@@ -115,7 +115,7 @@ level client (albino).
 --> 201 OK
 --> one or more lines listing devices with GUID in second column
 
-2.2 Add a device as a miracle unit: UADD {sdl, bluefish}:{NTSC, PAL}
+2.2 Add a device as a miracle unit: UADD {sdl, bluefish}
 --> 201 OK
 --> U0
 
@@ -124,39 +124,26 @@ level client (albino).
 --> U0 ?? {sdl, bluefish} 1
 --> It is important that the last column is '1' to indicate it is online.
 
-2.4 Add an offline unit by using some bogus GUID value: UADD foo
+2.4 List the units: ULS
 --> 201 OK
---> U1
+--> U0 ?? {sdl, bluefish} 1
 
-2.3 List the units: ULS
---> 201 OK
---> U0 ?? {GUID} 1
---> U1 00 0000000f00055c1 0
---> It is important that the last column of the last row is '0' to
-    indicate offline.
-
-2.4 Attempt unit commands for a unit that does not exist: LOAD U6 foo
+2.5 Attempt unit commands for a unit that does not exist: LOAD U6 foo
 --> 403 Unit not found
 
-2.5 Attempt unit commands without specifying a unit: PLAY
+2.6 Attempt unit commands without specifying a unit: PLAY
 --> 402 Argument missing
 
-2.6 Attempt unit commands for a unit that is offline: PLAY U1
---> 403 Unit not found
-
-2.7.0 Load a clip into an offline unit: LOAD U1 test.dv
+2.7 Attempt unit commands for a unit: PLAY U0
 --> 200 OK
 
-2.7.1 Verify the status of the offline unit: USTA U1
+2.8.0 Load a clip into an unit: LOAD U0 test.dv
+--> 200 OK
+
+2.7.1 Verify the status of the unit: USTA U0
 --> 202 OK
---> 1 offline "test.dv" 0 1000 25.00 0 ...
+--> 0 online "test.dv" 0 1000 25.00 0 ...
 --> only the first 3 columns are relevant in this test
-
-2.9 Set the property of an online unit: USET U0 points=use
---> 200 OK
-
-2.8 Set the property of an offline unit: USET U1 points=ignore
---> 200 OK
 
 
 3. Server Configuration
