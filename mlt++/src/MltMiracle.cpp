@@ -149,3 +149,9 @@ void Miracle::log_level( int threshold )
 {
 	miracle_log_init( log_stderr, threshold );
 }
+
+Properties *Miracle::unit( int index )
+{
+	mlt_properties properties = miracle_server_fetch_unit( server, index );
+	return properties != NULL ? new Properties( properties ) : NULL;
+}

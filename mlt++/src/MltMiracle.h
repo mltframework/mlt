@@ -50,6 +50,7 @@ namespace Mlt
 			virtual Response *push( char *command, Service *service );
 			void wait_for_shutdown( );
 			static void log_level( int );
+			Properties *unit( int );
 	};
 }
 

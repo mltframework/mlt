@@ -51,6 +51,7 @@ namespace Mlt {
 %newobject Frame::get_original_producer( );
 %newobject Miracle::execute( char * );
 %newobject Miracle::push( char *, Service & );
+%newobject Miracle::unit( int );
 }
 
 /** Classes to wrap.
