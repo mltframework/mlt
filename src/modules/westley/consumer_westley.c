@@ -385,8 +385,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					xmlNewProp( entry, "in", temp );
 					sprintf( temp, "%d", info.frame_out );
 					xmlNewProp( entry, "out", temp );
-					if ( mlt_producer_is_cut( info.producer ) )
-						serialise_service_filters( context, mlt_producer_service( info.producer ), entry );
+					if ( mlt_producer_is_cut( info.cut ) )
+						serialise_service_filters( context, mlt_producer_service( info.cut ), entry );
 				}
 			}
 		}

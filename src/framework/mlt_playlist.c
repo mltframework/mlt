@@ -490,6 +490,7 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 		mlt_properties properties = mlt_producer_properties( producer );
 		info->clip = index;
 		info->producer = producer;
+		info->cut = this->list[ index ]->producer;
 		info->start = mlt_playlist_clip( this, mlt_whence_relative_start, index );
 		info->resource = mlt_properties_get( properties, "resource" );
 		info->frame_in = this->list[ index ]->frame_in;
@@ -498,14 +499,6 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 		info->length = mlt_producer_get_length( producer );
 		info->fps = mlt_producer_get_fps( producer );
 		info->event = this->list[ index ]->event;
-	}
-
-	// Determine the consuming filter service
-	if ( info->producer != NULL )
-	{
-		info->service = mlt_producer_service( info->producer );
-		while ( mlt_service_consumer( info->service ) != NULL )
-			info->service = mlt_service_consumer( info->service );
 	}
 
 	return error;

@@ -640,7 +640,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 			}
 
 			mlt_playlist_get_clip_info( MLT_PLAYLIST( parent ), &info, mlt_playlist_count( MLT_PLAYLIST( parent ) ) - 1 );
-			entry = info.producer;
+			entry = info.cut;
 		}
 		else
 		{
