@@ -155,11 +155,11 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 		for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
 			serialise_service( context, MLT_SERVICE( mlt_multitrack_track( MLT_MULTITRACK( service ), i ) ), node );
 	}
-		
 	else
 	{
+		// Create the multitrack node
 		child = xmlNewChild( node, NULL, "multitrack", NULL );
-	
+		
 		// Set the id
 		if ( mlt_properties_get( properties, "id" ) == NULL )
 		{
@@ -202,9 +202,11 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 		{
 			if ( ! mlt_playlist_get_clip_info( MLT_PLAYLIST( service ), &info, i ) )
 			{
-				if ( info.producer && strcmp( mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" ), "blank" ) != 0 )
+				if ( info.producer != NULL )
 				{
-					serialise_service( context, MLT_SERVICE( info.producer ), node );
+					char *service_s = mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" );
+					if ( service_s != NULL && strcmp( service_s, "blank" ) != 0 )
+						serialise_service( context, MLT_SERVICE( info.producer ), node );
 				}
 			}
 		}
@@ -230,7 +232,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 		{
 			if ( ! mlt_playlist_get_clip_info( MLT_PLAYLIST( service ), &info, i ) )
 			{
-				if ( strcmp( mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" ), "blank" ) == 0 )
+				char *service_s = mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" );
+				if ( service_s != NULL && strcmp( service_s, "blank" ) == 0 )
 				{
 					char length[ 20 ];
 					length[ 19 ] = '\0';
@@ -405,52 +408,63 @@ static void serialise_service( serialise_context context, mlt_service service, x
 	}
 }
 
+xmlDocPtr westley_make_doc( mlt_service service )
+{
+	xmlDocPtr doc = xmlNewDoc( "1.0" );
+	xmlNodePtr root = xmlNewNode( NULL, "westley" );
+	struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
+	
+	xmlDocSetRootElement( doc, root );
+		
+	// Construct the context maps
+	context->producer_map = mlt_properties_new();
+	context->hide_map = mlt_properties_new();
+	
+	// Ensure producer is a framework producer
+	mlt_properties_set( mlt_service_properties( service ), "mlt_type", "mlt_producer" );
+
+	// In pass one, we serialise the end producers and playlists,
+	// adding them to a map keyed by address.
+	serialise_service( context, service, root );
+
+	// In pass two, we serialise the tractor and reference the
+	// producers and playlists
+	context->pass++;
+	serialise_service( context, service, root );
+
+	// Cleanup resource
+	mlt_properties_close( context->producer_map );
+	mlt_properties_close( context->hide_map );
+	free( context );
+	
+	return doc;
+}
+
+
 static int consumer_start( mlt_consumer this )
 {
 	mlt_service inigo = NULL;
-	xmlDoc *doc = xmlNewDoc( "1.0" );
-	xmlNode *root = xmlNewNode( NULL, "westley" );
-	xmlDocSetRootElement( doc, root );
+	xmlDocPtr doc = NULL;
 	
 	// Get the producer service
 	mlt_service service = mlt_service_get_producer( mlt_consumer_service( this ) );
 	if ( service != NULL )
 	{
-		struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
-		
-		// Construct the context maps
-		context->producer_map = mlt_properties_new();
-		context->hide_map = mlt_properties_new();
-		
 		// Remember inigo
 		if ( mlt_properties_get( mlt_service_properties( service ), "mlt_service" ) != NULL &&
 				strcmp( mlt_properties_get( mlt_service_properties( service ), "mlt_service" ), "inigo" ) == 0 )
 			inigo = service;
 		
-		// Ensure producer is a framework producer
-		mlt_properties_set( mlt_service_properties( service ), "mlt_type", "mlt_producer" );
-
-		// In pass one, we serialise the end producers and playlists,
-		// adding them to a map keyed by address.
-		serialise_service( context, service, root );
-
-		// In pass two, we serialise the tractor and reference the
-		// producers and playlists
-		context->pass++;
-		serialise_service( context, service, root );
-
-		// Cleanup resource
-		mlt_properties_close( context->producer_map );
-		mlt_properties_close( context->hide_map );
-		free( context );
+		doc = westley_make_doc( service );
 		
 		if ( mlt_properties_get( mlt_consumer_properties( this ), "resource" ) == NULL )
 			xmlDocFormatDump( stdout, doc, 1 );
 		else
 			xmlSaveFormatFile( mlt_properties_get( mlt_consumer_properties( this ), "resource" ), doc, 1 );
+		
+		xmlFreeDoc( doc );
 	}
-
-	xmlFreeDoc( doc );
+	
 	mlt_consumer_stop( this );
 
 	return 0;

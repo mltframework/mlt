@@ -10,7 +10,7 @@
 	  </playlist>
 	  <playlist>
 		<blank length="25"/>
-		<producer id="bar" in="100" out="199">
+		<producer id="bar" in="100" out="149">
 		  <property name="resource">clip3.mpeg</property>
 		</producer>
 		<entry out="99" producer="bar"/>
@@ -38,7 +38,7 @@
 	  </playlist>
 	  <playlist>
 		<blank length="25"/>
-		<producer id="bar" in="100" out="199">
+		<producer id="bar" in="100" out="149">
 		  <property name="resource">clip3.mpeg</property>
 		</producer>
 		<entry out="99" producer="bar"/>

@@ -33,6 +33,12 @@
 #include <libxml/tree.h>
 
 #define STACK_SIZE 1000
+#define BRANCH_SIG_LEN 4000
+
+#undef DEBUG
+#ifdef DEBUG
+extern xmlDocPtr westley_make_doc( mlt_service service );
+#endif
 
 struct deserialise_context_s
 {
@@ -47,9 +53,25 @@ struct deserialise_context_s
 	xmlNodePtr stack_node[ STACK_SIZE ];
 	int stack_node_size;
 	xmlDocPtr entity_doc;
+	int depth;
+	int branch[ STACK_SIZE ];
 };
 typedef struct deserialise_context_s *deserialise_context;
 
+/** Convert the numerical current branch address to a dot-delimited string.
+*/
+static char *serialise_branch( deserialise_context this, char *s )
+{
+	int i;
+	
+	s[0] = 0;
+	for ( i = 0; i < this->depth; i++ )
+	{
+		int len = strlen( s );
+		snprintf( s + len, BRANCH_SIG_LEN - len, "%d.", this->branch[ i ] );
+	}
+	return s;
+}
 
 /** Push a service.
 */
@@ -58,7 +80,16 @@ static int context_push_service( deserialise_context this, mlt_service that )
 {
 	int ret = this->stack_service_size >= STACK_SIZE - 1;
 	if ( ret == 0 )
-		this->stack_service[ this->stack_service_size ++ ] = that;
+	{
+		this->stack_service[ this->stack_service_size++ ] = that;
+		
+		// Record the tree branch on which this service lives
+		if ( mlt_properties_get( mlt_service_properties( that ), "_westley_branch" ) == NULL )
+		{
+			char s[ BRANCH_SIG_LEN ];
+			mlt_properties_set( mlt_service_properties( that ), "_westley_branch", serialise_branch( this, s ) );
+		}
+	}
 	return ret;
 }
 
@@ -298,48 +329,58 @@ static int add_producer( deserialise_context context, mlt_service service, mlt_p
 {
 	// Get the parent producer
 	mlt_service producer = context_pop_service( context );
+
 	if ( producer != NULL )
 	{
-		char *resource = mlt_properties_get( mlt_service_properties( producer ), "resource" );
-		
-		// Put the parent producer back
-		context_push_service( context, producer );
-			
-		// If the parent producer is a multitrack or playlist (not a track or entry)
-		if ( resource && ( strcmp( resource, "<playlist>" ) == 0 ||
-			strcmp( resource, "<multitrack>" ) == 0 ) )
-		{
-			if ( strcmp( resource, "<playlist>" ) == 0 )
-			{
-				// Append this producer to the playlist
-				mlt_playlist_append_io( MLT_PLAYLIST( producer ), 
-					MLT_PRODUCER( service ), in, out );
-			}
-			else
-			{
-				mlt_properties properties = mlt_service_properties( service );
-				
-				// Set this producer on the multitrack
-				mlt_multitrack_connect( MLT_MULTITRACK( producer ),
-					MLT_PRODUCER( service ),
-					mlt_multitrack_count( MLT_MULTITRACK( producer ) ) );
-				
-				// Set the hide state of the track producer
-				char *hide_s = mlt_properties_get( properties, "hide" );
-				if ( hide_s != NULL )
-				{
-					if ( strcmp( hide_s, "video" ) == 0 )
-						mlt_properties_set_int( properties, "hide", 1 );
-					else if ( strcmp( hide_s, "audio" ) == 0 )
-						mlt_properties_set_int( properties, "hide", 2 );
-					else if ( strcmp( hide_s, "both" ) == 0 )
-						mlt_properties_set_int( properties, "hide", 3 );
-				}
+		char current_branch[ BRANCH_SIG_LEN ];
+		char *service_branch = mlt_properties_get( mlt_service_properties( producer ), "_westley_branch" );
 
+		// Validate the producer from the stack is an ancestor and not predecessor
+		serialise_branch( context, current_branch );
+		if ( service_branch != NULL && strncmp( service_branch, current_branch, strlen( service_branch ) ) == 0 )
+		{
+			char *resource = mlt_properties_get( mlt_service_properties( producer ), "resource" );
+			
+			// Put the parent producer back
+			context_push_service( context, producer );
+				
+			// If the parent producer is a multitrack or playlist (not a track or entry)
+			if ( resource && ( strcmp( resource, "<playlist>" ) == 0 ||
+				strcmp( resource, "<multitrack>" ) == 0 ) )
+			{
+//printf( "add_producer: current branch %s service branch %s (%d)\n", current_branch, service_branch, strncmp( service_branch, current_branch, strlen( service_branch ) ) );
+				if ( strcmp( resource, "<playlist>" ) == 0 )
+				{
+					// Append this producer to the playlist
+					mlt_playlist_append_io( MLT_PLAYLIST( producer ), 
+						MLT_PRODUCER( service ), in, out );
+				}
+				else
+				{
+					mlt_properties properties = mlt_service_properties( service );
+					
+					// Set this producer on the multitrack
+					mlt_multitrack_connect( MLT_MULTITRACK( producer ),
+						MLT_PRODUCER( service ),
+						mlt_multitrack_count( MLT_MULTITRACK( producer ) ) );
+					
+					// Set the hide state of the track producer
+					char *hide_s = mlt_properties_get( properties, "hide" );
+					if ( hide_s != NULL )
+					{
+						if ( strcmp( hide_s, "video" ) == 0 )
+							mlt_properties_set_int( properties, "hide", 1 );
+						else if ( strcmp( hide_s, "audio" ) == 0 )
+							mlt_properties_set_int( properties, "hide", 2 );
+						else if ( strcmp( hide_s, "both" ) == 0 )
+							mlt_properties_set_int( properties, "hide", 3 );
+					}
+	
+				}
+				// Normally, the enclosing entry or track will pop this service off
+				// In its absence we do not push it on.
+				return 1;
 			}
-			// Normally, the enclosing entry or track will pop this service off
-			// In its absence we do not push it on.
-			return 1;
 		}
 	}
 	return 0;
@@ -351,7 +392,7 @@ static void on_end_multitrack( deserialise_context context, const xmlChar *name 
 	mlt_service producer = context_pop_service( context );
 	if ( producer == NULL )
 		return;
-
+	
 	// Get the tractor from the stack
 	mlt_service service = context_pop_service( context );
 	
@@ -361,9 +402,14 @@ static void on_end_multitrack( deserialise_context context, const xmlChar *name 
 		resource = mlt_properties_get( mlt_service_properties( service ), "resource" );
 	if ( service == NULL || resource == NULL || strcmp( resource, "<tractor>" ) )
 	{
-		// Put the anonymous service back onto the stack!
-		context_push_service( context, service );
+//printf("creating a tractor\n");
+		char current_branch[ BRANCH_SIG_LEN ];
 		
+		// Put the anonymous service back onto the stack!
+		if ( service != NULL )
+			context_push_service( context, service );
+		
+		// Fabricate the tractor
 		service = mlt_tractor_service( mlt_tractor_init() );
 		track_service( context->destructors, service, (mlt_destructor) mlt_tractor_close );
 		
@@ -372,6 +418,8 @@ static void on_end_multitrack( deserialise_context context, const xmlChar *name 
 		mlt_properties_set_position( properties, "length", mlt_producer_get_out( MLT_PRODUCER( producer ) ) + 1 );
 		mlt_producer_set_in_and_out( MLT_PRODUCER( service ), 0, mlt_producer_get_out( MLT_PRODUCER( producer ) ) );
 		mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( MLT_PRODUCER( producer ) ) );
+		
+		mlt_properties_set( properties, "_westley_branch", serialise_branch( context, current_branch ) );
 	}
 	
 	// Connect the tractor to the multitrack
@@ -379,7 +427,7 @@ static void on_end_multitrack( deserialise_context context, const xmlChar *name 
 	mlt_properties_set_data( mlt_service_properties( service ), "multitrack",
 		MLT_MULTITRACK( producer ), 0, NULL, NULL );
 
-	// See if the producer should be added to a playlist or multitrack
+	// See if the tractor should be added to a playlist or multitrack
 	add_producer( context, service, 0, mlt_producer_get_out( MLT_PRODUCER( producer ) ) );
 	
 	// Always push the multitrack back onto the stack for filters and transitions
@@ -835,6 +883,10 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 	
+//printf("on_start_element: %s\n", name );
+	context->branch[ context->depth ] ++;
+	context->depth ++;
+	
 	// Build a tree from nodes within a property value
 	if ( context->is_value == 1 )
 	{
@@ -882,6 +934,7 @@ static void on_end_element( void *ctx, const xmlChar *name )
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 	
+//printf("on_end_element: %s\n", name );
 	if ( context->is_value == 1 && strcmp( name, "property" ) != 0 )
 		context_pop_node( context );
 	else if ( strcmp( name, "multitrack" ) == 0 )
@@ -902,6 +955,9 @@ static void on_end_element( void *ctx, const xmlChar *name )
 		on_end_filter( context, name );
 	else if ( strcmp( name, "transition" ) == 0 )
 		on_end_transition( context, name );
+
+	context->branch[ context->depth ] = 0;
+	context->depth --;
 }
 
 static void on_characters( void *ctx, const xmlChar *ch, int len )
@@ -1012,12 +1068,20 @@ mlt_producer producer_westley_init( char *filename )
 		// Verify it is a producer service (mlt_type="mlt_producer")
 		// (producer, playlist, multitrack)
 		char *type = mlt_properties_get( mlt_service_properties( service ), "mlt_type" );
-		if ( type == NULL || ( strcmp( type, "mlt_producer" ) != 0 ) )
+		if ( type == NULL || ( strcmp( type, "mlt_producer" ) != 0 && strcmp( type, "producer" ) != 0 ) )
 			service = NULL;
 	}
 
+#ifdef DEBUG
+	xmlDocPtr doc = westley_make_doc( service );
+	xmlDocFormatDump( stdout, doc, 1 );
+	xmlFreeDoc( doc );
+	service = NULL;
+#endif
+	
 	if ( well_formed && service != NULL )
 	{
+		
 		// Need the complete producer list for various reasons
 		properties = context->destructors;
 
