@@ -101,6 +101,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
 
+		// Default progressive true
+		mlt_properties_set_int( this->properties, "progressive", 1 );
+
 		// Get aspect ratio
 		this->aspect_ratio = mlt_properties_get_double( this->properties, "aspect_ratio" );
 		
