@@ -442,7 +442,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 			char key[ 25 ];
 			sprintf( key, "_clone.%d", clone_index - 1 );
 			clone = mlt_properties_get_data( mlt_producer_properties( mlt_producer_cut_parent( this ) ), key, NULL );
-			if ( clone == NULL ) fprintf( stderr, "requested clone doesn't exist\n" );
+			if ( clone == NULL ) fprintf( stderr, "requested clone doesn't exist %d\n", clone_index );
 			clone = clone == NULL ? this : clone;
 		}
 		else
@@ -525,7 +525,7 @@ static void mlt_producer_set_clones( mlt_producer this, int clones )
 	int i = 0;
 	char key[ 25 ];
 
-	// If the number of existing clones is different, the create/remove as necessary
+	// If the number of existing clones is different, then create/remove as necessary
 	if ( existing != clones )
 	{
 		if ( existing < clones )
@@ -634,7 +634,7 @@ static int on_start_producer( mlt_parser this, mlt_producer object )
 	mlt_properties properties = mlt_parser_properties( this );
 	mlt_properties producers = mlt_properties_get_data( properties, "producers", NULL );
 	mlt_producer parent = mlt_producer_cut_parent( object );
-	if ( !mlt_producer_is_mix( mlt_producer_cut_parent( object ) ) && mlt_producer_is_cut( object ) )
+	if ( mlt_service_identify( ( mlt_service )mlt_producer_cut_parent( object ) ) == producer_type && mlt_producer_is_cut( object ) )
 	{
 		int ref_count = 0;
 		clip_references *old_refs = NULL;

@@ -54,7 +54,6 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 	}
 	//fprintf( stderr, "transition_mix: previous %f current %f\n", mix_start, mix_end );
 
-	mlt_properties_set_int( b_props, "test_audio", mlt_properties_get_int( b_props, "original_test_audio" ) );
 	mlt_frame_mix_audio( frame, b_frame, mix_start, mix_end, buffer, format, frequency, channels, samples );
 
 	return 0;
@@ -106,8 +105,6 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 		mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
 		
 		mlt_properties_set_double( b_props, "audio.reverse", mlt_properties_get_double( properties, "reverse" ) );
-
-		mlt_properties_set_int( b_props, "original_test_audio", mlt_properties_get_int( b_props, "test_audio" ) );
 	}
 			
 	// Backup the original get_audio (it's still needed)
@@ -132,6 +129,7 @@ mlt_transition transition_mix_init( char *arg )
 		this->process = transition_process;
 		if ( arg != NULL )
 			mlt_properties_set_double( mlt_transition_properties( this ), "start", atof( arg ) );
+		mlt_properties_set_int( mlt_transition_properties( this ), "_accepts_blanks", 1 );
 	}
 	return this;
 }

@@ -416,10 +416,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		mlt_properties properties = mlt_frame_properties( *frame );
 		mlt_properties_set_double( properties, "_speed", speed );
 		mlt_properties_set_position( properties, "_position", position );
-		if ( mlt_properties_get_int( properties, "test_image" ) == 0 )
-			mlt_properties_set_int( properties, "test_image", hide & 1 );
-		if ( mlt_properties_get_int( properties, "test_audio" ) == 0 )
-			mlt_properties_set_int( properties, "test_audio", hide & 2 );
+		mlt_properties_set_int( properties, "hide", hide );
 	}
 	else
 	{

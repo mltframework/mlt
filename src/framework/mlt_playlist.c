@@ -100,7 +100,7 @@ mlt_playlist mlt_playlist_init( )
 		mlt_properties_set( mlt_playlist_properties( this ), "resource", "<playlist>" );
 		mlt_properties_set( mlt_playlist_properties( this ), "mlt_type", "mlt_producer" );
 		mlt_properties_set_position( mlt_playlist_properties( this ), "in", 0 );
-		mlt_properties_set_position( mlt_playlist_properties( this ), "out", 0 );
+		mlt_properties_set_position( mlt_playlist_properties( this ), "out", -1 );
 		mlt_properties_set_position( mlt_playlist_properties( this ), "length", 0 );
 
 		this->size = 10;

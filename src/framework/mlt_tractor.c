@@ -284,6 +284,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			// Determine which data_queue to pass on...
 			void *data_queue = NULL;
 
+			// Temporary properties
+			mlt_properties temp_properties = NULL;
+
 			// Get the multitrack's producer
 			mlt_producer target = mlt_multitrack_producer( multitrack );
 			mlt_producer_seek( target, mlt_producer_frame( parent ) );
@@ -301,21 +304,24 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				// Get a frame from the producer
 				mlt_service_get_frame( this->producer, &temp, i );
 
+				// Get the temporary properties
+				temp_properties = mlt_frame_properties( temp );
+
 				// Check for last track
-				done = mlt_properties_get_int( mlt_frame_properties( temp ), "last_track" );
+				done = mlt_properties_get_int( temp_properties, "last_track" );
 
 				// We store all frames with a destructor on the output frame
 				sprintf( label, "_%s_%d", id, count ++ );
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
 				// We want the last data_queue 
-				if ( mlt_properties_get_data( mlt_frame_properties( temp ), "data_queue", NULL ) != NULL )
+				if ( !done && mlt_properties_get_data( temp_properties, "data_queue", NULL ) != NULL )
 					data_queue = mlt_properties_get_data( mlt_frame_properties( temp ), "data_queue", NULL );
 
 				// Pick up first video and audio frames
-				if ( !done && !mlt_frame_is_test_audio( temp ) )
+				if ( !done && !mlt_frame_is_test_audio( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 2 ) )
 					audio = temp;
-				if ( !done && !mlt_frame_is_test_card( temp ) )
+				if ( !done && !mlt_frame_is_test_card( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 1 ) )
 					video = temp;
 			}
 	
@@ -340,6 +346,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_position( frame_properties, "_position", mlt_properties_get_position( video_properties, "_position" ) );
 			}
 
+			mlt_frame_set_position( *frame, mlt_producer_frame( parent ) );
 			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_audio", audio == NULL );
 			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_image", video == NULL );
 		}

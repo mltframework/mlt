@@ -233,8 +233,6 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
-			mlt_properties_set( properties, "rescale.interp", "none" );
-			mlt_properties_set( properties, "scale", "off" );
 		}
 		else
 		{
@@ -317,7 +315,9 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 
 	if ( hide == 0 && this->get_audio != NULL )
 	{
+		mlt_position position = mlt_frame_get_position( this );
 		this->get_audio( this, buffer, format, frequency, channels, samples );
+		mlt_frame_set_position( this, position );
 	}
 	else if ( mlt_properties_get_data( properties, "audio", NULL ) )
 	{
