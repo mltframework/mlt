@@ -19,7 +19,7 @@ for i in *
 do
 	if [ -x $i/configure -a \( "$help" = "1" -o ! -f disable-$i \) ]
 	then
-		echo "Configuring modules/$i:"
+		[ "$help" = "0" ] && echo "Configuring modules/$i:"
 		pushd $i > /dev/null
 		./configure $@
 		[ $? != 0 ] && exit 1
