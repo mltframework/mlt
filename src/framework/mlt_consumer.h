@@ -42,6 +42,7 @@ struct mlt_consumer_s
 	void *private;
 	void *child;
 
+	int real_time;
 	int ahead;
 	mlt_image_format format;
 	mlt_deque queue;

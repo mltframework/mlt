@@ -697,6 +697,7 @@ void miracle_unit_close( miracle_unit unit )
 	if ( unit != NULL )
 	{
 		miracle_log( LOG_DEBUG, "closing unit..." );
+		miracle_unit_terminate( unit );
 		if ( unit->old_producers != NULL )
 			mlt_properties_close( unit->old_producers );
 		mlt_properties_close( unit->properties );

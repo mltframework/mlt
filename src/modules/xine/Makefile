@@ -7,7 +7,7 @@ OBJS = factory.o \
 	   cpu_accel.o \
 	   filter_deinterlace.o
 
-CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -DARCH_X86
+CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -DARCH_X86
 
 SRCS := $(OBJS:.o=.c)
 

@@ -165,6 +165,9 @@ int mlt_consumer_start( mlt_consumer this )
 		mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 	}
 
+	// Set the real_time preference
+	this->real_time = mlt_properties_get_int( properties, "real_time" );
+
 	// Start the service
 	if ( this->start != NULL )
 		return this->start( this );
@@ -172,7 +175,7 @@ int mlt_consumer_start( mlt_consumer this )
 	return 0;
 }
 
-/** Protected method :-/ for consumer to get frames from connected service
+/** Protected method for consumer to get frames from connected service
 */
 
 mlt_frame mlt_consumer_get_frame( mlt_consumer this )
@@ -375,7 +378,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 	mlt_properties properties = mlt_consumer_properties( this );
 
 	// Check if the user has requested real time or not
-	if ( mlt_properties_get_int( properties, "real_time" ) )
+	if ( this->real_time )
 	{
 		int size = 1;
 

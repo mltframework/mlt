@@ -10,7 +10,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -117,10 +117,14 @@ mlt_consumer consumer_avformat_init( char *arg )
 
 		// Set avformat defaults
 		mlt_properties_set_int( properties, "audio_bit_rate", 128000 );
-		mlt_properties_set_int( properties, "video_bit_rate", 400000 );
+		mlt_properties_set_int( properties, "video_bit_rate", 200 * 1000 );
+		mlt_properties_set_int( properties, "video_bit_rate_tolerance", 4000 * 1000 );
+		mlt_properties_set_int( properties, "frame_rate_base", 1 );
 		mlt_properties_set_int( properties, "gop_size", 12 );
 		mlt_properties_set_int( properties, "max_b_frames", 0 );
 		mlt_properties_set_int( properties, "mb_decision", 0 );
+		mlt_properties_set_double( properties, "qscale", 0 );
+		mlt_properties_set_int( properties, "me_method", ME_EPZS );
 
 		// Ensure termination at end of the stream
 		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
@@ -161,7 +165,7 @@ static int consumer_start( mlt_consumer this )
 		int height = mlt_properties_get_int( properties, "height" );
 
 		// Obtain the size property
-		char *size =  mlt_properties_get( properties, "size" );
+		char *size = mlt_properties_get( properties, "size" );
 
 		// Interpret it
 		if ( size != NULL )
@@ -241,26 +245,26 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 	mlt_properties properties = mlt_consumer_properties( this );
 
 	// Create a new stream
-    AVStream *st = av_new_stream( oc, 1 );
+	AVStream *st = av_new_stream( oc, 1 );
 
 	// If created, then initialise from properties
-    if ( st != NULL ) 
+	if ( st != NULL ) 
 	{
-    	AVCodecContext *c = &st->codec;
-    	c->codec_id = codec_id;
-    	c->codec_type = CODEC_TYPE_AUDIO;
+		AVCodecContext *c = &st->codec;
+		c->codec_id = codec_id;
+		c->codec_type = CODEC_TYPE_AUDIO;
 
-    	// Put sample parameters
-    	c->bit_rate = mlt_properties_get_int( properties, "audio_bit_rate" );
-    	c->sample_rate = mlt_properties_get_int( properties, "frequency" );
-    	c->channels = mlt_properties_get_int( properties, "channels" );
+		// Put sample parameters
+		c->bit_rate = mlt_properties_get_int( properties, "audio_bit_rate" );
+		c->sample_rate = mlt_properties_get_int( properties, "frequency" );
+		c->channels = mlt_properties_get_int( properties, "channels" );
 	}
 	else
 	{
-        fprintf( stderr, "Could not allocate a stream for audio\n" );
-    }
+		fprintf( stderr, "Could not allocate a stream for audio\n" );
+	}
 
-    return st;
+	return st;
 }
 
 static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size )
@@ -269,35 +273,41 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	int audio_input_frame_size = 0;
 
 	// Get the context
-    AVCodecContext *c = &st->codec;
+	AVCodecContext *c = &st->codec;
 
 	// Find the encoder
-    AVCodec *codec = avcodec_find_encoder( c->codec_id );
+	AVCodec *codec = avcodec_find_encoder( c->codec_id );
 
 	// Continue if codec found and we can open it
 	if ( codec != NULL && avcodec_open(c, codec) >= 0 )
 	{
-    	// ugly hack for PCM codecs (will be removed ASAP with new PCM
-    	// support to compute the input frame size in samples
-    	if ( c->frame_size <= 1 ) 
+		// ugly hack for PCM codecs (will be removed ASAP with new PCM
+		// support to compute the input frame size in samples
+		if ( c->frame_size <= 1 ) 
 		{
-        	audio_input_frame_size = audio_outbuf_size / c->channels;
-        	switch(st->codec.codec_id) 
+			audio_input_frame_size = audio_outbuf_size / c->channels;
+			switch(st->codec.codec_id) 
 			{
-        		case CODEC_ID_PCM_S16LE:
-        		case CODEC_ID_PCM_S16BE:
-        		case CODEC_ID_PCM_U16LE:
-        		case CODEC_ID_PCM_U16BE:
-            		audio_input_frame_size >>= 1;
-            		break;
-        		default:
-            		break;
-        	}
-    	} 
+				case CODEC_ID_PCM_S16LE:
+				case CODEC_ID_PCM_S16BE:
+				case CODEC_ID_PCM_U16LE:
+				case CODEC_ID_PCM_U16BE:
+					audio_input_frame_size >>= 1;
+					break;
+				default:
+					break;
+			}
+		} 
 		else 
 		{
-        	audio_input_frame_size = c->frame_size;
-    	}
+			audio_input_frame_size = c->frame_size;
+		}
+
+		// Some formats want stream headers to be seperate (hmm)
+		if( !strcmp( oc->oformat->name, "mp4" ) || 
+			!strcmp( oc->oformat->name, "mov" ) || 
+			!strcmp( oc->oformat->name, "3gp" ) )
+			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
 	}
 	else
 	{
@@ -309,7 +319,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 
 static void close_audio( AVFormatContext *oc, AVStream *st )
 {
-    avcodec_close( &st->codec );
+	avcodec_close( &st->codec );
 }
 
 /** Add a video output stream 
@@ -317,77 +327,95 @@ static void close_audio( AVFormatContext *oc, AVStream *st )
 
 static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int codec_id )
 {
-   	// Get the properties
+ 	// Get the properties
 	mlt_properties properties = mlt_consumer_properties( this );
 
 	// Create a new stream
-    AVStream *st = av_new_stream( oc, 0 );
+	AVStream *st = av_new_stream( oc, 0 );
 
-    if ( st != NULL ) 
+	if ( st != NULL ) 
 	{
 		AVCodecContext *c = &st->codec;
-    	c->codec_id = codec_id;
-    	c->codec_type = CODEC_TYPE_VIDEO;
+		c->codec_id = codec_id;
+		c->codec_type = CODEC_TYPE_VIDEO;
 
-    	// put sample parameters
-    	c->bit_rate = mlt_properties_get_int( properties, "video_bit_rate" );
-    	c->width = mlt_properties_get_int( properties, "width" );  
-    	c->height = mlt_properties_get_int( properties, "height" );
-    	c->frame_rate = mlt_properties_get_double( properties, "fps" );  
-    	c->frame_rate_base = 1;
-    	c->gop_size = mlt_properties_get_int( properties, "gop_size" );
-       	c->max_b_frames = mlt_properties_get_int( properties, "max_b_frames" );
-       	c->mb_decision = mlt_properties_get_int( properties, "mb_decision" );
+		// put sample parameters
+		c->bit_rate = mlt_properties_get_int( properties, "video_bit_rate" );
+		c->bit_rate_tolerance = mlt_properties_get_int( properties, "video_bit_rate_tolerance" );
+		c->width = mlt_properties_get_int( properties, "width" );
+		c->height = mlt_properties_get_int( properties, "height" );
+		c->frame_rate = mlt_properties_get_double( properties, "fps" );
+		c->frame_rate_base = mlt_properties_get_double( properties, "frame_rate_base" );
+		c->frame_rate_base = 1;
+		c->gop_size = mlt_properties_get_int( properties, "gop_size" );
+	 	c->max_b_frames = mlt_properties_get_int( properties, "max_b_frames" );
+		if ( c->max_b_frames )
+		{
+			c->b_frame_strategy = 0;
+			c->b_quant_factor = 2.0;
+		}
 
-    	// Some formats want stream headers to be seperate (hmm)
-    	if( !strcmp( oc->oformat->name, "mp4" ) || 
+	 	c->mb_decision = mlt_properties_get_int( properties, "mb_decision" );
+		c->sample_aspect_ratio = av_d2q( mlt_properties_get_double( properties, "aspect_ratio" ), 255 );
+
+
+		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
+		{
+			c->flags |= CODEC_FLAG_QSCALE;
+			st->quality = FF_QP2LAMBDA * mlt_properties_get_double( properties, "qscale" );
+		}
+
+		// Some formats want stream headers to be seperate (hmm)
+		if( !strcmp( oc->oformat->name, "mp4" ) || 
 			!strcmp( oc->oformat->name, "mov" ) || 
 			!strcmp( oc->oformat->name, "3gp" ) )
-        	c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+
+		c->me_method = mlt_properties_get_int( properties, "me_method" );
  	}
 	else
 	{
-        fprintf( stderr, "Could not allocate a stream for video\n" );
-    }
-   
-    return st;
+		fprintf( stderr, "Could not allocate a stream for video\n" );
+	}
+ 
+	return st;
 }
 
 static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 {
 	// Allocate a frame
-    AVFrame *picture = avcodec_alloc_frame();
+	AVFrame *picture = avcodec_alloc_frame();
 
 	// Determine size of the 
-   	int size = avpicture_get_size(pix_fmt, width, height);
+ 	int size = avpicture_get_size(pix_fmt, width, height);
 
 	// Allocate the picture buf
-   	uint8_t *picture_buf = av_malloc(size);
+ 	uint8_t *picture_buf = av_malloc(size);
 
 	// If we have both, then fill the image
 	if ( picture != NULL && picture_buf != NULL )
 	{
 		// Fill the frame with the allocated buffer
-    	avpicture_fill((AVPicture *)picture, picture_buf, pix_fmt, width, height);
+		avpicture_fill( (AVPicture *)picture, picture_buf, pix_fmt, width, height);
 	}
 	else
 	{
 		// Something failed - clean up what we can
-       	av_free(picture);
-       	av_free(picture_buf);
-       	picture = NULL;
+	 	av_free( picture );
+	 	av_free( picture_buf );
+	 	picture = NULL;
 	}
 
-    return picture;
+	return picture;
 }
-    
+	
 static int open_video(AVFormatContext *oc, AVStream *st)
 {
 	// Get the codec
-    AVCodecContext *c = &st->codec;
+	AVCodecContext *c = &st->codec;
 
-    // find the video encoder
-    AVCodec *codec = avcodec_find_encoder(c->codec_id);
+	// find the video encoder
+	AVCodec *codec = avcodec_find_encoder(c->codec_id);
 
 	// Open the codec safely
 	return codec != NULL && avcodec_open(c, codec) >= 0;
@@ -395,7 +423,7 @@ static int open_video(AVFormatContext *oc, AVStream *st)
 
 void close_video(AVFormatContext *oc, AVStream *st)
 {
-    avcodec_close(&st->codec);
+	avcodec_close(&st->codec);
 }
 
 /** The main thread - the argument is simply the consumer.
@@ -429,14 +457,14 @@ static void *consumer_thread( void *arg )
 	int samples = 0;
 
 	// AVFormat audio buffer and frame size
-   	int audio_outbuf_size = 10000;
-   	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
+ 	int audio_outbuf_size = 2 * 128 * 1024;
+ 	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
 	int audio_input_frame_size = 0;
 
 	// AVFormat video buffer and frame count
 	int frame_count = 0;
-	int video_outbuf_size = 200000;
-	uint8_t *video_outbuf = av_malloc(video_outbuf_size);
+	int video_outbuf_size = ( 1024 * 1024 );
+	uint8_t *video_outbuf = av_malloc( video_outbuf_size );
 
 	// Used for the frame properties
 	mlt_frame frame = NULL;
@@ -459,24 +487,28 @@ static void *consumer_thread( void *arg )
 	int count = 0;
 
 	// Allocate the context
-    AVFormatContext *oc = av_alloc_format_context();
+	AVFormatContext *oc = av_alloc_format_context( );
 
 	// Streams
-    AVStream *audio_st = NULL;
+	AVStream *audio_st = NULL;
 	AVStream *video_st = NULL;
 
 	// Time stamps
-    double audio_pts, video_pts;
+	double audio_pts, video_pts;
 
 	// Loop variable
 	int i;
 
 	// Determine the format
-    AVOutputFormat *fmt = NULL;
+	AVOutputFormat *fmt = NULL;
 	char *filename = mlt_properties_get( properties, "target" );
 	char *format = mlt_properties_get( properties, "format" );
-	//char *vcodec = mlt_properties_get( properties, "vcodec" );
-	//char *acodec = mlt_properties_get( properties, "acodec" );
+	char *vcodec = mlt_properties_get( properties, "vcodec" );
+	char *acodec = mlt_properties_get( properties, "acodec" );
+
+	// Used to store and override codec ids
+	int audio_codec_id;
+	int video_codec_id;
 
 	// Check for user selected format first
 	if ( format != NULL )
@@ -494,43 +526,82 @@ static void *consumer_thread( void *arg )
 	if ( filename == NULL )
 		filename = "pipe:";
 
+	// Get the codec ids selected
+	audio_codec_id = fmt->audio_codec;
+	video_codec_id = fmt->video_codec;
+
+	// Check for audio codec overides
+	if ( acodec != NULL )
+	{
+		AVCodec *p = first_avcodec;
+		while( p != NULL ) 
+		{
+			if ( !strcmp( p->name, acodec ) && p->type == CODEC_TYPE_AUDIO )
+				break;
+			p = p->next;
+		}
+		if ( p != NULL )
+			audio_codec_id = p->id;
+		else
+			fprintf( stderr, "consumer_avcodec: audio codec %s unrecognised - ignoring\n", acodec );
+	}
+
+	// Check for video codec overides
+	if ( vcodec != NULL )
+	{
+		AVCodec *p = first_avcodec;
+		while( p != NULL ) 
+		{
+			if ( !strcmp( p->name, vcodec ) && p->type == CODEC_TYPE_VIDEO )
+				break;
+			p = p->next;
+		}
+		if ( p != NULL )
+			video_codec_id = p->id;
+		else
+			fprintf( stderr, "consumer_avcodec: video codec %s unrecognised - ignoring\n", vcodec );
+	}
+
 	// Update the output context
 	oc->oformat = fmt;
-    snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
+	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
 
 	// Add audio and video streams 
-    if ( fmt->video_codec != CODEC_ID_NONE )
-        video_st = add_video_stream( this, oc, fmt->video_codec );
-    if ( fmt->audio_codec != CODEC_ID_NONE )
-        audio_st = add_audio_stream( this, oc, fmt->audio_codec );
+	if ( fmt->video_codec != CODEC_ID_NONE )
+		video_st = add_video_stream( this, oc, video_codec_id );
+	if ( fmt->audio_codec != CODEC_ID_NONE )
+		audio_st = add_audio_stream( this, oc, audio_codec_id );
 
 	// Set the parameters (even though we have none...)
-    if ( av_set_parameters(oc, NULL) >= 0 ) 
+	if ( av_set_parameters(oc, NULL) >= 0 ) 
 	{
-	    if ( video_st && !open_video( oc, video_st ) )
+		if ( video_st && !open_video( oc, video_st ) )
 			video_st = NULL;
-    	if ( audio_st )
-        	audio_input_frame_size = open_audio( oc, audio_st, audio_outbuf_size );
+		if ( audio_st )
+			audio_input_frame_size = open_audio( oc, audio_st, audio_outbuf_size );
 
-    	// Open the output file, if needed
-    	if ( !( fmt->flags & AVFMT_NOFILE ) ) 
+		// Open the output file, if needed
+		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
 		{
-        	if (url_fopen(&oc->pb, filename, URL_WRONLY) < 0) 
+			if (url_fopen(&oc->pb, filename, URL_RDWR) < 0) 
 			{
-            	fprintf(stderr, "Could not open '%s'\n", filename);
+				fprintf(stderr, "Could not open '%s'\n", filename);
 				mlt_properties_set_int( properties, "running", 0 );
-        	}
-    	}
-    
-    	// Write the stream header, if any
+			}
+		}
+	
+		if ( url_is_streamed( &oc->pb ) )
+			fprintf( stderr, "FUCK!\n" );
+
+		// Write the stream header, if any
 		if ( mlt_properties_get_int( properties, "running" ) )
-    		av_write_header( oc );
+			av_write_header( oc );
 	}
 	else
 	{
-        fprintf(stderr, "Invalid output format parameters\n");
+		fprintf(stderr, "Invalid output format parameters\n");
 		mlt_properties_set_int( properties, "running", 0 );
-    }
+	}
 
 	// Last check - need at least one stream
 	if ( audio_st == NULL && video_st == NULL )
@@ -565,47 +636,47 @@ static void *consumer_thread( void *arg )
 			// While we have stuff to process, process...
 			while ( 1 )
 			{
-       			// Compute current audio and video time
-       			if (audio_st)
-           			audio_pts = (double)audio_st->pts.val * oc->pts_num / oc->pts_den;
-       			else
-           			audio_pts = 0.0;
-       
-       			if (video_st)
-           			video_pts = (double)video_st->pts.val * oc->pts_num / oc->pts_den;
-       			else
-           			video_pts = 0.0;
+	 			// Compute current audio and video time
+	 			if (audio_st)
+		 			audio_pts = (double)audio_st->pts.val * oc->pts_num / oc->pts_den;
+	 			else
+		 			audio_pts = 0.0;
+	 
+	 			if (video_st)
+		 			video_pts = (double)video_st->pts.val * oc->pts_num / oc->pts_den;
+	 			else
+		 			video_pts = 0.0;
 
-       			// Write interleaved audio and video frames
-       			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
+	 			// Write interleaved audio and video frames
+	 			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
 				{
 					if ( channels * audio_input_frame_size < sample_fifo_used( fifo ) )
 					{
-           	    		int out_size;
-   						AVCodecContext *c;
+		 				int out_size;
+ 						AVCodecContext *c;
 
-   						c = &audio_st->codec;
+ 						c = &audio_st->codec;
 
 						sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
 
-   						out_size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
+ 						out_size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
 
-   						// Write the compressed frame in the media file
-   						if (av_write_frame(oc, audio_st->index, audio_outbuf, out_size) != 0) 
-       						fprintf(stderr, "Error while writing audio frame\n");
+ 						// Write the compressed frame in the media file
+ 						if (av_write_frame(oc, audio_st->index, audio_outbuf, out_size) != 0) 
+	 						fprintf(stderr, "Error while writing audio frame\n");
 					}
 					else
 					{
 						break;
 					}
 				}
-       			else if ( video_st )
+	 			else if ( video_st )
 				{
 					if ( mlt_deque_count( queue ) )
 					{
-   						int out_size, ret;
-   						AVCodecContext *c;
-   
+ 						int out_size, ret;
+ 						AVCodecContext *c;
+ 
 						frame = mlt_deque_pop_front( queue );
 						frame_properties = mlt_frame_properties( frame );
 
@@ -615,8 +686,8 @@ static void *consumer_thread( void *arg )
 							break;
 						}
 
-   						c = &video_st->codec;
-   						
+ 						c = &video_st->codec;
+ 						
 						if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 						{
 							int i = 0;
@@ -641,26 +712,26 @@ static void *consumer_thread( void *arg )
 
 							img_convert( ( AVPicture * )output, PIX_FMT_YUV420P, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
 						}
-   
-   						if (oc->oformat->flags & AVFMT_RAWPICTURE) 
+ 
+ 						if (oc->oformat->flags & AVFMT_RAWPICTURE) 
 						{
-       						// raw video case. The API will change slightly in the near future for that
-       						ret = av_write_frame(oc, video_st->index, (uint8_t *)output, sizeof(AVPicture));
-   						} 
+	 						// raw video case. The API will change slightly in the near future for that
+	 						ret = av_write_frame(oc, video_st->index, (uint8_t *)output, sizeof(AVPicture));
+ 						} 
 						else 
 						{
-       						// Encode the image
-       						out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
+	 						// Encode the image
+	 						out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
 
-       						// If zero size, it means the image was buffered
-       						if (out_size != 0) 
+	 						// If zero size, it means the image was buffered
+	 						if (out_size != 0) 
 							{
-           						// write the compressed frame in the media file
-           						// XXX: in case of B frames, the pts is not yet valid
-           						ret = av_write_frame( oc, video_st->index, video_outbuf, out_size );
-       						} 
-   						}
-   						frame_count++;
+		 						// write the compressed frame in the media file
+		 						// XXX: in case of B frames, the pts is not yet valid
+		 						ret = av_write_frame( oc, video_st->index, video_outbuf, out_size );
+	 						} 
+ 						}
+ 						frame_count++;
 						mlt_frame_close( frame );
 					}
 					else
@@ -672,32 +743,32 @@ static void *consumer_thread( void *arg )
 		}
 	}
 
-    // close each codec 
-    if (video_st)
-        close_video(oc, video_st);
-    if (audio_st)
-        close_audio(oc, audio_st);
+	// close each codec 
+	if (video_st)
+		close_video(oc, video_st);
+	if (audio_st)
+		close_audio(oc, audio_st);
 
-    // Write the trailer, if any
-    av_write_trailer(oc);
-    
-    // Free the streams
-    for(i = 0; i < oc->nb_streams; i++)
-        av_freep(&oc->streams[i]);
+	// Write the trailer, if any
+	av_write_trailer(oc);
+
+	// Free the streams
+	for(i = 0; i < oc->nb_streams; i++)
+		av_freep(&oc->streams[i]);
 
 	// Close the output file
-    if (!(fmt->flags & AVFMT_NOFILE))
-        url_fclose(&oc->pb);
+	if (!(fmt->flags & AVFMT_NOFILE))
+		url_fclose(&oc->pb);
 
 	// Clean up input and output frames
-    av_free( output->data[0] );
-    av_free( output );
-    av_free( input->data[0] );
-    av_free( input );
-    av_free( video_outbuf );
+	av_free( output->data[0] );
+	av_free( output );
+	av_free( input->data[0] );
+	av_free( input );
+	av_free( video_outbuf );
 
-    // Free the stream
-    av_free(oc);
+	// Free the stream
+	av_free(oc);
 
 	return NULL;
 }

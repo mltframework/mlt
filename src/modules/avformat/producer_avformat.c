@@ -469,7 +469,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						current_time = real_timecode;
 
 					// Handle ignore
-					if ( current_time < real_timecode )
+					if ( ( int )( current_time * 100 ) < ( int )( real_timecode * 100 ) - 7 )
 					{
 						ignore = 0;
 						got_picture = 0;

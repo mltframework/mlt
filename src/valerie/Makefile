@@ -14,7 +14,7 @@ OBJS = valerie.o \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS=-O3 -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS=-O4 -pipe -ffast-math -fomit-frame-pointer -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 LDFLAGS=-ldv -lpthread
 

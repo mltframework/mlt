@@ -1278,6 +1278,35 @@ Transitions
 Consumers
 ---------
 
+	avformat
+	
+	    Description
+	    
+	        Multiformat transcoding consumer.
+
+	    Constructor Argument
+
+	        string target - the filename to write to, e.g. test.mpeg.
+
+	    Initialisation Properties
+	    
+	        int buffer - the number of frames to buffer, minimum 1, default 25.
+	        string rescale - a rescale method, see the Filters/rescale.
+	        int progressive - indicates whether to use progressive or field-
+	                          based rendering, default 0 (off).
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Dependencies
+	    
+	        libavformat
+	        
+	    Known Bugs
+	    
+	        Plenty.
+
 	bluefish (Proprietary)
 	
 	    Description

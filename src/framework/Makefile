@@ -21,7 +21,7 @@ OBJS = mlt_frame.o \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS = -g -O3 -Wall -D_FILE_OFFSET_BITS=64 -pthread -DPREFIX="\"$(prefix)\""
+CFLAGS = -g -O4 -pipe -ffast-math -fomit-frame-pointer -Wall -D_FILE_OFFSET_BITS=64 -pthread -DPREFIX="\"$(prefix)\""
 
 LDFLAGS = -lm -ldl -lpthread
 

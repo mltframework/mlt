@@ -5,7 +5,7 @@ TARGET = ../libmltresample.so
 OBJS = factory.o \
 	   filter_resample.o 
 
-CFLAGS = -O3 -I../../ -Wall -g
+CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I../../ -Wall -g
 
 LDFLAGS= -lsamplerate
 

@@ -2,7 +2,7 @@ include ../../config.mak
 
 TARGET = dan charlie pango pixbuf dissolve luma
 
-CFLAGS = -O3 -I .. -Wall -rdynamic -pthread
+CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I .. -Wall -rdynamic -pthread
 
 LDFLAGS = -L ../framework -L ../modules -lmlt -lmltdv -lmltsdl
 

@@ -11,7 +11,7 @@ OBJS = factory.o \
 ASM_OBJS = have_mmx.o \
 		   scale_line_22_yuv_mmx.o
 
-CFLAGS = -O3 -DUSE_MMX `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -DUSE_MMX `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 LDFLAGS = `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
 

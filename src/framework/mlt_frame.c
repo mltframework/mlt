@@ -494,6 +494,8 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 
 	int active_width = 2 * iwidth;
 	int inactive_width = out_x_range - in_x_range;
+	uint8_t *p = NULL;
+	uint8_t *end = NULL;
 
    	// Loop for the entirety of our output height.
 	while ( iheight -- )
@@ -510,8 +512,13 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		}
 
    		// We're in the input range for this row.
-		memcpy( out_ptr, in_middle + in_line, active_width );
-		out_ptr += active_width;
+		p = in_middle + in_line;
+		end = out_ptr + active_width;
+		while ( out_ptr != end )
+		{
+			*out_ptr ++ = *p ++;
+			*out_ptr ++ = *p ++;
+		}
 
 		// Fill the outer part with black
 		elements = inactive_width;
