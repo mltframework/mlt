@@ -1,0 +1,90 @@
+/**
+ * MltGeometry.cpp - MLT Wrapper
+ * Copyright (C) 2004-2005 Charles Yates
+ * Author: Charles Yates <charles.yates@pandora.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include <stdlib.h>
+#include "MltGeometry.h"
+using namespace Mlt;
+
+Geometry::Geometry( char *data, int length, int nw, int nh )
+{
+	geometry = mlt_geometry_init( );
+	parse( data, length, nw, nh );
+}
+
+Geometry::~Geometry( )
+{
+	mlt_geometry_close( geometry );
+}
+
+int Geometry::parse( char *data, int length, int nw, int nh )
+{
+	return mlt_geometry_parse( geometry, data, length, nw, nh );
+}
+
+// Fetch a geometry item for an absolute position
+int Geometry::fetch( GeometryItem &item, float position )
+{
+	return mlt_geometry_fetch( geometry, item.get_item( ), position );
+}
+
+int Geometry::fetch( GeometryItem *item, float position )
+{
+	return mlt_geometry_fetch( geometry, item->get_item( ), position );
+}
+
+// Specify a geometry item at an absolute position
+int Geometry::insert( GeometryItem &item )
+{
+	return mlt_geometry_insert( geometry, item.get_item( ) );
+}
+
+int Geometry::insert( GeometryItem *item )
+{
+	return mlt_geometry_insert( geometry, item->get_item( ) );
+}
+
+// Remove the key at the specified position
+int Geometry::remove( int position )
+{
+	return mlt_geometry_remove( geometry, position );
+}
+
+// Get the key at the position or the next following
+int Geometry::key( GeometryItem &item, int position )
+{
+	return mlt_geometry_key( geometry, item.get_item( ), position );
+}
+
+int Geometry::key( GeometryItem *item, int position )
+{
+	return mlt_geometry_key( geometry, item->get_item( ), position );
+}
+
+// Serialise the current geometry
+char *Geometry::serialise( int in, int out )
+{
+	return mlt_geometry_serialise_cut( geometry, in, out );
+}
+
+char *Geometry::serialise( )
+{
+	return mlt_geometry_serialise( geometry );
+}
+

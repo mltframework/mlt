@@ -29,6 +29,7 @@
 #include "MltFilter.h"
 #include "MltFilteredConsumer.h"
 #include "MltFrame.h"
+#include "MltGeometry.h"
 #include "MltMiracle.h"
 #include "MltMultitrack.h"
 #include "MltParser.h"

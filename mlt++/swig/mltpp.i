@@ -62,6 +62,7 @@ namespace Mlt {
 %include <MltEvent.h>
 %include <MltProperties.h>
 %include <MltFrame.h>
+%include <MltGeometry.h>
 %include <MltService.h>
 %include <MltProducer.h>
 %include <MltPlaylist.h>

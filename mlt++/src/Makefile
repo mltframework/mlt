@@ -13,6 +13,7 @@ OBJS = MltConsumer.o \
 	   MltFilter.o \
 	   MltFilteredConsumer.o \
 	   MltFrame.o \
+	   MltGeometry.o \
 	   MltMiracle.o \
 	   MltMultitrack.o \
 	   MltParser.o \
