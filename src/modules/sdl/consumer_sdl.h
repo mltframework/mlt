@@ -23,6 +23,6 @@
 
 #include <framework/mlt_consumer.h>
 
-extern mlt_consumer consumer_sdl_init( void * );
+extern mlt_consumer consumer_sdl_init( char * );
 
 #endif

@@ -184,8 +184,8 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 			uint8_t *q;
 			
 			test_card.vfmt = *format;
-			test_card.width = 720;
-			test_card.height = 576;
+			test_card.width = *width == 0 ? 720 : *width;
+			test_card.height = *height == 0 ? 576 : *height;
 
 			switch( *format )
 			{

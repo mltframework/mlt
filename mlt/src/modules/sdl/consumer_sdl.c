@@ -46,6 +46,8 @@ struct consumer_sdl_s
 	pthread_cond_t audio_cond;
 	int window_width;
 	int window_height;
+	int width;
+	int height;
 };
 
 /** Forward references to static functions.
@@ -59,7 +61,7 @@ static int consumer_get_dimensions( int *width, int *height );
 	via the argument, but keep it simple.
 */
 
-mlt_consumer consumer_sdl_init( void *dummy )
+mlt_consumer consumer_sdl_init( char *arg )
 {
 	// Create the consumer object
 	consumer_sdl this = calloc( sizeof( struct consumer_sdl_s ), 1 );
@@ -85,8 +87,24 @@ mlt_consumer consumer_sdl_init( void *dummy )
 		pthread_mutex_init( &this->audio_mutex, NULL );
 		pthread_cond_init( &this->audio_cond, NULL);
 		
-		// TODO: process actual param
-		
+		// process actual param
+		if ( arg == NULL || !strcmp( arg, "PAL" ) )
+		{
+			this->width = 720;
+			this->height = 576;
+		}
+		else if ( !strcmp( arg, "NTSC" ) )
+		{
+			this->width = 720;
+			this->height = 480;
+		}
+		else if ( sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
+		{
+			this->width = 720;
+			this->height = 576;
+		}
+
+
 		// Create the the thread
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 
@@ -194,7 +212,7 @@ static void *consumer_thread( void *arg )
 		if ( mlt_service_get_frame( service, &frame, 0 ) == 0 )
 		{
 			mlt_image_format vfmt = mlt_image_yuv422;
-			int width, height;
+			int width = this->width, height = this->height;
 			uint8_t *image;
 
 			mlt_audio_format afmt = mlt_audio_pcm;

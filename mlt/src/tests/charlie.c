@@ -19,6 +19,10 @@ mlt_producer create_producer( char *file )
 		result = mlt_factory_producer( "mcdv", file );
 	else if ( strstr( file, ".jpg" ) )
 		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".JPG" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".jpeg" ) )
+		result = mlt_factory_producer( "pixbuf", file );
 	else if ( strstr( file, ".png" ) )
 		result = mlt_factory_producer( "pixbuf", file );
 
