@@ -21,14 +21,14 @@
 #include "filter_sox.h"
 
 #include <framework/mlt_frame.h>
-#include "valerie/valerie_tokeniser.c"
+#include <framework/mlt_tokeniser.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include <st.h>
+#include <sox/st.h>
 
 #define BUFFER_LEN 8192
 #define AMPLITUDE_NORM 0.2511886431509580 /* -12dBFS */
@@ -60,13 +60,13 @@ static inline double mean( double *buf, int count )
 */
 static int create_effect( mlt_filter this, char *value, int count, int channel, int frequency )
 {
-	valerie_tokeniser tokeniser = valerie_tokeniser_init();
+	mlt_tokeniser tokeniser = mlt_tokeniser_init();
 	eff_t eff = mlt_pool_alloc( sizeof( struct st_effect ) );
 	char id[ 256 ];
 	int error = 1;
 
 	// Tokenise the effect specification
-	valerie_tokeniser_parse_new( tokeniser, value, " " );
+	mlt_tokeniser_parse_new( tokeniser, value, " " );
 
 	// Locate the effect
 	int opt_count = st_geteffect_opt( eff, tokeniser->count, tokeniser->tokens );
@@ -99,7 +99,7 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 	if ( error == 1 )
 		mlt_pool_release( eff );
 	
-	valerie_tokeniser_close( tokeniser );
+	mlt_tokeniser_close( tokeniser );
 	
 	return error;
 }
