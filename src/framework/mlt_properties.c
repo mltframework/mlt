@@ -116,12 +116,26 @@ mlt_properties mlt_properties_load( char *filename )
 		{
 			// Temp string
 			char temp[ 1024 ];
+			char last[ 1024 ] = "";
 
 			// Read each string from the file
 			while( fgets( temp, 1024, file ) )
 			{
 				// Chomp the string
 				temp[ strlen( temp ) - 1 ] = '\0';
+
+				// Check if the line starts with a .
+				if ( temp[ 0 ] == '.' )
+				{
+					char temp2[ 1024 ];
+					sprintf( temp2, "%s%s", last, temp );
+					strcpy( temp, temp2 );
+				}
+				else if ( strchr( temp, '=' ) )
+				{
+					strcpy( last, temp );
+					*( strchr( last, '=' ) ) = '\0';
+				}
 
 				// Parse and set the property
 				if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
