@@ -104,10 +104,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			// Keep the original image around to be destroyed on frame close
 			mlt_properties_rename( properties, "image", "original_image" );
 
+			// Duplicate the last line in the field to avoid artifact
+			memcpy( image + oheight * owidth * 2, image + oheight * owidth * 2 - owidth * 4, owidth * 2 );
+
 			// Offset the image pointer by one line
 			image += owidth * 2;
 			size -= owidth * 2;
-
+			
 			// Set the new image pointer with no destructor
 			mlt_properties_set_data( properties, "image", image, size, NULL, NULL );
 

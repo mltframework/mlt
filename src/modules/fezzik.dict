@@ -18,6 +18,7 @@ http://*=avformat
 *.svg=pixbuf
 *.tga=pixbuf
 *.txt=pango
+*.vob=mcmpeg,avformat
 *.wav=avformat
 *.wmv=avformat
 *=avformat

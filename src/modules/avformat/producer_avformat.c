@@ -483,6 +483,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						got_picture = 0;
 					}
+					mlt_properties_set_int( properties, "top_field_first", frame.top_field_first );
 				}
 			}
 
@@ -571,6 +572,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			}
 		}
 	}
+	
+	// Set the field order property for this frame
+	mlt_properties_set_int( frame_properties, "top_field_first", 
+		mlt_properties_get_int( properties, "top_field_first" ) );
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
 	mlt_properties_set_position( properties, "video_expected", position + 1 );
