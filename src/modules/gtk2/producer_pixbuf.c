@@ -250,7 +250,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		{
 			GdkPixbuf *temp = pixbuf;
 			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
-				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 54.0/59.0),
+				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 45.0/48.0),
 				gdk_pixbuf_get_height( pixbuf ), GDK_INTERP_HYPER );
 			pixbuf = scaled;
 			g_object_unref( temp );
@@ -259,7 +259,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		{
 			GdkPixbuf *temp = pixbuf;
 			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
-				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 11.0/10.0 ),
+				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 9.0/8.0 ),
 				gdk_pixbuf_get_height( pixbuf ), GDK_INTERP_HYPER );
 			pixbuf = scaled;
 			g_object_unref( temp );
