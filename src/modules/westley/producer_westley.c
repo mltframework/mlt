@@ -550,7 +550,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 					else
 					{
 						// Otherwise, set in and out on producer directly
-						mlt_producer_set_in_and_out( MLT_PRODUCER( service ), in, out );
+						mlt_producer_set_in_and_out( MLT_PRODUCER( producer ), in, out );
 					}
 				}
 				else
@@ -559,7 +559,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 					mlt_producer_set_in_and_out( MLT_PRODUCER( producer ), in, out );
 				}
 			}
-	
+
 			// Push the producer onto the stack
 			context_push_service( context, producer, mlt_producer_type );
 		}

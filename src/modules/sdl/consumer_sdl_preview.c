@@ -80,6 +80,7 @@ mlt_consumer consumer_sdl_preview_init( char *arg )
 		this->play = mlt_factory_consumer( "sdl", arg );
 		this->still = mlt_factory_consumer( "sdl_still", arg );
 		mlt_properties_set( mlt_consumer_properties( parent ), "real_time", "0" );
+		mlt_properties_set( mlt_consumer_properties( parent ), "rescale", "nearest" );
 		parent->close = consumer_close;
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
@@ -196,6 +197,9 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set( play, "height", mlt_properties_get( properties, "height" ) );
 	mlt_properties_set( still, "height", mlt_properties_get( properties, "height" ) );
 
+	mlt_properties_set_int( play, "progressive", 1 );
+	mlt_properties_set_int( still, "progressive", 1 );
+
 	mlt_properties_pass( play, mlt_consumer_properties( consumer ), "play." );
 	mlt_properties_pass( still, mlt_consumer_properties( consumer ), "still." );
 
@@ -203,9 +207,6 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_data( still, "app_lock", mlt_properties_get_data( properties, "app_lock", NULL ), 0, NULL, NULL );
 	mlt_properties_set_data( play, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
 	mlt_properties_set_data( still, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
-
-	mlt_properties_set_int( play, "progressive", 1 );
-	mlt_properties_set_int( still, "progressive", 1 );
 
 	mlt_properties_set_int( play, "put_mode", 1 );
 	mlt_properties_set_int( still, "put_mode", 1 );

@@ -102,7 +102,7 @@ int mlt_tokeniser_parse_new( mlt_tokeniser tokeniser, char *string, char *delimi
 		{
 			strncat( token, start, end - start );
 			index += end - start;
-			if ( token[ 0 ] != '\"' || ( token[ 0 ] == '\"' && token[ strlen( token ) - 1 ] == '\"' ) )
+			if ( strchr( token, '\"' ) == NULL || token[ strlen( token ) - 1 ] == '\"' )
 			{
 				mlt_tokeniser_append( tokeniser, token );
 				strcpy( token, "" );

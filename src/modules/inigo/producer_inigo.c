@@ -359,7 +359,7 @@ mlt_producer producer_inigo_init( char **argv )
 					mlt_properties_set_int( properties, "hide", 2 );
 			}
 		}
-		else if ( strchr( argv[ i ], '=' ) )
+		else if ( strchr( argv[ i ], '=' ) && strstr( argv[ i ], "<?xml" ) != argv[ i ] )
 		{
 			mlt_properties_parse( properties, argv[ i ] );
 		}
@@ -367,7 +367,7 @@ mlt_producer producer_inigo_init( char **argv )
 		{
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
-			if ( title == NULL )
+			if ( title == NULL && strstr( argv[ i ], "<?xml" ) != argv[ i ] )
 				title = argv[ i ];
 			producer = create_producer( field, argv[ i ] );
 			if ( producer != NULL )

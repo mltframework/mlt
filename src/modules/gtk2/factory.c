@@ -25,9 +25,19 @@
 #include "producer_pango.h"
 #include "filter_rescale.h"
 
+static void initialise( )
+{
+	static int init = 0;
+	if ( init == 0 )
+	{
+		init = 1;
+		g_type_init( );
+	}
+}
+
 void *mlt_create_producer( char *id, void *arg )
 {
-	g_type_init( );
+	initialise( );
 	if ( !strcmp( id, "pixbuf" ) )
 		return producer_pixbuf_init( arg );
 	else if ( !strcmp( id, "pango" ) )
@@ -37,7 +47,7 @@ void *mlt_create_producer( char *id, void *arg )
 
 void *mlt_create_filter( char *id, void *arg )
 {
-	g_type_init( );
+	initialise( );
 	if ( !strcmp( id, "gtkrescale" ) )
 		return filter_rescale_init( arg );
 	return NULL;
@@ -50,7 +60,7 @@ void *mlt_create_transition( char *id, void *arg )
 
 void *mlt_create_consumer( char *id, void *arg )
 {
-	g_type_init( );
+	initialise( );
 	if ( !strcmp( id, "gtk2_preview" ) )
 		return consumer_gtk2_preview_init( arg );
 	return NULL;

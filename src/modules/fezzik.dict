@@ -1,4 +1,5 @@
 http://*=avformat
+<?xml*=westley-xml
 *.westley=westley
 *.inigo=inigo_file
 *.asf=avformat
