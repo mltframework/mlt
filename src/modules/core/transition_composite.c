@@ -315,7 +315,8 @@ static inline float delta_calculate( mlt_transition this, mlt_frame frame )
 	mlt_position out = mlt_transition_get_out( this );
 
 	// Get the position of the frame
-	mlt_position position = mlt_frame_get_position( frame );
+	char *name = mlt_properties_get( mlt_transition_properties( this ), "_unique_id" );
+	mlt_position position = mlt_properties_get_position( mlt_frame_properties( frame ), name );
 
 	// Now do the calcs
 	float x = ( float )( position - in ) / ( float )( out - in + 1 );
@@ -524,10 +525,9 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int32_t weight = ( 1 << 16 ) * ( geometry.mix / 100 );
 	int step = ( field > -1 ) ? 2 : 1;
 	int bpp = 2;
-	int stride_src = width_src * bpp * step;
-	int stride_dest = width_dest * bpp * step;
-	int alpha_stride = stride_src / bpp;
-
+	int stride_src = width_src * bpp;
+	int stride_dest = width_dest * bpp;
+	
 	// Adjust to consumer scale
 	int x = geometry.x * width_dest / geometry.nw;
 	int y = geometry.y * height_dest / geometry.nh;
@@ -600,6 +600,10 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 			p_alpha += stride_src / bpp;
 		height_src--;
 	}
+
+	stride_src *= step;
+	stride_dest *= step;
+	int alpha_stride = stride_src / bpp;
 
 	if ( line_fn == NULL )
 		line_fn = composite_line_yuv;
@@ -1025,8 +1029,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
+	// Get a unique name to store the frame position
+	char *name = mlt_properties_get( mlt_transition_properties( this ), "_unique_id" );
+
+	// Assign the current position to the name
+	mlt_properties_set_position( mlt_frame_properties( a_frame ), name, mlt_frame_get_position( a_frame ) );
+
 	// Propogate the transition properties to the b frame
 	mlt_properties_set_double( mlt_frame_properties( b_frame ), "relative_position", position_calculate( this, mlt_frame_get_position( a_frame ) ) );
+	
 	mlt_frame_push_service( a_frame, this );
 	mlt_frame_push_frame( a_frame, b_frame );
 	mlt_frame_push_get_image( a_frame, transition_get_image );
