@@ -96,10 +96,10 @@ static void consumer_close( mlt_consumer this );
 mlt_consumer consumer_avformat_init( char *arg )
 {
 	// Allocate the consumer
-	mlt_consumer this = calloc( 1, sizeof( struct mlt_consumer_s ) );
+	mlt_consumer this = mlt_consumer_new( );
 
 	// If memory allocated and initialises without error
-	if ( this != NULL && mlt_consumer_init( this, NULL ) == 0 )
+	if ( this != NULL )
 	{
 		// Get properties from the consumer
 		mlt_properties properties = mlt_consumer_properties( this );
@@ -133,12 +133,6 @@ mlt_consumer consumer_avformat_init( char *arg )
 		this->start = consumer_start;
 		this->stop = consumer_stop;
 		this->is_stopped = consumer_is_stopped;
-	}
-	else
-	{
-		// Clean up in case of init failure
-		free( this );
-		this = NULL;
 	}
 
 	// Return this

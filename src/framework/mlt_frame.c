@@ -729,7 +729,7 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
 {
 	int samples = 0;
 
-	if ( fps > 29 && fps <= 30 )
+	if ( ( int )( fps * 100 ) == 2997 )
 	{
 		samples = frequency / 30;
 

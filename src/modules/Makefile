@@ -6,7 +6,7 @@ all clean depend:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile ] ; \
-		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@; \
+		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@ || exit 1; \
 		fi \
 	done
 
@@ -15,7 +15,7 @@ dist-clean:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile ] ; \
-		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@; \
+		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@ || exit 1; \
 		fi \
 	done
 
@@ -24,7 +24,7 @@ install:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile ] ; \
-		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@; \
+		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@ || exit 1; \
 		fi \
 	done
 
