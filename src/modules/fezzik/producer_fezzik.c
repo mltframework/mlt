@@ -81,11 +81,20 @@ static mlt_producer create_producer( char *file )
 
 	// 3rd line fallbacks 
 	if ( result == NULL )
-		result = mlt_factory_producer( "avformat", file );
+		result = mlt_factory_producer( "avformat", file + 
+			( strncmp( file, "avformat:", 9 ) ? 0 : 9 ) );
 
 	// 4th - allow explicit construction
 	if ( result == NULL )
-		result = mlt_factory_producer( file, NULL );
+	{
+		char *arg = strchr( file, ':' );
+		if ( arg )
+		{
+			arg[0] = 0;
+			arg++;
+		}
+		result = mlt_factory_producer( file, arg );
+	}
 
 	return result;
 }

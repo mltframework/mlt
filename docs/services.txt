@@ -15,7 +15,19 @@ Producers
 
 		Constructor Argument
 
-			'file' - producer a/v from file
+			'file' - a filename specification or URL in the form:
+		             [{protocol}|{format}]:{resource}[?{format-parameter}[&{format-parameter}]]
+			         For example, video4linux:/dev/video1?width=320&height=240
+			         Note: on the bash command line, '&' must be escaped as '\&'
+			         Use 'ffmpeg -formats' to see a list of supported protocols 
+			         and formats.
+					 
+		Details
+		
+			Format parameters only appear to be useful with 'video4linux' or
+			'audio_device' formats. For 'video4linux' the parameters are
+			width, height, frame_rate, frame_rate_base, and standard (ntsc|pal).
+			For 'audio_device' the parameters are channels and sample_rate.
 
 		Initialisation Properties
 
@@ -54,7 +66,8 @@ Producers
 
 		Constructor Argument
 
-			'file'	- produce a/v from file
+			'file'	- a filename specification:
+			          [{mlt-service}:]{resource} | {mlt-service}
 			        - can also be the name of a producer service that can
 					  accept the resource specified post construction.
 
@@ -1165,15 +1178,6 @@ Consumers
 			
 			Needs an argument or property for multi-card address.
 		
-	ffmpeg
-	
-		Description
-		Constructor Argument
-		Initialisation Properties
-		Read Only Properties
-		Dependencies
-		Known Bugs
-
 	libdv
 	
 		Description
@@ -1182,12 +1186,17 @@ Consumers
 
 		Constructor Argument
 
-			string target
+			string target - the filename to write to, e.g. /dev/dv1394.
 
 		Initialisation Properties
 		
-			int buffer
-			string rescale
+			int buffer - the number of frames to buffer, minimum 1, default 25.
+			string rescale - a rescale method, see the Filters/rescale.
+		
+		Mutable Properties
+		
+			int progressive - indicates whether to use progressive or field-
+			                  based rendering, default 0 (off).
 			
 		Read Only Properties
 		
@@ -1211,6 +1220,12 @@ Consumers
 
 			string video_standard - "PAL" (default), "NTSC", or "WxH"
 			
+		Initialisation Properties
+		
+			int buffer - the number of frames to buffer, minimum 1, default 25.
+			string rescale - a rescale method, see the Filters/rescale.
+			               - Hint: "none" works very good with SDL output.
+			
 		Mutable Properties
 
 			double volume - audio level factor
@@ -1218,6 +1233,8 @@ Consumers
 			int audio_off - if 1, disable audio output
 			int scale_overlay - if 1, resample video from source pixel aspect
 			                    ratio to square pixels.
+			int progressive - indicates whether to use progressive or field-
+			                  based rendering, default 0 (off).
 			
 		Read Only Properties
 
@@ -1229,8 +1246,7 @@ Consumers
 		
 		Known Bugs
 
-			NTSC handling needs tightening up - sdl:NTSC is the only valid
-			constructor for NTSC playback at the moment.
+			none
 
 	westley
 
@@ -1242,7 +1258,7 @@ Consumers
 		Constructor Argument
 
 			resource - the name of a file in which to store the XML.
-				stdout is used if not supplied.
+			          - stdout is default.
 			
 		Initialisation Properties
 

@@ -190,10 +190,84 @@ static int producer_open( mlt_producer this, char *file )
 
 	// Lock the mutex now
 	pthread_mutex_lock( &avformat_mutex );
+	
+	// If "MRL", then create AVInputFormat
+	AVInputFormat *format = NULL;
+	AVFormatParameters *params = NULL;
+	char *standard = NULL;
+	char *mrl = strchr( file, ':' );
+	
+	// Only if there is not a protocol specification that avformat can handle
+	if ( mrl && !url_exist( file ) )
+	{
+		// 'file' becomes format abbreviation
+		mrl[0] = 0;
+	
+		// Lookup the format
+		format = av_find_input_format( file );
+		
+		// Eat the format designator
+		file = ++mrl;
+		
+		if ( format )
+		{
+			// Allocate params
+			params = calloc( sizeof( AVFormatParameters ), 1 );
+			
+			// These are required by video4linux (defaults)
+			params->width = 640;
+			params->height = 480;
+			params->frame_rate = 25;
+			params->frame_rate_base = 1;
+			params->device = file;
+			params->channels = 2;
+			params->sample_rate = 48000;
+		}
+		
+		// Parse out params
+		mrl = strchr( file, '?' );
+		while ( mrl )
+		{
+			mrl[0] = 0;
+			char *name = strdup( ++mrl );
+			char *value = strchr( name, '=' );
+			if ( value )
+			{
+				value[0] = 0;
+				value++;
+				char *t = strchr( value, '&' );
+				if ( t )
+					t[0] = 0;
+				if ( !strcmp( name, "frame_rate" ) )
+					params->frame_rate = atoi( value );
+				else if ( !strcmp( name, "frame_rate_base" ) )
+					params->frame_rate_base = atoi( value );
+				else if ( !strcmp( name, "sample_rate" ) )
+					params->sample_rate = atoi( value );
+				else if ( !strcmp( name, "channels" ) )
+					params->channels = atoi( value );
+				else if ( !strcmp( name, "width" ) )
+					params->width = atoi( value );
+				else if ( !strcmp( name, "height" ) )
+					params->height = atoi( value );
+				else if ( !strcmp( name, "standard" ) )
+				{
+					standard = strdup( value );
+					params->standard = standard;
+				}
+			}
+			free( name );
+			mrl = strchr( mrl, '&' );
+		}
+	}
 
 	// Now attempt to open the file
-	error = av_open_input_file( &context, file, NULL, 0, NULL );
+	error = av_open_input_file( &context, file, format, 0, params );
 	error = error < 0;
+	
+	// Cleanup AVFormatParameters
+	free( standard );
+	free( params );
 
 	// If successful, then try to get additional info
 	if ( error == 0 )
@@ -303,7 +377,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_position expected = mlt_properties_get_position( properties, "video_expected" );
 
 	// Calculate the real time code
-	double real_timecode = producer_time_of_frame( this, position );
+	double real_timecode = producer_time_of_frame( this, position ) + mlt_properties_get_double( properties, "_v_pts_offset" );
 
 	// Get the video stream
 	AVStream *stream = context->streams[ index ];
@@ -416,7 +490,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				if ( got_picture )
 				{
 					if ( pkt.pts != AV_NOPTS_VALUE && pkt.pts != 0  )
+					{
+						if ( current_time == 0 )
+						{
+							mlt_properties_set_double( properties, "_v_pts_offset", ( double )( pkt.pts / 1000000 ) );
+							real_timecode += pkt.pts / 1000000;
+						}
 						current_time = ( double )pkt.pts / 1000000.0;
+					}
 					else
 						current_time = real_timecode;
 
@@ -597,7 +678,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			//fprintf( stderr, "AVFORMAT: sample aspect %f %dx%d\n", av_q2d( codec_context->sample_aspect_ratio ), codec_context->width, codec_context->height );
 
 			// Determine the fps
-			source_fps = ( double )codec_context->frame_rate / codec_context->frame_rate_base;
+			source_fps = ( double )codec_context->frame_rate / ( codec_context->frame_rate_base == 0 ? 1 : codec_context->frame_rate_base );
 
 			// We'll use fps if it's available
 			if ( source_fps > 0 && source_fps < 30 )
