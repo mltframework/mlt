@@ -87,6 +87,7 @@ namespace Mlt
 			int get_clip_index_at( int position );
 			bool is_mix( int clip );
 			bool is_blank( int clip );
+			bool is_blank_at( int position );
 			void consolidate_blanks( int keep_length = 0 );
 			Producer *replace_with_blank( int clip );
 			void insert_blank( int clip, int length );

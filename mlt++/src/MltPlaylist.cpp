@@ -244,6 +244,11 @@ bool Playlist::is_blank( int clip )
 	return mlt_playlist_is_blank( get_playlist( ), clip );
 }
 
+bool Playlist::is_blank_at( int position )
+{
+	return mlt_playlist_is_blank_at( get_playlist( ), position );
+}
+
 Producer *Playlist::replace_with_blank( int clip )
 {
 	mlt_producer producer = mlt_playlist_replace_with_blank( get_playlist( ), clip );
