@@ -236,6 +236,7 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 		producer = entry->producer;
 		position = mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) );
 		mlt_producer_seek_frame( producer, position + entry->frame_out );
+		mlt_producer_set_speed( this_producer, 0 );
 		mlt_producer_set_speed( producer, 0 );
 	}
 	else if ( !strcmp( eof, "loop" ) && total > 0 )
