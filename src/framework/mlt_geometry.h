@@ -61,7 +61,8 @@ extern int mlt_geometry_insert( mlt_geometry self, mlt_geometry_item item );
 // Remove the key at the specified position
 extern int mlt_geometry_remove( mlt_geometry self, int position );
 // Get the key at the position or the next following
-extern int mlt_geometry_key( mlt_geometry self, mlt_geometry_item item, int position );
+extern int mlt_geometry_next_key( mlt_geometry self, mlt_geometry_item item, int position );
+extern int mlt_geometry_prev_key( mlt_geometry self, mlt_geometry_item item, int position );
 // Serialise the current geometry
 extern char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out );
 extern char *mlt_geometry_serialise( mlt_geometry self );

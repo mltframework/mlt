@@ -173,6 +173,11 @@ static int mlt_geometry_drop( mlt_geometry this, geometry_item item )
 			self->item->data.f[4] = 1;
 		}
 	}
+	else if ( item->next != NULL && item->prev != NULL )
+	{
+		item->prev->next = item->next;
+		item->next->prev = item->prev;
+	}
 	else if ( item->next != NULL )
 	{
 		item->next->prev = item->prev;
@@ -180,7 +185,6 @@ static int mlt_geometry_drop( mlt_geometry this, geometry_item item )
 	else if ( item->prev != NULL )
 	{
 		item->prev->next = item->next;
-		item->next->prev = item->prev;
 	}
 
 	free( item );
@@ -520,7 +524,7 @@ int mlt_geometry_remove( mlt_geometry this, int position )
 	// Get the first item
 	geometry_item place = self->item;
 
-	while( place != NULL && position < place->data.frame )
+	while( place != NULL && position != place->data.frame )
 		place = place->next;
 
 	if ( place != NULL && position == place->data.frame )
@@ -533,7 +537,7 @@ int mlt_geometry_remove( mlt_geometry this, int position )
 }
 
 // Get the key at the position or the next following
-int mlt_geometry_key( mlt_geometry this, mlt_geometry_item item, int position )
+int mlt_geometry_next_key( mlt_geometry this, mlt_geometry_item item, int position )
 {
 	// Get the local/private geometry structure
 	geometry self = this->local;
@@ -542,6 +546,24 @@ int mlt_geometry_key( mlt_geometry this, mlt_geometry_item item, int position )
 	geometry_item place = self->item;
 
 	while( place != NULL && position > place->data.frame )
+		place = place->next;
+
+	if ( place != NULL )
+		memcpy( item, &place->data, sizeof( struct mlt_geometry_item_s ) );
+
+	return place == NULL;
+}
+
+// Get the key at the position or the previous key
+int mlt_geometry_prev_key( mlt_geometry this, mlt_geometry_item item, int position )
+{
+	// Get the local/private geometry structure
+	geometry self = this->local;
+
+	// Get the first item
+	geometry_item place = self->item;
+
+	while( place != NULL && place->next != NULL && position >= place->next->data.frame )
 		place = place->next;
 
 	if ( place != NULL )
@@ -590,7 +612,7 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 			// Typically, we move from key to key
 			else if ( item.frame < out )
 			{
-				if ( mlt_geometry_key( this, &item, item.frame ) )
+				if ( mlt_geometry_next_key( this, &item, item.frame ) )
 					break;
 
 				// Special case - crop at the out point
