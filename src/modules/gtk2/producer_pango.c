@@ -444,7 +444,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		// Clone our image
 		uint8_t *copy = mlt_pool_alloc( size );
-		if ( copy != NULL )
+		if ( copy != NULL && image != NULL )
 			memcpy( copy, image, size );
 
 		// We're going to pass the copy on
@@ -538,9 +538,13 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
+static PangoFT2FontMap *fontmap = NULL;
+
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, int pad, int align, int weight, int size )
 {
-	PangoFT2FontMap *fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
+	if ( fontmap == NULL )
+		fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
+
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
 	PangoLayout *layout = pango_layout_new( context );
 	int w, h, x;
@@ -607,9 +611,9 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 		src += bitmap.pitch;
 	}
 	mlt_pool_release( bitmap.buffer );
+	pango_font_description_free( desc );
 	g_object_unref( layout );
 	g_object_unref( context );
-	g_object_unref( fontmap );
 
 	return pixbuf;
 }
