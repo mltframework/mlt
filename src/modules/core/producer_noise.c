@@ -149,8 +149,14 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		// Obtain properties of frame
 		mlt_properties properties = mlt_frame_properties( *frame );
 
+		// Obtain properties of producer
+		mlt_properties producer_props = mlt_producer_properties( this );
+
+		// Determine if we're producing PAL or NTSC
+		int is_pal = mlt_properties_get_double( producer_props, "fps" ) == 25.0;
+
 		// Aspect ratio is 1?
-		mlt_properties_set_double( properties, "aspect_ratio", 1.0 );
+		mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 128.0/117.0 : 72.0/79.0 );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );

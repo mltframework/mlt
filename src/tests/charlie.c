@@ -20,6 +20,8 @@ mlt_producer create_producer( char *file )
 		result = mlt_factory_producer( "mcmpeg", file );
 	else if ( strstr( file, ".mpeg" ) )
 		result = mlt_factory_producer( "mcmpeg", file );
+	else if ( strstr( file, ".dat" ) )
+		result = mlt_factory_producer( "mcmpeg", file );
 	else if ( strstr( file, ".dv" ) )
 		result = mlt_factory_producer( "mcdv", file );
 	else if ( strstr( file, ".dif" ) )

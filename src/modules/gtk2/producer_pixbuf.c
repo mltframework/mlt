@@ -164,7 +164,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 		// Note - the original pixbuf is already safe and ready for destruction
 		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
-		
+
 		// Store width and height
 		this->width = width;
 		this->height = height;

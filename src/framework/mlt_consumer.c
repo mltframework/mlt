@@ -327,9 +327,6 @@ static void *consumer_read_ahead_thread( void *arg )
 			if ( !video_off )
 				mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
 			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
-
-			// Reset the skipped count
-			skipped = 0;
 		}
 		else
 		{
@@ -338,7 +335,7 @@ static void *consumer_read_ahead_thread( void *arg )
 			skip_next = 0;
 
 			// If we've reached an unacceptable level, reset everything
-			if ( skipped > 10 )
+			if ( skipped > 5 )
 			{
 				skipped = 0;
 				time_frame = 0;
