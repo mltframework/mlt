@@ -232,7 +232,7 @@ static int producer_open( mlt_producer this, char *file )
 		{
 			mrl[0] = 0;
 			char *name = strdup( ++mrl );
-			char *value = strchr( name, '=' );
+			char *value = strchr( name, ':' );
 			if ( value )
 			{
 				value[0] = 0;
@@ -379,7 +379,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_position expected = mlt_properties_get_position( properties, "video_expected" );
 
 	// Calculate the real time code
-	double real_timecode = producer_time_of_frame( this, position ) + mlt_properties_get_double( properties, "_v_pts_offset" );
+	double real_timecode = producer_time_of_frame( this, position );
 
 	// Get the video stream
 	AVStream *stream = context->streams[ index ];
@@ -493,11 +493,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					if ( pkt.pts != AV_NOPTS_VALUE && pkt.pts != 0  )
 					{
-						if ( current_time == 0 )
-						{
-							mlt_properties_set_double( properties, "_v_pts_offset", ( double )( pkt.pts / 1000000 ) );
-							real_timecode += pkt.pts / 1000000;
-						}
 						current_time = ( double )pkt.pts / 1000000.0;
 					}
 					else

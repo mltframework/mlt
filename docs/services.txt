@@ -16,9 +16,10 @@ Producers
 		Constructor Argument
 
 			'file' - a filename specification or URL in the form:
-		             [{protocol}|{format}]:{resource}[?{format-parameter}[&{format-parameter}]]
-			         For example, video4linux:/dev/video1?width=320&height=240
-			         Note: on the bash command line, '&' must be escaped as '\&'
+		             [{protocol}|{format}]:{resource}[?{format-parameter}[&{format-parameter}...]]
+			         For example, video4linux:/dev/video1?width:320&height:240
+			         Note: on the bash command line, & must be escaped as '\&'.
+					 Also, note the use of ':' instead of '=' for parameters.
 			         Use 'ffmpeg -formats' to see a list of supported protocols 
 			         and formats.
 					 
@@ -57,6 +58,8 @@ Producers
 			MPEG seeking is inaccurate - doesn't seek to i-frames so you may
 			get junk for a few frames.
 			RAW DV seeking not supported.
+			Fails to play beyond first frame of video of sources with PTS not
+			starting at 0 (video4linux).
 
 	fezzik
 
