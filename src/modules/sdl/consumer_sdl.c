@@ -55,7 +55,6 @@ struct consumer_sdl_s
 	SDL_Surface *sdl_screen;
 	SDL_Overlay *sdl_overlay;
 	uint8_t *buffer;
-	int time_taken;
 };
 
 /** Forward references to static functions.
@@ -264,6 +263,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	if ( mlt_properties_get_int( properties, "audio_off" ) )
 	{
 		this->playing = 1;
+		init_audio = 1;
 		return init_audio;
 	}
 
@@ -295,11 +295,11 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 	if ( init_audio == 0 )
 	{
+		mlt_properties properties = mlt_frame_properties( frame );
 		bytes = ( samples * channels * 2 );
 		pthread_mutex_lock( &this->audio_mutex );
 		while ( bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
 			pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
-		mlt_properties properties = mlt_frame_properties( frame );
 		if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
 			memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
 		else
@@ -316,7 +316,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	return init_audio;
 }
 
-static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elapsed, int64_t playtime )
+static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 {
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
@@ -326,34 +326,10 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	uint8_t *image;
 	int changed = 0;
 
-	if ( mlt_properties_get_int( properties, "video_off" ) )
+	if ( mlt_properties_get_int( properties, "video_off" ) == 0 )
 	{
-		mlt_frame_close( frame );
-		return 0;
-	}
-
-	// Set skip
-	mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
-
-	// Push this frame to the back of the queue
-	mlt_deque_push_back( this->queue, frame );
-	frame = NULL;
-
-	if ( this->playing )
-		frame = mlt_deque_pop_front( this->queue );
-
-	if ( this->playing && frame != NULL && mlt_properties_get_int( mlt_frame_properties( frame ), "rendered" ) == 1 )
-	{
-		playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
-
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-
-		if ( playtime > elapsed + 25000 )
-		{
-			struct timespec tm = { ( playtime - elapsed ) / 1000000, ( ( playtime - elapsed ) % 1000000 ) * 1000 };
-			nanosleep( &tm, NULL );
-		}
 
 		// Handle events
 		if ( this->sdl_screen != NULL )
@@ -460,8 +436,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	}
 
 	// Close the frame
-	if ( frame != NULL )
-		mlt_frame_close( frame );
+	mlt_frame_close( frame );
 
 	return 0;
 }
@@ -486,6 +461,9 @@ static void *consumer_thread( void *arg )
 	int64_t elapsed = 0;
 	int duration = 0;
 	int64_t playtime = 0;
+	struct timespec tm;
+	mlt_frame next = NULL;
+	mlt_frame frame = NULL;
 
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
@@ -500,7 +478,7 @@ static void *consumer_thread( void *arg )
 	while( this->running )
 	{
 		// Get a frame from the attached producer
-		mlt_frame frame = mlt_consumer_rt_frame( consumer );
+		frame = mlt_consumer_rt_frame( consumer );
 
 		// Ensure that we have a frame
 		if ( frame != NULL )
@@ -518,12 +496,52 @@ static void *consumer_thread( void *arg )
 					start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
 				else
 					elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec) - start;
-
 			}
 
-			consumer_play_video( this, frame, elapsed, playtime );
+			// Set playtime for this frame
+			mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
 
+			// Push this frame to the back of the queue
+			mlt_deque_push_back( this->queue, frame );
+
+			// Calculate the next playtime
 			playtime += ( duration * 1000 );
+		}
+
+		if ( this->playing )
+		{
+			// Pop the next frame
+			next = mlt_deque_pop_front( this->queue );
+
+			// See if we have to delay the display of the current frame
+			if ( next != NULL && mlt_properties_get_int( mlt_frame_properties( next ), "rendered" ) == 1 )
+			{
+				mlt_position scheduled = mlt_properties_get_position( mlt_frame_properties( next ), "playtime" ) + 5000;
+				if ( scheduled > elapsed && mlt_deque_count( this->queue ) > 25 )
+				{
+					tm.tv_sec = ( scheduled - elapsed ) / 1000000;
+					tm.tv_nsec = ( ( scheduled - elapsed ) % 1000000 ) * 1000;
+					nanosleep( &tm, NULL );
+
+					// Show current frame
+					consumer_play_video( this, next );
+				}
+				else if ( scheduled > elapsed )
+				{
+					// More time to kill
+					mlt_deque_push_front( this->queue, next );
+				}
+				else
+				{
+					// Show current frame
+					consumer_play_video( this, next );
+				}
+			}
+			else
+			{
+				// This is an unrendered frame - just close it
+				mlt_frame_close( next );
+			}
 		}
 	}
 

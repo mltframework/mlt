@@ -278,6 +278,8 @@ static void *consumer_read_ahead_thread( void *arg )
 				skipped = 0;
 				time_frame = 0;
 				time_image = 0;
+				time_wait = 0;
+				count = 0;
 			}
 		}
 	}

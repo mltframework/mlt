@@ -1,5 +1,16 @@
 #!/bin/bash
 
+function show_consumers( )
+{
+	awk -F '\t' '{ printf( "%d. %s\n", ++ i, $1 ); }' < consumers.ini
+}
+
+function get_consumer( )
+{
+	option=$1
+	[ "$option" != "" ] && [ $option -gt 0 ] && sed 's/\t\+/\t/g' < consumers.ini | cut -f 2 | head -n $option | tail -n -1
+}
+
 function show_menu( )
 {
 	sed 's/\t\+/\t/g' < demo.ini |
@@ -39,34 +50,21 @@ function get_demo( )
 while [ 1 ]
 do
 
-cat << "eof"
-Select Consumer
+	echo Select Consumer
+	echo
 
-1. Play with Inigo half size
-2. Play with Inigo full size
-3. Serialise with Westley to terminal
-4. Play with Westley
+	show_consumers
 
-0. Exit
-
-eof
-
+	echo
+	echo 0. Exit
+	echo
 	echo -n "Option: "
 	read option
 	echo
 
-	export MLT_CONSUMER=
+	[ "$option" == "0" ] && break
 
-	case "$option" in
-		"0" ) exit 0 ;;
-		"1" ) export MLT_CONSUMER="sdl:360x288 buffer=1" ;;
-		"2" ) export MLT_CONSUMER="sdl" ;;
-		"3" ) export MLT_CONSUMER="westley" ;;
-		"4" ) export MLT_CONSUMER="westley:" ;;
-		"5" ) export MLT_CONSUMER="mcdv:NTSC target=/dev/dv1394 rescale=nearest" ;;
-		"6" ) export MLT_CONSUMER="bluefish:NTSC" ;;
-		"7" ) export MLT_CONSUMER="sdl rescale=none" ;;
-	esac
+	export MLT_CONSUMER=`get_consumer $option`
 
 	while [ "$option" != "0" -a "$MLT_CONSUMER" != "" ]
 	do

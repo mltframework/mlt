@@ -446,7 +446,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Since we are the consumer of the b_frame, we must pass along this
 	// consumer property from the a_frame
-	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+	if ( !strcmp( mlt_properties_get( a_props, "rescale.interp" ), "none" ) )
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "aspect_ratio" ) );
+	else
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
 	// Honour the reverse here
 	if ( mix >= 1.0 )
