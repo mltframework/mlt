@@ -159,8 +159,8 @@ int term_read( )
 
     FD_ZERO( &rfds );
     FD_SET( 0, &rfds );
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
+    tv.tv_sec = 0;
+    tv.tv_usec = 250;
     n = select( 1, &rfds, NULL, NULL, &tv );
     if (n > 0) 
 	{

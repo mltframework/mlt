@@ -5,6 +5,7 @@ OBJS = factory.o \
 	   producer_ppm.o \
 	   filter_deinterlace.o \
 	   filter_greyscale.o \
+	   filter_gamma.o \
 	   filter_resize.o \
 	   transition_composite.o
 

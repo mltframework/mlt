@@ -1,5 +1,5 @@
 /*
- * filter_resize.h -- resizing filter
+ * filter_gamma.h -- gamma filter
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,11 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _FILTER_RESIZE_H_
-#define _FILTER_RESIZE_H_
+#ifndef _FILTER_GAMMA_H_
+#define _FILTER_GAMMA_H_
 
 #include <framework/mlt_filter.h>
 
-extern mlt_filter filter_resize_init( void *arg );
+extern mlt_filter filter_gamma_init( char *arg );
 
 #endif

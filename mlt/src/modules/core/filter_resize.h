@@ -23,6 +23,6 @@
 
 #include <framework/mlt_filter.h>
 
-extern mlt_filter filter_deinterlace_init( void *arg );
+extern mlt_filter filter_resize_init( void *arg );
 
 #endif
