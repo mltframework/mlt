@@ -347,7 +347,7 @@ mlt_producer mlt_playlist_current( mlt_playlist this )
 
 mlt_position mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index )
 {
-	int64_t position = 0;
+	mlt_position position = 0;
 	int absolute_clip = index;
 	int i = 0;
 
@@ -380,6 +380,9 @@ mlt_position mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index 
 	return position;
 }
 
+/** Get all the info about the clip specified.
+*/
+
 int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index )
 {
 	int error = index < 0 || index >= this->count;
@@ -388,6 +391,7 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 	{
 		mlt_producer producer = this->list[ index ]->producer;
 		mlt_properties properties = mlt_producer_properties( producer );
+		info->clip = index;
 		info->producer = producer;
 		info->start = mlt_playlist_clip( this, mlt_whence_relative_start, index );
 		info->resource = mlt_properties_get( properties, "resource" );
@@ -453,16 +457,111 @@ int mlt_playlist_blank( mlt_playlist this, mlt_position length )
 
 int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, mlt_position in, mlt_position out )
 {
-	return 0;
+	// Append to end
+	mlt_playlist_append_io( this, producer, in, out );
+
+	// Move to the position specified
+	return mlt_playlist_move( this, this->count - 1, where );
 }
+
+/** Remove an entry in the playlist.
+*/
 
 int mlt_playlist_remove( mlt_playlist this, int where )
 {
+	if ( this->count > 0 )
+	{
+		// We need to know the current clip and the position within the playlist
+		int current = mlt_playlist_current_clip( this );
+		mlt_position position = mlt_producer_position( mlt_playlist_producer( this ) );
+
+		// We need all the details about the clip we're removing
+		mlt_playlist_clip_info where_info;
+
+		// Loop variable
+		int i = 0;
+
+		// Make sure the clip to be removed is valid and correct if necessary
+		if ( where < 0 ) 
+			where = 0;
+		if ( where >= this->count )
+			where = this->count - 1;
+
+		// Get the clip info of the clip to be removed
+		mlt_playlist_get_clip_info( this, &where_info, where );
+
+		// Reorganise the list
+		for ( i = where + 1; i < this->count; i ++ )
+			this->list[ i - 1 ] = this->list[ i ];
+		this->count --;
+
+		// Correct position
+		if ( where == current )
+			mlt_producer_seek( mlt_playlist_producer( this ), where_info.start );
+		else if ( where < current && this->count > 0 )
+			mlt_producer_seek( mlt_playlist_producer( this ), position - where_info.frame_count );
+		else if ( this->count == 0 )
+			mlt_producer_seek( mlt_playlist_producer( this ), 0 );
+	}
+
 	return 0;
 }
 
-int mlt_playlist_move( mlt_playlist this, int from, int to )
+/** Move an entry in the playlist.
+*/
+
+int mlt_playlist_move( mlt_playlist this, int src, int dest )
 {
+	int i;
+
+	/* We need to ensure that the requested indexes are valid and correct it as necessary */
+	if ( src < 0 ) 
+		src = 0;
+	if ( src >= this->count )
+		src = this->count - 1;
+
+	if ( dest < 0 ) 
+		dest = 0;
+	if ( dest >= this->count )
+		dest = this->count - 1;
+	
+	if ( src != dest && this->count > 1 )
+	{
+		int current = mlt_playlist_current_clip( this );
+		mlt_position position = mlt_producer_position( mlt_playlist_producer( this ) );
+		playlist_entry *src_entry = NULL;
+
+		// We need all the details about the current clip
+		mlt_playlist_clip_info current_info;
+
+		mlt_playlist_get_clip_info( this, &current_info, current );
+		position -= current_info.start;
+
+		if ( current == src )
+			current = dest;
+		else if ( current > src && current < dest )
+			current ++;
+		else if ( current == dest )
+			current = src;
+
+		if ( src > dest )
+		{
+			int t = dest;
+			dest = src;
+			src = t;
+		}
+		
+		src_entry = this->list[ src ];
+
+		for ( i = src + 1; i <= dest; i ++ )
+			this->list[ i - 1 ] = this->list[ i ];
+
+		this->list[ dest ] = src_entry;
+
+		mlt_playlist_get_clip_info( this, &current_info, current );
+		mlt_producer_seek( mlt_playlist_producer( this ), current_info.start + position );
+	}
+
 	return 0;
 }
 

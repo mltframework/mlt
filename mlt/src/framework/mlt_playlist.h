@@ -28,6 +28,7 @@
 
 typedef struct
 {
+	int clip;
 	mlt_producer producer;
 	mlt_position start;
 	char *resource;

@@ -615,7 +615,23 @@ Consumers
 		Dependencies
 		Known Bugs
 
+	libdv
+	
+		Description
+		
+			libdv dv producer.
+
+		Constructor Argument
+
+			string video_standard - "PAL" (default) or "NTSC"
+
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
+
 	sdl
+
 		Description
 
 			Simple DirectMedia Layer audio and video output module.
