@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /** Do it :-).
 */
@@ -47,6 +48,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Get the composite from the filter
 	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
+
+	// Get the resource to use
+	char *resource = mlt_properties_get( properties, "resource" );
+
+	// Get the old resource
+	char *old_resource = mlt_properties_get( properties, "old_resource" );
 
 	// Create a composite if we don't have one
 	if ( composite == NULL )
@@ -70,11 +77,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 
 	// Create a producer if don't have one
-	if ( producer == NULL )
+	if ( producer == NULL || ( old_resource != NULL && strcmp( resource, old_resource ) ) )
 	{
-		// Get the resource to use
-		char *resource = mlt_properties_get( properties, "resource" );
-
 		// Get the factory producer service
 		char *factory = mlt_properties_get( properties, "factory" );
 
@@ -89,6 +93,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 			// Ensure that we loop
 			mlt_properties_set( mlt_producer_properties( producer ), "eof", "loop" );
+
+			// Set the old resource
+			mlt_properties_set( properties, "old_resource", resource );
 		}
 	}
 

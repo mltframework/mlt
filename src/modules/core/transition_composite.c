@@ -896,6 +896,16 @@ static struct geometry_s *composite_calculate( struct geometry_s *result, mlt_tr
 	return start;
 }
 
+static inline void inline_memcpy( uint8_t *dest, uint8_t *src, int length )
+{
+	uint8_t *end = src + length;
+	while ( src < end )
+	{
+		*dest ++ = *src ++;
+		*dest ++ = *src ++;
+	}
+}
+
 mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_position frame_position )
 {
 	// Create a frame to return
@@ -963,7 +973,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 
 	while ( q < r )
 	{
-		memcpy( q, p, w * 2 );
+		inline_memcpy( q, p, w * 2 );
 		q += w * 2;
 		p += width * 2;
 	}
