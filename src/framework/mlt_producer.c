@@ -133,13 +133,13 @@ int mlt_producer_seek( mlt_producer this, mlt_timecode timecode )
 /** Seek to a specified absolute frame.
 */
 
-int mlt_producer_seek_frame( mlt_producer this, uint64_t frame )
+int mlt_producer_seek_frame( mlt_producer this, int64_t frame )
 {
 	// Calculate the time code
 	double timecode = ( frame / mlt_producer_get_fps( this ) ) - mlt_producer_get_in( this );
 
 	// If timecode is invalid, then seek on time
-	if ( timecode < 0 )
+	if ( frame < 0 || timecode < 0 )
 	{
 		// Seek to the in point
 		mlt_producer_seek( this, 0 );

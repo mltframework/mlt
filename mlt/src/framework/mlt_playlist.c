@@ -33,7 +33,9 @@
 typedef struct
 {
 	mlt_producer producer;
-	mlt_timecode in;
+	int64_t frame_in;
+	int64_t frame_out;
+	int64_t frame_count;
 	mlt_timecode playtime;
 }
 playlist_entry;
@@ -150,8 +152,11 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 /** Append to the virtual playlist.
 */
 
-static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_timecode in, mlt_timecode playtime )
+static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, int64_t in, int64_t out )
 {
+	double fps = mlt_properties_get_double( mlt_playlist_properties( this ), "fps" );
+	double playtime = ( double )( out - in + 1 ) / fps;
+
 	// Check that we have room
 	if ( this->count >= this->size )
 	{
@@ -164,8 +169,12 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 
 	this->list[ this->count ] = calloc( sizeof( playlist_entry ), 1 );
 	this->list[ this->count ]->producer = producer;
-	this->list[ this->count ]->in = in;
+	this->list[ this->count ]->frame_in = in;
+	this->list[ this->count ]->frame_out = out;
+	this->list[ this->count ]->frame_count = out - in + 1;
 	this->list[ this->count ]->playtime = playtime;
+
+	mlt_producer_set_speed( producer, 0 );
 
 	this->count ++;
 
@@ -178,32 +187,53 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 {
 	// Default producer to blank
-	mlt_producer producer = &this->blank;
+	mlt_producer producer = NULL;
 
 	// Map playlist position to real producer in virtual playlist
-	mlt_timecode position = mlt_producer_position( &this->parent );
+	mlt_timecode pos = mlt_producer_position( &this->parent );
+	int64_t position = mlt_producer_frame_position( &this->parent, pos );
+	int64_t total = 0;
 
 	// Loop through the virtual playlist
 	int i = 0;
 
 	for ( i = 0; i < this->count; i ++ )
 	{
-		if ( position < this->list[ i ]->playtime )
+		// Increment the total
+		total += this->list[ i ]->frame_count;
+
+		if ( position < this->list[ i ]->frame_count )
 		{
 			// Found it, now break
 			producer = this->list[ i ]->producer;
-			position += this->list[ i ]->in;
+			position += this->list[ i ]->frame_in;
 			break;
 		}
 		else
 		{
 			// Decrement position by length of this entry
-			position -= this->list[ i ]->playtime;
+			position -= this->list[ i ]->frame_count;
 		}
 	}
 
 	// Seek in real producer to relative position
-	mlt_producer_seek( producer, position );
+	if ( producer != NULL )
+	{
+		mlt_producer_seek_frame( producer, position );
+	}
+	else if ( total > 0 )
+	{
+		playlist_entry *entry = this->list[ this->count - 1 ];
+		mlt_producer this_producer = mlt_playlist_producer( this );
+		mlt_producer_seek_frame( this_producer, total - 1 );
+		producer = entry->producer;
+		mlt_producer_seek_frame( producer, entry->frame_out );
+	}
+	else
+	{
+		mlt_producer_seek( mlt_playlist_producer( this ), 0 );
+		producer = &this->blank;
+	}
 
 	return producer;
 }
@@ -214,24 +244,24 @@ static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 	mlt_producer producer = &this->blank;
 
 	// Map playlist position to real producer in virtual playlist
-	mlt_timecode position = mlt_producer_position( &this->parent );
+	mlt_timecode pos = mlt_producer_position( &this->parent );
+	int64_t position = mlt_producer_frame_position( &this->parent, pos );
 
 	// Loop through the virtual playlist
 	int i = 0;
 
 	for ( i = 0; i < this->count; i ++ )
 	{
-		if ( position < this->list[ i ]->playtime )
+		if ( position < this->list[ i ]->frame_count )
 		{
 			// Found it, now break
 			producer = this->list[ i ]->producer;
-			position += this->list[ i ]->in;
 			break;
 		}
 		else
 		{
 			// Decrement position by length of this entry
-			position -= this->list[ i ]->playtime;
+			position -= this->list[ i ]->frame_count;
 		}
 	}
 
@@ -239,7 +269,8 @@ static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 	if ( i < this->count )
 	{
 		// Update the playtime for the changed clip (hmmm)
-		this->list[ i ]->playtime = position - this->list[ i ]->in;
+		this->list[ i ]->frame_count = position + 1;
+		this->list[ i ]->frame_out = position - this->list[ i ]->frame_in;
 
 		// Refresh the playlist
 		mlt_playlist_virtual_refresh( this );
@@ -251,14 +282,15 @@ static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 int mlt_playlist_current_clip( mlt_playlist this )
 {
 	// Map playlist position to real producer in virtual playlist
-	mlt_timecode position = mlt_producer_position( &this->parent );
+	mlt_timecode pos = mlt_producer_position( &this->parent );
+	int64_t position = mlt_producer_frame_position( &this->parent, pos );
 
 	// Loop through the virtual playlist
 	int i = 0;
 
 	for ( i = 0; i < this->count; i ++ )
 	{
-		if ( position < this->list[ i ]->playtime )
+		if ( position < this->list[ i ]->frame_count )
 		{
 			// Found it, now break
 			break;
@@ -266,7 +298,7 @@ int mlt_playlist_current_clip( mlt_playlist this )
 		else
 		{
 			// Decrement position by length of this entry
-			position -= this->list[ i ]->playtime;
+			position -= this->list[ i ]->frame_count;
 		}
 	}
 
@@ -287,7 +319,7 @@ mlt_producer mlt_playlist_current( mlt_playlist this )
 
 mlt_timecode mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index )
 {
-	mlt_timecode position = 0;
+	int64_t position = 0;
 	int absolute_clip = index;
 	int i = 0;
 
@@ -315,9 +347,9 @@ mlt_timecode mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index 
 
 	// Now determine the timecode
 	for ( i = 0; i < absolute_clip; i ++ )
-		position += this->list[ i ]->playtime;
+		position += this->list[ i ]->frame_count;
 
-	return position;
+	return mlt_producer_time( &this->parent, position );
 }
 
 int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index )
@@ -331,8 +363,10 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 		info->producer = producer;
 		info->start = mlt_playlist_clip( this, mlt_whence_relative_start, index );
 		info->resource = mlt_properties_get( properties, "resource" );
-		info->in = this->list[ index ]->in;
-		info->out = this->list[ index ]->in + this->list[ index ]->playtime;
+		info->frame_in = this->list[ index ]->frame_in;
+		info->in = mlt_producer_time( producer, info->frame_in );
+		info->frame_out = this->list[ index ]->frame_out;
+		info->out = mlt_producer_time( producer, info->frame_out );
 		info->playtime = this->list[ index ]->playtime;
 		info->length = mlt_producer_get_length( producer );
 		info->fps = mlt_producer_get_fps( producer );
@@ -364,7 +398,8 @@ int mlt_playlist_clear( mlt_playlist this )
 int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 {
 	// Append to virtual list
-	return mlt_playlist_virtual_append( this, producer, 0, mlt_producer_get_playtime( producer ) );
+	int64_t out = mlt_producer_frame_position( producer, mlt_producer_get_out( producer ) );
+	return mlt_playlist_virtual_append( this, producer, 0, out );
 }
 
 /** Append a producer to the playlist with in/out points.
@@ -374,9 +409,15 @@ int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, double in,
 {
 	// Append to virtual list
 	if ( in != -1 && out != -1 )
-		return mlt_playlist_virtual_append( this, producer, in, out - in );
+	{
+		int64_t fin = mlt_producer_frame_position( producer, in );
+		int64_t fout = mlt_producer_frame_position( producer, out );
+		return mlt_playlist_virtual_append( this, producer, fin, fout );
+	}
 	else
-		return mlt_playlist_virtual_append( this, producer, 0, mlt_producer_get_playtime( producer ) );
+	{
+		return mlt_playlist_append( this, producer );
+	}
 }
 
 /** Append a blank to the playlist of a given length.
@@ -385,7 +426,8 @@ int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, double in,
 int mlt_playlist_blank( mlt_playlist this, mlt_timecode length )
 {
 	// Append to the virtual list
-	return mlt_playlist_virtual_append( this, &this->blank, 0, length );
+	int64_t fout = mlt_producer_frame_position( &this->blank, length );
+	return mlt_playlist_virtual_append( this, &this->blank, 0, fout );
 }
 
 /** Insert a producer into the playlist.
@@ -426,7 +468,12 @@ int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_timecode in, mlt_
 			out = t;
 		}
 
-		entry->in = in;
+		int64_t fin = mlt_producer_frame_position( producer, in );
+		int64_t fout = mlt_producer_frame_position( producer, out );
+
+		entry->frame_in = fin;
+		entry->frame_out = fout;
+		entry->frame_count = fout - fin + 1;
 		entry->playtime = out - in;
 		mlt_playlist_virtual_refresh( this );
 	}

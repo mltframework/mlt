@@ -223,8 +223,8 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 		mlt_playlist_get_clip_info( playlist , &info, i );
 		valerie_response_printf( response, 10240, "%d \"%s\" %lld %lld %lld %lld %.2f\n", 
 								 i, info.resource, 
-								 mlt_producer_frame_position( producer, info.in ), 
-								 mlt_producer_frame_position( producer, info.out ),
+								 info.frame_in, 
+								 info.frame_out,
 								 mlt_producer_frame_position( producer, info.playtime ), 
 								 mlt_producer_frame_position( producer, info.length ), 
 								 info.fps );
@@ -417,13 +417,13 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 			strncpy( status->clip, info.resource, sizeof( status->clip ) );
 			status->speed = (int)( mlt_producer_get_speed( producer ) * 1000.0 );
 			status->fps = mlt_producer_get_fps( producer );
-			status->in = mlt_producer_frame_position( producer, info.in );
-			status->out = mlt_producer_frame_position( producer, info.out );
+			status->in = info.frame_in;
+			status->out = info.frame_out;
 			status->position = mlt_producer_frame_position( producer, mlt_producer_position( clip ) );
 			status->length = mlt_producer_frame_position( producer, mlt_producer_get_length( clip ) );
 			strncpy( status->tail_clip, info.resource, sizeof( status->tail_clip ) );
-			status->tail_in = mlt_producer_frame_position( producer, info.in );
-			status->tail_out = mlt_producer_frame_position( producer, info.out );
+			status->tail_in = info.frame_in;
+			status->tail_out = info.frame_out;
 			status->tail_position = mlt_producer_frame_position( producer, mlt_producer_position( clip ) );
 			status->tail_length = mlt_producer_frame_position( producer, mlt_producer_get_length( clip ) );
 			status->clip_index = mlt_playlist_current_clip( playlist );
@@ -460,30 +460,29 @@ void miracle_unit_change_position( miracle_unit unit, int clip, int64_t position
 	mlt_playlist_clip_info info;
 
 	if ( clip < 0 )
+	{
 		clip = 0;
+		position = 0;
+	}
 	else if ( clip >= mlt_playlist_count( playlist ) )
-		clip = mlt_playlist_count( playlist );
+	{
+		clip = mlt_playlist_count( playlist ) - 1;
+		position = 999999999999;
+	}
 
 	if ( mlt_playlist_get_clip_info( playlist, &info, clip ) == 0 )
 	{
-		mlt_timecode relative = mlt_producer_time( info.producer, position );
-		mlt_timecode absolute = relative - info.in;
 		int64_t frame_start = mlt_producer_frame_position( info.producer, info.start );
-		int64_t frame_offset = 0;
+		int64_t frame_offset = position;
 
-		if ( absolute < 0 )
-			frame_offset = 0;
-		else if ( absolute >= info.out )
-			frame_offset = mlt_producer_frame_position( info.producer, info.out ) - 1;
-		else
-			frame_offset = mlt_producer_frame_position( info.producer, absolute );
-
-		mlt_producer_seek_frame( producer, frame_start + frame_offset );
-	}
-	else
-	{
-		mlt_timecode out = mlt_producer_get_out( producer );
-		mlt_producer_seek( producer, mlt_producer_frame_position( producer, out ) - 1 );
+		if ( frame_offset < 0 )
+			frame_offset = info.frame_out;
+		if ( frame_offset < info.frame_in )
+			frame_offset = info.frame_in;
+		if ( frame_offset >= info.frame_out )
+			frame_offset = info.frame_out;
+		
+		mlt_producer_seek_frame( producer, frame_start + frame_offset - info.frame_in );
 	}
 
 	miracle_unit_status_communicate( unit );
@@ -537,7 +536,7 @@ int miracle_unit_set_clip_out( miracle_unit unit, int index, int64_t position )
 		error = mlt_playlist_resize_clip( playlist, index, info.in, out );
 		update_generation( unit );
 		miracle_unit_status_communicate( unit );
-		miracle_unit_change_position( unit, index, 0 );
+		miracle_unit_change_position( unit, index, -1 );
 	}
 
 	return error;
@@ -552,7 +551,7 @@ void miracle_unit_step( miracle_unit unit, int64_t offset )
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 	mlt_producer producer = mlt_playlist_producer( playlist );
 	mlt_timecode position = mlt_producer_position( producer );
-	mlt_producer_seek( producer, position + mlt_producer_time( producer, offset ) );
+	mlt_producer_seek_frame( producer, mlt_producer_frame_position( producer, position ) + offset );
 }
 
 /** Set the unit's clip mode regarding in and out points.

@@ -32,7 +32,9 @@ typedef struct
 	mlt_timecode start;
 	char *resource;
 	mlt_timecode in;
+	int64_t frame_in;
 	mlt_timecode out;
+	int64_t frame_out;
 	mlt_timecode playtime;
 	mlt_timecode length;
 	float fps;
