@@ -454,7 +454,7 @@ static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
 			if ( bpp == 1 )
 				*p++ = data[ i ] << 8;
 			else
-				*p++ = ( data[ i ] << 8 ) + data[ i+1 ];
+				*p++ = ( data[ i ] << 8 ) + data[ i + 1 ];
 		}
 
 		break;
@@ -609,6 +609,32 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 	return ret;
 }
 
+
+/** Scale 16bit greyscale luma map using nearest neighbor.
+*/
+
+static inline void
+scale_luma ( uint16_t *dest_buf, int dest_width, int dest_height, const uint16_t *src_buf, int src_width, int src_height )
+{
+	register int i, j;
+	register int x_step = ( src_width << 16 ) / dest_width;
+	register int y_step = ( src_height << 16 ) / dest_height;
+	register int x, y = 0;
+
+	for ( i = 0; i < dest_height; i++ )
+	{
+		const uint16_t *src = src_buf + ( y >> 16 ) * src_width;
+		x = 0;
+		
+		for ( j = 0; j < dest_width; j++ )
+		{
+			*dest_buf++ = src[ x >> 16 ];
+			x += x_step;
+		}
+		y += y_step;
+	}
+}
+
 static uint16_t* get_luma( mlt_properties properties, int width, int height )
 {
 	// The cached luma map information
@@ -619,83 +645,93 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "luma" );
 
-	if ( luma_bitmap == NULL && resource != NULL )
+	if ( resource != NULL && ( luma_bitmap == NULL || luma_width != width || luma_height != height ) )
 	{
-		char *extension = extension = strrchr( resource, '.' );
+		uint16_t *orig_bitmap = mlt_properties_get_data( properties, "_luma.orig_bitmap", NULL );
+		luma_width = mlt_properties_get_int( properties, "_luma.orig_width" );
+		luma_height = mlt_properties_get_int( properties, "_luma.orig_height" );
 
-		// See if it is a PGM
-		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
+		// Load the original luma once
+		if ( orig_bitmap == NULL )
 		{
-			// Open PGM
-			FILE *f = fopen( resource, "r" );
-			if ( f != NULL )
+			char *extension = extension = strrchr( resource, '.' );
+			
+			// See if it is a PGM
+			if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 			{
-				// Load from PGM
-				luma_read_pgm( f, &luma_bitmap, &luma_width, &luma_height );
-				fclose( f );
-
-				// Set the transition properties
-				mlt_properties_set_int( properties, "_luma.width", luma_width );
-				mlt_properties_set_int( properties, "_luma.height", luma_height );
-				mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
-			}
-		}
-		else
-		{
-			// Get the factory producer service
-			char *factory = mlt_properties_get( properties, "factory" );
-
-			// Create the producer
-			mlt_producer producer = mlt_factory_producer( factory, resource );
-
-			// If we have one
-			if ( producer != NULL )
-			{
-				// Get the producer properties
-				mlt_properties producer_properties = mlt_producer_properties( producer );
-
-				// Ensure that we loop
-				mlt_properties_set( producer_properties, "eof", "loop" );
-
-				// Now pass all producer. properties on the transition down
-				mlt_properties_pass( producer_properties, properties, "luma." );
-
-				// We will get the alpha frame from the producer
-				mlt_frame luma_frame = NULL;
-
-				// Get the luma frame
-				if ( mlt_service_get_frame( mlt_producer_service( producer ), &luma_frame, 0 ) == 0 )
+				// Open PGM
+				FILE *f = fopen( resource, "r" );
+				if ( f != NULL )
 				{
-					uint8_t *luma_image;
-					mlt_image_format luma_format = mlt_image_yuv422;
-
-					// Request a luma image the size of transition image request
-					luma_width = width;
-					luma_height = height;
-
-					// Get image from the luma producer
-					mlt_properties_set( mlt_frame_properties( luma_frame ), "distort", "true" );
-					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
-
-					// Generate the luma map
-					if ( luma_image != NULL && luma_format == mlt_image_yuv422 )
-					{
-						luma_read_yuv422( luma_image, &luma_bitmap, luma_width, luma_height );
+					// Load from PGM
+					luma_read_pgm( f, &orig_bitmap, &luma_width, &luma_height );
+					fclose( f );
 					
-						// Set the transition properties
-						mlt_properties_set_int( properties, "_luma.width", luma_width );
-						mlt_properties_set_int( properties, "_luma.height", luma_height );
-						mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
-					}
-
-					// Cleanup the luma frame
-					mlt_frame_close( luma_frame );
+					// Remember the original size for subsequent scaling
+					mlt_properties_set_data( properties, "_luma.orig_bitmap", orig_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+					mlt_properties_set_int( properties, "_luma.orig_width", luma_width );
+					mlt_properties_set_int( properties, "_luma.orig_height", luma_height );
 				}
-
-				// Cleanup the luma producer
-				mlt_producer_close( producer );
+			}
+			else
+			{
+				// Get the factory producer service
+				char *factory = mlt_properties_get( properties, "factory" );
+	
+				// Create the producer
+				mlt_producer producer = mlt_factory_producer( factory, resource );
+	
+				// If we have one
+				if ( producer != NULL )
+				{
+					// Get the producer properties
+					mlt_properties producer_properties = mlt_producer_properties( producer );
+	
+					// Ensure that we loop
+					mlt_properties_set( producer_properties, "eof", "loop" );
+	
+					// Now pass all producer. properties on the transition down
+					mlt_properties_pass( producer_properties, properties, "luma." );
+	
+					// We will get the alpha frame from the producer
+					mlt_frame luma_frame = NULL;
+	
+					// Get the luma frame
+					if ( mlt_service_get_frame( mlt_producer_service( producer ), &luma_frame, 0 ) == 0 )
+					{
+						uint8_t *luma_image;
+						mlt_image_format luma_format = mlt_image_yuv422;
+	
+						// Get image from the luma producer
+						mlt_properties_set( mlt_frame_properties( luma_frame ), "rescale.interp", "none" );
+						mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
+	
+						// Generate the luma map
+						if ( luma_image != NULL && luma_format == mlt_image_yuv422 )
+							luma_read_yuv422( luma_image, &orig_bitmap, luma_width, luma_height );
+	
+						// Remember the original size for subsequent scaling
+						mlt_properties_set_data( properties, "_luma.orig_bitmap", orig_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+						mlt_properties_set_int( properties, "_luma.orig_width", luma_width );
+						mlt_properties_set_int( properties, "_luma.orig_height", luma_height );
+						
+						// Cleanup the luma frame
+						mlt_frame_close( luma_frame );
+					}
+	
+					// Cleanup the luma producer
+					mlt_producer_close( producer );
+				}
 			}
 		}
+		// Scale luma map
+		luma_bitmap = mlt_pool_alloc( width * height * sizeof( uint16_t ) );
+		scale_luma( luma_bitmap, width, height, orig_bitmap, luma_width, luma_height );
+
+		// Remember the scaled luma size to prevent unnecessary scaling
+		mlt_properties_set_int( properties, "_luma.width", width );
+		mlt_properties_set_int( properties, "_luma.height", height );
+		mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, width * height * 2, mlt_pool_release, NULL );
 	}
 	return luma_bitmap;
 }
@@ -927,7 +963,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		struct geometry_s *start = composite_calculate( &result, this, a_frame, position );
 		
 		// Optimisation - no compositing required
-		if ( result.mix == 0 )
+		if ( result.mix == 0 || ( result.w == 0 && result.h == 0 ) )
 			return 0;
 
 		// Since we are the consumer of the b_frame, we must pass along these

@@ -407,12 +407,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					uint8_t *luma_image;
 					mlt_image_format luma_format = mlt_image_yuv422;
 
-					// Request a luma image the size of transition image request
-					luma_width = *width;
-					luma_height = *height;
-
 					// Get image from the luma producer
-					mlt_properties_set( mlt_frame_properties( luma_frame ), "distort", "true" );
+					mlt_properties_set( mlt_frame_properties( luma_frame ), "rescale.interp", "none" );
 					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
 
 					// Generate the luma map
@@ -451,7 +447,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Since we are the consumer of the b_frame, we must pass along this
 	// consumer property from the a_frame
 	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-	mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
 
 	// Honour the reverse here
 	if ( mix >= 1.0 )
