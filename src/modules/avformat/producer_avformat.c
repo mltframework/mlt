@@ -394,9 +394,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties_set_int( frame_properties, "width", *width );
 	mlt_properties_set_int( frame_properties, "height", *height );
 
-	// Lock the mutex now
-	avformat_lock( );
-
 	// Construct an AVFrame for YUV422 conversion
 	if ( output == NULL )
 	{
@@ -586,9 +583,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
 	mlt_properties_set_position( properties, "video_expected", position + 1 );
 
-	// Unlock the mutex now
-	avformat_unlock( );
-
 	return 0;
 }
 
@@ -608,9 +602,6 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 
 	// Get the frame properties
 	mlt_properties frame_properties = mlt_frame_properties( frame );
-
-	// Lock the mutex now
-	avformat_lock( );
 
 	if ( context != NULL && index != -1 )
 	{
@@ -678,9 +669,6 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	{
 		mlt_properties_set_int( frame_properties, "test_image", 1 );
 	}
-
-	// Unlock the mutex now
-	avformat_unlock( );
 }
 
 /** Get the audio from a frame.
@@ -738,9 +726,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 	// Flag for paused (silence) 
 	int paused = 0;
-
-	// Lock the mutex now
-	avformat_lock( );
 
 	// Check for resample and create if necessary
 	if ( resample == NULL && codec_context->channels <= 2 )
@@ -912,9 +897,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	if ( !paused )
 		mlt_properties_set_position( properties, "audio_expected", position + 1 );
 
-	// Unlock the mutex now
-	avformat_unlock( );
-
 	return 0;
 }
 
@@ -931,9 +913,6 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 
 	// Get the audio_index
 	int index = mlt_properties_get_int( properties, "audio_index" );
-
-	// Lock the mutex now
-	avformat_lock( );
 
 	// Deal with audio context
 	if ( context != NULL && index != -1 )
@@ -977,9 +956,6 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 			mlt_properties_set_data( frame_properties, "avformat_producer", this, 0, NULL, NULL );
 		}
 	}
-
-	// Unlock the mutex now
-	avformat_unlock( );
 }
 
 /** Our get frame implementation.
