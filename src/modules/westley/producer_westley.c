@@ -121,6 +121,8 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
 		mlt_properties_set( properties, ( char* )atts[0], ( char* )atts[1] );
+
+		// Out will be overwritten later as we append, so we need to save it
 		if ( strcmp( atts[ 0 ], "out" ) == 0 )
 			mlt_properties_set( properties, "_westley.out", ( char* )atts[ 1 ] );
 	}
@@ -166,15 +168,23 @@ static void on_start_blank( deserialise_context context, const xmlChar *name, co
 
 static void on_start_entry_track( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
-	// Look for the producer attribute
+	// Use a dummy service to hold properties to allow arbitratry nesting
+	mlt_service service = calloc( 1, sizeof( struct mlt_service_s ) );
+	mlt_service_init( service, NULL );
+
+	// Push the dummy service onto the stack
+	context_push_service( context, service );
+	
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		if ( strcmp( atts[0], "producer" ) == 0 )
+		mlt_properties_set( mlt_service_properties( service ), (char*) atts[0], (char*) atts[1] );
+		
+		// Look for the producer attribute
+		if ( strcmp( atts[ 0 ], "producer" ) == 0 )
 		{
 			if ( mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL ) !=  NULL )
 				// Push the referenced producer onto the stack
 				context_push_service( context, MLT_SERVICE( mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL ) ) );
-			break;
 		}
 	}
 }
@@ -270,6 +280,9 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 	// Get the producer from the stack
 	mlt_service producer = context_pop_service( context );
 
+	// Get the dummy track service from the stack
+	mlt_service track = context_pop_service( context );
+
 	// Get the multitrack from the stack
 	mlt_service service = context_pop_service( context );
 
@@ -278,8 +291,19 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 		MLT_PRODUCER( producer ),
 		mlt_multitrack_count( MLT_MULTITRACK( service ) ) );
 
+	// Set producer i/o if specified
+	if ( mlt_properties_get( mlt_service_properties( track ), "in" ) != NULL ||
+		mlt_properties_get( mlt_service_properties( track ), "out" ) != NULL )
+	{
+		mlt_producer_set_in_and_out( MLT_PRODUCER( producer ),
+			mlt_properties_get_position( mlt_service_properties( track ), "in" ),
+			mlt_properties_get_position( mlt_service_properties( track ), "out" ) );
+	}
+	
 	// Push the multitrack back onto the stack
 	context_push_service( context, service );
+
+	mlt_service_close( track );
 }
 
 static void on_end_entry( deserialise_context context, const xmlChar *name )
@@ -287,17 +311,30 @@ static void on_end_entry( deserialise_context context, const xmlChar *name )
 	// Get the producer from the stack
 	mlt_service producer = context_pop_service( context );
 
+	// Get the dummy entry service from the stack
+	mlt_service entry = context_pop_service( context );
+
 	// Get the playlist from the stack
 	mlt_service service = context_pop_service( context );
 
 	// Append the producer to the playlist
-	// TODO: THIS IS NOT CORRECT - an entry SHOULD have in/out points of its own
-	mlt_playlist_append_io( MLT_PLAYLIST( service ),
-		MLT_PRODUCER( producer ), 0, 
-		mlt_properties_get_position( mlt_service_properties( producer ), "out" ) - mlt_properties_get_position( mlt_service_properties( producer ), "in" ) + 1 );
+	if ( mlt_properties_get( mlt_service_properties( entry ), "in" ) != NULL ||
+		mlt_properties_get( mlt_service_properties( entry ), "out" ) != NULL )
+	{
+		mlt_playlist_append_io( MLT_PLAYLIST( service ),
+			MLT_PRODUCER( producer ),
+			mlt_properties_get_position( mlt_service_properties( entry ), "in" ), 
+			mlt_properties_get_position( mlt_service_properties( entry ), "out" ) );
+	}
+	else
+	{
+		mlt_playlist_append( MLT_PLAYLIST( service ), MLT_PRODUCER( producer ) );
+	}
 
 	// Push the playlist back onto the stack
 	context_push_service( context, service );
+
+	mlt_service_close( entry );
 }
 
 static void on_end_tractor( deserialise_context context, const xmlChar *name )
