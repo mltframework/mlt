@@ -28,25 +28,24 @@
 
 namespace Mlt
 {
+	class Properties;
+	class Frame;
+
 	class Service : public Properties
 	{
+		private:
+			mlt_service instance;
 		public:
-			virtual mlt_service get_service( ) = 0;
+			Service( );
+			Service( Service &service );
+			Service( mlt_service service );
+			virtual ~Service( );
+			virtual mlt_service get_service( );
 			mlt_properties get_properties( );
 			int connect_producer( Service &producer, int index = 0 );
 			Service *consumer( );
 			Service *producer( );
 			Frame *get_frame( int index = 0 );
-	};
-	
-	class ServiceInstance : public Service
-	{
-		private:
-			mlt_service instance;
-		public:
-			mlt_service get_service( );
-			ServiceInstance( Service &service );
-			ServiceInstance( mlt_service service );
 	};
 }
 

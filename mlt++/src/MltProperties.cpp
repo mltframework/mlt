@@ -21,39 +21,39 @@
 #include "MltProperties.h"
 using namespace Mlt;
 
-PropertiesInstance::PropertiesInstance( ) :
+Properties::Properties( ) :
 	destroy( true ),
 	instance( NULL )
 {
 	instance = mlt_properties_new( );
 }
 
-PropertiesInstance::PropertiesInstance( Properties &properties ) :
+Properties::Properties( Properties &properties ) :
 	destroy( false ),
 	instance( properties.get_properties( ) )
 {
 }
 
-PropertiesInstance::PropertiesInstance( mlt_properties properties ) :
+Properties::Properties( mlt_properties properties ) :
 	destroy( false ),
 	instance( properties )
 {
 }
 
-PropertiesInstance::PropertiesInstance( char *file ) :
+Properties::Properties( char *file ) :
 	destroy( true ),
 	instance( NULL )
 {
 	instance = mlt_properties_load( file );
 }
 
-PropertiesInstance::~PropertiesInstance( )
+Properties::~Properties( )
 {
 	if ( destroy )
 		mlt_properties_close( instance );
 }
 
-mlt_properties PropertiesInstance::get_properties( )
+mlt_properties Properties::get_properties( )
 {
 	return instance;
 }

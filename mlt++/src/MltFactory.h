@@ -33,10 +33,6 @@ namespace Mlt
 	{
 		public:
 			static int init( char *arg = NULL );
-			static Producer *producer( char *id, char *arg = NULL );
-			static Filter *filter( char *id, char *arg = NULL );
-			static Transition *transition( char *id, char *arg = NULL );
-			static Consumer *consumer( char *id, char *arg = NULL );
 			static void close( );
 	};
 }

@@ -21,6 +21,29 @@
 #include "MltFrame.h"
 using namespace Mlt;
 
+Frame::Frame( mlt_frame frame ) :
+	destroy( true ),
+	instance( frame )
+{
+}
+
+Frame::Frame( Frame &frame ) :
+	destroy( false ),
+	instance( frame.get_frame( ) )
+{
+}
+
+Frame::~Frame( )
+{
+	if ( destroy )
+		mlt_frame_close( instance );
+}
+
+mlt_frame Frame::get_frame( )
+{
+	return instance;
+}
+
 mlt_properties Frame::get_properties( )
 {
 	return mlt_frame_properties( get_frame( ) );
@@ -38,29 +61,6 @@ int16_t *Frame::get_audio( mlt_audio_format &format, int &frequency, int &channe
 	int16_t *audio = NULL;
 	mlt_frame_get_audio( get_frame( ), &audio, &format, &frequency, &channels, &samples );
 	return audio;
-}
-
-mlt_frame FrameInstance::get_frame( )
-{
-	return instance;
-}
-
-FrameInstance::FrameInstance( mlt_frame frame ) :
-	destroy( true ),
-	instance( frame )
-{
-}
-
-FrameInstance::FrameInstance( Frame &frame ) :
-	destroy( false ),
-	instance( frame.get_frame( ) )
-{
-}
-
-FrameInstance::~FrameInstance( )
-{
-	if ( destroy )
-		mlt_frame_close( instance );
 }
 
 

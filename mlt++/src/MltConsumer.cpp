@@ -21,6 +21,36 @@
 #include "MltConsumer.h"
 using namespace Mlt;
 
+Consumer::Consumer( char *id, char *service ) :
+	destroy( true ),
+	instance( NULL )
+{
+	instance = mlt_factory_consumer( id, service );
+}
+
+Consumer::Consumer( Consumer &consumer ) :
+	destroy( false ),
+	instance( consumer.get_consumer( ) )
+{
+}
+
+Consumer::Consumer( mlt_consumer consumer ) :
+	destroy( false ),
+	instance( consumer )
+{
+}
+
+Consumer::~Consumer( )
+{
+	if ( destroy )
+		mlt_consumer_close( instance );
+}
+
+mlt_consumer Consumer::get_consumer( )
+{
+	return instance;
+}
+
 mlt_service Consumer::get_service( )
 {
 	return mlt_consumer_service( get_consumer( ) );
@@ -46,33 +76,4 @@ int Consumer::is_stopped( )
 	return mlt_consumer_is_stopped( get_consumer( ) );
 }
 
-mlt_consumer ConsumerInstance::get_consumer( )
-{
-	return instance;
-}
-
-ConsumerInstance::ConsumerInstance( char *id, char *service ) :
-	destroy( true ),
-	instance( NULL )
-{
-	instance = mlt_factory_consumer( id, service );
-}
-
-ConsumerInstance::ConsumerInstance( Consumer &consumer ) :
-	destroy( false ),
-	instance( consumer.get_consumer( ) )
-{
-}
-
-ConsumerInstance::ConsumerInstance( mlt_consumer consumer ) :
-	destroy( false ),
-	instance( consumer )
-{
-}
-
-ConsumerInstance::~ConsumerInstance( )
-{
-	if ( destroy )
-		mlt_consumer_close( instance );
-}
 

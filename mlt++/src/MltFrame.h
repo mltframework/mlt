@@ -26,25 +26,21 @@
 
 namespace Mlt
 {
+	class Properties;
+
 	class Frame : public Properties
-	{
-		public:
-			virtual mlt_frame get_frame( ) = 0;
-			mlt_properties get_properties( );
-			uint8_t *get_image( mlt_image_format &format, int &w, int &h, int writable = 0 );
-			int16_t *get_audio( mlt_audio_format &format, int &frequency, int &channels, int &samples );
-	};
-	
-	class FrameInstance : public Frame
 	{
 		private:
 			bool destroy;
 			mlt_frame instance;
 		public:
-			mlt_frame get_frame( );
-			FrameInstance( mlt_frame frame );
-			FrameInstance( Frame &frame );
-			virtual ~FrameInstance( );
+			Frame( mlt_frame frame );
+			Frame( Frame &frame );
+			virtual ~Frame( );
+			virtual mlt_frame get_frame( );
+			mlt_properties get_properties( );
+			uint8_t *get_image( mlt_image_format &format, int &w, int &h, int writable = 0 );
+			int16_t *get_audio( mlt_audio_format &format, int &frequency, int &channels, int &samples );
 	};
 }
 

@@ -27,28 +27,24 @@
 
 namespace Mlt
 {
-	class Consumer : public Service
-	{
-		public:
-			virtual mlt_consumer get_consumer( ) = 0;
-			mlt_service get_service( );
-			int connect( Service &service );
-			int start( );
-			int stop( );
-			int is_stopped( );
-	};
+	class Service;
 
-	class ConsumerInstance : public Consumer
+	class Consumer : public Service
 	{
 		private:
 			bool destroy;
 			mlt_consumer instance;
 		public:
-			mlt_consumer get_consumer( );
-			ConsumerInstance( char *id, char *service = NULL );
-			ConsumerInstance( Consumer &consumer );
-			ConsumerInstance( mlt_consumer consumer );
-			virtual ~ConsumerInstance( );
+			Consumer( char *id, char *service = NULL );
+			Consumer( Consumer &consumer );
+			Consumer( mlt_consumer consumer );
+			virtual ~Consumer( );
+			virtual mlt_consumer get_consumer( );
+			mlt_service get_service( );
+			int connect( Service &service );
+			int start( );
+			int stop( );
+			int is_stopped( );
 	};
 }
 

@@ -31,8 +31,16 @@ namespace Mlt
 
 	class Properties 
 	{
+		private:
+			bool destroy;
+			mlt_properties instance;
 		public:
-			virtual mlt_properties get_properties( ) = 0;
+			Properties( );
+			Properties( Properties &properties );
+			Properties( mlt_properties properties );
+			Properties( char *file );
+			virtual ~Properties( );
+			virtual mlt_properties get_properties( );
 			bool is_valid( );
 			int count( );
 			char *get( char *name );
@@ -52,23 +60,6 @@ namespace Mlt
 			int inherit( Properties &that );
 			int rename( char *source, char *dest );
 			void dump( FILE *output = stderr );
-	};
-	
-	/** Instance class.
-	 */
-	
-	class PropertiesInstance : public Properties
-	{
-		private:
-			bool destroy;
-			mlt_properties instance;
-		public:
-			mlt_properties get_properties( );
-			PropertiesInstance( );
-			PropertiesInstance( Properties &properties );
-			PropertiesInstance( mlt_properties properties );
-			PropertiesInstance( char *file );
-			virtual ~PropertiesInstance( );
 	};
 }
 

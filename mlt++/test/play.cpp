@@ -11,15 +11,15 @@ using namespace Mlt;
 int main( int argc, char **argv )
 {
 	Factory::init( NULL );
-	Producer *producer = Factory::producer( argv[ 1 ] );
+	Producer *producer = new Producer( argv[ 1 ] );
 	if ( !producer->is_valid( ) )
 	{
 		cerr << "Can't construct producer for " << argv[ 1 ] << endl;
 		return 0;
 	}
-	Consumer *consumer = Factory::consumer( "sdl" );
+	Consumer *consumer = new Consumer( "sdl" );
 	consumer->set( "rescale", "none" );
-	Filter *filter = Factory::filter( "greyscale" );
+	Filter *filter = new Filter( "greyscale" );
 	filter->connect( *producer );
 	consumer->connect( *filter );
 	consumer->start( );

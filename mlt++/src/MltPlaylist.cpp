@@ -25,8 +25,8 @@ using namespace Mlt;
 
 ClipInfo::ClipInfo( mlt_playlist_clip_info *info ) :
 	clip( info->clip ),
-	producer( new ProducerInstance( info->producer ) ),
-	service( new ServiceInstance( info->service ) ),
+	producer( new Producer( info->producer ) ),
+	service( new Service( info->service ) ),
 	start( info->start ),
 	resource( strdup( info->resource ) ),
 	frame_in( info->frame_in ),
@@ -37,6 +37,22 @@ ClipInfo::ClipInfo( mlt_playlist_clip_info *info ) :
 {
 }
 
+ClipInfo::ClipInfo( Playlist &playlist, int index )
+{
+	mlt_playlist_clip_info info;
+	mlt_playlist_get_clip_info( playlist.get_playlist( ), &info, index );
+	clip = info.clip;
+	producer = new Producer( info.producer );
+	service = new Service( info.service );
+	start = info.start;
+	resource = strdup( info.resource );
+	frame_in = info.frame_in;
+	frame_out = info.frame_out;
+	frame_count = info.frame_count;
+	length = info.length;
+	fps = info.fps;
+}
+
 ClipInfo::~ClipInfo( )
 {
 	delete producer;
@@ -44,32 +60,32 @@ ClipInfo::~ClipInfo( )
 	free( resource );
 }
 
-PlaylistInstance::PlaylistInstance( ) :
+Playlist::Playlist( ) :
 	destroy( true ),
 	instance( NULL )
 {
 	instance = mlt_playlist_init( );
 }
 
-PlaylistInstance::PlaylistInstance( Playlist &playlist ) :
+Playlist::Playlist( Playlist &playlist ) :
 	destroy( false ),
 	instance( playlist.get_playlist( ) )
 {
 }
 
-PlaylistInstance::PlaylistInstance( mlt_playlist playlist ) :
+Playlist::Playlist( mlt_playlist playlist ) :
 	destroy( false ),
 	instance( playlist )
 {
 }
 
-PlaylistInstance::~PlaylistInstance( )
+Playlist::~Playlist( )
 {
 	if ( destroy )
 		mlt_playlist_close( instance );
 }
 
-mlt_playlist PlaylistInstance::get_playlist( )
+mlt_playlist Playlist::get_playlist( )
 {
 	return instance;
 }
@@ -111,7 +127,7 @@ int Playlist::current_clip( )
 
 Producer *Playlist::current( )
 {
-	return new ProducerInstance( mlt_playlist_current( get_playlist( ) ) );
+	return new Producer( mlt_playlist_current( get_playlist( ) ) );
 }
 
 ClipInfo *Playlist::clip_info( int index )

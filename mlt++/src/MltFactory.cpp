@@ -26,26 +26,6 @@ int Factory::init( char *arg )
 	return mlt_factory_init( arg );
 }
 
-Producer *Factory::producer( char *id, char *arg )
-{
-	return new ProducerInstance( id, arg );
-}
-
-Filter *Factory::filter( char *id, char *arg )
-{
-	return new FilterInstance( id, arg );
-}
-
-Transition *Factory::transition( char *id, char *arg )
-{
-	return new TransitionInstance( id, arg );
-}
-
-Consumer *Factory::consumer( char *id, char *arg )
-{
-	return new ConsumerInstance( id, arg );
-}
-
 void Factory::close( )
 {
 	mlt_factory_close( );

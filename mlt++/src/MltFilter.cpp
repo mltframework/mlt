@@ -21,6 +21,36 @@
 #include "MltFilter.h"
 using namespace Mlt;
 
+Filter::Filter( char *id, char *service ) :
+	destroy( true ),
+	instance( NULL )
+{
+	instance = mlt_factory_filter( id, service );
+}
+
+Filter::Filter( Filter &filter ) :
+	destroy( false ),
+	instance( filter.get_filter( ) )
+{
+}
+
+Filter::Filter( mlt_filter filter ) :
+	destroy( false ),
+	instance( filter )
+{
+}
+
+Filter::~Filter( )
+{
+	if ( destroy )
+		mlt_filter_close( instance );
+}
+
+mlt_filter Filter::get_filter( )
+{
+	return instance;
+}
+
 mlt_service Filter::get_service( )
 {
 	return mlt_filter_service( get_filter( ) );
@@ -51,33 +81,4 @@ int Filter::get_track( )
 	return mlt_filter_get_track( get_filter( ) );
 }
 
-mlt_filter FilterInstance::get_filter( )
-{
-	return instance;
-}
-
-FilterInstance::FilterInstance( char *id, char *service ) :
-	destroy( true ),
-	instance( NULL )
-{
-	instance = mlt_factory_filter( id, service );
-}
-
-FilterInstance::FilterInstance( Filter &filter ) :
-	destroy( false ),
-	instance( filter.get_filter( ) )
-{
-}
-
-FilterInstance::FilterInstance( mlt_filter filter ) :
-	destroy( false ),
-	instance( filter )
-{
-}
-
-FilterInstance::~FilterInstance( )
-{
-	if ( destroy )
-		mlt_filter_close( instance );
-}
 

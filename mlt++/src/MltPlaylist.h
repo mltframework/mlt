@@ -27,10 +27,15 @@
 
 namespace Mlt
 {
+	class Producer;
+	class Service;
+	class Playlist;
+
 	class ClipInfo
 	{
 		public:
 			ClipInfo( mlt_playlist_clip_info *info );
+			ClipInfo( Playlist &playlist, int i );
 			~ClipInfo( );
 			int clip;
 			Producer *producer;
@@ -46,8 +51,15 @@ namespace Mlt
 
 	class Playlist : public Producer
 	{
+		private:
+			bool destroy;
+			mlt_playlist instance;
 		public:
-			virtual mlt_playlist get_playlist( ) = 0;
+			Playlist( );
+			Playlist( Playlist &playlist );
+			Playlist( mlt_playlist playlist );
+			virtual ~Playlist( );
+			virtual mlt_playlist get_playlist( );
 			mlt_producer get_producer( );
 			int count( );
 			int clear( );
@@ -61,19 +73,6 @@ namespace Mlt
 			int remove( int where );
 			int move( int from, int to );
 			int resize_clip( int clip, mlt_position in, mlt_position out );
-	};
-	
-	class PlaylistInstance : public Playlist
-	{
-		private:
-			bool destroy;
-			mlt_playlist instance;
-		public:
-			mlt_playlist get_playlist( );
-			PlaylistInstance( );
-			PlaylistInstance( Playlist &playlist );
-			PlaylistInstance( mlt_playlist playlist );
-			virtual ~PlaylistInstance( );
 	};
 }
 

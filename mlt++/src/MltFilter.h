@@ -27,29 +27,25 @@
 
 namespace Mlt
 {
+	class Service;
+
 	class Filter : public Service
 	{
+		private:
+			bool destroy;
+			mlt_filter instance;
 		public:
-			virtual mlt_filter get_filter( ) = 0;
+			Filter( char *id, char *service = NULL );
+			Filter( Filter &filter );
+			Filter( mlt_filter filter );
+			virtual ~Filter( );
+			virtual mlt_filter get_filter( );
 			mlt_service get_service( );
 			int connect( Service &service, int index = 0 );
 			void set_in_and_out( mlt_position in, mlt_position out );
 			mlt_position get_in( );
 			mlt_position get_out( );
 			int get_track( );
-	};
-
-	class FilterInstance : public Filter
-	{
-		private:
-			bool destroy;
-			mlt_filter instance;
-		public:
-			mlt_filter get_filter( );
-			FilterInstance( char *id, char *service = NULL );
-			FilterInstance( Filter &filter );
-			FilterInstance( mlt_filter filter );
-			virtual ~FilterInstance( );
 	};
 }
 

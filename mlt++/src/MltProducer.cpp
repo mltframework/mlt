@@ -21,6 +21,39 @@
 #include "MltProducer.h"
 using namespace Mlt;
 
+Producer::Producer( ) :
+	destroy( false ),
+	instance( NULL )
+{
+}
+
+Producer::Producer( char *id, char *service ) :
+	destroy( true ),
+	instance( NULL )
+{
+	if ( id != NULL && service != NULL )
+		instance = mlt_factory_producer( id, service );
+	else
+		instance = mlt_factory_producer( "fezzik", id != NULL ? id : service );
+}
+
+Producer::Producer( mlt_producer producer ) :
+	destroy( false ),
+	instance( producer )
+{
+}
+
+Producer::Producer( Producer &producer ) :
+	destroy( false ),
+	instance( producer.get_producer( ) )
+{
+}
+
+Producer::~Producer( )
+{
+	if ( destroy )
+		mlt_producer_close( instance );
+}
 mlt_service Producer::get_service( )
 {
 	return mlt_producer_service( get_producer( ) );
@@ -81,36 +114,9 @@ mlt_position Producer::get_playtime( )
 	return mlt_producer_get_playtime( get_producer( ) );
 }
 
-mlt_producer ProducerInstance::get_producer( )
+mlt_producer Producer::get_producer( )
 {
 	return instance;
 }
 
-ProducerInstance::ProducerInstance( char *id, char *service ) :
-	destroy( true ),
-	instance( NULL )
-{
-	if ( id != NULL && service != NULL )
-		instance = mlt_factory_producer( id, service );
-	else
-		instance = mlt_factory_producer( "fezzik", id != NULL ? id : service );
-}
-
-ProducerInstance::ProducerInstance( mlt_producer producer ) :
-	destroy( false ),
-	instance( producer )
-{
-}
-
-ProducerInstance::ProducerInstance( Producer &producer ) :
-	destroy( false ),
-	instance( producer.get_producer( ) )
-{
-}
-
-ProducerInstance::~ProducerInstance( )
-{
-	if ( destroy )
-		mlt_producer_close( instance );
-}
 

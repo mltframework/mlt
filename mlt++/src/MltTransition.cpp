@@ -21,39 +21,39 @@
 #include "MltTransition.h"
 using namespace Mlt;
 
-mlt_service Transition::get_service( )
-{
-	return mlt_transition_service( get_transition( ) );
-}
-
-mlt_transition TransitionInstance::get_transition( )
-{
-	return instance;
-}
-
-TransitionInstance::TransitionInstance( char *id, char *arg ) :
+Transition::Transition( char *id, char *arg ) :
 	destroy( true ),
 	instance( NULL )
 {
 	instance = mlt_factory_transition( id, arg );
 }
 
-TransitionInstance::TransitionInstance( Transition &transition ) :
+Transition::Transition( Transition &transition ) :
 	destroy( false ),
 	instance( transition.get_transition( ) )
 {
 }
 
-TransitionInstance::TransitionInstance( mlt_transition transition ) :
+Transition::Transition( mlt_transition transition ) :
 	destroy( false ),
 	instance( transition )
 {
 }
 
-TransitionInstance::~TransitionInstance( )
+Transition::~Transition( )
 {
 	if ( destroy )
 		mlt_transition_close( instance );
+}
+
+mlt_transition Transition::get_transition( )
+{
+	return instance;
+}
+
+mlt_service Transition::get_service( )
+{
+	return mlt_transition_service( get_transition( ) );
 }
 
 

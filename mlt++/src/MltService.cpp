@@ -21,6 +21,30 @@
 #include "MltService.h"
 using namespace Mlt;
 
+Service::Service( ) :
+	instance( NULL )
+{
+}
+
+Service::Service( Service &service ) :
+	instance( service.get_service( ) )
+{
+}
+
+Service::Service( mlt_service service ) :
+	instance( service )
+{
+}
+
+Service::~Service( )
+{
+}
+
+mlt_service Service::get_service( )
+{
+	return instance;
+}
+
 mlt_properties Service::get_properties( )
 {
 	return mlt_service_properties( get_service( ) );
@@ -33,33 +57,19 @@ int Service::connect_producer( Service &producer, int index )
 
 Service *Service::producer( )
 {
-	return new ServiceInstance( mlt_service_producer( get_service( ) ) );
+	return new Service( mlt_service_producer( get_service( ) ) );
 }
 
 Service *Service::consumer( )
 {
-	return new ServiceInstance( mlt_service_consumer( get_service( ) ) );
+	return new Service( mlt_service_consumer( get_service( ) ) );
 }
 
 Frame *Service::get_frame( int index )
 {
 	mlt_frame frame = NULL;
 	mlt_service_get_frame( get_service( ), &frame, index );
-	return new FrameInstance( frame );
+	return new Frame( frame );
 }
 
-mlt_service ServiceInstance::get_service( )
-{
-	return instance;
-}
-
-ServiceInstance::ServiceInstance( Service &service ) :
-	instance( service.get_service( ) )
-{
-}
-
-ServiceInstance::ServiceInstance( mlt_service service ) :
-	instance( service )
-{
-}
 

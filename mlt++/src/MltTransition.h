@@ -26,24 +26,20 @@
 
 namespace Mlt
 {
+	class Service;
+
 	class Transition : public Service
-	{
-		public:
-			virtual mlt_transition get_transition( ) = 0;
-			mlt_service get_service( );
-	};
-	
-	class TransitionInstance : public Transition
 	{
 		private:
 			bool destroy;
 			mlt_transition instance;
 		public:
-			mlt_transition get_transition( );
-			TransitionInstance( char *id, char *arg = NULL );
-			TransitionInstance( Transition &transition );
-			TransitionInstance( mlt_transition transition );
-			virtual ~TransitionInstance( );
+			Transition( char *id, char *arg = NULL );
+			Transition( Transition &transition );
+			Transition( mlt_transition transition );
+			virtual ~Transition( );
+			virtual mlt_transition get_transition( );
+			mlt_service get_service( );
 	};
 }
 

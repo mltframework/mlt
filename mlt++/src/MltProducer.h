@@ -27,10 +27,20 @@
 
 namespace Mlt
 {
+	class Service;
+
 	class Producer : public Service
 	{
+		private:
+			bool destroy;
+			mlt_producer instance;
 		public:
-			virtual mlt_producer get_producer( ) = 0;
+			Producer( );
+			Producer( char *id, char *service = NULL );
+			Producer( mlt_producer producer );
+			Producer( Producer &producer );
+			virtual ~Producer( );
+			virtual mlt_producer get_producer( );
 			mlt_service get_service( );
 			int seek( mlt_position position );
 			mlt_position position( );
@@ -43,19 +53,6 @@ namespace Mlt
 			mlt_position get_out( );
 			mlt_position get_length( );
 			mlt_position get_playtime( );
-	};
-	
-	class ProducerInstance : public Producer
-	{
-		private:
-			bool destroy;
-			mlt_producer instance;
-		public:
-			mlt_producer get_producer( );
-			ProducerInstance( char *id, char *service = NULL );
-			ProducerInstance( mlt_producer producer );
-			ProducerInstance( Producer &producer );
-			virtual ~ProducerInstance( );
 	};
 }
 
