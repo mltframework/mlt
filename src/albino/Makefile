@@ -4,7 +4,7 @@ OBJS = albino.o
 
 CFLAGS = -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
 
-LDFLAGS = -L ../valerie -L ../miracle -lmiracle -lvalerie
+LDFLAGS = -L ../valerie -L ../miracle -L ../framework -lmiracle -lmlt -lvalerie
 
 SRCS := $(OBJS:.o=.c)
 
