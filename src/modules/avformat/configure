@@ -7,6 +7,11 @@ cat << EOF >> ../producers.dat
 avformat		libmltavformat.so
 EOF
 
+cat << EOF >> ../filters.dat
+avdeinterlace	libmltavformat.so
+avresample		libmltavformat.so
+EOF
+
 cat << EOF >> ../consumers.dat
 avformat		libmltavformat.so
 EOF
