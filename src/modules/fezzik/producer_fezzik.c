@@ -163,10 +163,10 @@ mlt_producer producer_fezzik_init( char *arg )
 			mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 			// Now attach normalising filters
-			last = create_filter( tractor, last, "deinterlace" );
+			last = create_filter( tractor, last, "avdeinterlace" );
 			last = create_filter( tractor, last, "rescale" );
 			last = create_filter( tractor, last, "resize" );
-			last = create_filter( tractor, last, "resample" );
+			last = create_filter( tractor, last, "avresample" );
 
 			// Connect the tractor to the last
 			mlt_tractor_connect( tractor, last );
