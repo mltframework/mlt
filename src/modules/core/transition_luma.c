@@ -66,9 +66,9 @@ static inline float smoothstep( float edge1, float edge2, float a )
 static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, int luma_height,
 							float *luma_bitmap, float pos, float frame_delta, float softness, int field_order )
 {
-	int width_src, height_src;
-	int width_dest, height_dest;
-	mlt_image_format format_src, format_dest;
+	int width_src = 0, height_src = 0;
+	int width_dest = 0, height_dest = 0;
+	mlt_image_format format_src = mlt_image_yuv422, format_dest = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
 	int i, j;
 	int stride_src;
@@ -273,7 +273,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
 	// If the filename property changed, reload the map
-	char *luma_file = mlt_properties_get( properties, "filename" );
+	char *luma_file = mlt_properties_get( properties, "resource" );
 	if ( luma_file != NULL && ( this->filename == NULL || ( this->filename && strcmp( luma_file, this->filename ) ) ) )
 	{
 		int width = mlt_properties_get_int( b_props, "width" );
@@ -333,7 +333,7 @@ mlt_transition transition_luma_init( char *lumafile )
 		transition->close = transition_close;
 
 		if ( lumafile != NULL )
-			mlt_properties_set( mlt_transition_properties( transition ), "filename", lumafile );
+			mlt_properties_set( mlt_transition_properties( transition ), "resource", lumafile );
 		
 		return &this->parent;
 	}

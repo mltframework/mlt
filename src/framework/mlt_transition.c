@@ -50,6 +50,7 @@ int mlt_transition_init( mlt_transition this, void *child )
 		mlt_properties_set_position( properties, "out", 0 );
 		mlt_properties_set_int( properties, "a_track", 0 );
 		mlt_properties_set_int( properties, "b_track", 1 );
+		mlt_properties_set( properties, "resource", "<transition>" );
 
 		return 0;
 	}

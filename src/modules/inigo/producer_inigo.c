@@ -83,6 +83,8 @@ static mlt_producer create_producer( char *file )
 		result = mlt_factory_producer( "pixbuf", file );
 	else if ( strstr( file, ".txt" ) )
 		result = mlt_factory_producer( "pango", file );
+	else if ( strstr( file, ".westley" ) )
+		result = mlt_factory_producer( "westley", file );
 
 	// 2nd Line fallbacks
 	if ( result == NULL && strstr( file, ".dv" ) )
