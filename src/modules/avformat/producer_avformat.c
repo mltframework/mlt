@@ -392,6 +392,12 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 		pict.linesize[2] = width >> 1;
 		img_convert( &pict, PIX_FMT_YUV420P, (AVPicture *)frame, pix_fmt, width, height );
 	}
+	else if ( format == mlt_image_rgb24 )
+	{
+		AVPicture output;
+		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
+		img_convert( &output, PIX_FMT_RGB24, (AVPicture *)frame, pix_fmt, width, height );
+	}
 	else
 	{
 		AVPicture output;
@@ -460,12 +466,22 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int size = 0; 
 
 	// Set the result arguments that we know here (only *buffer is now required)
-	if ( *format != mlt_image_yuv422 && *format != mlt_image_yuv420p )
-		*format = mlt_image_yuv422;
 	*width = codec_context->width;
 	*height = codec_context->height;
 
-	size = *width * ( *height + 1 ) * 2;
+	switch ( *format )
+	{
+		case mlt_image_yuv420p:
+			size = *width * 3 * ( *height + 1 ) / 2;
+			break;
+		case mlt_image_rgb24:
+			size = *width * ( *height + 1 ) * 3;
+			break;
+		default:
+			*format = mlt_image_yuv422;
+			size = *width * ( *height + 1 ) * 2;
+			break;
+	}
 
 	// Set this on the frame properties
 	mlt_properties_set_int( frame_properties, "width", *width );
@@ -522,7 +538,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		{
 			av_frame = calloc( 1, sizeof( AVFrame ) );
 			mlt_properties_set_data( properties, "av_frame", av_frame, 0, free, NULL );
-			paused = 0;
 		}
 
 		while( ret >= 0 && !got_picture )
