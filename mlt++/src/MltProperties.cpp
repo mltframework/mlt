@@ -40,10 +40,22 @@ PropertiesInstance::PropertiesInstance( mlt_properties properties ) :
 {
 }
 
+PropertiesInstance::PropertiesInstance( char *file ) :
+	destroy( true ),
+	instance( NULL )
+{
+	instance = mlt_properties_load( file );
+}
+
 PropertiesInstance::~PropertiesInstance( )
 {
 	if ( destroy )
 		mlt_properties_close( instance );
+}
+
+mlt_properties PropertiesInstance::get_properties( )
+{
+	return instance;
 }
 
 bool Properties::is_valid( )
@@ -96,9 +108,47 @@ int Properties::set( char *name, void *value, int size, mlt_destructor destructo
 	return mlt_properties_set_data( get_properties( ), name, value, size, destructor, serialiser );
 }
 
-mlt_properties PropertiesInstance::get_properties( )
+int Properties::pass( Properties &that, char *prefix )
 {
-	return instance;
+	return mlt_properties_pass( get_properties( ), that.get_properties( ), prefix );
 }
 
+int Properties::parse( char *namevalue )
+{
+	return mlt_properties_parse( get_properties( ), namevalue );
+}
 
+char *Properties::get_name( int index )
+{
+	return mlt_properties_get_name( get_properties( ), index );
+}
+
+char *Properties::get( int index )
+{
+	return mlt_properties_get_value( get_properties( ), index );
+}
+
+void *Properties::get_data( int index, int &size )
+{
+	return mlt_properties_get_data_at( get_properties( ), index, &size );
+}
+
+void Properties::mirror( Properties &that )
+{
+	mlt_properties_mirror( get_properties( ), that.get_properties( ) );
+}
+
+int Properties::inherit( Properties &that )
+{
+	return mlt_properties_inherit( get_properties( ), that.get_properties( ) );
+}
+
+int Properties::rename( char *source, char *dest )
+{
+	return mlt_properties_rename( get_properties( ), source, dest );
+}
+
+void Properties::dump( FILE *output )
+{
+	mlt_properties_dump( get_properties( ), output );
+}

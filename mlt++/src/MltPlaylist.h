@@ -27,6 +27,23 @@
 
 namespace Mlt
 {
+	class ClipInfo
+	{
+		public:
+			ClipInfo( mlt_playlist_clip_info *info );
+			~ClipInfo( );
+			int clip;
+			Producer *producer;
+			Service *service;
+			mlt_position start;
+			char *resource;
+			mlt_position frame_in;
+			mlt_position frame_out;
+			mlt_position frame_count;
+			mlt_position length;
+			float fps;
+	};
+
 	class Playlist : public Producer
 	{
 		public:
@@ -36,6 +53,14 @@ namespace Mlt
 			int clear( );
 			int append( Producer &producer, mlt_position in = -1, mlt_position out = -1 );
 			int blank( mlt_position length );
+			mlt_position clip( mlt_whence whence, int index );
+			int current_clip( );
+			Producer *current( );
+			ClipInfo *clip_info( int index );
+			int insert( Producer &producer, int where, mlt_position in = -1, mlt_position out = -1 );
+			int remove( int where );
+			int move( int from, int to );
+			int resize_clip( int clip, mlt_position in, mlt_position out );
 	};
 	
 	class PlaylistInstance : public Playlist

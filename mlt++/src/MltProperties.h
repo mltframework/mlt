@@ -21,6 +21,7 @@
 #ifndef _MLTPP_PROPERTIES_H_
 #define _MLTPP_PROPERTIES_H_
 
+#include <stdio.h>
 #include <framework/mlt.h>
 
 namespace Mlt 
@@ -42,7 +43,15 @@ namespace Mlt
 			int set( char *name, int value );
 			int set( char *name, double value );
 			int set( char *name, void *value, int size, mlt_destructor destroy = NULL, mlt_serialiser serial = NULL );
-
+			int pass( Properties &that, char *prefix );
+			int parse( char *namevalue );
+			char *get_name( int index );
+			char *get( int index );
+			void *get_data( int index, int &size );
+			void mirror( Properties &that );
+			int inherit( Properties &that );
+			int rename( char *source, char *dest );
+			void dump( FILE *output = stderr );
 	};
 	
 	/** Instance class.
@@ -58,6 +67,7 @@ namespace Mlt
 			PropertiesInstance( );
 			PropertiesInstance( Properties &properties );
 			PropertiesInstance( mlt_properties properties );
+			PropertiesInstance( char *file );
 			virtual ~PropertiesInstance( );
 	};
 }
