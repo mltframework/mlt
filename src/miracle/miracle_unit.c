@@ -392,6 +392,9 @@ void miracle_unit_play( miracle_unit_t *unit, int speed )
 void miracle_unit_terminate( miracle_unit unit )
 {
 	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
+	mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
+	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_producer_set_speed( producer, 0 );
 	mlt_consumer_stop( consumer );
 	miracle_unit_status_communicate( unit );
 }

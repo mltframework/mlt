@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <math.h>
 
 // Forward references.
 static int producer_open( mlt_producer this, char *file );
@@ -319,6 +320,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Current time calcs
 	double current_time = 0;
 
+	// We may want to use the source fps if available
+	double source_fps = mlt_properties_get_double( properties, "source_fps" );
+
 	// Set the result arguments that we know here (only *buffer is now required)
 	*format = mlt_image_yuv422;
 	*width = codec_context->width;
@@ -370,7 +374,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	
 	// Duplicate the last image if necessary
 	if ( mlt_properties_get_data( properties, "current_image", NULL ) != NULL &&
-		 ( paused || mlt_properties_get_double( properties, "current_time" ) > real_timecode ) )
+		 ( paused || mlt_properties_get_double( properties, "current_time" ) >= real_timecode ) )
 	{
 		// Get current image and size
 		int size = 0;
@@ -401,27 +405,30 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// We only deal with video from the selected video_index
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
+				current_time = ( double )pkt.pts / 1000000.0;
+
 				// Decode the image
 				// Wouldn't it be great if I could use this...
 				//if ( (float)pkt.pts / 1000000.0 >= real_timecode )
 				ret = avcodec_decode_video( codec_context, &frame, &got_picture, pkt.data, pkt.size );
 
-				// Handle ignore
-				if ( (float)pkt.pts / 1000000.0 < real_timecode )
+				if ( got_picture )
 				{
-					ignore = 0;
-					got_picture = 0;
+					// Handle ignore
+					if ( current_time < real_timecode )
+					{
+						ignore = 0;
+						got_picture = 0;
+					}
+					else if ( current_time >= real_timecode )
+					{
+						ignore = 0;
+					}
+					else if ( got_picture && ignore -- )
+					{
+						got_picture = 0;
+					}
 				}
-				else if ( (float)pkt.pts / 1000000.0 >= real_timecode )
-				{
-					ignore = 0;
-				}
-				else if ( got_picture && ignore -- )
-				{
-					got_picture = 0;
-				}
-
-				current_time = ( double )pkt.pts / 1000000.0;
 			}
 
 			// We're finished with this packet regardless
@@ -449,7 +456,17 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			memcpy( image, output->data[ 0 ], size );
 			memcpy( *buffer, output->data[ 0 ], size );
 			mlt_properties_set_data( frame_properties, "image", *buffer, size, free, NULL );
-			mlt_properties_set_double( properties, "current_time", current_time );
+
+			if ( current_time == 0 && source_fps != 0 )
+			{
+				double fps = mlt_properties_get_double( properties, "fps" );
+				current_time = ceil( source_fps * ( double )position / fps ) * ( 1 / source_fps );
+				mlt_properties_set_double( properties, "current_time", current_time );
+			}
+			else
+			{
+				mlt_properties_set_double( properties, "current_time", current_time );
+			}
 		}
 	}
 
@@ -503,9 +520,9 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			if ( codec != NULL && avcodec_open( codec_context, codec ) >= 0 )
 			{
 				double aspect_ratio = 0;
+				double source_fps = 0;
 
 				// Set aspect ratio
-				fprintf( stderr, "AVFORMAT: sample aspect %d\n", codec_context->sample_aspect_ratio.num );
 				if ( codec_context->sample_aspect_ratio.num == 0) 
 					aspect_ratio = 0;
 				else
@@ -515,6 +532,14 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 					aspect_ratio = ( double )codec_context->width / ( double )codec_context->height;
 
 				mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
+				fprintf( stderr, "AVFORMAT: sample aspect %f\n", aspect_ratio );
+
+				// Determine the fps
+				source_fps = ( double )codec_context->frame_rate / codec_context->frame_rate_base;
+
+				// We'll use fps if it's available
+				if ( source_fps > 0 && source_fps < 30 )
+					mlt_properties_set_double( properties, "source_fps", source_fps );
 
 				// Now store the codec with its destructor
 				mlt_properties_set_data( properties, "video_codec", codec_context, 0, producer_codec_close, NULL );
@@ -601,6 +626,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 	// Flag for paused (silence) 
 	int paused = 0;
+	int locked = 0;
 
 	// Lock the mutex now
 	pthread_mutex_lock( &avformat_mutex );
@@ -645,6 +671,8 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 			// Clear the usage in the audio buffer
 			audio_used = 0;
+
+			locked = 1;
 		}
 	}
 
@@ -673,17 +701,17 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
     		uint8_t *ptr = pkt.data;
 			int data_size;
 
-			if ( ptr == NULL || len == 0 )
-				break;
-
 			// We only deal with video from the selected video_index
-			while ( ret >= 0 && pkt.stream_index == index && len > 0 )
+			while ( ptr != NULL && ret >= 0 && pkt.stream_index == index && len > 0 )
 			{
 				// Decode the audio
 				ret = avcodec_decode_audio( codec_context, temp, &data_size, ptr, len );
 
 				if ( ret < 0 )
+				{
+					ret = 0;
 					break;
+				}
 
 				len -= ret;
 				ptr += ret;
@@ -706,7 +734,24 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				// If we're behind, ignore this packet
 				float current_pts = (float)pkt.pts / 1000000.0;
 				double discrepancy = mlt_properties_get_double( properties, "discrepancy" );
-				if ( discrepancy * current_pts < real_timecode )
+				if ( current_pts != 0 && real_timecode != 0 )
+				{
+					if ( discrepancy != 1 )
+						discrepancy = ( discrepancy + ( real_timecode / current_pts ) ) / 2;
+					else
+						discrepancy = real_timecode / current_pts;
+					if ( discrepancy > 0.9 && discrepancy < 1.1 )
+						discrepancy = 1.0;
+					else
+						discrepancy = floor( discrepancy + 0.5 );
+
+					if ( discrepancy == 0 )
+						discrepancy = 1.0;
+
+					mlt_properties_set_double( properties, "discrepancy", discrepancy );
+				}
+
+				if ( discrepancy * current_pts <= ( real_timecode - 0.02 ) )
 					ignore = 1;
 			}
 
@@ -715,7 +760,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		}
 
 		// Now handle the audio if we have enough
-
 		if ( audio_used >= *samples )
 		{
 			*buffer = malloc( *samples * *channels * sizeof( int16_t ) );
@@ -793,6 +837,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 			{
 				// Now store the codec with its destructor
 				mlt_properties_set_data( properties, "audio_codec", codec_context, 0, producer_codec_close, NULL );
+
 			}
 			else
 			{

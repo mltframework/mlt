@@ -107,15 +107,25 @@ int mlt_consumer_start( mlt_consumer this )
 	// Deal with it now.
 	if ( test_card != NULL )
 	{
-		// Create a test card producer
-		// TODO: do we want to use fezzik here?
-		mlt_producer producer = mlt_factory_producer( "fezzik", test_card );
-
-		// Do we have a producer
-		if ( producer != NULL )
+		if ( mlt_properties_get_data( properties, "test_card_producer", NULL ) == NULL )
 		{
-			// Set the test card on the consumer
-			mlt_properties_set_data( properties, "test_card_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+			// Create a test card producer
+			// TODO: do we want to use fezzik here?
+			mlt_producer producer = mlt_factory_producer( "fezzik", test_card );
+
+			// Do we have a producer
+			if ( producer != NULL )
+			{
+				// Test card should loop I guess...
+				mlt_properties_set( mlt_producer_properties( producer ), "eof", "loop" );
+
+				// Set the test card on the consumer
+				mlt_properties_set_data( properties, "test_card_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+			}
+
+			// Check and run an ante command
+			if ( mlt_properties_get( properties, "ante" ) )
+				system( mlt_properties_get( properties, "ante" ) );
 		}
 	}
 
@@ -173,10 +183,14 @@ int mlt_consumer_stop( mlt_consumer this )
 
 	// Stop the consumer
 	if ( this->stop != NULL )
-		return this->stop( this );
+		this->stop( this );
 
 	// Kill the test card
 	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
+
+	// Check and run a post command
+	if ( mlt_properties_get( properties, "post" ) )
+		system( mlt_properties_get( properties, "post" ) );
 
 	return 0;
 }
@@ -186,7 +200,7 @@ int mlt_consumer_stop( mlt_consumer this )
 
 int mlt_consumer_is_stopped( mlt_consumer this )
 {
-	// Stop the consumer
+	// Check if the consumer is stopped
 	if ( this->is_stopped != NULL )
 		return this->is_stopped( this );
 

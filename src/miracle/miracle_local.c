@@ -127,7 +127,8 @@ typedef enum
 	ATYPE_NONE,
 	ATYPE_FLOAT,
 	ATYPE_STRING,
-	ATYPE_INT
+	ATYPE_INT,
+	ATYPE_PAIR
 } 
 arguments_types;
 
@@ -165,7 +166,7 @@ static command_t vocabulary[] =
 	{"UADD", miracle_add_unit, 0, ATYPE_STRING, "Create a new DV unit (virtual VTR) to transmit to receiver specified in GUID argument."},
 	{"ULS", miracle_list_units, 0, ATYPE_NONE, "Lists the units that have already been added to the server."},
 	{"CLS", miracle_list_clips, 0, ATYPE_STRING, "Lists the clips at directory name argument."},
-	{"SET", miracle_set_global_property, 0, ATYPE_STRING, "Set a server configuration property."},
+	{"SET", miracle_set_global_property, 0, ATYPE_PAIR, "Set a server configuration property."},
 	{"GET", miracle_get_global_property, 0, ATYPE_STRING, "Get a server configuration property."},
 	{"RUN", miracle_run, 0, ATYPE_STRING, "Run a batch file." },
 	{"LIST", miracle_list, 1, ATYPE_NONE, "List the playlist associated to a unit."},
@@ -185,7 +186,7 @@ static command_t vocabulary[] =
 	{"SIN", miracle_set_in_point, 1, ATYPE_INT, "Set the IN point of the loaded clip to frame number argument. -1 = reset in point to 0"},
 	{"SOUT", miracle_set_out_point, 1, ATYPE_INT, "Set the OUT point of the loaded clip to frame number argument. -1 = reset out point to maximum."},
 	{"USTA", miracle_get_unit_status, 1, ATYPE_NONE, "Report information about the unit."},
-	{"USET", miracle_set_unit_property, 1, ATYPE_STRING, "Set a unit configuration property."},
+	{"USET", miracle_set_unit_property, 1, ATYPE_PAIR, "Set a unit configuration property."},
 	{"UGET", miracle_get_unit_property, 1, ATYPE_STRING, "Get a unit configuration property."},
 	{"XFER", miracle_transfer, 1, ATYPE_STRING, "Transfer the unit's clip to another unit specified as argument."},
 	{"SHUTDOWN", miracle_shutdown, 0, ATYPE_NONE, "Shutdown the server."},
@@ -359,7 +360,7 @@ int miracle_command_parse_unit( command_argument cmd, int argument )
 /** Parse a normal argument.
 */
 
-void *miracle_command_parse_argument( command_argument cmd, int argument, arguments_types type )
+void *miracle_command_parse_argument( command_argument cmd, int argument, arguments_types type, char *command )
 {
 	void *ret = NULL;
 	char *value = valerie_tokeniser_get_string( cmd->tokeniser, argument );
@@ -381,6 +382,19 @@ void *miracle_command_parse_argument( command_argument cmd, int argument, argume
 				ret = strdup( value );
 				break;
 					
+			case ATYPE_PAIR:
+				if ( strchr( command, '=' ) )
+				{
+					char *ptr = strchr( command, '=' );
+					while ( *( ptr - 1 ) != ' ' ) 
+						ptr --;
+					ret = strdup( ptr );
+					ptr = ret;
+					while( ptr[ strlen( ptr ) - 1 ] == ' ' )
+						ptr[ strlen( ptr ) - 1 ] = '\0';
+				}
+				break;
+
 			case ATYPE_INT:
 				ret = malloc( sizeof( int ) );
 				if ( ret != NULL )
@@ -453,7 +467,7 @@ static valerie_response miracle_local_execute( miracle_local local, char *comman
 
 			if ( miracle_command_get_error( &cmd ) == RESPONSE_SUCCESS )
 			{
-				cmd.argument = miracle_command_parse_argument( &cmd, position, vocabulary[ index ].type );
+				cmd.argument = miracle_command_parse_argument( &cmd, position, vocabulary[ index ].type, command );
 				if ( cmd.argument == NULL && vocabulary[ index ].type != ATYPE_NONE )
 					miracle_command_set_error( &cmd, RESPONSE_MISSING_ARG );
 				position ++;

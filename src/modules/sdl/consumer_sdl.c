@@ -515,6 +515,9 @@ static void *consumer_thread( void *arg )
 		SDL_FreeYUVOverlay( this->sdl_overlay );
 	SDL_Quit( );
 
+	while( -- this->count >= 0 )
+		mlt_frame_close( this->queue[ this->count ] );
+
 	this->sdl_screen = NULL;
 	this->sdl_overlay = NULL;
 	this->audio_avail = 0;

@@ -373,7 +373,22 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		
 	// Instatiate the producer
 	if ( mlt_properties_get( properties, "resource" ) != NULL )
-		service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "resource" ) ) );
+	{
+		char *root = mlt_properties_get( context->producer_map, "_root" );
+		char *resource = mlt_properties_get( properties, "resource" );
+		char *full_resource = malloc( strlen( root ) + strlen( resource ) + 1 );
+		if ( resource[ 0 ] != '/' )
+		{
+			strcpy( full_resource, root );
+			strcat( full_resource, resource );
+		}
+		else
+		{
+			strcpy( full_resource, resource );
+		}
+		service = MLT_SERVICE( mlt_factory_producer( "fezzik", full_resource ) );
+		free( full_resource );
+	}
 	if ( service == NULL && mlt_properties_get( properties, "mlt_service" ) != NULL )
 	{
 		service = MLT_SERVICE( mlt_factory_producer( mlt_properties_get( properties, "mlt_service" ),
@@ -582,7 +597,6 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 
 mlt_producer producer_westley_init( char *filename )
 {
-	static int init = 0;
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
 	mlt_properties properties = NULL;
@@ -590,17 +604,26 @@ mlt_producer producer_westley_init( char *filename )
 
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
+
 	// We need to track the number of registered filters
 	mlt_properties_set_int( context->destructors, "registered", 0 );
+
+	// We need the directory prefix which was used for the westley
+	mlt_properties_set( context->producer_map, "_root", "" );
+	if ( strchr( filename, '/' ) )
+	{
+		char *root = NULL;
+		mlt_properties_set( context->producer_map, "_root", filename );
+		root = mlt_properties_get( context->producer_map, "_root" );
+		*( strrchr( root, '/' ) + 1 ) = '\0';
+	}
+
 	sax->startElement = on_start_element;
 	sax->endElement = on_end_element;
 	sax->characters = on_characters;
 
-	if ( !init )
-	{
-		xmlInitParser();
-		//init = 1;
-	}
+	// I REALLY DON'T GET THIS - HOW THE HELL CAN YOU REFERENCE A WESTLEY IN A WESTLEY???
+	xmlInitParser();
 
 	xmlSAXUserParseFile( sax, context, filename );
 

@@ -14,7 +14,7 @@ OBJS = factory.o \
 	   transition_mix.o \
 	   filter_brightness.o
 
-CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 SRCS := $(OBJS:.o=.c)
 

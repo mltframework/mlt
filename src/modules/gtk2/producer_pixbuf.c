@@ -34,12 +34,6 @@
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
-typedef enum
-{
-	SIGNAL_FORMAT_PAL,
-	SIGNAL_FORMAT_NTSC
-} mlt_signal_format;
-
 static int filter_files( const struct dirent *de )
 {
 	if ( de->d_name[ 0 ] != '.' )
@@ -48,7 +42,6 @@ static int filter_files( const struct dirent *de )
 		return 0;
 }
 
-
 mlt_producer producer_pixbuf_init( char *filename )
 {
 	producer_pixbuf this = calloc( sizeof( struct producer_pixbuf_s ), 1 );
@@ -56,12 +49,13 @@ mlt_producer producer_pixbuf_init( char *filename )
 	{
 		mlt_producer producer = &this->parent;
 
-		producer->get_frame = producer_get_frame;
-		producer->close = producer_close;
-
 		// Get the properties interface
 		mlt_properties properties = mlt_producer_properties( &this->parent );
 	
+		// Callback registration
+		producer->get_frame = producer_get_frame;
+		producer->close = producer_close;
+
 		// Set the default properties
 		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "ttl", 25 );
@@ -89,7 +83,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 					gap ++;
 				}
 			} 
-			mlt_properties_set_position( properties, "out", this->count * 25 );
+			mlt_properties_set_position( properties, "out", this->count * 250 );
 		}
 		else if ( strstr( filename, "/.all." ) != NULL )
 		{
@@ -123,7 +117,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 		{
 			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
 			this->filenames[ this->count ++ ] = strdup( filename );
-			mlt_properties_set_position( properties, "out", 25 );
+			mlt_properties_set_position( properties, "out", 250 );
 		}
 
 		// Initialise gobject types
@@ -163,16 +157,25 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 
     // optimization for subsequent iterations on single picture
-	if ( this->image != NULL && image_idx == this->image_idx )
+	if ( width != 0 && this->image != NULL && image_idx == this->image_idx )
 	{
 		if ( width != this->width || height != this->height )
 		{
 			pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
 			mlt_properties_set_int( producer_props, "bpp", gdk_pixbuf_get_has_alpha( pixbuf ) ? 4 : 3 );
+			free( this->image );
+			free( this->alpha );
+			this->image = NULL;
+			this->alpha = NULL;
 		}
 	}
-	else 
+	else if ( this->image == NULL || image_idx != this->image_idx )
 	{
+		free( this->image );
+		free( this->alpha );
+		this->image = NULL;
+		this->alpha = NULL;
+
 		this->image_idx = image_idx;
 		pixbuf = gdk_pixbuf_new_from_file( this->filenames[ image_idx ], &error );
 
@@ -197,31 +200,47 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// If we have a pixbuf
 	if ( pixbuf && width > 0 )
 	{
-		int i;
-		//fprintf( stderr, "SCALING PIXBUF from %dx%d to %dx%d\n", gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), width, height );
 		
 		// Note - the original pixbuf is already safe and ready for destruction
-		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_HYPER );
+		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_NEAREST );
 		
 		// Store width and height
-		this->width = gdk_pixbuf_get_width( pixbuf );
-		this->height = gdk_pixbuf_get_height( pixbuf );
+		this->width = width;
+		this->height = height;
 		
+		//fprintf( stderr, "SCALING PIXBUF from %dx%d to %dx%d %dx%d\n", gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), width, height, this->width, this->height );
 		// Allocate/define image
 		// IRRIGATE ME
 		uint8_t *image = malloc( width * ( height + 1 ) * bpp );
+		uint8_t *alpha = NULL;
 
-		for ( i = 0; i < height; i++ )
-			memcpy( image + i * width * bpp,
-				gdk_pixbuf_get_pixels( pixbuf ) + i * gdk_pixbuf_get_rowstride( pixbuf ),
-				gdk_pixbuf_get_width( pixbuf ) * bpp );
+		// Extract YUV422 and alpha
+		if ( gdk_pixbuf_get_has_alpha( pixbuf ) )
+		{
+			// Allocate the alpha mask
+			alpha = malloc( this->width * this->height );
+
+			// Convert the image
+			mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
+										  this->width, this->height,
+										  gdk_pixbuf_get_rowstride( pixbuf ),
+										  image, alpha );
+		}
+		else
+		{ 
+			// No alpha to extract
+			mlt_convert_rgb24_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
+										 this->width, this->height,
+										 gdk_pixbuf_get_rowstride( pixbuf ),
+										 image );
+		}
 
 		// Finished with pixbuf now
 		g_object_unref( pixbuf );
 
-		// Pass image on properties with or without destructor
-		free( this->image );
+		// Assign images to producer
 		this->image = image;
+		this->alpha = alpha;
 	}
 
 	// Set width/height of frame
@@ -231,7 +250,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
 
 	// pass the image data without destructor
-	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * bpp, NULL, NULL );
+	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * 2, NULL, NULL );
+	mlt_properties_set_data( properties, "alpha", this->alpha, this->width * this->height, NULL, NULL );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
@@ -239,12 +259,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain properties of frame
 	mlt_properties properties = mlt_frame_properties( frame );
 
+	*width = mlt_properties_get_int( properties, "rescale_width" );
+	*height = mlt_properties_get_int( properties, "rescale_height" );
+
 	// Refresh the image
 	refresh_image( frame, *width, *height );
 
 	// Determine format
-	mlt_producer this = mlt_properties_get_data( properties, "producer_pixbuf", NULL );
-	*format = ( mlt_properties_get_int( mlt_producer_properties( this ), "bpp" ) == 4 ) ? mlt_image_rgb24a : mlt_image_rgb24;
+	//mlt_producer this = mlt_properties_get_data( properties, "producer_pixbuf", NULL );
+	//*format = ( mlt_properties_get_int( mlt_producer_properties( this ), "bpp" ) == 4 ) ? mlt_image_rgb24a : mlt_image_rgb24;
 
 	// May need to know the size of the image to clone it
 	int size = 0;
@@ -279,6 +302,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	return 0;
 }
 
+static uint8_t *producer_get_alpha_mask( mlt_frame this )
+{
+	// Obtain properties of frame
+	mlt_properties properties = mlt_frame_properties( this );
+
+	// Return the alpha mask
+	return mlt_properties_get_data( properties, "alpha", NULL );
+}
+
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Get the real structure for this producer
@@ -299,6 +331,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Set producer-specific frame properties
 	mlt_properties_set_int( properties, "progressive", 1 );
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "real_width" ) / mlt_properties_get_double( properties, "real_height" ) );
+
+	// Set alpha call back
+	( *frame )->get_alpha_mask = producer_get_alpha_mask;
 
 	// Push the get_image method
 	mlt_frame_push_get_image( *frame, producer_get_image );

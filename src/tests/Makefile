@@ -1,6 +1,6 @@
 TARGET = dan charlie pango pixbuf dissolve luma
 
-CFLAGS = -I .. -Wall -rdynamic -pthread
+CFLAGS = -O3 -I .. -Wall -rdynamic -pthread
 
 LDFLAGS = -L ../framework -lmlt 
 

@@ -4,7 +4,7 @@ TARGET = ../libmltinigo.so
 OBJS = factory.o \
 	   producer_inigo.o 
 
-CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 SRCS := $(OBJS:.o=.c)
 

@@ -4,7 +4,7 @@ TARGET = ../libmltsdl.so
 OBJS = factory.o \
 	   consumer_sdl.o 
 
-CFLAGS = -I../../ `sdl-config --cflags` -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS = -O3 -I../../ `sdl-config --cflags` -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 LDFLAGS= `sdl-config --libs`
 

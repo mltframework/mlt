@@ -13,7 +13,7 @@ OBJS = valerie.o \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS=-Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS=-O3 -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 LDFLAGS=-ldv -lpthread
 

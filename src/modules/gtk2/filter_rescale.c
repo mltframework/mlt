@@ -47,8 +47,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	uint8_t *input = NULL;
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
 	int interp = PIXOPS_INTERP_BILINEAR;
-	double i_aspect_ratio = mlt_frame_get_aspect_ratio( this );
-	double o_aspect_ratio = mlt_properties_get_double( properties, "consumer_aspect_ratio" );
 	
 	if ( strcmp( interps, "nearest" ) == 0 )
 		interp = PIXOPS_INTERP_NEAREST;
@@ -57,25 +55,19 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	else if ( strcmp( interps, "hyper" ) == 0 )
 		interp = PIXOPS_INTERP_HYPER;
 
-	mlt_frame_get_image( this, &input, format, &iwidth, &iheight, writable );
-
-	if ( o_aspect_ratio != 0 && o_aspect_ratio != i_aspect_ratio && mlt_properties_get( properties, "distort" ) == NULL )
+	// If real_width/height exist, we want that as minimum information
+	if ( mlt_properties_get_int( properties, "real_width" ) )
 	{
-		int temp_width = i_aspect_ratio / o_aspect_ratio * owidth + 0.5;
-
-		// Determine maximum size within the aspect ratio:
-		if ( temp_width > owidth )
-			if ( i_aspect_ratio > o_aspect_ratio )
-				oheight = o_aspect_ratio / i_aspect_ratio * oheight + 0.5;
-			else
-				oheight = i_aspect_ratio / o_aspect_ratio * oheight + 0.5;
-		else
-			owidth = temp_width;
-			
-		// Tell frame we have conformed the aspect to the consumer
-		mlt_frame_set_aspect_ratio( this, o_aspect_ratio );
+		iwidth = mlt_properties_get_int( properties, "real_width" );
+		iheight = mlt_properties_get_int( properties, "real_height" );
 	}
-	//fprintf( stderr, "rescale: from %dx%d (aspect %f) to %dx%d (aspect %f)\n", iwidth, iheight, i_aspect_ratio, owidth, oheight, o_aspect_ratio );
+
+	// Let the producer know what we are actually requested to obtain
+	mlt_properties_set_int( properties, "rescale_width", *width );
+	mlt_properties_set_int( properties, "rescale_height", *height );
+
+	// Get the image as requested
+	mlt_frame_get_image( this, &input, format, &iwidth, &iheight, writable );
 
 	if ( input != NULL )
 	{

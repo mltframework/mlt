@@ -35,6 +35,9 @@ mlt_frame mlt_frame_init( )
 
 	if ( this != NULL )
 	{
+		// Get the normalisation
+		char *normalisation = getenv( "MLT_NORMALISATION" );
+
 		// Initialise the properties
 		mlt_properties properties = &this->parent;
 		mlt_properties_init( properties, this );
@@ -42,11 +45,27 @@ mlt_frame mlt_frame_init( )
 		// Set default properties on the frame
 		mlt_properties_set_position( properties, "_position", 0.0 );
 		mlt_properties_set_data( properties, "image", NULL, 0, NULL, NULL );
-		mlt_properties_set_int( properties, "width", 720 );
-		mlt_properties_set_int( properties, "height", 576 );
+
+		if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )
+		{
+			mlt_properties_set_int( properties, "width", 720 );
+			mlt_properties_set_int( properties, "height", 576 );
+			mlt_properties_set_int( properties, "normalised_width", 720 );
+			mlt_properties_set_int( properties, "normalised_height", 576 );
+		}
+		else
+		{
+			mlt_properties_set_int( properties, "width", 720 );
+			mlt_properties_set_int( properties, "height", 480 );
+			mlt_properties_set_int( properties, "normalised_width", 720 );
+			mlt_properties_set_int( properties, "normalised_height", 480 );
+		}
+
 		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 		mlt_properties_set_data( properties, "audio", NULL, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
+
+
 	}
 	return this;
 }
@@ -174,10 +193,13 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		mlt_service_get_frame( mlt_producer_service( producer ), &test_frame, 0 );
 		if ( test_frame != NULL )
 		{
+			mlt_properties test_properties = mlt_frame_properties( test_frame );
+			mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
+			mlt_properties_set_double( test_properties, "consumer_scale", mlt_properties_get_double( properties, "consumer_scale" ) );
+			mlt_properties_set( test_properties, "rescale.interp", "nearest" );
 			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
-			mlt_properties_inherit( mlt_frame_properties( this ), mlt_frame_properties( test_frame ) );
+			mlt_properties_inherit( properties, test_properties );
 			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
-
 			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
@@ -410,29 +432,6 @@ int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int 
 	return ret;
 }
 
-void *memfill( void *dst, void *src, int l, int elements )
-{
-	int i = 0;
-	if ( l == 2 )
-	{
-		uint8_t *p = dst;
-		uint8_t *src1 = src;
-		uint8_t *src2 = src + 1;
-		for ( i = 0; i < elements; i ++ )
-		{
-			*p ++ = *src1;
-			*p ++ = *src2;
-		}
-		dst = p;
-	}
-	else
-	{
-		for ( i = 0; i < elements; i ++ )
-			dst = memcpy( dst, src, l ) + l;
-	}
-	return dst;
-}
-
 void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight )
 {
 	// Calculate strides
@@ -465,38 +464,62 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
    	uint8_t *in_middle = input + istride * ( iheight / 2 ) + ( iwidth / 2 ) * 2;
    	int in_line = - in_y_range * istride - in_x_range * 2;
 
-	uint8_t black[ 2 ] = { 16, 128 };
+	uint8_t black[ 2 ] = { 0, 128 };
+	int elements;
+
+	// Fill whole section with black
+	y = out_y_range - ( iheight / 2 );
+	int blank_elements = ostride * y / 2;
+	elements = blank_elements;
+	while ( elements -- )
+	{
+		*out_line ++ = black[ 0 ];
+		*out_line ++ = black[ 1 ];
+	}
+
+	int active_width = 2 * iwidth;
+	int inactive_width = out_x_range - in_x_range;
 
    	// Loop for the entirety of our output height.
-   	for ( y = - out_y_range; y < out_y_range ; y ++ )
+	while ( iheight -- )
    	{
        	// Start at the beginning of the line
        	out_ptr = out_line;
 
-		if ( abs( y ) < iheight / 2 )
+		// Fill the outer part with black
+		elements = inactive_width;
+		while ( elements -- )
 		{
-			// Fill the outer part with black
-			out_ptr = memfill( out_ptr, black, 2, out_x_range - in_x_range );
-
-       		// We're in the input range for this row.
-			memcpy( out_ptr, in_middle + in_line, 2 * iwidth );
-			out_ptr += 2 * iwidth;
-
-			// Fill the outer part with black
-			out_ptr = memfill( out_ptr, black, 2, out_x_range - in_x_range );
-
-       		// Move to next input line
-       		in_line += istride;
+			*out_ptr ++ = black[ 0 ];
+			*out_ptr ++ = black[ 1 ];
 		}
-		else
+
+   		// We're in the input range for this row.
+		memcpy( out_ptr, in_middle + in_line, active_width );
+		out_ptr += active_width;
+
+		// Fill the outer part with black
+		elements = inactive_width;
+		while ( elements -- )
 		{
-			// Fill whole line with black
-			out_ptr = memfill( out_ptr, black, 2, owidth );
+			*out_ptr ++ = black[ 0 ];
+			*out_ptr ++ = black[ 1 ];
 		}
+
+  		// Move to next input line
+   		in_line += istride;
 
        	// Move to next output line
        	out_line += ostride;
    	}
+
+	// Fill whole section with black
+	elements = blank_elements;
+	while ( elements -- )
+	{
+		*out_line ++ = black[ 0 ];
+		*out_line ++ = black[ 1 ];
+	}
 }
 
 /** A resizing function for yuv422 frames - this does not rescale, but simply

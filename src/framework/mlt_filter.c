@@ -63,6 +63,9 @@ mlt_service mlt_filter_service( mlt_filter this )
 	return &this->parent;
 }
 
+/** Get the properties associated to this filter.
+*/
+
 mlt_properties mlt_filter_properties( mlt_filter this )
 {
 	return mlt_service_properties( mlt_filter_service( this ) );
@@ -129,7 +132,7 @@ mlt_position mlt_filter_get_out( mlt_filter this )
 /** Process the frame.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+mlt_frame mlt_filter_process( mlt_filter this, mlt_frame frame )
 {
 	if ( this->process == NULL )
 		return frame;
@@ -157,7 +160,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 		{
 			mlt_position position = mlt_frame_get_position( *frame );
 			if ( position >= in && ( out == 0 || position < out ) )
-				*frame = filter_process( this, *frame );
+				*frame = mlt_filter_process( this, *frame );
 			return 0;
 		}
 		else

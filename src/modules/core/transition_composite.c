@@ -29,6 +29,8 @@
 
 struct geometry_s
 {
+	int nw;
+	int nh;
 	float x;
 	float y;
 	float w;
@@ -36,11 +38,41 @@ struct geometry_s
 	float mix;
 };
 
-/** Parse a geometry property string.
+/** Parse a value from a geometry string.
 */
 
-static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defaults, char *property )
+static float parse_value( char **ptr, int normalisation, char delim, float defaults )
 {
+	float value = defaults;
+
+	if ( *ptr != NULL && **ptr != '\0' )
+	{
+		char *end = NULL;
+		value = strtod( *ptr, &end );
+		if ( end != NULL )
+		{
+			if ( *end == '%' )
+				value = ( value / 100.0 ) * normalisation;
+			while ( *end == delim || *end == '%' )
+				end ++;
+		}
+		*ptr = end;
+	}
+
+	return value;
+}
+
+/** Parse a geometry property string with the syntax X,Y:WxH:MIX. Any value can be 
+	expressed as a percentage by appending a % after the value, otherwise values are
+	assumed to be relative to the normalised dimensions of the consumer.
+*/
+
+static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defaults, char *property, int nw, int nh )
+{
+	// Assign normalised width and height
+	geometry->nw = nw;
+	geometry->nh = nh;
+
 	// Assign from defaults if available
 	if ( defaults != NULL )
 	{
@@ -57,7 +89,14 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 
 	// Parse the geomtry string
 	if ( property != NULL )
-		sscanf( property, "%f,%f:%fx%f:%f", &geometry->x, &geometry->y, &geometry->w, &geometry->h, &geometry->mix );
+	{
+		char *ptr = property;
+		geometry->x = parse_value( &ptr, nw, ',', geometry->x );
+		geometry->y = parse_value( &ptr, nh, ':', geometry->y );
+		geometry->w = parse_value( &ptr, nw, 'x', geometry->w );
+		geometry->h = parse_value( &ptr, nh, ':', geometry->h );
+		geometry->mix = parse_value( &ptr, 100, ' ', geometry->mix );
+	}
 }
 
 /** Calculate real geometry.
@@ -66,6 +105,8 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 static void geometry_calculate( struct geometry_s *output, struct geometry_s *in, struct geometry_s *out, float position )
 {
 	// Calculate this frames geometry
+	output->nw = in->nw;
+	output->nh = in->nh;
 	output->x = in->x + ( out->x - in->x ) * position;
 	output->y = in->y + ( out->y - in->y ) * position;
 	output->w = in->w + ( out->w - in->w ) * position;
@@ -89,6 +130,14 @@ static float position_calculate( mlt_transition this, mlt_frame frame )
 	return ( float )( position - in ) / ( float )( out - in + 1 );
 }
 
+static int get_value( mlt_properties properties, char *preferred, char *fallback )
+{
+	int value = mlt_properties_get_int( properties, preferred );
+	if ( value == 0 )
+		value = mlt_properties_get_int( properties, fallback );
+	return value;
+}
+
 /** Composite function.
 */
 
@@ -102,73 +151,70 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 	int x_src = 0, y_src = 0;
 
 	mlt_image_format format_src = format_dest;
-	int x = ( int )( ( float )width_dest * geometry.x / 100 );
-	int y = ( int )( ( float )height_dest * geometry.y / 100 );
 	float weight = geometry.mix / 100;
 
 	// Compute the dimensioning rectangle
-	int width_src = ( int )( ( float )width_dest * geometry.w / 100 );
-	int height_src = ( int )( ( float )height_dest * geometry.h / 100 );
-
 	mlt_properties b_props = mlt_frame_properties( that );
 	mlt_transition this = mlt_properties_get_data( b_props, "transition_composite", NULL );
 	mlt_properties properties = mlt_transition_properties( this );
 
-	if ( mlt_properties_get( properties, "distort" ) == NULL &&
-		 mlt_properties_get( mlt_frame_properties( that ), "real_width" ) != NULL )
+	if ( mlt_properties_get( properties, "distort" ) == NULL )
 	{
-		int width_b = mlt_properties_get_double( b_props, "real_width" );
-		int height_b = mlt_properties_get_double( b_props, "real_height" );
+		// Now do additional calcs based on real_width/height etc
+		//int normalised_width = mlt_properties_get_int( b_props, "normalised_width" );
+		//int normalised_height = mlt_properties_get_int( b_props, "normalised_height" );
+		int normalised_width = geometry.w;
+		int normalised_height = geometry.h;
+		int real_width = get_value( b_props, "real_width", "width" );
+		int real_height = get_value( b_props, "real_height", "height" );
+		double input_ar = mlt_frame_get_aspect_ratio( that );
+		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
+		int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
+		int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
 
-		// Maximise the dimensioning rectangle to the aspect of the b_frame
-		if ( mlt_properties_get_double( b_props, "aspect_ratio" ) * height_src > width_src )
-			height_src = ( double )width_src / mlt_properties_get_double( b_props, "aspect_ratio" ) + 0.5;
+		// Now ensure that our images fit in the normalised frame
+		if ( scaled_width > normalised_width )
+		{
+			scaled_height = scaled_height * normalised_width / scaled_width;
+			scaled_width = normalised_width;
+		}
+		if ( scaled_height > normalised_height )
+		{
+			scaled_width = scaled_width * normalised_height / scaled_height;
+			scaled_height = normalised_height;
+		}
+
+		// Special case 
+		if ( scaled_height == normalised_height )
+			scaled_width = normalised_width;
+
+		// Now we need to align to the geometry
+		if ( scaled_width <= geometry.w && scaled_height <= geometry.h )
+		{
+			// TODO: Should take into account requested alignment here...
+			// Assume centred alignment for now
+			
+			geometry.x = geometry.x + ( geometry.w - scaled_width ) / 2;
+			geometry.y = geometry.y + ( geometry.h - scaled_height ) / 2;
+			geometry.w = scaled_width;
+			geometry.h = scaled_height;
+			mlt_properties_set( b_props, "distort", "true" );
+		}
 		else
-			width_src = mlt_properties_get_double( b_props, "aspect_ratio" ) * height_src + 0.5;
-
-		// See if we need to normalise pixel aspect ratio
-		// We can use consumer_aspect_ratio because the a_frame will take on this aspect
-		double aspect = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		if ( aspect != 0 )
 		{
-			// Derive the consumer pixel aspect
-			double oaspect = aspect / ( double )width_dest * height_dest;
-
-			// Get the b frame pixel aspect - usually 1
-			double iaspect = mlt_properties_get_double( b_props, "aspect_ratio" ) / width_b * height_b;
-
-			// Normalise pixel aspect
-			if ( iaspect != 0 && iaspect != oaspect )
-			{
-				width_b = iaspect / oaspect * ( double )width_b + 0.5;
-				width_src = iaspect / oaspect * ( double )width_src + 0.5;
-			}
-				
-			// Tell rescale not to normalise display aspect
-			mlt_frame_set_aspect_ratio( that, aspect );
-		}
-		
-		// Adjust overall scale for consumer
-		double consumer_scale = mlt_properties_get_double( b_props, "consumer_scale" );
-		if ( consumer_scale > 0 )
-		{
-			width_b = consumer_scale * width_b + 0.5;
-			height_b = consumer_scale * height_b + 0.5;
-		}
-
-//		fprintf( stderr, "bounding rect %dx%d for overlay %dx%d\n",	width_src, height_src, width_b, height_b );
-		// Constrain the overlay to the dimensioning rectangle
-		if ( width_b < width_src && height_b < height_src )
-		{
-			width_src = width_b;
-			height_src = height_b;
+			mlt_properties_set( b_props, "distort", "true" );
 		}
 	}
-	else if ( mlt_properties_get( b_props, "real_width" ) != NULL )
+	else
 	{
-		// Tell rescale not to normalise display aspect
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", 0 );
+		// We want to ensure that we bypass resize now...
+		mlt_properties_set( b_props, "distort", "true" );
 	}
+
+	int x = ( geometry.x * width_dest ) / geometry.nw;
+	int y = ( geometry.y * height_dest ) / geometry.nh;
+	int width_src = ( geometry.w * width_dest ) / geometry.nw;
+	int height_src = ( geometry.h * height_dest ) / geometry.nh;
 
 	x -= x % 2;
 
@@ -273,6 +319,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	if ( b_frame != NULL )
 	{
+		// Get the properties of the a frame
+		mlt_properties a_props = mlt_frame_properties( a_frame );
+
 		// Get the properties of the b frame
 		mlt_properties b_props = mlt_frame_properties( b_frame );
 
@@ -290,19 +339,21 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Calculate the position
 		float position = position_calculate( this, a_frame );
 
+		// Obtain the normalised width and height from the a_frame
+		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
+		int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
+
 		// Now parse the geometries
-		geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ) );
-		geometry_parse( &end, &start, mlt_properties_get( properties, "end" ) );
+		geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
+		geometry_parse( &end, &start, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
 
 		// Do the calculation
 		geometry_calculate( &result, &start, &end, position );
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio",
-			mlt_properties_get_double( mlt_frame_properties( a_frame ), "consumer_aspect_ratio" ) );
-		mlt_properties_set_double( b_props, "consumer_scale",
-			mlt_properties_get_double( mlt_frame_properties( a_frame ), "consumer_scale" ) );
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+		mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
 		
 		// Composite the b_frame on the a_frame
 		composite_yuv( *image, *format, *width, *height, b_frame, result );
@@ -333,7 +384,7 @@ mlt_transition transition_composite_init( char *arg )
 	if ( this != NULL && mlt_transition_init( this, NULL ) == 0 )
 	{
 		this->process = composite_process;
-		mlt_properties_set( mlt_transition_properties( this ), "start", arg != NULL ? arg : "85,5:10x10" );
+		mlt_properties_set( mlt_transition_properties( this ), "start", arg != NULL ? arg : "85%,5%:10%x10%" );
 		mlt_properties_set( mlt_transition_properties( this ), "end", "" );
 	}
 	return this;

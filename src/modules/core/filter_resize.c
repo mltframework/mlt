@@ -26,22 +26,65 @@
 #include <string.h>
 #include <stdlib.h>
 
+static int get_value( mlt_properties properties, char *preferred, char *fallback )
+{
+	int value = mlt_properties_get_int( properties, preferred );
+	if ( value == 0 )
+		value = mlt_properties_get_int( properties, fallback );
+	return value;
+}
+
 /** Do it :-).
 */
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	// Get the properties from the frame
 	mlt_properties properties = mlt_frame_properties( this );
+
+	// Assign requested width/height from our subordinate
 	int owidth = *width;
 	int oheight = *height;
+
+	if ( mlt_properties_get( properties, "distort" ) == NULL )
+	{
+		// Now do additional calcs based on real_width/height etc
+		int normalised_width = mlt_properties_get_int( properties, "normalised_width" );
+		int normalised_height = mlt_properties_get_int( properties, "normalised_height" );
+		int real_width = get_value( properties, "real_width", "width" );
+		int real_height = get_value( properties, "real_height", "height" );
+		double input_ar = mlt_frame_get_aspect_ratio( this );
+		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" );
+		int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
+		int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
+
+		// Now ensure that our images fit in the normalised frame
+		if ( scaled_width > normalised_width )
+		{
+			scaled_height = scaled_height * normalised_width / scaled_width;
+			scaled_width = normalised_width;
+		}
+		if ( scaled_height > normalised_height )
+		{
+			scaled_width = scaled_width * normalised_height / scaled_height;
+			scaled_height = normalised_height;
+		}
+
+		if ( input_ar == output_ar && scaled_height == normalised_height )
+			scaled_width = normalised_width;
 	
+		// Now calculate the actual image size that we want
+		owidth = scaled_width * owidth / normalised_width;
+		oheight = scaled_height * oheight / normalised_height;
+	}
+
+	// Now pass on the calculations down the line
+	mlt_properties_set_int( properties, "resize_width", *width );
+	mlt_properties_set_int( properties, "resize_height", *height );
+
+	// Now get the image
 	mlt_frame_get_image( this, image, format, &owidth, &oheight, writable );
 	
-	if ( *width == 0 )
-		*width = 720;
-	if ( *height == 0 )
-		*height = 576;
-		
 	// Correct field order if needed
 	if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 )
 	{

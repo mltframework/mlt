@@ -12,7 +12,7 @@ LIB_OBJS = miracle_log.o \
 
 OBJS = $(APP_OBJS) $(LIB_OBJS)
 
-CFLAGS = -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
+CFLAGS = -O3 -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
 
 LDFLAGS = -L ../valerie -lvalerie -L ../framework -lmlt
 

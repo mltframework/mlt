@@ -4,7 +4,7 @@ OBJS = client.o \
        io.o \
 	   remote.o
 
-CFLAGS = -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
+CFLAGS = -O3 -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
 
 LDFLAGS = -L ../valerie -lvalerie
 

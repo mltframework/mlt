@@ -19,7 +19,7 @@ OBJS = mlt_frame.o \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS = -g -Wall -D_FILE_OFFSET_BITS=64 -pthread 
+CFLAGS = -g -O3 -Wall -D_FILE_OFFSET_BITS=64 -pthread 
 
 LDFLAGS = -lm -ldl -lpthread
 
