@@ -5,7 +5,7 @@ TARGET = ../libmltsox.so
 OBJS = factory.o \
 	   filter_sox.o 
 
-CFLAGS += -I../../
+CFLAGS += -I../../ -I/usr/include/sox
 
 LDFLAGS += -lst -lpopt -lvorbis -logg -lvorbisfile -lvorbisenc
 

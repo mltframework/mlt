@@ -591,8 +591,6 @@ static void *consumer_thread( void *arg )
 		if ( audio_st )
 			audio_input_frame_size = open_audio( oc, audio_st, audio_outbuf_size );
 
-		fprintf( stderr, "%d\n", audio_input_frame_size );
-
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
 		{
