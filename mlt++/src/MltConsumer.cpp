@@ -43,7 +43,10 @@ Consumer::Consumer( mlt_consumer consumer ) :
 Consumer::~Consumer( )
 {
 	if ( destroy )
+	{
+		stop( );
 		mlt_consumer_close( instance );
+	}
 }
 
 mlt_consumer Consumer::get_consumer( )
@@ -58,7 +61,7 @@ mlt_service Consumer::get_service( )
 
 int Consumer::connect( Service &service )
 {
-	return mlt_consumer_connect( get_consumer( ), service.get_service( ) );
+	return connect_producer( service );
 }
 
 int Consumer::start( )
@@ -71,9 +74,8 @@ int Consumer::stop( )
 	return mlt_consumer_stop( get_consumer( ) );
 }
 
-int Consumer::is_stopped( )
+bool Consumer::is_stopped( )
 {
-	return mlt_consumer_is_stopped( get_consumer( ) );
+	return mlt_consumer_is_stopped( get_consumer( ) ) != 0;
 }
-
 

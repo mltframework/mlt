@@ -1,5 +1,5 @@
 /**
- * MltService.h - MLT Wrapper
+ * MltFilteredProducer.h - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,35 +18,31 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_SERVICE_H_
-#define _MLTPP_SERVICE_H_
+#ifndef _MLTPP_FILTERED_PRODUCER_H_
+#define _MLTPP_FILTERED_PRODUCER_H_
 
-#include <framework/mlt.h>
-
-#include "MltProperties.h"
-#include "MltFrame.h"
+#include "MltProducer.h"
+#include "MltFilter.h"
+#include "MltService.h"
 
 namespace Mlt
 {
-	class Properties;
-	class Frame;
+	class Producer;
+	class Service;
+	class Filter;
 
-	class Service : public Properties
+	class FilteredProducer : public Producer
 	{
 		private:
-			mlt_service instance;
+			Service *last;
 		public:
-			Service( );
-			Service( Service &service );
-			Service( mlt_service service );
-			virtual mlt_service get_service( );
-			virtual mlt_service get_connection( );
-			mlt_properties get_properties( );
-			int connect_producer( Service &producer, int index = 0 );
-			Service *consumer( );
-			Service *producer( );
-			Frame *get_frame( int index = 0 );
+			FilteredProducer( char *id, char *arg = NULL );
+			virtual ~FilteredProducer( );
+			mlt_service get_connection( );
+			int attach( Filter &filter );
+			int detach( Filter &filter );
 	};
 }
 
 #endif
+

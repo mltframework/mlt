@@ -41,6 +41,11 @@ mlt_service Service::get_service( )
 	return instance;
 }
 
+mlt_service Service::get_connection( )
+{
+	return get_service( );
+}
+
 mlt_properties Service::get_properties( )
 {
 	return mlt_service_properties( get_service( ) );
@@ -48,7 +53,7 @@ mlt_properties Service::get_properties( )
 
 int Service::connect_producer( Service &producer, int index )
 {
-	return mlt_service_connect_producer( get_service( ), producer.get_service( ), index );
+	return mlt_service_connect_producer( get_service( ), producer.get_connection( ), index );
 }
 
 Service *Service::producer( )

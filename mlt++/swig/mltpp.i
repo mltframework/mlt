@@ -24,8 +24,6 @@
 #include <mlt++/Mlt.h>
 %}
 
-%typedef int mlt_position;
-
 /** These methods return objects which should be gc'd.
  */
 
@@ -44,6 +42,8 @@ namespace Mlt {
 /** Classes to wrap.
  */
 
+%include <framework/mlt_types.h>
+%include <MltFactory.h>
 %include <MltProperties.h>
 %include <MltFrame.h>
 %include <MltService.h>
@@ -51,5 +51,6 @@ namespace Mlt {
 %include <MltPlaylist.h>
 %include <MltConsumer.h>
 %include <MltFilter.h>
-%include <MltFactory.h>
+%include <MltFilteredConsumer.h>
+%include <MltFilteredProducer.h>
 

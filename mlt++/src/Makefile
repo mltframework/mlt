@@ -8,6 +8,8 @@ TARGET = libmlt++.so
 OBJS = MltConsumer.o \
 	   MltFactory.o \
 	   MltFilter.o \
+	   MltFilteredConsumer.o \
+	   MltFilteredProducer.o \
 	   MltFrame.o \
 	   MltPlaylist.o \
 	   MltProducer.o \

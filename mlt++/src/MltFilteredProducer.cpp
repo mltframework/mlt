@@ -1,0 +1,91 @@
+/**
+ * MltFilteredProducer.cpp - MLT Wrapper
+ * Copyright (C) 2004-2005 Charles Yates
+ * Author: Charles Yates <charles.yates@pandora.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include "MltFilteredProducer.h"
+using namespace Mlt;
+
+FilteredProducer::FilteredProducer( char *id, char *arg ) :
+	Producer( id, arg )
+{
+	// Create a reference to the last service
+	last = new Service( *this );
+}
+
+FilteredProducer::~FilteredProducer( )
+{
+	// Delete the reference to the last service
+	delete last;
+}
+
+mlt_service FilteredProducer::get_connection( )
+{
+	return last->get_service( );
+}
+
+int FilteredProducer::attach( Filter &filter )
+{
+	int error = 0;
+	if ( filter.is_valid( ) )
+	{
+		Service *consumer = last->consumer( );
+		filter.connect_producer( *last );
+		if ( consumer->is_valid( ) )
+			consumer->connect_producer( filter );
+		delete consumer;
+		delete last;
+		last = new Service( filter );
+	}
+	else
+	{
+		error = 1;
+	}
+	return error;
+}
+
+int FilteredProducer::detach( Filter &filter )
+{
+	if ( filter.is_valid( ) )
+	{
+		Service *it = new Service( *last );
+		while ( it->is_valid( ) && it->get_service( ) != filter.get_service( ) )
+		{
+			Service *producer = it->producer( );
+			delete it;
+			it = producer;
+		}
+		if ( it->get_service( ) == filter.get_service( ) )
+		{
+			Service *producer = it->producer( );
+			Service *consumer = it->consumer( );
+			if ( consumer->is_valid( ) )
+				consumer->connect_producer( *producer );
+			Producer dummy( "colour" );
+			dummy.connect_producer( *it );
+			if ( last->get_service( ) == it->get_service( ) )
+			{
+				delete last;
+				last = new Service( *producer );
+			}
+		}
+		delete it;
+	}
+	return 0;
+}
+

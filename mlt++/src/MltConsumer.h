@@ -41,10 +41,10 @@ namespace Mlt
 			virtual ~Consumer( );
 			virtual mlt_consumer get_consumer( );
 			mlt_service get_service( );
-			int connect( Service &service );
+			virtual int connect( Service &service );
 			int start( );
 			int stop( );
-			int is_stopped( );
+			bool is_stopped( );
 	};
 }
 
