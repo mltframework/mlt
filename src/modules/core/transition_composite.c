@@ -153,8 +153,6 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	output->w = in->w + ( out->w - in->w ) * position;
 	output->h = in->h + ( out->h - in->h ) * position;
 	output->mix = in->mix + ( out->mix - in->mix ) * position;
-	output->sw = output->w;
-	output->sh = output->h;
 	output->distort = in->distort;
 }
 
@@ -453,6 +451,10 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	// Get the properties objects
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 	mlt_properties properties = mlt_transition_properties( this );
+
+	// ???: Not getting the logic of this...
+	geometry->sw = geometry->w;
+	geometry->sh = geometry->h;
 
 	if ( mlt_properties_get( properties, "distort" ) == NULL && geometry->distort == 0 )
 	{
