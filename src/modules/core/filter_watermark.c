@@ -132,8 +132,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Get the b frame and process with composite if successful
 		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
 		{
-			// Set the b frame to be in the same position
+			// Get the a and b frame properties
+			mlt_properties a_props = mlt_frame_properties( frame );
+			mlt_properties b_props = mlt_frame_properties( b_frame );
+
+			// Set the b frame to be in the same position and have same consumer requirements
 			mlt_frame_set_position( b_frame, position );
+			mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+			mlt_properties_set_int( b_props, "consumer_progressive", mlt_properties_get_double( a_props, "consumer_progressive" ) );
 
 			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
 			{
@@ -148,12 +154,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			}
 			else
 			{
-				mlt_properties a_props = mlt_frame_properties( frame );
-				mlt_properties b_props = mlt_frame_properties( b_frame );
 				mlt_transition_process( composite, b_frame, frame );
 				mlt_properties_set( a_props, "rescale.interp", "nearest" );
 				mlt_properties_set( b_props, "rescale.interp", "nearest" );
-				mlt_properties_set_int( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 				mlt_service_apply_filters( mlt_filter_service( this ), frame, 0 );
 				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
 				mlt_properties_set_data( b_props, "image", *image, 0, NULL, NULL );

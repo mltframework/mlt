@@ -573,6 +573,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	{
 		y_src = -y;
 		height_src -= y_src;
+		y = 0;
 	}
 	
 	// crop overlay below bottom edge of frame

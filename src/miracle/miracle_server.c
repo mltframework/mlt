@@ -275,8 +275,21 @@ void miracle_server_shutdown( miracle_server server )
 	{
 		server->shutdown = 1;
 		pthread_join( server->thread, NULL );
-		valerie_parser_close( server->parser );
 		miracle_server_set_config( server, NULL );
+		valerie_parser_close( server->parser );
+		server->parser = NULL;
 		close( server->socket );
+	}
+}
+
+/** Close the server.
+*/
+
+void miracle_server_close( miracle_server server )
+{
+	if ( server != NULL )
+	{
+		miracle_server_shutdown( server );
+		free( server );
 	}
 }

@@ -75,6 +75,9 @@ int mlt_factory_init( char *prefix )
 		filters = mlt_repository_init( object_list, prefix, "filters", "mlt_create_filter" );
 		transitions = mlt_repository_init( object_list, prefix, "transitions", "mlt_create_transition" );
 		consumers = mlt_repository_init( object_list, prefix, "consumers", "mlt_create_consumer" );
+
+		// Force a clean up when app closes
+		atexit( mlt_factory_close );
 	}
 
 	return 0;

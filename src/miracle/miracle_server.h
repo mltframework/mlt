@@ -64,6 +64,7 @@ extern void miracle_server_set_port( miracle_server, int );
 extern void miracle_server_set_proxy( miracle_server, char * );
 extern int miracle_server_execute( miracle_server );
 extern void miracle_server_shutdown( miracle_server );
+extern void miracle_server_close( miracle_server );
 
 #ifdef __cplusplus
 }
