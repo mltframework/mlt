@@ -51,6 +51,7 @@ extern int mlt_frame_set_position( mlt_frame self, mlt_position value );
 extern int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame self );
 extern int mlt_frame_get_audio( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
+extern unsigned char *mlt_frame_get_waveform( mlt_frame self, double fps, int w, int h );
 extern int mlt_frame_push_get_image( mlt_frame self, mlt_get_image get_image );
 extern mlt_get_image mlt_frame_pop_get_image( mlt_frame self );
 extern int mlt_frame_push_frame( mlt_frame self, mlt_frame that );
@@ -96,4 +97,3 @@ extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
   v = v > 240 ? 240 : v
 
 #endif
-

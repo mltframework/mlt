@@ -339,6 +339,54 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 	return 0;
 }
 
+unsigned char *mlt_frame_get_waveform( mlt_frame this, double fps, int w, int h )
+{
+	/* Currently, w is not honored - the user must scale to desired height.
+	   Get the integer property waveform_width after calling to see the 
+	   produced width (currently equal to # samples). */
+	int16_t *pcm = NULL;
+	mlt_properties properties = mlt_frame_properties( this );
+	mlt_audio_format format = mlt_audio_pcm;
+	int frequency = 32000; /* lower frequency available? */
+	int channels = 2;
+	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
+	
+	/* get the pcm data */
+	mlt_frame_get_audio( this, &pcm, &format, &frequency, &channels, &samples );
+	mlt_properties_set_int( properties, "waveform_width", samples );
+	
+	/* make an 8-bit buffer large enough to hold rendering */
+	int size = samples * h;
+	unsigned char *bitmap = ( unsigned char* )mlt_pool_alloc( size );
+	if ( bitmap != NULL )
+		memset( bitmap, 0, size );
+	mlt_properties_set_data( properties, "waveform", bitmap, size, ( mlt_destructor )mlt_pool_release, NULL );
+	
+	/* render - pcm data has channels interleaved */
+	int vertical_resolution = h / channels;
+	int i, j, k;
+	
+	for ( i = 0; i < samples; i++ )
+	{
+		for ( j = 0; j < channels; j++ )
+		{
+			/* the height of a "bar" is the ratio of the sample multiplied by the vertical resolution */
+			int pcm_scaled = ( int )( ( double )( *pcm ) / 32767 * vertical_resolution );
+			int height = pcm_scaled < 0 ? -pcm_scaled : pcm_scaled;
+			int offset = j * samples * vertical_resolution;
+			int displacement = pcm_scaled < 0 ? ( vertical_resolution / 2 ) : ( vertical_resolution / 2 - pcm_scaled );
+			unsigned char *p = &bitmap[ offset + i + displacement * samples ];
+			
+			for ( k = 0; k < height; k++ )
+				p[ samples * k ] = 0xFF;
+			
+			pcm++;
+		}
+	}
+	return bitmap;
+}
+
+
 void mlt_frame_close( mlt_frame this )
 {
 	if ( this != NULL && mlt_properties_dec_ref( mlt_frame_properties( this ) ) <= 0 )
