@@ -437,7 +437,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	
 	// Duplicate the last image if necessary
 	if ( mlt_properties_get_data( properties, "current_image", NULL ) != NULL &&
-		 ( paused || mlt_properties_get_double( properties, "current_time" ) >= real_timecode ) )
+		 ( paused || mlt_properties_get_double( properties, "current_time" ) >= real_timecode ) &&
+		 strcmp( mlt_properties_get( properties, "resource" ), "pipe:" ) )
 	{
 		// Get current image and size
 		int size = 0;
