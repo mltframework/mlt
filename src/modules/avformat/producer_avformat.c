@@ -586,21 +586,15 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		// No codec, no show...
 		if ( codec != NULL )
 		{
-			double aspect_ratio = 0;
+			double aspect_ratio = 1;
 			double source_fps = 0;
 
 			// Set aspect ratio
-			if ( codec_context->sample_aspect_ratio.num == 0 )
-				aspect_ratio = 0;
-			else
-				aspect_ratio = av_q2d( codec_context->sample_aspect_ratio ) * codec_context->width / codec_context->height;
+			if ( codec_context->sample_aspect_ratio.num > 0 )
+				aspect_ratio = av_q2d( codec_context->sample_aspect_ratio );
 
-			// XXX: This assumes square pixels!
-       		if (aspect_ratio <= 0.0)
-				aspect_ratio = ( double )codec_context->width / ( double )codec_context->height;
-				
 			mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
-			//fprintf( stderr, "AVFORMAT: sample aspect %f computed display aspect %f\n", av_q2d( codec_context->sample_aspect_ratio ), aspect_ratio );
+			//fprintf( stderr, "AVFORMAT: sample aspect %f %dx%d\n", av_q2d( codec_context->sample_aspect_ratio ), codec_context->width, codec_context->height );
 
 			// Determine the fps
 			source_fps = ( double )codec_context->frame_rate / codec_context->frame_rate_base;
@@ -608,10 +602,13 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			// We'll use fps if it's available
 			if ( source_fps > 0 && source_fps < 30 )
 				mlt_properties_set_double( properties, "source_fps", source_fps );
+			
+			// Set the width and height
+			mlt_properties_set_int( frame_properties, "width", codec_context->width );
+			mlt_properties_set_int( frame_properties, "height", codec_context->height );
 
 			mlt_frame_push_get_image( frame, producer_get_image );
 			mlt_properties_set_data( frame_properties, "avformat_producer", this, 0, NULL, NULL );
-
 		}
 		else
 		{

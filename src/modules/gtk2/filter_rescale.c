@@ -220,4 +220,3 @@ mlt_filter filter_rescale_init( char *arg )
 	}
 	return this;
 }
-

@@ -234,7 +234,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "height", height );
 		mlt_properties_set_int( properties, "has_image", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", ( double )width  / height );
+		mlt_properties_set_double( properties, "aspect_ratio", 1 );
 
 		// Push the image callback
 		mlt_frame_push_get_image( *frame, producer_get_image );
@@ -272,4 +272,3 @@ static void producer_close( mlt_producer parent )
 	mlt_producer_close( parent );
 	free( this );
 }
-

@@ -53,18 +53,24 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Normalise the input and out display aspect
 		int normalised_width = mlt_properties_get_int( properties, "normalised_width" );
 		int normalised_height = mlt_properties_get_int( properties, "normalised_height" );
-		double input_ar = mlt_frame_get_aspect_ratio( this );
-		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" );
+		int real_width = mlt_properties_get_int( properties, "real_width" );
+		int real_height = mlt_properties_get_int( properties, "real_height" );
+		if ( real_width == 0 )
+			real_width = mlt_properties_get_int( properties, "width" );
+		if ( real_height == 0 )
+			real_height = mlt_properties_get_int( properties, "height" );
+		double input_ar = mlt_frame_get_aspect_ratio( this ) * real_width / real_height;
+		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight;
 		
 		// Optimised for the input_ar > output_ar case (e.g. widescreen on standard)
-		int scaled_width = normalised_width;
-		int scaled_height = output_ar / input_ar * normalised_height;
+		int scaled_width = input_ar / output_ar * normalised_width + 0.5;
+		int scaled_height = normalised_height;
 
-		// Now ensure that our images fit in the normalised frame
-		if ( scaled_height > normalised_height )
+		// Now ensure that our images fit in the output frame
+		if ( scaled_width > normalised_width )
 		{
-			scaled_width = input_ar / output_ar * normalised_width;
-			scaled_height = normalised_height;
+			scaled_width = normalised_width;
+			scaled_height = output_ar / input_ar * normalised_height + 0.5;
 		}
 	
 		// Now calculate the actual image size that we want
@@ -154,4 +160,3 @@ mlt_filter filter_resize_init( char *arg )
 	}
 	return this;
 }
-

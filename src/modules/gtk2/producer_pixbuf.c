@@ -274,8 +274,39 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties properties = mlt_producer_properties( producer );
 		char *filename = mlt_properties_get( properties, "resource" );
 		
+		// Read xml string
+		if ( strstr( filename, "<svg" ) )
+		{
+			// Generate a temporary file for the svg
+			char fullname[ 1024 ] = "/tmp/mlt.XXXXXX";
+			int fd = mkstemp( fullname );
+
+			if ( fd > -1 )
+			{
+				// Write the svg into the temp file
+				ssize_t remaining_bytes;
+				char *xml = filename;
+				
+				// Strip leading crap
+				while ( xml[0] != '<' )
+					xml++;
+				
+				remaining_bytes = strlen( xml );
+				while ( remaining_bytes > 0 )
+					remaining_bytes -= write( fd, xml + strlen( xml ) - remaining_bytes, remaining_bytes );
+				close( fd );
+
+				this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+				this->filenames[ this->count ++ ] = strdup( fullname );
+
+				mlt_properties_set_position( properties, "out", 250 );
+
+				// Teehe - when the producer closes, delete the temp file and the space allo
+				mlt_properties_set_data( properties, "__temporary_file__", this->filenames[ this->count - 1 ], 0, ( mlt_destructor )unlink, NULL );
+			}
+		}
 		// Obtain filenames
-		if ( strchr( filename, '%' ) != NULL )
+		else if ( strchr( filename, '%' ) != NULL )
 		{
 			// handle picture sequences
 			int i = 0;
@@ -327,29 +358,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 			free( de );
 			free( dir_name );
 		}
-		else if ( strstr( filename, "<svg" ) )
-		{
-			// Generate a temporary file for the svg
-			char fullname[ 1024 ] = "/tmp/mlt.XXXXXX";
-			int fd = mkstemp( fullname );
-
-			if ( fd > -1 )
-			{
-				// Write the svg into the temp file
-				ssize_t remaining_bytes = strlen( filename );
-				while ( remaining_bytes > 0 )
-					remaining_bytes -= write( fd, filename + strlen( filename ) - remaining_bytes, remaining_bytes );
-				close( fd );
-
-				this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
-				this->filenames[ this->count ++ ] = strdup( fullname );
-
-				mlt_properties_set_position( properties, "out", 250 );
-
-				// Teehe - when the producer closes, delete the temp file and the space allo
-				mlt_properties_set_data( properties, "__temporary_file__", this->filenames[ this->count - 1 ], 0, ( mlt_destructor )unlink, NULL );
-			}
-		}
 		else
 		{
 			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
@@ -380,7 +388,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "real_width" )/mlt_properties_get_double( properties, "real_height" ) );
+		mlt_properties_set_double( properties, "aspect_ratio", 1 );
 
 		// Set alpha call back
 		( *frame )->get_alpha_mask = producer_get_alpha_mask;
@@ -406,4 +414,3 @@ static void producer_close( mlt_producer parent )
 	free( this->filenames );
 	free( this );
 }
-

@@ -118,9 +118,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 			this->width = mlt_properties_get_int( this->properties, "width" );
 			this->height = mlt_properties_get_int( this->properties, "height" );
 		}
-
+		
 		// Default window size
-		this->window_width = (int)( (float)this->height * this->aspect_ratio ) + 1;
+		this->window_width = (int)( (float)this->height * 4.0/3.0 + 0.5);
 		this->window_height = this->height;
 		
 		// Set the sdl flags
@@ -334,7 +334,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 
 	// Set skip
 	mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
-	mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_scale", ( double )height / mlt_properties_get_double( properties, "height" ) );
 
 	// Push this frame to the back of the queue
 	mlt_deque_push_back( this->queue, frame );
@@ -397,12 +396,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 
 		if ( this->sdl_screen == NULL || changed )
 		{
-			double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
-			float display_aspect_ratio = (float)width / (float)height;
+			double aspect_ratio = ( float )this->aspect_ratio * this->width / this->height;
+			float display_aspect_ratio = ( float )width / height;
 			SDL_Rect rect;
-
-			if ( mlt_properties_get_double( properties, "aspect_ratio" ) )
-				aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
+			if ( mlt_properties_get( properties, "rescale" ) != NULL &&
+					!strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
+				aspect_ratio = mlt_frame_get_aspect_ratio( frame ) * mlt_properties_get_int(mlt_frame_properties(frame),"width") / mlt_properties_get_int(mlt_frame_properties(frame),"height");
 
 			if ( aspect_ratio == 1 )
 			{
@@ -412,11 +411,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 			else if ( this->window_width < this->window_height * aspect_ratio )
 			{
 				rect.w = this->window_width;
-				rect.h = this->window_width / aspect_ratio;
+				rect.h = this->window_width / aspect_ratio + 1;
 			}
 			else
 			{
-				rect.w = this->window_height * aspect_ratio;
+				rect.w = this->window_height * aspect_ratio + 1;
 				rect.h = this->window_height;
 			}
 
@@ -604,4 +603,3 @@ static void consumer_close( mlt_consumer parent )
 	// Finally clean up this
 	free( this );
 }
-

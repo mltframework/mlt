@@ -53,6 +53,7 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 576 );
 			mlt_properties_set_int( properties, "progressive", 0 );
+			mlt_properties_set_double( properties, "aspect_ratio", 128.0 / 117.0 );
 		}
 		else
 		{
@@ -61,10 +62,8 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 480 );
 			mlt_properties_set_int( properties, "progressive", 0 );
+			mlt_properties_set_double( properties, "aspect_ratio", 72.0 / 79.0 );
 		}
-
-		// Default aspect ratio
-		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 
 		// Default rescaler for all consumers
 		mlt_properties_set( properties, "rescale", "bilinear" );
@@ -399,4 +398,3 @@ void mlt_consumer_close( mlt_consumer this )
 	else
 		mlt_service_close( &this->parent );
 }
-

@@ -18,7 +18,9 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-// TODO: destroy unreferenced producers
+// TODO: destroy unreferenced producers (they are currently destroyed
+//       when the returned producer is closed).
+// TODO: try using XmlReader interface to avoid global context issues in sax.
  
 #include "producer_westley.h"
 #include <framework/mlt.h>
@@ -371,8 +373,12 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 	if ( properties == NULL )
 		return;
 		
-	// Instatiate the producer
-	if ( mlt_properties_get( properties, "resource" ) != NULL )
+	// Instantiate the producer
+	if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
+	{
+		service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "mlt_service" ) ) );
+	}
+	if ( service == NULL && mlt_properties_get( properties, "resource" ) != NULL )
 	{
 		char *root = mlt_properties_get( context->producer_map, "_root" );
 		char *resource = mlt_properties_get( properties, "resource" );
@@ -388,10 +394,6 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		}
 		service = MLT_SERVICE( mlt_factory_producer( "fezzik", full_resource ) );
 		free( full_resource );
-	}
-	if ( service == NULL && mlt_properties_get( properties, "mlt_service" ) != NULL )
-	{
-		service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "mlt_service" ) ) );
 	}
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_producer_close );
@@ -620,6 +622,7 @@ mlt_producer producer_westley_init( char *filename )
 	sax->startElement = on_start_element;
 	sax->endElement = on_end_element;
 	sax->characters = on_characters;
+	sax->cdataBlock = on_characters;
 
 	// I REALLY DON'T GET THIS - HOW THE HELL CAN YOU REFERENCE A WESTLEY IN A WESTLEY???
 	xmlInitParser();
@@ -669,10 +672,9 @@ mlt_producer producer_westley_init( char *filename )
 	mlt_properties_close( context->producer_map );
 	//free( context );
 	free( sax );
-	xmlCleanupParser();
+	//xmlCleanupParser();
 	xmlMemoryDump( );
 
 
 	return MLT_PRODUCER( service );
 }
-

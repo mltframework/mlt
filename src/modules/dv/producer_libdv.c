@@ -153,7 +153,8 @@ static int producer_collect_info( producer_libdv this )
 
 			// Parse the header for meta info
 			dv_parse_header( this->dv_decoder, dv_data );
-			mlt_properties_set_double( properties, "aspect_ratio", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
+			mlt_properties_set_double( properties, "aspect_ratio", 
+				dv_format_wide( this->dv_decoder ) ? ( this->is_pal ? 512/351 : 96/79 ) : ( this->is_pal ? 128/117 : 72/79 ) );
 		}
 
 		mlt_pool_release( dv_data );
@@ -316,7 +317,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Parse the header for meta info
 		dv_parse_header( this->dv_decoder, data );
 		mlt_properties_set_int( properties, "progressive", dv_is_progressive( this->dv_decoder ) );
-		mlt_properties_set_double( properties, "aspect_ratio", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
+		mlt_properties_set_double( properties, "aspect_ratio", 
+			dv_format_wide( this->dv_decoder ) ? ( this->is_pal ? 512.0/351.0 : 96.0/79.0 ) : ( this->is_pal ? 128.0/117.0 : 72.0/79.0 ) );
 
 		// Hmm - register audio callback
 		( *frame )->get_audio = producer_get_audio;
@@ -357,4 +359,3 @@ static void producer_close( mlt_producer parent )
 	// Free the memory
 	free( this );
 }
-

@@ -412,6 +412,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					luma_height = *height;
 
 					// Get image from the luma producer
+					mlt_properties_set( mlt_frame_properties( luma_frame ), "distort", "true" );
 					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
 
 					// Generate the luma map

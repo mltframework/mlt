@@ -419,7 +419,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Set producer-specific frame properties
 	mlt_properties_set_int( properties, "progressive", 1 );
-	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "real_width" ) / mlt_properties_get_double( properties, "real_height" ) );
+	mlt_properties_set_double( properties, "aspect_ratio", 1 );
 
 	// Set alpha call back
 	( *frame )->get_alpha_mask = producer_get_alpha_mask;
@@ -535,4 +535,3 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 
 	return pixbuf;
 }
-

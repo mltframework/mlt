@@ -53,6 +53,7 @@ mlt_frame mlt_frame_init( )
 			mlt_properties_set_int( properties, "height", 576 );
 			mlt_properties_set_int( properties, "normalised_width", 720 );
 			mlt_properties_set_int( properties, "normalised_height", 576 );
+			mlt_properties_set_double( properties, "aspect_ratio", 72.0/79.0 );
 		}
 		else
 		{
@@ -60,9 +61,9 @@ mlt_frame mlt_frame_init( )
 			mlt_properties_set_int( properties, "height", 480 );
 			mlt_properties_set_int( properties, "normalised_width", 720 );
 			mlt_properties_set_int( properties, "normalised_height", 480 );
+			mlt_properties_set_double( properties, "aspect_ratio", 128.0/117.0 );
 		}
 
-		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 		mlt_properties_set_data( properties, "audio", NULL, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
 
@@ -204,7 +205,6 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		{
 			mlt_properties test_properties = mlt_frame_properties( test_frame );
 			mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
-			mlt_properties_set_double( test_properties, "consumer_scale", mlt_properties_get_double( properties, "consumer_scale" ) );
 			mlt_properties_set( test_properties, "rescale.interp", "nearest" );
 			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
 			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
@@ -746,4 +746,3 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
 
 	return samples;
 }
-

@@ -19,7 +19,7 @@
  */
 
 #include "transition_composite.h"
-#include <framework/mlt_frame.h>
+#include <framework/mlt.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -322,10 +322,169 @@ static int get_value( mlt_properties properties, char *preferred, char *fallback
 	return value;
 }
 
+/** A linear threshold determination function.
+*/
+
+static inline int32_t linearstep( int32_t edge1, int32_t edge2, int32_t a )
+{
+	if ( a < edge1 )
+		return 0;
+
+	if ( a >= edge2 )
+		return 0x10000;
+
+	return ( ( a - edge1 ) << 16 ) / ( edge2 - edge1 );
+}
+
+/** A smoother, non-linear threshold determination function.
+*/
+
+static inline int32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
+{
+	if ( a < edge1 )
+		return 0;
+
+	if ( a >= edge2 )
+		return 0x10000;
+
+	a = ( ( a - edge1 ) << 16 ) / ( edge2 - edge1 );
+
+	return ( ( ( a * a ) >> 16 )  * ( ( 3 << 16 ) - ( 2 * a ) ) ) >> 16;
+}
+
+/** Load the luma map from PGM stream.
+*/
+
+static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
+{
+	uint8_t *data = NULL;
+	while (1)
+	{
+		char line[128];
+		char comment[128];
+		int i = 2;
+		int maxval;
+		int bpp;
+		uint16_t *p;
+
+		line[127] = '\0';
+
+		// get the magic code
+		if ( fgets( line, 127, f ) == NULL )
+			break;
+
+		// skip comments
+		while ( sscanf( line, " #%s", comment ) > 0 )
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+		if ( line[0] != 'P' || line[1] != '5' )
+			break;
+
+		// skip white space and see if a new line must be fetched
+		for ( i = 2; i < 127 && line[i] != '\0' && isspace( line[i] ); i++ );
+		if ( ( line[i] == '\0' || line[i] == '#' ) && fgets( line, 127, f ) == NULL )
+			break;
+
+		// skip comments
+		while ( sscanf( line, " #%s", comment ) > 0 )
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+		// get the dimensions
+		if ( line[0] == 'P' )
+			i = sscanf( line, "P5 %d %d %d", width, height, &maxval );
+		else
+			i = sscanf( line, "%d %d %d", width, height, &maxval );
+
+		// get the height value, if not yet
+		if ( i < 2 )
+		{
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+			// skip comments
+			while ( sscanf( line, " #%s", comment ) > 0 )
+				if ( fgets( line, 127, f ) == NULL )
+					break;
+
+			i = sscanf( line, "%d", height );
+			if ( i == 0 )
+				break;
+			else
+				i = 2;
+		}
+
+		// get the maximum gray value, if not yet
+		if ( i < 3 )
+		{
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+			// skip comments
+			while ( sscanf( line, " #%s", comment ) > 0 )
+				if ( fgets( line, 127, f ) == NULL )
+					break;
+
+			i = sscanf( line, "%d", &maxval );
+			if ( i == 0 )
+				break;
+		}
+
+		// determine if this is one or two bytes per pixel
+		bpp = maxval > 255 ? 2 : 1;
+
+		// allocate temporary storage for the raw data
+		data = mlt_pool_alloc( *width * *height * bpp );
+		if ( data == NULL )
+			break;
+
+		// read the raw data
+		if ( fread( data, *width * *height * bpp, 1, f ) != 1 )
+			break;
+
+		// allocate the luma bitmap
+		*map = p = (uint16_t*)mlt_pool_alloc( *width * *height * sizeof( uint16_t ) );
+		if ( *map == NULL )
+			break;
+
+		// proces the raw data into the luma bitmap
+		for ( i = 0; i < *width * *height * bpp; i += bpp )
+		{
+			if ( bpp == 1 )
+				*p++ = data[ i ] << 8;
+			else
+				*p++ = ( data[ i ] << 8 ) + data[ i+1 ];
+		}
+
+		break;
+	}
+
+	if ( data != NULL )
+		mlt_pool_release( data );
+}
+
+/** Generate a luma map from any YUV image.
+*/
+
+static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int height )
+{
+	int i;
+	
+	// allocate the luma bitmap
+	uint16_t *p = *map = ( uint16_t* )mlt_pool_alloc( width * height * sizeof( uint16_t ) );
+	if ( *map == NULL )
+		return;
+
+	// proces the image data into the luma bitmap
+	for ( i = 0; i < width * height * 2; i += 2 )
+		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
+}
+
 /** Composite function.
 */
 
-static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int bpp, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field )
+static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int bpp, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field, uint16_t *p_luma, int32_t softness )
 {
 	int ret = 0;
 	int i, j;
@@ -380,6 +539,10 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 	if ( p_alpha )
 		p_alpha += x_src + y_src * stride_src / bpp;
 
+	// offset pointer into luma channel based upon cropping
+	if ( p_luma )
+		p_luma += x_src + y_src * stride_src / bpp;
+	
 	// Assuming lower field first
 	// Special care is taken to make sure the b_frame is aligned to the correct field.
 	// field 0 = lower field and y should be odd (y is 0-based).
@@ -405,9 +568,11 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 	uint8_t *p = p_src;
 	uint8_t *q = p_dest;
 	uint8_t *o = p_dest;
+	uint16_t *l = p_luma;
 	uint8_t *z = p_alpha;
 
 	uint8_t a;
+	int32_t current_weight;
 	int32_t value;
 	int step = ( field > -1 ) ? 2 : 1;
 
@@ -421,12 +586,14 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 		p = p_src;
 		q = p_dest;
 		o = q;
+		l = p_luma;
 		z = p_alpha;
 
 		for ( j = 0; j < width_src; j ++ )
 		{
 			a = ( z == NULL ) ? 255 : *z ++;
-			value = ( weight * ( a + 1 ) ) >> 8;
+			current_weight = ( l == NULL ) ? weight : linearstep( l[ j ], l[ j ] + softness, weight );
+			value = ( current_weight * ( a + 1 ) ) >> 8;
 			*o ++ = ( *p++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
 			*o ++ = ( *p++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
 		}
@@ -435,11 +602,103 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 		p_dest += stride_dest;
 		if ( p_alpha )
 			p_alpha += alpha_stride;
+		if ( p_luma )
+			p_luma += alpha_stride;
 	}
 
 	return ret;
 }
 
+static uint16_t* get_luma( mlt_properties properties, int width, int height )
+{
+	// The cached luma map information
+	int luma_width = mlt_properties_get_int( properties, "_luma.width" );
+	int luma_height = mlt_properties_get_int( properties, "_luma.height" );
+	uint16_t *luma_bitmap = mlt_properties_get_data( properties, "_luma.bitmap", NULL );
+	
+	// If the filename property changed, reload the map
+	char *resource = mlt_properties_get( properties, "luma" );
+
+	if ( luma_bitmap == NULL && resource != NULL )
+	{
+		char *extension = extension = strrchr( resource, '.' );
+
+		// See if it is a PGM
+		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
+		{
+			// Open PGM
+			FILE *f = fopen( resource, "r" );
+			if ( f != NULL )
+			{
+				// Load from PGM
+				luma_read_pgm( f, &luma_bitmap, &luma_width, &luma_height );
+				fclose( f );
+
+				// Set the transition properties
+				mlt_properties_set_int( properties, "_luma.width", luma_width );
+				mlt_properties_set_int( properties, "_luma.height", luma_height );
+				mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+			}
+		}
+		else
+		{
+			// Get the factory producer service
+			char *factory = mlt_properties_get( properties, "factory" );
+
+			// Create the producer
+			mlt_producer producer = mlt_factory_producer( factory, resource );
+
+			// If we have one
+			if ( producer != NULL )
+			{
+				// Get the producer properties
+				mlt_properties producer_properties = mlt_producer_properties( producer );
+
+				// Ensure that we loop
+				mlt_properties_set( producer_properties, "eof", "loop" );
+
+				// Now pass all producer. properties on the transition down
+				mlt_properties_pass( producer_properties, properties, "luma." );
+
+				// We will get the alpha frame from the producer
+				mlt_frame luma_frame = NULL;
+
+				// Get the luma frame
+				if ( mlt_service_get_frame( mlt_producer_service( producer ), &luma_frame, 0 ) == 0 )
+				{
+					uint8_t *luma_image;
+					mlt_image_format luma_format = mlt_image_yuv422;
+
+					// Request a luma image the size of transition image request
+					luma_width = width;
+					luma_height = height;
+
+					// Get image from the luma producer
+					mlt_properties_set( mlt_frame_properties( luma_frame ), "distort", "true" );
+					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
+
+					// Generate the luma map
+					if ( luma_image != NULL && luma_format == mlt_image_yuv422 )
+					{
+						luma_read_yuv422( luma_image, &luma_bitmap, luma_width, luma_height );
+					
+						// Set the transition properties
+						mlt_properties_set_int( properties, "_luma.width", luma_width );
+						mlt_properties_set_int( properties, "_luma.height", luma_height );
+						mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+					}
+
+					// Cleanup the luma frame
+					mlt_frame_close( luma_frame );
+				}
+
+				// Cleanup the luma producer
+				mlt_producer_close( producer );
+			}
+		}
+	}
+	return luma_bitmap;
+}
 
 /** Get the properly sized image from b_frame.
 */
@@ -462,13 +721,8 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_frame_get_aspect_ratio( b_frame );
 		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		int scaled_width = real_width;
+		int scaled_width = input_ar / output_ar * real_width;
 		int scaled_height = real_height;
-		double output_sar = ( double ) geometry->nw / geometry->nh / output_ar;
-
-		// If the output is fat pixels (NTSC) then stretch our input horizontally
-		// derived from: output_sar / input_sar * real_width
-		scaled_width = output_sar * real_height * input_ar;
 			
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
@@ -671,11 +925,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Do the calculation
 		struct geometry_s *start = composite_calculate( &result, this, a_frame, position );
+		
+		// Optimisation - no compositing required
+		if ( result.mix == 0 )
+			return 0;
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-		mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
@@ -692,6 +949,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					mlt_properties_get_int( a_props, "consumer_progressive" ) ||
 					mlt_properties_get_int( properties, "progressive" );
 			int field;
+			
+			int32_t luma_softness = mlt_properties_get_double( properties, "softness" ) * ( 1 << 16 );
+			uint16_t *luma_bitmap = get_luma( properties, width_b, height_b );
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
@@ -705,7 +965,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				alignment_calculate( &result );
 
 				// Composite the b_frame on the a_frame
-				composite_yuv( dest, *width, *height, bpp, src, width_b, height_b, alpha, result, progressive ? -1 : field );
+				composite_yuv( dest, *width, *height, bpp, src, width_b, height_b, alpha, result, progressive ? -1 : field, luma_bitmap, luma_softness );
 			}
 		}
 	}
@@ -736,7 +996,9 @@ mlt_transition transition_composite_init( char *arg )
 	{
 		this->process = composite_process;
 		mlt_properties_set( mlt_transition_properties( this ), "start", arg != NULL ? arg : "85%,5%:10%x10%" );
+		
+		// Default factory
+		mlt_properties_set( mlt_transition_properties( this ), "factory", "fezzik" );
 	}
 	return this;
 }
-
