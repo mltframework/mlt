@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 
 /** Public final methods
@@ -87,6 +88,7 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		this->format = mlt_image_yuv422;
 
 		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
+		mlt_events_register( properties, "consumer-frame-render", ( mlt_transmitter )mlt_consumer_frame_render );
 		mlt_events_register( properties, "consumer-stopped", NULL );
 
 		// Create the push mutex and condition
@@ -98,6 +100,12 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 }
 
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( mlt_frame )args[ 0 ] );
+}
+
+static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
 {
 	if ( listener != NULL )
 		listener( owner, this, ( mlt_frame )args[ 0 ] );
@@ -371,7 +379,10 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Get the image of the first frame
 	if ( !video_off )
+	{
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
 		mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+	}
 
 	if ( !audio_off )
 	{
@@ -434,7 +445,10 @@ static void *consumer_read_ahead_thread( void *arg )
 		{
 			// Get the image, mark as rendered and time it
 			if ( !video_off )
+			{
+				mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
 				mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+			}
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
 		}
 		else

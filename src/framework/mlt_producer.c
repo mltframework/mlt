@@ -244,7 +244,7 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 		mlt_producer_seek( mlt_producer_cut_parent( this ), position + mlt_producer_get_in( this ) );
 
 	// Check bounds
-	if ( position < 0 )
+	if ( position < 0 || mlt_producer_get_playtime( this ) == 0 )
 	{
 		position = 0;
 	}
