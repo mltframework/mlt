@@ -21,6 +21,7 @@
 #include "config.h"
 #include "mlt_frame.h"
 #include "mlt_producer.h"
+#include "mlt_factory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +37,7 @@ mlt_frame mlt_frame_init( )
 	if ( this != NULL )
 	{
 		// Get the normalisation
-		char *normalisation = getenv( "MLT_NORMALISATION" );
+		char *normalisation = mlt_environment( "MLT_NORMALISATION" );
 
 		// Initialise the properties
 		mlt_properties properties = &this->parent;

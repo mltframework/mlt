@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "mlt_producer.h"
+#include "mlt_factory.h"
 #include "mlt_frame.h"
 #include <stdio.h>
 #include <string.h>
@@ -52,7 +53,7 @@ int mlt_producer_init( mlt_producer this, void *child )
 		if ( mlt_service_init( &this->parent, this ) == 0 )
 		{
 			// Get the normalisation preference
-			char *normalisation = getenv( "MLT_NORMALISATION" );
+			char *normalisation = mlt_environment( "MLT_NORMALISATION" );
 
 			// The parent is the service
 			mlt_service parent = &this->parent;

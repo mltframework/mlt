@@ -42,7 +42,7 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		mlt_properties properties = mlt_service_properties( &this->parent );
 
 		// Get the normalisation preference
-		char *normalisation = getenv( "MLT_NORMALISATION" );
+		char *normalisation = mlt_environment( "MLT_NORMALISATION" );
 
 		// Deal with normalisation
 		if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )

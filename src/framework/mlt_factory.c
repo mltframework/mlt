@@ -30,6 +30,7 @@
 */
 
 static char *mlt_prefix = NULL;
+static mlt_properties global_properties = NULL;
 static mlt_properties object_list = NULL;
 static mlt_repository producers = NULL;
 static mlt_repository filters = NULL;
@@ -55,6 +56,10 @@ int mlt_factory_init( char *prefix )
 		// Initialise the pool
 		mlt_pool_init( );
 
+		// Create the global properties
+		global_properties = mlt_properties_new( );
+		mlt_properties_set( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ) );
+
 		// Create the object list.
 		object_list = mlt_properties_new( );
 
@@ -74,6 +79,14 @@ int mlt_factory_init( char *prefix )
 const char *mlt_factory_prefix( )
 {
 	return mlt_prefix;
+}
+
+/** Get a value from the environment.
+*/
+
+char *mlt_environment( char *name )
+{
+	return mlt_properties_get( global_properties, name );
 }
 
 /** Fetch a producer from the repository.
@@ -153,6 +166,7 @@ void mlt_factory_close( )
 		mlt_repository_close( transitions );
 		mlt_repository_close( consumers );
 		mlt_properties_close( object_list );
+		mlt_properties_close( global_properties );
 		free( mlt_prefix );
 		mlt_prefix = NULL;
 		mlt_pool_close( );

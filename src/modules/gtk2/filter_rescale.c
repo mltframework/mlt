@@ -91,6 +91,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			// Return the output
 			*image = output;
 		}
+		else if ( *format == mlt_image_yuv422 && !strcmp( interps, "none" ) )
+		{
+			// Do nothing
+			*width = iwidth;
+			*height = iheight;
+			*image = input;
+		}
 		else if ( *format == mlt_image_rgb24 || *format == mlt_image_rgb24a )
 		{
 			int bpp = (*format == mlt_image_rgb24a ? 4 : 3 );
