@@ -130,3 +130,11 @@ int Producer::get_playtime( )
 	return mlt_producer_get_playtime( get_producer( ) );
 }
 
+Producer *Producer::cut( int in, int out )
+{
+	mlt_producer producer = mlt_producer_cut( get_producer( ), in, out );
+	Producer *result = new Producer( producer );
+	mlt_producer_close( producer );
+	return result;
+}
+
