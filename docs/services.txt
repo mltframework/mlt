@@ -1357,6 +1357,41 @@ Consumers
 	    
 	        none
 
+	mcmpeg
+	
+	    Description
+	    
+	        Mainconcept MPEG encoder.
+
+	    Constructor Argument
+
+	        string target - the filename to write to.
+
+	    Initialisation Properties
+	    
+	        int buffer - the number of frames to buffer, minimum 1, default 25.
+	        string rescale - a rescale method, see the Filters/rescale.
+	        string format - vcd [default], svcd or dvd provide base settings
+	        int motion_search_type - 0 to 16 - reduces quality/cpu usage
+	        int gop - group of picture size (default: format dependent)
+
+	    Mutable Properties
+	    
+	        int progressive - indicates whether to use progressive or field-
+	                          based rendering, default 0 (off).
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Dependencies
+	    
+	        Mainconcept MPEG SDK
+	        
+	    Known Bugs
+	    
+	        none
+
 	sdl
 
 	    Description

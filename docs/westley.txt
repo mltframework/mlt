@@ -14,7 +14,7 @@ Preamble:
 	as such, it closely mirrors the internal structure of the MLT API.
 
 	If you just want to go straight to the DTD, then see 
-	mlt/src/modules/westley.dtd, which gets installed at 
+	mlt/src/modules/westley/westley.dtd, which gets installed at 
 	$(prefix)/share/mlt/modules/westley.dtd. Currently, the westley parser is
 	non-validating.
 
