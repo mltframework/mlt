@@ -5,6 +5,7 @@ then
 
 cat << EOF >> ../producers.dat
 ppm				libmltcore.so
+colour			libmltcore.so
 EOF
 
 cat << EOF >> ../filters.dat

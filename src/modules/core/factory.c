@@ -34,9 +34,12 @@
 #include "transition_composite.h"
 #include "transition_luma.h"
 #include "transition_mix.h"
+#include "producer_colour.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
+	if ( !strcmp( id, "colour" ) )
+		return producer_colour_init( arg );
 	if ( !strcmp( id, "ppm" ) )
 		return producer_ppm_init( arg );
 	return NULL;

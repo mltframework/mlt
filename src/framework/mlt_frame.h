@@ -96,5 +96,29 @@ extern void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t
 extern int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 
+/* this macro scales rgb into the yuv gamut, y is scaled by 219/255 and uv by 224/255 */
+#define RGB2YUV(r, g, b, y, u, v)\
+  y = ((257*r + 504*g + 98*b) >> 10) + 16;\
+  u = ((-148*r - 291*g + 439*b) >> 10) + 128;\
+  v = ((439*r - 368*g - 71*b) >> 10) + 128;\
+  y = y < 16 ? 16 : y;\
+  u = u < 16 ? 16 : u;\
+  v = v < 16 ? 16 : v;\
+  y = y > 235 ? 235 : y;\
+  u = u > 240 ? 240 : u;\
+  v = v > 240 ? 240 : v
+
+/* this macro assumes the user has already scaled their rgb down into the broadcast limits */
+#define RGB2YUV_UNSCALED(r, g, b, y, u, v)\
+  y = (299*r + 587*g + 114*b) >> 10;\
+  u = ((-169*r - 331*g + 500*b) >> 10) + 128;\
+  v = ((500*r - 419*g - 81*b) >> 10) + 128;\
+  y = y < 16 ? 16 : y;\
+  u = u < 16 ? 16 : u;\
+  v = v < 16 ? 16 : v;\
+  y = y > 235 ? 235 : y;\
+  u = u > 240 ? 240 : u;\
+  v = v > 240 ? 240 : v
+
 #endif
 
