@@ -32,7 +32,6 @@ namespace Mlt
 	class Filter : public Service
 	{
 		private:
-			bool destroy;
 			mlt_filter instance;
 		public:
 			Filter( char *id, char *service = NULL );

@@ -31,7 +31,6 @@ namespace Mlt
 	class Frame : public Properties
 	{
 		private:
-			bool destroy;
 			mlt_frame instance;
 		public:
 			Frame( mlt_frame frame );

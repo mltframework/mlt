@@ -45,28 +45,26 @@ ClipInfo::~ClipInfo( )
 }
 
 Playlist::Playlist( ) :
-	destroy( true ),
 	instance( NULL )
 {
 	instance = mlt_playlist_init( );
 }
 
 Playlist::Playlist( Playlist &playlist ) :
-	destroy( false ),
 	instance( playlist.get_playlist( ) )
 {
+	inc_ref( );
 }
 
 Playlist::Playlist( mlt_playlist playlist ) :
-	destroy( false ),
 	instance( playlist )
 {
+	inc_ref( );
 }
 
 Playlist::~Playlist( )
 {
-	if ( destroy )
-		mlt_playlist_close( instance );
+	mlt_playlist_close( instance );
 }
 
 mlt_playlist Playlist::get_playlist( )
@@ -141,3 +139,12 @@ int Playlist::resize_clip( int clip, int in, int out )
 	return mlt_playlist_resize_clip( get_playlist( ), clip, in, out );
 }
 
+int Playlist::split( int clip, int position )
+{
+	return mlt_playlist_split( get_playlist( ), clip, position );
+}
+
+int Playlist::join( int clip, int count, int merge )
+{
+	return mlt_playlist_join( get_playlist( ), clip, count, merge );
+}

@@ -22,21 +22,19 @@
 using namespace Mlt;
 
 Frame::Frame( mlt_frame frame ) :
-	destroy( true ),
 	instance( frame )
 {
 }
 
 Frame::Frame( Frame &frame ) :
-	destroy( false ),
 	instance( frame.get_frame( ) )
 {
+	inc_ref( );
 }
 
 Frame::~Frame( )
 {
-	if ( destroy )
-		mlt_frame_close( instance );
+	mlt_frame_close( instance );
 }
 
 mlt_frame Frame::get_frame( )

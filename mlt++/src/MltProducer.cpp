@@ -22,13 +22,11 @@
 using namespace Mlt;
 
 Producer::Producer( ) :
-	destroy( false ),
 	instance( NULL )
 {
 }
 
 Producer::Producer( char *id, char *service ) :
-	destroy( true ),
 	instance( NULL )
 {
 	if ( id != NULL && service != NULL )
@@ -38,21 +36,20 @@ Producer::Producer( char *id, char *service ) :
 }
 
 Producer::Producer( mlt_producer producer ) :
-	destroy( false ),
 	instance( producer )
 {
+	inc_ref( );
 }
 
 Producer::Producer( Producer &producer ) :
-	destroy( false ),
 	instance( producer.get_producer( ) )
 {
+	inc_ref( );
 }
 
 Producer::~Producer( )
 {
-	if ( destroy )
-		mlt_producer_close( instance );
+	mlt_producer_close( instance );
 }
 
 mlt_producer Producer::get_producer( )

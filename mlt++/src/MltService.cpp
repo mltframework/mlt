@@ -22,18 +22,28 @@
 using namespace Mlt;
 
 Service::Service( ) :
+	Properties( false ),
 	instance( NULL )
 {
 }
 
 Service::Service( Service &service ) :
+	Properties( false ),
 	instance( service.get_service( ) )
 {
+	inc_ref( );
 }
 
 Service::Service( mlt_service service ) :
+	Properties( false ),
 	instance( service )
 {
+	inc_ref( );
+}
+
+Service::~Service( )
+{
+	mlt_service_close( instance );
 }
 
 mlt_service Service::get_service( )

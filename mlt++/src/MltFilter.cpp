@@ -24,7 +24,6 @@
 using namespace Mlt;
 
 Filter::Filter( char *id, char *arg ) :
-	destroy( true ),
 	instance( NULL )
 {
 	if ( arg != NULL )
@@ -49,21 +48,20 @@ Filter::Filter( char *id, char *arg ) :
 }
 
 Filter::Filter( Filter &filter ) :
-	destroy( false ),
 	instance( filter.get_filter( ) )
 {
+	inc_ref( );
 }
 
 Filter::Filter( mlt_filter filter ) :
-	destroy( false ),
 	instance( filter )
 {
+	inc_ref( );
 }
 
 Filter::~Filter( )
 {
-	if ( destroy )
-		mlt_filter_close( instance );
+	mlt_filter_close( instance );
 }
 
 mlt_filter Filter::get_filter( )

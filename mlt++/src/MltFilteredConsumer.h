@@ -37,6 +37,7 @@ namespace Mlt
 			Service *first;
 		public:
 			FilteredConsumer( char *id, char *arg = NULL );
+			FilteredConsumer( Consumer &consumer );
 			virtual ~FilteredConsumer( );
 			int connect( Service &service );
 			int attach( Filter &filter );

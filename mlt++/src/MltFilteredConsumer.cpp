@@ -28,6 +28,13 @@ FilteredConsumer::FilteredConsumer( char *id, char *arg ) :
 	first = new Service( *this );
 }
 
+FilteredConsumer::FilteredConsumer( Consumer &consumer ) :
+	Consumer( consumer )
+{
+	// Create a reference to the first service
+	first = new Service( *this );
+}
+
 FilteredConsumer::~FilteredConsumer( )
 {
 	// Delete the reference to the first service

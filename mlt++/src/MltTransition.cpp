@@ -24,7 +24,6 @@
 using namespace Mlt;
 
 Transition::Transition( char *id, char *arg ) :
-	destroy( true ),
 	instance( NULL )
 {
 	if ( arg != NULL )
@@ -49,21 +48,20 @@ Transition::Transition( char *id, char *arg ) :
 }
 
 Transition::Transition( Transition &transition ) :
-	destroy( false ),
 	instance( transition.get_transition( ) )
 {
+	inc_ref( );
 }
 
 Transition::Transition( mlt_transition transition ) :
-	destroy( false ),
 	instance( transition )
 {
+	inc_ref( );
 }
 
 Transition::~Transition( )
 {
-	if ( destroy )
-		mlt_transition_close( instance );
+	mlt_transition_close( instance );
 }
 
 mlt_transition Transition::get_transition( )

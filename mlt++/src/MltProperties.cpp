@@ -22,26 +22,31 @@
 using namespace Mlt;
 
 Properties::Properties( ) :
-	destroy( true ),
 	instance( NULL )
 {
 	instance = mlt_properties_new( );
 }
 
+Properties::Properties( bool dummy ) :
+	instance( NULL )
+{
+}
+
 Properties::Properties( Properties &properties ) :
-	destroy( false ),
 	instance( properties.get_properties( ) )
 {
+	fprintf( stderr, "Incrementing ref count on properties #1\n" );
+	inc_ref( );
 }
 
 Properties::Properties( mlt_properties properties ) :
-	destroy( false ),
 	instance( properties )
 {
+	fprintf( stderr, "Incrementing ref count on properties #2\n" );
+	inc_ref( );
 }
 
 Properties::Properties( char *file ) :
-	destroy( true ),
 	instance( NULL )
 {
 	instance = mlt_properties_load( file );
@@ -49,13 +54,22 @@ Properties::Properties( char *file ) :
 
 Properties::~Properties( )
 {
-	if ( destroy )
-		mlt_properties_close( instance );
+	mlt_properties_close( instance );
 }
 
 mlt_properties Properties::get_properties( )
 {
 	return instance;
+}
+
+int Properties::inc_ref( )
+{
+	return mlt_properties_inc_ref( get_properties( ) );
+}
+
+int Properties::dec_ref( )
+{
+	return mlt_properties_dec_ref( get_properties( ) );
 }
 
 bool Properties::is_valid( )
@@ -151,6 +165,11 @@ int Properties::rename( char *source, char *dest )
 void Properties::dump( FILE *output )
 {
 	mlt_properties_dump( get_properties( ), output );
+}
+
+void Properties::debug( char *title, FILE *output )
+{
+	mlt_properties_debug( get_properties( ), title, output );
 }
 
 int Properties::save( char *file )

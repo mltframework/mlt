@@ -51,7 +51,6 @@ namespace Mlt
 	class Playlist : public Producer
 	{
 		private:
-			bool destroy;
 			mlt_playlist instance;
 		public:
 			Playlist( );
@@ -72,6 +71,8 @@ namespace Mlt
 			int remove( int where );
 			int move( int from, int to );
 			int resize_clip( int clip, int in, int out );
+			int split( int clip, int position );
+			int join( int clip, int count = 1, int merge = 1 );
 	};
 }
 

@@ -31,7 +31,6 @@ namespace Mlt
 	class Transition : public Service
 	{
 		private:
-			bool destroy;
 			mlt_transition instance;
 		public:
 			Transition( char *id, char *arg = NULL );

@@ -24,7 +24,6 @@
 using namespace Mlt;
 
 Consumer::Consumer( char *id, char *arg ) :
-	destroy( true ),
 	instance( NULL )
 {
 	if ( arg != NULL )
@@ -49,24 +48,20 @@ Consumer::Consumer( char *id, char *arg ) :
 }
 
 Consumer::Consumer( Consumer &consumer ) :
-	destroy( false ),
 	instance( consumer.get_consumer( ) )
 {
+	inc_ref( );
 }
 
 Consumer::Consumer( mlt_consumer consumer ) :
-	destroy( false ),
 	instance( consumer )
 {
+	inc_ref( );
 }
 
 Consumer::~Consumer( )
 {
-	if ( destroy )
-	{
-		stop( );
-		mlt_consumer_close( instance );
-	}
+	mlt_consumer_close( instance );
 }
 
 mlt_consumer Consumer::get_consumer( )

@@ -32,7 +32,6 @@ namespace Mlt
 	class Producer : public Service
 	{
 		private:
-			bool destroy;
 			mlt_producer instance;
 		public:
 			Producer( );
