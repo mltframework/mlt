@@ -18,6 +18,7 @@ Directories
 			+ core			- Independent MLT services
 			+ dv			- libdv dependent services
 			+ ffmpeg		- ffmpeg dependent services
+			+ avformat		- libavformat dependent services
 			+ sdl			- SDL dependent services
 			+ resample		- libresample dependent services
 			+ gtk2			- pango and pixbuf dependent services

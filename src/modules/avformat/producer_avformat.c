@@ -630,8 +630,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				// If we're behind, ignore this packet
 				float current_pts = (float)pkt.pts / 1000000.0;
 				double discrepancy = mlt_properties_get_double( properties, "discrepancy" );
-
-				fprintf( stderr, "%f < %f\n", discrepancy * current_pts, (float) real_timecode );
 				if ( discrepancy * current_pts < real_timecode )
 					ignore = 1;
 			}

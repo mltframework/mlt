@@ -1,6 +1,53 @@
 Producers
 ---------
 
+	avformat
+
+		Description
+
+			ffmpeg libavformat based producer for video and audio.
+
+		Constructor Argument
+
+			'file' - producer a/v from file
+
+		Initialisation Properties
+
+			int video_index - index of video stream to use (-1 is off)
+			int audio_index - index of audio stream to use (-1 is off)
+			int in - in point
+			int out - out point
+
+		Read Only Properties
+
+			double fps - this is fixed at 25 for PAL currently
+			double aspect_ratio - this is determined on the first frame read
+
+		Dependencies
+
+			ffmpeg must be configured as --enable-shared and installed prior
+			to compilation of mlt.
+
+		Oddities
+
+			There seems to be a discrepancy between audio and video pts (time
+			stamps) which causes audio seeking to be unreliable in some cases.
+			If audio playback is broken, try adding discrepancy=3 as a
+			property.
+
+			Not sure of the exact reasons, but am investigating. 
+
+		Known Bugs
+
+			Fixed frame rate.
+			Audio sync discrepancy with some content.
+			Not all libavformat supported formats are seekable.
+			ogg is currently broken.
+			Multiple mp3 uses in a single instance causes crash (patch
+			available on request - submitted to ffmpeg mailing list).
+			mpeg seeking is inaccurate - doesn't seek to i-frames so you may
+			get junk for a few frames.
+
 	ffmpeg
 
 		Description
@@ -24,7 +71,7 @@ Producers
 			int audio_channels - audio channels (default: 2)
 			int audio_track - audio track to use (default: 0)
 			int audio_loop - loop audio until video exhausted (default: 0)
-			intint in - in point
+			int in - in point
 			int out - out point
 			double fps - output frames per second (default: 25)
 			double aspect_ratio - aspect ratio of video
