@@ -941,6 +941,15 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	w = result.w * width / result.nw;
 	h = result.h * height / result.nh;
 
+	if ( y < 0 )
+	{
+		h = h + y;
+		y = 0;
+	}
+
+	if ( y + h > height )
+		h = height - y;
+
 	x &= 0xfffffffe;
 	w &= 0xfffffffe;
 

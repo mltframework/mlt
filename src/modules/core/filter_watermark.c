@@ -54,18 +54,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Create composite via the factory
 		composite = mlt_factory_transition( "composite", NULL );
 
-		// If we have one
+		// Register the composite for reuse/destruction
 		if ( composite != NULL )
-		{
-			// Get the properties
-			mlt_properties composite_properties = mlt_transition_properties( composite );
-
-			// Pass all the composite. properties on the filter down
-			mlt_properties_pass( composite_properties, properties, "composite." );
-
-			// Register the composite for reuse/destruction
 			mlt_properties_set_data( properties, "composite", composite, 0, ( mlt_destructor )mlt_transition_close, NULL );
-		}
+	}
+
+	// If we have one
+	if ( composite != NULL )
+	{
+		// Get the properties
+		mlt_properties composite_properties = mlt_transition_properties( composite );
+
+		// Pass all the composite. properties on the filter down
+		mlt_properties_pass( composite_properties, properties, "composite." );
 	}
 
 	// Create a producer if don't have one
@@ -83,18 +84,21 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// If we have one
 		if ( producer != NULL )
 		{
-			// Get the producer properties
-			mlt_properties producer_properties = mlt_producer_properties( producer );
-
-			// Ensure that we loop
-			mlt_properties_set( producer_properties, "eof", "loop" );
-
-			// Now pass all producer. properties on the filter down
-			mlt_properties_pass( producer_properties, properties, "producer." );
-
 			// Register the producer for reuse/destruction
 			mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+
+			// Ensure that we loop
+			mlt_properties_set( mlt_producer_properties( producer ), "eof", "loop" );
 		}
+	}
+
+	if ( producer != NULL )
+	{
+		// Get the producer properties
+		mlt_properties producer_properties = mlt_producer_properties( producer );
+
+		// Now pass all producer. properties on the filter down
+		mlt_properties_pass( producer_properties, properties, "producer." );
 	}
 
 	// Only continue if we have both producer and composite
