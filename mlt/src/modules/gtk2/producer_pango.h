@@ -32,6 +32,6 @@ typedef enum
 	pango_align_right
 } pango_align;
 
-extern mlt_producer producer_pango_init( const char *markup );
+extern mlt_producer producer_pango_init( const char *filename );
 
 #endif

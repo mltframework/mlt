@@ -81,6 +81,17 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 {
 	mlt_frame_push_get_image( a_frame, transition_get_image );
 	mlt_frame_push_frame( a_frame, b_frame );
+	
+	// Propogate the transition properties to the b frame
+	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties b_props = mlt_frame_properties( b_frame );
+	if ( mlt_properties_get( properties, "x" ) != NULL )
+		mlt_properties_set_int( b_props, "x", mlt_properties_get_int( properties, "x" ) );
+	if ( mlt_properties_get( properties, "y" ) != NULL )
+		mlt_properties_set_int( b_props, "y", mlt_properties_get_int( properties, "y" ) );
+	if ( mlt_properties_get( properties, "mix" ) != NULL )
+		mlt_properties_set_double( b_props, "mix",  mlt_properties_get_double( properties, "mix" ) );
+
 	return a_frame;
 }
 

@@ -55,7 +55,7 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 	rgba_color fg, rgba_color bg, int pad, int align );
 
-mlt_producer producer_pango_init( const char *markup )
+mlt_producer producer_pango_init( const char *filename )
 {
 	producer_pango this = calloc( sizeof( struct producer_pango_s ), 1 );
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
@@ -77,14 +77,52 @@ mlt_producer producer_pango_init( const char *markup )
 		mlt_properties_set_int( properties, "bgcolor", 0x00000000 );
 		mlt_properties_set_int( properties, "align", pango_align_left );
 		mlt_properties_set_int( properties, "pad", 0 );
-		mlt_properties_set( properties, "markup", ( char * ) ( markup == NULL ? "" : markup ) );
 		mlt_properties_set( properties, "text", "" );
 		mlt_properties_set( properties, "font", "Sans 48" );
 		mlt_properties_set_int( properties, "x", 0 );
 		mlt_properties_set_int( properties, "y", 0 );
 		mlt_properties_set_double( properties, "mix", 1.0 );
 
-		mlt_properties_set( properties, "resource", "pango" );
+		if ( filename == NULL )
+		{
+			mlt_properties_set( properties, "resource", "pango" );
+			mlt_properties_set( properties, "markup", "" );
+		}
+		else
+		{
+			FILE *f = fopen( filename, "r" );
+			if ( f != NULL )
+			{
+				char line[81];
+				char *markup = NULL;
+				size_t size = 0;
+				line[80] = '\0';
+				
+				while ( fgets( line, 80, f ) )
+				{
+					size += strlen( line ) + 1;
+					if ( markup )
+					{
+						realloc( markup, size );
+						strcat( markup, line );
+					}
+					else
+					{
+						markup = strdup( line );
+					}
+				}
+				fclose( f );
+				mlt_properties_set( properties, "resource", ( char * ) filename );
+				mlt_properties_set( properties, "markup", ( char * ) ( markup == NULL ? "" : markup ) );
+				if ( markup )
+					free( markup );
+			}
+			else
+			{
+				mlt_properties_set( properties, "resource", "pango" );
+				mlt_properties_set( properties, "markup", "" );
+			}
+		}
 
 		return producer;
 	}
@@ -283,9 +321,12 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "height", this->height );
 
 		// Set the compositing properties
-		mlt_properties_set_int( properties, "x", mlt_properties_get_int( producer_props, "x" ) );
-		mlt_properties_set_int( properties, "y", mlt_properties_get_int( producer_props, "y" ) );
-		mlt_properties_set_double( properties, "mix",  mlt_properties_get_double( producer_props, "mix" ) );
+		if ( mlt_properties_get( producer_props, "x" ) != NULL )
+			mlt_properties_set_int( properties, "x", mlt_properties_get_int( producer_props, "x" ) );
+		if ( mlt_properties_get( producer_props, "y" ) != NULL )
+			mlt_properties_set_int( properties, "y", mlt_properties_get_int( producer_props, "y" ) );
+		if ( mlt_properties_get( producer_props, "mix" ) != NULL )
+			mlt_properties_set_double( properties, "mix",  mlt_properties_get_double( producer_props, "mix" ) );
 
 		// if picture sequence pass the image and alpha data without destructor
 		mlt_properties_set_data( properties, "image", this->image, this->width * this->height * 2, NULL, NULL );
