@@ -7,7 +7,7 @@ OBJS = factory.o \
 
 CFLAGS += -I../../
 
-LDFLAGS += -lst
+LDFLAGS += -lst -lpopt -lvorbis -logg -lvorbisfile -lvorbisenc
 
 SRCS := $(OBJS:.o=.c)
 
