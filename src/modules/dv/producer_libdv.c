@@ -169,15 +169,15 @@ mlt_producer producer_libdv_init( char *filename )
 
 static int read_frame( int fd, uint8_t* frame_buf, int *isPAL )
 {
-	int result = read( fd, frame_buf, frame_size_525_60 ) == frame_size_525_60;
+	int result = read( fd, frame_buf, FRAME_SIZE_525_60 ) == FRAME_SIZE_525_60;
 	if ( result )
 	{
 		*isPAL = ( frame_buf[3] & 0x80 );
 
 		if ( *isPAL )
 		{
-			int diff = frame_size_625_50 - frame_size_525_60;
-			result = read( fd, frame_buf + frame_size_525_60, diff ) == diff;
+			int diff = FRAME_SIZE_625_50 - FRAME_SIZE_525_60;
+			result = read( fd, frame_buf + FRAME_SIZE_525_60, diff ) == diff;
 		}
 	}
 	
@@ -188,7 +188,7 @@ static int producer_collect_info( producer_libdv this )
 {
 	int valid = 0;
 
-	uint8_t *dv_data = mlt_pool_alloc( frame_size_625_50 );
+	uint8_t *dv_data = mlt_pool_alloc( FRAME_SIZE_625_50 );
 
 	if ( dv_data != NULL )
 	{
@@ -212,7 +212,7 @@ static int producer_collect_info( producer_libdv this )
 			this->file_size = buf.st_size;
 
 			// Determine the frame size
-			this->frame_size = this->is_pal ? frame_size_625_50 : frame_size_525_60;
+			this->frame_size = this->is_pal ? FRAME_SIZE_625_50 : FRAME_SIZE_525_60;
 
 			// Determine the number of frames in the file
 			this->frames_in_file = this->file_size / this->frame_size;
@@ -384,7 +384,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	producer_libdv this = producer->child;
-	uint8_t *data = mlt_pool_alloc( frame_size_625_50 );
+	uint8_t *data = mlt_pool_alloc( FRAME_SIZE_625_50 );
 	
 	// Obtain the current frame number
 	uint64_t position = mlt_producer_frame( producer );
@@ -407,7 +407,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		dv_decoder_t *dv_decoder = dv_decoder_alloc( );
 
 		// Pass the dv data
-		mlt_properties_set_data( properties, "dv_data", data, frame_size_625_50, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "dv_data", data, FRAME_SIZE_625_50, ( mlt_destructor )mlt_pool_release, NULL );
 
 		// Update other info on the frame
 		mlt_properties_set_int( properties, "width", 720 );

@@ -20,6 +20,7 @@
 
 // Local header files
 #include "consumer_libdv.h"
+#include "producer_libdv.h"
 
 // mlt Header files
 #include <framework/mlt_frame.h>
@@ -233,7 +234,7 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		else
 		{
 			// Calculate the size of the dv frame
-			size = height == 576 ? frame_size_625_50 : frame_size_525_60;
+			size = height == 576 ? FRAME_SIZE_625_50 : FRAME_SIZE_525_60;
 		}
 
 		// Process the frame
@@ -246,7 +247,7 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 	else if ( encoder != NULL )
 	{
 		// Calculate the size of the dv frame (duplicate of previous)
-		size = height == 576 ? frame_size_625_50 : frame_size_525_60;
+		size = height == 576 ? FRAME_SIZE_625_50 : FRAME_SIZE_525_60;
 	}
 	
 	return size;
@@ -377,7 +378,7 @@ static void *consumer_thread( void *arg )
 	int ( *output )( mlt_consumer, uint8_t *, int, mlt_frame ) = mlt_properties_get_data( properties, "output", NULL );
 
 	// Allocate a single PAL frame for encoding
-	uint8_t *dv_frame = mlt_pool_alloc( frame_size_625_50 );
+	uint8_t *dv_frame = mlt_pool_alloc( FRAME_SIZE_625_50 );
 
 	// Frame and size
 	mlt_frame frame = NULL;

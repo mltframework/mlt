@@ -25,4 +25,7 @@
 
 extern mlt_producer producer_libdv_init( char *filename );
 
+#define FRAME_SIZE_525_60 	10 * 150 * 80
+#define FRAME_SIZE_625_50 	12 * 150 * 80
+
 #endif
