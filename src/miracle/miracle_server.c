@@ -52,6 +52,12 @@ static void miracle_command_received( mlt_listener listener, mlt_properties owne
 		listener( owner, this, ( valerie_response ** )args[ 0 ], ( char * )args[ 1 ] );
 }
 
+static void miracle_doc_received( mlt_listener listener, mlt_properties owner, miracle_server this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( valerie_response ** )args[ 0 ], ( char * )args[ 1 ], ( char * )args[ 2 ] );
+}
+
 static void miracle_push_received( mlt_listener listener, mlt_properties owner, miracle_server this, void **args )
 {
 	if ( listener != NULL )
@@ -73,6 +79,7 @@ miracle_server miracle_server_init( char *id )
 		server->socket = -1;
 		mlt_events_init( &server->parent );
 		mlt_events_register( &server->parent, "command-received", ( mlt_transmitter )miracle_command_received );
+		mlt_events_register( &server->parent, "doc-received", ( mlt_transmitter )miracle_doc_received );
 		mlt_events_register( &server->parent, "push-received", ( mlt_transmitter )miracle_push_received );
 	}
 	return server;

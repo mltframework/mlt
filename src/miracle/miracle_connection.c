@@ -247,10 +247,19 @@ void *parser_thread( void *arg )
 				}
 				buffer[ bytes ] = '\0';
 				if ( bytes > 0 && total == bytes )
-					service = ( mlt_service )mlt_factory_producer( "westley-xml", buffer );
-				mlt_events_fire( owner, "push-received", &response, command, service, NULL );
-				if ( response == NULL )
-					response = valerie_parser_push( parser, command, service );
+				{
+					if ( mlt_properties_get( owner, "push-parser-off" ) == 0 )
+					{
+						service = ( mlt_service )mlt_factory_producer( "westley-xml", buffer );
+						mlt_events_fire( owner, "push-received", &response, command, service, NULL );
+						if ( response == NULL )
+							response = valerie_parser_push( parser, command, service );
+					}
+					else
+					{
+						response = valerie_parser_received( parser, command, buffer );
+					}
+				}
 				error = connection_send( fd, response );
 				valerie_response_close( response );
 				mlt_service_close( service );

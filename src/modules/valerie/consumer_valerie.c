@@ -93,7 +93,10 @@ static int consumer_start( mlt_consumer this )
 	// If this is a reuse, then a valerie object will exist
 	valerie connection = mlt_properties_get_data( properties, "connection", NULL );
 
-	if ( service != NULL )
+	// Special case - we can get a doc too...
+	char *doc = mlt_properties_get( properties, "westley" );
+
+	if ( service != NULL || doc != NULL )
 	{
 		// Initiate the connection if required
 		if ( connection == NULL )
@@ -117,20 +120,32 @@ static int consumer_start( mlt_consumer this )
 		// If we have connection, push the service over
 		if ( connection != NULL )
 		{
-			int error;
+			if ( doc == NULL )
+			{
+				int error;
 
-			// Set the title if provided
-			if ( title != NULL )
-				mlt_properties_set( mlt_service_properties( service ), "title", title );
-			else if ( mlt_properties_get( mlt_service_properties( service ), "title" ) == NULL )
-				mlt_properties_set( mlt_service_properties( service ), "title", "Anonymous Submission" );
+				// Set the title if provided
+				if ( title != NULL )
+					mlt_properties_set( mlt_service_properties( service ), "title", title );
+				else if ( mlt_properties_get( mlt_service_properties( service ), "title" ) == NULL )
+					mlt_properties_set( mlt_service_properties( service ), "title", "Anonymous Submission" );
 
-			// Push the service
-			error = valerie_unit_push( connection, unit, command, service );
+				// Push the service
+				error = valerie_unit_push( connection, unit, command, service );
 
-			// Report error
-			if ( error != valerie_ok )
-				fprintf( stderr, "Push failed on %s:%d %s u%d (%d)\n", server, port, command, unit, error );
+				// Report error
+				if ( error != valerie_ok )
+					fprintf( stderr, "Push failed on %s:%d %s u%d (%d)\n", server, port, command, unit, error );
+			}
+			else
+			{
+				// Push the service
+				int error = valerie_unit_receive( connection, unit, command, doc );
+
+				// Report error
+				if ( error != valerie_ok )
+					fprintf( stderr, "Send failed on %s:%d %s u%d (%d)\n", server, port, command, unit, error );
+			}
 		}
 	}
 	

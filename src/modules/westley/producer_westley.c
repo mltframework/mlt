@@ -726,12 +726,12 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 
 		if ( multitrack != NULL )
 		{
-			// Set the track on the multitrack
-
 			// Set producer i/o if specified
-			if ( mlt_properties_get( track_props, "in" ) != NULL &&
+			if ( mlt_properties_get( track_props, "in" ) != NULL ||
 				 mlt_properties_get( track_props, "out" ) != NULL )
 			{
+				if ( mlt_properties_get( track_props, "out" ) == NULL )
+					mlt_properties_set_position( track_props, "out", mlt_properties_get_position( track_props, "length" ) - 1 );
 				mlt_producer cut = mlt_producer_cut( MLT_PRODUCER( producer ),
 					mlt_properties_get_position( track_props, "in" ),
 					mlt_properties_get_position( track_props, "out" ) );
@@ -891,6 +891,8 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 			if ( parent_type == mlt_tractor_type )
 			{
 				mlt_field field = mlt_tractor_field( MLT_TRACTOR( parent ) );
+				if ( mlt_properties_get_int( properties, "a_track" ) == mlt_properties_get_int( properties, "b_track" ) )
+					mlt_properties_set_int( properties, "b_track", mlt_properties_get_int( properties, "a_track" ) + 1 );
 				mlt_field_plant_transition( field, MLT_TRANSITION( effect ), 
 											mlt_properties_get_int( properties, "a_track" ),
 											mlt_properties_get_int( properties, "b_track" ) );

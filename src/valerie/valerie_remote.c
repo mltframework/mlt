@@ -55,6 +55,7 @@ typedef struct
 
 static valerie_response valerie_remote_connect( valerie_remote );
 static valerie_response valerie_remote_execute( valerie_remote, char * );
+static valerie_response valerie_remote_receive( valerie_remote, char *, char * );
 static valerie_response valerie_remote_push( valerie_remote, char *, mlt_service );
 static void valerie_remote_close( valerie_remote );
 static int valerie_remote_read_response( valerie_socket, valerie_response );
@@ -72,6 +73,7 @@ valerie_parser valerie_parser_init_remote( char *server, int port )
 		parser->connect = (parser_connect)valerie_remote_connect;
 		parser->execute = (parser_execute)valerie_remote_execute;
 		parser->push = (parser_push)valerie_remote_push;
+		parser->received = (parser_received)valerie_remote_receive;
 		parser->close = (parser_close)valerie_remote_close;
 		parser->real = remote;
 
@@ -194,34 +196,47 @@ static valerie_response valerie_remote_execute( valerie_remote remote, char *com
 	return response;
 }
 
-/** Push a producer to the server.
+/** Push a westley document to the server.
 */
 
-static valerie_response valerie_remote_push( valerie_remote remote, char *command, mlt_service service )
+static valerie_response valerie_remote_receive( valerie_remote remote, char *command, char *buffer )
 {
 	valerie_response response = NULL;
 	pthread_mutex_lock( &remote->mutex );
 	if ( valerie_socket_write_data( remote->socket, command, strlen( command ) ) == strlen( command ) )
 	{
-		mlt_consumer consumer = mlt_factory_consumer( "westley", "buffer" );
-		mlt_properties properties = mlt_consumer_properties( consumer );
 		char temp[ 20 ];
-		char *buffer = NULL;
-		int length = 0;
-		mlt_consumer_connect( consumer, service );
+		int length = strlen( buffer );
 		response = valerie_response_init( );
 		valerie_socket_write_data( remote->socket, "\r\n", 2 );
-		mlt_consumer_start( consumer );
-		buffer = mlt_properties_get_data( properties, "buffer", &length );
 		sprintf( temp, "%d", length );
 		valerie_socket_write_data( remote->socket, temp, strlen( temp ) );
 		valerie_socket_write_data( remote->socket, "\r\n", 2 );
 		valerie_socket_write_data( remote->socket, buffer, length );
 		valerie_socket_write_data( remote->socket, "\r\n", 2 );
 		valerie_remote_read_response( remote->socket, response );
-		mlt_consumer_close( consumer );
 	}
 	pthread_mutex_unlock( &remote->mutex );
+	return response;
+}
+
+/** Push a producer to the server.
+*/
+
+static valerie_response valerie_remote_push( valerie_remote remote, char *command, mlt_service service )
+{
+	valerie_response response = NULL;
+	if ( service != NULL )
+	{
+		mlt_consumer consumer = mlt_factory_consumer( "westley", "buffer" );
+		mlt_properties properties = mlt_consumer_properties( consumer );
+		char *buffer = NULL;
+		mlt_consumer_connect( consumer, service );
+		mlt_consumer_start( consumer );
+		buffer = mlt_properties_get_data( properties, "buffer", NULL );
+		response = valerie_remote_receive( remote, command, buffer );
+		mlt_consumer_close( consumer );
+	}
 	return response;
 }
 

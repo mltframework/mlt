@@ -38,6 +38,7 @@ extern "C"
 
 typedef valerie_response (*parser_connect)( void * );
 typedef valerie_response (*parser_execute)( void *, char * );
+typedef valerie_response (*parser_received)( void *, char *, char * );
 typedef valerie_response (*parser_push)( void *, char *, mlt_service );
 typedef void (*parser_close)( void * );
 
@@ -49,6 +50,7 @@ typedef struct
 	parser_connect connect;
 	parser_execute execute;
 	parser_push push;
+	parser_received received;
 	parser_close close;
 	void *real;
 	valerie_notifier notifier;
@@ -60,6 +62,7 @@ typedef struct
 
 extern valerie_response valerie_parser_connect( valerie_parser );
 extern valerie_response valerie_parser_push( valerie_parser, char *, mlt_service );
+extern valerie_response valerie_parser_received( valerie_parser, char *, char * );
 extern valerie_response valerie_parser_execute( valerie_parser, char * );
 extern valerie_response valerie_parser_executef( valerie_parser, char *, ... );
 extern valerie_response valerie_parser_run( valerie_parser, char * );

@@ -47,6 +47,14 @@ valerie_response valerie_parser_execute( valerie_parser parser, char *command )
 /** Push a service via the parser.
 */
 
+valerie_response valerie_parser_received( valerie_parser parser, char *command, char *doc )
+{
+	return parser->received != NULL ? parser->received( parser->real, command, doc ) : NULL;
+}
+
+/** Push a service via the parser.
+*/
+
 valerie_response valerie_parser_push( valerie_parser parser, char *command, mlt_service service )
 {
 	return parser->push( parser->real, command, service );

@@ -97,6 +97,7 @@ extern valerie_error_code valerie_unit_load_clipped( valerie, int, char *, int32
 extern valerie_error_code valerie_unit_load_back( valerie, int, char * );
 extern valerie_error_code valerie_unit_load_back_clipped( valerie, int, char *, int32_t, int32_t );
 extern valerie_error_code valerie_unit_append( valerie, int, char *, int32_t, int32_t );
+extern valerie_error_code valerie_unit_receive( valerie, int, char *, char * );
 extern valerie_error_code valerie_unit_push( valerie, int, char *, mlt_service );
 extern valerie_error_code valerie_unit_clean( valerie, int );
 extern valerie_error_code valerie_unit_clear( valerie, int );

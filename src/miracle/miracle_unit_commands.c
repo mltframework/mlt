@@ -263,6 +263,22 @@ int miracle_push( command_argument cmd_arg, mlt_service service )
 	return RESPONSE_BAD_FILE;
 }
 
+int miracle_receive( command_argument cmd_arg, char *doc )
+{
+	mlt_producer producer = mlt_factory_producer( "westley-xml", doc );
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	if ( unit != NULL && producer != NULL )
+	{
+		if ( miracle_unit_append_service( unit, mlt_producer_service( producer ) ) == valerie_ok )
+		{
+			mlt_producer_close( producer );
+			return RESPONSE_SUCCESS;
+		}
+	}
+	mlt_producer_close( producer );
+	return RESPONSE_BAD_FILE;
+}
+
 int miracle_play( command_argument cmd_arg )
 {
 	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
