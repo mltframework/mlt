@@ -201,8 +201,14 @@ mlt_producer mlt_tractor_get_track( mlt_tractor this, int index )
 	return mlt_multitrack_track( mlt_tractor_multitrack( this ), index );
 }
 
+static uint8_t *mlt_tractor_alpha_mask( mlt_frame frame )
+{
+	return mlt_properties_get_data( mlt_frame_properties( frame ), "alpha", NULL );
+}
+
 static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
+	uint8_t *data = NULL;
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_frame frame = mlt_frame_pop_service( this );
 	mlt_properties_inherit( mlt_frame_properties( frame ), properties );
@@ -211,6 +217,9 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
+	data = mlt_frame_get_alpha_mask( frame );
+	mlt_properties_set_data( properties, "alpha", data, 0, NULL, NULL );
+	this->get_alpha_mask = mlt_tractor_alpha_mask;
 	return 0;
 }
 
