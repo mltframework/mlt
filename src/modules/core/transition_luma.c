@@ -59,15 +59,113 @@ static inline float smoothstep( float edge1, float edge2, float a )
 	return ( a * a * ( 3 - 2 * a ) );
 }
 
+static int frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float weight, int *width, int *height )
+{
+	int ret = 0;
+	int width_src = *width, height_src = *height;
+	int width_dest = *width, height_dest = *height;
+	mlt_image_format format_src = mlt_image_yuv422, format_dest = mlt_image_yuv422;
+	uint8_t *p_src, *p_dest;
+	int i, j;
+	int stride_src;
+	int stride_dest;
+	int x_src = 0, y_src = 0;
+
+	// optimization point - no work to do
+	if ( ( x < 0 && -x >= width_src ) || ( y < 0 && -y >= height_src ) )
+		return ret;
+
+	format_src = mlt_image_yuv422;
+	format_dest = mlt_image_yuv422;
+
+	mlt_frame_get_image( this, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
+	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
+
+	stride_src = width_src * 2;
+	stride_dest = width_dest * 2;
+	
+	// crop overlay off the left edge of frame
+	if ( x < 0 )
+	{
+		x_src = -x;
+		width_src -= x_src;
+		x = 0;
+	}
+	
+	// crop overlay beyond right edge of frame
+	else if ( x + width_src > width_dest )
+		width_src = width_dest - x;
+
+	// crop overlay off the top edge of the frame
+	if ( y < 0 )
+	{
+		y_src = -y;
+		height_src -= y_src;
+	}
+	// crop overlay below bottom edge of frame
+	else if ( y + height_src > height_dest )
+		height_src = height_dest - y;
+
+	// offset pointer into overlay buffer based on cropping
+	p_src += x_src * 2 + y_src * stride_src;
+
+	// offset pointer into frame buffer based upon positive, even coordinates only!
+	p_dest += ( x < 0 ? 0 : x ) * 2 + ( y < 0 ? 0 : y ) * stride_dest;
+
+	// Get the alpha channel of the overlay
+	uint8_t *p_alpha = mlt_frame_get_alpha_mask( that );
+
+	// offset pointer into alpha channel based upon cropping
+	if ( p_alpha )
+		p_alpha += x_src + y_src * stride_src / 2;
+
+	uint8_t *p = p_src;
+	uint8_t *q = p_dest;
+	uint8_t *o = p_dest;
+	uint8_t *z = p_alpha;
+
+	uint8_t Y;
+	uint8_t UV;
+	uint8_t a;
+	float value;
+
+	// now do the compositing only to cropped extents
+	for ( i = 0; i < height_src; i++ )
+	{
+		p = p_src;
+		q = p_dest;
+		o = p_dest;
+		z = p_alpha;
+
+		for ( j = 0; j < width_src; j ++ )
+		{
+			Y = *p ++;
+			UV = *p ++;
+			a = ( z == NULL ) ? 255 : *z ++;
+			value = ( weight * ( float ) a / 255.0 );
+			*o ++ = (uint8_t)( Y * value + *q++ * ( 1 - value ) );
+			*o ++ = (uint8_t)( UV * value + *q++ * ( 1 - value ) );
+		}
+
+		p_src += stride_src;
+		p_dest += stride_dest;
+		if ( p_alpha )
+			p_alpha += stride_src / 2;
+	}
+
+	return ret;
+}
+
 /** powerful stuff
 
     \param field_order -1 = progressive, 0 = lower field first, 1 = top field first
 */
-static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, int luma_height,
-							float *luma_bitmap, float pos, float frame_delta, float softness, int field_order )
+static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width, int luma_height,
+							float *luma_bitmap, float pos, float frame_delta, float softness, int field_order,
+							int *width, int *height )
 {
-	int width_src = 0, height_src = 0;
-	int width_dest = 0, height_dest = 0;
+	int width_src = *width, height_src = *height;
+	int width_dest = *width, height_dest = *height;
 	mlt_image_format format_src = mlt_image_yuv422, format_dest = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
 	int i, j;
@@ -79,7 +177,7 @@ static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, i
 	format_src = mlt_image_yuv422;
 	format_dest = mlt_image_yuv422;
 
-	mlt_frame_get_image( this, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
+	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
 	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
 
 	stride_src = width_src * 2;
@@ -103,6 +201,9 @@ static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, i
 	uint8_t uv;
    	float value;
 
+	float x_diff = ( float )luma_width / ( float )*width;
+	float y_diff = ( float )luma_height / ( float )*height;
+
 	// composite using luma map
 	for ( field = 0; field < ( field_order < 0 ? 1 : 2 ); ++field )
 	{
@@ -111,13 +212,13 @@ static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, i
 			p = &p_src[ i * stride_src ];
 			q = &p_dest[ i * stride_dest ];
 			o = &p_dest[ i * stride_dest ];
-			l = &luma_bitmap[ i * luma_width ];
+			l = &luma_bitmap[ ( int )( ( float )i * y_diff ) * luma_width ];
 
 			for ( j = 0; j < width_src; j ++ )
 			{
 				y = *p ++;
 				uv = *p ++;
-             	weight = *l ++;
+             	weight = l[ ( int )( ( float )j * x_diff ) ];
    				value = smoothstep( weight, weight + softness, field_pos[ field ] );
 
 				*o ++ = (uint8_t)( y * value + *q++ * ( 1 - value ) );
@@ -155,13 +256,16 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	// Honour the reverse here
 	mix = reverse ? 1 - mix : mix;
 
+	// Ensure we get scaling on the b_frame
+	mlt_properties_set( b_props, "rescale.interp", "nearest" );
+
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 		// Composite the frames using a luma map
 		luma_composite( this, b_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
-			luma_softness, progressive > 0 ? -1 : top_field_first );
+			luma_softness, progressive > 0 ? -1 : top_field_first, width, height );
 	else
 		// Dissolve the frames using the time offset for mix value
-		mlt_frame_composite_yuv( this, b_frame, 0, 0, mix );
+		frame_composite_yuv( this, b_frame, 0, 0, mix, width, height );
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( a_props, "width" );
@@ -276,27 +380,17 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	char *luma_file = mlt_properties_get( properties, "resource" );
 	if ( luma_file != NULL && ( this->filename == NULL || ( this->filename && strcmp( luma_file, this->filename ) ) ) )
 	{
-		int width = mlt_properties_get_int( b_props, "width" );
-		int height = mlt_properties_get_int( b_props, "height" );
-		char command[ 512 ];
 		FILE *pipe;
 		
-		command[ 511 ] = '\0';
-		if ( this->filename )
-			free( this->filename );
+		free( this->filename );
 		this->filename = strdup( luma_file );
-		snprintf( command, 511, "anytopnm %s | pnmscale -width %d -height %d", luma_file, width, height );
-		//pipe = popen( command, "r" );
 		pipe = fopen( luma_file, "r" );
 		if ( pipe != NULL )
 		{
-			if ( this->bitmap )
-				free( this->bitmap );
+			free( this->bitmap );
 			luma_read_pgm( pipe, &this->bitmap, &this->width, &this->height );
-			//pclose( pipe );
 			fclose( pipe );
 		}
-		
 	}
 
 	// Determine the time position of this frame in the transition duration
@@ -331,10 +425,7 @@ mlt_transition transition_luma_init( char *lumafile )
 		mlt_transition_init( transition, this );
 		transition->process = transition_process;
 		transition->close = transition_close;
-
-		if ( lumafile != NULL )
-			mlt_properties_set( mlt_transition_properties( transition ), "resource", lumafile );
-		
+		mlt_properties_set( mlt_transition_properties( transition ), "resource", lumafile );
 		return &this->parent;
 	}
 	return NULL;
@@ -346,13 +437,8 @@ mlt_transition transition_luma_init( char *lumafile )
 static void transition_close( mlt_transition parent )
 {
 	transition_luma *this = (transition_luma*) parent->child;
-
-	if ( this->bitmap )
-		free( this->bitmap );
-	
-	if ( this->filename )
-		free( this->filename );
-
+	free( this->bitmap );
+	free( this->filename );
 	free( this );
 }
 
