@@ -113,7 +113,7 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
 	int size = 0;
 	uint8_t *input = mlt_properties_get_data( MLT_FRAME_PROPERTIES( this ), "alpha", &size );
 	
-	if ( input != NULL && ( size == iwidth * iheight ) || size == ( iwidth * ( iheight + 1 ) ) )
+	if ( input != NULL && ( ( size == iwidth * iheight ) || size == ( iwidth * ( iheight + 1 ) ) ) )
 	{
 		uint8_t *output = mlt_pool_alloc( owidth * oheight );
 
