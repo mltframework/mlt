@@ -556,7 +556,7 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 
 	char temp[ 512 ];
 
-	if ( strchr( resource, '%' ) )
+	if ( resource != NULL && strchr( resource, '%' ) )
 	{
 		sprintf( temp, "%s/lumas/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
 		resource = temp;
