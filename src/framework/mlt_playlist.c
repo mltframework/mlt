@@ -98,7 +98,7 @@ mlt_playlist mlt_playlist_init( )
 
 mlt_producer mlt_playlist_producer( mlt_playlist this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Get the service associated to this playlist.

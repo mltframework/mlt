@@ -78,7 +78,7 @@ mlt_field mlt_field_init( )
 
 mlt_service mlt_field_service( mlt_field this )
 {
-	return mlt_tractor_service( this->tractor );
+	return this != NULL ? mlt_tractor_service( this->tractor ) : NULL;
 }
 
 /** Get the multi track.
@@ -86,7 +86,7 @@ mlt_service mlt_field_service( mlt_field this )
 
 mlt_multitrack mlt_field_multitrack( mlt_field this )
 {
-	return this->multitrack;
+	return this != NULL ? this->multitrack : NULL;
 }
 
 /** Get the tractor.
@@ -94,7 +94,7 @@ mlt_multitrack mlt_field_multitrack( mlt_field this )
 
 mlt_tractor mlt_field_tractor( mlt_field this )
 {
-	return this->tractor;
+	return this != NULL ? this->tractor : NULL;
 }
 
 /** Get the properties associated to this field.

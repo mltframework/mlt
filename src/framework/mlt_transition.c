@@ -72,7 +72,7 @@ mlt_transition mlt_transition_new( )
 
 mlt_service mlt_transition_service( mlt_transition this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Get the properties interface.

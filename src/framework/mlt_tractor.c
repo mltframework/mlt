@@ -83,7 +83,7 @@ mlt_service mlt_tractor_service( mlt_tractor this )
 
 mlt_producer mlt_tractor_producer( mlt_tractor this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Get the properties object associated to the tractor.

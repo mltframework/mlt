@@ -78,7 +78,7 @@ mlt_multitrack mlt_multitrack_init( )
 
 mlt_producer mlt_multitrack_producer( mlt_multitrack this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Get the service associated this multitrack.

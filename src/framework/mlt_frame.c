@@ -80,7 +80,7 @@ mlt_frame mlt_frame_init( )
 
 mlt_properties mlt_frame_properties( mlt_frame this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Check if we have a way to derive something other than a test card.

@@ -108,7 +108,7 @@ mlt_consumer mlt_consumer_new( )
 
 mlt_service mlt_consumer_service( mlt_consumer this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Get the consumer properties.
@@ -116,7 +116,7 @@ mlt_service mlt_consumer_service( mlt_consumer this )
 
 mlt_properties mlt_consumer_properties( mlt_consumer this )
 {
-	return mlt_service_properties( &this->parent );
+	return this != NULL ? mlt_service_properties( &this->parent ) : NULL;
 }
 
 /** Connect the consumer to the producer.

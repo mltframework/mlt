@@ -217,7 +217,7 @@ static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 
 mlt_properties mlt_service_properties( mlt_service self )
 {
-	return &self->parent;
+	return self != NULL ? &self->parent : NULL;
 }
 
 /** Obtain a frame.

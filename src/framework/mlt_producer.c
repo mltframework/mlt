@@ -105,7 +105,7 @@ mlt_producer mlt_producer_new( )
 
 mlt_service mlt_producer_service( mlt_producer this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Get the producer properties.

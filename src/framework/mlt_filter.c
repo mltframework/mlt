@@ -70,7 +70,7 @@ mlt_filter mlt_filter_new( )
 
 mlt_service mlt_filter_service( mlt_filter this )
 {
-	return &this->parent;
+	return this != NULL ? &this->parent : NULL;
 }
 
 /** Get the properties associated to this filter.
