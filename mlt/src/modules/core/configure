@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$help" != "1" ]
+then
+
+cat << EOF >> ../producers.dat
+ppm				libmltcore.so
+EOF
+
+cat << EOF >> ../filters.dat
+deinterlace		libmltcore.so
+greyscale		libmltcore.so
+EOF
+
+cat << EOF >> ../transitions.dat
+composite		libmltcore.so
+EOF
+
+fi
+
