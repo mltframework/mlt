@@ -334,7 +334,7 @@ static void producer_close( mlt_producer parent )
 	producer_libdv this = parent->child;
 
 	// Free the dv deconder
-	//dv_decoder_free( this->dv_decoder );
+	dv_decoder_free( this->dv_decoder );
 
 	// Close the file
 	if ( this->fd > 0 )

@@ -384,8 +384,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		int got_picture = 0;
 		AVFrame frame;
 
-		//memset( &pkt, 0, sizeof( pkt ) );
-		//memset( &frame, 0, sizeof( frame ) );
+		memset( &pkt, 0, sizeof( pkt ) );
+		memset( &frame, 0, sizeof( frame ) );
 
 		while( ret >= 0 && !got_picture )
 		{
@@ -718,7 +718,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		int got_audio = 0;
 		int16_t *temp = mlt_pool_alloc( sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE );
 
-		//memset( &pkt, 0, sizeof( pkt ) );
+		memset( &pkt, 0, sizeof( pkt ) );
 
 		while( ret >= 0 && !got_audio )
 		{
@@ -794,20 +794,19 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 			av_free_packet( &pkt );
 		}
 
+		*buffer = mlt_pool_alloc( *samples * *channels * sizeof( int16_t ) );
+		mlt_properties_set_data( frame_properties, "audio", *buffer, 0, ( mlt_destructor )mlt_pool_release, NULL );
+
 		// Now handle the audio if we have enough
 		if ( audio_used >= *samples )
 		{
-			*buffer = mlt_pool_alloc( *samples * *channels * sizeof( int16_t ) );
 			memcpy( *buffer, audio_buffer, *samples * *channels * sizeof( int16_t ) );
 			audio_used -= *samples;
 			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * *channels * sizeof( int16_t ) );
-			mlt_properties_set_data( frame_properties, "audio", *buffer, 0, ( mlt_destructor )mlt_pool_release, NULL );
 		}
 		else
 		{
-			frame->get_audio = NULL;
-			mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
-			audio_used = 0;
+			memset( *buffer, 0, *samples * *channels * sizeof( int16_t ) );
 		}
 		
 		// Store the number of audio samples still available

@@ -220,15 +220,15 @@ void *mlt_pool_alloc( int size )
 	mlt_pool pool = NULL;
 
 	// Determines the index of the pool to use
-	int index = 0;
+	int index = 8;
 
 	// Minimum size pooled is 256 bytes
-	size = size >> 8;
+	size = size + 4;
 	while ( ( 1 << index ) < size )
 		index ++;
 
 	// Now get the pool at the index
-	pool = mlt_properties_get_data_at( pools, index + 1, NULL );
+	pool = mlt_properties_get_data_at( pools, index - 8, NULL );
 
 	// Now get the real item
 	return pool_fetch( pool );
