@@ -371,9 +371,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 
 		// Indicate speed of this producer
 		mlt_properties producer_properties = mlt_producer_properties( parent );
-		double speed = mlt_properties_get_double( producer_properties, "speed" );
+		double speed = mlt_properties_get_double( producer_properties, "_speed" );
 		mlt_properties properties = mlt_frame_properties( *frame );
-		mlt_properties_set_double( properties, "speed", speed );
+		mlt_properties_set_double( properties, "_speed", speed );
 	}
 	else
 	{

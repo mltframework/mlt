@@ -43,8 +43,6 @@ Producers
 			Audio sync discrepancy with some content.
 			Not all libavformat supported formats are seekable.
 			ogg is currently broken.
-			Multiple mp3 uses in a single instance causes crash (patch
-			available on request - submitted to ffmpeg mailing list).
 			mpeg seeking is inaccurate - doesn't seek to i-frames so you may
 			get junk for a few frames.
 
@@ -478,6 +476,35 @@ Filters
 
 			none
 		
+	obscure
+	
+		Description
+
+			Obscuring filter.
+			
+		Constructor Argument
+
+			none
+			
+		Initialisation Properties
+		
+			string start - in the format X,Y:WxH[:PWxPY]
+			string end - in the format X,Y:WxH[:PWxPY]
+			int in - in point
+			int out - out point
+
+		Read Only Properties
+
+			none
+			
+		Dependencies
+
+			none
+
+		Known Bugs
+
+			none
+
 	resize
 	
 		Description

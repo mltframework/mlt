@@ -170,7 +170,6 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	mlt_position in = mlt_properties_get_position( properties, "in" );
 	mlt_position out = mlt_properties_get_position( properties, "out" );
 
-	// Fetch a and b frames together...
 	if ( ( index == a_track || index == b_track ) && !( this->a_held || this->b_held ) )
 	{
 		mlt_service_get_frame( this->producer, &this->a_frame, a_track );

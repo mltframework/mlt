@@ -138,9 +138,6 @@ static int producer_collect_info( producer_libdv this )
 			// Parse the header for meta info
 			dv_parse_header( this->dv_decoder, dv_data );
 			mlt_properties_set_double( properties, "aspect_ratio", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
-		
-			// Set the speed to normal
-			mlt_properties_set_double( properties, "speed", 1 );
 		}
 
 		free( dv_data );

@@ -517,11 +517,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Get the additional properties
 	double aspect_ratio = mlt_properties_get_double( producer_properties, "aspect_ratio" );
-	double speed = mlt_properties_get_double( producer_properties, "speed" );
+	double speed = mlt_producer_get_speed( producer );
 
 	// Set them on the frame
 	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
-	mlt_properties_set_double( properties, "speed", speed );
+	mlt_properties_set_double( properties, "_speed", speed );
 
 	// Set the out point on the producer
 	if ( this->end_of_video && this->end_of_audio )

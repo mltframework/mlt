@@ -127,10 +127,59 @@ void miracle_unit_set_notifier( miracle_unit this, valerie_notifier notifier, ch
 	miracle_unit_status_communicate( this );
 }
 
+static mlt_producer create_producer( char *file )
+{
+	mlt_producer result = NULL;
+
+	// 1st Line preferences
+	if ( strstr( file, ".inigo" ) )
+		result = mlt_factory_producer( "inigo_file", file );
+	else if ( strstr( file, ".westley" ) )
+		result = mlt_factory_producer( "westley", file );
+	else if ( strstr( file, ".mpg" ) )
+		result = mlt_factory_producer( "mcmpeg", file );
+	else if ( strstr( file, ".mpeg" ) )
+		result = mlt_factory_producer( "mcmpeg", file );
+	else if ( strstr( file, ".dv" ) )
+		result = mlt_factory_producer( "mcdv", file );
+	else if ( strstr( file, ".dif" ) )
+		result = mlt_factory_producer( "mcdv", file );
+	else if ( strstr( file, ".jpg" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".JPG" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".jpeg" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".png" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".tga" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".txt" ) )
+		result = mlt_factory_producer( "pango", file );
+	else if ( strstr( file, ".ogg" ) )
+		result = mlt_factory_producer( "vorbis", file );
+
+	// 2nd Line fallbacks
+	if ( result == NULL && strstr( file, ".dv" ) )
+		result = mlt_factory_producer( "libdv", file );
+	else if ( result == NULL && strstr( file, ".dif" ) )
+		result = mlt_factory_producer( "libdv", file );
+
+	// 3rd line fallbacks 
+	if ( result == NULL )
+		result = mlt_factory_producer( "avformat", file );
+
+	// 4th line fallbacks 
+	if ( result == NULL )
+		result = mlt_factory_producer( "ffmpeg", file );
+
+	return result;
+}
+
 /** Create or locate a producer for the file specified.
 */
 
-static mlt_producer create_producer( miracle_unit unit, char *file )
+static mlt_producer locate_producer( miracle_unit unit, char *file )
 {
 	// Get the unit properties
 	mlt_properties properties = unit->producers;
@@ -140,50 +189,12 @@ static mlt_producer create_producer( miracle_unit unit, char *file )
 
 	if ( result == NULL )
 	{
-		// 1st Line preferences
-		if ( strstr( file, ".inigo" ) )
-			result = mlt_factory_producer( "inigo_file", file );
-		else if ( strstr( file, ".westley" ) )
-			result = mlt_factory_producer( "westley", file );
-		else if ( strstr( file, ".mpg" ) )
-			result = mlt_factory_producer( "mcmpeg", file );
-		else if ( strstr( file, ".mpeg" ) )
-			result = mlt_factory_producer( "mcmpeg", file );
-		else if ( strstr( file, ".dv" ) )
-			result = mlt_factory_producer( "mcdv", file );
-		else if ( strstr( file, ".dif" ) )
-			result = mlt_factory_producer( "mcdv", file );
-		else if ( strstr( file, ".jpg" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".JPG" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".jpeg" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".png" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".tga" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".txt" ) )
-			result = mlt_factory_producer( "pango", file );
-		else if ( strstr( file, ".ogg" ) )
-			result = mlt_factory_producer( "vorbis", file );
-
-		// 2nd Line fallbacks
-		if ( result == NULL && strstr( file, ".dv" ) )
-			result = mlt_factory_producer( "libdv", file );
-		else if ( result == NULL && strstr( file, ".dif" ) )
-			result = mlt_factory_producer( "libdv", file );
-	
-		// 3rd line fallbacks 
-		if ( result == NULL )
-			result = mlt_factory_producer( "avformat", file );
-
-		// 4th line fallbacks 
-		if ( result == NULL )
-			result = mlt_factory_producer( "ffmpeg", file );
+		// Create the producer
+		result = create_producer( file );
 
 		// Now store the result
-		mlt_properties_set_data( properties, file, result, 0, ( mlt_destructor )mlt_producer_close, NULL );
+		if ( result != NULL )
+			mlt_properties_set_data( properties, file, result, 0, ( mlt_destructor )mlt_producer_close, NULL );
 	}
 
 	return result;
@@ -256,15 +267,14 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 
 valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int64_t in, int64_t out, int flush )
 {
-	// Have to clear the unit first
-	clear_unit( unit );
-
 	// Now try to create an producer
-	mlt_producer instance = create_producer( unit, clip );
+	mlt_producer instance = create_producer( clip );
 
 	if ( instance != NULL )
 	{
+		clear_unit( unit );
 		mlt_properties properties = unit->properties;
+		mlt_properties_set_data( unit->producers, clip, instance, 0, ( mlt_destructor )mlt_producer_close, NULL );
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 		mlt_playlist_append_io( playlist, instance, in, out );
 		miracle_log( LOG_DEBUG, "loaded clip %s", clip );
@@ -277,7 +287,7 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int64_t in,
 
 valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index, int64_t in, int64_t out )
 {
-	mlt_producer instance = create_producer( unit, clip );
+	mlt_producer instance = locate_producer( unit, clip );
 
 	if ( instance != NULL )
 	{
@@ -334,7 +344,7 @@ valerie_error_code miracle_unit_move( miracle_unit unit, int src, int dest )
 
 valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, int64_t in, int64_t out )
 {
-	mlt_producer instance = create_producer( unit, clip );
+	mlt_producer instance = locate_producer( unit, clip );
 
 	if ( instance != NULL )
 	{

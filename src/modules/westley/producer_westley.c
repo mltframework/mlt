@@ -75,11 +75,20 @@ static void track_service( mlt_properties properties, void *service, mlt_destruc
 static void on_start_tractor( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
 	mlt_service service = mlt_tractor_service( mlt_tractor_init() );
+	mlt_properties properties = mlt_service_properties( service );
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_tractor_close );
 
+	mlt_properties_set_position( properties, "length", 0 );
+
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		mlt_properties_set( mlt_service_properties( service ), (char*) atts[0], (char*) atts[1] );
+
+	if ( mlt_properties_get_position( properties, "length" ) < mlt_properties_get_position( properties, "out" ) )
+	{
+		mlt_position length = mlt_properties_get_position( properties, "out" ) + 1;
+		mlt_properties_set_position( properties, "length", length );
+	}
 
 	context_push_service( context, service );
 }
@@ -103,11 +112,19 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_playlist_close );
 
+	mlt_properties_set_position( properties, "length", 0 );
+
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
 
 	if ( mlt_properties_get( properties, "id" ) != NULL )
 		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
+
+	if ( mlt_properties_get_position( properties, "length" ) < mlt_properties_get_position( properties, "out" ) )
+	{
+		mlt_position length = mlt_properties_get_position( properties, "out" ) + 1;
+		mlt_properties_set_position( properties, "length", length );
+	}
 
 	context_push_service( context, service );
 }
@@ -163,7 +180,7 @@ static void on_start_blank( deserialise_context context, const xmlChar *name, co
 	}
 
 	// Append a blank to the playlist
-	mlt_playlist_blank( MLT_PLAYLIST( service ), length );
+	mlt_playlist_blank( MLT_PLAYLIST( service ), length - 1 );
 
 	// Push the playlist back onto the stack
 	context_push_service( context, service );
@@ -419,11 +436,10 @@ mlt_producer producer_westley_init( char *filename )
 	if ( !init )
 	{
 		xmlInitParser();
-		init = 1;
+		//init = 1;
 	}
 
 	xmlSAXUserParseFile( sax, context, filename );
-	free( sax );
 
 	// Need the complete producer list for various reasons
 	properties = context->destructors;
@@ -466,7 +482,11 @@ mlt_producer producer_westley_init( char *filename )
 
 	free( context->stack_service );
 	mlt_properties_close( context->producer_map );
-	free( context );
+	//free( context );
+	free( sax );
+	xmlCleanupParser();
+	xmlMemoryDump( );
+
 
 	return MLT_PRODUCER( service );
 }

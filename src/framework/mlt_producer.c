@@ -59,10 +59,10 @@ int mlt_producer_init( mlt_producer this, void *child )
 	
 			// Set the default properties
 			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
-			mlt_properties_set_position( properties, "position", 0.0 );
-			mlt_properties_set_double( properties, "frame", 0 );
+			mlt_properties_set_position( properties, "_position", 0.0 );
+			mlt_properties_set_double( properties, "_frame", 0 );
 			mlt_properties_set_double( properties, "fps", 25.0 );
-			mlt_properties_set_double( properties, "speed", 1.0 );
+			mlt_properties_set_double( properties, "_speed", 1.0 );
 			mlt_properties_set_position( properties, "in", 0 );
 			mlt_properties_set_position( properties, "out", 1799999 );
 			mlt_properties_set_position( properties, "length", 1800000 );
@@ -109,10 +109,10 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 		position = mlt_producer_get_playtime( this ) - 1;
 
 	// Set the position
-	mlt_properties_set_position( mlt_producer_properties( this ), "position", position );
+	mlt_properties_set_position( mlt_producer_properties( this ), "_position", position );
 
 	// Calculate the absolute frame
-	mlt_properties_set_position( mlt_producer_properties( this ), "frame", mlt_producer_get_in( this ) + position );
+	mlt_properties_set_position( mlt_producer_properties( this ), "_frame", mlt_producer_get_in( this ) + position );
 
 	return 0;
 }
@@ -122,7 +122,7 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 
 mlt_position mlt_producer_position( mlt_producer this )
 {
-	return mlt_properties_get_position( mlt_producer_properties( this ), "position" );
+	return mlt_properties_get_position( mlt_producer_properties( this ), "_position" );
 }
 
 /** Get the current position (relative to start of producer).
@@ -130,7 +130,7 @@ mlt_position mlt_producer_position( mlt_producer this )
 
 mlt_position mlt_producer_frame( mlt_producer this )
 {
-	return mlt_properties_get_position( mlt_producer_properties( this ), "frame" );
+	return mlt_properties_get_position( mlt_producer_properties( this ), "_frame" );
 }
 
 /** Set the playing speed.
@@ -138,7 +138,7 @@ mlt_position mlt_producer_frame( mlt_producer this )
 
 int mlt_producer_set_speed( mlt_producer this, double speed )
 {
-	return mlt_properties_set_double( mlt_producer_properties( this ), "speed", speed );
+	return mlt_properties_set_double( mlt_producer_properties( this ), "_speed", speed );
 }
 
 /** Get the playing speed.
@@ -146,7 +146,7 @@ int mlt_producer_set_speed( mlt_producer this, double speed )
 
 double mlt_producer_get_speed( mlt_producer this )
 {
-	return mlt_properties_get_double( mlt_producer_properties( this ), "speed" );
+	return mlt_properties_get_double( mlt_producer_properties( this ), "_speed" );
 }
 
 /** Get the frames per second.
@@ -261,7 +261,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	mlt_properties properties = mlt_frame_properties( *frame );
 	mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( this ) );
 	double speed = mlt_producer_get_speed( this );
-	mlt_properties_set_double( properties, "speed", speed );
+	mlt_properties_set_double( properties, "_speed", speed );
 
 	return 0;
 }

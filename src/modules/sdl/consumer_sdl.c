@@ -303,7 +303,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		while ( bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
 			pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
 		mlt_properties properties = mlt_frame_properties( frame );
-		if ( mlt_properties_get_double( properties, "speed" ) == 1 )
+		if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
 			memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
 		else
 			memset( &this->audio_buffer[ this->audio_avail ], 0, bytes );

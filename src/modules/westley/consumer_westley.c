@@ -88,8 +88,11 @@ static inline void serialise_properties( mlt_properties properties, xmlNode *nod
 	// Enumerate the properties
 	for ( i = 0; i < mlt_properties_count( properties ); i++ )
 	{
-		if ( mlt_properties_get_value( properties, i ) != NULL &&
-			strcmp( mlt_properties_get_name( properties, i ), "westley" ) != 0 )
+		char *name = mlt_properties_get_name( properties, i );
+		if ( name != NULL &&
+			 name[ 0 ] != '_' &&
+			 mlt_properties_get_value( properties, i ) != NULL &&
+			 strcmp( name, "westley" ) != 0 )
 		{
 #if 0
 			p = xmlNewChild( node, NULL, "prop", NULL );
