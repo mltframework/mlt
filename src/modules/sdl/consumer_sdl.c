@@ -45,6 +45,8 @@ struct consumer_sdl_s
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
 	pthread_cond_t audio_cond;
+	pthread_mutex_t video_mutex;
+	pthread_cond_t video_cond;
 	int window_width;
 	int window_height;
 	float aspect_ratio;
@@ -100,6 +102,8 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// This is the initialisation of the consumer
 		pthread_mutex_init( &this->audio_mutex, NULL );
 		pthread_cond_init( &this->audio_cond, NULL);
+		pthread_mutex_init( &this->video_mutex, NULL );
+		pthread_cond_init( &this->video_cond, NULL);
 		
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
@@ -501,10 +505,88 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}
 		}
-
 	}
 
 	return 0;
+}
+
+static void *video_thread( void *arg )
+{
+	// Identify the arg
+	consumer_sdl this = arg;
+
+	// Obtain time of thread start
+	struct timeval now;
+	int64_t start = 0;
+	int64_t elapsed = 0;
+	struct timespec tm;
+	mlt_frame next = NULL;
+	mlt_properties properties = NULL;
+	double speed = 0;
+	int skipped = 0;
+
+	// Get the current time
+	gettimeofday( &now, NULL );
+
+	// Determine start time
+	start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
+
+	while ( this->running )
+	{
+		// Pop the next frame
+		pthread_mutex_lock( &this->video_mutex );
+		while ( ( next = mlt_deque_pop_front( this->queue ) ) == NULL && this->running )
+			pthread_cond_wait( &this->video_cond, &this->video_mutex );
+		pthread_mutex_unlock( &this->video_mutex );
+
+		// Get the properties
+		properties =  mlt_frame_properties( next );
+
+		// Get the speed of the frame
+		speed = mlt_properties_get_double( properties, "_speed" );
+
+		// Get the current time
+		gettimeofday( &now, NULL );
+
+		// Get the elapsed time
+		elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - start;
+
+		// See if we have to delay the display of the current frame
+		if ( mlt_properties_get_int( properties, "rendered" ) == 1 && this->running )
+		{
+			// Obtain the scheduled playout time
+			mlt_position scheduled = mlt_properties_get_position( properties, "playtime" );
+
+			// Determine the difference between the elapsed time and the scheduled playout time
+			mlt_position difference = scheduled - elapsed;
+
+			// Smooth playback a bit
+			if ( difference > 20000 && speed == 1.0 )
+			{
+				tm.tv_sec = difference / 1000000;
+				tm.tv_nsec = ( difference % 1000000 ) * 500;
+				nanosleep( &tm, NULL );
+			}
+
+			// Show current frame if not too old
+			if ( difference > -10000 || speed != 1.0 || mlt_deque_count( this->queue ) < 2 )
+				consumer_play_video( this, next );
+			else
+				skipped ++;
+
+			// If the queue is empty, recalculate start to allow build up again
+			if ( mlt_deque_count( this->queue ) == 0 )
+			{
+				gettimeofday( &now, NULL );
+				start = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - scheduled + 20000;
+			}
+		}
+
+		// This frame can now be closed
+		mlt_frame_close( next );
+	}
+
+	return NULL;
 }
 
 /** Threaded wrapper for pipe.
@@ -518,19 +600,16 @@ static void *consumer_thread( void *arg )
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
 
+	// Video thread
+	pthread_t thread;
+
 	// internal intialization
 	int init_audio = 1;
-
-	// Obtain time of thread start
-	struct timeval now;
-	int64_t start = 0;
-	int64_t elapsed = 0;
-	int duration = 0;
-	int64_t playtime = 0;
-	struct timespec tm;
-	mlt_frame next = NULL;
+	int init_video = 1;
 	mlt_frame frame = NULL;
 	mlt_properties properties = NULL;
+	int duration = 0;
+	int64_t playtime = 0;
 
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
@@ -557,76 +636,36 @@ static void *consumer_thread( void *arg )
 			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
 
 			// Determine the start time now
-			if ( this->playing && start == 0 )
+			if ( this->playing && init_video )
 			{
-				// Get the current time
-				gettimeofday( &now, NULL );
+				// Create the video thread
+				pthread_create( &thread, NULL, video_thread, this );
 
-				// Determine start time
-				start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
+				// Video doesn't need to be initialised any more
+				init_video = 0;
 			}
 
 			// Set playtime for this frame
 			mlt_properties_set_position( properties, "playtime", playtime );
 
 			// Push this frame to the back of the queue
+			pthread_mutex_lock( &this->video_mutex );
 			mlt_deque_push_back( this->queue, frame );
+			pthread_cond_broadcast( &this->video_cond );
+			pthread_mutex_unlock( &this->video_mutex );
 
 			// Calculate the next playtime
 			playtime += ( duration * 1000 );
 		}
+	}
 
-		// Pop the next frame
-		next = mlt_deque_pop_front( this->queue );
-
-		while ( next != NULL && this->playing )
-		{
-			// Get the properties
-			properties =  mlt_frame_properties( next );
-
-			// Get the current time
-			gettimeofday( &now, NULL );
-
-			// Get the elapsed time
-			elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - start;
-
-			// See if we have to delay the display of the current frame
-			if ( mlt_properties_get_int( properties, "rendered" ) == 1 )
-			{
-				// Obtain the scheduled playout time
-				mlt_position scheduled = mlt_properties_get_position( properties, "playtime" );
-
-				// Determine the difference between the elapsed time and the scheduled playout time
-				mlt_position difference = scheduled - elapsed;
-
-				// If the frame is quite some way in the future, go get another
-				if ( difference >= 30000 && mlt_deque_count( this->queue ) < 10 )
-					break;
-
-				// Smooth playback a bit
-				if ( difference > 20000 && mlt_properties_get_double( properties, "_speed" ) == 1.0 )
-				{
-					tm.tv_sec = difference / 1000000;
-					tm.tv_nsec = ( difference % 1000000 ) * 1000;
-					nanosleep( &tm, NULL );
-				}
-
-				// Show current frame if not too old
-				if ( difference > -10000 || mlt_properties_get_double( properties, "_speed" ) != 1.0 )
-					consumer_play_video( this, next );
-				else
-					start = start - difference;
-			}
-
-			// This is an unrendered frame - just close it
-			mlt_frame_close( next );
-
-			// Pop the next frame
-			next = mlt_deque_pop_front( this->queue );
-		}
-
-		if ( next != NULL )
-			mlt_deque_push_front( this->queue, next );
+	// Kill the video thread
+	if ( init_video == 0 )
+	{
+		pthread_mutex_lock( &this->video_mutex );
+		pthread_cond_broadcast( &this->video_cond );
+		pthread_mutex_unlock( &this->video_mutex );
+		pthread_join( thread, NULL );
 	}
 
 	// internal cleanup
