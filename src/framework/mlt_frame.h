@@ -68,6 +68,7 @@ struct mlt_frame_s
 extern mlt_frame mlt_frame_init( );
 extern mlt_properties mlt_frame_properties( mlt_frame this );
 extern int mlt_frame_is_test_card( mlt_frame this );
+extern int mlt_frame_is_test_audio( mlt_frame this );
 extern double mlt_frame_get_aspect_ratio( mlt_frame this );
 extern int mlt_frame_set_aspect_ratio( mlt_frame this, double value );
 extern mlt_position mlt_frame_get_position( mlt_frame this );

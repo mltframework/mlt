@@ -489,7 +489,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Push the image callback
 		mlt_frame_push_get_image( *frame, producer_get_image );
-
 	}
 	else
 	{
@@ -505,28 +504,24 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		}
 
 		// Push the image callback
-		mlt_frame_push_get_image( *frame, producer_get_image );
+		if ( !this->end_of_video )
+			mlt_frame_push_get_image( *frame, producer_get_image );
 	}
 
 	// Set the audio pipe
 	mlt_properties_set_data( properties, "producer_ffmpeg", this, 0, NULL, NULL );
 
 	// Hmm - register audio callback
-	( *frame )->get_audio = producer_get_audio;
+	if ( !this->end_of_audio )
+		( *frame )->get_audio = producer_get_audio;
 
 	// Get the additional properties
 	double aspect_ratio = mlt_properties_get_double( producer_properties, "aspect_ratio" );
 	double speed = mlt_properties_get_double( producer_properties, "speed" );
-	char *video_file = mlt_properties_get( producer_properties, "video_file" );
 
 	// Set them on the frame
 	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
 	mlt_properties_set_double( properties, "speed", speed );
-	if ( strchr( video_file, '/' ) != NULL )
-		mlt_properties_set( properties, "file", strrchr( video_file, '/' ) + 1 );
-	else
-		mlt_properties_set( properties, "file", video_file );
-
 
 	// Set the out point on the producer
 	if ( this->end_of_video && this->end_of_audio )

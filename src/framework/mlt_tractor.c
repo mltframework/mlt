@@ -118,7 +118,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		int i = 0;
 		int looking = 1;
 		int done = 0;
-		mlt_frame temp;
+		mlt_frame temp = NULL;
 
 		// Get the properties of the parent producer
 		mlt_properties properties = mlt_producer_properties( parent );
@@ -154,7 +154,13 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				// Use this as output if we don't have one already
 				*frame = temp;
 			}
-			else if ( !mlt_frame_is_test_card( temp ) && looking )
+			else if ( ( !mlt_frame_is_test_card( temp ) || !mlt_frame_is_test_audio( temp ) ) && 
+					    mlt_producer_frame( parent ) == mlt_properties_get_position( mlt_frame_properties( temp ), "position" ) )
+			{
+				*frame = temp;
+				looking = 0;
+			}
+			else if ( ( !mlt_frame_is_test_card( temp ) || !mlt_frame_is_test_audio( temp ) ) && looking )
 			{
 				// This is the one we want and we can stop looking
 				*frame = temp;

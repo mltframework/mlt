@@ -342,7 +342,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_position in = mlt_transition_get_in( transition );
 	mlt_position out = mlt_transition_get_out( transition );
 	mlt_position time = mlt_frame_get_position( b_frame );
-	double pos = ( time - in ) / ( out - in );
+	double pos = ( (double)time - (double)in ) / ( (double)out - (double)in + 1 );
 	
 	// Set the b frame properties
 	mlt_properties_set_double( b_props, "mix", pos );

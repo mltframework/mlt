@@ -77,7 +77,15 @@ mlt_properties mlt_frame_properties( mlt_frame this )
 
 int mlt_frame_is_test_card( mlt_frame this )
 {
-	return this->stack_get_image_size == 0;
+	return ( this->stack_get_image_size == 0 && mlt_properties_get_data( mlt_frame_properties( this ), "image", NULL ) == NULL );
+}
+
+/** Check if we have a way to derive something than test audio.
+*/
+
+int mlt_frame_is_test_audio( mlt_frame this )
+{
+	return this->get_audio == NULL;
 }
 
 /** Get the aspect ratio of the frame.

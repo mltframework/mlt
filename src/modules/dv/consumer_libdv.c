@@ -140,6 +140,9 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 	// This will hold the size of the dv frame
 	int size = 0;
 
+	// determine if this a test card
+	int is_test = mlt_frame_is_test_card( frame );
+
 	// If we get an encoder, then encode the image
 	if ( encoder != NULL )
 	{
@@ -168,10 +171,13 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		}
 
 		// Process the frame
-		if ( size != 0 )
+		if ( size != 0 && !( mlt_properties_get_int( this_properties, "was_test_card" ) && is_test ) )
 		{
 			// Encode the image
 			dv_encode_full_frame( encoder, &image, e_dv_color_yuv, dv_frame );
+
+			// Note test card status
+			mlt_properties_set_int( this_properties, "was_test_card", is_test );
 		}
 	}
 	
