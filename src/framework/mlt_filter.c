@@ -169,7 +169,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 		if ( ret == 0 )
 		{
 			mlt_position position = mlt_frame_get_position( *frame );
-			if ( position >= in && ( out == 0 || position < out ) )
+			if ( position >= in && ( out == 0 || position <= out ) )
 				*frame = mlt_filter_process( this, *frame );
 			return 0;
 		}
@@ -195,4 +195,3 @@ void mlt_filter_close( mlt_filter this )
 	else
 		mlt_service_close( &this->parent );
 }
-

@@ -84,6 +84,7 @@ mlt_playlist mlt_playlist_init( )
 		// Specify the eof condition
 		mlt_properties_set( mlt_playlist_properties( this ), "eof", "pause" );
 		mlt_properties_set( mlt_playlist_properties( this ), "resource", "<playlist>" );
+		mlt_properties_set( mlt_playlist_properties( this ), "mlt_type", "mlt_producer" );
 	}
 	
 	return this;

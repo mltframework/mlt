@@ -8,6 +8,7 @@ http://*=avformat
 *.gif=pixbuf
 *.jpg=pixbuf
 *.jpeg=pixbuf
+*.kino=westley
 *.mp3=avformat
 *.mpg=mcmpeg,avformat
 *.mpeg=mcmpeg,avformat

@@ -108,6 +108,10 @@ static mlt_producer create_producer( char *file )
 		free( lookup );
 	}
 
+	// Finally, try just loading as service
+	if ( result == NULL )
+		result = mlt_factory_producer( file, NULL );
+
 	return result;
 }
 

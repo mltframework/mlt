@@ -1,0 +1,55 @@
+<playlist>
+  <entry>
+    <multitrack>
+	  <playlist>
+        <producer id="foo" in="100" out="149">
+	      <property name="resource">clip2.mpeg</property>
+		</producer>
+		<blank length="25"/>
+        <entry producer="foo" in="10" out="59"/>
+	  </playlist>
+	  <playlist>
+		<blank length="25"/>
+		<producer id="bar" in="100" out="199">
+		  <property name="resource">clip3.mpeg</property>
+		</producer>
+		<entry out="99" producer="bar"/>
+	  </playlist>
+    </multitrack>
+    <filter track="0">
+      <property name="mlt_service">greyscale</property>
+    </filter>
+    <transition in="25" out="49" a_track="0" b_track="1">
+      <property name="mlt_service">luma</property>
+    </transition>
+    <transition in="75" out="99" a_track="0" b_track="1" reverse="1">
+      <property name="mlt_service">luma</property>
+    </transition>
+  </entry>
+
+  <entry>
+    <multitrack>
+	  <playlist>
+        <producer id="foo" in="100" out="149">
+	      <property name="resource">clip2.mpeg</property>
+		</producer>
+		<blank length="25"/>
+        <entry producer="foo" in="10" out="59"/>
+	  </playlist>
+	  <playlist>
+		<blank length="25"/>
+		<producer id="bar" in="100" out="199">
+		  <property name="resource">clip3.mpeg</property>
+		</producer>
+		<entry out="99" producer="bar"/>
+	  </playlist>
+    </multitrack>
+    <transition in="25" out="49" a_track="0" b_track="1">
+      <property name="mlt_service">luma</property>
+    </transition>
+    <transition in="75" out="99" a_track="0" b_track="1" reverse="1">
+      <property name="mlt_service">luma</property>
+    </transition>
+  </entry>
+
+</playlist>

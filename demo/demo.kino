@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<smil xmlns:smil2="http://www.w3.org/2001/SMIL20/Language">
+  <seq title="MLT" copyright="2004" abstract="foo man choo">
+    <video src="clip2.dv" clipBegin="171" clipEnd="450"/>
+  </seq>
+  <seq title="Demo">
+    <video src="clip2.dv" clipBegin="0" clipEnd="170"/>
+  </seq>
+  <seq>
+    <video src="clip1.dv" clipBegin="0" clipEnd="159"/>
+    <video src="clip3.dv" clipBegin="0" clipEnd="106"/>
+  </seq>
+</smil>
