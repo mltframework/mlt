@@ -289,7 +289,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 /** Seek in the virtual playlist.
 */
 
-static mlt_service mlt_playlist_virtual_seek( mlt_playlist this )
+static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressive )
 {
 	// Default producer to blank
 	mlt_producer producer = NULL;
@@ -336,17 +336,20 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this )
 	if ( producer != NULL )
 	{
 		int count = this->list[ i ]->frame_count / this->list[ i ]->repeat;
+		*progressive = count == 1;
 		mlt_producer_seek( producer, position % count );
 	}
 	else if ( !strcmp( eof, "pause" ) && total > 0 )
 	{
 		playlist_entry *entry = this->list[ this->count - 1 ];
+		int count = entry->frame_count / entry->repeat;
 		mlt_producer this_producer = mlt_playlist_producer( this );
 		mlt_producer_seek( this_producer, original - 1 );
 		producer = entry->producer;
-		mlt_producer_seek( producer, entry->frame_out );
+		mlt_producer_seek( producer, entry->frame_out % count );
 		mlt_producer_set_speed( this_producer, 0 );
 		mlt_producer_set_speed( producer, 0 );
+		*progressive = count == 1;
 	}
 	else if ( !strcmp( eof, "loop" ) && total > 0 )
 	{
@@ -805,8 +808,6 @@ int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 			playlist_entry *entry = this->list[ clip ];
 			mlt_playlist_append( new_clip, entry->producer );
 			mlt_playlist_repeat_clip( new_clip, i, entry->repeat );
-			if ( entry->frame_count == entry->repeat )
-				mlt_properties_set_int( mlt_playlist_properties( new_clip ), "hide", 2 );
 			entry->preservation_hack = 1;
 			mlt_playlist_remove( this, clip );
 		}
@@ -881,7 +882,7 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 		}
 
 		mlt_events_unblock( mlt_playlist_properties( this ), this );
-		mlt_events_fire( mlt_playlist_properties( this ), "producer-changed", NULL );
+		mlt_playlist_virtual_refresh( this );
 		mlt_producer_close( track_a );
 		mlt_producer_close( track_b );
 		mlt_tractor_close( tractor );
@@ -941,7 +942,8 @@ static int mlt_playlist_unmix( mlt_playlist this, int clip )
 	{
 		mlt_producer producer = mlt_producer_cut_parent( this->list[ clip ]->producer );
 		mlt_properties properties = mlt_producer_properties( producer );
-		error = mlt_properties_get_data( properties, "mlt_mix", NULL ) == NULL;
+		error = mlt_properties_get_data( properties, "mlt_mix", NULL ) == NULL ||
+			    this->list[ clip ]->preservation_hack;
 	}
 
 	if ( error == 0 )
@@ -1035,8 +1037,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Get this mlt_playlist
 	mlt_playlist this = producer->child;
 
+	// Need to ensure the frame is deinterlaced when repeating 1 frame
+	int progressive = 0;
+
 	// Get the real producer
-	mlt_service real = mlt_playlist_virtual_seek( this );
+	mlt_service real = mlt_playlist_virtual_seek( this, &progressive );
 
 	// Get the frame
 	mlt_service_get_frame( real, frame, index );
@@ -1045,6 +1050,13 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties properties = mlt_frame_properties( *frame );
 	if ( mlt_properties_get_int( properties, "end_of_clip" ) )
 		mlt_playlist_virtual_set_out( this );
+
+	// Set the consumer progressive property
+	if ( progressive )
+	{
+		mlt_properties_set_int( properties, "consumer_progressive", progressive );
+		mlt_properties_set_int( properties, "test_audio", 1 );
+	}
 
 	// Check for notifier and call with appropriate argument
 	mlt_properties playlist_properties = mlt_producer_properties( producer );

@@ -313,8 +313,9 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	mlt_properties properties = mlt_frame_properties( this );
+	int hide = mlt_properties_get_int( properties, "test_audio" );
 
-	if ( this->get_audio != NULL )
+	if ( hide == 0 && this->get_audio != NULL )
 	{
 		this->get_audio( this, buffer, format, frequency, channels, samples );
 	}

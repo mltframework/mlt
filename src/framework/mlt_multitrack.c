@@ -394,8 +394,17 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		// Get the producer for this track
 		mlt_producer producer = this->list[ index ]->producer;
 
+		// Get the track hide property
+		int hide = mlt_properties_get_int( mlt_producer_properties( mlt_producer_cut_parent( producer ) ), "hide" );
+
 		// Obtain the current position
 		mlt_position position = mlt_producer_frame( parent );
+
+		// Get the parent properties
+		mlt_properties producer_properties = mlt_producer_properties( parent );
+
+		// Get the speed
+		double speed = mlt_properties_get_double( producer_properties, "_speed" );
 
 		// Make sure we're at the same point
 		mlt_producer_seek( producer, position );
@@ -404,12 +413,13 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		mlt_service_get_frame( mlt_producer_service( producer ), frame, 0 );
 
 		// Indicate speed of this producer
-		mlt_properties producer_properties = mlt_producer_properties( parent );
-		double speed = mlt_properties_get_double( producer_properties, "_speed" );
 		mlt_properties properties = mlt_frame_properties( *frame );
 		mlt_properties_set_double( properties, "_speed", speed );
 		mlt_properties_set_position( properties, "_position", position );
-		mlt_properties_set_int( properties, "hide", mlt_properties_get_int( mlt_producer_properties( producer ), "hide" ) );
+		if ( mlt_properties_get_int( properties, "test_image" ) == 0 )
+			mlt_properties_set_int( properties, "test_image", hide & 1 );
+		if ( mlt_properties_get_int( properties, "test_audio" ) == 0 )
+			mlt_properties_set_int( properties, "test_audio", hide & 2 );
 	}
 	else
 	{
