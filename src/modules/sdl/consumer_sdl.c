@@ -432,12 +432,16 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			}
 		}
 	
-		if ( width != this->width || height != this->height || this->last_frame_aspect != mlt_frame_get_aspect_ratio( frame ) )
+		if ( width != this->width || height != this->height || 
+			 ( int )( this->last_frame_aspect * 1000 ) != ( int )( mlt_frame_get_aspect_ratio( frame ) * 1000 ) )
 		{
-			this->width = width;
-			this->height = height;
-			this->last_frame_aspect = mlt_frame_get_aspect_ratio( frame );
-			changed = 1;
+			if ( mlt_frame_get_aspect_ratio( frame ) != 1.0 || this->last_frame_aspect == 0.0 )
+			{
+				this->width = width;
+				this->height = height;
+				this->last_frame_aspect = mlt_frame_get_aspect_ratio( frame );
+				changed = 1;
+			}
 		}
 
 		if ( this->sdl_screen == NULL || changed )
