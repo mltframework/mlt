@@ -422,6 +422,18 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 	}
 }
 
+void mlt_consumer_purge( mlt_consumer this )
+{
+	if ( this->ahead )
+	{
+		pthread_mutex_lock( &this->mutex );
+		while ( mlt_deque_count( this->queue ) )
+			mlt_frame_close( mlt_deque_pop_back( this->queue ) );
+		pthread_cond_broadcast( &this->cond );
+		pthread_mutex_unlock( &this->mutex );
+	}
+}
+
 mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 {
 	// Frame to return

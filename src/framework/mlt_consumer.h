@@ -60,6 +60,7 @@ extern mlt_service mlt_consumer_service( mlt_consumer self );
 extern mlt_properties mlt_consumer_properties( mlt_consumer self );
 extern int mlt_consumer_connect( mlt_consumer self, mlt_service producer );
 extern int mlt_consumer_start( mlt_consumer self );
+extern void mlt_consumer_purge( mlt_consumer self );
 extern mlt_frame mlt_consumer_get_frame( mlt_consumer self );
 extern mlt_frame mlt_consumer_rt_frame( mlt_consumer self );
 extern int mlt_consumer_stop( mlt_consumer self );
