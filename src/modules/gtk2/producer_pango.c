@@ -41,6 +41,7 @@ struct producer_pango_s
 	char *markup;
 	char *text;
 	char *font;
+	int weight;
 };
 
 // special color type used by internal pango routines
@@ -54,7 +55,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
-	rgba_color fg, rgba_color bg, int pad, int align );
+	rgba_color fg, rgba_color bg, int pad, int align, int weight );
 
 /** Return nonzero if the two strings are equal, ignoring case, up to
     the first n characters.
@@ -111,6 +112,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set( properties, "text", "" );
 		mlt_properties_set( properties, "font", "Sans 48" );
 		mlt_properties_set( properties, "encoding", "UTF-8" );
+		mlt_properties_set_int( properties, "weight", PANGO_WEIGHT_NORMAL );
 
 		if ( filename == NULL )
 		{
@@ -289,6 +291,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	char *text = mlt_properties_get( producer_props, "text" );
 	char *font = mlt_properties_get( producer_props, "font" );
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
+	int weight = mlt_properties_get_int( producer_props, "weight" );
 	
 	// See if any properties changed
 	int property_changed = ( align != this->align );
@@ -298,6 +301,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
 	property_changed = property_changed || ( text && this->text && strcmp( text, this->text ) );
 	property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
+	property_changed = property_changed || ( weight != this->weight );
 
 	// Save the properties for next comparison
 	this->align = align;
@@ -307,6 +311,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	set_string( &this->markup, markup, NULL );
 	set_string( &this->text, text, NULL );
 	set_string( &this->font, font, "Sans 48" );
+	this->weight = weight;
 
 	if ( property_changed )
 	{
@@ -334,7 +339,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 		
 		// Render the title
-		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, pad, align );
+		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, pad, align, weight );
 
 		if ( pixbuf != NULL )
 		{
@@ -530,7 +535,7 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, int pad, int align )
+static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, int pad, int align, int weight )
 {
 	PangoFT2FontMap *fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
@@ -543,10 +548,12 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	uint8_t* dest = NULL;
 	uint8_t *d, *s, a;
 	int stride;
+	PangoFontDescription *desc = pango_font_description_from_string( font );
 
 	pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
 	pango_layout_set_width( layout, -1 ); // set wrapping constraints
-	pango_layout_set_font_description( layout, pango_font_description_from_string( font ) );
+	pango_font_description_set_weight( desc, ( PangoWeight ) weight  );
+	pango_layout_set_font_description( layout, desc );
 //	pango_layout_set_spacing( layout, space );
 	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
 	if ( markup != NULL && strcmp( markup, "" ) != 0 )
