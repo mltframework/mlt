@@ -170,7 +170,7 @@ int main( int argc, char **argv )
 	// Get inigo producer
 	inigo = mlt_factory_producer( "inigo", &argv[ 1 ] );
 
-	if ( inigo != NULL && mlt_producer_get_length( inigo ) > 0 )
+	if ( argc > 1 && inigo != NULL && mlt_producer_get_length( inigo ) > 0 )
 	{
 		// Get inigo's properties
 		mlt_properties inigo_props = mlt_producer_properties( inigo );
@@ -242,6 +242,7 @@ int main( int argc, char **argv )
         				 "             [ -filter id[:arg] [ name=value ] * ]\n"
         				 "             [ -transition id[:arg] [ name=value ] * ]\n"
 						 "             [ -blank time ]\n"
+						 "             [ -track ]\n"
         				 "             [ producer [ name=value ] * ]+\n" );
 	}
 
