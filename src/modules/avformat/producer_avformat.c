@@ -699,6 +699,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		}
 
 		// Now handle the audio if we have enough
+
 		if ( audio_used >= *samples )
 		{
 			*buffer = malloc( *samples * *channels * sizeof( int16_t ) );

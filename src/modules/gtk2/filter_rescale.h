@@ -1,7 +1,7 @@
 /*
- * factory.c -- the factory method interfaces
+ * filter_rescale.h -- scale the producer video frame size to match the consumer
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,35 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+#ifndef _FILTER_RESCALE_H_
+#define _FILTER_RESCALE_H_
 
-#include "producer_pixbuf.h"
-#include "producer_pango.h"
-#include "filter_rescale.h"
+#include <framework/mlt_filter.h>
 
-void *mlt_create_producer( char *id, void *arg )
-{
-	if ( !strcmp( id, "pixbuf" ) )
-		return producer_pixbuf_init( arg );
-	else if ( !strcmp( id, "pango" ) )
-		return producer_pango_init( arg );
-	return NULL;
-}
+extern mlt_filter filter_rescale_init( char *arg );
 
-void *mlt_create_filter( char *id, void *arg )
-{
-	if ( !strcmp( id, "rescale" ) )
-		return filter_rescale_init( arg );
-	return NULL;
-}
-
-void *mlt_create_transition( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( char *id, void *arg )
-{
-	return NULL;
-}
-
+#endif

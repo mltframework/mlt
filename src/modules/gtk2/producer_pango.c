@@ -103,7 +103,7 @@ mlt_producer producer_pango_init( const char *filename )
 					size += strlen( line ) + 1;
 					if ( markup )
 					{
-						realloc( markup, size );
+						markup = realloc( markup, size );
 						strcat( markup, line );
 					}
 					else

@@ -6,7 +6,7 @@ OBJS = factory.o \
 
 CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64
 
-LDFLAGS = -lvorbisfile
+LDFLAGS = -lvorbis -lvorbisfile
 
 SRCS := $(OBJS:.o=.c)
 

@@ -723,15 +723,18 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	int16_t *src, *dest;
 	//static int16_t *extra_src = NULL, *extra_dest = NULL;
 	static int extra_src_samples = 0, extra_dest_samples = 0;
-	int frequency_src = 0, frequency_dest = 0;
-	int channels_src = 0, channels_dest = 0;
-	int samples_src = 0, samples_dest = 0;
+	int frequency_src = *channels, frequency_dest = *channels;
+	int channels_src = *channels, channels_dest = *channels;
+	int samples_src = *samples, samples_dest = *samples;
 	int i, j;
+	double d = 0, s = 0;
 
 	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
-	//fprintf( stderr, "frame dest samples %d channels %d position %f\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "position" ) );
+	fprintf( stderr, "frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "position" ) );
 	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
-	//fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
+	fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
+	src = p_src;
+	dest = p_dest;
 	if ( channels_src > 6 )
 		channels_src = 0;
 	if ( channels_dest > 6 )
@@ -759,9 +762,6 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	}
 	else
 		src = p_src;
-#else
-	src = p_src;
-	dest = p_dest;
 #endif
 
 	// determine number of samples to process	
@@ -778,8 +778,10 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	{
 		for ( j = 0; j < *channels; j++ )
 		{
-			double d = (double) dest[ i * channels_dest + j ];
-			double s = (double) src[ i * channels_src + j ];
+			if ( j < channels_dest )
+				d = (double) dest[ i * channels_dest + j ];
+			if ( j < channels_src )
+				s = (double) src[ i * channels_src + j ];
 			dest[ i * channels_dest + j ] = s * weight + d * ( 1.0 - weight );
 		}
 	}

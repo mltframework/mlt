@@ -8,5 +8,9 @@ pixbuf			libmltgtk2.so
 pango			libmltgtk2.so
 EOF
 
+cat << EOF >> ../filters.dat
+rescale			libmltgtk2.so
+EOF
+
 fi
 
