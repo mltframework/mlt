@@ -162,8 +162,16 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 
 int mlt_consumer_stop( mlt_consumer this )
 {
+	// Get the properies
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	// Stop the consumer
 	if ( this->stop != NULL )
 		return this->stop( this );
+
+	// Kill the test card
+	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
+
 	return 0;
 }
 
@@ -172,15 +180,9 @@ int mlt_consumer_stop( mlt_consumer this )
 
 int mlt_consumer_is_stopped( mlt_consumer this )
 {
-	// Get the properies
-	mlt_properties properties = mlt_consumer_properties( this );
-
 	// Stop the consumer
 	if ( this->is_stopped != NULL )
 		return this->is_stopped( this );
-
-	// Kill the test card
-	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 
 	return 0;
 }

@@ -373,6 +373,44 @@ int mlt_properties_set_data( mlt_properties this, char *name, void *value, int l
 	return error;
 }
 
+/** Rename a property.
+*/
+
+int mlt_properties_rename( mlt_properties this, char *source, char *dest )
+{
+	mlt_property value = mlt_properties_find( this, dest );
+
+	if ( value == NULL )
+	{
+		property_list *list = this->private;
+		int i = 0;
+
+		// Locate the item 
+		for ( i = 0; i < list->count; i ++ )
+		{
+			if ( !strcmp( list->name[ i ], source ) )
+			{
+				free( list->name[ i ] );
+				list->name[ i ] = strdup( dest );
+				break;
+			}
+		}
+	}
+
+	return value != NULL;
+}
+
+/** Dump the properties.
+*/
+
+void mlt_properties_dump( mlt_properties this, FILE *output )
+{
+	property_list *list = this->private;
+	int i = 0;
+	for ( i = 0; i < list->count; i ++ )
+		fprintf( stderr, "%s = %s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
+}
+
 /** Close the list.
 */
 

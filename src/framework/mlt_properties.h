@@ -22,6 +22,7 @@
 #define _MLT_PROPERTIES_H_
 
 #include "mlt_types.h"
+#include <stdio.h>
 
 /** The properties base class defines the basic property propagation and
 	handling.
@@ -53,7 +54,9 @@ extern mlt_position mlt_properties_get_position( mlt_properties this, char *name
 extern int mlt_properties_set_position( mlt_properties this, char *name, mlt_position value );
 extern int mlt_properties_set_data( mlt_properties this, char *name, void *value, int length, mlt_destructor, mlt_serialiser );
 extern void *mlt_properties_get_data( mlt_properties this, char *name, int *length );
+extern int mlt_properties_rename( mlt_properties this, char *source, char *dest );
 extern int mlt_properties_count( mlt_properties this );
+extern void mlt_properties_dump( mlt_properties this, FILE *output );
 extern void mlt_properties_close( mlt_properties this );
 
 #endif
