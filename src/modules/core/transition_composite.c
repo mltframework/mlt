@@ -275,9 +275,6 @@ static struct geometry_s *transition_parse_keys( mlt_transition this,  int norma
 	else
 		end->position = 1;
 
-	// Assign to properties to ensure we get destroyed
-	mlt_properties_set_data( properties, "geometries", start, 0, transition_destroy_keys, NULL );
-
 	return start;
 }
 
@@ -863,7 +860,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 }
 
 
-struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transition this, mlt_frame a_frame, float position )
+static struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transition this, mlt_frame a_frame, float position )
 {
 	// Get the properties from the transition
 	mlt_properties properties = mlt_transition_properties( this );
@@ -875,7 +872,7 @@ struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transitio
 	struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
 
 	// Now parse the geometries
-	if ( start == NULL )
+	if ( start == NULL || mlt_properties_get_int( properties, "refresh" ) )
 	{
 		// Obtain the normalised width and height from the a_frame
 		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
@@ -883,6 +880,10 @@ struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transitio
 
 		// Parse the transitions properties
 		start = transition_parse_keys( this, normalised_width, normalised_height );
+
+		// Assign to properties to ensure we get destroyed
+		mlt_properties_set_data( properties, "geometries", start, 0, transition_destroy_keys, NULL );
+		mlt_properties_set_int( properties, "refresh", 0 );
 	}
 
 	// Do the calculation
@@ -941,7 +942,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	h = result.h * height / result.nh;
 
 	x &= 0xfffffffe;
-	//w &= 0xfffffffe;
+	w &= 0xfffffffe;
 
 	// Now we need to create a new destination image
 	dest = mlt_pool_alloc( w * h * 2 );
@@ -1010,10 +1011,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		
 		// Optimisation - no compositing required
 		if ( result.mix == 0 || ( result.w == 0 && result.h == 0 ) )
-		{
-			mlt_properties_set_data( properties, "geometries", NULL, 0, NULL, NULL );
 			return 0;
-		}
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
@@ -1055,9 +1053,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			}
 		}
 	}
-
-	// Force geometries to be recalculated
-	mlt_properties_set_data( properties, "geometries", NULL, 0, NULL, NULL );
 
 	return 0;
 }

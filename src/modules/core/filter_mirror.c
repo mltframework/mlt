@@ -63,7 +63,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				q = p + *width * 2;
 				if ( !reverse )
 				{
-					while ( p != q )
+					while ( p < q )
 					{
 						*p ++ = *( q - 2 );
 						*p ++ = *( q - 3 );
@@ -74,7 +74,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				}
 				else
 				{
-					while ( p != q )
+					while ( p < q )
 					{
 						*( q - 2 ) = *p ++;
 						*( q - 3 ) = *p ++;
@@ -95,7 +95,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			for ( i = 0; i < hh; i ++ )
 			{
 				p = ( uint16_t * )*image + i * *width;
-				q = end - i * *width;
+				q = end - ( i + 1 ) * *width;
 				j = *width;
 				if ( !reverse )
 				{
@@ -191,7 +191,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			{
 				p = ( uint8_t * )*image + i * *width * 2;
 				q = p + *width * 2;
-				while ( p != q )
+				while ( p < q )
 				{
 					t[ 0 ] = p[ 0 ];
 					t[ 1 ] = p[ 1 ];
@@ -219,7 +219,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			for ( i = 0; i < hh; i ++ )
 			{
 				p = ( uint16_t * )*image + i * *width;
-				q = end - i * *width;
+				q = end - ( i + 1 ) * *width;
 				j = *width;
 				while ( j -- )
 				{

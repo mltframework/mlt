@@ -265,7 +265,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		while ( filter != NULL )
 		{
 			// Stack this filter
-			mlt_filter_process( filter, b_frame );
+			if ( mlt_properties_get_int( mlt_filter_properties( filter ), "off" ) == 0 )
+				mlt_filter_process( filter, b_frame );
 
 			// Generate the key for the next
 			sprintf( id, "_filter_%d", ++ i );
