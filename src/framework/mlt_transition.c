@@ -197,6 +197,10 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		{
 			// Process the transition
 			*frame = mlt_transition_process( this, this->a_frame, this->b_frame );
+			if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_image" ) )
+				mlt_properties_set_int( mlt_frame_properties( this->b_frame ), "test_image", 1 );
+			if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_audio" ) )
+				mlt_properties_set_int( mlt_frame_properties( this->b_frame ), "test_audio", 1 );
 			this->a_held = 0;
 		}
 		else

@@ -158,7 +158,10 @@ mlt_producer producer_inigo_init( char **argv )
 			producer = NULL;
 			mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
 		}
-		else if ( !strcmp( argv[ i ], "-track" ) )
+		else if ( !strcmp( argv[ i ], "-track" ) ||
+				  !strcmp( argv[ i ], "-hide-track" ) ||
+				  !strcmp( argv[ i ], "-hide-video" ) ||
+				  !strcmp( argv[ i ], "-hide-audio" ) )
 		{
 			if ( producer != NULL )
 				mlt_playlist_append( playlist, producer );
@@ -166,6 +169,16 @@ mlt_producer producer_inigo_init( char **argv )
 			mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track ++ );
 			track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
 			playlist = mlt_playlist_init( );
+			if ( playlist != NULL )
+			{
+				properties = mlt_playlist_properties( playlist );
+				if ( !strcmp( argv[ i ], "-hide-track" ) )
+					mlt_properties_set_int( properties, "hide", 3 );
+				else if ( !strcmp( argv[ i ], "-hide-video" ) )
+					mlt_properties_set_int( properties, "hide", 1 );
+				else if ( !strcmp( argv[ i ], "-hide-audio" ) )
+					mlt_properties_set_int( properties, "hide", 2 );
+			}
 		}
 		else if ( strchr( argv[ i ], '=' ) )
 		{

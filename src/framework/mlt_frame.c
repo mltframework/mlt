@@ -88,7 +88,7 @@ mlt_properties mlt_frame_properties( mlt_frame this )
 
 int mlt_frame_is_test_card( mlt_frame this )
 {
-	return mlt_properties_get_int( mlt_frame_properties( this ), "test_image" );
+	return mlt_deque_count( this->stack_image ) == 0 || mlt_properties_get_int( mlt_frame_properties( this ), "test_image" );
 }
 
 /** Check if we have a way to derive something than test audio.

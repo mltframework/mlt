@@ -298,6 +298,8 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( this ) );
 	double speed = mlt_producer_get_speed( this );
 	mlt_properties_set_double( properties, "_speed", speed );
+	mlt_properties_set_int( properties, "test_audio", mlt_frame_is_test_audio( *frame ) );
+	mlt_properties_set_int( properties, "test_image", mlt_frame_is_test_card( *frame ) );
 
 	return 0;
 }

@@ -199,9 +199,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
 				// Pick up first video and audio frames
-				if ( audio == NULL && !mlt_frame_is_test_audio( temp ) )
+				if ( !done && !mlt_frame_is_test_audio( temp ) && !( mlt_properties_get_int( mlt_frame_properties( temp ), "hide" ) & 2 ) )
 					audio = temp;
-				if ( video == NULL && !mlt_frame_is_test_card( temp ) )
+				if ( !done && !mlt_frame_is_test_card( temp ) && !( mlt_properties_get_int( mlt_frame_properties( temp ), "hide" ) & 1 ) )
 					video = temp;
 			}
 	
