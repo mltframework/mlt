@@ -517,7 +517,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// Calculate the region now
-	composite_calculate( &result, this, a_frame, ( float )( position - in ) / ( out - in + 1 ) );
+	composite_calculate( &result, this, a_frame, ( float )( position ) / ( out - in + 1 ) );
 
 	// Fetch the b frame image
 	result.w = ( int )( result.w * *width / result.nw );
@@ -673,7 +673,6 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 
 	// Push the transition method
 	mlt_frame_push_get_image( a_frame, transition_get_image );
-
 
 	return a_frame;
 }

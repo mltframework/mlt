@@ -176,7 +176,11 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 		{
 			mlt_position position = mlt_frame_get_position( *frame );
 			if ( position >= in && ( out == 0 || position <= out ) )
+			{
+				mlt_frame_set_position( *frame, position - in );
 				*frame = mlt_filter_process( this, *frame );
+				mlt_frame_set_position( *frame, position + in );
+			}
 			return 0;
 		}
 		else

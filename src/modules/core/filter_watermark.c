@@ -190,7 +190,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	char *name = mlt_properties_get( mlt_filter_properties( this ), "_unique_id" );
 
 	// Assign the current position to the name
-	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) - mlt_filter_get_in( this ) );
+	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) );
 
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, this );

@@ -157,7 +157,6 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_append( playlist, producer );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
-				properties = mlt_producer_properties( producer );
 			}
 
 			if ( filter != NULL && mlt_playlist_count( playlist ) > 0 )

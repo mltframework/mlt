@@ -177,23 +177,6 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 		output->mix = out->mix;
 		output->distort = out->distort;
 	}
-
-	// Definitely incorrect...
-#if 0
-	if ( ( int )output->x & 1 && ( int )output->w & 1 )
-	{
-		output->x -= 1.0;
-		output->w += 1.0;
-	}
-	else if ( ( int )output->x & 1 )
-	{
-		output->x += 1.0;
-	}
-	else if ( ( int )output->w & 1 )
-	{
-		output->w += 1.0;
-	}
-#endif
 }
 
 static void transition_destroy_keys( void *arg )
@@ -972,8 +955,8 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	if ( y + h > height )
 		h = height - y;
 
-	//x = ( x | 1 ) ^ 1;
-	//w = ( w | 1 ) ^ 1;
+	x = ( x | 1 ) ^ 1;
+	w = ( w | 1 ) ^ 1;
 
 	// Now we need to create a new destination image
 	dest = mlt_pool_alloc( w * h * 2 );

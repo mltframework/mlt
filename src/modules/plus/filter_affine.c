@@ -101,6 +101,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	// Push the frame filter
 	mlt_frame_push_service( frame, this );
 	mlt_frame_push_get_image( frame, filter_get_image );
+
 	return frame;
 }
 

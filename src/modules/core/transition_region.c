@@ -283,6 +283,9 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			mlt_properties_set_data( mlt_frame_properties( frame ), name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
 
+		// Set the position of the b_frame
+		mlt_frame_set_position( b_frame, position );
+
 		// Make sure the filter is in the correct position
 		while ( filter != NULL )
 		{

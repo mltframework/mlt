@@ -269,11 +269,16 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 	mlt_properties frame_properties = mlt_frame_properties( frame );
 	mlt_properties filter_properties = mlt_service_properties( this );
 	mlt_service_base *base = this->local;
-	mlt_position position = mlt_properties_get_position( frame_properties, "_position" );
+	mlt_position position = mlt_frame_get_position( frame );
+	mlt_position this_in = mlt_properties_get_position( filter_properties, "in" );
 
 	// Hmm - special case for cuts - apply filters from the parent first
 	if ( mlt_properties_get_int( filter_properties, "_cut" ) )
+	{
+		position -= this_in;
+		mlt_frame_set_position( frame, position );
 		mlt_service_apply_filters( ( mlt_service )mlt_properties_get_data( filter_properties, "_cut_parent", NULL ), frame, 0 );
+	}
 
 	if ( index == 0 || mlt_properties_get_int( filter_properties, "_filter_private" ) == 0 )
 	{
@@ -283,18 +288,21 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 			if ( base->filters[ i ] != NULL )
 			{
 				mlt_properties properties = mlt_filter_properties( base->filters[ i ] );
-				mlt_position in = mlt_properties_get_position( properties, "in" );
-				mlt_position out = mlt_properties_get_position( properties, "out" );
+				mlt_position in = mlt_filter_get_in( base->filters[ i ] );
+				mlt_position out = mlt_filter_get_out( base->filters[ i ] );
 				if ( ( in == 0 && out == 0 ) || ( position >= in && ( position <= out || out == 0 ) ) )
 				{
+					mlt_frame_set_position( frame, position - in );
 					mlt_filter_process( base->filters[ i ], frame );
-					mlt_properties_set_position( frame_properties, "_position", position - in );
 					mlt_service_apply_filters( mlt_filter_service( base->filters[ i ] ), frame, index + 1 );
-					mlt_properties_set_position( frame_properties, "_position", position );
+					mlt_frame_set_position( frame, position + in );
 				}
 			}
 		}
 	}
+
+	if ( mlt_properties_get_int( filter_properties, "_cut" ) )
+		mlt_frame_set_position( frame, position + this_in );
 }
 
 /** Obtain a frame.
