@@ -303,7 +303,7 @@ static void sigsegv_handler()
 	miracle_log( LOG_CRIT, "Obtained %zd stack frames.\n", size );
 
 	for ( i = 0; i < size; i++ )
-		 miracle_log( LOG_CRIT, "%s\n", strings[ i ] );
+		 miracle_log( LOG_CRIT, "%s", strings[ i ] );
 
 	free( strings );
 
@@ -331,7 +331,8 @@ static valerie_response miracle_local_connect( miracle_local local )
 	signal( SIGPIPE, signal_handler );
 	signal( SIGALRM, signal_handler );
 	signal( SIGCHLD, SIG_IGN );
-	signal( SIGSEGV, sigsegv_handler );
+	if ( getenv( "MLT_SIGSEGV" ) )
+		signal( SIGSEGV, sigsegv_handler );
 
 	return response;
 }
