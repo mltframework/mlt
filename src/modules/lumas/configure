@@ -1,0 +1,26 @@
+#!/bin/sh
+
+if [ "$help" = "1" ]
+then
+	cat << EOF
+Luma options:
+
+  --luma-compress         - Produce compressed (png) lumas
+  --luma-8bpp             - Produce 8 bit pgm lumas (defaut is 16 bit)
+
+EOF
+
+else
+
+	rm -f .8bit .compress .executed
+
+	for i in "$@"
+	do
+		case $i in
+			--luma-compress )	touch .compress ;;
+			--luma-8bit )		touch .8bit ;;
+		esac
+	done
+
+fi
+
