@@ -1,0 +1,18 @@
+inigo \
+clip1.dv \
+out=199 \
+-track \
+-blank 59 \
+clip2.dv \
+in=100 \
+out=239 \
+-transition \
+composite \
+start=0,0:100%x100%:0 \
+key[5]=0,0:100%x100%:100 \
+end=0,0:100%x100%:100 \
+in=60 \
+out=199 \
+a_track=0 \
+b_track=1 \
+$*
