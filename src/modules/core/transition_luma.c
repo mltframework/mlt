@@ -95,48 +95,24 @@ static float delta_calculate( mlt_transition this, mlt_frame frame )
 	return ( y - x ) / 2.0;
 }
 
-static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, int *width, int *height )
+static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, int width, int height )
 {
 	int ret = 0;
-	int width_src = *width, height_src = *height;
-	int width_dest = *width, height_dest = *height;
-	mlt_image_format format_src = mlt_image_yuv422, format_dest = mlt_image_yuv422;
+	int width_src = width, height_src = height;
+	mlt_image_format format = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
-	int i, j;
-	int stride_src;
-	int stride_dest;
-
-	format_src = mlt_image_yuv422;
-	format_dest = mlt_image_yuv422;
-
-	mlt_frame_get_image( this, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
-	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
-
-	stride_src = width_src << 1;
-	stride_dest = width_dest << 1;
-	
-	uint8_t *p = p_src;
-	uint8_t *q = p_dest;
-	uint8_t *o = p_dest;
-
-	uint8_t Y;
-	uint8_t UV;
 	float weight_complement = 1 - weight;
+	uint8_t *p;
+	uint8_t *limit;
 
-	// now do the compositing only to cropped extents
-	for ( i = 0; i < height_src; i++ )
-	{
-		p = &p_src[ i * stride_src ];
-		o = q = &p_dest[ i * stride_dest ];
+	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 /* writable */ );
+	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 /* writable */ );
+	
+	p = p_dest;
+	limit = p_dest + height_src * width_src * 2;
 
-		for ( j = 0; j < width_src; j ++ )
-		{
-			Y = *p ++;
-			UV = *p ++;
-			*o ++ = (uint8_t)( Y * weight + *q++ * weight_complement );
-			*o ++ = (uint8_t)( UV * weight + *q++ * weight_complement );
-		}
-	}
+	while ( p < limit )
+		*p_dest++ = ( uint8_t )( *p_src++ * weight + *p++ * weight_complement );
 
 	return ret;
 }
@@ -259,7 +235,7 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 			luma_softness, progressive ? -1 : top_field_first, width, height );
 	else
 		// Dissolve the frames using the time offset for mix value
-		dissolve_yuv( this, b_frame, mix, width, height );
+		dissolve_yuv( this, b_frame, mix, *width, *height );
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( a_props, "width" );
