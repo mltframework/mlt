@@ -385,7 +385,7 @@ static void affine_scale( float this[3][3], float sx, float sy )
 }
 
 // Shear by a given value
-static void affine_shear( float this[3][3], float shear_x, float shear_y )
+static void affine_shear( float this[3][3], float shear_x, float shear_y, float shear_z )
 {
 	float affine[3][3];
 	affine[0][0] = 1;
@@ -393,7 +393,7 @@ static void affine_shear( float this[3][3], float shear_x, float shear_y )
 	affine[0][2] = 0;
 	affine[1][0] = tan( shear_y * M_PI / 180 );
 	affine[1][1] = 1;
-	affine[1][2] = 0;
+	affine[1][2] = tan( shear_z * M_PI / 180 );
 	affine[2][0] = 0;
 	affine[2][1] = 0;
 	affine[2][2] = 1;
@@ -540,6 +540,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 	}
 
+	mlt_properties_set( b_props, "distort", mlt_properties_get( properties, "distort" ) );
 	mlt_frame_get_image( b_frame, &b_image, &b_format, &b_width, &b_height, 0 );
 	result.w = b_width;
 	result.h = b_height;
@@ -557,8 +558,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float rotate_z = mlt_properties_get_double( properties, "rotate_z" );
 		float fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
 		float fix_shear_y = mlt_properties_get_double( properties, "fix_shear_y" );
+		float fix_shear_z = mlt_properties_get_double( properties, "fix_shear_z" );
 		float shear_x = mlt_properties_get_double( properties, "shear_x" );
 		float shear_y = mlt_properties_get_double( properties, "shear_y" );
+		float shear_z = mlt_properties_get_double( properties, "shear_z" );
 		float ox = mlt_properties_get_double( properties, "ox" );
 		float oy = mlt_properties_get_double( properties, "oy" );
 		int scale = mlt_properties_get_int( properties, "scale" );
@@ -579,18 +582,25 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		int x_offset = ( int )result.w >> 1;
 		int y_offset = ( int )result.h >> 1;
 
+		uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
+		float mix;
+
 		affine_t affine;
 		affine_init( affine.matrix );
 		affine_rotate( affine.matrix, rotate_x * ( position - in ) );
 		affine_rotate_y( affine.matrix, rotate_y * ( position - in ) );
 		affine_rotate_z( affine.matrix, rotate_z * ( position - in ) );
-		affine_shear( affine.matrix, fix_shear_x + shear_x * ( position - in ), fix_shear_y + shear_y * ( position - in ) );
+		affine_shear( affine.matrix, 
+					  fix_shear_x + shear_x * ( position - in ), 
+					  fix_shear_y + shear_y * ( position - in ),
+					  fix_shear_z + shear_z * ( position - in ) );
 		affine_offset( affine.matrix, ox, oy );
 
-		affine_max_output( affine.matrix, &sw, &sh );
-
 		if ( scale )
+		{
+			affine_max_output( affine.matrix, &sw, &sh );
 			affine_scale( affine.matrix, sw, sh );
+		}
 	
 		lower_x -= ( lower_x & 1 );
 		upper_x -= ( upper_x & 1 );
@@ -608,9 +618,19 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
 				{
-					dx -= dx & 1;
-					*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) );
-					*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
+					if ( alpha == NULL )
+					{
+						dx -= dx & 1;
+						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) );
+						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
+					}
+					else
+					{
+						dx -= dx & 1;
+						mix = ( float )*( alpha + dy * b_width + dx ) / 255.0;
+						*p ++ = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) );
+						*p ++ = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
+					}
 				}
 				else
 				{
@@ -660,6 +680,7 @@ mlt_transition transition_affine_init( char *arg )
 	{
 		mlt_properties_set_int( mlt_transition_properties( transition ), "sx", 1 );
 		mlt_properties_set_int( mlt_transition_properties( transition ), "sy", 1 );
+		mlt_properties_set( mlt_transition_properties( transition ), "distort", NULL );
 		mlt_properties_set( mlt_transition_properties( transition ), "start", "0,0:100%x100%" );
 		transition->process = transition_process;
 	}

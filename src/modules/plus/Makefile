@@ -5,6 +5,7 @@ TARGET = ../libmltplus.so
 OBJS = factory.o \
 	   filter_charcoal.o \
 	   filter_invert.o \
+	   filter_sepia.o \
 	   transition_affine.o
 
 CFLAGS += -I../..
