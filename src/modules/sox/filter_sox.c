@@ -250,15 +250,21 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 				double *smooth_buffer = mlt_properties_get_data( filter_properties, "smooth_buffer", NULL );
 				double max_gain = mlt_properties_get_double( filter_properties, "max_gain" );
 				
+				// Default the maximum gain factor to 20dBFS
 				if ( max_gain == 0 )
 					max_gain = 10.0;
 				
+				// The smoothing buffer prevents radical shifts in the gain level
 				if ( window > 0 && smooth_buffer != NULL )
 				{
 					int smooth_index = mlt_properties_get_int( filter_properties, "_smooth_index" );
 					smooth_buffer[ smooth_index ] = rms;
+					
+					// Ignore very small values that adversely affect the mean
 					if ( rms > AMPLITUDE_MIN )
 						mlt_properties_set_int( filter_properties, "_smooth_index", ( smooth_index + 1 ) % window );
+					
+					// Smoothing is really just a mean over the past N values
 					normalised_gain = AMPLITUDE_NORM / mean( smooth_buffer, window );
 				}
 				else if ( rms > 0 )
@@ -268,6 +274,8 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 				}
 					
 				//printf("filter_sox: rms %.3f gain %.3f\n", rms, normalised_gain );
+				
+				// Govern the maximum gain
 				if ( normalised_gain > max_gain )
 					normalised_gain = max_gain;
 			}
@@ -278,11 +286,12 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 				sprintf( id, "_effect_%d_%d", j, i );
 				e = mlt_properties_get_data( filter_properties, id, NULL );
 				
-				// Apply the effect
+				// We better have this guy
 				if ( e != NULL )
 				{
 					float saved_gain = 1.0;
 					
+					// XXX: hack to apply the normalised gain level to the vol effect
 					if ( normalise && strcmp( e->name, "vol" ) == 0 )
 					{
 						float *f = ( float * )( e->priv );
@@ -290,13 +299,16 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 						*f = saved_gain * normalised_gain;
 					}
 					
+					// Apply the effect
 					if ( ( * e->h->flow )( e, input_buffer, output_buffer, &isamp, &osamp ) == ST_SUCCESS )
 					{
+						// Swap input and output buffer pointers for subsequent effects
 						p = input_buffer;
 						input_buffer = output_buffer;
 						output_buffer = p;
 					}
 					
+					// XXX: hack to restore the original vol gain to prevent accumulation
 					if ( normalise && strcmp( e->name, "vol" ) == 0 )
 					{
 						float *f = ( float * )( e->priv );
@@ -327,6 +339,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	if ( frame->get_audio != NULL )
 	{
+		// Add the filter to the frame
 		mlt_frame_push_audio( frame, frame->get_audio );
 		mlt_frame_push_audio( frame, this );
 		frame->get_audio = filter_get_audio;
