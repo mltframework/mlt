@@ -29,9 +29,10 @@
 #include <string.h>
 
 #define MAX_CHANNELS 6
-#define SMOOTH_BUFFER_SIZE 50
+#define SMOOTH_BUFFER_SIZE 75  /* smooth over 3 seconds on PAL */
+#define EPSILON 0.00001
 
-/* This utilities and limiter function comes from the normalize utility:
+/* The normalise functions come from the normalize utility:
    Copyright (C) 1999--2002 Chris Vaill */
 
 #define samp_width 16
@@ -68,14 +69,15 @@ int strncaseeq(const char *s1, const char *s2, size_t n)
 */
 static inline double limiter( double x, double lmtr_lvl )
 {
-	double xp;
+	double xp = x;
 
 	if (x < -lmtr_lvl)
 		xp = tanh((x + lmtr_lvl) / (1-lmtr_lvl)) * (1-lmtr_lvl) - lmtr_lvl;
-	else if (x <= lmtr_lvl)
-		xp = x;
-	else
+	else if (x > lmtr_lvl)
 		xp = tanh((x - lmtr_lvl) / (1-lmtr_lvl)) * (1-lmtr_lvl) + lmtr_lvl;
+
+//	if ( x != xp )
+//		fprintf( stderr, "filter_volume: sample %f limited %f\n", x, xp );
 
 	return xp;
 }
@@ -158,6 +160,8 @@ double signal_max_power( int16_t *buffer, int channels, int samples, int16_t *pe
 	return sqrt( maxpow );
 }
 
+/* ------ End normalize functions --------------------------------------- */
+
 /** Get the audio.
 */
 
@@ -166,14 +170,17 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	// Get the properties of the a frame
 	mlt_properties properties = mlt_frame_properties( frame );
 	double gain = mlt_properties_get_double( properties, "gain" );
-	int use_limiter =  mlt_properties_get_int( properties, "volume.use_limiter" );
-	double limiter_level =  mlt_properties_get_double( properties, "volume.limiter_level" );
+	double max_gain = mlt_properties_get_double( properties, "volume.max_gain" );
+	double limiter_level = 0.5; /* -6 dBFS */
 	int normalise =  mlt_properties_get_int( properties, "volume.normalise" );
 	double amplitude =  mlt_properties_get_double( properties, "volume.amplitude" );
 	int i;
 	double sample;
 	int16_t peak;
 
+	if ( mlt_properties_get( properties, "volume.limiter" ) != NULL )
+		limiter_level = mlt_properties_get_double( properties, "volume.limiter" );
+	
 	// Restore the original get_audio
 	frame->get_audio = mlt_properties_get_data( properties, "volume.get_audio", NULL );
 
@@ -185,11 +192,6 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	int samplemax = (1 << (bytes_per_samp * 8 - 1)) - 1;
 	int samplemin = -samplemax - 1;
 
-#if 0
-	if ( gain > 1.0 && use_limiter != 0 )
-		fprintf(stderr, "filter_volume: limiting samples greater than %f\n", limiter_level );
-#endif
-
 	if ( normalise )
 	{
 		double *smooth_buffer = mlt_properties_get_data( properties, "volume.smooth_buffer", NULL );
@@ -197,12 +199,23 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 		// Compute the signal power and put into smoothing buffer
 		smooth_buffer[ *smooth_index ] = signal_max_power( *buffer, *channels, *samples, &peak );
-		*smooth_index = ( *smooth_index + 1 ) % SMOOTH_BUFFER_SIZE;
+//		fprintf( stderr, "filter_volume: raw power %f ", smooth_buffer[ *smooth_index ] );
+		if ( smooth_buffer[ *smooth_index ] > EPSILON )
+		{
+			*smooth_index = ( *smooth_index + 1 ) % SMOOTH_BUFFER_SIZE;
 
-		// Smooth the data and compute the gain
-		gain *= amplitude / get_smoothed_data( smooth_buffer, SMOOTH_BUFFER_SIZE );
+			// Smooth the data and compute the gain
+//			fprintf( stderr, "smoothed %f\n", get_smoothed_data( smooth_buffer, SMOOTH_BUFFER_SIZE ) );
+			gain *= amplitude / get_smoothed_data( smooth_buffer, SMOOTH_BUFFER_SIZE );
+		}
 	}
 	
+	if ( gain > 1.0 && normalise )
+		fprintf(stderr, "filter_volume: limiter level %f gain %f\n", limiter_level, gain );
+
+	if ( max_gain > 0 && gain > max_gain )
+		gain = max_gain;
+
 	// Apply the gain
 	for ( i = 0; i < ( *channels * *samples ); i++ )
 	{
@@ -212,7 +225,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		if ( gain > 1.0 )
 		{
 			/* use limiter function instead of clipping */
-			if ( use_limiter != 0 )
+			if ( normalise )
 				(*buffer)[i] = ROUND( samplemax * limiter( sample / (double) samplemax, limiter_level ) );
 				
 			/* perform clipping */
@@ -234,17 +247,49 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	mlt_properties properties = mlt_frame_properties( frame );
 	mlt_properties filter_props = mlt_filter_properties( this );
 
-	// Propogate the volume/gain property
+	// Propogate the gain property
 	if ( mlt_properties_get( properties, "gain" ) == NULL )
 	{
-		double gain = 1.0; // none
-		if ( mlt_properties_get( filter_props, "volume" ) != NULL )
-			gain = mlt_properties_get_double( filter_props, "volume" );
+		double gain = 1.0; // no adjustment
+		
 		if ( mlt_properties_get( filter_props, "gain" ) != NULL )
-			gain = mlt_properties_get_double( filter_props, "gain" );
+		{
+			char *p = mlt_properties_get( filter_props, "gain" );
+			
+			if ( strncaseeq( p, "normalise", 9 ) )
+				mlt_properties_set( filter_props, "normalise", "" );
+			else
+			{
+				if ( strcmp( p, "" ) != 0 )
+					gain = fabs( strtod( p, &p) );
+
+				while ( isspace( *p ) )
+					p++;
+
+				/* check if "dB" is given after number */
+				if ( strncaseeq( p, "db", 2 ) )
+					gain = DBFSTOAMP( gain );
+			}
+		}
 		mlt_properties_set_double( properties, "gain", gain );
 	}
 	
+	// Propogate the maximum gain property
+	if ( mlt_properties_get( filter_props, "max_gain" ) != NULL )
+	{
+		char *p = mlt_properties_get( filter_props, "max_gain" );
+		double gain = fabs( strtod( p, &p) ); // 0 = no max
+			
+		while ( isspace( *p ) )
+			p++;
+
+		/* check if "dB" is given after number */
+		if ( strncaseeq( p, "db", 2 ) )
+			gain = DBFSTOAMP( gain );
+			
+		mlt_properties_set_double( properties, "volume.max_gain", gain );
+	}
+
 	// Parse and propogate the limiter property
 	if ( mlt_properties_get( filter_props, "limiter" ) != NULL )
 	{
@@ -253,10 +298,10 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		if ( strcmp( p, "" ) != 0 )
 			level = strtod( p, &p);
 		
-		/* check if "dB" is given after number */
 		while ( isspace( *p ) )
 			p++;
 		
+		/* check if "dB" is given after number */
 		if ( strncaseeq( p, "db", 2 ) )
 		{
 			if ( level > 0 )
@@ -268,8 +313,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			if ( level < 0 )
 				level = -level;
 		}
-		mlt_properties_set_int( properties, "volume.use_limiter", 1 );
-		mlt_properties_set_double( properties, "volume.limiter_level", level );
+		mlt_properties_set_double( properties, "volume.limiter", level );
 	}
 
 	// Parse and propogate the normalise property
@@ -280,10 +324,10 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		if ( strcmp( p, "" ) != 0 )
 			amplitude = strtod( p, &p);
 
-		/* check if "dB" is given after number */
 		while ( isspace( *p ) )
 			p++;
 
+		/* check if "dB" is given after number */
 		if ( strncaseeq( p, "db", 2 ) )
 		{
 			if ( amplitude > 0 )
@@ -306,7 +350,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_properties_get_data( filter_props, "smooth_buffer", NULL ), 0, NULL, NULL );
 	mlt_properties_set_data( properties, "volume.smooth_index",
 		mlt_properties_get_data( filter_props, "smooth_index", NULL ), 0, NULL, NULL );
-		
+
 	// Backup the original get_audio (it's still needed)
 	mlt_properties_set_data( properties, "volume.get_audio", frame->get_audio, 0, NULL, NULL );
 
@@ -324,9 +368,10 @@ mlt_filter filter_volume_init( char *arg )
 	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
 	if ( this != NULL && mlt_filter_init( this, NULL ) == 0 )
 	{
+		mlt_properties properties = mlt_filter_properties( this );
 		this->process = filter_process;
 		if ( arg != NULL )
-			mlt_properties_set_double( mlt_filter_properties( this ), "volume", atof( arg ) );
+			mlt_properties_set( properties, "gain", arg );
 
 		// Create a smoothing buffer for the calculated "max power" of frame of audio used in normalisation
 		double *smooth_buffer = (double*) calloc( SMOOTH_BUFFER_SIZE, sizeof( double ) );

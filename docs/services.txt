@@ -313,6 +313,29 @@ Producers
 
 			Since it uses pipes, it is not compatible with bluefish.
 
+	westley
+
+		Description
+
+			Construct a service network from an XML description.
+
+		Constructor Argument
+
+			file - an XML text file containing westley XML (schema pending)
+
+		Read Only Properties
+
+			string resource - file location
+
+		Dependencies
+
+			libxml2
+
+		Known Bugs
+
+			Non-referenced producers and playlists are not destroyed.
+			A referenced producer or playlist must appear before the reference.
+
 	vorbis
 
 		Description
@@ -340,7 +363,6 @@ Producers
 
 			Fixed frame size (PAL audio chunks).
 			Doesn't cover ogg files with multiple, differing sections.
-
 
 Filters
 -------
@@ -492,7 +514,10 @@ Filters
 			
 		Constructor Argument
 
-			volume - a floating point value of the factor
+			gain - a string containing one of:
+				 - a floating point value of the gain adjustment
+				 - a numeric value with the suffix "dB" to adjust in terms of decibels
+				 - "normalise" to normalise the volume to the target amplitude -12dBFS
 			
 		Initialisation Properties
 		
@@ -501,7 +526,20 @@ Filters
 
 		Mutable Properties
 
-			double volume - the factor applied to each sample
+			string gain - same as constructor argument above
+
+			string normalise - normalise the volume to the amplitude:
+				- a numeric value with the suffix "dB" to set amplitude in decibels
+				- a floating point value of the relative volume
+				- an unspecified value uses the default -12dBFS
+
+			string limiter - limit all samples above:
+				- a numeric value with the suffix "dB"
+				- a floating point value ( dB = 20 * log10(x) )
+				- an unspecified value uses the default -6dBFS
+
+			double max_gain - a floating point or decibel value of the maximum gain that
+				can be applied during normalisation.
 			
 		Dependencies
 
@@ -589,7 +627,7 @@ Transitions
 		
 		Constructor Argument
 
-			string file - the luma map file name. If not supplied, a dissolve.
+			string resource - the luma map file name. If not supplied, a dissolve.
 
 		Initialisation Properties
 		
@@ -598,7 +636,7 @@ Transitions
 
 		Mutable Properties
 
-			string filename - same as above
+			string resource - same as above
 			double softness - only when using a luma map, how soft to make the
 			                  edges between A and B. 0.0 = no softness. 1.0 =
 			                  too soft.
@@ -736,4 +774,29 @@ Consumers
 
 			NTSC handling needs tightening up - sdl:NTSC is the only valid
 			constructor for NTSC playback at the moment.
+
+	westley
+
+		Description
+
+			Serialise the service network to XML.
+			
+		Constructor Argument
+
+			resource - the name of a file in which to store the XML.
+				stdout is used if not supplied.
+			
+		Initialisation Properties
+
+			string resource - same as above.
+			
+		Dependencies
+		
+			libxml2
+			
+		Known Bugs
+
+			Untested arbitrary nesting of multitracks and playlists.
+			Property "id" is generated as service type followed by number if
+			no property named "id" exists, but it fails to guarantee uniqueness.
 
