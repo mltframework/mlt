@@ -445,6 +445,9 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	}
 	else
 	{
+		// Get the speed of the cut
+		double speed = mlt_producer_get_speed( this );
+
 		// Get the parent of this cut
 		mlt_producer parent = mlt_producer_cut_parent( this );
 
@@ -484,6 +487,9 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 
 		// We're done with the clone now
 		mlt_properties_set_data( parent_properties, "use_clone", NULL, 0, NULL, NULL );
+
+		mlt_properties_set_double( mlt_frame_properties( *frame ), "_speed", speed );
+		mlt_producer_prepare_next( this );
 	}
 
 	return result;
