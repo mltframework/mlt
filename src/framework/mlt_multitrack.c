@@ -27,6 +27,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+struct mlt_track_s
+{
+	mlt_producer producer;
+	mlt_event event;
+};
+
+typedef struct mlt_track_s *mlt_track;
+
 /** Private definition.
 */
 
@@ -34,7 +42,7 @@ struct mlt_multitrack_s
 {
 	// We're extending producer here
 	struct mlt_producer_s parent;
-	mlt_producer *list;
+	mlt_track *list;
 	int size;
 	int count;
 };
@@ -117,7 +125,8 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	for ( i = 0; i < this->count; i ++ )
 	{
 		// Get the producer from this index
-		mlt_producer producer = this->list[ i ];
+		mlt_track track = this->list[ i ];
+		mlt_producer producer = track->producer;
 
 		// If it's allocated then, update our stats
 		if ( producer != NULL )
@@ -148,9 +157,19 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	}
 
 	// Update multitrack properties now - we'll not destroy the in point here
+	mlt_events_block( properties, properties );
 	mlt_properties_set_position( properties, "length", length );
+	mlt_events_unblock( properties, properties );
 	mlt_properties_set_position( properties, "out", length - 1 );
 	mlt_properties_set_double( properties, "fps", fps );
+}
+
+/** Listener for producers on the playlist.
+*/
+
+static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack this )
+{
+	mlt_multitrack_refresh( this );
 }
 
 /** Connect a producer to a given track.
@@ -170,14 +189,28 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 		if ( track >= this->size )
 		{
 			int i;
-			this->list = realloc( this->list, ( track + 10 ) * sizeof( mlt_producer ) );
+			this->list = realloc( this->list, ( track + 10 ) * sizeof( mlt_track ) );
 			for ( i = this->size; i < track + 10; i ++ )
 				this->list[ i ] = NULL;
 			this->size = track + 10;
 		}
-		
+
+		if ( this->list[ track ] != NULL )
+		{
+			mlt_event_close( this->list[ track ]->event );
+			mlt_producer_close( this->list[ track ]->producer );
+		}
+		else
+		{
+			this->list[ track ] = malloc( sizeof( struct mlt_track_s ) );
+		}
+
 		// Assign the track in our list here
-		this->list[ track ] = producer;
+		this->list[ track ]->producer = producer;
+		this->list[ track ]->event = mlt_events_listen( mlt_producer_properties( producer ), this, 
+									 "producer-changed", ( mlt_listener )mlt_multitrack_listener );
+		mlt_properties_inc_ref( mlt_producer_properties( producer ) );
+		mlt_event_inc_ref( this->list[ track ]->event );
 		
 		// Increment the track count if need be
 		if ( track >= this->count )
@@ -206,7 +239,7 @@ mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 	mlt_producer producer = NULL;
 	
 	if ( this->list != NULL && track < this->count )
-		producer = this->list[ track ];
+		producer = this->list[ track ]->producer;
 
 	return producer;
 }
@@ -258,7 +291,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 	for ( i = 0; i < this->count; i ++ )
 	{
 		// Get the producer for this track
-		mlt_producer producer = this->list[ i ];
+		mlt_producer producer = this->list[ i ]->producer;
 
 		// If it's assigned and not a hidden track
 		if ( producer != NULL )
@@ -359,7 +392,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 	if ( index < this->count && this->list[ index ] != NULL )
 	{
 		// Get the producer for this track
-		mlt_producer producer = this->list[ index ];
+		mlt_producer producer = this->list[ index ]->producer;
 
 		// Obtain the current position
 		mlt_position position = mlt_producer_frame( parent );
@@ -409,6 +442,17 @@ void mlt_multitrack_close( mlt_multitrack this )
 {
 	if ( this != NULL && mlt_properties_dec_ref( mlt_multitrack_properties( this ) ) <= 0 )
 	{
+		int i = 0;
+		for ( i = 0; i < this->count; i ++ )
+		{
+			if ( this->list[ i ] != NULL )
+			{
+				mlt_event_close( this->list[ i ]->event );
+				mlt_producer_close( this->list[ i ]->producer );
+				free( this->list[ i ] );
+			}
+		}
+
 		// Close the producer
 		mlt_producer_close( &this->parent );
 

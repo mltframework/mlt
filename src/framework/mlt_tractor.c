@@ -42,6 +42,7 @@ struct mlt_tractor_s
 */
 
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int track );
+static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor this );
 
 /** Constructor for the tractor.
 */
@@ -91,6 +92,8 @@ mlt_tractor mlt_tractor_new( )
 			mlt_properties_set_position( props, "length", 0 );
 			mlt_properties_set_data( props, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
 			mlt_properties_set_data( props, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
+
+			mlt_events_listen( mlt_multitrack_properties( multitrack ), this, "producer-changed", ( mlt_listener )mlt_tractor_listener );
 
 			producer->get_frame = producer_get_frame;
 			producer->close = ( mlt_destructor )mlt_tractor_close;
@@ -153,10 +156,19 @@ void mlt_tractor_refresh( mlt_tractor this )
 	mlt_multitrack multitrack = mlt_tractor_multitrack( this );
 	mlt_properties properties = mlt_multitrack_properties( multitrack );
 	mlt_properties self = mlt_tractor_properties( this );
+	mlt_events_block( properties, self );
+	mlt_events_block( self, self );
 	mlt_multitrack_refresh( multitrack );
 	mlt_properties_set_position( self, "in", 0 );
 	mlt_properties_set_position( self, "out", mlt_properties_get_position( properties, "out" ) );
+	mlt_events_unblock( self, self );
+	mlt_events_unblock( properties, self );
 	mlt_properties_set_position( self, "length", mlt_properties_get_position( properties, "length" ) );
+}
+
+static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor this )
+{
+	mlt_tractor_refresh( this );
 }
 
 /** Connect the tractor.
@@ -178,9 +190,7 @@ int mlt_tractor_connect( mlt_tractor this, mlt_service producer )
 
 int mlt_tractor_set_track( mlt_tractor this, mlt_producer producer, int index )
 {
-	int error = mlt_multitrack_connect( mlt_tractor_multitrack( this ), producer, index );
-	mlt_tractor_refresh( this );
-	return error;
+	return mlt_multitrack_connect( mlt_tractor_multitrack( this ), producer, index );
 }
 
 /** Get the producer for a specific track.
