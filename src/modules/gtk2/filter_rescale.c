@@ -74,7 +74,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	{
 		// When no scaling is requested, revert the requested dimensions if possible
 		mlt_properties_set_int( properties, "rescale_width", ( iwidth / 2 ) * 2 );
-		mlt_properties_set_int( properties, "rescale_height", ( iheight /2 ) * 2 );
+		mlt_properties_set_int( properties, "rescale_height", ( iheight / 2 ) * 2 );
 	}
 
 	// Get the image as requested

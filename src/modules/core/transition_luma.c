@@ -78,6 +78,10 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 );
 	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
 
+	// Pick the lesser of two evils ;-)
+	width_src = width_src > width ? width : width_src;
+	height_src = height_src > height ? height : height_src;
+	
 	p = p_dest;
 	limit = p_dest + height_src * width_src * 2;
 
@@ -128,6 +132,10 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 );
 	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 );
 
+	// Pick the lesser of two evils ;-)
+	width_src = width_src > width_dest ? width_dest : width_src;
+	height_src = height_src > height_dest ? height_dest : height_src;
+	
 	stride_src = width_src * 2;
 	stride_dest = width_dest * 2;
 
