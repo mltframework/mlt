@@ -193,20 +193,21 @@ static int get_value( mlt_properties properties, char *preferred, char *fallback
 /** Composite function.
 */
 
-static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field )
+static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int bpp, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field )
 {
 	int ret = 0;
-	int i, j;
+	int i, j, k;
 	int x_src = 0, y_src = 0;
 	float weight = geometry.mix / 100;
-	int stride_src = width_src * 2;
-	int stride_dest = width_dest * 2;
+	int stride_src = width_src * bpp;
+	int stride_dest = width_dest * bpp;
 
 	// Adjust to consumer scale
 	int x = geometry.x * width_dest / geometry.nw + 0.5;
 	int y = geometry.y * height_dest / geometry.nh + 0.5;
 
-	x -= x % 2;
+	if ( bpp == 2 )
+		x -= x % 2;
 
 	// optimization points - no work to do
 	if ( width_src <= 0 || height_src <= 0 )
@@ -238,14 +239,14 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 		height_src = height_dest - y;
 
 	// offset pointer into overlay buffer based on cropping
-	p_src += x_src * 2 + y_src * stride_src;
+	p_src += x_src * bpp + y_src * stride_src;
 
-	// offset pointer into frame buffer based upon positive, even coordinates only!
-	p_dest += ( x < 0 ? 0 : x ) * 2 + ( y < 0 ? 0 : y ) * stride_dest;
+	// offset pointer into frame buffer based upon positive coordinates only!
+	p_dest += ( x < 0 ? 0 : x ) * bpp + ( y < 0 ? 0 : y ) * stride_dest;
 
 	// offset pointer into alpha channel based upon cropping
 	if ( p_alpha )
-		p_alpha += x_src + y_src * stride_src / 2;
+		p_alpha += x_src + y_src * stride_src / bpp;
 
 	// Assuming lower field first
 	// Special care is taken to make sure the b_frame is aligned to the correct field.
@@ -264,7 +265,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	{
 		p_src += stride_src;
 		if ( p_alpha )
-			p_alpha += stride_src / 2;
+			p_alpha += stride_src / bpp;
 		height_src--;
 	}
 
@@ -273,8 +274,6 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	uint8_t *o = p_dest;
 	uint8_t *z = p_alpha;
 
-	uint8_t Y;
-	uint8_t UV;
 	uint8_t a;
 	float value;
 	int step = ( field > -1 ) ? 2 : 1;
@@ -286,16 +285,14 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 		q = &p_dest[ i * stride_dest ];
 		o = &p_dest[ i * stride_dest ];
 		if ( p_alpha )
-			z = &p_alpha[ i * stride_src / 2 ];
+			z = &p_alpha[ i * stride_src / bpp ];
 
 		for ( j = 0; j < width_src; j ++ )
 		{
-			Y = *p ++;
-			UV = *p ++;
 			a = ( z == NULL ) ? 255 : *z ++;
 			value = ( weight * ( float ) a / 255.0 );
-			*o ++ = (uint8_t)( Y * value + *q++ * ( 1 - value ) );
-			*o ++ = (uint8_t)( UV * value + *q++ * ( 1 - value ) );
+			for ( k = 0; k < bpp; k ++ )
+				*o ++ = (uint8_t)( *p++ * value + *q++ * ( 1 - value ) );
 		}
 	}
 
@@ -408,6 +405,15 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 }
 
 
+static uint8_t *transition_get_alpha_mask( mlt_frame this )
+{
+	// Obtain properties of frame
+	mlt_properties properties = mlt_frame_properties( this );
+
+	// Return the alpha mask
+	return mlt_properties_get_data( properties, "alpha", NULL );
+}
+
 /** Get the image.
 */
 
@@ -472,11 +478,102 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		
 		if ( get_b_frame_image( b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
 		{
+			uint8_t *dest = *image;
+			uint8_t *src = image_b;
+			int bpp = 2;
 			uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
 			int progressive = mlt_properties_get_int( a_props, "progressive" ) ||
 					mlt_properties_get_int( a_props, "consumer_progressive" ) ||
 					mlt_properties_get_int( properties, "progressive" );
 			int field;
+
+			// See if the alpha channel is our destination
+			if ( mlt_properties_get( properties, "a_frame" ) != NULL )
+			{
+				bpp = 1;
+				
+				// Get or make the a_frame alpha channel
+				dest = mlt_frame_get_alpha_mask( a_frame );
+				if ( dest == NULL )
+				{
+					// Allocate the alpha
+					dest = mlt_pool_alloc( *width * *height );
+					mlt_properties_set_data( a_props, "alpha", dest, *width * *height, ( mlt_destructor )mlt_pool_release, NULL );
+					
+					// Set alpha call back
+					a_frame->get_alpha_mask = transition_get_alpha_mask;
+				}
+
+				// If the source is an image, convert its YUV to an alpha channel
+				if ( mlt_properties_get( properties, "b_frame" ) == NULL )
+				{
+					if ( alpha == NULL )
+					{
+						// Allocate the alpha
+						alpha = mlt_pool_alloc( width_b * height_b );
+						mlt_properties_set_data( b_props, "alpha", alpha, width_b * height_b, ( mlt_destructor )mlt_pool_release, NULL );
+
+						// Set alpha call back
+						b_frame->get_alpha_mask = transition_get_alpha_mask;
+					}
+
+					// Copy the Y values into alpha
+					uint8_t *p = image_b;
+					uint8_t *q = alpha;
+					int i;
+					for ( i = 0; i < width_b * height_b; i ++, p += 2 )
+						*q ++ = *p;
+
+					// Setup to composite from the alpha channel
+					src = alpha;
+					alpha = NULL;
+				}
+			}
+			
+			// See if the alpha channel is our source
+			if ( mlt_properties_get( properties, "b_frame" ) != NULL )
+			{
+				// If we do not have an alpha channel fabricate it
+				if ( alpha == NULL )
+				{
+					// Allocate the alpha
+					alpha = mlt_pool_alloc( width_b * height_b );
+					mlt_properties_set_data( b_props, "alpha", alpha, width_b * height_b, ( mlt_destructor )mlt_pool_release, NULL );
+
+					// Set alpha call back
+					b_frame->get_alpha_mask = transition_get_alpha_mask;
+					
+					// Copy the Y values into alpha
+					uint8_t *p = image_b;
+					uint8_t *q = alpha;
+					int i;
+					for ( i = 0; i < width_b * height_b; i ++, p += 2 )
+						*q ++ = *p;
+				}
+
+				// If the destination is image, convert the alpha channel to YUV
+				if ( mlt_properties_get( properties, "a_frame" ) == NULL )
+				{
+					uint8_t *p = alpha;
+					uint8_t *q = image_b;
+					int i;
+					
+					for ( i = 0; i < width_b * height_b; i ++, p ++ )
+					{
+						*q ++ = 16 + ( ( float )*p / 255 * 220 ); // 220 is the luma range from 16-235
+						*q ++ = 128;
+					}
+				}
+				else
+				{
+					// Setup to composite from the alpha channel
+					src = alpha;
+					bpp = 1;
+				}
+
+				// Never the apply the alpha channel to this type of operation
+				alpha = NULL;
+			}
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
@@ -490,7 +587,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				alignment_calculate( &result );
 
 				// Composite the b_frame on the a_frame
-				composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha, result, progressive ? -1 : field );
+				composite_yuv( dest, *width, *height, bpp, src, width_b, height_b, alpha, result, progressive ? -1 : field );
 			}
 		}
 	}

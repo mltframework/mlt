@@ -148,7 +148,7 @@ static float position_calculate( mlt_filter this, mlt_frame frame )
 /** The averaging function...
 */
 
-void obscure_average( uint8_t *start, int width, int height, int stride )
+void obscure_average( uint8_t *start, int width, int height, int stride, uint8_t *alpha )
 {
 	int y;
 	int x;
@@ -171,12 +171,33 @@ void obscure_average( uint8_t *start, int width, int height, int stride )
 	for ( y = 0; y < height; y ++ )
 	{
 		uint8_t *p = start + y * stride;
+		uint8_t *z = alpha;
+		
+		if ( z != NULL )
+			z += y * stride / 2;
+		
 		for ( x = 0; x < width / 2; x ++ )
 		{
-			*p ++ = Y;
-			*p ++ = U;
-			*p ++ = Y;
-			*p ++ = V;
+			if ( z == NULL || ( z != NULL && *z++ > 127 ) )
+			{
+				*p ++ = Y;
+				*p ++ = U;
+			}
+			else
+			{
+				p += 2;
+			}
+				
+			if ( z == NULL || ( z != NULL && *z++ > 127 ) )
+			{
+				
+				*p ++ = Y;
+				*p ++ = V;
+			}
+			else
+			{
+				p += 2;
+			}
 		}
 	}
 }
@@ -185,7 +206,7 @@ void obscure_average( uint8_t *start, int width, int height, int stride )
 /** The obscurer rendering function...
 */
 
-static void obscure_render( uint8_t *image, int width, int height, struct geometry_s result )
+static void obscure_render( uint8_t *image, int width, int height, struct geometry_s result, uint8_t *alpha )
 {
 	int area_x = result.x;
 	int area_y = result.y;
@@ -198,6 +219,9 @@ static void obscure_render( uint8_t *image, int width, int height, struct geomet
 	int h;
 
 	uint8_t *p = image + area_y * width * 2 + area_x * 2;
+	uint8_t *z = alpha;
+	if ( z != NULL )
+		z += area_y * width + area_x;
 
 	for ( w = 0; w < area_w; w += mw )
 	{
@@ -205,8 +229,9 @@ static void obscure_render( uint8_t *image, int width, int height, struct geomet
 		{
 			int aw = w + mw > area_w ? mw - ( w + mw - area_w ) : mw;
 			int ah = h + mh > area_h ? mh - ( h + mh - area_h ) : mh;
-			if ( aw > 1 && ah > 1 );
-				obscure_average( p + h * width * 2 + w * 2, aw, ah, width * 2 );
+			if ( aw > 1 && ah > 1 )
+				obscure_average( p + h * width * 2 + w * 2, aw, ah, width * 2,
+					( z == NULL ? z : z + h * width + w ) );
 		}
 	}
 }
@@ -253,7 +278,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			geometry_calculate( &result, &start, &end, position, *width, *height );
 
 			// Now actually render it
-			obscure_render( *image, *width, *height, result );
+			obscure_render( *image, *width, *height, result, mlt_frame_get_alpha_mask( frame ) );
 		}
 	}
 
