@@ -416,6 +416,10 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	iheight = iheight - ( iheight % 2 );
 	oheight = oheight - ( oheight % 2 );
 
+	// Optimisation point
+	if ( iwidth == owidth && iheight == oheight )
+		memcpy( output, input, iheight * istride );
+
    	// Coordinates (0,0 is middle of output)
    	int y;
 

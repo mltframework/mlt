@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <execinfo.h>
+#include <stdio.h>
 
 /* Valerie header files */
 #include <valerie/valerie_util.h>
@@ -286,6 +288,31 @@ void signal_handler( int sig )
 	}
 }
 
+static void sigsegv_handler()
+{
+	void *array[ 10 ];
+	size_t size;
+	char **strings;
+	size_t i;
+
+	fprintf( stderr, "\a\nMiracle experienced a segmentation fault.\n"
+		"Dumping stack from the offending thread\n\n" );
+	size = backtrace( array, 10 );
+	strings = backtrace_symbols( array, size );
+
+	fprintf( stderr, "Obtained %zd stack frames.\n", size );
+
+	for ( i = 0; i < size; i++ )
+		 fprintf( stderr, "%s\n", strings[ i ] );
+
+	free( strings );
+
+	fprintf( stderr, "\nDone dumping - exiting.\n" );
+	exit( EXIT_FAILURE );
+}
+
+
+
 /** Local 'connect' function.
 */
 
@@ -304,6 +331,7 @@ static valerie_response miracle_local_connect( miracle_local local )
 	signal( SIGPIPE, signal_handler );
 	signal( SIGALRM, signal_handler );
 	signal( SIGCHLD, SIG_IGN );
+	signal( SIGSEGV, sigsegv_handler );
 
 	return response;
 }

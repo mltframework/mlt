@@ -90,6 +90,7 @@ int valerie_notifier_wait( valerie_notifier this, valerie_status status )
 
 void valerie_notifier_put( valerie_notifier this, valerie_status status )
 {
+	static unsigned int counter = 0;
 	pthread_mutex_lock( &this->mutex );
 	valerie_status_copy( &this->store[ status->unit ], status );
 	valerie_status_copy( &this->last, status );

@@ -549,18 +549,17 @@ int mlt_playlist_move( mlt_playlist this, int src, int dest )
 		else if ( current == dest )
 			current = src;
 
+		src_entry = this->list[ src ];
 		if ( src > dest )
 		{
-			int t = dest;
-			dest = src;
-			src = t;
+			for ( i = src; i > dest; i -- )
+				this->list[ i ] = this->list[ i - 1 ];
 		}
-		
-		src_entry = this->list[ src ];
-
-		for ( i = src + 1; i <= dest; i ++ )
-			this->list[ i - 1 ] = this->list[ i ];
-
+		else
+		{
+			for ( i = src; i < dest; i ++ )
+				this->list[ i ] = this->list[ i + 1 ];
+		}
 		this->list[ dest ] = src_entry;
 
 		mlt_playlist_get_clip_info( this, &current_info, current );
