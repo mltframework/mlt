@@ -51,6 +51,7 @@ struct consumer_sdl_s
 	int window_height;
 	float aspect_ratio;
 	float display_aspect;
+	double last_frame_aspect;
 	int width;
 	int height;
 	int playing;
@@ -407,10 +408,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			}
 		}
 	
-		if ( width != this->width || height != this->height )
+		if ( width != this->width || height != this->height || this->last_frame_aspect != mlt_frame_get_aspect_ratio( frame ) )
 		{
 			this->width = width;
 			this->height = height;
+			this->last_frame_aspect = mlt_frame_get_aspect_ratio( frame );
 			changed = 1;
 		}
 
@@ -437,7 +439,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				else
 				{
 					// Use hardware scaler to normalise display aspect ratio
-					this->rect.w = frame_aspect / this_aspect * this->window_width + 0.5;
+					this->rect.w = frame_aspect / this_aspect * this->window_width;
 					this->rect.h = this->window_height;
 					if ( this->rect.w > this->window_width )
 					{
@@ -473,7 +475,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				SDL_FreeYUVOverlay( this->sdl_overlay );
 
 			// open SDL window with video overlay, if possible
+			sdl_lock_display();
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+			sdl_unlock_display();
 
 			if ( this->sdl_screen != NULL )
 			{
@@ -692,6 +696,9 @@ static int consumer_get_dimensions( int *width, int *height )
 	// Specify the SDL Version
 	SDL_VERSION( &wm.version );
 
+	// Lock the display
+	sdl_lock_display();
+
 	// Get the wm structure
 	if ( SDL_GetWMInfo( &wm ) == 1 )
 	{
@@ -716,6 +723,9 @@ static int consumer_get_dimensions( int *width, int *height )
 			*height = attr.height;
 		}
 	}
+
+	// Unlock the display
+	sdl_lock_display();
 
 	return changed;
 }
