@@ -207,14 +207,9 @@ int consumer_stop( mlt_consumer parent )
 	if ( this->joined == 0 )
 	{
 		// Kill the thread and clean up
-		this->running = 0;
-
-		pthread_mutex_lock( &this->audio_mutex );
-		pthread_cond_broadcast( &this->audio_cond );
-		pthread_mutex_unlock( &this->audio_mutex );
-
-		pthread_join( this->thread, NULL );
 		this->joined = 1;
+		this->running = 0;
+		pthread_join( this->thread, NULL );
 	}
 
 	return 0;
@@ -375,7 +370,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	uint8_t *image;
 	int changed = 0;
 
-	if ( mlt_properties_get_int( properties, "video_off" ) == 0 )
+	if ( this->running && mlt_properties_get_int( properties, "video_off" ) == 0 )
 	{
 		// Get the image, width and height
 		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
@@ -450,7 +445,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			mlt_properties_set_int( properties, "changed", 0 );
 		}
 
-		if ( 1 )
+		if ( this->running )
 		{
 			// Determine window's new display aspect ratio
 			float this_aspect = ( float )this->window_width / this->window_height;
@@ -514,7 +509,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			SDL_SetClipRect( this->sdl_screen, &this->rect );
 		}
 
-		if ( this->sdl_screen != NULL && this->sdl_overlay == NULL )
+		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay == NULL )
 		{
 			SDL_SetClipRect( this->sdl_screen, &this->rect );
 			SDL_Flip( this->sdl_screen );
@@ -523,7 +518,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			sdl_unlock_display();
 		}
 
-		if ( this->sdl_screen != NULL && this->sdl_overlay != NULL )
+		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay != NULL )
 		{
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
 			sdl_lock_display();
@@ -568,9 +563,15 @@ static void *video_thread( void *arg )
 	{
 		// Pop the next frame
 		pthread_mutex_lock( &this->video_mutex );
-		while ( ( next = mlt_deque_pop_front( this->queue ) ) == NULL && this->running )
+		next = mlt_deque_pop_front( this->queue );
+		while ( next == NULL && this->running )
+		{
 			pthread_cond_wait( &this->video_cond, &this->video_mutex );
+			next = mlt_deque_pop_front( this->queue );
+		}
 		pthread_mutex_unlock( &this->video_mutex );
+
+		if ( !this->running || next == NULL ) break;
 
 		// Get the properties
 		properties =  MLT_FRAME_PROPERTIES( next );
@@ -615,7 +616,11 @@ static void *video_thread( void *arg )
 
 		// This frame can now be closed
 		mlt_frame_close( next );
+		next = NULL;
 	}
+
+	if ( next != NULL )
+		mlt_frame_close( next );
 
 	mlt_consumer_stopped( &this->parent );
 
@@ -729,8 +734,8 @@ static void *consumer_thread( void *arg )
 	if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "audio_off" ) )
 		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 
-	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
-		SDL_Quit( );
+	//if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
+		//SDL_Quit( );
 
 	while( mlt_deque_count( this->queue ) )
 		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
@@ -795,7 +800,10 @@ static void consumer_close( mlt_consumer parent )
 	consumer_sdl this = parent->child;
 
 	// Stop the consumer
-	mlt_consumer_stop( parent );
+	///mlt_consumer_stop( parent );
+
+	// Now clean up the rest
+	mlt_consumer_close( parent );
 
 	// Close the queue
 	mlt_deque_close( this->queue );
@@ -804,9 +812,6 @@ static void consumer_close( mlt_consumer parent )
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );
 		
-	// Now clean up the rest
-	mlt_consumer_close( parent );
-
 	// Finally clean up this
 	free( this );
 }

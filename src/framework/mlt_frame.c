@@ -262,16 +262,15 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	mlt_get_image get_image = mlt_frame_pop_get_image( this );
 	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
+	int error = 0;
 
 	*width = *width >> 1 << 1;
 	
 	if ( get_image != NULL )
 	{
-		int error = 0;
 		mlt_position position = mlt_frame_get_position( this );
 	   	error = get_image( this, buffer, format, width, height, writable );
 		mlt_frame_set_position( this, position );
-		return error;
 	}
 	else if ( mlt_properties_get_data( properties, "image", NULL ) != NULL )
 	{
@@ -360,7 +359,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		mlt_properties_set_int( properties, "test_image", 1 );
 	}
 
-	return 0;
+	return error;
 }
 
 uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )

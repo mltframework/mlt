@@ -569,6 +569,10 @@ static void *consumer_thread( void *arg )
 			consumer_play_video( this, frame );
 			mlt_frame_close( frame );
 		}
+		else
+		{
+			this->running = 0;
+		}
 	}
 
 	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )

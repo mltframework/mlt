@@ -295,7 +295,7 @@ static void *consumer_thread( void *arg )
 			}
 			else
 			{
-				mlt_consumer_purge( this->play );
+				//mlt_consumer_purge( this->play );
 				last_position = -1;
 			}
 
@@ -363,12 +363,16 @@ static void *consumer_thread( void *arg )
 			// We are definitely not waiting on the first frame any more
 			first = 0;
 		}
+		else
+		{
+			this->running = 0;
+		}
 	}
 
-	mlt_consumer_stop( this->play );
-	mlt_consumer_stop( this->still );
+	//mlt_consumer_stop( this->play );
+	//mlt_consumer_stop( this->still );
 
-	SDL_Quit( );
+	//SDL_Quit( );
 
 	return NULL;
 }
@@ -384,12 +388,12 @@ static void consumer_close( mlt_consumer parent )
 	// Stop the consumer
 	mlt_consumer_stop( parent );
 
-	// Now clean up the rest
-	mlt_consumer_close( parent );
-
 	// Close the child consumers
 	mlt_consumer_close( this->play );
 	mlt_consumer_close( this->still );
+
+	// Now clean up the rest
+	mlt_consumer_close( parent );
 
 	// Finally clean up this
 	free( this );

@@ -52,6 +52,7 @@ struct mlt_consumer_s
 	pthread_mutex_t put_mutex;
 	pthread_cond_t put_cond;
 	mlt_frame put;
+	int put_active;
 };
 
 /** Public final methods

@@ -157,6 +157,7 @@ int mlt_consumer_start( mlt_consumer this )
 	// Just to make sure nothing is hanging around...
 	mlt_frame_close( this->put );
 	this->put = NULL;
+	this->put_active = 1;
 
 	// Deal with it now.
 	if ( test_card != NULL )
@@ -215,14 +216,14 @@ int mlt_consumer_put_frame( mlt_consumer this, mlt_frame frame )
 		struct timeval now;
 		struct timespec tm;
 		pthread_mutex_lock( &this->put_mutex );
-		while ( !mlt_consumer_is_stopped( this ) && this->put != NULL )
+		while ( this->put_active && this->put != NULL )
 		{
 			gettimeofday( &now, NULL );
 			tm.tv_sec = now.tv_sec + 1;
 			tm.tv_nsec = now.tv_usec * 1000;
 			pthread_cond_timedwait( &this->put_cond, &this->put_mutex, &tm );
 		}
-		if ( !mlt_consumer_is_stopped( this ) && this->put == NULL )
+		if ( this->put_active && this->put == NULL )
 			this->put = frame;
 		else
 			mlt_frame_close( frame );
@@ -257,7 +258,7 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 		struct timeval now;
 		struct timespec tm;
 		pthread_mutex_lock( &this->put_mutex );
-		while ( !mlt_consumer_is_stopped( this ) && this->put == NULL )
+		while ( this->put_active && this->put == NULL )
 		{
 			gettimeofday( &now, NULL );
 			tm.tv_sec = now.tv_sec + 1;
@@ -353,9 +354,16 @@ static void *consumer_read_ahead_thread( void *arg )
 	int64_t time_frame = 0;
 	int64_t time_process = 0;
 	int skip_next = 0;
+	mlt_service lock_object = NULL;
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( this );
+
+	// Get the lock object
+	lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
+
+	// Lock it
+	if ( lock_object ) mlt_service_lock( lock_object );
 
 	// Get the image of the first frame
 	if ( !video_off )
@@ -367,6 +375,10 @@ static void *consumer_read_ahead_thread( void *arg )
 		mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
 	}
 
+	// Unlock the lock object
+	if ( lock_object ) mlt_service_unlock( lock_object );
+
+	// Mark as rendered
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
 
 	// Get the starting time (can ignore the times above)
@@ -393,8 +405,14 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( frame == NULL )
 			continue;
 
+		// Attempt to fetch the lock object
+		lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
+
 		// Increment the count
 		count ++;
+
+		// Lock if there's a lock object
+		if ( lock_object ) mlt_service_lock( lock_object );
 
 		// All non normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
@@ -445,6 +463,9 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Determine if the next frame should be skipped
 		if ( mlt_deque_count( this->queue ) <= 5 && ( ( time_wait + time_frame + time_process ) / count ) > 40000 )
 			skip_next = 1;
+
+		// Unlock if there's a lock object
+		if ( lock_object ) mlt_service_unlock( lock_object );
 	}
 
 	// Remove the last frame
@@ -585,24 +606,24 @@ int mlt_consumer_stop( mlt_consumer this )
 {
 	// Get the properies
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	char *debug = mlt_properties_get( MLT_CONSUMER_PROPERTIES( this ), "debug" );
+
+	// Just in case...
+	if ( debug ) fprintf( stderr, "%s: stopping put waiting\n", debug );
+	pthread_mutex_lock( &this->put_mutex );
+	this->put_active = 0;
+	pthread_cond_broadcast( &this->put_cond );
+	pthread_mutex_unlock( &this->put_mutex );
 
 	// Stop the consumer
+	if ( debug ) fprintf( stderr, "%s: stopping consumer\n", debug );
 	if ( this->stop != NULL )
 		this->stop( this );
 
 	// Check if the user has requested real time or not and stop if necessary
+	if ( debug ) fprintf( stderr, "%s: stopping read_ahead\n", debug );
 	if ( mlt_properties_get_int( properties, "real_time" ) )
 		consumer_read_ahead_stop( this );
-
-	// Just in case...
-	pthread_mutex_lock( &this->put_mutex );
-	if ( this->put != NULL )
-	{
-		mlt_frame_close( this->put );
-		this->put = NULL;
-	}
-	pthread_cond_broadcast( &this->put_cond );
-	pthread_mutex_unlock( &this->put_mutex );
 
 	// Kill the test card
 	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
@@ -610,6 +631,8 @@ int mlt_consumer_stop( mlt_consumer this )
 	// Check and run a post command
 	if ( mlt_properties_get( properties, "post" ) )
 		system( mlt_properties_get( properties, "post" ) );
+
+	if ( debug ) fprintf( stderr, "%s: stopped\n", debug );
 
 	return 0;
 }
@@ -639,19 +662,17 @@ void mlt_consumer_close( mlt_consumer this )
 		if ( consumer_close )
 		{
 			// Just in case...
-			mlt_consumer_stop( this );
+			//mlt_consumer_stop( this );
 
 			this->close = NULL;
 			consumer_close( this );
 		}
 		else
 		{
-
 			// Make sure it only gets called once
 			this->parent.close = NULL;
 
 			// Destroy the push mutex and condition
-			pthread_cond_broadcast( &this->put_cond );
 			pthread_mutex_destroy( &this->put_mutex );
 			pthread_cond_destroy( &this->put_cond );
 
