@@ -335,6 +335,71 @@ static double producer_time_of_frame( mlt_producer this, mlt_position position )
 	return ( double )position / fps;
 }
 
+static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format format, int width, int height )
+{
+	// EXPERIMENTAL IMAGE NORMALISATIONS
+	if ( pix_fmt == PIX_FMT_YUV420P && format == mlt_image_yuv422 )
+	{
+		register int i, j;
+		register int half = width >> 1;
+		register uint8_t *Y = ( ( AVPicture * )frame )->data[ 0 ];
+		register uint8_t *U = ( ( AVPicture * )frame )->data[ 1 ];
+		register uint8_t *V = ( ( AVPicture * )frame )->data[ 2 ];
+		register uint8_t *d = buffer;
+		register uint8_t *y, *u, *v;
+
+		i = height >> 1;
+		while ( i -- )
+		{
+			y = Y;
+			u = U;
+			v = V;
+			j = half;
+			while ( j -- )
+			{
+				*d ++ = *y ++;
+				*d ++ = *u ++;
+				*d ++ = *y ++;
+				*d ++ = *v ++;
+			}
+
+			Y += ( ( AVPicture * )frame )->linesize[ 0 ];
+			y = Y;
+			u = U;
+			v = V;
+			j = half;
+			while ( j -- )
+			{
+				*d ++ = *y ++;
+				*d ++ = *u ++;
+				*d ++ = *y ++;
+				*d ++ = *v ++;
+			}
+
+			Y += ( ( AVPicture * )frame )->linesize[ 0 ];
+			U += ( ( AVPicture * )frame )->linesize[ 1 ];
+			V += ( ( AVPicture * )frame )->linesize[ 2 ];
+		}
+	}
+	else if ( format == mlt_image_yuv420p )
+	{
+		AVPicture pict;
+		pict.data[0] = buffer;
+		pict.data[1] = buffer + width * height;
+		pict.data[2] = buffer + ( 3 * width * height ) / 2;
+		pict.linesize[0] = width;
+		pict.linesize[1] = width >> 1;
+		pict.linesize[2] = width >> 1;
+		img_convert( &pict, PIX_FMT_YUV420P, (AVPicture *)frame, pix_fmt, width, height );
+	}
+	else
+	{
+		AVPicture output;
+		avpicture_fill( &output, buffer, PIX_FMT_YUV422, width, height );
+		img_convert( &output, PIX_FMT_YUV422, (AVPicture *)frame, pix_fmt, width, height );
+	}
+}
+
 /** Get an image from a frame.
 */
 
@@ -374,7 +439,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	AVPacket pkt;
 
 	// Get the conversion frame
-	AVPicture *output = mlt_properties_get_data( properties, "video_output_frame", NULL );
+	AVFrame *av_frame = mlt_properties_get_data( properties, "av_frame", NULL );
 
 	// Special case pause handling flag
 	int paused = 0;
@@ -391,25 +456,23 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get the seekable status
 	int seekable = mlt_properties_get_int( properties, "seekable" );
 
+	// Generate the size in bytes
+	int size = 0; 
+
 	// Set the result arguments that we know here (only *buffer is now required)
-	*format = mlt_image_yuv422;
+	if ( *format != mlt_image_yuv422 && *format != mlt_image_yuv420p )
+		*format = mlt_image_yuv422;
 	*width = codec_context->width;
 	*height = codec_context->height;
+
+	size = *width * ( *height + 1 ) * 2;
 
 	// Set this on the frame properties
 	mlt_properties_set_int( frame_properties, "width", *width );
 	mlt_properties_set_int( frame_properties, "height", *height );
 
-	// Construct an AVFrame for YUV422 conversion
-	if ( output == NULL )
-	{
-		int size = avpicture_get_size( PIX_FMT_YUV422, *width, *height + 1 );
-		uint8_t *buf = mlt_pool_alloc( size );
-		output = mlt_pool_alloc( sizeof( AVPicture ) );
-		avpicture_fill( output, buf, PIX_FMT_YUV422, *width, *height );
-		mlt_properties_set_data( properties, "video_output_frame", output, 0, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "video_output_buffer", buf, 0, ( mlt_destructor )mlt_pool_release, NULL );
-	}
+	// Construct the output image
+	*buffer = mlt_pool_alloc( size );
 
 	// Seek if necessary
 	if ( position != expected )
@@ -431,22 +494,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	
 			// Remove the cached info relating to the previous position
 			mlt_properties_set_double( properties, "current_time", real_timecode );
-			mlt_properties_set_data( properties, "current_image", NULL, 0, NULL, NULL );
+
+			mlt_properties_set_data( properties, "av_frame", NULL, 0, NULL, NULL );
+			av_frame = NULL;
 		}
 	}
 	
 	// Duplicate the last image if necessary
-	if ( mlt_properties_get_data( properties, "current_image", NULL ) != NULL &&
-		 ( paused || mlt_properties_get_double( properties, "current_time" ) >= real_timecode ) &&
+	if ( av_frame != NULL && ( paused || mlt_properties_get_double( properties, "current_time" ) >= real_timecode ) &&
 		 strcmp( mlt_properties_get( properties, "resource" ), "pipe:" ) )
 	{
-		// Get current image and size
-		int size = 0;
-		uint8_t *image = mlt_properties_get_data( properties, "current_image", &size );
-
 		// Duplicate it
-		*buffer = mlt_pool_alloc( size );
-		memcpy( *buffer, image, size );
+		convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
 
 		// Set this on the frame properties
 		mlt_properties_set_data( frame_properties, "image", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
@@ -455,10 +514,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		int ret = 0;
 		int got_picture = 0;
-		AVFrame frame;
 
 		memset( &pkt, 0, sizeof( pkt ) );
-		memset( &frame, 0, sizeof( frame ) );
+
+		// Construct an AVFrame for YUV422 conversion
+		if ( av_frame == NULL )
+		{
+			av_frame = calloc( 1, sizeof( AVFrame ) );
+			mlt_properties_set_data( properties, "av_frame", av_frame, 0, free, NULL );
+			paused = 0;
+		}
 
 		while( ret >= 0 && !got_picture )
 		{
@@ -469,7 +534,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
 				// Decode the image
-				ret = avcodec_decode_video( codec_context, &frame, &got_picture, pkt.data, pkt.size );
+				ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
 
 				if ( got_picture )
 				{
@@ -493,7 +558,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						got_picture = 0;
 					}
-					mlt_properties_set_int( properties, "top_field_first", frame.top_field_first );
+					mlt_properties_set_int( properties, "top_field_first", av_frame->top_field_first );
 				}
 			}
 
@@ -504,71 +569,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Now handle the picture if we have one
 		if ( got_picture )
 		{
-			// Get current image and size
-			int size = 0;
-			uint8_t *image = mlt_properties_get_data( properties, "current_image", &size );
+			convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
 
-			if ( image == NULL || size != *width * *height * 2 )
-			{
-				size = *width * ( *height + 1 ) * 2;
-				image = mlt_pool_alloc( size );
-				mlt_properties_set_data( properties, "current_image", image, size, ( mlt_destructor )mlt_pool_release, NULL );
-			}
-
-			*buffer = mlt_pool_alloc( size );
-
-			// EXPERIMENTAL IMAGE NORMALISATIONS
-			if ( codec_context->pix_fmt == PIX_FMT_YUV420P )
-			{
-				register int i, j;
-				register int half = *width >> 1;
-				register uint8_t *Y = ( ( AVPicture * )&frame )->data[ 0 ];
-				register uint8_t *U = ( ( AVPicture * )&frame )->data[ 1 ];
-				register uint8_t *V = ( ( AVPicture * )&frame )->data[ 2 ];
-				register uint8_t *d = *buffer;
-				register uint8_t *y, *u, *v;
-
-				i = *height >> 1;
-				while ( i -- )
-				{
-					y = Y;
-					u = U;
-					v = V;
-					j = half;
-					while ( j -- )
-					{
-						*d ++ = *y ++;
-						*d ++ = *u ++;
-						*d ++ = *y ++;
-						*d ++ = *v ++;
-					}
-
-					Y += ( ( AVPicture * )&frame )->linesize[ 0 ];
-					y = Y;
-					u = U;
-					v = V;
-					j = half;
-					while ( j -- )
-					{
-						*d ++ = *y ++;
-						*d ++ = *u ++;
-						*d ++ = *y ++;
-						*d ++ = *v ++;
-					}
-
-					Y += ( ( AVPicture * )&frame )->linesize[ 0 ];
-					U += ( ( AVPicture * )&frame )->linesize[ 1 ];
-					V += ( ( AVPicture * )&frame )->linesize[ 2 ];
-				}
-			}
-			else
-			{
-				img_convert( output, PIX_FMT_YUV422, (AVPicture *)&frame, codec_context->pix_fmt, *width, *height );
-				memcpy( *buffer, output->data[ 0 ], size );
-			}
-
-			memcpy( image, *buffer, size );
-			mlt_properties_set_data( frame_properties, "image", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+			mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
 
 			if ( current_time == 0 && source_fps != 0 )
 			{
