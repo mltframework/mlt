@@ -174,6 +174,7 @@ static command_t vocabulary[] =
 	{"INSERT", miracle_insert, 1, ATYPE_STRING, "Insert a clip at the given clip index."},
 	{"REMOVE", miracle_remove, 1, ATYPE_NONE, "Remove a clip at the given clip index."},
 	{"CLEAN", miracle_clean, 1, ATYPE_NONE, "Clean a unit by removing all but the currently playing clip."},
+	{"CLEAR", miracle_clear, 1, ATYPE_NONE, "Clear a unit by removing all clips."},
 	{"MOVE", miracle_move, 1, ATYPE_INT, "Move a clip to another clip index."},
 	{"APND", miracle_append, 1, ATYPE_STRING, "Append a clip specified in absolute filename argument."},
 	{"PLAY", miracle_play, 1, ATYPE_NONE, "Play a loaded clip at speed -2000 to 2000 where 1000 = normal forward speed."},

@@ -325,6 +325,14 @@ valerie_error_code miracle_unit_clean( miracle_unit unit )
 	return valerie_ok;
 }
 
+valerie_error_code miracle_unit_clear( miracle_unit unit )
+{
+	clear_unit( unit );
+	miracle_log( LOG_DEBUG, "Cleared playlist" );
+	miracle_unit_status_communicate( unit );
+	return valerie_ok;
+}
+
 valerie_error_code miracle_unit_move( miracle_unit unit, int src, int dest )
 {
 	mlt_properties properties = unit->properties;

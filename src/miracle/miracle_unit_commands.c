@@ -106,7 +106,7 @@ int miracle_insert( command_argument cmd_arg )
 	char *filename = (char*) cmd_arg->argument;
 	char fullname[1024];
 
-	if ( filename[0] == '/' )
+	if ( strlen( cmd_arg->root_dir ) && filename[0] == '/' )
 		filename++;
 
 	snprintf( fullname, 1023, "%s%s", cmd_arg->root_dir, filename );
@@ -165,6 +165,20 @@ int miracle_clean( command_argument cmd_arg )
 	return RESPONSE_SUCCESS;
 }
 
+int miracle_clear( command_argument cmd_arg )
+{
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	
+	if (unit == NULL)
+		return RESPONSE_INVALID_UNIT;
+	else
+	{
+		if ( miracle_unit_clear( unit ) != valerie_ok )
+			return RESPONSE_BAD_FILE;
+	}
+	return RESPONSE_SUCCESS;
+}
+
 int miracle_move( command_argument cmd_arg )
 {
 	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
@@ -198,7 +212,7 @@ int miracle_append( command_argument cmd_arg )
 	char *filename = (char*) cmd_arg->argument;
 	char fullname[1024];
 
-	if ( filename[0] == '/' )
+	if ( strlen( cmd_arg->root_dir ) && filename[0] == '/' )
 		filename++;
 
 	snprintf( fullname, 1023, "%s%s", cmd_arg->root_dir, filename );

@@ -47,6 +47,7 @@ extern valerie_error_code 	miracle_unit_insert( miracle_unit unit, char *clip, i
 extern valerie_error_code   miracle_unit_append( miracle_unit unit, char *clip, int32_t in, int32_t out );
 extern valerie_error_code 	miracle_unit_remove( miracle_unit unit, int index );
 extern valerie_error_code 	miracle_unit_clean( miracle_unit unit );
+extern valerie_error_code 	miracle_unit_clear( miracle_unit unit );
 extern valerie_error_code 	miracle_unit_move( miracle_unit unit, int src, int dest );
 extern int                  miracle_unit_transfer( miracle_unit dest_unit, miracle_unit src_unit );
 extern void                 miracle_unit_play( miracle_unit_t *unit, int speed );

@@ -260,6 +260,14 @@ valerie_error_code valerie_unit_clean( valerie this, int unit )
 	return valerie_execute( this, 1024, "CLEAN U%d", unit );
 }
 
+/** Clear the unit - this function removes all clips.
+*/
+
+valerie_error_code valerie_unit_clear( valerie this, int unit )
+{
+	return valerie_execute( this, 1024, "CLEAR U%d", unit );
+}
+
 /** Move clips on the units playlist.
 */
 
