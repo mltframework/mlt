@@ -320,6 +320,8 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_positio
 		out = 0;
 	else if ( out > mlt_producer_get_length( this ) && !mlt_producer_is_blank( this ) )
 		out = mlt_producer_get_length( this );
+	else if ( out >= mlt_producer_get_length( this ) - 1 && mlt_producer_is_blank( this ) )
+		mlt_properties_set_position( mlt_producer_properties( this ), "length", out + 1 );
 
 	// Swap ins and outs if wrong
 	if ( out < in )
