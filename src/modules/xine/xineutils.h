@@ -37,23 +37,23 @@ extern "C" {
 #  include <libgen.h>
 #endif
 
-#ifdef XINE_COMPILE
+//#ifdef XINE_COMPILE
 #  include "attributes.h"
-#  include "compat.h"
-#  include "xmlparser.h"
-#  include "xine_buffer.h"
-#  include "configfile.h"
-#else
-#  include <xine/attributes.h>
-#  include <xine/compat.h>
-#  include <xine/xmlparser.h>
-#  include <xine/xine_buffer.h>
-#  include <xine/configfile.h>
-#endif
+//#  include "compat.h"
+//#  include "xmlparser.h"
+//#  include "xine_buffer.h"
+//#  include "configfile.h"
+//#else
+//#  include <xine/attributes.h>
+//#  include <xine/compat.h>
+//#  include <xine/xmlparser.h>
+//#  include <xine/xine_buffer.h>
+//#  include <xine/configfile.h>
+//#endif
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+//#ifdef HAVE_CONFIG_H
+//#include "config.h"
+//#endif
   
 #include <stdio.h>
 #include <string.h>
