@@ -43,6 +43,7 @@ namespace Mlt
 			int clip( mlt_whence whence, int index );
 			int count( );
 			Producer *track( int index );
+			void refresh( );
 	};
 }
 

@@ -69,3 +69,7 @@ Producer *Multitrack::track( int index )
 	return new Producer( mlt_multitrack_track( get_multitrack( ), index ) );
 }
 
+void Multitrack::refresh( )
+{
+	return mlt_multitrack_refresh( get_multitrack( ) );
+}

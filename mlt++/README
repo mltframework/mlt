@@ -76,10 +76,16 @@ CLASS HIERARCHY
 			Frame
 			Service
 				Consumer
+					FilteredConsumer [*]
+				Field
 				Filter
+				Multitrack
 				Producer
 					Playlist
+				Tractor
 				Transition
+
+	[*] These classes have no direct equivalent in the C API.
 
 SPECIAL CASES
 -------------

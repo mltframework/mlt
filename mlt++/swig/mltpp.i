@@ -40,9 +40,10 @@ namespace Mlt {
 %newobject Producer::filter( int );
 %newobject Playlist::current( );
 %newobject Playlist::clip_info( int );
-%newobject Multitrack::track( int index );
+%newobject Multitrack::track( int );
 %newobject Tractor::multitrack( );
 %newobject Tractor::field( );
+%newobject Tractor::track( int );
 }
 
 /** Classes to wrap.

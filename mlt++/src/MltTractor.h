@@ -44,6 +44,9 @@ namespace Mlt
 			mlt_producer get_producer( );
 			Multitrack *multitrack( );
 			Field *field( );
+			void refresh( );
+			int set_track( Producer &producer, int index );
+			Producer *track( int index );
 	};
 }
 

@@ -65,3 +65,17 @@ Field *Tractor::field( )
 	return new Field( mlt_tractor_field( get_tractor( ) ) );
 }
 
+void Tractor::refresh( )
+{
+	return mlt_tractor_refresh( get_tractor( ) );
+}
+
+int Tractor::set_track( Producer &producer, int index )
+{
+	return mlt_tractor_set_track( get_tractor( ), producer.get_producer( ), index );
+}
+
+Producer *Tractor::track( int index )
+{
+	return new Producer( mlt_tractor_get_track( get_tractor( ), index ) );
+}
