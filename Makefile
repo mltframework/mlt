@@ -1,12 +1,12 @@
 include config.mak
 
 SUBDIRS = src/framework \
-		  src/modules \
 		  src/inigo \
 		  src/valerie \
 		  src/miracle \
 		  src/humperdink \
-		  src/albino
+		  src/albino \
+		  src/modules
 
 all clean depend:
 	list='$(SUBDIRS)'; \

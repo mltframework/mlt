@@ -76,7 +76,7 @@ dv_decoder_t *dv_decoder_alloc( )
 
 			// Configure the decoder
 			this = dv_decoder_new( FALSE, FALSE, FALSE );
-			this->quality = DV_QUALITY_COLOR | DV_QUALITY_AC_1;
+			this->quality = DV_QUALITY_COLOR | DV_QUALITY_AC_2;
 			this->audio->arg_audio_emphasis = 2;
 			dv_set_audio_correction( this, DV_AUDIO_CORRECT_AVERAGE );
 
@@ -419,7 +419,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Parse the header for meta info
 		dv_parse_header( dv_decoder, data );
-		mlt_properties_set_int( properties, "progressive", dv_is_progressive( dv_decoder ) );
+		//mlt_properties_set_int( properties, "progressive", dv_is_progressive( dv_decoder ) );
 		mlt_properties_set_double( properties, "aspect_ratio", 
 			dv_format_wide( dv_decoder ) ? ( this->is_pal ? 512.0/351.0 : 96.0/79.0 ) : ( this->is_pal ? 128.0/117.0 : 72.0/79.0 ) );
 
