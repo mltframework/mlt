@@ -20,13 +20,13 @@
 
 // TODO: destroy unreferenced producers (they are currently destroyed
 //       when the returned producer is closed).
-// TODO: determine why deserialise_context can not be released.
 
 #include "producer_westley.h"
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
@@ -55,6 +55,9 @@ struct deserialise_context_s
 	xmlDocPtr entity_doc;
 	int depth;
 	int branch[ STACK_SIZE ];
+	const xmlChar *publicId;
+	const xmlChar *systemId;
+	mlt_properties params;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -985,6 +988,28 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 	free( value);
 }
 
+/** Convert parameters parsed from resource into entity declarations.
+*/
+static void params_to_entities( deserialise_context context )
+{
+	if ( context->params != NULL )
+	{	
+		int i;
+		
+		// Add our params as entitiy declarations
+		for ( i = 0; i < mlt_properties_count( context->params ); i++ )
+		{
+			xmlChar *name = ( xmlChar* )mlt_properties_get_name( context->params, i );
+			xmlAddDocEntity( context->entity_doc, name, XML_INTERNAL_GENERAL_ENTITY,
+				context->publicId, context->systemId, ( xmlChar* )mlt_properties_get( context->params, name ) );
+		}
+
+		// Flag completion
+		mlt_properties_close( context->params );
+		context->params = NULL;
+	}
+}
+
 // The following 3 facilitate entity substitution in the SAX parser
 static void on_internal_subset( void *ctx, const xmlChar* name,
 	const xmlChar* publicId, const xmlChar* systemId )
@@ -992,7 +1017,12 @@ static void on_internal_subset( void *ctx, const xmlChar* name,
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 	
+	context->publicId = publicId;
+	context->systemId = systemId;
 	xmlCreateIntSubset( context->entity_doc, name, publicId, systemId );
+	
+	// Override default entities with our parameters
+	params_to_entities( context );
 }
 
 static void on_entity_declaration( void *ctx, const xmlChar* name, int type, 
@@ -1009,11 +1039,88 @@ xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 
+	// Setup for entity declarations if not ready
+	if ( xmlGetIntSubset( context->entity_doc ) == NULL )
+	{
+		xmlCreateIntSubset( context->entity_doc, "westley", "", "" );
+		context->publicId = "";
+		context->systemId = "";
+	}
+
+	// Add our parameters if not already
+	params_to_entities( context );
+	
 	return xmlGetDocEntity( context->entity_doc, name );
 }
 
+/** Convert a hexadecimal character to its value.
+*/
+static int tohex( char p )
+{
+	return isdigit( p ) ? p - '0' : tolower( p ) - 'a' + 10;
+}
 
-mlt_producer producer_westley_init( char *filename )
+/** Decode a url-encoded string containing hexadecimal character sequences.
+*/
+static char *url_decode( char *dest, char *src )
+{
+	char *p = dest;
+	
+	while ( *src )
+	{
+		if ( *src == '%' )
+		{
+			*p ++ = ( tohex( *( src + 1 ) ) << 4 ) | tohex( *( src + 2 ) );
+			src += 3;
+		}
+		else
+		{
+			*p ++ = *src ++;
+		}
+	}
+
+	*p = *src;
+	return dest;
+}
+
+/** Extract the filename from a URL attaching parameters to a properties list.
+*/
+static void parse_url( mlt_properties properties, char *url )
+{
+	int i;
+	int n = strlen( url );
+	char *name = NULL;
+	char *value = NULL;
+	
+	for ( i = 0; i < n; i++ )
+	{
+		switch ( url[ i ] )
+		{
+			case '?':
+				url[ i++ ] = '\0';
+				name = &url[ i ];
+				break;
+			
+			case ':':
+			case '=':
+				url[ i++ ] = '\0';
+				value = &url[ i ];
+				break;
+			
+			case '&':
+				url[ i++ ] = '\0';
+				if ( name != NULL && value != NULL )
+					mlt_properties_set( properties, name, value );
+				name = &url[ i ];
+				value = NULL;
+				break;
+		}
+	}
+	if ( name != NULL && value != NULL )
+		mlt_properties_set( properties, name, value );
+}
+
+mlt_producer producer_westley_init( char *url )
 {
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
@@ -1021,9 +1128,14 @@ mlt_producer producer_westley_init( char *filename )
 	int i = 0;
 	struct _xmlParserCtxt *xmlcontext;
 	int well_formed = 0;
+	char *filename = strdup( url );
 	
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
+	context->params = mlt_properties_new();
+
+	// Decode URL and parse parameters	
+	parse_url( context->params, url_decode( filename, url ) );
 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( context->destructors, "registered", 0 );
@@ -1111,7 +1223,7 @@ mlt_producer producer_westley_init( char *filename )
 		mlt_properties_set_data( properties, "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
 
 		// Now assign additional properties
-		mlt_properties_set( properties, "resource", filename );
+		mlt_properties_set( properties, "resource", url );
 
 		// This tells consumer_westley not to deep copy
 		mlt_properties_set( properties, "westley", "was here" );
@@ -1125,9 +1237,12 @@ mlt_producer producer_westley_init( char *filename )
 		mlt_properties_close( context->destructors );
 	}
 
-	free( context->stack_service );
+	// Clean up
 	mlt_properties_close( context->producer_map );
-	//free( context );
+	if ( context->params != NULL )
+		mlt_properties_close( context->params );
+	free( context );
+	free( filename );
 
 	return MLT_PRODUCER( service );
 }

@@ -40,6 +40,7 @@ int miracle_load( command_argument cmd_arg )
 	char *filename = (char*) cmd_arg->argument;
 	char fullname[1024];
 	int flush = 1;
+	char *service;
 
 	if ( filename[0] == '!' )
 	{
@@ -47,10 +48,25 @@ int miracle_load( command_argument cmd_arg )
 		filename ++;
 	}
 
-	if ( strlen( cmd_arg->root_dir ) && filename[0] == '/' )
-		filename++;
+	service = strchr( filename, ':' );
+	if ( service != NULL )
+	{
+		service = filename;
+		filename = strchr( service, ':' );
+		*filename ++ = '\0';
+		
+		if ( strlen( cmd_arg->root_dir ) && filename[0] == '/' )
+			filename++;
+	
+		snprintf( fullname, 1023, "%s:%s%s", service, cmd_arg->root_dir, filename );
+	}
+	else
+	{
+		if ( strlen( cmd_arg->root_dir ) && filename[0] == '/' )
+			filename++;
 
-	snprintf( fullname, 1023, "%s%s", cmd_arg->root_dir, filename );
+		snprintf( fullname, 1023, "%s%s", cmd_arg->root_dir, filename );
+	}
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;

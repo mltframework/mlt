@@ -231,9 +231,10 @@ Tractors:
 	
 	Note that it's only applied to the visible parts of the top track.
 
-	The requirement to apply a filter to the output, as opposed to a specific track 
-	leads us to the final item in the Rules section above. As an example, let's
-	assume we wish to watermark all output, then we could use the following:
+	The requirement to apply a filter to the output, as opposed to a specific 
+	track leads us to the final item in the Rules section above. As an example, 
+	let's assume we wish to watermark all output, then we could use the 
+	following:
 
 	<westley>
 	  <producer id="producer0">
@@ -278,8 +279,60 @@ Tractors:
 	be better handled at the playout stage itself (ie: as a filter automatically
 	placed between all producers and the consumer).
 
-	TODO: transition example
+	Tracks act like "layers" in an image processing program like the GIMP. The 
+	bottom-most track takes highest priority and higher layers are overlays 
+	and do not appear unless there are gaps in the lower layers or unless
+	a transition is applied that merges the tracks on the specifed region.
+	Practically speaking, for A/B video editing it does not mean too much, 
+	and it will work as expected; however, as a general rule apply any CGI
+	(graphic overlays with pixbuf or titles with pango) on tracks higher than
+	your video tracks. Also, this means that any audio-only tracks that are
+	lower than your video tracks will play rather than the audio from the video
+	clip. Remember, nothing is affected like mixing or compositing until one
+	applies a transition or appropriate filter.
+	
+	<westley>
+	  <producer id="producer0">
+		<property name="resource">clip1.dv</property>
+	  </producer>
+	  <playlist id="playlist0">
+		<entry producer="producer0"/>
+	  </playlist>
+	  <producer id="producer1">
+		<property name="resource">clip2.mpeg</property>
+	  </producer>
+	  <playlist id="playlist1">
+		<blank length="50"/>
+		<entry producer="producer1"/>
+	  </playlist>
+	  <tractor id="tractor0" in="0" out="315">
+		<multitrack id="multitrack0">
+		  <track producer="playlist0"/>
+		  <track producer="playlist1"/>
+		</multitrack>
+		<transition id="transition0" in="50" out="74">
+		  <property name="a_track">0</property>
+		  <property name="b_track">1</property>
+		  <property name="mlt_service">luma</property>
+		</transition>
+		<transition id="transition1" in="50" out="74">
+		  <property name="a_track">0</property>
+		  <property name="b_track">1</property>
+		  <property name="mlt_service">mix</property>
+		  <property name="start">0.0</property>
+		  <property name="end">1.0</property>
+		</transition>
+	  </tractor>
+	</westley>
 
+	A "luma" transition is a video wipe processor that takes a greyscale bitmap
+	for the wipe definition. When one does not specify a bitmap, luma performs
+	a dissolve. The "mix" transition does an audio mix, but it interpolates
+	between the gain scaling factors between the start and end properties - 
+	in this example, from 0.0 (none of track B) to 1.0 (all of track B). 
+	Because the bottom track starts out with a gap specified using the <blank>
+	element, the upper track appears during	the blank segment. See the demos and
+	services.txt to get an idea of the capabilities of the included transitions.
 
 Flexibility:
 
@@ -411,10 +464,54 @@ Flexibility:
 	any embedded XML that contains an element named "property" because 
 	westley collects embedded XML until it reaches a closing property tag.
 	
-	TODO: xml entities
+	
+Entities and Parameterisation:
+	
+	The westley producer parser supports XML entities. An example:
+	
+	<?xml version="1.0"?>
+	<!DOCTYPE westley [
+		<!ENTITY msg "Hello world!">
+	]>
+	<westley>
+	  <producer id="producer0">
+		<property name="mlt_service">pango</property>
+		<property name="text">&msg;</property>
+	  </producer>
+	</westley>
+	
+	If you are embedding another XML document into a property value not using
+	a CNODE section, then any DOCTYPE section must be relocated before any of
+	the xml elements to be well-formed. See demo/dvg.westley for an example.
+	
+	Entities can be used to parameterise westley! Using the above example, the
+	entity declared serves as the default value for &msg;. The entity content
+	can be overridden from the resource property supplied to the westley
+	producer. The syntax is the familiar, url-encoded query string used with
+	HTTP, e.g.: file?name=value&name=value...
+	
+	There are a couple of rules of usage. The Miracle LOAD command and inigo
+	command line tool require you to preface the URL with "westley:" because
+	the query string destroys the filename extension matching peformed by
+	Fezzik. Also, inigo looks for '=' to tokenise property settings. Therefore, 
+	one uses ':' between name and value instead of '='. Finally, since inigo
+	is run from the shell, one must enclose the URL within single quotes to 
+	prevent shell filename expansion, or similar.
+	
+	Needless to say, the ability to parameterise westley XML compositions is
+	an extremely powerful tool. The above example is avialable in 
+	demo/entity.westley for you to try out. Override the message from inigo:
+	inigo 'westley:entity.westley?msg:Amazing!'
+	
+	Technically, the entity declaration is not needed in the head of the XML
+	document if you always supply the parameter. However, you run the risk
+	of unpredictable behviour without one. Therefore, it is safest and a best
+	practice to always supply an entity declaration. It is improves the 
+	readability as one does not need to search for the entity references to 
+	see what parameters are available.
+	
 
-
-Technique:
+Tips and Technique:
 
 	If one finds the above hierarchical, abbreviated format intuitive,
 	start with a simple template and fill and extend as needed:
@@ -452,9 +549,17 @@ Technique:
 		  </entry>
 		</playlist>
 
+	If you end up making a collection of templates for various situations, then
+	consider using XML Entities to make the template more effective by moving
+	anything that should parameterised into an entity.
+
 	If you want to have a silent, black background for audio and video fades,
-	then make the last track simply <producer mlt_service="colour"/>. Then,
-	use composite and volume key-framable properties. 
-	TODO: to be continued
+	then make the top track simply <producer mlt_service="colour"/>. Then,
+	use composite and volume effects. See the "Fade from/to black/silence"
+	demo for an example (demo/mlt_fade_black).
 	
-	TODO: considerations with mixing multiple audio layers
+	If you apply the reverse=1 property to a transition like "luma," then
+	be careful because it also inherently swaps the roles of A and B tracks.
+	Therefore, you need to might need to swap the a_track and b_track values
+	if it did not turn out the way you expected. See the "Clock in and out"
+	for an example (demo/mlt_clock_in_and_out).

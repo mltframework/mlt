@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!DOCTYPE westley [
+	<!ENTITY msg "Hello world!">
+]>
+<westley>
+  <producer id="producer0">
+    <property name="mlt_service">pango</property>
+	<property name="text" value="&msg;"/>
+  </producer>
+</westley>

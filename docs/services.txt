@@ -439,8 +439,18 @@ Producers
 
 		Constructor Argument
 
-			file - an XML text file containing westley XML (schema pending)
-
+			URL - an XML text file containing westley XML (schema/DTD pending)
+			    - Since westley files can be parameterised, the URL syntax is:
+			      {file-name}[?{param-name}{'='|':'}{param-value}[&{param-name}{'='|':'}{param-value}...]]
+				  A colon is allowed instead of an equal sign to pacify inigo,
+				  who tokenises anything with an equal sign as a property 
+				  setting. Also, when running inigo from the shell, beware of
+				  the '?' and shell filename expansion. You can surround the URL
+				  with single quotations to prevent expansion. Finally, fezzik
+				  will fail to match the filename when you use parameters, so
+				  preface the url with 'westley:' to force fezzik to load with
+				  the westley service.
+				  
 		Read Only Properties
 
 			string resource - file location
@@ -1119,6 +1129,7 @@ Transitions
 			double softness - only when using a luma map, how soft to make the
 			                  edges between A and B. 0.0 = no softness. 1.0 =
 			                  too soft.
+			int reverse - reverse the direction of the transition.
 			Any property starting with "producer." is passed to the non-PGM luma
 			    producer.
 			

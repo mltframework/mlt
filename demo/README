@@ -73,6 +73,8 @@ Clock in and out
 	This image can be a 16 bit PGM (grayscale bitmap) or the luma channel of
 	any video producer. A number of high quality wipes can be downloaded from
 	http://mlt.sf.net/. It also performs field rendering.
+	The second wipe demonstrates the ability to control the direction of the
+	wipe as well.
 	
 Obscure
 
