@@ -79,22 +79,20 @@ _pixops_scale_line_22_yuv_mmx:
  * Load current values from pixel 1
  */
 	movl %ebx, %edx          # x_scaled = x ...
-	sarl $16, %edx           # >> 16
-	sall $1, %edx            # x_scaled *= channels
+	sarl $15, %edx           # >> 16
+	andl $-2, %edx           # x_scaled *= channels
+	movl %edx, -24(%ebp)     # save x_scaled
 
 	movl 16(%ebp), %edi      # get src0
-	movzbl 2(%edi,%edx), %ecx # next y = src0[ x_scaled + 2 ]
-	/* wish we had a register for this */
-	movl %ecx, -24(%ebp)     # save next y
-	movzbl (%edi,%edx), %ecx # y = src0[ x_scaled ]
+	movzbl (%edi,%edx), %ecx # current y = src0[ x_scaled ]
 
-	sarl $2, %edx            # x_aligned = ( x_scaled / channels ) >> 1 ...
-	sall $2, %edx            # << 2
+	andl $-4, %edx           # x_aligned
 
 	movl 36(%ebp), %eax      # uv_index = dest_x ...
 	andl $1, %eax            # ( dest_x & 1 ) ...
 	sall $1, %eax            # << 1
 	addl %eax, %edx          # x_aligned += uv_index
+	movl %edx, -20(%ebp)     # save x_aligned
 
 	movzbl 1(%edi,%edx), %eax # uv = src0[ x_aligned + 1 ]
 	shll $8, %eax           # position uv
@@ -103,33 +101,33 @@ _pixops_scale_line_22_yuv_mmx:
 	movd %ecx, %mm0          # move to mmx0
 	punpcklbw %mm4, %mm0
 
-	movl -24(%ebp), %ecx     # restore next y
+	/* this is the next x, not simply x_scaled again */
+	movl %ebx, %edx          # x_scaled = x ...
+	addl 24(%ebp), %edx      # + x_step
+	sarl $15, %edx           # >> 16
+	andl $-2, %edx           # x_scaled *= channels
+	movl %edx, -16(%ebp)     # save next x_scaled
+
+	movzbl (%edi,%edx), %ecx # next y = src0[ x_scaled ]
 	orl %eax, %ecx           # store uv
 
 	movd %ecx, %mm1          # move to mmx1
 	punpcklbw %mm4, %mm1
 
 	movl 20(%ebp), %edi      # get src1
+	movl -24(%ebp), %edx     # restore x_scaled
+	movzbl (%edi,%edx), %ecx # current y = src1[ x_scaled ]
 
-	/* do u/v first since we already have x_aligned */
+	movl -20(%ebp), %edx     # restore x_aligned
 	movzbl 1(%edi,%edx), %eax # uv = src1[ x_aligned + 1 ]
 	shll $8, %eax            # position uv
-
-	/* which is faster? 2 moves in and out of memory, or
-       1 move between registers and 2 shifts? I wager the latter. */
-	movl %ebx, %edx          # x_scaled = x ...
-	sarl $16, %edx           # >> 16
-	sall $1, %edx            # x_scaled *= channels
-
-	movzbl 2(%edi,%edx), %ecx # next y = src1[ x_scaled + 2 ]
-	movl %eax, -24(%ebp)     # save next y
-	movzbl (%edi,%edx), %ecx # y = src1[ x_scaled ]
 	orl %eax, %ecx           # store uv
 
 	movd %ecx, %mm2          # move to mmx2
 	punpcklbw %mm4, %mm2
 
-	movl -24(%ebp), %ecx     # restore next y
+	movl -16(%ebp), %edx     # restore next x_scaled
+	movzbl (%edi,%edx), %ecx # next y = src0[ x_scaled ]
 	orl %eax, %ecx           # store uv
 
 	movd %ecx, %mm3          # move to mmx3
