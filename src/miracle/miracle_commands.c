@@ -211,7 +211,7 @@ response_codes miracle_set_global_property( command_argument cmd_arg )
 		strncpy( cmd_arg->root_dir, value, 1023 );
 
 		/* add a trailing slash if needed */
-		if ( cmd_arg->root_dir[ len - 1 ] != '/')
+		if ( len && cmd_arg->root_dir[ len - 1 ] != '/')
 		{
 			cmd_arg->root_dir[ len ] = '/';
 			cmd_arg->root_dir[ len + 1 ] = '\0';

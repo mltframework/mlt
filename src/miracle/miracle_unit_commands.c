@@ -47,7 +47,7 @@ int miracle_load( command_argument cmd_arg )
 		filename ++;
 	}
 
-	if ( filename[0] == '/' )
+	if ( strlen( cmd_arg->root_dir ) && filename[0] == '/' )
 		filename++;
 
 	snprintf( fullname, 1023, "%s%s", cmd_arg->root_dir, filename );
