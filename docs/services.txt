@@ -324,6 +324,7 @@ Producers
 	                      default "Sans 48". FreeType2 renders at 72 dpi.
 	        string encoding - the text encoding type of the input if not UTF-8.
 	                        - see 'iconv --list' for a list of possible inputs.
+			int weight - the weight of the font (default is 400)
 
 	    Read Only Properties
 

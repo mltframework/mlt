@@ -74,14 +74,16 @@ static void geometry_calculate( mlt_transition this, struct geometry_s *output, 
 {
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 	mlt_geometry geometry = mlt_properties_get_data( properties, "geometries", NULL );
+	int mirror_off = mlt_properties_get_int( properties, "mirror_off" );
+	int repeat_off = mlt_properties_get_int( properties, "repeat_off" );
 	int length = mlt_geometry_get_length( geometry );
 
 	// Allow wrapping
-	if ( position >= length && length != 0 )
+	if ( !repeat_off && position >= length && length != 0 )
 	{
 		int section = position / length;
 		position -= section * length;
-		if ( section % 2 == 1 )
+		if ( !mirror_off && section % 2 == 1 )
 			position = length - position;
 	}
 
