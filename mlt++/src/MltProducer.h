@@ -34,6 +34,7 @@ namespace Mlt
 	{
 		private:
 			mlt_producer instance;
+			Producer *parent_;
 		public:
 			Producer( );
 			Producer( char *id, char *service = NULL );
@@ -43,6 +44,7 @@ namespace Mlt
 			Producer( Producer *producer );
 			virtual ~Producer( );
 			virtual mlt_producer get_producer( );
+			Producer &parent( );
 			mlt_producer get_parent( );
 			mlt_service get_service( );
 			int seek( int position );

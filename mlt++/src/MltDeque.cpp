@@ -1,5 +1,5 @@
 /**
- * MltFactory.h - MLT Wrapper
+ * MltDeque.cpp - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,30 +18,51 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_FACTORY_H_
-#define _MLTPP_FACTORY_H_
+#include "MltDeque.h"
+using namespace Mlt;
 
-#include <framework/mlt.h>
-
-namespace Mlt
+Deque::Deque( )
 {
-	class Properties;
-	class Producer;
-	class Filter;
-	class Transition;
-	class Consumer;
-
-	class Factory
-	{
-		public:
-			static int init( char *arg = NULL );
-			static Properties *event_object( );
-			static Producer *producer( char *id, char *arg = NULL );
-			static Filter *filter( char *id, char *arg = NULL );
-			static Transition *transition( char *id, char *arg = NULL );
-			static Consumer *consumer( char *id, char *arg = NULL );
-			static void close( );
-	};
+	deque = mlt_deque_init( );
 }
 
-#endif
+Deque::~Deque( )
+{
+	mlt_deque_close( deque );
+}
+
+int Deque::count( )
+{
+	return mlt_deque_count( deque );
+}
+
+int Deque::push_back( void *item )
+{
+	return mlt_deque_push_back( deque, item );
+}
+
+void *Deque::pop_back( )
+{
+	return mlt_deque_pop_back( deque );
+}
+
+int Deque::push_front( void *item )
+{
+	return mlt_deque_push_front( deque, item );
+}
+
+void *Deque::pop_front( )
+{
+	return mlt_deque_pop_front( deque );
+}
+
+void *Deque::peek_back( )
+{
+	return mlt_deque_peek_back( deque );
+}
+
+void *Deque::peek_front( )
+{
+	return mlt_deque_peek_front( deque );
+}
+

@@ -1,5 +1,5 @@
 /**
- * MltFactory.h - MLT Wrapper
+ * MltDeque.h - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,29 +18,27 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_FACTORY_H_
-#define _MLTPP_FACTORY_H_
+#ifndef _MLTPP_DEQUE_H
+#define _MLTPP_DEQUE_H
 
 #include <framework/mlt.h>
 
 namespace Mlt
 {
-	class Properties;
-	class Producer;
-	class Filter;
-	class Transition;
-	class Consumer;
-
-	class Factory
+	class Deque
 	{
+		private:
+			mlt_deque deque;
 		public:
-			static int init( char *arg = NULL );
-			static Properties *event_object( );
-			static Producer *producer( char *id, char *arg = NULL );
-			static Filter *filter( char *id, char *arg = NULL );
-			static Transition *transition( char *id, char *arg = NULL );
-			static Consumer *consumer( char *id, char *arg = NULL );
-			static void close( );
+			Deque( );
+			~Deque( );
+			int count( );
+			int push_back( void *item );
+			void *pop_back( );
+			int push_front( void *item );
+			void *pop_front( );
+			void *peek_back( );
+			void *peek_front( );
 	};
 }
 

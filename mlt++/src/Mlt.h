@@ -22,6 +22,7 @@
 #define _MLTPP_H_
 
 #include "MltConsumer.h"
+#include "MltDeque.h"
 #include "MltEvent.h"
 #include "MltFactory.h"
 #include "MltField.h"

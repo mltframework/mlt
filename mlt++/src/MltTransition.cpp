@@ -84,3 +84,7 @@ mlt_service Transition::get_service( )
 	return mlt_transition_service( get_transition( ) );
 }
 
+void Transition::set_in_and_out( int in, int out )
+{
+	mlt_transition_set_in_and_out( get_transition( ), in, out );
+}

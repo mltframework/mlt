@@ -30,6 +30,11 @@ int Factory::init( char *arg )
 	return mlt_factory_init( arg );
 }
 
+Properties *Factory::event_object( )
+{
+	return new Properties( mlt_factory_event_object( ) );
+}
+
 Producer *Factory::producer( char *id, char *arg )
 {
 	return new Producer( id, arg );

@@ -23,12 +23,14 @@
 using namespace Mlt;
 
 Producer::Producer( ) :
-	instance( NULL )
+	instance( NULL ),
+	parent_( NULL )
 {
 }
 
 Producer::Producer( char *id, char *service ) :
-	instance( NULL )
+	instance( NULL ),
+	parent_( NULL )
 {
 	if ( id != NULL && service != NULL )
 		instance = mlt_factory_producer( id, service );
@@ -37,7 +39,8 @@ Producer::Producer( char *id, char *service ) :
 }
 
 Producer::Producer( Service &producer ) :
-	instance( NULL )
+	instance( NULL ),
+	parent_( NULL )
 {
 	mlt_service_type type = producer.type( );
 	if ( type == producer_type || type == playlist_type || 
@@ -49,19 +52,22 @@ Producer::Producer( Service &producer ) :
 }
 
 Producer::Producer( mlt_producer producer ) :
-	instance( producer )
+	instance( producer ),
+	parent_( NULL )
 {
 	inc_ref( );
 }
 
 Producer::Producer( Producer &producer ) :
-	instance( producer.get_producer( ) )
+	instance( producer.get_producer( ) ),
+	parent_( NULL )
 {
 	inc_ref( );
 }
 
 Producer::Producer( Producer *producer ) :
-	instance( producer != NULL ? producer->get_producer( ) : NULL )
+	instance( producer != NULL ? producer->get_producer( ) : NULL ),
+	parent_( NULL )
 {
 	if ( is_valid( ) )
 		inc_ref( );
@@ -69,6 +75,7 @@ Producer::Producer( Producer *producer ) :
 
 Producer::~Producer( )
 {
+	delete parent_;
 	mlt_producer_close( instance );
 	instance = NULL;
 }
@@ -81,6 +88,13 @@ mlt_producer Producer::get_producer( )
 mlt_producer Producer::get_parent( )
 {
 	return get_producer( ) != NULL && mlt_producer_cut_parent( get_producer( ) ) != NULL ? mlt_producer_cut_parent( get_producer( ) ) : get_producer( );
+}
+
+Producer &Producer::parent( )
+{
+	if ( is_cut( ) && parent_ == NULL )
+		parent_ = new Producer( get_parent( ) );
+	return parent_ == NULL ? *this : *parent_;
 }
 
 mlt_service Producer::get_service( )

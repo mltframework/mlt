@@ -40,6 +40,7 @@ namespace Mlt
 			virtual ~Transition( );
 			virtual mlt_transition get_transition( );
 			mlt_service get_service( );
+			void set_in_and_out( int in, int out );
 	};
 }
 
