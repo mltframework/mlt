@@ -437,8 +437,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	float frame_delta = delta_calculate( transition, a_frame );
 	
 	float luma_softness = mlt_properties_get_double( properties, "softness" );
-	int progressive = mlt_properties_get_int( b_props, "progressive" ) ||
+	int progressive = mlt_properties_get_int( a_props, "progressive" ) ||
 			mlt_properties_get_int( a_props, "consumer_progressive" ) ||
+			mlt_properties_get_int( properties, "progressive" ) ||
 			mlt_properties_get_int( b_props, "luma.progressive" );
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
 	int reverse = mlt_properties_get_int( properties, "reverse" );

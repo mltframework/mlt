@@ -1,3 +1,9 @@
+SERVICES
+--------
+
+Services marked as "(Proprietary)" are not distributed with the GPL version
+of mlt.
+
 Producers
 ---------
 
@@ -20,8 +26,11 @@ Producers
 
 		Read Only Properties
 
+			string resource - file location
 			double fps - this is fixed at 25 for PAL currently
-			double aspect_ratio - this is determined on the first frame read
+			double source_fps - the framerate of the resource
+			double aspect_ratio - sample aspect ratio of the resource
+			                    - this is determined on every frame read
 
 		Dependencies
 
@@ -32,9 +41,10 @@ Producers
 
 			Audio sync discrepancy with some content.
 			Not all libavformat supported formats are seekable.
-			ogg is currently broken.
-			mpeg seeking is inaccurate - doesn't seek to i-frames so you may
+			Ogg Vorbis is currently broken.
+			MPEG seeking is inaccurate - doesn't seek to i-frames so you may
 			get junk for a few frames.
+			RAW DV seeking not supported.
 
 	fezzik
 
@@ -45,6 +55,8 @@ Producers
 		Constructor Argument
 
 			'file'	- produce a/v from file
+			        - can also be the name of a producer service that can
+					  accept the resource specified post construction.
 
 		Initialisation Properties
 
@@ -78,7 +90,39 @@ Producers
 
 			None.
 
-	ffmpeg
+	
+	colour
+	
+		Description
+		
+			A simple colour generator.
+			
+		Constructor Argument
+		
+			colour - A colour value is a hexadecimal representation of RGB plus
+			         alpha channel as 0xrrggbbaa.
+			       - Also colours can be the words: white, black, red, green,
+			         or blue.
+			       - The default colour is black.
+				   
+		Initialisation Properties
+		
+			none
+			
+		Read Only Properties
+		
+			none
+			
+		Dependencies
+		
+			none
+			
+		Known Bugs
+		
+			none
+
+	
+	ffmpeg (DEPRECATED)
 
 		Description
 
@@ -140,8 +184,12 @@ Producers
 
 			string resource - file location
 			double fps - output frames per second
-			double aspect_ratio - aspect ratio of video]
 			int length - duration of resource (in frames)
+			
+		Mutable Properties
+		
+			string quality - one of "best," "fast" or anything else chooses
+			                 medium.
 
 		Dependencies
 
@@ -149,13 +197,14 @@ Producers
 
 		Known Bugs
 
-			None.
+			DVCPRO is incorrectly identified as 16:9 aspect ratio. You must use
+			libdv from CVS or a post 0.101 release. 
 
-	mcdv
+	mcdv (Proprietary)
 
 		Description
 
-			Mainconcept based dv decoder for video and audio.
+			MainConcept based dv decoder for video and audio.
 
 		Constructor Argument
 
@@ -170,23 +219,22 @@ Producers
 
 			string resource - file location
 			double fps - output frames per second
-			double aspect_ratio - aspect ratio of video
 			int length - duration of resource (in frames)
 
 		Dependencies
 
-			mainconcept dv sdk and libdv.
+			MainConcept DV or DVCPRO SDK, libdv.
 			"dv_sdk" installed parallel to mlt.
 
 		Known Bugs
 
-			Can be problematic with some NTSC DV files?
+			None
 
-	mcmpeg
+	mcmpeg (Proprietary)
 
 		Description
 
-			Mainconcept based mpeg decoder for video and audio.
+			MainConcept based mpeg decoder for video and audio.
 
 		Constructor Argument
 
@@ -201,12 +249,13 @@ Producers
 
 			string resource - file location
 			double fps - output frames per second
-			double aspect_ratio - aspect ratio of video
-
+			double aspect_ratio - sample aspect ratio of video
+			int length - duration of resource (in frames)
+			
 		Dependencies
 
-			mainconcept mpeg sdk.
-			"mpeg_sdk_demo" installed parallel to mlt.
+			MainConcept MPEG SDK.
+			"mpeg_sdk_release" installed parallel to mlt.
 
 		Known Bugs
 
@@ -222,8 +271,24 @@ Producers
 		Constructor Argument
 
 			string file - a text file containing Pango markup, see:
-			           http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
-			           - requires xml-like encoding special chars: <, >, & to &lt;, &gt;, &amp;
+			http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+			            - requires xml-like encoding special chars from: 
+			              <, >, &   -to-   &lt;, &gt;, &amp;
+						  
+		Details
+		
+			Supplying a filename with extension ".txt" causes the Fezzik 
+			producer to load with pango. If the filename begins with "+" the 
+			pango producer interprets the filename as pango text. This is a
+			shortcut to embed titles in inigo commands. For westley, it is 
+			recommended that you embed the title text in the property value.
+			If you need to embed Pango markup in a westley XML file, then
+			enclose the value inside "<![CDATA[ ... ]]>".
+			
+			Pango has builtin scaling. It will rescale the originally rendered
+			title to whatever the consumer requests. Therefore, it will lose
+			its aspect ratio if so requested, and it is up to the consumer to
+			request a proper width and height that maintains the image aspect.
 
 		Initialisation Properties
 
@@ -232,42 +297,47 @@ Producers
 
 		Mutable Properties
 
-			int video_standard - enum mlt_video_standard from mlt_frame.h
-			                     PAL = 0, NTSC = 1
-			                     this determines proper pixel aspect ratio
-
-			string markup - a string containing Pango markup see:
-			                http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
-			              - requires xml-like encoding special chars: <, >, & to &lt;, &gt;, &amp;
-
-			string fgcolour - an rgba colour specification of the text (i.e. 0xrrggbbaa)
-			string bgcolour - an rgba colour of the background rectangle
-			int align - paragraph alignment: 0 = left, 1 = center, 2 = right
-			int pad - the number of pixels to pad the background rectangle beyond edges of text
-			          default 0
+			string markup - a UTF-8 string containing Pango markup see:
+			http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+			              - requires xml-like encoding special chars from: 
+			                <, >, &   -to-   &lt;, &gt;, &amp;
+			string fgcolour - an RGBA colour specification of the text 
+			                  (i.e. 0xrrggbbaa)
+			string bgcolour - an RGBA colour of the background rectangle
+			string align - paragraph alignment: left, centre, right
+			             - also, numbers 0, 1 and 2 can be used respectively.
+			int pad - the number of pixels to pad the background rectangle 
+			          beyond edges of text. default 0.
 			string markup - see constructor argument
-			string text - non-markup text (can contain markup chars un-encoded)
-			string font - the default typeface to use when not using markup
-			              default "Sans 48"
+			string text - non-markup string in UTF-8 encoding (can contain 
+			              markup chars un-encoded)
+			string font - the default typeface to use when not using markup.
+			              default "Sans 48". FreeType2 renders at 72 dpi.
 
 		Read Only Properties
 
-			string resource - the text/markup file or "pango" if no file
+			string resource - the text/markup file or "pango" if no file.
+			int real_width - the original, unscaled width of the rendered title.
+			int real_height - the original, unscaled height of the title.
+			int width - the last requested scaled image width.
+			int height - the last requested scaled image height.
 
 		Dependencies
 
-			libpango-1.0, libpangoft2-1.0, libfreetype, libgdk_pixbuf-2.0, libglib-2.0,
-			libgobject-2.0, libgmodule-2.0, libfontconfig
+			libpango-1.0, libpangoft2-1.0, libfreetype, libgdk_pixbuf-2.0, 
+			libglib-2.0, libgobject-2.0, libgmodule-2.0, libfontconfig.
 
 		Known Bugs
 
-			no frame-alignment functionality
+			The foreground and background Pango markup span attributes are not
+			supported.
+			Word wrapping is not supported.
 
 	pixbuf
 
 		Description
 
-			A graphics overlay generator using gdk-pixbuf
+			A still graphics to video generator using gdk-pixbuf
 
 		Constructor Argument
 
@@ -275,10 +345,23 @@ Producers
 			         a gdk-pixbuf loader. see /usr/lib/gdk-pixbuf/loaders
 			         definitely png, jpeg, tiff, pnm, and xpm
 			       - If "%" in filename, the filename is used with sprintf
-			         generate a filename from a counter for multi-file/flipbook animation.
-			         The file sequence ends when numeric discontinuity >100.
-			       - If filename contains "/.all.", suffix with an extension to load
-			         all pictures with matching extension from a directory
+			         generate a filename from a counter for multi-file/flipbook 
+			         animation. The file sequence ends when numeric 
+			         discontinuity >100.
+			       - If filename contains "/.all.", suffix with an extension to 
+			         load all pictures with matching extension from a directory.
+			       - If filename contains the string "<svg", then pixbuf tries
+			         to load the filename as inline SVG XML, which is convenient
+			         for inigo commands. For westley XML, set the resource
+			         property value with inline XML embedded using a CDATA node
+			         ("<![CDATA[ ... ]]>").
+					 
+		Details
+		
+			Pixbuf has builtin scaling. It will rescale the originally rendered
+			title to whatever the consumer requests. Therefore, it will lose
+			its aspect ratio if so requested, and it is up to the consumer to
+			request a proper width and height that maintains the image aspect.
 
 		Initialisation Properties
 
@@ -287,14 +370,16 @@ Producers
 
 		Mutable Properties
 
-			int video_standard - enum mlt_video_standard from mlt_frame.h
-			                     PAL = 0, NTSC = 1
-			                     this determines proper pixel aspect ratio
-			double ttl - how long (seconds) to repeat each picture in file sequences
+			int ttl - how long (in frames) to repeat each picture in file 
+			          sequences. default is 25.
 
 		Read Only Properties
 
-			string resource - file location
+			string resource - file location. See Constructor Argument above.
+			int real_width - the original, unscaled width of the rendered title.
+			int real_height - the original, unscaled height of the title.
+			int width - the last requested scaled image width.
+			int height - the last requested scaled image height.
 
 		Dependencies
 
@@ -302,7 +387,7 @@ Producers
 
 		Known Bugs
 
-			in/out settings are incorrectly handled.
+			XXX: in/out settings are incorrectly handled.
 
 	ppm
 	
@@ -336,6 +421,7 @@ Producers
 		Description
 
 			Construct a service network from an XML description.
+			See docs/westley.txt.
 
 		Constructor Argument
 
@@ -351,8 +437,11 @@ Producers
 
 		Known Bugs
 
-			Non-referenced producers and playlists are not destroyed.
+			Non-referenced producers and playlists are not destroyed until the 
+			network is destroyed.
 			A referenced producer or playlist must appear before the reference.
+			A filter that occurs before a producer has been defined causes a 
+			segfault.
 
 	vorbis
 
@@ -385,33 +474,80 @@ Producers
 Filters
 -------
 
+	brightness
+	
+		Description
+		
+			Shift the luma component using a constant value.
+			
+		Constructor Argument
+		
+			start - the constant floating point numeric value to apply.
+			      - the default is 0.
+			
+		Initialisation Properties
+		
+			int in - in point
+			int out - out point
+			double start - see Constructor Argument above.
+			double end - the ending adjustment value. the filter interpolates
+			             between the start and end adjustments over the 
+			             duration of the effect.
+						 
+		Read Only Properties
+		
+			none
+			
+		Dependencies
+		
+			none
+			
+		Known Bugs
+		
+			Does not go completely to black or white.
+
+
 	deinterlace
 	
 		Description
 
-			Deinterlace a frame consisting of two fields by linearly blending.
+			Deinterlace a frame consisting of two fields using bob, weave,
+			greedy, one-field, and linear blend methods. This code is 
+			appropriated from the Xine XV video output plugin.
 		
 		Constructor Argument
 
-			none
+			method - a string containing the deinterlace method: bob, weave,
+			         greedy, onefield, or linearblend. The default is
+					 linearblend.
 		
 		Initialisation Properties
 
 			int in - in point
 			int out - out point
-
+			
 		Read Only Properties
 
 			none
 		
+		Mutable Properties
+		
+			string method
+			
+		Details
+		
+			If the frame properties "progressive" or "consumer_progressive"
+			are non-zero, then the filter is not applied. Also, if applied,
+			this sets the frame property "progressive" to 1.
+
 		Dependencies
 
 			none
 			
 		Known Bugs
 
-			Not a bug, but it only provides fair quality at a fair performance;
-				i.e., it excels at neither.
+			Not a bug, but it only provides fair quality.
+			
 		
 	ffmpeg_dub
 	
@@ -441,6 +577,7 @@ Filters
 		Known Bugs
 
 			Uses pipes and is therefore not compatible with bluefish.
+			
 
 	gamma
 	
@@ -450,7 +587,7 @@ Filters
 			
 		Constructor Argument
 
-			gamma - a floating point value
+			gamma - a floating point value. The default is 1.0, or none.
 		
 		Initialisation Properties
 		
@@ -468,6 +605,7 @@ Filters
 		Known Bugs
 
 			none
+			
 	
 	greyscale
 	
@@ -496,6 +634,46 @@ Filters
 
 			none
 		
+	luma
+	
+		Description
+		
+			Applies a luma transition between the current and next frames.
+			Useful for transitions from a slideshow created using producer
+			pixbuf.
+			
+		Constructor Argument
+		
+			file - a luma wipe
+			
+		Initialisation Properties
+		
+			int in - in point
+			int out - out point
+			
+		Read Only Properties
+		
+			none
+			
+		Mutable Properties
+		
+			int period - how long to wait between success iterations of the
+			             transition. For best results set this to a multiple
+			             of ttl used in pixbuf. The default is 24.
+						 
+			luma. - all properties beginning with "luma." are passed to the
+			        encapsulated luma transition. For example, luma.out controls
+			        the duration of the wipe.
+			
+		Dependencies
+		
+			transition_luma and its dependencies
+			
+		Known Bugs
+		
+			none
+		
+	
 	obscure
 	
 		Description
@@ -509,6 +687,7 @@ Filters
 		Initialisation Properties
 		
 			string start - in the format X,Y:WxH[:PWxPY]
+			             - PWxPY is the size of the averaging region in pixels.
 			string end - in the format X,Y:WxH[:PWxPY]
 			int in - in point
 			int out - out point
@@ -525,39 +704,46 @@ Filters
 
 			none
 
-	resize
+	region
 	
 		Description
-
-			Image scaling and padding
+		
+			Apply one or filters to a region of the video image. The region
+			can be shaped as well using the alpha channel of another producer.
 			
 		Constructor Argument
-
-			scale - "affine" to use affine transform scaling, otherwise
-			         center and pad.
-			
-		Initialisation Properties
 		
+			file - A file whose alpha channel will "shape"  the region.
+			     - The string "circle" is a shortcut but it requires pixbuf with
+			       the librsvg loader. The circle is automatically stretched
+			       to the region to create an ellipse.
+	
+		Initialisation Properties
+
 			int in - in point
 			int out - out point
-
+			plus and region transition properties
+			
 		Read Only Properties
-
-			none
+		
+			see the region transition
 			
 		Dependencies
-
-			none
+		
+			transition_region
 			
 		Known Bugs
-
-			none
+		
+			"circle" is unpredictable in the absence of the librsvg pixbuf loader.
+			
 
 	resample
 
 		Description
 
-			Adjust an audio stream's sampling rate
+			Adjust an audio stream's sampling rate.
+			This filter is automatically invoked by Fezzik for the sake of
+			normalisation over inputs and with the consumer.
 
 		Constructor Argument
 
@@ -585,14 +771,16 @@ Filters
 		Description
 
 			Scale the producer video frame size to match the consumer.
+			This filter is automatically invoked by Fezzik in order to normalise
+			sample aspect ratio.
 
 		Constructor Argument
 
 			interpolation - the rescaling method, one of:
 				nearest (lowest quality, fastest),
 				tiles,
-				bilinear (good quality, moderate speed),
-				hyper (best quality, slowest)
+				bilinear (default; good quality, moderate speed),
+				hyper (best quality, slowest).
 
 		Initialisation Properties
 
@@ -618,6 +806,45 @@ Filters
 		Known Bugs
 
 			none
+
+	resize
+	
+		Description
+
+			Image scaling and padding and field order adjustment.
+				
+		Details
+		
+			Normally resize is used to pad the producer's
+			output to what the consumer has requested after an upstream rescale
+			filter first scales the image to maximise usage of the image area.
+			This filter also adjusts the field order to lower field first
+			if the frame property "top_field_first" has been set to 1.
+			Therefore, when done, it sets the top_field_first to 0.
+			This filter is automatically invoked by Fezzik as part of image
+			sample aspect ratio normalisation.
+			
+		Constructor Argument
+
+			scale - "affine" to use affine transform scaling, otherwise
+			         center and pad.
+			
+		Initialisation Properties
+		
+			int in - in point
+			int out - out point
+
+		Read Only Properties
+
+			none
+			
+		Dependencies
+
+			none
+			
+		Known Bugs
+
+			Assumes lower field first output.
 
 	volume
 
@@ -713,49 +940,103 @@ Transitions
 	
 		Description
 
-			An alpha-channel based compositor for two frames.
+			A key-framable alpha-channel compositor for two frames.
+			
+		Details
+		
+			Performs dissolves and luma wipes in addition to alpha compositing.
+			
+			By default, the aspect ratio of the B frame is respected and the
+			size portion of the geometry specification simply defines a 
+			bounding rectangle.
+		
+			This performs field-based rendering unless the A frame property
+			"progressive" or "consumer_progressive" or the transition property
+			"progressive" is set to 1.
 			
 		Constructor Argument
 
-			string start - X,Y:WxH[:mix]
+			string start - a geometry specification as X,Y:WxH[!][:mix]
+			             - X, Y, W, H are assumed to pixel units unless they
+			               have the suffix '%'
+			             - '!' is a shortcut to specify distort, see below.
+			             - mix is always a 2 digit percentage, defaults to 100.
+						 - default is "85%,5%:10%x10%"
 
 		Initialisation Properties
 			
-			string end - X,Y:WxH[:mix]
+			string end - the ending size and position.
+			string key[F] - X,Y:WxH[:mix] - set a key frame for geometry between
+			                the in and out. F is a frame number and can be
+			                negative to make it relative to the out point.
 			int in - in point
 			int out - out point
+			string factory - The name of a factory service used as a non-PGM
+			                 producer loader. The default is fezzik.
 	
 		Read Only Properties
 
 			none
-		
+
+		Mutable Properties
+			
+			int progressive - set to 1 to disable field-based rendering.
+			string distort - when set, causes the B frame image to fill the WxH
+			                 completely with no regard to B's aspect ratio.
+			string halign - when not distorting, set the horizontal alignment
+			                of B within the geometry rectangle.
+			              - one of: left (0), centre (1), or right (2).
+			              - the default is left.
+			string valign - when not distorting, set the vertical alignment of 
+			                B within the geometry rectangle.
+			              - one of: top (0), middle (1), or bottom (2).
+			              - the default is top.
+			string luma - the luma map file name. If not supplied, a dissolve.
+			double softness - only when using a luma map, how soft to make the
+			                  edges between A and B. 0.0 = no softness. 1.0 =
+			                  too soft.
+			Any property starting with "luma." is passed to the non-PGM luma
+			    producer.
+
 		Dependencies
 
 			none
 		
 		Known Bugs
 
-			Need to add field-based rendering.
+			Assumes lower field first during field rendering.
 
 	luma
 	
 		Description
 
-			A generic dissolve and wipe transition processor. It gets its name
+			A generic dissolve and wipe transition processor.
+
+		Details
+
+			luma gets its name
 			from how it uses a grayscale "map" file. As the luma value varies
 			over time, a threshold filter is applied to the map to determine
-			what parts of frame A vs. frame B to show. It only reads PGM
-			files, but it does handle 16 bit PGM. This performs field-based
-			rendering.
+			what parts of frame A vs. frame B to show. It reads PGM files
+			up to 16 bits! Alternatively, it can use the first frame from any
+			producer that outputs yuv, but it will be limited to the luma
+			gamut of 220 values.
+			This performs field-based rendering unless the A frame property
+			"progressive" or "consumer_progressive" or the transition property
+			"progressive" is set to 1.
 		
 		Constructor Argument
 
-			string resource - the luma map file name. If not supplied, a dissolve.
+			string resource - the luma map file name - either PGM or any other
+			                  producable video. 
+			                - If not supplied, a dissolve.
 
 		Initialisation Properties
 		
 			int in - in point
 			int out - out point
+			string factory - The name of a factory service used as a non-PGM
+			                 producer loader. The default is Fezzik.
 
 		Mutable Properties
 
@@ -763,6 +1044,8 @@ Transitions
 			double softness - only when using a luma map, how soft to make the
 			                  edges between A and B. 0.0 = no softness. 1.0 =
 			                  too soft.
+			Any property starting with "producer." is passed to the non-PGM luma
+			    producer.
 			
 		Read Only Properties
 
@@ -773,9 +1056,8 @@ Transitions
 			none
 			
 		Known Bugs
-
-			The luma map must be the same size as the B frame.
-			The PGM parser does not handle comments.
+			
+			Assumes lower field first output.
 
 	mix
 
@@ -811,11 +1093,48 @@ Transitions
 		Known Bugs
 
 			Samples from the longer of the two frames are discarded.
+			
+	
+	region
+	
+		Description
+		
+			Apply zero or more filters to B frame as it is composited onto
+			a region of the A frame. The "shape" of the region can be defined
+			by the alpha channel of a third producer.
+			
+		Constructor Argument
+
+			resource - a shape producer
+		
+		Initialisation Properties
+		
+			string resource - nothing is rectangle, "circle" is a pixbuf-
+			    generated SVG circle, anything else is loaded by the factory.
+			string factory - the service that creates the shape producer.
+			               - the default is fezzik.
+			string filter[N] - one or more filters to apply. All filter
+			                   properties are passed using the same filter "key"
+			Any property starting with "composite." is passed to the 
+			    encapsulated composite transition.
+			
+		Read Only Properties
+		
+			none
+			
+		Dependencies
+		
+			transition_composite
+			
+		Known Bugs
+		
+			none
+			
 
 Consumers
 ---------
 
-	bluefish
+	bluefish (Proprietary)
 	
 		Description
 
@@ -863,12 +1182,24 @@ Consumers
 
 		Constructor Argument
 
-			string video_standard - "PAL" (default) or "NTSC"
+			string target
 
 		Initialisation Properties
+		
+			int buffer
+			string rescale
+			
 		Read Only Properties
+		
+			none
+			
 		Dependencies
+		
+			libdv
+			
 		Known Bugs
+		
+			none
 
 	sdl
 
@@ -906,6 +1237,7 @@ Consumers
 		Description
 
 			Serialise the service network to XML.
+			See docs/westley.txt for more information.
 			
 		Constructor Argument
 
@@ -925,4 +1257,3 @@ Consumers
 			Untested arbitrary nesting of multitracks and playlists.
 			Property "id" is generated as service type followed by number if
 			no property named "id" exists, but it fails to guarantee uniqueness.
-

@@ -44,27 +44,34 @@ _composite_line_yuv_mmx:
 	
 .loop:
 
-	movl $0xff, %ecx           # a = 255
+	movl $0xffff, %ecx           # a = 255
 	cmpl $0, 20(%ebp)         # if alpha == NULL
 	je .noalpha
 	movl 20(%ebp), %edi       # a = alpha[ j ]
 	movb (%edi,%edx), %cl
 .noalpha:
+	movl %ecx, -24(%ebp)      # save ecx
 
 	movl 24(%ebp), %eax       # mix = weight
 	cmpl $0, 28(%ebp)         # if luma == NULL
 	je .noluma
 	movl 28(%ebp), %edi       # mix = ...
 	movl %edx, %ebx
-	#sall $1, %ebx
-	movw (%edi,%ebx), %ax # luma[ j*2 ]
-	cmpw %cx, %ax
+	sall $1, %ebx
+	movw (%edi,%ebx), %bx # luma[ j*2 ]
+	cmpl %ebx, %eax
 	jl .luma0
-	movl %eax, %ebx
-	addl 32(%ebp), %ebx       # + softness
-	cmpw %bx, %cx
+	movl %ebx, %ecx
+	addl 32(%ebp), %ecx       # + softness
+	cmpl %ecx, %eax
 	jge .luma1
-	/* TODO: linear interpolate between edges eax and ebx */
+	/* TODO: linear interpolate between edges */
+	subw %bx, %ax
+	sall $8, %eax
+	subw %bx, %cx
+	movl %edx, %ebx
+	divw %cx
+	movl %ebx, %edx
 	jmp .noluma
 .luma0:
 	movl $0, %eax
@@ -75,6 +82,7 @@ _composite_line_yuv_mmx:
 	shrl $8, %eax
 
 	movl %edx, %ebx           # edx will be destroyed by mulw
+	movl -24(%ebp), %ecx      # restore ecx
 	mull %ecx                  # mix = mix * a...
 	movl %ebx, %edx           # restore edx
 	shrl $8, %eax             # >>8
@@ -137,8 +145,8 @@ _composite_line_yuv_mmx:
 
 /* for..next */
 	addl $1, %edx             # j++
-	cmpl %edx, 16(%ebp)       # if ( j == width_src )
-	je .out
+	cmpl 16(%ebp), %edx       # if ( j == width_src )
+	jge .out
 	
 	addl $2, %esi
 	addl $2, 12(%ebp)

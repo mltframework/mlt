@@ -39,7 +39,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_properties properties = mlt_filter_properties( filter );
 	mlt_transition luma = mlt_properties_get_data( properties, "luma", NULL );
 	mlt_frame b_frame = mlt_properties_get_data( properties, "frame", NULL );
-	int out = 24;
+	int out = mlt_properties_get_int( properties, "period" );
+	
+	if ( out == 0 )
+		out = 24;
 
 	if ( luma == NULL )
 	{
@@ -49,11 +52,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		{
 			mlt_properties luma_properties = mlt_transition_properties( luma );
 			mlt_properties_set_int( luma_properties, "in", 0 );
-			mlt_properties_set_int( luma_properties, "out", out );
+			mlt_properties_set_int( luma_properties, "out", 24 );
 			mlt_properties_set_int( luma_properties, "reverse", 1 );
 			mlt_properties_pass( luma_properties, properties, "luma." );
 			mlt_properties_set_data( properties, "luma", luma, 0, ( mlt_destructor )mlt_transition_close, NULL );
-			out = mlt_properties_get_int( luma_properties, "out" );
 		}
 	}
 
@@ -119,4 +121,3 @@ mlt_filter filter_luma_init( void *arg )
 	}
 	return this;
 }
-

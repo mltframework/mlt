@@ -165,4 +165,3 @@ mlt_producer producer_fezzik_init( char *arg )
 	// Return the tractor's producer
 	return producer;
 }
-
