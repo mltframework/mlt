@@ -36,39 +36,46 @@ static int producer_get_frame( mlt_service this, mlt_frame_ptr frame, int index 
 
 int mlt_producer_init( mlt_producer this, void *child )
 {
-	// Initialise the producer
-	memset( this, 0, sizeof( struct mlt_producer_s ) );
-	
-	// Associate with the child
-	this->child = child;
+	// Check that we haven't received NULL
+	int error = this == NULL;
 
-	// Initialise the service
-	if ( mlt_service_init( &this->parent, this ) == 0 )
+	// Continue if no error
+	if ( error == 0 )
 	{
-		// The parent is the service
-		mlt_service parent = &this->parent;
+		// Initialise the producer
+		memset( this, 0, sizeof( struct mlt_producer_s ) );
+	
+		// Associate with the child
+		this->child = child;
 
-		// Get the properties of the parent
-		mlt_properties properties = mlt_service_properties( parent );
+		// Initialise the service
+		if ( mlt_service_init( &this->parent, this ) == 0 )
+		{
+			// The parent is the service
+			mlt_service parent = &this->parent;
+	
+			// Get the properties of the parent
+			mlt_properties properties = mlt_service_properties( parent );
+	
+			// Set the default properties
+			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
+			mlt_properties_set_position( properties, "position", 0.0 );
+			mlt_properties_set_double( properties, "frame", 0 );
+			mlt_properties_set_double( properties, "fps", 25.0 );
+			mlt_properties_set_double( properties, "speed", 1.0 );
+			mlt_properties_set_position( properties, "in", 0 );
+			mlt_properties_set_position( properties, "out", 1799999 );
+			mlt_properties_set_position( properties, "length", 1800000 );
+			mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
+			mlt_properties_set( properties, "eof", "pause" );
+			mlt_properties_set( properties, "resource", "<producer>" );
 
-		// Set the default properties
-		mlt_properties_set( properties, "mlt_type", "mlt_producer" );
-		mlt_properties_set_position( properties, "position", 0.0 );
-		mlt_properties_set_double( properties, "frame", 0 );
-		mlt_properties_set_double( properties, "fps", 25.0 );
-		mlt_properties_set_double( properties, "speed", 1.0 );
-		mlt_properties_set_position( properties, "in", 0 );
-		mlt_properties_set_position( properties, "out", 1799999 );
-		mlt_properties_set_position( properties, "length", 1800000 );
-		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
-		mlt_properties_set( properties, "eof", "pause" );
-		mlt_properties_set( properties, "resource", "<producer>" );
-
-		// Override service get_frame
-		parent->get_frame = producer_get_frame;
+			// Override service get_frame
+			parent->get_frame = producer_get_frame;
+		}
 	}
 
-	return 0;
+	return error;
 }
 
 /** Get the parent service object.

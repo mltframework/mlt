@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$help" != "1" ]
+then
+
+cat << EOF >> ../producers.dat
+avformat		libmltavformat.so
+EOF
+
+fi
+

@@ -137,24 +137,27 @@ static mlt_consumer create_consumer( char *id, mlt_producer producer )
 	return consumer;
 }
 
-static void transport( mlt_producer producer )
+static void transport( mlt_producer producer, mlt_consumer consumer )
 {
 	mlt_properties properties = mlt_producer_properties( producer );
 
 	term_init( );
 
-	fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
-	fprintf( stderr, "|1=-10| |2= -5| |3= -2| |4= -1| |5=  0| |6=  1| |7=  2| |8=  5| |9= 10|\n" );
-	fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
+	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
+	{
+		fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
+		fprintf( stderr, "|1=-10| |2= -5| |3= -2| |4= -1| |5=  0| |6=  1| |7=  2| |8=  5| |9= 10|\n" );
+		fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
 
-	fprintf( stderr, "+---------------------------------------------------------------------+\n" );
-	fprintf( stderr, "|               H = back 1 minute,  L = forward 1 minute              |\n" );
-	fprintf( stderr, "|                 h = previous frame,  l = next frame                 |\n" );
-	fprintf( stderr, "|           g = start of clip, j = next clip, k = previous clip       |\n" );
-	fprintf( stderr, "|                0 = restart, q = quit, space = play                  |\n" );
-	fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+		fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+		fprintf( stderr, "|               H = back 1 minute,  L = forward 1 minute              |\n" );
+		fprintf( stderr, "|                 h = previous frame,  l = next frame                 |\n" );
+		fprintf( stderr, "|           g = start of clip, j = next clip, k = previous clip       |\n" );
+		fprintf( stderr, "|                0 = restart, q = quit, space = play                  |\n" );
+		fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+	}
 
-	while( mlt_properties_get_int( properties, "done" ) == 0 )
+	while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 	{
 		int value = term_read( );
 		if ( value != -1 )
@@ -173,6 +176,7 @@ int main( int argc, char **argv )
 	// Construct the factory
 	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
 
+	// Check for serialisation switch first
 	for ( i = 1; i < argc; i ++ )
 	{
 		if ( !strcmp( argv[ i ], "-serialise" ) )
@@ -184,7 +188,8 @@ int main( int argc, char **argv )
 	}
 
 	// Get inigo producer
-	inigo = mlt_factory_producer( "inigo", &argv[ 1 ] );
+	if ( argc > 1 )
+		inigo = mlt_factory_producer( "inigo", &argv[ 1 ] );
 
 	if ( argc > 1 && inigo != NULL && mlt_producer_get_length( inigo ) > 0 )
 	{
@@ -245,7 +250,7 @@ int main( int argc, char **argv )
 			mlt_consumer_start( consumer );
 
 			// Transport functionality
-			transport( inigo );
+			transport( inigo, consumer );
 
 			// Stop the consumer
 			mlt_consumer_stop( consumer );

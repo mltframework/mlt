@@ -11,17 +11,18 @@ Directories
 
 	The directory heirarchy is defined as follows:
 
-	+ docs					- Location of all text and source format 
-							  documentation
+	+ docs					- Location of all documentation
 	+ src					- All project source is provided here
-		+ framework			- The media framework
-		+ modules			- All components are defined here
-			+ core			- Non-dependent MLT service
-			+ dv			- libdv services
-			+ ffmpeg		- ffmpeg dependent modules and test code
-			+ sdl			- SDL dependent modules and test code
-			+ bluefish		- Bluefish dependent modules and test code (*)
-			+ mainconcept	- mainconcept dependent modules and test code (*)
+		+ framework			- The mlt media framework
+		+ modules			- All services are defined here
+			+ core			- Independent MLT services
+			+ dv			- libdv dependent services
+			+ ffmpeg		- ffmpeg dependent services
+			+ sdl			- SDL dependent services
+			+ resample		- libresample dependent services
+			+ gtk2			- pango and pixbuf dependent services
+			+ bluefish		- Bluefish dependent services (*)
+			+ mainconcept	- mainconcept dependent services (*)
 		+ inigo				- A media playing test application
 		+ valerie			- Client API to access the server
 		+ miracle			- The server implementation

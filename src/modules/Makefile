@@ -1,4 +1,4 @@
-SUBDIRS = core gtk2 dv sdl mainconcept bluefish ffmpeg resample inigo westley
+SUBDIRS = core gtk2 dv sdl mainconcept bluefish ffmpeg resample inigo avformat westley
 
 all clean depend install:
 	list='$(SUBDIRS)'; \

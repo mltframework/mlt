@@ -33,10 +33,12 @@ General rules:
 	available;
 
 	4. The MLT framework, from which inigo has inherited its 
-	naming convention - is very ego-centric. Producers produce 
+	naming convention, is very mlt-centric. Producers produce 
 	MLT frame objects and consumers consume MLT frame objects. 
 	The distinction is important - a DV producer does not produce 
-	DV and a DV consumer does not consume DV.
+	DV, it produces MLT frames from a DV source, and similarly a 
+	DV consumer does not consume DV, it consumes MLT frames and 
+	produces DV frames.
 
 
 Terminoligy:
@@ -173,7 +175,7 @@ Introducing Tracks and Blanks:
 	It is best to visualise a track arrangement, so we'll start with
 	an example:
 	
-	$ inigo a.dv out=49 -track b.dv
+	$ inigo a.dv in=0 out=49 -track b.dv
 	
 	This can be visualised as follows:
 	

@@ -251,6 +251,9 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	int channels = 2;
 	int frequency = 48000;
 	static int counter = 0;
+	if ( mlt_properties_get_int( properties, "frequency" ) != 0 )
+		frequency =  mlt_properties_get_int( properties, "frequency" );
+
 	int samples = mlt_sample_calculator( mlt_properties_get_double( this->properties, "fps" ), frequency, counter++ );
 	
 	int16_t *pcm;
