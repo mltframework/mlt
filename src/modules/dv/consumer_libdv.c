@@ -234,6 +234,9 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		// Process the frame
 		if ( size != 0 && !( mlt_properties_get_int( this_properties, "was_test_card" ) && is_test ) )
 		{
+			if ( mlt_properties_get_int( mlt_frame_properties( frame ), "top_field_first" ) == 0 )
+				image += width * 2;
+
 			// Encode the image
 			dv_encode_full_frame( encoder, &image, e_dv_color_yuv, dv_frame );
 
@@ -314,8 +317,32 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 
 static void consumer_output( mlt_consumer this, uint8_t *dv_frame, int size, mlt_frame frame )
 {
-	fwrite( dv_frame, size, 1, stdout );
-	fflush( stdout );
+	// Get the properties
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	FILE *output = stdout;
+	char *target = mlt_properties_get( properties, "target" );
+
+	if ( target != NULL )
+	{
+		output = mlt_properties_get_data( properties, "output_file", NULL );
+		if ( output == NULL )
+		{
+			output = fopen( target, "w" );
+			if ( output != NULL )
+				mlt_properties_set_data( properties, "output_file", output, 0, ( mlt_destructor )fclose, 0 );
+		}
+	}
+
+	if ( output != NULL )
+	{
+		fwrite( dv_frame, size, 1, output );
+		fflush( output );
+	}
+	else
+	{
+		fprintf( stderr, "Unable to open %s\n", target );
+	}
 }
 
 /** The main thread - the argument is simply the consumer.
