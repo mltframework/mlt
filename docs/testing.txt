@@ -60,23 +60,23 @@ for a virgin install.
 
 Run these from the top level project directory
 
-1.1.0 Start dv1394d in interactive mode: src/dv1394d -test
---> dv1394d starts interactively and reports:
+1.1.0 Start miracle in interactive mode: src/miracle/miracle -test
+--> miracle starts interactively and reports:
 (5) Starting server on 5250.
-(5) lt-dv1394d version 0.1.0 listening on port 5250
+(5) miracle version 0.0.1 listening on port 5250
 
 1.1.1 Stop the server by pressing Ctrl-C
---> dv1394d returns the following and returns control to the console:
-(5) lt-dv1394d version 0.1.0 server terminated.
+--> miracle returns the following and returns control to the console:
+(5) miracle version 0.0.1 server terminated.
 
-1.2.2 Start dv1394d as a daemon: src/dv1394d
+1.2.2 Start miracle as a daemon: src/miracle/miracle
 --> control returns to the console
 
-1.2.3 Verify dv1394d is running: ps ax
---> five dv1394d (or lt-dv1394d) processes are running
+1.2.3 Verify miracle is running: ps ax
+--> several miracle processes are running
 
-1.2.4 Verify successful dv1394d startup using syslog: sudo tail /var/log/syslog
---> dv1394d: lt-dv1394d version 0.1.0 listening on port 5250
+1.2.4 Verify successful miracle startup using syslog: sudo tail /var/log/syslog
+--> miracle: miracle version 0.0.1 listening on port 5250
 
 1.2.5 Verify connectivity on port 5250: telnet localhost 5250
 --> 100 VTR Ready
@@ -84,16 +84,16 @@ Run these from the top level project directory
 1.2.6 Test clean disconnect: BYE
 --> Connection closed by foreign host.
 
-1.2.7 Stop the daemon: killall lt-dv1394d
+1.2.7 Stop the daemon: killall miracle
 --> no errors
 
 1.2.8 Verify a clean server shutdown: sudo tail /var/log/syslog
---> dv1394d: shutdown complete.
+--> miracle: shutdown complete.
 
-1.3.0 Start dv1394d on a different port: src/dv1394d -port 5260
+1.3.0 Start miracle on a different port: src/miracle/miracle -port 5260
 
-1.3.1 Verify successful dv1394d startup using syslog: sudo tail /var/log/syslog
---> dv1394d: lt-dv1394d version 0.1.0 listening on port 5260
+1.3.1 Verify successful miracle startup using syslog: sudo tail /var/log/syslog
+--> miracle: miracle version 0.0.1 listening on port 5260
 
 1.3.2 Verify connectivity on port 5260: telnet localhost 5260
 --> 100 VTR Ready
@@ -101,27 +101,27 @@ Run these from the top level project directory
 1.3.3 Test clean disconnect: BYE
 --> Connection closed by foreign host.
 
-1.3.4 Stop the daemon: killall lt-dv1394d
+1.3.4 Stop the daemon: killall miracle
 --> no errors
 
 
 2. Unit Management
 ------------------
 
-Start the dv1394d server and connect to it with telnet or a protocol-
-level client. Make sure a DV device is connected and powered.
+Start the miracle server and connect to it with telnet or a protocol-
+level client (albino). 
 
 2.1 List the AV/C devices on the bus: NLS
 --> 201 OK
 --> one or more lines listing devices with GUID in second column
 
-2.2 Add a device as a dv1394d unit: UADD {GUID}
+2.2 Add a device as a miracle unit: UADD {sdl, bluefish}:{NTSC, PAL}
 --> 201 OK
 --> U0
 
 2.3 List the units: ULS
 --> 201 OK
---> U0 ?? {GUID} 1
+--> U0 ?? {sdl, bluefish} 1
 --> It is important that the last column is '1' to indicate it is online.
 
 2.4 Add an offline unit by using some bogus GUID value: UADD foo
@@ -149,7 +149,7 @@ level client. Make sure a DV device is connected and powered.
 
 2.7.1 Verify the status of the offline unit: USTA U1
 --> 202 OK
---> 1 offline "test.dv" 0 1000 29.97 0 65720
+--> 1 offline "test.dv" 0 1000 25.00 0 ...
 --> only the first 3 columns are relevant in this test
 
 2.9 Set the property of an online unit: USET U0 points=use
@@ -162,7 +162,7 @@ level client. Make sure a DV device is connected and powered.
 3. Server Configuration
 -----------------------
 
-Start dv1394d if not already started from a previous test.
+Start miracle if not already started from a previous test.
 
 3.1 Get the hard-coded default root property value: GET root
 --> 202 OK
@@ -207,7 +207,7 @@ XXX --> 400 Unknown command
 4. Simple Playback
 -------------------
 
-Start dv1394d or restart if already started.
+Start miracle or restart if already started.
 Add an online unit.
 Set the server root property if desired.
 
@@ -216,7 +216,7 @@ Set the server root property if desired.
 
 4.1.1 Check the unit status: USTA U0
 --> 202 OK
---> 0 stopped "test.dv" 0 1000 29.97 0 65720
+--> 0 stopped "test.dv" 0 1000 25.00 0 ...
 --> Only the first 3 columns are relevant in this test.
 --> The remaining columns are only relevant to the tester.
 
@@ -226,7 +226,7 @@ Set the server root property if desired.
 
 4.2.1 Check the unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 1739 1000 29.97 0 65720
+--> 0 playing "test.dv" 1739 1000 25.00 0 ...
 --> Only the first 3 columns are relevant in this test.
 --> The remaining columns are only relevant to the tester.
 
@@ -236,7 +236,7 @@ Set the server root property if desired.
 
 4.3.1 Check the unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 1739 0 29.97 0 65720
+--> 0 paused "test.dv" 1739 0 25.00 0 ...
 --> The fifth column --------^ should be 0; it indicates speed.
 
 4.3.2 Stop playback: STOP U0
@@ -265,7 +265,7 @@ Set the server root property if desired.
 5. Multi-unit Playback
 -----------------------
 
-Start dv1394d or restart if already started.
+Start miracle or restart if already started.
 Add *2* online units.
 Set the server root property if desired.
 
@@ -293,7 +293,7 @@ Set the server root property if desired.
 6. Advanced Playback
 --------------------
 
-Start dv1394d or restart if already started.
+Start miracle or restart if already started.
 Add *2* online units.
 Set the server root property if desired.
 
@@ -306,22 +306,22 @@ Trick play modes:
 --> 200 OK
 --> analog video starts, but audio is muted.
 
-6.1.2 Play fast forward: FF U0 test.dv
+6.1.2 Play fast forward: FF U0
 --> 200 OK
 --> verify video is playing fast in the forward direction.
 
 6.1.3 Get unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 219 2000 29.97 0 65720
+--> 0 playing "test.dv" 219 2000 25.00 0 ...
 --> The important column is --^, indicates speed
 
-6.1.4 Play fast reverse: REW U0 test.dv
+6.1.4 Play fast reverse: REW U0
 --> 200 OK
 --> verify analog video output is fast in the reverse direction.
 
 6.1.5 Get unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 4621 -2000 29.97 0 65720
+--> 0 playing "test.dv" 4621 -2000 25.00 0 ...
 --> The important column is ---^, negative mean reverse
 
 6.1.6 Play slow forward: PLAY U0 500
@@ -357,7 +357,7 @@ Loading while playing:
 
 6.2.5 Get unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 403 1000 29.97 100 500
+--> 0 playing "test.dv" 403 1000 25.00 100 ...
 --> verify position -----^ is beyond --^ in point, last column is the out
     point specified in the previous step.
 
@@ -375,8 +375,8 @@ Edit points:
 
 6.3.4 Get the unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 100 0 29.97 100 65720
---> verify position -----^ and in ---^
+--> 0 paused "test.dv" 100 0 25.00 100 ...
+--> verify position ---^ and in ---^
 
 6.3.5 Change the mode of the unit to not restrict playback to the edit
       region: USET U0 points=ignore
@@ -387,8 +387,8 @@ Edit points:
 
 6.3.7 Get the unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 50 0 29.97 100 65720
---> position -----------^ preceeds -^ (in)
+--> 0 paused "test.dv" 50 0 25.00 100 ...
+--> position ----------^ preceeds -^ (in)
 
 6.3.8 Set the unit mode to restrict playback to the edit region: USET U0 points=use
 --> 200 OK
@@ -396,16 +396,16 @@ Edit points:
 
 6.3.9 Get the unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 100 0 29.97 100 65720
---> verify position -----^ and in ---^
+--> 0 paused "test.dv" 100 0 25.00 100 ...
+--> verify position ---^ and in ---^
 
 6.3.10 Clear the in point: SIN U0 -1
 --> 200 OK
 
 6.3.11 Get the unit status: USTA U0
 --> 202 OK
---> 0 playing "test.dv" 100 0 29.97 0 65720
---> verify the in point is reset ---^
+--> 0 paused "test.dv" 100 0 25.00 0 ...
+--> verify the in point is reset --^
 
 The above sequence should be repeated in a similar manner for the out point
 using the SOUT command.
@@ -443,7 +443,7 @@ Transfer:
 7. Unit Configuration
 ---------------------
 
-Start dv1394d or restart if already started.
+Start miracle or restart if already started.
 Add an online unit.
 Set the server root property if desired.
 
@@ -479,88 +479,18 @@ Set the server root property if desired.
 --> ignore
 
 
-8. Bus Reset
-------------
-
-Stop dv1394d if it is already running/.
-Connect two DV devices.
-Run these from the top level project directory.
-
-8.1.0 Start dv1394d in interactive mode: src/dv1394d -test
---> dv1394d starts interactively and reports:
---> (5) Starting server on 5250.
---> (5) lt-dv1394d version 0.1.0 listening on port 5250
---> Watch the activity in this console during these tests.
-
-8.1.1 Connect: telnet localhost 5250
---> 100 VTR Ready
-
-8.1.2 List the AV/C devices on the bus: NLS
---> 201 OK
---> one or more lines listing devices with GUID in second column
-
-8.1.3 Add a device as a dv1394d unit: UADD {GUID}
---> 201 OK
---> U0
-
-8.1.3 Add another device as a dv1394d unit: UADD {GUID}
---> 201 OK
---> U1
-
-8.1.4 Get a status list of units: ULS
---> 201 OK
---> U0 01 0007360000000001 1
---> U1 03 0003f3001100065a 1
---> Both units are online.
-
-8.1.5 Disconnect a device
---> see messasges from dv1394d
-
-8.1.6 Get a status list of units: ULS
---> 201 OK
---> U0 01 0007360000000001 1
---> U1 03 0003f3001100065a 0
---> One unit is offlne.
-
-8.1.7 Load a clip into the offline unit: LOAD /var/dv1394d/test.dv
---> 200 OK
-
-8.1.8 Try to play the offline unit: PLAY U1
---> 403 Unit not found
-
-8.1.9 Reconnect the device
---> see messages from dv1394d
-
-8.1.10 Get a status list of units: ULS
---> 201 OK
---> U0 01 0007360000000001 1
---> U1 03 0003f3001100065a 1
---> Both units are online.
-
-8.1.11 Start playing: PLAY U1
---> 200 OK
-
-8.1.12 Disconnect a device
---> U1 stops playing
-
-8.1.13 Reconnect disconnected device
-
-8.1.14 Start playing: PLAY U1
---> 200 OK
-
 9. Server Side Queuing
 ----------------------
 
-This section is designed to test the server side queuing implementation added
-in the 0.2.2 release of dv1394d. Only one unit is used for these test cases, and
+Only one unit is used for these test cases, and
 users are encouraged to test with multiple units online. It is assumed that a
 number of dv files are available for use in the servers ROOT directory - this
 document assumes that they are named test001.dv and up.
 
-9.1.0 Start dv1394d in interactive mode and add a unit (all tests will assume U0)
+9.1.0 Start miracle in interactive mode and add a unit (all tests will assume U0)
 --> server started with unit 0 available
 
-9.1.1 Obtain a dv1394d shell (via telnet or other app).
+9.1.1 Obtain a miracle shell (via telnet or albino).
 --> 100 VTR (if reported by the client)
 
 9.1.2 Load a clip with LOAD U0 test001.dv and PAUSE U0
@@ -569,7 +499,7 @@ document assumes that they are named test001.dv and up.
 9.1.3 List the clips with LIST U0
 --> 201 OK
 --> 1
---> 0 "test001.dv" 0 6999 7000 7000
+--> 0 "test001.dv" 0 6999 7000 7000 25.00
 --> The 1 on the second line denotes the number of times the list has been changed
 	via user commands (known as the 'generation' number).
 --> The third line and beyond reports the clip index (from 0 to n), file loaded, in point,
