@@ -19,7 +19,9 @@
  */
 
 #include "producer_ppm.h"
+
 #include <framework/mlt_frame.h>
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -81,9 +83,10 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 		// Convert to requested format
 		if ( *format == mlt_image_yuv422 )
 		{
-			uint8_t *image = malloc( *width * *height * 2 );
+			// IRRIGATE ME
+			uint8_t *image = malloc( *width * ( *height + 1 ) * 2 );
 			mlt_convert_rgb24_to_yuv422( rgb, *width, *height, *width * 3, image );
-			mlt_properties_set_data( properties, "image", image, *width * *height * 2, free, NULL );
+			mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, free, NULL );
 			*buffer = image;
 		}
 		else if ( *format == mlt_image_rgb24 )
@@ -222,16 +225,19 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	{
 
 		// Allocate an image
-		uint8_t *image = malloc( width * height * 3 );
+		// IRRIGATE ME
+		uint8_t *image = malloc( width * ( height + 1 ) * 3 );
 		
 		// Read it
 		fread( image, width * height * 3, 1, video );
 
 		// Pass the data on the frame properties
-		mlt_properties_set_data( properties, "image", image, width * height * 3, free, NULL );
+		mlt_properties_set_data( properties, "image", image, width * ( height + 1 ) * 3, free, NULL );
 		mlt_properties_set_int( properties, "width", width );
 		mlt_properties_set_int( properties, "height", height );
 		mlt_properties_set_int( properties, "has_image", 1 );
+		mlt_properties_set_int( properties, "progressive", 1 );
+		mlt_properties_set_double( properties, "aspect_ratio", ( double )width  / height );
 
 		// Push the image callback
 		mlt_frame_push_get_image( *frame, producer_get_image );

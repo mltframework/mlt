@@ -184,7 +184,9 @@ static int producer_open( mlt_producer this, char *file )
 	pthread_mutex_lock( &avformat_mutex );
 
 	// Now attempt to open the file
-	error = av_open_input_file( &context, file, NULL, 0, NULL ) < 0;
+	error = av_open_input_file( &context, file, NULL, 0, NULL );
+//	fprintf( stderr, "AVFORMAT: open %d %s\n", error, file );
+	error = error < 0;
 
 	// If successful, then try to get additional info
 	if ( error == 0 )
@@ -333,6 +335,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( output == NULL )
 	{
 		int size = avpicture_get_size( PIX_FMT_YUV422, *width, *height );
+		// IRRIGATE ME
+		size += *width * 2;
 		uint8_t *buf = malloc( size );
 		output = malloc( sizeof( AVPicture ) );
 		avpicture_fill( output, buf, PIX_FMT_YUV422, *width, *height );
@@ -373,6 +377,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image = mlt_properties_get_data( properties, "current_image", &size );
 
 		// Duplicate it
+		// IRRIGATE ME
 		*buffer = malloc( size );
 		memcpy( *buffer, image, size );
 
@@ -432,11 +437,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 			if ( image == NULL || size != *width * *height * 2 )
 			{
-				size = *width * *height * 2;
+				size = *width * ( *height + 1 ) * 2;
+				// IRRIGATE ME
 				image = malloc( size );
 				mlt_properties_set_data( properties, "current_image", image, size, free, NULL );
 			}
 
+			// IRRIGATE ME
 			*buffer = malloc( size );
 			img_convert( output, PIX_FMT_YUV422, (AVPicture *)&frame, codec_context->pix_fmt, *width, *height );
 			memcpy( image, output->data[ 0 ], size );
@@ -498,6 +505,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 				double aspect_ratio = 0;
 
 				// Set aspect ratio
+				fprintf( stderr, "AVFORMAT: sample aspect %d\n", codec_context->sample_aspect_ratio.num );
 				if ( codec_context->sample_aspect_ratio.num == 0) 
 					aspect_ratio = 0;
 				else

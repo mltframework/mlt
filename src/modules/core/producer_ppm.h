@@ -22,7 +22,6 @@
 #define _PRODUCER_PPM_H_
 
 #include <framework/mlt_producer.h>
-#include <stdio.h>
 
 extern mlt_producer producer_ppm_init( void *command );
 

@@ -32,7 +32,6 @@ struct producer_pango_s
 	int width;
 	int height;
 	uint8_t *image;
-	uint8_t *alpha;
 	char *fgcolor;
 	char *bgcolor;
 	int   align;
@@ -267,16 +266,23 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			// Store the width/height of the pixbuf temporarily
 			this->width = gdk_pixbuf_get_width( pixbuf );
 			this->height = gdk_pixbuf_get_height( pixbuf );
+
+			mlt_properties_set_int( producer_props, "bpp", gdk_pixbuf_get_has_alpha( pixbuf ) ? 4 : 3 );
 		}
 	}
 	else if ( this->image == NULL || width != this->width || height != this->height )
 	{
 		pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
+		mlt_properties_set_int( producer_props, "bpp", gdk_pixbuf_get_has_alpha( pixbuf ) ? 4 : 3 );
 	}
+
+	int bpp = mlt_properties_get_int( producer_props, "bpp" );
 
 	// If we have a pixbuf and a valid width
 	if ( pixbuf && width > 0 )
 	{
+		int i;
+		
 		// Note - the original pixbuf is already safe and ready for destruction
 		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_HYPER );
 
@@ -284,39 +290,21 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		this->width = gdk_pixbuf_get_width( pixbuf );
 		this->height = gdk_pixbuf_get_height( pixbuf );
 
-		// Allocate/define image and alpha
-		uint8_t *image = malloc( this->width * this->height * 2 );
-		uint8_t *alpha = NULL;
+		// Allocate/define image
+		// IRRIGATE ME
+		uint8_t *image = malloc( this->width * ( this->height + 1 )* bpp );
 
-		// Extract YUV422 and alpha
-		if ( gdk_pixbuf_get_has_alpha( pixbuf ) )
-		{
-			// Allocate the alpha mask
-			alpha = malloc( this->width * this->height );
-
-			// Convert the image
-			mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
-										  this->width, this->height,
-										  gdk_pixbuf_get_rowstride( pixbuf ),
-										  image, alpha );
-		}
-		else
-		{ 
-			// No alpha to extract
-			mlt_convert_rgb24_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
-										 this->width, this->height,
-										 gdk_pixbuf_get_rowstride( pixbuf ),
-										 image );
-		}
+		for ( i = 0; i < height; i++ )
+			memcpy( image + i * width * bpp,
+				gdk_pixbuf_get_pixels( pixbuf ) + i * gdk_pixbuf_get_rowstride( pixbuf ),
+				gdk_pixbuf_get_width( pixbuf ) * bpp );
 
 		// Finished with pixbuf now
 		g_object_unref( pixbuf );
 		
-		// if single picture, reference the image and alpha in the producer
+		// reference the image in the producer
 		free( this->image );
 		this->image = image;
-		free( this->alpha );
-		this->alpha = alpha;
 	}
 
 	// Set width/height
@@ -325,9 +313,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "real_width" ) );
 	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
 
-	// pass the image and alpha data without destructor
-	mlt_properties_set_data( properties, "image", this->image, this->width * this->height * 2, NULL, NULL );
-	mlt_properties_set_data( properties, "alpha", this->alpha, this->width * this->height, NULL, NULL );
+	// pass the image data without destructor
+	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * bpp, NULL, NULL );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
@@ -337,6 +324,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Refresh the image
 	refresh_image( frame, *width, *height );
+
+	// Determine format
+	mlt_producer this = mlt_properties_get_data( properties, "producer_pango", NULL );
+	*format = ( mlt_properties_get_int( mlt_producer_properties( this ), "bpp" ) == 4 ) ? mlt_image_rgb24a : mlt_image_rgb24;
 
 	// May need to know the size of the image to clone it
 	int size = 0;
@@ -352,6 +343,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( writable )
 	{
 		// Clone our image
+		// IRRIGATE ME
 		uint8_t *copy = malloc( size );
 		memcpy( copy, image, size );
 
@@ -366,15 +358,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*buffer = image;
 
 	return 0;
-}
-
-static uint8_t *producer_get_alpha_mask( mlt_frame this )
-{
-	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( this );
-
-	// Return the alpha mask
-	return mlt_properties_get_data( properties, "alpha", NULL );
 }
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
@@ -393,8 +376,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Refresh the pango image
 	refresh_image( *frame, 0, 0 );
 
-	// Set alpha mask call back
-	( *frame )->get_alpha_mask = producer_get_alpha_mask;
+	// Set producer-specific frame properties
+	mlt_properties_set_int( properties, "progressive", 1 );
+	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "real_width" ) / mlt_properties_get_double( properties, "real_height" ) );
 
 	// Stack the get image callback
 	mlt_frame_push_get_image( *frame, producer_get_image );
@@ -412,7 +396,6 @@ static void producer_close( mlt_producer parent )
 {
 	producer_pango this = parent->child;
 	free( this->image );
-	free( this->alpha );
 	free( this->fgcolor );
 	free( this->bgcolor );
 	free( this->markup );

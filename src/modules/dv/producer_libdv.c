@@ -111,6 +111,7 @@ static int read_frame( int fd, uint8_t* frame_buf, int *isPAL )
 static int producer_collect_info( producer_libdv this )
 {
 	int valid = 0;
+	// IRRIGATE ME
 	uint8_t *dv_data = malloc( frame_size_625_50 );
 
 	if ( dv_data != NULL )
@@ -186,10 +187,11 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	if ( *format == mlt_image_yuv422 )
 	{
 		// Allocate an image
-		uint8_t *image = malloc( *width * *height * 2 );
+		// IRRIGATE ME
+		uint8_t *image = malloc( *width * ( *height + 1 ) * 2 );
 
 		// Pass to properties for clean up
-		mlt_properties_set_data( properties, "image", image, *width * *height * 2, free, NULL );
+		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, free, NULL );
 
 		// Decode the image
 		pitches[ 0 ] = *width * 2;
@@ -202,10 +204,11 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	else if ( *format == mlt_image_rgb24 )
 	{
 		// Allocate an image
-		uint8_t *image = malloc( *width * *height * 3 );
+		// IRRIGATE ME
+		uint8_t *image = malloc( *width * ( *height + 1 ) * 3 );
 
 		// Pass to properties for clean up
-		mlt_properties_set_data( properties, "image", image, *width * *height * 3, free, NULL );
+		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 3, free, NULL );
 
 		// Decode the frame
 		pitches[ 0 ] = 720 * 3;

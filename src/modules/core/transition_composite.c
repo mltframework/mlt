@@ -105,6 +105,8 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 	int x = ( int )( ( float )width_dest * geometry.x / 100 );
 	int y = ( int )( ( float )height_dest * geometry.y / 100 );
 	float weight = geometry.mix / 100;
+
+	// Compute the dimensioning rectangle
 	int width_src = ( int )( ( float )width_dest * geometry.w / 100 );
 	int height_src = ( int )( ( float )height_dest * geometry.h / 100 );
 
@@ -115,26 +117,54 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 	if ( mlt_properties_get( properties, "distort" ) == NULL &&
 		 mlt_properties_get( mlt_frame_properties( that ), "real_width" ) != NULL )
 	{
-		int width_b = mlt_properties_get_int( mlt_frame_properties( that ), "real_width" );
-		int height_b = mlt_properties_get_int( mlt_frame_properties( that ), "real_height" );
+		int width_b = mlt_properties_get_double( b_props, "real_width" );
+		int height_b = mlt_properties_get_double( b_props, "real_height" );
 
+		// See if we need to normalise pixel aspect ratio
+		// We can use consumer_aspect_ratio because the a_frame will take on this aspect
+		double aspect = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
+		if ( aspect != 0 )
+		{
+			// Derive the consumer pixel aspect
+			double oaspect = aspect / ( double )width_dest * height_dest;
+
+			// Get the b frame pixel aspect - usually 1
+			double iaspect = mlt_properties_get_double( b_props, "aspect_ratio" ) / width_b * height_b;
+
+			// Normalise pixel aspect
+			if ( iaspect != 0 && iaspect != oaspect )
+				width_b = iaspect / oaspect * ( double )width_b + 0.5;
+				
+			// Tell rescale not to normalise display aspect
+			mlt_frame_set_aspect_ratio( that, aspect );
+		}
+
+		// Constrain the overlay to the dimensioning rectangle
 		if ( width_b < width_src )
 			width_src = width_b;
 		if ( height_b < height_src )
 			height_src = height_b;
-		mlt_properties_set( mlt_frame_properties( that ), "rescale.interp", "none" );
+
+		// Adjust overall scale for consumer
+		double consumer_scale = mlt_properties_get_double( b_props, "consumer_scale" );
+		if ( consumer_scale > 0 )
+		{
+			width_src = consumer_scale * width_src + 0.5;
+			height_src = consumer_scale * height_src + 0.5;
+		}
 	}
-	else if ( mlt_properties_get( mlt_frame_properties( that ), "real_width" ) != NULL )
+	else if ( mlt_properties_get( b_props, "real_width" ) != NULL )
 	{
-		mlt_properties_set( mlt_frame_properties( that ), "rescale.interp", "none" );
+		// Tell rescale not to normalise display aspect
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", 0 );
 	}
 
 	x -= x % 2;
 
+	// optimization points - no work to do
 	if ( width_src <= 0 || height_src <= 0 )
 		return ret;
 
-	// optimization point - no work to do
 	if ( ( x < 0 && -x >= width_src ) || ( y < 0 && -y >= height_src ) )
 		return ret;
 
@@ -256,6 +286,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Do the calculation
 		geometry_calculate( &result, &start, &end, position );
 
+		// Since we are the consumer of the b_frame, we must pass along these
+		// consumer properties from the a_frame
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio",
+			mlt_properties_get_double( mlt_frame_properties( a_frame ), "consumer_aspect_ratio" ) );
+		mlt_properties_set_double( b_props, "consumer_scale",
+			mlt_properties_get_double( mlt_frame_properties( a_frame ), "consumer_scale" ) );
+		
 		// Composite the b_frame on the a_frame
 		composite_yuv( *image, *format, *width, *height, b_frame, result );
 	}

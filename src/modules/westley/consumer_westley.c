@@ -222,9 +222,6 @@ static void serialise_service( serialise_context context, mlt_service service, x
 					else
 						strncpy( id, mlt_properties_get( properties, "id" ), ID_SIZE );
 
-					xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
-					xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
-
 					// Add producer to the map
 					snprintf( key, 10, "%p", service );
 					mlt_properties_set( context->producer_map, key, id );
@@ -247,6 +244,8 @@ static void serialise_service( serialise_context context, mlt_service service, x
 								xmlNode *entry = xmlNewChild( child, NULL, "entry", NULL );
 								snprintf( key, 10, "%p", MLT_SERVICE( info.producer ) );
 								xmlNewProp( entry, "producer", mlt_properties_get( context->producer_map, key ) );
+								xmlNewProp( entry, "in", mlt_properties_get( mlt_producer_properties( info.producer ), "in" ) );
+								xmlNewProp( entry, "out", mlt_properties_get( mlt_producer_properties( info.producer ), "out" ) );
 							}
 						}
 					}

@@ -51,6 +51,7 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 			mlt_properties_set_double( properties, "fps", 25.0 );
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 576 );
+			mlt_properties_set_int( properties, "progressive", 0 );
 		}
 		else
 		{
@@ -58,7 +59,9 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 			mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 480 );
+			mlt_properties_set_int( properties, "progressive", 0 );
 		}
+		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 
 		// Default rescaler for all consumers
 		mlt_properties_set( properties, "rescale", "bilinear" );
@@ -105,6 +108,7 @@ int mlt_consumer_start( mlt_consumer this )
 	if ( test_card != NULL )
 	{
 		// Create a test card producer
+		// TODO: do we want to use fezzik here?
 		mlt_producer producer = mlt_factory_producer( "fezzik", test_card );
 
 		// Do we have a producer
@@ -151,6 +155,8 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 			mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale" ) );
 
 		// TODO: Aspect ratio and other jiggery pokery
+		mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
+		
 	}
 
 	// Return the frame

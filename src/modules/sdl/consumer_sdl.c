@@ -101,6 +101,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
 
+		// Get aspect ratio
+		this->aspect_ratio = mlt_properties_get_double( this->properties, "aspect_ratio" );
+		
 		// process actual param
 		if ( arg == NULL || sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
 		{
@@ -108,11 +111,10 @@ mlt_consumer consumer_sdl_init( char *arg )
 			this->height = mlt_properties_get_int( this->properties, "height" );
 		}
 
-		// Default window size and aspect ratio
-		this->aspect_ratio = 4.0 / 3.0;
+		// Default window size
 		this->window_width = (int)( (float)this->height * this->aspect_ratio ) + 1;
 		this->window_height = this->height;
-
+		
 		// Set the sdl flags
 		this->sdl_flags = SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_HWACCEL | SDL_RESIZABLE;
 
@@ -458,7 +460,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_frame_close( frame );
 
 	if ( this->count )
+	{
+		// Tell the producers about our scale relative to the normalisation
+		mlt_properties_set_double( mlt_frame_properties( this->queue[ this->count - 1 ] ), "consumer_scale",
+			( double )height / mlt_properties_get_double( properties, "height" ) );
 		mlt_frame_get_image( this->queue[ this->count - 1 ], &image, &vfmt, &width, &height, 0 );
+	}
 
 	return 0;
 }
@@ -492,6 +499,10 @@ static void *consumer_thread( void *arg )
 		// Ensure that we have a frame
 		if ( frame != NULL )
 		{
+			// SDL adapts display aspect, but set this so pixel aspect can be normalised
+			mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_aspect_ratio",
+				mlt_frame_get_aspect_ratio( frame ) );
+			
 			init_audio = consumer_play_audio( this, frame, init_audio );
 			consumer_play_video( this, frame );
 		}

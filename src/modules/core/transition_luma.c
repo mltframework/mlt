@@ -253,6 +253,13 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
 	int reverse = mlt_properties_get_int( b_props, "luma.reverse" );
 
+	// Since we are the consumer of the b_frame, we must pass along this
+	// consumer property from the a_frame
+	mlt_properties_set_double( b_props, "consumer_aspect_ratio",
+		mlt_properties_get_double( mlt_frame_properties( this ), "consumer_aspect_ratio" ) );
+	mlt_properties_set_double( b_props, "consumer_scale",
+		mlt_properties_get_double( mlt_frame_properties( this ), "consumer_scale" ) );
+		
 	// Honour the reverse here
 	mix = reverse ? 1 - mix : mix;
 
@@ -332,7 +339,9 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 
 		// determine if this is one or two bytes per pixel
 		bpp = maxval > 255 ? 2 : 1;
-			// allocate temporary storage for the raw data
+		
+		// allocate temporary storage for the raw data
+		// IRRIGATE ME
 		data = malloc( *width * *height * bpp );
 		if ( data == NULL )
 			break;
@@ -342,6 +351,7 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 			break;
 		
 		// allocate the luma bitmap
+		// IRRIGATE ME
 		*map =  p = (float*) malloc( *width * *height * sizeof( float ) );
 		if ( *map == NULL )
 			break;

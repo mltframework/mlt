@@ -208,19 +208,25 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 				*buffer = NULL;
 				break;
 			case mlt_image_rgb24:
+				// IRRIGATE ME
 				size *= 3;
+				size += *width * 3;
 				*buffer = malloc( size );
 				if ( *buffer )
 					memset( *buffer, 255, size );
 				break;
 			case mlt_image_rgb24a:
+				// IRRIGATE ME
 				size *= 4;
+				size += *width * 4;
 				*buffer = malloc( size );
 				if ( *buffer )
 					memset( *buffer, 255, size );
 				break;
 			case mlt_image_yuv422:
+				// IRRIGATE ME
 				size *= 2;
+				size += *width * 2;
 				*buffer = malloc( size );
 				p = *buffer;
 				q = p + size;
@@ -511,21 +517,20 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 	if ( iwidth != owidth || iheight != oheight )
 	{
 		// Create the output image
-		uint8_t *output = malloc( owidth * oheight * 2 );
+		// IRRIGATE ME
+		uint8_t *output = malloc( owidth * ( oheight + 1 ) * 2 );
 
 		// Call the generic resize
 		mlt_resize_yuv422( output, owidth, oheight, input, iwidth, iheight );
 
 		// Now update the frame
-		mlt_properties_set_data( properties, "image", output, owidth * oheight * 2, free, NULL );
+		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, free, NULL );
 		mlt_properties_set_int( properties, "width", owidth );
 		mlt_properties_set_int( properties, "height", oheight );
-		mlt_frame_set_aspect_ratio( this, 4.0/3.0/*( float )owidth / oheight*/ );
 
 		// Return the output
 		return output;
 	}
-
 	// No change, return input
 	return input;
 }
@@ -548,7 +553,8 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 	if ( iwidth != owidth || iheight != oheight )
 	{
 		// Create the output image
-		uint8_t *output = malloc( owidth * oheight * 2 );
+		// IRRIGATE ME
+		uint8_t *output = malloc( owidth * ( oheight + 1 ) * 2 );
 
 		// Calculate strides
 		int istride = iwidth * 2;
