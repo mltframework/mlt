@@ -472,6 +472,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			
 			this->rect.x = ( this->window_width - this->rect.w ) / 2;
 			this->rect.y = ( this->window_height - this->rect.h ) / 2;
+
+			mlt_properties_set_int( this->properties, "rect_x", this->rect.x );
+			mlt_properties_set_int( this->properties, "rect_y", this->rect.y );
+			mlt_properties_set_int( this->properties, "rect_w", this->rect.w );
+			mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
 			
 			// Force an overlay recreation
 			if ( this->sdl_overlay != NULL )
