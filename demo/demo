@@ -47,8 +47,6 @@ function get_demo( )
 	fi
 }
 
-cd ..; . setenv; cd -
-
 while [ 1 ]
 do
 
