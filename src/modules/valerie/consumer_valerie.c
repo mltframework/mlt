@@ -111,6 +111,7 @@ static int consumer_start( mlt_consumer this )
 			else
 			{
 				fprintf( stderr, "Unable to connect to the server at %s:%d\n", server, port );
+				mlt_properties_set_int( properties, "_error", 1 );
 				valerie_close( connection );
 				valerie_parser_close( parser );
 				connection = NULL;
