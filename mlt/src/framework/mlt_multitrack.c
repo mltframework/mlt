@@ -96,7 +96,7 @@ mlt_properties mlt_multitrack_properties( mlt_multitrack this )
 	return mlt_service_properties( mlt_multitrack_service( this ) );
 }
 
-/** Initialise timecode related information.
+/** Initialise position related information.
 */
 
 void mlt_multitrack_refresh( mlt_multitrack this )
@@ -107,7 +107,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	mlt_properties properties = mlt_multitrack_properties( this );
 
 	// We need to ensure that the multitrack reports the longest track as its length
-	mlt_timecode length = 0;
+	mlt_position length = 0;
 
 	// We need to ensure that fps are the same on all services
 	double fps = 0;
@@ -146,8 +146,8 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	}
 
 	// Update multitrack properties now - we'll not destroy the in point here
-	mlt_properties_set_timecode( properties, "length", length );
-	mlt_properties_set_timecode( properties, "out", length );
+	mlt_properties_set_position( properties, "length", length );
+	mlt_properties_set_position( properties, "out", length );
 	mlt_properties_set_double( properties, "fps", fps );
 }
 
@@ -208,10 +208,10 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 	0.0, 1.0, b0.0, 0.1, b1.1, 1.1, 0.1, 0.2, [out of playlist2], [out of playlist1]
 */
 
-mlt_timecode mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
+mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
 {
 	int first = 1;
-	mlt_timecode position = 0;
+	mlt_position position = 0;
 	int i = 0;
 
 	// Loop through each of the tracks
@@ -232,7 +232,7 @@ mlt_timecode mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 			// We only consider playlists
 			if ( playlist != NULL )
 			{
-				// Locate the smallest timecode
+				// Locate the smallest position
 				if ( first )
 				{
 					// First position found
@@ -244,12 +244,16 @@ mlt_timecode mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 				else
 				{
 					// Obtain the clip position in this playlist
-					mlt_timecode position2 = mlt_playlist_clip( playlist, whence, index );
+					//mlt_position position2 = mlt_playlist_clip( playlist, whence, index );
 
 					// If this position is prior to the first, then use it
-					if ( position2 < position )
-						position = position2;
+					//if ( position2 < position )
+						//position = position2;
 				}
+			}
+			else
+			{
+				fprintf( stderr, "track %d isn't a playlist\n", index );
 			}
 		}
 	}
@@ -293,11 +297,11 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		// Get the producer for this track
 		mlt_producer producer = this->list[ index ];
 
-		// Obtain the current timecode
+		// Obtain the current position
 		uint64_t position = mlt_producer_frame( parent );
 
 		// Make sure we're at the same point
-		mlt_producer_seek_frame( producer, position );
+		mlt_producer_seek( producer, position );
 
 		// Get the frame from the producer
 		mlt_service_get_frame( mlt_producer_service( producer ), frame, 0 );
@@ -313,8 +317,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		// Generate a test frame
 		*frame = mlt_frame_init( );
 
-		// Update timecode on the frame we're creating
-		mlt_frame_set_timecode( *frame, mlt_producer_position( parent ) );
+		// Update position on the frame we're creating
+		mlt_frame_set_position( *frame, mlt_producer_position( parent ) );
 
 		// Move on to the next frame
 		if ( index >= this->count )

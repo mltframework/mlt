@@ -19,9 +19,8 @@
  */
 
 #include "config.h"
-#include "mlt_factory.h"
+#include "mlt.h"
 #include "mlt_repository.h"
-#include "mlt_properties.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -41,22 +40,26 @@ static mlt_repository consumers = NULL;
 
 int mlt_factory_init( char *prefix )
 {
-	// If no directory is specified, default to install directory
-	if ( prefix == NULL )
-		prefix = PREFIX_DATA;
+	// Only initialise once
+	if ( mlt_prefix == NULL )
+	{
+		// If no directory is specified, default to install directory
+		if ( prefix == NULL )
+			prefix = PREFIX_DATA;
 
-	// Store the prefix for later retrieval
-	mlt_prefix = strdup( prefix );
+		// Store the prefix for later retrieval
+		mlt_prefix = strdup( prefix );
 
-	// Create the object list.
-	object_list = calloc( sizeof( struct mlt_properties_s ), 1 );
-	mlt_properties_init( object_list, NULL );
+		// Create the object list.
+		object_list = calloc( sizeof( struct mlt_properties_s ), 1 );
+		mlt_properties_init( object_list, NULL );
 
-	// Create a repository for each service type
-	producers = mlt_repository_init( object_list, prefix, "producers.dat", "mlt_create_producer" );
-	filters = mlt_repository_init( object_list, prefix, "filters.dat", "mlt_create_filter" );
-	transitions = mlt_repository_init( object_list, prefix, "transitions.dat", "mlt_create_transition" );
-	consumers = mlt_repository_init( object_list, prefix, "consumers.dat", "mlt_create_consumer" );
+		// Create a repository for each service type
+		producers = mlt_repository_init( object_list, prefix, "producers.dat", "mlt_create_producer" );
+		filters = mlt_repository_init( object_list, prefix, "filters.dat", "mlt_create_filter" );
+		transitions = mlt_repository_init( object_list, prefix, "transitions.dat", "mlt_create_transition" );
+		consumers = mlt_repository_init( object_list, prefix, "consumers.dat", "mlt_create_consumer" );
+	}
 
 	return 0;
 }
@@ -74,7 +77,14 @@ const char *mlt_factory_prefix( )
 
 mlt_producer mlt_factory_producer( char *service, void *input )
 {
-	return ( mlt_producer )mlt_repository_fetch( producers, service, input );
+	mlt_producer obj = mlt_repository_fetch( producers, service, input );
+	if ( obj != NULL )
+	{
+		mlt_properties properties = mlt_producer_properties( obj );
+		mlt_properties_set( properties, "mlt_type", "producer" );
+		mlt_properties_set( properties, "mlt_service", service );
+	}
+	return obj;
 }
 
 /** Fetch a filter from the repository.
@@ -82,7 +92,14 @@ mlt_producer mlt_factory_producer( char *service, void *input )
 
 mlt_filter mlt_factory_filter( char *service, void *input )
 {
-	return ( mlt_filter )mlt_repository_fetch( filters, service, input );
+	mlt_filter obj = mlt_repository_fetch( filters, service, input );
+	if ( obj != NULL )
+	{
+		mlt_properties properties = mlt_filter_properties( obj );
+		mlt_properties_set( properties, "mlt_type", "filter" );
+		mlt_properties_set( properties, "mlt_service", service );
+	}
+	return obj;
 }
 
 /** Fetch a transition from the repository.
@@ -90,7 +107,14 @@ mlt_filter mlt_factory_filter( char *service, void *input )
 
 mlt_transition mlt_factory_transition( char *service, void *input )
 {
-	return ( mlt_transition )mlt_repository_fetch( transitions, service, input );
+	mlt_transition obj = mlt_repository_fetch( transitions, service, input );
+	if ( obj != NULL )
+	{
+		mlt_properties properties = mlt_transition_properties( obj );
+		mlt_properties_set( properties, "mlt_type", "transition" );
+		mlt_properties_set( properties, "mlt_service", service );
+	}
+	return obj;
 }
 
 /** Fetch a consumer from the repository
@@ -98,7 +122,14 @@ mlt_transition mlt_factory_transition( char *service, void *input )
 
 mlt_consumer mlt_factory_consumer( char *service, void *input )
 {
-	return ( mlt_consumer )mlt_repository_fetch( consumers, service, input );
+	mlt_consumer obj = mlt_repository_fetch( consumers, service, input );
+	if ( obj != NULL )
+	{
+		mlt_properties properties = mlt_consumer_properties( obj );
+		mlt_properties_set( properties, "mlt_type", "consumer" );
+		mlt_properties_set( properties, "mlt_service", service );
+	}
+	return obj;
 }
 
 /** Close the factory.
@@ -106,12 +137,16 @@ mlt_consumer mlt_factory_consumer( char *service, void *input )
 
 void mlt_factory_close( )
 {
-	mlt_repository_close( producers );
-	mlt_repository_close( filters );
-	mlt_repository_close( transitions );
-	mlt_repository_close( consumers );
-	mlt_properties_close( object_list );
-	free( mlt_prefix );
-	free( object_list );
+	if ( mlt_prefix != NULL )
+	{
+		mlt_repository_close( producers );
+		mlt_repository_close( filters );
+		mlt_repository_close( transitions );
+		mlt_repository_close( consumers );
+		mlt_properties_close( object_list );
+		free( mlt_prefix );
+		free( object_list );
+		mlt_prefix = NULL;
+	}
 }
 

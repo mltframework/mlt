@@ -90,7 +90,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 					gap ++;
 				}
 			} 
-			mlt_properties_set_timecode( properties, "out", this->count );
+			mlt_properties_set_position( properties, "out", this->count * 25 );
 		}
 		else if ( strstr( filename, "/.all." ) != NULL )
 		{
@@ -117,7 +117,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 				free( de[ i ] );
 			}
 
-			mlt_properties_set_timecode( properties, "out", this->count );
+			mlt_properties_set_position( properties, "out", this->count * 25 );
 			free( de );
 			free( dir_name );
 		}
@@ -125,7 +125,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 		{
 			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
 			this->filenames[ this->count ++ ] = strdup( filename );
-			mlt_properties_set_timecode( properties, "out", 1 );
+			mlt_properties_set_position( properties, "out", 25 );
 		}
 
 		// Initialise gobject types
@@ -207,7 +207,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	int image_idx = ( int )floor( mlt_producer_position( producer ) / ttl ) % this->count;
 
 	// Update timecode on the frame we're creating
-	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );
+	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
     // optimization for subsequent iterations on single picture
 	if ( this->image != NULL && image_idx == this->image_idx )

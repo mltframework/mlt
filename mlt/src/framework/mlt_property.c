@@ -73,14 +73,14 @@ int mlt_property_set_double( mlt_property this, double value )
 	return 0;
 }
 
-/** Set a timecode on this property.
+/** Set a position on this property.
 */
 
-int mlt_property_set_timecode( mlt_property this, mlt_timecode value )
+int mlt_property_set_position( mlt_property this, mlt_position value )
 {
 	mlt_property_clear( this );
-	this->types = mlt_prop_timecode;
-	this->prop_timecode = value;
+	this->types = mlt_prop_position;
+	this->prop_position = value;
 	return 0;
 }
 
@@ -132,8 +132,8 @@ int mlt_property_get_int( mlt_property this )
 		return this->prop_int;
 	else if ( this->types & mlt_prop_double )
 		return ( int )this->prop_double;
-	else if ( this->types & mlt_prop_timecode )
-		return ( int )this->prop_timecode;
+	else if ( this->types & mlt_prop_position )
+		return ( int )this->prop_position;
 	else if ( this->types & mlt_prop_int64 )
 		return ( int )this->prop_int64;
 	else if ( this->types & mlt_prop_string )
@@ -150,8 +150,8 @@ double mlt_property_get_double( mlt_property this )
 		return this->prop_double;
 	else if ( this->types & mlt_prop_int )
 		return ( double )this->prop_int;
-	else if ( this->types & mlt_prop_timecode )
-		return ( double )this->prop_timecode;
+	else if ( this->types & mlt_prop_position )
+		return ( double )this->prop_position;
 	else if ( this->types & mlt_prop_int64 )
 		return ( double )this->prop_int64;
 	else if ( this->types & mlt_prop_string )
@@ -159,21 +159,21 @@ double mlt_property_get_double( mlt_property this )
 	return 0;
 }
 
-/** Get a timecode from this property.
+/** Get a position from this property.
 */
 
-mlt_timecode mlt_property_get_timecode( mlt_property this )
+mlt_position mlt_property_get_position( mlt_property this )
 {
-	if ( this->types & mlt_prop_timecode )
-		return this->prop_timecode;
+	if ( this->types & mlt_prop_position )
+		return this->prop_position;
 	else if ( this->types & mlt_prop_int )
-		return ( mlt_timecode )this->prop_int;
+		return ( mlt_position )this->prop_int;
 	else if ( this->types & mlt_prop_double )
-		return ( mlt_timecode )this->prop_double;
+		return ( mlt_position )this->prop_double;
 	else if ( this->types & mlt_prop_int64 )
-		return ( mlt_timecode )this->prop_int64;
+		return ( mlt_position )this->prop_int64;
 	else if ( this->types & mlt_prop_string )
-		return ( mlt_timecode )atof( this->prop_string );
+		return ( mlt_position )atol( this->prop_string );
 	return 0;
 }
 
@@ -188,10 +188,10 @@ int64_t mlt_property_get_int64( mlt_property this )
 		return ( int64_t )this->prop_int;
 	else if ( this->types & mlt_prop_double )
 		return ( int64_t )this->prop_double;
-	else if ( this->types & mlt_prop_timecode )
-		return ( int64_t )this->prop_timecode;
+	else if ( this->types & mlt_prop_position )
+		return ( int64_t )this->prop_position;
 	else if ( this->types & mlt_prop_string )
-		return ( int64_t )atof( this->prop_string );
+		return ( int64_t )atol( this->prop_string );
 	return 0;
 }
 
@@ -215,11 +215,11 @@ char *mlt_property_get_string( mlt_property this )
 			this->prop_string = malloc( 32 );
 			sprintf( this->prop_string, "%e", this->prop_double );
 		}
-		else if ( this->types & mlt_prop_timecode )
+		else if ( this->types & mlt_prop_position )
 		{
 			this->types |= mlt_prop_string;
 			this->prop_string = malloc( 32 );
-			sprintf( this->prop_string, "%e", this->prop_timecode );
+			sprintf( this->prop_string, "%lld", this->prop_position );
 		}
 		else if ( this->types & mlt_prop_int64 )
 		{

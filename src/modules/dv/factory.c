@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "producer_libdv.h"
+#include "consumer_libdv.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -41,6 +42,8 @@ void *mlt_create_transition( char *id, void *arg )
 
 void *mlt_create_consumer( char *id, void *arg )
 {
+	if ( !strcmp( id, "libdv" ) )
+		return consumer_libdv_init( arg );
 	return NULL;
 }
 

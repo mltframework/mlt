@@ -43,23 +43,23 @@ struct mlt_producer_s
 /** Public final methods
 */
 
+//extern double mlt_producer_convert_position_to_time( mlt_producer this, int64_t frame );
+//extern mlt_position mlt_producer_convert_time_to_position( mlt_producer this, double time );
+
 extern int mlt_producer_init( mlt_producer this, void *child );
 extern mlt_service mlt_producer_service( mlt_producer this );
 extern mlt_properties mlt_producer_properties( mlt_producer this );
-extern mlt_timecode mlt_producer_time( mlt_producer this, int64_t frame );
-extern int64_t mlt_producer_frame_position( mlt_producer this, mlt_timecode position );
-extern int mlt_producer_seek( mlt_producer this, mlt_timecode timecode );
-extern int mlt_producer_seek_frame( mlt_producer this, int64_t frame );
-extern mlt_timecode mlt_producer_position( mlt_producer this );
-extern uint64_t mlt_producer_frame( mlt_producer this );
+extern int mlt_producer_seek( mlt_producer this, mlt_position position );
+extern mlt_position mlt_producer_position( mlt_producer this );
+extern mlt_position mlt_producer_frame( mlt_producer this );
 extern int mlt_producer_set_speed( mlt_producer this, double speed );
 extern double mlt_producer_get_speed( mlt_producer this );
 extern double mlt_producer_get_fps( mlt_producer this );
-extern int mlt_producer_set_in_and_out( mlt_producer this, mlt_timecode in, mlt_timecode out );
-extern mlt_timecode mlt_producer_get_in( mlt_producer this );
-extern mlt_timecode mlt_producer_get_out( mlt_producer this );
-extern mlt_timecode mlt_producer_get_playtime( mlt_producer this );
-extern mlt_timecode mlt_producer_get_length( mlt_producer this );
+extern int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_position out );
+extern mlt_position mlt_producer_get_in( mlt_producer this );
+extern mlt_position mlt_producer_get_out( mlt_producer this );
+extern mlt_position mlt_producer_get_playtime( mlt_producer this );
+extern mlt_position mlt_producer_get_length( mlt_producer this );
 extern void mlt_producer_prepare_next( mlt_producer this );
 extern void mlt_producer_close( mlt_producer this );
 

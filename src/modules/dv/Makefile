@@ -2,7 +2,8 @@
 TARGET = ../libmltdv.so
 
 OBJS = factory.o \
-	   producer_libdv.o 
+	   producer_libdv.o \
+	   consumer_libdv.o
 
 CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 

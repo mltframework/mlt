@@ -7,5 +7,9 @@ cat << EOF >> ../producers.dat
 libdv			libmltdv.so
 EOF
 
+cat << EOF >> ../consumers.dat
+libdv			libmltdv.so
+EOF
+
 fi
 

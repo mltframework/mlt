@@ -53,7 +53,7 @@ mlt_frame mlt_frame_init( )
 		mlt_properties_init( properties, this );
 
 		// Set default properties on the frame
-		mlt_properties_set_timecode( properties, "timecode", 0.0 );
+		mlt_properties_set_position( properties, "position", 0.0 );
 		mlt_properties_set_data( properties, "image", NULL, 0, NULL, NULL );
 		mlt_properties_set_int( properties, "width", 720 );
 		mlt_properties_set_int( properties, "height", 576 );
@@ -98,22 +98,22 @@ int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
 	return mlt_properties_set_double( properties, "aspect_ratio", value );
 }
 
-/** Get the timecode of this frame.
+/** Get the position of this frame.
 */
 
-mlt_timecode mlt_frame_get_timecode( mlt_frame this )
+mlt_position mlt_frame_get_position( mlt_frame this )
 {
 	mlt_properties properties = mlt_frame_properties( this );
-	return mlt_properties_get_timecode( properties, "timecode" );
+	return mlt_properties_get_position( properties, "position" );
 }
 
-/** Set the timecode of this frame.
+/** Set the position of this frame.
 */
 
-int mlt_frame_set_timecode( mlt_frame this, mlt_timecode value )
+int mlt_frame_set_position( mlt_frame this, mlt_position value )
 {
 	mlt_properties properties = mlt_frame_properties( this );
-	return mlt_properties_set_timecode( properties, "timecode", value );
+	return mlt_properties_set_position( properties, "position", value );
 }
 
 /** Stack a get_image callback.
@@ -709,7 +709,7 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	int i, j;
 
 	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
-	//fprintf( stderr, "frame dest samples %d channels %d timecode %f\n", samples_dest, channels_dest, mlt_properties_get_timecode( mlt_frame_properties( this ), "timecode" ) );
+	//fprintf( stderr, "frame dest samples %d channels %d position %f\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "position" ) );
 	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
 	//fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
 	if ( channels_src > 6 )

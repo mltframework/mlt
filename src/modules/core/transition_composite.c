@@ -44,32 +44,42 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	// Get the b frame from the stack
 	mlt_frame b_frame = mlt_frame_pop_frame( this );
 
-	// Get the properties of the b frame
-	mlt_properties b_props = mlt_frame_properties( b_frame );
+	if ( b_frame != NULL )
+	{
+		// Get the properties of the b frame
+		mlt_properties b_props = mlt_frame_properties( b_frame );
 
-	// Arbitrary composite defaults
-	int x = 0;
-	int y = 0;
-	double mix = 1.0;
+		// Arbitrary composite defaults
+		int x = 0;
+		int y = 0;
+		double mix = 1.0;
 
-	// Override from b frame properties if provided
-	if ( mlt_properties_get( b_props, "x" ) != NULL )
-		x = mlt_properties_get_int( b_props, "x" );
-	if ( mlt_properties_get( b_props, "y" ) != NULL )
-		y = mlt_properties_get_int( b_props, "y" );
-	if ( mlt_properties_get( b_props, "mix" ) != NULL )
-		mix = mlt_properties_get_double( b_props, "mix" );
+		// Override from b frame properties if provided
+		if ( mlt_properties_get( b_props, "x" ) != NULL )
+			x = mlt_properties_get_int( b_props, "x" );
+		if ( mlt_properties_get( b_props, "y" ) != NULL )
+			y = mlt_properties_get_int( b_props, "y" );
+		if ( mlt_properties_get( b_props, "mix" ) != NULL )
+			mix = mlt_properties_get_double( b_props, "mix" );
 
-	// Composite the b_frame on the a_frame
-	mlt_frame_composite_yuv( this, b_frame, x, y, mix );
+		// Composite the b_frame on the a_frame
+		mlt_frame_composite_yuv( this, b_frame, x, y, mix );
 
-	// Extract the a_frame image info
-	*width = mlt_properties_get_int( a_props, "width" );
-	*height = mlt_properties_get_int( a_props, "height" );
-	*image = mlt_properties_get_data( a_props, "image", NULL );
+		// Extract the a_frame image info
+		*width = mlt_properties_get_int( a_props, "width" );
+		*height = mlt_properties_get_int( a_props, "height" );
+		*image = mlt_properties_get_data( a_props, "image", NULL );
 
-	// Close the b_frame
-	mlt_frame_close( b_frame );
+		// Close the b_frame
+		mlt_frame_close( b_frame );
+	}
+	else if ( a_props != NULL )
+	{
+		// Extract the a_frame image info
+		*width = mlt_properties_get_int( a_props, "width" );
+		*height = mlt_properties_get_int( a_props, "height" );
+		*image = mlt_properties_get_data( a_props, "image", NULL );
+	}
 
 	return 0;
 }

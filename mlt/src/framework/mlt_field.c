@@ -89,6 +89,14 @@ mlt_multitrack mlt_field_multitrack( mlt_field this )
 	return this->multitrack;
 }
 
+/** Get the tractor.
+*/
+
+mlt_tractor mlt_field_tractor( mlt_field this )
+{
+	return this->tractor;
+}
+
 /** Get the properties associated to this field.
 */
 

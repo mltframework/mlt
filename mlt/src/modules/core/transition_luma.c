@@ -339,9 +339,9 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	}
 
 	// Determine the time position of this frame in the transition duration
-	mlt_timecode in = mlt_transition_get_in( transition );
-	mlt_timecode out = mlt_transition_get_out( transition );
-	mlt_timecode time = mlt_frame_get_timecode( b_frame );
+	mlt_position in = mlt_transition_get_in( transition );
+	mlt_position out = mlt_transition_get_out( transition );
+	mlt_position time = mlt_frame_get_position( b_frame );
 	double pos = ( time - in ) / ( out - in );
 	
 	// Set the b frame properties

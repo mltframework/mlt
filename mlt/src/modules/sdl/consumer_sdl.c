@@ -529,8 +529,7 @@ static void consumer_close( mlt_consumer parent )
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );
 		
-	// Now clean up the rest (the close = NULL is a bit nasty but needed for now)
-	parent->close = NULL;
+	// Now clean up the rest
 	mlt_consumer_close( parent );
 
 	// Finally clean up this

@@ -63,8 +63,15 @@ int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 
 void mlt_consumer_close( mlt_consumer this )
 {
-	if ( this->close != NULL )
-		this->close( this );
+	// Get the childs close function
+	void ( *consumer_close )( ) = this->close;
+
+	// Make sure it only gets called once
+	this->close = NULL;
+
+	// Call the childs close if available
+	if ( consumer_close != NULL )
+		consumer_close( this );
 	else
 		mlt_service_close( &this->parent );
 }

@@ -130,11 +130,10 @@ static int producer_collect_info( producer_libdv this )
 
 			// Calculate default in/out points
 			double fps = this->is_pal ? 25 : 30000.0 / 1001.0;
-			mlt_timecode length = ( mlt_timecode )( this->frames_in_file ) / fps;
 			mlt_properties_set_double( properties, "fps", fps );
-			mlt_properties_set_timecode( properties, "length", length );
-			mlt_properties_set_timecode( properties, "in", 0.0 );
-			mlt_properties_set_timecode( properties, "out", ( mlt_timecode )( this->frames_in_file - 1 ) / fps );
+			mlt_properties_set_position( properties, "length", this->frames_in_file );
+			mlt_properties_set_position( properties, "in", 0 );
+			mlt_properties_set_position( properties, "out", this->frames_in_file - 1 );
 
 			// Parse the header for meta info
 			dv_parse_header( this->dv_decoder, dv_data );
@@ -307,7 +306,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 
 	// Update timecode on the frame we're creating
-	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );
+	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );

@@ -70,8 +70,8 @@ extern mlt_properties mlt_frame_properties( mlt_frame this );
 extern int mlt_frame_is_test_card( mlt_frame this );
 extern double mlt_frame_get_aspect_ratio( mlt_frame this );
 extern int mlt_frame_set_aspect_ratio( mlt_frame this, double value );
-extern mlt_timecode mlt_frame_get_timecode( mlt_frame this );
-extern int mlt_frame_set_timecode( mlt_frame this, mlt_timecode value );
+extern mlt_position mlt_frame_get_position( mlt_frame this );
+extern int mlt_frame_set_position( mlt_frame this, mlt_position value );
 
 extern int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame this );

@@ -240,7 +240,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	return 0;
 }
 
-FILE *producer_ffmpeg_run_video( producer_ffmpeg this, mlt_timecode position )
+FILE *producer_ffmpeg_run_video( producer_ffmpeg this, mlt_position position )
 {
 	if ( this->video == NULL )
 	{
@@ -277,7 +277,7 @@ FILE *producer_ffmpeg_run_video( producer_ffmpeg this, mlt_timecode position )
 	return this->video;
 }
 
-FILE *producer_ffmpeg_run_audio( producer_ffmpeg this, mlt_timecode position )
+FILE *producer_ffmpeg_run_audio( producer_ffmpeg this, mlt_position position )
 {
 	// Get the producer
 	mlt_producer producer = &this->parent;
@@ -530,12 +530,12 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	if ( this->end_of_video && this->end_of_audio )
 	{
 		mlt_properties_set_int( properties, "end_of_clip", 1 );
-		mlt_properties_set_timecode( producer_properties, "length", mlt_producer_position( &this->parent ) );
+		mlt_properties_set_position( producer_properties, "length", mlt_producer_position( &this->parent ) );
 		mlt_producer_set_in_and_out( &this->parent, mlt_producer_get_in( &this->parent ), mlt_producer_position( &this->parent ) );
 	}
 
 	// Update timecode on the frame we're creating
-	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );
+	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );

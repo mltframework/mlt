@@ -241,10 +241,15 @@ mlt_producer producer_inigo_init( char **argv )
 		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track );
 	}
 
-	mlt_properties props = mlt_multitrack_properties( multitrack );
+	mlt_tractor tractor = mlt_field_tractor( field );
+	mlt_producer prod = mlt_tractor_producer( tractor );
+	mlt_properties props = mlt_tractor_properties( tractor );
+	mlt_properties_set_data( props, "multitrack", multitrack, 0, NULL, NULL );
 	mlt_properties_set_data( props, "field", field, 0, NULL, NULL );
 	mlt_properties_set_data( props, "group", group, 0, NULL, NULL );
+	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) );
+	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( mlt_multitrack_producer( multitrack ) ) );
 
-	return mlt_multitrack_producer( multitrack );
+	return mlt_tractor_producer( tractor );
 }
 

@@ -50,43 +50,57 @@ static void transport_action( mlt_producer producer, char *value )
 			case '9':
 				mlt_producer_set_speed( producer, 10 );
 				break;
+			case 'd':
+				if ( multitrack != NULL )
+				{
+					int i = 0;
+					mlt_position last = -1;
+					for ( i = 0; 1; i ++ )
+					{
+						mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_start, i );
+						if ( time == last )
+							break;
+						last = time;
+						fprintf( stderr, "%d: %lld\n", i, time );
+					}
+				}
+				break;
+
 			case 'g':
 				if ( multitrack != NULL )
 				{
-					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 0 );
+					mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 0 );
 					mlt_producer_seek( producer, time );
 				}
 				break;
 			case 'h':
 				if ( multitrack != NULL )
 				{
-					mlt_producer producer = mlt_multitrack_producer( multitrack );
-					int64_t position = mlt_producer_frame_position( producer, mlt_producer_position( producer ) );
+					mlt_position position = mlt_producer_position( producer );
 					mlt_producer_set_speed( producer, 0 );
-					mlt_producer_seek_frame( producer, position - 1 >= 0 ? position - 1 : 0 );
+					mlt_producer_seek( producer, position - 1 >= 0 ? position - 1 : 0 );
 				}
 				break;
 			case 'j':
 				if ( multitrack != NULL )
 				{
-					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 1 );
+					mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 1 );
 					mlt_producer_seek( producer, time );
 				}
 				break;
 			case 'k':
 				if ( multitrack != NULL )
 				{
-					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, -1 );
+					mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, -1 );
 					mlt_producer_seek( producer, time );
 				}
 				break;
 			case 'l':
 				if ( multitrack != NULL )
 				{
-					mlt_producer producer = mlt_multitrack_producer( multitrack );
-					int64_t position = mlt_producer_frame_position( producer, mlt_producer_position( producer ) );
+					mlt_position position = mlt_producer_position( producer );
 					mlt_producer_set_speed( producer, 0 );
-					mlt_producer_seek_frame( producer, position + 1 );
+					mlt_producer_seek( producer, position + 1 );
 				}
 				break;
 		}

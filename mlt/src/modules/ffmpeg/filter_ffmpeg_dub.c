@@ -47,7 +47,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	if ( !mlt_properties_get_int( producer_properties, "end_of_clip" ) )
 	{
 		// Get the position
-		double position = mlt_properties_get_double( producer_properties, "dub_position" );
+		mlt_position position = mlt_properties_get_position( producer_properties, "dub_position" );
 
 		// We need a frame from the producer
 		mlt_frame producer_frame;
@@ -56,7 +56,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		mlt_properties_set_double( producer_properties, "fps", mlt_properties_get_double( frame_properties, "fps" ) );
 
 		// Seek to the position
-		mlt_producer_seek_frame( producer, ( int64_t )position );
+		mlt_producer_seek( producer, position );
 
 		// Get the next frame
 		producer->get_frame( producer, &producer_frame, 0 );
@@ -70,7 +70,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 			mlt_properties_set_data( frame_properties, "ffmpeg_dub_frame", producer_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
 			// Incrment the position
-			mlt_properties_set_double( producer_properties, "dub_position", position + 1 );
+			mlt_properties_set_position( producer_properties, "dub_position", position + 1 );
 		}
 	}
 
@@ -135,7 +135,7 @@ mlt_filter filter_ffmpeg_dub_init( char *file )
 	mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 	// Initialise the audio frame position
-	mlt_properties_set_double( properties, "dub_position", 0 );
+	mlt_properties_set_position( properties, "dub_position", 0 );
 
 	return this;
 }

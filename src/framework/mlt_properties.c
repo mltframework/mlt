@@ -285,16 +285,16 @@ int mlt_properties_set_double( mlt_properties this, char *name, double value )
 /** Get a value associated to the name.
 */
 
-mlt_timecode mlt_properties_get_timecode( mlt_properties this, char *name )
+mlt_position mlt_properties_get_position( mlt_properties this, char *name )
 {
 	mlt_property value = mlt_properties_find( this, name );
-	return value == NULL ? 0 : mlt_property_get_timecode( value );
+	return value == NULL ? 0 : mlt_property_get_position( value );
 }
 
 /** Set a value associated to the name.
 */
 
-int mlt_properties_set_timecode( mlt_properties this, char *name, mlt_timecode value )
+int mlt_properties_set_position( mlt_properties this, char *name, mlt_position value )
 {
 	int error = 1;
 
@@ -303,7 +303,7 @@ int mlt_properties_set_timecode( mlt_properties this, char *name, mlt_timecode v
 
 	// Set it if not NULL
 	if ( property != NULL )
-		error = mlt_property_set_timecode( property, value );
+		error = mlt_property_set_position( property, value );
 
 	return error;
 }

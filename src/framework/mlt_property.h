@@ -31,7 +31,7 @@ typedef enum
 	mlt_prop_none = 0,
 	mlt_prop_int = 1,
 	mlt_prop_string = 2,
-	mlt_prop_timecode = 4,
+	mlt_prop_position = 4,
 	mlt_prop_double = 8,
 	mlt_prop_data = 16,
 	mlt_prop_int64 = 32
@@ -48,7 +48,7 @@ typedef struct mlt_property_s
 
 	// Atomic type handling
 	int prop_int;
-	mlt_timecode prop_timecode;
+	mlt_position prop_position;
 	double prop_double;
 	int64_t prop_int64;
 
@@ -70,13 +70,13 @@ extern mlt_property mlt_property_init( );
 extern void mlt_property_clear( mlt_property this );
 extern int mlt_property_set_int( mlt_property this, int value );
 extern int mlt_property_set_double( mlt_property this, double value );
-extern int mlt_property_set_timecode( mlt_property this, mlt_timecode value );
+extern int mlt_property_set_position( mlt_property this, mlt_position value );
 extern int mlt_property_set_uint64( mlt_property this, uint64_t value );
 extern int mlt_property_set_string( mlt_property this, char *value );
 extern int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser );
 extern int mlt_property_get_int( mlt_property this );
 extern double mlt_property_get_double( mlt_property this );
-extern mlt_timecode mlt_property_get_timecode( mlt_property this );
+extern mlt_position mlt_property_get_position( mlt_property this );
 extern int64_t mlt_property_get_int64( mlt_property this );
 extern char *mlt_property_get_string( mlt_property this );
 extern void *mlt_property_get_data( mlt_property this, int *length );

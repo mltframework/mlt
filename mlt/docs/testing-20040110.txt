@@ -26,10 +26,8 @@ Incorrect Behaviour
 killall miracle does not work. requires killall -HUP
 STOP does not play the test card (white silence) (=pause)
 USTA when stopped reports "paused"
-REW when stopped does not rewind to the beginning of the clip.
 CLEAN removes all clips (as opposed to leaving the currently playing one)
 USET eof=pause is partially supported
-SIN/SOUT do not leave the unit in a paused state
 
 
 Different Intentional Behaviour

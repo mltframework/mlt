@@ -25,6 +25,8 @@
 
 extern mlt_tractor mlt_tractor_init( );
 extern mlt_service mlt_tractor_service( mlt_tractor this );
+extern mlt_producer mlt_tractor_producer( mlt_tractor this );
+extern mlt_properties mlt_tractor_properties( mlt_tractor this );
 extern int mlt_tractor_connect( mlt_tractor this, mlt_service service );
 extern void mlt_tractor_close( mlt_tractor this );
 
