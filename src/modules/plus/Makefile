@@ -3,6 +3,7 @@ include ../../../config.mak
 TARGET = ../libmltplus.so
 
 OBJS = factory.o \
+	   filter_affine.o \
 	   filter_charcoal.o \
 	   filter_invert.o \
 	   filter_sepia.o \

@@ -7,6 +7,7 @@ cat << EOF >> ../producers.dat
 EOF
 
 cat << EOF >> ../filters.dat
+affine			libmltplus.so
 charcoal		libmltplus.so
 invert			libmltplus.so
 sepia			libmltplus.so
