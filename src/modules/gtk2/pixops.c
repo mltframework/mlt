@@ -218,23 +218,19 @@ scale_line_22_yuv ( int *weights, int n_x, int n_y,
 
 		/* process U/V */
 		x_aligned = ( ( x_scaled >> 1 ) << 2 );
-		q0 = src0 + x_aligned;
-		uv_index = ( ( dest_x & 1 ) << 1 );
-		//printf( "scale_line_22_yuv: %d %d\n", x_aligned + uv_index, dest_x );
-		p  = w1 * q0[ uv_index + 1 ];
-		p += w2 * q0[ uv_index + 1 ];
-
-		x += x_step;
-		x_scaled = x >> SCALE_SHIFT;
-		dest_x++;
-		
-		x_aligned = ( ( x_scaled >> 1 ) << 2 );
-		q1 = src1 + x_aligned;
 		uv_index = ( ( dest_x & 1 ) << 1 ) + 1;
+		
+		q0 = src0 + x_aligned;
+		q1 = src1 + x_aligned;
+		p  = w1 * q0[ uv_index ];
 		p += w3 * q1[ uv_index ];
+		p += w2 * q0[ uv_index ];
 		p += w4 * q1[ uv_index ];
-		*dest++ = ( p + 0x8000 ) >> SCALE_SHIFT;
+		
+		x += x_step;
+		dest_x ++;
 
+		*dest++ = ( p + 0x8000 ) >> SCALE_SHIFT;
 	}
 
 	return dest;
