@@ -358,7 +358,6 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
 		mlt_properties_inc_ref( properties );
-		mlt_service_unlock( this );
 		result = this->get_frame( this, frame, index );
 		if ( result == 0 )
 		{
@@ -370,9 +369,11 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 			}
 			mlt_service_apply_filters( this, *frame, 1 );
 			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), this );
+			mlt_service_unlock( this );
 		}
 		else
 		{
+			mlt_service_unlock( this );
 			mlt_service_close( this );
 		}
 		return result;

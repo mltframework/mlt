@@ -399,7 +399,8 @@ mlt_position mlt_producer_get_length( mlt_producer this )
 
 void mlt_producer_prepare_next( mlt_producer this )
 {
-	mlt_producer_seek( this, mlt_producer_position( this ) + mlt_producer_get_speed( this ) );
+	if ( mlt_producer_get_speed( this ) != 0 )
+		mlt_producer_seek( this, mlt_producer_position( this ) + mlt_producer_get_speed( this ) );
 }
 
 /** Get a frame.
