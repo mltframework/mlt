@@ -137,7 +137,7 @@ static int producer_collect_info( producer_libdv this )
 			mlt_properties_set_timecode( properties, "out", length );
 
 			// Parse the header for meta info
-			dv_parse_header( this->dv_decoder, data );
+			dv_parse_header( this->dv_decoder, dv_data );
 			mlt_properties_set_double( properties, "aspect_ratio", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
 		
 			// Set the speed to normal
@@ -165,7 +165,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
 
 	// Parse the header for meta info
-	dv_parse_header( this->dv_decoder, data );
+	dv_parse_header( decoder, dv_data );
 	
 	// Assign width and height from properties
 	*width = mlt_properties_get_int( properties, "width" );
@@ -224,7 +224,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
 
 	// Parse the header for meta info
-	dv_parse_header( this->dv_decoder, data );
+	dv_parse_header( decoder, dv_data );
 
 	// Obtain required values
 	*frequency = decoder->audio->frequency;
