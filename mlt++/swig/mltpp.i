@@ -81,6 +81,7 @@ static void ruby_listener( mlt_properties owner, void *object );
 class RubyListener
 {
 	private:
+		VALUE callback;
 		Mlt::Event *event;
 
 	public:
@@ -90,7 +91,7 @@ class RubyListener
 			event = properties.listen( id, this, ( mlt_listener )ruby_listener );
 		}
 
-		~RubyList( )
+		~RubyListener( )
 		{
 			delete event;
 		}
@@ -105,9 +106,6 @@ class RubyListener
         	ID method = rb_intern( "call" );
         	rb_funcall( callback, method, 0 );
     	}
-
-	private:
-		VALUE callback;
 };
 
 static void ruby_listener( mlt_properties owner, void *object )

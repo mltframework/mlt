@@ -77,7 +77,9 @@ Frame *Service::get_frame( int index )
 {
 	mlt_frame frame = NULL;
 	mlt_service_get_frame( get_service( ), &frame, index );
-	return new Frame( frame );
+	Frame *result = new Frame( frame );
+	mlt_frame_close( frame );
+	return result;
 }
 
 service_type Service::type( )
