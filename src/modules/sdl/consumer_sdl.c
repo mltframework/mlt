@@ -94,18 +94,18 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// process actual param
 		if ( arg == NULL || !strcmp( arg, "PAL" ) )
 		{
-			this->width = 720;
-			this->height = 576;
+			this->window_width = 720;
+			this->window_height = 576;
 		}
 		else if ( !strcmp( arg, "NTSC" ) )
 		{
-			this->width = 720;
-			this->height = 480;
+			this->window_width = 720;
+			this->window_height = 480;
 		}
-		else if ( sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
+		else if ( sscanf( arg, "%dx%d", &this->window_width, &this->window_height ) != 2 )
 		{
-			this->width = 720;
-			this->height = 576;
+			this->window_width = 720;
+			this->window_height = 576;
 		}
 
 		// Create the the thread
@@ -308,12 +308,13 @@ static void *consumer_thread( void *arg )
 						}
 					}
 	
-					if ( width != this->width || height != this->height )
-					{
-						this->width = width;
-						this->height = height;
-						changed = 1;
-					}
+				}
+
+				if ( width != this->width || height != this->height )
+				{
+					this->width = width;
+					this->height = height;
+					changed = 1;
 				}
 
 				if ( sdl_screen == NULL || changed )
@@ -322,12 +323,6 @@ static void *consumer_thread( void *arg )
 	
 					if ( mlt_properties_get_double( properties, "aspect_ratio" ) )
 						aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
-	
-					if ( this->window_width == 0 || this->window_height == 0 )
-					{
-						this->window_width = width;
-						this->window_height = height;
-					}
 	
 					// open SDL window with video overlay, if possible
 					sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, sdl_flags );

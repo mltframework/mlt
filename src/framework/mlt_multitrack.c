@@ -95,7 +95,7 @@ mlt_properties mlt_multitrack_properties( mlt_multitrack this )
 /** Initialise timecode related information.
 */
 
-static void mlt_multitrack_refresh( mlt_multitrack this )
+void mlt_multitrack_refresh( mlt_multitrack this )
 {
 	int i = 0;
 
@@ -236,6 +236,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		// Move on to the next frame
 		if ( index >= this->count )
 			mlt_producer_prepare_next( parent );
+
+		// Refresh our stats
+		mlt_multitrack_refresh( this );
 	}
 
 	return 0;

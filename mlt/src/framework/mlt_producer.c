@@ -52,6 +52,7 @@ int mlt_producer_init( mlt_producer this, void *child )
 		mlt_properties properties = mlt_service_properties( parent );
 
 		// Set the default properties
+		mlt_properties_set( properties, "mlt_type", "mlt_producer" );
 		mlt_properties_set_timecode( properties, "position", 0.0 );
 		mlt_properties_set_double( properties, "frame", 1 );
 		mlt_properties_set_double( properties, "fps", 25.0 );
@@ -60,6 +61,8 @@ int mlt_producer_init( mlt_producer this, void *child )
 		mlt_properties_set_timecode( properties, "out", 36000.0 );
 		mlt_properties_set_timecode( properties, "playtime", 36000.0 );
 		mlt_properties_set_timecode( properties, "length", 36000.0 );
+		mlt_properties_set_int( properties, "known_length", 1 );
+		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 
 		// Override service get_frame
 		parent->get_frame = producer_get_frame;

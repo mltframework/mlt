@@ -184,6 +184,43 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 	return producer;
 }
 
+static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
+{
+	// Default producer to blank
+	mlt_producer producer = &this->blank;
+
+	// Map playlist position to real producer in virtual playlist
+	mlt_timecode position = mlt_producer_position( &this->parent );
+
+	// Loop through the virtual playlist
+	int i = 0;
+
+	for ( i = 0; i < this->count; i ++ )
+	{
+		if ( position < this->list[ i ]->playtime )
+		{
+			// Found it, now break
+			producer = this->list[ i ]->producer;
+			position += this->list[ i ]->in;
+			break;
+		}
+		else
+		{
+			// Decrement position by length of this entry
+			position -= this->list[ i ]->playtime;
+		}
+	}
+
+	// Seek in real producer to relative position
+	if ( i < this->count )
+	{
+		fprintf( stderr, "END OF CLIP %d AT %e\n", i, position );
+		this->list[ i ]->playtime = position - this->list[ i ]->in;
+	}
+
+	return producer;
+}
+
 /** Append a producer to the playlist.
 */
 
@@ -215,6 +252,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Get the frame
 	mlt_service_get_frame( mlt_producer_service( real ), frame, index );
+
+	// Check if we're at the end of the clip
+	mlt_properties properties = mlt_frame_properties( *frame );
+	if ( mlt_properties_get_int( properties, "end_of_clip" ) )
+		mlt_playlist_virtual_set_out( this );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );
