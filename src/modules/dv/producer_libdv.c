@@ -20,6 +20,9 @@
 
 #include "producer_libdv.h"
 #include <framework/mlt_frame.h>
+#include <framework/mlt_deque.h>
+#include <framework/mlt_factory.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -29,13 +32,94 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+/** To conserve resources, we maintain a stack of dv decoders.
+*/
+
+static pthread_mutex_t decoder_lock = PTHREAD_MUTEX_INITIALIZER;
+static mlt_properties dv_decoders = NULL;
+
+dv_decoder_t *dv_decoder_alloc( )
+{
+	// We'll return a dv_decoder
+	dv_decoder_t *this = NULL;
+
+	// Lock the mutex
+	pthread_mutex_lock( &decoder_lock );
+
+	// Create the properties if necessary
+	if ( dv_decoders == NULL )
+	{
+		// Create the properties
+		dv_decoders = mlt_properties_new( );
+
+		// Create the stack
+		mlt_properties_set_data( dv_decoders, "stack", mlt_deque_init( ), 0, ( mlt_destructor )mlt_deque_close, NULL );
+
+		// Register the properties for clean up
+		mlt_factory_register_for_clean_up( dv_decoders, ( mlt_destructor )mlt_properties_close );
+	}
+
+	// Now try to obtain a decoder
+	if ( dv_decoders != NULL )
+	{
+		// Obtain the stack
+		mlt_deque stack = mlt_properties_get_data( dv_decoders, "stack", NULL );
+
+		// Pop the top of the stack
+		this = mlt_deque_pop_back( stack );
+
+		// Create a new decoder if none available
+		if ( this == NULL )
+		{
+			// We'll need a unique property ID for this
+			char label[ 256 ];
+
+			// Configure the decoder
+			this = dv_decoder_new( FALSE, FALSE, FALSE );
+			this->quality = DV_QUALITY_COLOR | DV_QUALITY_AC_1;
+			this->audio->arg_audio_emphasis = 2;
+			dv_set_audio_correction( this, DV_AUDIO_CORRECT_AVERAGE );
+
+			// Register it with the properties to ensure clean up
+			// BUG: dv_decoder_free core dumps here
+			sprintf( label, "%p", this );
+			//mlt_properties_set_data( dv_decoders, label, this, 0, ( mlt_destructor )dv_decoder_free, NULL );
+			mlt_properties_set_data( dv_decoders, label, this, 0, NULL, NULL );
+		}
+	}
+
+	// Unlock the mutex
+	pthread_mutex_unlock( &decoder_lock );
+
+	return this;
+}
+
+void dv_decoder_return( dv_decoder_t *this )
+{
+	// Lock the mutex
+	pthread_mutex_lock( &decoder_lock );
+
+	// Now try to return the decoder
+	if ( dv_decoders != NULL )
+	{
+		// Obtain the stack
+		mlt_deque stack = mlt_properties_get_data( dv_decoders, "stack", NULL );
+
+		// Push it back
+		mlt_deque_push_back( stack, this );
+	}
+
+	// Unlock the mutex
+	pthread_mutex_unlock( &decoder_lock );
+}
+
+
 typedef struct producer_libdv_s *producer_libdv;
 
 struct producer_libdv_s
 {
 	struct mlt_producer_s parent;
 	int fd;
-	dv_decoder_t *dv_decoder;
 	int is_pal;
 	uint64_t file_size;
 	int frame_size;
@@ -61,12 +145,6 @@ mlt_producer producer_libdv_init( char *filename )
 
 		// Register our get_frame implementation with the producer
 		producer->get_frame = producer_get_frame;
-
-		// Create the dv_decoder
-		this->dv_decoder = dv_decoder_new( FALSE, FALSE, FALSE );
-		this->dv_decoder->quality = DV_QUALITY_COLOR | DV_QUALITY_AC_1;
-		this->dv_decoder->audio->arg_audio_emphasis = 2;
-		dv_set_audio_correction( this->dv_decoder, DV_AUDIO_CORRECT_AVERAGE );
 
 		// Open the file if specified
 		this->fd = open( filename, O_RDONLY );
@@ -125,6 +203,9 @@ static int producer_collect_info( producer_libdv this )
 			// Get the properties
 			mlt_properties properties = mlt_producer_properties( &this->parent );
 
+			// Get a dv_decoder
+			dv_decoder_t *dv_decoder = dv_decoder_alloc( );
+
 			// Determine the file size
 			struct stat buf;
 			fstat( this->fd, &buf );
@@ -152,9 +233,12 @@ static int producer_collect_info( producer_libdv this )
 			}
 
 			// Parse the header for meta info
-			dv_parse_header( this->dv_decoder, dv_data );
+			dv_parse_header( dv_decoder, dv_data );
 			mlt_properties_set_double( properties, "aspect_ratio", 
-				dv_format_wide( this->dv_decoder ) ? ( this->is_pal ? 512.0/351.0 : 96.0/79.0 ) : ( this->is_pal ? 128.0/117.0 : 72.0/79.0 ) );
+				dv_format_wide( dv_decoder ) ? ( this->is_pal ? 512.0/351.0 : 96.0/79.0 ) : ( this->is_pal ? 128.0/117.0 : 72.0/79.0 ) );
+
+			// Return the decoder
+			dv_decoder_return( dv_decoder );
 		}
 
 		mlt_pool_release( dv_data );
@@ -171,11 +255,24 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	// Get the frames properties
 	mlt_properties properties = mlt_frame_properties( this );
 
-	// Get the dv decoder
-	dv_decoder_t *decoder = mlt_properties_get_data( properties, "dv_decoder", NULL );
+	// Get a dv_decoder
+	dv_decoder_t *decoder = dv_decoder_alloc( );
 
 	// Get the dv data
 	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
+
+	// Get and set the quality request
+	char *quality = mlt_frame_pop_service( this );
+
+	if ( quality != NULL )
+	{
+		if ( strncmp( quality, "fast", 4 ) == 0 )
+			decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_DC );
+		else if ( strncmp( quality, "best", 4 ) == 0 )
+			decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_AC_2 );
+		else
+			decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_AC_1 );
+	}
 
 	// Parse the header for meta info
 	dv_parse_header( decoder, dv_data );
@@ -218,6 +315,9 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 		*buffer = image;
 	}
 
+	// Return the decoder
+	dv_decoder_return( decoder );
+
 	return 0;
 }
 
@@ -230,8 +330,8 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	// Get the frames properties
 	mlt_properties properties = mlt_frame_properties( this );
 
-	// Get the dv decoder
-	dv_decoder_t *decoder = mlt_properties_get_data( properties, "dv_decoder", NULL );
+	// Get a dv_decoder
+	dv_decoder_t *decoder = dv_decoder_alloc( );
 
 	// Get the dv data
 	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
@@ -277,6 +377,9 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 		mlt_frame_get_audio( this, buffer, format, frequency, channels, samples );
 	}
 
+	// Return the decoder
+	dv_decoder_return( decoder );
+
 	return 0;
 }
 
@@ -302,8 +405,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Get the frames properties
 		mlt_properties properties = mlt_frame_properties( *frame );
 
-		// Pass the dv decoder
-		mlt_properties_set_data( properties, "dv_decoder", this->dv_decoder, 0, NULL, NULL );
+		// Get a dv_decoder
+		dv_decoder_t *dv_decoder = dv_decoder_alloc( );
 
 		// Pass the dv data
 		mlt_properties_set_data( properties, "dv_data", data, frame_size_625_50, ( mlt_destructor )mlt_pool_release, NULL );
@@ -313,28 +416,23 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "height", this->is_pal ? 576 : 480 );
 		mlt_properties_set_int( properties, "top_field_first", 0 );
 
-		char *quality = mlt_properties_get( mlt_producer_properties( producer ), "quality" );
-		if ( quality != NULL )
-		{
-			if ( strncmp( quality, "fast", 4 ) == 0 )
-				this->dv_decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_DC );
-			else if ( strncmp( quality, "best", 4 ) == 0 )
-				this->dv_decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_AC_2 );
-			else
-				this->dv_decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_AC_1 );
-		}
-		
 		// Parse the header for meta info
-		dv_parse_header( this->dv_decoder, data );
-		mlt_properties_set_int( properties, "progressive", dv_is_progressive( this->dv_decoder ) );
+		dv_parse_header( dv_decoder, data );
+		mlt_properties_set_int( properties, "progressive", dv_is_progressive( dv_decoder ) );
 		mlt_properties_set_double( properties, "aspect_ratio", 
-			dv_format_wide( this->dv_decoder ) ? ( this->is_pal ? 512.0/351.0 : 96.0/79.0 ) : ( this->is_pal ? 128.0/117.0 : 72.0/79.0 ) );
+			dv_format_wide( dv_decoder ) ? ( this->is_pal ? 512.0/351.0 : 96.0/79.0 ) : ( this->is_pal ? 128.0/117.0 : 72.0/79.0 ) );
 
 		// Hmm - register audio callback
 		( *frame )->get_audio = producer_get_audio;
-		
+
+		// Push the quality string
+		mlt_frame_push_service( *frame, mlt_properties_get( mlt_producer_properties( producer ), "quality" ) );
+
 		// Push the get_image method on to the stack
 		mlt_frame_push_get_image( *frame, producer_get_image );
+
+		// Return the decoder
+		dv_decoder_return( dv_decoder );
 	}
 	else
 	{
@@ -354,9 +452,6 @@ static void producer_close( mlt_producer parent )
 {
 	// Obtain this
 	producer_libdv this = parent->child;
-
-	// Free the dv deconder
-	//dv_decoder_free( this->dv_decoder );
 
 	// Close the file
 	if ( this->fd > 0 )

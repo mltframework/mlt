@@ -30,6 +30,7 @@ extern mlt_producer mlt_factory_producer( char *name, void *input );
 extern mlt_filter mlt_factory_filter( char *name, void *input );
 extern mlt_transition mlt_factory_transition( char *name, void *input );
 extern mlt_consumer mlt_factory_consumer( char *name, void *input );
+extern void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor );
 extern void mlt_factory_close( );
 
 #endif

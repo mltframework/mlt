@@ -42,21 +42,38 @@ typedef struct
 }
 property_list;
 
+/** Memory leak checks.
+*/
+
+#ifdef _MLT_PROPERTY_CHECKS_
+static int properties_created = 0;
+static int properties_destroyed = 0;
+#endif
+
 /** Basic implementation.
 */
 
 int mlt_properties_init( mlt_properties this, void *child )
 {
-	// NULL all methods
-	memset( this, 0, sizeof( struct mlt_properties_s ) );
+	if ( this != NULL )
+	{
+#ifdef _MLT_PROPERTY_CHECKS_
+		// Increment number of properties created
+		properties_created ++;
+#endif
 
-	// Assign the child of the object
-	this->child = child;
+		// NULL all methods
+		memset( this, 0, sizeof( struct mlt_properties_s ) );
 
-	// Allocate the private structure
-	this->private = calloc( sizeof( property_list ), 1 );
+		// Assign the child of the object
+		this->child = child;
 
-	return this->private == NULL;
+		// Allocate the private structure
+		this->private = calloc( sizeof( property_list ), 1 );
+	}
+
+	// Check that initialisation was successful
+	return this != NULL && this->private == NULL;
 }
 
 /** Constructor for stand alone object.
@@ -520,7 +537,7 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 	property_list *list = this->private;
 	int i = 0;
 	for ( i = 0; i < list->count; i ++ )
-		fprintf( stderr, "%s = %s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
+		fprintf( stderr, "%s=%s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
 }
 
 /** Close the list.
@@ -528,23 +545,34 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 
 void mlt_properties_close( mlt_properties this )
 {
-	property_list *list = this->private;
-	int index = 0;
-
-	// Clean up names and values
-	for ( index = list->count - 1; index >= 0; index -- )
+	if ( this != NULL )
 	{
-		free( list->name[ index ] );
-		mlt_property_close( list->value[ index ] );
+		property_list *list = this->private;
+		int index = 0;
+
+		// Clean up names and values
+		for ( index = list->count - 1; index >= 0; index -- )
+		{
+			free( list->name[ index ] );
+			mlt_property_close( list->value[ index ] );
+		}
+
+		// Clear up the list
+		free( list->name );
+		free( list->value );
+		free( list );
+
+		// Free this now if this has no child
+		if ( this->child == NULL )
+			free( this );
+
+#ifdef _MLT_PROPERTY_CHECKS_
+		// Increment destroyed count
+		properties_destroyed ++;
+
+		// Show current stats - these should match when the app is closed
+		fprintf( stderr, "Created %d, destroyed %d\n", properties_created, properties_destroyed );
+#endif
 	}
-
-	// Clear up the list
-	free( list->name );
-	free( list->value );
-	free( list );
-
-	// Free this now if this has no child
-	if ( this->child == NULL )
-		free( this );
 }
 

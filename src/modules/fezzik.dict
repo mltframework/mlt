@@ -13,6 +13,7 @@ http://*=avformat
 *.mpg=mcmpeg,avformat
 *.mpeg=mcmpeg,avformat
 *.ogg=vorbis
+*.pgm=pixbuf
 *.png=pixbuf
 *.svg=pixbuf
 *.tga=pixbuf

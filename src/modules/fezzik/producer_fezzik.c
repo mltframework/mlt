@@ -88,6 +88,7 @@ static mlt_producer create_producer( char *file )
 			char temp[ 1024 ];
 			sprintf( temp, "%s/fezzik.dict", mlt_factory_prefix( ) );
 			dictionary = mlt_properties_load( temp );
+			mlt_factory_register_for_clean_up( dictionary, ( mlt_destructor )mlt_properties_close );
 		}
 
 		// Convert the lookup string to lower case

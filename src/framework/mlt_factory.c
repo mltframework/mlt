@@ -174,6 +174,16 @@ mlt_consumer mlt_factory_consumer( char *service, void *input )
 	return obj;
 }
 
+/** Register an object for clean up.
+*/
+
+void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor )
+{
+	char unique[ 256 ];
+	sprintf( unique, "%08d", mlt_properties_count( global_properties ) );
+	mlt_properties_set_data( global_properties, unique, ptr, 0, destructor, NULL );
+}
+
 /** Close the factory.
 */
 

@@ -106,6 +106,9 @@ static void *pool_fetch( mlt_pool this )
 			// Initialise it
 			if ( release != NULL )
 			{
+				// Increment the number of items allocated to this pool
+				this->count ++;
+
 				// Assign the pool
 				release->pool = this;
 
@@ -297,6 +300,17 @@ void mlt_pool_release( void *release )
 
 void mlt_pool_close( )
 {
+#ifdef _MLT_POOL_CHECKS_
+	// Stats dump on close
+	int i = 0;
+	for ( i = 0; i < mlt_properties_count( pools ); i ++ )
+	{
+		mlt_pool pool = mlt_properties_get_data_at( pools, i, NULL );
+		if ( pool->count )
+			fprintf( stderr, "%d: allocated %d returned %d\n", pool->size, pool->count, mlt_deque_count( pool->stack ) );
+	}
+#endif
+
 	// Close the properties
 	mlt_properties_close( pools );
 }
