@@ -278,6 +278,8 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int32_t in,
 		mlt_properties properties = unit->properties;
 		mlt_properties_set_data( unit->producers, clip, instance, 0, ( mlt_destructor )mlt_producer_close, NULL );
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+		mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
+		mlt_consumer_purge( consumer );
 		mlt_playlist_append_io( playlist, instance, in, out );
 		miracle_log( LOG_DEBUG, "loaded clip %s", clip );
 		miracle_unit_status_communicate( unit );
@@ -327,7 +329,9 @@ valerie_error_code miracle_unit_clean( miracle_unit unit )
 
 valerie_error_code miracle_unit_clear( miracle_unit unit )
 {
+	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
 	clear_unit( unit );
+	mlt_consumer_purge( consumer );
 	miracle_log( LOG_DEBUG, "Cleared playlist" );
 	miracle_unit_status_communicate( unit );
 	return valerie_ok;

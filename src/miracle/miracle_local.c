@@ -504,7 +504,7 @@ static void miracle_local_close( miracle_local local )
 {
 	miracle_delete_all_units();
 #ifdef linux
-	pthread_kill_other_threads_np();
+	//pthread_kill_other_threads_np();
 	miracle_log( LOG_DEBUG, "Clean shutdown." );
 	free( local );
 	mlt_factory_close( );
