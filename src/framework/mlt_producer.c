@@ -526,7 +526,7 @@ static void mlt_producer_set_clones( mlt_producer this, int clones )
 			{
 				mlt_producer clone = mlt_producer_clone( parent );
 				sprintf( key, "_clone.%d", i );
-				mlt_properties_set_data( properties, key, clone, 0, ( mlt_destructor )mlt_producer_clone, NULL );
+				mlt_properties_set_data( properties, key, clone, 0, ( mlt_destructor )mlt_producer_close, NULL );
 			}
 		}
 		else

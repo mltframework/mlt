@@ -34,8 +34,6 @@ static int on_unknown( mlt_parser this, mlt_service object )
 
 static int on_start_producer( mlt_parser this, mlt_producer object )
 {
-	if ( !mlt_producer_is_mix( mlt_producer_cut_parent( object ) ) && mlt_producer_is_cut( object ) )
-		mlt_properties_debug( mlt_producer_properties( object ), "cut", stderr );
 	return 0;
 }
 
