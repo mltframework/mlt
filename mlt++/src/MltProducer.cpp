@@ -70,6 +70,11 @@ mlt_producer Producer::get_producer( )
 	return instance;
 }
 
+mlt_producer Producer::get_parent( )
+{
+	return get_producer( ) != NULL && mlt_producer_cut_parent( get_producer( ) ) != NULL ? mlt_producer_cut_parent( get_producer( ) ) : get_producer( );
+}
+
 mlt_service Producer::get_service( )
 {
 	return mlt_producer_service( get_producer( ) );
@@ -136,6 +141,11 @@ Producer *Producer::cut( int in, int out )
 	Producer *result = new Producer( producer );
 	mlt_producer_close( producer );
 	return result;
+}
+
+bool Producer::is_cut( )
+{
+	return mlt_producer_is_cut( get_producer( ) );
 }
 
 bool Producer::same_clip( Producer &that )

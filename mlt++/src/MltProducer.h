@@ -42,6 +42,7 @@ namespace Mlt
 			Producer( Producer &producer );
 			virtual ~Producer( );
 			virtual mlt_producer get_producer( );
+			mlt_producer get_parent( );
 			mlt_service get_service( );
 			int seek( int position );
 			int position( );
@@ -55,6 +56,7 @@ namespace Mlt
 			int get_length( );
 			int get_playtime( );
 			Producer *cut( int in = 0, int out = -1 );
+			bool is_cut( );
 			bool same_clip( Producer &that );
 			bool runs_into( Producer &that );
 	};
