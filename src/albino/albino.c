@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sched.h>
 
 /* Application header files */
 #include <miracle/miracle_local.h>
@@ -58,6 +59,13 @@ int main( int argc, char **argv  )
 	}
 	else
 	{
+		struct sched_param scp;
+	
+		// Use realtime scheduling if possible
+		memset( &scp, '\0', sizeof( scp ) );
+		scp.sched_priority = sched_get_priority_max( SCHED_FIFO ) - 1;
+		sched_setscheduler( 0, SCHED_RR, &scp );
+
 		printf( "Miracle Standalone Instance\n" );
 		parser = miracle_parser_init_local( );
 		response = valerie_parser_connect( parser );

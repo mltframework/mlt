@@ -59,6 +59,7 @@ mlt_producer producer_hold_init( char *arg )
 		mlt_properties_set_position( properties, "out", 25 );
 		mlt_properties_set_position( properties, "length", 15000 );
 		mlt_properties_set( properties, "resource", arg );
+		mlt_properties_set( properties, "method", "onefield" );
 
 		// Override the get_frame method
 		this->get_frame = producer_get_frame;
@@ -182,6 +183,9 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 		// Ensure that the consumer sees what the real frame has
 		mlt_properties_pass( MLT_FRAME_PROPERTIES( *frame ), MLT_FRAME_PROPERTIES( real_frame ), "" );
+
+		mlt_properties_set( MLT_FRAME_PROPERTIES( real_frame ), "deinterlace_method",
+			mlt_properties_get( properties, "method" ) );
 	}
 
 	// Move to the next position

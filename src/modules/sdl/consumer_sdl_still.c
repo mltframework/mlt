@@ -158,8 +158,6 @@ static int consumer_start( mlt_consumer parent )
 
 	if ( !this->running )
 	{
-		pthread_attr_t thread_attributes;
-
 		// Attach a colour space converter
 		if ( !this->filtered )
 		{
@@ -185,11 +183,7 @@ static int consumer_start( mlt_consumer parent )
 
 		//this->width = this->height * this->display_aspect;
 
-		// Inherit the scheduling priority
-		pthread_attr_init( &thread_attributes );
-		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
-
-		pthread_create( &this->thread, &thread_attributes, consumer_thread, this );
+		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
 
 	return 0;

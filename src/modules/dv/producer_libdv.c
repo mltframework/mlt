@@ -79,6 +79,7 @@ dv_decoder_t *dv_decoder_alloc( )
 			this->quality = DV_QUALITY_COLOR | DV_QUALITY_AC_2;
 			this->audio->arg_audio_emphasis = 2;
 			dv_set_audio_correction( this, DV_AUDIO_CORRECT_AVERAGE );
+			dv_set_error_log( this, NULL );
 
 			// Register it with the properties to ensure clean up
 			sprintf( label, "%p", this );

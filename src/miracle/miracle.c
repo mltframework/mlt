@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
+#include <sched.h>
 
 #include <framework/mlt.h>
 
@@ -66,6 +67,12 @@ int main( int argc, char **argv )
 	int index = 0;
 	int background = 1;
 	struct timespec tm = { 5, 0 };
+	struct sched_param scp;
+
+	// Use realtime scheduling if possible
+	memset( &scp, '\0', sizeof( scp ) );
+	scp.sched_priority = sched_get_priority_max( SCHED_FIFO ) - 1;
+	sched_setscheduler( 0, SCHED_RR, &scp );
 
 	mlt_factory_init( NULL );
 

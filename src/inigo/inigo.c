@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sched.h>
 
 #include <framework/mlt.h>
 
@@ -191,6 +192,12 @@ int main( int argc, char **argv )
 	mlt_producer inigo = NULL;
 	FILE *store = NULL;
 	char *name = NULL;
+	struct sched_param scp;
+
+	// Use realtime scheduling if possible
+	memset( &scp, '\0', sizeof( scp ) );
+	scp.sched_priority = sched_get_priority_max( SCHED_FIFO ) - 1;
+	sched_setscheduler( 0, SCHED_FIFO, &scp );
 
 	// Construct the factory
 	mlt_factory_init( NULL );

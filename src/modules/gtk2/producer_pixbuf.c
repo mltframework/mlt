@@ -315,7 +315,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		else if ( strchr( filename, '%' ) != NULL )
 		{
 			// handle picture sequences
-			int i = 0;
+			int i = mlt_properties_get_int( properties, "begin" );
 			int gap = 0;
 			char full[1024];
 

@@ -95,7 +95,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		char *method_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "method" );
 		int method = DEINTERLACE_LINEARBLEND;
 		
-		if ( strcmp( method_str, "bob" ) == 0 )
+		if ( method_str == NULL )
+			method_str = mlt_properties_get( MLT_FRAME_PROPERTIES( this ), "deinterlace_method" );
+		
+		if ( method_str == NULL )
+			mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "method", "linearblend" );
+		else if ( strcmp( method_str, "bob" ) == 0 )
 			method = DEINTERLACE_BOB;
 		else if ( strcmp( method_str, "weave" ) == 0 )
 			method = DEINTERLACE_BOB;
@@ -142,7 +147,7 @@ mlt_filter filter_deinterlace_init( void *arg )
 	if ( this != NULL )
 	{
 		this->process = deinterlace_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "method", arg == NULL ? "linearblend" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "method", arg );
 	}
 	return this;
 }

@@ -158,9 +158,6 @@ static void *miracle_server_run( void *arg )
 	   their resources get freed automatically. (CY: ... hmmph...) */
 	pthread_attr_init( &thread_attributes );
 	pthread_attr_setdetachstate( &thread_attributes, PTHREAD_CREATE_DETACHED );
-	pthread_attr_init( &thread_attributes );
-	pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
-	/* pthread_attr_setschedpolicy( &thread_attributes, SCHED_RR ); */
 
 	while ( !server->shutdown )
 	{
@@ -267,25 +264,13 @@ int miracle_server_execute( miracle_server server )
 
 		if ( response != NULL )
 		{
-			pthread_attr_t attr;
 			int result;
-			pthread_attr_init( &attr );
-			pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_JOINABLE );
-			pthread_attr_setinheritsched( &attr, PTHREAD_EXPLICIT_SCHED );
-			pthread_attr_setschedpolicy( &attr, SCHED_FIFO );
-			pthread_attr_setscope( &attr, PTHREAD_SCOPE_SYSTEM );
 			valerie_response_close( response );
-			result = pthread_create( &server->thread, &attr, miracle_server_run, server );
+			result = pthread_create( &server->thread, NULL, miracle_server_run, server );
 			if ( result )
 			{
-				miracle_log( LOG_WARNING, "Failed to schedule realtime (%s)", strerror(errno) );
-				pthread_attr_setschedpolicy( &attr, SCHED_OTHER );
-				result = pthread_create( &server->thread, &attr, miracle_server_run, server );
-				if ( result )
-				{
-					miracle_log( LOG_CRIT, "Failed to launch TCP listener thread" );
-					error = -1;
-				}
+				miracle_log( LOG_CRIT, "Failed to launch TCP listener thread" );
+				error = -1;
 			}
 		}
 	}
