@@ -177,9 +177,8 @@ int main( int argc, char **argv )
 			else if ( !strcmp( argv[ i ], "-consumer" ) )
 			{
 				consumer = create_consumer( argv[ ++ i ], inigo );
-				while ( strstr( argv[ ++ i ], "=" ) )
-					mlt_properties_parse( group, argv[ i ] );
-				i --;
+				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
+					mlt_properties_parse( group, argv[ ++ i ] );
 			}
 			else
 			{
@@ -211,8 +210,6 @@ int main( int argc, char **argv )
 			// Transport functionality
 			transport( inigo );
 			
-			// Close the consumer
-			mlt_consumer_close( consumer );
 		}
 		else if ( store != NULL )
 		{
@@ -220,8 +217,6 @@ int main( int argc, char **argv )
 			fclose( store );
 		}
 
-		// Close the producer
-		mlt_producer_close( inigo );
 	}
 	else
 	{
@@ -232,6 +227,14 @@ int main( int argc, char **argv )
 						 "             [ -blank time ]\n"
         				 "             [ producer [ name=value ] * ]+\n" );
 	}
+
+	// Close the consumer
+	if ( consumer != NULL )
+		mlt_consumer_close( consumer );
+
+	// Close the producer
+	if ( inigo != NULL )
+		mlt_producer_close( inigo );
 
 	// Close the factory
 	mlt_factory_close( );

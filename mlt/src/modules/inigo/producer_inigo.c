@@ -158,11 +158,7 @@ mlt_producer producer_inigo_init( char **argv )
 	// Parse the arguments
 	for ( i = 0; argv[ i ] != NULL; i ++ )
 	{
-		if ( !strcmp( argv[ i ], "-serialise" ) )
-		{
-			i ++;
-		}
-		else if ( !strcmp( argv[ i ], "-group" ) )
+		if ( !strcmp( argv[ i ], "-group" ) )
 		{
 			if ( mlt_properties_count( group ) != 0 )
 			{
@@ -222,9 +218,12 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else
 		{
-			while ( argv[ i ] != NULL && argv[ i ][ 0 ] != '-' )
+			if ( !strcmp( argv[ i ], "-serialise" ) )
 				i ++;
-			i --;
+			else if ( !strcmp( argv[ i ], "-consumer" ) )
+				i ++;
+			else while ( argv[ i ] != NULL && argv[ i ][ 0 ] != '-' )
+				i ++;
 		}
 	}
 
