@@ -16,13 +16,13 @@ HíÉà~ÉÒ+àeôÒ`ò­÷ +y«ÉKÉ §ÉÉWð~É]]></property>
   </producer>
   <tractor>
     <multitrack>
-      <track producer="video"/>
       <track producer="title"/>
+      <track producer="video"/>
     </multitrack>
     <transition in="0" out="150">
       <property name="mlt_service">composite</property>
-      <property name="a_track">0</property>
-      <property name="b_track">1</property>
+      <property name="a_track">1</property>
+      <property name="b_track">0</property>
       <property name="start">-70%,65%:100%x35%:0</property>
       <property name="key[25]">0,65%:100%x35%:100</property>
       <property name="key[125]">0,65%:100%x35%:100</property>

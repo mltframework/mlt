@@ -642,7 +642,14 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 	// Instantiate the producer
 	if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
 	{
-		service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "mlt_service" ) ) );
+		char temp[ 1024 ];
+		strncpy( temp, mlt_properties_get( properties, "mlt_service" ), 1024 );
+		if ( resource != NULL )
+		{
+			strcat( temp, ":" );
+			strncat( temp, resource, 1023 - strlen( temp ) );
+		}
+		service = MLT_SERVICE( mlt_factory_producer( "fezzik", temp ) );
 	}
 	if ( service == NULL && resource != NULL )
 	{

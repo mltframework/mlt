@@ -57,6 +57,7 @@ mlt_producer producer_hold_init( char *arg )
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 25 );
 		mlt_properties_set_position( properties, "length", 15000 );
+		mlt_properties_set( properties, "resource", arg );
 
 		// Override the get_frame method
 		this->get_frame = producer_get_frame;
@@ -64,8 +65,10 @@ mlt_producer producer_hold_init( char *arg )
 	else
 	{
 		// Clean up (not sure which one failed, can't be bothered to find out, so close both)
-		mlt_producer_close( this );
-		mlt_producer_close( producer );
+		if ( this )
+			mlt_producer_close( this );
+		if ( producer )
+			mlt_producer_close( producer );
 
 		// Make sure we return NULL
 		this = NULL;

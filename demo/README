@@ -2,8 +2,8 @@ MLT Demo Notes
 
 Before running the demo script, make sure you '. setenv' from the parent
 directory. Also, please create clips clip1.dv, clip2.dv, clip3.dv, clip1.mpeg,
-clip2.mpeg, clip3.mpeg, and music1.ogg. It is okay if some of these are
-duplicates. Please make sure clips are at least 500 frames duration.
+clip2.mpeg, clip3.mpeg, and music1.ogg. Please make sure clips are at least 500 
+frames duration.
 
 These notes explain the the concepts presented in each demonstration and
 what details to look for.
@@ -166,6 +166,15 @@ Bouncy, Bouncy Ball
 
 	A variation on the above Bouncy, Bouncy demo that applies a shape, or
 	alpha producer, to the the compositing region.
+	
+Breaking News
+
+	This demonstrates layout capabilities of the compositor.
+
+Squeeze Transitions
+
+	This demonstrates a distorting barndoor-like wipe.
+
 
 J Cut
 
