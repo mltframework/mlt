@@ -117,6 +117,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
+	// Parse the colour
+	rgba_color color = parse_color( mlt_properties_get( producer_props, "resource" ) );
+
 	// Get the current image and dimensions cached in the producer
 	uint8_t *image = mlt_properties_get_data( producer_props, "image", &size );
 	int current_width = mlt_properties_get_int( producer_props, "width" );
@@ -135,7 +138,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_set_int( producer_props, "height", *height );
 
 		// Color the image
-		rgba_color color = parse_color( mlt_properties_get( producer_props, "resource" ) );
 		uint8_t y, u, v;
 		int i = 0;
 		RGB2YUV( color.r, color.g, color.b, y, u, v );
@@ -157,6 +159,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Clone if necessary
 	if ( writable )
 	{
+		// Create the alpha channel
+		uint8_t *alpha = mlt_pool_alloc( size >> 1 );
+
 		// Clone our image
 		uint8_t *copy = mlt_pool_alloc( size );
 		memcpy( copy, image, size );
@@ -164,8 +169,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// We're going to pass the copy on
 		image = copy;
 
+		// Initialise the alpha
+		if ( alpha )
+			memset( alpha, color.a, size >> 1 );
+
 		// Now update properties so we free the copy after
 		mlt_properties_set_data( properties, "image", copy, size, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "alpha", alpha, size >> 1, mlt_pool_release, NULL );
 	}
 
 	// Pass on the image

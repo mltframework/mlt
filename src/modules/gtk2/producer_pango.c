@@ -88,12 +88,18 @@ static int alignment_parse( char* align )
 	return ret;
 }
 
+static PangoFT2FontMap *fontmap = NULL;
+
 mlt_producer producer_pango_init( const char *filename )
 {
 	producer_pango this = calloc( sizeof( struct producer_pango_s ), 1 );
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
+
+		// THIS SHOULD BE MUTEXED...
+		if ( fontmap == NULL )
+			fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
 
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
@@ -538,13 +544,8 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static PangoFT2FontMap *fontmap = NULL;
-
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, int pad, int align, int weight, int size )
 {
-	if ( fontmap == NULL )
-		fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
-
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
 	PangoLayout *layout = pango_layout_new( context );
 	int w, h, x;

@@ -263,9 +263,6 @@ static void *consumer_thread( void *arg )
 			// Get the speed of the frame
 			double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
-			// Determine which speed to use
-			double use_speed = speed;
-
 			// Lock during the operation
 			mlt_service_lock( MLT_CONSUMER_SERVICE( consumer ) );
 
@@ -311,13 +308,13 @@ static void *consumer_thread( void *arg )
 				mlt_consumer_put_frame( this->active, frame );
 			}
 			// If we aren't playing normally, then use the still
-			else if ( use_speed != 1 )
+			else if ( speed != 1 )
 			{
 				if ( !mlt_consumer_is_stopped( this->play ) )
 					mlt_consumer_stop( this->play );
 				if ( mlt_consumer_is_stopped( this->still ) )
 				{
-					this->last_speed = use_speed;
+					this->last_speed = speed;
 					this->active = this->still;
 					this->ignore_change = 0;
 					mlt_consumer_start( this->still );
@@ -331,7 +328,7 @@ static void *consumer_thread( void *arg )
 					mlt_consumer_stop( this->still );
 				if ( mlt_consumer_is_stopped( this->play ) )
 				{
-					this->last_speed = use_speed;
+					this->last_speed = speed;
 					this->active = this->play;
 					this->ignore_change = 25;
 					mlt_consumer_start( this->play );

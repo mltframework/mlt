@@ -332,7 +332,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 					// Move the contents of this queue on to the output frames data queue
 					mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
 					mlt_deque temp = mlt_deque_init( );
-					while ( mlt_deque_count( sub_queue ) )
+					while ( global_feed && mlt_deque_count( sub_queue ) )
 					{
 						mlt_properties p = mlt_deque_pop_back( sub_queue );
 						if ( mlt_properties_get_int( p, "final" ) )

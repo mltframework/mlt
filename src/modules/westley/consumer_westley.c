@@ -549,7 +549,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 		if ( strcmp( mlt_type, "producer" ) == 0 )
 		{
 			char *mlt_service = mlt_properties_get( properties, "mlt_service" );
-			if ( mlt_properties_get( properties, "westley" ) == NULL && !strcmp( mlt_service, "tractor" ) )
+			if ( mlt_properties_get( properties, "westley" ) == NULL && ( mlt_service != NULL && !strcmp( mlt_service, "tractor" ) ) )
 			{
 				context->pass = 0;
 				serialise_tractor( context, service, node );

@@ -518,6 +518,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		start = transition_parse_keys( this, normalised_width, normalised_height );
 	}
 
+	if ( *height & 1 )
+		*height ++;
+
 	// Fetch the a frame image
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
@@ -568,6 +571,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
 		float fix_shear_y = mlt_properties_get_double( properties, "fix_shear_y" );
 		float fix_shear_z = mlt_properties_get_double( properties, "fix_shear_z" );
+		float scale_x = mlt_properties_get_double( properties, "scale_x" );
+		float scale_y = mlt_properties_get_double( properties, "scale_y" );
 		float shear_x = mlt_properties_get_double( properties, "shear_x" );
 		float shear_y = mlt_properties_get_double( properties, "shear_y" );
 		float shear_z = mlt_properties_get_double( properties, "shear_z" );
@@ -592,7 +597,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		int y_offset = ( int )result.h >> 1;
 
 		uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
-		uint8_t *mask = mlt_pool_alloc( b_width * b_height );
+		uint8_t *mask = mlt_frame_get_alpha_mask( a_frame );
 		uint8_t *pmask = mask;
 		float mix;
 
@@ -614,8 +619,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		dz = MapZ( affine.matrix, 0, 0 );
 
-		if ( mask != NULL )
-			memset( mask, 0, b_width * b_height );
+		if ( mask == NULL )
+		{
+			mask = mlt_pool_alloc( *width * *height );
+			pmask = mask;
+			memset( mask, 255, *width * *height );
+		}
 
 		if ( ( int )abs( dz * 1000 ) < 25 )
 			goto getout;
@@ -623,7 +632,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( scale )
 		{
 			affine_max_output( affine.matrix, &sw, &sh, dz );
-			affine_scale( affine.matrix, sw, sh );
+			affine_scale( affine.matrix, 1.0 / sw, 1.0 / sh );
+		}
+		else if ( scale_x != 0 && scale_y != 0 )
+		{
+			affine_scale( affine.matrix, scale_x, scale_y );
 		}
 
 		for ( y = lower_y; y < upper_y; y ++ )
@@ -639,7 +652,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				{
 					if ( alpha == NULL )
 					{
-						*pmask ++ = 255;
+						*pmask ++;
 						dx += dx & 1;
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) );
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
@@ -666,8 +679,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 
 getout:
-		b_frame->get_alpha_mask = NULL;
-		mlt_properties_set_data( b_props, "alpha", mask, 0, mlt_pool_release, NULL );
+		a_frame->get_alpha_mask = NULL;
+		mlt_properties_set_data( a_props, "alpha", mask, 0, mlt_pool_release, NULL );
 	}
 
 	return 0;

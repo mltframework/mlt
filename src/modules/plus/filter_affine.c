@@ -80,6 +80,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_frame_get_image( a_frame, image, format, width, height, writable );
 			mlt_properties_set_data( frame_properties, "affine_frame", a_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
 			mlt_properties_set_data( frame_properties, "image", *image, *width * *height * 2, NULL, NULL );
+			mlt_properties_set_data( frame_properties, "alpha", mlt_frame_get_alpha_mask( a_frame ), *width * *height, NULL, NULL );
 		}
 	}
 
