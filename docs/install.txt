@@ -13,6 +13,7 @@ Directories
 
 	The directory heirarchy is defined as follows:
 
+	+ demo                  - A selection of samples to show off capabilities.
 	+ docs                  - Location of all documentation
 	+ src                   - All project source is provided here
 	    + framework         - The mlt media framework
@@ -25,13 +26,17 @@ Directories
 	        + sdl            - SDL dependent services
 	        + resample      - libresample dependent services
 	        + gtk2          - pango and pixbuf dependent services
+	        + fezzik        - A giant (meta) service to load and normalise media
+	        + westley         Nice and clever XML services
+	        + vorbis          Ogg Vorbis dependent services
+	        + xine          - Xine-derived sources
 	        + bluefish      - Bluefish dependent services (*)
 	        + mainconcept   - mainconcept dependent services (*)
 	    + inigo             - A media playing test application
 	    + valerie           - Client API to access the server
 	    + miracle           - The server implementation
-	    + humperdink        - The evil demo
-	    + albino            - The simple but nice demo
+	    + albino            - A simple console (protocol level) example
+	    + humperdink        - A terminal-based example client
 	    + tests             - Reserved for regression and unit tests
 
 	Additional subdirectories may be nested below those shown and should be
@@ -135,5 +140,3 @@ Development
 	This allows migration of source between external and internal modules. 
 	The configuration and Makefile template requirements will require
 	attention though.
-
-

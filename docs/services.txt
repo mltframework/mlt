@@ -298,8 +298,6 @@ Producers
 			pango producer interprets the filename as pango text. This is a
 			shortcut to embed titles in inigo commands. For westley, it is 
 			recommended that you embed the title text in the property value.
-			If you need to embed Pango markup in a westley XML file, then
-			enclose the value inside "<![CDATA[ ... ]]>".
 			
 			Pango has builtin scaling. It will rescale the originally rendered
 			title to whatever the consumer requests. Therefore, it will lose
@@ -313,7 +311,7 @@ Producers
 
 		Mutable Properties
 
-			string markup - a UTF-8 string containing Pango markup see:
+			string markup - a string containing Pango markup see:
 			http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
 			              - requires xml-like encoding special chars from: 
 			                <, >, &   -to-   &lt;, &gt;, &amp;
@@ -329,6 +327,8 @@ Producers
 			              markup chars un-encoded)
 			string font - the default typeface to use when not using markup.
 			              default "Sans 48". FreeType2 renders at 72 dpi.
+			string encoding - the text encoding type of the input if not UTF-8.
+			                - see 'iconv --list' for a list of possible inputs.
 
 		Read Only Properties
 
@@ -368,9 +368,7 @@ Producers
 			         load all pictures with matching extension from a directory.
 			       - If filename contains the string "<svg", then pixbuf tries
 			         to load the filename as inline SVG XML, which is convenient
-			         for inigo commands. For westley XML, set the resource
-			         property value with inline XML embedded using a CDATA node
-			         ("<![CDATA[ ... ]]>").
+			         for inigo commands.
 					 
 		Details
 		
@@ -1219,11 +1217,18 @@ Consumers
 		
 		Constructor Argument
 
-			string video_standard - "PAL" (default) or "NTSC"
+			card - a numeric card id starting at 1, default is 1.
 			
 		Initialisation Properties
 
-			int video_standard - 0 = PAL, 1 = NTSC
+			string standard - "PAL" (default) or "NTSC"
+			                - default is based upon MLT_NORMALISATION 
+							  environment variable, which defaults to PAL.
+			int frames - the number of DMA video frames. default is 4.
+			             minimum is 2. maximum on my system is 11.
+			int buffer - the number of frames to buffer within MLT, minimum 1, 
+			             default 25.
+			string rescale - a rescale method, see the Filters/rescale.
 			
 		Read Only Properties
 
@@ -1237,10 +1242,10 @@ Consumers
 
 			Does not work with any service that uses pipes!
 			
-			If mlt crashes, you must reload the BlueDriver kernel module
-			due to unreleased DMA buffers.
+			If mlt crashes, you might need to reload the BlueDriver kernel 
+			module due to unreleased DMA buffers.
 			
-			Needs an argument or property for multi-card address.
+			Only supports 2 channel audio at the moment.
 		
 	libdv
 	

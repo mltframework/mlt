@@ -223,6 +223,8 @@ static void on_start_entry_track( deserialise_context context, const xmlChar *na
 	
 	if ( strcmp( name, "entry" ) == 0 )
 		mlt_properties_set( mlt_service_properties( service ), "resource", "<entry>" );
+	else
+		mlt_properties_set( mlt_service_properties( service ), "resource", "<track>" );
 	
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
@@ -234,6 +236,9 @@ static void on_start_entry_track( deserialise_context context, const xmlChar *na
 			if ( mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL ) !=  NULL )
 				// Push the referenced producer onto the stack
 				context_push_service( context, MLT_SERVICE( mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL ) ) );
+			else
+				// Remove the dummy service to cause end element failure
+				context_pop_service( context );
 		}
 	}
 }
@@ -412,7 +417,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 
 	// Get the dummy track service from the stack
 	mlt_service track = context_pop_service( context );
-	if ( track == NULL )
+	if ( track == NULL || strcmp( mlt_properties_get( mlt_service_properties( track ), "resource" ), "<track>" ) )
 	{
 		context_push_service( context, producer );
 		return;
@@ -461,7 +466,7 @@ static void on_end_entry( deserialise_context context, const xmlChar *name )
 
 	// Get the dummy entry service from the stack
 	mlt_service entry = context_pop_service( context );
-	if ( entry == NULL )
+	if ( entry == NULL || strcmp( mlt_properties_get( mlt_service_properties( entry ), "resource" ), "<entry>" ) )
 	{
 		context_push_service( context, producer );
 		return;

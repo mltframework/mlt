@@ -23,6 +23,7 @@ Directories
 			+ sdl			- SDL dependent services
 			+ resample		- libresample dependent services
 			+ gtk2			- pango and pixbuf dependent services
+			+ xine          - xine-derived services
 			+ bluefish		- Bluefish dependent services (*)
 			+ mainconcept	- mainconcept dependent services (*)
 		+ inigo				- A media playing test application
@@ -135,4 +136,3 @@ Summary
 	1.	The server will interact with public interfaces from the framework only;
 	2.	The modules must expose public framework interfaces only;
 	3.	All modules are dynamically loaded at runtime.
-

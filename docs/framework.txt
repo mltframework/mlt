@@ -905,7 +905,7 @@ mlt_frame:
 	+------------------+------------------------------------+------------------+
 	|samples           |The samples of the audio            |                  |
 	+------------------+------------------------------------+------------------+
-	|aspect_ratio      |The aspect ratio of the image       |double            |
+	|aspect_ratio      |The sample aspect ratio of the image|double            |
 	+------------------+------------------------------------+------------------+
 	|test_image        |Used to indicate no image available |0 or 1            |
 	+------------------+------------------------------------+------------------+
@@ -1141,5 +1141,3 @@ mlt_playlist:
 	void mlt_playlist_close( mlt_playlist this );
 
 mlt_tractor:
-
-

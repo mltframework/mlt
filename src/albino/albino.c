@@ -51,14 +51,14 @@ int main( int argc, char **argv  )
 
 	if ( argc > 2 && !strcmp( argv[ 1 ], "-s" ) )
 	{
-		printf( "DV1394D Client Instance\n" );
+		printf( "Miracle Client Instance\n" );
 		parser = valerie_parser_init_remote( argv[ 2 ], 5250 );
 		response = valerie_parser_connect( parser );
 		index = 3;
 	}
 	else
 	{
-		printf( "DV1394D Standalone Instance\n" );
+		printf( "Miracle Standalone Instance\n" );
 		parser = miracle_parser_init_local( );
 		response = valerie_parser_connect( parser );
 	}
@@ -90,7 +90,7 @@ int main( int argc, char **argv  )
 	}
 	else
 	{
-		fprintf( stderr, "Unable to connect to a dv1394 instance.\n" );
+		fprintf( stderr, "Unable to connect to a Miracle instance.\n" );
 	}
 
 	printf( "\n" );

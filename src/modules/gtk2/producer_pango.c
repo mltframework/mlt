@@ -25,6 +25,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <pango/pangoft2.h>
 #include <freetype/freetype.h>
+#include <iconv.h>
 
 struct producer_pango_s
 {
@@ -54,6 +55,19 @@ static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 	rgba_color fg, rgba_color bg, int pad, int align );
+
+/** Return nonzero if the two strings are equal, ignoring case, up to
+    the first n characters.
+*/
+int strncaseeq(const char *s1, const char *s2, size_t n)
+{
+	for ( ; n > 0; n--)
+	{
+		if (tolower(*s1++) != tolower(*s2++))
+			return 0;
+	}
+	return 1;
+}
 
 /** Parse the alignment property.
 */
@@ -96,6 +110,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set_int( properties, "pad", 0 );
 		mlt_properties_set( properties, "text", "" );
 		mlt_properties_set( properties, "font", "Sans 48" );
+		mlt_properties_set( properties, "encoding", "UTF-8" );
 
 		if ( filename == NULL )
 		{
@@ -220,6 +235,34 @@ rgba_color parse_color( char *color )
 	return result;
 }
 
+/** Convert a string property to UTF-8
+*/
+static int iconv_utf8( mlt_properties properties, char *prop_name, const char* encoding )
+{
+	char *text = mlt_properties_get( properties, prop_name );
+	int result = -1;
+	
+	iconv_t	cd = iconv_open( "UTF-8", encoding );
+	if ( cd != ( iconv_t )-1 )
+	{
+		char *inbuf_p = strdup( text );
+		size_t inbuf_n = strlen( text );
+		size_t outbuf_n = inbuf_n * 6;
+		char *outbuf = mlt_pool_alloc( outbuf_n );
+		char *outbuf_p = outbuf;
+		
+		if ( iconv( cd, &inbuf_p, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
+		{
+			outbuf[ outbuf_n ] = 0;
+			mlt_properties_set( properties, prop_name, outbuf );
+			result = 0;
+		}
+		mlt_pool_release( outbuf );
+		iconv_close( cd );
+	}
+	return result;
+}
+
 static void refresh_image( mlt_frame frame, int width, int height )
 {
 	// Pixbuf 
@@ -245,7 +288,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	char *markup = mlt_properties_get( producer_props, "markup" );
 	char *text = mlt_properties_get( producer_props, "text" );
 	char *font = mlt_properties_get( producer_props, "font" );
-
+	char *encoding = mlt_properties_get( producer_props, "encoding" );
+	
 	// See if any properties changed
 	int property_changed = ( align != this->align );
 	property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
@@ -274,6 +318,21 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		this->image = NULL;
 		this->alpha = NULL;
 
+		// Convert from specified encoding to UTF-8
+		if ( encoding != NULL && !strncaseeq( encoding, "utf-8", 5 ) && !strncaseeq( encoding, "utf8", 4 ) )
+		{
+			if ( markup != NULL && iconv_utf8( producer_props, "markup", encoding ) != -1 )
+			{
+				markup = mlt_properties_get( producer_props, "markup" );
+				set_string( &this->markup, markup, NULL );
+			}
+			if ( text != NULL && iconv_utf8( producer_props, "text", encoding ) != -1 )
+			{
+				text = mlt_properties_get( producer_props, "text" );
+				set_string( &this->text, text, NULL );
+			}
+		}
+		
 		// Render the title
 		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, pad, align );
 

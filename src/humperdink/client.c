@@ -415,7 +415,7 @@ valerie_error_code dv_demo_execute( dv_demo demo )
 	char command[ 10240 ];
 	int terminated = 0;
 
-	printf( "DV1394D Shell\n" );
+	printf( "Miracle Shell\n" );
 	printf( "Enter an empty command to exit.\n\n" );
 
 	while ( !terminated )
@@ -1023,4 +1023,3 @@ void dv_demo_close( dv_demo demo )
 {
 	free( demo );
 }
-
