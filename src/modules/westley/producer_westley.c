@@ -373,6 +373,8 @@ static void on_end_playlist( deserialise_context context, const xmlChar *name )
 {
 	// Get the playlist from the stack
 	mlt_service producer = context_pop_service( context );
+	if ( producer == NULL )
+		return;
 	mlt_properties properties = mlt_service_properties( producer );
 
 	mlt_position in = mlt_properties_get_position( properties, "in" );
