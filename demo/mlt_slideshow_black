@@ -1,0 +1,3 @@
+inigo Scotland/.all.jpg ttl=250 \
+-filter watermark:colour:black reverse=1 composite.geometry="15%,15%:10%,10%;0.0625=0,0:100%x100%;.4375=;250=70%,70%:10%x10%;251=15%,15%:10%,10%;.5625=0,0:100%x100%;-.0625=;500=70%,70%:10%x10%" composite.cycle=500 composite.fill=1 composite.valign=c composite.halign=c \
+$*

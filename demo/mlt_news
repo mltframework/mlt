@@ -1,19 +1,19 @@
 inigo \
 colour:black out=199 \
 -track \
-hold:clip1.mpeg out=99 clip1.mpeg \
+clip1.dv in=0 out=0 -repeat 99 clip1.dv \
 -track \
-clip2.mpeg out=199 \
+clip2.dv out=199 \
 -track \
-pango: text=" Breaking News                        
+pango: text=" Breaking News                 
  MLT Rocks India" bgcolour=0xff000080 out=149 \
-pango: text=" Breaking News                        
+pango: text=" Breaking News                 
  MLT Rocks the World" bgcolour=0xff000080 out=349 \
 -transition mix:1 a_track=0 b_track=2 in=0 out=149 \
 -transition mix:1 a_track=0 b_track=1 in=150 out=199 \
--transition composite:50%,15%:40%x40% a_track=0 b_track=1 in=0 out=174 \
--transition composite:10%,15%:40%x40% a_track=0 b_track=2 in=0 out=199 \
--transition composite:50%,15%:40%x40% end=3%,2%:94%x96% a_track=0 b_track=1 distort=true in=174 out=199 \
--transition composite:10%,65%:90%x20% a_track=0 b_track=3 in=0 out=199 \
--transition composite:10%,65%:90%x20% a_track=1 b_track=3 in=200 out=499 \
+-transition composite geometry=50%,15%:37.5%x40% a_track=0 b_track=1 in=0 out=174 \
+-transition composite geometry=10%,15%:37.5%x40% a_track=0 b_track=2 in=0 out=199 \
+-transition composite geometry="50%,15%:37.540%x40%;-1=0%,0%:100%x100%" a_track=0 b_track=1 in=174 out=199 distort=1 \
+-transition composite geometry=10%,65%:90%x20% a_track=0 b_track=3 in=0 out=199 \
+-transition composite geometry=10%,65%:90%x20% a_track=1 b_track=3 in=200 out=499 \
 $*

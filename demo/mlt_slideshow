@@ -1,4 +1,4 @@
 inigo \
 Scotland/.all.jpg ttl=75 \
--filter luma:luma1.pgm luma.softness=0.1 \
+-filter luma:luma1.pgm luma.softness=0.1 luma.invert=0 \
 $*

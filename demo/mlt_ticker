@@ -6,9 +6,8 @@ colour:black out=299 \
 "+The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog..txt" \
 out=299 \
 -transition \
-composite a_track=0 b_track=1 out=299 titles=1 \
+composite a_track=0 b_track=1 out=299 distort=1 \
 start=0,70%:100%x64:100 \
-distort=true \
 -transition \
 composite a_track=0 b_track=2 out=299 titles=1 \
 start=100%,70%:999%x20% \
