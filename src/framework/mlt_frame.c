@@ -681,7 +681,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
    	uint8_t *out_ptr = out_line;
 
    	// Calculate a middle and possibly invalid pointer in the input
-   	uint8_t *in_middle = input + istride * ( iheight / 2 ) + ( iwidth / 2 ) * 2;
+   	uint8_t *in_middle = input + istride * ( iheight / 2 ) + iwidth;
    	int in_line = - in_y_range * istride - in_x_range * 2;
 
 	int elements;
@@ -697,9 +697,17 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	}
 
 	int active_width = 2 * iwidth;
-	int inactive_width = out_x_range - in_x_range;
+	int left_inactive_width = out_x_range - in_x_range;
+	int right_inactive_width = left_inactive_width;
 	uint8_t *p = NULL;
 	uint8_t *end = NULL;
+
+	if ( in_line % 4 )
+	{
+		active_width -= 2;
+		in_middle += 2;
+		right_inactive_width += 2;
+	}
 
    	// Loop for the entirety of our output height.
 	while ( iheight -- )
@@ -708,7 +716,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
        	out_ptr = out_line;
 
 		// Fill the outer part with black
-		elements = inactive_width;
+		elements = left_inactive_width;
 		while ( elements -- )
 		{
 			*out_ptr ++ = 16;
@@ -725,7 +733,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		}
 
 		// Fill the outer part with black
-		elements = inactive_width;
+		elements = right_inactive_width;
 		while ( elements -- )
 		{
 			*out_ptr ++ = 16;
