@@ -38,3 +38,14 @@ MLT Bugs
 ------------------------------------------------------------------------------
 Please check the services.txt doc for known bugs related to MLT components.
 
+
+User Acceptance Testing, 2004-01-12, by Dan Dennedy
+------------------------------------------------------------------------------
+We may need to add a play u0 in some places of the test script due to play
+state issues.
+sout u0 1000 made frame 1000 repeat with audio (usta shows playing, not paused).
+sin u0 400 made it jump to frame 400 and start playing
+When miracle hit the out point (1000) not paused, playing last frame with audio.
+Sometimes I need to say goto u0 0 to continue test script because it has hit
+the end of a clip.
+Everything else working good.
