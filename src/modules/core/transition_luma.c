@@ -32,32 +32,15 @@
 typedef struct 
 {
 	struct mlt_transition_s parent;
-	char *filename;
 	int width;
 	int height;
-	float *bitmap;
+	uint16_t *bitmap;
 }
 transition_luma;
 
 
 // forward declarations
 static void transition_close( mlt_transition parent );
-
-
-// image processing functions
-
-static inline float smoothstep( float edge1, float edge2, float a )
-{
-	if ( a < edge1 )
-		return 0.0;
-
-	if ( a >= edge2 )
-		return 1.0;
-
-	a = ( a - edge1 ) / ( edge2 - edge1 );
-
-	return ( a * a * ( 3 - 2 * a ) );
-}
 
 /** Calculate the position for this frame.
 */
@@ -89,8 +72,7 @@ static float delta_calculate( mlt_transition this, mlt_frame frame )
 
 	// Now do the calcs
 	float x = ( float )( position - in ) / ( float )( out - in + 1 );
-	position++;
-	float y = ( float )( position - in ) / ( float )( out - in + 1 );
+	float y = ( float )( position + 1 - in ) / ( float )( out - in + 1 );
 
 	return ( y - x ) / 2.0;
 }
@@ -101,20 +83,40 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 	int width_src = width, height_src = height;
 	mlt_image_format format = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
-	float weight_complement = 1 - weight;
 	uint8_t *p;
 	uint8_t *limit;
 
-	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 /* writable */ );
-	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 /* writable */ );
-	
+	int32_t weigh = weight * ( 1 << 16 );
+	int32_t weigh_complement = ( 1 - weight ) * ( 1 << 16 );
+
+	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 );
+	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
+
 	p = p_dest;
 	limit = p_dest + height_src * width_src * 2;
 
 	while ( p < limit )
-		*p_dest++ = ( uint8_t )( *p_src++ * weight + *p++ * weight_complement );
+	{
+		*p_dest++ = ( *p_src++ * weigh + *p++ * weigh_complement ) >> 16;
+		*p_dest++ = ( *p_src++ * weigh + *p++ * weigh_complement ) >> 16;
+	}
 
 	return ret;
+}
+
+// image processing functions
+
+static inline uint32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
+{
+	if ( a < edge1 )
+		return 0;
+
+	if ( a >= edge2 )
+		return 0x10000;
+
+	a = ( ( a - edge1 ) << 16 ) / ( edge2 - edge1 );
+
+	return ( ( ( a * a ) >> 16 )  * ( ( 3 << 16 ) - ( 2 * a ) ) ) >> 16;
 }
 
 /** powerful stuff
@@ -122,7 +124,7 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
     \param field_order -1 = progressive, 0 = lower field first, 1 = top field first
 */
 static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width, int luma_height,
-							float *luma_bitmap, float pos, float frame_delta, float softness, int field_order,
+							uint16_t *luma_bitmap, float pos, float frame_delta, float softness, int field_order,
 							int *width, int *height )
 {
 	int width_src = *width, height_src = *height;
@@ -132,60 +134,77 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	int i, j;
 	int stride_src;
 	int stride_dest;
-	float weight = 0;
-	int field;
+	uint16_t weight = 0;
 
 	format_src = mlt_image_yuv422;
 	format_dest = mlt_image_yuv422;
 
-	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
-	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
+	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 );
+	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 );
 
 	stride_src = width_src * 2;
 	stride_dest = width_dest * 2;
 
 	// Offset the position based on which field we're looking at ...
-	float field_pos[ 2 ];
-	field_pos[ 0 ] = pos + ( ( field_order == 0 ? 1 : 0 ) * frame_delta * 0.5 );
-	field_pos[ 1 ] = pos + ( ( field_order == 0 ? 0 : 1 ) * frame_delta * 0.5 );
+	int32_t field_pos[ 2 ];
+	field_pos[ 0 ] = ( pos + ( ( field_order == 0 ? 1 : 0 ) * frame_delta * 0.5 ) ) * ( 1 << 16 ) * ( 1.0 + softness );
+	field_pos[ 1 ] = ( pos + ( ( field_order == 0 ? 0 : 1 ) * frame_delta * 0.5 ) ) * ( 1 << 16 ) * ( 1.0 + softness );
 
-	// adjust the position for the softness level
-	field_pos[ 0 ] *= ( 1.0 + softness );
-	field_pos[ 1 ] *= ( 1.0 + softness );
+	register uint8_t *p;
+	register uint8_t *q;
+	register uint8_t *o;
+	uint16_t  *l;
 
-	uint8_t *p;
-	uint8_t *q;
-	uint8_t *o;
-	float  *l;
+	uint32_t value;
 
-	uint8_t y;
-	uint8_t uv;
-	float value;
+	int32_t x_diff = ( luma_width << 16 ) / *width;
+	int32_t y_diff = ( luma_height << 16 ) / *height;
+	int32_t x_offset = 0;
+	int32_t y_offset = 0;
+	uint8_t *p_row;
+	uint8_t *q_row;
 
-	float x_diff = ( float )luma_width / ( float )*width;
-	float y_diff = ( float )luma_height / ( float )*height;
+	int32_t i_softness = softness * ( 1 << 16 );
+
+	int field_count = field_order < 0 ? 1 : 2;
+	int field_stride_src = field_count * stride_src;
+	int field_stride_dest = field_count * stride_dest;
+
+	int field = 0;
 
 	// composite using luma map
-	for ( field = 0; field < ( field_order < 0 ? 1 : 2 ); ++field )
+	while ( field < field_count )
 	{
-		for ( i = field; i < height_src; i += ( field_order < 0 ? 1 : 2 ) )
+		p_row = p_src + field * stride_src;
+		q_row = p_dest + field * stride_dest;
+		y_offset = ( field * luma_width ) << 16;
+		i = field;
+
+		while ( i < height_src )
 		{
-			p = &p_src[ i * stride_src ];
-			q = &p_dest[ i * stride_dest ];
-			o = &p_dest[ i * stride_dest ];
-			l = &luma_bitmap[ ( int )( ( float )i * y_diff ) * luma_width ];
+			p = p_row;
+			q = q_row;
+			o = q;
+			l = luma_bitmap + ( y_offset >> 16 ) * ( luma_width * field_count );
+			x_offset = 0;
+			j = width_src;
 
-			for ( j = 0; j < width_src; j ++ )
+			while( j -- )
 			{
-				y = *p ++;
-				uv = *p ++;
-             	weight = l[ ( int )( ( float )j * x_diff ) ];
-   				value = smoothstep( weight, weight + softness, field_pos[ field ] );
-
-				*o ++ = (uint8_t)( y * value + *q++ * ( 1 - value ) );
-				*o ++ = (uint8_t)( uv * value + *q++ * ( 1 - value ) );
+             	weight = l[ x_offset >> 16 ];
+   				value = smoothstep( weight, i_softness + weight, field_pos[ field ] );
+				*o ++ = ( *p ++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
+				*o ++ = ( *p ++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
+				x_offset += x_diff;
 			}
+
+			y_offset += y_diff;
+			i += field_count;
+			p_row += field_stride_src;
+			q_row += field_stride_dest;
 		}
+
+		field ++;
 	}
 }
 
@@ -208,7 +227,7 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	float frame_delta = mlt_properties_get_double( b_props, "luma.delta" );
 	int luma_width = mlt_properties_get_int( b_props, "luma.width" );
 	int luma_height = mlt_properties_get_int( b_props, "luma.height" );
-	float *luma_bitmap = mlt_properties_get_data( b_props, "luma.bitmap", NULL );
+	uint16_t *luma_bitmap = mlt_properties_get_data( b_props, "luma.bitmap", NULL );
 	float luma_softness = mlt_properties_get_double( b_props, "luma.softness" );
 	int progressive = mlt_properties_get_int( b_props, "progressive" ) ||
 			mlt_properties_get_int( a_props, "consumer_progressive" ) ||
@@ -248,7 +267,7 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 /** Load the luma map from PGM stream.
 */
 
-static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
+static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
 {
 	uint8_t *data = NULL;
 	while (1)
@@ -257,7 +276,7 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 		int i = 2;
 		int maxval;
 		int bpp;
-		float *p;
+		uint16_t *p;
 		
 		line[127] = '\0';
 
@@ -313,7 +332,7 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 			break;
 		
 		// allocate the luma bitmap
-		*map = p = (float*)mlt_pool_alloc( *width * *height * sizeof( float ) );
+		*map = p = (uint16_t*)mlt_pool_alloc( *width * *height * sizeof( uint16_t ) );
 		if ( *map == NULL )
 			break;
 
@@ -321,9 +340,9 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 		for ( i = 0; i < *width * *height * bpp; i += bpp )
 		{
 			if ( bpp == 1 )
-				*p++ = (float) data[ i ] / (float) maxval;
+				*p++ = data[ i ] << 8;
 			else
-				*p++ = (float) ( ( data[ i ] << 8 ) + data[ i+1 ] ) / (float) maxval;
+				*p++ = ( data[ i ] << 8 ) + data[ i+1 ];
 		}
 
 		break;
@@ -348,17 +367,12 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
 	// If the filename property changed, reload the map
-	char *luma_file = mlt_properties_get( properties, "resource" );
-	if ( luma_file != NULL && ( this->filename == NULL || ( this->filename && strcmp( luma_file, this->filename ) ) ) )
+	char *lumafile = mlt_properties_get( properties, "resource" );
+	if ( this->bitmap == NULL && lumafile != NULL )
 	{
-		FILE *pipe;
-		
-		free( this->filename );
-		this->filename = strdup( luma_file );
-		pipe = fopen( luma_file, "r" );
+		FILE *pipe = fopen( lumafile, "r" );
 		if ( pipe != NULL )
 		{
-			mlt_pool_release( this->bitmap );
 			luma_read_pgm( pipe, &this->bitmap, &this->width, &this->height );
 			fclose( pipe );
 		}
@@ -404,7 +418,6 @@ static void transition_close( mlt_transition parent )
 {
 	transition_luma *this = (transition_luma*) parent->child;
 	mlt_pool_release( this->bitmap );
-	free( this->filename );
 	free( this );
 }
 

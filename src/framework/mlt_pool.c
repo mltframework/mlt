@@ -22,6 +22,7 @@
 #include "mlt_deque.h"
 
 #include <stdlib.h>
+#include <malloc.h>
 #include <string.h>
 #include <pthread.h>
 
@@ -45,6 +46,7 @@ typedef struct mlt_pool_s
 typedef struct mlt_release_s
 {
 	mlt_pool pool;
+	int references;
 }
 *mlt_release;
 
@@ -92,17 +94,23 @@ static void *pool_fetch( mlt_pool this )
 		{
 			// Pop the top of the stack
 			ptr = mlt_deque_pop_back( this->stack );
+
+			// Assign the reference
+			( ( mlt_release )ptr )->references = 1;
 		}
 		else
 		{
 			// We need to generate a release item
-			mlt_release release = malloc( sizeof( struct mlt_release_s ) + this->size );
+			mlt_release release = memalign( 16, this->size );
 
 			// Initialise it
 			if ( release != NULL )
 			{
 				// Assign the pool
 				release->pool = this;
+
+				// Assign the reference
+				release->references = 1;
 
 				// Determine the ptr
 				ptr = ( void * )release + sizeof( struct mlt_release_s );
@@ -126,7 +134,7 @@ static void pool_return( void *ptr )
 	if ( ptr != NULL )
 	{
 		// Get the release pointer
-		mlt_release that = ( void * )ptr - sizeof( struct mlt_release_s );
+		mlt_release that = ptr - sizeof( struct mlt_release_s );
 
 		// Get the pool
 		mlt_pool this = that->pool;
@@ -223,7 +231,7 @@ void *mlt_pool_alloc( int size )
 	int index = 8;
 
 	// Minimum size pooled is 256 bytes
-	size = size + 4;
+	size = size + sizeof( mlt_release );
 	while ( ( 1 << index ) < size )
 		index ++;
 
@@ -232,38 +240,6 @@ void *mlt_pool_alloc( int size )
 
 	// Now get the real item
 	return pool_fetch( pool );
-}
-
-/** Allocate size bytes from the pool.
-*/
-
-void *mlt_pool_allocate( int size, void **release )
-{
-	// This is the real release structure we'll return
-	void *real = NULL;
-
-	// This will be used to obtain the pool to use
-	mlt_pool pool = NULL;
-
-	// Determines the index of the pool to use
-	int index = 0;
-
-	// Minimum size pooled is 256 bytes
-	size = size >> 8;
-	while ( ( 1 << index ) < size )
-		index ++;
-
-	// Now get the pool at the index
-	pool = mlt_properties_get_data_at( pools, index + 1, NULL );
-
-	// Now get the real item
-	real = pool_fetch( pool );
-
-	// Assign to release
-	*release = real;
-	
-	// Otherwise return a NULL to indicate failure
-	return real;
 }
 
 /** Release the allocated memory.
