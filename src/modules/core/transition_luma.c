@@ -92,7 +92,7 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 
 // image processing functions
 
-static inline int32_t smoothstep( int32_t edge1, int32_t edge2, int32_t a )
+static inline int32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
 {
 	if ( a < edge1 )
 		return 0;
