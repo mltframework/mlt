@@ -160,6 +160,11 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 	// Get the service base
 	mlt_service_base *base = this->local;
 
+	// Special case 'track' index - only works for last filter(s) in a particular chain
+	// but allows a filter to apply to the output frame regardless of which track it comes from
+	if ( index == -1 )
+		index = 0;
+
 	// Check if the producer is already registered with this service
 	for ( i = 0; i < base->count; i ++ )
 		if ( base->in[ i ] == producer )

@@ -169,7 +169,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 	mlt_service producer = mlt_service_producer( &this->parent );
 
 	// If the frame request is for this filters track, we need to process it
-	if ( index == track )
+	if ( index == track || track == -1 )
 	{
 		int ret = mlt_service_get_frame( producer, frame, index );
 		if ( ret == 0 )
