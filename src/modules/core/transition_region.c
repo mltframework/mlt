@@ -245,6 +245,9 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		// Get the resource of this filter (could be a shape [rectangle/circle] or an alpha provider of choice
 		char *resource =  mlt_properties_get( properties, "resource" );
 
+		// Get the old resource in case it's changed
+		char *old_resource =  mlt_properties_get( properties, "_old_resource" );
+
 		// String to hold the filter to query on
 		char id[ 256 ];
 
@@ -288,10 +291,13 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 
 			// If We have no producer then create one
-			if ( producer == NULL )
+			if ( producer == NULL || ( old_resource != NULL && strcmp( resource, old_resource ) ) )
 			{
 				// Get the factory producer service
 				char *factory = mlt_properties_get( properties, "factory" );
+
+				// Store the old resource
+				mlt_properties_set( properties, "_old_resource", resource );
 
 				// Special case circle resource
 				if ( strcmp( resource, "circle" ) == 0 )

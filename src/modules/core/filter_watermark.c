@@ -53,7 +53,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	char *resource = mlt_properties_get( properties, "resource" );
 
 	// Get the old resource
-	char *old_resource = mlt_properties_get( properties, "old_resource" );
+	char *old_resource = mlt_properties_get( properties, "_old_resource" );
 
 	// Create a composite if we don't have one
 	if ( composite == NULL )
@@ -95,7 +95,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_properties_set( mlt_producer_properties( producer ), "eof", "loop" );
 
 			// Set the old resource
-			mlt_properties_set( properties, "old_resource", resource );
+			mlt_properties_set( properties, "_old_resource", resource );
 		}
 	}
 
