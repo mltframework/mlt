@@ -36,6 +36,7 @@ typedef struct
 	mlt_position frame_in;
 	mlt_position frame_out;
 	mlt_position frame_count;
+	mlt_event event;
 }
 playlist_entry;
 
@@ -129,10 +130,12 @@ mlt_properties mlt_playlist_properties( mlt_playlist this )
 
 static int mlt_playlist_virtual_refresh( mlt_playlist this )
 {
-	int i = 0;
+	// Obtain the properties
+	mlt_properties properties = mlt_playlist_properties( this );
 
 	// Get the fps of the first producer
-	double fps = mlt_properties_get_double( mlt_playlist_properties( this ), "first_fps" );
+	double fps = mlt_properties_get_double( properties, "first_fps" );
+	int i = 0;
 	mlt_position frame_count = 0;
 
 	for ( i = 0; i < this->count; i ++ )
@@ -160,12 +163,22 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 	}
 
 	// Refresh all properties
-	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", fps );
-	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps == 0 ? 25 : fps );
-	mlt_properties_set_position( mlt_playlist_properties( this ), "length", frame_count );
-	mlt_properties_set_position( mlt_playlist_properties( this ), "out", frame_count - 1 );
+	mlt_properties_set_double( properties, "first_fps", fps );
+	mlt_properties_set_double( properties, "fps", fps == 0 ? 25 : fps );
+	mlt_events_block( properties, properties );
+	mlt_properties_set_position( properties, "length", frame_count );
+	mlt_events_unblock( properties, properties );
+	mlt_properties_set_position( properties, "out", frame_count - 1 );
 
 	return 0;
+}
+
+/** Listener for producers on the playlist.
+*/
+
+static void mlt_playlist_listener( mlt_producer producer, mlt_playlist this )
+{
+	mlt_playlist_virtual_refresh( this );
 }
 
 /** Append to the virtual playlist.
@@ -173,6 +186,8 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 
 static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_position in, mlt_position out )
 {
+	mlt_properties properties = mlt_producer_properties( producer );
+
 	// Check that we have room
 	if ( this->count >= this->size )
 	{
@@ -187,14 +202,15 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	this->list[ this->count ]->frame_in = in;
 	this->list[ this->count ]->frame_out = out;
 	this->list[ this->count ]->frame_count = out - in + 1;
+	this->list[ this->count ]->event = mlt_events_listen( properties, this, "producer-changed", ( mlt_listener )mlt_playlist_listener );
 
-	mlt_properties_set( mlt_producer_properties( producer ), "eof", "pause" );
+	mlt_properties_set( properties, "eof", "pause" );
 
 	mlt_producer_set_speed( producer, 0 );
 
 	this->count ++;
 
-	mlt_properties_inc_ref( mlt_producer_properties( producer ) );
+	mlt_properties_inc_ref( properties );
 
 	return mlt_playlist_virtual_refresh( this );
 }
@@ -306,7 +322,7 @@ static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 	}
 
 	// Seek in real producer to relative position
-	if ( i < this->count )
+	if ( i < this->count && this->list[ i ]->frame_out != position )
 	{
 		// Update the frame_count for the changed clip (hmmm)
 		this->list[ i ]->frame_out = position;
@@ -417,6 +433,7 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 		info->frame_count = this->list[ index ]->frame_count;
 		info->length = mlt_producer_get_length( producer );
 		info->fps = mlt_producer_get_fps( producer );
+		info->event = this->list[ index ]->event;
 	}
 
 	// Determine the consuming filter service
@@ -445,7 +462,10 @@ int mlt_playlist_clear( mlt_playlist this )
 {
 	int i;
 	for ( i = 0; i < this->count; i ++ )
+	{
+		mlt_event_close( this->list[ i ]->event );
 		mlt_producer_close( this->list[ i ]->producer );
+	}
 	this->count = 0;
 	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", 0 );
 	return mlt_playlist_virtual_refresh( this );
@@ -487,10 +507,14 @@ int mlt_playlist_blank( mlt_playlist this, mlt_position length )
 int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, mlt_position in, mlt_position out )
 {
 	// Append to end
+	mlt_events_block( mlt_playlist_properties( this ), this );
 	mlt_playlist_append_io( this, producer, in, out );
 
 	// Move to the position specified
-	return mlt_playlist_move( this, this->count - 1, where );
+	mlt_playlist_move( this, this->count - 1, where );
+	mlt_events_unblock( mlt_playlist_properties( this ), this );
+
+	return mlt_playlist_virtual_refresh( this );
 }
 
 /** Remove an entry in the playlist.
@@ -520,6 +544,7 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 		mlt_playlist_get_clip_info( this, &where_info, where );
 
 		// Close the producer associated to the clip info
+		mlt_event_close( where_info.event );
 		mlt_producer_close( where_info.producer );
 
 		// Reorganise the list
@@ -534,6 +559,9 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 			mlt_producer_seek( mlt_playlist_producer( this ), position - where_info.frame_count );
 		else if ( this->count == 0 )
 			mlt_producer_seek( mlt_playlist_producer( this ), 0 );
+
+		// Refresh the playlist
+		mlt_playlist_virtual_refresh( this );
 	}
 
 	return 0;
@@ -591,6 +619,7 @@ int mlt_playlist_move( mlt_playlist this, int src, int dest )
 
 		mlt_playlist_get_clip_info( this, &current_info, current );
 		mlt_producer_seek( mlt_playlist_producer( this ), current_info.start + position );
+		mlt_playlist_virtual_refresh( this );
 	}
 
 	return 0;
@@ -640,7 +669,9 @@ int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 		{
 			int in = entry->frame_in;
 			int out = entry->frame_out;
+			mlt_events_block( mlt_playlist_properties( this ), this );
 			mlt_playlist_resize_clip( this, clip, in, in + position );
+			mlt_events_unblock( mlt_playlist_properties( this ), this );
 			mlt_playlist_insert( this, entry->producer, clip + 1, in + position + 1, out );
 		}
 		else
@@ -661,6 +692,7 @@ int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 	{
 		int i = clip;
 		mlt_playlist new_clip = mlt_playlist_init( );
+		mlt_events_block( mlt_playlist_properties( this ), this );
 		if ( clip + count >= this->count )
 			count = this->count - clip;
 		for ( i = 0; i <= count; i ++ )
@@ -669,6 +701,7 @@ int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 			mlt_playlist_append_io( new_clip, entry->producer, entry->frame_in, entry->frame_out );
 			mlt_playlist_remove( this, clip );
 		}
+		mlt_events_unblock( mlt_playlist_properties( this ), this );
 		mlt_playlist_insert( this, mlt_playlist_producer( new_clip ), clip, 0, -1 );
 		mlt_playlist_close( new_clip );
 	}
@@ -721,13 +754,14 @@ void mlt_playlist_close( mlt_playlist this )
 	{
 		int i = 0;
 		this->parent.close = NULL;
-		mlt_producer_close( &this->parent );
-		mlt_producer_close( &this->blank );
 		for ( i = 0; i < this->count; i ++ )
 		{
+			mlt_event_close( this->list[ i ]->event );
 			mlt_producer_close( this->list[ i ]->producer );
 			free( this->list[ i ] );
 		}
+		mlt_producer_close( &this->blank );
+		mlt_producer_close( &this->parent );
 		free( this->list );
 		free( this );
 	}

@@ -53,6 +53,7 @@ mlt_service_base;
 static void mlt_service_disconnect( mlt_service this );
 static void mlt_service_connect( mlt_service this, mlt_service that );
 static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
+static void mlt_service_property_changed( mlt_listener, mlt_properties owner, mlt_service this, void **args );
 
 /** Constructor
 */
@@ -79,9 +80,18 @@ int mlt_service_init( mlt_service this, void *child )
 	{
 		this->parent.close = ( mlt_destructor )mlt_service_close;
 		this->parent.close_object = this;
+
+		mlt_events_init( &this->parent );
+		mlt_events_register( &this->parent, "property-changed", ( mlt_transmitter )mlt_service_property_changed );
 	}
 
 	return error;
+}
+
+static void mlt_service_property_changed( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( char * )args[ 0 ] );
 }
 
 /** Connect a producer service.

@@ -116,7 +116,7 @@ int mlt_property_set_string( mlt_property this, char *value )
 	this->types = mlt_prop_string;
 	if ( value != NULL )
 		this->prop_string = strdup( value );
-	return this->prop_string != NULL;
+	return this->prop_string == NULL;
 }
 
 /** Set an int64 on this property.

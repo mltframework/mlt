@@ -554,6 +554,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float sw, sh;
 
 		// Get values from the transition
+		float fix_rotate_x = mlt_properties_get_double( properties, "fix_rotate_x" );
+		float fix_rotate_y = mlt_properties_get_double( properties, "fix_rotate_y" );
+		float fix_rotate_z = mlt_properties_get_double( properties, "fix_rotate_z" );
 		float rotate_x = mlt_properties_get_double( properties, "rotate_x" );
 		float rotate_y = mlt_properties_get_double( properties, "rotate_y" );
 		float rotate_z = mlt_properties_get_double( properties, "rotate_z" );
@@ -588,9 +591,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		affine_t affine;
 		affine_init( affine.matrix );
-		affine_rotate( affine.matrix, rotate_x * ( position - in ) );
-		affine_rotate_y( affine.matrix, rotate_y * ( position - in ) );
-		affine_rotate_z( affine.matrix, rotate_z * ( position - in ) );
+		affine_rotate( affine.matrix, fix_rotate_x + rotate_x * ( position - in ) );
+		affine_rotate_y( affine.matrix, fix_rotate_y + rotate_y * ( position - in ) );
+		affine_rotate_z( affine.matrix, fix_rotate_z + rotate_z * ( position - in ) );
 		affine_shear( affine.matrix, 
 					  fix_shear_x + shear_x * ( position - in ), 
 					  fix_shear_y + shear_y * ( position - in ),

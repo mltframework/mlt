@@ -373,6 +373,8 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 		mlt_properties_do_mirror( this, name );
 	}
 
+	mlt_events_fire( this, "property-changed", name, NULL );
+
 	return error;
 }
 
@@ -500,6 +502,8 @@ int mlt_properties_set_int( mlt_properties this, char *name, int value )
 		mlt_properties_do_mirror( this, name );
 	}
 
+	mlt_events_fire( this, "property-changed", name, NULL );
+
 	return error;
 }
 
@@ -528,6 +532,8 @@ int mlt_properties_set_double( mlt_properties this, char *name, double value )
 		error = mlt_property_set_double( property, value );
 		mlt_properties_do_mirror( this, name );
 	}
+
+	mlt_events_fire( this, "property-changed", name, NULL );
 
 	return error;
 }
@@ -558,6 +564,8 @@ int mlt_properties_set_position( mlt_properties this, char *name, mlt_position v
 		mlt_properties_do_mirror( this, name );
 	}
 
+	mlt_events_fire( this, "property-changed", name, NULL );
+
 	return error;
 }
 
@@ -583,6 +591,8 @@ int mlt_properties_set_data( mlt_properties this, char *name, void *value, int l
 	// Set it if not NULL
 	if ( property != NULL )
 		error = mlt_property_set_data( property, value, length, destroy, serialise );
+
+	mlt_events_fire( this, "property-changed", name, NULL );
 
 	return error;
 }

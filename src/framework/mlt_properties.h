@@ -22,6 +22,7 @@
 #define _MLT_PROPERTIES_H_
 
 #include "mlt_types.h"
+#include "mlt_events.h"
 #include <stdio.h>
 
 /** The properties base class defines the basic property propagation and

@@ -38,6 +38,7 @@ typedef struct
 	mlt_position frame_count;
 	mlt_position length;
 	float fps;
+	mlt_event event;
 }
 mlt_playlist_clip_info;
 

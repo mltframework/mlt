@@ -53,6 +53,7 @@ mlt_whence;
 typedef int32_t mlt_position;
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr;
 typedef struct mlt_properties_s *mlt_properties;
+typedef struct mlt_event_struct *mlt_event;
 typedef struct mlt_service_s *mlt_service;
 typedef struct mlt_producer_s *mlt_producer;
 typedef struct mlt_manager_s *mlt_manager;

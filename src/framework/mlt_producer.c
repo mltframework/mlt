@@ -31,6 +31,7 @@
 */
 
 static int producer_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
+static void mlt_producer_property_changed( mlt_service owner, mlt_producer this, char *name );
 
 /** Constructor
 */
@@ -91,10 +92,22 @@ int mlt_producer_init( mlt_producer this, void *child )
 
 			// Override service get_frame
 			parent->get_frame = producer_get_frame;
+
+			mlt_events_listen( properties, this, "property-changed", ( mlt_listener )mlt_producer_property_changed );
+			mlt_events_register( properties, "producer-changed", NULL );
 		}
 	}
 
 	return error;
+}
+
+/** Listener for property changes.
+*/
+
+static void mlt_producer_property_changed( mlt_service owner, mlt_producer this, char *name )
+{
+	if ( !strcmp( name, "in" ) || !strcmp( name, "out" ) || !strcmp( name, "length" ) )
+		mlt_events_fire( mlt_producer_properties( this ), "producer-changed", NULL );
 }
 
 /** Create a new producer.
@@ -201,6 +214,8 @@ double mlt_producer_get_fps( mlt_producer this )
 
 int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_position out )
 {
+	mlt_properties properties = mlt_producer_properties( this );
+
 	// Correct ins and outs if necessary
 	if ( in < 0 )
 		in = 0;
@@ -221,8 +236,11 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_positio
 	}
 
 	// Set the values
-	mlt_properties_set_position( mlt_producer_properties( this ), "in", in );
-	mlt_properties_set_position( mlt_producer_properties( this ), "out", out );
+	mlt_events_block( properties, properties );
+	mlt_properties_set_position( properties, "in", in );
+	mlt_properties_set_position( properties, "out", out );
+	mlt_events_unblock( properties, properties );
+	mlt_events_fire( properties, "producer-changed", NULL );
 
 	return 0;
 }
