@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <math.h>
 
 /** Luma class.
 */
@@ -240,8 +241,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// consumer property from the a_frame
 	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 	mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
-		
+
 	// Honour the reverse here
+	if ( mix >= 1.0 )
+		mix -= floor( mix );
+
 	mix = reverse ? 1 - mix : mix;
 	frame_delta *= reverse ? -1.0 : 1.0;
 
@@ -379,8 +383,8 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	}
 
 	// Set the b frame properties
-	mlt_properties_set_double( b_props, "image.mix", position_calculate( transition, b_frame ) );
-	mlt_properties_set_double( b_props, "luma.delta", delta_calculate( transition, b_frame ) );
+	mlt_properties_set_double( b_props, "image.mix", position_calculate( transition, a_frame ) );
+	mlt_properties_set_double( b_props, "luma.delta", delta_calculate( transition, a_frame ) );
 	mlt_properties_set_int( b_props, "luma.width", this->width );
 	mlt_properties_set_int( b_props, "luma.height", this->height );
 	mlt_properties_set_data( b_props, "luma.bitmap", this->bitmap, 0, NULL, NULL );

@@ -24,6 +24,7 @@
 #include "filter_brightness.h"
 #include "filter_deinterlace.h"
 #include "filter_gamma.h"
+#include "filter_luma.h"
 #include "filter_greyscale.h"
 #include "filter_obscure.h"
 #include "filter_resize.h"
@@ -50,6 +51,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_gamma_init( arg );
 	if ( !strcmp( id, "greyscale" ) )
 		return filter_greyscale_init( arg );
+	if ( !strcmp( id, "luma" ) )
+		return filter_luma_init( arg );
 	if ( !strcmp( id, "obscure" ) )
 		return filter_obscure_init( arg );
 	if ( !strcmp( id, "resize" ) )

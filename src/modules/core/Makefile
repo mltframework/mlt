@@ -7,6 +7,7 @@ OBJS = factory.o \
 	   filter_deinterlace.o \
 	   filter_greyscale.o \
 	   filter_gamma.o \
+	   filter_luma.o \
 	   filter_obscure.o \
 	   filter_resize.o \
 	   filter_volume.o \

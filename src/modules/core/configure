@@ -12,6 +12,7 @@ brightness		libmltcore.so
 deinterlace		libmltcore.so
 gamma			libmltcore.so
 greyscale		libmltcore.so
+luma			libmltcore.so
 obscure			libmltcore.so
 resize			libmltcore.so
 volume			libmltcore.so

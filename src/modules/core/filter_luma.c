@@ -1,5 +1,5 @@
 /*
- * filter_watermark.c -- watermark filter
+ * filter_luma.c -- luma filter
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,7 +18,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "filter_watermark.h"
+#include "filter_luma.h"
 
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /** Do it :-).
 */
@@ -36,49 +37,54 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int error = 0;
 	mlt_filter filter = mlt_frame_pop_service( this );
 	mlt_properties properties = mlt_filter_properties( filter );
-	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
-	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
+	mlt_transition luma = mlt_properties_get_data( properties, "luma", NULL );
+	mlt_frame b_frame = mlt_properties_get_data( properties, "frame", NULL );
+	int out = 24;
 
-	if ( composite == NULL )
-	{
-		composite = mlt_factory_transition( "composite", NULL );
-		if ( composite != NULL )
-		{
-			mlt_properties composite_properties = mlt_transition_properties( composite );
-			mlt_properties_pass( composite_properties, properties, "composite." );
-			mlt_properties_set_data( properties, "composite", composite, 0, ( mlt_destructor )mlt_transition_close, NULL );
-		}
-	}
-
-	if ( producer == NULL )
+	if ( luma == NULL )
 	{
 		char *resource = mlt_properties_get( properties, "resource" );
-		char *factory = mlt_properties_get( properties, "factory" );
-		producer = mlt_factory_producer( factory, resource );
-		if ( producer != NULL )
+		luma = mlt_factory_transition( "luma", resource );
+		if ( luma != NULL )
 		{
-			mlt_properties producer_properties = mlt_producer_properties( producer );
-			mlt_properties_set( producer_properties, "eof", "loop" );
-			mlt_properties_pass( producer_properties, properties, "producer." );
-			mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+			mlt_properties luma_properties = mlt_transition_properties( luma );
+			mlt_properties_set_int( luma_properties, "in", 0 );
+			mlt_properties_set_int( luma_properties, "out", out );
+			mlt_properties_set_int( luma_properties, "reverse", 1 );
+			mlt_properties_pass( luma_properties, properties, "luma." );
+			mlt_properties_set_data( properties, "luma", luma, 0, ( mlt_destructor )mlt_transition_close, NULL );
+			out = mlt_properties_get_int( luma_properties, "out" );
 		}
 	}
 
-	if ( composite != NULL && producer != NULL )
+	if ( b_frame == NULL )
 	{
-		mlt_service service = mlt_producer_service( producer );
-		mlt_frame b_frame = NULL;
-
-		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
-			mlt_transition_process( composite, this, b_frame );
-
-		error = mlt_frame_get_image( this, image, format, width, height, 1 );
-
-		mlt_frame_close( b_frame );
+		b_frame = mlt_frame_init( );
+		mlt_properties_set_data( properties, "frame", b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
-	else
+
+	if ( luma != NULL && 
+		( mlt_properties_get( properties, "blur" ) != NULL || 
+		  mlt_frame_get_position( this ) % ( out + 1 ) != out ) )
+		mlt_transition_process( luma, this, b_frame );
+
+	error = mlt_frame_get_image( this, image, format, width, height, 1 );
+
+	if ( error == 0 )
 	{
-		error = mlt_frame_get_image( this, image, format, width, height, 1 );
+		mlt_properties a_props = mlt_frame_properties( this );
+		int size = 0;
+		uint8_t *src = mlt_properties_get_data( a_props, "image", &size );
+		uint8_t *dst = mlt_pool_alloc( size );
+
+		if ( dst != NULL )
+		{
+			mlt_properties b_props = mlt_frame_properties( b_frame );
+			memcpy( dst, src, size );
+			mlt_properties_set_data( b_props, "image", dst, size, mlt_pool_release, NULL );
+			mlt_properties_set_int( b_props, "width", *width );
+			mlt_properties_set_int( b_props, "height", *height );
+		}
 	}
 
 	return error;
@@ -101,14 +107,13 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_watermark_init( void *arg )
+mlt_filter filter_luma_init( void *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
 		mlt_properties properties = mlt_filter_properties( this );
 		this->process = filter_process;
-		mlt_properties_set( properties, "factory", "fezzik" );
 		if ( arg != NULL )
 			mlt_properties_set( properties, "resource", arg );
 	}

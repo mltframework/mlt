@@ -105,13 +105,35 @@ void mlt_properties_mirror( mlt_properties this, mlt_properties that )
 int mlt_properties_inherit( mlt_properties this, mlt_properties that )
 {
 	int count = mlt_properties_count( that );
-	while ( count -- )
+	int i = 0;
+	for ( i = 0; i < count; i ++ )
 	{
-		char *value = mlt_properties_get_value( that, count );
+		char *value = mlt_properties_get_value( that, i );
 		if ( value != NULL )
 		{
-			char *name = mlt_properties_get_name( that, count );
+			char *name = mlt_properties_get_name( that, i );
 			mlt_properties_set( this, name, value );
+		}
+	}
+	return 0;
+}
+
+/** Pass all properties from 'that' that match the prefix to 'this' (excluding the prefix).
+*/
+
+int mlt_properties_pass( mlt_properties this, mlt_properties that, char *prefix )
+{
+	int count = mlt_properties_count( that );
+	int length = strlen( prefix );
+	int i = 0;
+	for ( i = 0; i < count; i ++ )
+	{
+		char *name = mlt_properties_get_name( that, i );
+		if ( !strncmp( name, prefix, length ) )
+		{
+			char *value = mlt_properties_get_value( that, i );
+			if ( value != NULL )
+				mlt_properties_set( this, name + length, value );
 		}
 	}
 	return 0;

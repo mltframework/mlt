@@ -583,9 +583,6 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 
 				// Now store the codec with its destructor
 				mlt_properties_set_data( properties, "video_codec", codec_context, 0, producer_codec_close, NULL );
-
-				// Set to the real timecode
-				av_seek_frame( context, -1, 0 );
 			}
 			else
 			{
