@@ -1,4 +1,4 @@
-CXXFLAGS=-Wall `mlt-config --cflags` -I ../src
+CXXFLAGS=-Wall -g `mlt-config --cflags` -I ../src
 LDFLAGS=-L../src -lmlt++
 CC=c++
 

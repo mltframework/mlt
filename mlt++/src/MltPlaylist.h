@@ -88,6 +88,15 @@ namespace Mlt
 			bool is_blank( int clip );
 			void consolidate_blanks( int keep_length = 0 );
 			Producer *replace_with_blank( int clip );
+			void insert_blank( int clip, int length );
+			void pad_blanks( int position, int length, int find = 0 );
+			int insert_at( int position, Producer *producer, int mode = 0 );
+			int insert_at( int position, Producer &producer, int mode = 0 );
+			int clip_start( int clip );
+			int clip_length( int clip );
+			int blanks_from( int clip, int bounded = 0 );
+			int remove_region( int position, int length );
+			int move_region( int position, int length, int new_position );
 	};
 }
 

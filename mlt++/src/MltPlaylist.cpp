@@ -251,3 +251,49 @@ void Playlist::consolidate_blanks( int keep_length )
 {
 	return mlt_playlist_consolidate_blanks( get_playlist( ), keep_length );
 }
+
+void Playlist::insert_blank( int clip, int length )
+{
+	mlt_playlist_insert_blank( get_playlist( ), clip, length );
+}
+
+void Playlist::pad_blanks( int position, int length, int find )
+{
+	mlt_playlist_pad_blanks( get_playlist( ), position, length, find );
+}
+
+int Playlist::insert_at( int position, Producer *producer, int mode )
+{
+	return mlt_playlist_insert_at( get_playlist( ), position, producer->get_producer( ), mode );
+}
+
+int Playlist::insert_at( int position, Producer &producer, int mode )
+{
+	return mlt_playlist_insert_at( get_playlist( ), position, producer.get_producer( ), mode );
+}
+
+int Playlist::clip_start( int clip )
+{
+	return mlt_playlist_clip_start( get_playlist( ), clip );
+}
+
+int Playlist::blanks_from( int clip, int bounded )
+{
+	return mlt_playlist_blanks_from( get_playlist( ), clip, bounded );
+}
+
+int Playlist::clip_length( int clip )
+{
+	return mlt_playlist_clip_length( get_playlist( ), clip );
+}
+
+int Playlist::remove_region( int position, int length )
+{
+	return mlt_playlist_remove_region( get_playlist( ), position, length );
+}
+
+int Playlist::move_region( int position, int length, int new_position )
+{
+	return mlt_playlist_move_region( get_playlist( ), position, length, new_position );
+}
+

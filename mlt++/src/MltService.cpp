@@ -58,6 +58,16 @@ mlt_properties Service::get_properties( )
 	return mlt_service_properties( get_service( ) );
 }
 
+void Service::lock( )
+{
+	mlt_service_lock( get_service( ) );
+}
+
+void Service::unlock( )
+{
+	mlt_service_unlock( get_service( ) );
+}
+
 int Service::connect_producer( Service &producer, int index )
 {
 	return mlt_service_connect_producer( get_service( ), producer.get_service( ), index );

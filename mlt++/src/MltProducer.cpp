@@ -60,9 +60,17 @@ Producer::Producer( Producer &producer ) :
 	inc_ref( );
 }
 
+Producer::Producer( Producer *producer ) :
+	instance( producer != NULL ? producer->get_producer( ) : NULL )
+{
+	if ( is_valid( ) )
+		inc_ref( );
+}
+
 Producer::~Producer( )
 {
 	mlt_producer_close( instance );
+	instance = NULL;
 }
 
 mlt_producer Producer::get_producer( )

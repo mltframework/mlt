@@ -42,6 +42,8 @@ namespace Mlt
 			Service( mlt_service service );
 			virtual ~Service( );
 			virtual mlt_service get_service( );
+			void lock( );
+			void unlock( );
 			mlt_properties get_properties( );
 			int connect_producer( Service &producer, int index = 0 );
 			Service *consumer( );

@@ -40,6 +40,7 @@ namespace Mlt
 			Producer( Service &producer );
 			Producer( mlt_producer producer );
 			Producer( Producer &producer );
+			Producer( Producer *producer );
 			virtual ~Producer( );
 			virtual mlt_producer get_producer( );
 			mlt_producer get_parent( );

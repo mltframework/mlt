@@ -78,12 +78,12 @@ int Properties::ref_count( )
 
 void Properties::block( void *object )
 {
-	mlt_events_block( get_properties( ), object );
+	mlt_events_block( get_properties( ), object != NULL ? object : get_properties( ) );
 }
 
 void Properties::unblock( void *object )
 {
-	mlt_events_unblock( get_properties( ), object );
+	mlt_events_unblock( get_properties( ), object != NULL ? object : get_properties( ) );
 }
 
 void Properties::fire_event( const char *event )
