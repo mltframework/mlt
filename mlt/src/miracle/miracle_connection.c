@@ -147,7 +147,7 @@ static int connection_read( int fd, char *command, int length )
 	char *cr = strchr( command, '\r');
 	if ( cr != NULL ) 
 		cr[0] = '\0';
-	if ( eof_chk || strncmp( command, "BYE", 3 ) == 0 ) 
+	if ( eof_chk || strncasecmp( command, "BYE", 3 ) == 0 ) 
 		nchars = 0;
 	return nchars;
 }

@@ -76,7 +76,7 @@ int main( int argc, char **argv  )
 		while ( response != NULL && prompt( temp, 1024 ) )
 		{
 			valerie_util_trim( valerie_util_chomp( temp ) );
-			if ( !strcmp( temp, "BYE" ) )
+			if ( !strcasecmp( temp, "BYE" ) )
 			{
 				break;
 			}

@@ -167,7 +167,7 @@ response_codes miracle_list_clips( command_argument cmd_arg )
 		{
 			snprintf( fullname, 1023, "%s%s/%s", cmd_arg->root_dir, dir_name, de[i]->d_name );
 			if ( lstat( fullname, &info ) == 0 && 
-				 ( S_ISREG( info.st_mode ) || ( strstr( fullname, ".clip" ) && info.st_mode | S_IXUSR ) ) )
+				 ( S_ISREG( info.st_mode ) || S_ISLNK( info.st_mode ) || ( strstr( fullname, ".clip" ) && info.st_mode | S_IXUSR ) ) )
 				valerie_response_printf( cmd_arg->response, 1024, "\"%s\" %llu\n", de[i]->d_name, (unsigned long long) info.st_size );
 			free( de[ i ] );
 		}
