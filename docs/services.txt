@@ -688,6 +688,53 @@ Filters
 
 	        none
 
+	jackrack
+	
+	    Description
+	    
+	        Creates Jack ports and runs a JackRack project to process audio
+			through a stack of LADSPA filters.
+	        
+	    Constructor Argument
+	    
+	        src - a JackRack file
+			
+		Details
+		
+			If you are using a consumer that uses ALSA, then you should start
+			jacks with the dummy driver: jackd -d dummy.
+			I also recommend using a period size of 2048: -p 2048.
+			
+			jackd -ddummy -r48000 -p2048
+	        
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
+			
+			The following can be used without a rack file in order to connect
+			filter_jackrack to a running instance of JackRack:
+			string out_1 - Jack port to connect MLT's output port (JackRack's input)
+			string out_2 - Jack port to connect MLT's output port (JackRack's input)
+			string in_1 - Jack port to connect MLT's input port (JackRack's output)
+			string in_2 - Jack port to connect MLT's input port (JackRack's output)
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Mutable Properties
+
+			none
+	        
+	    Dependencies
+	    
+	        Jack, LADSPA, glib-2.0, libxml2
+	        
+	    Known Bugs
+	    
+	        no encapsulated resampling and jack runs at a fixed frequency
+	    
 	luma
 	
 	    Description

@@ -196,9 +196,6 @@ static int jack_process (jack_nframes_t frames, void * data)
 			total_size += ring_size;
 		if ( first_ring_size == -sizeof(float) || total_size >= first_ring_size )
 		{
-			// Set flag to skip this henceforth
-			mlt_properties_set_int( properties, "_samples", -1 );
-			
 			// Return audio through in port
 			jack_input_buffers[i] = jack_port_get_buffer( jack_input_ports[i], frames );
 			if ( ! jack_input_buffers[i] )
@@ -212,11 +209,15 @@ static int jack_process (jack_nframes_t frames, void * data)
 			jack_ringbuffer_write( input_buffers[i], ( char * )jack_input_buffers[i], ring_size < jack_size ? ring_size : jack_size );
 			
 			// Tell mlt that audio is available
-			if ( i == ( channels - 1 ) && pthread_mutex_trylock( output_lock) == 0 )
+			if ( first_ring_size != -sizeof(float) && i == ( channels - 1 ) 
+				 && pthread_mutex_trylock( output_lock) == 0 )
 			{
 				pthread_cond_signal( output_ready );
 				pthread_mutex_unlock( output_lock );
 			}
+			
+			// Set flag to skip this henceforth
+			mlt_properties_set_int( properties, "_samples", -1 );
 		}
 	}
 
@@ -273,33 +274,31 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	//	fprintf( stderr, "%s: out buffer size %d\n", __FUNCTION__, jack_ringbuffer_write_space( output_buffers[0] ) );
 	
 	// Read from input ringbuffer and convert from floats
-	while ( jack_ringbuffer_read_space( input_buffers[ *channels - 1 ] ) < ( *samples * sizeof(float) ) )
+	while ( mlt_properties_get_int( filter_properties, "_samples" ) != -1
+		    && jack_ringbuffer_read_space( input_buffers[ *channels - 1 ] ) < ( *samples * sizeof(float) ) )
 		pthread_cond_wait( output_ready, output_lock );
-	{
-		q = *buffer;
-		
-		// Initialise to silence, but repeat last frame if available in case of 
-		// buffer underrun
-		sample = 0;
-		
-		for ( i = 0; i < *samples; i++ )
-			for ( j = 0; j < *channels; j++ )
-			{
-				jack_ringbuffer_read( input_buffers[j], ( char * )&sample, sizeof(float) );
 
-				if ( sample > 1.0 )
-					sample = 1.0;
-				else if ( sample < -1.0 )
-					sample = -1.0;
-			
-				if ( sample > 0 )
-					*q ++ = 32767 * sample;
-				else
-					*q ++ = 32768 * sample;
-			}
-	}
-	//else
-	//	fprintf( stderr, "%s: in buffer size %d\n", __FUNCTION__, jack_ringbuffer_read_space( output_buffers[0] ) );
+	q = *buffer;
+		
+	// Initialise to silence, but repeat last frame if available in case of 
+	// buffer underrun
+	sample = 0;
+	
+	for ( i = 0; i < *samples; i++ )
+		for ( j = 0; j < *channels; j++ )
+		{
+			jack_ringbuffer_read( input_buffers[j], ( char * )&sample, sizeof(float) );
+
+			if ( sample > 1.0 )
+				sample = 1.0;
+			else if ( sample < -1.0 )
+				sample = -1.0;
+		
+			if ( sample > 0 )
+				*q ++ = 32767 * sample;
+			else
+				*q ++ = 32768 * sample;
+		}
 
 	return 0;
 }
