@@ -254,6 +254,15 @@ int miracle_append( command_argument cmd_arg )
 	return RESPONSE_SUCCESS;
 }
 
+int miracle_push( command_argument cmd_arg, mlt_service service )
+{
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	if ( unit != NULL && service != NULL )
+		if ( miracle_unit_append_service( unit, service ) == valerie_ok )
+			return RESPONSE_SUCCESS;
+	return RESPONSE_BAD_FILE;
+}
+
 int miracle_play( command_argument cmd_arg )
 {
 	miracle_unit unit = miracle_get_unit(cmd_arg->unit);

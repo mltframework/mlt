@@ -5,6 +5,7 @@ then
 
 cat << EOF >> ../producers.dat
 westley			libmltwestley.so
+westley-xml		libmltwestley.so
 EOF
 
 cat << EOF >> ../consumers.dat

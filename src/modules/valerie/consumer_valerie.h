@@ -1,7 +1,7 @@
 /*
- * factory.c -- the factory method interfaces
+ * consumer_valerie.h -- pushes a service via valerie
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Author: Charles Yates <charles.yates@telenet.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,34 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+#ifndef _CONSUMER_VALERIE_H_
+#define _CONSUMER_VALERIE_H_
 
-#include "consumer_westley.h"
-#include "producer_westley.h"
+#include <framework/mlt_consumer.h>
 
-void *mlt_create_producer( char *id, void *arg )
-{
-	if ( !strcmp( id, "westley" ) )
-		return producer_westley_init( 0, arg );
-	if ( !strcmp( id, "westley-xml" ) )
-		return producer_westley_init( 1, arg );
-	return NULL;
-}
+extern mlt_consumer consumer_valerie_init( char * );
 
-void *mlt_create_filter( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( char *id, void *arg )
-{
-	if ( !strcmp( id, "westley" ) )
-		return consumer_westley_init( arg );
-	return NULL;
-}
-
+#endif

@@ -32,6 +32,7 @@ dist-clean:	clean
 		rm -f .depend
 
 clean:	
+		if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg clean ; fi
 		rm -f $(OBJS) $(TARGET) 
 
 install: all

@@ -60,6 +60,9 @@ rgba_color parse_color( char *color )
 {
 	rgba_color result = { 0xff, 0xff, 0xff, 0xff };
 
+	if ( strchr( color, '/' ) )
+		color = strrchr( color, '/' ) + 1;
+
 	if ( !strncmp( color, "0x", 2 ) )
 	{
 		unsigned int temp = 0;

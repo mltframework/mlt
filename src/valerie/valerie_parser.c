@@ -44,6 +44,14 @@ valerie_response valerie_parser_execute( valerie_parser parser, char *command )
 	return parser->execute( parser->real, command );
 }
 
+/** Push a service via the parser.
+*/
+
+valerie_response valerie_parser_push( valerie_parser parser, char *command, mlt_service service )
+{
+	return parser->push( parser->real, command, service );
+}
+
 /** Execute a formatted command via the parser.
 */
 

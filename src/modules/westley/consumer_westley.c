@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <libxml/tree.h>
 
 #define ID_SIZE 128
@@ -40,6 +41,7 @@ struct serialise_context_s
 	int transition_count;
 	int pass;
 	mlt_properties hide_map;
+	char *root;
 };
 typedef struct serialise_context_s* serialise_context;
 
@@ -165,7 +167,7 @@ mlt_consumer consumer_westley_init( char *arg )
 	return NULL;
 }
 
-static inline void serialise_properties( mlt_properties properties, xmlNode *node )
+static inline void serialise_properties( serialise_context context, mlt_properties properties, xmlNode *node )
 {
 	int i;
 	xmlNode *p;
@@ -181,12 +183,17 @@ static inline void serialise_properties( mlt_properties properties, xmlNode *nod
 			 strcmp( name, "in" ) != 0 &&
 			 strcmp( name, "out" ) != 0 && 
 			 strcmp( name, "id" ) != 0 && 
+			 strcmp( name, "root" ) != 0 && 
 			 strcmp( name, "width" ) != 0 &&
 			 strcmp( name, "height" ) != 0 )
 		{
+			char *value = mlt_properties_get_value( properties, i );
 			p = xmlNewChild( node, NULL, "property", NULL );
 			xmlNewProp( p, "name", mlt_properties_get_name( properties, i ) );
-			xmlNodeSetContent( p, mlt_properties_get_value( properties, i ) );
+			if ( strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
+				xmlNodeSetContent( p, value + strlen( context->root ) + 1 );
+			else
+				xmlNodeSetContent( p, value );
 		}
 	}
 }
@@ -207,9 +214,19 @@ static inline void serialise_service_filters( serialise_context context, mlt_ser
 			char *id = westley_get_id( context, mlt_filter_service( filter ), westley_filter );
 			if ( id != NULL )
 			{
+				int in = mlt_properties_get_position( properties, "in" );
+				int out = mlt_properties_get_position( properties, "out" );
 				p = xmlNewChild( node, NULL, "filter", NULL );
 				xmlNewProp( p, "id", id );
-				serialise_properties( properties, p );
+				if ( in != 0 || out != 0 )
+				{
+					char temp[ 20 ];
+					sprintf( temp, "%d", in );
+					xmlNewProp( p, "in", temp );
+					sprintf( temp, "%d", out );
+					xmlNewProp( p, "out", temp );
+				}
+				serialise_properties( context, properties, p );
 				serialise_service_filters( context, mlt_filter_service( filter ), p );
 			}
 		}
@@ -232,7 +249,7 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 
 		// Set the id
 		xmlNewProp( child, "id", id );
-		serialise_properties( properties, child );
+		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
 
 		// Add producer to the map
@@ -418,7 +435,7 @@ static void serialise_filter( serialise_context context, mlt_service service, xm
 		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
-		serialise_properties( properties, child );
+		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
 	}
 }
@@ -445,7 +462,7 @@ static void serialise_transition( serialise_context context, mlt_service service
 		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
-		serialise_properties( properties, child );
+		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
 	}
 }
@@ -519,12 +536,28 @@ static void serialise_service( serialise_context context, mlt_service service, x
 
 xmlDocPtr westley_make_doc( mlt_service service )
 {
+	mlt_properties properties = mlt_service_properties( service );
 	xmlDocPtr doc = xmlNewDoc( "1.0" );
 	xmlNodePtr root = xmlNewNode( NULL, "westley" );
 	struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
 	
 	xmlDocSetRootElement( doc, root );
-		
+
+	// If we have root, then deal with it now
+	if ( mlt_properties_get( properties, "root" ) != NULL )
+	{
+		xmlNewProp( root, "root", mlt_properties_get( properties, "root" ) );
+		context->root = strdup( mlt_properties_get( properties, "root" ) );
+	}
+	else
+	{
+		context->root = strdup( "" );
+	}
+
+	// Assign a title property
+	if ( mlt_properties_get( properties, "title" ) != NULL )
+		xmlNewProp( root, "title", mlt_properties_get( properties, "title" ) );
+
 	// Construct the context maps
 	context->id_map = mlt_properties_new();
 	context->hide_map = mlt_properties_new();
@@ -544,11 +577,11 @@ xmlDocPtr westley_make_doc( mlt_service service )
 	// Cleanup resource
 	mlt_properties_close( context->id_map );
 	mlt_properties_close( context->hide_map );
+	free( context->root );
 	free( context );
 	
 	return doc;
 }
-
 
 static int consumer_start( mlt_consumer this )
 {
@@ -558,15 +591,49 @@ static int consumer_start( mlt_consumer this )
 	mlt_service service = mlt_service_producer( mlt_consumer_service( this ) );
 	if ( service != NULL )
 	{
-		char *resource =  mlt_properties_get( mlt_consumer_properties( this ), "resource" );
+		mlt_properties properties = mlt_consumer_properties( this );
+		char *resource =  mlt_properties_get( properties, "resource" );
 
+		// Set the title if provided
+		if ( mlt_properties_get( properties, "title" ) )
+			mlt_properties_set( mlt_service_properties( service ), "title", mlt_properties_get( properties, "title" ) );
+		else if ( mlt_properties_get( mlt_service_properties( service ), "title" ) == NULL )
+			mlt_properties_set( mlt_service_properties( service ), "title", "Anonymous Submission" );
+
+		// Check for a root on the consumer properties and pass to service
+		if ( mlt_properties_get( properties, "root" ) )
+			mlt_properties_set( mlt_service_properties( service ), "root", mlt_properties_get( properties, "root" ) );
+
+		// Specify roots in other cases...
+		if ( resource != NULL && mlt_properties_get( properties, "root" ) == NULL )
+		{
+			// Get the current working directory
+			char *cwd = getcwd( NULL, 0 );
+			mlt_properties_set( mlt_service_properties( service ), "root", cwd );
+			free( cwd );
+		}
+
+		// Make the document
 		doc = westley_make_doc( service );
-		
+
+		// Handle the output
 		if ( resource == NULL || !strcmp( resource, "" ) )
+		{
 			xmlDocFormatDump( stdout, doc, 1 );
+		}
+		else if ( !strcmp( resource, "buffer" ) )
+		{
+			xmlChar *buffer = NULL;
+			int length = 0;
+			xmlDocDumpMemory( doc, &buffer, &length );
+			mlt_properties_set_data( properties, "buffer", buffer, length, xmlFree, NULL );
+		}
 		else
+		{
 			xmlSaveFormatFile( resource, doc, 1 );
+		}
 		
+		// Close the document
 		xmlFreeDoc( doc );
 	}
 	

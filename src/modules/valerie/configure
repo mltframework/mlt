@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ "$help" != "1" ]
+then
+
+cat << EOF >> ../consumers.dat
+valerie			libmltvalerie.so
+EOF
+
+fi
+

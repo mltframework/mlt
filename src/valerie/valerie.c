@@ -145,6 +145,37 @@ valerie_error_code valerie_execute( valerie this, size_t size, char *format, ...
 	return error;
 }
 
+/** Execute a command.
+*/
+
+valerie_error_code valerie_push( valerie this, mlt_service service, size_t size, char *format, ... )
+{
+	valerie_error_code error = valerie_server_unavailable;
+	char *command = malloc( size );
+	if ( this != NULL && command != NULL )
+	{
+		va_list list;
+		va_start( list, format );
+		if ( vsnprintf( command, size, format, list ) != 0 )
+		{
+			valerie_response response = valerie_parser_push( this->parser, command, service );
+			valerie_set_last_response( this, response );
+			error = valerie_get_error_code( this, response );
+		}
+		else
+		{
+			error = valerie_invalid_command;
+		}
+		va_end( list );
+	}
+	else
+	{
+		error = valerie_malloc_failed;
+	}
+	free( command );
+	return error;
+}
+
 /** Set a global property.
 */
 
@@ -250,6 +281,14 @@ valerie_error_code valerie_unit_load_back_clipped( valerie this, int unit, char 
 valerie_error_code valerie_unit_append( valerie this, int unit, char *file, int32_t in, int32_t out )
 {
 	return valerie_execute( this, 10240, "APND U%d \"%s\" %d %d", unit, file, in, out );
+}
+
+/** Push a service on to a unit.
+*/
+
+valerie_error_code valerie_unit_push( valerie this, int unit, char *command, mlt_service service )
+{
+	return valerie_push( this, service, 10240, "PUSH U%d %s", unit, command );
 }
 
 /** Clean the unit - this function removes all but the currently playing clip.

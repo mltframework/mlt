@@ -50,6 +50,7 @@ extern response_codes miracle_get_unit_status( command_argument );
 extern response_codes miracle_set_unit_property( command_argument );
 extern response_codes miracle_get_unit_property( command_argument );
 extern response_codes miracle_transfer( command_argument );
+extern response_codes miracle_push( command_argument, mlt_service );
 
 #ifdef __cplusplus
 }

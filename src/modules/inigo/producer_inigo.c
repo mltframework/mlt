@@ -129,6 +129,7 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_field field = mlt_tractor_field( tractor );
 	mlt_properties field_properties = mlt_field_properties( field );
 	mlt_multitrack multitrack = mlt_tractor_multitrack( tractor );
+	char *title = NULL;
 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( field_properties, "registered", 0 );
@@ -265,6 +266,8 @@ mlt_producer producer_inigo_init( char **argv )
 		{
 			if ( producer != NULL )
 				mlt_playlist_append( playlist, producer );
+			if ( title == NULL )
+				title = argv[ i ];
 			producer = create_producer( field, argv[ i ] );
 			if ( producer != NULL )
 			{
@@ -303,6 +306,8 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_properties_set_position( props, "length", mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) + 1 );
 	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) );
 	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( mlt_multitrack_producer( multitrack ) ) );
+	if ( title != NULL )
+		mlt_properties_set( props, "title", strchr( title, '/' ) ? strrchr( title, '/' ) + 1 : title );
 
 	return prod;
 }

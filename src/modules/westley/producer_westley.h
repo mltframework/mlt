@@ -23,6 +23,6 @@
 
 #include <framework/mlt_producer.h>
 
-extern mlt_producer producer_westley_init( char *filename );
+extern mlt_producer producer_westley_init( int type, char *data );
 
 #endif

@@ -21,6 +21,9 @@
 #ifndef _VALERIE_PARSER_H_
 #define _VALERIE_PARSER_H_
 
+/* MLT Header files */
+#include <framework/mlt.h>
+
 /* Application header files */
 #include "valerie_response.h"
 #include "valerie_notifier.h"
@@ -35,6 +38,7 @@ extern "C"
 
 typedef valerie_response (*parser_connect)( void * );
 typedef valerie_response (*parser_execute)( void *, char * );
+typedef valerie_response (*parser_push)( void *, char *, mlt_service );
 typedef void (*parser_close)( void * );
 
 /** Structure for the valerie parser.
@@ -44,6 +48,7 @@ typedef struct
 {
 	parser_connect connect;
 	parser_execute execute;
+	parser_push push;
 	parser_close close;
 	void *real;
 	valerie_notifier notifier;
@@ -54,6 +59,7 @@ typedef struct
 */
 
 extern valerie_response valerie_parser_connect( valerie_parser );
+extern valerie_response valerie_parser_push( valerie_parser, char *, mlt_service );
 extern valerie_response valerie_parser_execute( valerie_parser, char * );
 extern valerie_response valerie_parser_executef( valerie_parser, char *, ... );
 extern valerie_response valerie_parser_run( valerie_parser, char * );

@@ -27,6 +27,7 @@
 #include <pthread.h>
 
 /* Application header files */
+#include <framework/mlt.h>
 #include "valerie_remote.h"
 #include "valerie_socket.h"
 #include "valerie_tokeniser.h"
@@ -54,6 +55,7 @@ typedef struct
 
 static valerie_response valerie_remote_connect( valerie_remote );
 static valerie_response valerie_remote_execute( valerie_remote, char * );
+static valerie_response valerie_remote_push( valerie_remote, char *, mlt_service );
 static void valerie_remote_close( valerie_remote );
 static int valerie_remote_read_response( valerie_socket, valerie_response );
 
@@ -62,21 +64,19 @@ static int valerie_remote_read_response( valerie_socket, valerie_response );
 
 valerie_parser valerie_parser_init_remote( char *server, int port )
 {
-	valerie_parser parser = malloc( sizeof( valerie_parser_t ) );
-	valerie_remote remote = malloc( sizeof( valerie_remote_t ) );
+	valerie_parser parser = calloc( 1, sizeof( valerie_parser_t ) );
+	valerie_remote remote = calloc( 1, sizeof( valerie_remote_t ) );
 
 	if ( parser != NULL )
 	{
-		memset( parser, 0, sizeof( valerie_parser_t ) );
-
 		parser->connect = (parser_connect)valerie_remote_connect;
 		parser->execute = (parser_execute)valerie_remote_execute;
+		parser->push = (parser_push)valerie_remote_push;
 		parser->close = (parser_close)valerie_remote_close;
 		parser->real = remote;
 
 		if ( remote != NULL )
 		{
-			memset( remote, 0, sizeof( valerie_remote_t ) );
 			remote->parser = parser;
 			remote->server = strdup( server );
 			remote->port = port;
@@ -194,6 +194,37 @@ static valerie_response valerie_remote_execute( valerie_remote remote, char *com
 	return response;
 }
 
+/** Push a producer to the server.
+*/
+
+static valerie_response valerie_remote_push( valerie_remote remote, char *command, mlt_service service )
+{
+	valerie_response response = NULL;
+	pthread_mutex_lock( &remote->mutex );
+	if ( valerie_socket_write_data( remote->socket, command, strlen( command ) ) == strlen( command ) )
+	{
+		mlt_consumer consumer = mlt_factory_consumer( "westley", "buffer" );
+		mlt_properties properties = mlt_consumer_properties( consumer );
+		char temp[ 20 ];
+		char *buffer = NULL;
+		int length = 0;
+		mlt_consumer_connect( consumer, service );
+		response = valerie_response_init( );
+		valerie_socket_write_data( remote->socket, "\r\n", 2 );
+		mlt_consumer_start( consumer );
+		buffer = mlt_properties_get_data( properties, "buffer", &length );
+		sprintf( temp, "%d", length );
+		valerie_socket_write_data( remote->socket, temp, strlen( temp ) );
+		valerie_socket_write_data( remote->socket, "\r\n", 2 );
+		valerie_socket_write_data( remote->socket, buffer, length );
+		valerie_socket_write_data( remote->socket, "\r\n", 2 );
+		valerie_remote_read_response( remote->socket, response );
+		mlt_consumer_close( consumer );
+	}
+	pthread_mutex_unlock( &remote->mutex );
+	return response;
+}
+
 /** Disconnect.
 */
 
@@ -201,7 +232,8 @@ static void valerie_remote_disconnect( valerie_remote remote )
 {
 	if ( remote != NULL && remote->terminated )
 	{
-		pthread_join( remote->thread, NULL );
+		if ( remote->connected )
+			pthread_join( remote->thread, NULL );
 		valerie_socket_close( remote->status );
 		valerie_socket_close( remote->socket );
 		remote->connected = 0;

@@ -134,6 +134,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
 			{
+				// Apply all filters that are attached to this filter to the b frame
+				mlt_service_apply_filters( mlt_filter_service( this ), b_frame, 0 );
+
+				// Process the frame
 				mlt_transition_process( composite, frame, b_frame );
 
 				// Get the image
@@ -147,6 +151,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_properties_set( a_props, "rescale.interp", "nearest" );
 				mlt_properties_set( b_props, "rescale.interp", "nearest" );
 				mlt_properties_set_int( b_props, "consumer_aspect_ratio", 1 );
+				mlt_service_apply_filters( mlt_filter_service( this ), frame, 0 );
 				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
 				mlt_properties_set_data( b_props, "image", *image, 0, NULL, NULL );
 				mlt_properties_set_data( a_props, "image", *image, *width * *height * 2, mlt_pool_release, NULL );
@@ -203,6 +208,8 @@ mlt_filter filter_watermark_init( void *arg )
 		mlt_properties_set( properties, "factory", "fezzik" );
 		if ( arg != NULL )
 			mlt_properties_set( properties, "resource", arg );
+		// Ensure that attached filters are handled privately
+		mlt_properties_set_int( properties, "_filter_private", 1 );
 	}
 	return this;
 }

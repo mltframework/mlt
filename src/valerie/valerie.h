@@ -24,6 +24,9 @@
 /* System header files */
 #include <limits.h>
 
+/* MLT Header files. */
+#include <framework/mlt.h>
+
 /* Application header files */
 #include "valerie_parser.h"
 #include "valerie_status.h"
@@ -94,6 +97,7 @@ extern valerie_error_code valerie_unit_load_clipped( valerie, int, char *, int32
 extern valerie_error_code valerie_unit_load_back( valerie, int, char * );
 extern valerie_error_code valerie_unit_load_back_clipped( valerie, int, char *, int32_t, int32_t );
 extern valerie_error_code valerie_unit_append( valerie, int, char *, int32_t, int32_t );
+extern valerie_error_code valerie_unit_push( valerie, int, char *, mlt_service );
 extern valerie_error_code valerie_unit_clean( valerie, int );
 extern valerie_error_code valerie_unit_clear( valerie, int );
 extern valerie_error_code valerie_unit_clip_move( valerie, int, valerie_clip_offset, int, valerie_clip_offset, int );
@@ -246,6 +250,7 @@ extern char *valerie_error_description( valerie_error_code );
 
 /* Courtesy functions. */
 extern valerie_error_code valerie_execute( valerie, size_t, char *, ... );
+extern valerie_error_code valerie_push( valerie, mlt_service, size_t, char *, ... );
 
 /* Close function. */
 extern void valerie_close( valerie );

@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
@@ -172,13 +173,14 @@ static inline void qualify_property( deserialise_context context, mlt_properties
 	if ( resource != NULL )
 	{
 		// Qualify file name properties	
-		char *root = mlt_properties_get( context->producer_map, "_root" );
-		if ( root != NULL )
+		char *root = mlt_properties_get( context->producer_map, "root" );
+		if ( root != NULL && strcmp( root, "" ) )
 		{
-			char *full_resource = malloc( strlen( root ) + strlen( resource ) + 1 );
-			if ( resource[ 0 ] != '/' )
+			char *full_resource = malloc( strlen( root ) + strlen( resource ) + 2 );
+			if ( resource[ 0 ] != '/' && strchr( resource, ':' ) == NULL )
 			{
 				strcpy( full_resource, root );
+				strcat( full_resource, "/" );
 				strcat( full_resource, resource );
 			}
 			else
@@ -1000,6 +1002,9 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_transition( context, name, atts );
 	else if ( strcmp( name, "property" ) == 0 )
 		on_start_property( context, name, atts );
+	else if ( strcmp( name, "westley" ) == 0 )
+		for ( ; atts != NULL && *atts != NULL; atts += 2 )
+			mlt_properties_set( context->producer_map, ( char * )atts[ 0 ], ( char * )atts[ 1 ] );
 }
 
 static void on_end_element( void *ctx, const xmlChar *name )
@@ -1213,9 +1218,9 @@ static void parse_url( mlt_properties properties, char *url )
 		mlt_properties_set( properties, name, value );
 }
 
-mlt_producer producer_westley_init( char *url )
+mlt_producer producer_westley_init( int info, char *data )
 {
-	if ( url == NULL )
+	if ( data == NULL )
 		return NULL;
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
@@ -1223,27 +1228,42 @@ mlt_producer producer_westley_init( char *url )
 	int i = 0;
 	struct _xmlParserCtxt *xmlcontext;
 	int well_formed = 0;
-	char *filename = strdup( url );
+	char *filename = NULL;
 	
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
 	context->params = mlt_properties_new();
 
-	// Decode URL and parse parameters	
-	parse_url( context->params, url_decode( filename, url ) );
+	// Decode URL and parse parameters
+	mlt_properties_set( context->producer_map, "root", "" );
+	if ( info == 0 )
+	{
+		filename = strdup( data );
+		parse_url( context->params, url_decode( filename, data ) );
+
+		// We need the directory prefix which was used for the westley
+		if ( strchr( filename, '/' ) )
+		{
+			char *root = NULL;
+			mlt_properties_set( context->producer_map, "root", filename );
+			root = mlt_properties_get( context->producer_map, "root" );
+			*( strrchr( root, '/' ) ) = '\0';
+
+			// If we don't have an absolute path here, we're heading for disaster...
+			if ( root[ 0 ] != '/' )
+			{
+				char *cwd = getcwd( NULL, 0 );
+				char *real = malloc( strlen( cwd ) + strlen( root ) + 2 );
+				sprintf( real, "%s/%s", cwd, root );
+				mlt_properties_set( context->producer_map, "root", real );
+				free( real );
+				free( cwd );
+			}
+		}
+	}
 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( context->destructors, "registered", 0 );
-
-	// We need the directory prefix which was used for the westley
-	mlt_properties_set( context->producer_map, "_root", "" );
-	if ( strchr( filename, '/' ) )
-	{
-		char *root = NULL;
-		mlt_properties_set( context->producer_map, "_root", filename );
-		root = mlt_properties_get( context->producer_map, "_root" );
-		*( strrchr( root, '/' ) + 1 ) = '\0';
-	}
 
 	// Setup SAX callbacks
 	sax->startElement = on_start_element;
@@ -1259,7 +1279,11 @@ mlt_producer producer_westley_init( char *url )
 	xmlSubstituteEntitiesDefault( 1 );
 	// This is used to facilitate entity substitution in the SAX parser
 	context->entity_doc = xmlNewDoc( "1.0" );
-	xmlcontext = xmlCreateFileParserCtxt( filename );
+	if ( info == 0 )
+		xmlcontext = xmlCreateFileParserCtxt( filename );
+	else
+		xmlcontext = xmlCreateMemoryParserCtxt( data, strlen( data ) );
+
 	xmlcontext->sax = sax;
 	xmlcontext->_private = ( void* )context;
 	
@@ -1296,6 +1320,7 @@ mlt_producer producer_westley_init( char *url )
 	
 	if ( well_formed && service != NULL )
 	{
+		char *title = mlt_properties_get( context->producer_map, "title" );
 		
 		// Need the complete producer list for various reasons
 		properties = context->destructors;
@@ -1318,10 +1343,15 @@ mlt_producer producer_westley_init( char *url )
 		// make the returned service destroy the connected services
 		mlt_properties_set_data( properties, "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
 
+		// Assign the title
+		mlt_properties_set( properties, "title", title );
+
+		// Handle deep copies
 		if ( getenv( "MLT_WESTLEY_DEEP" ) == NULL )
 		{
 			// Now assign additional properties
-			mlt_properties_set( properties, "resource", url );
+			if ( info == 0 )
+				mlt_properties_set( properties, "resource", data );
 
 			// This tells consumer_westley not to deep copy
 			mlt_properties_set( properties, "westley", "was here" );

@@ -34,8 +34,7 @@ extern "C"
 typedef struct
 {
 	mlt_properties properties;
-	mlt_properties producers;
-	mlt_properties old_producers;
+	mlt_playlist old_playlist;
 } 
 miracle_unit_t, *miracle_unit;
 
@@ -45,6 +44,7 @@ extern void                 miracle_unit_allow_stdin( miracle_unit unit, int fla
 extern valerie_error_code   miracle_unit_load( miracle_unit unit, char *clip, int32_t in, int32_t out, int flush );
 extern valerie_error_code 	miracle_unit_insert( miracle_unit unit, char *clip, int index, int32_t in, int32_t out );
 extern valerie_error_code   miracle_unit_append( miracle_unit unit, char *clip, int32_t in, int32_t out );
+extern valerie_error_code   miracle_unit_append_service( miracle_unit unit, mlt_service service );
 extern valerie_error_code 	miracle_unit_remove( miracle_unit unit, int index );
 extern valerie_error_code 	miracle_unit_clean( miracle_unit unit );
 extern valerie_error_code 	miracle_unit_clear( miracle_unit unit );

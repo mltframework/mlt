@@ -223,7 +223,35 @@ void *parser_thread( void *arg )
 
 		while( !error && connection_read( fd, command, 1024 ) )
 		{
-			if ( strncmp( command, "STATUS", 6 ) )
+			if ( !strncmp( command, "PUSH ", 5 ) )
+			{
+				char temp[ 20 ];
+				int bytes;
+				char *buffer = NULL;
+				int total = 0;
+				mlt_service service = NULL;
+
+				connection_read( fd, temp, 20 );
+				bytes = atoi( temp );
+				buffer = malloc( bytes + 1 );
+				while ( total < bytes )
+				{
+					int count = read( fd, buffer + total, bytes - total );
+					if ( count >= 0 )
+						total += count;
+					else
+						break;
+				}
+				buffer[ bytes ] = '\0';
+				if ( bytes > 0 && total == bytes )
+					service = ( mlt_service )mlt_factory_producer( "westley-xml", buffer );
+				response = valerie_parser_push( parser, command, service );
+				error = connection_send( fd, response );
+				valerie_response_close( response );
+				mlt_service_close( service );
+				free( buffer );
+			}
+			else if ( strncmp( command, "STATUS", 6 ) )
 			{
 				response = valerie_parser_execute( parser, command );
 				miracle_log( LOG_INFO, "%s \"%s\" %d", address, command, valerie_response_get_error_code( response ) );

@@ -129,23 +129,6 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 	return alpha;
 }
 
-static void apply_filters( mlt_filter this, mlt_frame frame, int index )
-{
-	mlt_service service = mlt_filter_service( this );
-	mlt_properties properties = mlt_filter_properties( this );
-	int i;
-
-	if ( index == 0 || mlt_properties_get_int( properties, "_filter_private" ) == 0 )
-	{
-		mlt_filter filter = NULL;
-		for ( i = 0; ( filter = mlt_service_filter( service, i ) ) != NULL; i ++ )
-		{
-			mlt_filter_process( filter, frame );
-			apply_filters( filter, frame, 1 );
-		}
-	}
-}
-
 /** Do it :-).
 */
 
@@ -317,7 +300,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		// Allow filters to be attached to a region filter
 		filter = mlt_properties_get_data( properties, "_region_filter", NULL );
 		if ( filter != NULL )
-			apply_filters( filter, b_frame, 0 );
+			mlt_service_apply_filters( mlt_filter_service( filter ), b_frame, 0 );
 
 		// Hmm - this is probably going to go wrong....
 		mlt_frame_set_position( frame, position );

@@ -1,15 +1,13 @@
 include ../../../config.mak
 
-TARGET = ../libmltsox.so
+TARGET = ../libmltvalerie.so
 
 OBJS = factory.o \
-	   filter_sox.o 
+	   consumer_valerie.o
 
-CFLAGS += -I../../ -I/usr/include/sox
+CFLAGS += -I../../ 
 
-LDFLAGS += -lst -lpopt -lvorbis -logg -lvorbisfile -lvorbisenc
-
-LDFLAGS+=-L../../framework -lmlt -lmp3lame
+LDFLAGS+=-L../../valerie -lvalerie -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 
@@ -25,7 +23,7 @@ dist-clean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(OBJS) $(TARGET)
+		rm -f $(OBJS) $(TARGET) 
 
 install: all
 	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"

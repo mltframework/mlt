@@ -60,6 +60,7 @@ typedef struct
 
 static valerie_response miracle_local_connect( miracle_local );
 static valerie_response miracle_local_execute( miracle_local, char * );
+static valerie_response miracle_local_push( miracle_local, char *, mlt_service );
 static void miracle_local_close( miracle_local );
 response_codes miracle_help( command_argument arg );
 response_codes miracle_run( command_argument arg );
@@ -79,6 +80,7 @@ valerie_parser miracle_parser_init_local( )
 
 		parser->connect = (parser_connect)miracle_local_connect;
 		parser->execute = (parser_execute)miracle_local_execute;
+		parser->push = (parser_push)miracle_local_push;
 		parser->close = (parser_close)miracle_local_close;
 		parser->real = local;
 
@@ -490,6 +492,46 @@ static valerie_response miracle_local_execute( miracle_local local, char *comman
 
 			free( cmd.argument );
 		}
+	}
+
+	valerie_tokeniser_close( cmd.tokeniser );
+
+	return cmd.response;
+}
+
+static valerie_response miracle_local_push( miracle_local local, char *command, mlt_service service )
+{
+	command_argument_t cmd;
+	cmd.parser = local->parser;
+	cmd.response = valerie_response_init( );
+	cmd.tokeniser = valerie_tokeniser_init( );
+	cmd.command = command;
+	cmd.unit = -1;
+	cmd.argument = NULL;
+	cmd.root_dir = local->root_dir;
+
+	/* Set the default error */
+	miracle_command_set_error( &cmd, RESPONSE_SUCCESS );
+
+	/* Parse the command */
+	if ( valerie_tokeniser_parse_new( cmd.tokeniser, command, " " ) > 0 )
+	{
+		int index = 0;
+		int position = 1;
+
+		/* Strip quotes from all tokens */
+		for ( index = 0; index < valerie_tokeniser_count( cmd.tokeniser ); index ++ )
+			valerie_util_strip( valerie_tokeniser_get_string( cmd.tokeniser, index ), '\"' );
+
+		cmd.unit = miracle_command_parse_unit( &cmd, position );
+		if ( cmd.unit == -1 )
+			miracle_command_set_error( &cmd, RESPONSE_MISSING_ARG );
+		position ++;
+
+		miracle_push( &cmd, service );
+		miracle_command_set_error( &cmd, RESPONSE_SUCCESS );
+
+		free( cmd.argument );
 	}
 
 	valerie_tokeniser_close( cmd.tokeniser );

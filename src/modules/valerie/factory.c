@@ -20,15 +20,10 @@
 
 #include <string.h>
 
-#include "consumer_westley.h"
-#include "producer_westley.h"
+#include "consumer_valerie.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
-	if ( !strcmp( id, "westley" ) )
-		return producer_westley_init( 0, arg );
-	if ( !strcmp( id, "westley-xml" ) )
-		return producer_westley_init( 1, arg );
 	return NULL;
 }
 
@@ -44,8 +39,8 @@ void *mlt_create_transition( char *id, void *arg )
 
 void *mlt_create_consumer( char *id, void *arg )
 {
-	if ( !strcmp( id, "westley" ) )
-		return consumer_westley_init( arg );
+	if ( !strcmp( id, "valerie" ) )
+		return consumer_valerie_init( arg );
 	return NULL;
 }
 

@@ -19,7 +19,7 @@
  */
 
 #include <string.h>
-
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include "producer_pixbuf.h"
 #include "producer_pango.h"
 #include "filter_rescale.h"

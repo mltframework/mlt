@@ -634,8 +634,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					{
 						mix = ( float )*( alpha + dy * b_width + dx ) / 255.0;
 						dx += dx & 1;
-						*p ++ = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) );
-						*p ++ = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
+						*p = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) );
+						p ++;
+						*p = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
+						p ++;
 					}
 				}
 				else
