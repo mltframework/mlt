@@ -41,7 +41,7 @@ struct consumer_sdl_s
 	mlt_deque queue;
 	pthread_t thread;
 	int running;
-	uint8_t audio_buffer[ 4096 * 24 ];
+	uint8_t audio_buffer[ 4096 * 19 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
 	pthread_cond_t audio_cond;
@@ -268,19 +268,21 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		SDL_AudioSpec request;
 		SDL_AudioSpec got;
 
+		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+		SDL_EnableUNICODE( 1 );
+
 		// specify audio format
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
 		this->playing = 0;
 		request.freq = frequency;
 		request.format = AUDIO_S16;
 		request.channels = channels;
-		request.samples = 4096;
+		request.samples = 2048;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
 		{
 			fprintf( stderr, "SDL failed to open audio: %s\n", SDL_GetError() );
-			mlt_properties_set_int( properties, "audio_off", 1 );
 			init_audio = 2;
 		}
 		else if ( got.size != 0 )
@@ -315,7 +317,6 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elapsed, int64_t playtime )
 {
-	int error = 0;
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
 
@@ -323,9 +324,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	int width = this->width, height = this->height;
 	uint8_t *image;
 	int changed = 0;
-	struct timeb now;
-	ftime( &now );
-	int64_t start = ( ( int64_t )now.time * 1000 + now.millitm );
+
+	struct timeb before;
+	ftime( &before );
 
 	if ( mlt_properties_get_int( properties, "video_off" ) )
 	{
@@ -333,21 +334,18 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 		return 0;
 	}
 
-	if ( frame != NULL )
-	{
-		// Set playtime
-		mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
-		mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_scale", ( double )height / mlt_properties_get_double( properties, "height" ) );
+	// Set skip
+	mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
+	mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_scale", ( double )height / mlt_properties_get_double( properties, "height" ) );
 
-		// Push this frame to the back of the queue
-		mlt_deque_push_back( this->queue, frame );
-	}
+	// Push this frame to the back of the queue
+	mlt_deque_push_back( this->queue, frame );
+	frame = NULL;
 
 	if ( this->playing )
 	{
 		// We might want to use an old frame if the current frame is skipped
 		mlt_frame candidate = NULL;
-		frame = NULL;
 
 		while ( frame == NULL && mlt_deque_count( this->queue ) )
 		{
@@ -355,20 +353,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 			playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
 
 			// Check if frame is in the future or past
-			if ( playtime > elapsed + 500 )
+			if ( playtime > elapsed + 60 || mlt_deque_count( this->queue ) < 12 )
 			{
-				// Too far in the future - play it now
-				frame = mlt_deque_pop_front( this->queue );
-			}
-			else if ( playtime > elapsed + 160 )
-			{
-				// Time to squeeze a few more frames in
-				frame = candidate;
-				candidate = NULL;
-				error = 1;
+				// no frame to show or remove
+				frame = NULL;
 				break;
 			}
-			else if ( playtime < elapsed )
+			else if ( playtime < elapsed - 20 )
 			{
 				if ( candidate != NULL )
 					mlt_frame_close( candidate );
@@ -387,24 +378,23 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 		else if ( candidate != NULL )
 			mlt_frame_close( candidate );
 	}
-	else
-	{
-		if ( frame != NULL )
-			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		frame = NULL;
-	}
 
 	if ( this->playing && frame != NULL )
 	{
+		//struct timeb after;
+
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		ftime( &now );
-		elapsed += ( ( int64_t )now.time * 1000 + now.millitm ) - start;
 
-		playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
-		struct timespec slow = { 0, ( playtime - elapsed ) * 1000 };
-		if ( slow.tv_nsec > 50 )
-			nanosleep( &slow, NULL );
+		//ftime( &after );
+		//fprintf( stderr, "showing %lld at %lld\n", playtime, elapsed );
+		//elapsed += ( ( int64_t )after.time * 1000 + after.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
+
+		//playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
+		//struct timespec slow = { 0, ( playtime - elapsed ) * 500 };
+		//if ( slow.tv_nsec > 20000 )
+			//nanosleep( &slow, NULL );
+
 
 		// Handle events
 		if ( this->sdl_screen != NULL )
@@ -514,7 +504,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	if ( frame != NULL )
 		mlt_frame_close( frame );
 
-	return error || frame == NULL;
+	return 0;
 }
 
 /** Threaded wrapper for pipe.
@@ -538,34 +528,23 @@ static void *consumer_thread( void *arg )
 	int duration = 0;
 	int64_t playtime = 0;
 
-	// Initialise the SDL subsystem
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
 		fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
 		return NULL;
 	}
-
-	// Additional initialisation
-	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-	SDL_EnableUNICODE( 1 );
-
+	
 	// Loop until told not to
 	while( this->running )
 	{
 		// Get a frame from the attached producer
 		mlt_frame frame = mlt_consumer_get_frame( consumer );
-		mlt_frame video_frame = frame;
-		int done = 0;
 
 		// Ensure that we have a frame
-		while ( !done )
+		if ( frame != NULL )
 		{
 			// Play audio
-			if ( sizeof( this->audio_buffer ) - this->audio_avail > 8192 || mlt_deque_count( this->queue ) < 2 )
-			{
-				init_audio = consumer_play_audio( this, frame, init_audio, &duration );
-				done = 1;
-			}
+			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
 
 			if ( this->playing )
 			{
@@ -579,20 +558,9 @@ static void *consumer_thread( void *arg )
 					elapsed = ( ( int64_t )now.time * 1000 + now.millitm ) - start;
 			}
 
-			if ( consumer_play_video( this, video_frame, elapsed, playtime ) )
-			{
-				if ( !done )
-				{
-					init_audio = consumer_play_audio( this, frame, init_audio, &duration );
-					done = 1;
-				}
-			}
+			consumer_play_video( this, frame, elapsed, playtime );
 
-			if ( video_frame != NULL )
-			{
-				video_frame = NULL;
-				playtime += duration;
-			}
+			playtime += duration;
 		}
 	}
 
