@@ -113,9 +113,10 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_playlist playlist = mlt_playlist_init( );
 	mlt_properties group = mlt_properties_new( );
 	mlt_properties properties = group;
-	mlt_field field = mlt_field_init( );
+	mlt_tractor tractor = mlt_tractor_new( );
+	mlt_field field = mlt_tractor_field( tractor );
 	mlt_properties field_properties = mlt_field_properties( field );
-	mlt_multitrack multitrack = mlt_field_multitrack( field );
+	mlt_multitrack multitrack = mlt_tractor_multitrack( tractor );
 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( field_properties, "registered", 0 );
@@ -220,15 +221,12 @@ mlt_producer producer_inigo_init( char **argv )
 	if ( mlt_playlist_count( playlist ) > 0 )
 		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track );
 
-	mlt_tractor tractor = mlt_field_tractor( field );
 	mlt_producer prod = mlt_tractor_producer( tractor );
 	mlt_properties props = mlt_tractor_properties( tractor );
-	mlt_properties_set_data( props, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
-	mlt_properties_set_data( props, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
 	mlt_properties_set_data( props, "group", group, 0, ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties_set_position( props, "length", mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) + 1 );
 	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) );
 	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( mlt_multitrack_producer( multitrack ) ) );
 
-	return mlt_tractor_producer( tractor );
+	return prod;
 }

@@ -776,7 +776,6 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		while( mlt_deque_count( context->filter_queue ) )
 		{
 			mlt_properties filter_properties = mlt_deque_pop_front( context->filter_queue );
-			mlt_properties_debug( filter_properties, "Filter?", stderr );
 			mlt_filter filter = mlt_factory_filter( mlt_properties_get( filter_properties, "mlt_service" ), NULL );
 			if ( filter != NULL )
 			{

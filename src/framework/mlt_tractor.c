@@ -23,6 +23,7 @@
 #include "mlt_tractor.h"
 #include "mlt_frame.h"
 #include "mlt_multitrack.h"
+#include "mlt_field.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -70,6 +71,37 @@ mlt_tractor mlt_tractor_init( )
 	return this;
 }
 
+mlt_tractor mlt_tractor_new( )
+{
+	mlt_tractor this = calloc( sizeof( struct mlt_tractor_s ), 1 );
+	if ( this != NULL )
+	{
+		mlt_producer producer = &this->parent;
+		if ( mlt_producer_init( producer, this ) == 0 )
+		{
+			mlt_multitrack multitrack = mlt_multitrack_init( );
+			mlt_field field = mlt_field_new( multitrack, this );
+			mlt_properties props = mlt_producer_properties( producer );
+
+			mlt_properties_set( props, "resource", "<tractor>" );
+			mlt_properties_set( props, "mlt_type", "mlt_producer" );
+			mlt_properties_set( props, "mlt_service", "tractor" );
+			mlt_properties_set_data( props, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
+			mlt_properties_set_data( props, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
+
+			producer->get_frame = producer_get_frame;
+			producer->close = ( mlt_destructor )mlt_tractor_close;
+			producer->close_object = this;
+		}
+		else
+		{
+			free( this );
+			this = NULL;
+		}
+	}
+	return this;
+}
+
 /** Get the service object associated to the tractor.
 */
 
@@ -92,6 +124,22 @@ mlt_producer mlt_tractor_producer( mlt_tractor this )
 mlt_properties mlt_tractor_properties( mlt_tractor this )
 {
 	return mlt_producer_properties( &this->parent );
+}
+
+/** Get the field this tractor is harvesting.
+*/
+
+mlt_field mlt_tractor_field( mlt_tractor this )
+{
+	return mlt_properties_get_data( mlt_tractor_properties( this ), "field", NULL );
+}
+
+/** Get the multitrack this tractor is pulling.
+*/
+
+mlt_multitrack mlt_tractor_multitrack( mlt_tractor this )
+{
+	return mlt_properties_get_data( mlt_tractor_properties( this ), "multitrack", NULL );
 }
 
 /** Connect the tractor.

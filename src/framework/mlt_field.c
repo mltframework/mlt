@@ -73,6 +73,31 @@ mlt_field mlt_field_init( )
 	return this;
 }
 
+mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
+{
+	// Initialise the field
+	mlt_field this = calloc( sizeof( struct mlt_field_s ), 1 );
+
+	// Initialise it
+	if ( this != NULL )
+	{
+		// Construct a multitrack
+		this->multitrack = multitrack;
+
+		// Construct a tractor
+		this->tractor = tractor;
+
+		// The first plant will be connected to the mulitrack
+		this->producer = mlt_multitrack_service( this->multitrack );
+
+		// Connect the tractor to the multitrack
+		mlt_tractor_connect( this->tractor, this->producer );
+	}
+
+	// Return this
+	return this;
+}
+
 /** Get the service associated to this field.
 */
 

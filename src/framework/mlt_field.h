@@ -24,6 +24,7 @@
 #include "mlt_types.h"
 
 extern mlt_field mlt_field_init( );
+extern mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor );
 extern mlt_service mlt_field_service( mlt_field self );
 extern mlt_tractor mlt_field_tractor( mlt_field self );
 extern mlt_multitrack mlt_field_multitrack( mlt_field self );

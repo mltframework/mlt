@@ -478,13 +478,11 @@ Multiple Tracks and Transitions:
 	| +------+ |    +-------------+    +-------+
 	+----------+
 
-	In reality, we create a field first, and from that we obtain a multitrack
-	and a tractor. We can then populate the multitrack, field and finally,
-	connect the tractor to the consumer. 
-	
-	The reasoning behind this is possibly flawed - it might have made more 
-	sense to produce the tractor and have it encapsulate the field and the
-	multitrack as that is how it looks to a connected consumer:
+	So, we need to create the tractor first, and from that we obtain the
+	multitrack and field objects. We can populate these and finally 
+	connect the tractor to a consumer.
+
+	In essence, this is how it looks to the consumer:
 
 	+-----------------------------------------------+
 	|tractor          +--------------------------+  |
@@ -514,16 +512,16 @@ Multiple Tracks and Transitions:
 
 	mlt_producer create_tracks( int argc, char **argv )
 	{
-	    // Create the field
-	    mlt_field field = mlt_field_init( );
+		// Create the tractor
+		mlt_tractor tractor = mlt_tractor_new( );
+
+	    // Obtain the field
+	    mlt_field field = mlt_tractor_field( tractor );
 	
 	    // Obtain the multitrack
-	    mlt_multitrack multitrack = mlt_field_multitrack( field );
+	    mlt_multitrack multitrack = mlt_tractor_multitrack( tractor );
 	
-	    // Obtain the tractor
-	    mlt_tractor tractor = mlt_field_tractor( field );
-	
-	    // Obtain a composite transition
+	    // Create a composite transition
 	    mlt_transition transition = mlt_factory_transition( "composite", "10%,10%:15%x15%" );
 	
 	    // Create track 0
@@ -555,15 +553,12 @@ Multiple Tracks and Transitions:
 	
 	    // Now plant the transition
 	    mlt_field_plant_transition( field, transition, 0, 1 );
-	
-	    // Now set the properties on the tractor
-	    properties = mlt_tractor_properties( tractor );
-	    mlt_properties_set_data( properties, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
-	    mlt_properties_set_data( properties, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
-	    mlt_properties_set_data( properties, "track0", track0, 0, ( mlt_destructor )mlt_producer_close, NULL );
-	    mlt_properties_set_data( properties, "track1", track1, 0, ( mlt_destructor )mlt_producer_close, NULL );
-	    mlt_properties_set_data( properties, "transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
-	
+
+		// Close our references
+		mlt_producer_close( track0 );
+		mlt_producer_close( track1 );
+		mlt_transition_close( transition );
+
 	    // Return the tractor
 	    return mlt_tractor_producer( tractor );
 	}
