@@ -721,12 +721,13 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 			// Set the track on the multitrack
 
 			// Set producer i/o if specified
-			if ( mlt_properties_get( track_props, "in" ) != NULL ||
-				mlt_properties_get( track_props, "out" ) != NULL )
+			if ( mlt_properties_get( track_props, "in" ) != NULL &&
+				 mlt_properties_get( track_props, "out" ) != NULL )
 			{
 				mlt_producer cut = mlt_producer_cut( MLT_PRODUCER( producer ),
 					mlt_properties_get_position( track_props, "in" ),
 					mlt_properties_get_position( track_props, "out" ) );
+				mlt_properties_set_int( mlt_producer_properties( cut ), "cut", 1 );
 				mlt_multitrack_connect( multitrack, cut, mlt_multitrack_count( multitrack ) );
 				mlt_producer_close( cut );
 			}

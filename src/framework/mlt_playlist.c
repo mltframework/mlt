@@ -170,8 +170,9 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 		}
 
 		// Check if the length of the producer has changed
-		if ( this->list[ i ]->frame_in != mlt_producer_get_in( producer ) ||
-			 this->list[ i ]->frame_out != mlt_producer_get_out( producer ) );
+		if ( this->list[ i ]->producer != &this->blank &&
+			 ( this->list[ i ]->frame_in != mlt_producer_get_in( producer ) ||
+			   this->list[ i ]->frame_out != mlt_producer_get_out( producer ) ) )
 		{
 			// This clip should be removed...
 			if ( current_length == 1 )
@@ -219,16 +220,36 @@ static void mlt_playlist_listener( mlt_producer producer, mlt_playlist this )
 
 static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, mlt_position in, mlt_position out )
 {
-	mlt_producer producer = mlt_producer_is_cut( source ) ? source : mlt_producer_cut( source, in, out );
-	mlt_properties properties = mlt_producer_properties( producer );
+	mlt_producer producer = NULL;
+	mlt_properties properties = NULL;
 
 	// If we have a cut, then use the in/out points from the cut
-	if ( mlt_producer_is_cut( source ) )
+	if ( &this->blank == source )
 	{
+		producer = source;
+		properties = mlt_producer_properties( producer );
 		mlt_properties_inc_ref( properties );
-		in = mlt_producer_get_in( source );
-		out = mlt_producer_get_out( source );
 	}
+	else if ( mlt_producer_is_cut( source ) )
+	{
+		producer = source;
+		if ( in == -1 )
+			in = mlt_producer_get_in( producer );
+		if ( out == -1 || out > mlt_producer_get_out( producer ) )
+			out = mlt_producer_get_out( producer );
+		properties = mlt_producer_properties( producer );
+		mlt_properties_inc_ref( properties );
+	}
+	else
+	{
+		producer = mlt_producer_cut( source, in, out );
+		if ( in == -1 || in < mlt_producer_get_in( producer ) )
+			in = mlt_producer_get_in( producer );
+		if ( out == -1 || out > mlt_producer_get_out( producer ) )
+			out = mlt_producer_get_out( producer );
+		properties = mlt_producer_properties( producer );
+	}
+
 
 	// Check that we have room
 	if ( this->count >= this->size )
@@ -248,12 +269,13 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 	this->list[ this->count ]->event = mlt_events_listen( properties, this, "producer-changed", ( mlt_listener )mlt_playlist_listener );
 	mlt_event_inc_ref( this->list[ this->count ]->event );
 
+	mlt_properties_set( mlt_producer_properties( source ), "eof", "pause" );
 	mlt_properties_set( properties, "eof", "pause" );
 
+	mlt_producer_set_speed( source, 0 );
 	mlt_producer_set_speed( producer, 0 );
 
 	this->count ++;
-
 
 	return mlt_playlist_virtual_refresh( this );
 }
@@ -772,11 +794,14 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 		mlt_tractor tractor = mlt_tractor_new( );
 		mlt_events_block( mlt_playlist_properties( this ), this );
 
-		mlt_playlist_resize_clip( this, clip, clip_a->frame_in, clip_a->frame_out - length );
+		track_a = mlt_producer_cut( clip_a->producer, clip_a->frame_out - length + 1, clip_a->frame_out );
+		mlt_properties_set_int( mlt_producer_properties( track_a ), "cut", 1 );
+		track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in, clip_b->frame_in + length - 1 );
+		mlt_properties_set_int( mlt_producer_properties( track_b ), "cut", 1 );
+
+		mlt_playlist_resize_clip( this, clip, clip_a->frame_in, clip_a->frame_out - length + 1 );
 		mlt_playlist_resize_clip( this, clip + 1, clip_b->frame_in + length, clip_b->frame_out );
 
-		track_a = mlt_producer_cut( mlt_producer_cut_parent( clip_a->producer ), clip_a->frame_out + 1, clip_a->frame_out + length );
-		track_b = mlt_producer_cut( mlt_producer_cut_parent( clip_b->producer ), clip_b->frame_in - length, clip_b->frame_in - 1 );
 		mlt_tractor_set_track( tractor, track_a, 0 );
 		mlt_tractor_set_track( tractor, track_b, 1 );
 		mlt_playlist_insert( this, mlt_tractor_producer( tractor ), clip + 1, -1, -1 );

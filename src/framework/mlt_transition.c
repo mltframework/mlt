@@ -150,10 +150,8 @@ mlt_position mlt_transition_get_out( mlt_transition this )
 
 mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
-	if ( this->process == NULL || b_frame == NULL || ( mlt_frame_is_test_card( b_frame ) && mlt_frame_is_test_audio( b_frame ) ) )
+	if ( this->process == NULL )
 		return a_frame;
-	else if ( a_frame == NULL || ( mlt_frame_is_test_card( a_frame ) && mlt_frame_is_test_audio( a_frame ) ) )
-		return b_frame;
 	else
 		return this->process( this, a_frame, b_frame );
 }
@@ -199,18 +197,30 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		mlt_position position = mlt_frame_get_position( this->a_frame );
 		if ( position >= in && position <= out )
 		{
-			// Process the transition
-			*frame = mlt_transition_process( this, this->a_frame, this->b_frame );
-			if ( *frame == this->b_frame )
+#if 0
+			// TODO: This could is breaking muliple transitions, but it would be nice to have...
+			// essentially, it allows transitions to run over whole tracks, while ignoring test cards
+			// (alternative is to put the handling in the transitions themselves :-/)
+			if ( this->b_frame == NULL || ( mlt_frame_is_test_card( this->b_frame ) && mlt_frame_is_test_audio( this->b_frame ) ) )
+			{
+				*frame = this->a_frame;
+			}
+			else if ( this->a_frame == NULL || ( mlt_frame_is_test_card( this->a_frame ) && mlt_frame_is_test_audio( this->a_frame ) ) )
 			{
 				mlt_frame t = this->a_frame;
 				this->a_frame = this->b_frame;
 				this->b_frame = t;
+				*frame = this->a_frame;
 			}
-			if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_image" ) )
-				mlt_properties_set_int( mlt_frame_properties( this->b_frame ), "test_image", 1 );
-			if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_audio" ) )
-				mlt_properties_set_int( mlt_frame_properties( this->b_frame ), "test_audio", 1 );
+			else
+#endif
+			{
+				*frame = mlt_transition_process( this, this->a_frame, this->b_frame );
+				if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_image" ) )
+					mlt_properties_set_int( mlt_frame_properties( this->b_frame ), "test_image", 1 );
+				if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_audio" ) )
+					mlt_properties_set_int( mlt_frame_properties( this->b_frame ), "test_audio", 1 );
+			}
 			this->a_held = 0;
 		}
 		else
