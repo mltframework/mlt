@@ -136,7 +136,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 				mlt_properties_set( mlt_producer_properties( producer ), "eof", "continue" );
 			
 			// Determine the longest length
-			if ( !mlt_properties_get_int( mlt_producer_properties( producer ), "hide" ) )
+			//if ( !mlt_properties_get_int( mlt_producer_properties( producer ), "hide" ) )
 				length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
 			
 			// Handle fps
