@@ -26,22 +26,26 @@
 
 namespace Mlt
 {
+	class Properties;
 	class Service;
 	class Response;
 
-	class Miracle
+	class Miracle : public Properties
 	{
 		private:
 			miracle_server server;
 			void *_real;
 			parser_execute _execute;
+			parser_received _received;
 			parser_push _push;
 		public:
 			Miracle( char *name, int port = 5250, char *config = NULL );
 			virtual ~Miracle( );
+			mlt_properties get_properties( );
 			bool start( );
 			bool is_running( );
 			virtual Response *execute( char *command );
+			virtual Response *received( char *command, char *doc );
 			virtual Response *push( char *command, Service *service );
 			void wait_for_shutdown( );
 	};

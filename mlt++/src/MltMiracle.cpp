@@ -43,6 +43,28 @@ static valerie_response mlt_miracle_execute( void *arg, char *command )
 	}
 }
 
+static valerie_response mlt_miracle_received( void *arg, char *command, char *doc )
+{
+	Miracle *miracle = ( Miracle * )arg;
+	if ( miracle != NULL )
+	{
+		Response *response = miracle->received( command, doc );
+		if ( response != NULL )
+		{
+			valerie_response real = valerie_response_clone( response->get_response( ) );
+			delete response;
+			return real;
+		}
+		return NULL;
+	}
+	else
+	{
+		valerie_response response = valerie_response_init( );
+		valerie_response_set_error( response, 500, "Invalid server" );
+		return response;
+	}
+}
+
 static valerie_response mlt_miracle_push( void *arg, char *command, mlt_service service )
 {
 	Miracle *miracle = ( Miracle * )arg;
@@ -62,7 +84,8 @@ static valerie_response mlt_miracle_push( void *arg, char *command, mlt_service 
 	}
 }
 
-Miracle::Miracle( char *name, int port, char *config )
+Miracle::Miracle( char *name, int port, char *config ) :
+	Properties( false )
 {
 	server = miracle_server_init( name );
 	miracle_server_set_port( server, port );
@@ -74,14 +97,21 @@ Miracle::~Miracle( )
 	miracle_server_close( server );
 }
 
+mlt_properties Miracle::get_properties( )
+{
+	return &server->parent;
+}
+
 bool Miracle::start( )
 {
 	miracle_server_execute( server );
 	_real = server->parser->real;
 	_execute = server->parser->execute;
+	_received = server->parser->received;
 	_push = server->parser->push;
 	server->parser->real = this;
 	server->parser->execute = mlt_miracle_execute;
+	server->parser->received = mlt_miracle_received;
 	server->parser->push = mlt_miracle_push;
 	return server->shutdown == 0;
 }
@@ -94,6 +124,11 @@ bool Miracle::is_running( )
 Response *Miracle::execute( char *command )
 {
 	return new Response( _execute( _real, command ) );
+}
+
+Response *Miracle::received( char *command, char *doc )
+{
+	return new Response( _received( _real, command, doc ) );
 }
 
 Response *Miracle::push( char *command, Service *service )
