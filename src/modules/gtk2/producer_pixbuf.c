@@ -62,7 +62,7 @@ static int filter_files( const struct dirent *de )
 mlt_producer producer_pixbuf_init( char *filename )
 {
 	producer_pixbuf this = calloc( sizeof( struct producer_pixbuf_s ), 1 );
-	if ( filename != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
 
@@ -77,66 +77,6 @@ mlt_producer producer_pixbuf_init( char *filename )
 		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "ttl", 25 );
 		
-		// Obtain filenames
-		if ( strchr( filename, '%' ) != NULL )
-		{
-			// handle picture sequences
-			int i = 0;
-			int gap = 0;
-			char full[1024];
-
-			while ( gap < 100 )
-			{
-				struct stat buf;
-				snprintf( full, 1023, filename, i ++ );
-				if ( stat( full, &buf ) == 0 )
-				{
-					this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
-					this->filenames[ this->count ++ ] = strdup( full );
-					gap = 0;
-				}
-				else
-				{
-					gap ++;
-				}
-			} 
-			mlt_properties_set_position( properties, "out", this->count * 250 );
-		}
-		else if ( strstr( filename, "/.all." ) != NULL )
-		{
-			char *dir_name = strdup( filename );
-			char *extension = strrchr( filename, '.' );
-			*( strstr( dir_name, "/.all." ) + 1 ) = '\0';
-			char fullname[ 1024 ];
-			strcpy( fullname, dir_name );
-			struct dirent **de = NULL;
-			int n = scandir( fullname, &de, filter_files, alphasort );
-			int i;
-			struct stat info;
-
-			for (i = 0; i < n; i++ )
-			{
-				snprintf( fullname, 1023, "%s%s", dir_name, de[i]->d_name );
-
-				if ( lstat( fullname, &info ) == 0 && 
-				 	( S_ISREG( info.st_mode ) || ( strstr( fullname, extension ) && info.st_mode | S_IXUSR ) ) )
-				{
-					this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
-					this->filenames[ this->count ++ ] = strdup( fullname );
-				}
-				free( de[ i ] );
-			}
-
-			free( de );
-			free( dir_name );
-		}
-		else
-		{
-			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
-			this->filenames[ this->count ++ ] = strdup( filename );
-			mlt_properties_set_position( properties, "out", 250 );
-		}
-
 		// Initialise gobject types
 		g_type_init();
 
@@ -329,6 +269,95 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Get the real structure for this producer
 	producer_pixbuf this = producer->child;
 
+	if ( this->count == 0 && mlt_properties_get( mlt_producer_properties( producer ), "resource" ) != NULL )
+	{
+		mlt_properties properties = mlt_producer_properties( producer );
+		char *filename = mlt_properties_get( properties, "resource" );
+		
+		// Obtain filenames
+		if ( strchr( filename, '%' ) != NULL )
+		{
+			// handle picture sequences
+			int i = 0;
+			int gap = 0;
+			char full[1024];
+
+			while ( gap < 100 )
+			{
+				struct stat buf;
+				snprintf( full, 1023, filename, i ++ );
+				if ( stat( full, &buf ) == 0 )
+				{
+					this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+					this->filenames[ this->count ++ ] = strdup( full );
+					gap = 0;
+				}
+				else
+				{
+					gap ++;
+				}
+			}
+			mlt_properties_set_position( properties, "out", this->count * 250 );
+		}
+		else if ( strstr( filename, "/.all." ) != NULL )
+		{
+			char *dir_name = strdup( filename );
+			char *extension = strrchr( filename, '.' );
+			*( strstr( dir_name, "/.all." ) + 1 ) = '\0';
+			char fullname[ 1024 ];
+			strcpy( fullname, dir_name );
+			struct dirent **de = NULL;
+			int n = scandir( fullname, &de, filter_files, alphasort );
+			int i;
+			struct stat info;
+
+			for (i = 0; i < n; i++ )
+			{
+				snprintf( fullname, 1023, "%s%s", dir_name, de[i]->d_name );
+
+				if ( lstat( fullname, &info ) == 0 &&
+				 	( S_ISREG( info.st_mode ) || ( strstr( fullname, extension ) && info.st_mode | S_IXUSR ) ) )
+				{
+					this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+					this->filenames[ this->count ++ ] = strdup( fullname );
+				}
+				free( de[ i ] );
+			}
+
+			free( de );
+			free( dir_name );
+		}
+		else if ( strstr( filename, "<svg" ) )
+		{
+			// Generate a temporary file for the svg
+			char fullname[ 1024 ] = "/tmp/mlt.XXXXXX";
+			int fd = mkstemp( fullname );
+
+			if ( fd > -1 )
+			{
+				// Write the svg into the temp file
+				ssize_t remaining_bytes = strlen( filename );
+				while ( remaining_bytes > 0 )
+					remaining_bytes -= write( fd, filename + strlen( filename ) - remaining_bytes, remaining_bytes );
+				close( fd );
+
+				this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+				this->filenames[ this->count ++ ] = strdup( fullname );
+
+				mlt_properties_set_position( properties, "out", 250 );
+
+				// Teehe - when the producer closes, delete the temp file and the space allo
+				mlt_properties_set_data( properties, "__temporary_file__", this->filenames[ this->count - 1 ], 0, ( mlt_destructor )unlink, NULL );
+			}
+		}
+		else
+		{
+			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+			this->filenames[ this->count ++ ] = strdup( filename );
+			mlt_properties_set_position( properties, "out", 250 );
+		}
+	}
+
 	// Generate a frame
 	*frame = mlt_frame_init( );
 
@@ -372,6 +401,11 @@ static void producer_close( mlt_producer parent )
 	mlt_pool_release( this->image );
 	parent->close = NULL;
 	mlt_producer_close( parent );
+	while ( *this->filenames )
+	{
+		free( *this->filenames );
+		this->filenames++;
+	}
 	free( this );
 }
 

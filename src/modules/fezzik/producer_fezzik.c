@@ -83,6 +83,10 @@ static mlt_producer create_producer( char *file )
 	if ( result == NULL )
 		result = mlt_factory_producer( "avformat", file );
 
+	// 4th - allow explicit construction
+	if ( result == NULL )
+		result = mlt_factory_producer( file, NULL );
+
 	return result;
 }
 

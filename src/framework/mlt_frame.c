@@ -259,7 +259,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 				q = p + size;
 				while ( p != NULL && p != q )
 				{
-					*p ++ = 255;
+					*p ++ = 235;
 					*p ++ = 128;
 				}
 				break;
@@ -326,12 +326,12 @@ void mlt_frame_close( mlt_frame this )
   y = (306*r + 601*g + 117*b)  >> 10;\
   u = ((-172*r - 340*g + 512*b) >> 10)  + 128;\
   v = ((512*r - 429*g - 83*b) >> 10) + 128;\
-  y = y < 0 ? 0 : y;\
-  u = u < 0 ? 0 : u;\
-  v = v < 0 ? 0 : v;\
-  y = y > 255 ? 255 : y;\
-  u = u > 255 ? 255 : u;\
-  v = v > 255 ? 255 : v
+  y = y < 16 ? 16 : y;\
+  u = u < 16 ? 16 : u;\
+  v = v < 16 ? 16 : v;\
+  y = y > 235 ? 235 : y;\
+  u = u > 240 ? 240 : u;\
+  v = v > 240 ? 240 : v
 
 int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha )
 {
@@ -483,7 +483,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	elements = blank_elements;
 	while ( elements -- )
 	{
-		*out_line ++ = 0;
+		*out_line ++ = 16;
 		*out_line ++ = 128;
 	}
 
@@ -500,7 +500,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		elements = inactive_width;
 		while ( elements -- )
 		{
-			*out_ptr ++ = 0;
+			*out_ptr ++ = 16;
 			*out_ptr ++ = 128;
 		}
 
@@ -512,7 +512,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		elements = inactive_width;
 		while ( elements -- )
 		{
-			*out_ptr ++ = 0;
+			*out_ptr ++ = 16;
 			*out_ptr ++ = 128;
 		}
 
@@ -527,7 +527,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	elements = blank_elements;
 	while ( elements -- )
 	{
-		*out_line ++ = 0;
+		*out_line ++ = 16;
 		*out_line ++ = 128;
 	}
 }
@@ -663,22 +663,18 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	int ret = 0;
-	int16_t *p_src, *p_dest;
 	int16_t *src, *dest;
-	//static int16_t *extra_src = NULL, *extra_dest = NULL;
-	static int extra_src_samples = 0, extra_dest_samples = 0;
 	int frequency_src = *frequency, frequency_dest = *frequency;
 	int channels_src = *channels, channels_dest = *channels;
 	int samples_src = *samples, samples_dest = *samples;
 	int i, j;
 	double d = 0, s = 0;
 
-	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
+	mlt_frame_get_audio( this, &dest, format, &frequency_dest, &channels_dest, &samples_dest );
 	//fprintf( stderr, "mix: frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "_position" ) );
-	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
+	mlt_frame_get_audio( that, &src, format, &frequency_src, &channels_src, &samples_src );
 	//fprintf( stderr, "mix: frame src  samples %d channels %d\n", samples_src, channels_src );
-	src = p_src;
-	dest = p_dest;
+	
 	if ( channels_src > 6 )
 		channels_src = 0;
 	if ( channels_dest > 6 )
@@ -688,34 +684,10 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 	if ( samples_dest > 4000 )
 		samples_dest = 0;
 
-#if 0
-	// Append new samples to leftovers
-	if ( extra_dest_samples > 0 )
-	{
-		fprintf( stderr, "prepending %d samples to dest\n", extra_dest_samples );
-		dest = realloc( extra_dest, ( samples_dest + extra_dest_samples ) * 2 * channels_dest );
-		memcpy( &extra_dest[ extra_dest_samples * channels_dest ], p_dest, samples_dest * 2 * channels_dest );
-	}
-	else
-		dest = p_dest;
-	if ( extra_src_samples > 0 )
-	{
-		fprintf( stderr, "prepending %d samples to src\n", extra_src_samples );
-		src = realloc( extra_src, ( samples_src + extra_src_samples ) * 2 * channels_src );
-		memcpy( &extra_src[ extra_src_samples * channels_src ], p_src, samples_src * 2 * channels_src );
-	}
-	else
-		src = p_src;
-#endif
-
-	// determine number of samples to process	
-	if ( samples_src + extra_src_samples < samples_dest + extra_dest_samples )
-		*samples = samples_src + extra_src_samples;
-	else if ( samples_dest + extra_dest_samples < samples_src + extra_src_samples )
-		*samples = samples_dest + extra_dest_samples;
-	
+	// determine number of samples to process
+	*samples = samples_src < samples_dest ? samples_src : samples_dest;
 	*channels = channels_src < channels_dest ? channels_src : channels_dest;
-	*buffer = p_dest;
+	*buffer = dest;
 	*frequency = frequency_dest;
 
 	// Compute a smooth ramp over start to end
@@ -736,40 +708,6 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 		weight += weight_step;
 	}
 
-	// We have to copy --sigh
-	if ( dest != p_dest )
-		memcpy( p_dest, dest, *samples * 2 * *channels );
-
-#if 0
-	// Store the leftovers
-	if ( samples_src + extra_src_samples < samples_dest + extra_dest_samples )
-	{
-		extra_dest_samples = ( samples_dest + extra_dest_samples ) - ( samples_src + extra_src_samples );
-		size_t size = extra_dest_samples * 2 * channels_dest;
-		fprintf( stderr, "storing %d samples from dest\n", extra_dest_samples );
-		if ( extra_dest )
-			free( extra_dest );
-		extra_dest = malloc( size );
-		if ( extra_dest )
-			memcpy( extra_dest, &p_dest[ ( samples_dest - extra_dest_samples - 1 ) * channels_dest ], size );
-		else
-			extra_dest_samples = 0;
-	}
-	else if ( samples_dest + extra_dest_samples < samples_src + extra_src_samples )
-	{
-		extra_src_samples = ( samples_src + extra_src_samples ) - ( samples_dest + extra_dest_samples );
-		size_t size = extra_src_samples * 2 * channels_src;
-		fprintf( stderr, "storing %d samples from src\n", extra_dest_samples );
-		if ( extra_src )
-			free( extra_src );
-		extra_src = malloc( size );
-		if ( extra_src )
-			memcpy( extra_src, &p_src[ ( samples_src - extra_src_samples - 1 ) * channels_src ], size );
-		else
-			extra_src_samples = 0;
-	}
-#endif
-	
 	return ret;
 }
 

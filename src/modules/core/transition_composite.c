@@ -152,8 +152,6 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	output->y = in->y + ( out->y - in->y ) * position;
 	output->w = in->w + ( out->w - in->w ) * position;
 	output->h = in->h + ( out->h - in->h ) * position;
-	output->sw = output->w;
-	output->sh = output->h;
 	output->mix = in->mix + ( out->mix - in->mix ) * position;
 	output->distort = in->distort;
 
@@ -499,6 +497,11 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		geometry->sw = scaled_width;
 		geometry->sh = scaled_height;
 	}
+	else
+	{
+		geometry->sw = geometry->w;
+		geometry->sh = geometry->h;
+	}
 
 	// We want to ensure that we bypass resize now...
 	mlt_properties_set( b_props, "distort", "true" );
@@ -526,15 +529,6 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	return ret;
 }
 
-
-static uint8_t *transition_get_alpha_mask( mlt_frame this )
-{
-	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( this );
-
-	// Return the alpha mask
-	return mlt_properties_get_data( properties, "alpha", NULL );
-}
 
 struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transition this, mlt_frame a_frame, float position )
 {
@@ -610,8 +604,8 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame )
 	// Need to scale down to actual dimensions
 	x = result.x * width / result.nw ;
 	y = result.y * height / result.nh;
-	w = result.sw * width / result.nw;
-	h = result.sh * height / result.nh;
+	w = result.w * width / result.nw;
+	h = result.h * height / result.nh;
 
 	x &= 0xfffffffe;
 	w &= 0xfffffffe;

@@ -391,8 +391,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 	}
 	if ( service == NULL && mlt_properties_get( properties, "mlt_service" ) != NULL )
 	{
-		service = MLT_SERVICE( mlt_factory_producer( mlt_properties_get( properties, "mlt_service" ),
-			mlt_properties_get( properties, "resource" ) ) );
+		service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "mlt_service" ) ) );
 	}
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_producer_close );
