@@ -103,6 +103,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
 
+		// Default buffer for low latency
+		mlt_properties_set_int( this->properties, "buffer", 8 );
+
 		// Default progressive true
 		mlt_properties_set_int( this->properties, "progressive", 1 );
 
@@ -347,7 +350,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 
-		if ( playtime > elapsed + 20000 )
+		if ( playtime > elapsed + 25000 )
 		{
 			struct timespec tm = { ( playtime - elapsed ) / 1000000, ( ( playtime - elapsed ) % 1000000 ) * 1000 };
 			nanosleep( &tm, NULL );
@@ -498,7 +501,7 @@ static void *consumer_thread( void *arg )
 	while( this->running )
 	{
 		// Get a frame from the attached producer
-		mlt_frame frame = mlt_consumer_rt_frame( consumer, mlt_image_yuv422 );
+		mlt_frame frame = mlt_consumer_rt_frame( consumer );
 
 		// Ensure that we have a frame
 		if ( frame != NULL )

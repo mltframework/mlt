@@ -62,10 +62,18 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 			mlt_properties_set_int( properties, "height", 480 );
 			mlt_properties_set_int( properties, "progressive", 0 );
 		}
+
+		// Default aspect ratio
 		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 
 		// Default rescaler for all consumers
 		mlt_properties_set( properties, "rescale", "bilinear" );
+
+		// Default read ahead buffer size
+		mlt_properties_set_int( properties, "buffer", 25 );
+
+		// Hmm - default all consumers to yuv422 :-/
+		this->format = mlt_image_yuv422;
 	}
 	return error;
 }
@@ -203,6 +211,9 @@ static void *consumer_read_ahead_thread( void *arg )
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
 
+	// Get the maximum size of the buffer
+	int buffer = mlt_properties_get_int( properties, "buffer" );
+
 	// General frame variable
 	mlt_frame frame = NULL;
 	uint8_t *image = NULL;
@@ -231,7 +242,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	{
 		// Put the current frame into the queue
 		pthread_mutex_lock( &this->mutex );
-		while( this->ahead && mlt_deque_count( this->queue ) >= 25 )
+		while( this->ahead && mlt_deque_count( this->queue ) >= buffer )
 			pthread_cond_wait( &this->cond, &this->mutex );
 		mlt_deque_push_back( this->queue, frame );
 		pthread_cond_broadcast( &this->cond );
@@ -314,19 +325,19 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 	}
 }
 
-mlt_frame mlt_consumer_rt_frame( mlt_consumer this, mlt_image_format format )
+mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 {
 	// Frame to return
 	mlt_frame frame = NULL;
 	int size = 1;
 
-
 	// Is the read ahead running?
 	if ( this->ahead == 0 )
 	{
-		this->format = format;
+		int buffer = mlt_properties_get_int( mlt_consumer_properties( this ), "buffer" );
 		consumer_read_ahead_start( this );
-		size = 12;
+		if ( buffer > 1 )
+			size = buffer / 2;
 	}
 
 	// Get frame from queue

@@ -37,7 +37,8 @@ static float position_calculate( mlt_transition this, mlt_frame frame )
 	mlt_position out = mlt_transition_get_out( this );
 
 	// Get the position of the frame
-	mlt_position position = mlt_frame_get_position( frame );
+	char *name = mlt_properties_get( mlt_transition_properties( this ), "_unique_id" );
+	mlt_position position = mlt_properties_get_position( mlt_frame_properties( frame ), name );
 
 	// Now do the calcs
 	return ( float )( position - in ) / ( float )( out - in + 1 );

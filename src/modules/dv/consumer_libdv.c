@@ -199,13 +199,18 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 	// This will hold the size of the dv frame
 	int size = 0;
 
+	// Is the image rendered
+	int rendered = mlt_properties_get_int( mlt_frame_properties( frame ), "rendered" );
+
+	// Get width and height
+	int width = mlt_properties_get_int( this_properties, "width" );
+	int height = mlt_properties_get_int( this_properties, "height" );
+
 	// If we get an encoder, then encode the image
-	if ( encoder != NULL )
+	if ( rendered && encoder != NULL )
 	{
 		// Specify desired image properties
 		mlt_image_format fmt = mlt_image_yuv422;
-		int width = mlt_properties_get_int( this_properties, "width" );
-		int height = mlt_properties_get_int( this_properties, "height" );
 		uint8_t *image = NULL;
 
 		// Get the image
@@ -232,6 +237,11 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 			// Encode the image
 			dv_encode_full_frame( encoder, &image, e_dv_color_yuv, dv_frame );
 		}
+	}
+	else if ( encoder != NULL )
+	{
+		// Calculate the size of the dv frame (duplicate of previous)
+		size = height == 576 ? frame_size_625_50 : frame_size_525_60;
 	}
 	
 	return size;
@@ -363,7 +373,7 @@ static void *consumer_thread( void *arg )
 	while( mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
-		mlt_frame frame = mlt_consumer_rt_frame( this, mlt_image_yuv422 );
+		mlt_frame frame = mlt_consumer_rt_frame( this );
 
 		// Check that we have a frame to work with
 		if ( frame != NULL )
