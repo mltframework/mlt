@@ -24,6 +24,7 @@
 #include <framework/mlt_factory.h>
 #include "producer_avformat.h"
 #include "consumer_avformat.h"
+#include "filter_avcolour_space.h"
 #include "filter_avdeinterlace.h"
 #include "filter_avresample.h"
 
@@ -100,6 +101,8 @@ void *mlt_create_producer( char *id, void *arg )
 void *mlt_create_filter( char *id, void *arg )
 {
 	avformat_init( );
+	if ( !strcmp( id, "avcolour_space" ) )
+		return filter_avcolour_space_init( arg );
 	if ( !strcmp( id, "avdeinterlace" ) )
 		return filter_avdeinterlace_init( arg );
 	if ( !strcmp( id, "avresample" ) )

@@ -6,6 +6,7 @@ TARGET = ../libmltavformat.so
 OBJS = factory.o \
 	   producer_avformat.o \
 	   consumer_avformat.o \
+	   filter_avcolour_space.o \
 	   filter_avdeinterlace.o \
 	   filter_avresample.o
 

@@ -80,6 +80,7 @@ EOF
 cat << EOF >> ../filters.dat
 avdeinterlace	libmltavformat.so
 avresample		libmltavformat.so
+avcolour_space	libmltavformat.so
 EOF
 
 cat << EOF >> ../consumers.dat
