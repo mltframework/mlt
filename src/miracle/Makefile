@@ -12,6 +12,10 @@ LIB_OBJS = miracle_log.o \
 	   miracle_commands.o \
 	   miracle_unit_commands.o
 
+INCS = miracle_server.h \
+	   miracle_local.h \
+	   miracle_log.h
+
 OBJS = $(APP_OBJS) $(LIB_OBJS)
 
 CFLAGS += -I.. -rdynamic
@@ -42,9 +46,7 @@ install:	all
 	install -c -s -m 755 $(TARGET) "$(bindir)"
 	install -m 755 libmiracle.so $(prefix)/lib/libmiracle.so
 	mkdir -p "$(prefix)/include/mlt/miracle"
-	install -m 644 \
-			miracle_local.h \
-            "$(prefix)/include/mlt/miracle"
+	install -m 644 $(INCS) "$(prefix)/include/mlt/miracle"
 
 ifneq ($(wildcard .depend),)
 include .depend
