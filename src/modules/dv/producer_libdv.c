@@ -146,49 +146,6 @@ static int producer_collect_info( producer_libdv this )
 	return valid;
 }
 
-#if 0
-static int mc_producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
-{
-	// Get the frames properties
-	mlt_properties properties = mlt_frame_properties( this );
-
-	// Get the dv data
-	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
-
-	// Determine bytes in frame
-	int bytes_in_frame = dv_data[ 3 ] & 0x80 ? frame_size_625_50 : frame_size_525_60;
-
-	// Assign width and height from properties
-	*width = mlt_properties_get_int( properties, "width" );
-	*height = mlt_properties_get_int( properties, "height" );
-
-	if ( *format == mlt_image_yuv422 )
-	{
-		// Allocate image
-		*buffer = malloc( *width * *height * 2 );
-
-		// Decompress
-		DecompressBuffer_DV( dv_data, bytes_in_frame, *buffer, *width * 2, *width, *height, 0, FOURCC_YUYV, 0, NULL );
-
-		// Set the image on the properties
-		mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, free, NULL );
-	}
-	else
-	{
-		// Allocate image
-		*buffer = malloc( *width * *height * 3 );
-
-		// Decompress
-		DecompressBuffer_DV( dv_data, bytes_in_frame, *buffer, *width * 3, *width, *height, 0, FOURCC_R24C, 0, NULL );
-
-		// Set the image on the properties
-		mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, free, NULL );
-	}
-
-	return 0;
-}
-#endif
-
 static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int pitches[3] = { 0, 0, 0 };

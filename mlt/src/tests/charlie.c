@@ -1,12 +1,4 @@
-#include <framework/mlt_factory.h>
-
-#include <framework/mlt_producer.h>
-#include <framework/mlt_consumer.h>
-#include <framework/mlt_filter.h>
-#include <framework/mlt_tractor.h>
-#include <framework/mlt_transition.h>
-#include <framework/mlt_multitrack.h>
-
+#include <framework/mlt.h>
 #include <stdio.h>
 
 int main( int argc, char **argv )
