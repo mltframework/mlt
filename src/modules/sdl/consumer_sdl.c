@@ -62,6 +62,9 @@ struct consumer_sdl_s
 /** Forward references to static functions.
 */
 
+static int consumer_start( mlt_consumer parent );
+static int consumer_stop( mlt_consumer parent );
+static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static int consumer_get_dimensions( int *width, int *height );
@@ -92,7 +95,6 @@ mlt_consumer consumer_sdl_init( char *arg )
 		mlt_properties_set_double( this->properties, "volume", 1.0 );
 
 		// This is the initialisation of the consumer
-		this->running = 1;
 		pthread_mutex_init( &this->audio_mutex, NULL );
 		pthread_cond_init( &this->audio_cond, NULL);
 		
@@ -125,8 +127,10 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// Set the sdl flags
 		this->sdl_flags = SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_HWACCEL | SDL_RESIZABLE;
 
-		// Create the the thread
-		pthread_create( &this->thread, NULL, consumer_thread, this );
+		// Allow thread to be started/stopped
+		parent->start = consumer_start;
+		parent->stop = consumer_stop;
+		parent->is_stopped = consumer_is_stopped;
 
 		// Return the consumer produced
 		return parent;
@@ -137,6 +141,45 @@ mlt_consumer consumer_sdl_init( char *arg )
 
 	// Indicate failure
 	return NULL;
+}
+
+int consumer_start( mlt_consumer parent )
+{
+	consumer_sdl this = parent->child;
+
+	if ( !this->running )
+	{
+		this->running = 1;
+		pthread_create( &this->thread, NULL, consumer_thread, this );
+	}
+
+	return 0;
+}
+
+int consumer_stop( mlt_consumer parent )
+{
+	// Get the actual object
+	consumer_sdl this = parent->child;
+
+	if ( this->running )
+	{
+		// Kill the thread and clean up
+		this->running = 0;
+
+		pthread_mutex_lock( &this->audio_mutex );
+		pthread_cond_broadcast( &this->audio_cond );
+		pthread_mutex_unlock( &this->audio_mutex );
+
+		pthread_join( this->thread, NULL );
+	}
+
+	return 0;
+}
+
+int consumer_is_stopped( mlt_consumer parent )
+{
+	consumer_sdl this = parent->child;
+	return !this->running;
 }
 
 static int sdl_lock_display( )
@@ -227,6 +270,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		SDL_AudioSpec got;
 
 		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+		SDL_EnableUNICODE( 1 );
 
 		// specify audio format
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
@@ -327,11 +371,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 					case SDL_KEYDOWN:
 						{
 							mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );
+							char keyboard[ 2 ] = " ";
 							void (*callback)( mlt_producer, char * ) = mlt_properties_get_data( properties, "transport_callback", NULL );
-							if ( callback != NULL && producer != NULL && strcmp( SDL_GetKeyName(event.key.keysym.sym), "space" ) )
-								callback( producer, SDL_GetKeyName(event.key.keysym.sym) );
-							else if ( callback != NULL && producer != NULL && !strcmp( SDL_GetKeyName(event.key.keysym.sym), "space" ) )
-								callback( producer, " " );
+							if ( callback != NULL && producer != NULL && event.key.keysym.unicode < 0x80 && event.key.keysym.unicode > 0 )
+							{
+								keyboard[ 0 ] = ( char )event.key.keysym.unicode;
+								callback( producer, keyboard );
+							}
 						}
 						break;
 				}
@@ -469,6 +515,10 @@ static void *consumer_thread( void *arg )
 		SDL_FreeYUVOverlay( this->sdl_overlay );
 	SDL_Quit( );
 
+	this->sdl_screen = NULL;
+	this->sdl_overlay = NULL;
+	this->audio_avail = 0;
+
 	return NULL;
 }
 
@@ -518,14 +568,10 @@ static void consumer_close( mlt_consumer parent )
 	// Get the actual object
 	consumer_sdl this = parent->child;
 
-	// Kill the thread and clean up
-	this->running = 0;
+	// Stop the consumer
+	mlt_consumer_stop( parent );
 
-	pthread_mutex_lock( &this->audio_mutex );
-	pthread_cond_broadcast( &this->audio_cond );
-	pthread_mutex_unlock( &this->audio_mutex );
-
-	pthread_join( this->thread, NULL );
+	// Destroy mutexes
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );
 		

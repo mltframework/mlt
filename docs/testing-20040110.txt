@@ -13,9 +13,6 @@ Server side error checks and related response error codes are not stringently en
 Not Implemented
 ------------------------------------------------------------------------------
 NLS
-INSERT
-MOVE
-REMOVE
 USET points=ignore
 USET eof=terminate
 XFER
@@ -24,7 +21,6 @@ XFER
 Incorrect Behaviour
 ------------------------------------------------------------------------------
 killall miracle does not work. requires killall -HUP
-STOP does not play the test card (white silence) (=pause)
 USTA when stopped reports "paused"
 CLEAN removes all clips (as opposed to leaving the currently playing one)
 USET eof=pause is partially supported
@@ -32,8 +28,6 @@ USET eof=pause is partially supported
 
 Different Intentional Behaviour
 ------------------------------------------------------------------------------
-LOAD commences play
-STOP does not terminate audio/video output
 
 
 MLT Bugs

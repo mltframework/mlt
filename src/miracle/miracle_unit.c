@@ -162,6 +162,10 @@ static mlt_producer create_producer( miracle_unit unit, char *file )
 			result = mlt_factory_producer( "pixbuf", file );
 		else if ( strstr( file, ".png" ) )
 			result = mlt_factory_producer( "pixbuf", file );
+		else if ( strstr( file, ".tga" ) )
+			result = mlt_factory_producer( "pixbuf", file );
+		else if ( strstr( file, ".txt" ) )
+			result = mlt_factory_producer( "pango", file );
 	
 		// 2nd Line fallbacks
 		if ( result == NULL && strstr( file, ".dv" ) )
@@ -299,6 +303,7 @@ valerie_error_code miracle_unit_clean( miracle_unit unit )
 {
 	clear_unit( unit );
 	miracle_log( LOG_DEBUG, "Cleaned playlist" );
+	miracle_unit_status_communicate( unit );
 	return valerie_ok;
 }
 
@@ -340,9 +345,7 @@ valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, int64_t i
 	return valerie_invalid_file;
 }
 
-/** Start playing the clip.
-
-    Start a dv-pump and commence dv1394 transmission.
+/** Start playing the unit.
 
     \todo error handling
     \param unit A miracle_unit handle.
@@ -355,7 +358,9 @@ void miracle_unit_play( miracle_unit_t *unit, int speed )
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
 	mlt_producer_set_speed( producer, ( double )speed / 1000 );
+	mlt_consumer_start( consumer );
 	miracle_unit_status_communicate( unit );
 }
 
@@ -368,6 +373,9 @@ void miracle_unit_play( miracle_unit_t *unit, int speed )
 
 void miracle_unit_terminate( miracle_unit unit )
 {
+	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
+	mlt_consumer_stop( consumer );
+	miracle_unit_status_communicate( unit );
 }
 
 /** Query the status of unit playback.
@@ -378,7 +386,8 @@ void miracle_unit_terminate( miracle_unit unit )
 
 int miracle_unit_has_terminated( miracle_unit unit )
 {
-	return 0;
+	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
+	return mlt_consumer_is_stopped( consumer );
 }
 
 /** Transfer the currently loaded clip to another unit
@@ -437,7 +446,9 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 
 		status->generation = mlt_properties_get_int( properties, "generation" );
 
-		if ( !strcmp( status->clip, "" ) )
+		if ( miracle_unit_has_terminated( unit ) )
+			status->status = unit_stopped;
+		else if ( !strcmp( status->clip, "" ) )
 			status->status = unit_not_loaded;
 		else if ( status->speed == 0 )
 			status->status = unit_paused;

@@ -45,6 +45,9 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 	double mix = 0.5;
 	if ( mlt_properties_get( b_props, "audio.mix" ) != NULL )
 		mix = mlt_properties_get_double( b_props, "audio.mix" );
+	if ( mlt_properties_get_int( b_props, "audio.reverse" ) )
+		mix = 1 - mix;
+
 	mlt_frame_mix_audio( frame, b_frame, mix, buffer, format, frequency, channels, samples );
 
 	// Push the b_frame back on for get_image
@@ -77,6 +80,7 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 		}
 		else
 			mlt_properties_set_double( b_props, "audio.mix", mlt_properties_get_double( properties, "mix" ) );
+		mlt_properties_set_double( b_props, "audio.reverse", mlt_properties_get_double( properties, "reverse" ) );
 	}
 			
 	// Backup the original get_audio (it's still needed)

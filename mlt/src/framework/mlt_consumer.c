@@ -58,6 +58,36 @@ int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 	return mlt_service_connect_producer( &this->parent, producer, 0 );
 }
 
+/** Start the consumer.
+*/
+
+int mlt_consumer_start( mlt_consumer this )
+{
+	if ( this->start != NULL )
+		return this->start( this );
+	return 0;
+}
+
+/** Stop the consumer.
+*/
+
+int mlt_consumer_stop( mlt_consumer this )
+{
+	if ( this->stop != NULL )
+		return this->stop( this );
+	return 0;
+}
+
+/** Determine if the consumer is stopped.
+*/
+
+int mlt_consumer_is_stopped( mlt_consumer this )
+{
+	if ( this->is_stopped != NULL )
+		return this->is_stopped( this );
+	return 0;
+}
+
 /** Close the consumer.
 */
 

@@ -35,7 +35,7 @@ typedef struct
 	char *filename;
 	int width;
 	int height;                                      		
-	double *bitmap;
+	float *bitmap;
 }
 transition_luma;
 
@@ -46,7 +46,7 @@ static void transition_close( mlt_transition parent );
 
 // image processing functions
 
-static inline double smoothstep( double edge1, double edge2, double a )
+static inline float smoothstep( float edge1, float edge2, float a )
 {
 	if ( a < edge1 )
 		return 0.0;
@@ -64,7 +64,7 @@ static inline double smoothstep( double edge1, double edge2, double a )
     \param field_order -1 = progressive, 0 = lower field first, 1 = top field first
 */
 static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, int luma_height,
-							double *luma_bitmap, double pos, double frame_delta, double softness, int field_order )
+							float *luma_bitmap, float pos, float frame_delta, float softness, int field_order )
 {
 	int width_src, height_src;
 	int width_dest, height_dest;
@@ -73,7 +73,7 @@ static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, i
 	int i, j;
 	int stride_src;
 	int stride_dest;
-	double weight = 0;
+	float weight = 0;
 	int field;
 
 	format_src = mlt_image_yuv422;
@@ -85,28 +85,40 @@ static void luma_composite( mlt_frame this, mlt_frame b_frame, int luma_width, i
 	stride_src = width_src * 2;
 	stride_dest = width_dest * 2;
 
+	// Offset the position based on which field we're looking at ...
+	float field_pos[ 2 ];
+	field_pos[ 0 ] = pos + ( ( field_order == 0 ? 1 : 0 ) * frame_delta * 0.5 );
+	field_pos[ 1 ] = pos + ( ( field_order == 0 ? 0 : 1 ) * frame_delta * 0.5 );
+
+	// adjust the position for the softness level
+	field_pos[ 0 ] *= ( 1.0 + softness );
+	field_pos[ 1 ] *= ( 1.0 + softness );
+
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *o;
+	float  *l;
+
+	uint8_t y;
+	uint8_t uv;
+   	float value;
+
 	// composite using luma map
 	for ( field = 0; field < ( field_order < 0 ? 1 : 2 ); ++field )
 	{
-		// Offset the position based on which field we're looking at ...
-		double field_pos = pos + ( ( field_order == 0 ? 1 - field : field) * frame_delta * 0.5 );
-
-		// adjust the position for the softness level
-		field_pos *= ( 1.0 + softness );
-
 		for ( i = field; i < height_src; i += ( field_order < 0 ? 1 : 2 ) )
 		{
-			uint8_t *p = &p_src[ i * stride_src ];
-			uint8_t *q = &p_dest[ i * stride_dest ];
-			uint8_t *o = &p_dest[ i * stride_dest ];
-			double  *l = &luma_bitmap[ i * luma_width ];
+			p = &p_src[ i * stride_src ];
+			q = &p_dest[ i * stride_dest ];
+			o = &p_dest[ i * stride_dest ];
+			l = &luma_bitmap[ i * luma_width ];
 
 			for ( j = 0; j < width_src; j ++ )
 			{
-				uint8_t y = *p ++;
-				uint8_t uv = *p ++;
-                weight = *l ++;
-				double value = smoothstep( weight, weight + softness, field_pos );
+				y = *p ++;
+				uv = *p ++;
+             	weight = *l ++;
+   				value = smoothstep( weight, weight + softness, field_pos[ field ] );
 
 				*o ++ = (uint8_t)( y * value + *q++ * ( 1 - value ) );
 				*o ++ = (uint8_t)( uv * value + *q++ * ( 1 - value ) );
@@ -130,42 +142,22 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
 	// Arbitrary composite defaults
-	static double previous_mix = 0;
-	double mix = 0;
-	int luma_width = 0;
-	int luma_height = 0;
-	double *luma_bitmap = NULL;
-	double luma_softness = 0;
-	int progressive = 0;
-	int top_field_first = 0;
+	float frame_delta = 1 / mlt_properties_get_double( b_props, "fps" );
+	float mix = mlt_properties_get_double( b_props, "image.mix" );
+	int luma_width = mlt_properties_get_int( b_props, "luma.width" );
+	int luma_height = mlt_properties_get_int( b_props, "luma.height" );
+	float *luma_bitmap = mlt_properties_get_data( b_props, "luma.bitmap", NULL );
+	float luma_softness = mlt_properties_get_double( b_props, "luma.softness" );
+	int progressive = mlt_properties_get_int( b_props, "progressive" );
+	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
+	int reverse = mlt_properties_get_int( b_props, "luma.reverse" );
 
-	// mix is the offset time value in the duration of the transition
-	// - also used as the mixing level for a dissolve
-	if ( mlt_properties_get( b_props, "image.mix" ) != NULL )
-		mix = mlt_properties_get_double( b_props, "image.mix" );
-
-	// (mix - previous_mix) is the animation delta, if backwards reset previous
-	if ( mix < previous_mix )
-		previous_mix = 0;
-
-	// Get the interlace and field properties of the frame
-	if ( mlt_properties_get( b_props, "progressive" ) != NULL )
-		progressive = mlt_properties_get_int( b_props, "progressive" );
-	if ( mlt_properties_get( b_props, "top_field_first" ) != NULL )
-		top_field_first = mlt_properties_get_int( b_props, "top_field_first" );
-
-	// Get the luma map parameters
-	if ( mlt_properties_get( b_props, "luma.width" ) != NULL )
-		luma_width = mlt_properties_get_int( b_props, "luma.width" );
-	if ( mlt_properties_get( b_props, "luma.height" ) != NULL )
-		luma_height = mlt_properties_get_int( b_props, "luma.height" );
-	if ( mlt_properties_get( b_props, "luma.softness" ) != NULL )
-		luma_softness = mlt_properties_get_double( b_props, "luma.softness" );
-	luma_bitmap = (double*) mlt_properties_get_data( b_props, "luma.bitmap", NULL );
+	// Honour the reverse here
+	mix = reverse ? 1 - mix : mix;
 
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 		// Composite the frames using a luma map
-		luma_composite( this, b_frame, luma_width, luma_height, luma_bitmap, mix, mix - previous_mix,
+		luma_composite( this, b_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
 			luma_softness, progressive > 0 ? -1 : top_field_first );
 	else
 		// Dissolve the frames using the time offset for mix value
@@ -176,15 +168,13 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	*height = mlt_properties_get_int( a_props, "height" );
 	*image = mlt_properties_get_data( a_props, "image", NULL );
 
-	previous_mix = mix;
-
 	return 0;
 }
 
 /** Load the luma map from PGM stream.
 */
 
-static void luma_read_pgm( FILE *f, double **map, int *width, int *height )
+static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 {
 	uint8_t *data = NULL;
 	while (1)
@@ -193,7 +183,7 @@ static void luma_read_pgm( FILE *f, double **map, int *width, int *height )
 		int i = 2;
 		int maxval;
 		int bpp;
-		double *p;
+		float *p;
 		
 		line[127] = '\0';
 
@@ -248,7 +238,7 @@ static void luma_read_pgm( FILE *f, double **map, int *width, int *height )
 			break;
 		
 		// allocate the luma bitmap
-		*map =  p = (double*) malloc( *width * *height * sizeof( double ) );
+		*map =  p = (float*) malloc( *width * *height * sizeof( float ) );
 		if ( *map == NULL )
 			break;
 
@@ -256,9 +246,9 @@ static void luma_read_pgm( FILE *f, double **map, int *width, int *height )
 		for ( i = 0; i < *width * *height * bpp; i += bpp )
 		{
 			if ( bpp == 1 )
-				*p++ = (double) data[ i ] / (double) maxval;
+				*p++ = (float) data[ i ] / (float) maxval;
 			else
-				*p++ = (double) ( ( data[ i ] << 8 ) + data[ i+1 ] ) / (double) maxval;
+				*p++ = (float) ( ( data[ i ] << 8 ) + data[ i+1 ] ) / (float) maxval;
 		}
 
 		break;
@@ -313,15 +303,15 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_position in = mlt_transition_get_in( transition );
 	mlt_position out = mlt_transition_get_out( transition );
 	mlt_position time = mlt_frame_get_position( b_frame );
-	double pos = ( double )( time - in ) / ( double )( out - in + 1 );
+	float pos = ( float )( time - in ) / ( float )( out - in + 1 );
 	
 	// Set the b frame properties
 	mlt_properties_set_double( b_props, "image.mix", pos );
 	mlt_properties_set_int( b_props, "luma.width", this->width );
 	mlt_properties_set_int( b_props, "luma.height", this->height );
 	mlt_properties_set_data( b_props, "luma.bitmap", this->bitmap, 0, NULL, NULL );
-	if ( mlt_properties_get( properties, "softness" ) != NULL )
-		mlt_properties_set_double( b_props, "luma.softness", mlt_properties_get_double( properties, "softness" ) );
+	mlt_properties_set_int( b_props, "luma.reverse", mlt_properties_get_int( properties, "reverse" ) );
+	mlt_properties_set_double( b_props, "luma.softness", mlt_properties_get_double( properties, "softness" ) );
 
 	mlt_frame_push_get_image( a_frame, transition_get_image );
 	mlt_frame_push_frame( a_frame, b_frame );

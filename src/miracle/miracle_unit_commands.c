@@ -249,7 +249,10 @@ int miracle_stop( command_argument cmd_arg )
 	if ( unit == NULL )
 		return RESPONSE_INVALID_UNIT;
 	else 
+	{
 		miracle_unit_play( unit, 0 );
+		miracle_unit_terminate( unit );
+	}
 	return RESPONSE_SUCCESS;
 }
 

@@ -63,6 +63,7 @@ static void transport_action( mlt_producer producer, char *value )
 						last = time;
 						fprintf( stderr, "%d: %lld\n", i, time );
 					}
+					fprintf( stderr, "Current Position: %lld\n", mlt_producer_position( producer ) );
 				}
 				break;
 
@@ -73,12 +74,19 @@ static void transport_action( mlt_producer producer, char *value )
 					mlt_producer_seek( producer, time );
 				}
 				break;
+			case 'H':
+				if ( producer != NULL )
+				{
+					mlt_position position = mlt_producer_position( producer );
+					mlt_producer_seek( producer, position - ( mlt_producer_get_fps( producer ) * 60 ) );
+				}
+				break;
 			case 'h':
-				if ( multitrack != NULL )
+				if ( producer != NULL )
 				{
 					mlt_position position = mlt_producer_position( producer );
 					mlt_producer_set_speed( producer, 0 );
-					mlt_producer_seek( producer, position - 1 >= 0 ? position - 1 : 0 );
+					mlt_producer_seek( producer, position - 1 );
 				}
 				break;
 			case 'j':
@@ -96,11 +104,18 @@ static void transport_action( mlt_producer producer, char *value )
 				}
 				break;
 			case 'l':
-				if ( multitrack != NULL )
+				if ( producer != NULL )
 				{
 					mlt_position position = mlt_producer_position( producer );
 					mlt_producer_set_speed( producer, 0 );
 					mlt_producer_seek( producer, position + 1 );
+				}
+				break;
+			case 'L':
+				if ( producer != NULL )
+				{
+					mlt_position position = mlt_producer_position( producer );
+					mlt_producer_seek( producer, position + ( mlt_producer_get_fps( producer ) * 60 ) );
 				}
 				break;
 		}
@@ -133,7 +148,8 @@ static void transport( mlt_producer producer )
 	fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
 
 	fprintf( stderr, "+---------------------------------------------------------------------+\n" );
-	fprintf( stderr, "|                      h = previous,  l = next                        |\n" );
+	fprintf( stderr, "|               H = back 1 minute,  L = forward 1 minute              |\n" );
+	fprintf( stderr, "|                 h = previous frame,  l = next frame                 |\n" );
 	fprintf( stderr, "|           g = start of clip, j = next clip, k = previous clip       |\n" );
 	fprintf( stderr, "|                0 = restart, q = quit, space = play                  |\n" );
 	fprintf( stderr, "+---------------------------------------------------------------------+\n" );
@@ -225,15 +241,20 @@ int main( int argc, char **argv )
 			// Connect consumer to tractor
 			mlt_consumer_connect( consumer, mlt_field_service( field ) );
 
+			// Start the consumer
+			mlt_consumer_start( consumer );
+
 			// Transport functionality
 			transport( inigo );
+
+			// Stop the consumer
+			mlt_consumer_stop( consumer );
 		}
 		else if ( store != NULL )
 		{
 			fprintf( stderr, "Project saved as %s.\n", name );
 			fclose( store );
 		}
-
 	}
 	else
 	{
@@ -241,7 +262,7 @@ int main( int argc, char **argv )
 						 "             [ -consumer id[:arg] [ name=value ]* ]\n"
         				 "             [ -filter id[:arg] [ name=value ] * ]\n"
         				 "             [ -transition id[:arg] [ name=value ] * ]\n"
-						 "             [ -blank time ]\n"
+						 "             [ -blank frames ]\n"
 						 "             [ -track ]\n"
         				 "             [ producer [ name=value ] * ]+\n" );
 	}

@@ -456,22 +456,32 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 	if ( p_alpha )
 		p_alpha += x_src + y_src * stride_src / 2;
 
+	uint8_t *p = p_src;
+	uint8_t *q = p_dest;
+	uint8_t *o = p_dest;
+	uint8_t *z = p_alpha;
+
+	uint8_t Y;
+	uint8_t UV;
+	uint8_t a;
+	float value;
+
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i++ )
 	{
-		uint8_t *p = p_src;
-		uint8_t *q = p_dest;
-		uint8_t *o = p_dest;
-		uint8_t *z = p_alpha;
+		p = p_src;
+		q = p_dest;
+		o = p_dest;
+		z = p_alpha;
 
 		for ( j = 0; j < width_src; j ++ )
 		{
-				uint8_t y = *p ++;
-				uint8_t uv = *p ++;
-				uint8_t a = ( z == NULL ) ? 255 : *z ++;
-				float value = ( weight * ( float ) a / 255.0 );
-				*o ++ = (uint8_t)( y * value + *q++ * ( 1 - value ) );
-				*o ++ = (uint8_t)( uv * value + *q++ * ( 1 - value ) );
+			Y = *p ++;
+			UV = *p ++;
+			a = ( z == NULL ) ? 255 : *z ++;
+			value = ( weight * ( float ) a / 255.0 );
+			*o ++ = (uint8_t)( Y * value + *q++ * ( 1 - value ) );
+			*o ++ = (uint8_t)( UV * value + *q++ * ( 1 - value ) );
 		}
 
 		p_src += stride_src;
