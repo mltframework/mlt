@@ -62,6 +62,15 @@ miracle_server miracle_server_init( char *id )
 	return server;
 }
 
+void miracle_server_set_config( miracle_server server, char *config )
+{
+	if ( server != NULL )
+	{
+		free( server->config );
+		server->config = config != NULL ? strdup( config ) : NULL;
+	}
+}
+
 /** Set the port of the server.
 */
 
@@ -209,10 +218,10 @@ int miracle_server_execute( miracle_server server )
 	if ( response != NULL && valerie_response_get_error_code( response ) == 100 )
 	{
 		/* read configuration file */
-		if ( response != NULL && !server->proxy )
+		if ( response != NULL && !server->proxy && server->config != NULL )
 		{
 			valerie_response_close( response );
-			response = valerie_parser_run( server->parser, "/etc/miracle.conf" );
+			response = valerie_parser_run( server->parser, server->config );
 
 			if ( valerie_response_count( response ) > 1 )
 			{
@@ -267,6 +276,7 @@ void miracle_server_shutdown( miracle_server server )
 		server->shutdown = 1;
 		pthread_join( server->thread, NULL );
 		valerie_parser_close( server->parser );
+		miracle_server_set_config( server, NULL );
 		close( server->socket );
 	}
 }

@@ -51,6 +51,7 @@ typedef struct
 	int proxy;
 	char remote_server[ 50 ];
 	int remote_port;
+	char *config;
 }
 *miracle_server, miracle_server_t;
 
@@ -58,6 +59,7 @@ typedef struct
 */
 
 extern miracle_server miracle_server_init( char * );
+extern void miracle_server_set_config( miracle_server, char * );
 extern void miracle_server_set_port( miracle_server, int );
 extern void miracle_server_set_proxy( miracle_server, char * );
 extern int miracle_server_execute( miracle_server );

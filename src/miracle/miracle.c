@@ -97,6 +97,9 @@ int main( int argc, char **argv )
 
 	atexit( main_cleanup );
 
+	/* Set the config script */
+	miracle_server_set_config( server, "/etc/miracle.conf" );
+
 	/* Execute the server */
 	error = miracle_server_execute( server );
 
