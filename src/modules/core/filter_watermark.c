@@ -34,8 +34,7 @@
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
-	mlt_properties frame_properties = mlt_frame_properties( this );
-	mlt_filter filter = mlt_properties_get_data( frame_properties, "watermark", NULL );
+	mlt_filter filter = mlt_frame_pop_service( this );
 	mlt_properties properties = mlt_filter_properties( filter );
 	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
@@ -92,9 +91,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	mlt_properties properties = mlt_frame_properties( frame );
-	mlt_properties_set_data( properties, "watermark", this, 0, NULL, NULL );
+	// Push the filter on to the stack
+	mlt_frame_push_service( frame, this );
+
+	// Push the get_image on to the stack
 	mlt_frame_push_get_image( frame, filter_get_image );
+
 	return frame;
 }
 

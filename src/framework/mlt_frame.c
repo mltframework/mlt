@@ -68,6 +68,7 @@ mlt_frame mlt_frame_init( )
 		// Construct stacks for frames and methods
 		this->stack_get_image = mlt_deque_init( );
 		this->stack_frame = mlt_deque_init( );
+		this->stack_service = mlt_deque_init( );
 	}
 
 	return this;
@@ -159,6 +160,22 @@ int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
 mlt_frame mlt_frame_pop_frame( mlt_frame this )
 {
 	return mlt_deque_pop_back( this->stack_frame );
+}
+
+/** Push a service.
+*/
+
+int mlt_frame_push_service( mlt_frame this, void *that )
+{
+	return mlt_deque_push_back( this->stack_service, that );
+}
+
+/** Pop a service.
+*/
+
+void *mlt_frame_pop_service( mlt_frame this )
+{
+	return mlt_deque_pop_back( this->stack_service );
 }
 
 int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
@@ -297,6 +314,7 @@ void mlt_frame_close( mlt_frame this )
 	{
 		mlt_deque_close( this->stack_get_image );
 		mlt_deque_close( this->stack_frame );
+		mlt_deque_close( this->stack_service );
 		mlt_properties_close( &this->parent );
 		free( this );
 	}

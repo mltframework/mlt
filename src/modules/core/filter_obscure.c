@@ -21,7 +21,6 @@
 #include "filter_obscure.h"
 
 #include <framework/mlt_frame.h>
-#include <framework/mlt_deque.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -223,11 +222,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the frame properties
 	mlt_properties frame_properties = mlt_frame_properties( frame );
 
-	// Fetch the obscure stack for this frame
-	mlt_deque deque = mlt_properties_get_data( frame_properties, "filter_obscure", NULL );
-
 	// Pop the top of stack now
-	mlt_filter this = mlt_deque_pop_back( deque );
+	mlt_filter this = mlt_frame_pop_service( frame );
 
 	// Get the image from the frame
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
@@ -272,24 +268,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	// Get the frame properties
-	mlt_properties frame_properties = mlt_frame_properties( frame );
-
-	// Fetch the obscure stack for this frame
-	mlt_deque deque = mlt_properties_get_data( frame_properties, "filter_obscure", NULL );
-
-	// Create stack if necessary
-	if ( deque == NULL )
-	{
-		// Create the deque
-		deque = mlt_deque_init( );
-
-		// Assign to the frame
-		mlt_properties_set_data( frame_properties, "filter_obscure", deque, 0, ( mlt_destructor )mlt_deque_close, NULL );
-	}
-
-	// Push this on to the obscure stack
-	mlt_deque_push_back( deque, this );
+	// Push this on to the service stack
+	mlt_frame_push_service( frame, this );
 	
 	// Push the get image call
 	mlt_frame_push_get_image( frame, filter_get_image );

@@ -62,6 +62,7 @@ struct mlt_frame_s
 	// Private properties
 	mlt_deque stack_get_image;
 	mlt_deque stack_frame;
+	mlt_deque stack_service;
 };
 
 extern mlt_frame mlt_frame_init( );
@@ -81,6 +82,8 @@ extern int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image );
 extern mlt_get_image mlt_frame_pop_get_image( mlt_frame this );
 extern int mlt_frame_push_frame( mlt_frame this, mlt_frame that );
 extern mlt_frame mlt_frame_pop_frame( mlt_frame this );
+extern int mlt_frame_push_service( mlt_frame this, void *that );
+extern void *mlt_frame_pop_service( mlt_frame this );
 extern void mlt_frame_close( mlt_frame this );
 
 /* convenience functions */

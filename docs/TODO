@@ -1,16 +1,17 @@
-* optimisations
-* memory pooling
-* all memory leak detection
-* global property handling (more later)
-* documentation (framework, implementations)
-* finalisation of westley (entry, in/out points, frame holding)
-* installation procedure
-* dependency checks
-* field order considerations and normalisation
-* sdl rework (minor)
-* speex?
-* text/overlay/obsucure placement (units)
-* i18n (use of iconv api in producer_pango)
-* shaped fx for obscurer (and alpha in general?)
-* aspect constraints for scaling
-* field-based compositing for animation
+* PARTIAL - optimisations
+* DONE    - memory pooling
+* PARTIAL - all memory leak detection
+* PARTIAL - global property handling (more later)
+*         - documentation (framework, implementations)
+* DONE    - finalisation of westley (entry, in/out points)
+*         - installation procedure
+*         - dependency checks
+* DONE    - field order considerations and normalisation
+* PARTIAL - sdl rework (minor)
+*         - speex?
+* DONE    - text/overlay/obsucure placement (units)
+*         - i18n (use of iconv api in producer_pango)
+*         - shaped fx for obscurer (and alpha in general?)
+* DONE    - aspect constraints for scaling
+* DONE    - field-based compositing for animation
+*         - frame hold

@@ -309,7 +309,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int ignore = 0;
 
 	// Current time calcs
-	double current_time = 0;
+	double current_time = mlt_properties_get_double( properties, "current_time" );
 
 	// We may want to use the source fps if available
 	double source_fps = mlt_properties_get_double( properties, "source_fps" );
@@ -358,7 +358,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			av_seek_frame( context, -1, real_timecode * 1000000.0 );
 	
 			// Remove the cached info relating to the previous position
-			mlt_properties_set_double( properties, "current_time", 0 );
+			mlt_properties_set_double( properties, "current_time", real_timecode );
 			mlt_properties_set_data( properties, "current_image", NULL, 0, NULL, NULL );
 		}
 	}
@@ -395,13 +395,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// We only deal with video from the selected video_index
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
-				current_time = ( double )pkt.pts / 1000000.0;
-
 				// Decode the image
 				ret = avcodec_decode_video( codec_context, &frame, &got_picture, pkt.data, pkt.size );
 
 				if ( got_picture )
 				{
+					if ( pkt.pts != AV_NOPTS_VALUE && pkt.pts != 0  )
+						current_time = ( double )pkt.pts / 1000000.0;
+					else
+						current_time = real_timecode;
+
 					// Handle ignore
 					if ( current_time < real_timecode )
 					{
@@ -410,9 +413,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else if ( current_time >= real_timecode )
 					{
+						//current_time = real_timecode;
 						ignore = 0;
 					}
-					else if ( got_picture && ignore -- )
+					else if ( ignore -- )
 					{
 						got_picture = 0;
 					}

@@ -83,7 +83,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	{
 		// Check that we want progressive and we aren't already progressive
 		if ( !mlt_properties_get_int( mlt_frame_properties( this ), "progressive" ) &&
-			 mlt_properties_get_int( mlt_frame_properties( this ), "consumer_progressive" ) )
+			 mlt_properties_get_int( mlt_frame_properties( this ), "consumer_deinterlace" ) )
 		{
 			// Deinterlace the image
 			deinterlace_yuv( *image, *image, *width * 2, *height );

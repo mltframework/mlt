@@ -24,12 +24,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 /** Geometry struct.
 */
 
 struct geometry_s
 {
+	float mix;
 	int nw; // normalised width
 	int nh; // normalised height
 	int sw; // scaled width, not including consumer scale based upon w/nw
@@ -38,7 +40,6 @@ struct geometry_s
 	float y;
 	float w;
 	float h;
-	float mix;
 	int halign; // horizontal alignment: 0=left, 1=center, 2=right
 	int valign; // vertical alignment: 0=top, 1=middle, 2=bottom
 };
@@ -74,6 +75,8 @@ static float parse_value( char **ptr, int normalisation, char delim, float defau
 
 static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defaults, char *property, int nw, int nh )
 {
+	memset( geometry, 0, sizeof( struct geometry_s ) );
+
 	// Assign normalised width and height
 	geometry->nw = nw;
 	geometry->nh = nh;
@@ -117,6 +120,8 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	output->w = in->w + ( out->w - in->w ) * position;
 	output->h = in->h + ( out->h - in->h ) * position;
 	output->mix = in->mix + ( out->mix - in->mix ) * position;
+	if ( output->mix > 100 )
+	fprintf( stderr, "%f = %f + ( %f - %f ) * %f\n", output->mix, in->mix, out->mix, in->mix, position );
 }
 
 /** Parse the alignment properties into the geometry.
@@ -149,13 +154,13 @@ static void alignment_calculate( struct geometry_s *geometry )
 /** Calculate the position for this frame.
 */
 
-static float position_calculate( mlt_transition this, mlt_frame frame )
+static inline float position_calculate( mlt_transition this, mlt_frame frame )
 {
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
 	mlt_position out = mlt_transition_get_out( this );
 
-	// Get the position of the frame
+	// Get the position
 	mlt_position position = mlt_frame_get_position( frame );
 
 	// Now do the calcs
@@ -165,7 +170,7 @@ static float position_calculate( mlt_transition this, mlt_frame frame )
 /** Calculate the field delta for this frame - position between two frames.
 */
 
-static float delta_calculate( mlt_transition this, mlt_frame frame )
+static inline float delta_calculate( mlt_transition this, mlt_frame frame )
 {
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
@@ -176,8 +181,7 @@ static float delta_calculate( mlt_transition this, mlt_frame frame )
 
 	// Now do the calcs
 	float x = ( float )( position - in ) / ( float )( out - in + 1 );
-	position++;
-	float y = ( float )( position - in ) / ( float )( out - in + 1 );
+	float y = ( float )( position + 1 - in ) / ( float )( out - in + 1 );
 
 	return ( y - x ) / 2.0;
 }
@@ -196,9 +200,11 @@ static int get_value( mlt_properties properties, char *preferred, char *fallback
 static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int bpp, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field )
 {
 	int ret = 0;
-	int i, j, k;
+	int i, j;
 	int x_src = 0, y_src = 0;
-	float weight = geometry.mix / 100;
+	int32_t weight = ( 1 << 16 ) * ( geometry.mix / 100 );
+	if ( geometry.mix > 100 )
+		fprintf( stderr, "%f %d\n", geometry.mix, weight );
 	int stride_src = width_src * bpp;
 	int stride_dest = width_dest * bpp;
 
@@ -276,25 +282,33 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 	uint8_t *z = p_alpha;
 
 	uint8_t a;
-	float value;
+	int32_t value;
 	int step = ( field > -1 ) ? 2 : 1;
+
+	stride_src = stride_src * step;
+	int alpha_stride = stride_src / bpp;
+	stride_dest = stride_dest * step;
 
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i += step )
 	{
-		p = &p_src[ i * stride_src ];
-		q = &p_dest[ i * stride_dest ];
-		o = &p_dest[ i * stride_dest ];
-		if ( p_alpha )
-			z = &p_alpha[ i * stride_src / bpp ];
+		p = p_src;
+		q = p_dest;
+		o = q;
+		z = p_alpha;
 
 		for ( j = 0; j < width_src; j ++ )
 		{
 			a = ( z == NULL ) ? 255 : *z ++;
-			value = ( weight * ( float ) a / 255.0 );
-			for ( k = 0; k < bpp; k ++ )
-				*o ++ = (uint8_t)( *p++ * value + *q++ * ( 1 - value ) );
+			value = ( weight * ( a + 1 ) ) >> 8;
+			*o ++ = ( *p++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
+			*o ++ = ( *p++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
 		}
+
+		p_src += stride_src;
+		p_dest += stride_dest;
+		if ( p_alpha )
+			p_alpha += alpha_stride;
 	}
 
 	return ret;
@@ -304,7 +318,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 /** Get the properly sized image from b_frame.
 */
 
-static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, int *height, struct geometry_s *geometry )
+static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **image, int *width, int *height, struct geometry_s *geometry )
 {
 	int ret = 0;
 	mlt_image_format format = mlt_image_yuv422;
@@ -315,7 +329,6 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 
 	// Compute the dimensioning rectangle
 	mlt_properties b_props = mlt_frame_properties( b_frame );
-	mlt_transition this = mlt_properties_get_data( b_props, "transition_composite", NULL );
 	mlt_properties properties = mlt_transition_properties( this );
 
 	if ( mlt_properties_get( properties, "distort" ) == NULL )
@@ -325,32 +338,8 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 		int normalised_height = geometry->h;
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
-		double input_ar = mlt_frame_get_aspect_ratio( b_frame );
-		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		//int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
-		//int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
 		int scaled_width = real_width;
 		int scaled_height = real_height;
-		double output_sar = ( double ) geometry->nw / geometry->nh / output_ar;
-
-		// We always normalise pixel aspect by requesting a larger than normal
-		// image in order to maximise usage of the bounding rectangle
-
-		// These calcs are optimised by reducing factors in equations
-// This is disabled due to bad results on 480 wide MPEGs
-#if 0
-		if ( output_sar < 1.0 )
-			// If the output is skinny pixels (PAL) then stretch our input vertically
-			// derived from: input_sar / output_sar * real_height
-			scaled_height = ( double )real_width / input_ar / output_sar;
-
-		else
-#endif
-			// If the output is fat pixels (NTSC) then stretch our input horizontally
-			// derived from: output_sar / input_sar * real_width
-			scaled_width = output_sar * real_height * input_ar;
-			
-//		fprintf( stderr, "composite: real %dx%d scaled %dx%d normalised %dx%d\n", real_width, real_height, scaled_width, scaled_height, normalised_width, normalised_height );
 
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
@@ -387,8 +376,6 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 
 	x -= x % 2;
 
-	//fprintf( stderr, "composite calculated %d,%d:%dx%d\n", x, y, *width, *height );
-
 	// optimization points - no work to do
 	if ( *width <= 0 || *height <= 0 )
 		return 1;
@@ -396,7 +383,7 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 	if ( ( x < 0 && -x >= *width ) || ( y < 0 && -y >= *height ) )
 		return 1;
 
-	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 /* writable */ );
+	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
 
 	return ret;
 }
@@ -422,6 +409,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// This compositer is yuv422 only
 	*format = mlt_image_yuv422;
 
+	// Get the transition from the a frame
+	mlt_transition this = mlt_frame_pop_service( a_frame );
+
 	// Get the image from the a frame
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
@@ -433,9 +423,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Get the properties of the b frame
 		mlt_properties b_props = mlt_frame_properties( b_frame );
 
-		// Get the transition from the b frame
-		mlt_transition this = mlt_properties_get_data( b_props, "transition_composite", NULL );
-
 		// Get the properties from the transition
 		mlt_properties properties = mlt_transition_properties( this );
 
@@ -445,7 +432,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		struct geometry_s end;
 
 		// Calculate the position
-		float position = position_calculate( this, a_frame );
+		float position = mlt_properties_get_double( b_props, "relative_position" );
 		float delta = delta_calculate( this, a_frame );
 
 		// Obtain the normalised width and height from the a_frame
@@ -473,7 +460,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		int width_b = *width;
 		int height_b = *height;
 		
-		if ( get_b_frame_image( b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
+		if ( get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
 		{
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
@@ -483,94 +470,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					mlt_properties_get_int( a_props, "consumer_progressive" ) ||
 					mlt_properties_get_int( properties, "progressive" );
 			int field;
-
-			// See if the alpha channel is our destination
-			if ( mlt_properties_get( properties, "a_frame" ) != NULL )
-			{
-				bpp = 1;
-				
-				// Get or make the a_frame alpha channel
-				dest = mlt_frame_get_alpha_mask( a_frame );
-				if ( dest == NULL )
-				{
-					// Allocate the alpha
-					dest = mlt_pool_alloc( *width * *height );
-					mlt_properties_set_data( a_props, "alpha", dest, *width * *height, ( mlt_destructor )mlt_pool_release, NULL );
-					
-					// Set alpha call back
-					a_frame->get_alpha_mask = transition_get_alpha_mask;
-				}
-
-				// If the source is an image, convert its YUV to an alpha channel
-				if ( mlt_properties_get( properties, "b_frame" ) == NULL )
-				{
-					if ( alpha == NULL )
-					{
-						// Allocate the alpha
-						alpha = mlt_pool_alloc( width_b * height_b );
-						mlt_properties_set_data( b_props, "alpha", alpha, width_b * height_b, ( mlt_destructor )mlt_pool_release, NULL );
-
-						// Set alpha call back
-						b_frame->get_alpha_mask = transition_get_alpha_mask;
-					}
-
-					// Copy the Y values into alpha
-					uint8_t *p = image_b;
-					uint8_t *q = alpha;
-					int i;
-					for ( i = 0; i < width_b * height_b; i ++, p += 2 )
-						*q ++ = *p;
-
-					// Setup to composite from the alpha channel
-					src = alpha;
-					alpha = NULL;
-				}
-			}
-			
-			// See if the alpha channel is our source
-			if ( mlt_properties_get( properties, "b_frame" ) != NULL )
-			{
-				// If we do not have an alpha channel fabricate it
-				if ( alpha == NULL )
-				{
-					// Allocate the alpha
-					alpha = mlt_pool_alloc( width_b * height_b );
-					mlt_properties_set_data( b_props, "alpha", alpha, width_b * height_b, ( mlt_destructor )mlt_pool_release, NULL );
-
-					// Set alpha call back
-					b_frame->get_alpha_mask = transition_get_alpha_mask;
-					
-					// Copy the Y values into alpha
-					uint8_t *p = image_b;
-					uint8_t *q = alpha;
-					int i;
-					for ( i = 0; i < width_b * height_b; i ++, p += 2 )
-						*q ++ = *p;
-				}
-
-				// If the destination is image, convert the alpha channel to YUV
-				if ( mlt_properties_get( properties, "a_frame" ) == NULL )
-				{
-					uint8_t *p = alpha;
-					uint8_t *q = image_b;
-					int i;
-					
-					for ( i = 0; i < width_b * height_b; i ++, p ++ )
-					{
-						*q ++ = 16 + ( ( float )*p / 255 * 219 ); // 220 is the luma range from 16-235
-						*q ++ = 128;
-					}
-				}
-				else
-				{
-					// Setup to composite from the alpha channel
-					src = alpha;
-					bpp = 1;
-				}
-
-				// Never the apply the alpha channel to this type of operation
-				alpha = NULL;
-			}
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
@@ -598,8 +497,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
 	// Propogate the transition properties to the b frame
-	mlt_properties b_props = mlt_frame_properties( b_frame );
-	mlt_properties_set_data( b_props, "transition_composite", this, 0, NULL, NULL );
+	mlt_properties_set_double( mlt_frame_properties( b_frame ), "relative_position", position_calculate( this, a_frame ) );
+	mlt_frame_push_service( a_frame, this );
 	mlt_frame_push_get_image( a_frame, transition_get_image );
 	mlt_frame_push_frame( a_frame, b_frame );
 	return a_frame;

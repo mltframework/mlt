@@ -106,7 +106,7 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 
 // image processing functions
 
-static uint32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
+static inline uint32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
 {
 	if ( a < edge1 )
 		return 0;
@@ -211,13 +211,13 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 /** Get the image.
 */
 
-static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the properties of the a frame
-	mlt_properties a_props = mlt_frame_properties( this );
+	mlt_properties a_props = mlt_frame_properties( a_frame );
 
 	// Get the b frame from the stack
-	mlt_frame b_frame = mlt_frame_pop_frame( this );
+	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
 
 	// Get the properties of the b frame
 	mlt_properties b_props = mlt_frame_properties( b_frame );
@@ -250,11 +250,11 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 		// Composite the frames using a luma map
-		luma_composite( this, b_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
+		luma_composite( a_frame, b_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
 			luma_softness, progressive ? -1 : top_field_first, width, height );
 	else
 		// Dissolve the frames using the time offset for mix value
-		dissolve_yuv( this, b_frame, mix, *width, *height );
+		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( a_props, "width" );
@@ -365,7 +365,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	
 	// Get the properties of the b frame
 	mlt_properties b_props = mlt_frame_properties( b_frame );
-
+	
 	// If the filename property changed, reload the map
 	char *lumafile = mlt_properties_get( properties, "resource" );
 	if ( this->bitmap == NULL && lumafile != NULL )
