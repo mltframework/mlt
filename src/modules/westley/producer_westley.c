@@ -221,6 +221,9 @@ static void on_start_entry_track( deserialise_context context, const xmlChar *na
 	// Push the dummy service onto the stack
 	context_push_service( context, service );
 	
+	if ( strcmp( name, "entry" ) == 0 )
+		mlt_properties_set( mlt_service_properties( service ), "resource", "<entry>" );
+	
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
 		mlt_properties_set( mlt_service_properties( service ), (char*) atts[0], (char*) atts[1] );
@@ -625,7 +628,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 				context_push_service( context, parent );
 					
 				// If the parent is a track or entry
-				if ( resource && ( strcmp( resource, "<entry_track>" ) == 0 ) )
+				if ( resource && ( strcmp( resource, "<entry>" ) == 0 ) )
 				{
 					mlt_properties_set_position( properties, "in", in );
 					mlt_properties_set_position( properties, "out", out );
