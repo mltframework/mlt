@@ -104,15 +104,17 @@ mlt_properties Miracle::get_properties( )
 
 bool Miracle::start( )
 {
-	miracle_server_execute( server );
-	_real = server->parser->real;
-	_execute = server->parser->execute;
-	_received = server->parser->received;
-	_push = server->parser->push;
-	server->parser->real = this;
-	server->parser->execute = mlt_miracle_execute;
-	server->parser->received = mlt_miracle_received;
-	server->parser->push = mlt_miracle_push;
+	if ( miracle_server_execute( server ) == 0 )
+	{
+		_real = server->parser->real;
+		_execute = server->parser->execute;
+		_received = server->parser->received;
+		_push = server->parser->push;
+		server->parser->real = this;
+		server->parser->execute = mlt_miracle_execute;
+		server->parser->received = mlt_miracle_received;
+		server->parser->push = mlt_miracle_push;
+	}
 	return server->shutdown == 0;
 }
 
