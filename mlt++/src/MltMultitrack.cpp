@@ -28,6 +28,16 @@ Multitrack::Multitrack( mlt_multitrack multitrack ) :
 	inc_ref( );
 }
 
+Multitrack::Multitrack( Service &multitrack ) :
+	instance( NULL )
+{
+	if ( multitrack.type( ) == multitrack_type )
+	{
+		instance = ( mlt_multitrack )multitrack.get_service( );
+		inc_ref( );
+	}
+}
+
 Multitrack::Multitrack( Multitrack &multitrack ) :
 	instance( multitrack.get_multitrack( ) )
 {

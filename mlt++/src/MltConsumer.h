@@ -35,6 +35,7 @@ namespace Mlt
 			mlt_consumer instance;
 		public:
 			Consumer( char *id, char *service = NULL );
+			Consumer( Service &consumer );
 			Consumer( Consumer &consumer );
 			Consumer( mlt_consumer consumer );
 			virtual ~Consumer( );

@@ -47,6 +47,16 @@ Consumer::Consumer( char *id, char *arg ) :
 	}
 }
 
+Consumer::Consumer( Service &consumer ) :
+	instance( NULL )
+{
+	if ( consumer.type( ) == consumer_type )
+	{
+		instance = ( mlt_consumer )consumer.get_service( );
+		inc_ref( );
+	}
+}
+
 Consumer::Consumer( Consumer &consumer ) :
 	instance( consumer.get_consumer( ) )
 {

@@ -28,6 +28,16 @@ Tractor::Tractor( ) :
 {
 }
 
+Tractor::Tractor( Service &tractor ) :
+	instance( NULL )
+{
+	if ( tractor.type( ) == tractor_type )
+	{
+		instance = ( mlt_tractor )tractor.get_service( );
+		inc_ref( );
+	}
+}
+
 Tractor::Tractor( mlt_tractor tractor ) :
 	instance( tractor )
 {

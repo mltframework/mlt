@@ -37,8 +37,9 @@ namespace Mlt
 			mlt_tractor instance;
 		public:
 			Tractor( );
+			Tractor( Service &tractor );
 			Tractor( mlt_tractor tractor );
-			Tractor( Tractor &Tractor );
+			Tractor( Tractor &tractor );
 			virtual ~Tractor( );
 			mlt_tractor get_tractor( );
 			mlt_producer get_producer( );

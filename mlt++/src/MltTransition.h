@@ -34,6 +34,7 @@ namespace Mlt
 			mlt_transition instance;
 		public:
 			Transition( char *id, char *arg = NULL );
+			Transition( Service &transition );
 			Transition( Transition &transition );
 			Transition( mlt_transition transition );
 			virtual ~Transition( );

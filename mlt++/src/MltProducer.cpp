@@ -36,6 +36,18 @@ Producer::Producer( char *id, char *service ) :
 		instance = mlt_factory_producer( "fezzik", id != NULL ? id : service );
 }
 
+Producer::Producer( Service &producer ) :
+	instance( NULL )
+{
+	service_type type = producer.type( );
+	if ( type == producer_type || type == playlist_type || 
+		 type == tractor_type || type == multitrack_type )
+	{
+		instance = ( mlt_producer )producer.get_service( );
+		inc_ref( );
+	}
+}
+
 Producer::Producer( mlt_producer producer ) :
 	instance( producer )
 {

@@ -37,6 +37,7 @@ namespace Mlt
 		public:
 			Producer( );
 			Producer( char *id, char *service = NULL );
+			Producer( Service &producer );
 			Producer( mlt_producer producer );
 			Producer( Producer &producer );
 			virtual ~Producer( );

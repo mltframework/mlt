@@ -47,6 +47,16 @@ Filter::Filter( char *id, char *arg ) :
 	}
 }
 
+Filter::Filter( Service &filter ) :
+	instance( NULL )
+{
+	if ( filter.type( ) == filter_type )
+	{
+		instance = ( mlt_filter )filter.get_service( );
+		inc_ref( );
+	}
+}
+
 Filter::Filter( Filter &filter ) :
 	instance( filter.get_filter( ) )
 {

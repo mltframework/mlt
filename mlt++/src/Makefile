@@ -1,5 +1,5 @@
 include ../config.mak
-CXXFLAGS = -Wall -pthread `mlt-config --cflags`
+CXXFLAGS = -Wall -fPIC -DPIC -pthread `mlt-config --cflags`
 LDFLAGS = `mlt-config --libs`
 INSTALL = install
 

@@ -50,14 +50,18 @@ Playlist::Playlist( ) :
 	instance = mlt_playlist_init( );
 }
 
-Playlist::Playlist( Playlist &playlist ) :
-	instance( playlist.get_playlist( ) )
+Playlist::Playlist( Service &producer ) :
+	instance( NULL )
 {
-	inc_ref( );
+	if ( producer.type( ) == playlist_type )
+	{
+		instance = ( mlt_playlist )producer.get_service( );
+		inc_ref( );
+	}
 }
 
-Playlist::Playlist( Producer &producer ) :
-	instance( (mlt_playlist )producer.get_producer( ) )
+Playlist::Playlist( Playlist &playlist ) :
+	instance( playlist.get_playlist( ) )
 {
 	inc_ref( );
 }

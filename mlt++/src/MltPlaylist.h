@@ -54,9 +54,9 @@ namespace Mlt
 			mlt_playlist instance;
 		public:
 			Playlist( );
+			Playlist( Service &playlist );
 			Playlist( Playlist &playlist );
 			Playlist( mlt_playlist playlist );
-			Playlist( Producer &producer );
 			virtual ~Playlist( );
 			virtual mlt_playlist get_playlist( );
 			mlt_producer get_producer( );

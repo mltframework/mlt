@@ -76,4 +76,8 @@ int16_t *Frame::get_audio( mlt_audio_format &format, int &frequency, int &channe
 	return audio;
 }
 
+unsigned char *Frame::get_waveform( int w, int h )
+{
+	return mlt_frame_get_waveform( get_frame( ), w, h );
+}
 

@@ -41,6 +41,7 @@ namespace Mlt
 			uint8_t *get_image( mlt_image_format &format, int &w, int &h, int writable = 0 );
 			unsigned char *fetch_image( mlt_image_format format, int w, int h, int writable = 0 );
 			int16_t *get_audio( mlt_audio_format &format, int &frequency, int &channels, int &samples );
+			unsigned char *get_waveform( int w, int h );
 	};
 }
 

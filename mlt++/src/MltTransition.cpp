@@ -47,6 +47,16 @@ Transition::Transition( char *id, char *arg ) :
 	}
 }
 
+Transition::Transition( Service &transition ) :
+	instance( NULL )
+{
+	if ( transition.type( ) == transition_type )
+	{
+		instance = ( mlt_transition )transition.get_service( );
+		inc_ref( );
+	}
+}
+
 Transition::Transition( Transition &transition ) :
 	instance( transition.get_transition( ) )
 {

@@ -27,6 +27,7 @@
 
 namespace Mlt
 {
+	class Service;
 	class Producer;
 
 	class Multitrack : public Producer
@@ -35,6 +36,7 @@ namespace Mlt
 			mlt_multitrack instance;
 		public:
 			Multitrack( mlt_multitrack multitrack );
+			Multitrack( Service &multitrack );
 			Multitrack( Multitrack &multitrack );
 			virtual ~Multitrack( );
 			mlt_multitrack get_multitrack( );
