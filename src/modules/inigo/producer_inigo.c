@@ -48,9 +48,7 @@ static mlt_producer parse_inigo( char *file )
 	if ( result != NULL )
 	{
 		mlt_properties properties = mlt_producer_properties( result );
-		mlt_field field = mlt_properties_get_data( properties, "field", NULL );
 		mlt_properties_set( properties, "resource", file );
-		mlt_properties_set( mlt_field_properties( field ), "resource", file );
 	}
 
 	while( count -- )

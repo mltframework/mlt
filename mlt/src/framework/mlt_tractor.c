@@ -135,7 +135,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			mlt_producer target = mlt_multitrack_producer( multitrack );
 			mlt_producer_seek( target, mlt_producer_frame( parent ) );
 			mlt_producer_set_speed( target, mlt_producer_get_speed( parent ) );
-			//mlt_producer_set_in_and_out( parent, mlt_producer_get_in( target ), mlt_producer_get_out( target ) );
 		}
 		else
 		{
@@ -176,6 +175,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			mlt_properties frame_properties = mlt_frame_properties( *frame );
 			char label[ 30 ];
 			sprintf( label, "tractor_%d", count );
+			while ( mlt_properties_get_data( frame_properties, label, NULL ) != NULL )
+				strcat( label, "+" );
 			mlt_properties_set_data( frame_properties, label, store[ count ], 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
 

@@ -263,16 +263,7 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 
 void mlt_frame_close( mlt_frame this )
 {
-	mlt_frame frame = mlt_frame_pop_frame( this );
-	
-	while ( frame != NULL )
-	{
-		mlt_frame_close( frame);
-		frame = mlt_frame_pop_frame( this );
-	}
-	
 	mlt_properties_close( &this->parent );
-
 	free( this );
 }
 
