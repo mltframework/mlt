@@ -189,15 +189,10 @@ int Properties::save( char *file )
 	return error;
 }
 
-void Properties::listen( char *id, void *object, mlt_listener listener )
+Event *Properties::listen( char *id, void *object, mlt_listener listener )
 {
-	char key[ 128 ];
 	mlt_event event = mlt_events_listen( get_properties( ), object, id, listener );
-	if ( event != NULL )
-	{
-		sprintf( key, "_%p", event );
-		mlt_properties_set_data( get_properties( ), key, event, 0, ( mlt_destructor )mlt_event_close, NULL );
-	}
+	return new Event( event );
 }
 
 Event *Properties::setup_wait_for( char *id )

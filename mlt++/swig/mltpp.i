@@ -34,6 +34,7 @@ namespace Mlt {
 %newobject Factory::filter( char *, char * );
 %newobject Factory::transition( char *, char * );
 %newobject Factory::consumer( char *, char * );
+%newobject Properties::listen( char *, void *, mlt_listener );
 %newobject Service::producer( );
 %newobject Service::consumer( );
 %newobject Service::get_frame( int );
@@ -79,11 +80,19 @@ static void ruby_listener( mlt_properties owner, void *object );
 
 class RubyListener
 {
+	private:
+		Mlt::Event *event;
+
 	public:
 		RubyListener( Mlt::Properties &properties, char *id, VALUE callback ) : 
 			callback( callback ) 
 		{
-			properties.listen( id, this, ( mlt_listener )ruby_listener );
+			event = properties.listen( id, this, ( mlt_listener )ruby_listener );
+		}
+
+		~RubyList( )
+		{
+			delete event;
 		}
 
     	void mark( ) 

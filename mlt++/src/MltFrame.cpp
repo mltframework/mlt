@@ -24,6 +24,7 @@ using namespace Mlt;
 Frame::Frame( mlt_frame frame ) :
 	instance( frame )
 {
+	inc_ref( );
 }
 
 Frame::Frame( Frame &frame ) :

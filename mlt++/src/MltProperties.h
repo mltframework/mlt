@@ -67,7 +67,7 @@ namespace Mlt
 			void dump( FILE *output = stderr );
 			void debug( char *title = "Object", FILE *output = stderr );
 			int save( char *file );
-			void listen( char *id, void *object, mlt_listener listener );
+			Event *listen( char *id, void *object, mlt_listener listener );
 			Event *setup_wait_for( char *id );
 			void wait_for( Event *, bool destroy = true );
 	};
