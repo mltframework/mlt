@@ -22,6 +22,7 @@
 #define _MLT_PRODUCER_H_
 
 #include "mlt_service.h"
+#include "mlt_filter.h"
 
 /** The interface definition for all producers.
 */
@@ -60,6 +61,9 @@ extern mlt_position mlt_producer_get_out( mlt_producer self );
 extern mlt_position mlt_producer_get_playtime( mlt_producer self );
 extern mlt_position mlt_producer_get_length( mlt_producer self );
 extern void mlt_producer_prepare_next( mlt_producer self );
+extern int mlt_producer_attach( mlt_producer self, mlt_filter filter );
+extern int mlt_producer_detach( mlt_producer self, mlt_filter filter );
+extern mlt_filter mlt_producer_filter( mlt_producer self, int index );
 extern void mlt_producer_close( mlt_producer self );
 
 #endif

@@ -203,7 +203,6 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this )
 {
 	// Default producer to blank
 	mlt_producer producer = NULL;
-	mlt_service service = NULL;
 
 	// Map playlist position to real producer in virtual playlist
 	mlt_position position = mlt_producer_frame( &this->parent );
@@ -271,14 +270,7 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this )
 		producer = &this->blank;
 	}
 
-	if ( producer != NULL )
-	{
-		service = mlt_producer_service( producer );
-		while ( mlt_service_consumer( service ) != NULL )
-			service = mlt_service_consumer( service );
-	}
-
-	return service;
+	return mlt_producer_service( producer );
 }
 
 /** Invoked when a producer indicates that it has prematurely reached its end.
@@ -671,21 +663,7 @@ int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 		for ( i = 0; i <= count; i ++ )
 		{
 			playlist_entry *entry = this->list[ clip ];
-			char *resource = mlt_properties_get( mlt_producer_properties( entry->producer ), "resource" );
-			if ( merge && resource != NULL && !strcmp( resource, "<playlist>" ) )
-			{
-				mlt_playlist old_clip = ( mlt_playlist )entry->producer;
-				while( old_clip->count )
-				{
-					entry = old_clip->list[ 0 ];
-					mlt_playlist_append_io( new_clip, entry->producer, entry->frame_in, entry->frame_out );
-					mlt_playlist_remove( old_clip, 0 );
-				}
-			}
-			else
-			{
-				mlt_playlist_append_io( new_clip, entry->producer, entry->frame_in, entry->frame_out );
-			}
+			mlt_playlist_append_io( new_clip, entry->producer, entry->frame_in, entry->frame_out );
 			mlt_playlist_remove( this, clip );
 		}
 		mlt_playlist_insert( this, mlt_playlist_producer( new_clip ), clip, 0, -1 );

@@ -59,6 +59,8 @@ struct deserialise_context_s
 	const xmlChar *publicId;
 	const xmlChar *systemId;
 	mlt_properties params;
+	mlt_deque filter_queue;
+	int in_producer;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -242,6 +244,8 @@ static void on_start_producer( deserialise_context context, const xmlChar *name,
 {
 	mlt_properties properties = context->producer_properties = mlt_properties_new();
 
+	context->in_producer ++;
+
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
 		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
@@ -307,7 +311,12 @@ static void on_start_entry_track( deserialise_context context, const xmlChar *na
 
 static void on_start_filter( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
-	mlt_properties properties = context->producer_properties = mlt_properties_new();
+	mlt_properties properties = mlt_properties_new();
+
+	if ( context->in_producer != 0 )
+		mlt_deque_push_front( context->filter_queue, context->producer_properties );
+
+	context->producer_properties = properties;
 
 	// Set the properties
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
@@ -662,6 +671,8 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 	mlt_properties properties = context->producer_properties;
 	mlt_service service = NULL;
 	
+	context->in_producer --;
+
 	if ( properties == NULL )
 		return;
 		
@@ -761,6 +772,26 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 			}
 		}
 	
+		// Allow for embedded filters
+		while( mlt_deque_count( context->filter_queue ) )
+		{
+			mlt_properties filter_properties = mlt_deque_pop_front( context->filter_queue );
+			mlt_properties_debug( filter_properties, "Filter?", stderr );
+			mlt_filter filter = mlt_factory_filter( mlt_properties_get( filter_properties, "mlt_service" ), NULL );
+			if ( filter != NULL )
+			{
+				track_service( context->destructors, filter, (mlt_destructor) mlt_filter_close );
+				qualify_property( context, filter_properties, "resource" );
+				qualify_property( context, filter_properties, "luma" );
+				qualify_property( context, filter_properties, "luma.resource" );
+				qualify_property( context, filter_properties, "composite.luma" );
+				qualify_property( context, filter_properties, "producer.resource" );
+				mlt_properties_inherit( mlt_filter_properties( filter ), filter_properties );
+				mlt_properties_close( filter_properties );
+				mlt_producer_attach( MLT_PRODUCER( service ), filter );
+			}
+		}
+
 		// Push the producer onto the stack
 		context_push_service( context, service );
 	}
@@ -769,6 +800,13 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 static void on_end_filter( deserialise_context context, const xmlChar *name )
 {
 	mlt_properties properties = context->producer_properties;
+	if ( context->in_producer )
+	{
+		mlt_deque_push_back( context->filter_queue, properties );
+		context->producer_properties = mlt_deque_pop_front( context->filter_queue );
+		return;
+	}
+
 	if ( properties == NULL )
 		return;
 
@@ -1191,6 +1229,7 @@ mlt_producer producer_westley_init( char *url )
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
 	context->params = mlt_properties_new();
+	context->filter_queue = mlt_deque_init();
 
 	// Decode URL and parse parameters	
 	parse_url( context->params, url_decode( filename, url ) );
@@ -1299,6 +1338,7 @@ mlt_producer producer_westley_init( char *url )
 	mlt_properties_close( context->producer_map );
 	if ( context->params != NULL )
 		mlt_properties_close( context->params );
+	mlt_deque_close( context->filter_queue );
 	free( context );
 	free( filename );
 
