@@ -40,11 +40,10 @@ else
 
 	if [ "$cvs_ffmpeg" != "" ]
 	then
-		[ ! -d "ffmpeg" ] && cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co -D "10/11/2004 20:30 CET" ffmpeg
-		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure )
+		[ ! -d "ffmpeg" ] && cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co ffmpeg
+		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure --enable-shared )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
 		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec" >> config.mak
-		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec" >> config.mak
 		echo "LOCAL_FFMPEG=1" >> config.mak
 		extra_libs="$extra_libs -lz"
 	elif [ "$static_ffmpeg" != "" ]

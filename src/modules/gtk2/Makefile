@@ -9,9 +9,8 @@ OBJS = factory.o \
 	   pixops.o \
 	   filter_rescale.o
 
-ifeq ($(MMX_FLAGS),-DUSE_MMX)
-ASM_OBJS = have_mmx.o \
-		   scale_line_22_yuv_mmx.o
+ifdef ($(MMX_FLAGS))
+ASM_OBJS = have_mmx.o scale_line_22_yuv_mmx.o
 endif
 
 CFLAGS += `pkg-config gtk+-2.0 --cflags` `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../..

@@ -150,7 +150,7 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	// Only call this if we have a means to get audio
-	if ( mlt_frame_is_test_audio( frame ) != 0 )
+	if ( mlt_frame_is_test_audio( frame ) == 0 )
 	{
 		// Push the filter on to the stack
 		mlt_frame_push_audio( frame, this );

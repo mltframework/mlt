@@ -34,7 +34,7 @@
 
 #include "ui.h"
 
-#define BUFFER_LEN 2048 * 3
+#define BUFFER_LEN 204800 * 3
 
 static void *jackrack_thread( void *arg )
 {
@@ -258,46 +258,46 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	
 	// Process the audio
 	int16_t *q = *buffer;
-	float sample;
+	float sample[ 2 ][ 10000 ];
 	int i, j;
+	struct timespec tm = { 0, 0 };
 
 	// Convert to floats and write into output ringbuffer
 	if ( jack_ringbuffer_write_space( output_buffers[0] ) >= ( *samples * sizeof(float) ) )
 	{
 		for ( i = 0; i < *samples; i++ )
 			for ( j = 0; j < *channels; j++ )
-			{
-				sample = ( float )( *q ++ ) / 32768.0;
-				jack_ringbuffer_write( output_buffers[j], ( char * )&sample, sizeof(float) );
-			}
+				sample[ j ][ i ] = ( float )( *q ++ ) / 32768.0;
+
+		for ( j = 0; j < *channels; j++ )
+			jack_ringbuffer_write( output_buffers[j], ( char * )sample[ j ], *samples * sizeof(float) );
 	}
 
 	// Synchronization phase - wait for signal from Jack process
-	while ( mlt_properties_get_int( filter_properties, "_sync" )
-		    && jack_ringbuffer_read_space( input_buffers[ *channels - 1 ] ) < ( *samples * sizeof(float) ) )
-		pthread_cond_wait( output_ready, output_lock );
+	while ( jack_ringbuffer_read_space( input_buffers[ *channels - 1 ] ) < ( *samples * sizeof(float) ) ) ;
+		//pthread_cond_wait( output_ready, output_lock );
 		
 	// Read from input ringbuffer and convert from floats
-	//if ( jack_ringbuffer_read_space( input_buffers[0] ) >= ( *samples * sizeof(float) ) )
+	if ( jack_ringbuffer_read_space( input_buffers[0] ) >= ( *samples * sizeof(float) ) )
 	{
 		// Initialise to silence, but repeat last frame if available in case of 
 		// buffer underrun
-		sample = 0;
+		for ( j = 0; j < *channels; j++ )
+			jack_ringbuffer_read( input_buffers[j], ( char * )sample[ j ], *samples * sizeof(float) );
+
 		q = *buffer;
 		for ( i = 0; i < *samples; i++ )
 			for ( j = 0; j < *channels; j++ )
 			{
-				jack_ringbuffer_read( input_buffers[j], ( char * )&sample, sizeof(float) );
-	
-				if ( sample > 1.0 )
-					sample = 1.0;
-				else if ( sample < -1.0 )
-					sample = -1.0;
+				if ( sample[ j ][ i ] > 1.0 )
+					sample[ j ][ i ] = 1.0;
+				else if ( sample[ j ][ i ] < -1.0 )
+					sample[ j ][ i ] = -1.0;
 			
-				if ( sample > 0 )
-					*q ++ = 32767 * sample;
+				if ( sample[ j ][ i ] > 0 )
+					*q ++ = 32767 * sample[ j ][ i ];
 				else
-					*q ++ = 32768 * sample;
+					*q ++ = 32768 * sample[ j ][ i ];
 			}
 	}
 
@@ -310,7 +310,6 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	if ( mlt_frame_is_test_audio( frame ) != 0 )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		mlt_frame_push_audio( frame, this );

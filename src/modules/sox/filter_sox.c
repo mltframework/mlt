@@ -334,7 +334,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	if ( mlt_frame_is_test_audio( frame ) != 0 )
+	if ( mlt_frame_is_test_audio( frame ) == 0 )
 	{
 		// Add the filter to the frame
 		mlt_frame_push_audio( frame, this );
