@@ -317,10 +317,25 @@ static int add_producer( deserialise_context context, mlt_service service, mlt_p
 			}
 			else
 			{
+				mlt_properties properties = mlt_service_properties( service );
+				
 				// Set this producer on the multitrack
 				mlt_multitrack_connect( MLT_MULTITRACK( producer ),
 					MLT_PRODUCER( service ),
 					mlt_multitrack_count( MLT_MULTITRACK( producer ) ) );
+				
+				// Set the hide state of the track producer
+				char *hide_s = mlt_properties_get( properties, "hide" );
+				if ( hide_s != NULL )
+				{
+					if ( strcmp( hide_s, "video" ) == 0 )
+						mlt_properties_set_int( properties, "hide", 1 );
+					else if ( strcmp( hide_s, "audio" ) == 0 )
+						mlt_properties_set_int( properties, "hide", 2 );
+					else if ( strcmp( hide_s, "both" ) == 0 )
+						mlt_properties_set_int( properties, "hide", 3 );
+				}
+
 			}
 			// Normally, the enclosing entry or track will pop this service off
 			// In its absence we do not push it on.
@@ -408,9 +423,10 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 	mlt_service producer = context_pop_service( context );
 	if ( producer == NULL )
 		return;
+	mlt_properties producer_props = mlt_service_properties( producer );
 
 	// See if the producer is a tractor
-	char *resource = mlt_properties_get( mlt_service_properties( producer ), "resource" );
+	char *resource = mlt_properties_get( producer_props, "resource" );
 	if ( resource && strcmp( resource, "<tractor>" ) == 0 )
 		// If so chomp its producer
 		context_pop_service( context );
@@ -422,6 +438,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 		context_push_service( context, producer );
 		return;
 	}
+	mlt_properties track_props = mlt_service_properties( track );
 
 	// Get the multitrack from the stack
 	mlt_service service = context_pop_service( context );
@@ -430,19 +447,31 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 		context_push_service( context, producer );
 		return;
 	}
-
+	
 	// Set the track on the multitrack
 	mlt_multitrack_connect( MLT_MULTITRACK( service ),
 		MLT_PRODUCER( producer ),
 		mlt_multitrack_count( MLT_MULTITRACK( service ) ) );
 
 	// Set producer i/o if specified
-	if ( mlt_properties_get( mlt_service_properties( track ), "in" ) != NULL ||
-		mlt_properties_get( mlt_service_properties( track ), "out" ) != NULL )
+	if ( mlt_properties_get( track_props, "in" ) != NULL ||
+		mlt_properties_get( track_props, "out" ) != NULL )
 	{
 		mlt_producer_set_in_and_out( MLT_PRODUCER( producer ),
-			mlt_properties_get_position( mlt_service_properties( track ), "in" ),
-			mlt_properties_get_position( mlt_service_properties( track ), "out" ) );
+			mlt_properties_get_position( track_props, "in" ),
+			mlt_properties_get_position( track_props, "out" ) );
+	}
+	
+	// Set the hide state of the track producer
+	char *hide_s = mlt_properties_get( track_props, "hide" );
+	if ( hide_s != NULL )
+	{
+		if ( strcmp( hide_s, "video" ) == 0 )
+			mlt_properties_set_int( producer_props, "hide", 1 );
+		else if ( strcmp( hide_s, "audio" ) == 0 )
+			mlt_properties_set_int( producer_props, "hide", 2 );
+		else if ( strcmp( hide_s, "both" ) == 0 )
+			mlt_properties_set_int( producer_props, "hide", 3 );
 	}
 
 	// Push the multitrack back onto the stack
