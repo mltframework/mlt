@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /** Virtual playlist entry.
 */
@@ -139,7 +140,7 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 
 	// Refresh all properties
 	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", fps );
-	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps );
+	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps == 0 ? 25 : fps );
 	mlt_properties_set_timecode( mlt_playlist_properties( this ), "length", playtime );
 	mlt_properties_set_timecode( mlt_playlist_properties( this ), "out", playtime );
 
@@ -149,7 +150,7 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 /** Append to the virtual playlist.
 */
 
-static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_timecode in, mlt_timecode out )
+static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_timecode in, mlt_timecode playtime )
 {
 	// Check that we have room
 	if ( this->count >= this->size )
@@ -164,7 +165,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	this->list[ this->count ] = calloc( sizeof( playlist_entry ), 1 );
 	this->list[ this->count ]->producer = producer;
 	this->list[ this->count ]->in = in;
-	this->list[ this->count ]->playtime = out - in;
+	this->list[ this->count ]->playtime = playtime;
 
 	this->count ++;
 
@@ -327,6 +328,8 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 	{
 		mlt_producer producer = this->list[ index ]->producer;
 		mlt_properties properties = mlt_producer_properties( producer );
+		info->producer = producer;
+		info->start = mlt_playlist_clip( this, mlt_whence_relative_start, index );
 		info->resource = mlt_properties_get( properties, "resource" );
 		info->in = this->list[ index ]->in;
 		info->out = this->list[ index ]->in + this->list[ index ]->playtime;
@@ -401,6 +404,33 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 int mlt_playlist_move( mlt_playlist this, int from, int to )
 {
 	return 0;
+}
+
+int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_timecode in, mlt_timecode out )
+{
+	int error = clip < 0 || clip >= this->count;
+	if ( error == 0 )
+	{
+		playlist_entry *entry = this->list[ clip ];
+		mlt_producer producer = entry->producer;
+
+		if ( in <= -1 )
+			in = 0;
+		if ( out <= -1 || out >= mlt_producer_get_out( producer ) )
+			out = mlt_producer_get_out( producer );
+
+		if ( out < in )
+		{
+			mlt_timecode t = in;
+			in = out;
+			out = t;
+		}
+
+		entry->in = in;
+		entry->playtime = out - in;
+		mlt_playlist_virtual_refresh( this );
+	}
+	return error;
 }
 
 /** Get the current frame.

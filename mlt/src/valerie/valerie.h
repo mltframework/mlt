@@ -90,28 +90,28 @@ extern valerie_error_code valerie_run( valerie, char * );
 /* Unit functions */
 extern valerie_error_code valerie_unit_add( valerie, char *, int * );
 extern valerie_error_code valerie_unit_load( valerie, int, char * );
-extern valerie_error_code valerie_unit_load_clipped( valerie, int, char *, double, double );
+extern valerie_error_code valerie_unit_load_clipped( valerie, int, char *, int64_t, int64_t );
 extern valerie_error_code valerie_unit_load_back( valerie, int, char * );
-extern valerie_error_code valerie_unit_load_back_clipped( valerie, int, char *, double, double );
-extern valerie_error_code valerie_unit_append( valerie, int, char *, double, double );
+extern valerie_error_code valerie_unit_load_back_clipped( valerie, int, char *, int64_t, int64_t );
+extern valerie_error_code valerie_unit_append( valerie, int, char *, int64_t, int64_t );
 extern valerie_error_code valerie_unit_clean( valerie, int );
 extern valerie_error_code valerie_unit_clip_move( valerie, int, valerie_clip_offset, int, valerie_clip_offset, int );
 extern valerie_error_code valerie_unit_clip_remove( valerie, int, valerie_clip_offset, int );
 extern valerie_error_code valerie_unit_remove_current_clip( valerie, int );
-extern valerie_error_code valerie_unit_clip_insert( valerie, int, valerie_clip_offset, int, char *, double, double );
+extern valerie_error_code valerie_unit_clip_insert( valerie, int, valerie_clip_offset, int, char *, int64_t, int64_t );
 extern valerie_error_code valerie_unit_play( valerie, int );
 extern valerie_error_code valerie_unit_play_at_speed( valerie, int, int );
 extern valerie_error_code valerie_unit_stop( valerie, int );
 extern valerie_error_code valerie_unit_pause( valerie, int );
 extern valerie_error_code valerie_unit_rewind( valerie, int );
 extern valerie_error_code valerie_unit_fast_forward( valerie, int );
-extern valerie_error_code valerie_unit_step( valerie, int, double );
-extern valerie_error_code valerie_unit_goto( valerie, int, double );
-extern valerie_error_code valerie_unit_clip_goto( valerie, int, valerie_clip_offset, int, double );
-extern valerie_error_code valerie_unit_clip_set_in( valerie, int, valerie_clip_offset, int, double );
-extern valerie_error_code valerie_unit_clip_set_out( valerie, int, valerie_clip_offset, int, double );
-extern valerie_error_code valerie_unit_set_in( valerie, int, double );
-extern valerie_error_code valerie_unit_set_out( valerie, int, double );
+extern valerie_error_code valerie_unit_step( valerie, int, int64_t );
+extern valerie_error_code valerie_unit_goto( valerie, int, int64_t );
+extern valerie_error_code valerie_unit_clip_goto( valerie, int, valerie_clip_offset, int, int64_t );
+extern valerie_error_code valerie_unit_clip_set_in( valerie, int, valerie_clip_offset, int, int64_t );
+extern valerie_error_code valerie_unit_clip_set_out( valerie, int, valerie_clip_offset, int, int64_t );
+extern valerie_error_code valerie_unit_set_in( valerie, int, int64_t );
+extern valerie_error_code valerie_unit_set_out( valerie, int, int64_t );
 extern valerie_error_code valerie_unit_clear_in( valerie, int );
 extern valerie_error_code valerie_unit_clear_out( valerie, int );
 extern valerie_error_code valerie_unit_clear_in_out( valerie, int );
@@ -169,11 +169,11 @@ typedef struct
 {
 	int clip;
 	char full[ PATH_MAX + NAME_MAX ];
-	double in;
-	double out;
-	double max;
-	double size;
-	double fps;
+	int64_t in;
+	int64_t out;
+	int64_t max;
+	int64_t size;
+	int64_t fps;
 }
 *valerie_list_entry, valerie_list_entry_t;
 

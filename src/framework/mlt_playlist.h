@@ -23,16 +23,18 @@
 
 #include "mlt_producer.h"
 
-/** Structur for returning clip information.
+/** Structure for returning clip information.
 */
 
 typedef struct
 {
+	mlt_producer producer;
+	mlt_timecode start;
 	char *resource;
-	double in;
-	double out;
-	double playtime;
-	double length;
+	mlt_timecode in;
+	mlt_timecode out;
+	mlt_timecode playtime;
+	mlt_timecode length;
 	float fps;
 }
 mlt_playlist_clip_info;
@@ -56,6 +58,7 @@ extern int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info
 extern int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, mlt_timecode in, mlt_timecode out );
 extern int mlt_playlist_remove( mlt_playlist this, int where );
 extern int mlt_playlist_move( mlt_playlist this, int from, int to );
+extern int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_timecode in, mlt_timecode out );
 extern void mlt_playlist_close( mlt_playlist this );
 
 #endif

@@ -184,6 +184,9 @@ static void update_generation( miracle_unit unit )
 	mlt_properties_set_int( properties, "generation", ++ generation );
 }
 
+/** Wipe all clips on the playlist for this unit.
+*/
+
 static void clear_unit( miracle_unit unit )
 {
 	mlt_properties properties = unit->properties;
@@ -210,6 +213,7 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 	mlt_properties properties = unit->properties;
 	int generation = mlt_properties_get_int( properties, "generation" );
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_producer producer = mlt_playlist_producer( playlist );
 
 	valerie_response_printf( response, 1024, "%d\n", generation );
 		
@@ -217,8 +221,13 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 	{
 		mlt_playlist_clip_info info;
 		mlt_playlist_get_clip_info( playlist , &info, i );
-		valerie_response_printf( response, 10240, "%d \"%s\" %e %e %e %e %.2f\n", 
-								 i, info.resource, info.in, info.out, info.playtime, info.length, info.fps );
+		valerie_response_printf( response, 10240, "%d \"%s\" %lld %lld %lld %lld %.2f\n", 
+								 i, info.resource, 
+								 mlt_producer_frame_position( producer, info.in ), 
+								 mlt_producer_frame_position( producer, info.out ),
+								 mlt_producer_frame_position( producer, info.playtime ), 
+								 mlt_producer_frame_position( producer, info.length ), 
+								 info.fps );
 	}
 }
 
@@ -231,7 +240,7 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 	\param out  The ending frame (-1 for maximum)
 */
 
-valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, double in, double out, int flush )
+valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int64_t in, int64_t out, int flush )
 {
 	// Have to clear the unit first
 	clear_unit( unit );
@@ -243,7 +252,7 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, double in, 
 	{
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-		mlt_playlist_append_io( playlist, instance, in, out );
+		mlt_playlist_append_io( playlist, instance, mlt_producer_time( instance, in ), mlt_producer_time( instance, out ) );
 		miracle_log( LOG_DEBUG, "loaded clip %s", clip );
 		miracle_unit_status_communicate( unit );
 		return valerie_ok;
@@ -252,7 +261,7 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, double in, 
 	return valerie_invalid_file;
 }
 
-valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index, double in, double out )
+valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index, int64_t in, int64_t out )
 {
 	mlt_producer instance = create_producer( unit, clip );
 
@@ -260,8 +269,9 @@ valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index
 	{
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-		mlt_playlist_insert( playlist, instance, index, in, out );
+		mlt_playlist_insert( playlist, instance, index, mlt_producer_time( instance, in ), mlt_producer_time( instance, out ) );
 		miracle_log( LOG_DEBUG, "inserted clip %s at %d", clip, index );
+		update_generation( unit );
 		miracle_unit_status_communicate( unit );
 		return valerie_ok;
 	}
@@ -275,6 +285,7 @@ valerie_error_code miracle_unit_remove( miracle_unit unit, int index )
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 	mlt_playlist_remove( playlist, index );
 	miracle_log( LOG_DEBUG, "removed clip at %d", index );
+	update_generation( unit );
 	miracle_unit_status_communicate( unit );
 	return valerie_ok;
 }
@@ -292,6 +303,7 @@ valerie_error_code miracle_unit_move( miracle_unit unit, int src, int dest )
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 	mlt_playlist_move( playlist, src, dest );
 	miracle_log( LOG_DEBUG, "moved clip %d to %d", src, dest );
+	update_generation( unit );
 	miracle_unit_status_communicate( unit );
 	return valerie_ok;
 }
@@ -305,7 +317,7 @@ valerie_error_code miracle_unit_move( miracle_unit unit, int src, int dest )
 	\param out  The ending frame (-1 for maximum)
 */
 
-valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, double in, double out )
+valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, int64_t in, int64_t out )
 {
 	mlt_producer instance = create_producer( unit, clip );
 
@@ -313,8 +325,9 @@ valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, double in
 	{
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-		mlt_playlist_append_io( playlist, instance, in, out );
+		mlt_playlist_append_io( playlist, instance, mlt_producer_time( instance, in ), mlt_producer_time( instance, out ) );
 		miracle_log( LOG_DEBUG, "appended clip %s", clip );
+		update_generation( unit );
 		miracle_unit_status_communicate( unit );
 		return valerie_ok;
 	}
@@ -404,12 +417,20 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 			strncpy( status->clip, info.resource, sizeof( status->clip ) );
 			status->speed = (int)( mlt_producer_get_speed( producer ) * 1000.0 );
 			status->fps = mlt_producer_get_fps( producer );
-			status->in = info.in;
-			status->out = info.in + info.playtime;
-			status->position = mlt_producer_position( clip );
-			status->length = mlt_producer_get_length( clip );
+			status->in = mlt_producer_frame_position( producer, info.in );
+			status->out = mlt_producer_frame_position( producer, info.out );
+			status->position = mlt_producer_frame_position( producer, mlt_producer_position( clip ) );
+			status->length = mlt_producer_frame_position( producer, mlt_producer_get_length( clip ) );
+			strncpy( status->tail_clip, info.resource, sizeof( status->tail_clip ) );
+			status->tail_in = mlt_producer_frame_position( producer, info.in );
+			status->tail_out = mlt_producer_frame_position( producer, info.out );
+			status->tail_position = mlt_producer_frame_position( producer, mlt_producer_position( clip ) );
+			status->tail_length = mlt_producer_frame_position( producer, mlt_producer_get_length( clip ) );
+			status->clip_index = mlt_playlist_current_clip( playlist );
 			status->seek_flag = 1;
 		}
+
+		status->generation = mlt_properties_get_int( properties, "generation" );
 
 		if ( !strcmp( status->clip, "" ) )
 			status->status = unit_not_loaded;
@@ -431,8 +452,40 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 /** Change position in the playlist.
 */
 
-void miracle_unit_change_position( miracle_unit unit, int clip, double position )
+void miracle_unit_change_position( miracle_unit unit, int clip, int64_t position )
 {
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_playlist_clip_info info;
+
+	if ( clip < 0 )
+		clip = 0;
+	else if ( clip >= mlt_playlist_count( playlist ) )
+		clip = mlt_playlist_count( playlist );
+
+	if ( mlt_playlist_get_clip_info( playlist, &info, clip ) == 0 )
+	{
+		mlt_timecode relative = mlt_producer_time( info.producer, position );
+		mlt_timecode absolute = relative - info.in;
+		int64_t frame_start = mlt_producer_frame_position( info.producer, info.start );
+		int64_t frame_offset = 0;
+
+		if ( absolute < 0 )
+			frame_offset = 0;
+		else if ( absolute >= info.out )
+			frame_offset = mlt_producer_frame_position( info.producer, info.out ) - 1;
+		else
+			frame_offset = mlt_producer_frame_position( info.producer, absolute );
+
+		mlt_producer_seek_frame( producer, frame_start + frame_offset );
+	}
+	else
+	{
+		mlt_timecode out = mlt_producer_get_out( producer );
+		mlt_producer_seek( producer, mlt_producer_frame_position( producer, out ) - 1 );
+	}
+
 	miracle_unit_status_communicate( unit );
 }
 
@@ -450,26 +503,56 @@ int	miracle_unit_get_current_clip( miracle_unit unit )
 /** Set a clip's in point
 */
 
-int miracle_unit_set_clip_in( miracle_unit unit, int index, double position )
+int miracle_unit_set_clip_in( miracle_unit unit, int index, int64_t position )
 {
-	int error = 0;
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_playlist_clip_info info;
+	int error = mlt_playlist_get_clip_info( playlist, &info, index );
+
+	if ( error == 0 )
+	{
+		mlt_timecode in = mlt_producer_time( info.producer, position );
+		error = mlt_playlist_resize_clip( playlist, index, in, info.out );
+		update_generation( unit );
+		miracle_unit_change_position( unit, index, 0 );
+	}
+
 	return error;
 }
 
 /** Set a clip's out point.
 */
 
-int miracle_unit_set_clip_out( miracle_unit unit, int index, double position )
+int miracle_unit_set_clip_out( miracle_unit unit, int index, int64_t position )
 {
-	int error = 0;
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_playlist_clip_info info;
+	int error = mlt_playlist_get_clip_info( playlist, &info, index );
+
+	if ( error == 0 )
+	{
+		mlt_timecode out = mlt_producer_time( info.producer, position );
+		error = mlt_playlist_resize_clip( playlist, index, info.in, out );
+		update_generation( unit );
+		miracle_unit_status_communicate( unit );
+		miracle_unit_change_position( unit, index, 0 );
+	}
+
 	return error;
 }
 
 /** Step by specified position.
 */
 
-void miracle_unit_step( miracle_unit unit, double offset )
+void miracle_unit_step( miracle_unit unit, int64_t offset )
 {
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_timecode position = mlt_producer_position( producer );
+	mlt_producer_seek( producer, position + mlt_producer_time( producer, offset ) );
 }
 
 /** Set the unit's clip mode regarding in and out points.

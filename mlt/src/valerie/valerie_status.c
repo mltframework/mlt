@@ -38,21 +38,21 @@ void valerie_status_parse( valerie_status status, char *text )
 	{
 		status->unit = atoi( valerie_tokeniser_get_string( tokeniser, 0 ) );
 		strncpy( status->clip, valerie_util_strip( valerie_tokeniser_get_string( tokeniser, 2 ), '\"' ), sizeof( status->clip ) );
-		status->position = atof( valerie_tokeniser_get_string( tokeniser, 3 ) );
+		status->position = atol( valerie_tokeniser_get_string( tokeniser, 3 ) );
 		status->speed = atoi( valerie_tokeniser_get_string( tokeniser, 4 ) );
 		status->fps = atof( valerie_tokeniser_get_string( tokeniser, 5 ) );
-		status->in = atof( valerie_tokeniser_get_string( tokeniser, 6 ) );
-		status->out = atof( valerie_tokeniser_get_string( tokeniser, 7 ) );
-		status->length = atof( valerie_tokeniser_get_string( tokeniser, 8 ) );
+		status->in = atol( valerie_tokeniser_get_string( tokeniser, 6 ) );
+		status->out = atol( valerie_tokeniser_get_string( tokeniser, 7 ) );
+		status->length = atol( valerie_tokeniser_get_string( tokeniser, 8 ) );
 
 		strncpy( status->tail_clip, valerie_util_strip( valerie_tokeniser_get_string( tokeniser, 9 ), '\"' ), sizeof( status->tail_clip ) );
-		status->tail_position = atof( valerie_tokeniser_get_string( tokeniser, 10 ) );
-		status->tail_in = atof( valerie_tokeniser_get_string( tokeniser, 11 ) );
-		status->tail_out = atof( valerie_tokeniser_get_string( tokeniser, 12 ) );
-		status->tail_length = atof( valerie_tokeniser_get_string( tokeniser, 13 ) );
-		status->seek_flag = atof( valerie_tokeniser_get_string( tokeniser, 14 ) );
-		status->generation = atof( valerie_tokeniser_get_string( tokeniser, 15 ) );
-		status->clip_index = atof( valerie_tokeniser_get_string( tokeniser, 16 ) );
+		status->tail_position = atol( valerie_tokeniser_get_string( tokeniser, 10 ) );
+		status->tail_in = atol( valerie_tokeniser_get_string( tokeniser, 11 ) );
+		status->tail_out = atol( valerie_tokeniser_get_string( tokeniser, 12 ) );
+		status->tail_length = atol( valerie_tokeniser_get_string( tokeniser, 13 ) );
+		status->seek_flag = atoi( valerie_tokeniser_get_string( tokeniser, 14 ) );
+		status->generation = atoi( valerie_tokeniser_get_string( tokeniser, 15 ) );
+		status->clip_index = atoi( valerie_tokeniser_get_string( tokeniser, 16 ) );
 
 		if ( !strcmp( valerie_tokeniser_get_string( tokeniser, 1 ), "unknown" ) )
 			status->status = unit_unknown;
@@ -121,7 +121,7 @@ char *valerie_status_serialise( valerie_status status, char *text, int length )
 			break;
 	}
 
-	snprintf( text, length, "%d %s \"%s\" %e %e %.2f %e %e %e \"%s\" %e %e %e %e %d %d %d\r\n",
+	snprintf( text, length, "%d %s \"%s\" %lld %d %.2f %lld %lld %lld \"%s\" %lld %lld %lld %lld %d %d %d\r\n",
 							status->unit,
 							status_string,
 							status->clip,

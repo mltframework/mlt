@@ -134,7 +134,7 @@ static int producer_collect_info( producer_libdv this )
 			mlt_properties_set_double( properties, "fps", fps );
 			mlt_properties_set_timecode( properties, "length", length );
 			mlt_properties_set_timecode( properties, "in", 0.0 );
-			mlt_properties_set_timecode( properties, "out", length );
+			mlt_properties_set_timecode( properties, "out", ( mlt_timecode )( this->frames_in_file - 1 ) / fps );
 
 			// Parse the header for meta info
 			dv_parse_header( this->dv_decoder, dv_data );

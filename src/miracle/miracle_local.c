@@ -455,5 +455,5 @@ static void miracle_local_close( miracle_local local )
 	pthread_kill_other_threads_np();
 	miracle_log( LOG_DEBUG, "Clean shutdown." );
 	free( local );
-	mlt_factory_close( );
+	//mlt_factory_close( );
 }

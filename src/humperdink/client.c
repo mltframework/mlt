@@ -147,7 +147,7 @@ void dv_demo_show_status( dv_demo demo, valerie_status status )
 				break;
 		}
 
-		sprintf( temp + strlen( temp ), " %9.2f %9.2f %9.2f ", status->in, status->position, status->out );
+		sprintf( temp + strlen( temp ), " %9lld %9lld %9lld ", status->in, status->position, status->out );
 		strcat( temp, status->clip );
 
 		printf( "%-80.80s\r", temp );

@@ -87,6 +87,28 @@ mlt_properties mlt_producer_properties( mlt_producer this )
 	return mlt_service_properties( &this->parent );
 }
 
+/** Convert frame position to timecode.
+*/
+
+mlt_timecode mlt_producer_time( mlt_producer this, int64_t frame )
+{
+	if ( frame < 0 )
+		return -1;
+	else
+		return ( mlt_timecode )frame / mlt_producer_get_fps( this );
+}
+
+/** Convert timecode to frame position.
+*/
+
+int64_t mlt_producer_frame_position( mlt_producer this, mlt_timecode position )
+{
+	if ( position < 0 )
+		return -1;
+	else
+		return ( int64_t )( floor( position * mlt_producer_get_fps( this ) + 0.5 ) );
+}
+
 /** Seek to a specified time code.
 */
 

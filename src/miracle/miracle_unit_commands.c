@@ -56,11 +56,11 @@ int miracle_load( command_argument cmd_arg )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		double in = -1, out = -1;
+		int64_t in = -1, out = -1;
 		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 5 )
 		{
-			in = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
-			out = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
+			in = atol( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
+			out = atol( valerie_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
 		}
 		if ( miracle_unit_load( unit, fullname, in, out, flush ) != valerie_ok )
 			return RESPONSE_BAD_FILE;
@@ -207,11 +207,11 @@ int miracle_append( command_argument cmd_arg )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		double in = -1, out = -1;
+		int64_t in = -1, out = -1;
 		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 5 )
 		{
-			in = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
-			out = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
+			in = atol( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
+			out = atol( valerie_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
 		}
 		switch ( miracle_unit_append( unit, fullname, in, out ) )
 		{
@@ -311,17 +311,16 @@ int miracle_ff( command_argument cmd_arg )
 
 int miracle_set_in_point( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	int clip = parse_clip( cmd_arg, 3 );
-	
-	if (unit == NULL || dv_unit_is_offline(unit))
+
+	if ( unit == NULL )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
 		int position = *(int *) cmd_arg->argument;
 
-		switch( dv_unit_set_clip_in( unit, clip, position ) )
+		switch( miracle_unit_set_clip_in( unit, clip, position ) )
 		{
 			case -1:
 				return RESPONSE_BAD_FILE;
@@ -329,23 +328,21 @@ int miracle_set_in_point( command_argument cmd_arg )
 				return RESPONSE_OUT_OF_RANGE;
 		}
 	}
-	*/
 	return RESPONSE_SUCCESS;
 }
 
 int miracle_set_out_point( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	int clip = parse_clip( cmd_arg, 3 );
 	
-	if (unit == NULL || dv_unit_is_offline(unit))
+	if ( unit == NULL )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
 		int position = *(int *) cmd_arg->argument;
 
-		switch( dv_unit_set_clip_out( unit, clip, position ) )
+		switch( miracle_unit_set_clip_out( unit, clip, position ) )
 		{
 			case -1:
 				return RESPONSE_BAD_FILE;
@@ -353,7 +350,7 @@ int miracle_set_out_point( command_argument cmd_arg )
 				return RESPONSE_OUT_OF_RANGE;
 		}
 	}
-	*/
+
 	return RESPONSE_SUCCESS;
 }
 

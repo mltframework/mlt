@@ -96,6 +96,17 @@ int mlt_property_set_string( mlt_property this, char *value )
 	return this->prop_string != NULL;
 }
 
+/** Set an int64 on this property.
+*/
+
+int mlt_property_set_int64( mlt_property this, int64_t value )
+{
+	mlt_property_clear( this );
+	this->types = mlt_prop_int64;
+	this->prop_int64 = value;
+	return 0;
+}
+
 /** Set a data on this property.
 */
 
@@ -123,6 +134,8 @@ int mlt_property_get_int( mlt_property this )
 		return ( int )this->prop_double;
 	else if ( this->types & mlt_prop_timecode )
 		return ( int )this->prop_timecode;
+	else if ( this->types & mlt_prop_int64 )
+		return ( int )this->prop_int64;
 	else if ( this->types & mlt_prop_string )
 		return atoi( this->prop_string );
 	return 0;
@@ -139,6 +152,8 @@ double mlt_property_get_double( mlt_property this )
 		return ( double )this->prop_int;
 	else if ( this->types & mlt_prop_timecode )
 		return ( double )this->prop_timecode;
+	else if ( this->types & mlt_prop_int64 )
+		return ( double )this->prop_int64;
 	else if ( this->types & mlt_prop_string )
 		return atof( this->prop_string );
 	return 0;
@@ -155,8 +170,28 @@ mlt_timecode mlt_property_get_timecode( mlt_property this )
 		return ( mlt_timecode )this->prop_int;
 	else if ( this->types & mlt_prop_double )
 		return ( mlt_timecode )this->prop_double;
+	else if ( this->types & mlt_prop_int64 )
+		return ( mlt_timecode )this->prop_int64;
 	else if ( this->types & mlt_prop_string )
 		return ( mlt_timecode )atof( this->prop_string );
+	return 0;
+}
+
+/** Get an int64 from this property.
+*/
+
+int64_t mlt_property_get_int64( mlt_property this )
+{
+	if ( this->types & mlt_prop_int64 )
+		return this->prop_int64;
+	else if ( this->types & mlt_prop_int )
+		return ( int64_t )this->prop_int;
+	else if ( this->types & mlt_prop_double )
+		return ( int64_t )this->prop_double;
+	else if ( this->types & mlt_prop_timecode )
+		return ( int64_t )this->prop_timecode;
+	else if ( this->types & mlt_prop_string )
+		return ( int64_t )atof( this->prop_string );
 	return 0;
 }
 
@@ -185,6 +220,12 @@ char *mlt_property_get_string( mlt_property this )
 			this->types |= mlt_prop_string;
 			this->prop_string = malloc( 32 );
 			sprintf( this->prop_string, "%e", this->prop_timecode );
+		}
+		else if ( this->types & mlt_prop_int64 )
+		{
+			this->types |= mlt_prop_string;
+			this->prop_string = malloc( 32 );
+			sprintf( this->prop_string, "%lld", this->prop_int64 );
 		}
 		else if ( this->types & mlt_prop_data && this->serialiser != NULL )
 		{

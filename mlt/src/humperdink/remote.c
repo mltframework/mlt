@@ -20,6 +20,7 @@
 
 /* System header files */
 #include <stdio.h>
+#include <stdint.h>
 
 /* dv1394d header files */
 #include <valerie/valerie_remote.h>
