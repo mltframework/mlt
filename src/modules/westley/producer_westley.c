@@ -93,6 +93,9 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 		mlt_properties_set_position( properties, "length", length );
 	}
 
+	if ( mlt_properties_get( properties, "id" ) != NULL )
+		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
+	
 	context_push_service( context, service );
 }
 
@@ -452,7 +455,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 	properties = mlt_service_properties( service );
 
 	// Set in and out
-//fprintf( stderr, "setting filter in %lld out %lld\n", mlt_properties_get_position( properties, "in" ), mlt_properties_get_position( properties, "out" ) );
+//fprintf( stderr, "setting filter in %d out %d\n", mlt_properties_get_position( properties, "in" ), mlt_properties_get_position( properties, "out" ) );
 	mlt_filter_set_in_and_out( MLT_FILTER( service ), 
 		mlt_properties_get_position( properties, "in" ),
 		mlt_properties_get_position( properties, "out" ) );
@@ -471,7 +474,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		context_push_service( context, tractor );
 	}
 
-//fprintf( stderr, "setting filter in %lld out %lld\n", mlt_properties_get_position( properties, "in" ), mlt_properties_get_position( properties, "out" ) );
+//fprintf( stderr, "setting filter in %d out %d\n", mlt_properties_get_position( properties, "in" ), mlt_properties_get_position( properties, "out" ) );
 	// If a producer alias is in the producer_map, get it
 	snprintf( key, 10, "%p", producer );
 	if ( mlt_properties_get_data( context->producer_map, key, NULL ) != NULL )

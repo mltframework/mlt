@@ -90,12 +90,11 @@ Properties:
 	
 	$ inigo file in=50 out=100 something="something else"
 	
-	Note that while some properties have meaning to all producers
-	(for example: in, out and length are guaranteed to be valid for
-	all, though typically, length is determined automatically), the
-	validity of others are dependent on the producer - however,
-	properties will always be assigned, but it doesn't mean they
-	will be used.
+	Note that while some properties have meaning to all producers (for 
+	example: in, out and length are guaranteed to be valid for all, though 
+	typically, length is determined automatically), the validity of others 
+	are dependent on the producer - however, properties will always be 
+	assigned and silently ignored if they won't be used.
 
 
 Multiple Files:
@@ -108,36 +107,29 @@ Multiple Files:
 	
 	$ inigo a.dv in=50 out=100 b.mpg out=500 c.png out=500
 
+	MLT will take care of 'normalising' the output of a producer to ensure
+	that the consumer gets what it needs. So, in the case above, the mlt
+	framework will ensure that images are rescaled and audio resampled to meet
+	the requirements of your configuration (which, by default, will be PAL).
+	See 'Appendix A: Normalisation Rules' below.
+
 
 Filters:
 
-	The Multiple Files examples above will logically playout one
-	after the other. 
-	
-	However, inigo doesn't care too much about changes in frame
-	dimensions or audio specification, so you may need to add
-	additional normalising filters to that, ie:
-	
-	$ inigo a.dv b.mpg c.png -filter resize -filter resample
-	
-	These filters are designed to guarantee that the consumer gets
-	what it asks for.
+	Filters are frame modifiers - they can change the contents of the audio or
+	the images associated to a frame.
 
-	It should also be stressed that filters are applied in the order
-	in which they're specified.
-
-
-Filter Properties:
+	$ inigo a.dv -filter greyscale
 
 	As with producers, properties may be specified on filters too.
 	
-	Again, in and out properties are common to all, so to apply a
-	filter to a range of frames, you would use something like:
+	Again, in and out properties are common to all, so to apply a filter to a 
+	range of frames, you would use something like:
 	
 	$ inigo a.dv -filter greyscale in=0 out=50
 	
-	Again, filters have their own set of rules about properties and
-	will silently ignore properties that do not apply.
+	Again, filters have their own set of rules about properties and will
+	silently ignore properties that do not apply.
 
 
 Groups:
@@ -165,8 +157,8 @@ Groups:
 
 Introducing Tracks and Blanks:
 
-	So far, all of the examples have shown the definition of a
-	single playlist, or more accurately, track.
+	So far, all of the examples have shown the definition of a single
+	playlist, or more accurately, track.
 
 	When multiple tracks exist, the consumer will receive a frame
 	from the 'lowest numbered' track that is generating a non-blank
@@ -202,8 +194,8 @@ Introducing Tracks and Blanks:
 	        +-------------------+
 	
 	Now playout will continue as though a and b clips are on the
-	same track (which is about as useful as reversing the process of
-	slicing bread).
+	same track (which on its own, is about as useful as reversing the 
+	process of slicing bread).
 
 
 Transitions:
@@ -213,9 +205,10 @@ Transitions:
 	Here we need tracks to overlap, so a useful multitrack
 	definition could be given as:
 	
-	$ inigo a.dv out=49 -transition luma in=25 out=49 \
+	$ inigo a.dv out=49 \
 	        -track \
-	        -blank 24 b.dv
+	        -blank 24 b.dv \
+	        -transition luma in=25 out=49 a_track=0 b_track=1
 	
 	Now we're cooking - our visualisation would be something like:
 	
@@ -246,23 +239,10 @@ Reversing a Transition:
 	In this scenario, we define a command line as follows:
 	
 	$ inigo a.dv out=49 -blank 49 a2.dv \
-			-transition luma in=25 out=49 \
-	        -transition luma in=100 out=124 reverse=1 \
 	        -track \
-	        -blank 24 b.dv out=99
-
-
-Filters and Tracks:
-
-	A filter applies to a [specified region of a] single track, so
-	normalisation filters need to be applied to each track when
-	applicable.
-	
-	This user specification is a necessary evil (you do not want to
-	resize a text or png overlay to be the size of the frame that
-	the consumer is requesting, and you may not want to unecessarily
-	resize a video track if you will be later rescaling it for
-	composition).
+	        -blank 24 b.dv out=99 \
+	        -transition luma in=25 out=49 a_track=0 b_track=1 \
+	        -transition luma in=100 out=124 reverse=1 a_track=0 b_track=1
 
 
 Serialisation:
@@ -275,14 +255,22 @@ Serialisation:
 	miracle or inigo. Take care though - paths to files are saved as
 	provided on the command line....
 
+	A more expressive serialisation can be obtained with the westley consumer
+	- this will provide an xml document which can be used freely in inigo and
+	miracle.
+
+	See westley.txt for more information.
+
 
 Missing Features:
 
-	Some filters/transitions should be applied on the output frame
-	regardless of which track it comes from - for example, you might
-	have a 3rd text track or a watermark which you want composited
-	on every frame, and of course, there's the obscure feature.... 
+	Some filters/transitions should be applied on the output frame regardless
+	of which track it comes from - for example, you might have a 3rd text 
+	track or a watermark which you want composited on every frame, and of 
+	course, there's the obscure filter.... 
 	
-	A -post switch will be added to provided this feature at some
-	point soon.
+	inigo only supports this in two invocations - as a simple example:
+
+	$ inigo a.dv -track -blank 100 b.dv -consumer westley:basic.westley
+	$ inigo basic.westley -filter watermark:watermark.png
 

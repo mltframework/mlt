@@ -222,6 +222,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Average time for get_frame and get_image
 	int count = 1;
+	int skipped = 0;
 	int64_t time_wait = 0;
 	int64_t time_frame = 0;
 	int64_t time_image = 0;
@@ -262,6 +263,22 @@ static void *consumer_read_ahead_thread( void *arg )
 			mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
 			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
 			time_image += time_difference( &ante );
+
+			// Reset the skipped count
+			skipped = 0;
+		}
+		else
+		{
+			// Increment the number of sequentially skipped frames
+			skipped ++;
+
+			// If we've reached an unacceptable level, reset everything
+			if ( skipped > 10 )
+			{
+				skipped = 0;
+				time_frame = 0;
+				time_image = 0;
+			}
 		}
 	}
 
