@@ -593,7 +593,7 @@ static void *consumer_thread( void *arg )
 	int samples = 0;
 
 	// AVFormat audio buffer and frame size
- 	int audio_outbuf_size = 2 * 128 * 1024;
+ 	int audio_outbuf_size = 10000;
  	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
 	int audio_input_frame_size = 0;
 
@@ -809,17 +809,22 @@ static void *consumer_thread( void *arg )
 			{
 				if ( channels * audio_input_frame_size < sample_fifo_used( fifo ) )
 				{
-	 				int out_size;
  					AVCodecContext *c;
+					AVPacket pkt;
+					av_init_packet( &pkt );
 
 					c = &audio_st->codec;
 
 					sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
 
-					out_size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
-
+					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
  					// Write the compressed frame in the media file
- 					if (av_write_frame(oc, audio_st->index, audio_outbuf, out_size) != 0) 
+					pkt.pts= c->coded_frame->pts;
+					pkt.flags |= PKT_FLAG_KEY;
+					pkt.stream_index= audio_st->index;
+					pkt.data= audio_outbuf;
+
+ 					if ( av_write_frame( oc, &pkt ) != 0) 
  						fprintf(stderr, "Error while writing audio frame\n");
 				}
 				else
@@ -867,7 +872,15 @@ static void *consumer_thread( void *arg )
  					if (oc->oformat->flags & AVFMT_RAWPICTURE) 
 					{
 	 					// raw video case. The API will change slightly in the near future for that
-	 					ret = av_write_frame(oc, video_st->index, (uint8_t *)output, sizeof(AVPicture));
+						AVPacket pkt;
+						av_init_packet(&pkt);
+        
+						pkt.flags |= PKT_FLAG_KEY;
+						pkt.stream_index= video_st->index;
+						pkt.data= (uint8_t *)output;
+						pkt.size= sizeof(AVPicture);
+
+						ret = av_write_frame(oc, &pkt);
  					} 
 					else 
 					{
@@ -880,9 +893,18 @@ static void *consumer_thread( void *arg )
 	 					// If zero size, it means the image was buffered
 	 					if (out_size != 0) 
 						{
-		 					// write the compressed frame in the media file
-		 					// XXX: in case of B frames, the pts is not yet valid
-		 					ret = av_write_frame( oc, video_st->index, video_outbuf, out_size );
+							AVPacket pkt;
+							av_init_packet( &pkt );
+
+							pkt.pts= c->coded_frame->pts;
+							if(c->coded_frame->key_frame)
+								pkt.flags |= PKT_FLAG_KEY;
+							pkt.stream_index= video_st->index;
+							pkt.data= video_outbuf;
+							pkt.size= out_size;
+
+             				// write the compressed frame in the media file
+							ret = av_write_frame(oc, &pkt);
 	 					} 
  					}
  					frame_count++;
