@@ -52,6 +52,7 @@ typedef char *( *mlt_serialiser )( void *, int length );
 #define MLT_PRODUCER(x) ( ( mlt_producer )( x ) )
 #define MLT_MULTITRACK(x) ( ( mlt_multitrack )( x ) )
 #define MLT_PLAYLIST(x) ( ( mlt_playlist )( x ) )
+#define MLT_TRACTOR(x) ( ( mlt_tractor )( x ) )
 #define MLT_FILTER(x) ( ( mlt_filter )( x ) )
 #define MLT_TRANSITION(x) ( ( mlt_transition )( x ) )
 

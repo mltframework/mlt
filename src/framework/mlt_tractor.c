@@ -57,7 +57,7 @@ mlt_tractor mlt_tractor_init( )
 		{
 			producer->get_frame = producer_get_frame;
 			mlt_properties_set( mlt_producer_properties( producer ), "resource", "<tractor>" );
-			mlt_properties_set( mlt_producer_properties( producer ), "mlt_type", "producer" );
+			mlt_properties_set( mlt_producer_properties( producer ), "mlt_type", "mlt_producer" );
 			mlt_properties_set( mlt_producer_properties( producer ), "mlt_service", "tractor" );
 		}
 		else

@@ -75,6 +75,8 @@ mlt_playlist mlt_playlist_init( )
 
 		// Initialise blank
 		mlt_producer_init( &this->blank, NULL );
+		mlt_properties_set( mlt_producer_properties( &this->blank ), "mlt_service", "blank" );
+		mlt_properties_set( mlt_producer_properties( &this->blank ), "resource", "blank" );
 
 		// Indicate that this producer is a playlist
 		mlt_properties_set_data( mlt_playlist_properties( this ), "playlist", this, 0, NULL, NULL );
