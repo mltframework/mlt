@@ -691,6 +691,46 @@ Filters
 
 	        none
 	    
+	gtkrescale
+
+	    Description
+
+	        Scale the producer video frame size to match the consumer.
+	        This filter is designed for use as a Fezzik normaliser.
+
+	    Constructor Argument
+
+	        interpolation - the rescaling method, one of:
+	            nearest (lowest quality, fastest),
+	            tiles,
+	            bilinear (default; good quality, moderate speed),
+	            hyper (best quality, slowest).
+
+	    Initialisation Properties
+
+	        int in - in point
+	        int out - out point
+
+	    Mutable Properties
+
+	        string interpolation - see constructor argument above
+
+	        If a property "consumer_aspect_ratio" exists on the frame, then
+	        rescaler normalises the producer's aspect ratio and maximises the
+	        size of the frame, but may not produce the consumer's requested
+	        dimension. Therefore, this option works best in conjunction with the
+	        resize filter. This behavior can be disabled by another service by
+	        either removing the property, setting it to zero, or setting
+	        frame property "distort" to 1.
+
+	    Dependencies
+
+	        libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
+
+	    Known Bugs
+
+	        none
+
 	luma
 	
 	    Description
@@ -730,6 +770,44 @@ Filters
 	    
 	        none
 	    
+	mcrescale
+
+	    Description
+
+	        Scale the producer video frame size to match the consumer.
+	        This filter is designed for use as a Fezzik normaliser.
+
+	    Constructor Argument
+
+	        interpolation - the rescaling method, one of:
+	            nearest (lowest quality, fastest),
+	            bilinear (default; good quality, moderate speed),
+	            hyper (best quality, slowest).
+
+	    Initialisation Properties
+
+	        int in - in point
+	        int out - out point
+
+	    Mutable Properties
+
+	        string interpolation - see constructor argument above
+
+	        If a property "consumer_aspect_ratio" exists on the frame, then
+	        rescaler normalises the producer's aspect ratio and maximises the
+	        size of the frame, but may not produce the consumer's requested
+	        dimension. Therefore, this option works best in conjunction with the
+	        resize filter. This behavior can be disabled by another service by
+	        either removing the property, setting it to zero, or setting
+	        frame property "distort" to 1.
+
+	    Dependencies
+
+	        the mainconcept rescaling sdk.
+
+	    Known Bugs
+
+	        none
 	
 	mirror
 	
@@ -798,7 +876,7 @@ Filters
 	
 	    Description
 	    
-	        Apply one or filters to a region of the video image. The region
+	        Apply one or more filters to a region of the video image. The region
 	        can be shaped as well using the alpha channel of another producer.
 	        
 	    Constructor Argument
@@ -864,16 +942,11 @@ Filters
 	    Description
 
 	        Scale the producer video frame size to match the consumer.
-	        This filter is automatically invoked by Fezzik in order to normalise
-	        sample aspect ratio.
+	        This filter is designed for use as a Fezzik normaliser.
 
 	    Constructor Argument
 
-	        interpolation - the rescaling method, one of:
-	            nearest (lowest quality, fastest),
-	            tiles,
-	            bilinear (default; good quality, moderate speed),
-	            hyper (best quality, slowest).
+	        None.
 
 	    Initialisation Properties
 
@@ -881,8 +954,6 @@ Filters
 	        int out - out point
 
 	    Mutable Properties
-
-	        string interpolation - see constructor argument above
 
 	        If a property "consumer_aspect_ratio" exists on the frame, then
 	        rescaler normalises the producer's aspect ratio and maximises the
@@ -894,11 +965,12 @@ Filters
 
 	    Dependencies
 
-	        libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
+	        none
 
 	    Known Bugs
 
-	        none
+	        none but... it only implements a nearest neighbour scaling - it is
+			used as the base class for the gtkrescale and mcrescale filters.
 
 	resize
 	

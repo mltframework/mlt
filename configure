@@ -5,20 +5,21 @@ function show_help
 	cat << EOF
 Funky non-autotool config script for MLT.
 
-	Options are:
+Options are:
 
-	--help                  - this information
-	--prefix=directory      - install prefix for path (default: $prefix)
-	--disable-debug         - Compile without debug support (default: on)
-	--disable-mmx           - Compile without MMX support (default: on)
-	--cpu='cpu'             - Compile for a specific CPU/architectre (default: none)
+  --help                  - this information
+  --prefix=directory      - install prefix for path (default: $prefix)
+  --disable-debug         - Compile without debug support (default: on)
+  --disable-mmx           - Compile without MMX support (default: on)
+  --enable-gpl            - Enable GPL components
+  --cpu='cpu'             - Compile for a specific CPU/architectre (default: none)
 EOF
 
 	for i in src/modules/*
 	do
-		[ -d $i ] && [ "`basename $i`" != "CVS" ] && basename $i
+		[ -d $i ] && [ "`basename $i`" != "CVS" ] && echo `basename $i` `[ -f $i/gpl ] && echo [GPL]`
 	done |
-	awk '{ printf( "   --disable-%-14.14s- Disable the %s module\n", $1, $1 ); }'
+	awk '{ printf( "  --disable-%-14.14s- Disable the %s module %s\n", $1, $1, $2 ); }'
 
 	echo
 }
@@ -86,6 +87,7 @@ export help=0
 export version=0.0.3
 export debug=true
 export mmx=true
+export gpl=false
 export cpu=
 
 # Iterate through arguments
@@ -96,6 +98,7 @@ do
 		--prefix=* )		prefix="${i#--prefix=}" ;;
 		--disable-debug )	debug=false ;;
 		--disable-mmx )		mmx=false ;;
+		--enable-gpl )		gpl=true ;;
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 	esac
 done
@@ -118,3 +121,10 @@ done
 
 # Build the pkg-config files
 build_pkgconfig
+
+# Report GPL Usage
+[ $help != 1 ] && 
+( [ "$gpl" = "false" ] && 
+echo "GPL Components are disabled" || 
+echo "GPL License Used" )
+
