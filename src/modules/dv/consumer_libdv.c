@@ -207,13 +207,9 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		int width = mlt_properties_get_int( this_properties, "width" );
 		int height = mlt_properties_get_int( this_properties, "height" );
 		uint8_t *image = NULL;
-		int is_test = 0;
 
 		// Get the image
 		mlt_frame_get_image( frame, &image, &fmt, &width, &height, 0 );
-
-		// determine if this a test card
-		is_test = mlt_frame_is_test_card( frame );
 
 		// Check that we get what we expected
 		if ( fmt != mlt_image_yuv422 || 
@@ -231,16 +227,10 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		}
 
 		// Process the frame
-		if ( size != 0 && !( mlt_properties_get_int( this_properties, "was_test_card" ) && is_test ) )
+		if ( size != 0 )
 		{
-			if ( mlt_properties_get_int( mlt_frame_properties( frame ), "top_field_first" ) )
-				image += width * 2;
-
 			// Encode the image
 			dv_encode_full_frame( encoder, &image, e_dv_color_yuv, dv_frame );
-
-			// Note test card status
-			mlt_properties_set_int( this_properties, "was_test_card", is_test );
 		}
 	}
 	

@@ -36,6 +36,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Get the properties from the frame
 	mlt_properties properties = mlt_frame_properties( this );
 
+	// Pop the top of stack now
+	mlt_filter filter = mlt_frame_pop_service( this );
+
 	// Assign requested width/height from our subordinate
 	int owidth = *width;
 	int oheight = *height;
@@ -82,6 +85,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// We only know how to process yuv422 at the moment
 	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
+		// Get the requested scale operation
+		char *op = mlt_properties_get( mlt_filter_properties( filter ), "scale" );
+
 		// Correct field order if needed
 		if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 )
 		{
@@ -103,11 +109,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_int( properties, "top_field_first", 0 );
 		}
 
-		if ( !strcmp( mlt_properties_get( properties, "resize.scale" ), "affine" ) )
+		if ( !strcmp( op, "affine" ) )
 		{
 			*image = mlt_frame_rescale_yuv422( this, *width, *height );
 		}
-		else if ( strcmp( mlt_properties_get( properties, "resize.scale" ), "none" ) != 0 )
+		else if ( strcmp( op, "none" ) != 0 )
 		{
 			*image = mlt_frame_resize_yuv422( this, *width, *height );
 		}
@@ -126,8 +132,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
+	// Push this on to the service stack
+	mlt_frame_push_service( frame, this );
+
+	// Push the get_image method on to the stack
 	mlt_frame_push_get_image( frame, filter_get_image );
-	mlt_properties_set( mlt_frame_properties( frame ), "resize.scale", mlt_properties_get( mlt_filter_properties( this ), "scale" ) );
+
 	return frame;
 }
 

@@ -592,9 +592,6 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 
 		iwidth = iwidth - ( iwidth % 4 );
 
-    	// Coordinates (0,0 is middle of output)
-    	int y, x;
-
 		// Derived coordinates
 		int dy, dx;
 
@@ -605,41 +602,44 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
     	int in_y_range = iheight / 2;
 
     	// Output pointers
-    	uint8_t *out_line = output;
-    	uint8_t *out_ptr;
+    	register uint8_t *out_line = output;
+    	register uint8_t *out_ptr;
 
     	// Calculate a middle pointer
     	uint8_t *in_middle = input + istride * in_y_range + in_x_range * 2;
     	uint8_t *in_line;
-		uint8_t *in_ptr;
 
 		// Generate the affine transform scaling values
-		int scale_width = ( iwidth << 16 ) / owidth;
-		int scale_height = ( iheight << 16 ) / oheight;
+		register int scale_width = ( iwidth << 16 ) / owidth;
+		register int scale_height = ( iheight << 16 ) / oheight;
+		register int base = 0;
+
+		int outer = out_x_range * scale_width;
+		int bottom = out_y_range * scale_height;
 
     	// Loop for the entirety of our output height.
-    	for ( y = - out_y_range; y < out_y_range ; y ++ )
+    	for ( dy = - bottom; dy < bottom; dy += scale_height )
     	{
-			// Calculate the derived y value
-			dy = ( scale_height * y ) >> 16;
-
         	// Start at the beginning of the line
         	out_ptr = out_line;
 	
         	// Pointer to the middle of the input line
-        	in_line = in_middle + dy * istride;
-	
-        	// Loop for the entirety of our output row.
-        	for ( x = - out_x_range; x < out_x_range; x += 1 )
-        	{
-				// Calculated the derived x
-				dx = ( scale_width * x ) >> 16;
+        	in_line = in_middle + ( dy >> 16 ) * istride;
 
-               	// We're in the input range for this row.
-				in_ptr = in_line + ( dx << 1 );
-               	*out_ptr ++ = *in_ptr ++;
-				in_ptr = in_line + ( ( dx >> 1 ) << 2 ) + ( ( x & 1 ) << 1 ) + 1;
-               	*out_ptr ++ = *in_ptr;
+        	// Loop for the entirety of our output row.
+        	for ( dx = - outer; dx < outer; dx += scale_width )
+        	{
+				base = dx >> 15;
+				base &= 0xfffffffe;
+				*out_ptr ++ = *( in_line + base );
+				base &= 0xfffffffc;
+				*out_ptr ++ = *( in_line + base + 1 );
+				dx += scale_width;
+				base = dx >> 15;
+				base &= 0xfffffffe;
+				*out_ptr ++ = *( in_line + base );
+				base &= 0xfffffffc;
+				*out_ptr ++ = *( in_line + base + 3 );
         	}
 
         	// Move to next output line
