@@ -131,7 +131,6 @@ static int producer_collect_info( producer_libdv this )
 			double fps = this->is_pal ? 25 : 30000 / 1001;
 			mlt_timecode length = ( mlt_timecode )( this->frames_in_file ) / fps;
 			mlt_properties_set_double( properties, "fps", fps );
-			mlt_properties_set_timecode( properties, "playtime", length );
 			mlt_properties_set_timecode( properties, "length", length );
 			mlt_properties_set_timecode( properties, "in", 0.0 );
 			mlt_properties_set_timecode( properties, "out", length );

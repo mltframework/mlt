@@ -44,43 +44,71 @@ mlt_producer create_producer( char *file )
 void transport_action( mlt_producer producer, char *value )
 {
 	mlt_properties properties = mlt_producer_properties( producer );
+	mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
 
-	switch( value[ 0 ] )
+	if ( strlen( value ) == 1 )
 	{
-		case 'q':
-			mlt_properties_set_int( properties, "done", 1 );
-			break;
-		case '0':
-			mlt_producer_set_speed( producer, 1 );
-			mlt_producer_seek( producer, 0 );
-			break;
-		case '1':
-			mlt_producer_set_speed( producer, -10 );
-			break;
-		case '2':
-			mlt_producer_set_speed( producer, -2.5 );
-			break;
-		case '3':
-			mlt_producer_set_speed( producer, -1 );
-			break;
-		case '4':
-			mlt_producer_set_speed( producer, -0.5 );
-			break;
-		case '5':
-			mlt_producer_set_speed( producer, 0 );
-			break;
-		case '6':
-			mlt_producer_set_speed( producer, 0.5 );
-			break;
-		case '7':
-			mlt_producer_set_speed( producer, 1 );
-			break;
-		case '8':
-			mlt_producer_set_speed( producer, 2.5 );
-			break;
-		case '9':
-			mlt_producer_set_speed( producer, 10 );
-			break;
+		switch( value[ 0 ] )
+		{
+			case 'q':
+				mlt_properties_set_int( properties, "done", 1 );
+				break;
+			case '0':
+				mlt_producer_set_speed( producer, 1 );
+				mlt_producer_seek( producer, 0 );
+				break;
+			case '1':
+				mlt_producer_set_speed( producer, -10 );
+				break;
+			case '2':
+				mlt_producer_set_speed( producer, -5 );
+				break;
+			case '3':
+				mlt_producer_set_speed( producer, -2 );
+				break;
+			case '4':
+				mlt_producer_set_speed( producer, -1 );
+				break;
+			case '5':
+				mlt_producer_set_speed( producer, 0 );
+				break;
+			case '6':
+				mlt_producer_set_speed( producer, 1 );
+				break;
+			case '7':
+				mlt_producer_set_speed( producer, 2 );
+				break;
+			case '8':
+				mlt_producer_set_speed( producer, 5 );
+				break;
+			case '9':
+				mlt_producer_set_speed( producer, 10 );
+				break;
+			case 'j':
+				if ( multitrack != NULL )
+				{
+					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, -1 );
+					mlt_producer_seek( producer, time );
+					mlt_producer_prepare_next( producer );
+				}
+				break;
+			case 'k':
+				if ( multitrack != NULL )
+				{
+					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 0 );
+					mlt_producer_seek( producer, time );
+					mlt_producer_prepare_next( producer );
+				}
+				break;
+			case 'l':
+				if ( multitrack != NULL )
+				{
+					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 1 );
+					mlt_producer_seek( producer, time );
+					mlt_producer_prepare_next( producer );
+				}
+				break;
+		}
 	}
 }
 
@@ -122,9 +150,8 @@ mlt_filter create_filter( mlt_field field, char *id, int track )
 	return filter;
 }
 
-void set_properties( mlt_service service, char *namevalue )
+void set_properties( mlt_properties properties, char *namevalue )
 {
-	mlt_properties properties = mlt_service_properties( service );
 	mlt_properties_parse( properties, namevalue );
 }
 
@@ -133,7 +160,16 @@ void transport( mlt_producer producer )
 	mlt_properties properties = mlt_producer_properties( producer );
 
 	term_init( );
-	fprintf( stderr, "Press 'q' to continue\n" );
+
+	fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
+	fprintf( stderr, "|1=-10| |2= -5| |3= -2| |4= -1| |5=  0| |6=  1| |7=  2| |8=  5| |9= 10|\n" );
+	fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
+
+	fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+	fprintf( stderr, "|             j = previous, k = restart current, l = next             |\n" );
+	fprintf( stderr, "|                       0 = restart, q = quit                         |\n" );
+	fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+
 	while( mlt_properties_get_int( properties, "done" ) == 0 )
 	{
 		int value = term_read( );
@@ -145,12 +181,13 @@ void transport( mlt_producer producer )
 int main( int argc, char **argv )
 {
 	int i;
-	mlt_service  service = NULL;
 	mlt_consumer consumer = NULL;
 	mlt_multitrack multitrack = NULL;
 	mlt_producer producer = NULL;
 	mlt_playlist playlist = NULL;
 	mlt_field field = NULL;
+	mlt_properties group = mlt_properties_new( );
+	mlt_properties properties = group;
 
 	// Construct the factory
 	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
@@ -162,8 +199,8 @@ int main( int argc, char **argv )
 	field = mlt_field_init( );
 
 	// We need to track the number of registered filters
-	mlt_properties properties = mlt_field_properties( field );
-	mlt_properties_set_int( properties, "registered", 0 );
+	mlt_properties field_properties = mlt_field_properties( field );
+	mlt_properties_set_int( field_properties, "registered", 0 );
 
 	// Get the multitrack from the field
 	multitrack = mlt_field_multitrack( field );
@@ -175,13 +212,29 @@ int main( int argc, char **argv )
 		{
 			consumer = create_consumer( argv[ ++ i ], mlt_multitrack_producer( multitrack ) );
 			if ( consumer != NULL )
-				service = mlt_consumer_service( consumer );
+			{
+				properties = mlt_consumer_properties( consumer );
+				mlt_properties_inherit( properties, group );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-group" ) )
+		{
+			if ( mlt_properties_count( group ) != 0 )
+			{
+				mlt_properties_close( group );
+				group = mlt_properties_new( );
+			}
+			if ( group != NULL )
+				properties = group;
 		}
 		else if ( !strcmp( argv[ i ], "-filter" ) )
 		{
 			mlt_filter filter = create_filter( field, argv[ ++ i ], 0 );
 			if ( filter != NULL )
-				service = mlt_filter_service( filter );
+			{
+				properties = mlt_filter_properties( filter );
+				mlt_properties_inherit( properties, group );
+			}
 		}
 		else if ( !strstr( argv[ i ], "=" ) )
 		{
@@ -189,23 +242,33 @@ int main( int argc, char **argv )
 				mlt_playlist_append( playlist, producer );
 			producer = create_producer( argv[ i ] );
 			if ( producer != NULL )
-				service = mlt_producer_service( producer );
+			{
+				properties = mlt_producer_properties( producer );
+				mlt_properties_inherit( properties, group );
+			}
 		}
 		else
 		{
-			set_properties( service, argv[ i ] );
+			set_properties( properties, argv[ i ] );
 		}
 	}
 
 	// We must have a producer at this point
 	if ( producer != NULL )
 	{
-		// Connect producer to playlist
-		mlt_playlist_append( playlist, producer );
-
 		// If we have no consumer, default to sdl
 		if ( consumer == NULL )
+		{
 			consumer = create_consumer( "sdl", mlt_multitrack_producer( multitrack ) );
+			if ( consumer != NULL )
+			{
+				properties = mlt_consumer_properties( consumer );
+				mlt_properties_inherit( properties, group );
+			}
+		}
+
+		// Connect producer to playlist
+		mlt_playlist_append( playlist, producer );
 
 		// Connect multitrack to producer
 		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), 0 );
@@ -222,13 +285,17 @@ int main( int argc, char **argv )
 	}
 	else
 	{
-		fprintf( stderr, "Usage: inigo [ -consumer id[:arg] [ name=value ]* ]\n"
+		fprintf( stderr, "Usage: inigo [ -group [ name=value ]* ]\n"
+						 "             [ -consumer id[:arg] [ name=value ]* ]\n"
         				 "             [ -filter id[:arg] [ name=value ] * ]\n"
         				 "             [ producer [ name=value ] * ]+\n" );
 	}
 
 	// Close the field
 	mlt_field_close( field );
+
+	// Close the group
+	mlt_properties_close( group );
 
 	// Close the factory
 	mlt_factory_close( );

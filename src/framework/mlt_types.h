@@ -23,6 +23,14 @@
 
 #include <stdint.h>
 
+typedef enum
+{
+	mlt_whence_relative_start,
+	mlt_whence_relative_current,
+	mlt_whence_relative_end
+}
+mlt_whence;
+
 typedef double mlt_timecode;
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr;
 typedef struct mlt_properties_s *mlt_properties;

@@ -142,7 +142,7 @@ FILE *producer_ffmpeg_run_video( producer_ffmpeg this )
 			char command[ 1024 ] = "";
 			float position = mlt_producer_position( &this->parent );
 
-			if ( video_loop ) position = 0;
+			if ( video_loop || position < 0 ) position = 0;
 
 			sprintf( command, "%s/ffmpeg/video.sh \"%s\" \"%s\" \"%s\" %f %f 2>/dev/null",
 							  mlt_prefix,
@@ -181,7 +181,7 @@ FILE *producer_ffmpeg_run_audio( producer_ffmpeg this )
 			char command[ 1024 ] = "";
 			float position = mlt_producer_position( &this->parent );
 
-			if ( audio_loop ) position = 0;
+			if ( audio_loop || position < 0 ) position = 0;
 
 			sprintf( command, "%s/ffmpeg/audio.sh \"%s\" \"%s\" %f %d %d %d 2>/dev/null",
 							  mlt_prefix,
@@ -242,11 +242,7 @@ static int sample_calculator( float fps, int frequency, int64_t position )
 {
 	int samples = 0;
 
-	if ( fps == 25 )
-	{
-		samples = frequency / 25;
-	}
-	else if ( fps >= 29.97 && fps < 29.98 )
+	if ( fps > 29 && fps <= 30 )
 	{
 		samples = frequency / 30;
 
@@ -280,10 +276,9 @@ static int sample_calculator( float fps, int frequency, int64_t position )
 				samples = 0;
 		}
 	}
-	else
+	else if ( fps != 0 )
 	{
-		if ( fps != 0 )
-			samples = frequency / fps;
+		samples = frequency / fps;
 	}
 
 	return samples;
@@ -456,9 +451,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties_set_double( properties, "speed", speed );
 
 	// Set the out point on the producer
-	if ( !this->end_of_video || !this->end_of_audio )
-		mlt_producer_set_in_and_out( &this->parent, mlt_producer_get_in( &this->parent ), mlt_producer_position( &this->parent ) + 1 );
-	else
+	if ( this->end_of_video && this->end_of_audio )
 		mlt_producer_set_in_and_out( &this->parent, mlt_producer_get_in( &this->parent ), mlt_producer_position( &this->parent ) );
 
 	// Update timecode on the frame we're creating

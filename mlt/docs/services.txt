@@ -27,6 +27,7 @@ Producers
 			timecode in - in point
 			timecode out - out point
 			double fps - output frames per second (default: 25)
+			double aspect_ratio - aspect ratio of video
 
 		Read Only Properties
 
@@ -61,6 +62,7 @@ Producers
 		Read Only Properties
 
 			double fps - output frames per second 
+			double aspect_ratio - aspect ratio of video
 
 		Dependencies
 
@@ -71,7 +73,63 @@ Producers
 			'file' is not populated on properties?
 
 	mcdv
+
+		Description:
+
+			Mainconcept based dv decoder for video and audio.
+
+		Constructor argument:
+
+			'file'	- produce a/v from file
+
+		Initialisation Properties
+
+			string file - file location
+			timecode in - in point
+			timecode out - out point
+
+		Read Only Properties
+
+			double fps - output frames per second 
+			double aspect_ratio - aspect ratio of video
+
+		Dependencies
+
+			mainconcept dv sdk and libdv.
+
+		Known Bugs
+
+			'file' is not populated on properties?
+
 	mcmpeg
+
+		Description:
+
+			Mainconcept based mpeg decoder for video and audio.
+
+		Constructor argument:
+
+			'file'	- produce a/v from file
+
+		Initialisation Properties
+
+			string file - file location
+			timecode in - in point
+			timecode out - out point
+
+		Read Only Properties
+
+			double fps - output frames per second 
+			double aspect_ratio - aspect ratio of video
+
+		Dependencies
+
+			mainconcept mpeg sdk.
+
+		Known Bugs
+
+			'file' is not populated on properties?
+
 	pango
 	pixbuf
 	ppm
@@ -95,5 +153,6 @@ Consumers
 ---------
 
 	bluefish
+	ffmpeg
 	sdl
 

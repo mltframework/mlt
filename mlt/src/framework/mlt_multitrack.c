@@ -21,6 +21,7 @@
 #include "config.h"
 
 #include "mlt_multitrack.h"
+#include "mlt_playlist.h"
 #include "mlt_frame.h"
 
 #include <stdio.h>
@@ -56,7 +57,9 @@ mlt_multitrack mlt_multitrack_init( )
 		mlt_producer producer = &this->parent;
 		if ( mlt_producer_init( producer, this ) == 0 )
 		{
+			mlt_properties properties = mlt_multitrack_properties( this );
 			producer->get_frame = producer_get_frame;
+			mlt_properties_set_data( properties, "multitrack", this, 0, NULL, NULL );
 		}
 		else
 		{
@@ -140,7 +143,6 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	// Update multitrack properties now - we'll not destroy the in point here
 	mlt_properties_set_timecode( properties, "length", length );
 	mlt_properties_set_timecode( properties, "out", length );
-	mlt_properties_set_timecode( properties, "playtime", length - mlt_properties_get_timecode( properties, "in" ) );
 	mlt_properties_set_double( properties, "fps", fps );
 }
 
@@ -249,6 +251,56 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 	}
 
 	return 0;
+}
+
+/** Determine the clip point.
+*/
+
+mlt_timecode mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
+{
+	int first = 1;
+	mlt_timecode position = 0;
+	int i = 0;
+
+	for ( i = 0; i < this->count; i ++ )
+	{
+		// Get the producer
+		mlt_producer producer = this->list[ i ];
+
+		if ( producer != NULL )
+		{
+			// Get the properties of this producer
+			mlt_properties properties = mlt_producer_properties( producer );
+
+			// Determine if it's a playlist
+			mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+
+			// We only consider playlists
+			if ( playlist != NULL )
+			{
+				// Locate the smallest timecode
+				if ( first )
+				{
+					// First position found
+					position = mlt_playlist_clip( playlist, whence, index );
+	
+					// We're no longer first
+					first = 0;
+				}
+				else
+				{
+					// Obtain the clip position in this playlist
+					mlt_timecode position2 = mlt_playlist_clip( playlist, whence, index );
+
+					// If this position is prior to the first, then use it
+					if ( position2 < position )
+						position = position2;
+				}
+			}
+		}
+	}
+
+	return position;
 }
 
 /** Close this instance.

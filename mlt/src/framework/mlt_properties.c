@@ -57,6 +57,39 @@ int mlt_properties_init( mlt_properties this, void *child )
 	return this->private == NULL;
 }
 
+/** Constructor for stand alone object.
+*/
+
+mlt_properties mlt_properties_new( )
+{
+	// Construct a standalone properties object
+	mlt_properties this = calloc( sizeof( struct mlt_properties_s ), 1 );
+
+	// Initialise this
+	mlt_properties_init( this, NULL );
+
+	// Return the pointer
+	return this;
+}
+
+/** Inherit all serialisable properties from that into this.
+*/
+
+int mlt_properties_inherit( mlt_properties this, mlt_properties that )
+{
+	int count = mlt_properties_count( that );
+	while ( count -- )
+	{
+		char *value = mlt_properties_get_value( that, count );
+		if ( value != NULL )
+		{
+			char *name = mlt_properties_get_name( that, count );
+			mlt_properties_set( this, name, value );
+		}
+	}
+	return 0;
+}
+
 /** Locate a property by name
 */
 
@@ -320,5 +353,9 @@ void mlt_properties_close( mlt_properties this )
 	free( list->name );
 	free( list->value );
 	free( list );
+
+	// Free this now if this has no child
+	if ( this->child == NULL )
+		free( this );
 }
 

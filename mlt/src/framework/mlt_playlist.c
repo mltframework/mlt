@@ -73,6 +73,9 @@ mlt_playlist mlt_playlist_init( )
 
 		// Initialise blank
 		mlt_producer_init( &this->blank, NULL );
+
+		// Indicate that this producer is a playlist
+		mlt_properties_set_data( mlt_playlist_properties( this ), "playlist", this, 0, NULL, NULL );
 	}
 	
 	return this;
@@ -219,6 +222,69 @@ static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 	}
 
 	return producer;
+}
+
+static int mlt_playlist_current_clip( mlt_playlist this )
+{
+	// Map playlist position to real producer in virtual playlist
+	mlt_timecode position = mlt_producer_position( &this->parent );
+
+	// Loop through the virtual playlist
+	int i = 0;
+
+	for ( i = 0; i < this->count; i ++ )
+	{
+		if ( position < this->list[ i ]->playtime )
+		{
+			// Found it, now break
+			break;
+		}
+		else
+		{
+			// Decrement position by length of this entry
+			position -= this->list[ i ]->playtime;
+		}
+	}
+
+	return i;
+}
+
+/** Get the timecode which corresponds to the start of the next clip.
+*/
+
+mlt_timecode mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index )
+{
+	mlt_timecode position = 0;
+	int absolute_clip = index;
+	int i = 0;
+
+	// Determine the absolute clip
+	switch ( whence )
+	{
+		case mlt_whence_relative_start:
+			absolute_clip = index;
+			break;
+
+		case mlt_whence_relative_current:
+			absolute_clip = mlt_playlist_current_clip( this ) + index;
+			break;
+
+		case mlt_whence_relative_end:
+			absolute_clip = this->count - index;
+			break;
+	}
+
+	// Check that we're in a valid range
+	if ( absolute_clip < 0 )
+		absolute_clip = 0;
+	else if ( absolute_clip > this->count )
+		absolute_clip = this->count;
+
+	// Now determine the timecode
+	for ( i = 0; i < absolute_clip; i ++ )
+		position += this->list[ i ]->playtime;
+
+	return position;
 }
 
 /** Append a producer to the playlist.

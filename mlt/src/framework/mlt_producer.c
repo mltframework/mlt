@@ -54,13 +54,12 @@ int mlt_producer_init( mlt_producer this, void *child )
 		// Set the default properties
 		mlt_properties_set( properties, "mlt_type", "mlt_producer" );
 		mlt_properties_set_timecode( properties, "position", 0.0 );
-		mlt_properties_set_double( properties, "frame", 1 );
+		mlt_properties_set_double( properties, "frame", 0 );
 		mlt_properties_set_double( properties, "fps", 25.0 );
 		mlt_properties_set_double( properties, "speed", 1.0 );
 		mlt_properties_set_timecode( properties, "in", 0.0 );
-		mlt_properties_set_timecode( properties, "out", 36000.0 );
-		mlt_properties_set_timecode( properties, "playtime", 36000.0 );
-		mlt_properties_set_timecode( properties, "length", 36000.0 );
+		mlt_properties_set_timecode( properties, "out", 3600.0 );
+		mlt_properties_set_timecode( properties, "length", 3600.0 );
 		mlt_properties_set_int( properties, "known_length", 1 );
 		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 
@@ -205,7 +204,6 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_timecode in, mlt_timecod
 	// Set the values
 	mlt_properties_set_timecode( mlt_producer_properties( this ), "in", in );
 	mlt_properties_set_timecode( mlt_producer_properties( this ), "out", out );
-	mlt_properties_set_timecode( mlt_producer_properties( this ), "playtime", out - in );
 
 	// Seek to the in point
 	mlt_producer_seek( this, 0 );
@@ -234,7 +232,7 @@ mlt_timecode mlt_producer_get_out( mlt_producer this )
 
 mlt_timecode mlt_producer_get_playtime( mlt_producer this )
 {
-	return mlt_properties_get_timecode( mlt_producer_properties( this ), "playtime" );
+	return mlt_producer_get_out( this ) - mlt_producer_get_in( this );
 }
 
 /** Get the total length of the producer.
