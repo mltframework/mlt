@@ -43,6 +43,7 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	SRC_DATA data;
 	float *input_buffer = mlt_properties_get_data( properties, "resample.input_buffer", NULL );
 	float *output_buffer = mlt_properties_get_data( properties, "resample.output_buffer", NULL );
+	int channels_avail = *channels;
 	int i;
 
 	if ( output_rate == 0 )
@@ -52,7 +53,29 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	frame->get_audio = mlt_properties_get_data( properties, "resample.get_audio", NULL );
 
 	// Get the producer's audio
-	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
+
+	// Duplicate channels as necessary
+	if ( channels_avail < *channels )
+	{
+		int size = *channels * *samples * 2;
+		int16_t *new_buffer = mlt_pool_alloc( size );
+		
+		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+		
+		// Duplicate the existing channels
+		for ( i = 0; i < *samples; i++ )
+		{
+			int j, k = 0;
+			for ( j = 0; j < *channels; j++ )
+			{
+				new_buffer[ ( i * *channels ) + j ] = (*buffer)[ ( i * channels_avail ) + k ];
+				k = ( k + 1 ) % channels_avail;
+			}
+		}
+		
+		*buffer = new_buffer;
+	}
 
 	// Return now if now work to do
 	if ( output_rate == *frequency )
@@ -158,4 +181,3 @@ mlt_filter filter_resample_init( char *arg )
 	}
 	return this;
 }
-

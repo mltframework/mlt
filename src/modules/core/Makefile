@@ -4,6 +4,7 @@ TARGET = ../libmltcore.so
 OBJS = factory.o \
 	   producer_ppm.o \
 	   filter_brightness.o \
+	   filter_channelcopy.o \
 	   filter_greyscale.o \
 	   filter_gamma.o \
 	   filter_luma.o \

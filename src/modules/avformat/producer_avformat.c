@@ -41,6 +41,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 static int avformat_initialised = 0;
 static pthread_mutex_t avformat_mutex;
 
+#if 0
 void *av_malloc( unsigned int size )
 {
 	return mlt_pool_alloc( size );
@@ -55,6 +56,7 @@ void av_free( void *ptr )
 {
 	return mlt_pool_release( ptr );
 }
+#endif
 
 /** Constructor for libavformat.
 */
@@ -297,7 +299,7 @@ static int producer_open( mlt_producer this, char *file )
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "audio_index", audio_index );
 			mlt_properties_set_int( properties, "video_index", video_index );
-
+			
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
 			if ( audio_index != -1 && video_index != -1 )
 			{

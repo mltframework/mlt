@@ -518,6 +518,31 @@ Filters
 		Known Bugs
 		
 			Does not go completely to black or white.
+			
+	
+	channelcopy
+	
+		Description
+		
+			Copy audio from one channel to another channel.
+			
+		Constructor Argument
+		
+			to - the 0-indexed channel to copy into, default is 1.
+			
+		Mutable Properties
+		
+			int to - see above
+			int from - the channel from which to copy, default is 0.
+			
+		Dependencies
+		
+			none
+			
+		Known Bugs
+		
+			none
+			
 
 
 	deinterlace
@@ -754,7 +779,9 @@ Filters
 
 		Description
 
-			Adjust an audio stream's sampling rate.
+			Adjust an audio stream's sampling rate, and duplicate channels if 
+			producer provides less than consumer requested.
+			
 			This filter is automatically invoked by Fezzik for the sake of
 			normalisation over inputs and with the consumer.
 
@@ -777,7 +804,8 @@ Filters
 
 		Known Bugs
 
-			none
+			Assumes 2 channels during libsamplerate initialisation. Untested
+			with >2 channels.
 
 	rescale
 
