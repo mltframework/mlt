@@ -122,7 +122,7 @@ scale_line ( int *weights, int n_x, int n_y,
              int x_init, int x_step, int src_width )
 {
 	int x = x_init;
-	register int i, j;
+	register int i, j, dx = 0;
 
 	while ( dest < dest_end )
 	{
@@ -142,7 +142,7 @@ scale_line ( int *weights, int n_x, int n_y,
 				unsigned int ta = line_weights[ j ];
 
 				y  += ta * q[ ( x_scaled << 1 ) ];
-				uv += ta * q[ ( ( x_scaled >> 1 ) << 2 ) + ( ( j & 1 ) << 1 ) + 1 ];
+				uv += ta * q[ ( ( x_scaled >> 1 ) << 2 ) + ( ( dx & 1 ) << 1 ) + 1 ];
 			}
 		}
 
@@ -150,6 +150,7 @@ scale_line ( int *weights, int n_x, int n_y,
 		*dest++ = ( uv + 0xffff ) >> SCALE_SHIFT;
 
 		x += x_step;
+		dx++;
 	}
 
 	return dest;
@@ -190,6 +191,7 @@ scale_line_22_33 ( int *weights, int n_x, int n_y,
 	int x = x_init;
 	guchar *src0 = src[ 0 ];
 	guchar *src1 = src[ 1 ];
+	int dx = 0;
 
 	while ( dest < dest_end )
 	{
@@ -199,9 +201,7 @@ scale_line_22_33 ( int *weights, int n_x, int n_y,
 		guchar *q0, *q1;
 		int w1, w2, w3, w4;
 		int x_aligned = ( ( x_scaled >> 1 ) << 2 );
-		int uv_index = ( ( x_scaled & 1 ) << 1 ) + 1;
-
-//		fprintf( stderr, "%d %d | ", x_scaled, x_aligned );
+		int uv_index = ( ( dx & 1 ) << 1 ) + 1;
 
 		pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * 4;
 
@@ -218,7 +218,6 @@ scale_line_22_33 ( int *weights, int n_x, int n_y,
 		y += w3 * q1[ 0 ];
 		y += w4 * q1[ 2 ];
 		*dest++ = ( y + 0x8000 ) >> 16;
-//		*dest++ = ( q0[ 0 ] + q0[ 2 ] + q1[ 0 ] + q1[ 2 ] ) >> 2;
 
 		q0 = src0 + x_aligned;
 		q1 = src1 + x_aligned;
@@ -228,10 +227,9 @@ scale_line_22_33 ( int *weights, int n_x, int n_y,
 		uv += w3 * q1[ uv_index ];
 		uv += w4 * q1[ uv_index ];
 		*dest++ = ( uv + 0x8000 ) >> 16;
-//		*dest++ = ( q0[ uv_index ] + q1[ uv_index ] ) >> 1;
-//		*dest++ = 128;
 
 		x += x_step;
+		dx++;
 	}
 
 	return dest;
@@ -244,8 +242,8 @@ process_pixel ( int *weights, int n_x, int n_y,
                 guchar **src, int src_channels,
                 int x_start, int src_width )
 {
-	unsigned int y = 0, uv = 0;
-	int i, j;
+	register unsigned int y = 0, uv = 0;
+	register int i, j, dx = 0;
 
 	for ( i = 0; i < n_y; i++ )
 	{
@@ -258,23 +256,24 @@ process_pixel ( int *weights, int n_x, int n_y,
 			if ( x_start + j < 0 )
 			{
 				y  += ta * src[ i ][ 0 ];
-				uv += ta * src[ i ][ ( ( j & 1 ) << 1 ) + 1 ];
+				uv += ta * src[ i ][ ( ( dx & 1 ) << 1 ) + 1 ];
 			}
 			else if ( x_start + j < src_width )
 			{
 				y  += ta * src[ i ][ ( x_start + j ) << 1 ];
-				uv += ta * src[ i ][ ( ( ( x_start + j ) >> 1 ) << 2) + ( ( j & 1 ) << 1 ) + 1 ];
+				uv += ta * src[ i ][ ( ( ( x_start + j ) >> 1 ) << 2) + ( ( dx & 1 ) << 1 ) + 1 ];
 			}
 			else
 			{
 				y  += ta * src[ i ][ ( src_width - 1 ) << 1 ];
-				uv += ta * src[ i ][ ( ( ( src_width - 1 ) >> 1 ) << 2) + ( ( j & 1 ) << 1 ) + 1 ];
+				uv += ta * src[ i ][ ( ( ( src_width - 1 ) >> 1 ) << 2) + ( ( dx & 1 ) << 1 ) + 1 ];
 			}
 		}
 	}
 
 	*dest++ = ( y  + 0xffffff ) >> 24;
 	*dest++ = ( uv + 0xffffff ) >> 24;
+	dx++;
 }
 
 
@@ -436,7 +435,7 @@ pixops_process ( guchar *dest_buf,
 		x = render_x0 * x_step + scaled_x_offset;
 		x_start = x >> SCALE_SHIFT;
 
-		while ( 0 && x_start < 0 && outbuf < outbuf_end )
+		while ( x_start < 0 && outbuf < outbuf_end )
 		{
 			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
 			                filter->x.n, filter->y.n,
@@ -449,7 +448,6 @@ pixops_process ( guchar *dest_buf,
 			dest_x++;
 			outbuf += dest_channels;
 		}
-		run_end_index = 720;
 
 		new_outbuf = ( *line_func ) ( run_weights, filter->x.n, filter->y.n,
 		                              outbuf, dest_x,
@@ -462,7 +460,7 @@ pixops_process ( guchar *dest_buf,
 		x = ( dest_x - check_x + render_x0 ) * x_step + scaled_x_offset;
 		outbuf = new_outbuf;
 
-		while ( 0 && outbuf < outbuf_end )
+		while ( outbuf < outbuf_end )
 		{
 			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
 			                filter->x.n, filter->y.n,
