@@ -615,6 +615,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		dz = MapZ( affine.matrix, 0, 0 );
 
+		if ( ( int )abs( dz * 1000 ) < 100 )
+			dz = dz < 0 ? - 0.1 : 0.1;
+
 		if ( mask != NULL )
 			memset( mask, 0, b_width * b_height );
 
