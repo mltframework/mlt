@@ -206,7 +206,6 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 		{
 			// Found it, now break
 			producer = this->list[ i ]->producer;
-			position += this->list[ i ]->frame_in;
 			break;
 		}
 		else
@@ -219,15 +218,18 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 	// Seek in real producer to relative position
 	if ( producer != NULL )
 	{
-		mlt_producer_seek_frame( producer, position + mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) ) );
+		position += this->list[ i ]->frame_in;
+		position += mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) );
+		mlt_producer_seek_frame( producer, position );
 	}
 	else if ( total > 0 )
 	{
 		playlist_entry *entry = this->list[ this->count - 1 ];
 		mlt_producer this_producer = mlt_playlist_producer( this );
-		mlt_producer_seek_frame( this_producer, total - 1 );
+		mlt_producer_seek_frame( this_producer, total );
 		producer = entry->producer;
-		mlt_producer_seek_frame( producer, entry->frame_out );
+		position = mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) );
+		mlt_producer_seek_frame( producer, position + entry->frame_out );
 	}
 	else
 	{
