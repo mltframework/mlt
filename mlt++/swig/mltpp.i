@@ -45,6 +45,8 @@ namespace Mlt {
 %newobject Tractor::multitrack( );
 %newobject Tractor::field( );
 %newobject Tractor::track( int );
+%newobject Miracle::execute( char * );
+%newobject Miracle::push( char *, Service & );
 }
 
 /** Classes to wrap.
@@ -67,6 +69,7 @@ namespace Mlt {
 %include <MltTractor.h>
 %include <MltFilteredConsumer.h>
 %include <MltMiracle.h>
+%include <MltResponse.h>
 
 #if defined(SWIGRUBY)
 

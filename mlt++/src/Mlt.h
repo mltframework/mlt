@@ -28,13 +28,14 @@
 #include "MltFilter.h"
 #include "MltFilteredConsumer.h"
 #include "MltFrame.h"
+#include "MltMiracle.h"
 #include "MltMultitrack.h"
 #include "MltPlaylist.h"
 #include "MltProducer.h"
 #include "MltProperties.h"
+#include "MltResponse.h"
 #include "MltService.h"
 #include "MltTractor.h"
 #include "MltTransition.h"
-#include "MltMiracle.h"
 
 #endif

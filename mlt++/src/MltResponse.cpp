@@ -1,5 +1,5 @@
 /**
- * MltMiracle.h - MLT Wrapper
+ * MltResponse.cpp - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,34 +18,42 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_MIRACLE_H_
-#define _MLTPP_MIRACLE_H_
+#include "MltResponse.h"
+using namespace Mlt;
 
-#include <miracle/miracle_server.h>
-#include "MltService.h"
-
-namespace Mlt
+Response::Response( valerie_response response ) :
+	_response( response )
 {
-	class Service;
-	class Response;
-
-	class Miracle
-	{
-		private:
-			miracle_server server;
-			void *_real;
-			parser_execute _execute;
-			parser_push _push;
-		public:
-			Miracle( char *name, int port = 5250, char *config = NULL );
-			virtual ~Miracle( );
-			bool start( );
-			bool is_running( );
-			virtual Response *execute( char *command );
-			virtual Response *push( char *command, Service *service );
-			void wait_for_shutdown( );
-	};
 }
 
-#endif
+Response::~Response( )
+{
+	valerie_response_close( _response );
+}
+
+valerie_response Response::get_response( )
+{
+	return _response;
+}
+
+int Response::error_code( )
+{
+	return valerie_response_get_error_code( get_response( ) );
+}
+
+char *Response::error_string( )
+{
+	return valerie_response_get_error_string( get_response( ) );
+}
+
+char *Response::get( int index )
+{
+	return valerie_response_get_line( get_response( ), index );
+}
+
+int Response::count( )
+{
+	return valerie_response_count( get_response( ) );
+}
+
 

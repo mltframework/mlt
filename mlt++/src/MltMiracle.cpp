@@ -20,6 +20,7 @@
 
 #include "MltMiracle.h"
 #include "MltService.h"
+#include "MltResponse.h"
 using namespace Mlt;
 
 #include <time.h>
@@ -29,7 +30,10 @@ static valerie_response mlt_miracle_execute( void *arg, char *command )
 	Miracle *miracle = ( Miracle * )arg;
 	if ( miracle != NULL )
 	{
-		return miracle->execute( command );
+		Response *response = miracle->execute( command );
+		valerie_response real = valerie_response_clone( response->get_response( ) );
+		delete response;
+		return real;
 	}
 	else
 	{
@@ -45,7 +49,10 @@ static valerie_response mlt_miracle_push( void *arg, char *command, mlt_service 
 	if ( miracle != NULL )
 	{
 		Service input( service );
-		return miracle->push( command, &input );
+		Response *response = miracle->push( command, &input );
+		valerie_response real = valerie_response_clone( response->get_response( ) );
+		delete response;
+		return real;
 	}
 	else
 	{
@@ -84,14 +91,14 @@ bool Miracle::is_running( )
 	return server->shutdown == 0;
 }
 
-valerie_response Miracle::execute( char *command )
+Response *Miracle::execute( char *command )
 {
-	return _execute( _real, command );
+	return new Response( _execute( _real, command ) );
 }
 
-valerie_response Miracle::push( char *command, Service *service )
+Response *Miracle::push( char *command, Service *service )
 {
-	return _push( _real, command, service->get_service( ) );
+	return new Response( _push( _real, command, service->get_service( ) ) );
 }
 
 void Miracle::wait_for_shutdown( )

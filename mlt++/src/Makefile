@@ -12,14 +12,15 @@ OBJS = MltConsumer.o \
 	   MltFilter.o \
 	   MltFilteredConsumer.o \
 	   MltFrame.o \
+	   MltMiracle.o \
 	   MltMultitrack.o \
 	   MltPlaylist.o \
 	   MltProducer.o \
 	   MltProperties.o \
+	   MltResponse.o \
 	   MltService.o \
 	   MltTractor.o \
-	   MltTransition.o \
-	   MltMiracle.o
+	   MltTransition.o
 
 SRCS = $(OBJS:.o=.cpp)
 

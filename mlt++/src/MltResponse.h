@@ -1,5 +1,5 @@
 /**
- * MltMiracle.h - MLT Wrapper
+ * MltResponse.h - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,34 +18,26 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_MIRACLE_H_
-#define _MLTPP_MIRACLE_H_
+#ifndef _MLTPP_RESPONSE_H_
+#define _MLTPP_RESPONSE_H_
 
-#include <miracle/miracle_server.h>
-#include "MltService.h"
+#include <valerie/valerie_response.h>
 
 namespace Mlt
 {
-	class Service;
-	class Response;
-
-	class Miracle
+	class Response
 	{
 		private:
-			miracle_server server;
-			void *_real;
-			parser_execute _execute;
-			parser_push _push;
+			valerie_response _response;
 		public:
-			Miracle( char *name, int port = 5250, char *config = NULL );
-			virtual ~Miracle( );
-			bool start( );
-			bool is_running( );
-			virtual Response *execute( char *command );
-			virtual Response *push( char *command, Service *service );
-			void wait_for_shutdown( );
+			Response( valerie_response response );
+			~Response( );
+			valerie_response get_response( );
+			int error_code( );
+			char *error_string( );
+			char *get( int );
+			int count( );
 	};
 }
 
 #endif
-
