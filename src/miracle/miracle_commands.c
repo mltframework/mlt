@@ -130,6 +130,7 @@ response_codes miracle_list_units( command_argument cmd_arg )
 			valerie_response_printf( cmd_arg->response, 1024, "U%d %02d %s %d\n", i, node, constructor, online );
 		}
 	}
+	valerie_response_printf( cmd_arg->response, 1024, "\n" );
 
 	return error;
 }
