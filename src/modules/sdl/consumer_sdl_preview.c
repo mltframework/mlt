@@ -45,6 +45,7 @@ struct consumer_sdl_s
 
 	pthread_cond_t refresh_cond;
 	pthread_mutex_t refresh_mutex;
+	int refresh_count;
 };
 
 /** Forward references to static functions.
@@ -121,12 +122,10 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *na
 	if ( !strcmp( name, "refresh" ) )
 	{
 		consumer_sdl this = parent->child;
-		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "refresh" ) )
-		{
-			pthread_mutex_lock( &this->refresh_mutex );
-			pthread_cond_broadcast( &this->refresh_cond );
-			pthread_mutex_unlock( &this->refresh_mutex );
-		}
+		pthread_mutex_lock( &this->refresh_mutex );
+		this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count ++;
+		pthread_cond_broadcast( &this->refresh_cond );
+		pthread_mutex_unlock( &this->refresh_mutex );
 	}
 }
 
@@ -258,7 +257,6 @@ static void *consumer_thread( void *arg )
 		// Get a frame from the attached producer
 		frame = mlt_consumer_get_frame( consumer );
 
-
 		// Ensure that we have a frame
 		if ( frame != NULL )
 		{
@@ -271,11 +269,13 @@ static void *consumer_thread( void *arg )
 			// Lock during the operation
 			mlt_service_lock( MLT_CONSUMER_SERVICE( consumer ) );
 
-			// Get refresh request for the current frame (effect changes in still mode)
+			// Get refresh request for the current frame
 			int refresh = mlt_properties_get_int( properties, "refresh" );
 
 			// Decrement refresh and clear changed
-			mlt_properties_set_int( properties, "refresh", refresh > 0 ? refresh - 1 : 0 );
+			mlt_events_block( properties, properties );
+			mlt_properties_set_int( properties, "refresh", 0 );
+			mlt_events_unblock( properties, properties );
 
 			// Unlock after the operation
 			mlt_service_unlock( MLT_CONSUMER_SERVICE( consumer ) );
@@ -289,12 +289,13 @@ static void *consumer_thread( void *arg )
 			// Optimisation to reduce latency
 			if ( speed == 1.0 )
 			{
-				//if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
-					//mlt_consumer_purge( this->play );
+				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
+					mlt_consumer_purge( this->play );
 				last_position = mlt_frame_get_position( frame );
 			}
 			else
 			{
+				mlt_consumer_purge( this->play );
 				last_position = -1;
 			}
 
@@ -353,8 +354,9 @@ static void *consumer_thread( void *arg )
 			if ( this->active == this->still )
 			{
 				pthread_mutex_lock( &this->refresh_mutex );
-				if ( speed == 0 && mlt_properties_get_int( properties, "refresh" ) == 0 )
+				if ( speed == 0 && this->refresh_count == 0 )
 					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
+				this->refresh_count = 0;
 				pthread_mutex_unlock( &this->refresh_mutex );
 			}
 
