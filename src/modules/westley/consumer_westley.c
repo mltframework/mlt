@@ -358,6 +358,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 						serialise_tractor( context, MLT_SERVICE( producer ), node );
 						context->pass --;
 					}
+					else if ( resource_s != NULL && !strcmp( resource_s, "<playlist>" ) )
+						serialise_playlist( context, MLT_SERVICE( producer ), node );
 					else if ( service_s != NULL && strcmp( service_s, "blank" ) != 0 )
 						serialise_service( context, MLT_SERVICE( producer ), node );
 				}
@@ -397,6 +399,11 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					xmlNewProp( entry, "in", temp );
 					sprintf( temp, "%d", info.frame_out );
 					xmlNewProp( entry, "out", temp );
+					if ( info.repeat > 1 )
+					{
+						sprintf( temp, "%d", info.repeat );
+						xmlNewProp( entry, "repeat", temp );
+					}
 					if ( mlt_producer_is_cut( info.cut ) )
 						serialise_service_filters( context, mlt_producer_service( info.cut ), entry );
 				}

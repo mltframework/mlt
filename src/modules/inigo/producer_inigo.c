@@ -158,10 +158,57 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_properties_inherit( properties, group );
 			}
 		}
+		else if ( !strcmp( argv[ i ], "-repeat" ) )
+		{
+			int repeat = atoi( argv[ ++ i ] );
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			if ( mlt_playlist_count( playlist ) > 0 )
+			{
+				mlt_playlist_clip_info info;
+				mlt_playlist_repeat_clip( playlist, mlt_playlist_count( playlist ) - 1, repeat );
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				producer = info.cut;
+				properties = mlt_producer_properties( producer );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-split" ) )
+		{
+			int split = atoi( argv[ ++ i ] );
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			if ( mlt_playlist_count( playlist ) > 0 )
+			{
+				mlt_playlist_clip_info info;
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				split = split < 0 ? info.frame_out + split : split;
+				mlt_playlist_split( playlist, mlt_playlist_count( playlist ) - 1, split );
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				producer = info.cut;
+				properties = mlt_producer_properties( producer );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-join" ) )
+		{
+			int clips = atoi( argv[ ++ i ] );
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			if ( mlt_playlist_count( playlist ) > 0 )
+			{
+				mlt_playlist_clip_info info;
+				mlt_playlist_join( playlist, mlt_playlist_count( playlist ) - clips - 1, clips, 0 );
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				producer = info.cut;
+				properties = mlt_producer_properties( producer );
+			}
+		}
 		else if ( !strcmp( argv[ i ], "-mix" ) )
 		{
 			int length = atoi( argv[ ++ i ] );
-			if ( producer != NULL )
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
 			if ( mlt_playlist_count( playlist ) >= 2 )
@@ -231,7 +278,7 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else if ( !strcmp( argv[ i ], "-blank" ) )
 		{
-			if ( producer != NULL )
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
 			mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
@@ -241,7 +288,7 @@ mlt_producer producer_inigo_init( char **argv )
 				  !strcmp( argv[ i ], "-hide-video" ) ||
 				  !strcmp( argv[ i ], "-hide-audio" ) )
 		{
-			if ( producer != NULL )
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
 			mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track ++ );
@@ -264,7 +311,7 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else if ( argv[ i ][ 0 ] != '-' )
 		{
-			if ( producer != NULL )
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			if ( title == NULL )
 				title = argv[ i ];
@@ -290,7 +337,7 @@ mlt_producer producer_inigo_init( char **argv )
 	}
 
 	// Connect last producer to playlist
-	if ( producer != NULL )
+	if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 		mlt_playlist_append( playlist, producer );
 
 	// Track the last playlist too

@@ -639,6 +639,14 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 				mlt_playlist_append( MLT_PLAYLIST( parent ), producer );
 			}
 
+			// Handle the repeat property
+			if ( mlt_properties_get_int( temp, "repeat" ) > 0 )
+			{
+				mlt_playlist_repeat_clip( MLT_PLAYLIST( parent ),
+										  mlt_playlist_count( MLT_PLAYLIST( parent ) ) - 1,
+										  mlt_properties_get_int( temp, "repeat" ) );
+			}
+
 			mlt_playlist_get_clip_info( MLT_PLAYLIST( parent ), &info, mlt_playlist_count( MLT_PLAYLIST( parent ) ) - 1 );
 			entry = info.cut;
 		}
