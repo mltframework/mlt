@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include "MltService.h"
+#include "MltFilter.h"
 using namespace Mlt;
 
 Service::Service( ) :
@@ -112,3 +113,19 @@ service_type Service::type( )
 	}
 	return type;
 }
+
+int Service::attach( Filter &filter )
+{
+	return mlt_service_attach( get_service( ), filter.get_filter( ) );
+}
+
+int Service::detach( Filter &filter )
+{
+	return mlt_service_detach( get_service( ), filter.get_filter( ) );
+}
+
+Filter *Service::filter( int index )
+{
+	return new Filter( mlt_service_filter( get_service( ), index ) );
+}
+

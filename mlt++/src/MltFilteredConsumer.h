@@ -41,6 +41,7 @@ namespace Mlt
 			virtual ~FilteredConsumer( );
 			int connect( Service &service );
 			int attach( Filter &filter );
+			int last( Filter &filter );
 			int detach( Filter &filter );
 	};
 }

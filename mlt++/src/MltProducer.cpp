@@ -130,17 +130,3 @@ int Producer::get_playtime( )
 	return mlt_producer_get_playtime( get_producer( ) );
 }
 
-int Producer::attach( Filter &filter )
-{
-	return mlt_producer_attach( get_producer( ), filter.get_filter( ) );
-}
-
-int Producer::detach( Filter &filter )
-{
-	return mlt_producer_detach( get_producer( ), filter.get_filter( ) );
-}
-
-Filter *Producer::filter( int index )
-{
-	return new Filter( mlt_producer_filter( get_producer( ), index ) );
-}

@@ -69,6 +69,24 @@ int FilteredConsumer::attach( Filter &filter )
 	return error;
 }
 
+int FilteredConsumer::last( Filter &filter )
+{
+	int error = 0;
+	if ( filter.is_valid( ) )
+	{
+		Service *producer = this->producer( );
+		error = filter.connect( *producer );
+		if ( error == 0 )
+			connect_producer( filter );
+		delete producer;
+	}
+	else
+	{
+		error = 1;
+	}
+	return error;
+}
+
 int FilteredConsumer::detach( Filter &filter )
 {
 	if ( filter.is_valid( ) )

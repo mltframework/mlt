@@ -54,9 +54,6 @@ namespace Mlt
 			int get_out( );
 			int get_length( );
 			int get_playtime( );
-			int attach( Filter &filter );
-			int detach( Filter &filter );
-			Filter *filter( int index );
 	};
 }
 

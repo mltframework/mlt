@@ -29,6 +29,7 @@
 namespace Mlt
 {
 	class Properties;
+	class Filter;
 	class Frame;
 
 	enum service_type
@@ -61,6 +62,9 @@ namespace Mlt
 			Service *producer( );
 			Frame *get_frame( int index = 0 );
 			service_type type( );
+			int attach( Filter &filter );
+			int detach( Filter &filter );
+			Filter *filter( int index );
 	};
 }
 
