@@ -61,7 +61,8 @@ int mlt_producer_init( mlt_producer this, void *child )
 		mlt_properties_set_position( properties, "out", 1799999 );
 		mlt_properties_set_position( properties, "length", 1800000 );
 		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
-		mlt_properties_set( properties, "log_id", "multitrack" );
+		mlt_properties_set( properties, "eof", "pause" );
+		mlt_properties_set( properties, "resource", "<producer>" );
 
 		// Override service get_frame
 		parent->get_frame = producer_get_frame;
@@ -91,10 +92,13 @@ mlt_properties mlt_producer_properties( mlt_producer this )
 
 int mlt_producer_seek( mlt_producer this, mlt_position position )
 {
+	// Determine eof handling
+	char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
+
 	// Check bounds
 	if ( position < 0 )
 		position = 0;
-	else if ( position > mlt_producer_get_playtime( this ) )
+	else if ( !strcmp( eof, "pause" ) && position >= mlt_producer_get_playtime( this ) )
 		position = mlt_producer_get_playtime( this ) - 1;
 
 	// Set the position
@@ -119,7 +123,11 @@ mlt_position mlt_producer_position( mlt_producer this )
 
 mlt_position mlt_producer_frame( mlt_producer this )
 {
-	return mlt_properties_get_double( mlt_producer_properties( this ), "frame" );
+	//char *resource = mlt_properties_get( mlt_producer_properties( this ), "resource" );
+	//mlt_position frame = mlt_properties_get_position( mlt_producer_properties( this ), "frame" );
+	//mlt_position position = mlt_properties_get_position( mlt_producer_properties( this ), "position" );
+	//fprintf( stderr, "%s: %lld %lld\n", resource, frame, position );
+	return mlt_properties_get_position( mlt_producer_properties( this ), "frame" );
 }
 
 /** Set the playing speed.
@@ -214,7 +222,7 @@ mlt_position mlt_producer_get_length( mlt_producer this )
 
 void mlt_producer_prepare_next( mlt_producer this )
 {
-	mlt_producer_seek( this, mlt_producer_frame( this ) + mlt_producer_get_speed( this ) );
+	mlt_producer_seek( this, mlt_producer_position( this ) + mlt_producer_get_speed( this ) );
 }
 
 /** Get a frame.
@@ -225,13 +233,11 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	int result = 1;
 	mlt_producer this = service->child;
 
+	// Determine eof handling
+	char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
+
 	// A properly instatiated producer will have a get_frame method...
-	if ( this->get_frame != NULL )
-	{
-		// Get the frame from the implementation
-		result = this->get_frame( this, frame, index );
-	}
-	else
+	if ( this->get_frame == NULL || ( !strcmp( eof, "continue" ) && mlt_producer_position( this ) > mlt_producer_get_out( this ) ) )
 	{
 		// Generate a test frame
 		*frame = mlt_frame_init( );
@@ -241,6 +247,11 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 
 		// Calculate the next position
 		mlt_producer_prepare_next( this );
+	}
+	else
+	{
+		// Get the frame from the implementation
+		result = this->get_frame( this, frame, index );
 	}
 
 	// Copy the fps and speed of the producer onto the frame

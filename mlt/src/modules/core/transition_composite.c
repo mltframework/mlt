@@ -69,9 +69,6 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 		*width = mlt_properties_get_int( a_props, "width" );
 		*height = mlt_properties_get_int( a_props, "height" );
 		*image = mlt_properties_get_data( a_props, "image", NULL );
-
-		// Close the b_frame
-		mlt_frame_close( b_frame );
 	}
 	else if ( a_props != NULL )
 	{

@@ -11,7 +11,12 @@ mlt_producer create_producer( char *file )
 	mlt_producer result = NULL;
 
 	// 1st Line preferences
-	if ( strstr( file, ".mpg" ) )
+	if ( strstr( file, ".inigo" ) )
+	{
+		char *args[ 2 ] = { file, NULL };
+		result = mlt_factory_producer( "inigo", args );
+	}
+	else if ( strstr( file, ".mpg" ) )
 		result = mlt_factory_producer( "mcmpeg", file );
 	else if ( strstr( file, ".mpeg" ) )
 		result = mlt_factory_producer( "mcmpeg", file );
@@ -104,20 +109,6 @@ void track_service( mlt_field field, void *service, mlt_destructor destructor )
 	mlt_properties_set_int( properties, "registered", ++ registered );
 }
 
-mlt_filter create_filter( mlt_field field, char *id, int track )
-{
-	char *arg = strchr( id, ':' );
-	if ( arg != NULL )
-		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( id, arg );
-	if ( filter != NULL )
-	{
-		mlt_field_plant_filter( field, filter, track );
-		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
-	}
-	return filter;
-}
-
 void set_properties( mlt_service service, char *namevalue )
 {
 	mlt_properties properties = mlt_service_properties( service );
@@ -143,10 +134,8 @@ int main( int argc, char **argv )
 	int i;
 	mlt_service  service = NULL;
 	mlt_consumer consumer = NULL;
-	mlt_multitrack multitrack = NULL;
 	mlt_producer producer = NULL;
 	mlt_playlist playlist = NULL;
-	mlt_field field = NULL;
 
 	// Construct the factory
 	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
@@ -154,30 +143,14 @@ int main( int argc, char **argv )
 	// Set up containers
 	playlist = mlt_playlist_init( );
 
-	// Construct the field
-	field = mlt_field_init( );
-
-	// We need to track the number of registered filters
-	mlt_properties properties = mlt_field_properties( field );
-	mlt_properties_set_int( properties, "registered", 0 );
-
-	// Get the multitrack from the field
-	multitrack = mlt_field_multitrack( field );
-
 	// Parse the arguments
 	for ( i = 1; i < argc; i ++ )
 	{
 		if ( !strcmp( argv[ i ], "-consumer" ) )
 		{
-			consumer = create_consumer( argv[ ++ i ], mlt_multitrack_producer( multitrack ) );
+			consumer = create_consumer( argv[ ++ i ], mlt_playlist_producer( playlist ) );
 			if ( consumer != NULL )
 				service = mlt_consumer_service( consumer );
-		}
-		else if ( !strcmp( argv[ i ], "-filter" ) )
-		{
-			mlt_filter filter = create_filter( field, argv[ ++ i ], 0 );
-			if ( filter != NULL )
-				service = mlt_filter_service( filter );
 		}
 		else if ( !strstr( argv[ i ], "=" ) )
 		{
@@ -195,25 +168,21 @@ int main( int argc, char **argv )
 
 	// If we have no consumer, default to sdl
 	if ( consumer == NULL )
-		consumer = create_consumer( "sdl", mlt_multitrack_producer( multitrack ) );
+		consumer = create_consumer( "sdl", mlt_playlist_producer( playlist ) );
 
 	// Connect producer to playlist
 	if ( producer != NULL )
 		mlt_playlist_append( playlist, producer );
 
-	// Connect multitrack to producer
-	mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), 0 );
-
-	// Connect consumer to tractor
-	mlt_consumer_connect( consumer, mlt_field_service( field ) );
+	// Connect consumer to playlist
+	mlt_consumer_connect( consumer, mlt_playlist_service( playlist ) );
 
 	// Transport functionality
-	transport( mlt_multitrack_producer( multitrack ) );
+	transport( mlt_playlist_producer( playlist ) );
 
 	// Close the services
 	mlt_consumer_close( consumer );
-	mlt_field_close( field );
-	mlt_producer_close( producer );
+	mlt_playlist_close( playlist );
 
 	// Close the factory
 	mlt_factory_close( );

@@ -227,7 +227,6 @@ int main( int argc, char **argv )
 
 			// Transport functionality
 			transport( inigo );
-			
 		}
 		else if ( store != NULL )
 		{

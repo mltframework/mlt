@@ -176,9 +176,6 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	*height = mlt_properties_get_int( a_props, "height" );
 	*image = mlt_properties_get_data( a_props, "image", NULL );
 
-	// Close the b_frame
-	mlt_frame_close( b_frame );
-	
 	previous_mix = mix;
 
 	return 0;
@@ -342,7 +339,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_position in = mlt_transition_get_in( transition );
 	mlt_position out = mlt_transition_get_out( transition );
 	mlt_position time = mlt_frame_get_position( b_frame );
-	double pos = ( (double)time - (double)in ) / ( (double)out - (double)in + 1 );
+	double pos = ( double )( time - in ) / ( double )( out - in + 1 );
 	
 	// Set the b frame properties
 	mlt_properties_set_double( b_props, "mix", pos );

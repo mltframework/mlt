@@ -93,8 +93,7 @@ int mlt_frame_is_test_audio( mlt_frame this )
 
 double mlt_frame_get_aspect_ratio( mlt_frame this )
 {
-	mlt_properties properties = mlt_frame_properties( this );
-	return mlt_properties_get_double( properties, "aspect_ratio" );
+	return mlt_properties_get_double( mlt_frame_properties( this ), "aspect_ratio" );
 }
 
 /** Set the aspect ratio of the frame.
@@ -102,8 +101,7 @@ double mlt_frame_get_aspect_ratio( mlt_frame this )
 
 int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
 {
-	mlt_properties properties = mlt_frame_properties( this );
-	return mlt_properties_set_double( properties, "aspect_ratio", value );
+	return mlt_properties_set_double( mlt_frame_properties( this ), "aspect_ratio", value );
 }
 
 /** Get the position of this frame.
@@ -111,8 +109,7 @@ int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
 
 mlt_position mlt_frame_get_position( mlt_frame this )
 {
-	mlt_properties properties = mlt_frame_properties( this );
-	return mlt_properties_get_position( properties, "position" );
+	return mlt_properties_get_position( mlt_frame_properties( this ), "position" );
 }
 
 /** Set the position of this frame.
@@ -120,8 +117,7 @@ mlt_position mlt_frame_get_position( mlt_frame this )
 
 int mlt_frame_set_position( mlt_frame this, mlt_position value )
 {
-	mlt_properties properties = mlt_frame_properties( this );
-	return mlt_properties_set_position( properties, "position", value );
+	return mlt_properties_set_position( mlt_frame_properties( this ), "position", value );
 }
 
 /** Stack a get_image callback.

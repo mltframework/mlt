@@ -81,6 +81,7 @@ mlt_playlist mlt_playlist_init( )
 
 		// Specify the eof condition
 		mlt_properties_set( mlt_playlist_properties( this ), "eof", "pause" );
+		mlt_properties_set( mlt_playlist_properties( this ), "resource", "<playlist>" );
 	}
 	
 	return this;
@@ -174,6 +175,8 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	this->list[ this->count ]->frame_in = in;
 	this->list[ this->count ]->frame_out = out;
 	this->list[ this->count ]->frame_count = out - in + 1;
+
+	mlt_properties_set( mlt_producer_properties( producer ), "eof", "continue" );
 
 	mlt_producer_set_speed( producer, 0 );
 

@@ -342,13 +342,9 @@ void mlt_properties_close( mlt_properties this )
 	property_list *list = this->private;
 	int index = 0;
 
-	int debug = mlt_properties_get_int( this, "debug" );
-
 	// Clean up names and values
 	for ( index = 0; index < list->count; index ++ )
 	{
-		if ( debug )
-			fprintf( stderr, "closing %s\n", list->name[ index ] );
 		free( list->name[ index ] );
 		mlt_property_close( list->value[ index ] );
 	}

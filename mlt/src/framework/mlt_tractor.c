@@ -55,6 +55,7 @@ mlt_tractor mlt_tractor_init( )
 		if ( mlt_producer_init( producer, this ) == 0 )
 		{
 			producer->get_frame = producer_get_frame;
+			mlt_properties_set( mlt_producer_properties( producer ), "resource", "<tractor>" );
 		}
 		else
 		{
@@ -119,6 +120,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		int looking = 1;
 		int done = 0;
 		mlt_frame temp = NULL;
+		mlt_frame store[ 10 ];
+		int count = 0;
 
 		// Get the properties of the parent producer
 		mlt_properties properties = mlt_producer_properties( parent );
@@ -154,23 +157,26 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				// Use this as output if we don't have one already
 				*frame = temp;
 			}
-			else if ( ( !mlt_frame_is_test_card( temp ) || !mlt_frame_is_test_audio( temp ) ) && 
-					    mlt_producer_frame( parent ) == mlt_properties_get_position( mlt_frame_properties( temp ), "position" ) )
+			else if ( ( !mlt_frame_is_test_card( temp ) || !mlt_frame_is_test_audio( temp ) ) && looking &&
+					    mlt_producer_position( parent ) == mlt_properties_get_position( mlt_frame_properties( temp ), "position" ) )
 			{
-				*frame = temp;
-				looking = 0;
-			}
-			else if ( ( !mlt_frame_is_test_card( temp ) || !mlt_frame_is_test_audio( temp ) ) && looking )
-			{
-				// This is the one we want and we can stop looking
 				*frame = temp;
 				looking = 0;
 			}
 			else
 			{
-				// We discard all other frames
-				mlt_frame_close( temp );
+				// We store all other frames for now
+				store[ count ++ ] = temp;
 			}
+		}
+
+		// Now place all the unused frames on to the properties (will be destroyed automatically)
+		while ( count -- )
+		{
+			mlt_properties frame_properties = mlt_frame_properties( *frame );
+			char label[ 30 ];
+			sprintf( label, "tractor_%d", count );
+			mlt_properties_set_data( frame_properties, label, store[ count ], 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
 
 		// Prepare the next frame

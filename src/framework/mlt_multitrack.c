@@ -61,6 +61,7 @@ mlt_multitrack mlt_multitrack_init( )
 			producer->get_frame = producer_get_frame;
 			mlt_properties_set_data( properties, "multitrack", this, 0, NULL, NULL );
 			mlt_properties_set( properties, "log_id", "multitrack" );
+			mlt_properties_set( properties, "resource", "<mulitrack>" );
 		}
 		else
 		{

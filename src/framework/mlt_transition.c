@@ -103,8 +103,7 @@ void mlt_transition_set_in_and_out( mlt_transition this, mlt_position in, mlt_po
 
 int mlt_transition_get_a_track( mlt_transition this )
 {
-	mlt_properties properties = mlt_transition_properties( this );
-	return mlt_properties_get_int( properties, "a_track" );
+	return mlt_properties_get_int( mlt_transition_properties( this ), "a_track" );
 }
 
 /** Get the index of the b track.
@@ -112,8 +111,7 @@ int mlt_transition_get_a_track( mlt_transition this )
 
 int mlt_transition_get_b_track( mlt_transition this )
 {
-	mlt_properties properties = mlt_transition_properties( this );
-	return mlt_properties_get_int( properties, "b_track" );
+	return mlt_properties_get_int( mlt_transition_properties( this ), "b_track" );
 }
 
 /** Get the in point.
@@ -121,8 +119,7 @@ int mlt_transition_get_b_track( mlt_transition this )
 
 mlt_position mlt_transition_get_in( mlt_transition this )
 {
-	mlt_properties properties = mlt_transition_properties( this );
-	return mlt_properties_get_position( properties, "in" );
+	return mlt_properties_get_position( mlt_transition_properties( this ), "in" );
 }
 
 /** Get the out point.
@@ -130,32 +127,20 @@ mlt_position mlt_transition_get_in( mlt_transition this )
 
 mlt_position mlt_transition_get_out( mlt_transition this )
 {
-	mlt_properties properties = mlt_transition_properties( this );
-	return mlt_properties_get_position( properties, "out" );
+	return mlt_properties_get_position( mlt_transition_properties( this ), "out" );
 }
 
 /** Process the frame.
+
+  	If we have no process method (unlikely), we simply return the a_frame unmolested.
 */
 
 static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
 	if ( this->process == NULL )
-	{
-		if ( !mlt_frame_is_test_card( a_frame ) )
-		{
-			mlt_frame_close( b_frame );
-			return a_frame;
-		}
-		else
-		{
-			mlt_frame_close( a_frame );
-			return b_frame;
-		}
-	}
+		return a_frame;
 	else
-	{
 		return this->process( this, a_frame, b_frame );
-	}
 }
 
 /** Get a frame from this filter.
@@ -165,14 +150,12 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	method for all tracks, we have to take special care that we only obtain the a and
 	b frames once - we do this on the first call to get a frame from either a or b.
 	
-	After that, we have 3 cases to resolve:
+	After that, we have 2 cases to resolve:
 	
 	1) 	if the track is the a_track and we're in the time zone, then we need to call the
-		process method to do the effect on the frame (we assign NULL to the a_frame and
-		b_frames here) otherwise, we pass on the a_frame unmolested;
-	2)	if the track is the b_track and we're the in the time zone OR the b_frame is NULL,
-		then we generate a test card frame, otherwise we pass on the b frame unmolested;
-	3)	For all other tracks, we get the frames on demand.
+		process method to do the effect on the frame and remember we've passed it on
+		otherwise, we pass on the a_frame unmolested;
+	2)	For all other tracks, we get the frames on demand.
 */
 
 static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
@@ -187,11 +170,12 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	mlt_position out = mlt_properties_get_position( properties, "out" );
 
 	// Fetch a and b frames together...
-	if ( ( index == a_track || index == b_track ) &&
-		 ( this->a_frame == NULL && this->b_frame == NULL ) )
+	if ( ( index == a_track || index == b_track ) && !( this->a_held || this->b_held ) )
 	{
 		mlt_service_get_frame( this->producer, &this->a_frame, a_track );
 		mlt_service_get_frame( this->producer, &this->b_frame, b_track );
+		this->a_held = 1;
+		this->b_held = 1;
 	}
 	
 	// Special case track processing
@@ -199,45 +183,25 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	{
 		// Determine if we're in the right time zone
 		mlt_position position = mlt_frame_get_position( this->a_frame );
-		if ( position >= in && position < out )
+		if ( position >= in && position <= out )
 		{
 			// Process the transition
 			*frame = transition_process( this, this->a_frame, this->b_frame );
-			
-			// Important - NULL both frames now so that we know they're done...
-			this->a_frame = NULL;
-			this->b_frame = NULL;
+			this->a_held = 0;
 		}
 		else
 		{
 			// Pass on the 'a frame' and remember that we've done it
 			*frame = this->a_frame;
-			this->a_frame = NULL;
-		}			
+			this->a_held = 0;
+		}
 		return 0;
 	}
 	if ( index == b_track )
 	{
-		if ( this->b_frame == NULL )
-		{
-			// We're *probably* in the zone and the a frame has been requested
-			*frame = mlt_frame_init( );
-		}
-		else
-		{
-			mlt_position position = mlt_frame_get_position( this->b_frame );
-			if ( position >= in && position < out )
-			{
-				// We're in the zone, but the 'a frame' has not been requested yet
-				*frame = mlt_frame_init( );
-			}
-			else
-			{
-				// We're out of the zone, pass on b and remember that we've done it
-				*frame = this->b_frame;
-				this->b_frame = NULL;
-			}
-		}
+		// Pass on the 'b frame' and remember that we've done it
+		*frame = this->b_frame;
+		this->b_held = 0;
 		return 0;
 	}
 	else

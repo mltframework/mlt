@@ -46,6 +46,8 @@ struct mlt_transition_s
 	// Private
 	mlt_frame a_frame;
 	mlt_frame b_frame;
+	int a_held;
+	int b_held;
 };
 
 /** Public final methods

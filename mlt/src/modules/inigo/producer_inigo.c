@@ -44,6 +44,7 @@ static mlt_producer parse_inigo( char *file )
 	}
 
 	mlt_producer result = producer_inigo_init( args );
+
 	if ( result != NULL )
 	{
 		mlt_properties properties = mlt_producer_properties( result );
@@ -135,11 +136,6 @@ static mlt_transition create_transition( mlt_field field, char *id, int track )
 	return transition;
 }
 
-static void set_properties( mlt_properties properties, char *namevalue )
-{
-	mlt_properties_parse( properties, namevalue );
-}
-
 mlt_producer producer_inigo_init( char **argv )
 {
 	int i;
@@ -203,7 +199,7 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else if ( strstr( argv[ i ], "=" ) )
 		{
-			set_properties( properties, argv[ i ] );
+			mlt_properties_parse( properties, argv[ i ] );
 		}
 		else if ( argv[ i ][ 0 ] != '-' )
 		{
@@ -247,6 +243,7 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_properties_set_data( props, "multitrack", multitrack, 0, NULL, NULL );
 	mlt_properties_set_data( props, "field", field, 0, NULL, NULL );
 	mlt_properties_set_data( props, "group", group, 0, NULL, NULL );
+	mlt_properties_set_position( props, "length", mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) + 1 );
 	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) );
 	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( mlt_multitrack_producer( multitrack ) ) );
 
