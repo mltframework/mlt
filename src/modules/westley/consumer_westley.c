@@ -42,6 +42,7 @@ struct serialise_context_s
 	int pass;
 	mlt_properties hide_map;
 	char *root;
+	char *store;
 };
 typedef struct serialise_context_s* serialise_context;
 
@@ -194,6 +195,31 @@ static inline void serialise_properties( serialise_context context, mlt_properti
 				xmlNodeSetContent( p, value + strlen( context->root ) + 1 );
 			else
 				xmlNodeSetContent( p, value );
+		}
+	}
+}
+
+static inline void serialise_store_properties( serialise_context context, mlt_properties properties, xmlNode *node )
+{
+	int i;
+	xmlNode *p;
+	
+	// Enumerate the properties
+	for ( i = 0; context->store != NULL && i < mlt_properties_count( properties ); i++ )
+	{
+		char *name = mlt_properties_get_name( properties, i );
+		if ( !strncmp( name, context->store, strlen( context->store ) ) )
+		{
+			char *value = mlt_properties_get_value( properties, i );
+			if ( value != NULL )
+			{
+				p = xmlNewChild( node, NULL, "property", NULL );
+				xmlNewProp( p, "name", mlt_properties_get_name( properties, i ) );
+				if ( context->root != NULL && strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
+					xmlNodeSetContent( p, value + strlen( context->root ) + 1 );
+				else
+					xmlNodeSetContent( p, value );
+			}
 		}
 	}
 }
@@ -353,6 +379,9 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 		// Set the id
 		xmlNewProp( child, "id", id );
 
+		// Store application specific properties
+		serialise_store_properties( context, properties, child );
+
 		// Add producer to the map
 		mlt_properties_set_int( context->hide_map, id, mlt_properties_get_int( properties, "hide" ) );
 	
@@ -424,6 +453,9 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 		xmlNewProp( child, "id", id );
 		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
+
+		// Store application specific properties
+		serialise_store_properties( context, mlt_service_properties( service ), child );
 
 		// Recurse on connected producer
 		serialise_service( context, mlt_service_producer( service ), child );
@@ -569,7 +601,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 	}
 }
 
-xmlDocPtr westley_make_doc( mlt_service service )
+xmlDocPtr westley_make_doc( mlt_consumer consumer, mlt_service service )
 {
 	mlt_properties properties = mlt_service_properties( service );
 	xmlDocPtr doc = xmlNewDoc( "1.0" );
@@ -588,6 +620,9 @@ xmlDocPtr westley_make_doc( mlt_service service )
 	{
 		context->root = strdup( "" );
 	}
+
+	// Assign the additional 'storage' pattern for properties
+	context->store = mlt_properties_get( mlt_consumer_properties( consumer ), "store" );
 
 	// Assign a title property
 	if ( mlt_properties_get( properties, "title" ) != NULL )
@@ -649,7 +684,7 @@ static int consumer_start( mlt_consumer this )
 		}
 
 		// Make the document
-		doc = westley_make_doc( service );
+		doc = westley_make_doc( this, service );
 
 		// Handle the output
 		if ( resource == NULL || !strcmp( resource, "" ) )

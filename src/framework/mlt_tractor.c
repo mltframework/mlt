@@ -55,9 +55,14 @@ mlt_tractor mlt_tractor_init( )
 		mlt_producer producer = &this->parent;
 		if ( mlt_producer_init( producer, this ) == 0 )
 		{
-			mlt_properties_set( mlt_producer_properties( producer ), "resource", "<tractor>" );
-			mlt_properties_set( mlt_producer_properties( producer ), "mlt_type", "mlt_producer" );
-			mlt_properties_set( mlt_producer_properties( producer ), "mlt_service", "tractor" );
+			mlt_properties properties = mlt_producer_properties( producer );
+
+			mlt_properties_set( properties, "resource", "<tractor>" );
+			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
+			mlt_properties_set( properties, "mlt_service", "tractor" );
+			mlt_properties_set_int( properties, "in", 0 );
+			mlt_properties_set_int( properties, "out", -1 );
+			mlt_properties_set_int( properties, "length", 0 );
 
 			producer->get_frame = producer_get_frame;
 			producer->close = ( mlt_destructor )mlt_tractor_close;

@@ -26,6 +26,7 @@
 extern int mlt_factory_init( char *prefix );
 extern const char *mlt_factory_prefix( );
 extern char *mlt_environment( char *name );
+extern mlt_properties mlt_factory_event_object( );
 extern mlt_producer mlt_factory_producer( char *name, void *input );
 extern mlt_filter mlt_factory_filter( char *name, void *input );
 extern mlt_transition mlt_factory_transition( char *name, void *input );

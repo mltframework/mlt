@@ -380,7 +380,6 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 		}
 		else
 		{
-			fprintf( stderr, "Ugh case\n" );
 			mlt_service_close( this );
 		}
 		return result;

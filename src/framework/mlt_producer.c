@@ -196,14 +196,12 @@ mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 	if ( in <= 0 )
 		in = 0;
 	if ( ( out < 0 || out >= mlt_producer_get_playtime( parent ) ) && !mlt_producer_is_blank( this ) )
-		out = mlt_producer_get_playtime( parent );
+		out = mlt_producer_get_playtime( parent ) - 1;
 
 	mlt_properties_inc_ref( parent_props );
 	mlt_properties_set_int( properties, "_cut", 1 );
 	mlt_properties_set_data( properties, "_cut_parent", parent, 0, ( mlt_destructor )mlt_producer_close, NULL );
 	mlt_properties_set_position( properties, "length", mlt_properties_get_position( parent_props, "length" ) );
-	mlt_properties_set_position( properties, "in", 0 );
-	mlt_properties_set_position( properties, "out", 0 );
 	mlt_producer_set_in_and_out( result, in, out );
 
 	return result;
@@ -313,14 +311,14 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_positio
 	// Correct ins and outs if necessary
 	if ( in < 0 )
 		in = 0;
-	else if ( in > mlt_producer_get_length( this ) )
-		in = mlt_producer_get_length( this );
+	else if ( in >= mlt_producer_get_length( this ) )
+		in = mlt_producer_get_length( this ) - 1;
 
 	if ( out < 0 )
 		out = 0;
-	else if ( out > mlt_producer_get_length( this ) && !mlt_producer_is_blank( this ) )
-		out = mlt_producer_get_length( this );
-	else if ( out >= mlt_producer_get_length( this ) - 1 && mlt_producer_is_blank( this ) )
+	else if ( out >= mlt_producer_get_length( this ) && !mlt_producer_is_blank( this ) )
+		out = mlt_producer_get_length( this ) - 1;
+	else if ( out >= mlt_producer_get_length( this ) && mlt_producer_is_blank( this ) )
 		mlt_properties_set_position( mlt_producer_properties( this ), "length", out + 1 );
 
 	// Swap ins and outs if wrong
@@ -544,6 +542,8 @@ static mlt_producer mlt_producer_clone( mlt_producer this )
 	char *resource = mlt_properties_get( properties, "resource" );
 	char *service = mlt_properties_get( properties, "mlt_service" );
 
+	mlt_events_block( mlt_factory_event_object( ), mlt_factory_event_object( ) );
+
 	if ( service != NULL )
 		clone = mlt_factory_producer( service, resource );
 
@@ -552,6 +552,8 @@ static mlt_producer mlt_producer_clone( mlt_producer this )
 
 	if ( clone != NULL )
 		mlt_properties_inherit( mlt_producer_properties( clone ), properties );
+
+	mlt_events_unblock( mlt_factory_event_object( ), mlt_factory_event_object( ) );
 
 	return clone;
 }

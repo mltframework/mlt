@@ -292,16 +292,8 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_tractor_close );
 
-	mlt_properties_set_position( properties, "length", 0 );
-
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		mlt_properties_set( mlt_service_properties( service ), (char*) atts[0], (char*) atts[1] );
-
-	if ( mlt_properties_get_position( properties, "length" ) < mlt_properties_get_position( properties, "out" ) )
-	{
-		mlt_position length = mlt_properties_get_position( properties, "out" ) + 1;
-		mlt_properties_set_position( properties, "length", length );
-	}
 
 	if ( mlt_properties_get( properties, "id" ) != NULL )
 		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
@@ -348,7 +340,6 @@ static void on_start_multitrack( deserialise_context context, const xmlChar *nam
 	{
 		mlt_service service = MLT_SERVICE( mlt_tractor_multitrack( MLT_TRACTOR( parent ) ) );
 		mlt_properties properties = mlt_service_properties( service );
-		mlt_properties_set_position( properties, "length", 0 );
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
 			mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
 
@@ -381,8 +372,6 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_playlist_close );
 
-	mlt_properties_set_position( properties, "length", 0 );
-
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
 		mlt_properties_set( properties, ( char* )atts[0], ( char* )atts[1] );
@@ -408,18 +397,8 @@ static void on_end_playlist( deserialise_context context, const xmlChar *name )
 	{
 		mlt_properties properties = mlt_service_properties( service );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
-		mlt_position out;
+		mlt_position out = mlt_properties_get_position( properties, "out" );
 
-		if ( mlt_properties_get( properties, "_westley.out" ) != NULL )
-			out = mlt_properties_get_position( properties, "_westley.out" );
-		else
-			out = mlt_properties_get_position( properties, "length" ) - 1;
-
-		if ( mlt_properties_get_position( properties, "length" ) < out )
-			mlt_properties_set_position( properties, "length", out  + 1 );
-
-		mlt_producer_set_in_and_out( MLT_PRODUCER( service ), in, out );
-	
 		// See if the playlist should be added to a playlist or multitrack
 		if ( add_producer( context, service, in, out ) == 0 )
 			context_push_service( context, service, type );
@@ -730,8 +709,6 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 			if ( mlt_properties_get( track_props, "in" ) != NULL ||
 				 mlt_properties_get( track_props, "out" ) != NULL )
 			{
-				if ( mlt_properties_get( track_props, "out" ) == NULL )
-					mlt_properties_set_position( track_props, "out", mlt_properties_get_position( track_props, "length" ) - 1 );
 				mlt_producer cut = mlt_producer_cut( MLT_PRODUCER( producer ),
 					mlt_properties_get_position( track_props, "in" ),
 					mlt_properties_get_position( track_props, "out" ) );
@@ -1324,6 +1301,18 @@ mlt_producer producer_westley_init( int info, char *data )
 	else
 		xmlcontext = xmlCreateMemoryParserCtxt( data, strlen( data ) );
 
+	// Invalid context - clean up and return NULL
+	if ( xmlcontext == NULL )
+	{
+		mlt_properties_close( context->producer_map );
+		mlt_properties_close( context->destructors );
+		mlt_properties_close( context->params );
+		free( context );
+		free( sax );
+		free( filename );
+		return NULL;
+	}
+
 	xmlcontext->sax = sax;
 	xmlcontext->_private = ( void* )context;
 	
@@ -1380,9 +1369,6 @@ mlt_producer producer_westley_init( int info, char *data )
 		// Set this var to service properties for convenience
 		properties = mlt_service_properties( service );
 	
-		// make the returned service destroy the connected services
-		mlt_properties_set_data( properties, "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
-
 		// Assign the title
 		mlt_properties_set( properties, "title", title );
 
@@ -1410,15 +1396,13 @@ mlt_producer producer_westley_init( int info, char *data )
 	{
 		// Return null if not well formed
 		service = NULL;
-		
-		// Clean up
-		mlt_properties_close( context->destructors );
 	}
 
 	// Clean up
 	mlt_properties_close( context->producer_map );
 	if ( context->params != NULL )
 		mlt_properties_close( context->params );
+	mlt_properties_close( context->destructors );
 	free( context );
 	free( filename );
 

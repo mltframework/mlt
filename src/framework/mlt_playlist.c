@@ -1359,9 +1359,6 @@ int mlt_playlist_move_region( mlt_playlist this, int position, int length, int n
 {
 	if ( this != NULL )
 	{
-		mlt_playlist temp = mlt_playlist_init( );
-		int original_size = mlt_producer_get_playtime( mlt_playlist_producer( temp ) );
-		mlt_playlist_close( temp );
 	}
 	return 0;
 }

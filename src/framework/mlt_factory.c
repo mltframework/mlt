@@ -36,7 +36,23 @@ static mlt_repository producers = NULL;
 static mlt_repository filters = NULL;
 static mlt_repository transitions = NULL;
 static mlt_repository consumers = NULL;
+static mlt_properties event_object = NULL;
 static int unique_id = 0;
+
+/** Event transmitters.
+*/
+
+static void mlt_factory_create_request( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service * )args[ 2 ] );
+}
+
+static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service )args[ 2 ] );
+}
 
 /** Construct the factories.
 */
@@ -60,6 +76,18 @@ int mlt_factory_init( char *prefix )
 		// Initialise the pool
 		mlt_pool_init( );
 
+		// Create and set up the events object
+		event_object = mlt_properties_new( );
+		mlt_events_init( event_object );
+		mlt_events_register( event_object, "producer-create-request", ( mlt_transmitter )mlt_factory_create_request );
+		mlt_events_register( event_object, "producer-create-done", ( mlt_transmitter )mlt_factory_create_done );
+		mlt_events_register( event_object, "filter-create-request", ( mlt_transmitter )mlt_factory_create_request );
+		mlt_events_register( event_object, "filter-create-done", ( mlt_transmitter )mlt_factory_create_done );
+		mlt_events_register( event_object, "transition-create-request", ( mlt_transmitter )mlt_factory_create_request );
+		mlt_events_register( event_object, "transition-create-done", ( mlt_transmitter )mlt_factory_create_done );
+		mlt_events_register( event_object, "consumer-create-request", ( mlt_transmitter )mlt_factory_create_request );
+		mlt_events_register( event_object, "consumer-create-done", ( mlt_transmitter )mlt_factory_create_done );
+
 		// Create the global properties
 		global_properties = mlt_properties_new( );
 		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
@@ -81,6 +109,14 @@ int mlt_factory_init( char *prefix )
 	}
 
 	return 0;
+}
+
+/** Fetch the events object.
+*/
+
+mlt_properties mlt_factory_event_object( )
+{
+	return event_object;
 }
 
 /** Fetch the prefix used in this instance.
@@ -110,16 +146,22 @@ mlt_producer mlt_factory_producer( char *service, void *input )
 	if ( service == NULL )
 		service = mlt_environment( "MLT_PRODUCER" );
 
-	// Try to instantiate via the specified service
-	obj = mlt_repository_fetch( producers, service, input );
+	// Offer the application the chance to 'create'
+	mlt_events_fire( event_object, "producer-create-request", service, input, &obj, NULL );
 
-	if ( obj != NULL )
+	// Try to instantiate via the specified service
+	if ( obj == NULL )
 	{
-		mlt_properties properties = mlt_producer_properties( obj );
-		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
-		mlt_properties_set( properties, "mlt_type", "producer" );
-		if ( mlt_properties_get_int( properties, "_mlt_service_hidden" ) == 0 )
-			mlt_properties_set( properties, "mlt_service", service );
+		obj = mlt_repository_fetch( producers, service, input );
+		mlt_events_fire( event_object, "producer-create-done", service, input, obj, NULL );
+		if ( obj != NULL )
+		{
+			mlt_properties properties = mlt_producer_properties( obj );
+			mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
+			mlt_properties_set( properties, "mlt_type", "producer" );
+			if ( mlt_properties_get_int( properties, "_mlt_service_hidden" ) == 0 )
+				mlt_properties_set( properties, "mlt_service", service );
+		}
 	}
 	return obj;
 }
@@ -129,7 +171,17 @@ mlt_producer mlt_factory_producer( char *service, void *input )
 
 mlt_filter mlt_factory_filter( char *service, void *input )
 {
-	mlt_filter obj = mlt_repository_fetch( filters, service, input );
+	mlt_filter obj = NULL;
+
+	// Offer the application the chance to 'create'
+	mlt_events_fire( event_object, "filter-create-request", service, input, &obj, NULL );
+
+	if ( obj == NULL )
+	{
+   		obj = mlt_repository_fetch( filters, service, input );
+		mlt_events_fire( event_object, "filter-create-done", service, input, obj, NULL );
+	}
+
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_filter_properties( obj );
@@ -145,7 +197,17 @@ mlt_filter mlt_factory_filter( char *service, void *input )
 
 mlt_transition mlt_factory_transition( char *service, void *input )
 {
-	mlt_transition obj = mlt_repository_fetch( transitions, service, input );
+	mlt_transition obj = NULL;
+
+	// Offer the application the chance to 'create'
+	mlt_events_fire( event_object, "transition-create-request", service, input, &obj, NULL );
+
+	if ( obj == NULL )
+	{
+   		obj = mlt_repository_fetch( transitions, service, input );
+		mlt_events_fire( event_object, "transition-create-done", service, input, obj, NULL );
+	}
+
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_transition_properties( obj );
@@ -166,7 +228,14 @@ mlt_consumer mlt_factory_consumer( char *service, void *input )
 	if ( service == NULL )
 		service = mlt_environment( "MLT_CONSUMER" );
 
-	obj = mlt_repository_fetch( consumers, service, input );
+	// Offer the application the chance to 'create'
+	mlt_events_fire( event_object, "consumer-create-request", service, input, &obj, NULL );
+
+	if ( obj == NULL )
+	{
+		obj = mlt_repository_fetch( consumers, service, input );
+		mlt_events_fire( event_object, "consumer-create-done", service, input, obj, NULL );
+	}
 
 	if ( obj != NULL )
 	{
@@ -198,6 +267,7 @@ void mlt_factory_close( )
 {
 	if ( mlt_prefix != NULL )
 	{
+		mlt_properties_close( event_object );
 		mlt_repository_close( producers );
 		mlt_repository_close( filters );
 		mlt_repository_close( transitions );

@@ -70,6 +70,10 @@ mlt_multitrack mlt_multitrack_init( )
 			mlt_properties_set_data( properties, "multitrack", this, 0, NULL, NULL );
 			mlt_properties_set( properties, "log_id", "multitrack" );
 			mlt_properties_set( properties, "resource", "<multitrack>" );
+			mlt_properties_set_int( properties, "in", 0 );
+			mlt_properties_set_int( properties, "out", -1 );
+			mlt_properties_set_int( properties, "length", 0 );
+			producer->close = ( mlt_destructor )mlt_multitrack_close;
 		}
 		else
 		{
@@ -459,6 +463,7 @@ void mlt_multitrack_close( mlt_multitrack this )
 		}
 
 		// Close the producer
+		this->parent.close = NULL;
 		mlt_producer_close( &this->parent );
 
 		// Free the list

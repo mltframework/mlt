@@ -666,7 +666,7 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 
 void mlt_properties_debug( mlt_properties this, char *title, FILE *output )
 {
-	fprintf( stderr, "%s: ", title );
+	fprintf( output, "%s: ", title );
 	if ( this != NULL )
 	{
 		property_list *list = this->local;
@@ -679,7 +679,7 @@ void mlt_properties_debug( mlt_properties this, char *title, FILE *output )
 				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_data( this, list->name[ i ], NULL ) );
 		fprintf( output, " ]" );
 	}
-	fprintf( stderr, "\n" );
+	fprintf( output, "\n" );
 }
 
 /** Close the list.
