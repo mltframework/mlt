@@ -41,6 +41,7 @@
 #include "miracle_connection.h"
 #include "miracle_local.h"
 #include "miracle_log.h"
+#include "miracle_commands.h"
 #include <valerie/valerie_remote.h>
 #include <valerie/valerie_tokeniser.h>
 
@@ -296,6 +297,15 @@ int miracle_server_execute( miracle_server server )
 	}
 
 	return error;
+}
+
+/** Fetch a units properties
+*/
+
+mlt_properties miracle_server_fetch_unit( miracle_server server, int index )
+{
+	miracle_unit unit = miracle_get_unit( index );
+	return unit != NULL ? unit->properties : NULL;
 }
 
 /** Shutdown the server.

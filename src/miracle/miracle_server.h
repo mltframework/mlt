@@ -65,6 +65,7 @@ extern void miracle_server_set_config( miracle_server, char * );
 extern void miracle_server_set_port( miracle_server, int );
 extern void miracle_server_set_proxy( miracle_server, char * );
 extern int miracle_server_execute( miracle_server );
+extern mlt_properties miracle_server_fetch_unit( miracle_server, int );
 extern void miracle_server_shutdown( miracle_server );
 extern void miracle_server_close( miracle_server );
 
