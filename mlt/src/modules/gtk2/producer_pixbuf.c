@@ -49,10 +49,10 @@ static int filter_files( const struct dirent *de )
 }
 
 
-mlt_producer producer_pixbuf_init( const char *filename )
+mlt_producer producer_pixbuf_init( char *filename )
 {
 	producer_pixbuf this = calloc( sizeof( struct producer_pixbuf_s ), 1 );
-	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	if ( filename != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
 
@@ -63,6 +63,7 @@ mlt_producer producer_pixbuf_init( const char *filename )
 		mlt_properties properties = mlt_producer_properties( &this->parent );
 	
 		// Set the default properties
+		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
 		mlt_properties_set_double( properties, "ttl", 5 );
 		

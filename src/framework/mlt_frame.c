@@ -659,7 +659,7 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
             	if ( abs( dx ) < in_x_range && abs( dy ) < in_y_range  )
             	{
                 	// We're in the input range for this row.
-					in_ptr = in_line + ( dx >> 1 ) * 4 - 2 * ( x & 1 );
+					in_ptr = in_line + ( dx >> 1 ) * 4 + 2 * ( x & 1 );
                 	*out_ptr ++ = *in_ptr ++;
                 	*out_ptr ++ = *in_ptr ++;
             	}

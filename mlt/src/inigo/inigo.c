@@ -178,13 +178,15 @@ void transport( mlt_producer producer )
 int main( int argc, char **argv )
 {
 	int i;
+	int track = 0;
 	mlt_consumer consumer = NULL;
-	mlt_multitrack multitrack = NULL;
 	mlt_producer producer = NULL;
 	mlt_playlist playlist = NULL;
-	mlt_field field = NULL;
 	mlt_properties group = mlt_properties_new( );
 	mlt_properties properties = group;
+	mlt_field field = mlt_field_init( );
+	mlt_properties field_properties = mlt_field_properties( field );
+	mlt_multitrack multitrack = mlt_field_multitrack( field );
 
 	// Construct the factory
 	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
@@ -192,15 +194,8 @@ int main( int argc, char **argv )
 	// Set up containers
 	playlist = mlt_playlist_init( );
 
-	// Construct the field
-	field = mlt_field_init( );
-
 	// We need to track the number of registered filters
-	mlt_properties field_properties = mlt_field_properties( field );
 	mlt_properties_set_int( field_properties, "registered", 0 );
-
-	// Get the multitrack from the field
-	multitrack = mlt_field_multitrack( field );
 
 	// Parse the arguments
 	for ( i = 1; i < argc; i ++ )
@@ -233,6 +228,13 @@ int main( int argc, char **argv )
 				mlt_properties_inherit( properties, group );
 			}
 		}
+		else if ( !strcmp( argv[ i ], "-blank" ) )
+		{
+			if ( producer != NULL )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
+		}
 		else if ( !strstr( argv[ i ], "=" ) )
 		{
 			if ( producer != NULL )
@@ -250,8 +252,13 @@ int main( int argc, char **argv )
 		}
 	}
 
-	// We must have a producer at this point
+	// Connect producer to playlist
 	if ( producer != NULL )
+		mlt_playlist_append( playlist, producer );
+
+
+	// We must have a producer at this point
+	if ( mlt_playlist_count( playlist ) > 0 )
 	{
 		// If we have no consumer, default to sdl
 		if ( consumer == NULL )
@@ -264,11 +271,8 @@ int main( int argc, char **argv )
 			}
 		}
 
-		// Connect producer to playlist
-		mlt_playlist_append( playlist, producer );
-
 		// Connect multitrack to producer
-		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), 0 );
+		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track );
 
 		// Connect consumer to tractor
 		mlt_consumer_connect( consumer, mlt_field_service( field ) );

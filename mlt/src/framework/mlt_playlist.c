@@ -105,31 +105,52 @@ mlt_properties mlt_playlist_properties( mlt_playlist this )
 	return mlt_producer_properties( &this->parent );
 }
 
+static int mlt_playlist_virtual_refresh( mlt_playlist this )
+{
+	int i = 0;
+
+	// Get the fps of the first producer
+	double fps = mlt_properties_get_double( mlt_playlist_properties( this ), "first_fps" );
+	mlt_timecode playtime = 0;
+
+	for ( i = 0; i < this->count; i ++ )
+	{
+		// Get the producer
+		mlt_producer producer = this->list[ i ]->producer;
+
+		// If fps is 0
+		if ( fps == 0 )
+		{
+			// Inherit it from the producer
+			fps = mlt_producer_get_fps( producer );
+		}
+		else if ( fps != mlt_properties_get_double( mlt_producer_properties( producer ), "fps" ) )
+		{
+			// Generate a warning for now - the following attempt to fix may fail
+			fprintf( stderr, "Warning: fps mismatch on playlist producer %d\n", this->count );
+
+			// It should be safe to impose fps on an image producer, but not necessarily safe for video
+			mlt_properties_set_double( mlt_producer_properties( producer ), "fps", fps );
+		}
+
+		// Update the playtime for this clip
+		playtime += this->list[ i ]->playtime;
+	}
+
+	// Refresh all properties
+	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", fps );
+	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps );
+	mlt_properties_set_timecode( mlt_playlist_properties( this ), "length", playtime );
+	mlt_properties_set_timecode( mlt_playlist_properties( this ), "out", playtime );
+
+	return 0;
+}
+
 /** Append to the virtual playlist.
 */
 
 static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_timecode in, mlt_timecode out )
 {
-	// Get the fps of the first producer
-	double fps = mlt_properties_get_double( mlt_playlist_properties( this ), "first_fps" );
-
-	mlt_timecode playtime = mlt_producer_get_playtime( mlt_playlist_producer( this ) ) + out - in;
-
-	// If fps is 0
-	if ( fps == 0 )
-	{
-		// Inherit it from the producer
-		fps = mlt_producer_get_fps( producer );
-	}
-	else if ( fps != mlt_properties_get_double( mlt_producer_properties( producer ), "fps" ) )
-	{
-		// Generate a warning for now - the following attempt to fix may fail
-		fprintf( stderr, "Warning: fps mismatch on playlist producer %d\n", this->count );
-
-		// It should be safe to impose fps on an image producer, but not necessarily safe for video
-		mlt_properties_set_double( mlt_producer_properties( producer ), "fps", fps );
-	}
-
 	// Check that we have room
 	if ( this->count >= this->size )
 	{
@@ -147,12 +168,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 
 	this->count ++;
 
-	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", fps );
-	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps );
-	mlt_properties_set_timecode( mlt_playlist_properties( this ), "length", playtime );
-	mlt_properties_set_timecode( mlt_playlist_properties( this ), "out", playtime );
-
-	return 0;
+	return mlt_playlist_virtual_refresh( this );
 }
 
 /** Seek in the virtual playlist.
@@ -221,14 +237,17 @@ static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 	// Seek in real producer to relative position
 	if ( i < this->count )
 	{
-		fprintf( stderr, "END OF CLIP %d AT %e\n", i, position );
+		// Update the playtime for the changed clip (hmmm)
 		this->list[ i ]->playtime = position - this->list[ i ]->in;
+
+		// Refresh the playlist
+		mlt_playlist_virtual_refresh( this );
 	}
 
 	return producer;
 }
 
-static int mlt_playlist_current_clip( mlt_playlist this )
+int mlt_playlist_current_clip( mlt_playlist this )
 {
 	// Map playlist position to real producer in virtual playlist
 	mlt_timecode position = mlt_producer_position( &this->parent );
@@ -251,6 +270,15 @@ static int mlt_playlist_current_clip( mlt_playlist this )
 	}
 
 	return i;
+}
+
+mlt_producer mlt_playlist_current( mlt_playlist this )
+{
+	int i = mlt_playlist_current_clip( this );
+	if ( i < this->count )
+		return this->list[ i ]->producer;
+	else
+		return &this->blank;
 }
 
 /** Get the timecode which corresponds to the start of the next clip.
@@ -291,6 +319,40 @@ mlt_timecode mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index 
 	return position;
 }
 
+int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index )
+{
+	int error = index < 0 || index >= this->count;
+	if ( !error )
+	{
+		mlt_producer producer = this->list[ index ]->producer;
+		mlt_properties properties = mlt_producer_properties( producer );
+		info->resource = mlt_properties_get( properties, "resource" );
+		info->in = this->list[ index ]->in;
+		info->out = this->list[ index ]->in + this->list[ index ]->playtime;
+		info->playtime = this->list[ index ]->playtime;
+		info->length = mlt_producer_get_length( producer );
+		info->fps = mlt_producer_get_fps( producer );
+	}
+	return error;
+}
+
+/** Get number of clips in the playlist.
+*/
+
+int mlt_playlist_count( mlt_playlist this )
+{
+	return this->count;
+}
+
+/** Clear the playlist.
+*/
+
+int mlt_playlist_clear( mlt_playlist this )
+{
+	this->count = 0;
+	return mlt_playlist_virtual_refresh( this );
+}
+
 /** Append a producer to the playlist.
 */
 
@@ -298,6 +360,18 @@ int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 {
 	// Append to virtual list
 	return mlt_playlist_virtual_append( this, producer, 0, mlt_producer_get_playtime( producer ) );
+}
+
+/** Append a producer to the playlist with in/out points.
+*/
+
+int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, double in, double out )
+{
+	// Append to virtual list
+	if ( in != -1 && out != -1 )
+		return mlt_playlist_virtual_append( this, producer, in, out - in );
+	else
+		return mlt_playlist_virtual_append( this, producer, 0, mlt_producer_get_playtime( producer ) );
 }
 
 /** Append a blank to the playlist of a given length.
@@ -327,6 +401,15 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties properties = mlt_frame_properties( *frame );
 	if ( mlt_properties_get_int( properties, "end_of_clip" ) )
 		mlt_playlist_virtual_set_out( this );
+
+	// Check for notifier and call with appropriate argument
+	mlt_properties playlist_properties = mlt_producer_properties( producer );
+	void ( *notifier )( void * ) = mlt_properties_get_data( playlist_properties, "notifier", NULL );
+	if ( notifier != NULL )
+	{
+		void *argument = mlt_properties_get_data( playlist_properties, "notifier_arg", NULL );
+		notifier( argument );
+	}
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );

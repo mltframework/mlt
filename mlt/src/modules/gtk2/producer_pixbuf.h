@@ -40,6 +40,6 @@ struct producer_pixbuf_s
 	uint8_t *alpha;
 };
 
-extern mlt_producer producer_pixbuf_init( const char *filename );
+extern mlt_producer producer_pixbuf_init( char *filename );
 
 #endif

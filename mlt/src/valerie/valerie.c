@@ -311,9 +311,9 @@ valerie_error_code valerie_unit_play( valerie this, int unit )
 /** Play the unit at specified speed.
 */
 
-valerie_error_code valerie_unit_play_at_speed( valerie this, int unit, double speed )
+valerie_error_code valerie_unit_play_at_speed( valerie this, int unit, int speed )
 {
-	return valerie_execute( this, 10240, "PLAY U%d %e", unit, speed );
+	return valerie_execute( this, 10240, "PLAY U%d %d", unit, speed );
 }
 
 /** Stop playback on the specified unit.

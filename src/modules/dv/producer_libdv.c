@@ -51,9 +51,10 @@ mlt_producer producer_libdv_init( char *filename )
 {
 	producer_libdv this = calloc( sizeof( struct producer_libdv_s ), 1 );
 
-	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	if ( filename != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
+		mlt_properties properties = mlt_producer_properties( producer );
 
 		// Register transport implementation with the producer
 		producer->close = producer_close;
@@ -68,11 +69,11 @@ mlt_producer producer_libdv_init( char *filename )
 		dv_set_audio_correction( this->dv_decoder, DV_AUDIO_CORRECT_AVERAGE );
 
 		// Open the file if specified
-		if ( filename != NULL )
-		{
-			this->fd = open( filename, O_RDONLY );
-			producer_collect_info( this );
-		}
+		this->fd = open( filename, O_RDONLY );
+		producer_collect_info( this );
+
+		// Set the resource property (required for all producers)
+		mlt_properties_set( properties, "resource", filename );
 
 		// Return the producer
 		return producer;

@@ -232,13 +232,10 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 			fprintf( stderr, "SDL failed to open audio: %s\n", SDL_GetError() );
 			init_audio = 2;
 		}
-		else
+		else if ( got.size != 0 )
 		{
-			if ( got.size != 0 )
-			{
-				SDL_PauseAudio( 0 );
-				init_audio = 0;
-			}
+			SDL_PauseAudio( 0 );
+			init_audio = 0;
 		}
 	}
 

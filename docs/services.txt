@@ -31,7 +31,8 @@ Producers
 
 		Read Only Properties
 
-			end_of_clip - holds 1 when input is exhausted
+			string resource - file or "v4l"
+			int end_of_clip - holds 1 when input is exhausted
 
 		Dependencies
 
@@ -39,7 +40,7 @@ Producers
 
 		Known Bugs
 
-			in/out point setting is broken.
+			in point setting is broken.
 
 			Implementation does not allow fast random access.
 
@@ -55,12 +56,12 @@ Producers
 
 		Initialisation Properties
 
-			string file - file location
 			timecode in - in point
 			timecode out - out point
 
 		Read Only Properties
 
+			string resource - file location
 			double fps - output frames per second 
 			double aspect_ratio - aspect ratio of video
 
@@ -70,7 +71,7 @@ Producers
 
 		Known Bugs
 
-			'file' is not populated on properties?
+			None.
 
 	mcdv
 
@@ -84,12 +85,12 @@ Producers
 
 		Initialisation Properties
 
-			string file - file location
 			timecode in - in point
 			timecode out - out point
 
 		Read Only Properties
 
+			string resource - file location
 			double fps - output frames per second 
 			double aspect_ratio - aspect ratio of video
 
@@ -99,7 +100,7 @@ Producers
 
 		Known Bugs
 
-			'file' is not populated on properties?
+			Can be problematic with source NTSC DV files?
 
 	mcmpeg
 
@@ -113,12 +114,12 @@ Producers
 
 		Initialisation Properties
 
-			string file - file location
 			timecode in - in point
 			timecode out - out point
 
 		Read Only Properties
 
+			string resource - file location
 			double fps - output frames per second 
 			double aspect_ratio - aspect ratio of video
 
@@ -128,7 +129,7 @@ Producers
 
 		Known Bugs
 
-			'file' is not populated on properties?
+			None.
 
 	pango
 	pixbuf

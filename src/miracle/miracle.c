@@ -1,5 +1,5 @@
 /*
- * dv1394d.c -- A DV over IEEE 1394 TCP Server
+ * miracle.c -- A DV over IEEE 1394 TCP Server
  *
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Authors:
@@ -21,10 +21,6 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 /* System header files */
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,21 +29,24 @@
 #include <unistd.h>
 #include <time.h>
 
+#include <framework/mlt.h>
+
 /* Application header files */
-#include "dvserver.h"
-#include "log.h"
+#include "miracle_server.h"
+#include "miracle_log.h"
 
 /** Our dv server.
 */
 
-static dv_server server = NULL;
+static miracle_server server = NULL;
 
 /** atexit shutdown handler for the server.
 */
 
 static void main_cleanup( )
 {
-	dv_server_shutdown( server );
+	miracle_server_shutdown( server );
+	mlt_factory_close( );
 }
 
 /** Report usage and exit.
@@ -69,14 +68,17 @@ int main( int argc, char **argv )
 	int background = 1;
 	struct timespec tm = { 5, 0 };
 
-	server = dv_server_init( argv[ 0 ] );
+	// Construct the factory
+	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
+
+	server = miracle_server_init( argv[ 0 ] );
 
 	for ( index = 1; index < argc; index ++ )
 	{
 		if ( !strcmp( argv[ index ], "-port" ) )
-			dv_server_set_port( server, atoi( argv[ ++ index ] ) );
+			miracle_server_set_port( server, atoi( argv[ ++ index ] ) );
 		else if ( !strcmp( argv[ index ], "-proxy" ) )
-			dv_server_set_proxy( server, argv[ ++ index ] );
+			miracle_server_set_proxy( server, argv[ ++ index ] );
 		else if ( !strcmp( argv[ index ], "-test" ) )
 			background = 0;
 		else
@@ -90,17 +92,17 @@ int main( int argc, char **argv )
 		if ( fork() )
 			return 0;
 		setsid();
-		dv1394d_log_init( log_syslog, LOG_INFO );
+		miracle_log_init( log_syslog, LOG_INFO );
 	}
 	else
 	{
-		dv1394d_log_init( log_stderr, LOG_INFO );
+		miracle_log_init( log_stderr, LOG_DEBUG );
 	}
 
 	atexit( main_cleanup );
 
 	/* Execute the server */
-	error = dv_server_execute( server );
+	error = miracle_server_execute( server );
 
 	/* We need to wait until we're exited.. */
 	while ( !server->shutdown )

@@ -1,10 +1,17 @@
+
+# Environment variable settings to allow execution without install
+
 export MLT_REPOSITORY=`pwd`/src/modules
 
 export LD_LIBRARY_PATH=`pwd`/src/framework:\
+`pwd`/src/valerie:\
 `pwd`/src/modules/bluefish:\
 `pwd`/../bluefish/lib:\
 `pwd`/../mpeg_sdk_demo/bin:\
 `pwd`/../dv_sdk
 
-export PATH=$PATH:`pwd`/src/inigo:`pwd`/src/miracle
+export PATH=$PATH:\
+`pwd`/src/inigo:\
+`pwd`/src/humperdink:\
+`pwd`/src/miracle
 

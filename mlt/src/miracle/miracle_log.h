@@ -1,5 +1,5 @@
 /*
- * log.h -- logging facility header
+ * miracle_log.h -- logging facility header
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
@@ -33,8 +33,8 @@ enum log_output {
 	log_syslog
 };
 
-void dv1394d_log_init( enum log_output method, int threshold );
-void dv1394d_log( int priority, char *format, ... );
+void miracle_log_init( enum log_output method, int threshold );
+void miracle_log( int priority, char *format, ... );
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+trap exit
+
 video_type="$1"
 video_file="$2"
 video_size="$3"

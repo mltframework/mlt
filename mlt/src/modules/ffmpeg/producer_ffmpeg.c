@@ -26,12 +26,118 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 typedef struct producer_ffmpeg_s *producer_ffmpeg;
+
+/** Bi-directional pipe structure.
+*/
+
+typedef struct rwpipe
+{
+    int pid;
+    FILE *reader;
+    FILE *writer;
+}
+rwpipe;
+
+/** Create a bidirectional pipe for the given command.
+*/
+
+rwpipe *rwpipe_open( char *command )
+{
+    rwpipe *this = malloc( sizeof( rwpipe ) );
+
+    if ( this != NULL )
+    {
+        int input[ 2 ];
+        int output[ 2 ];
+
+        pipe( input );
+        pipe( output );
+
+        this->pid = fork();
+
+        if ( this->pid == 0 )
+        {
+			signal( SIGPIPE, SIG_DFL );
+			signal( SIGHUP, SIG_DFL );
+			signal( SIGINT, SIG_DFL );
+			signal( SIGTERM, SIG_DFL );
+			signal( SIGSTOP, SIG_DFL );
+			signal( SIGCHLD, SIG_DFL );
+
+            dup2( output[ 0 ], STDIN_FILENO );
+            dup2( input[ 1 ], STDOUT_FILENO );
+
+            close( input[ 0 ] );
+            close( input[ 1 ] );
+            close( output[ 0 ] );
+            close( output[ 1 ] );
+
+			execl( "/bin/sh", "sh", "-c", command, NULL );
+            exit( 255 );
+        }
+        else
+        {
+			setpgid( this->pid, this->pid );
+
+            close( input[ 1 ] );
+            close( output[ 0 ] );
+
+            this->reader = fdopen( input[ 0 ], "r" );
+            this->writer = fdopen( output[ 1 ], "w" );
+        }
+    }
+
+    return this;
+}
+
+/** Read data from the pipe.
+*/
+
+FILE *rwpipe_reader( rwpipe *this )
+{
+    if ( this != NULL )
+        return this->reader;
+    else
+        return NULL;
+}
+
+/** Write data to the pipe.
+*/
+
+FILE *rwpipe_writer( rwpipe *this )
+{
+    if ( this != NULL )
+        return this->writer;
+    else
+        return NULL;
+}
+
+/** Close the pipe and process.
+*/
+
+void rwpipe_close( rwpipe *this )
+{
+    if ( this != NULL )
+    {
+		fclose( this->reader );
+		fclose( this->writer );
+		kill( - this->pid, SIGKILL );
+        waitpid( - this->pid, NULL, 0 );
+        free( this );
+    }
+}
 
 struct producer_ffmpeg_s
 {
 	struct mlt_producer_s parent;
+	rwpipe *video_pipe;
+	rwpipe *audio_pipe;
 	FILE *video;
 	FILE *audio;
 	uint64_t expected;
@@ -52,7 +158,7 @@ static void producer_close( mlt_producer parent );
 mlt_producer producer_ffmpeg_init( char *file )
 {
 	producer_ffmpeg this = calloc( sizeof( struct producer_ffmpeg_s ), 1 );
-	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	if ( file != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		// Get the producer
 		mlt_producer producer = &this->parent;
@@ -67,7 +173,7 @@ mlt_producer producer_ffmpeg_init( char *file )
 		// Set the properties
 		mlt_properties_set( properties, "mlt_type", "producer_ffmpeg" );
 
-		if ( file != NULL && !strcmp( file, "v4l" ) )
+		if ( !strcmp( file, "v4l" ) )
 		{
 			mlt_properties_set( properties, "video_type", "v4l" );
 			mlt_properties_set( properties, "video_file", "/dev/video0" );
@@ -89,6 +195,7 @@ mlt_producer producer_ffmpeg_init( char *file )
 		mlt_properties_set_int( properties, "audio_track", 0 );
 
 		mlt_properties_set( properties, "log_id", file );
+		mlt_properties_set( properties, "resource", file );
 
 		this->buffer = malloc( 1024 * 1024 * 2 );
 
@@ -151,7 +258,8 @@ FILE *producer_ffmpeg_run_video( producer_ffmpeg this, mlt_timecode position )
 							  video_rate,
 							  ( float )position );
 
-			this->video = popen( command, "r" );
+			this->video_pipe = rwpipe_open( command );
+			this->video = rwpipe_reader( this->video_pipe );
 		}
 	}
 	return this->video;
@@ -188,7 +296,8 @@ FILE *producer_ffmpeg_run_audio( producer_ffmpeg this, mlt_timecode position )
 							  channels,
 							  track );
 
-			this->audio = popen( command, "r" );
+			this->audio_pipe = rwpipe_open( command );
+			this->audio = rwpipe_reader( this->audio_pipe );
 		}
 	}
 	return this->audio;
@@ -207,12 +316,12 @@ static void producer_ffmpeg_position( producer_ffmpeg this, uint64_t requested, 
 	{
 		// Close the video pipe
 		if ( this->video != NULL )
-			pclose( this->video );
+			rwpipe_close( this->video_pipe );
 		this->video = NULL;
 
 		// Close the audio pipe
 		if ( this->audio != NULL )
-			pclose( this->audio );
+			rwpipe_close( this->audio_pipe );
 		this->audio = NULL;
 	
 		// We should not be open now
@@ -309,7 +418,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 			*samples = sample_calculator( fps, *frequency, target - skip );
 			if ( fread( *buffer, *samples * *channels * 2, 1, producer->audio ) != 1 )
 			{
-				pclose( producer->audio );
+				rwpipe_close( producer->audio_pipe );
 				producer->audio = NULL;
 				producer->end_of_audio = 1;
 			}
@@ -423,7 +532,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 			// Inform caller that end of clip is reached
 			this->end_of_video = !video_loop;
-			pclose( this->video );
+			rwpipe_close( this->video_pipe );
 			this->video = NULL;
 		}
 
@@ -472,9 +581,9 @@ static void producer_close( mlt_producer parent )
 {
 	producer_ffmpeg this = parent->child;
 	if ( this->video )
-		pclose( this->video );
+		rwpipe_close( this->video_pipe );
 	if ( this->audio )
-		pclose( this->audio );
+		rwpipe_close( this->audio_pipe );
 	parent->close = NULL;
 	mlt_producer_close( parent );
 	free( this->buffer );

@@ -1,5 +1,5 @@
 
-AR = ar
+TARGET = libvalerie.so
 
 OBJS = valerie.o \
 	   valerie_notifier.o \
@@ -17,11 +17,10 @@ CFLAGS=-Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 LDFLAGS=-ldv -lpthread
 
-all: libvalerie.a
+all: $(TARGET)
 
-libvalerie.a: $(OBJS)
-	$(AR) rvu $@ $(OBJS)
-	ranlib $@
+$(TARGET): $(OBJS)
+		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -30,7 +29,7 @@ dist-clean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(OBJS) libvalerie.a 
+		rm -f $(OBJS) $(TARGET)
 
 ifneq ($(wildcard .depend),)
 include .depend

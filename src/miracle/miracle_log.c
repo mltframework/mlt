@@ -1,5 +1,5 @@
 /*
- * log.h -- logging facility implementation
+ * miracle_log.c -- logging facility implementation
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
@@ -18,21 +18,16 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdarg.h>
 #include <syslog.h>
 #include <stdio.h>
 
-#include "log.h"
+#include "miracle_log.h"
 
 static int log_output = log_stderr;
 static int threshold = LOG_DEBUG;
 
-void
-dv1394d_log_init( enum log_output method, int new_threshold )
+void miracle_log_init( enum log_output method, int new_threshold )
 {
 	log_output = method;
 	threshold = new_threshold;
@@ -41,8 +36,7 @@ dv1394d_log_init( enum log_output method, int new_threshold )
 
 }
 
-void
-dv1394d_log( int priority, char *format, ... )
+void miracle_log( int priority, char *format, ... )
 {
 	va_list list;
 	va_start( list, format );

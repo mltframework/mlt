@@ -1,5 +1,5 @@
 /*
- * dvconnection.c -- DV Connection Handler
+ * miracle_connection.c -- DV Connection Handler
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -34,12 +34,13 @@
 #include <sys/socket.h> 
 #include <arpa/inet.h>
 
+#include <valerie/valerie_socket.h>
+
 /* Application header files */
-#include "global_commands.h"
-#include "dvconnection.h"
-#include "dvsocket.h"
-#include "dvserver.h"
-#include "log.h"
+#include "miracle_commands.h"
+#include "miracle_connection.h"
+#include "miracle_server.h"
+#include "miracle_log.h"
 
 /** This is a generic replacement for fgets which operates on a file
    descriptor. Unlike fgets, we can also specify a line terminator. Maximum
@@ -80,46 +81,46 @@ int fdgetline( int fd, char *buf, int max, char line_terminator, int *eof_chk )
 }
 
 static int connection_initiate( int );
-static int connection_send( int, dv_response );
+static int connection_send( int, valerie_response );
 static int connection_read( int, char *, int );
 static void connection_close( int );
 
 static int connection_initiate( int fd )
 {
 	int error = 0;
-	dv_response response = dv_response_init( );
-	dv_response_set_error( response, 100, "VTR Ready" );
+	valerie_response response = valerie_response_init( );
+	valerie_response_set_error( response, 100, "VTR Ready" );
 	error = connection_send( fd, response );
-	dv_response_close( response );
+	valerie_response_close( response );
 	return error;
 }
 
-static int connection_send( int fd, dv_response response )
+static int connection_send( int fd, valerie_response response )
 {
 	int error = 0;
 	int index = 0;
-	int code = dv_response_get_error_code( response );
+	int code = valerie_response_get_error_code( response );
 
 	if ( code != -1 )
 	{
-		int items = dv_response_count( response );
+		int items = valerie_response_count( response );
 
 		if ( items == 0 )
-			dv_response_set_error( response, 500, "Unknown error" );
+			valerie_response_set_error( response, 500, "Unknown error" );
 
 		if ( code == 200 && items > 2 )
-			dv_response_set_error( response, 201, "OK" );
+			valerie_response_set_error( response, 201, "OK" );
 		else if ( code == 200 && items > 1 )
-			dv_response_set_error( response, 202, "OK" );
+			valerie_response_set_error( response, 202, "OK" );
 
-		code = dv_response_get_error_code( response );
-		items = dv_response_count( response );
+		code = valerie_response_get_error_code( response );
+		items = valerie_response_count( response );
 
 		for ( index = 0; !error && index < items; index ++ )
 		{
-			char *line = dv_response_get_line( response, index );
+			char *line = valerie_response_get_line( response, index );
 			int length = strlen( line );
-			if ( length == 0 && index != dv_response_count( response ) - 1 && write( fd, " ", 1 ) != 1 )
+			if ( length == 0 && index != valerie_response_count( response ) - 1 && write( fd, " ", 1 ) != 1 )
 				error = -1;
 			else if ( length > 0 && write( fd, line, length ) != length )
 				error = -1;
@@ -127,7 +128,7 @@ static int connection_send( int fd, dv_response response )
 				error = -1;			
 		}
 
-		if ( ( code == 201 || code == 500 ) && strcmp( dv_response_get_line( response, items - 1 ), "" ) )
+		if ( ( code == 201 || code == 500 ) && strcmp( valerie_response_get_line( response, items - 1 ), "" ) )
 			write( fd, "\r\n", 2 );
 	}
 	else
@@ -151,27 +152,27 @@ static int connection_read( int fd, char *command, int length )
 	return nchars;
 }
 
-int connection_status( int fd, dv1394_notifier notifier )
+int connection_status( int fd, valerie_notifier notifier )
 {
 	int error = 0;
 	int index = 0;
-	dv1394_status_t status;
+	valerie_status_t status;
 	char text[ 10240 ];
-	dv_socket socket = dv_socket_init_fd( fd );
+	valerie_socket socket = valerie_socket_init_fd( fd );
 	
 	for ( index = 0; !error && index < MAX_UNITS; index ++ )
 	{
-		dv1394_notifier_get( notifier, &status, index );
-		dv1394_status_serialise( &status, text, sizeof( text ) );
-		error = dv_socket_write_data( socket, text, strlen( text )  ) != strlen( text );
+		valerie_notifier_get( notifier, &status, index );
+		valerie_status_serialise( &status, text, sizeof( text ) );
+		error = valerie_socket_write_data( socket, text, strlen( text )  ) != strlen( text );
 	}
 
 	while ( !error )
 	{
-		if ( dv1394_notifier_wait( notifier, &status ) == 0 )
+		if ( valerie_notifier_wait( notifier, &status ) == 0 )
 		{
-			dv1394_status_serialise( &status, text, sizeof( text ) );
-			error = dv_socket_write_data( socket, text, strlen( text ) ) != strlen( text );
+			valerie_status_serialise( &status, text, sizeof( text ) );
+			error = valerie_socket_write_data( socket, text, strlen( text ) ) != strlen( text );
 		}
 		else
 		{
@@ -186,7 +187,7 @@ int connection_status( int fd, dv1394_notifier notifier )
 		}
 	}
 
-	dv_socket_close( socket );
+	valerie_socket_close( socket );
 	
 	return error;
 }
@@ -203,11 +204,8 @@ void *parser_thread( void *arg )
 	char address[ 512 ];
 	char command[ 1024 ];
 	int fd = connection->fd;
-	dv_parser parser = connection->parser;
-	dv_response response = NULL;
-
-	/* We definitely want to ignore broken pipes. */
-    signal( SIGPIPE, SIG_IGN );
+	valerie_parser parser = connection->parser;
+	valerie_response response = NULL;
 
 	/* Get the connecting clients ip information */
 	he = gethostbyaddr( (char *) &( connection->sin.sin_addr.s_addr ), sizeof(u_int32_t), AF_INET); 
@@ -216,7 +214,7 @@ void *parser_thread( void *arg )
 	else
 		inet_ntop( AF_INET, &( connection->sin.sin_addr.s_addr), address, 32 );
 
-	dv1394d_log( LOG_NOTICE, "Connection established with %s (%d)", address, fd );
+	miracle_log( LOG_NOTICE, "Connection established with %s (%d)", address, fd );
 
 	/* Execute the commands received. */
 	if ( connection_initiate( fd ) == 0 )
@@ -227,14 +225,14 @@ void *parser_thread( void *arg )
 		{
 			if ( strncmp( command, "STATUS", 6 ) )
 			{
-				response = dv_parser_execute( parser, command );
-				dv1394d_log( LOG_INFO, "%s \"%s\" %d", address, command, dv_response_get_error_code( response ) );
+				response = valerie_parser_execute( parser, command );
+				miracle_log( LOG_INFO, "%s \"%s\" %d", address, command, valerie_response_get_error_code( response ) );
 				error = connection_send( fd, response );
-				dv_response_close( response );
+				valerie_response_close( response );
 			}
 			else
 			{
-				error = connection_status( fd, dv_parser_get_notifier( parser ) );
+				error = connection_status( fd, valerie_parser_get_notifier( parser ) );
 			}
 		}
 	}
@@ -242,7 +240,7 @@ void *parser_thread( void *arg )
 	/* Free the resources associated with this connection. */
 	connection_close( fd );
 
-	dv1394d_log( LOG_NOTICE, "Connection with %s (%d) closed", address, fd );
+	miracle_log( LOG_NOTICE, "Connection with %s (%d) closed", address, fd );
 
 	free( connection );
 

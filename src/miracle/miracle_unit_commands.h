@@ -22,33 +22,33 @@
 #ifndef _UNIT_COMMANDS_H_
 #define _UNIT_COMMANDS_H_
 
-#include "dvconnection.h"
+#include "miracle_connection.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-extern response_codes dv1394d_list( command_argument );
-extern response_codes dv1394d_load( command_argument );
-extern response_codes dv1394d_insert( command_argument );
-extern response_codes dv1394d_remove( command_argument );
-extern response_codes dv1394d_clean( command_argument );
-extern response_codes dv1394d_move( command_argument );
-extern response_codes dv1394d_append( command_argument );
-extern response_codes dv1394d_play( command_argument );
-extern response_codes dv1394d_stop( command_argument );
-extern response_codes dv1394d_pause( command_argument );
-extern response_codes dv1394d_rewind( command_argument );
-extern response_codes dv1394d_step( command_argument );
-extern response_codes dv1394d_goto( command_argument );
-extern response_codes dv1394d_ff( command_argument );
-extern response_codes dv1394d_set_in_point( command_argument );
-extern response_codes dv1394d_set_out_point( command_argument );
-extern response_codes dv1394d_get_unit_status( command_argument );
-extern response_codes dv1394d_set_unit_property( command_argument );
-extern response_codes dv1394d_get_unit_property( command_argument );
-extern response_codes dv1394d_transfer( command_argument );
+extern response_codes miracle_list( command_argument );
+extern response_codes miracle_load( command_argument );
+extern response_codes miracle_insert( command_argument );
+extern response_codes miracle_remove( command_argument );
+extern response_codes miracle_clean( command_argument );
+extern response_codes miracle_move( command_argument );
+extern response_codes miracle_append( command_argument );
+extern response_codes miracle_play( command_argument );
+extern response_codes miracle_stop( command_argument );
+extern response_codes miracle_pause( command_argument );
+extern response_codes miracle_rewind( command_argument );
+extern response_codes miracle_step( command_argument );
+extern response_codes miracle_goto( command_argument );
+extern response_codes miracle_ff( command_argument );
+extern response_codes miracle_set_in_point( command_argument );
+extern response_codes miracle_set_out_point( command_argument );
+extern response_codes miracle_get_unit_status( command_argument );
+extern response_codes miracle_set_unit_property( command_argument );
+extern response_codes miracle_get_unit_property( command_argument );
+extern response_codes miracle_transfer( command_argument );
 
 #ifdef __cplusplus
 }

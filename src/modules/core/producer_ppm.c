@@ -43,12 +43,20 @@ mlt_producer producer_ppm_init( void *command )
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
+		mlt_properties properties = mlt_producer_properties( producer );
 
 		producer->get_frame = producer_get_frame;
 		producer->close = producer_close;
 
 		if ( command != NULL )
+		{
+			mlt_properties_set( properties, "resource", command );
 			this->command = strdup( command );
+		}
+		else
+		{
+			mlt_properties_set( properties, "resource", "ppm test" );
+		}
 
 		return producer;
 	}

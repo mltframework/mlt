@@ -265,6 +265,10 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	{
 		// Get the frame from the implementation
 		result = this->get_frame( this, frame, index );
+
+		mlt_properties frame_properties = mlt_frame_properties( *frame );
+		double speed = mlt_producer_get_speed( this );
+		mlt_properties_set_double( frame_properties, "speed", speed );
 	}
 	else
 	{

@@ -1,5 +1,5 @@
 /*
- * dvconnection.h -- DV Connection Handler
+ * miracle_connection.h -- DV Connection Handler
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -25,8 +25,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include <dvparser.h>
-#include <dvtokeniser.h>
+#include <valerie/valerie_parser.h>
+#include <valerie/valerie_tokeniser.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -40,7 +40,7 @@ typedef struct
 {
 	int fd;
 	struct sockaddr_in sin;
-	dv_parser parser;
+	valerie_parser parser;
 } 
 connection_t;
 
@@ -68,9 +68,9 @@ response_codes;
 
 typedef struct 
 {
-	dv_parser    parser;
-	dv_response  response;
-	dv_tokeniser tokeniser;
+	valerie_parser    parser;
+	valerie_response  response;
+	valerie_tokeniser tokeniser;
 	char         *command;
 	int           unit;
 	void         *argument;

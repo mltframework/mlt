@@ -28,16 +28,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-#include "dvunit.h"
-#include "global_commands.h"
-#include "dverror.h"
-#include "dvframepool.h"
-#include "log.h"
+#include "miracle_unit.h"
+#include "miracle_commands.h"
+#include "miracle_log.h"
 
-int dv1394d_load( command_argument cmd_arg )
+int miracle_load( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	char *filename = (char*) cmd_arg->argument;
 	char fullname[1024];
 	int flush = 1;
@@ -57,53 +56,34 @@ int dv1394d_load( command_argument cmd_arg )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		long in = -1, out = -1;
-		if ( dv_tokeniser_count( cmd_arg->tokeniser ) == 5 )
+		double in = -1, out = -1;
+		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 5 )
 		{
-			in = atoi( dv_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
-			out = atoi( dv_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
+			in = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
+			out = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
 		}
-		if ( dv_unit_load( unit, fullname, in, out, flush ) != dv_pump_ok )
+		if ( miracle_unit_load( unit, fullname, in, out, flush ) != valerie_ok )
 			return RESPONSE_BAD_FILE;
 	}
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_list( command_argument cmd_arg )
+int miracle_list( command_argument cmd_arg )
 {
-	int i = 0;
-	dv_unit unit = dv1394d_get_unit( cmd_arg->unit );
-	dv_player player = dv_unit_get_dv_player( unit );
-	
-	if ( player != NULL )
+	miracle_unit unit = miracle_get_unit( cmd_arg->unit );
+
+	if ( unit != NULL )
 	{
-		dv_response_printf( cmd_arg->response, 1024, "%d\n", player->generation );
-		
-		for ( i = 0; i < dv_player_get_clip_count( player ); i ++ )
-		{
-			dv_clip clip = dv_player_get_clip( player, i );
-			
-			dv_response_printf( cmd_arg->response, 10240,
-								"%d \"%s\" %d %d %d %d %.2f\n", 
-								i,
-								dv_clip_get_resource( clip, cmd_arg->root_dir ),
-								dv_clip_get_in( clip ),
-								( !dv_clip_is_seekable( clip ) && clip->out_frame == -1 ? -1 : dv_clip_get_out( clip ) ),
-								dv_clip_get_max_frames( clip ),
-								( !dv_clip_is_seekable( clip ) && clip->out_frame == -1 ? -1 : dv_player_get_length_of_clip( player, i ) ),
-								dv_clip_frames_per_second( clip ) );
-		}
-	
-		dv_response_printf( cmd_arg->response, 2, "\n" );
-		
+		miracle_unit_report_list( unit, cmd_arg->response );
 		return RESPONSE_SUCCESS;
 	}
+
 	return RESPONSE_INVALID_UNIT;
 }
-
+/*
 static int parse_clip( command_argument cmd_arg, int arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	int clip = dv_unit_get_current_clip( unit );
 	
 	if ( dv_tokeniser_count( cmd_arg->tokeniser ) > arg )
@@ -124,10 +104,12 @@ static int parse_clip( command_argument cmd_arg, int arg )
 	
 	return clip;
 }
+*/
 
-int dv1394d_insert( command_argument cmd_arg )
+int miracle_insert( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	char *filename = (char*) cmd_arg->argument;
 	char fullname[1024];
 
@@ -159,12 +141,14 @@ int dv1394d_insert( command_argument cmd_arg )
 				return RESPONSE_BAD_FILE;
 		}
 	}
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_remove( command_argument cmd_arg )
+int miracle_remove( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
@@ -175,12 +159,14 @@ int dv1394d_remove( command_argument cmd_arg )
 		if ( dv_unit_remove( unit, index ) != dv_pump_ok )
 			return RESPONSE_BAD_FILE;
 	}
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_clean( command_argument cmd_arg )
+int miracle_clean( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
@@ -189,12 +175,14 @@ int dv1394d_clean( command_argument cmd_arg )
 		if ( dv_unit_clean( unit ) != dv_pump_ok )
 			return RESPONSE_BAD_FILE;
 	}
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_move( command_argument cmd_arg )
+int miracle_move( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if ( unit != NULL )
 	{
@@ -215,36 +203,36 @@ int dv1394d_move( command_argument cmd_arg )
 	{
 		return RESPONSE_INVALID_UNIT;
 	}
-	
+	*/
+
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_append( command_argument cmd_arg )
+int miracle_append( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	char *filename = (char*) cmd_arg->argument;
 	char fullname[1024];
 
 	if ( filename[0] == '/' )
 		filename++;
+
 	snprintf( fullname, 1023, "%s%s", cmd_arg->root_dir, filename );
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		long in = -1, out = -1;
-		if ( dv_tokeniser_count( cmd_arg->tokeniser ) == 5 )
+		double in = -1, out = -1;
+		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 5 )
 		{
-			in = atoi( dv_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
-			out = atoi( dv_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
+			in = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
+			out = atof( valerie_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
 		}
-		switch ( dv_unit_append( unit, fullname, in, out ) )
+		switch ( miracle_unit_append( unit, fullname, in, out ) )
 		{
-			case dv_pump_ok:
+			case valerie_ok:
 				return RESPONSE_SUCCESS;
-			case dv_pump_too_many_files_open:
-				return RESPONSE_TOO_MANY_FILES;
 			default:
 				return RESPONSE_BAD_FILE;
 		}
@@ -252,62 +240,59 @@ int dv1394d_append( command_argument cmd_arg )
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_play( command_argument cmd_arg )
+int miracle_play( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	
-	if (unit == NULL || dv_unit_is_offline(unit))
+	if ( unit == NULL )
+	{
 		return RESPONSE_INVALID_UNIT;
+	}
 	else
 	{
 		int speed = 1000;
-		if ( dv_tokeniser_count( cmd_arg->tokeniser ) == 3 )
-			speed = atoi( dv_tokeniser_get_string( cmd_arg->tokeniser, 2 ) );
-		dv_unit_play( unit, speed );
+		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 3 )
+			speed = atoi( valerie_tokeniser_get_string( cmd_arg->tokeniser, 2 ) );
+		miracle_unit_play( unit, speed );
 	}
-	
+
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_stop( command_argument cmd_arg )
+int miracle_stop( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
-	
-	if (unit == NULL || dv_unit_is_offline(unit))
-		return RESPONSE_INVALID_UNIT;
-	else
-		dv_unit_terminate( unit );
-	
-	return RESPONSE_SUCCESS;
-}
-
-int dv1394d_pause( command_argument cmd_arg )
-{
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
-	
-	if (unit == NULL || dv_unit_is_offline(unit))
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	if ( unit == NULL )
 		return RESPONSE_INVALID_UNIT;
 	else 
-		dv_unit_play( unit, 0 );
-	
+		miracle_unit_play( unit, 0 );
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_rewind( command_argument cmd_arg )
+int miracle_pause( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
-	
-	if (unit == NULL || dv_unit_is_offline(unit))
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	if ( unit == NULL )
 		return RESPONSE_INVALID_UNIT;
-	else
-		dv_unit_change_speed( unit, -2000 );
-	
+	else 
+		miracle_unit_play( unit, 0 );
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_step( command_argument cmd_arg )
+int miracle_rewind( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	if ( unit == NULL )
+		return RESPONSE_INVALID_UNIT;
+	else 
+		miracle_unit_play( unit, -2000 );
+	return RESPONSE_SUCCESS;
+}
+
+int miracle_step( command_argument cmd_arg )
+{
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if (unit == NULL || dv_unit_is_offline(unit))
 		return RESPONSE_INVALID_UNIT;
@@ -316,38 +301,38 @@ int dv1394d_step( command_argument cmd_arg )
 		dv_unit_play( unit, 0 );
 		dv_unit_step( unit, *(int*) cmd_arg->argument );
 	}
-	
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_goto( command_argument cmd_arg )
+int miracle_goto( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	int clip = parse_clip( cmd_arg, 3 );
 	
 	if (unit == NULL || dv_unit_is_offline(unit))
 		return RESPONSE_INVALID_UNIT;
 	else
 		dv_unit_change_position( unit, clip, *(int*) cmd_arg->argument );
-	
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_ff( command_argument cmd_arg )
+int miracle_ff( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
-	
-	if (unit == NULL || dv_unit_is_offline(unit))
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	if ( unit == NULL )
 		return RESPONSE_INVALID_UNIT;
-	else
-		dv_unit_change_speed( unit, 2000 );
-	
+	else 
+		miracle_unit_play( unit, 2000 );
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_set_in_point( command_argument cmd_arg )
+int miracle_set_in_point( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	int clip = parse_clip( cmd_arg, 3 );
 	
 	if (unit == NULL || dv_unit_is_offline(unit))
@@ -364,13 +349,14 @@ int dv1394d_set_in_point( command_argument cmd_arg )
 				return RESPONSE_OUT_OF_RANGE;
 		}
 	}
-	
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_set_out_point( command_argument cmd_arg )
+int miracle_set_out_point( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	int clip = parse_clip( cmd_arg, 3 );
 	
 	if (unit == NULL || dv_unit_is_offline(unit))
@@ -387,35 +373,31 @@ int dv1394d_set_out_point( command_argument cmd_arg )
 				return RESPONSE_OUT_OF_RANGE;
 		}
 	}
-	
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_get_unit_status( command_argument cmd_arg )
+int miracle_get_unit_status( command_argument cmd_arg )
 {
-	dv1394_status_t status;
-	int error = dv_unit_get_status( dv1394d_get_unit( cmd_arg->unit ), &status );
+	valerie_status_t status;
+	int error = miracle_unit_get_status( miracle_get_unit( cmd_arg->unit ), &status );
 
 	if ( error == -1 )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
 		char text[ 10240 ];
-
-		dv_response_printf( cmd_arg->response, 
-							sizeof( text ), 
-							dv1394_status_serialise( &status, text, sizeof( text ) ) );
-
+		valerie_response_printf( cmd_arg->response, sizeof( text ), valerie_status_serialise( &status, text, sizeof( text ) ) );
 		return RESPONSE_SUCCESS_1;
 	}
-	
 	return 0;
 }
 
 
-int dv1394d_set_unit_property( command_argument cmd_arg )
+int miracle_set_unit_property( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
@@ -429,7 +411,7 @@ int dv1394d_set_unit_property( command_argument cmd_arg )
 			return RESPONSE_OUT_OF_RANGE;
 		value[0] = 0;
 		value++;
-		dv1394d_log( LOG_DEBUG, "USET %s = %s", key, value );
+		miracle_log( LOG_DEBUG, "USET %s = %s", key, value );
 		if ( strncasecmp( key, "eof", 1024) == 0 )
 		{
 			if ( strncasecmp( value, "pause", 1024) == 0)
@@ -479,13 +461,14 @@ int dv1394d_set_unit_property( command_argument cmd_arg )
 		else
 			return RESPONSE_OUT_OF_RANGE;
 	}
-	
+	*/
 	return RESPONSE_SUCCESS;
 }
 
-int dv1394d_get_unit_property( command_argument cmd_arg )
+int miracle_get_unit_property( command_argument cmd_arg )
 {
-	dv_unit unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
@@ -585,14 +568,15 @@ int dv1394d_get_unit_property( command_argument cmd_arg )
 			dv_response_printf( cmd_arg->response, 1024, "n_fill=%d\n", dv_unit_get_n_fill( unit ) );
 		}
 	}
-	
+	*/
 	return RESPONSE_SUCCESS;
 }
 
 
-int dv1394d_transfer( command_argument cmd_arg )
+int miracle_transfer( command_argument cmd_arg )
 {
-	dv_unit src_unit = dv1394d_get_unit(cmd_arg->unit);
+	/*
+	dv_unit src_unit = miracle_get_unit(cmd_arg->unit);
 	int dest_unit_id = -1;
 	char *string = (char*) cmd_arg->argument;
 	if ( string != NULL && ( string[ 0 ] == 'U' || string[ 0 ] == 'u' ) && strlen( string ) > 1 )
@@ -600,13 +584,13 @@ int dv1394d_transfer( command_argument cmd_arg )
 	
 	if ( src_unit != NULL && dest_unit_id != -1 )
 	{
-		dv_unit dest_unit = dv1394d_get_unit( dest_unit_id );
+		dv_unit dest_unit = miracle_get_unit( dest_unit_id );
 		if ( dest_unit != NULL && !dv_unit_is_offline(dest_unit) && dest_unit != src_unit )
 		{
 			dv_unit_transfer( dest_unit, src_unit );
 			return RESPONSE_SUCCESS;
 		}
 	}
-	
+	*/
 	return RESPONSE_INVALID_UNIT;
 }

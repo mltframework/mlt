@@ -23,6 +23,20 @@
 
 #include "mlt_producer.h"
 
+/** Structur for returning clip information.
+*/
+
+typedef struct
+{
+	char *resource;
+	double in;
+	double out;
+	double playtime;
+	double length;
+	float fps;
+}
+mlt_playlist_clip_info;
+
 /** Public final methods
 */
 
@@ -30,9 +44,15 @@ extern mlt_playlist mlt_playlist_init( );
 extern mlt_producer mlt_playlist_producer( mlt_playlist this );
 extern mlt_service mlt_playlist_service( mlt_playlist this );
 extern mlt_properties mlt_playlist_properties( mlt_playlist this );
+extern int mlt_playlist_count( mlt_playlist this );
+extern int mlt_playlist_clear( mlt_playlist this );
 extern int mlt_playlist_append( mlt_playlist this, mlt_producer producer );
+extern int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, double in, double out );
 extern int mlt_playlist_blank( mlt_playlist this, mlt_timecode length );
 extern mlt_timecode mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index );
+extern int mlt_playlist_current_clip( mlt_playlist this );
+extern mlt_producer mlt_playlist_current( mlt_playlist this );
+extern int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index );
 extern void mlt_playlist_close( mlt_playlist this );
 
 #endif

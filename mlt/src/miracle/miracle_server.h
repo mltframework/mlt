@@ -1,5 +1,5 @@
 /*
- * dvserver.h -- DV Server
+ * miracle_server.h -- DV Server
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,14 +18,14 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _DV_SERVER_H_
-#define _DV_SERVER_H_
+#ifndef _MIRACLE_SERVER_H_
+#define _MIRACLE_SERVER_H_
 
 /* System header files */
 #include <pthread.h>
 
 /* Application header files */
-#include <dvparser.h>
+#include <valerie/valerie_parser.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -45,23 +45,23 @@ typedef struct
 	char *id;
 	int port;
 	int socket;
-	dv_parser parser;
+	valerie_parser parser;
 	pthread_t thread;
 	int shutdown;
 	int proxy;
 	char remote_server[ 50 ];
 	int remote_port;
 }
-*dv_server, dv_server_t;
+*miracle_server, miracle_server_t;
 
 /** API for the server
 */
 
-extern dv_server dv_server_init( char * );
-extern void dv_server_set_port( dv_server, int );
-extern void dv_server_set_proxy( dv_server, char * );
-extern int dv_server_execute( dv_server );
-extern void dv_server_shutdown( dv_server );
+extern miracle_server miracle_server_init( char * );
+extern void miracle_server_set_port( miracle_server, int );
+extern void miracle_server_set_proxy( miracle_server, char * );
+extern int miracle_server_execute( miracle_server );
+extern void miracle_server_shutdown( miracle_server );
 
 #ifdef __cplusplus
 }

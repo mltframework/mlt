@@ -84,6 +84,8 @@ mlt_producer producer_pango_init( const char *markup )
 		mlt_properties_set_int( properties, "y", 0 );
 		mlt_properties_set_double( properties, "mix", 1.0 );
 
+		mlt_properties_set( properties, "resource", "pango" );
+
 		return producer;
 	}
 	free( this );

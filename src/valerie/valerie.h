@@ -100,7 +100,7 @@ extern valerie_error_code valerie_unit_clip_remove( valerie, int, valerie_clip_o
 extern valerie_error_code valerie_unit_remove_current_clip( valerie, int );
 extern valerie_error_code valerie_unit_clip_insert( valerie, int, valerie_clip_offset, int, char *, double, double );
 extern valerie_error_code valerie_unit_play( valerie, int );
-extern valerie_error_code valerie_unit_play_at_speed( valerie, int, double );
+extern valerie_error_code valerie_unit_play_at_speed( valerie, int, int );
 extern valerie_error_code valerie_unit_stop( valerie, int );
 extern valerie_error_code valerie_unit_pause( valerie, int );
 extern valerie_error_code valerie_unit_rewind( valerie, int );
@@ -227,7 +227,7 @@ typedef struct
 {
 	int unit;
 	int node;
-	char guid[ 17 ];
+	char guid[ 512 ];
 	int online;
 }
 *valerie_unit_entry, valerie_unit_entry_t;

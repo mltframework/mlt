@@ -1,5 +1,5 @@
 /*
- * dvlocal.h -- Local dv1394d Parser
+ * miracle_local.h -- Local dv1394d Parser
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,11 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _DV_LOCAL_H_
-#define _DV_LOCAL_H_
+#ifndef _MIRACLE_LOCAL_H_
+#define _MIRACLE_LOCAL_H_
 
 /* Application header files */
-#include <dvparser.h>
+#include <valerie/valerie_parser.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -32,7 +32,7 @@ extern "C"
 /** Local parser API.
 */
 
-extern dv_parser dv_parser_init_local( );
+extern valerie_parser miracle_parser_init_local( );
 
 #ifdef __cplusplus
 }

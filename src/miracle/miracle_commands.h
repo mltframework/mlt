@@ -22,28 +22,28 @@
 #ifndef _GLOBAL_COMMANDS_H_
 #define _GLOBAL_COMMANDS_H_
 
-#include <dv1394status.h>
-#include "dvunit.h"
-#include "dvconnection.h"
+#include <valerie/valerie_status.h>
+#include "miracle_unit.h"
+#include "miracle_connection.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-dv_unit dv1394d_get_unit( int );
-void dv1394d_delete_unit( int );
-void dv1394d_delete_all_units( void );
-int dv1394d_unit_status( int n, dv1394_status status, int root_offset );
-void raw1394_start_service_threads( void );
-void raw1394_stop_service_threads( void );
+extern miracle_unit miracle_get_unit( int );
+extern void miracle_delete_unit( int );
+extern void miracle_delete_all_units( void );
+extern int miracle_unit_status( int n, valerie_status status, int root_offset );
+//extern void raw1394_start_service_threads( void );
+//extern void raw1394_stop_service_threads( void );
 
-extern response_codes dv1394d_add_unit( command_argument );
-extern response_codes dv1394d_list_nodes( command_argument );
-extern response_codes dv1394d_list_units( command_argument );
-extern response_codes dv1394d_list_clips( command_argument );
-extern response_codes dv1394d_set_global_property( command_argument );
-extern response_codes dv1394d_get_global_property( command_argument );
+extern response_codes miracle_add_unit( command_argument );
+extern response_codes miracle_list_nodes( command_argument );
+extern response_codes miracle_list_units( command_argument );
+extern response_codes miracle_list_clips( command_argument );
+extern response_codes miracle_set_global_property( command_argument );
+extern response_codes miracle_get_global_property( command_argument );
 
 #ifdef __cplusplus
 }
