@@ -64,8 +64,10 @@ namespace Mlt
 			// Remove the key at the specified position
 			int remove( int position );
 			// Get the key at the position or the next following
-			int key( GeometryItem &item, int position );
-			int key( GeometryItem *item, int position );
+			int next_key( GeometryItem &item, int position );
+			int next_key( GeometryItem *item, int position );
+			int prev_key( GeometryItem &item, int position );
+			int prev_key( GeometryItem *item, int position );
 			// Serialise the current geometry
 			char *serialise( int in, int out );
 			char *serialise( );

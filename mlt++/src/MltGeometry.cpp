@@ -67,14 +67,24 @@ int Geometry::remove( int position )
 }
 
 // Get the key at the position or the next following
-int Geometry::key( GeometryItem &item, int position )
+int Geometry::next_key( GeometryItem &item, int position )
 {
-	return mlt_geometry_key( geometry, item.get_item( ), position );
+	return mlt_geometry_next_key( geometry, item.get_item( ), position );
 }
 
-int Geometry::key( GeometryItem *item, int position )
+int Geometry::next_key( GeometryItem *item, int position )
 {
-	return mlt_geometry_key( geometry, item->get_item( ), position );
+	return mlt_geometry_next_key( geometry, item->get_item( ), position );
+}
+
+int Geometry::prev_key( GeometryItem &item, int position )
+{
+	return mlt_geometry_prev_key( geometry, item.get_item( ), position );
+}
+
+int Geometry::prev_key( GeometryItem *item, int position )
+{
+	return mlt_geometry_prev_key( geometry, item->get_item( ), position );
 }
 
 // Serialise the current geometry
