@@ -25,6 +25,7 @@
 #include "producer_ppm.h"
 #include "filter_brightness.h"
 #include "filter_channelcopy.h"
+#include "filter_data.h"
 #include "filter_gamma.h"
 #include "filter_greyscale.h"
 #include "filter_luma.h"
@@ -57,6 +58,10 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_brightness_init( arg );
 	if ( !strcmp( id, "channelcopy" ) )
 		return filter_channelcopy_init( arg );
+	if ( !strcmp( id, "data_feed" ) )
+		return filter_data_feed_init( arg );
+	if ( !strcmp( id, "data_show" ) )
+		return filter_data_show_init( arg );
 	if ( !strcmp( id, "gamma" ) )
 		return filter_gamma_init( arg );
 	if ( !strcmp( id, "greyscale" ) )

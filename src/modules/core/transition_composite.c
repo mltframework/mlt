@@ -296,7 +296,7 @@ static int alignment_parse( char* align )
 static void alignment_calculate( struct geometry_s *geometry )
 {
 	geometry->x += ( geometry->w - geometry->sw ) * geometry->halign / 2;
-	geometry->y += ( geometry->h - geometry->sh ) * geometry->valign;
+	geometry->y += ( geometry->h - geometry->sh ) * geometry->valign / 2;
 }
 
 /** Calculate the position for this frame.
@@ -1022,20 +1022,45 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Do the calculation
 		struct geometry_s *start = composite_calculate( &result, this, a_frame, position );
-		
-		// Optimisation - no compositing required
-		if ( result.mix == 0 || ( result.w == 0 && result.h == 0 ) )
-			return 0;
-
-		// Since we are the consumer of the b_frame, we must pass along these
-		// consumer properties from the a_frame
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
 		int width_b = *width;
 		int height_b = *height;
-		
+	
+		// Optimisation - no compositing required
+		if ( result.mix == 0 || ( result.w == 0 && result.h == 0 ) )
+			return 0;
+
+		// Need to keep the width/height of the a_frame on the b_frame for titling
+		if ( mlt_properties_get( a_props, "dest_width" ) == NULL )
+		{
+			mlt_properties_set_int( a_props, "dest_width", *width );
+			mlt_properties_set_int( a_props, "dest_height", *height );
+			mlt_properties_set_int( b_props, "dest_width", *width );
+			mlt_properties_set_int( b_props, "dest_height", *height );
+		}
+		else
+		{
+			mlt_properties_set_int( b_props, "dest_width", mlt_properties_get_int( a_props, "dest_width" ) );
+			mlt_properties_set_int( b_props, "dest_height", mlt_properties_get_int( a_props, "dest_height" ) );
+		}
+
+		// Since we are the consumer of the b_frame, we must pass along these
+		// consumer properties from the a_frame
+		mlt_properties_set_double( b_props, "consumer_progressive", mlt_properties_get_double( a_props, "consumer_progressive" ) );
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+
+		// Special case for titling...
+		if ( mlt_properties_get_int( properties, "titles" ) )
+		{
+			if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL )
+				mlt_properties_set( b_props, "rescale.interp", "nearest" );
+			mlt_properties_set( properties, "fill", NULL );
+			width_b = mlt_properties_get_int( a_props, "dest_width" );
+			height_b = mlt_properties_get_int( a_props, "dest_height" );
+		}
+
 		if ( get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
 		{
 			uint8_t *dest = *image;

@@ -275,6 +275,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			mlt_frame audio = NULL;
 			mlt_frame video = NULL;
 
+			// Determine which data_queue to pass on...
+			void *data_queue = NULL;
+
 			// Get the multitrack's producer
 			mlt_producer target = mlt_multitrack_producer( multitrack );
 			mlt_producer_seek( target, mlt_producer_frame( parent ) );
@@ -299,6 +302,10 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				sprintf( label, "_%s_%d", id, count ++ );
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
+				// We want the last data_queue 
+				if ( mlt_properties_get_data( mlt_frame_properties( temp ), "data_queue", NULL ) != NULL )
+					data_queue = mlt_properties_get_data( mlt_frame_properties( temp ), "data_queue", NULL );
+
 				// Pick up first video and audio frames
 				if ( !done && !mlt_frame_is_test_audio( temp ) && !( mlt_properties_get_int( mlt_frame_properties( temp ), "hide" ) & 2 ) )
 					audio = temp;
@@ -316,6 +323,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 
 			if ( video != NULL )
 			{
+				mlt_properties_set_data( mlt_frame_properties( *frame ), "data_queue", data_queue, 0, NULL, NULL );
 				mlt_frame_push_service( *frame, video );
 				mlt_frame_push_service( *frame, producer_get_image );
 				mlt_properties_inherit( mlt_frame_properties( *frame ), mlt_frame_properties( video ) );

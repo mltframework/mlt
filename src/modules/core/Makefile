@@ -8,6 +8,8 @@ OBJS = factory.o \
 	   producer_ppm.o \
 	   filter_brightness.o \
 	   filter_channelcopy.o \
+	   filter_data_feed.o \
+	   filter_data_show.o \
 	   filter_gamma.o \
 	   filter_greyscale.o \
 	   filter_luma.o \
@@ -50,6 +52,7 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
+	install -m 644 ../data_fx.properties "$(prefix)/share/mlt/modules"
 
 ifneq ($(wildcard .depend),)
 include .depend

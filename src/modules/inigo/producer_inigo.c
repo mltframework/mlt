@@ -147,7 +147,7 @@ mlt_producer producer_inigo_init( char **argv )
 			if ( group != NULL )
 				properties = group;
 		}
-		else if ( !strcmp( argv[ i ], "-attach" ) || !strcmp( argv[ i ], "-chain" ) )
+		else if ( !strcmp( argv[ i ], "-attach" ) || !strcmp( argv[ i ], "-attach-cut" ) )
 		{
 			int type = !strcmp( argv[ i ], "-attach" ) ? 0 : 1;
 			mlt_filter filter = create_attach( field, argv[ ++ i ], track );
@@ -155,6 +155,13 @@ mlt_producer producer_inigo_init( char **argv )
 			{
 				mlt_playlist_clip_info info;
 				mlt_playlist_append( playlist, producer );
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				producer = info.cut;
+			}
+
+			if ( type == 1 )
+			{
+				mlt_playlist_clip_info info;
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
 			}

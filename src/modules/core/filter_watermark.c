@@ -74,6 +74,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Pass all the composite. properties on the filter down
 		mlt_properties_pass( composite_properties, properties, "composite." );
+
+		// Force a refresh
+		mlt_properties_set_int( composite_properties, "refresh", 1 );
 	}
 
 	// Create a producer if don't have one

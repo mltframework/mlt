@@ -174,6 +174,7 @@ mlt_consumer mlt_factory_consumer( char *service, void *input )
 		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "consumer" );
 		mlt_properties_set( properties, "mlt_service", service );
+		mlt_service_attach( mlt_consumer_service( obj ), mlt_factory_filter( "data_show", NULL ) );
 	}
 	return obj;
 }

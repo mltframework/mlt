@@ -12,6 +12,8 @@ EOF
 cat << EOF >> ../filters.dat
 brightness		libmltcore.so
 channelcopy		libmltcore.so
+data_feed		libmltcore.so
+data_show		libmltcore.so
 gamma			libmltcore.so
 greyscale		libmltcore.so
 luma			libmltcore.so
