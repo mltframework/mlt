@@ -199,7 +199,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
 	mlt_audio_format afmt = mlt_audio_pcm;
-	int channels;
+	int channels = 0;
 	int samples;
 	int frequency;
 	int16_t *pcm;

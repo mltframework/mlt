@@ -343,52 +343,6 @@ static void producer_ffmpeg_position( producer_ffmpeg this, uint64_t requested, 
 	this->open = 1;
 }
 
-static int sample_calculator( float fps, int frequency, int64_t position )
-{
-	int samples = 0;
-
-	if ( fps > 29 && fps <= 30 )
-	{
-		samples = frequency / 30;
-
-		switch ( frequency )
-		{
-			case 48000:
-				if ( position % 5 != 0 )
-					samples += 2;
-				break;
-			case 44100:
-				if ( position % 300 == 0 )
-					samples = 1471;
-				else if ( position % 30 == 0 )
-					samples = 1470;
-				else if ( position % 2 == 0 )
-					samples = 1472;
-				else
-					samples = 1471;
-				break;
-			case 32000:
-				if ( position % 30 == 0 )
-					samples = 1068;
-				else if ( position % 29 == 0 )
-					samples = 1067;
-				else if ( position % 4 == 2 )
-					samples = 1067;
-				else
-					samples = 1068;
-				break;
-			default:
-				samples = 0;
-		}
-	}
-	else if ( fps != 0 )
-	{
-		samples = frequency / fps;
-	}
-
-	return samples;
-}
-
 static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the frames properties
@@ -415,7 +369,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	{
 		do
 		{
-			*samples = sample_calculator( fps, *frequency, target - skip );
+			*samples = mlt_sample_calculator( fps, *frequency, target - skip );
 			if ( fread( *buffer, *samples * *channels * 2, 1, producer->audio ) != 1 )
 			{
 				rwpipe_close( producer->audio_pipe );
@@ -427,7 +381,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	}
 	else
 	{
-		*samples = sample_calculator( fps, *frequency, target );
+		*samples = mlt_sample_calculator( fps, *frequency, target );
 		memset( *buffer, 0, size );
 	}
 

@@ -23,14 +23,14 @@ int main( int argc, char **argv )
 
 	// Create the producer(s)
 	mlt_producer dv1 = mlt_factory_producer( "mcdv", file1 );
-	mlt_producer_set_in_and_out( dv1, 0.0, 2.0 );
+	mlt_producer_set_in_and_out( dv1, 300.0, 303.0 );
 	
 	mlt_producer dv2 = mlt_factory_producer( "mcmpeg", file2 );
 	//mlt_producer_set_in_and_out( dv2, 10.0, 30.0 );
 
 #if 0
 	// Connect the consumer to the producer
-	mlt_consumer_connect( consumer, mlt_producer_service( dv1 ) );
+	mlt_consumer_connect( consumer, mlt_producer_service( dv2 ) );
 
 	// Do stuff until we're told otherwise...
 	fprintf( stderr, "Press return to continue\n" );
@@ -74,8 +74,8 @@ int main( int argc, char **argv )
 	// Define a transition
 	mlt_transition transition = mlt_factory_transition( "luma", NULL );
 	mlt_transition_connect( transition, mlt_multitrack_service( multitrack ), 0, 1 );
-	mlt_transition_set_in_and_out( transition, 1.0, 2.0 );
-	mlt_properties_set( mlt_transition_properties( transition ), "filename", "clock.pgm" );
+	mlt_transition_set_in_and_out( transition, 1.0, 3.0 );
+	//mlt_properties_set( mlt_transition_properties( transition ), "filename", "clock.pgm" );
 	mlt_properties_set_double( mlt_transition_properties( transition ), "softness", 0.1 );
 
 	// Buy a tractor and connect it to the filter

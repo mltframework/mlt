@@ -184,6 +184,31 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	return 0;
 }
 
+static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+{
+	// Get the properties of the a frame
+	mlt_properties a_props = mlt_frame_properties( frame );
+
+	// Get the b frame from the stack
+	mlt_frame b_frame = mlt_frame_pop_frame( frame );
+
+	// Get the properties of the b frame
+	mlt_properties b_props = mlt_frame_properties( b_frame );
+
+	// Restore the original get_audio
+	frame->get_audio = mlt_properties_get_data( a_props, "get_audio", NULL );
+	
+	double mix = 0;
+	if ( mlt_properties_get( b_props, "mix" ) != NULL )
+		mix = mlt_properties_get_double( b_props, "mix" );
+	mlt_frame_mix_audio( frame, b_frame, mix, buffer, format, frequency, channels, samples );
+
+	// Push the b_frame back on for get_image
+	mlt_frame_push_frame( frame, b_frame );
+
+	return 0;
+}
+
 
 /** Load the luma map from PGM stream.
 */
@@ -293,17 +318,18 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 		int width = mlt_properties_get_int( b_props, "width" );
 		int height = mlt_properties_get_int( b_props, "height" );
 		char command[ 512 ];
-		char *ext = strrchr( luma_file, '.' );
 		FILE *pipe;
 		
 		command[ 511 ] = '\0';
 		this->filename = luma_file;
 		snprintf( command, 511, "anytopnm %s | pnmscale -width %d -height %d", luma_file, width, height );
-		pipe = popen( command, "r" );
+		//pipe = popen( command, "r" );
+		pipe = fopen( luma_file, "r" );
 		if ( pipe != NULL )
 		{
 			luma_read_pgm( pipe, &this->bitmap, &this->width, &this->height );
-			pclose( pipe );
+			//pclose( pipe );
+			fclose( pipe );
 		}
 		
 	}
@@ -324,6 +350,14 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 
 	mlt_frame_push_get_image( a_frame, transition_get_image );
 	mlt_frame_push_frame( a_frame, b_frame );
+
+/************************ AUDIO ***************************/
+	// Backup the original get_audio (it's still needed)
+	mlt_properties_set_data( mlt_frame_properties( a_frame ), "get_audio", a_frame->get_audio, 0, NULL, NULL );
+
+	// Override the get_audio method
+	a_frame->get_audio = transition_get_audio;
+
 	return a_frame;
 }
 

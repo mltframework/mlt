@@ -3,11 +3,11 @@ Producers
 
 	ffmpeg
 
-		Description:
+		Description
 
 			Test case pipe based producer for video and audio.
 
-		Constructor argument:
+		Constructor Argument
 
 			'file'	- produce a/v from file
 			v4l		- produce a/v from video4linux and dsp device
@@ -46,11 +46,11 @@ Producers
 
 	libdv
 
-		Description:
+		Description
 
 			libdv based decoder for video and audio.
 
-		Constructor argument:
+		Constructor Argument
 
 			'file'	- produce a/v from file
 
@@ -63,7 +63,8 @@ Producers
 
 			string resource - file location
 			double fps - output frames per second 
-			double aspect_ratio - aspect ratio of video
+			double aspect_ratio - aspect ratio of video]
+			timecode length - duration of resource (in seconds)
 
 		Dependencies
 
@@ -75,11 +76,11 @@ Producers
 
 	mcdv
 
-		Description:
+		Description
 
 			Mainconcept based dv decoder for video and audio.
 
-		Constructor argument:
+		Constructor Argument
 
 			'file'	- produce a/v from file
 
@@ -93,6 +94,7 @@ Producers
 			string resource - file location
 			double fps - output frames per second 
 			double aspect_ratio - aspect ratio of video
+			timecode length - duration of resource (in seconds)
 
 		Dependencies
 
@@ -100,15 +102,15 @@ Producers
 
 		Known Bugs
 
-			Can be problematic with source NTSC DV files?
+			Can be problematic with source NTSC DV files? really?
 
 	mcmpeg
 
-		Description:
+		Description
 
 			Mainconcept based mpeg decoder for video and audio.
 
-		Constructor argument:
+		Constructor Argument
 
 			'file'	- produce a/v from file
 
@@ -132,28 +134,196 @@ Producers
 			None.
 
 	pango
+	
+		Description
+
+			A title generator that uses the Pango international text layout
+			and Freetype2 font renderer.
+
+		Constructor Argument
+
+			'markup' - a string containing Pango markup see:
+			           http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+			           - requires xml-like encoding special chars: <, > ( and '&' and '"' ?)
+
+		Initialisation Properties
+
+			timecode in - in point
+			timecode out - out point
+			int video_standard - enum mlt_video_standard from mlt_frame.h
+			                     PAL = 0, NTSC = 1
+			                     this determines proper pixel aspect ratio
+
+			int fgcolor - an rgba color specification of the text (i.e. 0xrrggbbaa)
+			int bgcolor - an rgba color of the background rectangle
+			int align - paragraph alignment: 0 = left, 1 = center, 2 = right
+			int pad - the number of pixels to pad the background rectangle beyond edges of text
+			          default 0
+			string markup - see constructor argument
+			string text - non-markup text (can contain markup chars un-encoded)
+			string font - the default typeface to use when not using markup
+			              default "Sans 48"
+			int x - the horizontal position of the title on the frame
+			        default 0
+			int y - the vertical position of the title on the frame
+			        default 0
+			double mix - the overall opacity control of the generated title
+			             default 1.0
+
+		Read Only Properties
+
+			string resource - "pango"
+
+		Dependencies
+
+			libpango-1.0, libpangoft2-1.0, libfreetype, libgdk_pixbuf-2.0, libglib-2.0,
+			libgobject-2.0, libgmodule-2.0, libfontconfig
+
+		Known Bugs
+
+			no frame-alignment functionality
+
 	pixbuf
+
+		Description
+
+			A graphics overlay generator using gdk-pixbuf
+
+		Constructor Argument
+
+			'file' - The name of a graphics file loadable by
+			         a gdk-pixbuf loader. see /usr/lib/gdk-pixbuf/loaders
+			         definitely png, jpeg, tiff, pnm, and xpm
+			       - If "%" in filename, the filename is used with sprintf
+			         generate a filename from a counter for multi-file/flipbook animation.
+			         The file sequence ends when numeric discontinuity >100.
+			       - If filename contains "/.all.", suffix with an extension to load
+			         all pictures with matching extension from a directory
+
+		Initialisation Properties
+
+			timecode in - in point
+			timecode out - out point
+			int video_standard - enum mlt_video_standard from mlt_frame.h
+			                     PAL = 0, NTSC = 1
+			                     this determines proper pixel aspect ratio
+			double ttl - how long (seconds) to repeat each picture in file sequences
+
+		Read Only Properties
+
+			string resource - file location
+
+		Dependencies
+
+			libgdk_pixbuf-2.0, libglib-2.0,	libgobject-2.0, libgmodule-2.0
+
+		Known Bugs
+
+			none
+
 	ppm
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
 
 
 Filters
 -------
 
 	deinterlace
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
+		
 	ffmpeg_dub
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
+
 	gamma
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
+	
 	greyscale
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
+		
 	resize
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
 
 Transitions
 -----------
 
 	composite
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
+
+	luma
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
 
 Consumers
 ---------
 
 	bluefish
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
+		
 	ffmpeg
-	sdl
+	
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs
 
+	sdl
+		Description
+		Constructor Argument
+		Initialisation Properties
+		Read Only Properties
+		Dependencies
+		Known Bugs

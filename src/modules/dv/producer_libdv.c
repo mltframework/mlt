@@ -129,13 +129,17 @@ static int producer_collect_info( producer_libdv this )
 			this->frames_in_file = this->file_size / this->frame_size;
 
 			// Calculate default in/out points
-			double fps = this->is_pal ? 25 : 30000 / 1001;
+			double fps = this->is_pal ? 25 : 30000.0 / 1001.0;
 			mlt_timecode length = ( mlt_timecode )( this->frames_in_file ) / fps;
 			mlt_properties_set_double( properties, "fps", fps );
 			mlt_properties_set_timecode( properties, "length", length );
 			mlt_properties_set_timecode( properties, "in", 0.0 );
 			mlt_properties_set_timecode( properties, "out", length );
 
+			// Parse the header for meta info
+			dv_parse_header( this->dv_decoder, data );
+			mlt_properties_set_double( properties, "aspect_ratio", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
+		
 			// Set the speed to normal
 			mlt_properties_set_double( properties, "speed", 1 );
 		}
@@ -160,6 +164,9 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	// Get the dv data
 	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
 
+	// Parse the header for meta info
+	dv_parse_header( this->dv_decoder, data );
+	
 	// Assign width and height from properties
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
@@ -215,6 +222,9 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 
 	// Get the dv data
 	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
+
+	// Parse the header for meta info
+	dv_parse_header( this->dv_decoder, data );
 
 	// Obtain required values
 	*frequency = decoder->audio->frequency;
@@ -283,7 +293,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Parse the header for meta info
 		dv_parse_header( this->dv_decoder, data );
 		mlt_properties_set_int( properties, "progressive", dv_is_progressive( this->dv_decoder ) );
-		mlt_properties_set_double( properties, "display_aspect", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
+		mlt_properties_set_double( properties, "aspect_ratio", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
 
 		// Hmm - register audio callback
 		( *frame )->get_audio = producer_get_audio;

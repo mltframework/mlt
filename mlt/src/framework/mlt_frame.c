@@ -688,3 +688,78 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 	return input;
 }
 
+int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+{
+	int ret = 0;
+	int16_t *p_src, *p_dest;
+	int frequency_src, frequency_dest;
+	int channels_src, channels_dest;
+	int samples_src, samples_dest;
+	int i, j;
+
+	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
+	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
+
+	*samples = samples_src < samples_dest ? samples_src : samples_dest;
+	*channels = channels_src < channels_dest ? channels_src : channels_dest;
+	*buffer = p_dest;
+
+	for ( i = 0; i < *samples; i++ )
+	{
+		for ( j = 0; j < *channels; j++ )
+		{
+			double dest = (double) p_dest[ i * channels_dest + j ];
+			double src = (double) p_src[ i * channels_src + j ];
+			p_dest[ i * channels_dest + j ] = src * weight + dest * ( 1.0 - weight );
+		}
+	}
+	
+	return ret;
+}
+
+int mlt_sample_calculator( float fps, int frequency, int64_t position )
+{
+	int samples = 0;
+
+	if ( fps > 29 && fps <= 30 )
+	{
+		samples = frequency / 30;
+
+		switch ( frequency )
+		{
+			case 48000:
+				if ( position % 5 != 0 )
+					samples += 2;
+				break;
+			case 44100:
+				if ( position % 300 == 0 )
+					samples = 1471;
+				else if ( position % 30 == 0 )
+					samples = 1470;
+				else if ( position % 2 == 0 )
+					samples = 1472;
+				else
+					samples = 1471;
+				break;
+			case 32000:
+				if ( position % 30 == 0 )
+					samples = 1068;
+				else if ( position % 29 == 0 )
+					samples = 1067;
+				else if ( position % 4 == 2 )
+					samples = 1067;
+				else
+					samples = 1068;
+				break;
+			default:
+				samples = 0;
+		}
+	}
+	else if ( fps != 0 )
+	{
+		samples = frequency / fps;
+	}
+
+	return samples;
+}
+
