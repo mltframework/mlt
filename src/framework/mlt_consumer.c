@@ -166,6 +166,7 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 
 		// TODO: Aspect ratio and other jiggery pokery
 		mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
+		mlt_properties_set_int( frame_properties, "consumer_progressive", mlt_properties_get_int( properties, "progressive" ) );
 		
 	}
 
