@@ -1,10 +1,10 @@
 inigo \
-clip3.dv \
+clip3.dv in=99 \
 -track "+hello~world.txt" align=1 out=1000 \
 -track "+hello~world.txt" align=1 out=1000 fgcolour=0x000000ff \
 -track watermark1.png out=1000 \
 -filter greyscale track=3 \
--transition composite:41%,11%:100%x100%:50 out=1000 a_track=0 b_track=2 \
--transition composite:40%,10%:100%x100% out=1000 a_track=0 b_track=1 \
+-transition composite:21%,11%:100%x100%:50 end=61%,41%:100%x100% out=99 a_track=0 b_track=2 \
+-transition composite:20%,10%:100%x100% end=60%,40%:100%x100% out=99 a_track=0 b_track=1 \
 -transition composite:85%,80%:10%x10%:30 out=1000 a_track=0 b_track=3 \
 $*

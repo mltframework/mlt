@@ -12,6 +12,7 @@ inigo \
 		b_track=1 \
 		key[24]=0%,75%:100%x20%:100 \
 		key[-25]=0%,75%:100%x20%:100 \
+		luma=luma1.pgm \
 		end=0%,75%:100%x20%:0 \
 		distort=1 \
 -transition \

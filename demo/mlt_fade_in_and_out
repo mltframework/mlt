@@ -2,7 +2,7 @@ inigo \
 clip1.dv out=74 -blank 99 clip3.dv in=25 \
 -track \
 -blank 49 clip2.mpeg out=149 \
--transition luma:luma1.pgm in=50 out=74 a_track=0 b_track=1 \
+-transition luma in=50 out=74 a_track=0 b_track=1 \
 -transition luma in=175 out=199 a_track=0 b_track=1 reverse=1 \
 -transition mix:-1 in=50 out=74 a_track=0 b_track=1 \
 -transition mix:-1 in=175 out=199 a_track=0 b_track=1 reverse=1 \

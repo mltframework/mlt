@@ -16,28 +16,23 @@ inigo \
 	a_track=0 \
 	b_track=1 \
 -transition \
-	mix:-1 \
+	mix:0.0 \
+	end=0.6 \
 	in=75 \
 	out=99 \
 	a_track=0 \
 	b_track=2 \
 -transition \
-	mix:1 \
+	mix:0.6 \
 	in=100 \
 	out=299 \
 	a_track=0 \
-	b_track=1 \
--transition \
-	mix:1 \
-	in=100 \
-	out=299 \
-	a_track=1 \
 	b_track=2 \
 -transition \
-	mix:-1 \
+	mix:0.6 \
+	end=0.0 \
 	in=300 \
 	out=324 \
 	a_track=0 \
 	b_track=2 \
-	reverse=1 \
 $*
