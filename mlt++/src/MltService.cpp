@@ -109,6 +109,7 @@ int Service::detach( Filter &filter )
 
 Filter *Service::filter( int index )
 {
-	return new Filter( mlt_service_filter( get_service( ), index ) );
+	mlt_filter result = mlt_service_filter( get_service( ), index );
+	return result == NULL ? NULL : new Filter( result );
 }
 
