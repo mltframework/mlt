@@ -131,10 +131,29 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Get the b frame and process with composite if successful
 		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
-			mlt_transition_process( composite, frame, b_frame );
+		{
+			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
+			{
+				mlt_transition_process( composite, frame, b_frame );
 
-		// Get the image
-		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+				// Get the image
+				error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+			}
+			else
+			{
+				mlt_properties a_props = mlt_frame_properties( frame );
+				mlt_properties b_props = mlt_frame_properties( b_frame );
+				mlt_transition_process( composite, b_frame, frame );
+				mlt_properties_set( a_props, "rescale.interp", "nearest" );
+				mlt_properties_set( b_props, "rescale.interp", "nearest" );
+				mlt_properties_set_int( b_props, "consumer_aspect_ratio", 1 );
+				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
+				mlt_properties_set_data( b_props, "image", *image, 0, NULL, NULL );
+				mlt_properties_set_data( a_props, "image", *image, *width * *height * 2, mlt_pool_release, NULL );
+				mlt_properties_set_int( a_props, "width", *width );
+				mlt_properties_set_int( a_props, "height", *height );
+			}
+		}
 
 		// Close the b frame
 		mlt_frame_close( b_frame );

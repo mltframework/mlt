@@ -314,18 +314,8 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	}
 	else
 	{
-		mlt_properties properties = mlt_producer_properties( this );
-		mlt_filter *filters = mlt_properties_get_data( properties, "_filters", NULL );
-		int count = mlt_properties_get_int( properties, "_filter_count" );
-		int i;
-
 		// Get the frame from the implementation
 		result = this->get_frame( this, frame, index );
-
-		// Process the frame with the attached filters
-		for ( i = 0; i < count; i ++ )
-			if ( filters[ i ] != NULL )
-				mlt_filter_process( filters[ i ], *frame );
 	}
 
 	// Copy the fps and speed of the producer onto the frame
@@ -344,41 +334,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 
 int mlt_producer_attach( mlt_producer this, mlt_filter filter )
 {
-	int error = this == NULL || filter == NULL;
-	if ( error == 0 )
-	{
-		int i = 0;
-		int size = 0;
-		mlt_properties properties = mlt_producer_properties( this );
-		mlt_filter *filters = mlt_properties_get_data( properties, "_filters", &size );
-		int count = mlt_properties_get_int( properties, "_filter_count" );
-
-		for ( i = 0; error == 0 && i < count; i ++ )
-			if ( filters[ i ] == filter )
-				error = 1;
-
-		if ( error == 0 )
-		{
-			if ( count == size )
-			{
-				size += 10;
-				filters = realloc( filters, size * sizeof( mlt_filter ) );
-				mlt_properties_set_data( properties, "_filters", filters, size, NULL, NULL );
-			}
-
-			if ( filters != NULL )
-			{
-				mlt_properties_inc_ref( mlt_filter_properties( filter ) );
-				filters[ count ++ ] = filter;
-				mlt_properties_set_int( properties, "_filter_count", count );
-			}
-			else
-			{
-				error = 2;
-			}
-		}
-	}
-	return error;
+	return mlt_service_attach( mlt_producer_service( this ), filter );
 }
 
 /** Detach a filter.
@@ -386,30 +342,7 @@ int mlt_producer_attach( mlt_producer this, mlt_filter filter )
 
 int mlt_producer_detach( mlt_producer this, mlt_filter filter )
 {
-	int error = this == NULL || filter == NULL;
-	if ( error == 0 )
-	{
-		int i = 0;
-		int size = 0;
-		mlt_properties properties = mlt_producer_properties( this );
-		mlt_filter *filters = mlt_properties_get_data( properties, "_filters", &size );
-		int count = mlt_properties_get_int( properties, "_filter_count" );
-
-		for ( i = 0; i < count; i ++ )
-			if ( filters[ i ] == filter )
-				break;
-
-		if ( i < count )
-		{
-			mlt_filter filter = filters[ i ];
-			filters[ i ] = NULL;
-			for ( i ++ ; i < count; i ++ )
-				filters[ i - 1 ] = filters[ i ];
-			mlt_properties_set_int( properties, "_filter_count", -- count );
-			mlt_filter_close( filter );
-		}
-	}
-	return error;
+	return mlt_service_detach( mlt_producer_service( this ), filter );
 }
 
 /** Retrieve a filter.
@@ -417,16 +350,7 @@ int mlt_producer_detach( mlt_producer this, mlt_filter filter )
 
 mlt_filter mlt_producer_filter( mlt_producer this, int index )
 {
-	mlt_filter filter = NULL;
-	if ( this != NULL )
-	{
-		mlt_properties properties = mlt_producer_properties( this );
-		mlt_filter *filters = mlt_properties_get_data( properties, "_filters", NULL );
-		int count = mlt_properties_get_int( properties, "_filter_count" );
-		if ( index >= 0 && index < count )
-			filter = filters[ index ];
-	}
-	return filter;
+	return mlt_service_filter( mlt_producer_service( this ), index );
 }
 
 /** Close the producer.
@@ -436,13 +360,6 @@ void mlt_producer_close( mlt_producer this )
 {
 	if ( this != NULL && mlt_properties_dec_ref( mlt_producer_properties( this ) ) <= 0 )
 	{
-		mlt_properties properties = mlt_producer_properties( this );
-		mlt_filter *filters = mlt_properties_get_data( properties, "_filters", NULL );
-		int count = mlt_properties_get_int( properties, "_filter_count" );
-
-		while( count -- )
-			mlt_producer_detach( this, filters[ 0 ] );
-
 		this->parent.close = NULL;
 
 		if ( this->close != NULL )

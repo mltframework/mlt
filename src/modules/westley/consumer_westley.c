@@ -188,7 +188,7 @@ static inline void serialise_properties( mlt_properties properties, xmlNode *nod
 	}
 }
 
-static inline void serialise_producer_filters( serialise_context context, mlt_service service, xmlNode *node )
+static inline void serialise_service_filters( serialise_context context, mlt_service service, xmlNode *node )
 {
 	int i;
 	xmlNode *p;
@@ -202,12 +202,13 @@ static inline void serialise_producer_filters( serialise_context context, mlt_se
 		{
 			// Get a new id - if already allocated, do nothing
 			char *id = westley_get_id( context, mlt_filter_service( filter ), westley_filter );
-			if ( id == NULL )
-				continue;
-
-			p = xmlNewChild( node, NULL, "filter", NULL );
-			xmlNewProp( p, "id", id );
-			serialise_properties( properties, p );
+			if ( id != NULL )
+			{
+				p = xmlNewChild( node, NULL, "filter", NULL );
+				xmlNewProp( p, "id", id );
+				serialise_properties( properties, p );
+				serialise_service_filters( context, mlt_filter_service( filter ), p );
+			}
 		}
 	}
 }
@@ -229,7 +230,7 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 		// Set the id
 		xmlNewProp( child, "id", id );
 		serialise_properties( properties, child );
-		serialise_producer_filters( context, service, child );
+		serialise_service_filters( context, service, child );
 
 		// Add producer to the map
 		mlt_properties_set_int( context->hide_map, id, mlt_properties_get_int( properties, "hide" ) );
@@ -280,7 +281,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 			if ( hide )
 				xmlNewProp( track, "hide", hide == 1 ? "video" : ( hide == 2 ? "audio" : "both" ) );
 		}
-		serialise_producer_filters( context, service, child );
+		serialise_service_filters( context, service, child );
 	}
 }
 
@@ -351,7 +352,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 			}
 		}
 
-		serialise_producer_filters( context, service, child );
+		serialise_service_filters( context, service, child );
 	}
 	else if ( strcmp( (const char*) node->name, "tractor" ) != 0 )
 	{
@@ -386,7 +387,7 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 
 		// Recurse on connected producer
 		serialise_service( context, mlt_service_producer( service ), child );
-		serialise_producer_filters( context, service, child );
+		serialise_service_filters( context, service, child );
 	}
 }
 
@@ -413,6 +414,7 @@ static void serialise_filter( serialise_context context, mlt_service service, xm
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
 		serialise_properties( properties, child );
+		serialise_service_filters( context, service, child );
 	}
 }
 
@@ -439,6 +441,7 @@ static void serialise_transition( serialise_context context, mlt_service service
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
 		serialise_properties( properties, child );
+		serialise_service_filters( context, service, child );
 	}
 }
 

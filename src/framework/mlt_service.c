@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "mlt_service.h"
+#include "mlt_filter.h"
 #include "mlt_frame.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +45,9 @@ typedef struct
 	int count;
 	mlt_service *in;
 	mlt_service out;
+	int filter_count;
+	int filter_size;
+	mlt_filter *filters;
 }
 mlt_service_base;
 
@@ -255,15 +259,126 @@ mlt_properties mlt_service_properties( mlt_service self )
 	return self != NULL ? &self->parent : NULL;
 }
 
+/** Recursively apply attached filters
+*/
+
+static void apply_filters( mlt_service this, mlt_frame frame, int index )
+{
+	mlt_properties properties = mlt_service_properties( this );
+	mlt_service_base *base = this->local;
+	int i;
+
+	if ( mlt_properties_get_int( properties, "_filter_private" ) == 0 )
+	{
+		// Process the frame with the attached filters
+		for ( i = 0; i < base->filter_count; i ++ )
+		{
+			if ( base->filters[ i ] != NULL )
+			{
+				mlt_filter_process( base->filters[ i ], frame );
+				apply_filters( mlt_filter_service( base->filters[ i ] ), frame, index );
+			}
+		}
+	}
+}
+
 /** Obtain a frame.
 */
 
 int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 {
 	if ( this != NULL )
-		return this->get_frame( this, frame, index );
+	{
+		int result = this->get_frame( this, frame, index );
+		if ( result == 0 )
+			apply_filters( this, *frame, index );
+		return result;
+	}
 	*frame = mlt_frame_init( );
 	return 0;
+}
+
+/** Attach a filter.
+*/
+
+int mlt_service_attach( mlt_service this, mlt_filter filter )
+{
+	int error = this == NULL || filter == NULL;
+	if ( error == 0 )
+	{
+		int i = 0;
+		mlt_properties properties = mlt_service_properties( this );
+		mlt_service_base *base = this->local;
+
+		for ( i = 0; error == 0 && i < base->filter_count; i ++ )
+			if ( base->filters[ i ] == filter )
+				error = 1;
+
+		if ( error == 0 )
+		{
+			if ( base->filter_count == base->filter_size )
+			{
+				base->filter_size += 10;
+				base->filters = realloc( base->filters, base->filter_size * sizeof( mlt_filter ) );
+			}
+
+			if ( base->filters != NULL )
+			{
+				mlt_properties_inc_ref( mlt_filter_properties( filter ) );
+				base->filters[ base->filter_count ++ ] = filter;
+				mlt_events_fire( properties, "service-changed", NULL );
+			}
+			else
+			{
+				error = 2;
+			}
+		}
+	}
+	return error;
+}
+
+/** Detach a filter.
+*/
+
+int mlt_service_detach( mlt_service this, mlt_filter filter )
+{
+	int error = this == NULL || filter == NULL;
+	if ( error == 0 )
+	{
+		int i = 0;
+		mlt_service_base *base = this->local;
+		mlt_properties properties = mlt_service_properties( this );
+
+		for ( i = 0; i < base->filter_count; i ++ )
+			if ( base->filters[ i ] == filter )
+				break;
+
+		if ( i < base->filter_count )
+		{
+			base->filters[ i ] = NULL;
+			for ( i ++ ; i < base->filter_count; i ++ )
+				base->filters[ i - 1 ] = base->filters[ i ];
+			base->filter_count --;
+			mlt_filter_close( filter );
+			mlt_events_fire( properties, "service-changed", NULL );
+		}
+	}
+	return error;
+}
+
+/** Retrieve a filter.
+*/
+
+mlt_filter mlt_service_filter( mlt_service this, int index )
+{
+	mlt_filter filter = NULL;
+	if ( this != NULL )
+	{
+		mlt_service_base *base = this->local;
+		if ( index >= 0 && index < base->filter_count )
+			filter = base->filters[ index ];
+	}
+	return filter;
 }
 
 /** Close the service.
@@ -281,12 +396,16 @@ void mlt_service_close( mlt_service this )
 		{
 			mlt_service_base *base = this->local;
 			int i = 0;
+			int count = base->filter_count;
+			while( count -- )
+				mlt_service_detach( this, base->filters[ 0 ] );
+			free( base->filters );
 			for ( i = 0; i < base->count; i ++ )
 				if ( base->in[ i ] != NULL )
 					mlt_service_close( base->in[ i ] );
+			this->parent.close = NULL;
 			free( base->in );
 			free( base );
-			this->parent.close = NULL;
 			mlt_properties_close( &this->parent );
 		}
 	}

@@ -77,6 +77,17 @@ static mlt_producer create_producer( mlt_field field, char *file )
 	return result;
 }
 
+static mlt_filter create_attach( mlt_field field, char *id, int track )
+{
+	char *arg = strchr( id, ':' );
+	if ( arg != NULL )
+		*arg ++ = '\0';
+	mlt_filter filter = mlt_factory_filter( id, arg );
+	if ( filter != NULL )
+		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
+	return filter;
+}
+
 static mlt_filter create_filter( mlt_field field, char *id, int track )
 {
 	char *arg = strchr( id, ':' );
@@ -133,6 +144,17 @@ mlt_producer producer_inigo_init( char **argv )
 			}
 			if ( group != NULL )
 				properties = group;
+		}
+		else if ( !strcmp( argv[ i ], "-attach" ) )
+		{
+			mlt_filter filter = create_attach( field, argv[ ++ i ], track );
+			if ( filter != NULL )
+			{
+				if ( properties != NULL )
+					mlt_service_attach( ( mlt_service )properties, filter );
+				properties = mlt_filter_properties( filter );
+				mlt_properties_inherit( properties, group );
+			}
 		}
 		else if ( !strcmp( argv[ i ], "-filter" ) )
 		{

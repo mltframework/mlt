@@ -221,9 +221,12 @@ static int producer_collect_info( producer_libdv this )
 			double fps = this->is_pal ? 25 : 30000.0 / 1001.0;
 			if ( mlt_properties_get_double( properties, "fps" ) == fps )
 			{
-				mlt_properties_set_position( properties, "length", this->frames_in_file );
-				mlt_properties_set_position( properties, "in", 0 );
-				mlt_properties_set_position( properties, "out", this->frames_in_file - 1 );
+				if ( this->frames_in_file > 0 )
+				{
+					mlt_properties_set_position( properties, "length", this->frames_in_file );
+					mlt_properties_set_position( properties, "in", 0 );
+					mlt_properties_set_position( properties, "out", this->frames_in_file - 1 );
+				}
 			}
 			else
 			{

@@ -271,7 +271,8 @@ int main( int argc, char **argv )
 	{
 		fprintf( stderr, "Usage: inigo [ -group [ name=value ]* ]\n"
 						 "             [ -consumer id[:arg] [ name=value ]* ]\n"
-        				 "             [ -filter id[:arg] [ name=value ] * ]\n"
+        				 "             [ -filter filter[:arg] [ name=value ] * ]\n"
+        				 "             [ -attach filter[:arg] [ name=value ] * ]\n"
         				 "             [ -transition id[:arg] [ name=value ] * ]\n"
 						 "             [ -blank frames ]\n"
 						 "             [ -track ]\n"

@@ -46,6 +46,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 		// Register with the filter
 		mlt_properties_set_data( properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
+
+		// Pass a reference to this filter down
+		mlt_properties_set_data( mlt_transition_properties( transition ), "_region_filter", this, 0, NULL, NULL );
 	}
 
 	// Pass all properties down
@@ -74,6 +77,9 @@ mlt_filter filter_region_init( void *arg )
 
 		// Resource defines the shape of the region
 		mlt_properties_set( properties, "resource", arg == NULL ? "rectangle" : arg );
+
+		// Ensure that attached filters are handled privately
+		mlt_properties_set_int( properties, "_filter_private", 1 );
 	}
 
 	// Return the filter

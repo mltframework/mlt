@@ -121,6 +121,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 
 		// Get sample aspect ratio
 		this->aspect_ratio = mlt_properties_get_double( this->properties, "aspect_ratio" );
+
+		// Ensure we don't join on a non-running object
+		this->joined = 1;
 		
 		// Default display aspect ratio
 		this->display_aspect = 4.0 / 3.0;
@@ -178,6 +181,8 @@ int consumer_start( mlt_consumer parent )
 	{
 		pthread_attr_t thread_attributes;
 		
+		consumer_stop( parent );
+
 		this->running = 1;
 		this->joined = 0;
 

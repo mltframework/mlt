@@ -50,6 +50,10 @@ extern int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int ind
 extern mlt_properties mlt_service_properties( mlt_service self );
 extern mlt_service mlt_service_consumer( mlt_service self );
 extern mlt_service mlt_service_producer( mlt_service self );
+extern int mlt_service_attach( mlt_service self, mlt_filter filter );
+extern int mlt_service_detach( mlt_service self, mlt_filter filter );
+extern mlt_filter mlt_service_filter( mlt_service self, int index );
+
 extern void mlt_service_close( mlt_service self );
 
 // I'm not sure about self one - leaving it out of docs for now (only used in consumer_westley)
