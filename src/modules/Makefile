@@ -1,6 +1,8 @@
+include ../../config.mak
+
 include make.inc
 
-all clean depend install:
+all clean depend:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile ] ; \
@@ -16,4 +18,15 @@ dist-clean:
 		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@; \
 		fi \
 	done
+
+install:
+	mkdir -p "$(prefix)/share/mlt/modules"
+	install -m 644 producers.dat filters.dat transitions.dat consumers.dat "$(prefix)/share/mlt/modules"
+	list='$(SUBDIRS)'; \
+	for subdir in $$list; do \
+		if [ -f $$subdir/Makefile ] ; \
+		then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@; \
+		fi \
+	done; \
+	/sbin/ldconfig
 

@@ -1,3 +1,4 @@
+include ../../config.mak
 
 TARGET = libvalerie.so
 
@@ -35,6 +36,21 @@ dist-clean:	clean
 
 clean:	
 		rm -f $(OBJS) $(TARGET)
+
+install: 	all
+	install -m 755 $(TARGET) $(prefix)/lib/libvalerie.so
+	mkdir -p "$(prefix)/include/mlt/valerie"
+	install -m 644 \
+			valerie.h \
+			valerie_notifier.h \
+			valerie_parser.h \
+			valerie_remote.h \
+			valerie_response.h \
+			valerie_socket.h \
+			valerie_status.h \
+			valerie_tokeniser.h \
+			valerie_util.h \
+            "$(prefix)/include/mlt/valerie"
 
 ifneq ($(wildcard .depend),)
 include .depend

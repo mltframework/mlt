@@ -1,3 +1,5 @@
+include ../../config.mak
+
 TARGET = inigo
 
 OBJS = inigo.o \
@@ -27,6 +29,10 @@ dist-clean:	clean
 
 clean:	
 		rm -f $(OBJS) $(TARGET)
+
+install:	all
+	install -d "$(bindir)"
+	install -c -s -m 755 $(TARGET) "$(bindir)"
 
 ifneq ($(wildcard .depend),)
 include .depend

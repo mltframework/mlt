@@ -1,3 +1,4 @@
+include ../../config.mak
 
 TARGET = libmlt.so
 
@@ -20,7 +21,7 @@ OBJS = mlt_frame.o \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS = -g -O3 -Wall -D_FILE_OFFSET_BITS=64 -pthread 
+CFLAGS = -g -O3 -Wall -D_FILE_OFFSET_BITS=64 -pthread -DPREFIX="\"$(prefix)\""
 
 LDFLAGS = -lm -ldl -lpthread
 
@@ -42,6 +43,29 @@ dist-clean:	clean
 
 clean:	
 		rm -f $(OBJS) $(TARGET)
+
+install:
+	install -m 755 $(TARGET) $(prefix)/lib/libmlt.so
+	mkdir -p "$(prefix)/include/mlt/framework"
+	install -m 644 mlt_consumer.h \
+			mlt_factory.h \
+			mlt_filter.h \
+			mlt.h \
+			mlt_multitrack.h \
+			mlt_pool.h \
+			mlt_properties.h \
+			mlt_repository.h \
+			mlt_tractor.h \
+			mlt_types.h \
+			mlt_deque.h \
+			mlt_field.h \
+			mlt_frame.h \
+			mlt_playlist.h \
+			mlt_producer.h \
+			mlt_property.h \
+			mlt_service.h  \
+			mlt_transition.h \
+            "$(prefix)/include/mlt/framework"
 
 ifneq ($(wildcard .depend),)
 include .depend

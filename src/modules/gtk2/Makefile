@@ -1,3 +1,4 @@
+include ../../../config.mak
 
 TARGET = ../libmltgtk2.so
 
@@ -35,6 +36,9 @@ dist-clean:	clean
 
 clean:	
 		rm -f $(OBJS) $(ASM_OBJS) $(TARGET)
+
+install: all
+	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
 
 ifneq ($(wildcard .depend),)
 include .depend

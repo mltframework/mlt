@@ -1,3 +1,5 @@
+include ../../config.mak
+
 TARGET = dan charlie pango pixbuf dissolve luma
 
 CFLAGS = -O3 -I .. -Wall -rdynamic -pthread

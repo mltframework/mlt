@@ -1,3 +1,5 @@
+include config.mak
+
 SUBDIRS = src/framework \
 		  src/modules \
 		  src/inigo \

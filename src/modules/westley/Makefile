@@ -1,3 +1,4 @@
+include ../../../config.mak
 
 TARGET = ../libmltwestley.so
 
@@ -24,6 +25,9 @@ dist-clean:	clean
 
 clean:	
 		rm -f $(OBJS) $(TARGET) 
+
+install: all
+	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
 
 ifneq ($(wildcard .depend),)
 include .depend

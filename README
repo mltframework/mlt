@@ -1,57 +1,17 @@
 README
 ------
 
-	This document provides a description of the MLT project organisation.
-
-	It provides *CRITICAL* architecture information, so please read carefully
-	if you plan to extend or use the MLT code base.
-
-Directories
------------
-
-	The directory heirarchy is defined as follows:
-
-	+ docs					- Location of all documentation
-	+ src					- All project source is provided here
-		+ framework			- The mlt media framework
-		+ modules			- All services are defined here
-			+ core			- Independent MLT services
-			+ dv			- libdv dependent services
-			+ ffmpeg		- ffmpeg dependent services
-			+ avformat		- libavformat dependent services
-			+ vorbis		- vorbis dependenent services
-			+ sdl			- SDL dependent services
-			+ resample		- libresample dependent services
-			+ gtk2			- pango and pixbuf dependent services
-			+ xine          - xine-derived services
-			+ bluefish		- Bluefish dependent services (*)
-			+ mainconcept	- mainconcept dependent services (*)
-		+ inigo				- A media playing test application
-		+ valerie			- Client API to access the server
-		+ miracle			- The server implementation
-		+ humperdink		- The evil demo
-		+ albino			- The simple but nice demo
-		+ tests				- Reserved for regression and unit tests
-
-	Additional subdirectories may be nested below those shown and should be
-	documented in their parent.
-
-	(*) Not posted to CVS due to licensing issues.
+	This document provides a quick reference for the minimal configuration,
+	build and installation of MLT.
 
 Configuration
 -------------
 
-	Configuration is triggered from the top level directory via a 
-	./configure script.
+	Configuration is triggered by running:
 
-	Each source bearing subdirectory shown above have their own configure
-	script which are called automatically from the top level.
+	    ./configure 
 
-	Typically, new modules can be introduced without modification to the 
-	configure script and arguments are accepted and passed through to all 
-	subdirectories.
-
-	Top level usage is:
+	Usage is:
 
 	./configure --help			- report all configure options
 	./configure --prefix=[dir]	- target install directory (default: /usr/local)
@@ -64,8 +24,11 @@ Configuration
 Compilation
 -----------
 
-	Makefiles are generated during configuration and these are based on
-	a per directory template which must be provided by the developer.
+	Once configured, it should be sufficient to run:
+
+	    make
+
+	to compile the system.
 
 Testing
 -------
@@ -73,66 +36,20 @@ Testing
 	To execute the mlt tools without installation, or to test a new version
 	on a system with an already installed mlt version, you should run:
 
-	. setenv
+	    . setenv
 
-	NB: This applies to your current shell only.
+	NB: This applies to your current shell only and it assumes a bash or 
+	regular bourne shell is in use.
 
 Installation
 ------------
 
-	* NOT IMPLEMENTED YET *
-
-	The install is triggered by running make install or make install-strip
-	from the top level directory.
+	The install is triggered by running:
 	
-	The framework produces a single shared object which is installed in 
-	$prefix/lib/ and public header files which are installed in
-	$prefix/include/mlt/framework.
-
-	The client produces a single shared object which is installed in 
-	$prefix/lib/ and public header which are installed in 
-	$prefix/include/mlt/client.
-
-	The server produces a single exectuable which is installed in
-	$prefix/bin/. This is linked against the framework shared object and
-	posix libs but not against any of the modules.
-
-	The modules produce a shared object per module and update text files
-	containing a list of modules provided by this build. These are installed 
-	in $prefix/share/mlt/. It is at the discretion of the module to install
-	additional support files. 
+	    make install 
 	
-	To allow the development of external components, mlt-client-config and
-	mlt-framework-config scripts are generated and installed in $prefix/bin.
 
-	After install, only those modules listed are usable by the server. No
-	module is loaded unless explicitly requested via server configuration
-	or usage.
+More Information
+----------------
 
-	External modules are also placed in this $prefix/share/mlt, and the 
-	installation of those must modify the text file accordingly before they
-	will be considered at runtime.
-
-Development
------------
-
-	All compilation in the project has {top-level-dir}/src on the include path. 
-	All headers are included as:
-
-		#include <framework/file.h>
-	
-	All external modules have {prefix}/include/mlt on the include path. All 
-	headers should also be included as:
-
-		#include <framework/file.h>
-
-	This allows migration of source between external and internal modules. 
-	The configuration and Makefile template requirements will require
-	attention though.
-
-Summary
--------
-
-	1.	The server will interact with public interfaces from the framework only;
-	2.	The modules must expose public framework interfaces only;
-	3.	All modules are dynamically loaded at runtime.
+	For more detailed information, please refer to docs/install.txt.

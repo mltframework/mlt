@@ -13,10 +13,17 @@ EOF
 
 	for i in src/modules/*
 	do
-		[ -d $i ] && echo "	--disable-`basename $i`"
+		[ -d $i ] && [ "`basename $i`" != "CVS" ] && echo "	--disable-`basename $i`"
 	done
 
 	echo
+}
+
+function build_config
+{
+	echo VERSION=0.1.0
+	echo prefix=$prefix
+	echo bindir=$prefix/bin
 }
 
 # Debug mode
@@ -37,7 +44,7 @@ do
 done
 
 # Show help if requested
-[ $help = 1 ] && show_help
+[ $help = 1 ] && show_help || build_config > config.mak
 
 # Iterate through each of the components
 for i in framework modules inigo valerie miracle humperdink

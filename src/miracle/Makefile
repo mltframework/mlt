@@ -1,3 +1,5 @@
+include ../../config.mak
+
 TARGET = miracle
 
 APP_OBJS = miracle.o
@@ -39,6 +41,15 @@ dist-clean:	clean
 
 clean:	
 			rm -f $(OBJS) $(TARGET) libmiracle.so
+
+install:	all
+	install -d "$(bindir)"
+	install -c -s -m 755 $(TARGET) "$(bindir)"
+	install -m 755 libmiracle.so $(prefix)/lib/libmiracle.so
+	mkdir -p "$(prefix)/include/mlt/miracle"
+	install -m 644 \
+			miracle_local.h \
+            "$(prefix)/include/mlt/miracle"
 
 ifneq ($(wildcard .depend),)
 include .depend
