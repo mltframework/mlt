@@ -55,7 +55,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
-	rgba_color fg, rgba_color bg, int pad, int align, int weight );
+	rgba_color fg, rgba_color bg, int pad, int align, int weight, int size );
 
 /** Return nonzero if the two strings are equal, ignoring case, up to
     the first n characters.
@@ -247,20 +247,22 @@ static int iconv_utf8( mlt_properties properties, char *prop_name, const char* e
 	iconv_t	cd = iconv_open( "UTF-8", encoding );
 	if ( cd != ( iconv_t )-1 )
 	{
-		char *inbuf_p = strdup( text );
+		char *inbuf_p = text;
 		size_t inbuf_n = strlen( text );
 		size_t outbuf_n = inbuf_n * 6;
 		char *outbuf = mlt_pool_alloc( outbuf_n );
 		char *outbuf_p = outbuf;
 		
-		if ( iconv( cd, &inbuf_p, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
-		{
-			outbuf[ outbuf_n ] = 0;
+		memset( outbuf, 0, outbuf_n );
+
+		if ( text != NULL && strcmp( text, "" ) && iconv( cd, &inbuf_p, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
 			mlt_properties_set( properties, prop_name, outbuf );
-			result = 0;
-		}
+		else
+			mlt_properties_set( properties, prop_name, "" );
+
 		mlt_pool_release( outbuf );
 		iconv_close( cd );
+		result = 0;
 	}
 	return result;
 }
@@ -292,6 +294,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	char *font = mlt_properties_get( producer_props, "font" );
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
 	int weight = mlt_properties_get_int( producer_props, "weight" );
+	int size = mlt_properties_get_int( producer_props, "size" );
 	
 	// See if any properties changed
 	int property_changed = ( align != this->align );
@@ -339,7 +342,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 		
 		// Render the title
-		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, pad, align, weight );
+		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, pad, align, weight, size );
 
 		if ( pixbuf != NULL )
 		{
@@ -535,7 +538,7 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, int pad, int align, int weight )
+static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, int pad, int align, int weight, int size )
 {
 	PangoFT2FontMap *fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
@@ -553,6 +556,8 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
 	pango_layout_set_width( layout, -1 ); // set wrapping constraints
 	pango_font_description_set_weight( desc, ( PangoWeight ) weight  );
+	if ( size != 0 )
+		pango_font_description_set_size( desc, PANGO_SCALE * size );
 	pango_layout_set_font_description( layout, desc );
 //	pango_layout_set_spacing( layout, space );
 	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
