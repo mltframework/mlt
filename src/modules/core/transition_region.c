@@ -91,6 +91,8 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 
 static uint8_t *filter_get_alpha_mask( mlt_frame this )
 {
+	uint8_t *alpha = NULL;
+
 	// Obtain properties of frame
 	mlt_properties properties = mlt_frame_properties( this );
 
@@ -107,7 +109,24 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 	mlt_properties_set( mlt_frame_properties( shape_frame ), "distort", "true" );
 	mlt_frame_get_image( shape_frame, &image, &format, &region_width, &region_height, 0 );
 
-	return mlt_frame_get_alpha_mask( shape_frame );
+	alpha = mlt_frame_get_alpha_mask( shape_frame );
+
+	// Generate from the Y component of the image if no alpha available
+	if ( alpha == NULL )
+	{
+		int size = region_width * region_height;
+		uint8_t *p = mlt_pool_alloc( size );
+		alpha = p;
+		while ( size -- )
+		{
+			*p ++ = *image ++;
+			image ++;
+		}
+		mlt_properties_set_data( mlt_frame_properties( shape_frame ), "alpha", alpha, 
+								 region_width * region_height, mlt_pool_release, NULL );
+	}
+
+	return alpha;
 }
 
 /** Do it :-).
