@@ -39,9 +39,9 @@ struct mlt_filter_s
 
 	// track and in/out points
 	mlt_service producer;
-	int track;
-	mlt_timecode in;
-	mlt_timecode out;
+	//int track;
+	//mlt_timecode in;
+	//mlt_timecode out;
 
 	// Protected
 	void *child;

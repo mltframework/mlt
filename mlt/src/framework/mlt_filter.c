@@ -39,7 +39,16 @@ int mlt_filter_init( mlt_filter this, void *child )
 	this->child = child;
 	if ( mlt_service_init( service, this ) == 0 )
 	{
+		mlt_properties properties = mlt_service_properties( service );
+
+		// Override the get_frame method
 		service->get_frame = filter_get_frame;
+
+		// Default in, out, track properties
+		mlt_properties_set_timecode( properties, "in", 0 );
+		mlt_properties_set_timecode( properties, "out", 0 );
+		mlt_properties_set_int( properties, "track", 0 );
+
 		return 0;
 	}
 	return 1;
@@ -64,10 +73,11 @@ int mlt_filter_connect( mlt_filter this, mlt_service producer, int index )
 	// If the connection was successful, grab the producer, track and reset in/out
 	if ( ret == 0 )
 	{
+		mlt_properties properties = mlt_service_properties( &this->parent );
 		this->producer = producer;
-		this->track = index;
-		this->in = 0;
-		this->out = 0;
+		mlt_properties_set_timecode( properties, "in", 0 );
+		mlt_properties_set_timecode( properties, "out", 0 );
+		mlt_properties_set_int( properties, "track", index );
 	}
 	
 	return ret;
@@ -78,8 +88,9 @@ int mlt_filter_connect( mlt_filter this, mlt_service producer, int index )
 
 void mlt_filter_set_in_and_out( mlt_filter this, mlt_timecode in, mlt_timecode out )
 {
-	this->in = in;
-	this->out = out;
+	mlt_properties properties = mlt_service_properties( &this->parent );
+	mlt_properties_set_timecode( properties, "in", in );
+	mlt_properties_set_timecode( properties, "out", out );
 }
 
 /** Return the track that this filter is operating on.
@@ -87,7 +98,8 @@ void mlt_filter_set_in_and_out( mlt_filter this, mlt_timecode in, mlt_timecode o
 
 int mlt_filter_get_track( mlt_filter this )
 {
-	return this->track;
+	mlt_properties properties = mlt_service_properties( &this->parent );
+	return mlt_properties_get_int( properties, "track" );
 }
 
 /** Get the in point.
@@ -95,7 +107,8 @@ int mlt_filter_get_track( mlt_filter this )
 
 mlt_timecode mlt_filter_get_in( mlt_filter this )
 {
-	return this->in;
+	mlt_properties properties = mlt_service_properties( &this->parent );
+	return mlt_properties_get_timecode( properties, "in" );
 }
 
 /** Get the out point.
@@ -103,7 +116,8 @@ mlt_timecode mlt_filter_get_in( mlt_filter this )
 
 mlt_timecode mlt_filter_get_out( mlt_filter this )
 {
-	return this->out;
+	mlt_properties properties = mlt_service_properties( &this->parent );
+	return mlt_properties_get_timecode( properties, "out" );
 }
 
 /** Process the frame.
@@ -123,9 +137,14 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
 {
 	mlt_filter this = service->child;
+
+	// Get coords in/out/track
+	int track = mlt_filter_get_track( this );
+	int in = mlt_filter_get_in( this );
+	int out = mlt_filter_get_out( this );
 	
 	// If the frame request is for this filters track, we need to process it
-	if ( index == this->track )
+	if ( index == track )
 	{
 		int ret = mlt_service_get_frame( this->producer, frame, index );
 		if ( ret == 0 )
@@ -133,7 +152,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 			if ( !mlt_frame_is_test_card( *frame ) )
 			{
 				mlt_timecode timecode = mlt_frame_get_timecode( *frame );
-				if ( timecode >= this->in && ( this->out == 0 || timecode < this->out ) )
+				if ( timecode >= in && ( out == 0 || timecode < out ) )
 					*frame = filter_process( this, *frame );
 			}
 			return 0;

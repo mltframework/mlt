@@ -1,5 +1,5 @@
 /*
- * mlt.h -- header file for lazy client and implementation code :-)
+ * mlt_field.h -- A field for planting multiple transitions and services
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,30 +18,17 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLT_H_
-#define _MLT_H_
+#ifndef _MLT_FIELD_H_
+#define _MLT_FIELD_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "mlt_types.h"
 
-#include "mlt_factory.h"
-#include "mlt_frame.h"
-#include "mlt_multitrack.h"
-#include "mlt_producer.h"
-#include "mlt_transition.h"
-#include "mlt_consumer.h"
-#include "mlt_filter.h"
-#include "mlt_manager.h"
-#include "mlt_playlist.h"
-#include "mlt_properties.h"
-#include "mlt_field.h"
-#include "mlt_tractor.h"
-
-#ifdef __cplusplus
-}
-#endif
+extern mlt_field mlt_field_init( mlt_service producer );
+extern mlt_service mlt_field_service( mlt_field this );
+extern mlt_properties mlt_field_properties( mlt_field this );
+extern int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track );
+extern int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track, int b_track );
+extern void mlt_field_close( mlt_field this );
 
 #endif
 

@@ -1,3 +1,5 @@
+export MLT_REPOSITORY=`pwd`/../modules
+
 export LD_LIBRARY_PATH=`pwd`/../framework:\
 `pwd`/../modules/bluefish:\
 `pwd`/../../../bluefish/lib:\

@@ -5,9 +5,11 @@ FRAMEWORK_OBJS = mlt_frame.o \
 				 mlt_service.o \
 				 mlt_producer.o \
 				 mlt_multitrack.o \
+				 mlt_playlist.o \
 				 mlt_consumer.o \
 				 mlt_filter.o \
 				 mlt_transition.o \
+				 mlt_field.o \
 				 mlt_tractor.o \
 				 mlt_factory.o \
 				 mlt_repository.o

@@ -1,6 +1,8 @@
-#include <framework/mlt.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#include <framework/mlt.h>
 
 mlt_producer create_producer( char *file )
 {
@@ -13,6 +15,8 @@ mlt_producer create_producer( char *file )
 		result = mlt_factory_producer( "mcmpeg", file );
 	else if ( strstr( file, ".dv" ) )
 		result = mlt_factory_producer( "mcdv", file );
+	else if ( strstr( file, ".dif" ) )
+		result = mlt_factory_producer( "mcdv", file );
 	else if ( strstr( file, ".jpg" ) )
 		result = mlt_factory_producer( "pixbuf", file );
 	else if ( strstr( file, ".png" ) )
@@ -21,13 +25,41 @@ mlt_producer create_producer( char *file )
 	// 2nd Line fallbacks
 	if ( result == NULL && strstr( file, ".dv" ) )
 		result = mlt_factory_producer( "libdv", file );
+	else if ( result == NULL && strstr( file, ".dif" ) )
+		result = mlt_factory_producer( "libdv", file );
 
 	return result;
 }
 
 mlt_consumer create_consumer( char *id )
 {
-	return mlt_factory_consumer( id, NULL );
+	char *arg = strchr( id, ':' );
+	if ( arg != NULL )
+		*arg ++ = '\0';
+	return mlt_factory_consumer( id, arg );
+}
+
+void track_service( mlt_field field, void *service, mlt_destructor destructor )
+{
+	mlt_properties properties = mlt_field_properties( field );
+	int registered = mlt_properties_get_int( properties, "registered" );
+	char *key = mlt_properties_get( properties, "registered" );
+	mlt_properties_set_data( properties, key, service, 0, destructor, NULL );
+	mlt_properties_set_int( properties, "registered", ++ registered );
+}
+
+mlt_filter create_filter( mlt_field field, char *id, int track )
+{
+	char *arg = strchr( id, ':' );
+	if ( arg != NULL )
+		*arg ++ = '\0';
+	mlt_filter filter = mlt_factory_filter( id, arg );
+	if ( filter != NULL )
+	{
+		mlt_field_plant_filter( field, filter, track );
+		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
+	}
+	return filter;
 }
 
 void set_properties( mlt_service service, char *namevalue )
@@ -48,26 +80,51 @@ int main( int argc, char **argv )
 	int i;
 	mlt_service  service = NULL;
 	mlt_consumer consumer = NULL;
+	mlt_multitrack multitrack = NULL;
+	mlt_tractor tractor = NULL;
 	mlt_producer producer = NULL;
+	mlt_playlist playlist = NULL;
+	mlt_field field = NULL;
 
-	mlt_factory_init( "../modules" );
+	// Construct the factory
+	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
+
+	// Set up containers
+	playlist = mlt_playlist_init( );
+	multitrack = mlt_multitrack_init( );
+	tractor = mlt_tractor_init( );
+
+	// Field must be connected on construction
+	field = mlt_field_init( mlt_multitrack_service( multitrack ) );
+	mlt_properties properties = mlt_field_properties( field );
+	mlt_properties_set_int( properties, "registered", 0 );
 
 	// Parse the arguments
 	for ( i = 1; i < argc; i ++ )
 	{
-		if ( !strcmp( argv[ i ], "-vo" ) )
+		if ( !strcmp( argv[ i ], "-consumer" ) )
 		{
 			consumer = create_consumer( argv[ ++ i ] );
-			service = mlt_consumer_service( consumer );
+			if ( consumer != NULL )
+				service = mlt_consumer_service( consumer );
 		}
-		else if ( strstr( argv[ i ], "=" ) )
+		else if ( !strcmp( argv[ i ], "-filter" ) )
 		{
-			set_properties( service, argv[ i ] );
+			mlt_filter filter = create_filter( field, argv[ ++ i ], 0 );
+			if ( filter != NULL )
+				service = mlt_filter_service( filter );
+		}
+		else if ( !strstr( argv[ i ], "=" ) )
+		{
+			if ( producer != NULL )
+				mlt_playlist_append( playlist, producer );
+			producer = create_producer( argv[ i ] );
+			if ( producer != NULL )
+				service = mlt_producer_service( producer );
 		}
 		else
 		{
-			producer = create_producer( argv[ i ] );
-			service = mlt_producer_service( producer );
+			set_properties( service, argv[ i ] );
 		}
 	}
 
@@ -75,63 +132,29 @@ int main( int argc, char **argv )
 	if ( consumer == NULL )
 		consumer= mlt_factory_consumer( "sdl", NULL );
 
-	// Connect producer to consumer
-	mlt_consumer_connect( consumer, mlt_producer_service( producer ) );
+	// Connect producer to playlist
+	mlt_playlist_append( playlist, producer );
+
+	// Connect multitrack to producer
+	mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), 0 );
+
+	// Connect tractor to field
+	mlt_tractor_connect( tractor, mlt_field_service( field ) );
+
+	// Connect consumer to tractor
+	mlt_consumer_connect( consumer, mlt_tractor_service( tractor ) );
 
 	// Transport functionality
 	transport( producer );
 
 	// Close the services
 	mlt_consumer_close( consumer );
+	mlt_tractor_close( tractor );
+	mlt_field_close( field );
+	mlt_multitrack_close( multitrack );
 	mlt_producer_close( producer );
 
-/*
-	// Create the producer(s)
-	mlt_producer dv1 = mlt_factory_producer( "mcmpeg", file1 );
-	mlt_producer dv2 = mlt_factory_producer( "mcmpeg", file2 );
-	//mlt_producer dv1 = producer_ppm_init( NULL );
-	//mlt_producer dv2 = producer_ppm_init( NULL );
-
-	// Connect a producer to our sdl consumer
-	mlt_consumer_connect( sdl_out, mlt_producer_service( dv1 ) );
-
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
-
-	// Register producers(s) with a multitrack object
-	mlt_multitrack multitrack = mlt_multitrack_init( );
-	mlt_multitrack_connect( multitrack, dv1, 0 );
-	mlt_multitrack_connect( multitrack, dv2, 1 );
-
-	// Create a filter and associate it to track 0
-	mlt_filter filter = mlt_factory_filter( "deinterlace", NULL );
-	mlt_filter_connect( filter, mlt_multitrack_service( multitrack ), 0 );
-	mlt_filter_set_in_and_out( filter, 0, 5 );
-
-	// Create another
-	mlt_filter greyscale = mlt_factory_filter( "greyscale", NULL );
-	mlt_filter_connect( greyscale, mlt_filter_service( filter ), 0 );
-	mlt_filter_set_in_and_out( greyscale, 0, 10 );
-
-	// Buy a tractor and connect it to the filter
-	mlt_tractor tractor = mlt_tractor_init( );
-	mlt_tractor_connect( tractor, mlt_filter_service( greyscale ) );
-
-	// Connect the tractor to the consumer
-	mlt_consumer_connect( sdl_out, mlt_tractor_service( tractor ) );
-
-	// Do stuff until we're told otherwise...
-
-	// Close everything...
-	//mlt_consumer_close( sdl_out );
-	//mlt_tractor_close( tractor );
-	//mlt_filter_close( filter );
-	//mlt_filter_close( greyscale );
-	//mlt_multitrack_close( multitrack );
-	//mlt_producer_close( dv1 );
-	//mlt_producer_close( dv2 );
-*/
-
+	// Close the factory
 	mlt_factory_close( );
 
 	return 0;

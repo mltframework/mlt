@@ -36,6 +36,7 @@ extern "C"
 #include "mlt_manager.h"
 #include "mlt_playlist.h"
 #include "mlt_properties.h"
+#include "mlt_field.h"
 #include "mlt_tractor.h"
 
 #ifdef __cplusplus
