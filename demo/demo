@@ -14,7 +14,7 @@ function get_consumer( )
 function show_menu( )
 {
 	sed 's/\t\+/\t/g' < demo.ini |
-	awk -F '\t' '{ printf( "%2d. %-30.30s", ++ i, $2 ); if ( i % 2 == 0 ) printf( "\n" ); }'
+	awk -F '\t' '{ printf( "%2d. %-30.30s", ++ i, $2 ); if ( i % 2 == 0 ) printf( "\n" ); } END { if ( i % 2 == 1 ) printf( "\n" ); }'
 }
 
 function check_dependencies( )
