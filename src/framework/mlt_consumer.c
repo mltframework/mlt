@@ -71,6 +71,13 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		// Default read ahead buffer size
 		mlt_properties_set_int( properties, "buffer", 25 );
 
+		// Default audio frequency and channels
+		mlt_properties_set_int( properties, "frequency", 48000 );
+		mlt_properties_set_int( properties, "channels", 2 );
+
+		// Default of all consumers is real time
+		mlt_properties_set_int( properties, "real_time", 1 );
+
 		// Hmm - default all consumers to yuv422 :-/
 		this->format = mlt_image_yuv422;
 	}
@@ -357,24 +364,40 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 {
 	// Frame to return
 	mlt_frame frame = NULL;
-	int size = 1;
 
-	// Is the read ahead running?
-	if ( this->ahead == 0 )
+	// Get the properties
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	// Check if the user has requested real time or not
+	if ( mlt_properties_get_int( properties, "real_time" ) )
 	{
-		int buffer = mlt_properties_get_int( mlt_consumer_properties( this ), "buffer" );
-		consumer_read_ahead_start( this );
-		if ( buffer > 1 )
-			size = buffer / 2;
-	}
+		int size = 1;
 
-	// Get frame from queue
-	pthread_mutex_lock( &this->mutex );
-	while( this->ahead && mlt_deque_count( this->queue ) < size )
-		pthread_cond_wait( &this->cond, &this->mutex );
-	frame = mlt_deque_pop_front( this->queue );
-	pthread_cond_broadcast( &this->cond );
-	pthread_mutex_unlock( &this->mutex );
+		// Is the read ahead running?
+		if ( this->ahead == 0 )
+		{
+			int buffer = mlt_properties_get_int( properties, "buffer" );
+			consumer_read_ahead_start( this );
+			if ( buffer > 1 )
+				size = buffer / 2;
+		}
+	
+		// Get frame from queue
+		pthread_mutex_lock( &this->mutex );
+		while( this->ahead && mlt_deque_count( this->queue ) < size )
+			pthread_cond_wait( &this->cond, &this->mutex );
+		frame = mlt_deque_pop_front( this->queue );
+		pthread_cond_broadcast( &this->cond );
+		pthread_mutex_unlock( &this->mutex );
+	}
+	else
+	{
+		// Get the frame in non real time
+		frame = mlt_consumer_get_frame( this );
+
+		// This isn't true, but from the consumers perspective it is
+		mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
+	}
 
 	return frame;
 }
@@ -391,8 +414,9 @@ int mlt_consumer_stop( mlt_consumer this )
 	if ( this->stop != NULL )
 		this->stop( this );
 
-	// Kill the read ahead
-	consumer_read_ahead_stop( this );
+	// Check if the user has requested real time or not and stop if necessary
+	if ( mlt_properties_get_int( properties, "real_time" ) )
+		consumer_read_ahead_stop( this );
 
 	// Kill the test card
 	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );

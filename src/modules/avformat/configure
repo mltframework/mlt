@@ -7,5 +7,9 @@ cat << EOF >> ../producers.dat
 avformat		libmltavformat.so
 EOF
 
+cat << EOF >> ../consumers.dat
+avformat		libmltavformat.so
+EOF
+
 fi
 

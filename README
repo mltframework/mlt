@@ -7,9 +7,11 @@ MLT/Miracle README
 
 	MLT is a multimedia framework designed for television broadcasting, and 
 	Miracle is a multi-unit video playout server with realtime effects.
+
 	This document provides a quick reference for the minimal configuration,
 	build and installation of MLT. See the docs directory for usage and
 	development details.
+
 
 Configuration
 -------------
@@ -20,14 +22,15 @@ Configuration
 
 	Usage is:
 
-	./configure --help			- report all configure options
-	./configure --prefix=[dir]	- target install directory (default: /usr/local)
+	./configure --help          - report all configure options
+	./configure --prefix=[dir]  - target install directory (default: /usr/local)
 	./configure --disable-[mod] - do not compile specified module(s)
-	./configure --[other]		- pass through to children
+	./configure --[other]       - pass through to children
 
 	NB: This script must be run to register new services after a CVS checkout
 	or subsequent update.
-	
+
+
 Compilation
 -----------
 
@@ -36,6 +39,7 @@ Compilation
 	    make
 
 	to compile the system.
+
 
 Testing
 -------
@@ -47,6 +51,7 @@ Testing
 
 	NB: This applies to your current shell only and it assumes a bash or 
 	regular bourne shell is in use.
+
 
 Installation
 ------------

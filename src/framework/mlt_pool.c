@@ -303,11 +303,13 @@ void mlt_pool_close( )
 #ifdef _MLT_POOL_CHECKS_
 	// Stats dump on close
 	int i = 0;
+	fprintf( stderr, "Usage:\n\n" );
 	for ( i = 0; i < mlt_properties_count( pools ); i ++ )
 	{
 		mlt_pool pool = mlt_properties_get_data_at( pools, i, NULL );
 		if ( pool->count )
-			fprintf( stderr, "%d: allocated %d returned %d\n", pool->size, pool->count, mlt_deque_count( pool->stack ) );
+			fprintf( stderr, "%d: allocated %d returned %d %c\n", pool->size, pool->count, mlt_deque_count( pool->stack ),
+																  pool->count !=  mlt_deque_count( pool->stack ) ? '*' : ' ' );
 	}
 #endif
 

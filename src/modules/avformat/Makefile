@@ -3,7 +3,8 @@ include ../../../config.mak
 TARGET = ../libmltavformat.so
 
 OBJS = factory.o \
-	   producer_avformat.o
+	   producer_avformat.o \
+	   consumer_avformat.o
 
 CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64
 

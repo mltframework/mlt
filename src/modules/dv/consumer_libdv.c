@@ -285,7 +285,7 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 		int i = 0;
 		int j = 0;
 		for ( i = 0 ; i < 4; i ++ )
-			audio_buffers[ i ] = calloc( 1, 2 * DV_AUDIO_MAX_SAMPLES );
+			audio_buffers[ i ] = mlt_pool_alloc( 2 * DV_AUDIO_MAX_SAMPLES );
 
 		// Get the audio
 		mlt_frame_get_audio( frame, &pcm, &fmt, &frequency, &channels, &samples );
@@ -313,7 +313,7 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 
 		// Temporary - free audio buffers
 		for ( i = 0 ; i < 4; i ++ )
-			free( audio_buffers[ i ] );
+			mlt_pool_release( audio_buffers[ i ] );
 	}
 }
 
@@ -367,7 +367,7 @@ static void *consumer_thread( void *arg )
 	int ( *output )( mlt_consumer, uint8_t *, int, mlt_frame ) = mlt_properties_get_data( properties, "output", NULL );
 
 	// Allocate a single PAL frame for encoding
-	uint8_t *dv_frame = malloc( frame_size_625_50 );
+	uint8_t *dv_frame = mlt_pool_alloc( frame_size_625_50 );
 
 	// Frame and size
 	mlt_frame frame = NULL;
@@ -406,7 +406,7 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Tidy up
-	free( dv_frame );
+	mlt_pool_release( dv_frame );
 
 	return NULL;
 }

@@ -81,10 +81,8 @@ dv_decoder_t *dv_decoder_alloc( )
 			dv_set_audio_correction( this, DV_AUDIO_CORRECT_AVERAGE );
 
 			// Register it with the properties to ensure clean up
-			// BUG: dv_decoder_free core dumps here
 			sprintf( label, "%p", this );
-			//mlt_properties_set_data( dv_decoders, label, this, 0, ( mlt_destructor )dv_decoder_free, NULL );
-			mlt_properties_set_data( dv_decoders, label, this, 0, NULL, NULL );
+			mlt_properties_set_data( dv_decoders, label, this, 0, ( mlt_destructor )dv_decoder_free, NULL );
 		}
 	}
 

@@ -195,8 +195,8 @@ void mlt_factory_close( )
 		mlt_repository_close( filters );
 		mlt_repository_close( transitions );
 		mlt_repository_close( consumers );
-		mlt_properties_close( object_list );
 		mlt_properties_close( global_properties );
+		mlt_properties_close( object_list );
 		free( mlt_prefix );
 		mlt_prefix = NULL;
 		mlt_pool_close( );

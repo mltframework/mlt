@@ -1,5 +1,5 @@
 /*
- * mlt.h -- header file for lazy client and implementation code :-)
+ * consumer_avformat.h -- avformat consumer
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,30 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLT_H_
-#define _MLT_H_
+#ifndef _CONSUMER_AVFORMAT_H_
+#define _CONSUMER_AVFORMAT_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include <framework/mlt_consumer.h>
 
-#include "mlt_factory.h"
-#include "mlt_frame.h"
-#include "mlt_deque.h"
-#include "mlt_multitrack.h"
-#include "mlt_producer.h"
-#include "mlt_transition.h"
-#include "mlt_consumer.h"
-#include "mlt_filter.h"
-#include "mlt_playlist.h"
-#include "mlt_properties.h"
-#include "mlt_field.h"
-#include "mlt_tractor.h"
-
-#ifdef __cplusplus
-}
-#endif
+extern mlt_consumer consumer_avformat_init( char *file );
 
 #endif
-

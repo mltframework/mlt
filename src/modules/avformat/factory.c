@@ -19,11 +19,77 @@
  */
 
 #include <string.h>
+#include <pthread.h>
 
+#include <framework/mlt_factory.h>
 #include "producer_avformat.h"
+#include "consumer_avformat.h"
+
+// ffmpeg Header files
+#include <ffmpeg/avformat.h>
+
+// A static flag used to determine if avformat has been initialised
+static int avformat_initialised = 0;
+
+// A locking mutex
+static pthread_mutex_t avformat_mutex;
+
+#if 0
+// These 3 functions should override the alloc functions in libavformat
+// but some formats or codecs seem to crash when used (wmv in particular)
+
+void *av_malloc( unsigned int size )
+{
+	return mlt_pool_alloc( size );
+}
+
+void *av_realloc( void *ptr, unsigned int size )
+{
+	return mlt_pool_realloc( ptr, size );
+}
+
+void av_free( void *ptr )
+{
+	return mlt_pool_release( ptr );
+}
+#endif
+
+void avformat_destroy( void *ignore )
+{
+	// Clean up
+	av_free_static( );
+
+	// Destroy the mutex
+	pthread_mutex_destroy( &avformat_mutex );
+}
+
+void avformat_lock( )
+{
+	// Lock the mutex now
+	pthread_mutex_lock( &avformat_mutex );
+}
+
+void avformat_unlock( )
+{
+	// Unlock the mutex now
+	pthread_mutex_unlock( &avformat_mutex );
+}
+
+static void avformat_init( )
+{
+	// Initialise avformat if necessary
+	if ( avformat_initialised == 0 )
+	{
+		avformat_initialised = 1;
+		pthread_mutex_init( &avformat_mutex, NULL );
+		av_register_all( );
+		mlt_factory_register_for_clean_up( NULL, avformat_destroy );
+	}
+}
 
 void *mlt_create_producer( char *id, void *arg )
 {
+	avformat_init( );
 	if ( !strcmp( id, "avformat" ) )
 		return producer_avformat_init( arg );
 	return NULL;
@@ -41,6 +107,9 @@ void *mlt_create_transition( char *id, void *arg )
 
 void *mlt_create_consumer( char *id, void *arg )
 {
+	avformat_init( );
+	if ( !strcmp( id, "avformat" ) )
+		return consumer_avformat_init( arg );
 	return NULL;
 }
 

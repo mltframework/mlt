@@ -33,30 +33,12 @@
 #include <pthread.h>
 #include <math.h>
 
+void avformat_lock( );
+void avformat_unlock( );
+
 // Forward references.
 static int producer_open( mlt_producer this, char *file );
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
-
-// A static flag used to determine if avformat has been initialised
-static int avformat_initialised = 0;
-static pthread_mutex_t avformat_mutex;
-
-#if 0
-void *av_malloc( unsigned int size )
-{
-	return mlt_pool_alloc( size );
-}
-
-void *av_realloc( void *ptr, unsigned int size )
-{
-	return mlt_pool_realloc( ptr, size );
-}
-
-void av_free( void *ptr )
-{
-	return mlt_pool_release( ptr );
-}
-#endif
 
 /** Constructor for libavformat.
 */
@@ -85,14 +67,6 @@ mlt_producer producer_avformat_init( char *file )
 
 			// Register our get_frame implementation
 			this->get_frame = producer_get_frame;
-
-			// Initialise avformat if necessary
-			if ( avformat_initialised == 0 )
-			{
-				avformat_initialised = 1;
-				pthread_mutex_init( &avformat_mutex, NULL );
-				av_register_all( );
-			}
 
 			// Open the file
 			if ( producer_open( this, file ) != 0 )
@@ -145,13 +119,13 @@ static void producer_file_close( void *context )
 	if ( context != NULL )
 	{
 		// Lock the mutex now
-		pthread_mutex_lock( &avformat_mutex );
+		avformat_lock( );
 
 		// Close the file
 		av_close_input_file( context );
 
 		// Unlock the mutex now
-		pthread_mutex_unlock( &avformat_mutex );
+		avformat_unlock( );
 	}
 }
 
@@ -163,13 +137,13 @@ static void producer_codec_close( void *codec )
 	if ( codec != NULL )
 	{
 		// Lock the mutex now
-		pthread_mutex_lock( &avformat_mutex );
+		avformat_lock( );
 
 		// Close the file
 		avcodec_close( codec );
 
 		// Unlock the mutex now
-		pthread_mutex_unlock( &avformat_mutex );
+		avformat_unlock( );
 	}
 }
 
@@ -191,7 +165,7 @@ static int producer_open( mlt_producer this, char *file )
 	double fps = mlt_properties_get_double( properties, "fps" );
 
 	// Lock the mutex now
-	pthread_mutex_lock( &avformat_mutex );
+	avformat_lock( );
 	
 	// If "MRL", then create AVInputFormat
 	AVInputFormat *format = NULL;
@@ -332,7 +306,7 @@ static int producer_open( mlt_producer this, char *file )
 	}
 
 	// Unlock the mutex now
-	pthread_mutex_unlock( &avformat_mutex );
+	avformat_unlock( );
 
 	return error;
 }
@@ -415,16 +389,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties_set_int( frame_properties, "height", *height );
 
 	// Lock the mutex now
-	pthread_mutex_lock( &avformat_mutex );
+	avformat_lock( );
 
 	// Construct an AVFrame for YUV422 conversion
 	if ( output == NULL )
 	{
-		int size = avpicture_get_size( PIX_FMT_YUV422, *width, *height );
-		size += *width * 2;
+		int size = avpicture_get_size( PIX_FMT_YUV422, *width, *height + 1 );
 		uint8_t *buf = mlt_pool_alloc( size );
 		output = mlt_pool_alloc( sizeof( AVPicture ) );
-		//memset( output, 0, sizeof( AVPicture ) );
 		avpicture_fill( output, buf, PIX_FMT_YUV422, *width, *height );
 		mlt_properties_set_data( properties, "video_output_frame", output, 0, ( mlt_destructor )mlt_pool_release, NULL );
 		mlt_properties_set_data( properties, "video_output_buffer", buf, 0, ( mlt_destructor )mlt_pool_release, NULL );
@@ -604,7 +576,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties_set_position( properties, "video_expected", position + 1 );
 
 	// Unlock the mutex now
-	pthread_mutex_unlock( &avformat_mutex );
+	avformat_unlock( );
 
 	return 0;
 }
@@ -627,7 +599,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	mlt_properties frame_properties = mlt_frame_properties( frame );
 
 	// Lock the mutex now
-	pthread_mutex_lock( &avformat_mutex );
+	avformat_lock( );
 
 	if ( context != NULL && index != -1 )
 	{
@@ -697,7 +669,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	}
 
 	// Unlock the mutex now
-	pthread_mutex_unlock( &avformat_mutex );
+	avformat_unlock( );
 }
 
 /** Get the audio from a frame.
@@ -755,7 +727,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	int locked = 0;
 
 	// Lock the mutex now
-	pthread_mutex_lock( &avformat_mutex );
+	avformat_lock( );
 
 	// Check for resample and create if necessary
 	if ( resample == NULL && codec_context->channels <= 2 )
@@ -928,7 +900,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	mlt_properties_set_position( properties, "audio_expected", position + 1 );
 
 	// Unlock the mutex now
-	pthread_mutex_unlock( &avformat_mutex );
+	avformat_unlock( );
 
 	return 0;
 }
@@ -948,7 +920,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 	int index = mlt_properties_get_int( properties, "audio_index" );
 
 	// Lock the mutex now
-	pthread_mutex_lock( &avformat_mutex );
+	avformat_lock( );
 
 	// Deal with audio context
 	if ( context != NULL && index != -1 )
@@ -994,7 +966,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 	}
 
 	// Unlock the mutex now
-	pthread_mutex_unlock( &avformat_mutex );
+	avformat_unlock( );
 }
 
 /** Our get frame implementation.
