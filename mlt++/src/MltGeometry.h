@@ -36,15 +36,15 @@ namespace Mlt
 			int frame( ) { return item.frame; }
 			void frame( int value ) { item.frame = value; }
 			float x( ) { return item.x; }
-			void x( float value ) { item.x = value; }
+			void x( float value ) { item.f[0] = 1; item.x = value; }
 			float y( ) { return item.y; }
-			void y( float value ) { item.y = value; }
+			void y( float value ) { item.f[1] = 1; item.y = value; }
 			float w( ) { return item.w; }
-			void w( float value ) { item.w = value; }
+			void w( float value ) { item.f[2] = 1; item.w = value; }
 			float h( ) { return item.h; }
-			void h( float value ) { item.h = value; }
+			void h( float value ) { item.f[3] = 1; item.h = value; }
 			float mix( ) { return item.mix; }
-			void mix( float value ) { item.mix = value; }
+			void mix( float value ) { item.f[4] = 1; item.mix = value; }
 	};
 
 	class Geometry
