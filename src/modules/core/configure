@@ -13,6 +13,7 @@ gamma			libmltcore.so
 greyscale		libmltcore.so
 resize			libmltcore.so
 volume			libmltcore.so
+obscure			libmltcore.so
 EOF
 
 cat << EOF >> ../transitions.dat

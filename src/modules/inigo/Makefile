@@ -1,5 +1,5 @@
 
-TARGET = ../libinigo.so
+TARGET = ../libmltinigo.so
 
 OBJS = factory.o \
 	   producer_inigo.o 

@@ -48,9 +48,7 @@ static mlt_producer parse_inigo( char *file )
 	if ( result != NULL )
 	{
 		mlt_properties properties = mlt_producer_properties( result );
-		fprintf( stderr, "resource = %s\n", mlt_properties_get( properties, "resource" ) );
 		mlt_properties_set( properties, "resource", file );
-		fprintf( stderr, "resource = %s\n", mlt_properties_get( properties, "resource" ) );
 	}
 
 	while( count -- )
@@ -248,9 +246,9 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_tractor tractor = mlt_field_tractor( field );
 	mlt_producer prod = mlt_tractor_producer( tractor );
 	mlt_properties props = mlt_tractor_properties( tractor );
-	mlt_properties_set_data( props, "multitrack", multitrack, 0, NULL, NULL );
-	mlt_properties_set_data( props, "field", field, 0, NULL, NULL );
-	mlt_properties_set_data( props, "group", group, 0, NULL, NULL );
+	mlt_properties_set_data( props, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
+	mlt_properties_set_data( props, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
+	mlt_properties_set_data( props, "group", group, 0, ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties_set_position( props, "length", mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) + 1 );
 	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) );
 	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( mlt_multitrack_producer( multitrack ) ) );

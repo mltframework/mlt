@@ -6,11 +6,12 @@ OBJS = factory.o \
 	   filter_deinterlace.o \
 	   filter_greyscale.o \
 	   filter_gamma.o \
+	   filter_obscure.o \
 	   filter_resize.o \
+	   filter_volume.o \
 	   transition_composite.o \
 	   transition_luma.o \
-	   transition_mix.o \
-	   filter_volume.o
+	   transition_mix.o
 
 CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 

@@ -11,6 +11,8 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_properties properties = mlt_producer_properties( producer );
 	mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
 
+	mlt_properties_set_int( properties, "stats_off", 0 );
+
 	if ( strlen( value ) == 1 )
 	{
 		switch( value[ 0 ] )
@@ -55,6 +57,7 @@ static void transport_action( mlt_producer producer, char *value )
 				{
 					int i = 0;
 					mlt_position last = -1;
+					fprintf( stderr, "\n" );
 					for ( i = 0; 1; i ++ )
 					{
 						mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_start, i );
@@ -63,7 +66,6 @@ static void transport_action( mlt_producer producer, char *value )
 						last = time;
 						fprintf( stderr, "%d: %lld\n", i, time );
 					}
-					fprintf( stderr, "Current Position: %lld\n", mlt_producer_position( producer ) );
 				}
 				break;
 
@@ -120,6 +122,8 @@ static void transport_action( mlt_producer producer, char *value )
 				break;
 		}
 	}
+
+	mlt_properties_set_int( properties, "stats_off", 0 );
 }
 
 static mlt_consumer create_consumer( char *id, mlt_producer producer )
@@ -162,7 +166,12 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 		int value = term_read( );
 		if ( value != -1 )
 			transport_action( producer, ( char * )&value );
+
+		if ( mlt_properties_get_int( properties, "stats_off" ) == 0 )
+			fprintf( stderr, "Current Position: %10lld\r", mlt_producer_position( producer ) );
 	}
+
+	fprintf( stderr, "\n" );
 }
 
 int main( int argc, char **argv )

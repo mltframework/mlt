@@ -22,13 +22,14 @@
 
 #include "producer_ppm.h"
 #include "filter_deinterlace.h"
-#include "filter_greyscale.h"
-#include "filter_resize.h"
 #include "filter_gamma.h"
+#include "filter_greyscale.h"
+#include "filter_obscure.h"
+#include "filter_resize.h"
+#include "filter_volume.h"
 #include "transition_composite.h"
 #include "transition_luma.h"
 #include "transition_mix.h"
-#include "filter_volume.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -45,6 +46,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_gamma_init( arg );
 	if ( !strcmp( id, "greyscale" ) )
 		return filter_greyscale_init( arg );
+	if ( !strcmp( id, "obscure" ) )
+		return filter_obscure_init( arg );
 	if ( !strcmp( id, "resize" ) )
 		return filter_resize_init( arg );
 	if ( !strcmp( id, "volume" ) )
