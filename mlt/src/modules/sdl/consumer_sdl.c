@@ -309,7 +309,7 @@ static void *consumer_thread( void *arg )
 					if ( sdl_overlay != NULL )
 						SDL_FreeYUVOverlay( sdl_overlay );
 					sdl_lock_display();
-					sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, sdl_screen );
+					sdl_overlay = SDL_CreateYUVOverlay( this->width, this->height, SDL_YUY2_OVERLAY, sdl_screen );
 					sdl_unlock_display();
 				}
 			}
@@ -321,7 +321,7 @@ static void *consumer_thread( void *arg )
 				{
 					if ( SDL_LockYUVOverlay( sdl_overlay ) >= 0 )
 					{
-						memcpy( buffer, image, width * height * 2 );
+						mlt_resize_yuv422( buffer, this->width, this->height, image, width, height );
 						SDL_UnlockYUVOverlay( sdl_overlay );
 						SDL_DisplayYUVOverlay( sdl_overlay, &sdl_screen->clip_rect );
 					}

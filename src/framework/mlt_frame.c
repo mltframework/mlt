@@ -432,6 +432,66 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 	return ret;
 }
 
+void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight )
+{
+	// Calculate strides
+	int istride = iwidth * 2;
+	int ostride = owidth * 2;
+
+   	// Coordinates (0,0 is middle of output)
+   	int y, x;
+
+   	// Calculate ranges
+   	int out_x_range = owidth / 2;
+   	int out_y_range = oheight / 2;
+   	int in_x_range = iwidth / 2;
+   	int in_y_range = iheight / 2;
+
+   	// Output pointers
+   	uint8_t *out_line = output;
+   	uint8_t *out_ptr;
+
+   	// Calculate a middle and possibly invalid pointer in the input
+   	uint8_t *in_middle = input + istride * in_y_range + in_x_range * 2;
+   	int in_line = - out_y_range * istride - out_x_range * 2;
+   	int in_ptr;
+
+   	// Loop for the entirety of our output height.
+   	for ( y = - out_y_range; y < out_y_range ; y ++ )
+   	{
+       	// Start at the beginning of the line
+       	out_ptr = out_line;
+
+       	// Point the start of the current input line (NB: can be out of range)
+       	in_ptr = in_line;
+
+       	// Loop for the entirety of our output row.
+       	for ( x = - out_x_range; x < out_x_range; x ++ )
+       	{
+           	// Check if x and y are in the valid input range.
+           	if ( abs( x ) < in_x_range && abs( y ) < in_y_range  )
+           	{
+               	// We're in the input range for this row.
+               	*out_ptr ++ = *( in_middle + in_ptr ++ );
+               	*out_ptr ++ = *( in_middle + in_ptr ++ );
+           	}
+           	else
+           	{
+               	// We're not in the input range for this row.
+               	*out_ptr ++ = 16;
+               	*out_ptr ++ = 128;
+               	in_ptr += 2;
+           	}
+       	}
+
+       	// Move to next output line
+       	out_line += ostride;
+
+       	// Move to next input line
+       	in_line += istride;
+   	}
+}
+
 /** A resizing function for yuv422 frames - this does not rescale, but simply
 	resizes. It assumes yuv422 images available on the frame so use with care.
 */
@@ -452,62 +512,8 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 		// Create the output image
 		uint8_t *output = malloc( owidth * oheight * 2 );
 
-		// Calculate strides
-		int istride = iwidth * 2;
-		int ostride = owidth * 2;
-
-    	// Coordinates (0,0 is middle of output)
-    	int y, x;
-
-    	// Calculate ranges
-    	int out_x_range = owidth / 2;
-    	int out_y_range = oheight / 2;
-    	int in_x_range = iwidth / 2;
-    	int in_y_range = iheight / 2;
-
-    	// Output pointers
-    	uint8_t *out_line = output;
-    	uint8_t *out_ptr;
-
-    	// Calculate a middle and possibly invalid pointer in the input
-    	uint8_t *in_middle = input + istride * in_y_range + in_x_range * 2;
-    	int in_line = - out_y_range * istride - out_x_range * 2;
-    	int in_ptr;
-
-    	// Loop for the entirety of our output height.
-    	for ( y = - out_y_range; y < out_y_range ; y ++ )
-    	{
-        	// Start at the beginning of the line
-        	out_ptr = out_line;
-	
-        	// Point the start of the current input line (NB: can be out of range)
-        	in_ptr = in_line;
-	
-        	// Loop for the entirety of our output row.
-        	for ( x = - out_x_range; x < out_x_range; x ++ )
-        	{
-            	// Check if x and y are in the valid input range.
-            	if ( abs( x ) < in_x_range && abs( y ) < in_y_range  )
-            	{
-                	// We're in the input range for this row.
-                	*out_ptr ++ = *( in_middle + in_ptr ++ );
-                	*out_ptr ++ = *( in_middle + in_ptr ++ );
-            	}
-            	else
-            	{
-                	// We're not in the input range for this row.
-                	*out_ptr ++ = 16;
-                	*out_ptr ++ = 128;
-                	in_ptr += 2;
-            	}
-        	}
-
-        	// Move to next output line
-        	out_line += ostride;
-
-        	// Move to next input line
-        	in_line += istride;
-    	}
+		// Call the generic resize
+		mlt_resize_yuv422( output, owidth, oheight, input, iwidth, iheight );
 
 		// Now update the frame
 		mlt_properties_set_data( properties, "image", output, owidth * oheight * 2, free, NULL );
