@@ -152,3 +152,19 @@ void Properties::dump( FILE *output )
 {
 	mlt_properties_dump( get_properties( ), output );
 }
+
+int Properties::save( char *file )
+{
+	int error = 0;
+	FILE *f = fopen( file, "w" );
+	if ( f != NULL )
+	{
+		dump( f );
+		fclose( f );
+	}
+	else
+	{
+		error = 1;
+	}
+	return error;
+}

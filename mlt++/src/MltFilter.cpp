@@ -18,14 +18,34 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include "MltFilter.h"
 using namespace Mlt;
 
-Filter::Filter( char *id, char *service ) :
+Filter::Filter( char *id, char *arg ) :
 	destroy( true ),
 	instance( NULL )
 {
-	instance = mlt_factory_filter( id, service );
+	if ( arg != NULL )
+	{
+		instance = mlt_factory_filter( id, arg );
+	}
+	else
+	{
+		if ( strchr( id, ':' ) )
+		{
+			char *temp = strdup( id );
+			char *arg = strchr( temp, ':' ) + 1;
+			*( arg - 1 ) = '\0';
+			instance = mlt_factory_filter( temp, arg );
+			free( temp );
+		}
+		else
+		{
+			instance = mlt_factory_filter( id, NULL );
+		}
+	}
 }
 
 Filter::Filter( Filter &filter ) :

@@ -18,14 +18,34 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include "MltConsumer.h"
 using namespace Mlt;
 
-Consumer::Consumer( char *id, char *service ) :
+Consumer::Consumer( char *id, char *arg ) :
 	destroy( true ),
 	instance( NULL )
 {
-	instance = mlt_factory_consumer( id, service );
+	if ( arg != NULL )
+	{
+		instance = mlt_factory_consumer( id, arg );
+	}
+	else
+	{
+		if ( strchr( id, ':' ) )
+		{
+			char *temp = strdup( id );
+			char *arg = strchr( temp, ':' ) + 1;
+			*( arg - 1 ) = '\0';
+			instance = mlt_factory_consumer( temp, arg );
+			free( temp );
+		}
+		else
+		{
+			instance = mlt_factory_consumer( id, NULL );
+		}
+	}
 }
 
 Consumer::Consumer( Consumer &consumer ) :
