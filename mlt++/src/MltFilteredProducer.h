@@ -38,7 +38,6 @@ namespace Mlt
 		public:
 			FilteredProducer( char *id, char *arg = NULL );
 			virtual ~FilteredProducer( );
-			mlt_service get_connection( );
 			int attach( Filter &filter );
 			int detach( Filter &filter );
 	};

@@ -28,6 +28,7 @@
 namespace Mlt
 {
 	class Service;
+	class Filter;
 
 	class Producer : public Service
 	{
@@ -52,6 +53,8 @@ namespace Mlt
 			int get_out( );
 			int get_length( );
 			int get_playtime( );
+			int attach( Filter &filter );
+			int detach( Filter &filter );
 	};
 }
 

@@ -51,11 +51,6 @@ mlt_service Service::get_service( )
 	return instance;
 }
 
-mlt_service Service::get_connection( )
-{
-	return get_service( );
-}
-
 mlt_properties Service::get_properties( )
 {
 	return mlt_service_properties( get_service( ) );
@@ -63,7 +58,7 @@ mlt_properties Service::get_properties( )
 
 int Service::connect_producer( Service &producer, int index )
 {
-	return mlt_service_connect_producer( get_service( ), producer.get_connection( ), index );
+	return mlt_service_connect_producer( get_service( ), producer.get_service( ), index );
 }
 
 Service *Service::producer( )
@@ -79,7 +74,7 @@ Service *Service::consumer( )
 Frame *Service::get_frame( int index )
 {
 	mlt_frame frame = NULL;
-	mlt_service_get_frame( get_connection( ), &frame, index );
+	mlt_service_get_frame( get_service( ), &frame, index );
 	return new Frame( frame );
 }
 

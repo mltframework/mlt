@@ -55,5 +55,4 @@ namespace Mlt {
 %include <MltConsumer.h>
 %include <MltFilter.h>
 %include <MltFilteredConsumer.h>
-%include <MltFilteredProducer.h>
 

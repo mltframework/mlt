@@ -25,7 +25,6 @@
 #include "MltFactory.h"
 #include "MltFilter.h"
 #include "MltFilteredConsumer.h"
-#include "MltFilteredProducer.h"
 #include "MltFrame.h"
 #include "MltPlaylist.h"
 #include "MltProducer.h"

@@ -34,11 +34,6 @@ FilteredProducer::~FilteredProducer( )
 	delete last;
 }
 
-mlt_service FilteredProducer::get_connection( )
-{
-	return last->get_service( );
-}
-
 int FilteredProducer::attach( Filter &filter )
 {
 	int error = 0;
