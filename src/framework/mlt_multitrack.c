@@ -394,7 +394,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		}
 
 		// Refresh our stats
-		mlt_multitrack_refresh( this );
+		//mlt_multitrack_refresh( this );
 	}
 
 	return 0;

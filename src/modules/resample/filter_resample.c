@@ -54,12 +54,12 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
-	//fprintf( stderr, "resample_get_audio: output_rate %d\n", output_rate );
-	
 	// Return now if now work to do
 	if ( output_rate == *frequency )
 		return 0;
 
+	//fprintf( stderr, "resample_get_audio: input_rate %d output_rate %d\n", *frequency, output_rate );
+	
 	// Convert to floating point
 	for ( i = 0; i < *samples * *channels; ++i )
 		input_buffer[ i ] = ( float )( (*buffer)[ i ] ) / 32768;
@@ -76,10 +76,8 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	{
 		if ( data.output_frames_gen > *samples )
 		{
-			void *release = NULL;
-			*buffer = mlt_pool_allocate( data.output_frames_gen * *channels * sizeof( int16_t ), &release );
-			mlt_properties_set_data( properties, "audio_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_data( properties, "audio", *buffer, *channels * data.output_frames_gen * 2, NULL, NULL );
+			*buffer = mlt_pool_alloc( data.output_frames_gen * *channels * sizeof( int16_t ) );
+			mlt_properties_set_data( properties, "audio", *buffer, *channels * data.output_frames_gen * 2, mlt_pool_release, NULL );
 		}
 		*samples = data.output_frames_gen;
 		*frequency = output_rate;
@@ -143,19 +141,15 @@ mlt_filter filter_resample_init( char *arg )
 		SRC_STATE *state = src_new( RESAMPLE_TYPE, 2 /* channels */, &error );
 		if ( error == 0 )
 		{
-			void *input_release = NULL;
-			void *input_buffer = mlt_pool_allocate( BUFFER_LEN, &input_release );
-			void *output_release = NULL;
-			void *output_buffer = mlt_pool_allocate( BUFFER_LEN, &output_release );
+			void *input_buffer = mlt_pool_alloc( BUFFER_LEN );
+			void *output_buffer = mlt_pool_alloc( BUFFER_LEN );
 			this->process = filter_process;
 			if ( arg != NULL )
 				mlt_properties_set_int( mlt_filter_properties( this ), "frequency", atoi( arg ) );
 			mlt_properties_set_int( mlt_filter_properties( this ), "channels", 2 );
 			mlt_properties_set_data( mlt_filter_properties( this ), "state", state, 0, (mlt_destructor)src_delete, NULL );
-			mlt_properties_set_data( mlt_filter_properties( this ), "input_release", input_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_data( mlt_filter_properties( this ), "input_buffer", input_buffer, BUFFER_LEN, NULL, NULL );
-			mlt_properties_set_data( mlt_filter_properties( this ), "output_release", output_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_data( mlt_filter_properties( this ), "output_buffer", output_buffer, BUFFER_LEN, NULL, NULL );
+			mlt_properties_set_data( mlt_filter_properties( this ), "input_buffer", input_buffer, BUFFER_LEN, mlt_pool_release, NULL );
+			mlt_properties_set_data( mlt_filter_properties( this ), "output_buffer", output_buffer, BUFFER_LEN, mlt_pool_release, NULL );
 		}
 		else
 		{

@@ -4,6 +4,11 @@ CFLAGS = -O3 -I .. -Wall -rdynamic -pthread
 
 LDFLAGS = -L ../framework -lmlt 
 
+ifeq ($(MLT_GPROF),true)
+CFLAGS+=-p
+LDFLAGS+=-p
+endif
+
 all: $(TARGET)
 
 pango:		pango.o

@@ -20,6 +20,7 @@
 
 #include "consumer_sdl.h"
 #include <framework/mlt_frame.h>
+#include <framework/mlt_deque.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,8 +37,7 @@ struct consumer_sdl_s
 {
 	struct mlt_consumer_s parent;
 	mlt_properties properties;
-	int format;
-	int video;
+	mlt_deque queue;
 	pthread_t thread;
 	int running;
 	uint8_t audio_buffer[ 4096 * 3 ];
@@ -50,9 +50,6 @@ struct consumer_sdl_s
 	int width;
 	int height;
 	int playing;
-	mlt_frame *queue;
-	int size;
-	int count;
 	int sdl_flags;
 	SDL_Surface *sdl_screen;
 	SDL_Overlay *sdl_overlay;
@@ -81,6 +78,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 	// If no malloc'd and consumer init ok
 	if ( this != NULL && mlt_consumer_init( &this->parent, this ) == 0 )
 	{
+		// Create the queue
+		this->queue = mlt_deque_init( );
+
 		// Get the parent consumer object
 		mlt_consumer parent = &this->parent;
 
@@ -119,7 +119,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 		this->window_height = this->height;
 		
 		// Set the sdl flags
-		this->sdl_flags = SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_HWACCEL | SDL_RESIZABLE;
+		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE;
 
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
@@ -329,23 +329,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		return 0;
 	}
 
-	if ( this->count == this->size )
-	{
-		this->size += 25;
-		this->queue = realloc( this->queue, sizeof( mlt_frame ) * this->size );
-	}
-	this->queue[ this->count ++ ] = frame;
+	// Push this frame to the back of the queue
+	mlt_deque_push_back( this->queue, frame );
 
 	if ( this->playing )
 	{
-		// We're working on the oldest frame now
-		frame = this->queue[ 0 ];
-
-		// Shunt the frames in the queue down
-		int i = 0;
-		for ( i = 1; i < this->count; i ++ )
-			this->queue[ i - 1 ] = this->queue[ i ];
-		this->count --;
+		// Get the frame at the front of the queue
+		frame = mlt_deque_pop_front( this->queue );
 
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
@@ -447,7 +437,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
 			if ( SDL_LockYUVOverlay( this->sdl_overlay ) >= 0 )
 			{
-				mlt_resize_yuv422( this->buffer, this->width - (this->width % 4 ), this->height- (this->height % 2 ), image, width, height );
+				memcpy( this->buffer, image, width * height * 2 );
 				SDL_UnlockYUVOverlay( this->sdl_overlay );
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}
@@ -462,12 +452,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	if ( frame != NULL )
 		mlt_frame_close( frame );
 
-	if ( this->count )
+	if ( mlt_deque_count( this->queue ) )
 	{
 		// Tell the producers about our scale relative to the normalisation
-		mlt_properties_set_double( mlt_frame_properties( this->queue[ this->count - 1 ] ), "consumer_scale",
+		frame = mlt_deque_peek_front( this->queue );
+		mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_scale",
 			( double )height / mlt_properties_get_double( properties, "height" ) );
-		mlt_frame_get_image( this->queue[ this->count - 1 ], &image, &vfmt, &width, &height, 0 );
+		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 	}
 
 	return 0;
@@ -518,8 +509,8 @@ static void *consumer_thread( void *arg )
 		SDL_FreeYUVOverlay( this->sdl_overlay );
 	SDL_Quit( );
 
-	while( -- this->count >= 0 )
-		mlt_frame_close( this->queue[ this->count ] );
+	while( mlt_deque_count( this->queue ) )
+		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
 
 	this->sdl_screen = NULL;
 	this->sdl_overlay = NULL;

@@ -8,6 +8,11 @@ CFLAGS = -O3 -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
 
 LDFLAGS = -L ../valerie -lvalerie
 
+ifeq ($(MLT_GPROF),true)
+CFLAGS+=-p
+LDFLAGS+=-p
+endif
+
 SRCS := $(OBJS:.o=.c)
 
 all: $(TARGET)

@@ -44,9 +44,7 @@ struct producer_pixbuf_s
 
 	int width;
 	int height;
-	void *image_release;
 	uint8_t *image;
-	void *alpha_release;
 	uint8_t *alpha;
 };
 
@@ -181,20 +179,16 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		if ( width != this->width || height != this->height )
 		{
 			pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
-			mlt_pool_release( this->image_release );
-			mlt_pool_release( this->alpha_release );
-			this->image_release = NULL;
-			this->alpha_release = NULL;
+			mlt_pool_release( this->image );
+			mlt_pool_release( this->alpha );
 			this->image = NULL;
 			this->alpha = NULL;
 		}
 	}
 	else if ( this->image == NULL || image_idx != this->image_idx )
 	{
-		mlt_pool_release( this->image_release );
-		mlt_pool_release( this->alpha_release );
-		this->image_release = NULL;
-		this->alpha_release = NULL;
+		mlt_pool_release( this->image );
+		mlt_pool_release( this->alpha );
 		this->image = NULL;
 		this->alpha = NULL;
 
@@ -236,13 +230,13 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		this->height = height;
 		
 		// Allocate/define image
-		this->image = mlt_pool_allocate( width * ( height + 1 ) * 2, &this->image_release );
+		this->image = mlt_pool_alloc( width * ( height + 1 ) * 2 );
 
 		// Extract YUV422 and alpha
 		if ( gdk_pixbuf_get_has_alpha( pixbuf ) )
 		{
 			// Allocate the alpha mask
-			this->alpha = mlt_pool_allocate( this->width * this->height, &this->alpha_release );
+			this->alpha = mlt_pool_alloc( this->width * this->height );
 
 			// Convert the image
 			mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
@@ -305,16 +299,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	//if ( writable )
 	{
 		// Clone our image
-		void *release = NULL;
-		uint8_t *copy = mlt_pool_allocate( size, &release );
+		uint8_t *copy = mlt_pool_alloc( size );
 		memcpy( copy, image, size );
 
 		// We're going to pass the copy on
 		image = copy;
 
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image_release", release, 0, mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "image", copy, size, NULL, NULL );
+		mlt_properties_set_data( properties, "image", copy, size, mlt_pool_release, NULL );
 	}
 
 	// Pass on the image
@@ -368,7 +360,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_pixbuf this = parent->child;
-	free( this->image );
+	mlt_pool_release( this->image );
 	parent->close = NULL;
 	mlt_producer_close( parent );
 	free( this );

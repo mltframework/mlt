@@ -212,7 +212,6 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	}
 	else
 	{
-		void *release = NULL;
 		uint8_t *p;
 		uint8_t *q;
 		int size = 0;
@@ -233,21 +232,21 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 			case mlt_image_rgb24:
 				size *= 3;
 				size += *width * 3;
-				*buffer = mlt_pool_allocate( size, &release );
+				*buffer = mlt_pool_alloc( size );
 				if ( *buffer )
 					memset( *buffer, 255, size );
 				break;
 			case mlt_image_rgb24a:
 				size *= 4;
 				size += *width * 4;
-				*buffer = mlt_pool_allocate( size, &release );
+				*buffer = mlt_pool_alloc( size );
 				if ( *buffer )
 					memset( *buffer, 255, size );
 				break;
 			case mlt_image_yuv422:
 				size *= 2;
 				size += *width * 2;
-				*buffer = mlt_pool_allocate( size, &release );
+				*buffer = mlt_pool_alloc( size );
 				p = *buffer;
 				q = p + size;
 				while ( p != NULL && p != q )
@@ -258,14 +257,13 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 				break;
 			case mlt_image_yuv420p:
 				size = size * 3 / 2;
-				*buffer = mlt_pool_allocate( size, &release );
+				*buffer = mlt_pool_alloc( size );
 				if ( *buffer )
 					memset( *buffer, 255, size );
 				break;
 		}
 
-		mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "image", *buffer, size, NULL, NULL );
+		mlt_properties_set_data( properties, "image", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "test_image", 1 );
 	}
 
@@ -290,16 +288,14 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 	else
 	{
 		int size = 0;
-		void *release = NULL;
 		*samples = *samples <= 0 ? 1920 : *samples;
 		*channels = *channels <= 0 ? 2 : *channels;
 		*frequency = *frequency <= 0 ? 48000 : *frequency;
 		size = *samples * *channels * sizeof( int16_t );
-		*buffer = mlt_pool_allocate( size, &release );
+		*buffer = mlt_pool_alloc( size );
 		if ( *buffer != NULL )
 			memset( *buffer, 0, size );
-		mlt_properties_set_data( properties, "audio_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "audio", *buffer, size, NULL, NULL );
+		mlt_properties_set_data( properties, "audio", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "test_audio", 1 );
 	}
 	return 0;
@@ -465,7 +461,6 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
    	uint8_t *in_middle = input + istride * ( iheight / 2 ) + ( iwidth / 2 ) * 2;
    	int in_line = - in_y_range * istride - in_x_range * 2;
 
-	uint8_t black[ 2 ] = { 0, 128 };
 	int elements;
 
 	// Fill whole section with black
@@ -474,8 +469,8 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	elements = blank_elements;
 	while ( elements -- )
 	{
-		*out_line ++ = black[ 0 ];
-		*out_line ++ = black[ 1 ];
+		*out_line ++ = 0;
+		*out_line ++ = 128;
 	}
 
 	int active_width = 2 * iwidth;
@@ -491,8 +486,8 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		elements = inactive_width;
 		while ( elements -- )
 		{
-			*out_ptr ++ = black[ 0 ];
-			*out_ptr ++ = black[ 1 ];
+			*out_ptr ++ = 0;
+			*out_ptr ++ = 128;
 		}
 
    		// We're in the input range for this row.
@@ -503,8 +498,8 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		elements = inactive_width;
 		while ( elements -- )
 		{
-			*out_ptr ++ = black[ 0 ];
-			*out_ptr ++ = black[ 1 ];
+			*out_ptr ++ = 0;
+			*out_ptr ++ = 128;
 		}
 
   		// Move to next input line
@@ -518,8 +513,8 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	elements = blank_elements;
 	while ( elements -- )
 	{
-		*out_line ++ = black[ 0 ];
-		*out_line ++ = black[ 1 ];
+		*out_line ++ = 0;
+		*out_line ++ = 128;
 	}
 }
 
@@ -541,15 +536,13 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 	if ( iwidth != owidth || iheight != oheight )
 	{
 		// Create the output image
-		void *release = NULL;
-		uint8_t *output = mlt_pool_allocate( owidth * ( oheight + 1 ) * 2, &release );
+		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 
 		// Call the generic resize
 		mlt_resize_yuv422( output, owidth, oheight, input, iwidth, iheight );
 
 		// Now update the frame
-		mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, NULL, NULL );
+		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "width", owidth );
 		mlt_properties_set_int( properties, "height", oheight );
 
@@ -578,8 +571,7 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 	if ( iwidth != owidth || iheight != oheight )
 	{
 		// Create the output image
-		void *release = NULL;
-		uint8_t *output = mlt_pool_allocate( owidth * ( oheight + 1 ) * 2, &release );
+		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 
 		// Calculate strides
 		int istride = iwidth * 2;
@@ -642,8 +634,7 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
     	}
 
 		// Now update the frame
-		mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, NULL, NULL );
+		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "width", owidth );
 		mlt_properties_set_int( properties, "height", oheight );
 

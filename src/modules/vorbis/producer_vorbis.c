@@ -203,15 +203,11 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Check for audio buffer and create if necessary
 	if ( audio_buffer == NULL )
 	{
-		// Release pointer
-		void *release = NULL;
-
 		// Allocate the audio buffer
-		audio_buffer = mlt_pool_allocate( 131072 * sizeof( int16_t ), &release );
+		audio_buffer = mlt_pool_alloc( 131072 * sizeof( int16_t ) );
 
 		// And store it on properties for reuse
-		mlt_properties_set_data( properties, "audio_buffer_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "audio_buffer", audio_buffer, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "audio_buffer", audio_buffer, 0, mlt_pool_release, NULL );
 	}
 
 	// Seek if necessary
@@ -274,13 +270,11 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		// Now handle the audio if we have enough
 		if ( audio_used >= *samples )
 		{
-			void *release = NULL;
-			*buffer = mlt_pool_allocate( *samples * *channels * sizeof( int16_t ), &release );
+			*buffer = mlt_pool_alloc( *samples * *channels * sizeof( int16_t ) );
 			memcpy( *buffer, audio_buffer, *samples * *channels * sizeof( int16_t ) );
 			audio_used -= *samples;
 			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * *channels * sizeof( int16_t ) );
-			mlt_properties_set_data( frame_properties, "audio_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_data( frame_properties, "audio", *buffer, 0, NULL, NULL );
+			mlt_properties_set_data( frame_properties, "audio", *buffer, 0, mlt_pool_release, NULL );
 		}
 		else
 		{

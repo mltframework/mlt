@@ -144,7 +144,7 @@ static mlt_property mlt_properties_add( mlt_properties this, char *name )
 	// Check that we have space and resize if necessary
 	if ( list->count == list->size )
 	{
-		list->size += 10;
+		list->size += 50;
 		list->name = realloc( list->name, list->size * sizeof( char * ) );
 		list->value = realloc( list->value, list->size * sizeof( mlt_property ) );
 	}

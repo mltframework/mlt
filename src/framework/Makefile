@@ -24,6 +24,11 @@ CFLAGS = -g -O3 -Wall -D_FILE_OFFSET_BITS=64 -pthread
 
 LDFLAGS = -lm -ldl -lpthread
 
+ifeq ($(MLT_GPROF),true)
+CFLAGS+=-p
+LDFLAGS+=-p
+endif
+
 all:	$(TARGET)
 
 $(TARGET): $(OBJS)

@@ -75,8 +75,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		if ( *format == mlt_image_yuv422 && strcmp( interps, "none" ) && ( iwidth != owidth || iheight != oheight ) )
 		{
 			// Create the output image
-			void *release = NULL;
-			uint8_t *output = mlt_pool_allocate( owidth * ( oheight + 1 ) * 2, &release );
+			uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 
 			// Calculate strides
 			int istride = iwidth * 2;
@@ -85,8 +84,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			yuv422_scale_simple( output, owidth, oheight, ostride, input, iwidth, iheight, istride, interp );
 		
 			// Now update the frame
-			mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, NULL, NULL );
+			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
 			mlt_properties_set_int( properties, "width", owidth );
 			mlt_properties_set_int( properties, "height", oheight );
 
@@ -98,8 +96,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			int bpp = (*format == mlt_image_rgb24a ? 4 : 3 );
 			
 			// Create the yuv image
-			void *release = NULL;
-			uint8_t *output = mlt_pool_allocate( owidth * ( oheight + 1 ) * 2, &release );
+			uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 
 			if ( strcmp( interps, "none" ) && ( iwidth != owidth || iheight != oheight ) )
 			{
@@ -114,8 +111,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				if ( bpp == 4 )
 				{
 					// Allocate the alpha mask
-					void *alpha_release = NULL;
-					uint8_t *alpha = mlt_pool_allocate( owidth * ( oheight + 1 ), &alpha_release );
+					uint8_t *alpha = mlt_pool_alloc( owidth * ( oheight + 1 ) );
 
 					// Convert the image and extract alpha
 					mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( scaled ),
@@ -123,8 +119,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 										  gdk_pixbuf_get_rowstride( scaled ),
 										  output, alpha );
 
-					mlt_properties_set_data( properties, "alpha_release", alpha_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-					mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), NULL, NULL );
+					mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
 				}
 				else
 				{
@@ -142,8 +137,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				if ( bpp == 4 )
 				{
 					// Allocate the alpha mask
-					void *alpha_release = NULL;
-					uint8_t *alpha = mlt_pool_allocate( owidth * ( oheight + 1 ), &alpha_release );
+					uint8_t *alpha = mlt_pool_alloc( owidth * ( oheight + 1 ) );
 
 					// Convert the image and extract alpha
 					mlt_convert_rgb24a_to_yuv422( input,
@@ -151,8 +145,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 										  owidth * 4,
 										  output, alpha );
 
-					mlt_properties_set_data( properties, "alpha_release", alpha_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-					mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), NULL, NULL );
+					mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
 				}
 				else
 				{
@@ -165,8 +158,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			}
 
 			// Now update the frame
-			mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, NULL, NULL );
+			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
 			mlt_properties_set_int( properties, "width", owidth );
 			mlt_properties_set_int( properties, "height", oheight );
 

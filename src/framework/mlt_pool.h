@@ -22,6 +22,7 @@
 #define _MLT_POOL_H
 
 extern void mlt_pool_init( );
+extern void *mlt_pool_alloc( int size );
 extern void *mlt_pool_allocate( int size, void **release );
 extern void mlt_pool_release( void *release );
 extern void mlt_pool_close( );
