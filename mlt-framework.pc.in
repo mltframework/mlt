@@ -1,0 +1,7 @@
+
+Name: mlt-framework
+Description: MLT multimedia framework
+Version: ${version}
+Requires:
+Libs: -L${libdir} ${libs}
+Cflags: ${cflags}

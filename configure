@@ -22,7 +22,7 @@ EOF
 function build_config
 {
 	(
-		echo version=0.1.0
+		echo version=$version
 		echo prefix=$prefix
 		echo bindir=$prefix/bin
 	) > config.mak
@@ -34,6 +34,21 @@ function build_config
 	echo -n > packages.dat
 }
 
+function build_pkgconfig
+{
+	for i in framework valerie miracle
+	do
+		echo "prefix=$prefix" >mlt-$i.pc
+		echo "exec_prefix=$prefix" >>mlt-$i.pc
+		echo "libdir=$prefix/lib" >>mlt-$i.pc
+		echo "includedir=$prefix/include" >>mlt-$i.pc
+		echo "version=$version" >>mlt-$i.pc
+		echo "cflags=`grep ^$i packages.dat | cut -f 2`" >>mlt-$i.pc
+		echo "libs=`grep ^$i packages.dat | cut -f 3`" >>mlt-$i.pc
+		cat mlt-$i.pc.in >>mlt-$i.pc
+	done
+}
+
 # Debug mode
 set +x
 
@@ -41,6 +56,7 @@ set +x
 export build_dir=`dirname $0`
 export prefix=/usr/local
 export help=0
+export version=0.1.0
 
 # Iterate through arguments
 for i in $*
@@ -52,7 +68,7 @@ do
 done
 
 # Show help if requested
-[ $help = 1 ] && show_help || build_config 
+[ $help = 1 ] && show_help || build_config
 
 # Iterate through each of the components
 for i in framework modules inigo valerie miracle humperdink
@@ -67,3 +83,5 @@ do
 	fi
 done
 
+# Build the pkg-config files
+build_pkgconfig

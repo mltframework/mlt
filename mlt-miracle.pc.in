@@ -1,0 +1,7 @@
+
+Name: mlt-miracle
+Description: MLT Miracle server API
+Version: ${version}
+Requires:
+Libs: -L${libdir} ${libs}
+Cflags: ${cflags}

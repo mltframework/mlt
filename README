@@ -1,8 +1,15 @@
-README
-------
+MLT/Miracle README
+------------------
 
+	Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+	by Charles Yates <charles.yates@pandora.be>
+	and Dan Dennedy <dan@dennedy.org>
+
+	MLT is a multimedia framework designed for television broadcasting, and 
+	Miracle is a multi-unit video playout server with realtime effects.
 	This document provides a quick reference for the minimal configuration,
-	build and installation of MLT.
+	build and installation of MLT. See the docs directory for usage and
+	development details.
 
 Configuration
 -------------
