@@ -528,7 +528,7 @@ static void *consumer_thread( void *arg )
 
 	// internal intialization
 	mlt_frame frame = NULL;
-	struct timespec tm = { 0, 1000 };
+	struct timespec tm = { 0, 400000 };
 
 	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
 	{
