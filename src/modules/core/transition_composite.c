@@ -208,7 +208,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 
 	if ( bpp == 2 )
 		x -= x % 2;
-
+		
 	// optimization points - no work to do
 	if ( width_src <= 0 || height_src <= 0 )
 		return ret;
@@ -254,7 +254,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 	// field 1 = upper field and y should be even.
 	if ( ( field > -1 ) && ( y % 2 == field ) )
 	{
-		if ( y == 0 )
+		//fprintf( stderr, "field %d y %d\n", field, y );
+		if ( ( field == 1 && y < height_dest - 1 ) || ( field == 0 && y == 0 ) )
 			p_dest += stride_dest;
 		else
 			p_dest -= stride_dest;
@@ -336,12 +337,15 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 		// image in order to maximise usage of the bounding rectangle
 
 		// These calcs are optimised by reducing factors in equations
+// This is disabled due to bad results on 480 wide MPEGs
+#if 0
 		if ( output_sar < 1.0 )
 			// If the output is skinny pixels (PAL) then stretch our input vertically
 			// derived from: input_sar / output_sar * real_height
 			scaled_height = ( double )real_width / input_ar / output_sar;
 
 		else
+#endif
 			// If the output is fat pixels (NTSC) then stretch our input horizontally
 			// derived from: output_sar / input_sar * real_width
 			scaled_width = output_sar * real_height * input_ar;
@@ -553,7 +557,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					
 					for ( i = 0; i < width_b * height_b; i ++, p ++ )
 					{
-						*q ++ = 16 + ( ( float )*p / 255 * 220 ); // 220 is the luma range from 16-235
+						*q ++ = 16 + ( ( float )*p / 255 * 219 ); // 220 is the luma range from 16-235
 						*q ++ = 128;
 					}
 				}
