@@ -33,8 +33,8 @@ struct producer_pango_s
 	int height;
 	uint8_t *image;
 	uint8_t *alpha;
-	int   fgcolor;
-	int   bgcolor;
+	char *fgcolor;
+	char *bgcolor;
 	int   align;
 	int   pad;
 	char *markup;
@@ -73,15 +73,12 @@ mlt_producer producer_pango_init( const char *filename )
 
 		// Set the default properties
 		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
-		mlt_properties_set_int( properties, "fgcolor", 0xffffffff );
-		mlt_properties_set_int( properties, "bgcolor", 0x00000000 );
+		mlt_properties_set( properties, "fgcolour", "0xffffffff" );
+		mlt_properties_set( properties, "bgcolour", "0x00000000" );
 		mlt_properties_set_int( properties, "align", pango_align_left );
 		mlt_properties_set_int( properties, "pad", 0 );
 		mlt_properties_set( properties, "text", "" );
 		mlt_properties_set( properties, "font", "Sans 48" );
-		mlt_properties_set_int( properties, "x", 0 );
-		mlt_properties_set_int( properties, "y", 0 );
-		mlt_properties_set_double( properties, "mix", 1.0 );
 
 		if ( filename == NULL )
 		{
@@ -143,6 +140,68 @@ mlt_producer producer_pango_init( const char *filename )
 	return NULL;
 }
 
+static void set_string( char **string, char *value, char *fallback )
+{
+	if ( value != NULL )
+	{
+		free( *string );
+		*string = strdup( value );
+	}
+	else if ( *string == NULL && fallback != NULL )
+	{
+		*string = strdup( fallback );
+	}
+	else if ( *string != NULL && fallback == NULL )
+	{
+		free( *string );
+		*string = NULL;
+	}
+}
+
+rgba_color parse_color( char *color )
+{
+	rgba_color result = { 0xff, 0xff, 0xff, 0xff };
+
+	if ( !strncmp( color, "0x", 2 ) )
+	{
+		unsigned int temp = 0;
+		sscanf( color + 2, "%x", &temp );
+		result.r = ( temp >> 24 ) & 0xff;
+		result.g = ( temp >> 16 ) & 0xff;
+		result.b = ( temp >> 8 ) & 0xff;
+		result.a = ( temp ) & 0xff;
+	}
+	else if ( !strcmp( color, "red" ) )
+	{
+		result.r = 0xff;
+		result.g = 0x00;
+		result.b = 0x00;
+	}
+	else if ( !strcmp( color, "green" ) )
+	{
+		result.r = 0x00;
+		result.g = 0xff;
+		result.b = 0x00;
+	}
+	else if ( !strcmp( color, "blue" ) )
+	{
+		result.r = 0x00;
+		result.g = 0x00;
+		result.b = 0xff;
+	}
+	else
+	{
+		unsigned int temp = 0;
+		sscanf( color, "%d", &temp );
+		result.r = ( temp >> 24 ) & 0xff;
+		result.g = ( temp >> 16 ) & 0xff;
+		result.b = ( temp >> 8 ) & 0xff;
+		result.a = ( temp ) & 0xff;
+	}
+
+	return result;
+}
+
 static void refresh_image( mlt_frame frame, int width, int height )
 {
 	// Pixbuf 
@@ -161,8 +220,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_properties producer_props = mlt_producer_properties( producer );
 
 	// Get producer properties
-	int fg = mlt_properties_get_int( producer_props, "fgcolor" );
-	int bg = mlt_properties_get_int( producer_props, "bgcolor" );
+	char *fg = mlt_properties_get( producer_props, "fgcolour" );
+	char *bg = mlt_properties_get( producer_props, "bgcolour" );
 	int align = mlt_properties_get_int( producer_props, "align" );
 	int pad = mlt_properties_get_int( producer_props, "pad" );
 	char *markup = mlt_properties_get( producer_props, "markup" );
@@ -170,8 +229,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	char *font = mlt_properties_get( producer_props, "font" );
 
 	// See if any properties changed
-	int property_changed = ( fg != this->fgcolor );
-	property_changed = property_changed || ( bg != this->bgcolor );
+	int property_changed = ( this->fgcolor == NULL || strcmp( fg, this->fgcolor ) );
+	property_changed = property_changed || ( this->bgcolor == NULL || strcmp( bg, this->bgcolor ) );
 	property_changed = property_changed || ( align != this->align );
 	property_changed = property_changed || ( pad != this->pad );
 	property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
@@ -179,42 +238,18 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
 
 	// Save the properties for next comparison
-	this->fgcolor = fg;
-	this->bgcolor = bg;
 	this->align = align;
 	this->pad = pad;
-	if ( markup != NULL )
-	{
-		free( this->markup );
-		this->markup = strdup( markup );
-	}
-	if ( text != NULL )
-	{
-		free( this->text );
-		this->text = strdup( text );
-	}
-	if ( font != NULL )
-	{
-		free( this->font );
-		this->font = strdup( font );
-	}
+	set_string( &this->fgcolor, fg, "0xffffffff" );
+	set_string( &this->bgcolor, bg, "0x00000000" );
+	set_string( &this->markup, markup, NULL );
+	set_string( &this->text, text, NULL );
+	set_string( &this->font, font, "Sans 48" );
 
 	if ( property_changed )
 	{
-		rgba_color fgcolor =
-		{
-			( fg & 0xff000000 ) >> 24,
-			( fg & 0x00ff0000 ) >> 16,
-			( fg & 0x0000ff00 ) >> 8,
-			( fg & 0x000000ff )
-		};
-		rgba_color bgcolor =
-		{
-			( bg & 0xff000000 ) >> 24,
-			( bg & 0x00ff0000 ) >> 16,
-			( bg & 0x0000ff00 ) >> 8,
-			( bg & 0x000000ff )
-		};
+		rgba_color fgcolor = parse_color( this->fgcolor );
+		rgba_color bgcolor = parse_color( this->bgcolor );
 
 		// Render the title
 		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, pad, align );
@@ -376,6 +411,8 @@ static void producer_close( mlt_producer parent )
 	producer_pango this = parent->child;
 	free( this->image );
 	free( this->alpha );
+	free( this->fgcolor );
+	free( this->bgcolor );
 	free( this->markup );
 	free( this->text );
 	free( this->font );

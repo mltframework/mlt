@@ -46,6 +46,48 @@ Producers
 			mpeg seeking is inaccurate - doesn't seek to i-frames so you may
 			get junk for a few frames.
 
+	fezzik
+
+		Description
+
+			A friendly giant that likes to rhyme and throw rocks
+
+		Constructor Argument
+
+			'file'	- produce a/v from file
+
+		Initialisation Properties
+
+			int in - in point
+			int out - out point
+			+ all producer initialising properties
+
+		Read Only Properties
+
+			string resource - file location
+			+ all producer read only properties
+
+		Details
+
+			This producer is has two roles:
+
+			1. it handles the mappings of all file names to the other
+			producers;
+			2. it attaches normalising filters (rescale, resize and resample)
+			to the producers (when necessary).
+
+			This producer simplifies many aspects of use. Essentially, it
+			ensures that a consumer will receive images and audio precisely as
+			they request them. 
+
+		Dependencies
+
+			all.
+
+		Known Bugs
+
+			None.
+
 	ffmpeg
 
 		Description
@@ -88,36 +130,6 @@ Producers
 			in point setting is broken.
 
 			Implementation does not allow fast random access.
-
-	fezzik
-
-		Description
-
-			A freindly giant that likes to throw rocks
-
-		Constructor Argument
-
-			'file'	- produce a/v from file
-
-		Initialisation Properties
-
-			int in - in point
-			int out - out point
-
-		Read Only Properties
-
-			string resource - file location
-			double fps - output frames per second
-			double aspect_ratio - aspect ratio of video]
-			int length - duration of resource (in frames)
-
-		Dependencies
-
-			all.
-
-		Known Bugs
-
-			None.
 
 	libdv
 
@@ -178,8 +190,7 @@ Producers
 
 		Known Bugs
 
-			Can be problematic with source NTSC DV files? really? yes - try
-			playing pond.dv...
+			Can be problematic with some NTSC DV files?
 
 	mcmpeg
 
@@ -239,8 +250,8 @@ Producers
 			                http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
 			              - requires xml-like encoding special chars: <, >, & to &lt;, &gt;, &amp;
 
-			int fgcolor - an rgba color specification of the text (i.e. 0xrrggbbaa)
-			int bgcolor - an rgba color of the background rectangle
+			string fgcolour - an rgba colour specification of the text (i.e. 0xrrggbbaa)
+			string bgcolour - an rgba colour of the background rectangle
 			int align - paragraph alignment: 0 = left, 1 = center, 2 = right
 			int pad - the number of pixels to pad the background rectangle beyond edges of text
 			          default 0
@@ -248,12 +259,6 @@ Producers
 			string text - non-markup text (can contain markup chars un-encoded)
 			string font - the default typeface to use when not using markup
 			              default "Sans 48"
-			int x - the horizontal position of the title on the frame
-			        default 0
-			int y - the vertical position of the title on the frame
-			        default 0
-			double mix - the overall opacity control of the generated title
-			             default 1.0
 
 		Read Only Properties
 
@@ -296,11 +301,6 @@ Producers
 			                     PAL = 0, NTSC = 1
 			                     this determines proper pixel aspect ratio
 			double ttl - how long (seconds) to repeat each picture in file sequences
-			int x - the horizontal offset from the left edge of the frame
-			int y - the vertical offset from the top edge of the frame
-			double mix - the opacity factor to apply to the second frame
-			             (used in addition to alpha channel).
-
 
 		Read Only Properties
 
@@ -427,7 +427,7 @@ Filters
 	
 		Description
 
-		        Use ffmpeg executable to substitute audio stream.
+		    Use ffmpeg executable to substitute audio stream.
 		
 		Constructor Argument
 
@@ -483,7 +483,7 @@ Filters
 	
 		Description
 
-			Convert color image to greyscale
+			Convert colour image to greyscale
 			
 		Constructor Argument
 
