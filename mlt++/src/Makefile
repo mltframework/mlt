@@ -17,7 +17,7 @@ OBJS = MltConsumer.o \
 
 SRCS = $(OBJS:.o=.cpp)
 
-HEADERS = $(OBJS:.o=.h)
+HEADERS = Mlt.h $(OBJS:.o=.h)
 
 CC=g++
 
