@@ -322,18 +322,34 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 
 	if ( mlt_properties_get( properties, "distort" ) == NULL )
 	{
-		// Now do additional calcs based on real_width/height etc
+		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->w;
 		int normalised_height = geometry->h;
-		//int real_width = get_value( b_props, "real_width", "width" );
+		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_frame_get_aspect_ratio( b_frame );
 		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
 		//int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
 		//int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
-		int scaled_width = ( float )geometry->nw / geometry->nh / output_ar * real_height * input_ar;
+		int scaled_width = real_width;
 		int scaled_height = real_height;
-		//fprintf( stderr, "composite: real %dx%d scaled %dx%d normalised %dx%d\n", real_width, real_height, scaled_width, scaled_height, normalised_width, normalised_height );
+		double output_sar = ( double ) geometry->nw / geometry->nh / output_ar;
+
+		// We always normalise pixel aspect by requesting a larger than normal
+		// image in order to maximise usage of the bounding rectangle
+
+		// These calcs are optimised by reducing factors in equations
+		if ( output_sar < 1.0 )
+			// If the output is skinny pixels (PAL) then stretch our input vertically
+			// derived from: input_sar / output_sar * real_height
+			scaled_height = ( double )real_width / input_ar / output_sar;
+
+		else
+			// If the output is fat pixels (NTSC) then stretch our input horizontally
+			// derived from: output_sar / input_sar * real_width
+			scaled_width = output_sar * real_height * input_ar;
+			
+//		fprintf( stderr, "composite: real %dx%d scaled %dx%d normalised %dx%d\n", real_width, real_height, scaled_width, scaled_height, normalised_width, normalised_height );
 
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
@@ -347,9 +363,12 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 			scaled_height = normalised_height;
 		}
 
+#if 0
+		// DRD> Why?
 		// Special case
 		if ( scaled_height == normalised_height )
 			scaled_width = normalised_width;
+#endif
 
 		// Now we need to align to the geometry
 		if ( scaled_width <= geometry->w && scaled_height <= geometry->h )
@@ -357,19 +376,11 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 			// Save the new scaled dimensions
 			geometry->sw = scaled_width;
 			geometry->sh = scaled_height;
-			
-			mlt_properties_set( b_props, "distort", "true" );
-		}
-		else
-		{
-			mlt_properties_set( b_props, "distort", "true" );
 		}
 	}
-	else
-	{
-		// We want to ensure that we bypass resize now...
-		mlt_properties_set( b_props, "distort", "true" );
-	}
+
+	// We want to ensure that we bypass resize now...
+	mlt_properties_set( b_props, "distort", "true" );
 
 	// Take into consideration alignment for optimisation
 	alignment_calculate( geometry );

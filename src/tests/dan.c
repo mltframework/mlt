@@ -1,5 +1,8 @@
 
 #include <framework/mlt.h>
+#include "../modules/dv/producer_libdv.h"
+#include "../modules/dv/consumer_libdv.h"
+//#include "../modules/sdl/consumer_sdl.h"
 
 #include <stdio.h>
 
@@ -9,7 +12,8 @@ int main( int argc, char **argv )
 	char *file1 = NULL;
 	char *file2 = NULL;
 
-	mlt_factory_init( "../modules" );
+//	mlt_factory_init( "../modules" );
+	mlt_pool_init( );
 
 	if ( argc >= 2 )
 		file1 = argv[ 1 ];
@@ -19,13 +23,15 @@ int main( int argc, char **argv )
 	// Start the consumer...
 	int vstd = mlt_video_standard_ntsc;
 	//mlt_consumer consumer = mlt_factory_consumer( "bluefish", &vstd );
-	mlt_consumer consumer = mlt_factory_consumer( "westley", NULL );
+	//mlt_consumer consumer = mlt_factory_consumer( "sdl", NULL );
+	mlt_consumer consumer = consumer_libdv_init( NULL );
 
 	// Create the producer(s)
-	mlt_producer dv1 = mlt_factory_producer( "westley", file1 );
+	//mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );
+	mlt_producer dv1 = producer_libdv_init( file1 );
 	//mlt_producer_set_in_and_out( dv1, 0, 5 );
 
-	mlt_producer dv2 = mlt_factory_producer( "libdv", file2 );
+	mlt_producer dv2;// = mlt_factory_producer( "libdv", file2 );
 	//mlt_producer_set_in_and_out( dv2, 10.0, 30.0 );
 
 #if 1
@@ -34,10 +40,11 @@ int main( int argc, char **argv )
 
 	// Do stuff until we're told otherwise...
 	mlt_consumer_start( consumer );
-//	fprintf( stderr, "Press return to continue\n" );
-//	fgets( temp, 132, stdin );
+	fprintf( stderr, "Press return to continue\n" );
+	fgets( temp, 132, stdin );
 	mlt_consumer_stop( consumer );
 	mlt_consumer_close( consumer );
+	mlt_pool_close( );
 	return 0;
 #endif
 

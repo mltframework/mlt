@@ -53,41 +53,42 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( mlt_properties_get( properties, "distort" ) == NULL )
 	{
-		// Now do additional calcs based on real_width/height etc
+		// Normalise the input and out display aspect
 		int normalised_width = mlt_properties_get_int( properties, "normalised_width" );
 		int normalised_height = mlt_properties_get_int( properties, "normalised_height" );
-		int real_width = get_value( properties, "real_width", "width" );
-		int real_height = get_value( properties, "real_height", "height" );
 		double input_ar = mlt_frame_get_aspect_ratio( this );
 		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" );
-		int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
-		int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
+		
+		// Optimised for the input_ar > output_ar case (e.g. widescreen on standard)
+		int scaled_width = normalised_width;
+		int scaled_height = output_ar / input_ar * normalised_height;
 
 		// Now ensure that our images fit in the normalised frame
-		if ( scaled_width > normalised_width )
-		{
-			scaled_height = scaled_height * normalised_width / scaled_width;
-			scaled_width = normalised_width;
-		}
 		if ( scaled_height > normalised_height )
 		{
-			scaled_width = scaled_width * normalised_height / scaled_height;
+			scaled_width = input_ar / output_ar * normalised_width;
 			scaled_height = normalised_height;
 		}
+		//fprintf( stderr, "resize: %dx%d from %dx%d input aspect %f output aspect %f\n",
+		//	scaled_width, scaled_height, normalised_width, normalised_height, input_ar, output_ar );
 
-		if ( input_ar == output_ar && scaled_height == normalised_height )
-		{
-			scaled_width = normalised_width;
-		}
-		else if ( ( real_height * 2 ) == normalised_height )
+#if 0
+		int real_width = get_value( properties, "real_height", "height" );
+		int real_height = get_value( properties, "real_height", "height" );
+		// DRD> Why?
+		if ( ( real_height * 2 ) == normalised_height )
 		{
 			scaled_width = normalised_width;
 			scaled_height = normalised_height;
 		}
+#endif
 	
 		// Now calculate the actual image size that we want
 		owidth = scaled_width * owidth / normalised_width;
 		oheight = scaled_height * oheight / normalised_height;
+
+		// Tell frame we have conformed the aspect to the consumer
+		mlt_frame_set_aspect_ratio( this, output_ar );
 	}
 
 	// Now pass on the calculations down the line

@@ -160,7 +160,7 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 
 	uint8_t y;
 	uint8_t uv;
-   	float value;
+	float value;
 
 	float x_diff = ( float )luma_width / ( float )*width;
 	float y_diff = ( float )luma_height / ( float )*height;

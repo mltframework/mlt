@@ -2,7 +2,7 @@ TARGET = dan charlie pango pixbuf dissolve luma
 
 CFLAGS = -O3 -I .. -Wall -rdynamic -pthread
 
-LDFLAGS = -L ../framework -lmlt 
+LDFLAGS = -L ../framework -L ../modules -lmlt -lmltdv -lmltsdl
 
 ifeq ($(MLT_GPROF),true)
 CFLAGS+=-p

@@ -558,16 +558,17 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 				double source_fps = 0;
 
 				// Set aspect ratio
-				if ( codec_context->sample_aspect_ratio.num == 0) 
+				if ( codec_context->sample_aspect_ratio.num == 0 ) 
 					aspect_ratio = 0;
 				else
 					aspect_ratio = av_q2d( codec_context->sample_aspect_ratio ) * codec_context->width / codec_context->height;
 
+				// XXX: This assumes square pixels!
         		if (aspect_ratio <= 0.0)
 					aspect_ratio = ( double )codec_context->width / ( double )codec_context->height;
 
 				mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
-				fprintf( stderr, "AVFORMAT: sample aspect %f\n", aspect_ratio );
+				fprintf( stderr, "AVFORMAT: sample aspect %f computed display aspect %f\n", av_q2d( codec_context->sample_aspect_ratio ), aspect_ratio );
 
 				// Determine the fps
 				source_fps = ( double )codec_context->frame_rate / codec_context->frame_rate_base;
