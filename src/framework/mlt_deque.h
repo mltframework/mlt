@@ -31,6 +31,14 @@ extern int mlt_deque_push_front( mlt_deque self, void *item );
 extern void *mlt_deque_pop_front( mlt_deque self );
 extern void *mlt_deque_peek_back( mlt_deque self );
 extern void *mlt_deque_peek_front( mlt_deque self );
+
+extern int mlt_deque_push_back_int( mlt_deque self, int item );
+extern int mlt_deque_pop_back_int( mlt_deque self );
+extern int mlt_deque_push_front_int( mlt_deque self, int item );
+extern int mlt_deque_pop_front_int( mlt_deque self );
+extern int mlt_deque_peek_back_int( mlt_deque self );
+extern int mlt_deque_peek_front_int( mlt_deque self );
+
 extern void mlt_deque_close( mlt_deque self );
 
 #endif

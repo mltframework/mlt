@@ -25,12 +25,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef union
+{
+	void *addr;
+	int value;
+}
+deque_entry;
+
 /** Private structure.
 */
 
 struct mlt_deque_s
 {
-	void **list;
+	deque_entry *list;
 	int size;
 	int count;
 };
@@ -65,7 +72,7 @@ static int mlt_deque_allocate( mlt_deque this )
 {
 	if ( this->count == this->size )
 	{
-		this->list = realloc( this->list, sizeof( void * ) * ( this->size + 20 ) );
+		this->list = realloc( this->list, sizeof( deque_entry ) * ( this->size + 20 ) );
 		this->size += 20;
 	}
 	return this->list == NULL;
@@ -79,7 +86,7 @@ int mlt_deque_push_back( mlt_deque this, void *item )
 	int error = mlt_deque_allocate( this );
 
 	if ( error == 0 )
-		this->list[ this->count ++ ] = item;
+		this->list[ this->count ++ ].addr = item;
 
 	return error;
 }
@@ -89,7 +96,7 @@ int mlt_deque_push_back( mlt_deque this, void *item )
 
 void *mlt_deque_pop_back( mlt_deque this )
 {
-	return this->count > 0 ? this->list[ -- this->count ] : NULL;
+	return this->count > 0 ? this->list[ -- this->count ].addr : NULL;
 }
 
 /** Queue an item at the start.
@@ -101,8 +108,8 @@ int mlt_deque_push_front( mlt_deque this, void *item )
 
 	if ( error == 0 )
 	{
-		memmove( &this->list[ 1 ], this->list, ( this->count ++ ) * sizeof( void * ) );
-		this->list[ 0 ] = item;
+		memmove( &this->list[ 1 ], this->list, ( this->count ++ ) * sizeof( deque_entry ) );
+		this->list[ 0 ].addr = item;
 	}
 
 	return error;
@@ -117,8 +124,8 @@ void *mlt_deque_pop_front( mlt_deque this )
 
 	if ( this->count > 0 )
 	{
-		item = this->list[ 0 ];
-		memmove( this->list, &this->list[ 1 ], ( -- this->count ) * sizeof( void * ) );
+		item = this->list[ 0 ].addr;
+		memmove( this->list, &this->list[ 1 ], ( -- this->count ) * sizeof( deque_entry ) );
 	}
 
 	return item;
@@ -129,7 +136,7 @@ void *mlt_deque_pop_front( mlt_deque this )
 
 void *mlt_deque_peek_back( mlt_deque this )
 {
-	return this->count > 0 ? this->list[ this->count - 1 ] : NULL;
+	return this->count > 0 ? this->list[ this->count - 1 ].addr : NULL;
 }
 
 /** Inquire on item at front of deque but don't remove.
@@ -137,7 +144,76 @@ void *mlt_deque_peek_back( mlt_deque this )
 
 void *mlt_deque_peek_front( mlt_deque this )
 {
-	return this->count > 0 ? this->list[ 0 ] : NULL;
+	return this->count > 0 ? this->list[ 0 ].addr : NULL;
+}
+
+/** Push an item to the end.
+*/
+
+int mlt_deque_push_back_int( mlt_deque this, int item )
+{
+	int error = mlt_deque_allocate( this );
+
+	if ( error == 0 )
+		this->list[ this->count ++ ].value = item;
+
+	return error;
+}
+
+/** Pop an item.
+*/
+
+int mlt_deque_pop_back_int( mlt_deque this )
+{
+	return this->count > 0 ? this->list[ -- this->count ].value : 0;
+}
+
+/** Queue an item at the start.
+*/
+
+int mlt_deque_push_front_int( mlt_deque this, int item )
+{
+	int error = mlt_deque_allocate( this );
+
+	if ( error == 0 )
+	{
+		memmove( &this->list[ 1 ], this->list, ( this->count ++ ) * sizeof( deque_entry ) );
+		this->list[ 0 ].value = item;
+	}
+
+	return error;
+}
+
+/** Remove an item from the start.
+*/
+
+int mlt_deque_pop_front_int( mlt_deque this )
+{
+	int item = 0;
+
+	if ( this->count > 0 )
+	{
+		item = this->list[ 0 ].value;
+		memmove( this->list, &this->list[ 1 ], ( -- this->count ) * sizeof( deque_entry ) );
+	}
+
+	return item;
+}
+
+/** Inquire on item at back of deque but don't remove.
+*/
+
+int mlt_deque_peek_back_int( mlt_deque this )
+{
+	return this->count > 0 ? this->list[ this->count - 1 ].value : 0;
+}
+
+/** Inquire on item at front of deque but don't remove.
+*/
+
+int mlt_deque_peek_front_int( mlt_deque this )
+{
+	return this->count > 0 ? this->list[ 0 ].value : 0;
 }
 
 /** Close the queue.
@@ -148,5 +224,4 @@ void mlt_deque_close( mlt_deque this )
 	free( this->list );
 	free( this );
 }
-
 

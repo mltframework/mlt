@@ -63,6 +63,8 @@ extern int mlt_frame_push_frame( mlt_frame self, mlt_frame that );
 extern mlt_frame mlt_frame_pop_frame( mlt_frame self );
 extern int mlt_frame_push_service( mlt_frame self, void *that );
 extern void *mlt_frame_pop_service( mlt_frame self );
+extern int mlt_frame_push_service_int( mlt_frame self, int that );
+extern int mlt_frame_pop_service_int( mlt_frame self );
 extern int mlt_frame_push_audio( mlt_frame self, void *that );
 extern void *mlt_frame_pop_audio( mlt_frame self );
 extern mlt_deque mlt_frame_service_stack( mlt_frame self );

@@ -181,6 +181,22 @@ void *mlt_frame_pop_service( mlt_frame this )
 	return mlt_deque_pop_back( this->stack_image );
 }
 
+/** Push a service.
+*/
+
+int mlt_frame_push_service_int( mlt_frame this, int that )
+{
+	return mlt_deque_push_back_int( this->stack_image, that );
+}
+
+/** Pop a service.
+*/
+
+int mlt_frame_pop_service_int( mlt_frame this )
+{
+	return mlt_deque_pop_back_int( this->stack_image );
+}
+
 /** Push an audio item on the stack.
 */
 
