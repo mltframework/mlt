@@ -93,6 +93,7 @@ extern int mlt_playlist_get_clip_index_at( mlt_playlist self, int position );
 extern int mlt_playlist_clip_is_mix( mlt_playlist self, int clip );
 extern void mlt_playlist_consolidate_blanks( mlt_playlist self, int keep_length );
 extern int mlt_playlist_is_blank( mlt_playlist self, int clip );
+extern int mlt_playlist_is_blank_at( mlt_playlist self, int position );
 extern void mlt_playlist_insert_blank( mlt_playlist self, int clip, int length );
 extern void mlt_playlist_pad_blanks( mlt_playlist self, int position, int length, int find );
 extern mlt_producer mlt_playlist_replace_with_blank( mlt_playlist self, int clip );

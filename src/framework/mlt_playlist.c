@@ -1192,6 +1192,14 @@ int mlt_playlist_is_blank( mlt_playlist this, int clip )
 	return this == NULL || mlt_producer_is_blank( mlt_playlist_get_clip( this, clip ) );
 }
 
+/** Determine if the specified position is a blank.
+*/
+
+int mlt_playlist_is_blank_at( mlt_playlist this, int position )
+{
+	return this == NULL || mlt_producer_is_blank( mlt_playlist_get_clip_at( this, position ) );
+}
+
 /** Replace the specified clip with a blank and return the clip.
 */
 
