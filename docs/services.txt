@@ -2,7 +2,7 @@ Service Documentation
 
 Copyright (C) 2004 Ushodaya Enterprises Limited
 Authors: Charles Yates <charles.yates@pandora.be>
-	     Dan Dennedy <dan@dennedy.org>
+         Dan Dennedy <dan@dennedy.org>
 Last Revision: 2004-03-20
 
 
@@ -95,7 +95,7 @@ Producers
 
 	    Details
 
-	        This producer is has two roles:
+	        This producer has two roles:
 
 	        1. it handles the mappings of all file names to the other
 	        producers;
@@ -636,36 +636,6 @@ Filters
 	        Not a bug, but it only provides fair quality.
 	        
 	    
-	ffmpeg_dub
-	
-	    Description
-
-	        Use ffmpeg executable to substitute audio stream.
-	    
-	    Constructor Argument
-
-	        file - filename of a WAV, Ogg Vorbis (--enable-vorbis),
-	               MP3 (--enable-mp3lame), or AC-3 (--enable-a52) audio file.
-	    
-	    Initialisation Properties
-
-	        int in - in point
-	        int out - out point
-	    
-	    Read Only Properties
-	    
-	        string resource - file
-	        
-	    Dependencies
-
-	        ffmpeg plus for ffmpeg:
-	        libogg and libvorbis for Ogg Vorbis, libmp3lame for MP3, liba52 for AC-3.
-	        
-	    Known Bugs
-
-	        Uses pipes and is therefore not compatible with bluefish.
-	        
-
 	gamma
 	
 	    Description

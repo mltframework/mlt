@@ -403,8 +403,9 @@ Multiple Tracks and Transitions:
 	                   +------------------------------+
 
 	The overlapping areas of track 0 and 1 would (presumably) have some kind of
-	transition - without a transition, the frames from a1 and a2 would be shown 
-	during the areas of overlap.
+	transition - without a transition, the frames from b1 and b2 would be shown 
+	during the areas of overlap (ie: by default, the higher numbered track takes 
+	precedence over the lower numbered track). 
 
 	MLT has a multitrack object, but it is not a producer in the sense that it
 	can be connected directly to a consumer and everything will work correctly.
@@ -441,7 +442,7 @@ Multiple Tracks and Transitions:
 	+----------+
 
 	With a combination of the two, we can now connect multitracks to consumers.
-	The first non-test card will be retrieved and passed on. 
+	The last non-test card will be retrieved and passed on. 
 
 	The tracks can be producers, playlists, or even other tractors. 
 
@@ -450,7 +451,7 @@ Multiple Tracks and Transitions:
 	tractor and the multitrack, but this involves a lot of connecting and
 	reconnecting left and right producers and consumers, and it seemed only fair
 	that we should be able to automate that process. 
-	
+
 	So in keeping with our agricultural theme, the concept of the 'field' was 
 	born. We 'plant' filters and transitions in the field and the tractor pulls 
 	the multitrack (think of a combine harvester :-)) over the field and 
@@ -536,7 +537,9 @@ Multiple Tracks and Transitions:
 	    mlt_properties_set_position( properties, "in", 0 );
 	    mlt_properties_set_position( properties, "out", length - 1 );
 	    mlt_properties_set_position( properties, "length", length );
-	
+	    mlt_properties_set_int( properties, "a_track", 0 );
+	    mlt_properties_set_int( properties, "b_track", 1 );
+
 	    // Now set the properties on the transition
 	    properties = mlt_transition_properties( transition );
 	    mlt_properties_set_position( properties, "in", 0 );

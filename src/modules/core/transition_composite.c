@@ -622,20 +622,34 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	stride_dest *= step;
 	int alpha_stride = stride_src / bpp;
 
-	if ( line_fn == NULL )
-		line_fn = composite_line_yuv;
-
 	// now do the compositing only to cropped extents
-	for ( i = 0; i < height_src; i += step )
+	if ( line_fn != NULL )
 	{
-		line_fn( p_dest, p_src, width_src, p_alpha, weight, p_luma, softness );
-
-		p_src += stride_src;
-		p_dest += stride_dest;
-		if ( p_alpha )
-			p_alpha += alpha_stride;
-		if ( p_luma )
-			p_luma += alpha_stride;
+		for ( i = 0; i < height_src; i += step )
+		{
+			line_fn( p_dest, p_src, width_src, p_alpha, weight, p_luma, softness );
+	
+			p_src += stride_src;
+			p_dest += stride_dest;
+			if ( p_alpha )
+				p_alpha += alpha_stride;
+			if ( p_luma )
+				p_luma += alpha_stride;
+		}
+	}
+	else
+	{
+		for ( i = 0; i < height_src; i += step )
+		{
+			composite_line_yuv( p_dest, p_src, width_src, p_alpha, weight, p_luma, softness );
+	
+			p_src += stride_src;
+			p_dest += stride_dest;
+			if ( p_alpha )
+				p_alpha += alpha_stride;
+			if ( p_luma )
+				p_luma += alpha_stride;
+		}
 	}
 
 	return ret;
@@ -1019,7 +1033,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			
 			int32_t luma_softness = mlt_properties_get_double( properties, "softness" ) * ( 1 << 16 );
 			uint16_t *luma_bitmap = get_luma( properties, width_b, height_b );
-			composite_line_fn line_fn = mlt_properties_get_int( properties, "_MMX" ) ? composite_line_yuv_mmx : composite_line_yuv;
+			composite_line_fn line_fn = mlt_properties_get_int( properties, "_MMX" ) ? composite_line_yuv_mmx : NULL;
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
