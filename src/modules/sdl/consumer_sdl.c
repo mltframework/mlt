@@ -106,7 +106,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 		mlt_properties_set_int( this->properties, "buffer", 8 );
 
 		// Default progressive true
-		mlt_properties_set_int( this->properties, "progressive", 1 );
+		mlt_properties_set_int( this->properties, "progressive", 0 );
 
 		// Get aspect ratio
 		this->aspect_ratio = mlt_properties_get_double( this->properties, "aspect_ratio" );
