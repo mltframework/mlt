@@ -537,7 +537,8 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 	property_list *list = this->private;
 	int i = 0;
 	for ( i = 0; i < list->count; i ++ )
-		fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
+		if ( mlt_properties_get( this, list->name[ i ] ) != NULL )
+			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
 }
 
 /** Close the list.

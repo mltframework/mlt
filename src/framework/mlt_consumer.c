@@ -144,8 +144,7 @@ int mlt_consumer_start( mlt_consumer this )
 		if ( mlt_properties_get_data( properties, "test_card_producer", NULL ) == NULL )
 		{
 			// Create a test card producer
-			// TODO: do we want to use fezzik here?
-			mlt_producer producer = mlt_factory_producer( "fezzik", test_card );
+			mlt_producer producer = mlt_factory_producer( NULL, test_card );
 
 			// Do we have a producer
 			if ( producer != NULL )
@@ -341,7 +340,6 @@ static void consumer_read_ahead_start( mlt_consumer this )
 	
 	// Create the read ahead 
 	pthread_create( &this->ahead_thread, &thread_attributes, consumer_read_ahead_thread, this );
-
 }
 
 static void consumer_read_ahead_stop( mlt_consumer this )
