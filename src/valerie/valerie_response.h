@@ -21,6 +21,8 @@
 #ifndef _VALERIE_RESPONSE_H_
 #define _VALERIE_RESPONSE_H_
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C"
 {
