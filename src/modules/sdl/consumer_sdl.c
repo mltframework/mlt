@@ -101,6 +101,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// Default fps
 		mlt_properties_set_double( this->properties, "fps", 25 );
 
+		// Default scaler (for now we'll use nearest)
+		mlt_properties_set( this->properties, "rescale", "nearest" );
+
 		// process actual param
 		if ( arg == NULL || !strcmp( arg, "PAL" ) )
 		{
@@ -341,6 +344,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		this->queue = realloc( this->queue, sizeof( mlt_frame ) * this->size );
 	}
 	this->queue[ this->count ++ ] = frame;
+
+	if ( mlt_properties_get( properties, "rescale" ) != NULL )
+		mlt_properties_set( mlt_frame_properties( frame ), "rescale.interp", mlt_properties_get( properties, "rescale" ) );
 
 	if ( this->playing )
 	{

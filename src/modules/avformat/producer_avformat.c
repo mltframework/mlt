@@ -507,7 +507,6 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 					aspect_ratio = ( double )codec_context->width / ( double )codec_context->height;
 
 				mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
-				fprintf( stderr, "avformat: %dx%d (%f)\n", codec_context->width, codec_context->height, av_q2d( codec_context->sample_aspect_ratio ) );
 
 				// Now store the codec with its destructor
 				mlt_properties_set_data( properties, "video_codec", codec_context, 0, producer_codec_close, NULL );

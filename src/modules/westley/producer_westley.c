@@ -291,10 +291,10 @@ static void on_end_entry( deserialise_context context, const xmlChar *name )
 	mlt_service service = context_pop_service( context );
 
 	// Append the producer to the playlist
+	// TODO: THIS IS NOT CORRECT - an entry SHOULD have in/out points of its own
 	mlt_playlist_append_io( MLT_PLAYLIST( service ),
-		MLT_PRODUCER( producer ),
-		mlt_properties_get_position( mlt_service_properties( producer ), "in" ),
-		mlt_properties_get_position( mlt_service_properties( producer ), "out" ) );
+		MLT_PRODUCER( producer ), 0, 
+		mlt_properties_get_position( mlt_service_properties( producer ), "out" ) - mlt_properties_get_position( mlt_service_properties( producer ), "in" ) + 1 );
 
 	// Push the playlist back onto the stack
 	context_push_service( context, service );
