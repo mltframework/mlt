@@ -3,7 +3,7 @@ Service Documentation
 Copyright (C) 2004 Ushodaya Enterprises Limited
 Authors: Charles Yates <charles.yates@pandora.be>
          Dan Dennedy <dan@dennedy.org>
-Last Revision: 2004-03-20
+Last Revision: 2004-11-07
 
 
 SERVICES
@@ -1421,8 +1421,7 @@ Consumers
 	        double volume - audio level factor
 	        int video_off - if 1, disable video output
 	        int audio_off - if 1, disable audio output
-	        int scale_overlay - if 1, resample video from source pixel aspect
-	                            ratio to square pixels.
+			int resize - TODO
 	        int progressive - indicates whether to use progressive or field-
 	                          based rendering, default 0 (off).
 		int audio_buffer - size of the sdl audio buffer (default: 1024)

@@ -8,10 +8,11 @@ export LD_LIBRARY_PATH=\
 `pwd`/src/valerie:\
 `pwd`/src/miracle:\
 `pwd`/src/modules/bluefish:\
-`pwd`/../bluefish/lib:\
+`pwd`/../BlueLinuxDriver/install/lib:\
 `pwd`/../mpeg_sdk_release/bin:\
 `pwd`/../dvcpro_sdk_release/lib:\
-`pwd`/../sr_sdk_release
+`pwd`/../sr_sdk_release:\
+$LD_LIBRARY_PATH
 
 export PATH=\
 `pwd`/src/albino:\
@@ -19,4 +20,3 @@ export PATH=\
 `pwd`/src/humperdink:\
 `pwd`/src/miracle:\
 $PATH
-
