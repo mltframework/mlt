@@ -40,6 +40,7 @@ typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src,
 
 struct geometry_s
 {
+	int frame;
 	float position;
 	float mix;
 	int nw; // normalised width
@@ -154,14 +155,28 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	position = ( position - in->position ) / ( out->position - in->position );
 
 	// Calculate this frames geometry
-	output->nw = in->nw;
-	output->nh = in->nh;
-	output->x = in->x + ( out->x - in->x ) * position;
-	output->y = in->y + ( out->y - in->y ) * position;
-	output->w = in->w + ( out->w - in->w ) * position;
-	output->h = in->h + ( out->h - in->h ) * position;
-	output->mix = in->mix + ( out->mix - in->mix ) * position;
-	output->distort = in->distort;
+	if ( in->frame != out->frame - 1 )
+	{
+		output->nw = in->nw;
+		output->nh = in->nh;
+		output->x = in->x + ( out->x - in->x ) * position;
+		output->y = in->y + ( out->y - in->y ) * position;
+		output->w = in->w + ( out->w - in->w ) * position;
+		output->h = in->h + ( out->h - in->h ) * position;
+		output->mix = in->mix + ( out->mix - in->mix ) * position;
+		output->distort = in->distort;
+	}
+	else
+	{
+		output->nw = out->nw;
+		output->nh = out->nh;
+		output->x = out->x;
+		output->y = out->y;
+		output->w = out->w;
+		output->h = out->h;
+		output->mix = out->mix;
+		output->distort = out->distort;
+	}
 
 	// DRD> These break on negative values. I do not think they are needed
 	// since yuv_composite takes care of YUYV group alignment
@@ -239,7 +254,8 @@ static struct geometry_s *transition_parse_keys( mlt_transition this,  int norma
 				// Parse and add to the list
 				geometry_parse( temp, ptr, value, normalised_width, normalised_height );
 
-				// Assign the position
+				// Assign the position and frame
+				temp->frame = frame;
 				temp->position = position;
 
 				// Allow the next to be appended after this one

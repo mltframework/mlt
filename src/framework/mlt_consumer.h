@@ -54,6 +54,7 @@ struct mlt_consumer_s
 */
 
 extern int mlt_consumer_init( mlt_consumer this, void *child );
+extern mlt_consumer mlt_consumer_new( );
 extern mlt_service mlt_consumer_service( mlt_consumer this );
 extern mlt_properties mlt_consumer_properties( mlt_consumer this );
 extern int mlt_consumer_connect( mlt_consumer this, mlt_service producer );

@@ -110,9 +110,31 @@ int mlt_tractor_connect( mlt_tractor this, mlt_service producer )
 	return ret;
 }
 
-/** Get the next frame.
+static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+{
+	mlt_properties properties = mlt_frame_properties( this );
+	mlt_frame frame = mlt_frame_pop_service( this );
+	mlt_properties_inherit( mlt_frame_properties( frame ), properties );
+	mlt_frame_get_image( frame, buffer, format, width, height, writable );
+	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
+	mlt_properties_set_int( properties, "width", *width );
+	mlt_properties_set_int( properties, "height", *height );
+	mlt_properties_inherit( properties, mlt_frame_properties( frame ) );
+	return 0;
+}
 
-	TODO: This should be reading a pump being populated by the thread...
+static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+{
+	mlt_properties properties = mlt_frame_properties( this );
+	mlt_frame frame = mlt_frame_pop_audio( this );
+	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	mlt_properties_set_data( properties, "audio", *buffer, 0, NULL, NULL );
+	mlt_properties_set_int( properties, "frequency", *frequency );
+	mlt_properties_set_int( properties, "channels", *channels );
+	return 0;
+}
+
+/** Get the next frame.
 */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track )
@@ -123,10 +145,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 	if ( track == 0 && this->producer != NULL )
 	{
 		int i = 0;
-		int looking = 1;
 		int done = 0;
 		mlt_frame temp = NULL;
-		mlt_frame store[ 10 ];
 		int count = 0;
 
 		// Get the properties of the parent producer
@@ -141,9 +161,29 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		// If we don't have one, we're in trouble... 
 		if ( multitrack != NULL )
 		{
+			// Used to garbage collect all frames
+			char label[ 30 ];
+
+			// Get the id of the tractor
+			char *id = mlt_properties_get( properties, "_unique_id" );
+
+			// Will be used to store the frame properties object
+			mlt_properties frame_properties = NULL;
+
+			// We'll store audio and video frames to use here
+			mlt_frame audio = NULL;
+			mlt_frame video = NULL;
+
+			// Get the multitrack's producer
 			mlt_producer target = mlt_multitrack_producer( multitrack );
 			mlt_producer_seek( target, mlt_producer_frame( parent ) );
 			mlt_producer_set_speed( target, mlt_producer_get_speed( parent ) );
+
+			// We will create one frame and attach everything to it
+			*frame = mlt_frame_init( );
+
+			// Get the properties of the frame
+			frame_properties = mlt_frame_properties( *frame );
 
 			// Loop through each of the tracks we're harvesting
 			for ( i = 0; !done; i ++ )
@@ -154,35 +194,32 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				// Check for last track
 				done = mlt_properties_get_int( mlt_frame_properties( temp ), "last_track" );
 
-				// Handle the frame
-				if ( done && looking )
-				{
-					// Use this as output if we don't have one already
-					*frame = temp;
-				}
-				else if ( ( !mlt_frame_is_test_card( temp ) || !mlt_frame_is_test_audio( temp ) ) && looking &&
-					    	mlt_producer_frame( parent ) == mlt_frame_get_position( temp ) )
-				{
-					*frame = temp;
-					looking = 0;
-				}
-				else
-				{
-					// We store all other frames for now
-					store[ count ++ ] = temp;
-				}
+				// We store all frames with a destructor on the output frame
+				sprintf( label, "_%s_%d", id, count ++ );
+				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
+
+				// Pick up first video and audio frames
+				if ( audio == NULL && !mlt_frame_is_test_audio( temp ) )
+					audio = temp;
+				if ( video == NULL && !mlt_frame_is_test_card( temp ) )
+					video = temp;
 			}
 	
-			// Now place all the unused frames on to the properties (will be destroyed automatically)
-			while ( count -- )
+			// Now stack callbacks
+			if ( audio != NULL )
 			{
-				mlt_properties frame_properties = mlt_frame_properties( *frame );
-				char label[ 30 ];
-				sprintf( label, "tractor_%d", count );
-				while ( mlt_properties_get_data( frame_properties, label, NULL ) != NULL )
-					strcat( label, "+" );
-				mlt_properties_set_data( frame_properties, label, store[ count ], 0, ( mlt_destructor )mlt_frame_close, NULL );
+				mlt_frame_push_audio( *frame, audio );
+				( *frame )->get_audio = producer_get_audio;
+				mlt_properties_inherit( mlt_frame_properties( *frame ), mlt_frame_properties( audio ) );
 			}
+
+			if ( video != NULL )
+			{
+				mlt_frame_push_service( *frame, video );
+				mlt_frame_push_service( *frame, producer_get_image );
+				mlt_properties_inherit( mlt_frame_properties( *frame ), mlt_frame_properties( video ) );
+			}
+
 		}
 		else if ( producer != NULL )
 		{

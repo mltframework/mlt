@@ -77,6 +77,22 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 	return error;
 }
 
+/** Create a new consumer.
+*/
+
+mlt_consumer mlt_consumer_new( )
+{
+	// Create the memory for the structure
+	mlt_consumer this = malloc( sizeof( struct mlt_consumer_s ) );
+
+	// Initialise it
+	if ( this != NULL )
+		mlt_consumer_init( this, NULL );
+
+	// Return it
+	return this;
+}
+
 /** Get the parent service object.
 */
 

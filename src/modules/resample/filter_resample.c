@@ -149,24 +149,27 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	mlt_properties properties = mlt_filter_properties( this );
-	mlt_properties frame_props = mlt_frame_properties( frame );
+	if ( frame->get_audio != NULL )
+	{
+		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties frame_props = mlt_frame_properties( frame );
 
-	// Propogate the frequency property if supplied
-	if ( mlt_properties_get( properties, "frequency" ) != NULL )
-		mlt_properties_set_int( frame_props, "resample.frequency", mlt_properties_get_int( properties, "frequency" ) );
+		// Propogate the frequency property if supplied
+		if ( mlt_properties_get( properties, "frequency" ) != NULL )
+			mlt_properties_set_int( frame_props, "resample.frequency", mlt_properties_get_int( properties, "frequency" ) );
 
-	// Propogate the other properties
-	mlt_properties_set_int( frame_props, "resample.channels", mlt_properties_get_int( properties, "channels" ) );
-	mlt_properties_set_data( frame_props, "resample.state", mlt_properties_get_data( properties, "state", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( frame_props, "resample.input_buffer", mlt_properties_get_data( properties, "input_buffer", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( frame_props, "resample.output_buffer", mlt_properties_get_data( properties, "output_buffer", NULL ), 0, NULL, NULL );
+		// Propogate the other properties
+		mlt_properties_set_int( frame_props, "resample.channels", mlt_properties_get_int( properties, "channels" ) );
+		mlt_properties_set_data( frame_props, "resample.state", mlt_properties_get_data( properties, "state", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( frame_props, "resample.input_buffer", mlt_properties_get_data( properties, "input_buffer", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( frame_props, "resample.output_buffer", mlt_properties_get_data( properties, "output_buffer", NULL ), 0, NULL, NULL );
 	
-	// Backup the original get_audio (it's still needed)
-	mlt_properties_set_data( frame_props, "resample.get_audio", frame->get_audio, 0, NULL, NULL );
+		// Backup the original get_audio (it's still needed)
+		mlt_properties_set_data( frame_props, "resample.get_audio", frame->get_audio, 0, NULL, NULL );
 
-	// Override the get_audio method
-	frame->get_audio = resample_get_audio;
+		// Override the get_audio method
+		frame->get_audio = resample_get_audio;
+	}
 
 	return frame;
 }
