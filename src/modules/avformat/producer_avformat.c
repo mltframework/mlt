@@ -424,7 +424,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = position - expected;
 		}
-		else if ( position < expected || position - expected >= 12 )
+		else if ( codec_context->gop_size == 0 || ( position < expected || position - expected >= 12 ) )
 		{
 			// Set to the real timecode
 			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 );
