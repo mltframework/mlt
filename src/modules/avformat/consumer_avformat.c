@@ -920,8 +920,11 @@ static void *consumer_thread( void *arg )
 		if ( real_time_output && frames % 25 == 0 )
 		{
 			long passed = time_difference( &ante );
-			long pending = ( ( ( long )sample_fifo_used( fifo ) * 1000 ) / frequency ) * 1000;
-			passed -= pending;
+			if ( fifo != NULL )
+			{
+				long pending = ( ( ( long )sample_fifo_used( fifo ) * 1000 ) / frequency ) * 1000;
+				passed -= pending;
+			}
 			if ( passed < total_time )
 			{
 				long total = ( total_time - passed );

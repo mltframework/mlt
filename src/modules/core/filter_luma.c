@@ -52,7 +52,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		{
 			mlt_properties luma_properties = mlt_transition_properties( luma );
 			mlt_properties_set_int( luma_properties, "in", 0 );
-			mlt_properties_set_int( luma_properties, "out", 24 );
+			mlt_properties_set_int( luma_properties, "out", out );
 			mlt_properties_set_int( luma_properties, "reverse", 1 );
 			mlt_properties_pass( luma_properties, properties, "luma." );
 			mlt_properties_set_data( properties, "luma", luma, 0, ( mlt_destructor )mlt_transition_close, NULL );

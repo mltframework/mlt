@@ -469,6 +469,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Ensure we get scaling on the b_frame
 	mlt_properties_set( b_props, "rescale.interp", "nearest" );
 
+	if ( mlt_properties_get( properties, "fixed" ) )
+		mix = mlt_properties_get_double( properties, "fixed" );
+
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 		// Composite the frames using a luma map
 		luma_composite( a_frame, b_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
