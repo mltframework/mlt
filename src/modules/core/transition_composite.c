@@ -1010,7 +1010,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		
 		// Optimisation - no compositing required
 		if ( result.mix == 0 || ( result.w == 0 && result.h == 0 ) )
+		{
+			mlt_properties_set_data( properties, "geometries", NULL, 0, NULL, NULL );
 			return 0;
+		}
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
