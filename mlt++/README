@@ -82,6 +82,9 @@ SPECIAL CASES
 	This excludes the use of the RTTI to determine the real type of the object -
 	this can only be done by parsing the objects properties.
 
+	Non-NULL objects may be invalid - always use the is_valid method to
+	check validity before use.
+
 LIMITATIONS
 -----------
 

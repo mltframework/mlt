@@ -32,6 +32,7 @@ namespace Mlt
 	{
 		public:
 			virtual mlt_properties get_properties( ) = 0;
+			bool is_valid( );
 			int count( );
 			char *get( char *name );
 			int get_int( char *name );
@@ -41,6 +42,7 @@ namespace Mlt
 			int set( char *name, int value );
 			int set( char *name, double value );
 			int set( char *name, void *value, int size, mlt_destructor destroy = NULL, mlt_serialiser serial = NULL );
+
 	};
 	
 	/** Instance class.

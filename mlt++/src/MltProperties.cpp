@@ -46,6 +46,11 @@ PropertiesInstance::~PropertiesInstance( )
 		mlt_properties_close( instance );
 }
 
+bool Properties::is_valid( )
+{
+	return get_properties( ) != NULL;
+}
+
 int Properties::count( )
 {
 	return mlt_properties_count( get_properties( ) );

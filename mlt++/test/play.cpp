@@ -11,9 +11,14 @@ using namespace Mlt;
 int main( int argc, char **argv )
 {
 	Factory::init( NULL );
+	Producer *producer = Factory::producer( argv[ 1 ] );
+	if ( !producer->is_valid( ) )
+	{
+		cerr << "Can't construct producer for " << argv[ 1 ] << endl;
+		return 0;
+	}
 	Consumer *consumer = Factory::consumer( "sdl" );
 	consumer->set( "rescale", "none" );
-	Producer *producer = Factory::producer( argv[ 1 ] );
 	Filter *filter = Factory::filter( "greyscale" );
 	filter->connect( *producer );
 	consumer->connect( *filter );
