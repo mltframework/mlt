@@ -322,6 +322,7 @@ mlt_timecode mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index 
 int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index )
 {
 	int error = index < 0 || index >= this->count;
+	memset( info, 0, sizeof( mlt_playlist_clip_info ) );
 	if ( !error )
 	{
 		mlt_producer producer = this->list[ index ]->producer;
@@ -350,6 +351,7 @@ int mlt_playlist_count( mlt_playlist this )
 int mlt_playlist_clear( mlt_playlist this )
 {
 	this->count = 0;
+	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", 0 );
 	return mlt_playlist_virtual_refresh( this );
 }
 
@@ -381,6 +383,24 @@ int mlt_playlist_blank( mlt_playlist this, mlt_timecode length )
 {
 	// Append to the virtual list
 	return mlt_playlist_virtual_append( this, &this->blank, 0, length );
+}
+
+/** Insert a producer into the playlist.
+*/
+
+int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, mlt_timecode in, mlt_timecode out )
+{
+	return 0;
+}
+
+int mlt_playlist_remove( mlt_playlist this, int where )
+{
+	return 0;
+}
+
+int mlt_playlist_move( mlt_playlist this, int from, int to )
+{
+	return 0;
 }
 
 /** Get the current frame.

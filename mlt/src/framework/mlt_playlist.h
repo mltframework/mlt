@@ -53,6 +53,9 @@ extern mlt_timecode mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int
 extern int mlt_playlist_current_clip( mlt_playlist this );
 extern mlt_producer mlt_playlist_current( mlt_playlist this );
 extern int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index );
+extern int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, mlt_timecode in, mlt_timecode out );
+extern int mlt_playlist_remove( mlt_playlist this, int where );
+extern int mlt_playlist_move( mlt_playlist this, int from, int to );
 extern void mlt_playlist_close( mlt_playlist this );
 
 #endif

@@ -43,7 +43,7 @@ extern miracle_unit         miracle_unit_init( int index, char *arg );
 extern void 				miracle_unit_report_list( miracle_unit unit, valerie_response response );
 extern void                 miracle_unit_allow_stdin( miracle_unit unit, int flag );
 extern valerie_error_code   miracle_unit_load( miracle_unit unit, char *clip, double in, double out, int flush );
-extern valerie_error_code 	miracle_unit_insert( miracle_unit unit, const char *clip, int index, double in, double out );
+extern valerie_error_code 	miracle_unit_insert( miracle_unit unit, char *clip, int index, double in, double out );
 extern valerie_error_code   miracle_unit_append( miracle_unit unit, char *clip, double in, double out );
 extern valerie_error_code 	miracle_unit_remove( miracle_unit unit, int index );
 extern valerie_error_code 	miracle_unit_clean( miracle_unit unit );

@@ -252,37 +252,30 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, double in, 
 	return valerie_invalid_file;
 }
 
-valerie_error_code miracle_unit_insert( miracle_unit unit, const char *clip, int index, double in, double out )
+valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index, double in, double out )
 {
-	/*
-	dv_player player = miracle_unit_get_dv_player( unit );
-	valerie_error_code error = dv_player_get_error( player );
-	if ( error == dv_pump_ok )
+	mlt_producer instance = create_producer( unit, clip );
+
+	if ( instance != NULL )
 	{
-		error = dv_player_insert_file( player, (char*) clip, index, in, out );
-		dv1394d_log( LOG_DEBUG, "inserted clip %s", clip );
-		if ( unit->is_terminated )
-			miracle_unit_status_communicate( unit );
+		mlt_properties properties = unit->properties;
+		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+		mlt_playlist_insert( playlist, instance, index, in, out );
+		miracle_log( LOG_DEBUG, "inserted clip %s at %d", clip, index );
+		miracle_unit_status_communicate( unit );
+		return valerie_ok;
 	}
-	return error;
-	*/
-	return valerie_ok;
+
+	return valerie_invalid_file;
 }
 
 valerie_error_code miracle_unit_remove( miracle_unit unit, int index )
 {
-	/*
-	dv_player player = miracle_unit_get_dv_player( unit );
-	valerie_error_code error = dv_player_get_error( player );
-	if ( error == dv_pump_ok )
-	{
-		error = dv_player_remove_clip( player, index );
-		dv1394d_log( LOG_DEBUG, "removed clip %d", index );
-		if ( unit->is_terminated )
-			miracle_unit_status_communicate( unit );
-	}
-	return error;
-	*/
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_playlist_remove( playlist, index );
+	miracle_log( LOG_DEBUG, "removed clip at %d", index );
+	miracle_unit_status_communicate( unit );
 	return valerie_ok;
 }
 
@@ -295,18 +288,11 @@ valerie_error_code miracle_unit_clean( miracle_unit unit )
 
 valerie_error_code miracle_unit_move( miracle_unit unit, int src, int dest )
 {
-	/*
-	dv_player player = miracle_unit_get_dv_player( unit );
-	valerie_error_code error = dv_player_get_error( player );
-	if ( error == dv_pump_ok )
-	{
-		error = dv_player_move_clip( player, src, dest );
-		dv1394d_log( LOG_DEBUG, "moved clip %d to %d", src, dest );
-		if ( unit->is_terminated )
-			miracle_unit_status_communicate( unit );
-	}
-	return error;
-	*/
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_playlist_move( playlist, src, dest );
+	miracle_log( LOG_DEBUG, "moved clip %d to %d", src, dest );
+	miracle_unit_status_communicate( unit );
 	return valerie_ok;
 }
 
@@ -450,16 +436,15 @@ void miracle_unit_change_position( miracle_unit unit, int clip, double position 
 	miracle_unit_status_communicate( unit );
 }
 
-/** Change speed.
+/** Get the index of the current clip.
 */
-
-void miracle_unit_change_speed( miracle_unit unit, int speed )
-{
-}
 
 int	miracle_unit_get_current_clip( miracle_unit unit )
 {
-	return 0;
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	int clip_index = mlt_playlist_current_clip( playlist );
+	return clip_index;
 }
 
 /** Set a clip's in point

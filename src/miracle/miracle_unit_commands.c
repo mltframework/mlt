@@ -80,36 +80,29 @@ int miracle_list( command_argument cmd_arg )
 
 	return RESPONSE_INVALID_UNIT;
 }
-/*
+
 static int parse_clip( command_argument cmd_arg, int arg )
 {
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
-	int clip = dv_unit_get_current_clip( unit );
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	int clip = miracle_unit_get_current_clip( unit );
 	
-	if ( dv_tokeniser_count( cmd_arg->tokeniser ) > arg )
+	if ( valerie_tokeniser_count( cmd_arg->tokeniser ) > arg )
 	{
-		dv_player player = dv_unit_get_dv_player( unit );
-		char *token = dv_tokeniser_get_string( cmd_arg->tokeniser, arg );
+		char *token = valerie_tokeniser_get_string( cmd_arg->tokeniser, arg );
 		if ( token[ 0 ] == '+' )
 			clip += atoi( token + 1 );
 		else if ( token[ 0 ] == '-' )
 			clip -= atoi( token + 1 );
 		else
 			clip = atoi( token );
-		if ( clip < 0 )
-			clip = 0;
-		if ( clip >= player->size )
-			clip = player->size - 1;
 	}
 	
 	return clip;
 }
-*/
 
 int miracle_insert( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	char *filename = (char*) cmd_arg->argument;
 	char fullname[1024];
 
@@ -125,30 +118,26 @@ int miracle_insert( command_argument cmd_arg )
 		long in = -1, out = -1;
 		int index = parse_clip( cmd_arg, 3 );
 		
-		if ( dv_tokeniser_count( cmd_arg->tokeniser ) == 6 )
+		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 6 )
 		{
-			in = atoi( dv_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
-			out = atoi( dv_tokeniser_get_string( cmd_arg->tokeniser, 5 ) );
+			in = atoi( valerie_tokeniser_get_string( cmd_arg->tokeniser, 4 ) );
+			out = atoi( valerie_tokeniser_get_string( cmd_arg->tokeniser, 5 ) );
 		}
 		
-		switch( dv_unit_insert( unit, fullname, index, in, out ) )
+		switch( miracle_unit_insert( unit, fullname, index, in, out ) )
 		{
-			case dv_pump_ok:
+			case valerie_ok:
 				return RESPONSE_SUCCESS;
-			case dv_pump_too_many_files_open:
-				return RESPONSE_TOO_MANY_FILES;
 			default:
 				return RESPONSE_BAD_FILE;
 		}
 	}
-	*/
 	return RESPONSE_SUCCESS;
 }
 
 int miracle_remove( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
@@ -156,42 +145,38 @@ int miracle_remove( command_argument cmd_arg )
 	{
 		int index = parse_clip( cmd_arg, 2 );
 			
-		if ( dv_unit_remove( unit, index ) != dv_pump_ok )
+		if ( miracle_unit_remove( unit, index ) != valerie_ok )
 			return RESPONSE_BAD_FILE;
 	}
-	*/
 	return RESPONSE_SUCCESS;
 }
 
 int miracle_clean( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		if ( dv_unit_clean( unit ) != dv_pump_ok )
+		if ( miracle_unit_clean( unit ) != valerie_ok )
 			return RESPONSE_BAD_FILE;
 	}
-	*/
 	return RESPONSE_SUCCESS;
 }
 
 int miracle_move( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	
 	if ( unit != NULL )
 	{
-		if ( dv_tokeniser_count( cmd_arg->tokeniser ) > 2 )
+		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) > 2 )
 		{
 			int src = parse_clip( cmd_arg, 2 );
 			int dest = parse_clip( cmd_arg, 3 );
 			
-			if ( dv_unit_move( unit, src, dest ) != dv_pump_ok )
+			if ( miracle_unit_move( unit, src, dest ) != valerie_ok )
 				return RESPONSE_BAD_FILE;
 		}
 		else
@@ -203,7 +188,6 @@ int miracle_move( command_argument cmd_arg )
 	{
 		return RESPONSE_INVALID_UNIT;
 	}
-	*/
 
 	return RESPONSE_SUCCESS;
 }
@@ -291,31 +275,27 @@ int miracle_rewind( command_argument cmd_arg )
 
 int miracle_step( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	
-	if (unit == NULL || dv_unit_is_offline(unit))
+	if (unit == NULL)
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		dv_unit_play( unit, 0 );
-		dv_unit_step( unit, *(int*) cmd_arg->argument );
+		miracle_unit_play( unit, 0 );
+		miracle_unit_step( unit, *(int*) cmd_arg->argument );
 	}
-	*/
 	return RESPONSE_SUCCESS;
 }
 
 int miracle_goto( command_argument cmd_arg )
 {
-	/*
-	dv_unit unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
 	int clip = parse_clip( cmd_arg, 3 );
 	
-	if (unit == NULL || dv_unit_is_offline(unit))
+	if (unit == NULL || miracle_unit_is_offline(unit))
 		return RESPONSE_INVALID_UNIT;
 	else
-		dv_unit_change_position( unit, clip, *(int*) cmd_arg->argument );
-	*/
+		miracle_unit_change_position( unit, clip, *(int*) cmd_arg->argument );
 	return RESPONSE_SUCCESS;
 }
 
