@@ -397,8 +397,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			changed = 1;
 		}
 
-		if ( this->sdl_screen == NULL || changed )
-		{
 			SDL_Rect rect;
 			
 			// Determine frame's display aspect ratio
@@ -453,6 +451,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			rect.x = ( this->window_width - rect.w ) / 2;
 			rect.y = ( this->window_height - rect.h ) / 2;
 			
+		if ( this->sdl_screen == NULL || changed )
+		{
 			// Force an overlay recreation
 			if ( this->sdl_overlay != NULL )
 				SDL_FreeYUVOverlay( this->sdl_overlay );
@@ -469,7 +469,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				sdl_unlock_display();
 			}
 		}
-			
+		else
+		{
+			SDL_SetClipRect( this->sdl_screen, &rect );
+		}
+
 		if ( this->sdl_screen != NULL && this->sdl_overlay != NULL )
 		{
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
