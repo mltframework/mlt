@@ -325,6 +325,7 @@ static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
 static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int height )
 {
 	int i;
+	int size = width * height * 2;
 	
 	// allocate the luma bitmap
 	uint16_t *p = *map = ( uint16_t* )mlt_pool_alloc( width * height * sizeof( uint16_t ) );
@@ -332,7 +333,7 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 		return;
 
 	// proces the image data into the luma bitmap
-	for ( i = 0; i < width * height * 2; i += 2 )
+	for ( i = 0; i < size; i += 2 )
 		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
 }
 
@@ -370,6 +371,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "resource" );
 
+	// Correct width/height if not specified
+	if ( luma_width == 0 || luma_height == 0 )
+	{
+		luma_width = mlt_properties_get_int( a_props, "width" );
+		luma_height = mlt_properties_get_int( a_props, "height" );
+	}
+		
 	if ( luma_bitmap == NULL && resource != NULL )
 	{
 		char temp[ 512 ];
@@ -377,7 +385,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		if ( strchr( resource, '%' ) )
 		{
+			FILE *test;
 			sprintf( temp, "%s/lumas/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+			test = fopen( temp, "r" );
+			if ( test == NULL )
+				strcat( temp, ".png" );
+			else
+				fclose( test ); 
 			resource = temp;
 			extension = strrchr( resource, '.' );
 		}
@@ -425,11 +439,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Get the luma frame
 				if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &luma_frame, 0 ) == 0 )
 				{
-					uint8_t *luma_image;
+					uint8_t *luma_image = NULL;
 					mlt_image_format luma_format = mlt_image_yuv422;
 
 					// Get image from the luma producer
-					mlt_properties_set( MLT_FRAME_PROPERTIES( luma_frame ), "rescale.interp", "none" );
+					mlt_properties_set( MLT_FRAME_PROPERTIES( luma_frame ), "rescale.interp", "nearest" );
 					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
 
 					// Generate the luma map

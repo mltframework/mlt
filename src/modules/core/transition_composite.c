@@ -566,9 +566,22 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 
 	char temp[ 512 ];
 
+	if ( luma_width == 0 || luma_height == 0 )
+	{
+		luma_width = width;
+		luma_height = height;
+	}
+
 	if ( resource != NULL && strchr( resource, '%' ) )
 	{
+		// TODO: Clean up quick and dirty compressed/existence check
+		FILE *test;
 		sprintf( temp, "%s/lumas/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+		test = fopen( temp, "r" );
+		if ( test == NULL )
+			strcat( temp, ".png" );
+		else
+			fclose( test );
 		resource = temp;
 	}
 
@@ -581,7 +594,7 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 		// Load the original luma once
 		if ( orig_bitmap == NULL )
 		{
-			char *extension = extension = strrchr( resource, '.' );
+			char *extension = strrchr( resource, '.' );
 			
 			// See if it is a PGM
 			if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
