@@ -19,22 +19,24 @@ int main( int argc, char **argv )
 	// Start the consumer...
 	int vstd = mlt_video_standard_ntsc;
 	//mlt_consumer consumer = mlt_factory_consumer( "bluefish", &vstd );
-	mlt_consumer consumer = mlt_factory_consumer( "westley", "PAL" );
+	mlt_consumer consumer = mlt_factory_consumer( "westley", NULL );
 
 	// Create the producer(s)
-	mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );
-	mlt_producer_set_in_and_out( dv1, 0, 5 );
-	
+	mlt_producer dv1 = mlt_factory_producer( "westley", file1 );
+	//mlt_producer_set_in_and_out( dv1, 0, 5 );
+
 	mlt_producer dv2 = mlt_factory_producer( "libdv", file2 );
 	//mlt_producer_set_in_and_out( dv2, 10.0, 30.0 );
 
-#if 0
+#if 1
 	// Connect the consumer to the producer
-	mlt_consumer_connect( consumer, mlt_producer_service( dv2 ) );
+	mlt_consumer_connect( consumer, mlt_producer_service( dv1 ) );
 
 	// Do stuff until we're told otherwise...
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
+	mlt_consumer_start( consumer );
+//	fprintf( stderr, "Press return to continue\n" );
+//	fgets( temp, 132, stdin );
+	mlt_consumer_stop( consumer );
 	mlt_consumer_close( consumer );
 	return 0;
 #endif
