@@ -194,4 +194,5 @@ void mlt_filter_close( mlt_filter this )
 		this->close( this );
 	else
 		mlt_service_close( &this->parent );
+	free( this );
 }

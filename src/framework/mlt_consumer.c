@@ -367,6 +367,9 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 		// Wipe the queue
 		while ( mlt_deque_count( this->queue ) )
 			mlt_frame_close( mlt_deque_pop_back( this->queue ) );
+
+		// Close the queue
+		mlt_deque_close( this->queue );
 	}
 }
 

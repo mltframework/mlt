@@ -665,6 +665,9 @@ static void consumer_close( mlt_consumer parent )
 	// Stop the consumer
 	mlt_consumer_stop( parent );
 
+	// Close the queue
+	mlt_deque_close( this->queue );
+
 	// Destroy mutexes
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );

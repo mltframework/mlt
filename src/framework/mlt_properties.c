@@ -360,24 +360,29 @@ int mlt_properties_count( mlt_properties this )
 int mlt_properties_parse( mlt_properties this, char *namevalue )
 {
 	char *name = strdup( namevalue );
-	char *value = strdup( namevalue );
+	char *value = NULL;
 	int error = 0;
+	char *ptr = strchr( name, '=' );
 
-	if ( strchr( name, '=' ) )
+	if ( ptr )
 	{
-		*( strchr( name, '=' ) ) = '\0';
-		strcpy( value, strchr( value, '=' ) + 1 );
+		*( ptr ++ ) = '\0';
+
+		if ( *ptr != '\"' )
+		{
+			value = strdup( ptr );
+		}
+		else
+		{
+			ptr ++;
+			value = strdup( ptr );
+			if ( value != NULL && value[ strlen( value ) - 1 ] == '\"' )
+				value[ strlen( value ) - 1 ] = '\0';
+		}
 	}
 	else
 	{
-		strcpy( value, "" );
-	}
-
-	if ( strlen( value ) > 1 && value[ 0 ] == '\"' )
-	{
-		strcpy( value, value + 1 );
-		if ( value[ strlen( value ) - 1 ] == '\"' )
-			value[ strlen( value ) - 1 ] = '\0';
+		value = strdup( "" );
 	}
 
 	error = mlt_properties_set( this, name, value );

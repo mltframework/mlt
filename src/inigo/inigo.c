@@ -183,7 +183,7 @@ int main( int argc, char **argv )
 	char *name = NULL;
 
 	// Construct the factory
-	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
+	mlt_factory_init( NULL );
 
 	// Check for serialisation switch first
 	for ( i = 1; i < argc; i ++ )

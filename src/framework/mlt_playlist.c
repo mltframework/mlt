@@ -85,6 +85,9 @@ mlt_playlist mlt_playlist_init( )
 		mlt_properties_set( mlt_playlist_properties( this ), "eof", "pause" );
 		mlt_properties_set( mlt_playlist_properties( this ), "resource", "<playlist>" );
 		mlt_properties_set( mlt_playlist_properties( this ), "mlt_type", "mlt_producer" );
+
+		this->size = 10;
+		this->list = malloc( this->size * sizeof( playlist_entry * ) );
 	}
 	
 	return this;
@@ -168,8 +171,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	{
 		int i;
 		this->list = realloc( this->list, ( this->size + 10 ) * sizeof( playlist_entry * ) );
-		for ( i = this->size; i < this->size + 10; i ++ )
-			this->list[ i ] = NULL;
+		for ( i = this->size; i < this->size + 10; i ++ ) this->list[ i ] = NULL;
 		this->size += 10;
 	}
 
@@ -643,7 +645,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 void mlt_playlist_close( mlt_playlist this )
 {
+	int i = 0;
 	mlt_producer_close( &this->parent );
 	mlt_producer_close( &this->blank );
+	for ( i = 0; i < this->count; i ++ )
+		free( this->list[ i ] );
+	free( this->list );
 	free( this );
 }

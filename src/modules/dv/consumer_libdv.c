@@ -275,7 +275,7 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 		// Default audio args
 		mlt_audio_format fmt = mlt_audio_pcm;
 		int channels = 2;
-		int frequency = 48000;
+		int frequency = mlt_properties_get_int( this_properties, "frequency" );
 		int samples = mlt_sample_calculator( mlt_properties_get_double( this_properties, "fps" ), frequency, count );
 		int16_t *pcm = NULL;
 
@@ -304,6 +304,11 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 			for ( i = 0; i < samples; i ++ )
 				for ( j = 0; j < channels; j++ )
 					audio_buffers[ j ][ i ] = *pcm ++;
+		}
+		else
+		{
+			for ( j = 0; j < channels; j++ )
+				memset( audio_buffers[ j ], 0, 2 * DV_AUDIO_MAX_SAMPLES );
 		}
 
 		// Encode audio on frame

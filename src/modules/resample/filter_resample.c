@@ -36,21 +36,30 @@
 
 static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// Get the properties of the a frame
+	// Get the properties of the frame
 	mlt_properties properties = mlt_frame_properties( frame );
-	int output_rate = mlt_properties_get_int( properties, "resample.frequency" );
-	SRC_STATE *state = mlt_properties_get_data( properties, "resample.state", NULL );
-	SRC_DATA data;
-	float *input_buffer = mlt_properties_get_data( properties, "resample.input_buffer", NULL );
-	float *output_buffer = mlt_properties_get_data( properties, "resample.output_buffer", NULL );
+
+	// Get the filter service
+	mlt_filter filter = mlt_frame_pop_audio( frame );
+
+	// Get the filter properties
+	mlt_properties filter_properties = mlt_filter_properties( filter );
+
+	// Get the resample information
+	int output_rate = mlt_properties_get_int( filter_properties, "frequency" );
+	SRC_STATE *state = mlt_properties_get_data( filter_properties, "state", NULL );
+	float *input_buffer = mlt_properties_get_data( filter_properties, "input_buffer", NULL );
+	float *output_buffer = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
 	int channels_avail = *channels;
+	SRC_DATA data;
 	int i;
 
+	// If no resample frequency is specified, default to requested value
 	if ( output_rate == 0 )
 		output_rate = *frequency;
 
 	// Restore the original get_audio
-	frame->get_audio = mlt_properties_get_data( properties, "resample.get_audio", NULL );
+	frame->get_audio = mlt_frame_pop_audio( frame );
 
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
@@ -60,11 +69,11 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	{
 		int size = *channels * *samples * sizeof( int16_t );
 		int16_t *new_buffer = mlt_pool_alloc( size );
+		int j, k = 0;
 		
 		// Duplicate the existing channels
 		for ( i = 0; i < *samples; i++ )
 		{
-			int j, k = 0;
 			for ( j = 0; j < *channels; j++ )
 			{
 				new_buffer[ ( i * *channels ) + j ] = (*buffer)[ ( i * channels_avail ) + k ];
@@ -77,7 +86,7 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		
 		*buffer = new_buffer;
 	}
-	else if ( channels_avail > *channels )
+	else if ( channels_avail == 6 && *channels == 2 )
 	{
 		// Nasty hack for ac3 5.1 audio - may be a cause of failure?
 		int size = *channels * *samples * sizeof( int16_t );
@@ -97,50 +106,56 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	}
 
 	// Return now if no work to do
-	if ( output_rate == *frequency )
-		return 0;
-
-	//fprintf( stderr, "resample_get_audio: input_rate %d output_rate %d\n", *frequency, output_rate );
-	
-	// Convert to floating point
-	for ( i = 0; i < *samples * *channels; ++i )
-		input_buffer[ i ] = ( float )( (*buffer)[ i ] ) / 32768;
-
-	// Resample
-	data.data_in = input_buffer;
-	data.data_out = output_buffer;
-	data.src_ratio = ( float ) output_rate / ( float ) *frequency;
-	data.input_frames = *samples;
-	data.output_frames = BUFFER_LEN / *channels;
-	data.end_of_input = 0;
-	i = src_process( state, &data );
-	if ( i == 0 )
+	if ( output_rate != *frequency )
 	{
-		if ( data.output_frames_gen > *samples )
+		float *p = input_buffer;
+		float *end = p + *samples * *channels;
+		int16_t *q = *buffer;
+
+		// Convert to floating point
+		while( p != end )
+			*p ++ = ( float )( *q ++ ) / 32768.0;
+
+		// Resample
+		data.data_in = input_buffer;
+		data.data_out = output_buffer;
+		data.src_ratio = ( float ) output_rate / ( float ) *frequency;
+		data.input_frames = *samples;
+		data.output_frames = BUFFER_LEN / *channels;
+		data.end_of_input = 0;
+		i = src_process( state, &data );
+		if ( i == 0 )
 		{
-			*buffer = mlt_pool_alloc( data.output_frames_gen * *channels * sizeof( int16_t ) );
-			mlt_properties_set_data( properties, "audio", *buffer, *channels * data.output_frames_gen * 2, mlt_pool_release, NULL );
+			if ( data.output_frames_gen > *samples )
+			{
+				*buffer = mlt_pool_realloc( *buffer, data.output_frames_gen * *channels * sizeof( int16_t ) );
+				mlt_properties_set_data( properties, "audio", *buffer, *channels * data.output_frames_gen * 2, mlt_pool_release, NULL );
+			}
+
+			*samples = data.output_frames_gen;
+			*frequency = output_rate;
+
+			p = output_buffer;
+			q = *buffer;
+			end = p + *samples * *channels;
+			
+			// Convert from floating back to signed 16bit
+			while( p != end )
+			{
+				if ( *p > 1.0 )
+					*p = 1.0;
+				if ( *p < -1.0 )
+					*p = -1.0;
+				if ( *p > 0 )
+					*q ++ = 32767 * *p ++;
+				else
+					*q ++ = 32768 * *p ++;
+			}
 		}
-		*samples = data.output_frames_gen;
-		*frequency = output_rate;
-		
-		// Convert from floating back to signed 16bit
-		for ( i = 0; i < *samples * *channels; ++i )
-		{
-			float sample = output_buffer[ i ];
-			if ( sample > 1.0 )
-				sample = 1.0;
-			if ( sample < -1.0 )
-				sample = -1.0;
-			if ( sample >= 0 )
-				(*buffer)[ i ] = lrint( 32767.0 * sample );
-			else
-				(*buffer)[ i ] = lrint( 32768.0 * sample );
-		}
+		else
+			fprintf( stderr, "resample_get_audio: %s %d,%d,%d\n", src_strerror( i ), *frequency, *samples, output_rate );
 	}
-	else
-		fprintf( stderr, "resample_get_audio: %s %d,%d,%d\n", src_strerror( i ), *frequency, *samples, output_rate );
-	
+
 	return 0;
 }
 
@@ -151,23 +166,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	if ( frame->get_audio != NULL )
 	{
-		mlt_properties properties = mlt_filter_properties( this );
-		mlt_properties frame_props = mlt_frame_properties( frame );
-
-		// Propogate the frequency property if supplied
-		if ( mlt_properties_get( properties, "frequency" ) != NULL )
-			mlt_properties_set_int( frame_props, "resample.frequency", mlt_properties_get_int( properties, "frequency" ) );
-
-		// Propogate the other properties
-		mlt_properties_set_int( frame_props, "resample.channels", mlt_properties_get_int( properties, "channels" ) );
-		mlt_properties_set_data( frame_props, "resample.state", mlt_properties_get_data( properties, "state", NULL ), 0, NULL, NULL );
-		mlt_properties_set_data( frame_props, "resample.input_buffer", mlt_properties_get_data( properties, "input_buffer", NULL ), 0, NULL, NULL );
-		mlt_properties_set_data( frame_props, "resample.output_buffer", mlt_properties_get_data( properties, "output_buffer", NULL ), 0, NULL, NULL );
-	
-		// Backup the original get_audio (it's still needed)
-		mlt_properties_set_data( frame_props, "resample.get_audio", frame->get_audio, 0, NULL, NULL );
-
-		// Override the get_audio method
+		mlt_frame_push_audio( frame, frame->get_audio );
+		mlt_frame_push_audio( frame, this );
 		frame->get_audio = resample_get_audio;
 	}
 
