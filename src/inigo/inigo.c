@@ -181,7 +181,7 @@ int main( int argc, char **argv )
 	int track = 0;
 	mlt_consumer consumer = NULL;
 	mlt_producer producer = NULL;
-	mlt_playlist playlist = NULL;
+	mlt_playlist playlist = mlt_playlist_init( );
 	mlt_properties group = mlt_properties_new( );
 	mlt_properties properties = group;
 	mlt_field field = mlt_field_init( );
@@ -190,9 +190,6 @@ int main( int argc, char **argv )
 
 	// Construct the factory
 	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
-
-	// Set up containers
-	playlist = mlt_playlist_init( );
 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( field_properties, "registered", 0 );
@@ -234,6 +231,14 @@ int main( int argc, char **argv )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
 			mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
+		}
+		else if ( !strcmp( argv[ i ], "-track" ) )
+		{
+			if ( producer != NULL )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track ++ );
+			playlist = mlt_playlist_init( );
 		}
 		else if ( !strstr( argv[ i ], "=" ) )
 		{
