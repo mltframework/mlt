@@ -280,7 +280,7 @@ Producers
 
 		Dependencies
 
-			libgdk_pixbuf-2.0, libglib-2.0,	libgobject-2.0, libgmodule-2.0
+			libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
 
 		Known Bugs
 
@@ -523,6 +523,8 @@ Filters
 		
 			int in - in point
 			int out - out point
+			int window - the number of video frames over which to smooth normalisation.
+			             defaults to 75.
 
 		Mutable Properties
 
@@ -540,6 +542,7 @@ Filters
 
 			double max_gain - a floating point or decibel value of the maximum gain that
 				can be applied during normalisation.
+				- an unspecified value uses the default 20dB
 			
 		Dependencies
 
@@ -571,6 +574,37 @@ Filters
 		Dependencies
 
 			libresample
+
+		Known Bugs
+
+			none
+
+	rescale
+
+		Description
+
+			Scale the producer video frame size to match the consumer.
+
+		Constructor Argument
+
+			interpolation - the rescaling method, one of:
+				nearest (lowest quality, fastest),
+				tiles,
+				bilinear (good quality, moderate speed),
+				hyper (best quality, slowest)
+
+		Initialisation Properties
+
+			int in - in point
+			int out - out point
+
+		Mutable Properties
+
+			string interpolation - see constructor argument above
+
+		Dependencies
+
+			libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
 
 		Known Bugs
 
