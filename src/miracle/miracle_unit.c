@@ -84,6 +84,21 @@ miracle_unit miracle_unit_init( int index, char *constructor )
 	return this;
 }
 
+static char *strip_root( miracle_unit unit, char *file )
+{
+	mlt_properties properties = unit->properties;
+	char *root = mlt_properties_get( properties, "root" );
+	if ( file != NULL && root != NULL )
+	{
+		int length = strlen( root );
+		if ( root[ length - 1 ] == '/' )
+			length --;
+		if ( !strncmp( file, root, length ) )
+			file += length;
+	}
+	return file;
+}
+
 /** Communicate the current status to all threads waiting on the notifier.
 */
 
@@ -186,6 +201,35 @@ static void clear_unit( miracle_unit unit )
 	update_generation( unit );
 }
 
+/** Wipe all but the playing clip from the unit.
+*/
+
+static void clean_unit( miracle_unit unit )
+{
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_playlist_clip_info info;
+	int current = mlt_playlist_current_clip( playlist );
+	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_position position = mlt_producer_frame( producer );
+	double speed = mlt_producer_get_speed( producer );
+	mlt_playlist_get_clip_info( playlist, &info, current );
+
+	if ( info.resource != NULL )
+	{
+		void *instance = mlt_properties_get_data( unit->producers, info.resource, NULL );
+		position -= info.start;
+		mlt_properties_set_data( unit->producers, info.resource, instance, 0, NULL, NULL );
+		clear_unit( unit );
+		mlt_playlist_append_io( playlist, instance, info.frame_in, info.frame_out );
+		mlt_properties_set_data( unit->producers, info.resource, instance, 0, ( mlt_destructor )mlt_producer_close, NULL );
+		mlt_producer_seek( producer, position );
+		mlt_producer_set_speed( producer, speed );
+	}
+	
+	update_generation( unit );
+}
+
 /** Generate a report on all loaded clips.
 */
 
@@ -193,7 +237,6 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 {
 	int i;
 	mlt_properties properties = unit->properties;
-	char *root_dir = mlt_properties_get( properties, "root" );
 	int generation = mlt_properties_get_int( properties, "generation" );
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 
@@ -203,11 +246,9 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 	{
 		mlt_playlist_clip_info info;
 		mlt_playlist_get_clip_info( playlist , &info, i );
-		char *resource = info.resource;
-		if ( root_dir != NULL && !strncmp( resource, root_dir, strlen( root_dir ) ) )
-			resource += strlen( root_dir );
 		valerie_response_printf( response, 10240, "%d \"%s\" %lld %lld %lld %lld %.2f\n", 
-								 i, resource, 
+								 i, 
+								 strip_root( unit, info.resource ), 
 								 info.frame_in, 
 								 info.frame_out,
 								 info.frame_count, 
@@ -253,6 +294,7 @@ valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index
 	{
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+		fprintf( stderr, "inserting clip %s before %d\n", clip, index );
 		mlt_playlist_insert( playlist, instance, index, in, out );
 		miracle_log( LOG_DEBUG, "inserted clip %s at %d", clip, index );
 		update_generation( unit );
@@ -276,7 +318,7 @@ valerie_error_code miracle_unit_remove( miracle_unit unit, int index )
 
 valerie_error_code miracle_unit_clean( miracle_unit unit )
 {
-	clear_unit( unit );
+	clean_unit( unit );
 	miracle_log( LOG_DEBUG, "Cleaned playlist" );
 	miracle_unit_status_communicate( unit );
 	return valerie_ok;
@@ -370,6 +412,28 @@ int miracle_unit_has_terminated( miracle_unit unit )
 
 int miracle_unit_transfer( miracle_unit dest_unit, miracle_unit src_unit )
 {
+	int i;
+	mlt_properties dest_properties = dest_unit->properties;
+	mlt_playlist dest_playlist = mlt_properties_get_data( dest_properties, "playlist", NULL );
+	mlt_properties src_properties = src_unit->properties;
+	mlt_playlist src_playlist = mlt_properties_get_data( src_properties, "playlist", NULL );
+
+	for ( i = 0; i < mlt_playlist_count( src_playlist ); i ++ )
+	{
+		mlt_playlist_clip_info info;
+		mlt_playlist_get_clip_info( src_playlist, &info, i );
+		mlt_producer producer = locate_producer( dest_unit, info.resource );
+		if ( producer != NULL )
+		{
+			mlt_playlist_append_io( dest_playlist, producer, info.frame_in, info.frame_out );
+			if ( i == 0 )
+			{
+				miracle_unit_change_position( dest_unit, mlt_playlist_count( dest_playlist ) - 1, 0 );
+				clean_unit( dest_unit );
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -393,7 +457,6 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 	if ( !error )
 	{
 		mlt_properties properties = unit->properties;
-		char *root_dir = mlt_properties_get( properties, "root" );		
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 		mlt_producer producer = mlt_playlist_producer( playlist );
 		mlt_producer clip = mlt_playlist_current( playlist );
@@ -404,20 +467,14 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 
 		if ( info.resource != NULL && strcmp( info.resource, "" ) )
 		{
-			if ( root_dir == NULL || strncmp( info.resource, root_dir, strlen( root_dir ) ) )
-				strncpy( status->clip, info.resource, sizeof( status->clip ) );
-			else
-				strncpy( status->clip, info.resource + strlen( root_dir ), sizeof( status->clip ) );
+			strncpy( status->clip, strip_root( unit, info.resource ), sizeof( status->clip ) );
 			status->speed = (int)( mlt_producer_get_speed( producer ) * 1000.0 );
 			status->fps = mlt_producer_get_fps( producer );
 			status->in = info.frame_in;
 			status->out = info.frame_out;
 			status->position = mlt_producer_position( clip );
 			status->length = mlt_producer_get_length( clip );
-			if ( root_dir == NULL || strncmp( info.resource, root_dir, strlen( root_dir ) ) )
-				strncpy( status->tail_clip, info.resource, sizeof( status->tail_clip ) );
-			else
-				strncpy( status->clip, info.resource + strlen( root_dir ), sizeof( status->clip ) );
+			strncpy( status->tail_clip, strip_root( unit, info.resource ), sizeof( status->tail_clip ) );
 			status->tail_in = info.frame_in;
 			status->tail_out = info.frame_out;
 			status->tail_position = mlt_producer_position( clip );

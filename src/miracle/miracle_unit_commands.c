@@ -400,8 +400,7 @@ int miracle_get_unit_property( command_argument cmd_arg )
 
 int miracle_transfer( command_argument cmd_arg )
 {
-	/*
-	dv_unit src_unit = miracle_get_unit(cmd_arg->unit);
+	miracle_unit src_unit = miracle_get_unit(cmd_arg->unit);
 	int dest_unit_id = -1;
 	char *string = (char*) cmd_arg->argument;
 	if ( string != NULL && ( string[ 0 ] == 'U' || string[ 0 ] == 'u' ) && strlen( string ) > 1 )
@@ -409,13 +408,12 @@ int miracle_transfer( command_argument cmd_arg )
 	
 	if ( src_unit != NULL && dest_unit_id != -1 )
 	{
-		dv_unit dest_unit = miracle_get_unit( dest_unit_id );
-		if ( dest_unit != NULL && !dv_unit_is_offline(dest_unit) && dest_unit != src_unit )
+		miracle_unit dest_unit = miracle_get_unit( dest_unit_id );
+		if ( dest_unit != NULL && !miracle_unit_is_offline(dest_unit) && dest_unit != src_unit )
 		{
-			dv_unit_transfer( dest_unit, src_unit );
+			miracle_unit_transfer( dest_unit, src_unit );
 			return RESPONSE_SUCCESS;
 		}
 	}
-	*/
 	return RESPONSE_INVALID_UNIT;
 }

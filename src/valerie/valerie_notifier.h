@@ -40,7 +40,6 @@ extern "C"
 typedef struct
 {
 	pthread_mutex_t mutex;
-	pthread_mutex_t cond_mutex;
 	pthread_cond_t cond;
 	valerie_status_t last;
 	valerie_status_t store[ MAX_UNITS ];

@@ -201,9 +201,6 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 	// This will hold the size of the dv frame
 	int size = 0;
 
-	// determine if this a test card
-	int is_test = mlt_frame_is_test_card( frame );
-
 	// If we get an encoder, then encode the image
 	if ( encoder != NULL )
 	{
@@ -212,12 +209,16 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		int width = mlt_properties_get_int( this_properties, "width" );
 		int height = mlt_properties_get_int( this_properties, "height" );
 		uint8_t *image = NULL;
+		int is_test = 0;
 
 		if ( mlt_properties_get( this_properties, "rescale" ) != NULL )
 			mlt_properties_set( mlt_frame_properties( frame ), "rescale.interp", mlt_properties_get( this_properties, "rescale" ) );
 
 		// Get the image
 		mlt_frame_get_image( frame, &image, &fmt, &width, &height, 0 );
+
+		// determine if this a test card
+		is_test = mlt_frame_is_test_card( frame );
 
 		// Check that we get what we expected
 		if ( fmt != mlt_image_yuv422 || 
@@ -237,7 +238,7 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		// Process the frame
 		if ( size != 0 && !( mlt_properties_get_int( this_properties, "was_test_card" ) && is_test ) )
 		{
-			if ( mlt_properties_get_int( mlt_frame_properties( frame ), "top_field_first" ) == 0 )
+			if ( mlt_properties_get_int( mlt_frame_properties( frame ), "top_field_first" ) )
 				image += width * 2;
 
 			// Encode the image
@@ -259,6 +260,9 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 	// Get the properties of the consumer
 	mlt_properties this_properties = mlt_consumer_properties( this );
 
+	// Get the properties of the frame
+	mlt_properties frame_properties = mlt_frame_properties( frame );
+
 	// Obtain the dv_encoder
 	dv_encoder_t *encoder = libdv_get_encoder( this, frame );
 
@@ -279,14 +283,14 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 		time_t start = time( NULL );
 		int height = mlt_properties_get_int( this_properties, "height" );
 		int is_pal = height == 576;
-		int is_wide = 0;
+		int is_wide = mlt_properties_get_double( frame_properties, "fps" ) == ( ( double ) 16.0 / 9.0 );
 
 		// Temporary - audio buffer allocation
 		int16_t *audio_buffers[ 4 ];
 		int i = 0;
 		int j = 0;
 		for ( i = 0 ; i < 4; i ++ )
-			audio_buffers[ i ] = malloc( 2 * DV_AUDIO_MAX_SAMPLES );
+			audio_buffers[ i ] = calloc( 1, 2 * DV_AUDIO_MAX_SAMPLES );
 
 		// Get the audio
 		mlt_frame_get_audio( frame, &pcm, &fmt, &frequency, &channels, &samples );
@@ -295,9 +299,12 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 		encoder->samples_this_frame = samples;
 
 		// Fill the audio buffers correctly
-		for ( i = 0; i < samples; i ++ )
-			for ( j = 0; j < channels; j++ )
-				audio_buffers[ j ][ i ] = *pcm ++;
+		if ( mlt_properties_get_double( frame_properties, "_speed" ) == 1.0 )
+		{
+			for ( i = 0; i < samples; i ++ )
+				for ( j = 0; j < channels; j++ )
+					audio_buffers[ j ][ i ] = *pcm ++;
+		}
 
 		// Encode audio on frame
 		dv_encode_full_audio( encoder, audio_buffers, channels, frequency, dv_frame );

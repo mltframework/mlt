@@ -20,7 +20,6 @@ XFER
 
 Incorrect Behaviour
 ------------------------------------------------------------------------------
-CLEAN removes all clips (as opposed to leaving the currently playing one)
 
 
 Different Intentional Behaviour

@@ -37,14 +37,12 @@
 
 valerie_notifier valerie_notifier_init( )
 {
-	valerie_notifier this = malloc( sizeof( valerie_notifier_t ) );
+	valerie_notifier this = calloc( 1, sizeof( valerie_notifier_t ) );
 	if ( this != NULL )
 	{
 		int index = 0;
-		memset( this, 0, sizeof( valerie_notifier_t ) );
 		pthread_mutex_init( &this->mutex, NULL );
 		pthread_cond_init( &this->cond, NULL );
-		pthread_mutex_init( &this->cond_mutex, NULL );
 		for ( index = 0; index < MAX_UNITS; index ++ )
 			this->store[ index ].unit = index;
 	}
@@ -58,14 +56,10 @@ void valerie_notifier_get( valerie_notifier this, valerie_status status, int uni
 {
 	pthread_mutex_lock( &this->mutex );
 	if ( unit >= 0 && unit < MAX_UNITS )
-	{
 		valerie_status_copy( status, &this->store[ unit ] );
-	}
 	else
-	{
 		memset( status, 0, sizeof( valerie_status_t ) );
-		status->unit = unit;
-	}
+	status->unit = unit;
 	status->dummy = time( NULL );
 	pthread_mutex_unlock( &this->mutex );
 }
@@ -80,24 +74,13 @@ int valerie_notifier_wait( valerie_notifier this, valerie_status status )
 	int error = 0;
 
 	memset( status, 0, sizeof( valerie_status_t ) );
-
-	pthread_mutex_lock( &this->cond_mutex );
 	gettimeofday( &now, NULL );
 	timeout.tv_sec = now.tv_sec + 1;
 	timeout.tv_nsec = now.tv_usec * 1000;
-	if ( pthread_cond_timedwait( &this->cond, &this->cond_mutex, &timeout ) != ETIMEDOUT )
-	{
-		pthread_mutex_lock( &this->mutex );
-		valerie_status_copy( status, &this->last );
-		pthread_mutex_unlock( &this->mutex );
-	}
-	else
-	{
-		pthread_mutex_lock( &this->mutex );
-		valerie_status_copy( status, &this->last );
-		pthread_mutex_unlock( &this->mutex );
-	}
-	pthread_mutex_unlock( &this->cond_mutex );
+	pthread_mutex_lock( &this->mutex );
+	pthread_cond_timedwait( &this->cond, &this->mutex, &timeout );
+	valerie_status_copy( status, &this->last );
+	pthread_mutex_unlock( &this->mutex );
 
 	return error;
 }
@@ -137,7 +120,6 @@ void valerie_notifier_close( valerie_notifier this )
 	if ( this != NULL )
 	{
 		pthread_mutex_destroy( &this->mutex );
-		pthread_mutex_destroy( &this->cond_mutex );
 		pthread_cond_destroy( &this->cond );
 		free( this );
 	}

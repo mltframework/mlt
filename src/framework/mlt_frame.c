@@ -24,20 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct
-{
-	mlt_image_format vfmt;
-	int width;
-	int height;
-	uint8_t *image;
-	uint8_t *alpha;
-	mlt_audio_format afmt;
-	int16_t *audio;
-}
-frame_test;
-
-static frame_test test_card = { mlt_image_none, 0, 0, NULL, NULL, mlt_audio_none, NULL };
-
 /** Constructor for a frame.
 */
 
@@ -77,7 +63,7 @@ mlt_properties mlt_frame_properties( mlt_frame this )
 
 int mlt_frame_is_test_card( mlt_frame this )
 {
-	return ( this->stack_get_image_size == 0 && mlt_properties_get_data( mlt_frame_properties( this ), "image", NULL ) == NULL );
+	return mlt_properties_get_int( mlt_frame_properties( this ), "test_image" );
 }
 
 /** Check if we have a way to derive something than test audio.
@@ -85,7 +71,7 @@ int mlt_frame_is_test_card( mlt_frame this )
 
 int mlt_frame_is_test_audio( mlt_frame this )
 {
-	return this->get_audio == NULL;
+	return this->get_audio == NULL || mlt_properties_get_int( mlt_frame_properties( this ), "test_audio" );
 }
 
 /** Get the aspect ratio of the frame.
@@ -182,62 +168,56 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	}
 	else
 	{
-		if ( test_card.vfmt != *format || test_card.width != *width || test_card.height != *height || test_card.image == NULL )
-		{
-			uint8_t *p;
-			uint8_t *q;
+		uint8_t *p;
+		uint8_t *q;
+		int size = 0;
 
-			test_card.vfmt = *format;
-			test_card.width = *width == 0 ? 720 : *width;
-			test_card.height = *height == 0 ? 576 : *height;
-
-			switch( *format )
-			{
-				case mlt_image_none:
-					break;
-				case mlt_image_rgb24:
-					test_card.image = realloc( test_card.image, test_card.width * test_card.height * 3 );
-					memset( test_card.image, 255, test_card.width * test_card.height * 3 );
-					break;
-				case mlt_image_rgb24a:
-					test_card.image = realloc( test_card.image, test_card.width * test_card.height * 4 );
-					memset( test_card.image, 255, test_card.width * test_card.height * 4 );
-					break;
-				case mlt_image_yuv422:
-					test_card.image = realloc( test_card.image, test_card.width * test_card.height * 2 );
-					p = test_card.image;
-					q = test_card.image + test_card.width * test_card.height * 2;
-					while ( p != q )
-					{
-						*p ++ = 255;
-						*p ++ = 128;
-					}
-					break;
-				case mlt_image_yuv420p:
-					test_card.image = realloc( test_card.image, test_card.width * test_card.height * 3 / 2 );
-					memset( test_card.image, 255, test_card.width * test_card.height * 3 / 2 );
-					break;
-			}
-		}
-
-		*width = test_card.width;
-		*height = test_card.height;
-		*buffer = test_card.image;
+		*width = *width == 0 ? 720 : *width;
+		*height = *height == 0 ? 576 : *height;
+		size = *width * *height;
 
 		mlt_properties_set_int( properties, "width", *width );
 		mlt_properties_set_int( properties, "height", *height );
 
-		if ( writable )
+		switch( *format )
 		{
-			uint8_t *copy = malloc( *width * *height * 2 );
-			memcpy( copy, *buffer, *width * *height * 2 );
-			mlt_properties_set_data( properties, "image", copy, *width * *height * 2, free, NULL );
-			*buffer = copy;
+			case mlt_image_none:
+				size = 0;
+				*buffer = NULL;
+				break;
+			case mlt_image_rgb24:
+				size *= 3;
+				*buffer = malloc( size );
+				if ( *buffer )
+					memset( *buffer, 255, size );
+				break;
+			case mlt_image_rgb24a:
+				size *= 4;
+				*buffer = malloc( size );
+				if ( *buffer )
+					memset( *buffer, 255, size );
+				break;
+			case mlt_image_yuv422:
+				size *= 2;
+				*buffer = malloc( size );
+				p = *buffer;
+				q = p + size;
+				while ( p != NULL && p != q )
+				{
+					*p ++ = 255;
+					*p ++ = 128;
+				}
+				break;
+			case mlt_image_yuv420p:
+				size = size * 3 / 2;
+				*buffer = malloc( size );
+				if ( *buffer )
+					memset( *buffer, 255, size );
+				break;
 		}
-		else
-		{
-			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
-		}
+
+		mlt_properties_set_data( properties, "image", *buffer, size, free, NULL );
+		mlt_properties_set_int( properties, "test_image", 1 );
 	}
 
 	return 0;
@@ -247,31 +227,29 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 {
 	if ( this->get_alpha_mask != NULL )
 		return this->get_alpha_mask( this );
-	return test_card.alpha;
+	return NULL;
 }
 
 int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
+	mlt_properties properties = mlt_frame_properties( this );
+
 	if ( this->get_audio != NULL )
 	{
 		return this->get_audio( this, buffer, format, frequency, channels, samples );
 	}
 	else
 	{
-		if ( *samples <= 0 )
-			*samples = 1920;
-		if ( *channels <= 0 )
-			*channels = 2;
-		if ( *frequency <= 0 )
-			*frequency = 48000;
-		if ( test_card.audio == NULL || test_card.afmt != *format )
-		{
-			test_card.afmt = *format;
-			test_card.audio = realloc( test_card.audio, *samples * *channels * sizeof( int16_t ) );
-			memset( test_card.audio, 0, *samples * *channels * sizeof( int16_t ) );
-		}
-		
-		*buffer = test_card.audio;
+		int size = 0;
+		*samples = *samples <= 0 ? 1920 : *samples;
+		*channels = *channels <= 0 ? 2 : *channels;
+		*frequency = *frequency <= 0 ? 48000 : *frequency;
+		size = *samples * *channels * sizeof( int16_t );
+		*buffer = malloc( size );
+		if ( *buffer != NULL )
+			memset( *buffer, 0, size );
+		mlt_properties_set_data( properties, "audio", *buffer, size, free, NULL );
+		mlt_properties_set_int( properties, "test_audio", 1 );
 	}
 	return 0;
 }
