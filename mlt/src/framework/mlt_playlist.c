@@ -219,7 +219,7 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 	// Seek in real producer to relative position
 	if ( producer != NULL )
 	{
-		mlt_producer_seek_frame( producer, position );
+		mlt_producer_seek_frame( producer, position + mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) ) );
 	}
 	else if ( total > 0 )
 	{
@@ -398,8 +398,9 @@ int mlt_playlist_clear( mlt_playlist this )
 int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 {
 	// Append to virtual list
+	int64_t in = mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) );
 	int64_t out = mlt_producer_frame_position( producer, mlt_producer_get_out( producer ) );
-	return mlt_playlist_virtual_append( this, producer, 0, out );
+	return mlt_playlist_virtual_append( this, producer, 0, out - in );
 }
 
 /** Append a producer to the playlist with in/out points.
@@ -412,7 +413,7 @@ int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, double in,
 	{
 		int64_t fin = mlt_producer_frame_position( producer, in );
 		int64_t fout = mlt_producer_frame_position( producer, out );
-		return mlt_playlist_virtual_append( this, producer, fin, fout );
+		return mlt_playlist_virtual_append( this, producer, 0, fout - fin );
 	}
 	else
 	{
