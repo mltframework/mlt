@@ -92,27 +92,23 @@ pixops_scale_nearest ( guchar *dest_buf,
                        double scale_x,
                        double scale_y )
 {
-	int i, j;
-	int x;
-	int x_step = ( 1 << SCALE_SHIFT ) / scale_x;
-	int y_step = ( 1 << SCALE_SHIFT ) / scale_y;
+	register int i, j;
+	register int x;
+	register int x_step = ( 1 << SCALE_SHIFT ) / scale_x;
+	register int y_step = ( 1 << SCALE_SHIFT ) / scale_y;
 
 	for ( i = 0; i < ( render_y1 - render_y0 ); i++ )
 	{
-		const guchar *src = src_buf + ( ( ( i + render_y0 ) * y_step + y_step / 2 ) >> SCALE_SHIFT ) * src_rowstride;
+		const guchar *src = src_buf + ( ( ( i + render_y0 ) * y_step + ( y_step >> 1 ) ) >> SCALE_SHIFT ) * src_rowstride;
 		guchar *dest = dest_buf + i * dest_rowstride;
 
-		x = render_x0 * x_step + x_step / 2;
+		x = render_x0 * x_step + ( x_step >> 1 );
 
 		for ( j = 0; j < ( render_x1 - render_x0 ); j++ )
 		{
-			const guchar *p = src + ( x >> SCALE_SHIFT ) * 4;
-			guint32 *p32;
-
-			p32 = ( guint32 * ) dest;
-			*p32 = *( ( guint32 * ) p );
-
-			dest += 4;
+			int x_scaled = x >> SCALE_SHIFT;
+			*dest++ = src[ x_scaled << 1 ];
+			*dest++ = src[ ( ( x_scaled >> 1 ) << 2 ) + ( ( j & 1 ) << 1 ) + 1 ];
 			x += x_step;
 		}
 	}
@@ -126,40 +122,32 @@ scale_line ( int *weights, int n_x, int n_y,
              int x_init, int x_step, int src_width )
 {
 	int x = x_init;
-	int i, j;
+	register int i, j;
 
 	while ( dest < dest_end )
 	{
 		int x_scaled = x >> SCALE_SHIFT;
 		int *pixel_weights;
+		unsigned int y = 0, uv = 0;
 
 		pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * n_x * n_y;
 
-		unsigned int y1 = 0, cb = 0, y2 = 0, cr = 0;
 		for ( i = 0; i < n_y; i++ )
 		{
-			guchar *q = src[ i ] + x_scaled * 4;
 			int *line_weights = pixel_weights + n_x * i;
+			guchar *q = src[ i ];
 
-			for ( j = 0; j < n_x; j++ )
+			for ( j = 0; j < n_x; j ++ )
 			{
 				unsigned int ta = line_weights[ j ];
 
-				y1 += ta * q[ 0 ];
-				cb += ta * q[ 1 ];
-				y2 += ta * q[ 2 ];
-				cr += ta * q[ 3 ];
-
-				q += 4;
+				y  += ta * q[ ( x_scaled << 1 ) ];
+				uv += ta * q[ ( ( x_scaled >> 1 ) << 2 ) + ( ( j & 1 ) << 1 ) + 1 ];
 			}
 		}
 
-		dest[ 0 ] = ( y1 + 0xffff ) >> 16;
-		dest[ 1 ] = ( cb + 0xffff ) >> 16;
-		dest[ 2 ] = ( y2 + 0xffff ) >> 16;
-		dest[ 3 ] = ( cr + 0xffff ) >> 16;
-
-		dest += 4;
+		*dest++ = ( y  + 0xffff ) >> SCALE_SHIFT;
+		*dest++ = ( uv + 0xffff ) >> SCALE_SHIFT;
 
 		x += x_step;
 	}
@@ -205,14 +193,15 @@ scale_line_22_33 ( int *weights, int n_x, int n_y,
 
 	while ( dest < dest_end )
 	{
-		unsigned int y1, cb, y2, cr;
+		unsigned int y, uv;
 		int x_scaled = x >> SCALE_SHIFT;
 		int *pixel_weights;
 		guchar *q0, *q1;
 		int w1, w2, w3, w4;
+		int x_aligned = ( ( x_scaled >> 1 ) << 2 );
+		int uv_index = ( ( x_scaled & 1 ) << 1 ) + 1;
 
-		q0 = src0 + x_scaled * 4;
-		q1 = src1 + x_scaled * 4;
+//		fprintf( stderr, "%d %d | ", x_scaled, x_aligned );
 
 		pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * 4;
 
@@ -221,32 +210,27 @@ scale_line_22_33 ( int *weights, int n_x, int n_y,
 		w3 = pixel_weights[ 2 ];
 		w4 = pixel_weights[ 3 ];
 
-		y1 = w1 * q0[ 0 ];
-		cb = w1 * q0[ 1 ];
-		y2 = w1 * q0[ 2 ];
-		cr = w1 * q0[ 3 ];
+		q0 = src0 + ( x_scaled << 1 );
+		q1 = src1 + ( x_scaled << 1 );
 
-		y1 += w2 * q0[ 4 ];
-		cb += w2 * q0[ 5 ];
-		y2 += w2 * q0[ 6 ];
-		cr += w2 * q0[ 7 ];
+		y  = w1 * q0[ 0 ];
+		y += w2 * q0[ 2 ];
+		y += w3 * q1[ 0 ];
+		y += w4 * q1[ 2 ];
+		*dest++ = ( y + 0x8000 ) >> 16;
+//		*dest++ = ( q0[ 0 ] + q0[ 2 ] + q1[ 0 ] + q1[ 2 ] ) >> 2;
 
-		y1 += w3 * q1[ 0 ];
-		cb += w3 * q1[ 1 ];
-		y2 += w3 * q1[ 2 ];
-		cr += w3 * q1[ 3 ];
+		q0 = src0 + x_aligned;
+		q1 = src1 + x_aligned;
 
-		y1 += w4 * q1[ 4 ];
-		cb += w4 * q1[ 5 ];
-		y2 += w4 * q1[ 6 ];
-		cr += w4 * q1[ 7 ];
+		uv  = w1 * q0[ uv_index ];
+		uv += w2 * q0[ uv_index ];
+		uv += w3 * q1[ uv_index ];
+		uv += w4 * q1[ uv_index ];
+		*dest++ = ( uv + 0x8000 ) >> 16;
+//		*dest++ = ( q0[ uv_index ] + q1[ uv_index ] ) >> 1;
+//		*dest++ = 128;
 
-		dest[ 0 ] = ( y1 + 0x8000 ) >> 16;
-		dest[ 1 ] = ( cb + 0x8000 ) >> 16;
-		dest[ 2 ] = ( y2 + 0x8000 ) >> 16;
-		dest[ 3 ] = ( cr + 0x8000 ) >> 16;
-
-		dest += 4;
 		x += x_step;
 	}
 
@@ -260,7 +244,7 @@ process_pixel ( int *weights, int n_x, int n_y,
                 guchar **src, int src_channels,
                 int x_start, int src_width )
 {
-	unsigned int y1 = 0, cb = 0, y2 = 0, cr = 0;
+	unsigned int y = 0, uv = 0;
 	int i, j;
 
 	for ( i = 0; i < n_y; i++ )
@@ -269,29 +253,28 @@ process_pixel ( int *weights, int n_x, int n_y,
 
 		for ( j = 0; j < n_x; j++ )
 		{
-			unsigned int ta;
-			guchar *q;
+			unsigned int ta = 0xff * line_weights[ j ];
 
 			if ( x_start + j < 0 )
-				q = src[ i ];
+			{
+				y  += ta * src[ i ][ 0 ];
+				uv += ta * src[ i ][ ( ( j & 1 ) << 1 ) + 1 ];
+			}
 			else if ( x_start + j < src_width )
-				q = src[ i ] + ( x_start + j ) * src_channels;
+			{
+				y  += ta * src[ i ][ ( x_start + j ) << 1 ];
+				uv += ta * src[ i ][ ( ( ( x_start + j ) >> 1 ) << 2) + ( ( j & 1 ) << 1 ) + 1 ];
+			}
 			else
-				q = src[ i ] + ( src_width - 1 ) * src_channels;
-
-			ta = 0xff * line_weights[ j ];
-
-			y1 += ta * q[ 0 ];
-			cb += ta * q[ 1 ];
-			y2 += ta * q[ 2 ];
-			cr += ta * q[ 3 ];
+			{
+				y  += ta * src[ i ][ ( src_width - 1 ) << 1 ];
+				uv += ta * src[ i ][ ( ( ( src_width - 1 ) >> 1 ) << 2) + ( ( j & 1 ) << 1 ) + 1 ];
+			}
 		}
 	}
 
-	dest[ 0 ] = ( y1 + 0xffffff ) >> 24;
-	dest[ 1 ] = ( cb + 0xffffff ) >> 24;
-	dest[ 2 ] = ( y2 + 0xffffff ) >> 24;
-	dest[ 3 ] = ( cr + 0xffffff ) >> 24;
+	*dest++ = ( y  + 0xffffff ) >> 24;
+	*dest++ = ( uv + 0xffffff ) >> 24;
 }
 
 
@@ -453,7 +436,7 @@ pixops_process ( guchar *dest_buf,
 		x = render_x0 * x_step + scaled_x_offset;
 		x_start = x >> SCALE_SHIFT;
 
-		while ( x_start < 0 && outbuf < outbuf_end )
+		while ( 0 && x_start < 0 && outbuf < outbuf_end )
 		{
 			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
 			                filter->x.n, filter->y.n,
@@ -466,6 +449,7 @@ pixops_process ( guchar *dest_buf,
 			dest_x++;
 			outbuf += dest_channels;
 		}
+		run_end_index = 720;
 
 		new_outbuf = ( *line_func ) ( run_weights, filter->x.n, filter->y.n,
 		                              outbuf, dest_x,
@@ -478,7 +462,7 @@ pixops_process ( guchar *dest_buf,
 		x = ( dest_x - check_x + render_x0 ) * x_step + scaled_x_offset;
 		outbuf = new_outbuf;
 
-		while ( outbuf < outbuf_end )
+		while ( 0 && outbuf < outbuf_end )
 		{
 			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
 			                filter->x.n, filter->y.n,
@@ -749,7 +733,7 @@ yuv422_scale ( guchar *dest_buf,
 		                       dest_rowstride,
 		                       src_buf, src_width, src_height, src_rowstride,
 		                       scale_x, scale_y );
-		return ;
+		return;
 	}
 
 	filter.overall_alpha = 1.0;

@@ -59,10 +59,10 @@ void yuv422_scale     (guchar         *dest_buf,
 
 #define yuv422_scale_simple( dest_buf, dest_width, dest_height, dest_rowstride, src_buf, src_width, src_height, src_rowstride, interp_type ) \
 	yuv422_scale( (dest_buf), 0, 0, \
-		(dest_width)/2, (dest_height), \
-		(dest_rowstride), 4, 0, \
-		(src_buf), (src_width)/2, (src_height), \
-		(src_rowstride), 4, 0, \
+		(dest_width), (dest_height), \
+		(dest_rowstride), 2, 0, \
+		(src_buf), (src_width), (src_height), \
+		(src_rowstride), 2, 0, \
 		(double) (dest_width) / (src_width), (double) (dest_height) / (src_height), \
 		(PixopsInterpType) interp_type );
 
