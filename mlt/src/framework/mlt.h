@@ -21,6 +21,11 @@
 #ifndef _MLT_H_
 #define _MLT_H_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "mlt_factory.h"
 #include "mlt_frame.h"
 #include "mlt_multitrack.h"
@@ -32,6 +37,10 @@
 #include "mlt_playlist.h"
 #include "mlt_properties.h"
 #include "mlt_tractor.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

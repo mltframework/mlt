@@ -66,7 +66,7 @@ static mlt_properties construct_service( mlt_properties object, char *id )
 	return output;
 }
 
-void *construct_instance( mlt_properties service_properties, char *symbol, void *input )
+static void *construct_instance( mlt_properties service_properties, char *symbol, void *input )
 {
 	// Extract the service
 	char *service = mlt_properties_get( service_properties, "id" );
@@ -126,7 +126,7 @@ mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, ch
 
 	// Construct the repository
 	mlt_repository this = calloc( sizeof( struct mlt_repository_s ), 1 );
-	mlt_properties_init( &this->parent, NULL );
+	mlt_properties_init( &this->parent, this );
 
 	// Add the symbol to THIS repository properties.
 	mlt_properties_set( &this->parent, "_symbol", symbol );
