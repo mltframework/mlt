@@ -44,12 +44,12 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		// Create the transition
 		transition = mlt_factory_transition( "region", NULL );
 
-		// Pass all properties down
-		mlt_properties_pass( mlt_transition_properties( transition ), properties, "" );
-
 		// Register with the filter
 		mlt_properties_set_data( properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
 	}
+
+	// Pass all properties down
+	mlt_properties_pass( mlt_transition_properties( transition ), properties, "" );
 
 	// Process the frame
 	return mlt_transition_process( transition, frame, NULL );

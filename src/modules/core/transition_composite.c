@@ -987,6 +987,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Get the image from the a frame
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
+	// Get the properties from the transition
+	mlt_properties properties = mlt_transition_properties( this );
+
 	if ( b_frame != NULL )
 	{
 		// Get the properties of the a frame
@@ -994,9 +997,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Get the properties of the b frame
 		mlt_properties b_props = mlt_frame_properties( b_frame );
-
-		// Get the properties from the transition
-		mlt_properties properties = mlt_transition_properties( this );
 
 		// Structures for geometry
 		struct geometry_s result;
@@ -1052,6 +1052,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			}
 		}
 	}
+
+	// Force geometries to be recalculated
+	mlt_properties_set_data( properties, "geometries", NULL, 0, NULL, NULL );
 
 	return 0;
 }

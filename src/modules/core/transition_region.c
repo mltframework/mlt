@@ -162,6 +162,12 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			mlt_properties_set_data( properties, "composite", composite, 0, ( mlt_destructor )mlt_transition_close, NULL );
 		}
 	}
+	else
+	{
+		// Pass all current properties down
+		mlt_properties composite_properties = mlt_transition_properties( composite );
+		mlt_properties_pass( composite_properties, properties, "composite." );
+	}
 
 	// Create filters
 	if ( filter == NULL )
@@ -187,6 +193,45 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 				// Create an instance
 				if ( create_instance( this, name, value, count ) == 0 )
 					count ++;
+			}
+		}
+	}
+	else
+	{
+		// Pass all properties down
+		mlt_filter temp = NULL;
+
+		// Loop Variable
+		int i = 0;
+
+		// Number of filters found
+		int count = 0;
+
+		// Loop for all properties
+		for ( i = 0; i < mlt_properties_count( properties ); i ++ )
+		{
+			// Get the name of this property
+			char *name = mlt_properties_get_name( properties, i );
+
+			// If the name does not contain a . and matches filter
+			if ( strchr( name, '.' ) == NULL && !strncmp( name, "filter", 6 ) )
+			{
+				// Strings to hold the id and pass down key
+				char id[ 256 ];
+				char key[ 256 ];
+
+				// Construct id and key
+				sprintf( id, "_filter_%d", count );
+				sprintf( key, "%s.", name );
+
+				// Get the filter
+				temp = mlt_properties_get_data( properties, id, NULL );
+
+				if ( temp != NULL )
+				{
+					mlt_properties_pass( mlt_filter_properties( temp ), properties, key );
+					count ++;
+				}
 			}
 		}
 	}
