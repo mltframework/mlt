@@ -1,0 +1,168 @@
+MLT Demo Notes
+
+Before running the demo script, make sure you '. setenv' from the parent
+directory. Also, please create clips clip1.dv, clip2.dv, clip3.dv, clip1.mpeg,
+clip2.mpeg, clip3.mpeg, and music1.ogg. It is okay if some of these are
+duplicates. Please make sure clips are at least 500 frames duration.
+
+These notes explain the the concepts presented in each demonstration and
+what details to look for.
+
+First, a note on consumers. When you start the script, the main menu asks
+you to choose a consumer. A consumer is like a viewer, but it could also
+write to a stream/file. The "SDL" consumer is the popular Simple DirectMedia
+Layer audio and video output. The "Westley" consumer generates an XML
+representation of the service network. That can be played directly due to the
+westley producer plugin. See docs/westley.txt for more information. The
+"MainConcept DV" consumer refers to the proprietary MLT plugin required to
+use MLT with MainConcept DV, DVCPro, and MPEG codecs. "/dev/dv1394" refers
+to a device file for transmitting DV over FireWire using the Linux dv1394 kernel
+module. The "BlueFish444" consumer is another proprietary plugin to use
+the BlueFish444 manufactured SDI video/audio output cards with MLT.
+
+And now the demos...
+
+All clips
+
+	Simply builds a playlist containing each video clip, and you can transport
+	between them using j and k keys.
+
+Filter in/out
+
+	A video filter can be applied to a portion of a producer (clip, playlist,
+	or multitrack). This examples shows the greyscale filter.
+
+Watermark
+
+	A graphic can overlay video in realtime with support for alpha channel.
+	This example uses a PNG file with an alpha channel. Distortion is explicitly
+	enabled here so the otherwise circular graphic is scaled to fill the 
+	compositing region. By default, compositing honours the aspect ratio of the
+	overlay.
+
+My name is...
+
+	Titles are very easy to composite in realtime. The titler uses Pango
+	with the FreeType2 rendering backend. This means it supports high
+	quality scalable font rendering with anti-aliasing, unicode (UTF-8),
+	and Pango markup capabilities. The compsiting here respects the aspect
+	ratio of the rendered title in the first two title pieces but distorts
+	the final one. This demo also shows the motion and scaling capabilities
+	of the compositor in conjunction with honouring aspect. The compositor
+	is doing field-based rendering. So, when displayed non-progressively
+	with SDL, you can see motion artifacts during animation. 
+	
+A composite transition
+
+	The compositor also handles video over video as demonstrated in this
+	usage of the compositor to create a special transition. This demonstration
+	also crossfades the audio during the transition! Progressive rendering
+	is explicitly enabled on the compositor due to the poor results that
+	would otherwise occur due to scaling an interleaved video frame and moving
+	the video in a reverse direction horizontally.
+	
+Fade in and out
+
+	A simple series of transitions betwen 3 clips using dissolves and audio 
+	crossfades. This is easy :-).
+
+Clock in and out
+	
+	Wipe transitions are very easy and highly extensible as they are generated 
+	using a very convenient lookup table based upon the luma of an image.
+	This image can be a 16 bit PGM (grayscale bitmap) or the luma channel of
+	any video producer. A number of high quality wipes can be downloaded from
+	http://mlt.sf.net/. It also performs field rendering.
+	
+Obscure
+
+	A popular requirement in news production is to obscure a face, obscenity,
+	or trademarked logo. This demonstrates using a simple rectangular 
+	obscure filter applied to a region of the image. The second example is more
+	advanced and shows using the "region" filter to select the image area and a 
+	property of the region filter to "shape" the region using the alpha channel
+	of another image (circle.png) and another property to "filter" the region
+	using the obscure filter.
+
+Audio Stuff
+
+	A music bed sound track can be mixed with a video. The sound track of the
+	video clip has a "floating" amplitude normalisation filter applied.
+	Typically, audio nornmalisation applies a constant gain factor across the
+	entire duration of an audio segment from a single source where the 
+	gain factor is automatically determined by anaylsing the maximum "power"
+	or peak levels. However, in news production, a popular requirement is to
+	to dynamically boost the amplitude in soft areas and reduce the amplitude
+	in louder areas. Thus, the gain analysis is performed using a "sliding
+	window" approach. This example also applies a constant gain factor of 
+	0.5 (50%) to the normalised audio of the video clip (to get a nicer
+	mix level).
+	
+Audio and Video Levels
+
+	Audio can be normalised by setting a target amplitude level in decibels.
+	A gamma curve can be applied to the luma channel of video.
+
+Shadowed Title and Watermark
+
+	Two instances of the titler are used to create a shadow effect.
+	The aspect ratio of the watermark in this example is not distorted. Since
+	the original image is a circle with square pixels--a computer-generated
+	image--and ITU BT.601 video is not composed of square samples. Therefore,
+	the compositor normalises the pixel aspect ratio of the overlay to the 
+	destination image, and the circular image remains circular on the analog
+	video output. Finally, a greyscale filter is applied to the watermark
+	while its opacity is set at 30%.
+
+Station Promo into Story?
+
+	Here is fun demo that might show using a still graphic with some music
+	to introduce a show. A luma wipe with an audio crossfade transitions from
+	the show title or station promotional material.
+
+Voiceover 2 clips with title
+
+	A common news production requirement to have a "voiceover" audio track
+	to a clip or even multiple clips as demonstrated here. Likewise, it is 
+	common to place a title caption on the video at the same time! This
+	demo has a little fun with the titler at the sake of practicality :-)
+	The foreground of the title is transparent while the opacity of the 
+	background is reduced to blend with the video. Meanwhile, the compositor
+	stretches the image to fill the bottom slice of the video--not suitable
+	for overscan displays ;-)
+	
+	Also, pay close attention to the mixing levels of the audio tracks.
+	The audio of the video fades out as the voiceover track (just music
+	in this demo) fades in. Then, the voiceover remains mixed with the 
+	ambient audio at a 60% level. Finally, the voiceover fades out smoothly 
+	from the 60% level to nothing.
+
+GJ-TTAvantika title
+
+	This demo requires a special TrueType font called Avantika. If you have the
+	font, register it with fontconfig using the fc-cache utility. This 
+	demonstrates i18n capabilities of the titler and the alignment capabilities 
+	of both the titler and the compositor. The titler centre aligns
+	the two lines of text, and the compositor centre aligns the title 
+	horizontally on the frame. 
+
+Title over graphic
+
+	You can superimpose a title over a graphic over video! Also,
+	you can apply a luma wipe to the compositor!
+
+Slideshow
+
+	This demo requires any number of JPEG images with the extension ".jpg"
+	in a subdirectory named "Scotland."
+
+Bouncy, Bouncy
+
+	The "watermark" filter encapsulates the compositor, and you have full
+	control over the compositor properties. Who says a watermark can not 
+	also be a video?!
+
+Bouncy, Bouncy Ball
+
+	A variation on the above Bouncy, Bouncy demo that applies a shape, or
+	alpha producer, to the the compositing region.

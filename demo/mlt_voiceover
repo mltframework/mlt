@@ -1,5 +1,5 @@
 inigo \
-	clip1.dv \
+	clip1.dv out=149 \
 	clip2.mpeg \
 -track "+voice over demo.txt" \
 		out=299 \
