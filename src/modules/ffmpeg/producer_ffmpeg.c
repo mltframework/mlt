@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 typedef struct producer_ffmpeg_s *producer_ffmpeg;
 
@@ -160,6 +161,8 @@ mlt_producer producer_ffmpeg_init( char *file )
 	producer_ffmpeg this = calloc( sizeof( struct producer_ffmpeg_s ), 1 );
 	if ( file != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
+		int usable = 1;
+
 		// Get the producer
 		mlt_producer producer = &this->parent;
 
@@ -183,6 +186,9 @@ mlt_producer producer_ffmpeg_init( char *file )
 		}
 		else
 		{
+			struct stat buf;
+			if ( stat( file, &buf ) != 0 || !S_ISREG( buf.st_mode ) )
+				usable = 0;
 			mlt_properties_set( properties, "video_type", "file" );
 			mlt_properties_set( properties, "video_file", file );
 			mlt_properties_set( properties, "video_size", "" );
@@ -198,6 +204,12 @@ mlt_producer producer_ffmpeg_init( char *file )
 		mlt_properties_set( properties, "resource", file );
 
 		this->buffer = malloc( 1024 * 1024 * 2 );
+
+		if ( !usable )
+		{
+			mlt_producer_close( &this->parent );
+			producer = NULL;
+		}
 
 		return producer;
 	}

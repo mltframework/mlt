@@ -432,7 +432,7 @@ int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, double in,
 	{
 		int64_t fin = mlt_producer_frame_position( producer, in );
 		int64_t fout = mlt_producer_frame_position( producer, out );
-		return mlt_playlist_virtual_append( this, producer, 0, fout - fin );
+		return mlt_playlist_virtual_append( this, producer, fin, fout );
 	}
 	else
 	{

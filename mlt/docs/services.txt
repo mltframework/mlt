@@ -237,7 +237,7 @@ Producers
 
 		Known Bugs
 
-			none
+			in/out settings are incorrectly handled.
 
 	ppm
 		Description
@@ -429,5 +429,6 @@ Consumers
 		
 		Known Bugs
 
-			?
+			NTSC handling needs tightening up - sdl:NTSC is the only valid
+			constructor for NTSC playback at the moment.
 

@@ -96,6 +96,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 		pthread_mutex_init( &this->audio_mutex, NULL );
 		pthread_cond_init( &this->audio_cond, NULL);
 		
+		// Default fps
+		mlt_properties_set_double( this->properties, "fps", 25 );
+
 		// process actual param
 		if ( arg == NULL || !strcmp( arg, "PAL" ) )
 		{
@@ -106,6 +109,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 		{
 			this->width = 720;
 			this->height = 480;
+			mlt_properties_set_double( this->properties, "fps", 29.97 );
 		}
 		else if ( sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
 		{
@@ -204,7 +208,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	int channels = 2;
 	int frequency = 48000;
 	static int counter = 0;
-	int samples = mlt_sample_calculator( ( this->height < 576 ? 29.97 : 25 ), frequency, counter++ );
+	int samples = mlt_sample_calculator( mlt_properties_get_double( this->properties, "fps" ), frequency, counter++ );
 	
 	int16_t *pcm;
 	int bytes;
@@ -221,6 +225,8 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	{
 		SDL_AudioSpec request;
 		SDL_AudioSpec got;
+
+		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 
 		// specify audio format
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
@@ -322,8 +328,10 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 						{
 							mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );
 							void (*callback)( mlt_producer, char * ) = mlt_properties_get_data( properties, "transport_callback", NULL );
-							if ( callback != NULL && producer != NULL )
+							if ( callback != NULL && producer != NULL && strcmp( SDL_GetKeyName(event.key.keysym.sym), "space" ) )
 								callback( producer, SDL_GetKeyName(event.key.keysym.sym) );
+							else if ( callback != NULL && producer != NULL && !strcmp( SDL_GetKeyName(event.key.keysym.sym), "space" ) )
+								callback( producer, " " );
 						}
 						break;
 				}

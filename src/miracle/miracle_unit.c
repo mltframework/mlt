@@ -140,7 +140,12 @@ static mlt_producer create_producer( miracle_unit unit, char *file )
 	if ( result == NULL )
 	{
 		// 1st Line preferences
-		if ( strstr( file, ".mpg" ) )
+		if ( strstr( file, ".inigo" ) )
+		{
+			char *args[ 2 ] = { file, NULL };
+			result = mlt_factory_producer( "inigo", args );
+		}
+		else if ( strstr( file, ".mpg" ) )
 			result = mlt_factory_producer( "mcmpeg", file );
 		else if ( strstr( file, ".mpeg" ) )
 			result = mlt_factory_producer( "mcmpeg", file );

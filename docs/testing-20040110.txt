@@ -1,11 +1,22 @@
 On 1/10/2004, Dan Dennedy ran the dv1394d/docs/testing.txt against
 mlt albino and miracle.
 
-Not Implemented/Completely Broken
+
+NOTE: Discrepancies cited here may have impact on related functionality.
+
+
+General
+------------------------------------------------------------------------------
+Server side error checks and related response error codes are not stringently enforced.
+
+
+Not Implemented
 ------------------------------------------------------------------------------
 NLS
-UADD {offline unit} -- to be supported?
-
+INSERT
+MOVE
+REMOVE
+USET points=ignore
 
 
 Incorrect Behaviour
@@ -15,9 +26,15 @@ LOAD commences play
 STOP does not play the test card (white silence) (=pause)
 USTA when stopped reports "paused"
 REW when stopped does not rewind to the beginning of the clip.
+CLEAN removes all clips (as opposed to leaving the currently playing one)
 
 
 Different Intentional Behaviour
 ------------------------------------------------------------------------------
 STOP does not terminate audio/video output
+
+
+MLT Bugs
+------------------------------------------------------------------------------
+Please check the services.txt doc for known bugs related to MLT components.
 

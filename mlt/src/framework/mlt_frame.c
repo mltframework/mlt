@@ -245,7 +245,7 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 			*channels = 2;
 		if ( *frequency <= 0 )
 			*frequency = 48000;
-		if ( test_card.afmt != *format )
+		if ( test_card.audio == NULL || test_card.afmt != *format )
 		{
 			test_card.afmt = *format;
 			test_card.audio = realloc( test_card.audio, *samples * *channels * sizeof( int16_t ) );
@@ -701,7 +701,7 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	int ret = 0;
 	int16_t *p_src, *p_dest;
 	int16_t *src, *dest;
-	static int16_t *extra_src = NULL, *extra_dest = NULL;
+	//static int16_t *extra_src = NULL, *extra_dest = NULL;
 	static int extra_src_samples = 0, extra_dest_samples = 0;
 	int frequency_src = 0, frequency_dest = 0;
 	int channels_src = 0, channels_dest = 0;
