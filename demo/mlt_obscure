@@ -1,0 +1,5 @@
+inigo \
+clip2.dv \
+-filter obscure:25%,25%:25%x25% in=0 out=68 \
+-filter obscure:55%,25%:12%x50% in=68 out=200 \
+$*

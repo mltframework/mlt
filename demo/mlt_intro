@@ -1,0 +1,12 @@
+inigo \
+watermark1.png out=124 \
+-track \
+-blank 74 \
+clip3.mpeg \
+-track \
+music1.ogg in=100 out=224 \
+-transition luma resource=luma1.pgm softness=0.2 in=100 out=124 a_track=0 b_track=1 \
+-transition mix:1 in=0 out=124 a_track=0 b_track=1 \
+-transition mix:1 in=0 out=99 a_track=1 b_track=2 \
+-transition mix:-1 in=100 out=124 a_track=1 b_track=2 reverse=1 \
+$*

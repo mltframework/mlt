@@ -278,7 +278,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		request.freq = frequency;
 		request.format = AUDIO_S16;
 		request.channels = channels;
-		request.samples = 4096;
+		request.samples = 1024;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
@@ -348,12 +348,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-
-		if ( playtime > elapsed + 25000 )
-		{
-			struct timespec tm = { ( playtime - elapsed ) / 1000000, ( ( playtime - elapsed ) % 1000000 ) * 1000 };
-			nanosleep( &tm, NULL );
-		}
 
 		// Handle events
 		if ( this->sdl_screen != NULL )
@@ -456,6 +450,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 				SDL_UnlockYUVOverlay( this->sdl_overlay );
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}
+		}
+
+		if ( playtime > elapsed + 25000 )
+		{
+			struct timespec tm = { ( playtime - elapsed ) / 1000000, ( ( playtime - elapsed ) % 1000000 ) * 1000 };
+			nanosleep( &tm, NULL );
 		}
 	}
 

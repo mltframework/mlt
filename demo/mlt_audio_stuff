@@ -1,0 +1,6 @@
+inigo \
+clip*.dv \
+-track music1.ogg \
+-filter volume:0.5 normalise= track=0 \
+-transition mix out=9999 a_track=0 b_track=1 \
+$*

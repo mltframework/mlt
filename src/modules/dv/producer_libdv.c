@@ -239,33 +239,43 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	// Parse the header for meta info
 	dv_parse_header( decoder, dv_data );
 
-	// Obtain required values
-	*frequency = decoder->audio->frequency;
-	*samples = decoder->audio->samples_this_frame;
-	*channels = decoder->audio->num_channels;
+	// Check that we have audio
+	if ( decoder->audio->num_channels > 0 )
+	{
+		// Obtain required values
+		*frequency = decoder->audio->frequency;
+		*samples = decoder->audio->samples_this_frame;
+		*channels = decoder->audio->num_channels;
 
-	// Create a temporary workspace
-	for ( i = 0; i < 4; i++ )
-		audio_channels[ i ] = mlt_pool_alloc( DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
-
-	// Create a workspace for the result
-	*buffer = mlt_pool_alloc( *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
-
-	// Pass the allocated audio buffer as a property
-	mlt_properties_set_data( properties, "audio", *buffer, *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ), ( mlt_destructor )mlt_pool_release, NULL );
-
-	// Decode the audio
-	dv_decode_full_audio( decoder, dv_data, audio_channels );
+		// Create a temporary workspace
+		for ( i = 0; i < 4; i++ )
+			audio_channels[ i ] = mlt_pool_alloc( DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
 	
-	// Interleave the audio
-	p = *buffer;
-	for ( i = 0; i < *samples; i++ )
-		for ( j = 0; j < *channels; j++ )
-			*p++ = audio_channels[ j ][ i ];
-
-	// Free the temporary work space
-	for ( i = 0; i < 4; i++ )
-		mlt_pool_release( audio_channels[ i ] );
+		// Create a workspace for the result
+		*buffer = mlt_pool_alloc( *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
+	
+		// Pass the allocated audio buffer as a property
+		mlt_properties_set_data( properties, "audio", *buffer, *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ), ( mlt_destructor )mlt_pool_release, NULL );
+	
+		// Decode the audio
+		dv_decode_full_audio( decoder, dv_data, audio_channels );
+		
+		// Interleave the audio
+		p = *buffer;
+		for ( i = 0; i < *samples; i++ )
+			for ( j = 0; j < *channels; j++ )
+				*p++ = audio_channels[ j ][ i ];
+	
+		// Free the temporary work space
+		for ( i = 0; i < 4; i++ )
+			mlt_pool_release( audio_channels[ i ] );
+	}
+	else
+	{
+		// No audio available on the frame, so get test audio (silence)
+		this->get_audio = NULL;
+		mlt_frame_get_audio( this, buffer, format, frequency, channels, samples );
+	}
 
 	return 0;
 }

@@ -1,0 +1,6 @@
+inigo \
+clip2.dv out=1000 \
+-track \
+watermark1.png out=1000 \
+-transition composite distort=true in=0 out=1000 a_track=0 b_track=1 \
+$*

@@ -1,0 +1,7 @@
+inigo \
+clip2.dv in=100 out=174 -blank 99 clip3.dv in=100 \
+-track \
+-blank 49 clip1.dv in=100 out=249 \
+-transition luma:luma1.pgm in=50 out=74 a_track=0 b_track=1 \
+-transition luma:luma1.pgm in=175 out=199 a_track=0 b_track=1 reverse=1 \
+$*

@@ -1,0 +1,24 @@
+inigo \
+	clip1.dv \
+-track \
+	watermark1.png out=9999 \
+-track \
+	"+title over gfx.txt" fgcolour=0x000000ff \
+-transition \
+	composite:0%,75%:100%x20%:0 \
+		in=50 \
+		out=199 \
+		a_track=0 \
+		b_track=1 \
+		key[24]=0%,75%:100%x20%:100 \
+		key[-25]=0%,75%:100%x20%:100 \
+		end=0%,75%:100%x20%:0 \
+		distort=1 \
+-transition \
+	composite start=30%,20%:40%x60% \
+		in=50 \
+		out=199 \
+		a_track=1 \
+		b_track=2 \
+		fill=true \
+$*

@@ -1,0 +1,106 @@
+#!/bin/bash
+
+function show_menu( )
+{
+	sed 's/\t\+/\t/g' < demo.ini |
+	awk -F '\t' '{ printf( "%2d. %-30.30s", ++ i, $2 ); if ( i % 2 == 0 ) printf( "\n" ); }'
+}
+
+function check_dependencies( )
+{
+	option=$1
+	if [ $option -gt 0 ]
+	then
+		deps=`sed 's/\t\+/\t/g' < demo.ini | cut -f 3 | head -n $option | tail -n -1`
+		if [ "$deps" != "" ]
+		then
+			echo "$deps" | 
+			tr ',' '\n' | 
+			while read dep 
+			do
+				ls $dep > /dev/null 2>&1
+				val=$?
+				[ $val != 0 ] && echo Failed to find $dep >&2 && echo $val
+			done
+		fi
+		echo 0
+	fi
+}
+
+function get_demo( )
+{
+	option=$1
+	if [ $option -gt 0 ]
+	then
+		cut -f 1 demo.ini | head -n $option | tail -n -1
+	fi
+}
+
+while [ 1 ]
+do
+
+cat << "eof"
+Select Consumer
+
+1. Play with Inigo half size
+2. Play with Inigo full size
+3. Serialise with Westley to terminal
+4. Play with Westley
+
+0. Exit
+
+eof
+
+	echo -n "Option: "
+	read option
+	echo
+
+	export MLT_CONSUMER=
+
+	case "$option" in
+		"0" ) exit 0 ;;
+		"1" ) export MLT_CONSUMER="sdl:360x288 buffer=1" ;;
+		"2" ) export MLT_CONSUMER="sdl" ;;
+		"3" ) export MLT_CONSUMER="westley" ;;
+		"4" ) export MLT_CONSUMER="westley:" ;;
+		"5" ) export MLT_CONSUMER="mcdv:NTSC target=/dev/dv1394 rescale=nearest" ;;
+		"6" ) export MLT_CONSUMER="bluefish:NTSC" ;;
+		"7" ) export MLT_CONSUMER="sdl rescale=none" ;;
+	esac
+
+	while [ $option != 0 -a "$MLT_CONSUMER" != "" ]
+	do
+		echo Choose Demo
+		echo
+	
+		show_menu
+	
+		echo
+		echo -n "Option: "
+		read option
+		echo
+	
+		demo=`get_demo $option`
+		usable=`check_dependencies $option`
+	
+		if [ "$usable" = "0" -a "$demo" != "" ]
+		then
+			if [ "$MLT_CONSUMER" == "westley:" ]
+			then	export WESTLEY_CONSUMER="westley:$demo.westley"
+					bash $demo -consumer $WESTLEY_CONSUMER
+					inigo +$demo.txt out=100 $demo.westley $demo.westley -filter watermark:watermark1.png composite.fill=true
+			elif [ "$MLT_CONSUMER" == "westley" ]
+			then	bash $demo -consumer $MLT_CONSUMER | less
+			else	bash $demo -consumer $MLT_CONSUMER
+			fi
+		elif [ "$usable" != "" ]
+		then
+			echo 
+			echo Unable to locate suitable files for the demo - please provide them.
+			read pause
+		fi
+	
+		stty sane
+	done
+
+done

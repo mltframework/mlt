@@ -17,11 +17,17 @@ Introduction:
 	
 	* Basic Producers - these are typically file or device oriented feeds; 
 	* Playlists - these are arrangements of multiple producers;
-	* Tractors - these are multitrack fx encapsulators.
+	* Multitracks - these are the fx encapsulators.
 
-	Although westley was defined as a serialisation mechanism for running MLT 
-	components, this document will concentrate on the hand authoring of westley
-	documents.
+	In the mlt model, producers are created and attached to 'consumers' -
+	consumers are software playback components (such as SDL), or wrappers for
+	hardware drivers (such as bluefish) or even the westley serialising
+	consumer itself (the latter doesn't receive frames - it merely
+	interrogates the connected producer for its configuration).
+
+	Although westley was defined as a serialisation mechanism for instantiated 
+	MLT components, this document will concentrate on the hand authoring of 
+	westley documents.
 
 
 Rules:
@@ -32,8 +38,8 @@ Rules:
 
 	1) create producer elements for each unique media clip in the project;
 	2) create playlists for each track;
-	3) create a tractor for track specific filters and transitions;
-	4) create another tractor for filters that are common to the output.
+	3) create a multitrack and specify filters and transitions;
+	4) adding global filters.
 
 	While other uses of westley exist, the approach taken here is to maximise
 	efficiency for complex projects. 
@@ -109,17 +115,18 @@ Playlists:
 
 	Notes:
 
-	1) All in/out points are absolute frame positions - we support PAL and
-	NTSC at a system level, but westley documents are currently authored
-	for a specific normalisation;
-	2) The last 'producer' in the document is the default for play out;
-	3) Playlists can reference the same producer multiple times. In/out regions
+	1) All in/out points are absolute frame positions relative to the producer
+	being appended to the playlist;
+	2) Westley documents are currently authored for a specific normalisation;
+	3) The last 'producer' in the document is the default for play out;
+	4) Playlists can reference the same producer multiple times. In/out regions
 	do not need to be contiguous - duplication and skipping is acceptable.
 
 
-Interlude - Introducing Tractors:
+Interlude - Introducing Multitracks:
 
-	So far, we've defined basic producers and playlists/tracks - the tractor is
+	
+	So far we've defined basic producers and playlists/tracks - the tractor is
 	the element that allows us to arrange our tracks and specify filters and
 	transitions. Similarly to a playlist, a tractor is a container.
 
@@ -162,11 +169,6 @@ Interlude - Introducing Tractors:
 	playback speed, position, or even which producer is connected to which
 	consumer. 
 	
-	In a later phase of MLT development, the application will be able to 
-	manipulate the tractors make up, by adding and removing tracks, filters
-	and transitions. The consumer itself remains connected to the same object 
-	(the tractor).
-
 	The consumer receives the first non-blank frame (see below). It has no say
 	in the order in which gets them (the sdl consumer when used with inigo might 
 	appear to be an exception - it isn't - it simply has a route back to the 

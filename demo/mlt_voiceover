@@ -1,0 +1,45 @@
+inigo \
+	clip1.dv \
+	clip2.mpeg \
+-track 
+	"+voice over demo.txt" \
+		out=299 \
+		font="Sans Bold 72" \
+		fgcolour=0x00000000 \
+		bgcolour=0xff9933aa \
+		pad=10 \
+-track 
+	music1.ogg \
+-transition \
+	composite:0%,80%:100%x20% \
+	distort=1 \
+	in=100 \
+	out=299 \
+	a_track=0 \
+	b_track=1 \
+-transition \
+	mix:-1 \
+	in=75 \
+	out=99 \
+	a_track=0 \
+	b_track=2 \
+-transition \
+	mix:1 \
+	in=100 \
+	out=299 \
+	a_track=0 \
+	b_track=1 \
+-transition \
+	mix:1 \
+	in=100 \
+	out=299 \
+	a_track=1 \
+	b_track=2 \
+-transition \
+	mix:-1 \
+	in=300 \
+	out=324 \
+	a_track=0 \
+	b_track=2 \
+	reverse=1 \
+$*
