@@ -147,18 +147,26 @@ mlt_producer producer_inigo_init( char **argv )
 			if ( group != NULL )
 				properties = group;
 		}
-		else if ( !strcmp( argv[ i ], "-attach" ) )
+		else if ( !strcmp( argv[ i ], "-attach" ) || !strcmp( argv[ i ], "-chain" ) )
 		{
+			int type = !strcmp( argv[ i ], "-attach" ) ? 0 : 1;
 			mlt_filter filter = create_attach( field, argv[ ++ i ], track );
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( filter != NULL && mlt_playlist_count( playlist ) > 0 )
 			{
 				mlt_playlist_clip_info info;
+				mlt_playlist_append( playlist, producer );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
-				mlt_service_attach( ( mlt_service )producer, filter );
+				properties = mlt_producer_properties( producer );
+			}
+
+			if ( filter != NULL && mlt_playlist_count( playlist ) > 0 )
+			{
+				if ( type == 0 )
+					mlt_service_attach( ( mlt_service )properties, filter );
+				else
+					mlt_service_attach( ( mlt_service )producer, filter );
+
 				properties = mlt_filter_properties( filter );
 				mlt_properties_inherit( properties, group );
 			}

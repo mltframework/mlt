@@ -43,6 +43,7 @@ typedef struct playlist_entry_s
 	int repeat;
 	mlt_position producer_length;
 	mlt_event event;
+	int preservation_hack;
 }
 playlist_entry;
 
@@ -615,21 +616,25 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 			this->list[ i - 1 ] = this->list[ i ];
 		this->count --;
 
-		// Decouple from mix_in/out if necessary
-		if ( mlt_properties_get_data( properties, "mix_in", NULL ) != NULL )
+		if ( entry->preservation_hack == 0 )
 		{
-			mlt_properties mix = mlt_properties_get_data( properties, "mix_in", NULL );
-			mlt_properties_set_data( mix, "mix_out", NULL, 0, NULL, NULL );
-		}
-		if ( mlt_properties_get_data( properties, "mix_out", NULL ) != NULL )
-		{
-			mlt_properties mix = mlt_properties_get_data( properties, "mix_out", NULL );
-			mlt_properties_set_data( mix, "mix_in", NULL, 0, NULL, NULL );
+			// Decouple from mix_in/out if necessary
+			if ( mlt_properties_get_data( properties, "mix_in", NULL ) != NULL )
+			{
+				mlt_properties mix = mlt_properties_get_data( properties, "mix_in", NULL );
+				mlt_properties_set_data( mix, "mix_out", NULL, 0, NULL, NULL );
+			}
+			if ( mlt_properties_get_data( properties, "mix_out", NULL ) != NULL )
+			{
+				mlt_properties mix = mlt_properties_get_data( properties, "mix_out", NULL );
+				mlt_properties_set_data( mix, "mix_in", NULL, 0, NULL, NULL );
+			}
+	
+			mlt_producer_clear( entry->producer );
 		}
 
 		// Close the producer associated to the clip info
 		mlt_event_close( entry->event );
-		mlt_producer_clear( entry->producer );
 		mlt_producer_close( entry->producer );
 
 		// Correct position
@@ -799,6 +804,7 @@ int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 			playlist_entry *entry = this->list[ clip ];
 			mlt_playlist_append( new_clip, entry->producer );
 			mlt_playlist_repeat_clip( new_clip, i, entry->repeat );
+			entry->preservation_hack = 1;
 			mlt_playlist_remove( this, clip );
 		}
 		mlt_events_unblock( mlt_playlist_properties( this ), this );
