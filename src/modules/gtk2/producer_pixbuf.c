@@ -25,11 +25,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <math.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+
+pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct producer_pixbuf_s *producer_pixbuf;
 
@@ -77,9 +80,6 @@ mlt_producer producer_pixbuf_init( char *filename )
 		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "ttl", 25 );
 		
-		// Initialise gobject types
-		g_type_init();
-
 		return producer;
 	}
 	free( this );
@@ -112,6 +112,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 	// Image index
 	int image_idx = ( int )floor( ( double )position / ttl ) % this->count;
+
+	pthread_mutex_lock( &fastmutex );
 
     // optimization for subsequent iterations on single picture
 	if ( width != 0 && this->image != NULL && image_idx == this->image_idx )
@@ -206,6 +208,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// pass the image data without destructor
 	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * 2, NULL, NULL );
 	mlt_properties_set_data( properties, "alpha", this->alpha, this->width * this->height, NULL, NULL );
+
+	pthread_mutex_unlock( &fastmutex );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )

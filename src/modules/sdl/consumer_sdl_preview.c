@@ -139,11 +139,20 @@ static int consumer_stop( mlt_consumer parent )
 
 	if ( this->joined == 0 )
 	{
+		mlt_properties properties = mlt_consumer_properties( parent );
+		int app_locked = mlt_properties_get_int( properties, "app_locked" );
+		void ( *lock )( void ) = mlt_properties_get_data( properties, "app_lock", NULL );
+		void ( *unlock )( void ) = mlt_properties_get_data( properties, "app_unlock", NULL );
+
+		if ( app_locked && unlock ) unlock( );
+
 		// Kill the thread and clean up
 		this->running = 0;
 
 		pthread_join( this->thread, NULL );
 		this->joined = 1;
+
+		if ( app_locked && lock ) lock( );
 	}
 
 	return 0;
@@ -190,12 +199,14 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_data( still, "transport_producer", mlt_properties_get_data( properties, "transport_producer", NULL ), 0, NULL, NULL );
 	mlt_properties_set_data( play, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
 	mlt_properties_set_data( still, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
+	mlt_properties_set_int( play, "resize", mlt_properties_get_int( properties, "resize" ) );
+	mlt_properties_set_int( still, "resize", mlt_properties_get_int( properties, "resize" ) );
 	mlt_properties_set( play, "rescale", mlt_properties_get( properties, "rescale" ) );
 	mlt_properties_set( still, "rescale", mlt_properties_get( properties, "rescale" ) );
-	mlt_properties_set( play, "width", mlt_properties_get( properties, "width" ) );
-	mlt_properties_set( still, "width", mlt_properties_get( properties, "width" ) );
-	mlt_properties_set( play, "height", mlt_properties_get( properties, "height" ) );
-	mlt_properties_set( still, "height", mlt_properties_get( properties, "height" ) );
+	mlt_properties_set_int( play, "width", mlt_properties_get_int( properties, "width" ) );
+	mlt_properties_set_int( still, "width", mlt_properties_get_int( properties, "width" ) );
+	mlt_properties_set_int( play, "height", mlt_properties_get_int( properties, "height" ) );
+	mlt_properties_set_int( still, "height", mlt_properties_get_int( properties, "height" ) );
 
 	mlt_properties_set_int( play, "progressive", 1 );
 	mlt_properties_set_int( still, "progressive", 1 );

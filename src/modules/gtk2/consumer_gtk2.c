@@ -47,6 +47,7 @@ mlt_consumer consumer_gtk2_preview_init( GtkWidget *widget )
 	if ( consumer != NULL )
 	{
 		mlt_properties properties = mlt_consumer_properties( consumer );
+		mlt_properties_set_int( properties, "app_locked", 1 );
 		mlt_properties_set_data( properties, "app_lock", gdk_threads_enter, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "app_unlock", gdk_threads_leave, 0, NULL, NULL );
 	}

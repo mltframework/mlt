@@ -224,6 +224,126 @@ static void sdl_unlock_display( )
 		SDL_UnlockSurface( screen );
 }
 
+static inline void display_1( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
+{
+	// Generate the affine transform scaling values
+	int scale_width = ( width << 16 ) / rect.w;
+	int scale_height = ( height << 16 ) / rect.h;
+	int stride = width * 3;
+	int x, y, row_index;
+	uint8_t *q, *row;
+
+	// Constants defined for clarity and optimisation
+	int scanlength = screen->pitch;
+	uint8_t *start = ( uint8_t * )screen->pixels + rect.y * scanlength + rect.x;
+	uint8_t *p;
+
+	// Iterate through the screen using a very basic scaling algorithm
+	for ( y = 0; y < rect.h; y ++ )
+	{
+		p = start;
+		row_index = ( scale_height * y ) >> 16;
+		row = image + stride * row_index;
+		for ( x = 0; x < rect.w; x ++ )
+		{
+			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
+		}
+		start += scanlength;
+	}
+}
+
+static inline void display_2( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
+{
+	// Generate the affine transform scaling values
+	int scale_width = ( width << 16 ) / rect.w;
+	int scale_height = ( height << 16 ) / rect.h;
+	int stride = width * 3;
+	int x, y, row_index;
+	uint8_t *q, *row;
+
+	// Constants defined for clarity and optimisation
+	int scanlength = screen->pitch / 2;
+	uint16_t *start = ( uint16_t * )screen->pixels + rect.y * scanlength + rect.x;
+	uint16_t *p;
+
+	// Iterate through the screen using a very basic scaling algorithm
+	for ( y = 0; y < rect.h; y ++ )
+	{
+		p = start;
+		row_index = ( scale_height * y ) >> 16;
+		row = image + stride * row_index;
+		for ( x = 0; x < rect.w; x ++ )
+		{
+			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
+		}
+		start += scanlength;
+	}
+}
+
+static inline void display_3( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
+{
+	// Generate the affine transform scaling values
+	int scale_width = ( width << 16 ) / rect.w;
+	int scale_height = ( height << 16 ) / rect.h;
+	int stride = width * 3;
+	int x, y, row_index;
+	uint8_t *q, *row;
+
+	// Constants defined for clarity and optimisation
+	int scanlength = screen->pitch;
+	uint8_t *start = ( uint8_t * )screen->pixels + rect.y * scanlength + rect.x;
+	uint8_t *p;
+	uint32_t pixel;
+
+	// Iterate through the screen using a very basic scaling algorithm
+	for ( y = 0; y < rect.h; y ++ )
+	{
+		p = start;
+		row_index = ( scale_height * y ) >> 16;
+		row = image + stride * row_index;
+		for ( x = 0; x < rect.w; x ++ )
+		{
+			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			pixel = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
+			*p ++ = (pixel & 0xFF0000) >> 16;
+			*p ++ = (pixel & 0x00FF00) >> 8;
+			*p ++ = (pixel & 0x0000FF);
+		}
+		start += scanlength;
+	}
+}
+
+static inline void display_4( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
+{
+	// Generate the affine transform scaling values
+	int scale_width = ( width << 16 ) / rect.w;
+	int scale_height = ( height << 16 ) / rect.h;
+	int stride = width * 3;
+	int x, y, row_index;
+	uint8_t *q, *row;
+
+	// Constants defined for clarity and optimisation
+	int scanlength = screen->pitch / 4;
+	uint32_t *start = ( uint32_t * )screen->pixels + rect.y * scanlength + rect.x;
+	uint32_t *p;
+
+	// Iterate through the screen using a very basic scaling algorithm
+	for ( y = 0; y < rect.h; y ++ )
+	{
+		p = start;
+		row_index = ( scale_height * y ) >> 16;
+		row = image + stride * row_index;
+		for ( x = 0; x < rect.w; x ++ )
+		{
+			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
+		}
+		start += scanlength;
+	}
+}
+
 static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 {
 	// Get the properties of this consumer
@@ -279,52 +399,23 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 	}
 
-	if ( ( ( int )( this->last_frame_aspect * 1000 ) != ( int )( mlt_frame_get_aspect_ratio( frame ) * 1000 ) &&
-		 ( mlt_frame_get_aspect_ratio( frame ) != 1.0 || this->last_frame_aspect == 0.0 ) ) )
-	{
-		this->last_frame_aspect = mlt_frame_get_aspect_ratio( frame );
-		changed = 1;
-	}
-
 	if ( this->sdl_screen == NULL || changed || mlt_properties_get_int( properties, "changed" ) == 2 )
 	{
 		// open SDL window 
-		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
+		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 		if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
-			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
+			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 
 		changed = 1;
 		mlt_properties_set_int( properties, "changed", 0 );
-
-		// May as well use the mlt rescaler...
-		//if ( mlt_properties_get( properties, "rescale" ) != NULL && !strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
-			//mlt_properties_set( properties, "rescale", "nearest" );
-
-		// Determine window's new display aspect ratio
-		float this_aspect = this->display_aspect / ( ( float )this->window_width / ( float )this->window_height );
-
-		this->rect.w = this_aspect * this->window_width;
-		this->rect.h = this->window_height;
-		if ( this->rect.w > this->window_width )
-		{
-			this->rect.w = this->window_width;
-			this->rect.h = ( 1.0 / this_aspect ) * this->window_height;
-		}
-
-		this->rect.x = ( this->window_width - this->rect.w ) / 2;
-		this->rect.y = ( this->window_height - this->rect.h ) / 2;
-
-		mlt_properties_set_int( this->properties, "rect_x", this->rect.x );
-		mlt_properties_set_int( this->properties, "rect_y", this->rect.y );
-		mlt_properties_set_int( this->properties, "rect_w", this->rect.w );
-		mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
 	}
 	else
 	{
 		changed = mlt_properties_get_int( properties, "changed" ) | mlt_properties_get_int( mlt_frame_properties( frame ), "refresh" );
 		mlt_properties_set_int( properties, "changed", 0 );
 	}
-		
+
+	
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
 		 this->last_producer == mlt_properties_get_data( mlt_frame_properties( frame ), "_producer", NULL ) )
@@ -355,50 +446,62 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 	}
 
+	if ( 1 )
+	{
+		char *rescale = mlt_properties_get( properties, "rescale" );
+		if ( rescale != NULL && strcmp( rescale, "none" ) )
+		{
+			float this_aspect = this->display_aspect / ( ( float )this->window_width / ( float )this->window_height );
+			this->rect.w = this_aspect * this->window_width;
+			this->rect.h = this->window_height;
+			if ( this->rect.w > this->window_width )
+			{
+				this->rect.w = this->window_width;
+				this->rect.h = ( 1.0 / this_aspect ) * this->window_height;
+			}
+		}
+		else
+		{
+			float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
+			this->rect.w = frame_aspect * this->window_height;
+			this->rect.h = this->window_height;
+			if ( this->rect.w > this->window_width )
+			{
+				this->rect.w = this->window_width;
+				this->rect.h = ( 1.0 / frame_aspect ) * this->window_width;
+			}
+		}
+
+		this->rect.x = ( this->window_width - this->rect.w ) / 2;
+		this->rect.y = ( this->window_height - this->rect.h ) / 2;
+
+		mlt_properties_set_int( this->properties, "rect_x", this->rect.x );
+		mlt_properties_set_int( this->properties, "rect_y", this->rect.y );
+		mlt_properties_set_int( this->properties, "rect_w", this->rect.w );
+		mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
+	}
+	
 	if ( this->sdl_screen != NULL )
 	{
-		// Calculate the scan length
-		int scanlength = this->sdl_screen->pitch / 2;
+		memset( this->sdl_screen->pixels, 0, this->window_width * this->window_height * this->sdl_screen->format->BytesPerPixel );
 
-		// Obtain the clip rect from the screen
-		SDL_Rect rect = this->rect;
-
-		// Generate the affine transform scaling values
-		int scale_width = ( width << 16 ) / rect.w;
-		int scale_height = ( height << 16 ) / rect.h;
-
-		// Constants defined for clarity and optimisation
-		int stride = width * 3;
-		uint16_t *start = ( uint16_t * )this->sdl_screen->pixels + rect.y * scanlength + rect.x;
-
-		int x, y, row_index;
-		uint16_t *p;
-		uint8_t *q, *row;
-
-		// Iterate through the screen using a very basic scaling algorithm
-		for ( y = 0; y < rect.h && this->last_position != -1; y ++ )
+		switch( this->sdl_screen->format->BytesPerPixel )
 		{
-			// Obtain the pointer to the current screen row
-			p = start;
-
-			// Calculate the row_index
-			row_index = ( scale_height * y ) >> 16;
-
-			// Calculate the pointer for the y offset (positioned on B instead of R)
-			row = image + stride * row_index;
-
-			// Iterate through the screen width
-			for ( x = 0; x < rect.w; x ++ )
-			{
-				// Obtain the pixel pointer
-				q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
-
-				// Map the BGR colour from the frame to the SDL format
-				*p ++ = SDL_MapRGB( this->sdl_screen->format, *q, *( q + 1 ), *( q + 2 ) );
-			}
-
-			// Move to the next row
-			start += scanlength;
+			case 1:
+				display_1( this->sdl_screen, this->rect, image, width, height );
+				break;
+			case 2:
+				display_2( this->sdl_screen, this->rect, image, width, height );
+				break;
+			case 3:
+				display_3( this->sdl_screen, this->rect, image, width, height );
+				break;
+			case 4:
+				display_4( this->sdl_screen, this->rect, image, width, height );
+				break;
+			default:
+				fprintf( stderr, "Unsupported video depth %d\n", this->sdl_screen->format->BytesPerPixel );
+				break;
 		}
 
 		// Flip it into sight
@@ -442,7 +545,11 @@ static void *consumer_thread( void *arg )
 	{
 		mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 2 );
 		if ( SDL_GetVideoSurface( ) != NULL )
+		{
+			this->sdl_screen = SDL_GetVideoSurface( );
 			consumer_get_dimensions( &this->window_width, &this->window_height );
+			mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 0 );
+		}
 	}
 
 	// Loop until told not to
