@@ -184,6 +184,7 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "in" ) != 0 &&
 			 strcmp( name, "out" ) != 0 && 
 			 strcmp( name, "id" ) != 0 && 
+			 strcmp( name, "title" ) != 0 && 
 			 strcmp( name, "root" ) != 0 && 
 			 strcmp( name, "width" ) != 0 &&
 			 strcmp( name, "height" ) != 0 )
@@ -240,6 +241,8 @@ static inline void serialise_service_filters( serialise_context context, mlt_ser
 				int out = mlt_properties_get_position( properties, "out" );
 				p = xmlNewChild( node, NULL, "filter", NULL );
 				xmlNewProp( p, "id", id );
+				if ( mlt_properties_get( properties, "title" ) )
+					xmlNewProp( p, "title", mlt_properties_get( properties, "title" ) );
 				if ( in != 0 || out != 0 )
 				{
 					char temp[ 20 ];
@@ -272,6 +275,8 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 
 		// Set the id
 		xmlNewProp( child, "id", id );
+		if ( mlt_properties_get( properties, "title" ) )
+			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
 		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 		serialise_properties( context, properties, child );
@@ -377,6 +382,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 
 		// Set the id
 		xmlNewProp( child, "id", id );
+		if ( mlt_properties_get( properties, "title" ) )
+			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
 
 		// Store application specific properties
 		serialise_store_properties( context, properties, child, context->store );
@@ -455,6 +462,10 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 
 		// Set the id
 		xmlNewProp( child, "id", id );
+		if ( mlt_properties_get( properties, "title" ) )
+			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
+		if ( mlt_properties_get( properties, "global_feed" ) )
+			xmlNewProp( child, "global_feed", mlt_properties_get( properties, "global_feed" ) );
 		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
@@ -487,6 +498,8 @@ static void serialise_filter( serialise_context context, mlt_service service, xm
 
 		// Set the id
 		xmlNewProp( child, "id", id );
+		if ( mlt_properties_get( properties, "title" ) )
+			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
 		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
@@ -514,6 +527,8 @@ static void serialise_transition( serialise_context context, mlt_service service
 	
 		// Set the id
 		xmlNewProp( child, "id", id );
+		if ( mlt_properties_get( properties, "title" ) )
+			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
 		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
@@ -632,6 +647,7 @@ xmlDocPtr westley_make_doc( mlt_consumer consumer, mlt_service service )
 	// Assign a title property
 	if ( mlt_properties_get( properties, "title" ) != NULL )
 		xmlNewProp( root, "title", mlt_properties_get( properties, "title" ) );
+	mlt_properties_set_int( properties, "global_feed", 1 );
 
 	// Construct the context maps
 	context->id_map = mlt_properties_new();
