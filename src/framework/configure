@@ -1,2 +1,2 @@
-#!/bin/bash
+#!/bin/sh
 echo "framework	-I$prefix/include/mlt -D_REENTRANT	-lmlt" >> ../../packages.dat

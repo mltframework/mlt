@@ -130,6 +130,7 @@ mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, ch
 
 	// Construct full file
 	construct_full_file( full_file, prefix, data );
+	strcat( full_file, ".dat" );
 
 	// Open the file
 	file = fopen( full_file, "r" );

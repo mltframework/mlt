@@ -71,10 +71,10 @@ int mlt_factory_init( char *prefix )
 		object_list = mlt_properties_new( );
 
 		// Create a repository for each service type
-		producers = mlt_repository_init( object_list, prefix, "producers.dat", "mlt_create_producer" );
-		filters = mlt_repository_init( object_list, prefix, "filters.dat", "mlt_create_filter" );
-		transitions = mlt_repository_init( object_list, prefix, "transitions.dat", "mlt_create_transition" );
-		consumers = mlt_repository_init( object_list, prefix, "consumers.dat", "mlt_create_consumer" );
+		producers = mlt_repository_init( object_list, prefix, "producers", "mlt_create_producer" );
+		filters = mlt_repository_init( object_list, prefix, "filters", "mlt_create_filter" );
+		transitions = mlt_repository_init( object_list, prefix, "transitions", "mlt_create_transition" );
+		consumers = mlt_repository_init( object_list, prefix, "consumers", "mlt_create_consumer" );
 	}
 
 	return 0;

@@ -268,7 +268,8 @@ static void *consumer_read_ahead_thread( void *arg )
 	int skipped = 0;
 	int64_t time_wait = 0;
 	int64_t time_frame = 0;
-	int64_t time_image = 0;
+	int64_t time_process = 0;
+	int skip_next = 0;
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( this );
@@ -293,14 +294,13 @@ static void *consumer_read_ahead_thread( void *arg )
 	while ( this->ahead )
 	{
 		// Put the current frame into the queue
-		time_difference( &ante );
 		pthread_mutex_lock( &this->mutex );
 		while( this->ahead && mlt_deque_count( this->queue ) >= buffer )
 			pthread_cond_wait( &this->cond, &this->mutex );
 		mlt_deque_push_back( this->queue, frame );
 		pthread_cond_broadcast( &this->cond );
 		pthread_mutex_unlock( &this->mutex );
-		time_wait = time_difference( &ante );
+		time_wait += time_difference( &ante );
 
 		// Get the next frame
 		frame = mlt_consumer_get_frame( this );
@@ -314,12 +314,14 @@ static void *consumer_read_ahead_thread( void *arg )
 		{
 			skipped = 0;
 			time_frame = 0;
-			time_image = 0;
+			time_process = 0;
+			time_wait = 0;
 			count = 1;
+			skip_next = 0;
 		}
 
 		// Get the image
-		if ( ( time_frame + time_image ) / count < 40000 )
+		if ( !skip_next )
 		{
 			// Get the image, mark as rendered and time it
 			if ( !video_off )
@@ -333,14 +335,16 @@ static void *consumer_read_ahead_thread( void *arg )
 		{
 			// Increment the number of sequentially skipped frames
 			skipped ++;
+			skip_next = 0;
 
 			// If we've reached an unacceptable level, reset everything
 			if ( skipped > 10 )
 			{
 				skipped = 0;
 				time_frame = 0;
-				time_image = 0;
-				count = 0;
+				time_process = 0;
+				time_wait = 0;
+				count = 1;
 			}
 		}
 
@@ -353,7 +357,11 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 
 		// Increment the time take for this frame
-		time_image += time_difference( &ante );
+		time_process += time_difference( &ante );
+
+		// Determine if the next frame should be skipped
+		if ( mlt_deque_count( this->queue ) <= 5 && ( ( time_wait + time_frame + time_process ) / count ) > 40000 )
+			skip_next = 1;
 	}
 
 	// Remove the last frame

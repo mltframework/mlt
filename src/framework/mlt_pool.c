@@ -294,6 +294,34 @@ void *mlt_pool_realloc( void *ptr, int size )
 	return result;
 }
 
+/** Purge unused items in the pool.
+*/
+
+void mlt_pool_purge( )
+{
+	int i = 0;
+
+	// For each pool
+	for ( i = 0; i < mlt_properties_count( pools ); i ++ )
+	{
+		// Get the pool
+		mlt_pool this = mlt_properties_get_data_at( pools, i, NULL );
+
+		// Pointer to unused memory
+		void *release = NULL;
+
+		// Lock the pool
+		pthread_mutex_lock( &this->lock );
+
+		// We'll free all unused items now
+		while ( ( release = mlt_deque_pop_back( this->stack ) ) != NULL )
+			free( release - sizeof( struct mlt_release_s ) );
+
+		// Unlock the pool
+		pthread_mutex_unlock( &this->lock );
+	}
+}
+
 /** Release the allocated memory.
 */
 
