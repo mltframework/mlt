@@ -38,6 +38,7 @@ extern "C"
 #include "mlt_properties.h"
 #include "mlt_field.h"
 #include "mlt_tractor.h"
+#include "mlt_tokeniser.h"
 
 #ifdef __cplusplus
 }
