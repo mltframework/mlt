@@ -31,7 +31,6 @@ int main( int argc, char **argv )
 
 	mlt_playlist playlist1 = mlt_playlist_init();
 	mlt_playlist_append_io( playlist1, dv1, 0.0, 5.0 );
-	mlt_playlist_blank( playlist1, 1.0 );
 
 	mlt_playlist playlist2 = mlt_playlist_init();
 	mlt_playlist_blank( playlist2, 2.9 );
