@@ -1,14 +1,21 @@
+Inigo Documentation
+
+Copyright (C) 2004 Ushodaya Enterprised Limited
+Author: Charles Yates <charles.yates@pandora.be>
+Last Revision: 2004-03-20
+
+
 INIGO
 -----
 
 Preamble:
 
-	inigo was developed as a test tool for the MLT framework. It can
-	be thought of as a powerful, if somewhat obscure, multitrack
-	command line oriented video editor.
+	inigo was developed as a test tool for the MLT framework. It can be thought
+	of as a powerful, if somewhat obscure, multitrack command line oriented 
+	video editor.
 
-	The following details the usage of the tool and as a result,
-	provides a lot of insight into the workings of the MLT framework.
+	The following details the usage of the tool and as a result, provides a lot 
+	of insight into the workings of the MLT framework.
 
 
 Usage:
@@ -18,7 +25,7 @@ Usage:
 	      [ -filter id[:arg] [ name=value ] * ]
 	      [ -transition id[:arg] [ name=value ] * ]
 	      [ -blank frames ]
-	      [ -track ]
+	      [ -track | -hide-track | -hide-video | -hide-audio ]
 	      [ producer [ name=value ] * ]+
 	      [ -serialise file.inigo ]
 
@@ -29,47 +36,43 @@ General rules:
 
 	2. Error checking on command line parsing is weak;
 
-	3. Please refer to services.txt for details on services 
-	available;
+	3. Please refer to services.txt for details on services available;
 
-	4. The MLT framework, from which inigo has inherited its 
-	naming convention, is very mlt-centric. Producers produce 
-	MLT frame objects and consumers consume MLT frame objects. 
-	The distinction is important - a DV producer does not produce 
-	DV, it produces MLT frames from a DV source, and similarly a 
-	DV consumer does not consume DV, it consumes MLT frames and 
-	produces DV frames.
+	4. The MLT framework, from which inigo has inherited its naming convention,
+	is very mlt-centric. Producers produce MLT frame objects and consumers 
+	consume MLT frame objects.  The distinction is important - a DV producer 
+	does not produce DV, it produces MLT frames from a DV source, and similarly
+	a DV consumer does not consume DV, it consumes MLT frames and produces DV
+	frames.
 
 
 Terminology:
 
-	'Producers' typically refer to files but may also indicate
-	devices (such as dv1394 input or video4linux). Hence, the more
-	generic term is used [yes, the more generic usage is out of
-	scope for now...].
+	'Producers' typically refer to files but may also indicate devices (such as
+	dv1394 input or video4linux). Hence, the more generic term is used [the more 
+	generic usage is out of scope for now...].
 
-	'Filters' are frame modifiers - they always guarantee that for
-	every frame they receive, they output *precisely* one frame.
+	'Filters' are frame modifiers - they always guarantee that for every frame 
+	they receive, they output *precisely* one frame.  Never more, never less, 
+	ever. Nothing says that a filter cannot generate frames though
+	
+	'Transitions' collect frames from two tracks (a and b) and output 1 
+	modified frame on their 'a track', and 1 unmodified frame on their 'b track'.
 	Never more, never less, ever.
 	
-	'Transitions' collect frames from two tracks (a and b) and
-	output 1 modified frame on their 'a track', and 1 unmodified
-	frame on their 'b track'. Never more, never less, ever.
-	
-	'Consumers' collect frames from a producer, do something with
-	them and destroy them.
+	'Consumers' collect frames from a producer, do something with them and
+	destroy them.
 	
 	Collectively, these are known as 'services'. 
 	
-	All services have 'properties' associated to them. These are
-	typically defaulted or evaluated and may be overriden on a case
-	by case basis.
+	All services have 'properties' associated to them. These are typically
+	defaulted or evaluated and may be overriden on a case by case basis.
 	
 	All services except consumers obey in and out properties.
 	
-	Consumers have no say in the flow of frames [though they may
-	give the illusion that they do]. They get frames from a
-	connected producer, use them, destroy them and get more.
+	Consumers have no say in the flow of frames [though they may give the
+	illusion that they do]. They get frames from a connected producer, use them, 
+	destroy them and get more.
 
 
 Basics:
@@ -77,24 +80,29 @@ Basics:
 	To play a file with the default SDL PAL consumer, usage is:
 	
 	$ inigo file
-	
-	Note that 'file' can be anything that inigo has a known
-	'producer' mapping for (so this can be anything from .dv to
-	.txt).
+
+	Note that 'file' can be anything that inigo has a known 'producer' mapping 
+	for (so this can be anything from .dv to .txt).
+
+	You can also specify the producer directly, for example:
+
+	$ inigo avformat:file.mpeg
+
+	Would force the direct use of avformat for loading the file.
 
 
 Properties:
 
-	Properties can be assigned to the producer by adding additional
-	name=value pairs after the producer:
+	Properties can be assigned to the producer by adding additional name=value
+	pairs after the producer:
 	
 	$ inigo file in=50 out=100 something="something else"
 	
-	Note that while some properties have meaning to all producers (for 
-	example: in, out and length are guaranteed to be valid for all, though 
-	typically, length is determined automatically), the validity of others 
-	are dependent on the producer - however, properties will always be 
-	assigned and silently ignored if they won't be used.
+	Note that while some properties have meaning to all producers (for example:
+	in, out and length are guaranteed to be valid for all, though typically, 
+	length is determined automatically), the validity of others are dependent on 
+	the producer - however, properties will always be assigned and silently 
+	ignored if they won't be used.
 
 
 Multiple Files:
@@ -123,7 +131,7 @@ Filters:
 
 	As with producers, properties may be specified on filters too.
 	
-	Again, in and out properties are common to all, so to apply a filter to a 
+	Again, in and out properties are common to all, so to apply a filter to a
 	range of frames, you would use something like:
 	
 	$ inigo a.dv -filter greyscale in=0 out=50
@@ -134,21 +142,21 @@ Filters:
 
 Groups:
 
-	The -group switch is provided to force default properties on the
-	following 'services'. For example:
+	The -group switch is provided to force default properties on the following
+	'services'. For example:
 	
 	$ inigo -group in=0 out=49 clip*
 	
-	would play the first 50 frames of all clips that match the wild
-	card pattern.
+	would play the first 50 frames of all clips that match the wild card
+	pattern.
 	
-	Note that the last -group settings also apply to the following
-	filters, transitions and consumers, so:
+	Note that the last -group settings also apply to the following filters, 
+	transitions and consumers, so:
 	
 	$ inigo -group in=0 out=49 clip* -filter greyscale
 	
-	is *probably not* what you want (ie: the greyscale filter would
-	only be applied to the first 50 frames).
+	is *probably not* what you want (ie: the greyscale filter would only be 
+	applied to the first 50 frames).
 	
 	To shed the group properties, you can use any empty group:
 	
@@ -161,27 +169,32 @@ Introducing Tracks and Blanks:
 	playlist, or more accurately, track.
 
 	When multiple tracks exist, the consumer will receive a frame
-	from the 'lowest numbered' track that is generating a non-blank
+	from the 'highest numbered' track that is generating a non-blank
 	frame.
 	
 	It is best to visualise a track arrangement, so we'll start with
 	an example:
 	
-	$ inigo a.dv in=0 out=49 -track b.dv
+	$ inigo a.dv -track b.dv in=0 out=49
 	
 	This can be visualised as follows:
 	
-	+-------+
-	|a      |
-	+-------+----------+
-	|b                 |
 	+------------------+
-	
-	Playout will show the first 50 frames of a and the 51st frame
-	shown will be the 51st frame of b.
-	
-	To have the 51st frame be the first frame of b, we can use the 
-	-blank switch:
+	|a                 |
+	+-------+----------+
+	|b      |
+	+-------+
+
+	Playout will show the first 50 frames of b and the 51st frame shown will be
+	the 51st frame of a.
+
+	This rule also applies to audio only producers on the second track, for
+	example, the following would show the video from the a track, but the audio
+	would come from the second track:
+
+	$ inigo a.dv -track b.mp3 in=0 out=49
+
+	To have the 51st frame be the first frame of b, we can use the -blank switch:
 	
 	$ inigo a.dv out=49 -track -blank 49 b.dv
 	

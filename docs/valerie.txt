@@ -1,8 +1,8 @@
-VALERIE API Documentation 
+Valerie API Documentation 
 
-Copyright (C) 2003 Ushodaya Enterprised Limited 
+Copyright (C) 2004 Ushodaya Enterprised Limited 
 Author: Charles Yates <charles.yates@pandora.be> 
-Last Revision: 2004-01-11
+Last Revision: 2004-03-20
 
 
 TABLE OF CONTENTS
@@ -222,10 +222,10 @@ TABLE OF CONTENTS
 
 	    valerie_error_code error = valerie_unit_play( dv, 0 );
 	    if ( error == valerie_ok )
-            fprintf( stderr, "Unit 0 is now playing\n" );
+	        fprintf( stderr, "Unit 0 is now playing\n" );
 	    else
-            fprintf( stderr, "Play on unit 0 failed: %s\n",
-                         valerie_error_description( error ) );
+	        fprintf( stderr, "Play on unit 0 failed: %s\n",
+	                     valerie_error_description( error ) );
 
 	The complete interface to valerie is listed in Appendix B of this document.
 
@@ -314,7 +314,7 @@ TABLE OF CONTENTS
 	and would provide a response formatted as follows:
 	
 	    201 OK
-		U0 00 sdl:360x288 1
+	    U0 00 sdl:360x288 1
 	
 	with a trailing empty line.
 	
@@ -371,8 +371,8 @@ TABLE OF CONTENTS
 	and would provide a response formated as follows:
 	
 	    202 OK
-		0 playing "a.dv" 58 1000 25.00 0 6999 7000 "a.dv" 157 0 6999 7000 1 4 0
-		
+	    0 playing "a.dv" 58 1000 25.00 0 6999 7000 "a.dv" 157 0 6999 7000 1 4 0
+	
 	with no trailing empty line.
 	
 	The entries in the record are:
@@ -472,15 +472,15 @@ TABLE OF CONTENTS
 	    double fps;
 	    int64_t in;
 	    int64_t out;
-		int64_t length;
+	    int64_t length;
 	    char tail_clip[ 2048 ];
 	    int64_t tail_position;
 	    int64_t tail_in;
 	    int64_t tail_out;
-		int64_t tail_length;
-		int seekable;
-		int generation;
-		int clip_index;
+	    int64_t tail_length;
+	    int seekable;
+	    int generation;
+	    int clip_index;
 	
 	You will always receive a status record for every frame output.
 
@@ -529,39 +529,39 @@ TABLE OF CONTENTS
 	
 	The following shows an example of obtaining the clips queued on unit 0:
 	
-		valerie_list list = valerie_list_init( dv, 0 );
-		valerie_list_entry_t entry;
-		int index;
-		
-		printf( "Generation = %d\n", list->generation );
-		for ( index = 0; index < valerie_list_count( list ); index ++ )
-		{
-			valerie_list_get( list, index, &entry );
-			printf( "%d %s %d %d %d %d\n", 
-					entry.clip, 
-					entry.full,
-					entry.in,
-					entry.out,
-					entry.max,
-					entry.size );
-		}
-		valerie_list_close( list );
-		
+	    valerie_list list = valerie_list_init( dv, 0 );
+	    valerie_list_entry_t entry;
+	    int index;
+	    
+	    printf( "Generation = %d\n", list->generation );
+	    for ( index = 0; index < valerie_list_count( list ); index ++ )
+	    {
+	        valerie_list_get( list, index, &entry );
+	        printf( "%d %s %d %d %d %d\n", 
+	                entry.clip, 
+	                entry.full,
+	                entry.in,
+	                entry.out,
+	                entry.max,
+	                entry.size );
+	    }
+	    valerie_list_close( list );
+	    
 	To load a clip on unit 0:
 	
-		valerie_unit_load( dv, 0, "/path/clip.dv" );
-		
+	    valerie_unit_load( dv, 0, "/path/clip.dv" );
+	    
 	To append a clip on unit 0:
 	
-		valerie_unit_append( dv, 0, "/path/clip.dv", -1, -1 );
-		
+	    valerie_unit_append( dv, 0, "/path/clip.dv", -1, -1 );
+	    
 	Note that the last two arguments specify the in and out points of the clip
 	with -1 denoting dfaults of the entirety of the file.
 	
 	To insert a clip at position 0 on unit 0, we can use the following:
 	
-		valerie_unit_clip_insert( dv, 0, clip_absolute, 0, "/path/clip.dv", -1, -1 );
-		
+	    valerie_unit_clip_insert( dv, 0, clip_absolute, 0, "/path/clip.dv", -1, -1 );
+	    
 	The 3rd and 4th arguments here are common to all the valerie_unit_clip functions.
 	They take the form of either [clip_absolute, n] to indicate an absolute clip
 	index, or [clip_relative, n] to indicate a clip index relative to the 
@@ -570,34 +570,34 @@ TABLE OF CONTENTS
 	So, to insert a clip immediately before the currently playing clip, we can
 	use:
 	
-		valerie_unit_clip_insert( dv, 0, clip_relative, -1, "/path/clip.dv", -1, -1 );
-		
+	    valerie_unit_clip_insert( dv, 0, clip_relative, -1, "/path/clip.dv", -1, -1 );
+	    
 	To move the current clip to the next position in the list:
 	
-		valerie_unit_clip_move( dv, 0, clip_relative, 0, clip_relative, 1 );
-		
+	    valerie_unit_clip_move( dv, 0, clip_relative, 0, clip_relative, 1 );
+	    
 	To remove a specific clip:
 	
-		valerie_unit_clip_remove( dv, 0, clip_absolute, index );
-		
+	    valerie_unit_clip_remove( dv, 0, clip_absolute, index );
+	    
 	To remove all but the currently playing clip:
 	
-		valerie_unit_clean( dv, 0 );
-		
+	    valerie_unit_clean( dv, 0 );
+	    
 	To goto the first frame in the first clip, you can use:
 	
-		valerie_unit_clip_goto( dv, 0, clip_absolute, 0, 0 );
-		
+	    valerie_unit_clip_goto( dv, 0, clip_absolute, 0, 0 );
+	    
 	To set the in and out points on the current clip:
 	
-		valerie_unit_clip_set_in( dv, 0, clip_relative, 0, 0 );
-		valerie_unit_clip_set_out( dv, 0, clip_relative, 0, 1000 );
-		
+	    valerie_unit_clip_set_in( dv, 0, clip_relative, 0, 0 );
+	    valerie_unit_clip_set_out( dv, 0, clip_relative, 0, 1000 );
+	    
 	A more complete example of use of the server side can queuing can be found
 	at:
 	
-		http://users.pandora.be/acp/gdv1394
-		
+	    http://users.pandora.be/acp/rugen
+	    
 	The demo client provided with valerie is used for retaining backward 
 	compatability with the client side queuing API.
 

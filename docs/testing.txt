@@ -1,9 +1,9 @@
-
-MLT Miracle Test Procedure
+Miracle Test Procedure
 
 Copyright (C) 2003 Ushodaya Enterprised Limited
 Author: Dan Dennedy <dan@dennedy.org>
-Last Revision: 2003-01-17
+Last Revision: 2004-03-20
+
 
 NOTE: THIS DOCUMENT REQUIRES REVISION TO NEW, EXPECTED BEHAVIOR FROM MIRACLE.
 
@@ -133,7 +133,7 @@ level client (albino).
 --> U0 ?? {GUID} 1
 --> U1 00 0000000f00055c1 0
 --> It is important that the last column of the last row is '0' to
-	indicate offline.
+    indicate offline.
 
 2.4 Attempt unit commands for a unit that does not exist: LOAD U6 foo
 --> 403 Unit not found
@@ -501,9 +501,9 @@ document assumes that they are named test001.dv and up.
 --> 1
 --> 0 "test001.dv" 0 6999 7000 7000 25.00
 --> The 1 on the second line denotes the number of times the list has been changed
-	via user commands (known as the 'generation' number).
+    via user commands (known as the 'generation' number).
 --> The third line and beyond reports the clip index (from 0 to n), file loaded, in point,
-	out point, real size of the file and the calculated size (out - in + 1 ).
+    out point, real size of the file and the calculated size (out - in + 1 ).
 
 9.1.4 Check the unit status with USTA U0
 --> 202 OK
@@ -531,7 +531,7 @@ document assumes that they are named test001.dv and up.
 --> 1 "test002.dv" 0 6999 7000 7000
 --> Check that USTA U0 reports a generation of 4 and current clip of 0
 --> Note that the order in which you run 9.1.6 and 9.1.7 shouldn't matter as the
-	result will be identical
+    result will be identical
 
 9.1.8 Change the position to the next clip with GOTO U0 0 +1
 --> 200 OK

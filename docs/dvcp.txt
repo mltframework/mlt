@@ -1,9 +1,9 @@
+Miracle Control Protocol (DVCP) Reference Documentation
 
-dv1394d Control Protocol (DVCP) Reference Documentation
-
-Copyright (C) 2003 Ushodaya Enterprised Limited
+Copyright (C) 2004 Ushodaya Enterprised Limited
 Author: Dan Dennedy <dan@dennedy.org>
-Last Revision: 2003-01-13
+Last Revision: 2004-03-20
+
 
 General Format
 --------------
@@ -27,10 +27,11 @@ Response Codes
 	is an error or exception. Most responses do not contain a body except
 	some of the success results that report information and sometimes the
 	500 Server Error returns specific information. 
-		A 200 result code contains no body.
-		A 201 result code contains one or more lines in the body, and a empty
-			line terminates the response.
-		A 202 result code contains only a single response line in the body.
+
+	A 200 result code contains no body.
+	A 201 result code contains one or more lines in the body, and an empty
+	line terminates the response.
+	A 202 result code contains only a single response line in the body.
 
 	Errors in the 400 range indicate a normally handled error where the
 	command could not perform its action due to protocol syntax errors or
@@ -303,8 +304,7 @@ USTA {unit}
 	- unit number: U0, U1, U2, or U3 without the "U" prefix
 	- mode: (offline|not_loaded|playing|stopped|paused|disconnected|unknown)
 	  "unknown" means the unit has not been added
-	  "disconnected" means the server has closed a connection to a client running
-	  	STATUS.
+	  "disconnected" means the server has closed the connection to the client.
 	- current clip name: filename
 	- current position: in absolute frame number units
 	- speed: playback rate in (percent * 10)

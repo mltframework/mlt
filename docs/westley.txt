@@ -1,3 +1,10 @@
+Westley Documentation
+
+Copyright (C) 2004 Ushodaya Enterprised Limited
+Authors: Charles Yates <charles.yates@pandora.be>
+Last Revision: 2004-03-20
+
+
 WESTLEY
 -------
 
@@ -178,9 +185,6 @@ Interlude - Introducing Multitracks:
 	appear to be an exception - it isn't - it simply has a route back to the 
 	application to allow the application to interpret key presses).
 
-	Whether this is better or worse than a traditional graph approach is a moot
-	point. The author of this document likes it anyway :-).
-
 
 Tractors:
 
@@ -298,35 +302,35 @@ Tractors:
 	
 	<westley>
 	  <producer id="producer0">
-		<property name="resource">clip1.dv</property>
+	    <property name="resource">clip1.dv</property>
 	  </producer>
 	  <playlist id="playlist0">
-		<entry producer="producer0"/>
+	    <entry producer="producer0"/>
 	  </playlist>
 	  <producer id="producer1">
-		<property name="resource">clip2.mpeg</property>
+	    <property name="resource">clip2.mpeg</property>
 	  </producer>
 	  <playlist id="playlist1">
-		<blank length="50"/>
-		<entry producer="producer1"/>
+	    <blank length="50"/>
+	    <entry producer="producer1"/>
 	  </playlist>
 	  <tractor id="tractor0" in="0" out="315">
-		<multitrack id="multitrack0">
-		  <track producer="playlist0"/>
-		  <track producer="playlist1"/>
-		</multitrack>
-		<transition id="transition0" in="50" out="74">
-		  <property name="a_track">0</property>
-		  <property name="b_track">1</property>
-		  <property name="mlt_service">luma</property>
-		</transition>
-		<transition id="transition1" in="50" out="74">
-		  <property name="a_track">0</property>
-		  <property name="b_track">1</property>
-		  <property name="mlt_service">mix</property>
-		  <property name="start">0.0</property>
-		  <property name="end">1.0</property>
-		</transition>
+	    <multitrack id="multitrack0">
+	      <track producer="playlist0"/>
+	      <track producer="playlist1"/>
+	    </multitrack>
+	    <transition id="transition0" in="50" out="74">
+	      <property name="a_track">0</property>
+	      <property name="b_track">1</property>
+	      <property name="mlt_service">luma</property>
+	    </transition>
+	    <transition id="transition1" in="50" out="74">
+	      <property name="a_track">0</property>
+	      <property name="b_track">1</property>
+	      <property name="mlt_service">mix</property>
+	      <property name="start">0.0</property>
+	      <property name="end">1.0</property>
+	    </transition>
 	  </tractor>
 	</westley>
 
@@ -336,7 +340,7 @@ Tractors:
 	between the gain scaling factors between the start and end properties - 
 	in this example, from 0.0 (none of track B) to 1.0 (all of track B). 
 	Because the bottom track starts out with a gap specified using the <blank>
-	element, the upper track appears during	the blank segment. See the demos and
+	element, the upper track appears during the blank segment. See the demos and
 	services.txt to get an idea of the capabilities of the included transitions.
 
 Flexibility:
@@ -476,12 +480,12 @@ Entities and Parameterisation:
 	
 	<?xml version="1.0"?>
 	<!DOCTYPE westley [
-		<!ENTITY msg "Hello world!">
+	    <!ENTITY msg "Hello world!">
 	]>
 	<westley>
 	  <producer id="producer0">
-		<property name="mlt_service">pango</property>
-		<property name="text">&msg;</property>
+	    <property name="mlt_service">pango</property>
+	    <property name="text">&msg;</property>
 	  </producer>
 	</westley>
 	
@@ -520,39 +524,39 @@ Tips and Technique:
 
 	If one finds the above hierarchical, abbreviated format intuitive,
 	start with a simple template and fill and extend as needed:
-		<westley>
-		  <multitrack>
-		    <playlist>
-		    </playlist>
-		    ...add a playlist for each track...
-		  </multitrack>
-		  ...add filters and transitions...
-		</westley>
-		
+	    <westley>
+	      <multitrack>
+	        <playlist>
+	        </playlist>
+	        ...add a playlist for each track...
+	      </multitrack>
+	      ...add filters and transitions...
+	    </westley>
+	    
 	By using a playlist for each track, it is easier to iteratively add new 
-	clips and blank regions as you develop the project.	You will not have to
+	clips and blank regions as you develop the project. You will not have to
 	use <track> or later add <playlist> when necessary.
 	
 	A more advanced template that allows sequencing multitracks is:
-		<playlist>
-		  <entry>
-		    <multitrack>
-		      <playlist>
-		      </playlist>
-		      ...add a playlist for each track...
-		    </multitrack>
-		    ...add filters and transitions...
-		  </entry>
-		  
-		  <entry>
-		    <multitrack>
-		      <playlist>
-		      </playlist>
-		      ...add a playlist for each track...
-		    </multitrack>
-		    ...add filters and transitions...
-		  </entry>
-		</playlist>
+	    <playlist>
+	      <entry>
+	        <multitrack>
+	          <playlist>
+	          </playlist>
+	          ...add a playlist for each track...
+	        </multitrack>
+	        ...add filters and transitions...
+	      </entry>
+	      
+	      <entry>
+	        <multitrack>
+	          <playlist>
+	          </playlist>
+	          ...add a playlist for each track...
+	        </multitrack>
+	        ...add filters and transitions...
+	      </entry>
+	    </playlist>
 
 	If you end up making a collection of templates for various situations, then
 	consider using XML Entities to make the template more effective by moving

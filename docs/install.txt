@@ -90,36 +90,34 @@ Testing
 Installation
 ------------
 
-	* NOT IMPLEMENTED YET *
-
-	The install is triggered by running make install or make install-strip
-	from the top level directory.
+	The install is triggered by running make install from the top level
+	directory.
 	
 	The framework produces a single shared object which is installed in 
 	$prefix/lib/ and public header files which are installed in
 	$prefix/include/mlt/framework.
 
-	The client produces a single shared object which is installed in 
+	Valerie produces a single shared object which is installed in 
 	$prefix/lib/ and public header which are installed in 
-	$prefix/include/mlt/client.
+	$prefix/include/mlt/valerie.
 
-	The server produces a single exectuable which is installed in
-	$prefix/bin/. This is linked against the framework shared object and
-	posix libs but not against any of the modules.
+	Miracle produces a single exectuable which is installed in
+	$prefix/bin/, a library in $prefix/lib and associated header files in
+	$prefix/include.
 
 	The modules produce a shared object per module and update text files
 	containing a list of modules provided by this build. These are installed 
-	in $prefix/share/mlt/. It is at the discretion of the module to install
-	additional support files. 
+	in $prefix/share/mlt/modules. It is at the discretion of the module to 
+	install additional support files. 
 	
-	To allow the development of external components, mlt-client-config and
-	mlt-framework-config scripts are generated and installed in $prefix/bin.
+	To allow the development of external components, mlt-config and scripts 
+	are generated and installed in $prefix/bin.
 
 	After install, only those modules listed are usable by the server. No
 	module is loaded unless explicitly requested via server configuration
 	or usage.
 
-	External modules are also placed in this $prefix/share/mlt, and the 
+	External modules are also placed in this $prefix/share/mlt/modules, and the
 	installation of those must modify the text file accordingly before they
 	will be considered at runtime.
 

@@ -1,1355 +1,1413 @@
+Service Documentation
+
+Copyright (C) 2004 Ushodaya Enterprises Limited
+Authors: Charles Yates <charles.yates@pandora.be>
+	     Dan Dennedy <dan@dennedy.org>
+Last Revision: 2004-03-20
+
+
 SERVICES
 --------
 
-Services marked as "(Proprietary)" are not distributed with the GPL version
-of mlt.
+	Services marked as "(Proprietary)" are not distributed with the GPL version
+	of mlt.
 
 Producers
 ---------
 
 	avformat
 
-		Description
+	    Description
 
-			ffmpeg libavformat based producer for video and audio.
+	        ffmpeg libavformat based producer for video and audio.
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file' - a filename specification or URL in the form:
-		             [{protocol}|{format}]:{resource}[?{format-parameter}[&{format-parameter}...]]
-			         For example, video4linux:/dev/video1?width:320&height:240
-			         Note: on the bash command line, & must be escaped as '\&'.
-					 Also, note the use of ':' instead of '=' for parameters.
-			         Use 'ffmpeg -formats' to see a list of supported protocols 
-			         and formats.
-					 
-		Details
-		
-			Format parameters only appear to be useful with 'video4linux' or
-			'audio_device' formats. For 'video4linux' the parameters are
-			width, height, frame_rate, frame_rate_base, and standard (ntsc|pal).
-			For 'audio_device' the parameters are channels and sample_rate.
+	        'file' - a filename specification or URL in the form:
+	                 [{protocol}|{format}]:{resource}[?{format-parameter}[&{format-parameter}...]]
+	                 For example, video4linux:/dev/video1?width:320&height:240
+	                 Note: on the bash command line, & must be escaped as '\&'.
+	                 Also, note the use of ':' instead of '=' for parameters.
+	                 Use 'ffmpeg -formats' to see a list of supported protocols 
+	                 and formats.
+	                 
+	    Details
+	    
+	        Format parameters only appear to be useful with 'video4linux' or
+	        'audio_device' formats. For 'video4linux' the parameters are
+	        width, height, frame_rate, frame_rate_base, and standard (ntsc|pal).
+	        For 'audio_device' the parameters are channels and sample_rate.
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int video_index - index of video stream to use (-1 is off)
-			int audio_index - index of audio stream to use (-1 is off)
-			int in - in point
-			int out - out point
+	        int video_index - index of video stream to use (-1 is off)
+	        int audio_index - index of audio stream to use (-1 is off)
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - file location
-			double fps - this is fixed at 25 for PAL currently
-			double source_fps - the framerate of the resource
-			double aspect_ratio - sample aspect ratio of the resource
-			                    - this is determined on every frame read
+	        string resource - file location
+	        double fps - this is fixed at 25 for PAL currently
+	        double source_fps - the framerate of the resource
+	        double aspect_ratio - sample aspect ratio of the resource
+	                            - this is determined on every frame read
 
-		Dependencies
+	    Dependencies
 
-			ffmpeg must be configured as --enable-shared and installed prior
-			to compilation of mlt.
+	        ffmpeg must be configured as --enable-shared and installed prior
+	        to compilation of mlt.
 
-		Known Bugs
+	    Known Bugs
 
-			Audio sync discrepancy with some content.
-			Not all libavformat supported formats are seekable.
-			Ogg Vorbis is currently broken.
-			MPEG seeking is inaccurate - doesn't seek to i-frames so you may
-			get junk for a few frames.
-			RAW DV seeking not supported.
-			Fails to play beyond first frame of video of sources with PTS not
-			starting at 0 (video4linux).
+	        Audio sync discrepancy with some content.
+	        Not all libavformat supported formats are seekable.
+	        Ogg Vorbis is currently broken.
+	        MPEG seeking is inaccurate - doesn't seek to i-frames so you may
+	        get junk for a few frames.
+	        RAW DV seeking not supported.
+	        Fails to play beyond first frame of video of sources with PTS not
+	        starting at 0 (video4linux).
 
 	fezzik
 
-		Description
+	    Description
 
-			A friendly giant that likes to rhyme and throw rocks
+	        A friendly giant that likes to rhyme and throw rocks
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file'	- a filename specification:
-			          [{mlt-service}:]{resource} | {mlt-service}
-			        - can also be the name of a producer service that can
-					  accept the resource specified post construction.
+	        'file'    - a filename specification:
+	                  [{mlt-service}:]{resource} | {mlt-service}
+	                - can also be the name of a producer service that can
+	                  accept the resource specified post construction.
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
-			+ all producer initialising properties
+	        int in - in point
+	        int out - out point
+	        + all producer initialising properties
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - file location
-			+ all producer read only properties
+	        string resource - file location
+	        + all producer read only properties
 
-		Details
+	    Details
 
-			This producer is has two roles:
+	        This producer is has two roles:
 
-			1. it handles the mappings of all file names to the other
-			producers;
-			2. it attaches normalising filters (rescale, resize and resample)
-			to the producers (when necessary).
+	        1. it handles the mappings of all file names to the other
+	        producers;
+	        2. it attaches normalising filters (rescale, resize and resample)
+	        to the producers (when necessary).
 
-			This producer simplifies many aspects of use. Essentially, it
-			ensures that a consumer will receive images and audio precisely as
-			they request them. 
+	        This producer simplifies many aspects of use. Essentially, it
+	        ensures that a consumer will receive images and audio precisely as
+	        they request them. 
 
-		Dependencies
+	    Dependencies
 
-			all.
+	        all.
 
-		Known Bugs
+	    Known Bugs
 
-			None.
+	        None.
 
 	
 	colour
 	
-		Description
-		
-			A simple colour generator.
-			
-		Constructor Argument
-		
-			colour - A colour value is a hexadecimal representation of RGB plus
-			         alpha channel as 0xrrggbbaa.
-			       - Also colours can be the words: white, black, red, green,
-			         or blue.
-			       - The default colour is black.
-				   
-		Initialisation Properties
-		
-			none
-			
-		Read Only Properties
-		
-			none
-			
-		Dependencies
-		
-			none
-			
-		Known Bugs
-		
-			none
+	    Description
+	    
+	        A simple colour generator.
+	        
+	    Constructor Argument
+	    
+	        colour - A colour value is a hexadecimal representation of RGB plus
+	                 alpha channel as 0xrrggbbaa.
+	               - Also colours can be the words: white, black, red, green,
+	                 or blue.
+	               - The default colour is black.
+	               
+	    Initialisation Properties
+	    
+	        none
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Dependencies
+	    
+	        none
+	        
+	    Known Bugs
+	    
+	        none
 
 	
 	ffmpeg (DEPRECATED)
 
-		Description
+	    Description
 
-			Test case pipe based producer for video and audio.
+	        Test case pipe based producer for video and audio.
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file'	- produce a/v from file
-			v4l		- produce a/v from video4linux and dsp device
+	        'file'    - produce a/v from file
+	        v4l        - produce a/v from video4linux and dsp device
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			string video_type - "file" or "v4l"
-			string video_file - file or v4l device
-			string video_size - WxH of video to produce (default: "")
-			int video_loop - loop video until audio exhausted (default: 0)
-			string audio_type - "file" or "dsp"
-			string audio_file - file or dsp device
-			int audio_rate - audio frequency (default: 48000)
-			int audio_channels - audio channels (default: 2)
-			int audio_track - audio track to use (default: 0)
-			int audio_loop - loop audio until video exhausted (default: 0)
-			int in - in point
-			int out - out point
-			double fps - output frames per second (default: 25)
-			double aspect_ratio - aspect ratio of video
+	        string video_type - "file" or "v4l"
+	        string video_file - file or v4l device
+	        string video_size - WxH of video to produce (default: "")
+	        int video_loop - loop video until audio exhausted (default: 0)
+	        string audio_type - "file" or "dsp"
+	        string audio_file - file or dsp device
+	        int audio_rate - audio frequency (default: 48000)
+	        int audio_channels - audio channels (default: 2)
+	        int audio_track - audio track to use (default: 0)
+	        int audio_loop - loop audio until video exhausted (default: 0)
+	        int in - in point
+	        int out - out point
+	        double fps - output frames per second (default: 25)
+	        double aspect_ratio - aspect ratio of video
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - file or "v4l"
-			int end_of_clip - holds 1 when input is exhausted
+	        string resource - file or "v4l"
+	        int end_of_clip - holds 1 when input is exhausted
 
-		Dependencies
+	    Dependencies
 
-			ffmpeg executable.
+	        ffmpeg executable.
 
-		Known Bugs
+	    Known Bugs
 
-			in point setting is broken.
+	        in point setting is broken.
 
-			Implementation does not allow fast random access.
+	        Implementation does not allow fast random access.
 
 	libdv
 
-		Description
+	    Description
 
-			libdv based decoder for video and audio.
+	        libdv based decoder for video and audio.
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file'	- produce a/v from file
+	        'file'    - produce a/v from file
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - file location
-			double fps - output frames per second
-			int length - duration of resource (in frames)
-			
-		Mutable Properties
-		
-			string quality - one of "best," "fast" or anything else chooses
-			                 medium.
+	        string resource - file location
+	        double fps - output frames per second
+	        int length - duration of resource (in frames)
+	        
+	    Mutable Properties
+	    
+	        string quality - one of "best," "fast" or anything else chooses
+	                         medium.
 
-		Dependencies
+	    Dependencies
 
-			libdv.
+	        libdv.
 
-		Known Bugs
+	    Known Bugs
 
-			DVCPRO is incorrectly identified as 16:9 aspect ratio. You must use
-			libdv from CVS or a post 0.101 release. 
+	        DVCPRO is incorrectly identified as 16:9 aspect ratio. You must use
+	        libdv from CVS or a post 0.101 release. 
 
 	mcdv (Proprietary)
 
-		Description
+	    Description
 
-			MainConcept based dv decoder for video and audio.
+	        MainConcept based dv decoder for video and audio.
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file'	- produce a/v from file
+	        'file'    - produce a/v from file
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - file location
-			double fps - output frames per second
-			int length - duration of resource (in frames)
+	        string resource - file location
+	        double fps - output frames per second
+	        int length - duration of resource (in frames)
 
-		Dependencies
+	    Dependencies
 
-			MainConcept DV or DVCPRO SDK, libdv.
-			"dv_sdk" installed parallel to mlt.
+	        MainConcept DV or DVCPRO SDK, libdv.
+	        "dv_sdk" installed parallel to mlt.
 
-		Known Bugs
+	    Known Bugs
 
-			None
+	        None
 
 	mcmpeg (Proprietary)
 
-		Description
+	    Description
 
-			MainConcept based mpeg decoder for video and audio.
+	        MainConcept based mpeg decoder for video and audio.
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file'	- produce a/v from file
+	        'file'    - produce a/v from file
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - file location
-			double fps - output frames per second
-			double aspect_ratio - sample aspect ratio of video
-			int length - duration of resource (in frames)
-			
-		Dependencies
+	        string resource - file location
+	        double fps - output frames per second
+	        double aspect_ratio - sample aspect ratio of video
+	        int length - duration of resource (in frames)
+	        
+	    Dependencies
 
-			MainConcept MPEG SDK.
-			"mpeg_sdk_release" installed parallel to mlt.
+	        MainConcept MPEG SDK.
+	        "mpeg_sdk_release" installed parallel to mlt.
 
-		Known Bugs
+	    Known Bugs
 
-			None.
+	        None.
+
+	noise
+
+	    Description
+
+	        White noise producer
+
+	    Constructor Argument
+
+	        none
+
+	    Initialisation Properties
+
+	        int in - in point
+	        int out - out point
+
+	    Read Only Properties
+
+	        string resource - file location
+	        double fps - output frames per second
+	        double aspect_ratio - sample aspect ratio of video
+	        int length - duration of resource (in frames)
+	        
+	    Dependencies
+
+	        none
+
+	    Known Bugs
+
+	        none
 
 	pango
 
-		Description
+	    Description
 
-			A title generator that uses the Pango international text layout
-			and Freetype2 font renderer.
+	        A title generator that uses the Pango international text layout
+	        and Freetype2 font renderer.
 
-		Constructor Argument
+	    Constructor Argument
 
-			string file - a text file containing Pango markup, see:
-			http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
-			            - requires xml-like encoding special chars from: 
-			              <, >, &   -to-   &lt;, &gt;, &amp;
-						  
-		Details
-		
-			Supplying a filename with extension ".txt" causes the Fezzik 
-			producer to load with pango. If the filename begins with "+" the 
-			pango producer interprets the filename as pango text. This is a
-			shortcut to embed titles in inigo commands. For westley, it is 
-			recommended that you embed the title text in the property value.
-			
-			Pango has builtin scaling. It will rescale the originally rendered
-			title to whatever the consumer requests. Therefore, it will lose
-			its aspect ratio if so requested, and it is up to the consumer to
-			request a proper width and height that maintains the image aspect.
+	        string file - a text file containing Pango markup, see:
+	        http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+	                    - requires xml-like encoding special chars from: 
+	                      <, >, &   -to-   &lt;, &gt;, &amp;
+	                      
+	    Details
+	    
+	        Supplying a filename with extension ".txt" causes the Fezzik 
+	        producer to load with pango. If the filename begins with "+" the 
+	        pango producer interprets the filename as pango text. This is a
+	        shortcut to embed titles in inigo commands. For westley, it is 
+	        recommended that you embed the title text in the property value.
+	        
+	        Pango has builtin scaling. It will rescale the originally rendered
+	        title to whatever the consumer requests. Therefore, it will lose
+	        its aspect ratio if so requested, and it is up to the consumer to
+	        request a proper width and height that maintains the image aspect.
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Mutable Properties
+	    Mutable Properties
 
-			string markup - a string containing Pango markup see:
-			http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
-			              - requires xml-like encoding special chars from: 
-			                <, >, &   -to-   &lt;, &gt;, &amp;
-			string fgcolour - an RGBA colour specification of the text 
-			                  (i.e. 0xrrggbbaa)
-			string bgcolour - an RGBA colour of the background rectangle
-			string align - paragraph alignment: left, centre, right
-			             - also, numbers 0, 1 and 2 can be used respectively.
-			int pad - the number of pixels to pad the background rectangle 
-			          beyond edges of text. default 0.
-			string markup - see constructor argument
-			string text - non-markup string in UTF-8 encoding (can contain 
-			              markup chars un-encoded)
-			string font - the default typeface to use when not using markup.
-			              default "Sans 48". FreeType2 renders at 72 dpi.
-			string encoding - the text encoding type of the input if not UTF-8.
-			                - see 'iconv --list' for a list of possible inputs.
+	        string markup - a string containing Pango markup see:
+	        http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+	                      - requires xml-like encoding special chars from: 
+	                        <, >, &   -to-   &lt;, &gt;, &amp;
+	        string fgcolour - an RGBA colour specification of the text 
+	                          (i.e. 0xrrggbbaa)
+	        string bgcolour - an RGBA colour of the background rectangle
+	        string align - paragraph alignment: left, centre, right
+	                     - also, numbers 0, 1 and 2 can be used respectively.
+	        int pad - the number of pixels to pad the background rectangle 
+	                  beyond edges of text. default 0.
+	        string markup - see constructor argument
+	        string text - non-markup string in UTF-8 encoding (can contain 
+	                      markup chars un-encoded)
+	        string font - the default typeface to use when not using markup.
+	                      default "Sans 48". FreeType2 renders at 72 dpi.
+	        string encoding - the text encoding type of the input if not UTF-8.
+	                        - see 'iconv --list' for a list of possible inputs.
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - the text/markup file or "pango" if no file.
-			int real_width - the original, unscaled width of the rendered title.
-			int real_height - the original, unscaled height of the title.
-			int width - the last requested scaled image width.
-			int height - the last requested scaled image height.
+	        string resource - the text/markup file or "pango" if no file.
+	        int real_width - the original, unscaled width of the rendered title.
+	        int real_height - the original, unscaled height of the title.
+	        int width - the last requested scaled image width.
+	        int height - the last requested scaled image height.
 
-		Dependencies
+	    Dependencies
 
-			libpango-1.0, libpangoft2-1.0, libfreetype, libgdk_pixbuf-2.0, 
-			libglib-2.0, libgobject-2.0, libgmodule-2.0, libfontconfig.
+	        libpango-1.0, libpangoft2-1.0, libfreetype, libgdk_pixbuf-2.0, 
+	        libglib-2.0, libgobject-2.0, libgmodule-2.0, libfontconfig.
 
-		Known Bugs
+	    Known Bugs
 
-			The foreground and background Pango markup span attributes are not
-			supported.
-			Word wrapping is not supported.
+	        The foreground and background Pango markup span attributes are not
+	        supported.
+	        Word wrapping is not supported.
 
 	pixbuf
 
-		Description
+	    Description
 
-			A still graphics to video generator using gdk-pixbuf
+	        A still graphics to video generator using gdk-pixbuf
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file' - The name of a graphics file loadable by
-			         a gdk-pixbuf loader. see /usr/lib/gdk-pixbuf/loaders
-			         definitely png, jpeg, tiff, pnm, and xpm
-			       - If "%" in filename, the filename is used with sprintf
-			         generate a filename from a counter for multi-file/flipbook 
-			         animation. The file sequence ends when numeric 
-			         discontinuity >100.
-			       - If filename contains "/.all.", suffix with an extension to 
-			         load all pictures with matching extension from a directory.
-			       - If filename contains the string "<svg", then pixbuf tries
-			         to load the filename as inline SVG XML, which is convenient
-			         for inigo commands.
-					 
-		Details
-		
-			Pixbuf has builtin scaling. It will rescale the originally rendered
-			title to whatever the consumer requests. Therefore, it will lose
-			its aspect ratio if so requested, and it is up to the consumer to
-			request a proper width and height that maintains the image aspect.
+	        'file' - The name of a graphics file loadable by
+	                 a gdk-pixbuf loader. see /usr/lib/gdk-pixbuf/loaders
+	                 definitely png, jpeg, tiff, pnm, and xpm
+	               - If "%" in filename, the filename is used with sprintf
+	                 generate a filename from a counter for multi-file/flipbook 
+	                 animation. The file sequence ends when numeric 
+	                 discontinuity >100.
+	               - If filename contains "/.all.", suffix with an extension to 
+	                 load all pictures with matching extension from a directory.
+	               - If filename contains the string "<svg", then pixbuf tries
+	                 to load the filename as inline SVG XML, which is convenient
+	                 for inigo commands.
+	                 
+	    Details
+	    
+	        Pixbuf has builtin scaling. It will rescale the originally rendered
+	        title to whatever the consumer requests. Therefore, it will lose
+	        its aspect ratio if so requested, and it is up to the consumer to
+	        request a proper width and height that maintains the image aspect.
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Mutable Properties
+	    Mutable Properties
 
-			int ttl - how long (in frames) to repeat each picture in file 
-			          sequences. default is 25.
+	        int ttl - how long (in frames) to repeat each picture in file 
+	                  sequences. default is 25.
 
-		Read Only Properties
+	    Read Only Properties
 
-			string resource - file location. See Constructor Argument above.
-			int real_width - the original, unscaled width of the rendered title.
-			int real_height - the original, unscaled height of the title.
-			int width - the last requested scaled image width.
-			int height - the last requested scaled image height.
+	        string resource - file location. See Constructor Argument above.
+	        int real_width - the original, unscaled width of the rendered title.
+	        int real_height - the original, unscaled height of the title.
+	        int width - the last requested scaled image width.
+	        int height - the last requested scaled image height.
 
-		Dependencies
+	    Dependencies
 
-			libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
+	        libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
 
-		Known Bugs
+	    Known Bugs
 
-			XXX: in/out settings are incorrectly handled.
+	        XXX: in/out settings are incorrectly handled.
 
 	ppm
 	
-		Description
+	    Description
 
-			Reads a stream of contiguous PPM images.
-			
-		Constructor Argument
+	        Reads a stream of contiguous PPM images.
+	        
+	    Constructor Argument
 
-			command - a shell command to run something that produces ppm
-			          streams on stdout.
-			
-		Initialisation Properties
+	        command - a shell command to run something that produces ppm
+	                  streams on stdout.
+	        
+	    Initialisation Properties
 
-			none
-			
-		Read Only Properties
+	        none
+	        
+	    Read Only Properties
 
-			string resource - the command
-			
-		Dependencies
+	        string resource - the command
+	        
+	    Dependencies
 
-			none
-			
-		Known Bugs
+	        none
+	        
+	    Known Bugs
 
-			Since it uses pipes, it is not compatible with bluefish.
+	        Since it uses pipes, it is not compatible with bluefish.
 
 	westley
 
-		Description
+	    Description
 
-			Construct a service network from an XML description.
-			See docs/westley.txt.
+	        Construct a service network from an XML description.
+	        See docs/westley.txt.
 
-		Constructor Argument
+	    Constructor Argument
 
-			URL - an XML text file containing westley XML (schema/DTD pending)
-			    - Since westley files can be parameterised, the URL syntax is:
-			      {file-name}[?{param-name}{'='|':'}{param-value}[&{param-name}{'='|':'}{param-value}...]]
-				  A colon is allowed instead of an equal sign to pacify inigo,
-				  who tokenises anything with an equal sign as a property 
-				  setting. Also, when running inigo from the shell, beware of
-				  the '?' and shell filename expansion. You can surround the URL
-				  with single quotations to prevent expansion. Finally, fezzik
-				  will fail to match the filename when you use parameters, so
-				  preface the url with 'westley:' to force fezzik to load with
-				  the westley service.
-				  
-		Read Only Properties
+	        URL - an XML text file containing westley XML (schema/DTD pending)
+	            - Since westley files can be parameterised, the URL syntax is:
+	              {file-name}[?{param-name}{'='|':'}{param-value}[&{param-name}{'='|':'}{param-value}...]]
+	              A colon is allowed instead of an equal sign to pacify inigo,
+	              who tokenises anything with an equal sign as a property 
+	              setting. Also, when running inigo from the shell, beware of
+	              the '?' and shell filename expansion. You can surround the URL
+	              with single quotations to prevent expansion. Finally, fezzik
+	              will fail to match the filename when you use parameters, so
+	              preface the url with 'westley:' to force fezzik to load with
+	              the westley service.
+	              
+	    Read Only Properties
 
-			string resource - file location
+	        string resource - file location
 
-		Dependencies
+	    Dependencies
 
-			libxml2
+	        libxml2
 
-		Known Bugs
+	    Known Bugs
 
-			Non-referenced producers and playlists are not destroyed until the 
-			network is destroyed.
-			A referenced producer or playlist must appear before the reference.
-			A filter that occurs before a producer has been defined causes a 
-			segfault.
+	        Non-referenced producers and playlists are not destroyed until the 
+	        network is destroyed.
+	        A referenced producer or playlist must appear before the reference.
+	        A filter that occurs before a producer has been defined causes a 
+	        segfault.
 
 	vorbis
 
-		Description
+	    Description
 
-			OGG Vorbis file reader.
+	        OGG Vorbis file reader.
 
-		Constructor Argument
+	    Constructor Argument
 
-			'file' - file to use (only .ogg supported at the moment)
+	        'file' - file to use (only .ogg supported at the moment)
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			double fps - this is fixed at 25 for PAL currently
+	        double fps - this is fixed at 25 for PAL currently
 
-		Dependencies
+	    Dependencies
 
-			libvorbisfile
+	        libvorbisfile
 
-		Known Bugs
+	    Known Bugs
 
-			Fixed frame size (PAL audio chunks).
-			Doesn't cover ogg files with multiple, differing sections.
+	        Fixed frame size (PAL audio chunks).
+	        Doesn't cover ogg files with multiple, differing sections.
 
 Filters
 -------
 
 	brightness
 	
-		Description
-		
-			Shift the luma component using a constant value.
-			
-		Constructor Argument
-		
-			start - the constant floating point numeric value to apply.
-			      - the default is 0.
-			
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
-			double start - see Constructor Argument above.
-			double end - the ending adjustment value. the filter interpolates
-			             between the start and end adjustments over the 
-			             duration of the effect.
-						 
-		Read Only Properties
-		
-			none
-			
-		Dependencies
-		
-			none
-			
-		Known Bugs
-		
-			Does not go completely to black or white.
-			
+	    Description
+	    
+	        Shift the luma component using a constant value.
+	        
+	    Constructor Argument
+	    
+	        start - the constant floating point numeric value to apply.
+	              - the default is 0.
+	        
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
+	        double start - see Constructor Argument above.
+	        double end - the ending adjustment value. the filter interpolates
+	                     between the start and end adjustments over the 
+	                     duration of the effect.
+	                     
+	    Read Only Properties
+	    
+	        none
+	        
+	    Dependencies
+	    
+	        none
+	        
+	    Known Bugs
+	    
+	        Does not go completely to black or white.
+	        
 	
 	channelcopy
 	
-		Description
-		
-			Copy audio from one channel to another channel.
-			
-		Constructor Argument
-		
-			to - the 0-indexed channel to copy into, default is 1.
-			
-		Mutable Properties
-		
-			int to - see above
-			int from - the channel from which to copy, default is 0.
-			
-		Dependencies
-		
-			none
-			
-		Known Bugs
-		
-			none
-			
+	    Description
+	    
+	        Copy audio from one channel to another channel.
+	        
+	    Constructor Argument
+	    
+	        to - the 0-indexed channel to copy into, default is 1.
+	        
+	    Mutable Properties
+	    
+	        int to - see above
+	        int from - the channel from which to copy, default is 0.
+	        
+	    Dependencies
+	    
+	        none
+	        
+	    Known Bugs
+	    
+	        none
+	        
 
 
 	deinterlace
 	
-		Description
+	    Description
 
-			Deinterlace a frame consisting of two fields using bob, weave,
-			greedy, one-field, and linear blend methods. This code is 
-			appropriated from the Xine XV video output plugin.
-		
-		Constructor Argument
+	        Deinterlace a frame consisting of two fields using bob, weave,
+	        greedy, one-field, and linear blend methods. This code is 
+	        appropriated from the Xine XV video output plugin.
+	    
+	    Constructor Argument
 
-			method - a string containing the deinterlace method: bob, weave,
-			         greedy, onefield, or linearblend. The default is
-					 linearblend.
-		
-		Initialisation Properties
+	        method - a string containing the deinterlace method: bob, weave,
+	                 greedy, onefield, or linearblend. The default is
+	                 linearblend.
+	    
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
-			
-		Read Only Properties
+	        int in - in point
+	        int out - out point
+	        
+	    Read Only Properties
 
-			none
-		
-		Mutable Properties
-		
-			string method
-			
-		Details
-		
-			If the frame properties "progressive" or "consumer_progressive"
-			are non-zero, then the filter is not applied. Also, if applied,
-			this sets the frame property "progressive" to 1.
+	        none
+	    
+	    Mutable Properties
+	    
+	        string method
+	        
+	    Details
+	    
+	        If the frame properties "progressive" or "consumer_progressive"
+	        are non-zero, then the filter is not applied. Also, if applied,
+	        this sets the frame property "progressive" to 1.
 
-		Dependencies
+	    Dependencies
 
-			none
-			
-		Known Bugs
+	        none
+	        
+	    Known Bugs
 
-			Not a bug, but it only provides fair quality.
-			
-		
+	        Not a bug, but it only provides fair quality.
+	        
+	    
 	ffmpeg_dub
 	
-		Description
+	    Description
 
-		    Use ffmpeg executable to substitute audio stream.
-		
-		Constructor Argument
+	        Use ffmpeg executable to substitute audio stream.
+	    
+	    Constructor Argument
 
-			file - filename of a WAV, Ogg Vorbis (--enable-vorbis),
-			       MP3 (--enable-mp3lame), or AC-3 (--enable-a52) audio file.
-		
-		Initialisation Properties
+	        file - filename of a WAV, Ogg Vorbis (--enable-vorbis),
+	               MP3 (--enable-mp3lame), or AC-3 (--enable-a52) audio file.
+	    
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
-		
-		Read Only Properties
-		
-			string resource - file
-			
-		Dependencies
+	        int in - in point
+	        int out - out point
+	    
+	    Read Only Properties
+	    
+	        string resource - file
+	        
+	    Dependencies
 
-			ffmpeg plus for ffmpeg:
-			libogg and libvorbis for Ogg Vorbis, libmp3lame for MP3, liba52 for AC-3.
-			
-		Known Bugs
+	        ffmpeg plus for ffmpeg:
+	        libogg and libvorbis for Ogg Vorbis, libmp3lame for MP3, liba52 for AC-3.
+	        
+	    Known Bugs
 
-			Uses pipes and is therefore not compatible with bluefish.
-			
+	        Uses pipes and is therefore not compatible with bluefish.
+	        
 
 	gamma
 	
-		Description
+	    Description
 
-			Adjust image luma using a non-linear power-law curve
-			
-		Constructor Argument
+	        Adjust image luma using a non-linear power-law curve
+	        
+	    Constructor Argument
 
-			gamma - a floating point value. The default is 1.0, or none.
-		
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
+	        gamma - a floating point value. The default is 1.0, or none.
+	    
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
 
-		Mutable Properties
+	    Mutable Properties
 
-			double gamma - the exponential factor of the power-law curve
-			
-		Dependencies
+	        double gamma - the exponential factor of the power-law curve
+	        
+	    Dependencies
 
-			none
-			
-		Known Bugs
+	        none
+	        
+	    Known Bugs
 
-			none
-			
+	        none
+	        
 	
 	greyscale
 	
-		Description
+	    Description
 
-			Convert colour image to greyscale
-			
-		Constructor Argument
+	        Convert colour image to greyscale
+	        
+	    Constructor Argument
 
-			none
-			
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
+	        none
+	        
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			none
-			
-		Dependencies
+	        none
+	        
+	    Dependencies
 
-			none
-			
-		Known Bugs
+	        none
+	        
+	    Known Bugs
 
-			none
-		
+	        none
+	    
 	luma
 	
-		Description
-		
-			Applies a luma transition between the current and next frames.
-			Useful for transitions from a slideshow created using producer
-			pixbuf.
-			
-		Constructor Argument
-		
-			file - a luma wipe
-			
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
-			
-		Read Only Properties
-		
-			none
-			
-		Mutable Properties
-		
-			int period - how long to wait between success iterations of the
-			             transition. For best results set this to a multiple
-			             of ttl used in pixbuf. The default is 24.
-						 
-			luma. - all properties beginning with "luma." are passed to the
-			        encapsulated luma transition. For example, luma.out controls
-			        the duration of the wipe.
-			
-		Dependencies
-		
-			transition_luma and its dependencies
-			
-		Known Bugs
-		
-			none
-		
+	    Description
+	    
+	        Applies a luma transition between the current and next frames.
+	        Useful for transitions from a slideshow created using producer
+	        pixbuf.
+	        
+	    Constructor Argument
+	    
+	        file - a luma wipe
+	        
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Mutable Properties
+	    
+	        int period - how long to wait between success iterations of the
+	                     transition. For best results set this to a multiple
+	                     of ttl used in pixbuf. The default is 24.
+	                     
+	        luma. - all properties beginning with "luma." are passed to the
+	                encapsulated luma transition. For example, luma.out controls
+	                the duration of the wipe.
+	        
+	    Dependencies
+	    
+	        transition_luma and its dependencies
+	        
+	    Known Bugs
+	    
+	        none
+	    
 	
 	mirror
 	
-		Description
-		
-			Provides various mirror and image reversing effects.
+	    Description
+	    
+	        Provides various mirror and image reversing effects.
 
-		Constructor Argument
-		
-			mirror - horizontal, vertical, diagonal, flip, flop
-			
-		Initialisation Properties
-		
-			int reverse - being 0 or 1
-			int in - in point
-			int out - out point
-			
-		Read Only Properties
-		
-			none
-			
-		Mutable Properties
-		
-			none
+	    Constructor Argument
+	    
+	        mirror - horizontal, vertical, diagonal, flip, flop
+	        
+	    Initialisation Properties
+	    
+	        int reverse - being 0 or 1
+	        int in - in point
+	        int out - out point
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Mutable Properties
+	    
+	        none
 
-		Dependencies
-		
-			none
-			
-		Known Bugs
-		
-			none
+	    Dependencies
+	    
+	        none
+	        
+	    Known Bugs
+	    
+	        none
 
 
 	obscure
 	
-		Description
+	    Description
 
-			Obscuring filter.
-			
-		Constructor Argument
+	        Obscuring filter.
+	        
+	    Constructor Argument
 
-			none
-			
-		Initialisation Properties
-		
-			string start - in the format X,Y:WxH[:PWxPY]
-			             - PWxPY is the size of the averaging region in pixels.
-			string end - in the format X,Y:WxH[:PWxPY]
-			int in - in point
-			int out - out point
+	        none
+	        
+	    Initialisation Properties
+	    
+	        string start - in the format X,Y:WxH[:PWxPY]
+	                     - PWxPY is the size of the averaging region in pixels.
+	        string end - in the format X,Y:WxH[:PWxPY]
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			none
-			
-		Dependencies
+	        none
+	        
+	    Dependencies
 
-			none
+	        none
 
-		Known Bugs
+	    Known Bugs
 
-			none
+	        none
 
 	region
 	
-		Description
-		
-			Apply one or filters to a region of the video image. The region
-			can be shaped as well using the alpha channel of another producer.
-			
-		Constructor Argument
-		
-			file - A file whose alpha channel will "shape"  the region.
-			     - The string "circle" is a shortcut but it requires pixbuf with
-			       the librsvg loader. The circle is automatically stretched
-			       to the region to create an ellipse.
+	    Description
+	    
+	        Apply one or filters to a region of the video image. The region
+	        can be shaped as well using the alpha channel of another producer.
+	        
+	    Constructor Argument
+	    
+	        file - A file whose alpha channel will "shape"  the region.
+	             - The string "circle" is a shortcut but it requires pixbuf with
+	               the librsvg loader. The circle is automatically stretched
+	               to the region to create an ellipse.
 	
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
-			plus and region transition properties
-			
-		Read Only Properties
-		
-			see the region transition
-			
-		Dependencies
-		
-			transition_region
-			
-		Known Bugs
-		
-			"circle" is unpredictable in the absence of the librsvg pixbuf loader.
-			
+	        int in - in point
+	        int out - out point
+	        plus and region transition properties
+	        
+	    Read Only Properties
+	    
+	        see the region transition
+	        
+	    Dependencies
+	    
+	        transition_region
+	        
+	    Known Bugs
+	    
+	        "circle" is unpredictable in the absence of the librsvg pixbuf loader.
+	        
 
 	resample
 
-		Description
+	    Description
 
-			Adjust an audio stream's sampling rate, and duplicate channels if 
-			producer provides less than consumer requested.
-			
-			This filter is automatically invoked by Fezzik for the sake of
-			normalisation over inputs and with the consumer.
+	        Adjust an audio stream's sampling rate, and duplicate channels if 
+	        producer provides less than consumer requested.
+	        
+	        This filter is automatically invoked by Fezzik for the sake of
+	        normalisation over inputs and with the consumer.
 
-		Constructor Argument
+	    Constructor Argument
 
-			frequency - a numeric value for the new sample rate
+	        frequency - a numeric value for the new sample rate
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Mutable Properties
+	    Mutable Properties
 
-			int frequency - the target sample rate
+	        int frequency - the target sample rate
 
-		Dependencies
+	    Dependencies
 
-			libresample
+	        libresample
 
-		Known Bugs
+	    Known Bugs
 
-			Assumes 2 channels during libsamplerate initialisation. Untested
-			with >2 channels.
+	        Assumes 2 channels during libsamplerate initialisation. Untested
+	        with >2 channels.
 
 	rescale
 
-		Description
+	    Description
 
-			Scale the producer video frame size to match the consumer.
-			This filter is automatically invoked by Fezzik in order to normalise
-			sample aspect ratio.
+	        Scale the producer video frame size to match the consumer.
+	        This filter is automatically invoked by Fezzik in order to normalise
+	        sample aspect ratio.
 
-		Constructor Argument
+	    Constructor Argument
 
-			interpolation - the rescaling method, one of:
-				nearest (lowest quality, fastest),
-				tiles,
-				bilinear (default; good quality, moderate speed),
-				hyper (best quality, slowest).
+	        interpolation - the rescaling method, one of:
+	            nearest (lowest quality, fastest),
+	            tiles,
+	            bilinear (default; good quality, moderate speed),
+	            hyper (best quality, slowest).
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Mutable Properties
+	    Mutable Properties
 
-			string interpolation - see constructor argument above
+	        string interpolation - see constructor argument above
 
-			If a property "consumer_aspect_ratio" exists on the frame, then
-			rescaler normalises the producer's aspect ratio and maximises the
-			size of the frame, but may not produce the consumer's requested
-			dimension. Therefore, this option works best in conjunction with the
-			resize filter. This behavior can be disabled by another service by
-			either removing the property, setting it to zero, or setting
-			frame property "distort" to 1.
+	        If a property "consumer_aspect_ratio" exists on the frame, then
+	        rescaler normalises the producer's aspect ratio and maximises the
+	        size of the frame, but may not produce the consumer's requested
+	        dimension. Therefore, this option works best in conjunction with the
+	        resize filter. This behavior can be disabled by another service by
+	        either removing the property, setting it to zero, or setting
+	        frame property "distort" to 1.
 
-		Dependencies
+	    Dependencies
 
-			libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
+	        libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
 
-		Known Bugs
+	    Known Bugs
 
-			none
+	        none
 
 	resize
 	
-		Description
+	    Description
 
-			Image scaling and padding and field order adjustment.
-				
-		Details
-		
-			Normally resize is used to pad the producer's
-			output to what the consumer has requested after an upstream rescale
-			filter first scales the image to maximise usage of the image area.
-			This filter also adjusts the field order to lower field first
-			if the frame property "top_field_first" has been set to 1.
-			Therefore, when done, it sets the top_field_first to 0.
-			This filter is automatically invoked by Fezzik as part of image
-			sample aspect ratio normalisation.
-			
-		Constructor Argument
+	        Image scaling and padding and field order adjustment.
+	            
+	    Details
+	    
+	        Normally resize is used to pad the producer's
+	        output to what the consumer has requested after an upstream rescale
+	        filter first scales the image to maximise usage of the image area.
+	        This filter also adjusts the field order to lower field first
+	        if the frame property "top_field_first" has been set to 1.
+	        Therefore, when done, it sets the top_field_first to 0.
+	        This filter is automatically invoked by Fezzik as part of image
+	        sample aspect ratio normalisation.
+	        
+	    Constructor Argument
 
-			scale - "affine" to use affine transform scaling, otherwise
-			         center and pad.
-			
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
+	        scale - "affine" to use affine transform scaling, otherwise
+	                 center and pad.
+	        
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
 
-		Read Only Properties
+	    Read Only Properties
 
-			none
-			
-		Dependencies
+	        none
+	        
+	    Dependencies
 
-			none
-			
-		Known Bugs
+	        none
+	        
+	    Known Bugs
 
-			Assumes lower field first output.
+	        Assumes lower field first output.
 
 	volume
 
-		Description
+	    Description
 
-			Adjust an audio stream's volume level
-			
-		Constructor Argument
+	        Adjust an audio stream's volume level
+	        
+	    Constructor Argument
 
-			gain - a string containing one of:
-				 - a floating point value of the gain adjustment
-				 - a numeric value with the suffix "dB" to adjust in terms of decibels
-				 - "normalise" to normalise the volume to the target amplitude -12dBFS
-			
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
-			int window - the number of video frames over which to smooth normalisation.
-			             defaults to 75.
+	        gain - a string containing one of:
+	             - a floating point value of the gain adjustment
+	             - a numeric value with the suffix "dB" to adjust in terms of decibels
+	             - "normalise" to normalise the volume to the target amplitude -12dBFS
+	        
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
+	        int window - the number of video frames over which to smooth normalisation.
+	                     defaults to 75.
 
-		Mutable Properties
+	    Mutable Properties
 
-			string gain - same as constructor argument above
+	        string gain - same as constructor argument above
 
-			string normalise - normalise the volume to the amplitude:
-				- a numeric value with the suffix "dB" to set amplitude in decibels
-				- a floating point value of the relative volume
-				- an unspecified value uses the default -12dBFS
+	        string normalise - normalise the volume to the amplitude:
+	            - a numeric value with the suffix "dB" to set amplitude in decibels
+	            - a floating point value of the relative volume
+	            - an unspecified value uses the default -12dBFS
 
-			string limiter - limit all samples above:
-				- a numeric value with the suffix "dB"
-				- a floating point value ( dB = 20 * log10(x) )
-				- an unspecified value uses the default -6dBFS
+	        string limiter - limit all samples above:
+	            - a numeric value with the suffix "dB"
+	            - a floating point value ( dB = 20 * log10(x) )
+	            - an unspecified value uses the default -6dBFS
 
-			double max_gain - a floating point or decibel value of the maximum gain that
-				can be applied during normalisation.
-				- an unspecified value uses the default 20dB
+	        double max_gain - a floating point or decibel value of the maximum gain that
+	            can be applied during normalisation.
+	            - an unspecified value uses the default 20dB
 
-			string end - a gain value just like the gain property above.
-			             This causes the gain to be interpolated from 'gain' to 'end'
-			             over the duration.
+	        string end - a gain value just like the gain property above.
+	                     This causes the gain to be interpolated from 'gain' to 'end'
+	                     over the duration.
 
-			int window - the size of the normalising smoothing buffer in video frame units.
-			           - the smoothing buffer prevents erratic gain changes.
-			           - the default value is 75 video frames. 
+	        int window - the size of the normalising smoothing buffer in video frame units.
+	                   - the smoothing buffer prevents erratic gain changes.
+	                   - the default value is 75 video frames. 
 
-			gain can be applied as a factor to the normalise amplitude!
-			
-		Dependencies
+	        gain can be applied as a factor to the normalise amplitude!
+	        
+	    Dependencies
 
-			none
-			
-		Known Bugs
+	        none
+	        
+	    Known Bugs
 
-			none
+	        none
 
 	watermark
 
-		Description
+	    Description
 
-			Add a watermark to the frames.
+	        Add a watermark to the frames.
 
-		Constructor Argument
+	    Constructor Argument
 
-			resource - the producer to use (ie: a .png)
+	        resource - the producer to use (ie: a .png)
 
-		Initialisation Properties
+	    Initialisation Properties
 
-			string resource - the producer to use
-			string factory - producer required for the resource ('fezzik')
-			string geometry - composite geometry
-			string distort - control scaling
-			int in - in point
-			int out - out point
+	        string resource - the producer to use
+	        string factory - producer required for the resource ('fezzik')
+	        string geometry - composite geometry
+	        string distort - control scaling
+	        int in - in point
+	        int out - out point
 
-		Mutable Properties
+	    Mutable Properties
 
-			none
+	        none
 
-		Dependencies
+	    Dependencies
 
-			mlt core modules and optionally, fezzik
+	        mlt core modules and optionally, fezzik
 
-		Known Bugs
+	    Known Bugs
 
-			none
+	        none
 
 Transitions
 -----------
 
 	composite
 	
-		Description
+	    Description
 
-			A key-framable alpha-channel compositor for two frames.
-			
-		Details
-		
-			Performs dissolves and luma wipes in addition to alpha compositing.
-			
-			By default, the aspect ratio of the B frame is respected and the
-			size portion of the geometry specification simply defines a 
-			bounding rectangle.
-		
-			This performs field-based rendering unless the A frame property
-			"progressive" or "consumer_progressive" or the transition property
-			"progressive" is set to 1.
-			
-		Constructor Argument
+	        A key-framable alpha-channel compositor for two frames.
+	        
+	    Details
+	    
+	        Performs dissolves and luma wipes in addition to alpha compositing.
+	        
+	        By default, the aspect ratio of the B frame is respected and the
+	        size portion of the geometry specification simply defines a 
+	        bounding rectangle.
+	    
+	        This performs field-based rendering unless the A frame property
+	        "progressive" or "consumer_progressive" or the transition property
+	        "progressive" is set to 1.
+	        
+	    Constructor Argument
 
-			string start - a geometry specification as X,Y:WxH[!][:mix]
-			             - X, Y, W, H are assumed to pixel units unless they
-			               have the suffix '%'
-			             - '!' is a shortcut to specify distort, see below.
-			             - mix is always a 2 digit percentage, defaults to 100.
-						 - default is "85%,5%:10%x10%"
+	        string start - a geometry specification as X,Y:WxH[!][:mix]
+	                     - X, Y, W, H are assumed to pixel units unless they
+	                       have the suffix '%'
+	                     - '!' is a shortcut to specify distort, see below.
+	                     - mix is always a 2 digit percentage, defaults to 100.
+	                     - default is "85%,5%:10%x10%"
 
-		Initialisation Properties
-			
-			string end - the ending size and position.
-			string key[F] - X,Y:WxH[:mix] - set a key frame for geometry between
-			                the in and out. F is a frame number and can be
-			                negative to make it relative to the out point.
-			int in - in point
-			int out - out point
-			string factory - The name of a factory service used as a non-PGM
-			                 producer loader. The default is fezzik.
+	    Initialisation Properties
+	        
+	        string end - the ending size and position.
+	        string key[F] - X,Y:WxH[:mix] - set a key frame for geometry between
+	                        the in and out. F is a frame number and can be
+	                        negative to make it relative to the out point.
+	        int in - in point
+	        int out - out point
+	        string factory - The name of a factory service used as a non-PGM
+	                         producer loader. The default is fezzik.
 	
-		Read Only Properties
+	    Read Only Properties
 
-			none
+	        none
 
-		Mutable Properties
-			
-			int progressive - set to 1 to disable field-based rendering.
-			string distort - when set, causes the B frame image to fill the WxH
-			                 completely with no regard to B's aspect ratio.
-			string halign - when not distorting, set the horizontal alignment
-			                of B within the geometry rectangle.
-			              - one of: left (0), centre (1), or right (2).
-			              - the default is left.
-			string valign - when not distorting, set the vertical alignment of 
-			                B within the geometry rectangle.
-			              - one of: top (0), middle (1), or bottom (2).
-			              - the default is top.
-			string luma - the luma map file name. If not supplied, a dissolve.
-			double softness - only when using a luma map, how soft to make the
-			                  edges between A and B. 0.0 = no softness. 1.0 =
-			                  too soft.
-			Any property starting with "luma." is passed to the non-PGM luma
-			    producer.
+	    Mutable Properties
+	        
+	        int progressive - set to 1 to disable field-based rendering.
+	        string distort - when set, causes the B frame image to fill the WxH
+	                         completely with no regard to B's aspect ratio.
+	        string halign - when not distorting, set the horizontal alignment
+	                        of B within the geometry rectangle.
+	                      - one of: left (0), centre (1), or right (2).
+	                      - the default is left.
+	        string valign - when not distorting, set the vertical alignment of 
+	                        B within the geometry rectangle.
+	                      - one of: top (0), middle (1), or bottom (2).
+	                      - the default is top.
+	        string luma - the luma map file name. If not supplied, a dissolve.
+	        double softness - only when using a luma map, how soft to make the
+	                          edges between A and B. 0.0 = no softness. 1.0 =
+	                          too soft.
+	        Any property starting with "luma." is passed to the non-PGM luma
+	            producer.
 
-		Dependencies
+	    Dependencies
 
-			none
-		
-		Known Bugs
+	        none
+	    
+	    Known Bugs
 
-			Assumes lower field first during field rendering.
+	        Assumes lower field first during field rendering.
 
 	luma
 	
-		Description
+	    Description
 
-			A generic dissolve and wipe transition processor.
+	        A generic dissolve and wipe transition processor.
 
-		Details
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
+	        string factory - The name of a factory service used as a non-PGM
+	                         producer loader. The default is Fezzik.
 
-			luma gets its name
-			from how it uses a grayscale "map" file. As the luma value varies
-			over time, a threshold filter is applied to the map to determine
-			what parts of frame A vs. frame B to show. It reads PGM files
-			up to 16 bits! Alternatively, it can use the first frame from any
-			producer that outputs yuv, but it will be limited to the luma
-			gamut of 220 values.
-			This performs field-based rendering unless the A frame property
-			"progressive" or "consumer_progressive" or the transition property
-			"progressive" is set to 1.
-		
-		Constructor Argument
+	    Mutable Properties
 
-			string resource - the luma map file name - either PGM or any other
-			                  producable video. 
-			                - If not supplied, a dissolve.
+	        string resource - same as above
+	        double softness - only when using a luma map, how soft to make the
+	                          edges between A and B. 0.0 = no softness. 1.0 =
+	                          too soft.
+	        int reverse - reverse the direction of the transition.
+	        Any property starting with "producer." is passed to the non-PGM luma
+	            producer.
+	        
+	    Read Only Properties
 
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
-			string factory - The name of a factory service used as a non-PGM
-			                 producer loader. The default is Fezzik.
+	        none
+	        
+	    Dependencies
 
-		Mutable Properties
+	        luma gets its name
+	        from how it uses a grayscale "map" file. As the luma value varies
+	        over time, a threshold filter is applied to the map to determine
+	        what parts of frame A vs. frame B to show. It reads PGM files
+	        up to 16 bits! Alternatively, it can use the first frame from any
+	        producer that outputs yuv, but it will be limited to the luma
+	        gamut of 220 values.
+	        This performs field-based rendering unless the A frame property
+	        "progressive" or "consumer_progressive" or the transition property
+	        "progressive" is set to 1.
+	    
+	    Constructor Argument
 
-			string resource - same as above
-			double softness - only when using a luma map, how soft to make the
-			                  edges between A and B. 0.0 = no softness. 1.0 =
-			                  too soft.
-			int reverse - reverse the direction of the transition.
-			Any property starting with "producer." is passed to the non-PGM luma
-			    producer.
-			
-		Read Only Properties
+	        string resource - the luma map file name - either PGM or any other
+	                          producable video. 
+	                        - If not supplied, a dissolve.
 
-			none
-			
-		Dependencies
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
+	        string factory - The name of a factory service used as a non-PGM
+	                         producer loader. The default is Fezzik.
 
-			none
-			
-		Known Bugs
-			
-			Assumes lower field first output.
+	    Mutable Properties
+
+	        string resource - same as above
+	        double softness - only when using a luma map, how soft to make the
+	                          edges between A and B. 0.0 = no softness. 1.0 =
+	                          too soft.
+	        Any property starting with "producer." is passed to the non-PGM luma
+	            producer.
+	        
+	    Read Only Properties
+
+	        none
+	        
+	    Dependencies
+
+	        none
+	        
+	    Known Bugs
+	        
+	        Assumes lower field first output.
 
 	mix
 
-		Description
+	    Description
 
-			An two stream audio mixer.
+	        An two stream audio mixer.
 
-		Constructor Argument
+	    Constructor Argument
 
-			start - see below
+	        start - see below
 
-		Initalisation Properties
+	    Initalisation Properties
 
-			int in - in point
-			int out - out point
+	        int in - in point
+	        int out - out point
 
-		Mutable Properties
+	    Mutable Properties
 
-			double start - the mix level to apply to the second frame.
-			             - any negative value causes an automatic crossfade from 0 to 1.
-			double end - the ending value of the mix level. mix level will be interpolated
-			             from start to end over the in-out range.
-			int reverse - set to 1 to reverse the direction of the mix.
+	        double start - the mix level to apply to the second frame.
+	                     - any negative value causes an automatic crossfade from 0 to 1.
+	        double end - the ending value of the mix level. mix level will be interpolated
+	                     from start to end over the in-out range.
+	        int reverse - set to 1 to reverse the direction of the mix.
 
-		Read Only Properties
+	    Read Only Properties
 
-			none
+	        none
 
-		Dependencies
+	    Dependencies
 
-			none
+	        none
 
-		Known Bugs
+	    Known Bugs
 
-			Samples from the longer of the two frames are discarded.
-			
+	        Samples from the longer of the two frames are discarded.
+	        
 	
 	region
 	
-		Description
-		
-			Apply zero or more filters to B frame as it is composited onto
-			a region of the A frame. The "shape" of the region can be defined
-			by the alpha channel of a third producer.
-			
-		Constructor Argument
+	    Description
+	    
+	        Apply zero or more filters to B frame as it is composited onto
+	        a region of the A frame. The "shape" of the region can be defined
+	        by the alpha channel of a third producer.
+	        
+	    Constructor Argument
 
-			resource - a shape producer
-		
-		Initialisation Properties
-		
-			string resource - nothing is rectangle, "circle" is a pixbuf-
-			    generated SVG circle, anything else is loaded by the factory.
-			string factory - the service that creates the shape producer.
-			               - the default is fezzik.
-			string filter[N] - one or more filters to apply. All filter
-			                   properties are passed using the same filter "key"
-			Any property starting with "composite." is passed to the 
-			    encapsulated composite transition.
-			
-		Read Only Properties
-		
-			none
-			
-		Dependencies
-		
-			transition_composite
-			
-		Known Bugs
-		
-			none
-			
+	        resource - a shape producer
+	    
+	    Initialisation Properties
+	    
+	        string resource - nothing is rectangle, "circle" is a pixbuf-
+	            generated SVG circle, anything else is loaded by the factory.
+	        string factory - the service that creates the shape producer.
+	                       - the default is fezzik.
+	        string filter[N] - one or more filters to apply. All filter
+	                           properties are passed using the same filter "key"
+	        Any property starting with "composite." is passed to the 
+	            encapsulated composite transition.
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Dependencies
+	    
+	        transition_composite
+	        
+	    Known Bugs
+	    
+	        none
+	        
 
 Consumers
 ---------
 
 	bluefish (Proprietary)
 	
-		Description
+	    Description
 
-			BlueFish444 audio and video output module.
-		
-		Constructor Argument
+	        BlueFish444 audio and video output module.
+	    
+	    Constructor Argument
 
-			card - a numeric card id starting at 1, default is 1.
-			
-		Initialisation Properties
+	        card - a numeric card id starting at 1, default is 1.
+	        
+	    Initialisation Properties
 
-			string standard - "PAL" (default) or "NTSC"
-			                - default is based upon MLT_NORMALISATION 
-							  environment variable, which defaults to PAL.
-			int frames - the number of DMA video frames. default is 8.
-			             minimum is 2. maximum on my system is 11.
-			int buffer - the number of frames to buffer within MLT, minimum 1, 
-			             default 25.
-			string rescale - a rescale method, see the Filters/rescale.
-			
-		Read Only Properties
+	        string standard - "PAL" (default) or "NTSC"
+	                        - default is based upon MLT_NORMALISATION 
+	                          environment variable, which defaults to PAL.
+	        int frames - the number of DMA video frames. default is 8.
+	                     minimum is 2. maximum on my system is 11.
+	        int buffer - the number of frames to buffer within MLT, minimum 1, 
+	                     default 25.
+	        string rescale - a rescale method, see the Filters/rescale.
+	        
+	    Read Only Properties
 
-			none
-		
-		Dependencies
+	        none
+	    
+	    Dependencies
 
-			BlueVelvet SDK installed parallel to mlt in "bluefish."
-		
-		Known Bugs
+	        BlueVelvet SDK installed parallel to mlt in "bluefish."
+	    
+	    Known Bugs
 
-			Does not work with any service that uses pipes!
-			
-			If mlt crashes, you might need to reload the BlueDriver kernel 
-			module due to unreleased DMA buffers.
-			
-			Only supports 2 channel audio at the moment.
-		
+	        Does not work with any service that uses pipes!
+	        
+	        If mlt crashes, you might need to reload the BlueDriver kernel 
+	        module due to unreleased DMA buffers.
+	        
+	        Only supports 2 channel audio at the moment.
+	    
 	libdv
 	
-		Description
-		
-			libdv dv producer.
+	    Description
+	    
+	        libdv dv producer.
 
-		Constructor Argument
+	    Constructor Argument
 
-			string target - the filename to write to, e.g. /dev/dv1394.
+	        string target - the filename to write to, e.g. /dev/dv1394.
 
-		Initialisation Properties
-		
-			int buffer - the number of frames to buffer, minimum 1, default 25.
-			string rescale - a rescale method, see the Filters/rescale.
-		
-		Mutable Properties
-		
-			int progressive - indicates whether to use progressive or field-
-			                  based rendering, default 0 (off).
-			
-		Read Only Properties
-		
-			none
-			
-		Dependencies
-		
-			libdv
-			
-		Known Bugs
-		
-			none
+	    Initialisation Properties
+	    
+	        int buffer - the number of frames to buffer, minimum 1, default 25.
+	        string rescale - a rescale method, see the Filters/rescale.
+	    
+	    Mutable Properties
+	    
+	        int progressive - indicates whether to use progressive or field-
+	                          based rendering, default 0 (off).
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Dependencies
+	    
+	        libdv
+	        
+	    Known Bugs
+	    
+	        none
 
 	sdl
 
-		Description
+	    Description
 
-			Simple DirectMedia Layer audio and video output module.
-			
-		Constructor Argument
+	        Simple DirectMedia Layer audio and video output module.
+	        
+	    Constructor Argument
 
-			string video_standard - "PAL" (default), "NTSC", or "WxH"
-			
-		Initialisation Properties
-		
-			int buffer - the number of frames to buffer, minimum 1, default 25.
-			string rescale - a rescale method, see the Filters/rescale.
-			               - Hint: "none" works very good with SDL output.
-			
-		Mutable Properties
+	        string video_standard - "PAL" (default), "NTSC", or "WxH"
+	        
+	    Initialisation Properties
+	    
+	        int buffer - the number of frames to buffer, minimum 1, default 25.
+	        string rescale - a rescale method, see the Filters/rescale.
+	                       - Hint: "none" works very good with SDL output.
+	        
+	    Mutable Properties
 
-			double volume - audio level factor
-			int video_off - if 1, disable video output
-			int audio_off - if 1, disable audio output
-			int scale_overlay - if 1, resample video from source pixel aspect
-			                    ratio to square pixels.
-			int progressive - indicates whether to use progressive or field-
-			                  based rendering, default 0 (off).
-			
-		Read Only Properties
+	        double volume - audio level factor
+	        int video_off - if 1, disable video output
+	        int audio_off - if 1, disable audio output
+	        int scale_overlay - if 1, resample video from source pixel aspect
+	                            ratio to square pixels.
+	        int progressive - indicates whether to use progressive or field-
+	                          based rendering, default 0 (off).
+	        
+	    Read Only Properties
 
-			none
-			
-		Dependencies
+	        none
+	        
+	    Dependencies
 
-			libSDL-1.2, libasound, libaudio, libXt, libX11, libXext, libSM, libICE
-		
-		Known Bugs
+	        libSDL-1.2, libasound, libaudio, libXt, libX11, libXext, libSM, libICE
+	    
+	    Known Bugs
 
-			none
+	        none
 
 	westley
 
-		Description
+	    Description
 
-			Serialise the service network to XML.
-			See docs/westley.txt for more information.
-			
-		Constructor Argument
+	        Serialise the service network to XML.
+	        See docs/westley.txt for more information.
+	        
+	    Constructor Argument
 
-			resource - the name of a file in which to store the XML.
-			          - stdout is default.
-			
-		Initialisation Properties
+	        resource - the name of a file in which to store the XML.
+	                  - stdout is default.
+	        
+	    Initialisation Properties
 
-			string resource - same as above.
-			
-		Dependencies
-		
-			libxml2
-			
-		Known Bugs
+	        string resource - same as above.
+	        
+	    Dependencies
+	    
+	        libxml2
+	        
+	    Known Bugs
 
-			Untested arbitrary nesting of multitracks and playlists.
-			Property "id" is generated as service type followed by number if
-			no property named "id" exists, but it fails to guarantee uniqueness.
+	        Untested arbitrary nesting of multitracks and playlists.
+	        Property "id" is generated as service type followed by number if
+	        no property named "id" exists, but it fails to guarantee uniqueness.

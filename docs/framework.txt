@@ -1,3 +1,10 @@
+Framework Documentation
+
+Copyright (C) 2004 Ushodaya Enterprises Limited
+Author: Charles Yates <charles.yates@pandora.be>
+Last Revision: 2004-03-20
+
+
 MLT FRAMEWORK
 -------------
 
@@ -7,7 +14,7 @@ Preamble:
 	it provides a pluggable architecture for the inclusion of new audio/video 
 	sources, filters, transitions and playback devices.
 
-	The MLT framework provides the structure and utility functionality on which
+	The framework provides the structure and utility functionality on which
 	all of the MLT applications and services are defined. 
 
 	On its own, the framework provides little more than 'abstract classes' and
@@ -75,7 +82,7 @@ Structure and Flow:
 	A typical consumer requests MLT Frame objects from the producer, does 
 	something with them and when finished with a frame, closes it. 
 	
-	 /\  A common confusion with the producer/consumer terminoligy used here is 
+	 /\  A common confusion with the producer/consumer terminology used here is 
 	/!!\ that a consumer may 'produce' something. For example, the libdv consumer
 	\!!/ produces DV and the libdv producer seems to consume DV. However, the
 	 \/  naming conventions refer only to producers and consumers of MLT Frames.
@@ -290,13 +297,13 @@ Playlists:
 	Let's assume that we're adapting the Hello World example, and wish to queue
 	a number of files for playout, ie:
 
-		hello *.avi
+	    hello *.avi
 
 	Instead of invoking mlt_factory_producer directly, we'll create a new
 	function called create_playlist. This function is responsible for creating
 	the playlist, creating each producer, appending to the playlist and ensuring
 	that all the producers are cleaned up when the playlist is destroyed. The
-	last point is important - a close on the playlist won't explicitly these 
+	last point is important - a close on the playlist won't explicitly close these 
 	producers. In this example, we use unique "data" properties with destructors
 	to ensure closing.
 
@@ -312,7 +319,7 @@ Playlists:
 	    int i = 0;
 	    for ( i = 1; i < argc; i ++ )
 	    {
-	        // Definie the unique key
+	        // Define the unique key
 	        char key[ 256 ];
 
 	        // Create the producer
@@ -373,14 +380,14 @@ Filters:
 	properties can be set as needed.
 
 	The additional argument in the filter connection is an important one as it
-	dicates the 'track' on which the filter operates. For basic producers and
+	dictates the 'track' on which the filter operates. For basic producers and
 	playlists, there's only one track (0), and as you will see in the next
 	section, even multiple tracks have a single track output.
 
 
 Multiple Tracks and Transitions:
 
-	MLT's approach to mutliple tracks is governed by two requirements:
+	MLT's approach to multiple tracks is governed by two requirements:
 
 	1) The need for a consumer and producer to communicate with one another via
 	a single frame;
@@ -416,7 +423,7 @@ Multiple Tracks and Transitions:
 	evenly, the correct frame is output and that we have 'producer like'
 	behaviour.
 
-	Thus, a mulitrack is conceptually 'pulled' by a tractor as shown here:
+	Thus, a multitrack is conceptually 'pulled' by a tractor as shown here:
 
 	+----------+
 	|multitrack|
@@ -438,7 +445,7 @@ Multiple Tracks and Transitions:
 
 	The tracks can be producers, playlists, or even other tractors. 
 
-	Now we wish to insert filters and transitions between the mulitrack and the
+	Now we wish to insert filters and transitions between the multitrack and the
 	tractor. We can do this directly by inserting filters directly between the
 	tractor and the multitrack, but this involves a lot of connecting and
 	reconnecting left and right producers and consumers, and it seemed only fair
@@ -571,9 +578,9 @@ Multiple Tracks and Transitions:
 SECTION 3 - STRUCTURE AND DESIGN
 --------------------------------
 
-Class Heirachy:
+Class Hierarchy:
 
-	The mlt framework consists of an OO class heirachy which consists of the
+	The mlt framework consists of an OO class hierarchy which consists of the
 	following public classes and abstractions:
 
 	mlt_properties
@@ -643,7 +650,7 @@ mlt_properties:
 	too.
 
 	Steps 6 and 7 demonstrate that the properties object handles deserialisation
-	from strings. The string value of "50" is set, the integer value of 50 is
+	from strings. The string value of "0" is set, the integer value of 0 is
 	retrieved.
 
 	Steps 8 and 9 demonstrate that the properties object handles serialisation
@@ -924,8 +931,8 @@ mlt_frame:
 	|rescale.interp    |Use this scale method for test image|"string"          |
 	+------------------+------------------------------------+------------------+
 
-	While most of these are mainly self explainatory, the normalised_width and
-	normalised_height values require a little explaination. These are required
+	While most of these are mainly self explanatory, the normalised_width and
+	normalised_height values require a little explanation. These are required
 	to ensure that effects are consistently handled as PAL or NTSC, regardless 
 	of the consumers or producers width/height image request. 
 
@@ -993,8 +1000,7 @@ mlt_service:
 	void mlt_service_close( mlt_service this );
 
 	Typically, only direct descendents of services need invoke these methods and
-	developers are encouraged to use those extensions when definining new
-	services. 
+	developers are encouraged to use those extensions when defining new services. 
 
 
 mlt_producer:
