@@ -518,9 +518,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		start = transition_parse_keys( this, normalised_width, normalised_height );
 	}
 
-	if ( *height & 1 )
-		*height ++;
-
 	// Fetch the a frame image
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
@@ -632,7 +629,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( scale )
 		{
 			affine_max_output( affine.matrix, &sw, &sh, dz );
-			affine_scale( affine.matrix, 1.0 / sw, 1.0 / sh );
+			affine_scale( affine.matrix, sw, sh );
 		}
 		else if ( scale_x != 0 && scale_y != 0 )
 		{

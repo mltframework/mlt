@@ -221,7 +221,7 @@ mlt_deque mlt_frame_service_stack( mlt_frame this )
 	return this->stack_service;
 }
 
-/** [EXPERIMENTAL] Replace image stack with the information provided.
+/** Replace image stack with the information provided.
 
   	This might prove to be unreliable and restrictive - the idea is that a transition
 	which normally uses two images may decide to only use the b frame (ie: in the case
@@ -242,8 +242,7 @@ mlt_deque mlt_frame_service_stack( mlt_frame this )
 
 void mlt_frame_replace_image( mlt_frame this, uint8_t *image, mlt_image_format format, int width, int height )
 {
-	// Herein lies the potential problem for this function - it makes a potentially 
-	// dangerous assumption that all content on the image stack can be removed without a destructor
+	// Remove all items from the stack
 	while( mlt_deque_pop_back( this->stack_image ) ) ;
 
 	// Update the information 
@@ -359,14 +358,30 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		mlt_properties_set_int( properties, "test_image", 1 );
 	}
 
+	mlt_properties_set_int( properties, "scaled_width", *width );
+	mlt_properties_set_int( properties, "scaled_height", *height );
+
 	return error;
 }
 
 uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 {
-	if ( this != NULL && this->get_alpha_mask != NULL )
-		return this->get_alpha_mask( this );
-	return this == NULL ? NULL : mlt_properties_get_data( &this->parent, "alpha", NULL );
+	uint8_t *alpha = NULL;
+	if ( this != NULL )
+	{
+		if ( this->get_alpha_mask != NULL )
+			alpha = this->get_alpha_mask( this );
+		if ( alpha == NULL )
+			alpha = mlt_properties_get_data( &this->parent, "alpha", NULL );
+		if ( alpha == NULL )
+		{
+			int size = mlt_properties_get_int( &this->parent, "scaled_width" ) * mlt_properties_get_int( &this->parent, "scaled_height" );
+			alpha = mlt_pool_alloc( size );
+			memset( alpha, 255, size );
+			mlt_properties_set_data( &this->parent, "alpha", alpha, size, mlt_pool_release, NULL );
+		}
+	}
+	return alpha;
 }
 
 int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )

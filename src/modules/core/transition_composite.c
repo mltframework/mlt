@@ -763,7 +763,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 
 	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
 
-	return ret;
+	return ret && image != NULL;
 }
 
 

@@ -128,6 +128,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// See if we need to regenerate
 	if ( *width != current_width || *height != current_height )
 	{
+		// Color the image
+		uint8_t y, u, v;
+		int i = 0;
+
 		// Allocate the image
 		size = *width * *height * 2;
 		image = mlt_pool_alloc( size );
@@ -137,9 +141,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_set_int( producer_props, "width", *width );
 		mlt_properties_set_int( producer_props, "height", *height );
 
-		// Color the image
-		uint8_t y, u, v;
-		int i = 0;
 		RGB2YUV( color.r, color.g, color.b, y, u, v );
 
 		while ( i < size )
