@@ -89,6 +89,36 @@ Producers
 
 			Implementation does not allow fast random access.
 
+	fezzik
+
+		Description
+
+			A freindly giant that likes to throw rocks
+
+		Constructor Argument
+
+			'file'	- produce a/v from file
+
+		Initialisation Properties
+
+			int in - in point
+			int out - out point
+
+		Read Only Properties
+
+			string resource - file location
+			double fps - output frames per second
+			double aspect_ratio - aspect ratio of video]
+			int length - duration of resource (in frames)
+
+		Dependencies
+
+			all.
+
+		Known Bugs
+
+			None.
+
 	libdv
 
 		Description
@@ -648,21 +678,14 @@ Transitions
 			
 		Constructor Argument
 
-			mix - see below
+			string start - X,Y:WxH[:mix]
 
 		Initialisation Properties
 			
+			string end - X,Y:WxH[:mix]
 			int in - in point
 			int out - out point
-
-		Mutable Properties
-
-			int x - the horizontal offset from the left edge of the frame
-			int y - the vertical offset from the top edge of the frame
-			double mix - the opacity factor to apply to the second frame
-			             (used in addition to alpha channel).
-			           - any negative value causes an automatic dissolve
-		
+	
 		Read Only Properties
 
 			none
