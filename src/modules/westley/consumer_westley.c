@@ -300,8 +300,8 @@ static int consumer_start( mlt_consumer this )
 		xmlDocFormatDump( stderr, doc, 1 );
 	}
 
-	mlt_consumer_stop( this );
 	xmlFreeDoc( doc );
+	mlt_consumer_stop( this );
 
 	// Tell inigo, enough already!
 	if ( inigo != NULL )
