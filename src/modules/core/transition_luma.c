@@ -19,29 +19,13 @@
  */
 
 #include "transition_luma.h"
-#include <framework/mlt_frame.h>
+#include <framework/mlt.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
-
-/** Luma class.
-*/
-
-typedef struct 
-{
-	struct mlt_transition_s parent;
-	int width;
-	int height;
-	uint16_t *bitmap;
-}
-transition_luma;
-
-
-// forward declarations
-static void transition_close( mlt_transition parent );
 
 /** Calculate the position for this frame.
 */
@@ -209,11 +193,152 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	}
 }
 
+/** Load the luma map from PGM stream.
+*/
+
+static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
+{
+	uint8_t *data = NULL;
+	while (1)
+	{
+		char line[128];
+		char comment[128];
+		int i = 2;
+		int maxval;
+		int bpp;
+		uint16_t *p;
+
+		line[127] = '\0';
+
+		// get the magic code
+		if ( fgets( line, 127, f ) == NULL )
+			break;
+
+		// skip comments
+		while ( sscanf( line, " #%s", comment ) > 0 )
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+		if ( line[0] != 'P' || line[1] != '5' )
+			break;
+
+		// skip white space and see if a new line must be fetched
+		for ( i = 2; i < 127 && line[i] != '\0' && isspace( line[i] ); i++ );
+		if ( ( line[i] == '\0' || line[i] == '#' ) && fgets( line, 127, f ) == NULL )
+			break;
+
+		// skip comments
+		while ( sscanf( line, " #%s", comment ) > 0 )
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+		// get the dimensions
+		if ( line[0] == 'P' )
+			i = sscanf( line, "P5 %d %d %d", width, height, &maxval );
+		else
+			i = sscanf( line, "%d %d %d", width, height, &maxval );
+
+		// get the height value, if not yet
+		if ( i < 2 )
+		{
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+			// skip comments
+			while ( sscanf( line, " #%s", comment ) > 0 )
+				if ( fgets( line, 127, f ) == NULL )
+					break;
+
+			i = sscanf( line, "%d", height );
+			if ( i == 0 )
+				break;
+			else
+				i = 2;
+		}
+
+		// get the maximum gray value, if not yet
+		if ( i < 3 )
+		{
+			if ( fgets( line, 127, f ) == NULL )
+				break;
+
+			// skip comments
+			while ( sscanf( line, " #%s", comment ) > 0 )
+				if ( fgets( line, 127, f ) == NULL )
+					break;
+
+			i = sscanf( line, "%d", &maxval );
+			if ( i == 0 )
+				break;
+		}
+
+		// determine if this is one or two bytes per pixel
+		bpp = maxval > 255 ? 2 : 1;
+
+		// allocate temporary storage for the raw data
+		data = mlt_pool_alloc( *width * *height * bpp );
+		if ( data == NULL )
+			break;
+
+		// read the raw data
+		if ( fread( data, *width * *height * bpp, 1, f ) != 1 )
+			break;
+
+		// allocate the luma bitmap
+		*map = p = (uint16_t*)mlt_pool_alloc( *width * *height * sizeof( uint16_t ) );
+		if ( *map == NULL )
+			break;
+
+		// proces the raw data into the luma bitmap
+		for ( i = 0; i < *width * *height * bpp; i += bpp )
+		{
+			if ( bpp == 1 )
+				*p++ = data[ i ] << 8;
+			else
+				*p++ = ( data[ i ] << 8 ) + data[ i+1 ];
+		}
+
+		break;
+	}
+
+	if ( data != NULL )
+		mlt_pool_release( data );
+}
+
+/** Generate a luma map from an RGB image.
+*/
+
+static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int height )
+{
+	int i;
+	
+	// allocate the luma bitmap
+	uint16_t *p = *map = ( uint16_t* )mlt_pool_alloc( width * height * sizeof( uint16_t ) );
+	if ( *map == NULL )
+		return;
+
+	// proces the image data into the luma bitmap
+	for ( i = 0; i < width * height * 2; i += 2 )
+		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
+}
+
+/** Generate a luma map from a YUV image.
+*/
+static void luma_read_rgb24( uint8_t *image, uint16_t **map, int width, int height )
+{
+}
+
 /** Get the image.
 */
 
 static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	// Get the transition object
+	mlt_transition transition = mlt_frame_pop_service( a_frame );
+
+	// Get the properties of the transition
+	mlt_properties properties = mlt_transition_properties( transition );
+
 	// Get the properties of the a frame
 	mlt_properties a_props = mlt_frame_properties( a_frame );
 
@@ -223,19 +348,103 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Get the properties of the b frame
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
+	// The cached luma map information
+	int luma_width = mlt_properties_get_int( properties, "width" );
+	int luma_height = mlt_properties_get_int( properties, "height" );
+	uint16_t *luma_bitmap = mlt_properties_get_data( properties, "bitmap", NULL );
+	
+	// If the filename property changed, reload the map
+	char *resource = mlt_properties_get( properties, "resource" );
+
+	if ( luma_bitmap == NULL && resource != NULL )
+	{
+		char *extension = extension = strrchr( resource, '.' );
+
+		// See if it is a PGM
+		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
+		{
+			// Open PGM
+			FILE *f = fopen( resource, "r" );
+			if ( f != NULL )
+			{
+				// Load from PGM
+				luma_read_pgm( f, &luma_bitmap, &luma_width, &luma_height );
+				fclose( f );
+
+				// Set the transition properties
+				mlt_properties_set_int( properties, "width", luma_width );
+				mlt_properties_set_int( properties, "height", luma_height );
+				mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+			}
+		}
+		else
+		{
+			// Get the factory producer service
+			char *factory = mlt_properties_get( properties, "factory" );
+
+			// Create the producer
+			mlt_producer producer = mlt_factory_producer( factory, resource );
+
+			// If we have one
+			if ( producer != NULL )
+			{
+				// Get the producer properties
+				mlt_properties producer_properties = mlt_producer_properties( producer );
+
+				// Ensure that we loop
+				mlt_properties_set( producer_properties, "eof", "loop" );
+
+				// Now pass all producer. properties on the transition down
+				mlt_properties_pass( producer_properties, properties, "producer." );
+
+				// We will get the alpha frame from the producer
+				mlt_frame luma_frame = NULL;
+
+				// Get the luma frame
+				if ( mlt_service_get_frame( mlt_producer_service( producer ), &luma_frame, 0 ) == 0 )
+				{
+					uint8_t *luma_image;
+					mlt_image_format luma_format = mlt_image_yuv422;
+
+					// Request a luma image the size of transition image request
+					luma_width = *width;
+					luma_height = *height;
+
+					// Get image from the luma producer
+					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
+
+					// Generate the luma map
+					if ( luma_image != NULL && luma_format == mlt_image_yuv422 )
+						luma_read_yuv422( luma_image, &luma_bitmap, luma_width, luma_height );
+						
+					else if ( luma_image != NULL && luma_format == mlt_image_rgb24 )
+						luma_read_rgb24( luma_image, &luma_bitmap, luma_width, luma_height );
+					
+					// Set the transition properties
+					mlt_properties_set_int( properties, "width", luma_width );
+					mlt_properties_set_int( properties, "height", luma_height );
+					mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+
+					// Cleanup the luma frame
+					mlt_frame_close( luma_frame );
+				}
+
+				// Cleanup the luma producer
+				mlt_producer_close( producer );
+			}
+		}
+	}
+
 	// Arbitrary composite defaults
-	float mix = mlt_properties_get_double( b_props, "image.mix" );
-	float frame_delta = mlt_properties_get_double( b_props, "luma.delta" );
-	int luma_width = mlt_properties_get_int( b_props, "luma.width" );
-	int luma_height = mlt_properties_get_int( b_props, "luma.height" );
-	uint16_t *luma_bitmap = mlt_properties_get_data( b_props, "luma.bitmap", NULL );
-	float luma_softness = mlt_properties_get_double( b_props, "luma.softness" );
+	float mix = position_calculate( transition, a_frame );
+	float frame_delta = delta_calculate( transition, a_frame );
+	
+	float luma_softness = mlt_properties_get_double( properties, "softness" );
 	int progressive = mlt_properties_get_int( b_props, "progressive" ) ||
 			mlt_properties_get_int( a_props, "consumer_progressive" ) ||
 			mlt_properties_get_int( b_props, "luma.progressive" );
-
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
-	int reverse = mlt_properties_get_int( b_props, "luma.reverse" );
+	int reverse = mlt_properties_get_int( properties, "reverse" );
 
 	// Since we are the consumer of the b_frame, we must pass along this
 	// consumer property from the a_frame
@@ -268,130 +477,25 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	return 0;
 }
 
-/** Load the luma map from PGM stream.
-*/
-
-static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
-{
-	uint8_t *data = NULL;
-	while (1)
-	{
-		char line[128];
-		int i = 2;
-		int maxval;
-		int bpp;
-		uint16_t *p;
-		
-		line[127] = '\0';
-
-		// get the magic code
-		if ( fgets( line, 127, f ) == NULL )
-			break;
-		if ( line[0] != 'P' || line[1] != '5' )
-			break;
-
-		// skip white space and see if a new line must be fetched
-		for ( i = 2; i < 127 && line[i] != '\0' && isspace( line[i] ); i++ );
-		if ( line[i] == '\0' && fgets( line, 127, f ) == NULL )
-			break;
-
-		// get the dimensions
-		if ( line[0] == 'P' )
-			i = sscanf( line, "P5 %d %d %d", width, height, &maxval );
-		else
-			i = sscanf( line, "%d %d %d", width, height, &maxval );
-
-		// get the height value, if not yet
-		if ( i < 2 )
-		{
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-			i = sscanf( line, "%d", height );
-			if ( i == 0 )
-				break;
-			else
-				i = 2;
-		}
-
-		// get the maximum gray value, if not yet
-		if ( i < 3 )
-		{
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-			i = sscanf( line, "%d", &maxval );
-			if ( i == 0 )
-				break;
-		}
-
-		// determine if this is one or two bytes per pixel
-		bpp = maxval > 255 ? 2 : 1;
-		
-		// allocate temporary storage for the raw data
-		data = mlt_pool_alloc( *width * *height * bpp );
-		if ( data == NULL )
-			break;
-
-		// read the raw data
-		if ( fread( data, *width * *height * bpp, 1, f ) != 1 )
-			break;
-		
-		// allocate the luma bitmap
-		*map = p = (uint16_t*)mlt_pool_alloc( *width * *height * sizeof( uint16_t ) );
-		if ( *map == NULL )
-			break;
-
-		// proces the raw data into the luma bitmap
-		for ( i = 0; i < *width * *height * bpp; i += bpp )
-		{
-			if ( bpp == 1 )
-				*p++ = data[ i ] << 8;
-			else
-				*p++ = ( data[ i ] << 8 ) + data[ i+1 ];
-		}
-
-		break;
-	}
-		
-	if ( data != NULL )
-		mlt_pool_release( data );
-}
-
 
 /** Luma transition processing.
 */
 
 static mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
-	transition_luma *this = (transition_luma*) transition->child;
+	// Get a unique name to store the frame position
+	char *name = mlt_properties_get( mlt_transition_properties( transition ), "_unique_id" );
 
-	// Get the properties of the transition
-	mlt_properties properties = mlt_transition_properties( transition );
-	
-	// Get the properties of the b frame
-	mlt_properties b_props = mlt_frame_properties( b_frame );
-	
-	// If the filename property changed, reload the map
-	char *lumafile = mlt_properties_get( properties, "resource" );
-	if ( this->bitmap == NULL && lumafile != NULL )
-	{
-		FILE *pipe = fopen( lumafile, "r" );
-		if ( pipe != NULL )
-		{
-			luma_read_pgm( pipe, &this->bitmap, &this->width, &this->height );
-			fclose( pipe );
-		}
-	}
+	// Assign the current position to the name
+	mlt_properties_set_position( mlt_frame_properties( a_frame ), name, mlt_frame_get_position( a_frame ) );
 
-	// Set the b frame properties
-	mlt_properties_set_double( b_props, "image.mix", position_calculate( transition, a_frame ) );
-	mlt_properties_set_double( b_props, "luma.delta", delta_calculate( transition, a_frame ) );
-	mlt_properties_set_int( b_props, "luma.width", this->width );
-	mlt_properties_set_int( b_props, "luma.height", this->height );
-	mlt_properties_set_data( b_props, "luma.bitmap", this->bitmap, 0, NULL, NULL );
-	mlt_properties_set_int( b_props, "luma.reverse", mlt_properties_get_int( properties, "reverse" ) );
-	mlt_properties_set_double( b_props, "luma.softness", mlt_properties_get_double( properties, "softness" ) );
+	// Push the transition on to the frame
+	mlt_frame_push_service( a_frame, transition );
 
+	// Push the transition method
 	mlt_frame_push_get_image( a_frame, transition_get_image );
+	
+	// Push the b_frame on to the stack
 	mlt_frame_push_frame( a_frame, b_frame );
 
 	return a_frame;
@@ -402,26 +506,19 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 
 mlt_transition transition_luma_init( char *lumafile )
 {
-	transition_luma *this = calloc( sizeof( transition_luma ), 1 );
-	if ( this != NULL )
+	mlt_transition transition = mlt_transition_new( );
+	if ( transition != NULL )
 	{
-		mlt_transition transition = &this->parent;
-		mlt_transition_init( transition, this );
+		// Set the methods
 		transition->process = transition_process;
-		transition->close = transition_close;
+		
+		// Default factory
+		mlt_properties_set( mlt_transition_properties( transition ), "factory", "fezzik" );
+
+		// Set the main property
 		mlt_properties_set( mlt_transition_properties( transition ), "resource", lumafile );
-		return &this->parent;
+		
+		return transition;
 	}
 	return NULL;
 }
-
-/** Close the transition.
-*/
-
-static void transition_close( mlt_transition parent )
-{
-	transition_luma *this = (transition_luma*) parent->child;
-	mlt_pool_release( this->bitmap );
-	free( this );
-}
-
