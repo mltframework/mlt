@@ -931,7 +931,7 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 
 		if ( context->property != NULL )
 			mlt_properties_set( properties, context->property, value == NULL ? "" : value );
-	
+
 		// Tell parser to collect any further nodes for serialisation
 		context->is_value = 1;
 
@@ -967,7 +967,7 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 			xmlFreeDoc( context->value_doc );
 			context->value_doc = NULL;
 		}
-	
+
 		// Close this property handling
 		free( context->property );
 		context->property = NULL;
@@ -1145,6 +1145,8 @@ static void on_internal_subset( void *ctx, const xmlChar* name,
 	params_to_entities( context );
 }
 
+// TODO: Check this with Dan... I think this is for westley parameterisation
+// but it's breaking standard escaped entities (like &lt; etc).
 static void on_entity_declaration( void *ctx, const xmlChar* name, int type, 
 	const xmlChar* publicId, const xmlChar* systemId, xmlChar* content)
 {
@@ -1154,7 +1156,8 @@ static void on_entity_declaration( void *ctx, const xmlChar* name, int type,
 	xmlAddDocEntity( context->entity_doc, name, type, publicId, systemId, content );
 }
 
-xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
+// TODO: Check this functionality (see on_entity_declaration)
+static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 {
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
@@ -1301,7 +1304,7 @@ mlt_producer producer_westley_init( int info, char *data )
 	sax->cdataBlock = on_characters;
 	sax->internalSubset = on_internal_subset;
 	sax->entityDecl = on_entity_declaration;
-	sax->getEntity = on_get_entity;
+	//sax->getEntity = on_get_entity;
 
 	// Setup libxml2 SAX parsing
 	xmlInitParser(); 

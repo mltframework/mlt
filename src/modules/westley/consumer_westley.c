@@ -189,12 +189,10 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "height" ) != 0 )
 		{
 			char *value = mlt_properties_get_value( properties, i );
-			p = xmlNewChild( node, NULL, "property", NULL );
-			xmlNewProp( p, "name", mlt_properties_get_name( properties, i ) );
 			if ( strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
-				xmlNodeSetContent( p, value + strlen( context->root ) + 1 );
-			else
-				xmlNodeSetContent( p, value );
+				value += strlen( context->root ) + 1;
+			p = xmlNewTextChild( node, NULL, "property", value );
+			xmlNewProp( p, "name", name );
 		}
 	}
 }
@@ -213,12 +211,10 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 			char *value = mlt_properties_get_value( properties, i );
 			if ( value != NULL )
 			{
-				p = xmlNewChild( node, NULL, "property", NULL );
-				xmlNewProp( p, "name", mlt_properties_get_name( properties, i ) );
-				if ( context->root != NULL && strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
-					xmlNodeSetContent( p, value + strlen( context->root ) + 1 );
-				else
-					xmlNodeSetContent( p, value );
+				if ( strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
+					value += strlen( context->root ) + 1;
+				p = xmlNewTextChild( node, NULL, "property", value );
+				xmlNewProp( p, "name", name );
 			}
 		}
 	}
@@ -704,13 +700,13 @@ static int consumer_start( mlt_consumer this )
 		{
 			xmlChar *buffer = NULL;
 			int length = 0;
-			xmlDocDumpMemory( doc, &buffer, &length );
+			xmlDocDumpMemoryEnc( doc, &buffer, &length, "utf-8" );
 			mlt_properties_set( properties, resource, buffer );
 			xmlFree( buffer );
 		}
 		else
 		{
-			xmlSaveFormatFile( resource, doc, 1 );
+			xmlSaveFormatFileEnc( resource, doc, "utf-8", 1 );
 		}
 		
 		// Close the document
