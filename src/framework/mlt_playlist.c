@@ -1329,7 +1329,7 @@ int mlt_playlist_clip_start( mlt_playlist this, int clip )
 	mlt_playlist_clip_info info;
 	if ( mlt_playlist_get_clip_info( this, &info, clip ) == 0 )
 		return info.start;
-	return clip < 0 ? 0 : mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( this ) ) + 1;
+	return clip < 0 ? 0 : mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( this ) );
 }
 
 int mlt_playlist_clip_length( mlt_playlist this, int clip )
