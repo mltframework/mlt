@@ -167,7 +167,7 @@ mlt_producer producer_inigo_init( char **argv )
 			track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
 			playlist = mlt_playlist_init( );
 		}
-		else if ( strchr( argv[ i ], '=' ) && !strchr( argv[ i ], ':' ) )
+		else if ( strchr( argv[ i ], '=' ) )
 		{
 			mlt_properties_parse( properties, argv[ i ] );
 		}
