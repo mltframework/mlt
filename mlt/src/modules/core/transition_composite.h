@@ -23,6 +23,6 @@
 
 #include <framework/mlt_transition.h>
 
-extern mlt_transition transition_composite_init( void *arg );
+extern mlt_transition transition_composite_init( char *arg );
 
 #endif

@@ -23,7 +23,7 @@ int main( int argc, char **argv )
 	}
 
 	// Start the consumer...
-	mlt_consumer consumer = mlt_factory_consumer( "sdl", "PAL" );
+	mlt_consumer consumer = mlt_factory_consumer( "bluefish", "NTSC" );
 
 	// Create the producer(s)
 	mlt_playlist pl1 = mlt_playlist_init();
@@ -39,7 +39,7 @@ int main( int argc, char **argv )
 	mlt_properties_set_int( mlt_producer_properties( title ), "bgcolor", 0x0000007f );
 	mlt_properties_set_int( mlt_producer_properties( title ), "pad", 8 );
 	mlt_properties_set_int( mlt_producer_properties( title ), "align", 1 );
-	mlt_properties_set_int( mlt_producer_properties( title ), "x", 20 );
+	mlt_properties_set_int( mlt_producer_properties( title ), "x", 200 );
 	mlt_properties_set_int( mlt_producer_properties( title ), "y", 40 );
 	mlt_properties_set_double( mlt_producer_properties( title ), "mix", 0.8 );
 

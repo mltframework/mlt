@@ -24,8 +24,8 @@ Producers
 			int audio_channels - audio channels (default: 2)
 			int audio_track - audio track to use (default: 0)
 			int audio_loop - loop audio until video exhausted (default: 0)
-			timecode in - in point
-			timecode out - out point
+			intint in - in point
+			int out - out point
 			double fps - output frames per second (default: 25)
 			double aspect_ratio - aspect ratio of video
 
@@ -56,15 +56,15 @@ Producers
 
 		Initialisation Properties
 
-			timecode in - in point
-			timecode out - out point
+			int in - in point
+			int out - out point
 
 		Read Only Properties
 
 			string resource - file location
-			double fps - output frames per second 
+			double fps - output frames per second
 			double aspect_ratio - aspect ratio of video]
-			timecode length - duration of resource (in seconds)
+			int length - duration of resource (in frames)
 
 		Dependencies
 
@@ -86,15 +86,15 @@ Producers
 
 		Initialisation Properties
 
-			timecode in - in point
-			timecode out - out point
+			int in - in point
+			int out - out point
 
 		Read Only Properties
 
 			string resource - file location
-			double fps - output frames per second 
+			double fps - output frames per second
 			double aspect_ratio - aspect ratio of video
-			timecode length - duration of resource (in seconds)
+			int length - duration of resource (in frames)
 
 		Dependencies
 
@@ -118,13 +118,13 @@ Producers
 
 		Initialisation Properties
 
-			timecode in - in point
-			timecode out - out point
+			int in - in point
+			int out - out point
 
 		Read Only Properties
 
 			string resource - file location
-			double fps - output frames per second 
+			double fps - output frames per second
 			double aspect_ratio - aspect ratio of video
 
 		Dependencies
@@ -137,7 +137,7 @@ Producers
 			None.
 
 	pango
-	
+
 		Description
 
 			A title generator that uses the Pango international text layout
@@ -151,11 +151,11 @@ Producers
 
 		Initialisation Properties
 
-			timecode in - in point
-			timecode out - out point
+			int in - in point
+			int out - out point
 
 		Mutable Properties
-		
+
 			int video_standard - enum mlt_video_standard from mlt_frame.h
 			                     PAL = 0, NTSC = 1
 			                     this determines proper pixel aspect ratio
@@ -212,8 +212,8 @@ Producers
 
 		Initialisation Properties
 
-			timecode in - in point
-			timecode out - out point
+			int in - in point
+			int out - out point
 
 		Mutable Properties
 
@@ -240,12 +240,31 @@ Producers
 			in/out settings are incorrectly handled.
 
 	ppm
+	
 		Description
+
+			Reads a stream of contiguous PPM images.
+			
 		Constructor Argument
+
+			command - a shell command to run something that produces ppm
+			          streams on stdout.
+			
 		Initialisation Properties
+
+			none
+			
 		Read Only Properties
+
+			string resource - the command
+			
 		Dependencies
+
+			none
+			
 		Known Bugs
+
+			Since it uses pipes, it is not compatible with bluefish.
 
 
 Filters
@@ -254,47 +273,195 @@ Filters
 	deinterlace
 	
 		Description
+
+			Deinterlace a frame consisting of two fields by linearly blending.
+		
 		Constructor Argument
+
+			none
+		
 		Initialisation Properties
+
+			int in - in point
+			int out - out point
+
 		Read Only Properties
+
+			none
+		
 		Dependencies
+
+			none
+			
 		Known Bugs
+
+			Not a bug, but it only provides fair quality at a fair performance;
+				i.e., it excels at neither.
 		
 	ffmpeg_dub
 	
 		Description
+
+		        Use ffmpeg executable to substitute audio stream.
+		
 		Constructor Argument
+
+			file - filename of a WAV, Ogg Vorbis (--enable-vorbis),
+			       MP3 (--enable-mp3lame), or AC-3 (--enable-a52) audio file.
+		
 		Initialisation Properties
+
+			int in - in point
+			int out - out point
+		
 		Read Only Properties
+		
+			string resource - file
+			
 		Dependencies
+
+			ffmpeg plus for ffmpeg:
+			libogg and libvorbis for Ogg Vorbis, libmp3lame for MP3, liba52 for AC-3.
+			
 		Known Bugs
+
+			Uses pipes and is therefore not compatible with bluefish.
 
 	gamma
 	
 		Description
+
+			Adjust image luma using a non-linear power-law curve
+			
 		Constructor Argument
+
+			gamma - a floating point value
+		
 		Initialisation Properties
-		Read Only Properties
+		
+			int in - in point
+			int out - out point
+
+		Mutable Properties
+
+			double gamma - the exponential factor of the power-law curve
+			
 		Dependencies
+
+			none
+			
 		Known Bugs
+
+			none
 	
 	greyscale
 	
 		Description
+
+			Convert color image to greyscale
+			
 		Constructor Argument
+
+			none
+			
 		Initialisation Properties
+		
+			int in - in point
+			int out - out point
+
 		Read Only Properties
+
+			none
+			
 		Dependencies
+
+			none
+			
 		Known Bugs
+
+			none
 		
 	resize
 	
 		Description
+
+			Image scaling and padding
+			
 		Constructor Argument
+
+			scale - "affine" to use affine transform scaling, otherwise
+			         center and pad.
+			
 		Initialisation Properties
+		
+			int in - in point
+			int out - out point
+
 		Read Only Properties
+
+			none
+			
 		Dependencies
+
+			none
+			
 		Known Bugs
+
+			none
+
+	volume
+
+		Description
+
+			Adjust an audio stream's volume level
+			
+		Constructor Argument
+
+			volume - a floating point value of the factor
+			
+		Initialisation Properties
+		
+			int in - in point
+			int out - out point
+
+		Mutable Properties
+
+			double volume - the factor applied to each sample
+			
+		Dependencies
+
+			none
+			
+		Known Bugs
+
+			none
+
+	resample
+
+		Description
+
+			Adjust an audio stream's sampling rate
+
+		Constructor Argument
+
+			frequency - a numeric value for the new sample rate
+
+		Initialisation Properties
+
+			int in - in point
+			int out - out point
+
+		Mutable Properties
+
+			int frequency - the target sample rate
+
+		Dependencies
+
+			libresample
+
+		Known Bugs
+
+			none
 
 Transitions
 -----------
@@ -307,14 +474,20 @@ Transitions
 			
 		Constructor Argument
 
-			none
+			mix - see below
+
+		Initialisation Properties
 			
+			int in - in point
+			int out - out point
+
 		Mutable Properties
 
 			int x - the horizontal offset from the left edge of the frame
 			int y - the vertical offset from the top edge of the frame
 			double mix - the opacity factor to apply to the second frame
 			             (used in addition to alpha channel).
+			           - any negative value causes an automatic dissolve
 		
 		Read Only Properties
 
@@ -342,7 +515,12 @@ Transitions
 		Constructor Argument
 
 			string file - the luma map file name. If not supplied, a dissolve.
+
+		Initialisation Properties
 		
+			int in - in point
+			int out - out point
+
 		Mutable Properties
 
 			string filename - same as above
@@ -361,6 +539,38 @@ Transitions
 		Known Bugs
 
 			The luma map must be the same size as the B frame.
+
+	mix
+
+		Description
+
+			An two stream audio mixer.
+
+		Constructor Argument
+
+			mix - see below
+
+		Initalisation Properties
+
+			int in - in point
+			int out - out point
+
+		Mutable Properties
+
+			double mix - the mix level to apply to the second frame.
+			           - any negative value causes an automatic crossfade.
+
+		Read Only Properties
+
+			none
+
+		Dependencies
+
+			none
+
+		Known Bugs
+
+			Samples from the longer of the two frames are discarded.
 
 Consumers
 ---------
@@ -389,8 +599,11 @@ Consumers
 		
 		Known Bugs
 
+			Does not work with any service that uses pipes!
+			
 			If mlt crashes, you must reload the BlueDriver kernel module
 			due to unreleased DMA buffers.
+			
 			Needs an argument or property for multi-card address.
 		
 	ffmpeg

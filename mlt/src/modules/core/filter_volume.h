@@ -1,5 +1,5 @@
 /*
- * transition_composite.h -- compose one image over another using alpha channel
+ * filter_volume.h -- adjust audio volume
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
@@ -18,11 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _TRANSITION_COMPOSITE_H_
-#define _TRANSITION_COMPOSITE_H_
+#ifndef _FILTER_VOLUME_H_
+#define _FILTER_VOLUME_H_
 
-#include <framework/mlt_transition.h>
+#include <framework/mlt_filter.h>
 
-extern mlt_transition transition_composite_init( char *arg );
+extern mlt_filter filter_volume_init( char *arg );
 
 #endif

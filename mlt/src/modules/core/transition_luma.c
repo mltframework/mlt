@@ -141,8 +141,8 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 
 	// mix is the offset time value in the duration of the transition
 	// - also used as the mixing level for a dissolve
-	if ( mlt_properties_get( b_props, "mix" ) != NULL )
-		mix = mlt_properties_get_double( b_props, "mix" );
+	if ( mlt_properties_get( b_props, "image.mix" ) != NULL )
+		mix = mlt_properties_get_double( b_props, "image.mix" );
 
 	// (mix - previous_mix) is the animation delta, if backwards reset previous
 	if ( mix < previous_mix )
@@ -180,32 +180,6 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 
 	return 0;
 }
-
-static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
-{
-	// Get the properties of the a frame
-	mlt_properties a_props = mlt_frame_properties( frame );
-
-	// Get the b frame from the stack
-	mlt_frame b_frame = mlt_frame_pop_frame( frame );
-
-	// Get the properties of the b frame
-	mlt_properties b_props = mlt_frame_properties( b_frame );
-
-	// Restore the original get_audio
-	frame->get_audio = mlt_properties_get_data( a_props, "get_audio", NULL );
-	
-	double mix = 0;
-	if ( mlt_properties_get( b_props, "mix" ) != NULL )
-		mix = mlt_properties_get_double( b_props, "mix" );
-	mlt_frame_mix_audio( frame, b_frame, mix, buffer, format, frequency, channels, samples );
-
-	// Push the b_frame back on for get_image
-	mlt_frame_push_frame( frame, b_frame );
-
-	return 0;
-}
-
 
 /** Load the luma map from PGM stream.
 */
@@ -342,7 +316,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	double pos = ( double )( time - in ) / ( double )( out - in + 1 );
 	
 	// Set the b frame properties
-	mlt_properties_set_double( b_props, "mix", pos );
+	mlt_properties_set_double( b_props, "image.mix", pos );
 	mlt_properties_set_int( b_props, "luma.width", this->width );
 	mlt_properties_set_int( b_props, "luma.height", this->height );
 	mlt_properties_set_data( b_props, "luma.bitmap", this->bitmap, 0, NULL, NULL );
@@ -352,14 +326,6 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_frame_push_get_image( a_frame, transition_get_image );
 	mlt_frame_push_frame( a_frame, b_frame );
 
-/************************ AUDIO ***************************/
-#if 1
-	// Backup the original get_audio (it's still needed)
-	mlt_properties_set_data( mlt_frame_properties( a_frame ), "get_audio", a_frame->get_audio, 0, NULL, NULL );
-
-	// Override the get_audio method
-	a_frame->get_audio = transition_get_audio;
-#endif
 	return a_frame;
 }
 

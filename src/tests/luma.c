@@ -25,7 +25,7 @@ int main( int argc, char **argv )
 	}
 
 	// Start the consumer...
-	mlt_consumer consumer = mlt_factory_consumer( "sdl", "PAL" );
+	mlt_consumer consumer = mlt_factory_consumer( "bluefish", "NTSC" );
 
 	// Create the producer(s)
 	mlt_producer dv1 = mlt_factory_producer( "mcmpeg", file1 );

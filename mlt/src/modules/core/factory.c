@@ -27,6 +27,8 @@
 #include "filter_gamma.h"
 #include "transition_composite.h"
 #include "transition_luma.h"
+#include "transition_mix.h"
+#include "filter_volume.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -45,6 +47,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_greyscale_init( arg );
 	if ( !strcmp( id, "resize" ) )
 		return filter_resize_init( arg );
+	if ( !strcmp( id, "volume" ) )
+		return filter_volume_init( arg );
 	return NULL;
 }
 
@@ -54,6 +58,8 @@ void *mlt_create_transition( char *id, void *arg )
 		return transition_composite_init( arg );
 	if ( !strcmp( id, "luma" ) )
 		return transition_luma_init( arg );
+	if ( !strcmp( id, "mix" ) )
+		return transition_mix_init( arg );
 	return NULL;
 }
 

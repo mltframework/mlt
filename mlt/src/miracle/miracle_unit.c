@@ -33,6 +33,7 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <limits.h>
 
 #include <sys/mman.h>
 
@@ -471,7 +472,7 @@ void miracle_unit_change_position( miracle_unit unit, int clip, int64_t position
 	else if ( clip >= mlt_playlist_count( playlist ) )
 	{
 		clip = mlt_playlist_count( playlist ) - 1;
-		position = 999999999999;
+		position = LONG_MAX;
 	}
 
 	if ( mlt_playlist_get_clip_info( playlist, &info, clip ) == 0 )

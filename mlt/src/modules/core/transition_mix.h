@@ -1,5 +1,5 @@
 /*
- * transition_composite.h -- compose one image over another using alpha channel
+ * transition_mix.h -- mix two audio streams
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
@@ -18,11 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _TRANSITION_COMPOSITE_H_
-#define _TRANSITION_COMPOSITE_H_
+#ifndef _TRANSITION_MIX_H_
+#define _TRANSITION_MIX_H_
 
 #include <framework/mlt_transition.h>
 
-extern mlt_transition transition_composite_init( char *arg );
+extern mlt_transition transition_mix_init( char *arg );
 
 #endif

@@ -32,7 +32,7 @@ void miracle_log_init( enum log_output method, int new_threshold )
 	log_output = method;
 	threshold = new_threshold;
 	if (method == log_syslog)
-		openlog( "dv1394d", LOG_CONS, LOG_DAEMON );
+		openlog( "miracle", LOG_CONS, LOG_DAEMON );
 
 }
 

@@ -20,46 +20,22 @@
 
 #include <string.h>
 
-#include "producer_ppm.h"
-#include "filter_deinterlace.h"
-#include "filter_greyscale.h"
-#include "filter_resize.h"
-#include "filter_gamma.h"
-#include "transition_composite.h"
-#include "transition_luma.h"
-#include "transition_mix.h"
-#include "filter_volume.h"
+#include "filter_resample.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
-	if ( !strcmp( id, "ppm" ) )
-		return producer_ppm_init( arg );
 	return NULL;
 }
 
 void *mlt_create_filter( char *id, void *arg )
 {
-	if ( !strcmp( id, "deinterlace" ) )
-		return filter_deinterlace_init( arg );
-	if ( !strcmp( id, "gamma" ) )
-		return filter_gamma_init( arg );
-	if ( !strcmp( id, "greyscale" ) )
-		return filter_greyscale_init( arg );
-	if ( !strcmp( id, "resize" ) )
-		return filter_resize_init( arg );
-	if ( !strcmp( id, "volume" ) )
-		return filter_volume_init( arg );
+	if ( !strcmp( id, "resample" ) )
+		return filter_resample_init( arg );
 	return NULL;
 }
 
 void *mlt_create_transition( char *id, void *arg )
 {
-	if ( !strcmp( id, "composite" ) )
-		return transition_composite_init( arg );
-	if ( !strcmp( id, "luma" ) )
-		return transition_luma_init( arg );
-	if ( !strcmp( id, "mix" ) )
-		return transition_mix_init( arg );
 	return NULL;
 }
 

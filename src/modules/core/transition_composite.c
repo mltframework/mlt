@@ -24,15 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/** Composition class.
-*/
-
-typedef struct 
-{
-	struct mlt_transition_s parent;
-}
-transition_composite;
-
 /** Get the image.
 */
 
@@ -59,8 +50,8 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 			x = mlt_properties_get_int( b_props, "x" );
 		if ( mlt_properties_get( b_props, "y" ) != NULL )
 			y = mlt_properties_get_int( b_props, "y" );
-		if ( mlt_properties_get( b_props, "mix" ) != NULL )
-			mix = mlt_properties_get_double( b_props, "mix" );
+		if ( mlt_properties_get( b_props, "image.mix" ) != NULL )
+			mix = mlt_properties_get_double( b_props, "image.mix" );
 
 		// Composite the b_frame on the a_frame
 		mlt_frame_composite_yuv( this, b_frame, x, y, mix );
@@ -86,18 +77,34 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 
 static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
-	mlt_frame_push_get_image( a_frame, transition_get_image );
-	mlt_frame_push_frame( a_frame, b_frame );
-	
 	// Propogate the transition properties to the b frame
 	mlt_properties properties = mlt_transition_properties( this );
 	mlt_properties b_props = mlt_frame_properties( b_frame );
+	
 	if ( mlt_properties_get( properties, "x" ) != NULL )
 		mlt_properties_set_int( b_props, "x", mlt_properties_get_int( properties, "x" ) );
 	if ( mlt_properties_get( properties, "y" ) != NULL )
 		mlt_properties_set_int( b_props, "y", mlt_properties_get_int( properties, "y" ) );
+
+	// Only if mix is specified, otherwise a producer may set the mix
 	if ( mlt_properties_get( properties, "mix" ) != NULL )
-		mlt_properties_set_double( b_props, "mix",  mlt_properties_get_double( properties, "mix" ) );
+	{
+		// A negative means dissolve
+		if ( mlt_properties_get_double( properties, "mix" ) < 0 )
+		{
+			// Determine the time position of this frame in the transition duration
+			mlt_position in = mlt_transition_get_in( this );
+			mlt_position out = mlt_transition_get_out( this );
+			mlt_position time = mlt_frame_get_position( b_frame );
+			double mix = ( double )( time - in ) / ( double )( out - in + 1 );
+			mlt_properties_set_double( b_props, "image.mix", mix );
+		}
+		else
+			mlt_properties_set_double( b_props, "image.mix", mlt_properties_get_double( properties, "mix" ) );
+	}
+	
+	mlt_frame_push_get_image( a_frame, transition_get_image );
+	mlt_frame_push_frame( a_frame, b_frame );
 
 	return a_frame;
 }
@@ -105,16 +112,15 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 /** Constructor for the filter.
 */
 
-mlt_transition transition_composite_init( void *arg )
+mlt_transition transition_composite_init( char *arg )
 {
-	transition_composite *this = calloc( sizeof( transition_composite ), 1 );
-	if ( this != NULL )
+	mlt_transition this = calloc( sizeof( struct mlt_transition_s ), 1 );
+	if ( this != NULL && mlt_transition_init( this, NULL ) == 0 )
 	{
-		mlt_transition transition = &this->parent;
-		mlt_transition_init( transition, this );
-		transition->process = composite_process;
-		return &this->parent;
+		this->process = composite_process;
+		if ( arg != NULL )
+			mlt_properties_set_double( mlt_transition_properties( this ), "mix", atof( arg ) );
 	}
-	return NULL;
+	return this;
 }
 

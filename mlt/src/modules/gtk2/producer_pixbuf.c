@@ -222,7 +222,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		if ( mlt_properties_get( producer_props, "y" ) != NULL )
 			mlt_properties_set_int( properties, "y", mlt_properties_get_int( producer_props, "y" ) );
 		if ( mlt_properties_get( producer_props, "mix" ) != NULL )
-			mlt_properties_set_double( properties, "mix",  mlt_properties_get_double( producer_props, "mix" ) );
+			mlt_properties_set_double( properties, "image.mix",  mlt_properties_get_double( producer_props, "mix" ) );
 
 		// if picture sequence pass the image and alpha data without destructor
 		mlt_properties_set_data( properties, "image", this->image, 0, NULL, NULL );
