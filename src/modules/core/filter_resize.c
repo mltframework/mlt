@@ -78,7 +78,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		oheight = scaled_height * oheight / normalised_height;
 
 		// Tell frame we have conformed the aspect to the consumer
-		mlt_frame_set_aspect_ratio( this, output_ar );
+		mlt_frame_set_aspect_ratio( this, mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 	}
 
 	// Now pass on the calculations down the line
