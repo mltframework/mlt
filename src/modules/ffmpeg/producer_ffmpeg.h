@@ -1,5 +1,5 @@
 /*
- * producer_ppm.h -- simple ppm test case
+ * producer_ffmpeg.h -- simple ffmpeg test case
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,12 +18,12 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _PRODUCER_PPM_H_
-#define _PRODUCER_PPM_H_
+#ifndef _PRODUCER_Y4M_H_
+#define _PRODUCER_Y4M_H_
 
 #include <framework/mlt_producer.h>
 #include <stdio.h>
 
-extern mlt_producer producer_ppm_init( void *command );
+extern mlt_producer producer_ffmpeg_init( char *file );
 
 #endif

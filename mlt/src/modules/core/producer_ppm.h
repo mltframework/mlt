@@ -24,17 +24,6 @@
 #include <framework/mlt_producer.h>
 #include <stdio.h>
 
-typedef struct producer_ppm_s *producer_ppm;
-
-struct producer_ppm_s
-{
-	struct mlt_producer_s parent;
-	char *command;
-	FILE *video;
-	FILE *audio;
-	uint64_t expected;
-};
-
 extern mlt_producer producer_ppm_init( void *command );
 
 #endif

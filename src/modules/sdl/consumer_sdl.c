@@ -234,7 +234,7 @@ static void *consumer_thread( void *arg )
 				request.freq = frequency;
 				request.format = AUDIO_S16;
 				request.channels = channels;
-				request.samples = 512;
+				request.samples = 2048;
 				request.callback = sdl_fill_audio;
 				request.userdata = (void *)this;
 				if ( SDL_OpenAudio( &request, NULL ) < 0 )
@@ -282,11 +282,21 @@ static void *consumer_thread( void *arg )
 							break;
 					}
 				}
+
+				if ( width != this->width || height != this->height )
+				{
+					this->width = width;
+					this->height = height;
+					changed = 1;
+				}
 			}
 
 			if ( sdl_screen == NULL || changed )
 			{
 				double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
+
+				if ( mlt_properties_get_double( properties, "aspect_ratio" ) )
+					aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 
 				if ( this->window_width == 0 || this->window_height == 0 )
 				{

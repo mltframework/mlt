@@ -362,6 +362,35 @@ int mlt_convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int stride
 	return ret;
 }
 
+int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int stride, uint8_t *yuv )
+{
+	int ret = 0;
+	register int i, j;
+
+	int half = width >> 1;
+
+	uint8_t *Y = yuv420p;
+	uint8_t *U = Y + width * height;
+	uint8_t *V = U + width * height / 4;
+
+	register uint8_t *d = yuv;
+
+	for ( i = 0; i < height; i++ )
+	{
+		register uint8_t *u = U + ( i / 2 ) * ( half );
+		register uint8_t *v = V + ( i / 2 ) * ( half );
+
+		for ( j = 0; j < half; j++ )
+		{
+			*d ++ = *Y ++;
+			*d ++ = *u ++;
+			*d ++ = *Y ++;
+			*d ++ = *v ++;
+		}
+	}
+	return ret;
+}
+
 int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float weight )
 {
 	int ret = 0;

@@ -20,11 +20,11 @@
 
 #include <string.h>
 
+#include "producer_ppm.h"
 #include "filter_deinterlace.h"
 #include "filter_greyscale.h"
 #include "filter_resize.h"
 #include "filter_gamma.h"
-#include "producer_ppm.h"
 #include "transition_composite.h"
 
 void *mlt_create_producer( char *id, void *arg )

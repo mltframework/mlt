@@ -36,7 +36,7 @@ mlt_producer create_producer( char *file )
 
 	// 3rd line fallbacks 
 	if ( result == NULL )
-		result = mlt_factory_producer( "ppm", file );
+		result = mlt_factory_producer( "ffmpeg", file );
 
 	return result;
 }
@@ -197,27 +197,38 @@ int main( int argc, char **argv )
 		}
 	}
 
-	// If we have no consumer, default to sdl
-	if ( consumer == NULL )
-		consumer = create_consumer( "sdl", mlt_multitrack_producer( multitrack ) );
-
-	// Connect producer to playlist
+	// We must have a producer at this point
 	if ( producer != NULL )
+	{
+		// Connect producer to playlist
 		mlt_playlist_append( playlist, producer );
 
-	// Connect multitrack to producer
-	mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), 0 );
+		// If we have no consumer, default to sdl
+		if ( consumer == NULL )
+			consumer = create_consumer( "sdl", mlt_multitrack_producer( multitrack ) );
 
-	// Connect consumer to tractor
-	mlt_consumer_connect( consumer, mlt_field_service( field ) );
+		// Connect multitrack to producer
+		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), 0 );
 
-	// Transport functionality
-	transport( mlt_multitrack_producer( multitrack ) );
+		// Connect consumer to tractor
+		mlt_consumer_connect( consumer, mlt_field_service( field ) );
 
-	// Close the services
-	mlt_consumer_close( consumer );
+		// Transport functionality
+		transport( mlt_multitrack_producer( multitrack ) );
+
+		// Close the services
+		mlt_consumer_close( consumer );
+		mlt_producer_close( producer );
+	}
+	else
+	{
+		fprintf( stderr, "Usage: inigo [ -consumer id[:arg] [ name=value ]* ]\n"
+        				 "             [ -filter id[:arg] [ name=value ] * ]\n"
+        				 "             [ producer [ name=value ] * ]+\n" );
+	}
+
+	// Close the field
 	mlt_field_close( field );
-	mlt_producer_close( producer );
 
 	// Close the factory
 	mlt_factory_close( );

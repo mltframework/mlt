@@ -1,4 +1,4 @@
-SUBDIRS = core gtk2 dv sdl mainconcept bluefish
+SUBDIRS = core gtk2 dv sdl mainconcept bluefish ffmpeg
 
 all clean depend install:
 	list='$(SUBDIRS)'; \
