@@ -639,22 +639,26 @@ void mlt_consumer_close( mlt_consumer this )
 		// Get the childs close function
 		void ( *consumer_close )( ) = this->close;
 
-		// Just in case...
-		mlt_consumer_stop( this );
+		if ( consumer_close )
+		{
+			// Just in case...
+			mlt_consumer_stop( this );
 
-		// Make sure it only gets called once
-		this->close = NULL;
-		this->parent.close = NULL;
-
-		// Destroy the push mutex and condition
-		pthread_cond_broadcast( &this->put_cond );
-		pthread_mutex_destroy( &this->put_mutex );
-		pthread_cond_destroy( &this->put_cond );
-
-		// Call the childs close if available
-		if ( consumer_close != NULL )
+			this->close = NULL;
 			consumer_close( this );
+		}
 		else
+		{
+
+			// Make sure it only gets called once
+			this->parent.close = NULL;
+
+			// Destroy the push mutex and condition
+			pthread_cond_broadcast( &this->put_cond );
+			pthread_mutex_destroy( &this->put_mutex );
+			pthread_cond_destroy( &this->put_cond );
+
 			mlt_service_close( &this->parent );
+		}
 	}
 }
