@@ -562,7 +562,7 @@ static void *video_thread( void *arg )
 			mlt_position difference = scheduled - elapsed;
 
 			// Smooth playback a bit
-			if ( difference > 10000 && speed == 1.0 )
+			if ( difference > 20000 && speed == 1.0 )
 			{
 				tm.tv_sec = difference / 1000000;
 				tm.tv_nsec = ( difference % 1000000 ) * 500;
