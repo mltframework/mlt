@@ -135,6 +135,9 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_multitrack multitrack = mlt_tractor_multitrack( tractor );
 	char *title = NULL;
 
+	// Assistance for template construction (allows -track usage to specify the first track)
+	mlt_properties_set_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_inigo_first", 1 );
+
 	// We need to track the number of registered filters
 	mlt_properties_set_int( field_properties, "registered", 0 );
 
@@ -365,7 +368,8 @@ mlt_producer producer_inigo_init( char **argv )
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
-			if ( mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
+			if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_inigo_first" ) || 
+				  mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
 			{
 				mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track ++ );
 				track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
@@ -421,7 +425,8 @@ mlt_producer producer_inigo_init( char **argv )
 	track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
 
 	// We must have a playlist to connect
-	if ( mlt_playlist_count( playlist ) > 0 )
+	if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_inigo_first" ) || 
+		  mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
 		mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track );
 
 	mlt_producer prod = MLT_TRACTOR_PRODUCER( tractor );
