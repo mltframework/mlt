@@ -149,7 +149,7 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", fps );
 	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps == 0 ? 25 : fps );
 	mlt_properties_set_position( mlt_playlist_properties( this ), "length", frame_count );
-	mlt_properties_set_position( mlt_playlist_properties( this ), "out", frame_count );
+	mlt_properties_set_position( mlt_playlist_properties( this ), "out", frame_count - 1 );
 
 	return 0;
 }

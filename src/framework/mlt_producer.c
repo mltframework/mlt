@@ -57,9 +57,9 @@ int mlt_producer_init( mlt_producer this, void *child )
 		mlt_properties_set_double( properties, "frame", 0 );
 		mlt_properties_set_double( properties, "fps", 25.0 );
 		mlt_properties_set_double( properties, "speed", 1.0 );
-		mlt_properties_set_position( properties, "in", 0.0 );
-		mlt_properties_set_position( properties, "out", 179999 );
-		mlt_properties_set_position( properties, "length", 180000 );
+		mlt_properties_set_position( properties, "in", 0 );
+		mlt_properties_set_position( properties, "out", 1799999 );
+		mlt_properties_set_position( properties, "length", 1800000 );
 		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 		mlt_properties_set( properties, "log_id", "multitrack" );
 
@@ -85,32 +85,6 @@ mlt_properties mlt_producer_properties( mlt_producer this )
 {
 	return mlt_service_properties( &this->parent );
 }
-
-/** Convert frame position to position.
-*/
-
-/*
-mlt_position mlt_producer_time( mlt_producer this, int64_t frame )
-{
-	if ( frame < 0 )
-		return -1;
-	else
-		return ( mlt_position )frame / mlt_producer_get_fps( this );
-}
-*/
-
-/** Convert position to frame position.
-*/
-
-/*
-int64_t mlt_producer_frame_position( mlt_producer this, mlt_position position )
-{
-	if ( position < 0 )
-		return -1;
-	else
-		return ( int64_t )( floor( position * mlt_producer_get_fps( this ) + 0.5 ) );
-}
-*/
 
 /** Seek to a specified position.
 */

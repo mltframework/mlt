@@ -202,6 +202,8 @@ mlt_producer producer_ffmpeg_init( char *file )
 
 		mlt_properties_set( properties, "log_id", file );
 		mlt_properties_set( properties, "resource", file );
+		mlt_properties_set_position( properties, "length", 36000 );
+		mlt_properties_set_position( properties, "out", 36000 );
 
 		this->buffer = malloc( 1024 * 1024 * 2 );
 

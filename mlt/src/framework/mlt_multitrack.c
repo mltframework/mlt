@@ -147,7 +147,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 
 	// Update multitrack properties now - we'll not destroy the in point here
 	mlt_properties_set_position( properties, "length", length );
-	mlt_properties_set_position( properties, "out", length );
+	mlt_properties_set_position( properties, "out", length - 1 );
 	mlt_properties_set_double( properties, "fps", fps );
 }
 
@@ -298,7 +298,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		mlt_producer producer = this->list[ index ];
 
 		// Obtain the current position
-		uint64_t position = mlt_producer_frame( parent );
+		mlt_position position = mlt_producer_frame( parent );
 
 		// Make sure we're at the same point
 		mlt_producer_seek( producer, position );
