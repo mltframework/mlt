@@ -56,6 +56,12 @@ Playlist::Playlist( Playlist &playlist ) :
 	inc_ref( );
 }
 
+Playlist::Playlist( Producer &producer ) :
+	instance( (mlt_playlist )producer.get_producer( ) )
+{
+	inc_ref( );
+}
+
 Playlist::Playlist( mlt_playlist playlist ) :
 	instance( playlist )
 {

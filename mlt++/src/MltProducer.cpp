@@ -127,3 +127,8 @@ int Producer::detach( Filter &filter )
 {
 	return mlt_producer_detach( get_producer( ), filter.get_filter( ) );
 }
+
+Filter *Producer::filter( int index )
+{
+	return new Filter( mlt_producer_filter( get_producer( ), index ) );
+}

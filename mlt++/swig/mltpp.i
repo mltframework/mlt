@@ -37,6 +37,7 @@ namespace Mlt {
 %newobject Service::producer( );
 %newobject Service::consumer( );
 %newobject Service::get_frame( int );
+%newobject Producer::filter( int );
 %newobject Playlist::current( );
 %newobject Playlist::clip_info( int );
 }
