@@ -47,7 +47,7 @@ int mlt_factory_init( char *prefix )
 	if ( mlt_prefix == NULL )
 	{
 		// Allow user over rides
-		if ( prefix == NULL )
+		if ( prefix == NULL || !strcmp( prefix, "" ) )
 			prefix = getenv( "MLT_REPOSITORY" );
 
 		// If no directory is specified, default to install directory

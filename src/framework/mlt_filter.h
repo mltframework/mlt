@@ -37,9 +37,6 @@ struct mlt_filter_s
 	// protected filter method
 	mlt_frame ( *process )( mlt_filter, mlt_frame );
 
-	// track and in/out points
-	mlt_service producer;
-
 	// Protected
 	void *child;
 };

@@ -155,7 +155,6 @@ int mlt_consumer_start( mlt_consumer this )
 				// Set the test card on the consumer
 				mlt_properties_set_data( properties, "test_card_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 			}
-
 		}
 	}
 	else

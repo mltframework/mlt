@@ -300,7 +300,7 @@ static void serialise_filter( serialise_context context, mlt_service service, xm
 	id[ ID_SIZE ] = '\0';
 	
 	// Recurse on connected producer
-	serialise_service( context, MLT_SERVICE( MLT_FILTER( service )->producer ), node );
+	serialise_service( context, mlt_service_producer( service ), node );
 
 	if ( context->pass == 1 )
 	{

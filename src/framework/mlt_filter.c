@@ -93,7 +93,6 @@ int mlt_filter_connect( mlt_filter this, mlt_service producer, int index )
 	if ( ret == 0 )
 	{
 		mlt_properties properties = mlt_service_properties( &this->parent );
-		this->producer = producer;
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
 		mlt_properties_set_int( properties, "track", index );
@@ -162,10 +161,13 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 	int in = mlt_filter_get_in( this );
 	int out = mlt_filter_get_out( this );
 	
+	// Get the producer this is connected to
+	mlt_service producer = mlt_service_producer( &this->parent );
+
 	// If the frame request is for this filters track, we need to process it
 	if ( index == track )
 	{
-		int ret = mlt_service_get_frame( this->producer, frame, index );
+		int ret = mlt_service_get_frame( producer, frame, index );
 		if ( ret == 0 )
 		{
 			mlt_position position = mlt_frame_get_position( *frame );
@@ -181,7 +183,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 	}
 	else
 	{
-		return mlt_service_get_frame( this->producer, frame, index );
+		return mlt_service_get_frame( producer, frame, index );
 	}
 }
 

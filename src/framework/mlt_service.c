@@ -144,7 +144,31 @@ static void mlt_service_disconnect( mlt_service this )
 	base->out = NULL;
 }
 
-/** Associate this service to the its consumer.
+/** Obtain the consumer this service is connected to.
+*/
+
+mlt_service mlt_service_consumer( mlt_service this )
+{
+	// Get the service base
+	mlt_service_base *base = this->local;
+
+	// Return the connected consumer
+	return base->out;
+}
+
+/** Obtain the producer this service is connected to.
+*/
+
+mlt_service mlt_service_producer( mlt_service this )
+{
+	// Get the service base
+	mlt_service_base *base = this->local;
+
+	// Return the connected producer
+	return base->count > 0 ? base->in[ base->count - 1 ] : NULL;
+}
+
+/** Associate this service to the consumer.
 */
 
 static void mlt_service_connect( mlt_service this, mlt_service that )
@@ -201,7 +225,10 @@ mlt_properties mlt_service_properties( mlt_service self )
 
 int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 {
-	return this->get_frame( this, frame, index );
+	if ( this != NULL )
+		return this->get_frame( this, frame, index );
+	*frame = mlt_frame_init( );
+	return 0;
 }
 
 /** Close the service.
