@@ -68,9 +68,8 @@ mlt_frame mlt_frame_init( )
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
 
 		// Construct stacks for frames and methods
-		this->stack_get_image = mlt_deque_init( );
-		this->stack_frame = mlt_deque_init( );
-		this->stack_service = mlt_deque_init( );
+		this->stack_image = mlt_deque_init( );
+		this->stack_audio = mlt_deque_init( );
 	}
 
 	return this;
@@ -137,7 +136,7 @@ int mlt_frame_set_position( mlt_frame this, mlt_position value )
 
 int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image )
 {
-	return mlt_deque_push_back( this->stack_get_image, get_image );
+	return mlt_deque_push_back( this->stack_image, get_image );
 }
 
 /** Pop a get_image callback.
@@ -145,7 +144,7 @@ int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image )
 
 mlt_get_image mlt_frame_pop_get_image( mlt_frame this )
 {
-	return mlt_deque_pop_back( this->stack_get_image );
+	return mlt_deque_pop_back( this->stack_image );
 }
 
 /** Push a frame.
@@ -153,7 +152,7 @@ mlt_get_image mlt_frame_pop_get_image( mlt_frame this )
 
 int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
 {
-	return mlt_deque_push_back( this->stack_frame, that );
+	return mlt_deque_push_back( this->stack_image, that );
 }
 
 /** Pop a frame.
@@ -161,7 +160,7 @@ int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
 
 mlt_frame mlt_frame_pop_frame( mlt_frame this )
 {
-	return mlt_deque_pop_back( this->stack_frame );
+	return mlt_deque_pop_back( this->stack_image );
 }
 
 /** Push a service.
@@ -169,7 +168,7 @@ mlt_frame mlt_frame_pop_frame( mlt_frame this )
 
 int mlt_frame_push_service( mlt_frame this, void *that )
 {
-	return mlt_deque_push_back( this->stack_service, that );
+	return mlt_deque_push_back( this->stack_image, that );
 }
 
 /** Pop a service.
@@ -177,7 +176,23 @@ int mlt_frame_push_service( mlt_frame this, void *that )
 
 void *mlt_frame_pop_service( mlt_frame this )
 {
-	return mlt_deque_pop_back( this->stack_service );
+	return mlt_deque_pop_back( this->stack_image );
+}
+
+/** Push an audio item on the stack.
+*/
+
+int mlt_frame_push_audio( mlt_frame this, void *that )
+{
+	return mlt_deque_push_back( this->stack_audio, that );
+}
+
+/** Pop an audio item from the stack
+*/
+
+void *mlt_frame_pop_audio( mlt_frame this )
+{
+	return mlt_deque_pop_back( this->stack_audio );
 }
 
 int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
@@ -313,9 +328,8 @@ void mlt_frame_close( mlt_frame this )
 {
 	if ( this != NULL )
 	{
-		mlt_deque_close( this->stack_get_image );
-		mlt_deque_close( this->stack_frame );
-		mlt_deque_close( this->stack_service );
+		mlt_deque_close( this->stack_image );
+		mlt_deque_close( this->stack_audio );
 		mlt_properties_close( &this->parent );
 		free( this );
 	}

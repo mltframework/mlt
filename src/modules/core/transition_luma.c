@@ -334,6 +334,9 @@ static void luma_read_rgb24( uint8_t *image, uint16_t **map, int width, int heig
 
 static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	// Get the b frame from the stack
+	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
+
 	// Get the transition object
 	mlt_transition transition = mlt_frame_pop_service( a_frame );
 
@@ -342,9 +345,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Get the properties of the a frame
 	mlt_properties a_props = mlt_frame_properties( a_frame );
-
-	// Get the b frame from the stack
-	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
 
 	// Get the properties of the b frame
 	mlt_properties b_props = mlt_frame_properties( b_frame );
@@ -489,12 +489,12 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	// Push the transition on to the frame
 	mlt_frame_push_service( a_frame, transition );
 
-	// Push the transition method
-	mlt_frame_push_get_image( a_frame, transition_get_image );
-	
 	// Push the b_frame on to the stack
 	mlt_frame_push_frame( a_frame, b_frame );
 
+	// Push the transition method
+	mlt_frame_push_get_image( a_frame, transition_get_image );
+	
 	return a_frame;
 }
 

@@ -50,9 +50,8 @@ struct mlt_frame_s
 	uint8_t * ( *get_alpha_mask )( mlt_frame this );
 	
 	// Private properties
-	mlt_deque stack_get_image;
-	mlt_deque stack_frame;
-	mlt_deque stack_service;
+	mlt_deque stack_image;
+	mlt_deque stack_audio;
 };
 
 extern mlt_frame mlt_frame_init( );
@@ -74,6 +73,10 @@ extern int mlt_frame_push_frame( mlt_frame this, mlt_frame that );
 extern mlt_frame mlt_frame_pop_frame( mlt_frame this );
 extern int mlt_frame_push_service( mlt_frame this, void *that );
 extern void *mlt_frame_pop_service( mlt_frame this );
+
+extern int mlt_frame_push_audio( mlt_frame this, void *that );
+extern void *mlt_frame_pop_audio( mlt_frame this );
+
 extern void mlt_frame_close( mlt_frame this );
 
 /* convenience functions */

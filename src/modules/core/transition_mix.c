@@ -34,7 +34,7 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 	mlt_properties a_props = mlt_frame_properties( frame );
 
 	// Get the b frame from the stack
-	mlt_frame b_frame = mlt_frame_pop_frame( frame );
+	mlt_frame b_frame = mlt_frame_pop_audio( frame );
 
 	// Get the properties of the b frame
 	mlt_properties b_props = mlt_frame_properties( b_frame );
@@ -55,9 +55,6 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 	//fprintf( stderr, "transition_mix: previous %f current %f\n", mix_start, mix_end );
 
 	mlt_frame_mix_audio( frame, b_frame, mix_start, mix_end, buffer, format, frequency, channels, samples );
-
-	// Push the b_frame back on for get_image
-	mlt_frame_push_frame( frame, b_frame );
 
 	return 0;
 }
@@ -116,7 +113,7 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	// Override the get_audio method
 	a_frame->get_audio = transition_get_audio;
 	
-	mlt_frame_push_frame( a_frame, b_frame );
+	mlt_frame_push_audio( a_frame, b_frame );
 	
 	return a_frame;
 }

@@ -118,11 +118,11 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	// Error we will return
 	int error = 0;
 
-	// Get the watermark transition object
-	mlt_transition this = mlt_frame_pop_service( frame );
-
 	// We will get the 'b frame' from the frame stack
 	mlt_frame b_frame = mlt_frame_pop_frame( frame );
+
+	// Get the watermark transition object
+	mlt_transition this = mlt_frame_pop_service( frame );
 
 	// Get the properties of the transition
 	mlt_properties properties = mlt_transition_properties( this );
@@ -322,11 +322,11 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	// Push the transition on to the frame
 	mlt_frame_push_service( a_frame, this );
 
-	// Push the transition method
-	mlt_frame_push_get_image( a_frame, transition_get_image );
-
 	// Push the b_frame on to the stack
 	mlt_frame_push_frame( a_frame, b_frame );
+
+	// Push the transition method
+	mlt_frame_push_get_image( a_frame, transition_get_image );
 
 	// Return the frame
 	return a_frame;

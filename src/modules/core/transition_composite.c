@@ -1017,8 +1017,8 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 	// Propogate the transition properties to the b frame
 	mlt_properties_set_double( mlt_frame_properties( b_frame ), "relative_position", position_calculate( this, mlt_frame_get_position( a_frame ) ) );
 	mlt_frame_push_service( a_frame, this );
-	mlt_frame_push_get_image( a_frame, transition_get_image );
 	mlt_frame_push_frame( a_frame, b_frame );
+	mlt_frame_push_get_image( a_frame, transition_get_image );
 	return a_frame;
 }
 
