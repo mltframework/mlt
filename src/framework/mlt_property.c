@@ -101,6 +101,8 @@ int mlt_property_set_string( mlt_property this, char *value )
 
 int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser )
 {
+	if ( this->data == value )
+		this->destructor = NULL;
 	mlt_property_clear( this );
 	this->types = mlt_prop_data;
 	this->data = value;

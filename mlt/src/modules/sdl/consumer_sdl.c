@@ -188,6 +188,9 @@ static void *consumer_thread( void *arg )
 	// Get the service assoicated to the consumer
 	mlt_service service = mlt_consumer_service( consumer );
 
+	// Get the properties of this consumer
+	mlt_properties properties = this->properties;
+
 	// Define a frame pointer
 	mlt_frame frame;
 
@@ -268,6 +271,14 @@ static void *consumer_thread( void *arg )
 							this->window_width = event.resize.w;
 							this->window_height = event.resize.h;
 							changed = 1;
+							break;
+						case SDL_KEYDOWN:
+							{
+								mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );
+								void (*callback)( mlt_producer, char * ) = mlt_properties_get_data( properties, "transport_callback", NULL );
+								if ( callback != NULL && producer != NULL )
+									callback( producer, SDL_GetKeyName(event.key.keysym.sym) );
+							}
 							break;
 					}
 				}

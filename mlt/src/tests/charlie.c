@@ -4,6 +4,8 @@
 
 #include <framework/mlt.h>
 
+#include "io.h"
+
 mlt_producer create_producer( char *file )
 {
 	mlt_producer result = NULL;
@@ -35,12 +37,62 @@ mlt_producer create_producer( char *file )
 	return result;
 }
 
-mlt_consumer create_consumer( char *id )
+void transport_action( mlt_producer producer, char *value )
+{
+	mlt_properties properties = mlt_producer_properties( producer );
+
+	switch( value[ 0 ] )
+	{
+		case 'q':
+			mlt_properties_set_int( properties, "done", 1 );
+			break;
+		case '0':
+			mlt_producer_set_speed( producer, 1 );
+			mlt_producer_seek( producer, 0 );
+			break;
+		case '1':
+			mlt_producer_set_speed( producer, -5 );
+			break;
+		case '2':
+			mlt_producer_set_speed( producer, -2.5 );
+			break;
+		case '3':
+			mlt_producer_set_speed( producer, -1 );
+			break;
+		case '4':
+			mlt_producer_set_speed( producer, -0.5 );
+			break;
+		case '5':
+			mlt_producer_set_speed( producer, 0 );
+			break;
+		case '6':
+			mlt_producer_set_speed( producer, 0.5 );
+			break;
+		case '7':
+			mlt_producer_set_speed( producer, 1 );
+			break;
+		case '8':
+			mlt_producer_set_speed( producer, 2.5 );
+			break;
+		case '9':
+			mlt_producer_set_speed( producer, 5 );
+			break;
+	}
+}
+
+mlt_consumer create_consumer( char *id, mlt_producer producer )
 {
 	char *arg = strchr( id, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	return mlt_factory_consumer( id, arg );
+	mlt_consumer consumer = mlt_factory_consumer( id, arg );
+	if ( consumer != NULL )
+	{
+		mlt_properties properties = mlt_consumer_properties( consumer );
+		mlt_properties_set_data( properties, "transport_callback", transport_action, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "transport_producer", producer, 0, NULL, NULL );
+	}
+	return consumer;
 }
 
 void track_service( mlt_field field, void *service, mlt_destructor destructor )
@@ -74,9 +126,15 @@ void set_properties( mlt_service service, char *namevalue )
 
 void transport( mlt_producer producer )
 {
-	char temp[ 132 ];
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
+	mlt_properties properties = mlt_producer_properties( producer );
+
+	fprintf( stderr, "Press 'q' to continue\n" );
+
+	while( mlt_properties_get_int( properties, "done" ) == 0 )
+	{
+		char value = get_keypress( );
+		transport_action( producer, &value );
+	}
 }
 
 int main( int argc, char **argv )
@@ -108,7 +166,7 @@ int main( int argc, char **argv )
 	{
 		if ( !strcmp( argv[ i ], "-consumer" ) )
 		{
-			consumer = create_consumer( argv[ ++ i ] );
+			consumer = create_consumer( argv[ ++ i ], mlt_multitrack_producer( multitrack ) );
 			if ( consumer != NULL )
 				service = mlt_consumer_service( consumer );
 		}
@@ -134,7 +192,7 @@ int main( int argc, char **argv )
 
 	// If we have no consumer, default to sdl
 	if ( consumer == NULL )
-		consumer= mlt_factory_consumer( "sdl", NULL );
+		consumer = create_consumer( "sdl:PAL", mlt_multitrack_producer( multitrack ) );
 
 	// Connect producer to playlist
 	if ( producer != NULL )
