@@ -489,8 +489,8 @@ static void *consumer_thread( void *arg )
 	uint8_t *image;
 	mlt_image_format img_fmt = mlt_image_yuv422;
 
-	// Fo receiving audio samples back from the fifo
-	int16_t buffer[ 48000 * 2 ];
+	// For receiving audio samples back from the fifo
+	int16_t *buffer = av_malloc( 48000 * 2 );
 	int count = 0;
 
 	// Allocate the context
@@ -590,6 +590,8 @@ static void *consumer_thread( void *arg )
 			video_st = NULL;
 		if ( audio_st )
 			audio_input_frame_size = open_audio( oc, audio_st, audio_outbuf_size );
+
+		fprintf( stderr, "%d\n", audio_input_frame_size );
 
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
@@ -794,6 +796,7 @@ static void *consumer_thread( void *arg )
 	av_free( input->data[0] );
 	av_free( input );
 	av_free( video_outbuf );
+	av_free( buffer );
 
 	// Free the stream
 	av_free(oc);

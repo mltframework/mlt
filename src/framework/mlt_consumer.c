@@ -274,7 +274,16 @@ static void *consumer_read_ahead_thread( void *arg )
 	frame = mlt_consumer_get_frame( this );
 
 	// Get the image of the first frame
-	mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+	if ( !video_off )
+		mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+
+	if ( !audio_off )
+	{
+		samples = mlt_sample_calculator( fps, frequency, counter++ );
+		mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
+		frame->get_audio = NULL;
+	}
+
 	mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
 
 	// Get the starting time (can ignore the times above)

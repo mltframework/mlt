@@ -630,8 +630,6 @@ static void *consumer_thread( void *arg )
 	}
 
 	// internal cleanup
-	if ( init_audio == 0 )
-		SDL_AudioQuit( );
 	if ( this->sdl_overlay != NULL )
 		SDL_FreeYUVOverlay( this->sdl_overlay );
 	SDL_Quit( );

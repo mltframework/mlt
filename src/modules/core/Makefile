@@ -20,7 +20,8 @@ OBJS = factory.o \
 	   transition_composite.o \
 	   transition_luma.o \
 	   transition_mix.o \
-	   transition_region.o 
+	   transition_region.o \
+	   consumer_null.o
 
 ASM_OBJS = composite_line_yuv_mmx.o
 

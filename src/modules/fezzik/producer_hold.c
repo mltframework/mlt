@@ -28,6 +28,7 @@
 
 // Forward references
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
+static void producer_close( mlt_producer this );
 
 /** Constructor for the frame holding producer. Basically, all this producer does is
 	provide a producer wrapper for the requested producer, allows the specifcation of
@@ -61,6 +62,7 @@ mlt_producer producer_hold_init( char *arg )
 
 		// Override the get_frame method
 		this->get_frame = producer_get_frame;
+		this->close = producer_close;
 	}
 	else
 	{
@@ -187,3 +189,11 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 	return 0;
 }
+
+static void producer_close( mlt_producer this )
+{
+	this->close = NULL;
+	mlt_producer_close( this );
+	free( this );
+}
+

@@ -994,7 +994,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
 	// Set the position of this producer
-	mlt_properties_set_position( mlt_frame_properties( *frame ), "avformat_position", mlt_producer_get_in( this ) + mlt_producer_position( this ) );
+	mlt_properties_set_position( mlt_frame_properties( *frame ), "avformat_position", mlt_producer_position( this ) );
 
 	// Set up the video
 	producer_set_up_video( this, *frame );

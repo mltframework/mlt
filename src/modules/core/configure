@@ -30,4 +30,8 @@ mix				libmltcore.so
 region			libmltcore.so
 EOF
 
+cat << EOF >> ../consumers.dat
+null			libmltcore.so
+EOF
+
 fi

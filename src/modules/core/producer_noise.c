@@ -42,6 +42,7 @@ static unsigned inline int fast_rand( )
 
 // Foward declarations
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
+static void producer_close( mlt_producer this );
 
 /** Initialise.
 */
@@ -54,8 +55,12 @@ mlt_producer producer_noise_init( void *arg )
 	// Initialise the producer
 	if ( this != NULL )
 	{
+		// Synthetic - aspect ratio of 1
+		mlt_properties_set_double( mlt_producer_properties( this ), "aspect_ratio", 1 );
+
 		// Callback registration
 		this->get_frame = producer_get_frame;
+		this->close = producer_close;
 	}
 
 	return this;
@@ -124,7 +129,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	{
 		int16_t *p = *buffer + size / 2;
 		while ( p != *buffer ) 
-			*( -- p ) = fast_rand( ) & 0xff;
+			*( -- p ) = fast_rand( ) & 0x0f00;
 	}
 
 	// Set the buffer for destruction
@@ -166,4 +171,10 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	return 0;
 }
 
+static void producer_close( mlt_producer this )
+{
+	this->close = NULL;
+	mlt_producer_close( this );
+	free( this );
+}
 

@@ -22,7 +22,7 @@ OBJS = mlt_frame.o \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS += -pthread -DPREFIX="\"$(prefix)\""
+CFLAGS += -rdynamic -DPREFIX="\"$(prefix)\""
 
 LDFLAGS += -lm $(LIBDL) -lpthread
 

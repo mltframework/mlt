@@ -38,6 +38,7 @@
 #include "transition_luma.h"
 #include "transition_mix.h"
 #include "transition_region.h"
+#include "consumer_null.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -92,5 +93,7 @@ void *mlt_create_transition( char *id, void *arg )
 
 void *mlt_create_consumer( char *id, void *arg )
 {
+	if ( !strcmp( id, "null" ) )
+		return consumer_null_init( arg );
 	return NULL;
 }
