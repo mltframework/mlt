@@ -442,6 +442,7 @@ int mlt_geometry_fetch( mlt_geometry this, mlt_geometry_item item, float positio
 	else
 	{
 		memset( item, 0, sizeof( struct mlt_geometry_item_s ) );
+		item->frame = position;
 		item->mix = 100;
 	}
 
@@ -574,6 +575,7 @@ int mlt_geometry_prev_key( mlt_geometry this, mlt_geometry_item item, int positi
 
 char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 {
+	geometry self = this->local;
 	struct mlt_geometry_item_s item;
 	char *ret = malloc( 1000 );
 	int used = 0;
@@ -601,6 +603,14 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 			{
 				if ( mlt_geometry_fetch( this, &item, item.frame ) )
 					break;
+
+				// If the first key is larger than the current position
+				// then do nothing here
+				if ( self->item->data.frame > item.frame )
+				{
+					item.frame ++;
+					continue;
+				}
 
 				// To ensure correct seeding, ensure all values are fixed
 				item.f[0] = 1;
