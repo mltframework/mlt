@@ -82,7 +82,8 @@ mlt_producer mlt_factory_producer( char *service, void *input )
 	{
 		mlt_properties properties = mlt_producer_properties( obj );
 		mlt_properties_set( properties, "mlt_type", "producer" );
-		mlt_properties_set( properties, "mlt_service", service );
+		if ( mlt_properties_get_int( properties, "_mlt_service_hidden" ) == 0 )
+			mlt_properties_set( properties, "mlt_service", service );
 	}
 	return obj;
 }

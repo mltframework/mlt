@@ -32,6 +32,7 @@
 */
 
 static int consumer_start( mlt_consumer parent );
+static int consumer_is_stopped( mlt_consumer this );
 
 /** This is what will be called by the factory - anything can be passed in
 	via the argument, but keep it simple.
@@ -50,6 +51,7 @@ mlt_consumer consumer_westley_init( char *arg )
 
 		// Allow thread to be started/stopped
 		this->start = consumer_start;
+		this->is_stopped = consumer_is_stopped;
 
 		mlt_properties_set( mlt_consumer_properties( this ), "resource", arg );
 
@@ -378,10 +380,11 @@ static int consumer_start( mlt_consumer this )
 	xmlFreeDoc( doc );
 	mlt_consumer_stop( this );
 
-	// Tell inigo, enough already!
-	if ( inigo != NULL )
-		mlt_properties_set_int( mlt_service_properties( inigo ), "done", 1 );
-	
 	return 0;
+}
+
+static int consumer_is_stopped( mlt_consumer this )
+{
+	return 1;
 }
 

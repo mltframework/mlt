@@ -69,47 +69,7 @@ static void track_service( mlt_field field, void *service, mlt_destructor destru
 
 static mlt_producer create_producer( mlt_field field, char *file )
 {
-	mlt_producer result = NULL;
-
-	// 1st Line preferences
-	if ( strstr( file, ".inigo" ) )
-		result = mlt_factory_producer( "inigo_file", file );
-	else if ( strstr( file, ".mpg" ) )
-		result = mlt_factory_producer( "mcmpeg", file );
-	else if ( strstr( file, ".mpeg" ) )
-		result = mlt_factory_producer( "mcmpeg", file );
-	else if ( strstr( file, ".dv" ) )
-		result = mlt_factory_producer( "mcdv", file );
-	else if ( strstr( file, ".dif" ) )
-		result = mlt_factory_producer( "mcdv", file );
-	else if ( strstr( file, ".jpg" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".JPG" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".jpeg" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".png" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".txt" ) )
-		result = mlt_factory_producer( "pango", file );
-	else if ( strstr( file, ".westley" ) )
-		result = mlt_factory_producer( "westley", file );
-	else if ( strstr( file, ".ogg" ) )
-		result = mlt_factory_producer( "vorbis", file );
-
-	// 2nd Line fallbacks
-	if ( result == NULL && strstr( file, ".dv" ) )
-		result = mlt_factory_producer( "libdv", file );
-	else if ( result == NULL && strstr( file, ".dif" ) )
-		result = mlt_factory_producer( "libdv", file );
-
-	// 3rd line fallbacks 
-	if ( result == NULL )
-		result = mlt_factory_producer( "avformat", file );
-
-	// 4th line fallbacks 
-	if ( result == NULL )
-		result = mlt_factory_producer( "ffmpeg", file );
+	mlt_producer result = mlt_factory_producer( "fezzik", file );
 
 	if ( result != NULL )
 		track_service( field, result, ( mlt_destructor )mlt_producer_close );

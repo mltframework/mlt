@@ -139,16 +139,12 @@ static void on_start_producer( deserialise_context context, const xmlChar *name,
 		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
 	}
 
-	if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
+	service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "resource" ) ) );
+
+	if ( service == NULL && mlt_properties_get( properties, "mlt_service" ) != NULL )
 	{
 		service = MLT_SERVICE( mlt_factory_producer( mlt_properties_get( properties, "mlt_service" ),
 			mlt_properties_get( properties, "resource" ) ) );
-	}
-	else
-	{
-		// Unspecified producer, use inigo
-		char *args[2] = { mlt_properties_get( properties, "resource" ), 0 };
-		service = MLT_SERVICE( mlt_factory_producer( "inigo", args ) );
 	}
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_producer_close );
