@@ -636,14 +636,21 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		// No codec, no show...
 		if ( codec != NULL )
 		{
-			double aspect_ratio = 1;
 			double source_fps = 0;
 
-			// Set aspect ratio
+			// XXX: We won't know the real aspect ratio until an image is decoded
+			// but we do need it now (to satisfy filter_resize) - take a guess based
+			// on pal/ntsc
 			if ( codec_context->sample_aspect_ratio.num > 0 )
-				aspect_ratio = av_q2d( codec_context->sample_aspect_ratio );
+			{
+				mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
+			}
+			else
+			{
+				int is_pal = mlt_properties_get_double( properties, "fps" ) == 25.0;
+				mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 128.0/117.0 : 72.0/79.0 );
+			}
 
-			mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
 			//fprintf( stderr, "AVFORMAT: sample aspect %f %dx%d\n", av_q2d( codec_context->sample_aspect_ratio ), codec_context->width, codec_context->height );
 
 			// Determine the fps
