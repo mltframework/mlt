@@ -1,0 +1,15 @@
+===================================================================
+RCS file: /cvsroot/ffmpeg/ffmpeg/libavcodec/ffv1.c,v
+retrieving revision 1.20
+diff -u -r1.20 ffv1.c
+--- libavcodec/ffv1.c	21 May 2004 14:37:16 -0000	1.20
++++ libavcodec/ffv1.c	9 Jun 2004 15:04:31 -0000
+@@ -453,7 +453,7 @@
+ 
+ static void encode_rgb_frame(FFV1Context *s, uint32_t *src, int w, int h, int stride){
+     int x, y, p, i;
+-    const int ring_size=2;
++    int ring_size=2;
+     int_fast16_t sample_buffer[3][ring_size][w+6], *sample[3][ring_size];
+     s->run_index=0;
+     
