@@ -14,7 +14,7 @@ OBJS = valerie.o \
 
 SRCS := $(OBJS:.o=.c)
 
-LDFLAGS=-ldv -lpthread
+LDFLAGS += -lpthread
 
 all: $(TARGET)
 

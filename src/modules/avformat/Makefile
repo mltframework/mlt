@@ -8,7 +8,7 @@ OBJS = factory.o \
 
 CFLAGS += -I../..
 
-LDFLAGS = -lavformat -lavcodec
+LDFLAGS += -lavformat -lavcodec
 
 SRCS := $(OBJS:.o=.c)
 

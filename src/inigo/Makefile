@@ -7,7 +7,7 @@ OBJS = inigo.o \
 
 CFLAGS += -I.. -rdynamic
 
-LDFLAGS = -L ../framework -lmlt 
+LDFLAGS += -L ../framework -lmlt 
 
 SRCS := $(OBJS:.o=.c)
 

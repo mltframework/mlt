@@ -8,7 +8,7 @@ OBJS = client.o \
 
 CFLAGS += -I.. -rdynamic
 
-LDFLAGS = -L ../valerie -lvalerie
+LDFLAGS += -L ../valerie -lvalerie
 
 SRCS := $(OBJS:.o=.c)
 

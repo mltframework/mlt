@@ -22,9 +22,13 @@
 #include "mlt_deque.h"
 
 #include <stdlib.h>
-#include <malloc.h>
 #include <string.h>
 #include <pthread.h>
+
+// Not nice - memalign is defined here apparently?
+#ifdef linux
+#include <malloc.h>
+#endif
 
 /** Singleton repositories
 */
@@ -101,7 +105,11 @@ static void *pool_fetch( mlt_pool this )
 		else
 		{
 			// We need to generate a release item
+#ifdef linux
 			mlt_release release = memalign( 16, this->size );
+#else
+			mlt_release release = malloc( this->size );
+#endif
 
 			// Initialise it
 			if ( release != NULL )

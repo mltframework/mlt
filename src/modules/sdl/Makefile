@@ -7,7 +7,7 @@ OBJS = factory.o \
 
 CFLAGS += -I../.. `sdl-config --cflags`
 
-LDFLAGS= `sdl-config --libs`
+LDFLAGS += `sdl-config --libs`
 
 SRCS := $(OBJS:.o=.c)
 

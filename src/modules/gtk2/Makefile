@@ -13,7 +13,7 @@ ASM_OBJS = have_mmx.o \
 
 CFLAGS += `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../..
 
-LDFLAGS = `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
+LDFLAGS += `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
 
 SRCS := $(OBJS:.o=.c)
 

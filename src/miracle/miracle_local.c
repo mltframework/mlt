@@ -26,7 +26,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+
+/* Needed for backtrace on linux */
+#ifdef linux
 #include <execinfo.h>
+#endif
 
 /* Valerie header files */
 #include <valerie/valerie_util.h>
@@ -291,6 +295,7 @@ void signal_handler( int sig )
 
 static void sigsegv_handler()
 {
+#ifdef linux
 	void *array[ 10 ];
 	size_t size;
 	char **strings;
@@ -309,6 +314,9 @@ static void sigsegv_handler()
 	free( strings );
 
 	miracle_log( LOG_CRIT, "\nDone dumping - exiting.\n" );
+#else
+	miracle_log( LOG_CRIT, "\a\nMiracle experienced a segmentation fault.\n" );
+#endif
 	exit( EXIT_FAILURE );
 }
 
@@ -495,8 +503,10 @@ static valerie_response miracle_local_execute( miracle_local local, char *comman
 static void miracle_local_close( miracle_local local )
 {
 	miracle_delete_all_units();
+#ifdef linux
 	pthread_kill_other_threads_np();
 	miracle_log( LOG_DEBUG, "Clean shutdown." );
 	free( local );
-	//mlt_factory_close( );
+	mlt_factory_close( );
+#endif
 }

@@ -8,7 +8,7 @@ OBJS = factory.o \
 
 CFLAGS += -I../../ `xml2-config --cflags`
 
-LDFLAGS = `xml2-config --libs`
+LDFLAGS += `xml2-config --libs`
 
 SRCS := $(OBJS:.o=.c)
 

@@ -23,7 +23,7 @@ SRCS := $(OBJS:.o=.c)
 
 CFLAGS += -pthread -DPREFIX="\"$(prefix)\""
 
-LDFLAGS = -lm -ldl -lpthread
+LDFLAGS += -lm $(LIBDL) -lpthread
 
 all:	$(TARGET)
 
