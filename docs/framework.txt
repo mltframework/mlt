@@ -2,7 +2,7 @@ Framework Documentation
 
 Copyright (C) 2004 Ushodaya Enterprises Limited
 Author: Charles Yates <charles.yates@pandora.be>
-Last Revision: 2004-03-20
+Last Revision: 2004-10-08
 
 
 MLT FRAMEWORK
@@ -323,8 +323,8 @@ Playlists:
 	        // Add it to the playlist
 	        mlt_playlist_append( playlist, producer );
 
-			// Close the producer (see below)
-			mlt_producer_close( producer );
+	        // Close the producer (see below)
+	        mlt_producer_close( producer );
 	    }
 
 	    // Return the playlist as a producer
@@ -387,6 +387,193 @@ Filters:
 	dictates the 'track' on which the filter operates. For basic producers and
 	playlists, there's only one track (0), and as you will see in the next
 	section, even multiple tracks have a single track output.
+
+
+Attached Filters:
+
+	All services can have attached filters.
+
+	Consider the following example:
+
+	    // Create a producer
+	    mlt_producer producer = mlt_factory_producer( NULL, clip );
+
+	    // Get the service object of the producer
+	    mlt_producer service = mlt_producer_service( producer );
+
+	    // Create a filter
+	    mlt_filter filter = mlt_factory_filter( "greyscale" );
+
+	    // Create a playlist
+	    mlt_playlist playlist = mlt_playlist_init( );
+
+	    // Attach the filter to the producer
+	    mlt_service_attach( producer, filter );
+
+	    // Construct a playlist with various cuts from the producer
+	    mlt_playlist_append_io( producer, 0, 99 );
+	    mlt_playlist_append_io( producer, 450, 499 );
+	    mlt_playlist_append_io( producer, 200, 399 );
+	
+	    // We can close the producer and filter now
+	    mlt_producer_close( producer );
+	    mlt_filter_close( filter );
+
+	When this is played out, the greyscale filter will be executed for each frame 
+	in the playlist which comes from that producer.
+
+	Further, each cut can have their own filters attached which are executed after 
+	the producer's filters. As an example:
+
+	    // Create a new filter
+	    filter = mlt_factory_filter( "invert", NULL );
+	
+	    // Get the second 'clip' in the playlist
+	    producer = mlt_playlist_get_clip( 1 );
+	
+	    // Get the service object of the clip
+	    service = mlt_producer_service( producer );
+	
+	    // Attach the filter
+	    mlt_service_attach( producer, filter );
+	
+	    // Close the filter
+	    mlt_filter_close( filter );
+	
+	Even the playlist itself can have an attached filter:
+
+	    // Create a new filter
+	    filter = mlt_factory_filter( "watermark", "+Hello.txt" );
+	
+	    // Get the service object of the playlist
+	    service = mlt_playlist_service( playlist );
+	
+	    // Attach the filter
+	    mlt_service_attach( service, filter );
+	
+	    // Close the filter
+	    mlt_filter_close( filter );
+	
+	And, of course, the playlist, being a producer, can be cut up and placed on 
+	another playlist, and filters can be attached to those cuts or on the new 
+	playlist itself and so on ad nauseum.
+
+	The main advantage of attached filters is that they remain attached and don't 
+	suffer from the maintenance problems associated with items being inserted and 
+	displacing calculated in/out points - this being a major issue if you 
+	exclusively use the connect or insert detached filters in a multitrack field 
+	(described below).
+
+
+Introducing the Mix:
+
+	The mix is the simplest way to introduce transitions between adjacent clips
+	on a playlist.
+
+	Consider the following playlist:
+
+	+-+----------------------+----------------------------+-+
+	|X|A                     |B                           |X|
+	+-+----------------------+----------------------------+-+
+
+	Let's assume that the 'X' is a 'black clip' of 50 frames long.
+
+	When you play this out, you'll get a 50 frames of black, abrupt cut into
+	A, followed by an abrupt cut into B, and finally into black again.
+
+	The intention is to convert this playlist into something like:
+
+	+-+---------------------+-+------------------------+-+
+	|X|A                    |A|B                       |B|
+	|A|                     |B|                        |X|
+	+-+---------------------+-+------------------------+-+
+
+	Where the clips which refer to 2 clips represent a transition. Notice that
+	the representation of the second playlist is shorter than the first - this is
+	to be expected - a single transition of 50 frames between two clips will 
+	reduce the playtime of the result by 50 frames. 
+
+	This is done via the use of the mlt_playlist_mix method. So, assuming you get 
+	a playlist as shown in the original diagram, to do the first mix, you could do
+	something like:
+
+	    // Create a transition
+	    mlt_transition transition = mlt_factor_transition( "luma", NULL );
+
+	    // Mix the first and second clips for 50 
+	    mlt_playlist_mix( playlist, 0, 50, transition );
+
+	    // Close the transition
+	    mlt_transition_close( transition );
+
+	This would give you the first transition, subsequently, you would apply a similar
+	technique to mix clips 1 and 2. Note that this would create a new clip on the 
+	playlist, so the next mix would be between 3 and 4.
+
+	As a general hint, to simplify the requirement to know the next clip index,
+	you might find the following simpler:
+
+	    // Get the number of clips on the playlist
+	    int i = mlt_playlist_count( );
+
+	    // Iterate through them in reverse order
+	    while ( i -- )
+	    {
+	        // Create a transition
+	        mlt_transition transition = mlt_factor_transition( "luma", NULL );
+
+	        // Mix the first and second clips for 50 
+	        mlt_playlist_mix( playlist, i, 50, transition );
+
+	        // Close the transition
+	        mlt_transition_close( transition );
+	    }
+	
+	There are other techniques, like using the mlt_playlist_join between the 
+	current clip and the newly created one (you can determine if a new clip was 
+	created by comparing the playlist length before and after the mix call).
+
+	Internally, the mlt_playlist_mix call generates a tractor and multitrack as 
+	described below. Like the attached filters, the mix makes life very simple
+	when you're inserting items into the playlist.
+
+	Also note that it allows a simpler user interface - instead of enforcing the
+	use of a complex multitrack object, you can do many operations on a single
+	track. Thus, additional tracks can be used to introduce audio dubs, mixes
+	or composites which are independently positioned and aren't affected by 
+	manipulations on other tracks. But hey, if you want a bombastic, confusing
+	and ultimately frustrating traditional NLE experience, that functionality
+	is provided too ;-).
+
+
+Practicalities and Optimisations:
+
+	In the previous two sections I've introduced some powerful functionality 
+	designed to simplify MLT usage. However, a general issue comes into this -
+	what happens when you introduce a transition between two cuts from the same
+	bit of video footage?
+
+	Anyone who is familiar with video compression will be aware that seeking 
+	isn't always without consequence from a performance point of view. So if
+	you happen to require two frames from the same clip for a transition, the
+	processing is going to be excessive and the result will undoubtedly be very
+	unpleasant, especially if you're rendering in realtime...
+
+	So how do we get round this?
+
+	Actually, it's very simple - you invoke mlt_producer_optimise on the top 
+	level object after a modification and MLT will determine how to handle it.
+	Internally, it determines the maximum number of overlapping instances 
+	throughout the object and creates clones and assigns clone indexes as
+	required.
+
+	In the mix example above, you can simply call:
+
+	    // Optimise the playlist
+	    mlt_producer_optimise( mlt_playlist_producer( playlist ) );
+	
+	after the mix calls have be done. Note that this is automatically applied
+	to deserialised westleys.
 
 
 Multiple Tracks and Transitions:
@@ -512,8 +699,8 @@ Multiple Tracks and Transitions:
 
 	mlt_producer create_tracks( int argc, char **argv )
 	{
-		// Create the tractor
-		mlt_tractor tractor = mlt_tractor_new( );
+	    // Create the tractor
+	    mlt_tractor tractor = mlt_tractor_new( );
 
 	    // Obtain the field
 	    mlt_field field = mlt_tractor_field( tractor );
@@ -554,10 +741,10 @@ Multiple Tracks and Transitions:
 	    // Now plant the transition
 	    mlt_field_plant_transition( field, transition, 0, 1 );
 
-		// Close our references
-		mlt_producer_close( track0 );
-		mlt_producer_close( track1 );
-		mlt_transition_close( transition );
+	    // Close our references
+	    mlt_producer_close( track0 );
+	    mlt_producer_close( track1 );
+	    mlt_transition_close( transition );
 
 	    // Return the tractor
 	    return mlt_tractor_producer( tractor );

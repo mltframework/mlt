@@ -30,6 +30,7 @@ Directories
 	        + gtk2          - pango and pixbuf dependent services
 	        + mainconcept   - mainconcept dependent services (*)
 	        + normalize     - audio normalisation functions (**)
+	        + plus          - throwaway silliness
 	        + resample      - libresample dependent services (**)
 	        + sdl           - SDL dependent services
 	        + vorbis        - vorbis dependenent services

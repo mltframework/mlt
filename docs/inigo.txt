@@ -22,12 +22,16 @@ Usage:
 
 	inigo [ -group [ name=value ]* ]
 	      [ -consumer id[:arg] [ name=value ]* ]
-	      [ -filter id[:arg] [ name=value ] * ]
+	      [ -filter filter[:arg] [ name=value ] * ]
+	      [ -attach filter[:arg] [ name=value ] * ]
+	      [ -mix length [ -mixer transition ]* ]
 	      [ -transition id[:arg] [ name=value ] * ]
 	      [ -blank frames ]
-	      [ -track | -hide-track | -hide-video | -hide-audio ]
+	      [ -track ]
+	      [ -split relative-frame ]
+	      [ -join clips ]
+	      [ -repeat times ]
 	      [ producer [ name=value ] * ]+
-	      [ -serialise file.inigo ]
 
 
 General rules:
@@ -161,6 +165,91 @@ Groups:
 	To shed the group properties, you can use any empty group:
 	
 	$ inigo -group in=0 out=49 clip* -group -filter greyscale
+
+
+Attached Filters:
+
+	As described above, the -filter switch applies filters to an entire track. To
+	localise filters to a specific clip on a track, you have to know information
+	about the lengths of the clip and all clips leading up to it. In practise, 
+	this is horrifically impractical, especially at a command line level (and not
+	even that practical from a programing point of view...).
+
+	The -attach family of switches simplify things enormously. By default, -attach
+	will attach a filter to the last service created, so:
+
+	$ inigo clip1.dv clip2.dv -attach greyscale clip3.dv
+
+	would only apply the filter to clip2.dv. You can further narrow down the area of
+	the effect by specifying in/out points on the attached filter.
+
+	This might seem simple so far, but there is a catch... consider the following:
+
+	$ ingo clip1.dv -attach watermark:+hello.txt -attach invert
+
+	The second attached filter is actually attached to the watermark. You might 
+	think, yay, nice (and it is :-)), but, it might not be what you want. For example
+	you might want to attach both to clip1.dv. To do that, you can use:
+
+	$ ingo clip1.dv -attach-cut watermark:+hello.txt -attach-cut invert
+
+	As you shall see below, there are still another couple of gotchas associated to 
+	-attach, and even another variant :-).
+
+
+Mixes:
+
+	The -mix switch provides the simplest means to introducer transitions between
+	adjacent clips.
+
+	For example:
+
+	$ inigo clip1.dv clip2.dv -mix 25 -mixer luma -mixer mix:-1
+
+	would provide both an audio and video transition between clip1 and clip2.
+
+	This functionality supercedes the enforced use of the -track and -transtition
+	switches from earlier versions of inigo and makes life a lot easier :-).
+
+	These can be used in combination, so you can for example do a fade from black
+	and to black using the following:
+
+	$ inigo colour:black out=24 clip1.dv -mix 25 -mixer luma \
+	        colour:black out=24 -mix 25 -mixer luma 
+	
+	while this may not be immediately obvious, consider what's happening as the 
+	command line is being parsed from left to right:
+
+	Input:                  Track
+	----------------------- -----------------------------------------------------
+	colour:black out=24     [black]
+	clip1.dv                [black][clip1.dv]
+	-mix 25                 [black+clip1.dv][clip1.dv]
+	-mixer luma             [luma:black+clip1.dv][clip1.dv]
+	colour:black out=24     [luma:black+clip1.dv][clip1.dv][black]
+	-mix 25                 [luma:black+clip1.dv][clip1.dv][clip1.dv+black]
+	-mixer luma             [luma:black+clip1.dv][clip1.dv][luma:clip1.dv+black]
+
+	Obviously, the clip1.dv instances refer to different parts of the clip, but 
+	hopefully that will demonstrate what happens as we construct the track.
+
+	You will find more details on the mix in the framework.txt.
+
+
+Mix and Attach:
+
+	As noted, -attach normally applies to the last created service - so, you can 
+	attach a filter to the transition region using:
+
+	$ inigo clip1.dv clip2.dv -mix 25 -mixer luma -attach watermark:+Transition.txt
+
+	Again, nice, but take care - if you want the attached filter to be associated
+	to the region following the transition, use -attach-cut instead.
+
+
+Splits, Joins, Removes and Swaps:
+
+	COMPLEX - needs simplification....
 
 
 Introducing Tracks and Blanks:
