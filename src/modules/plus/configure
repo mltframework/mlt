@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ "$help" != "1" ]
 then
@@ -12,6 +12,7 @@ invert			libmltplus.so
 EOF
 
 cat << EOF >> ../transitions.dat
+affine			libmltplus.so
 EOF
 
 cat << EOF >> ../consumers.dat

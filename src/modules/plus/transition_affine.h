@@ -1,7 +1,7 @@
 /*
- * factory.c -- the factory method interfaces
+ * transition_affine.h -- compose one image over another using affine transforms
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,34 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+#ifndef _TRANSITION_AFFINE_H_
+#define _TRANSITION_AFFINE_H_
 
-#include "filter_charcoal.h"
-#include "filter_invert.h"
-#include "transition_affine.h"
+#include <framework/mlt_transition.h>
 
-void *mlt_create_producer( char *id, void *arg )
-{
-	return NULL;
-}
+extern mlt_transition transition_affine_init( char *arg );
 
-void *mlt_create_filter( char *id, void *arg )
-{
-	if ( !strcmp( id, "charcoal" ) )
-		return filter_charcoal_init( arg );
-	if ( !strcmp( id, "invert" ) )
-		return filter_invert_init( arg );
-	return NULL;
-}
-
-void *mlt_create_transition( char *id, void *arg )
-{
-	if ( !strcmp( id, "affine" ) )
-		return transition_affine_init( arg );
-	return NULL;
-}
-
-void *mlt_create_consumer( char *id, void *arg )
-{
-	return NULL;
-}
+#endif
