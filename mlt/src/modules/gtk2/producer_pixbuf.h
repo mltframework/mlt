@@ -34,7 +34,6 @@ struct producer_pixbuf_s
 	int height;
 	uint8_t *image;
 	uint8_t *alpha;
-	int is_pal;
 };
 
 extern mlt_producer producer_pixbuf_init( const char *filename );

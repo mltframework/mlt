@@ -49,8 +49,17 @@ mlt_producer producer_pango_init( const char *markup )
 		producer->close = producer_close;
 
 		this->markup = strdup( markup );
-		this->is_pal = 1;
 		g_type_init();
+
+		// Get the properties interface
+		mlt_properties properties = mlt_producer_properties( &this->parent );
+
+		// Set the default properties
+		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
+		mlt_properties_set_int( properties, "fgcolor", 0xffffffff );
+		mlt_properties_set_int( properties, "bgcolor", 0x00000000 );
+		mlt_properties_set_int( properties, "align", pango_align_left );
+		mlt_properties_set_int( properties, "pad", 0 );
 
 		return producer;
 	}
@@ -133,21 +142,38 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 	else
 	{
-		// the following four will be replaced by properties
-		rgba_color fg = { 0xff, 0xff, 0xff, 0xff };
-		rgba_color bg = { 0, 0, 0, 0x7f };
-		int pad = 8;
-		int align = 0; /* left */
+		// Obtain properties of producer
+		mlt_properties props = mlt_producer_properties( producer );
+
+		// Get properties
+		int fg = mlt_properties_get_int( props, "fgcolor" );
+		int bg = mlt_properties_get_int( props, "bgcolor" );
+		int align = mlt_properties_get_int( props, "align" );
+		int pad = mlt_properties_get_int( props, "pad" );
+		rgba_color fgcolor =
+		{
+			( fg & 0xff000000 ) >> 24,
+			( fg & 0x00ff0000 ) >> 16,
+			( fg & 0x0000ff00 ) >> 8,
+			( fg & 0x000000ff )
+		};
+		rgba_color bgcolor =
+		{
+			( bg & 0xff000000 ) >> 24,
+			( bg & 0x00ff0000 ) >> 16,
+			( bg & 0x0000ff00 ) >> 8,
+			( bg & 0x000000ff )
+		};
 		
 		// Render the title
-		pixbuf = pango_get_pixbuf( this->markup, fg, bg, pad, align );
+		pixbuf = pango_get_pixbuf( this->markup, fgcolor, bgcolor, pad, align );
 	}
 
 	// If we have a pixbuf
 	if ( pixbuf )
 	{
 		// Scale to adjust for sample aspect ratio
-		if ( this->is_pal )
+		if ( mlt_properties_get_int( properties, "video_standard" ) == mlt_video_standard_pal )
 		{
 			GdkPixbuf *temp = pixbuf;
 			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,

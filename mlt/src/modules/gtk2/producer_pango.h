@@ -33,8 +33,14 @@ struct producer_pango_s
 	int height;
 	uint8_t *image;
 	uint8_t *alpha;
-	int is_pal;
 };
+
+typedef enum
+{
+	pango_align_left = 0,
+	pango_align_center,
+	pango_align_right
+} pango_align;
 
 extern mlt_producer producer_pango_init( const char *markup );
 

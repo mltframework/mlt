@@ -35,6 +35,13 @@ mlt_image_format;
 
 typedef enum
 {
+	mlt_video_standard_pal = 0,
+	mlt_video_standard_ntsc
+}
+mlt_video_standard;
+
+typedef enum
+{
 	mlt_audio_none = 0,
 	mlt_audio_pcm
 }

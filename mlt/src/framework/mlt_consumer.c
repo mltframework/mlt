@@ -42,6 +42,14 @@ mlt_service mlt_consumer_service( mlt_consumer this )
 	return &this->parent;
 }
 
+/** Get the consumer properties.
+*/
+
+mlt_properties mlt_consumer_properties( mlt_consumer this )
+{
+	return mlt_service_properties( &this->parent );
+}
+
 /** Connect the consumer to the producer.
 */
 

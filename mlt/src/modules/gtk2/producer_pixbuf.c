@@ -28,6 +28,12 @@
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
+typedef enum
+{
+	SIGNAL_FORMAT_PAL,
+	SIGNAL_FORMAT_NTSC
+} mlt_signal_format;
+
 mlt_producer producer_pixbuf_init( const char *filename )
 {
 	producer_pixbuf this = calloc( sizeof( struct producer_pixbuf_s ), 1 );
@@ -40,7 +46,13 @@ mlt_producer producer_pixbuf_init( const char *filename )
 
 		this->filename = strdup( filename );
 		this->counter = -1;
-		this->is_pal = 1;
+		
+		// Get the properties interface
+		mlt_properties properties = mlt_producer_properties( &this->parent );
+	
+		// Set the default properties
+		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
+		
 		g_type_init();
 
 		return producer;
@@ -147,7 +159,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	if ( pixbuf )
 	{
 		// Scale to adjust for sample aspect ratio
-		if ( this->is_pal )
+		if ( mlt_properties_get_int( properties, "video_stadnard" ) == mlt_video_standard_pal )
 		{
 			GdkPixbuf *temp = pixbuf;
 			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
