@@ -4,8 +4,8 @@ path=`which mlt-config 2>/dev/null`
 [ $? != 0 ] && echo "MLT not installed - aborting" && exit 1 
 
 # Determine default prefix
-prefix=`dirname $path`
-prefix=`dirname $prefix`
+prefix=`mlt-config --prefix`
+[ "$prefix" = "" ] && echo "Can't locate MLT's prefix - please reconfigure MLT." && exit 1
 
 # Allow override from command line
 [ "$1" != "" ] && prefix="${1#--prefix=}"

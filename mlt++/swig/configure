@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 
 which swig > /dev/null 2>&1
-[ $? != 0 ] && echo Please install swig
+[ $? != 0 ] && echo "Please install swig" && exit 1
 
 which mlt-config > /dev/null 2>&1
-[ $? != 0 ] && echo Please install mlt
+[ $? != 0 ] && echo "Please install mlt" && exit 1
 
 if [ "$1" = "all" ]
 then languages="java perl python ruby tcl"
@@ -14,6 +14,11 @@ else echo "Usage: ./configure [ all | language * ]"
 	 exit 0
 fi
 
+for i in java perl python ruby tcl
+do
+	rm -f .$i
+done
+
 for i in $languages
 do
 	echo -n "Configuring $i ... "
@@ -21,6 +26,7 @@ do
 	output=`./build 2>/dev/null`
 	if [ $? == 0 ]
 	then echo "OK"
+		 touch ../.$i
 	elif [ "$output" == "" ]
 	then
 		echo "Failed"
