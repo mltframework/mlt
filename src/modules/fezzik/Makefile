@@ -25,6 +25,7 @@ clean:
 		rm -f $(OBJS) $(TARGET) 
 
 install: all
+	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
 	install -m 644 ../fezzik.dict "$(prefix)/share/mlt/modules"
 
 ifneq ($(wildcard .depend),)
