@@ -68,6 +68,8 @@ extern int mlt_playlist_join( mlt_playlist self, int clip, int count, int merge 
 extern int mlt_playlist_mix( mlt_playlist self, int clip, int length, mlt_transition transition );
 extern int mlt_playlist_mix_add( mlt_playlist self, int clip, mlt_transition transition );
 extern mlt_producer mlt_playlist_get_clip( mlt_playlist self, int clip );
+extern mlt_producer mlt_playlist_get_clip_at( mlt_playlist self, int position );
+extern int mlt_playlist_get_clip_index_at( mlt_playlist self, int position );
 extern int mlt_playlist_clip_is_mix( mlt_playlist self, int clip );
 extern void mlt_playlist_close( mlt_playlist self );
 

@@ -286,51 +286,58 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 	return mlt_playlist_virtual_refresh( this );
 }
 
+static mlt_producer mlt_playlist_locate( mlt_playlist this, mlt_position *position, int *clip, int *total )
+{
+	// Default producer to NULL
+	mlt_producer producer = NULL;
+
+	// Loop for each producer until found
+	for ( *clip = 0; *clip < this->count; *clip += 1 )
+	{
+		// Increment the total
+		*total += this->list[ *clip ]->frame_count;
+
+		// Check if the position indicates that we have found the clip
+		// Note that 0 length clips get skipped automatically
+		if ( *position < this->list[ *clip ]->frame_count )
+		{
+			// Found it, now break
+			producer = this->list[ *clip ]->producer;
+			break;
+		}
+		else
+		{
+			// Decrement position by length of this entry
+			*position -= this->list[ *clip ]->frame_count;
+		}
+	}
+
+	return producer;
+}
+
 /** Seek in the virtual playlist.
 */
 
 static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressive )
 {
-	// Default producer to blank
-	mlt_producer producer = NULL;
-
 	// Map playlist position to real producer in virtual playlist
 	mlt_position position = mlt_producer_frame( &this->parent );
 
+	// Keep the original position since we change it while iterating through the list
 	mlt_position original = position;
 
-	// Total number of frames
-	int64_t total = 0;
+	// Clip index and total
+	int i = 0;
+	int total = 0;
+
+	// Locate the producer for the position
+	mlt_producer producer = mlt_playlist_locate( this, &position, &i, &total );
 
 	// Get the properties
 	mlt_properties properties = mlt_playlist_properties( this );
 
 	// Get the eof handling
 	char *eof = mlt_properties_get( properties, "eof" );
-
-	// Index for the main loop
-	int i = 0;
-
-	// Loop for each producer until found
-	for ( i = 0; i < this->count; i ++ )
-	{
-		// Increment the total
-		total += this->list[ i ]->frame_count;
-
-		// Check if the position indicates that we have found the clip
-		// Note that 0 length clips get skipped automatically
-		if ( position < this->list[ i ]->frame_count )
-		{
-			// Found it, now break
-			producer = this->list[ i ]->producer;
-			break;
-		}
-		else
-		{
-			// Decrement position by length of this entry
-			position -= this->list[ i ]->frame_count;
-		}
-	}
 
 	// Seek in real producer to relative position
 	if ( producer != NULL )
@@ -932,7 +939,7 @@ int mlt_playlist_mix_add( mlt_playlist this, int clip, mlt_transition transition
 	return error;
 }
 
-/** Return the clip at the position.
+/** Return the clip at the clip index.
 */
 
 mlt_producer mlt_playlist_get_clip( mlt_playlist this, int clip )
@@ -940,6 +947,25 @@ mlt_producer mlt_playlist_get_clip( mlt_playlist this, int clip )
 	if ( clip >= 0 && clip < this->count )
 		return this->list[ clip ]->producer;
 	return NULL;
+}
+
+/** Return the clip at the specified position.
+*/
+
+mlt_producer mlt_playlist_get_clip_at( mlt_playlist this, int position )
+{
+	int index = 0, total = 0;
+	return mlt_playlist_locate( this, &position, &index, &total );
+}
+
+/** Return the clip index of the specified position.
+*/
+
+int mlt_playlist_get_clip_index_at( mlt_playlist this, int position )
+{
+	int index = 0, total = 0;
+	mlt_playlist_locate( this, &position, &index, &total );
+	return index;
 }
 
 /** Determine if the clip is a mix.
