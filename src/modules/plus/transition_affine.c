@@ -426,16 +426,16 @@ static inline double MapZ( float this[3][3], int x, int y )
 #define MAX( x, y ) x > y ? x : y
 #define MIN( x, y ) x < y ? x : y
 
-static void affine_max_output( float this[3][3], float *w, float *h )
+static void affine_max_output( float this[3][3], float *w, float *h, float dz )
 {
-	int tlx = MapX( this, -720, 576 );
-	int tly = MapY( this, -720, 576 );
-	int trx = MapX( this, 720, 576 );
-	int try = MapY( this, 720, 576 );
-	int blx = MapX( this, -720, -576 );
-	int bly = MapY( this, -720, -576 );
-	int brx = MapX( this, 720, -576 );
-	int bry = MapY( this, 720, -576 );
+	int tlx = MapX( this, -720, 576 ) / dz;
+	int tly = MapY( this, -720, 576 ) / dz;
+	int trx = MapX( this, 720, 576 ) / dz;
+	int try = MapY( this, 720, 576 ) / dz;
+	int blx = MapX( this, -720, -576 ) / dz;
+	int bly = MapY( this, -720, -576 ) / dz;
+	int brx = MapX( this, 720, -576 ) / dz;
+	int bry = MapY( this, 720, -576 ) / dz;
 
 	int max_x;
 	int max_y;
@@ -602,12 +602,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					  fix_shear_z + shear_z * ( position - in ) );
 		affine_offset( affine.matrix, ox, oy );
 
-		if ( scale )
-		{
-			affine_max_output( affine.matrix, &sw, &sh );
-			affine_scale( affine.matrix, sw, sh );
-		}
-	
 		lower_x -= ( lower_x & 1 );
 		upper_x -= ( upper_x & 1 );
 
@@ -615,11 +609,17 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		dz = MapZ( affine.matrix, 0, 0 );
 
-		if ( ( int )abs( dz * 1000 ) < 100 )
-			dz = dz < 0 ? - 0.1 : 0.1;
-
 		if ( mask != NULL )
 			memset( mask, 0, b_width * b_height );
+
+		if ( ( int )abs( dz * 1000 ) < 25 )
+			goto getout;
+
+		if ( scale )
+		{
+			affine_max_output( affine.matrix, &sw, &sh, dz );
+			affine_scale( affine.matrix, sw, sh );
+		}
 
 		for ( y = lower_y; y < upper_y; y ++ )
 		{
@@ -660,6 +660,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			q += a_stride;
 		}
 
+getout:
 		b_frame->get_alpha_mask = NULL;
 		mlt_properties_set_data( b_props, "alpha", mask, 0, mlt_pool_release, NULL );
 	}
