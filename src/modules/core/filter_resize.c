@@ -130,7 +130,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 	}
 
-	return 0;
+	return error;
 }
 
 /** Filter processing.

@@ -27,6 +27,14 @@
 #include <string.h>
 #include <math.h>
 
+typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha, int weight, uint16_t *luma, int softness );
+
+/* mmx function declarations */
+#ifdef USE_MMX
+	void composite_line_yuv_mmx( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha, int weight, uint16_t *luma, int softness );
+	int composite_have_mmx( void );
+#endif
+
 /** Geometry struct.
 */
 
@@ -155,9 +163,11 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	output->mix = in->mix + ( out->mix - in->mix ) * position;
 	output->distort = in->distort;
 
-	output->x = ( int )floor( output->x ) & 0xfffffffe;
-	output->w = ( int )floor( output->w ) & 0xfffffffe;
-	output->sw &= 0xfffffffe;
+	// DRD> These break on negative values. I do not think they are needed
+	// since yuv_composite takes care of YUYV group alignment
+	//output->x = ( int )floor( output->x ) & 0xfffffffe;
+	//output->w = ( int )floor( output->w ) & 0xfffffffe;
+	//output->sw &= 0xfffffffe;
 }
 
 void transition_destroy_keys( void *arg )
@@ -481,22 +491,48 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
 }
 
+
+/** Composite a source line over a destination line
+*/
+
+static inline
+void composite_line_yuv( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha, int weight, uint16_t *luma, int softness )
+{
+	register int j;
+	int a, mix;
+	
+	for ( j = 0; j < width_src; j ++ )
+	{
+		a = ( alpha == NULL ) ? 255 : *alpha ++;
+		mix = ( luma == NULL ) ? weight : linearstep( luma[ j ], luma[ j ] + softness, weight );
+		mix = ( mix * ( a + 1 ) ) >> 8;
+		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+	}
+}
+
 /** Composite function.
 */
 
-static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int bpp, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field, uint16_t *p_luma, int32_t softness )
+static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field, uint16_t *p_luma, int32_t softness, composite_line_fn line_fn )
 {
 	int ret = 0;
-	int i, j;
+	int i;
 	int x_src = 0, y_src = 0;
 	int32_t weight = ( 1 << 16 ) * ( geometry.mix / 100 );
-	int stride_src = width_src * bpp;
-	int stride_dest = width_dest * bpp;
+	int step = ( field > -1 ) ? 2 : 1;
+	int bpp = 2;
+	int stride_src = width_src * bpp * step;
+	int stride_dest = width_dest * bpp * step;
+	int alpha_stride = stride_src / bpp;
 
 	// Adjust to consumer scale
 	int x = geometry.x * width_dest / geometry.nw;
 	int y = geometry.y * height_dest / geometry.nh;
 
+	// Align x to a full YUYV group
 	x &= 0xfffffffe;
 	width_src &= 0xfffffffe;
 
@@ -565,38 +601,13 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 		height_src--;
 	}
 
-	uint8_t *p = p_src;
-	uint8_t *q = p_dest;
-	uint8_t *o = p_dest;
-	uint16_t *l = p_luma;
-	uint8_t *z = p_alpha;
-
-	uint8_t a;
-	int32_t current_weight;
-	int32_t value;
-	int step = ( field > -1 ) ? 2 : 1;
-
-	stride_src = stride_src * step;
-	int alpha_stride = stride_src / bpp;
-	stride_dest = stride_dest * step;
+	if ( line_fn == NULL )
+		line_fn = composite_line_yuv;
 
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i += step )
 	{
-		p = p_src;
-		q = p_dest;
-		o = q;
-		l = p_luma;
-		z = p_alpha;
-
-		for ( j = 0; j < width_src; j ++ )
-		{
-			a = ( z == NULL ) ? 255 : *z ++;
-			current_weight = ( l == NULL ) ? weight : linearstep( l[ j ], l[ j ] + softness, weight );
-			value = ( current_weight * ( a + 1 ) ) >> 8;
-			*o ++ = ( *p++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
-			*o ++ = ( *p++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
-		}
+		line_fn( p_dest, p_src, width_src, p_alpha, weight, p_luma, softness );
 
 		p_src += stride_src;
 		p_dest += stride_dest;
@@ -805,7 +816,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	x -= x % 2;
 
 	// optimization points - no work to do
-	if ( *width <= 0 || *height <= 0 )
+	if ( *width < 1 || *height < 1 )
 		return 1;
 
 	if ( ( x < 0 && -x >= *width ) || ( y < 0 && -y >= *height ) )
@@ -895,7 +906,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	h = result.h * height / result.nh;
 
 	x &= 0xfffffffe;
-	w &= 0xfffffffe;
+	//w &= 0xfffffffe;
 
 	// Now we need to create a new destination image
 	dest = mlt_pool_alloc( w * h * 2 );
@@ -979,7 +990,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
-			int bpp = 2;
 			uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
 			int progressive = mlt_properties_get_int( a_props, "progressive" ) ||
 					mlt_properties_get_int( a_props, "consumer_progressive" ) ||
@@ -988,6 +998,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			
 			int32_t luma_softness = mlt_properties_get_double( properties, "softness" ) * ( 1 << 16 );
 			uint16_t *luma_bitmap = get_luma( properties, width_b, height_b );
+			composite_line_fn line_fn = mlt_properties_get_int( properties, "_MMX" ) ? composite_line_yuv_mmx : composite_line_yuv;
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
@@ -1001,7 +1012,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				alignment_calculate( &result );
 
 				// Composite the b_frame on the a_frame
-				composite_yuv( dest, *width, *height, bpp, src, width_b, height_b, alpha, result, progressive ? -1 : field, luma_bitmap, luma_softness );
+				composite_yuv( dest, *width, *height, src, width_b, height_b, alpha, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
 			}
 		}
 	}
@@ -1030,11 +1041,19 @@ mlt_transition transition_composite_init( char *arg )
 	mlt_transition this = calloc( sizeof( struct mlt_transition_s ), 1 );
 	if ( this != NULL && mlt_transition_init( this, NULL ) == 0 )
 	{
+		mlt_properties properties = mlt_transition_properties( this );
+		
 		this->process = composite_process;
-		mlt_properties_set( mlt_transition_properties( this ), "start", arg != NULL ? arg : "85%,5%:10%x10%" );
+		
+		// Default starting motion and zoom
+		mlt_properties_set( properties, "start", arg != NULL ? arg : "85%,5%:10%x10%" );
 		
 		// Default factory
-		mlt_properties_set( mlt_transition_properties( this ), "factory", "fezzik" );
+		mlt_properties_set( properties, "factory", "fezzik" );
+
+#ifdef USE_MMX
+		//mlt_properties_set_int( properties, "_MMX", composite_have_mmx() );
+#endif
 	}
 	return this;
 }

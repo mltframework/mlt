@@ -38,6 +38,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		*width = 720;
 	if ( *height == 0 )
 		*height = 576;
+	if ( *width < 2 || *height < 6 )
+		return 1;
 
 	mlt_properties properties = mlt_frame_properties( this );
 	int iwidth = *width;

@@ -18,14 +18,19 @@ OBJS = factory.o \
 	   transition_mix.o \
 	   transition_region.o 
 
-CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+ASM_OBJS = composite_line_yuv_mmx.o
+
+CFLAGS = -O3 -DUSE_MMX -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)
 
-$(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+$(TARGET): $(OBJS) $(ASM_OBJS)
+		$(CC) -shared -o $@ $(OBJS) $(ASM_OBJS) $(LDFLAGS)
+
+composite_line_yuv_mmx.o: composite_line_yuv_mmx.S
+	$(CC) -o $@ -c composite_line_yuv_mmx.S
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -34,9 +39,8 @@ dist-clean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(OBJS) $(TARGET) 
+		rm -f $(OBJS) $(ASM_OBJS) $(TARGET) 
 
 ifneq ($(wildcard .depend),)
 include .depend
 endif
-
