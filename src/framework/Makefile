@@ -17,7 +17,8 @@ OBJS = mlt_frame.o \
 	   mlt_tractor.o \
 	   mlt_factory.o \
 	   mlt_repository.o \
-	   mlt_pool.o
+	   mlt_pool.o \
+	   mlt_tokeniser.o
 
 SRCS := $(OBJS:.o=.c)
 
@@ -41,7 +42,7 @@ clean:
 
 install:
 	install -m 755 $(TARGET) $(prefix)/lib/libmlt.so
-	mkdir -p "$(prefix)/include/mlt/framework"
+	install -d "$(prefix)/include/mlt/framework"
 	install -m 644 mlt_consumer.h \
 			mlt_factory.h \
 			mlt_filter.h \
@@ -60,6 +61,7 @@ install:
 			mlt_property.h \
 			mlt_service.h  \
 			mlt_transition.h \
+			mlt_tokeniser.h \
             "$(prefix)/include/mlt/framework"
 
 ifneq ($(wildcard .depend),)
