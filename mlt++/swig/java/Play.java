@@ -32,7 +32,7 @@ public class Play {
 
 			// Wait until the user stops the consumer
 			Object o = new Object();
-			while (c.is_stopped() == 0) {
+			while ( !c.is_stopped() ) {
 				synchronized (o) {
 					try {
 						o.wait(1000);

@@ -15,7 +15,7 @@ raise "Usage: thumbs.rb file name [ size ]" if file.nil? || name.nil?
 
 # Create the producer
 producer = Mltpp::Factory::producer( file )
-raise "Unable to load #{file}" if producer.is_valid == 0
+raise "Unable to load #{file}" if !producer.is_valid
 
 # Construct the playlist
 playlist = Mltpp::PlaylistInstance.new( )
@@ -37,7 +37,7 @@ generator.connect( playlist );
 generator.start
 
 # Wait until we're done
-while generator.is_stopped == 0 
+while !generator.is_stopped 
 	sleep 1
 end
 
