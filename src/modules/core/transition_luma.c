@@ -106,7 +106,7 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 
 // image processing functions
 
-static inline uint32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
+static uint32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
 {
 	if ( a < edge1 )
 		return 0;
@@ -166,7 +166,7 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 
 	int32_t i_softness = softness * ( 1 << 16 );
 
-	int field_count = field_order < 0 ? 1 : 2;
+	int field_count = field_order <= 0 ? 1 : 2;
 	int field_stride_src = field_count * stride_src;
 	int field_stride_dest = field_count * stride_dest;
 

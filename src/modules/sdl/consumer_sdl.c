@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
+#include <sys/timeb.h>
 
 /** This classes definition.
 */
@@ -40,7 +41,7 @@ struct consumer_sdl_s
 	mlt_deque queue;
 	pthread_t thread;
 	int running;
-	uint8_t audio_buffer[ 4096 * 3 ];
+	uint8_t audio_buffer[ 4096 * 6 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
 	pthread_cond_t audio_cond;
@@ -235,7 +236,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	pthread_mutex_unlock( &this->audio_mutex );
 }
 
-static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_audio )
+static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_audio, int *duration )
 {
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
@@ -254,6 +255,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	int bytes;
 
 	mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
+	*duration = ( ( samples * 1000 ) / frequency );
 
 	if ( mlt_properties_get_int( properties, "audio_off" ) )
 	{
@@ -275,7 +277,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		request.freq = frequency;
 		request.format = AUDIO_S16;
 		request.channels = channels;
-		request.samples = 1024;
+		request.samples = 2048;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
@@ -313,7 +315,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	return init_audio;
 }
 
-static int consumer_play_video( consumer_sdl this, mlt_frame frame )
+static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elapsed, int skip, int64_t playtime )
 {
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
@@ -322,6 +324,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	int width = this->width, height = this->height;
 	uint8_t *image;
 	int changed = 0;
+	int show = 1;
 
 	if ( mlt_properties_get_int( properties, "video_off" ) )
 	{
@@ -329,48 +332,94 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		return 0;
 	}
 
+	// Handle events
+	if ( this->sdl_screen != NULL )
+	{
+		SDL_Event event;
+
+		changed = consumer_get_dimensions( &this->window_width, &this->window_height );
+
+		while ( SDL_PollEvent( &event ) )
+		{
+			switch( event.type )
+			{
+				case SDL_VIDEORESIZE:
+					this->window_width = event.resize.w;
+					this->window_height = event.resize.h;
+					changed = 1;
+					break;
+				case SDL_KEYDOWN:
+					{
+						mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );
+						char keyboard[ 2 ] = " ";
+						void (*callback)( mlt_producer, char * ) = mlt_properties_get_data( properties, "transport_callback", NULL );
+						if ( callback != NULL && producer != NULL && event.key.keysym.unicode < 0x80 && event.key.keysym.unicode > 0 )
+						{
+							keyboard[ 0 ] = ( char )event.key.keysym.unicode;
+							callback( producer, keyboard );
+						}
+					}
+					break;
+			}
+		}
+	}
+
+	// Set skip
+	mlt_properties_set_int( mlt_frame_properties( frame ), "skip", skip );
+	mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
+
 	// Push this frame to the back of the queue
 	mlt_deque_push_back( this->queue, frame );
+	frame = NULL;
 
 	if ( this->playing )
 	{
-		// Get the frame at the front of the queue
-		frame = mlt_deque_pop_front( this->queue );
+		// We might want to use an old frame if the current frame is skipped
+		mlt_frame candidate = NULL;
 
+		while ( frame == NULL && mlt_deque_count( this->queue ) )
+		{
+			frame = mlt_deque_peek_front( this->queue );
+			show = !mlt_properties_get_int( mlt_frame_properties( frame ), "skip" );
+			playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
+
+			// Check if frame is in the future or past
+			if ( !show )
+			{
+				frame = mlt_deque_pop_front( this->queue );
+				mlt_frame_close( frame );
+				frame = NULL;
+			}
+			else if ( playtime > elapsed )
+			{
+				// no frame to show or remove
+				frame = NULL;
+				break;
+			}
+			else if ( playtime < elapsed - 40 )
+			{
+				if ( candidate != NULL )
+					mlt_frame_close( candidate );
+				candidate = mlt_deque_pop_front( this->queue );
+				frame = NULL;
+			}
+			else
+			{
+				// Get the frame at the front of the queue
+				frame = mlt_deque_pop_front( this->queue );
+			}
+		}
+
+		if ( frame == NULL )
+			frame = candidate;
+		else if ( candidate != NULL )
+			mlt_frame_close( candidate );
+	}
+
+	if ( this->playing && frame != NULL )
+	{
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-
-		if ( this->sdl_screen != NULL )
-		{
-			SDL_Event event;
-
-			changed = consumer_get_dimensions( &this->window_width, &this->window_height );
-
-			while ( SDL_PollEvent( &event ) )
-			{
-				switch( event.type )
-				{
-					case SDL_VIDEORESIZE:
-						this->window_width = event.resize.w;
-						this->window_height = event.resize.h;
-						changed = 1;
-						break;
-					case SDL_KEYDOWN:
-						{
-							mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );
-							char keyboard[ 2 ] = " ";
-							void (*callback)( mlt_producer, char * ) = mlt_properties_get_data( properties, "transport_callback", NULL );
-							if ( callback != NULL && producer != NULL && event.key.keysym.unicode < 0x80 && event.key.keysym.unicode > 0 )
-							{
-								keyboard[ 0 ] = ( char )event.key.keysym.unicode;
-								callback( producer, keyboard );
-							}
-						}
-						break;
-				}
-			}
-
-		}
 
 		if ( width != this->width || height != this->height )
 		{
@@ -443,16 +492,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			}
 		}
 	}
-	else
-	{
-		frame = NULL;
-	}
 
 	// Close the frame
 	if ( frame != NULL )
 		mlt_frame_close( frame );
 
-	if ( mlt_deque_count( this->queue ) )
+	if ( mlt_deque_count( this->queue ) && !skip )
 	{
 		// Tell the producers about our scale relative to the normalisation
 		frame = mlt_deque_peek_front( this->queue );
@@ -478,6 +523,14 @@ static void *consumer_thread( void *arg )
 	// internal intialization
 	int init_audio = 1;
 
+	// Obtain time of thread start
+	struct timeb now;
+	int64_t start = 0;
+	int64_t elapsed = 0;
+	int duration = 0;
+	int64_t playtime = 0;
+	int skip = 0;
+
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
 		fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
@@ -493,12 +546,35 @@ static void *consumer_thread( void *arg )
 		// Ensure that we have a frame
 		if ( frame != NULL )
 		{
+			skip = 0;
+
 			// SDL adapts display aspect, but set this so pixel aspect can be normalised
 //			mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_aspect_ratio",
 //				mlt_frame_get_aspect_ratio( frame ) );
 			
-			init_audio = consumer_play_audio( this, frame, init_audio );
-			consumer_play_video( this, frame );
+			// Play audio
+			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
+
+			if ( this->playing )
+			{
+				// Get the current time
+				ftime( &now );
+
+				// Determine elapsed time
+				if ( start == 0 )
+					start = ( int64_t )now.time * 1000 + now.millitm;
+				else
+					elapsed = ( ( int64_t )now.time * 1000 + now.millitm ) - start;
+
+				skip = playtime < elapsed;
+
+				if ( skip )
+					start = start + ( elapsed - playtime );
+			}
+
+			consumer_play_video( this, frame, elapsed, skip, playtime );
+
+			playtime += duration;
 		}
 	}
 
