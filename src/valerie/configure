@@ -1,1 +1,2 @@
 #!/bin/sh
+echo "valerie	-I$prefix/include/mlt -D_REENTRANT	-lvalerie" >> ../../packages.dat
