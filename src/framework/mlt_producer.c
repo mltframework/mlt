@@ -528,6 +528,8 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 			char *name = mlt_properties_get_name( p_props, i );
 			if ( !strncmp( name, "meta.", 5 ) )
 				mlt_properties_set( f_props, name, mlt_properties_get( p_props, name ) );
+			else if ( !strncmp( name, "set.", 4 ) )
+				mlt_properties_set( f_props, name + 4, mlt_properties_get( p_props, name ) );
 		}
 	}
 

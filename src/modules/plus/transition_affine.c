@@ -27,259 +27,99 @@
 #include <string.h>
 #include <math.h>
 
-/** Geometry struct.
-*/
-
-struct geometry_s
-{
-	int frame;
-	float position;
-	float mix;
-	int nw; // normalised width
-	int nh; // normalised height
-	int sw; // scaled width, not including consumer scale based upon w/nw
-	int sh; // scaled height, not including consumer scale based upon h/nh
-	float x;
-	float y;
-	float w;
-	float h;
-	struct geometry_s *next;
-};
-
-/** Parse a value from a geometry string.
-*/
-
-static float parse_value( char **ptr, int normalisation, char delim, float defaults )
-{
-	float value = defaults;
-
-	if ( *ptr != NULL && **ptr != '\0' )
-	{
-		char *end = NULL;
-		value = strtod( *ptr, &end );
-		if ( end != NULL )
-		{
-			if ( *end == '%' )
-				value = ( value / 100.0 ) * normalisation;
-			while ( *end == delim || *end == '%' )
-				end ++;
-		}
-		*ptr = end;
-	}
-
-	return value;
-}
-
-/** Parse a geometry property string with the syntax X,Y:WxH:MIX. Any value can be 
-	expressed as a percentage by appending a % after the value, otherwise values are
-	assumed to be relative to the normalised dimensions of the consumer.
-*/
-
-static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defaults, char *property, int nw, int nh )
-{
-	// Assign normalised width and height
-	geometry->nw = nw;
-	geometry->nh = nh;
-
-	// Assign from defaults if available
-	if ( defaults != NULL )
-	{
-		geometry->x = defaults->x;
-		geometry->y = defaults->y;
-		geometry->w = geometry->sw = defaults->w;
-		geometry->h = geometry->sh = defaults->h;
-		geometry->mix = defaults->mix;
-		defaults->next = geometry;
-	}
-	else
-	{
-		geometry->mix = 100;
-	}
-
-	// Parse the geomtry string
-	if ( property != NULL && strcmp( property, "" ) )
-	{
-		char *ptr = property;
-		geometry->x = parse_value( &ptr, nw, ',', geometry->x );
-		geometry->y = parse_value( &ptr, nh, ':', geometry->y );
-		geometry->w = geometry->sw = parse_value( &ptr, nw, 'x', geometry->w );
-		geometry->h = geometry->sh = parse_value( &ptr, nh, ':', geometry->h );
-		geometry->mix = parse_value( &ptr, 100, ' ', geometry->mix );
-	}
-}
-
 /** Calculate real geometry.
 */
 
-static void geometry_calculate( struct geometry_s *output, struct geometry_s *in, float position )
+static void geometry_calculate( mlt_transition this, char *store, struct mlt_geometry_item_s *output, float position )
 {
-	// Search in for position
-	struct geometry_s *out = in->next;
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
+	int mirror_off = mlt_properties_get_int( properties, "mirror_off" );
+	int repeat_off = mlt_properties_get_int( properties, "repeat_off" );
+	int length = mlt_geometry_get_length( geometry );
 
-	if ( position >= 1.0 )
+	// Allow wrapping
+	if ( !repeat_off && position >= length && length != 0 )
 	{
-		int section = floor( position );
-		position -= section;
-		if ( section % 2 == 1 )
-			position = 1.0 - position;
+		int section = position / length;
+		position -= section * length;
+		if ( !mirror_off && section % 2 == 1 )
+			position = length - position;
 	}
 
-	while ( out->next != NULL )
-	{
-		if ( position >= in->position && position < out->position )
-			break;
-
-		in = out;
-		out = in->next;
-	}
-
-	position = ( position - in->position ) / ( out->position - in->position );
-
-	// Calculate this frames geometry
-	if ( in->frame != out->frame - 1 )
-	{
-		output->nw = in->nw;
-		output->nh = in->nh;
-		output->x = in->x + ( out->x - in->x ) * position;
-		output->y = in->y + ( out->y - in->y ) * position;
-		output->w = in->w + ( out->w - in->w ) * position;
-		output->h = in->h + ( out->h - in->h ) * position;
-		output->mix = in->mix + ( out->mix - in->mix ) * position;
-	}
-	else
-	{
-		output->nw = out->nw;
-		output->nh = out->nh;
-		output->x = out->x;
-		output->y = out->y;
-		output->w = out->w;
-		output->h = out->h;
-		output->mix = out->mix;
-	}
+	// Fetch the key for the position
+	mlt_geometry_fetch( geometry, output, position );
 }
 
-void transition_destroy_keys( void *arg )
+
+static mlt_geometry transition_parse_keys( mlt_transition this, char *name, char *store, int normalised_width, int normalised_height )
 {
-	struct geometry_s *ptr = arg;
-	struct geometry_s *next = NULL;
-
-	while ( ptr != NULL )
-	{
-		next = ptr->next;
-		free( ptr );
-		ptr = next;
-	}
-}
-
-static struct geometry_s *transition_parse_keys( mlt_transition this,  int normalised_width, int normalised_height )
-{
-	// Loop variable for property interrogation
-	int i = 0;
-
 	// Get the properties of the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+
+	// Try to fetch it first
+	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
 
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
 	mlt_position out = mlt_transition_get_out( this );
 
-	// Create the start
-	struct geometry_s *start = calloc( 1, sizeof( struct geometry_s ) );
+	// Determine length and obtain cycle
+	int length = out - in + 1;
+	double cycle = mlt_properties_get_double( properties, "cycle" );
 
-	// Create the end (we always need two entries)
-	struct geometry_s *end = calloc( 1, sizeof( struct geometry_s ) );
+	// Allow a geometry repeat cycle
+	if ( cycle >= 1 )
+		length = cycle;
+	else if ( cycle > 0 )
+		length *= cycle;
 
-	// Pointer
-	struct geometry_s *ptr = start;
-
-	// Parse the start property
-	geometry_parse( start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
-
-	// Parse the keys in between
-	for ( i = 0; i < mlt_properties_count( properties ); i ++ )
+	if ( geometry == NULL )
 	{
-		// Get the name of the property
-		char *name = mlt_properties_get_name( properties, i );
+		// Get the new style geometry string
+		char *property = mlt_properties_get( properties, name );
 
-		// Check that it's valid
-		if ( !strncmp( name, "key[", 4 ) )
-		{
-			// Get the value of the property
-			char *value = mlt_properties_get_value( properties, i );
+		// Create an empty geometries object
+		geometry = mlt_geometry_init( );
 
-			// Determine the frame number
-			int frame = atoi( name + 4 );
+		// Parse the geometry if we have one
+		mlt_geometry_parse( geometry, property, length, normalised_width, normalised_height );
 
-			// Determine the position
-			float position = 0;
-			
-			if ( frame >= 0 && frame < ( out - in ) )
-				position = ( float )frame / ( float )( out - in + 1 );
-			else if ( frame < 0 && - frame < ( out - in ) )
-				position = ( float )( out - in + frame ) / ( float )( out - in + 1 );
-
-			// For now, we'll exclude all keys received out of order
-			if ( position > ptr->position )
-			{
-				// Create a new geometry
-				struct geometry_s *temp = calloc( 1, sizeof( struct geometry_s ) );
-
-				// Parse and add to the list
-				geometry_parse( temp, ptr, value, normalised_width, normalised_height );
-
-				// Assign the position and frame
-				temp->frame = frame;
-				temp->position = position;
-
-				// Allow the next to be appended after this one
-				ptr = temp;
-			}
-			else
-			{
-				fprintf( stderr, "Key out of order - skipping %s\n", name );
-			}
-		}
+		// Store it
+		mlt_properties_set_data( properties, store, geometry, 0, ( mlt_destructor )mlt_geometry_close, NULL );
 	}
-	
-	// Parse the end
-	geometry_parse( end, ptr, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
-	if ( out > 0 )
-		end->position = ( float )( out - in ) / ( float )( out - in + 1 );
 	else
-		end->position = 1;
+	{
+		// Check for updates and refresh if necessary
+		mlt_geometry_refresh( geometry, mlt_properties_get( properties, name ), length, normalised_width, normalised_height );
+	}
 
-	// Assign to properties to ensure we get destroyed
-	mlt_properties_set_data( properties, "geometries", start, 0, transition_destroy_keys, NULL );
+	return geometry;
+}
+
+static mlt_geometry composite_calculate( mlt_transition this, struct mlt_geometry_item_s *result, int nw, int nh, float position )
+{
+	// Structures for geometry
+	mlt_geometry start = transition_parse_keys( this, "geometry", "geometries", nw, nh );
+
+	// Do the calculation
+	geometry_calculate( this, "geometries", result, position );
 
 	return start;
 }
 
-struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transition this, mlt_frame a_frame, float position )
+static inline float composite_calculate_key( mlt_transition this, char *name, char *store, int norm, float position )
 {
-	// Get the properties from the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	// Struct for the result
+	struct mlt_geometry_item_s result;
 
-	// Get the properties from the frame
-	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
-	
 	// Structures for geometry
-	struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
-
-	// Now parse the geometries
-	if ( start == NULL )
-	{
-		// Obtain the normalised width and height from the a_frame
-		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
-		int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
-
-		// Parse the transitions properties
-		start = transition_parse_keys( this, normalised_width, normalised_height );
-	}
+	transition_parse_keys( this, name, store, norm, 0 );
 
 	// Do the calculation
-	geometry_calculate( result, start, position );
+	geometry_calculate( this, store, &result, position );
 
-	return start;
+	return result.x;
 }
 
 typedef struct 
@@ -324,7 +164,7 @@ static void affine_multiply( float this[3][3], float that[3][3] )
 }
 
 // Rotate by a given angle
-static void affine_rotate( float this[3][3], float angle )
+static void affine_rotate_x( float this[3][3], float angle )
 {
 	float affine[3][3];
 	affine[0][0] = cos( angle * M_PI / 180 );
@@ -464,6 +304,54 @@ static void affine_max_output( float this[3][3], float *w, float *h, float dz )
 
 #define IN_RANGE( v, r )	( v >= - r / 2 && v < r / 2 )
 
+static inline void get_affine( affine_t *affine, mlt_transition this, float position )
+{
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	int keyed = mlt_properties_get_int( properties, "keyed" );
+	affine_init( affine->matrix );
+
+	if ( keyed == 0 )
+	{
+		float fix_rotate_x = mlt_properties_get_double( properties, "fix_rotate_x" );
+		float fix_rotate_y = mlt_properties_get_double( properties, "fix_rotate_y" );
+		float fix_rotate_z = mlt_properties_get_double( properties, "fix_rotate_z" );
+		float rotate_x = mlt_properties_get_double( properties, "rotate_x" );
+		float rotate_y = mlt_properties_get_double( properties, "rotate_y" );
+		float rotate_z = mlt_properties_get_double( properties, "rotate_z" );
+		float fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
+		float fix_shear_y = mlt_properties_get_double( properties, "fix_shear_y" );
+		float fix_shear_z = mlt_properties_get_double( properties, "fix_shear_z" );
+		float shear_x = mlt_properties_get_double( properties, "shear_x" );
+		float shear_y = mlt_properties_get_double( properties, "shear_y" );
+		float shear_z = mlt_properties_get_double( properties, "shear_z" );
+		float ox = mlt_properties_get_double( properties, "ox" );
+		float oy = mlt_properties_get_double( properties, "oy" );
+
+		affine_rotate_x( affine->matrix, fix_rotate_x + rotate_x * position );
+		affine_rotate_y( affine->matrix, fix_rotate_y + rotate_y * position );
+		affine_rotate_z( affine->matrix, fix_rotate_z + rotate_z * position );
+		affine_shear( affine->matrix, 
+					  fix_shear_x + shear_x * position, 
+					  fix_shear_y + shear_y * position,
+					  fix_shear_z + shear_z * position );
+		affine_offset( affine->matrix, ox, oy );
+	}
+	else
+	{
+		float rotate_x = composite_calculate_key( this, "rotate_x", "rotate_x_info", 360, position );
+		float rotate_y = composite_calculate_key( this, "rotate_y", "rotate_y_info", 360, position );
+		float rotate_z = composite_calculate_key( this, "rotate_z", "rotate_z_info", 360, position );
+		float shear_x = composite_calculate_key( this, "shear_x", "shear_x_info", 360, position );
+		float shear_y = composite_calculate_key( this, "shear_y", "shear_y_info", 360, position );
+		float shear_z = composite_calculate_key( this, "shear_z", "shear_z_info", 360, position );
+
+		affine_rotate_x( affine->matrix, rotate_x );
+		affine_rotate_y( affine->matrix, rotate_y );
+		affine_rotate_z( affine->matrix, rotate_z );
+		affine_shear( affine->matrix, shear_x, shear_y, shear_z );
+	}
+}
+
 /** Get the image.
 */
 
@@ -500,37 +388,29 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int mirror = mlt_properties_get_position( properties, "mirror" );
 	int length = out - in + 1;
 
+	// Obtain the normalised width and height from the a_frame
+	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
+	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
+
 	// Structures for geometry
-	struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
-	struct geometry_s result;
+	struct mlt_geometry_item_s result;
 
 	if ( mirror && position > length / 2 )
 		position = abs( position - length );
-
-	// Now parse the geometries
-	if ( start == NULL )
-	{
-		// Obtain the normalised width and height from the a_frame
-		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
-		int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
-
-		// Parse the transitions properties
-		start = transition_parse_keys( this, normalised_width, normalised_height );
-	}
 
 	// Fetch the a frame image
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// Calculate the region now
-	composite_calculate( &result, this, a_frame, ( float )position / length );
+	composite_calculate( this, &result, normalised_width, normalised_height, ( float )position );
 
 	// Fetch the b frame image
-	result.w = ( int )( result.w * *width / result.nw );
-	result.h = ( int )( result.h * *height / result.nh );
-	result.x = ( int )( result.x * *width / result.nw );
-	result.y = ( int )( result.y * *height / result.nh );
-	result.w -= ( int )abs( result.w ) % 2;
-	result.x -= ( int )abs( result.x ) % 2;
+	result.w = ( int )( result.w * *width / normalised_width );
+	result.h = ( int )( result.h * *height / normalised_height );
+	result.x = ( int )( result.x * *width / normalised_width );
+	result.y = ( int )( result.y * *height / normalised_height );
+	//result.w -= ( int )abs( result.w ) % 2;
+	//result.x -= ( int )abs( result.x ) % 2;
 	b_width = result.w;
 	b_height = result.h;
 
@@ -559,22 +439,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float sw, sh;
 
 		// Get values from the transition
-		float fix_rotate_x = mlt_properties_get_double( properties, "fix_rotate_x" );
-		float fix_rotate_y = mlt_properties_get_double( properties, "fix_rotate_y" );
-		float fix_rotate_z = mlt_properties_get_double( properties, "fix_rotate_z" );
-		float rotate_x = mlt_properties_get_double( properties, "rotate_x" );
-		float rotate_y = mlt_properties_get_double( properties, "rotate_y" );
-		float rotate_z = mlt_properties_get_double( properties, "rotate_z" );
-		float fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
-		float fix_shear_y = mlt_properties_get_double( properties, "fix_shear_y" );
-		float fix_shear_z = mlt_properties_get_double( properties, "fix_shear_z" );
 		float scale_x = mlt_properties_get_double( properties, "scale_x" );
 		float scale_y = mlt_properties_get_double( properties, "scale_y" );
-		float shear_x = mlt_properties_get_double( properties, "shear_x" );
-		float shear_y = mlt_properties_get_double( properties, "shear_y" );
-		float shear_z = mlt_properties_get_double( properties, "shear_z" );
-		float ox = mlt_properties_get_double( properties, "ox" );
-		float oy = mlt_properties_get_double( properties, "oy" );
 		int scale = mlt_properties_get_int( properties, "scale" );
 
 		uint8_t *p = *image;
@@ -599,15 +465,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float mix;
 
 		affine_t affine;
-		affine_init( affine.matrix );
-		affine_rotate( affine.matrix, fix_rotate_x + rotate_x * position );
-		affine_rotate_y( affine.matrix, fix_rotate_y + rotate_y * position );
-		affine_rotate_z( affine.matrix, fix_rotate_z + rotate_z * position );
-		affine_shear( affine.matrix, 
-					  fix_shear_x + shear_x * position, 
-					  fix_shear_y + shear_y * position,
-					  fix_shear_z + shear_z * position );
-		affine_offset( affine.matrix, ox, oy );
+
+		get_affine( &affine, this, ( float )position );
 
 		lower_x -= ( lower_x & 1 );
 		upper_x -= ( upper_x & 1 );
@@ -636,43 +495,64 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			affine_scale( affine.matrix, scale_x, scale_y );
 		}
 
-		for ( y = lower_y; y < upper_y; y ++ )
+		if ( alpha == NULL )
 		{
-			p = q;
-
-			for ( x = lower_x; x < upper_x; x ++ )
+			for ( y = lower_y; y < upper_y; y ++ )
 			{
-				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
-				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
+				p = q;
 
-				if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
+				for ( x = lower_x; x < upper_x; x ++ )
 				{
-					if ( alpha == NULL )
+					dx = MapX( affine.matrix, x, y ) / dz + x_offset;
+					dy = MapY( affine.matrix, x, y ) / dz + y_offset;
+
+					if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
 					{
 						*pmask ++;
-						dx += dx & 1;
+						dx -= dx & 1;
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) );
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
 					}
 					else
 					{
+						p += 2;
+						pmask ++;
+					}
+				}
+
+				q += a_stride;
+			}
+		}
+		else
+		{
+			for ( y = lower_y; y < upper_y; y ++ )
+			{
+				p = q;
+
+				for ( x = lower_x; x < upper_x; x ++ )
+				{
+					dx = MapX( affine.matrix, x, y ) / dz + x_offset;
+					dy = MapY( affine.matrix, x, y ) / dz + y_offset;
+
+					if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
+					{
 						*pmask ++ = *( alpha + dy * b_width + dx );
 						mix = ( float )*( alpha + dy * b_width + dx ) / 255.0;
-						dx += dx & 1;
+						dx -= dx & 1;
 						*p = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) );
 						p ++;
 						*p = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
 						p ++;
 					}
+					else
+					{
+						p += 2;
+						pmask ++;
+					}
 				}
-				else
-				{
-					p += 2;
-					pmask ++;
-				}
-			}
 
-			q += a_stride;
+				q += a_stride;
+			}
 		}
 
 getout:
@@ -718,7 +598,7 @@ mlt_transition transition_affine_init( char *arg )
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sx", 1 );
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sy", 1 );
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "distort", 0 );
-		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "start", "0,0:100%x100%" );
+		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "geometry", "0,0:100%x100%" );
 		// Inform apps and framework that this is a video only transition
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 1 );
 		transition->process = transition_process;

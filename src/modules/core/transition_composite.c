@@ -500,6 +500,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	{
 		p_src += 2;
 		width_src --;
+		full_alpha ++;
 	}
 
 	// now do the compositing only to cropped extents

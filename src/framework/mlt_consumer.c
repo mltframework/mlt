@@ -171,9 +171,9 @@ int mlt_consumer_start( mlt_consumer this )
 			if ( producer != NULL )
 			{
 				// Test card should loop I guess...
-				mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "pause" );
-				mlt_producer_set_speed( producer, 0 );
-				mlt_producer_set_in_and_out( producer, 0, 0 );
+				mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
+				//mlt_producer_set_speed( producer, 0 );
+				//mlt_producer_set_in_and_out( producer, 0, 0 );
 
 				// Set the test card on the consumer
 				mlt_properties_set_data( properties, "test_card_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
@@ -275,6 +275,10 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	else if ( mlt_service_producer( service ) != NULL )
 	{
 		mlt_service_get_frame( service, &frame, 0 );
+	}
+	else
+	{
+		frame = mlt_frame_init( );
 	}
 
 	if ( frame != NULL )
