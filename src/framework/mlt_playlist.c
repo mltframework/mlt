@@ -792,9 +792,6 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 		track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in, clip_b->frame_in + length - 1 );
 		mlt_properties_set_int( mlt_producer_properties( track_b ), "cut", 1 );
 
-		mlt_playlist_resize_clip( this, clip, clip_a->frame_in, clip_a->frame_out - length + 1 );
-		mlt_playlist_resize_clip( this, clip + 1, clip_b->frame_in + length, clip_b->frame_out );
-
 		mlt_tractor_set_track( tractor, track_a, 0 );
 		mlt_tractor_set_track( tractor, track_b, 1 );
 		mlt_playlist_insert( this, mlt_tractor_producer( tractor ), clip + 1, -1, -1 );
@@ -807,10 +804,14 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 			mlt_transition_set_in_and_out( transition, 0, length - 1 );
 		}
 
-		if ( clip_b->frame_count <= 0 )
+		if ( clip_b->frame_out - clip_b->frame_in > length )
+			mlt_playlist_resize_clip( this, clip + 2, clip_b->frame_in + length, clip_b->frame_out );
+		else
 			mlt_playlist_remove( this, clip + 2 );
 
-		if ( clip_a->frame_count <= 0 )
+		if ( clip_a->frame_out - clip_a->frame_in > length )
+			mlt_playlist_resize_clip( this, clip, clip_a->frame_in, clip_a->frame_out - length );
+		else
 			mlt_playlist_remove( this, clip );
 
 		mlt_events_unblock( mlt_playlist_properties( this ), this );
