@@ -23,11 +23,11 @@ Hello World
 		Producer p( "pango:" );
 		p.set( "text", "Hello World" );
 		Consumer c( "sdl" );
+		Event *e = Consumer.setup_wait_for( "consumer-stopped" );
 		c.connect( p );
 		c.start( );
-		struct timespec tm = { 1, 0 };
-		while ( !c.is_stopped( ) )
-			nanosleep( &tm, NULL );
+		c.wait_for( e );
+		delete e;
 		return 0;
 	}
 
@@ -48,8 +48,6 @@ Hello World
 	Note that mlt is designed to be housed in GUI or server type applications -
 	typically, applications don't wait around for the consumer to be stopped in
 	the manner shown.
-
-	TODO: Replace wait loop with an event.
 
 	So far, we've introduced the Producer and Consumer mlt classes. We'll cover
 	each of these in more detail later in the tutorial, but for now, we'll 
@@ -81,10 +79,10 @@ Playlists
 		}
 		Consumer c( "sdl" );
 		c.connect( list );
+		Event *e = Consumer.setup_wait_for( "consumer-stopped" );
 		c.start( );
-		struct timespec tm = { 1, 0 };
-		while ( !c.is_stopped( ) )
-			nanosleep( &tm, NULL );
+		c.wait_for( e );
+		delete e;
 		return 0;
 	}
 
@@ -134,10 +132,10 @@ Filters
 		list.attach( f );
 		Consumer c( "sdl" );
 		c.connect( list );
+		Event *e = Consumer.setup_wait_for( "consumer-stopped" );
 		c.start( );
-		struct timespec tm = { 1, 0 };
-		while ( !c.is_stopped( ) )
-			nanosleep( &tm, NULL );
+		c.wait_for( e );
+		delete e;
 		return 0;
 	}
 
@@ -284,4 +282,6 @@ Services
 		return producer.is_valid( );
 	}
 
-	
+
+Events
+------

@@ -16,7 +16,6 @@ if ( $p->is_valid( ) )
 
 	# Create the consumer
 	$c = new mltpp::FilteredConsumer( "sdl" );
-	$c->attach( new mltpp::Filter( "greyscale" ) );
 
 	# Turn of the default rescaling
 	$c->set( "rescale", "none" );
@@ -24,15 +23,15 @@ if ( $p->is_valid( ) )
 	# Connect the producer to the consumer
 	$c->connect( $p );
 	
+	$e = $c->setup_wait_for( "consumer-stopped" );
+
 	# Start the consumer
 	$c->start;
 
 	# Wait until the user stops the consumer
-	while ( !$c->is_stopped ) {
-		sleep( 1 );
-	}
+	$c->wait_for( $e );
 
-	$c->stop( );
+	$e = undef;
 	$c = undef;
 	$p = undef;
 }

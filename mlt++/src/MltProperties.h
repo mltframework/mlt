@@ -69,7 +69,7 @@ namespace Mlt
 			int save( char *file );
 			void listen( char *id, void *object, mlt_listener listener );
 			Event *setup_wait_for( char *id );
-			void wait_for( Event *, bool destroy = false );
+			void wait_for( Event *, bool destroy = true );
 	};
 }
 

@@ -209,9 +209,6 @@ void Properties::wait_for( Event *event, bool destroy )
 {
 	mlt_events_wait_for( get_properties( ), event->get_event( ) );
 	if ( destroy )
-	{
 		mlt_events_close_wait_for( get_properties( ), event->get_event( ) );
-		delete event;
-	}
 }
 

@@ -66,3 +66,59 @@ namespace Mlt {
 %include <MltTractor.h>
 %include <MltFilteredConsumer.h>
 
+#if defined(SWIGRUBY)
+
+%{
+
+static void ruby_listener( mlt_properties owner, void *object );
+
+class RubyListener
+{
+	public:
+		RubyListener( Mlt::Properties &properties, char *id, VALUE callback ) : 
+			callback( callback ) 
+		{
+			properties.listen( id, this, ( mlt_listener )ruby_listener );
+		}
+
+    	void mark( ) 
+		{ 
+			((void (*)(VALUE))(rb_gc_mark))( callback ); 
+		}
+
+    	void doit( ) 
+		{
+        	ID method = rb_intern( "call" );
+        	rb_funcall( callback, method, 0 );
+    	}
+
+	private:
+		VALUE callback;
+};
+
+static void ruby_listener( mlt_properties owner, void *object )
+{
+	RubyListener *o = static_cast< RubyListener * >( object );
+	o->doit( );
+}
+
+void markRubyListener( void* p ) 
+{
+    RubyListener *o = static_cast<RubyListener*>( p );
+    o->mark( );
+}
+
+%}
+
+// Ruby wrapper
+%rename( Listener )  RubyListener;
+%markfunc RubyListener "markRubyListener";
+
+class RubyListener 
+{
+	public:
+		RubyListener( Mlt::Properties &properties, char *id, VALUE callback );
+};
+
+#endif
+
