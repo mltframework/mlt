@@ -172,6 +172,24 @@ void mlt_service_connect( mlt_service this, mlt_service that )
 	base->out = that;
 }
 
+
+/** Get the first connected producer service.
+*/
+
+mlt_service mlt_service_get_producer( mlt_service this )
+{
+	mlt_service producer = NULL;
+
+	// Get the service base
+	mlt_service_base *base = this->private;
+
+	if ( base->in != NULL )
+		producer = base->in[ 0 ];
+	
+	return producer;
+}
+ 
+
 /** Get the service state.
 */
 

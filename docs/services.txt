@@ -539,6 +539,7 @@ Transitions
 		Known Bugs
 
 			The luma map must be the same size as the B frame.
+			The PGM parser does not handle comments.
 
 	mix
 

@@ -33,6 +33,8 @@ extern mlt_properties mlt_multitrack_properties( mlt_multitrack this );
 extern int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int track );
 extern mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index );
 extern void mlt_multitrack_close( mlt_multitrack this );
+extern int mlt_multitrack_count( mlt_multitrack this );
+extern mlt_producer mlt_multitrack_track( mlt_multitrack this, int track );
 
 #endif
 

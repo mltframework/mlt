@@ -1,5 +1,5 @@
 /*
- * mlt_multitrack.h -- multitrack service class
+ * factory.c -- the factory method interfaces
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,23 +18,32 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLT_MULITRACK_H_
-#define _MLT_MULITRACK_H_
+#include <string.h>
 
-#include "mlt_producer.h"
+#include "consumer_westley.h"
+#include "producer_westley.h"
 
-/** Public final methods
-*/
+void *mlt_create_producer( char *id, void *arg )
+{
+	if ( !strcmp( id, "westley" ) )
+		return producer_westley_init( arg );
+	return NULL;
+}
 
-extern mlt_multitrack mlt_multitrack_init( );
-extern mlt_producer mlt_multitrack_producer( mlt_multitrack this );
-extern mlt_service mlt_multitrack_service( mlt_multitrack this );
-extern mlt_properties mlt_multitrack_properties( mlt_multitrack this );
-extern int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int track );
-extern mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index );
-extern void mlt_multitrack_close( mlt_multitrack this );
-extern int mlt_multitrack_count( mlt_multitrack this );
-extern mlt_producer mlt_multitrack_track( mlt_multitrack this, int track );
+void *mlt_create_filter( char *id, void *arg )
+{
+	return NULL;
+}
 
-#endif
+void *mlt_create_transition( char *id, void *arg )
+{
+	return NULL;
+}
+
+void *mlt_create_consumer( char *id, void *arg )
+{
+	if ( !strcmp( id, "westley" ) )
+		return consumer_westley_init( arg );
+	return NULL;
+}
 

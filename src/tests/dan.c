@@ -19,7 +19,7 @@ int main( int argc, char **argv )
 	// Start the consumer...
 	int vstd = mlt_video_standard_ntsc;
 	//mlt_consumer consumer = mlt_factory_consumer( "bluefish", &vstd );
-	mlt_consumer consumer = mlt_factory_consumer( "sdl", "PAL" );
+	mlt_consumer consumer = mlt_factory_consumer( "westley", "PAL" );
 
 	// Create the producer(s)
 	mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );

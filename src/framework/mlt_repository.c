@@ -94,6 +94,8 @@ static void *construct_instance( mlt_properties service_properties, char *symbol
 
 		// Open the shared object
 		object = dlopen( full_file, RTLD_NOW | RTLD_GLOBAL );
+		if ( object == NULL )
+			fprintf( stderr, "Failed to load plugin: %s\n", dlerror() );
 
 		// Set it on the properties
 		mlt_properties_set_data( object_properties, "dlopen", object, 0, ( void (*)( void * ) )dlclose, NULL );

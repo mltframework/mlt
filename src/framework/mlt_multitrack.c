@@ -61,7 +61,7 @@ mlt_multitrack mlt_multitrack_init( )
 			producer->get_frame = producer_get_frame;
 			mlt_properties_set_data( properties, "multitrack", this, 0, NULL, NULL );
 			mlt_properties_set( properties, "log_id", "multitrack" );
-			mlt_properties_set( properties, "resource", "<mulitrack>" );
+			mlt_properties_set( properties, "resource", "<multitrack>" );
 		}
 		else
 		{
@@ -188,6 +188,28 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 
 	return result;
 }
+
+/** Get the number of tracks.
+*/
+
+int mlt_multitrack_count( mlt_multitrack this )
+{
+	return this->count;	
+}
+
+/** Get an individual track as a producer.
+*/
+
+mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
+{
+	mlt_producer producer = NULL;
+	
+	if ( this->list != NULL && track < this->count )
+		producer = this->list[ track ];
+
+	return producer;
+}
+
 
 /** Determine the clip point.
 

@@ -74,6 +74,7 @@ extern int mlt_service_has_input( mlt_service this );
 extern int mlt_service_has_output( mlt_service this );
 extern int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 extern int mlt_service_is_active( mlt_service this );
+extern mlt_service mlt_service_get_producer( mlt_service this );
 
 #endif
 

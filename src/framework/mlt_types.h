@@ -48,5 +48,11 @@ typedef struct mlt_consumer_s *mlt_consumer;
 typedef void ( *mlt_destructor )( void * );
 typedef char *( *mlt_serialiser )( void *, int length );
 
+#define MLT_SERVICE(x) ( ( mlt_service )( x ) )
+#define MLT_PRODUCER(x) ( ( mlt_producer )( x ) )
+#define MLT_MULTITRACK(x) ( ( mlt_multitrack )( x ) )
+#define MLT_PLAYLIST(x) ( ( mlt_playlist )( x ) )
+#define MLT_FILTER(x) ( ( mlt_filter )( x ) )
+#define MLT_TRANSITION(x) ( ( mlt_transition )( x ) )
 
 #endif
