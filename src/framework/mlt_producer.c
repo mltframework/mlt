@@ -240,6 +240,8 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
 
 	// A properly instatiated producer will have a get_frame method...
+//fprintf( stderr, "PRODUCER get_frame %p eof %s pos %lld out %lld\n",
+//this->get_frame, eof, mlt_producer_position( this ), mlt_producer_get_out( this ) );
 	if ( this->get_frame == NULL || ( !strcmp( eof, "continue" ) && mlt_producer_position( this ) > mlt_producer_get_out( this ) ) )
 	{
 		// Generate a test frame

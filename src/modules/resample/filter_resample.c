@@ -54,7 +54,8 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
-	//fprintf( stderr, "resample_get_audio: output_rate %d\n", output_rate, *frequency );
+	//fprintf( stderr, "resample_get_audio: output_rate %d\n", output_rate );
+	
 	// Return now if now work to do
 	if ( output_rate == *frequency )
 		return 0;

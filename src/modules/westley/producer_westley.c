@@ -299,7 +299,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 			mlt_properties_get_position( mlt_service_properties( track ), "in" ),
 			mlt_properties_get_position( mlt_service_properties( track ), "out" ) );
 	}
-	
+
 	// Push the multitrack back onto the stack
 	context_push_service( context, service );
 
@@ -372,8 +372,8 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		return;
 		
 	// Instatiate the producer
-	service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "resource" ) ) );
-	
+	if ( mlt_properties_get( properties, "resource" ) != NULL )
+		service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "resource" ) ) );
 	if ( service == NULL && mlt_properties_get( properties, "mlt_service" ) != NULL )
 	{
 		service = MLT_SERVICE( mlt_factory_producer( mlt_properties_get( properties, "mlt_service" ),

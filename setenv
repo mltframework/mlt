@@ -10,7 +10,7 @@ export LD_LIBRARY_PATH=\
 `pwd`/src/modules/bluefish:\
 `pwd`/../bluefish/lib:\
 `pwd`/../mpeg_sdk_release/bin:\
-`pwd`/../dv_sdk_release
+`pwd`/../dv_sdk_release/lib
 
 export PATH=\
 `pwd`/src/albino:\

@@ -61,6 +61,8 @@ static mlt_producer create_producer( char *file )
 		result = mlt_factory_producer( "pixbuf", file );
 	else if ( strstr( file, ".png" ) )
 		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".svg" ) )
+		result = mlt_factory_producer( "pixbuf", file );
 	else if ( strstr( file, ".txt" ) )
 		result = mlt_factory_producer( "pango", file );
 	else if ( strstr( file, ".westley" ) )
@@ -108,7 +110,9 @@ static mlt_service create_filter( mlt_tractor tractor, mlt_service last, char *e
 mlt_producer producer_fezzik_init( char *arg )
 {
 	// Create the producer that the tractor will contain
-	mlt_producer producer = create_producer( arg );
+	mlt_producer producer = NULL;
+	if ( arg != NULL )
+		producer = create_producer( arg );
 
 	// Build the tractor if we have a producer and it isn't already westley'd :-)
 	if ( producer != NULL && mlt_properties_get( mlt_producer_properties( producer ), "westley" ) == NULL )
