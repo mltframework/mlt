@@ -291,7 +291,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	{
 		// open SDL window 
 		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
-		consumer_get_dimensions( &this->window_width, &this->window_height );
+		if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
+			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
 		changed = 1;
 		mlt_properties_set_int( properties, "changed", 0 );
 
@@ -354,7 +355,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	}
 	else
 	{
-		changed = mlt_properties_get_int( properties, "changed" );
+		changed = mlt_properties_get_int( properties, "changed" ) | mlt_properties_get_int( mlt_frame_properties( frame ), "refresh" );
 		mlt_properties_set_int( properties, "changed", 0 );
 	}
 		

@@ -71,6 +71,8 @@ mlt_consumer consumer_sdl_preview_init( char *arg )
 		this->joined = 1;
 		mlt_events_listen( mlt_consumer_properties( this->play ), this, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
 		mlt_events_listen( mlt_consumer_properties( this->still ), this, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
+		mlt_events_listen( mlt_consumer_properties( this->play ), this, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
+		mlt_events_listen( mlt_consumer_properties( this->still ), this, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
 		return parent;
 	}
 	free( this );
@@ -204,30 +206,39 @@ static void *consumer_thread( void *arg )
 			// Determine which speed to use
 			double use_speed = first ? speed : this->last_speed;
 
-			// Get changed requests to the preview
+			// Get changed requests to the preview (focus changes)
 			int changed = mlt_properties_get_int( properties, "changed" );
+
+			// Get refresh request for the current frame (effect changes in still mode)
+			int refresh = mlt_properties_get_int( properties, "refresh" );
+
+			// Decrement refresh and clear changed
+			mlt_properties_set_int( properties, "refresh", refresh > 0 ? refresh - 1 : 0 );
 			mlt_properties_set_int( properties, "changed", 0 );
+
+			// Set the changed property on this frame for the benefit of still
+			mlt_properties_set_int( mlt_frame_properties( frame ), "refresh", refresh );
 
 			// Make sure the recipient knows that this frame isn't really rendered
 			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 0 );
 
+			// If we're not the first frame and both consumers are stopped, then stop ourselves
 			if ( !first && mlt_consumer_is_stopped( this->play ) && mlt_consumer_is_stopped( this->still ) )
 			{
 				this->running = 0;
 				mlt_frame_close( frame );
 			}
+			// Allow a little grace time before switching consumers on speed changes
 			else if ( this->ignore_change -- > 0 && this->active != NULL && !mlt_consumer_is_stopped( this->active ) )
 			{
 				mlt_consumer_put_frame( this->active, frame );
-				if ( this->active == this->still )
-					mlt_properties_set_int( still, "changed", changed );
+				mlt_properties_set_int( still, "changed", changed );
 			}
+			// If we aren't playing normally, then use the still
 			else if ( use_speed != 1 )
 			{
 				if ( !mlt_consumer_is_stopped( this->play ) )
-				{
 					mlt_consumer_stop( this->play );
-				}
 				if ( mlt_consumer_is_stopped( this->still ) )
 				{
 					this->last_speed = use_speed;
@@ -238,12 +249,11 @@ static void *consumer_thread( void *arg )
 				mlt_properties_set_int( still, "changed", changed );
 				mlt_consumer_put_frame( this->still, frame );
 			}
+			// Otherwise use the normal player
 			else
 			{
 				if ( !mlt_consumer_is_stopped( this->still ) )
-				{
 					mlt_consumer_stop( this->still );
-				}
 				if ( mlt_consumer_is_stopped( this->play ) )
 				{
 					this->last_speed = use_speed;
@@ -251,8 +261,21 @@ static void *consumer_thread( void *arg )
 					this->ignore_change = 25;
 					mlt_consumer_start( this->play );
 				}
+				mlt_properties_set_int( still, "changed", changed );
 				mlt_consumer_put_frame( this->play, frame );
 			}
+
+			// Copy the rectangle info from the active consumer
+			if ( this->running )
+			{
+				mlt_properties active = mlt_consumer_properties( this->active );
+				mlt_properties_set_int( properties, "rect_x", mlt_properties_get_int( active, "rect_x" ) );
+				mlt_properties_set_int( properties, "rect_y", mlt_properties_get_int( active, "rect_y" ) );
+				mlt_properties_set_int( properties, "rect_w", mlt_properties_get_int( active, "rect_w" ) );
+				mlt_properties_set_int( properties, "rect_h", mlt_properties_get_int( active, "rect_h" ) );
+			}
+
+			// We are definitely not waiting on the first frame any more
 			first = 0;
 		}
 	}

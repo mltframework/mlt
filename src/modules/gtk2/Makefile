@@ -3,6 +3,7 @@ include ../../../config.mak
 TARGET = ../libmltgtk2.so
 
 OBJS = factory.o \
+	   consumer_gtk2.o \
 	   producer_pixbuf.o \
 	   producer_pango.o \
 	   pixops.o \
@@ -11,9 +12,9 @@ OBJS = factory.o \
 ASM_OBJS = have_mmx.o \
 		   scale_line_22_yuv_mmx.o
 
-CFLAGS += `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../..
+CFLAGS += `pkg-config gtk+-2.0 --cflags` `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../..
 
-LDFLAGS += `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
+LDFLAGS += `pkg-config gtk+-2.0 --libs` `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
 
 LDFLAGS+=-L../../framework -lmlt
 

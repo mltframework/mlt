@@ -6,6 +6,7 @@ do
 	case $1 in
 		--help )		field=0 ;;
 		--version )		field=-1 ;;
+		--prefix )		field=-2 ;;
 		--prefix=* )	prefix="${i#--prefix=}" ;;
 		--cflags )		field=2 ;;
 		--libs )		field=3 ;;
@@ -19,6 +20,11 @@ if [ "$field" = "0" ]
 then	echo "Usage: mlt-config [ --version ] | [ --prefix=dir ] [ [ package ] [ --cflags ] [ --libs ] ]"
 elif [ "$field" = "-1" ]
 then	echo $version
+elif [ "$field" = "-2" ]
+then	config=`which mlt-config`
+		dir=`dirname $config`
+		dir=`dirname $dir`
+		echo $dir
 elif [ -f "$prefix/share/mlt/packages.dat" ]
 then grep "^$package" $prefix/share/mlt/packages.dat | cut -f $field
 else echo mlt-config cannot find package $package.

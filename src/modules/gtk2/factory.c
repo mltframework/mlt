@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include "consumer_gtk2.h"
 #include "producer_pixbuf.h"
 #include "producer_pango.h"
 #include "filter_rescale.h"
@@ -49,6 +50,9 @@ void *mlt_create_transition( char *id, void *arg )
 
 void *mlt_create_consumer( char *id, void *arg )
 {
+	g_type_init( );
+	if ( !strcmp( id, "gtk2_preview" ) )
+		return consumer_gtk2_preview_init( arg );
 	return NULL;
 }
 

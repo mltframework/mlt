@@ -1269,7 +1269,7 @@ mlt_producer producer_westley_init( int info, char *data )
 	struct _xmlParserCtxt *xmlcontext;
 	int well_formed = 0;
 	char *filename = NULL;
-	
+
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
 	context->params = mlt_properties_new();

@@ -12,5 +12,9 @@ cat << EOF >> ../filters.dat
 gtkrescale		libmltgtk2.so
 EOF
 
+cat << EOF >> ../consumers.dat
+gtk2_preview	libmltgtk2.so
+EOF
+
 fi
 
