@@ -373,6 +373,9 @@ static void *consumer_thread( void *arg )
 	// Get the properties
 	mlt_properties properties = mlt_consumer_properties( this );
 
+	// Get the terminate_on_pause property
+	int top = mlt_properties_get_int( properties, "terminate_on_pause" );
+
 	// Get the handling methods
 	int ( *video )( mlt_consumer, uint8_t *, mlt_frame ) = mlt_properties_get_data( properties, "video", NULL );
 	int ( *audio )( mlt_consumer, uint8_t *, mlt_frame ) = mlt_properties_get_data( properties, "audio", NULL );
@@ -394,6 +397,13 @@ static void *consumer_thread( void *arg )
 		// Check that we have a frame to work with
 		if ( frame != NULL )
 		{
+			// Terminate on pause
+			if ( top && mlt_properties_get_double( mlt_frame_properties( frame ), "_speed" ) == 0 )
+			{
+				mlt_frame_close( frame );
+				break;
+			}
+
 			// Obtain the dv_encoder
 			if ( libdv_get_encoder( this, frame ) != NULL )
 			{

@@ -154,6 +154,10 @@ int mlt_consumer_start( mlt_consumer this )
 	// Determine if there's a test card producer
 	char *test_card = mlt_properties_get( properties, "test_card" );
 
+	// Just to make sure nothing is hanging around...
+	mlt_frame_close( this->put );
+	this->put = NULL;
+
 	// Deal with it now.
 	if ( test_card != NULL )
 	{
@@ -206,9 +210,16 @@ int mlt_consumer_put_frame( mlt_consumer this, mlt_frame frame )
 
 	if ( mlt_service_producer( service ) == NULL )
 	{
+		struct timeval now;
+		struct timespec tm;
 		pthread_mutex_lock( &this->put_mutex );
-		if ( this->put != NULL )
-			pthread_cond_wait( &this->put_cond, &this->put_mutex );
+		while ( !mlt_consumer_is_stopped( this ) && this->put != NULL )
+		{
+			gettimeofday( &now, NULL );
+			tm.tv_sec = now.tv_sec + 1;
+			tm.tv_nsec = now.tv_usec * 1000;
+			pthread_cond_timedwait( &this->put_cond, &this->put_mutex, &tm );
+		}
 		if ( this->put == NULL )
 			this->put = frame;
 		else
@@ -241,9 +252,16 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	// Get the frame
 	if ( mlt_service_producer( service ) == NULL && mlt_properties_get_int( properties, "put_mode" ) )
 	{
+		struct timeval now;
+		struct timespec tm;
 		pthread_mutex_lock( &this->put_mutex );
-		if ( this->put == NULL )
-			pthread_cond_wait( &this->put_cond, &this->put_mutex );
+		while ( !mlt_consumer_is_stopped( this ) && this->put == NULL )
+		{
+			gettimeofday( &now, NULL );
+			tm.tv_sec = now.tv_sec + 1;
+			tm.tv_nsec = now.tv_usec * 1000;
+			pthread_cond_timedwait( &this->put_cond, &this->put_mutex, &tm );
+		}
 		frame = this->put;
 		this->put = NULL;
 		pthread_cond_broadcast( &this->put_cond );
@@ -251,8 +269,12 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 		if ( frame != NULL )
 			mlt_service_apply_filters( service, frame, 0 );
 	}
+	else if ( mlt_service_producer( service ) != NULL )
+	{
+		mlt_service_get_frame( service, &frame, 0 );
+	}
 
-	if ( frame != NULL || mlt_service_get_frame( service, &frame, 0 ) == 0 )
+	if ( frame != NULL )
 	{
 		// Get the frame properties
 		mlt_properties frame_properties = mlt_frame_properties( frame );
@@ -360,11 +382,16 @@ static void *consumer_read_ahead_thread( void *arg )
 		mlt_deque_push_back( this->queue, frame );
 		pthread_cond_broadcast( &this->cond );
 		pthread_mutex_unlock( &this->mutex );
+
 		time_wait += time_difference( &ante );
 
 		// Get the next frame
 		frame = mlt_consumer_get_frame( this );
 		time_frame += time_difference( &ante );
+
+		// If there's no frame, we're probably stopped...
+		if ( frame == NULL )
+			continue;
 
 		// Increment the count
 		count ++;
@@ -536,7 +563,8 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 		frame = mlt_consumer_get_frame( this );
 
 		// This isn't true, but from the consumers perspective it is
-		mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
+		if ( frame != NULL )
+			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
 	}
 
 	return frame;

@@ -182,6 +182,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	int b_track = mlt_properties_get_int( properties, "b_track" );
 	mlt_position in = mlt_properties_get_position( properties, "in" );
 	mlt_position out = mlt_properties_get_position( properties, "out" );
+	int always_active = mlt_properties_get_int( properties, "always_active" );
 
 	if ( ( index == a_track || index == b_track ) && !( this->a_held || this->b_held ) )
 	{
@@ -196,7 +197,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	{
 		// Determine if we're in the right time zone
 		mlt_position position = mlt_frame_get_position( this->a_frame );
-		if ( position >= in && position <= out )
+		if ( always_active || ( position >= in && position <= out ) )
 		{
 			if ( !accepts_blanks && ( this->b_frame == NULL || ( mlt_frame_is_test_card( this->b_frame ) && mlt_frame_is_test_audio( this->b_frame ) ) ) )
 			{

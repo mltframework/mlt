@@ -162,6 +162,14 @@ int mlt_producer_is_mix( mlt_producer this )
 	return tractor != NULL;
 }
 
+/** Determine if the producer is a blank [from a playlist].
+*/
+
+int mlt_producer_is_blank( mlt_producer this )
+{
+	return this == NULL || !strcmp( mlt_properties_get( mlt_producer_properties( mlt_producer_cut_parent( this ) ), "resource" ), "blank" );
+}
+
 /** Obtain the parent producer.
 */
 
@@ -187,7 +195,7 @@ mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 	// Special case - allow for a cut of the entire producer (this will squeeze all other cuts to 0)
 	if ( in <= 0 )
 		in = 0;
-	if ( out >= mlt_producer_get_playtime( parent ) )
+	if ( out >= mlt_producer_get_playtime( parent ) && !mlt_producer_is_blank( this ) )
 		out = mlt_producer_get_playtime( parent ) - 1;
 
 	mlt_properties_inc_ref( parent_props );
@@ -310,7 +318,7 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_positio
 
 	if ( out < 0 )
 		out = 0;
-	else if ( out > mlt_producer_get_length( this ) )
+	else if ( out > mlt_producer_get_length( this ) && !mlt_producer_is_blank( this ) )
 		out = mlt_producer_get_length( this );
 
 	// Swap ins and outs if wrong
@@ -393,9 +401,9 @@ void mlt_producer_prepare_next( mlt_producer this )
 static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
 {
 	int result = 1;
-	mlt_producer this = service->child;
+	mlt_producer this = service != NULL ? service->child : NULL;
 
-	if ( !mlt_producer_is_cut( this ) )
+	if ( this != NULL && !mlt_producer_is_cut( this ) )
 	{
 		// Get the properties of this producer
 		mlt_properties properties = mlt_producer_properties( this );
@@ -443,7 +451,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		if ( mlt_properties_get_data( properties, "_producer", NULL ) == NULL )
 			mlt_properties_set_data( properties, "_producer", service, 0, NULL, NULL );
 	}
-	else
+	else if ( this != NULL )
 	{
 		// Get the speed of the cut
 		double speed = mlt_producer_get_speed( this );
@@ -490,6 +498,11 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 
 		mlt_properties_set_double( mlt_frame_properties( *frame ), "_speed", speed );
 		mlt_producer_prepare_next( this );
+	}
+	else
+	{
+		*frame = mlt_frame_init( );
+		result = 0;
 	}
 
 	return result;
