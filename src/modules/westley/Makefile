@@ -10,6 +10,8 @@ CFLAGS += -I../../ `xml2-config --cflags`
 
 LDFLAGS += `xml2-config --libs`
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

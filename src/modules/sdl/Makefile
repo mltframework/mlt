@@ -9,6 +9,8 @@ CFLAGS += -I../.. `sdl-config --cflags`
 
 LDFLAGS += `sdl-config --libs`
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

@@ -9,6 +9,8 @@ CFLAGS += -I../../ -I/usr/include/sox
 
 LDFLAGS += -lst -lpopt -lvorbis -logg -lvorbisfile -lvorbisenc
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

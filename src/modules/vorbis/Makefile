@@ -9,6 +9,8 @@ CFLAGS += -I../..
 
 LDFLAGS += -lvorbisfile -lvorbis
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

@@ -27,6 +27,8 @@ ASM_OBJS = composite_line_yuv_mmx.o
 
 CFLAGS += -I../..
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

@@ -15,6 +15,8 @@ CFLAGS += `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I
 
 LDFLAGS += `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

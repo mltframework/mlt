@@ -12,6 +12,7 @@ OBJS = factory.o \
 CFLAGS+=-I../..
 
 LDFLAGS+=-lavformat -lavcodec $(EXTRA_LIBS)
+LDFLAGS+=-L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

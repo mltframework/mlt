@@ -10,6 +10,8 @@ CFLAGS += -I../..
 
 LDFLAGS += -ldv 
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)
