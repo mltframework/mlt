@@ -1,7 +1,0 @@
-export MLT_REPOSITORY=`pwd`/../modules
-
-export LD_LIBRARY_PATH=`pwd`/../framework:\
-`pwd`/../modules/bluefish:\
-`pwd`/../../../bluefish/lib:\
-`pwd`/../../../mpeg_sdk_demo/bin:\
-`pwd`/../../../dv_sdk
