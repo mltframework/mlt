@@ -600,6 +600,8 @@ static void *video_thread( void *arg )
 		mlt_frame_close( next );
 	}
 
+	mlt_consumer_stopped( &this->parent );
+
 	return NULL;
 }
 

@@ -83,6 +83,8 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 
 		// Hmm - default all consumers to yuv422 :-/
 		this->format = mlt_image_yuv422;
+
+		mlt_events_register( properties, "consumer-stopped", NULL );
 	}
 	return error;
 }
@@ -475,6 +477,15 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 	}
 
 	return frame;
+}
+
+/** Callback for the implementation to indicate a stopped condition.
+*/
+
+void mlt_consumer_stopped( mlt_consumer this )
+{
+	mlt_properties_set_int( mlt_consumer_properties( this ), "running", 0 );
+	mlt_events_fire( mlt_consumer_properties( this ), "consumer-stopped", NULL );
 }
 
 /** Stop the consumer.

@@ -564,6 +564,8 @@ static int consumer_start( mlt_consumer this )
 	
 	mlt_consumer_stop( this );
 
+	mlt_consumer_stopped( this );
+
 	return 0;
 }
 

@@ -419,6 +419,8 @@ static void *consumer_thread( void *arg )
 	// Tidy up
 	mlt_pool_release( dv_frame );
 
+	mlt_consumer_stopped( this );
+
 	return NULL;
 }
 

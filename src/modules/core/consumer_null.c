@@ -154,6 +154,9 @@ static void *consumer_thread( void *arg )
 		}
 	}
 
+	// Indicate that the consumer is stopped
+	mlt_consumer_stopped( this );
+
 	return NULL;
 }
 

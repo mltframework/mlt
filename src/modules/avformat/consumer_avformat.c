@@ -965,6 +965,8 @@ static void *consumer_thread( void *arg )
 	// Just in case we terminated on pause
 	mlt_properties_set_int( properties, "running", 0 );
 
+	mlt_consumer_stopped( this );
+
 	return NULL;
 }
 

@@ -34,6 +34,10 @@ extern void mlt_events_block( mlt_properties self, void *service );
 extern void mlt_events_unblock( mlt_properties self, void *service );
 extern void mlt_events_disconnect( mlt_properties self, void *service );
 
+extern mlt_event mlt_events_setup_wait_for( mlt_properties self, char *id );
+extern void mlt_events_wait_for( mlt_properties self, mlt_event event );
+extern void mlt_events_close_wait_for( mlt_properties self, mlt_event event );
+
 extern void mlt_event_inc_ref( mlt_event self );
 extern void mlt_event_block( mlt_event self );
 extern void mlt_event_unblock( mlt_event self );

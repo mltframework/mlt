@@ -203,6 +203,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	this->list[ this->count ]->frame_out = out;
 	this->list[ this->count ]->frame_count = out - in + 1;
 	this->list[ this->count ]->event = mlt_events_listen( properties, this, "producer-changed", ( mlt_listener )mlt_playlist_listener );
+	mlt_event_inc_ref( this->list[ this->count ]->event );
 
 	mlt_properties_set( properties, "eof", "pause" );
 

@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "mlt_properties.h"
 #include "mlt_events.h"
@@ -57,7 +58,7 @@ struct mlt_event_struct
 
 void mlt_event_inc_ref( mlt_event this )
 {
-	if ( this != NULL && this->owner != NULL )
+	if ( this != NULL )
 		this->ref_count ++;
 }
 
@@ -84,7 +85,7 @@ void mlt_event_unblock( mlt_event this )
 
 void mlt_event_close( mlt_event this )
 {
-	if ( this != NULL && this->owner != NULL )
+	if ( this != NULL )
 	{
 		if ( -- this->ref_count == 1 )
 			this->owner = NULL;
@@ -316,6 +317,56 @@ void mlt_events_disconnect( mlt_properties this, void *service )
 				}
 			}
 		}
+	}
+}
+
+typedef struct
+{
+	int done;
+	pthread_cond_t cond;
+	pthread_mutex_t mutex;
+}
+condition_pair;
+
+static void mlt_events_listen_for( mlt_properties this, condition_pair *pair )
+{
+	pthread_mutex_lock( &pair->mutex );
+	if ( pair->done == 0 )
+	{
+		pthread_cond_signal( &pair->cond );
+		pthread_mutex_unlock( &pair->mutex );
+	}
+}
+
+mlt_event mlt_events_setup_wait_for( mlt_properties this, char *id )
+{
+	condition_pair *pair = malloc( sizeof( condition_pair ) );
+	pair->done = 0;
+	pthread_cond_init( &pair->cond, NULL );
+	pthread_mutex_init( &pair->mutex, NULL );
+	pthread_mutex_lock( &pair->mutex );
+	return mlt_events_listen( this, pair, id, ( mlt_listener )mlt_events_listen_for );
+}
+
+void mlt_events_wait_for( mlt_properties this, mlt_event event )
+{
+	if ( event != NULL )
+	{
+		condition_pair *pair = event->service;
+		pthread_cond_wait( &pair->cond, &pair->mutex );
+	}
+}
+
+void mlt_events_close_wait_for( mlt_properties this, mlt_event event )
+{
+	if ( event != NULL )
+	{
+		condition_pair *pair = event->service;
+		event->owner = NULL;
+		pair->done = 0;
+		pthread_mutex_unlock( &pair->mutex );
+		pthread_mutex_destroy( &pair->mutex );
+		pthread_cond_destroy( &pair->cond );
 	}
 }
 

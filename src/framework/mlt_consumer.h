@@ -65,6 +65,7 @@ extern mlt_frame mlt_consumer_get_frame( mlt_consumer self );
 extern mlt_frame mlt_consumer_rt_frame( mlt_consumer self );
 extern int mlt_consumer_stop( mlt_consumer self );
 extern int mlt_consumer_is_stopped( mlt_consumer self );
+extern void mlt_consumer_stopped( mlt_consumer self );
 extern void mlt_consumer_close( mlt_consumer );
 
 #endif
