@@ -340,13 +340,16 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		mlt_properties properties = mlt_frame_properties( frame );
 		bytes = ( samples * channels * 2 );
 		pthread_mutex_lock( &this->audio_mutex );
-		while ( bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
+		while ( this->running && bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
 			pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
-		if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
-			memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
-		else
-			memset( &this->audio_buffer[ this->audio_avail ], 0, bytes );
-		this->audio_avail += bytes;
+		if ( this->running )
+		{
+			if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
+				memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
+			else
+				memset( &this->audio_buffer[ this->audio_avail ], 0, bytes );
+			this->audio_avail += bytes;
+		}
 		pthread_cond_broadcast( &this->audio_cond );
 		pthread_mutex_unlock( &this->audio_mutex );
 	}
@@ -613,6 +616,7 @@ static void *consumer_thread( void *arg )
 	mlt_properties properties = NULL;
 	int duration = 0;
 	int64_t playtime = 0;
+	struct timespec tm = { 0, 100000 };
 
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
@@ -650,6 +654,9 @@ static void *consumer_thread( void *arg )
 
 			// Set playtime for this frame
 			mlt_properties_set_position( properties, "playtime", playtime );
+
+			while ( this->running && mlt_deque_count( this->queue ) > 15 )
+				nanosleep( &tm, NULL );
 
 			// Push this frame to the back of the queue
 			pthread_mutex_lock( &this->video_mutex );
