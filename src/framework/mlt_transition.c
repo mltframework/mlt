@@ -253,8 +253,13 @@ void mlt_transition_close( mlt_transition this )
 	{
 		this->parent.close = NULL;
 		if ( this->close != NULL )
+		{
 			this->close( this );
+		}
 		else
+		{
 			mlt_service_close( &this->parent );
+			free( this );
+		}
 	}
 }

@@ -112,10 +112,17 @@ int mlt_property_set_position( mlt_property this, mlt_position value )
 
 int mlt_property_set_string( mlt_property this, char *value )
 {
-	mlt_property_clear( this );
-	this->types = mlt_prop_string;
-	if ( value != NULL )
-		this->prop_string = strdup( value );
+	if ( value != this->prop_string )
+	{
+		mlt_property_clear( this );
+		this->types = mlt_prop_string;
+		if ( value != NULL )
+			this->prop_string = strdup( value );
+	}
+	else
+	{
+		this->types = mlt_prop_string;
+	}
 	return this->prop_string == NULL;
 }
 

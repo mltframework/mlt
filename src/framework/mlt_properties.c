@@ -346,7 +346,16 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 	mlt_property property = mlt_properties_fetch( this, name );
 
 	// Set it if not NULL
-	if ( property != NULL && ( value == NULL || value[ 0 ] != '@' ) )
+	if ( property == NULL )
+	{
+		fprintf( stderr, "Whoops\n" );
+	}
+	else if ( value == NULL )
+	{
+		error = mlt_property_set_string( property, value );
+		mlt_properties_do_mirror( this, name );
+	}
+	else if ( *value != '@' )
 	{
 		error = mlt_property_set_string( property, value );
 		mlt_properties_do_mirror( this, name );

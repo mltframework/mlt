@@ -837,6 +837,8 @@ void mlt_producer_close( mlt_producer this )
 		}
 		else
 		{
+			int destroy = mlt_producer_is_cut( this );
+
 #if _MLT_PRODUCER_CHECKS_ == 1
 			// Show debug info
 			mlt_properties_debug( MLT_PRODUCER_PROPERTIES( this ), "Producer closing", stderr );
@@ -851,6 +853,9 @@ void mlt_producer_close( mlt_producer this )
 #endif
 
 			mlt_service_close( &this->parent );
+
+			if ( destroy )
+				free( this );
 		}
 	}
 }
