@@ -134,26 +134,11 @@ mlt_consumer consumer_sdl_init( char *arg )
 		{
 			this->width = mlt_properties_get_int( this->properties, "width" );
 			this->height = mlt_properties_get_int( this->properties, "height" );
-			
-			// Default window size
-			this->window_width = ( float )this->height * this->display_aspect;
-			this->window_height = this->height;
 		}
-		else
-		{
-			if ( (int)( ( float )this->width / this->height * 1000 ) != 
-				 (int)( this->display_aspect * 1000 ) ) 
-			{
-				// Override these
-				this->display_aspect = ( float )this->width / this->height;
-				this->aspect_ratio = 1.0;
-				mlt_properties_set_double( this->properties, "aspect_ratio", this->aspect_ratio );
-			}
-			
-			// Set window size
-			this->window_width = this->width;
-			this->window_height = this->height;
-		}
+
+		// Default window size
+		this->window_width = ( float )this->height * this->display_aspect;
+		this->window_height = this->height;
 
 		// Set the sdl flags
 		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
