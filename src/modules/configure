@@ -19,11 +19,17 @@ for i in *
 do
 	if [ -x $i/configure -a \( "$help" = "1" -o ! -f disable-$i \) ]
 	then
-		[ "$help" = "0" ] && echo "Configuring modules/$i:"
-		pushd $i > /dev/null
-		./configure $@
-		[ $? != 0 ] && exit 1
-		popd > /dev/null
+		if [ "$gpl" = "true" -o ! -f $i/gpl ]
+		then
+			[ "$help" = "0" ] && echo "Configuring modules/$i:"
+			pushd $i > /dev/null
+			./configure $@
+			[ $? != 0 ] && exit 1
+			popd > /dev/null
+		elif [ "$help" = "0" ]
+		then
+			touch disable-$i
+		fi
 	fi
 done
 

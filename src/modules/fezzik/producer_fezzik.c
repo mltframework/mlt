@@ -29,6 +29,7 @@
 #include <framework/mlt.h>
 
 static mlt_properties dictionary = NULL;
+static mlt_properties normalisers = NULL;
 
 static void track_service( mlt_tractor tractor, void *service, mlt_destructor destructor )
 {
@@ -116,7 +117,7 @@ static mlt_producer create_producer( char *file )
 	return result;
 }
 
-static mlt_service create_filter( mlt_tractor tractor, mlt_service last, char *effect )
+static mlt_service create_filter( mlt_tractor tractor, mlt_service last, char *effect, int *created )
 {
 	char *id = strdup( effect );
 	char *arg = strchr( id, ':' );
@@ -128,8 +129,43 @@ static mlt_service create_filter( mlt_tractor tractor, mlt_service last, char *e
 		mlt_filter_connect( filter, last, 0 );
 		track_service( tractor, filter, ( mlt_destructor )mlt_filter_close );
 		last = mlt_filter_service( filter );
+		*created = 1;
 	}
 	free( id );
+	return last;
+}
+
+static mlt_service attach_normalisers( mlt_tractor tractor, mlt_service last )
+{
+	// Loop variable
+	int i;
+
+	// Tokeniser
+	mlt_tokeniser tokeniser = mlt_tokeniser_init( );
+
+	// We only need to load the normalising properties once
+	if ( normalisers == NULL )
+	{
+		char temp[ 1024 ];
+		sprintf( temp, "%s/fezzik.ini", mlt_factory_prefix( ) );
+		normalisers = mlt_properties_load( temp );
+		mlt_factory_register_for_clean_up( normalisers, ( mlt_destructor )mlt_properties_close );
+	}
+
+	// Apply normalisers
+	for ( i = 0; i < mlt_properties_count( normalisers ); i ++ )
+	{
+		int j = 0;
+		int created = 0;
+		char *value = mlt_properties_get_value( normalisers, i );
+		mlt_tokeniser_parse_new( tokeniser, value, "," );
+		for ( j = 0; !created && j < mlt_tokeniser_count( tokeniser ); j ++ )
+			last = create_filter( tractor, last, mlt_tokeniser_get_string( tokeniser, j ), &created );
+	}
+
+	// Close the tokeniser
+	mlt_tokeniser_close( tokeniser );
+
 	return last;
 }
 
@@ -163,10 +199,7 @@ mlt_producer producer_fezzik_init( char *arg )
 			mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 			// Now attach normalising filters
-			last = create_filter( tractor, last, "avdeinterlace" );
-			last = create_filter( tractor, last, "rescale" );
-			last = create_filter( tractor, last, "resize" );
-			last = create_filter( tractor, last, "avresample" );
+			last = attach_normalisers( tractor, last );
 
 			// Connect the tractor to the last
 			mlt_tractor_connect( tractor, last );

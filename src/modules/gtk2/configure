@@ -9,7 +9,7 @@ pango			libmltgtk2.so
 EOF
 
 cat << EOF >> ../filters.dat
-rescale			libmltgtk2.so
+gtkrescale		libmltgtk2.so
 EOF
 
 fi

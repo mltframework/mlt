@@ -30,6 +30,7 @@
 #include "filter_luma.h"
 #include "filter_mirror.h"
 #include "filter_obscure.h"
+#include "filter_rescale.h"
 #include "filter_resize.h"
 #include "filter_region.h"
 #include "filter_watermark.h"
@@ -67,6 +68,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_obscure_init( arg );
 	if ( !strcmp( id, "region" ) )
 		return filter_region_init( arg );
+	if ( !strcmp( id, "rescale" ) )
+		return filter_rescale_init( arg );
 	if ( !strcmp( id, "resize" ) )
 		return filter_resize_init( arg );
 	if ( !strcmp( id, "watermark" ) )

@@ -14,6 +14,7 @@ OBJS = factory.o \
 	   filter_mirror.o \
 	   filter_obscure.o \
 	   filter_region.o \
+	   filter_rescale.o \
 	   filter_resize.o \
 	   filter_watermark.o \
 	   transition_composite.o \

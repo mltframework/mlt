@@ -18,6 +18,7 @@ luma			libmltcore.so
 mirror			libmltcore.so
 obscure			libmltcore.so
 region			libmltcore.so
+rescale			libmltcore.so
 resize			libmltcore.so
 watermark		libmltcore.so
 EOF
