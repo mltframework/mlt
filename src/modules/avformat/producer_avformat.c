@@ -92,7 +92,7 @@ mlt_producer producer_avformat_init( char *file )
 /** Find the default streams.
 */
 
-void find_default_streams( AVFormatContext *context, int *audio_index, int *video_index )
+static void find_default_streams( AVFormatContext *context, int *audio_index, int *video_index )
 {
 	int i;
 
@@ -122,7 +122,7 @@ void find_default_streams( AVFormatContext *context, int *audio_index, int *vide
 /** Producer file destructor.
 */
 
-void producer_file_close( void *context )
+static void producer_file_close( void *context )
 {
 	if ( context != NULL )
 	{
@@ -140,7 +140,7 @@ void producer_file_close( void *context )
 /** Producer file destructor.
 */
 
-void producer_codec_close( void *codec )
+static void producer_codec_close( void *codec )
 {
 	if ( codec != NULL )
 	{

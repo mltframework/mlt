@@ -210,6 +210,21 @@ mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 	return producer;
 }
 
+static int position_compare( const void *p1, const void *p2 )
+{
+	return *( int64_t * )p1 - *( int64_t * )p2;
+}
+
+static int add_unique( mlt_position *array, int size, mlt_position position )
+{
+	int i = 0;
+	for ( i = 0; i < size; i ++ )
+		if ( array[ i ] == position )
+			break;
+	if ( i == size )
+		array[ size ++ ] = position;
+	return size;
+}
 
 /** Determine the clip point.
 
@@ -233,11 +248,12 @@ mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 
 mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
 {
-	int first = 1;
 	mlt_position position = 0;
 	int i = 0;
+	int j = 0;
+	int64_t *map = malloc( 1000 * sizeof( mlt_position ) );
+	int count = 0;
 
-	// Loop through each of the tracks
 	for ( i = 0; i < this->count; i ++ )
 	{
 		// Get the producer for this track
@@ -252,34 +268,58 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 			// Determine if it's a playlist
 			mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 
-			// We only consider playlists
+			// Special case consideration of playlists
 			if ( playlist != NULL )
 			{
-				// Locate the smallest position
-				if ( first )
-				{
-					// First position found
-					position = mlt_playlist_clip( playlist, whence, index );
-	
-					// We're no longer first
-					first = 0;
-				}
-				else
-				{
-					// Obtain the clip position in this playlist
-					//mlt_position position2 = mlt_playlist_clip( playlist, whence, index );
-
-					// If this position is prior to the first, then use it
-					//if ( position2 < position )
-						//position = position2;
-				}
+				for ( j = 0; j < mlt_playlist_count( playlist ); j ++ )
+					count = add_unique( map, count, mlt_playlist_clip( playlist, mlt_whence_relative_start, j ) );
+				count = add_unique( map, count, mlt_producer_get_out( producer ) + 1 );
 			}
 			else
 			{
-				fprintf( stderr, "track %d isn't a playlist\n", index );
+				count = add_unique( map, count, 0 );
+				count = add_unique( map, count, mlt_producer_get_out( producer ) + 1 );
 			}
 		}
 	}
+
+	// Now sort the map
+	qsort( map, count, sizeof( int64_t ), position_compare );
+
+	// Now locate the requested index
+	switch( whence )
+	{
+		case mlt_whence_relative_start:
+			if ( index < count )
+				position = map[ index ];
+			else
+				position = map[ count - 1 ];
+			break;
+
+		case mlt_whence_relative_current:
+			position = mlt_producer_position( mlt_multitrack_producer( this ) );
+			for ( i = 0; i < count - 2; i ++ ) 
+				if ( position >= map[ i ] && position < map[ i + 1 ] )
+					break;
+			index += i;
+			if ( index >= 0 && index < count )
+				position = map[ index ];
+			else if ( index < 0 )
+				position = map[ 0 ];
+			else
+				position = map[ count - 1 ];
+			break;
+
+		case mlt_whence_relative_end:
+			if ( index < count )
+				position = map[ count - index - 1 ];
+			else
+				position = map[ 0 ];
+			break;
+	}
+
+	// Free the map
+	free( map );
 
 	return position;
 }

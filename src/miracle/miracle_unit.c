@@ -146,6 +146,8 @@ static mlt_producer create_producer( miracle_unit unit, char *file )
 			char *args[ 2 ] = { file, NULL };
 			result = mlt_factory_producer( "inigo", args );
 		}
+		else if ( strstr( file, ".westley" ) )
+			result = mlt_factory_producer( "westley", file );
 		else if ( strstr( file, ".mpg" ) )
 			result = mlt_factory_producer( "mcmpeg", file );
 		else if ( strstr( file, ".mpeg" ) )
@@ -166,7 +168,9 @@ static mlt_producer create_producer( miracle_unit unit, char *file )
 			result = mlt_factory_producer( "pixbuf", file );
 		else if ( strstr( file, ".txt" ) )
 			result = mlt_factory_producer( "pango", file );
-	
+		else if ( strstr( file, ".ogg" ) )
+			result = mlt_factory_producer( "vorbis", file );
+
 		// 2nd Line fallbacks
 		if ( result == NULL && strstr( file, ".dv" ) )
 			result = mlt_factory_producer( "libdv", file );
@@ -176,6 +180,10 @@ static mlt_producer create_producer( miracle_unit unit, char *file )
 		// 3rd line fallbacks 
 		if ( result == NULL )
 			result = mlt_factory_producer( "avformat", file );
+
+		// 4th line fallbacks 
+		if ( result == NULL )
+			result = mlt_factory_producer( "ffmpeg", file );
 
 		// Now store the result
 		mlt_properties_set_data( properties, file, result, 0, ( mlt_destructor )mlt_producer_close, NULL );

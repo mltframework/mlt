@@ -48,7 +48,9 @@ static mlt_producer parse_inigo( char *file )
 	if ( result != NULL )
 	{
 		mlt_properties properties = mlt_producer_properties( result );
+		fprintf( stderr, "resource = %s\n", mlt_properties_get( properties, "resource" ) );
 		mlt_properties_set( properties, "resource", file );
+		fprintf( stderr, "resource = %s\n", mlt_properties_get( properties, "resource" ) );
 	}
 
 	while( count -- )
@@ -85,6 +87,8 @@ static mlt_producer create_producer( char *file )
 		result = mlt_factory_producer( "pango", file );
 	else if ( strstr( file, ".westley" ) )
 		result = mlt_factory_producer( "westley", file );
+	else if ( strstr( file, ".ogg" ) )
+		result = mlt_factory_producer( "vorbis", file );
 
 	// 2nd Line fallbacks
 	if ( result == NULL && strstr( file, ".dv" ) )
@@ -95,6 +99,10 @@ static mlt_producer create_producer( char *file )
 	// 3rd line fallbacks 
 	if ( result == NULL )
 		result = mlt_factory_producer( "avformat", file );
+
+	// 4th line fallbacks 
+	if ( result == NULL )
+		result = mlt_factory_producer( "ffmpeg", file );
 
 	return result;
 }

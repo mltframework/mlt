@@ -313,6 +313,34 @@ Producers
 
 			Since it uses pipes, it is not compatible with bluefish.
 
+	vorbis
+
+		Description
+
+			OGG Vorbis file reader.
+
+		Constructor Argument
+
+			'file' - file to use (only .ogg supported at the moment)
+
+		Initialisation Properties
+
+			int in - in point
+			int out - out point
+
+		Read Only Properties
+
+			double fps - this is fixed at 25 for PAL currently
+
+		Dependencies
+
+			libvorbisfile
+
+		Known Bugs
+
+			Fixed frame size (PAL audio chunks).
+			Doesn't cover ogg files with multiple, differing sections.
+
 
 Filters
 -------
