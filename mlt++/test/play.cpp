@@ -3,7 +3,7 @@
 #include <string>
 using namespace std;
 
-#include <mlt++/Mlt.h>
+#include <Mlt.h>
 using namespace Mlt;
 
 #include <time.h>
