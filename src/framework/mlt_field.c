@@ -146,6 +146,9 @@ int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track )
 
 		// Reconnect tractor to new producer
 		mlt_tractor_connect( this->tractor, this->producer );
+
+		// Fire an event
+		mlt_events_fire( mlt_field_properties( this ), "service-changed", NULL );
 	}
 
 	return result;
@@ -167,6 +170,9 @@ int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track
 
 		// Reconnect tractor to new producer
 		mlt_tractor_connect( this->tractor, this->producer );
+
+		// Fire an event
+		mlt_events_fire( mlt_field_properties( this ), "service-changed", NULL );
 	}
 
 	return 0;

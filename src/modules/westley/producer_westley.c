@@ -1318,11 +1318,19 @@ mlt_producer producer_westley_init( char *url )
 		// make the returned service destroy the connected services
 		mlt_properties_set_data( properties, "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
 
-		// Now assign additional properties
-		mlt_properties_set( properties, "resource", url );
+		if ( getenv( "MLT_WESTLEY_DEEP" ) == NULL )
+		{
+			// Now assign additional properties
+			mlt_properties_set( properties, "resource", url );
 
-		// This tells consumer_westley not to deep copy
-		mlt_properties_set( properties, "westley", "was here" );
+			// This tells consumer_westley not to deep copy
+			mlt_properties_set( properties, "westley", "was here" );
+		}
+		else
+		{
+			// Allow the project to be edited
+			mlt_properties_set_int( properties, "_mlt_service_hidden", 1 );
+		}
 	}
 	else
 	{

@@ -179,7 +179,10 @@ static inline void serialise_properties( mlt_properties properties, xmlNode *nod
 			 mlt_properties_get_value( properties, i ) != NULL &&
 			 strcmp( name, "westley" ) != 0 &&
 			 strcmp( name, "in" ) != 0 &&
-			 strcmp( name, "out" ) != 0 )
+			 strcmp( name, "out" ) != 0 && 
+			 strcmp( name, "id" ) != 0 && 
+			 strcmp( name, "width" ) != 0 &&
+			 strcmp( name, "height" ) != 0 )
 		{
 			p = xmlNewChild( node, NULL, "property", NULL );
 			xmlNewProp( p, "name", mlt_properties_get_name( properties, i ) );
@@ -246,7 +249,6 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 static void serialise_multitrack( serialise_context context, mlt_service service, xmlNode *node )
 {
 	int i;
-	xmlNode *child = node;
 	
 	if ( context->pass == 0 )
 	{
@@ -261,16 +263,10 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 		if ( id == NULL )
 			return;
 
-		// Create the multitrack node
-		child = xmlNewChild( node, NULL, "multitrack", NULL );
-		
-		// Set the id
-		xmlNewProp( child, "id", id );
-
 		// Serialise the tracks
 		for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
 		{
-			xmlNode *track = xmlNewChild( child, NULL, "track", NULL );
+			xmlNode *track = xmlNewChild( node, NULL, "track", NULL );
 			int hide = 0;
 			mlt_producer producer = mlt_multitrack_track( MLT_MULTITRACK( service ), i );
 
@@ -281,9 +277,11 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 			if ( hide )
 				xmlNewProp( track, "hide", hide == 1 ? "video" : ( hide == 2 ? "audio" : "both" ) );
 		}
-		serialise_service_filters( context, service, child );
+		serialise_service_filters( context, service, node );
 	}
 }
+
+static void serialise_tractor( serialise_context context, mlt_service service, xmlNode *node );
 
 static void serialise_playlist( serialise_context context, mlt_service service, xmlNode *node )
 {
@@ -308,7 +306,14 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 				{
 					char *service_s = mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" );
 					char *resource_s = mlt_properties_get( mlt_producer_properties( info.producer ), "resource" );
-					if ( service_s != NULL && strcmp( service_s, "blank" ) != 0 )
+					if ( resource_s != NULL && !strcmp( resource_s, "<tractor>" ) )
+					{
+						serialise_tractor( context, MLT_SERVICE( info.producer ), node );
+						context->pass ++;
+						serialise_tractor( context, MLT_SERVICE( info.producer ), node );
+						context->pass --;
+					}
+					else if ( service_s != NULL && strcmp( service_s, "blank" ) != 0 )
 						serialise_service( context, MLT_SERVICE( info.producer ), node );
 					else if ( resource_s != NULL && !strcmp( resource_s, "<playlist>" ) )
 						serialise_playlist( context, MLT_SERVICE( info.producer ), node );

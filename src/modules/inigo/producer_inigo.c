@@ -121,6 +121,7 @@ mlt_producer producer_inigo_init( char **argv )
 	int i;
 	int track = 0;
 	mlt_producer producer = NULL;
+	mlt_tractor mix = NULL;
 	mlt_playlist playlist = mlt_playlist_init( );
 	mlt_properties group = mlt_properties_new( );
 	mlt_properties properties = group;
@@ -156,6 +157,30 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_properties_inherit( properties, group );
 			}
 		}
+		else if ( !strcmp( argv[ i ], "-mix" ) )
+		{
+			int length = atoi( argv[ ++ i ] );
+			if ( producer != NULL )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			if ( mlt_playlist_count( playlist ) >= 2 )
+			{
+				if ( mlt_playlist_mix( playlist, mlt_playlist_count( playlist ) - 2, length, NULL ) == 0 )
+				{
+					mlt_playlist_clip_info info;
+					mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 2 );
+					mix = ( mlt_tractor )info.producer;
+				}
+				else
+				{
+					fprintf( stderr, "Mix failed?\n" );
+				}
+			}
+			else
+			{
+				fprintf( stderr, "Invalid position for a mix...\n" );
+			}
+		}
 		else if ( !strcmp( argv[ i ], "-filter" ) )
 		{
 			mlt_filter filter = create_filter( field, argv[ ++ i ], track );
@@ -172,6 +197,33 @@ mlt_producer producer_inigo_init( char **argv )
 			{
 				properties = mlt_transition_properties( transition );
 				mlt_properties_inherit( properties, group );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-mixer" ) )
+		{
+			if ( mix != NULL )
+			{
+				char *id = strdup( argv[ ++ i ] );
+				char *arg = strchr( id, ':' );
+				mlt_field field = mlt_tractor_field( mix );
+				mlt_transition transition = NULL;
+				if ( arg != NULL )
+					*arg ++ = '\0';
+				transition = mlt_factory_transition( id, arg );
+				if ( transition != NULL )
+				{
+					properties = mlt_transition_properties( transition );
+					mlt_properties_inherit( properties, group );
+					mlt_field_plant_transition( field, transition, 0, 1 );
+					mlt_properties_set_position( properties, "in", 0 );
+					mlt_properties_set_position( properties, "out", mlt_producer_get_out( ( mlt_producer )mix ) );
+					mlt_transition_close( transition );
+				}
+				free( id );
+			}
+			else
+			{
+				fprintf( stderr, "Invalid mixer...\n" );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-blank" ) )
