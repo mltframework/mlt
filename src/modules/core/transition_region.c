@@ -67,8 +67,8 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 		sprintf( key, "%s.", name );
 
 		// Just in case, let's assume that the filter here has a composite
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "composite.start", "0%,0%:100%x100%" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "composite.fill", "true" );
+		//mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "composite.geometry", "0%,0%:100%x100%" );
+		//mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "composite.fill", 1 );
 
 		// Pass all the key properties on the filter down
 		mlt_properties_pass( MLT_FILTER_PROPERTIES( filter ), properties, key );
@@ -106,7 +106,7 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 	mlt_image_format format = mlt_image_yuv422;
 					
 	// Get the shape image to trigger alpha creation
-	mlt_properties_set( MLT_FRAME_PROPERTIES( shape_frame ), "distort", "true" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( shape_frame ), "distort", 1 );
 	mlt_frame_get_image( shape_frame, &image, &format, &region_width, &region_height, 0 );
 
 	alpha = mlt_frame_get_alpha_mask( shape_frame );
@@ -122,9 +122,14 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 			*p ++ = *image ++;
 			image ++;
 		}
-		mlt_properties_set_data( MLT_FRAME_PROPERTIES( shape_frame ), "alpha", alpha, 
-								 region_width * region_height, mlt_pool_release, NULL );
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", alpha, region_width * region_height, mlt_pool_release, NULL );
 	}
+	else
+	{
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", alpha, region_width * region_height, NULL, NULL );
+	}
+
+	this->get_alpha_mask = NULL;
 
 	return alpha;
 }
@@ -171,8 +176,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			mlt_properties composite_properties = MLT_TRANSITION_PROPERTIES( composite );
 
 			// We want to ensure that we don't get a wobble...
-			mlt_properties_set( composite_properties, "distort", "true" );
-			mlt_properties_set( composite_properties, "progressive", "1" );
+			mlt_properties_set_int( composite_properties, "distort", 1 );
+			mlt_properties_set_int( composite_properties, "progressive", 1 );
 
 			// Pass all the composite. properties on the transition down
 			mlt_properties_pass( composite_properties, properties, "composite." );

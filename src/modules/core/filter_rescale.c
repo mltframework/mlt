@@ -110,9 +110,10 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 
 static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight )
 {
-	uint8_t *input = mlt_frame_get_alpha_mask( this );
+	int size = 0;
+	uint8_t *input = mlt_properties_get_data( MLT_FRAME_PROPERTIES( this ), "alpha", &size );
 	
-	if ( input != NULL )
+	if ( input != NULL && ( size == iwidth * iheight ) || size == ( iwidth * ( iheight + 1 ) ) )
 	{
 		uint8_t *output = mlt_pool_alloc( owidth * oheight );
 

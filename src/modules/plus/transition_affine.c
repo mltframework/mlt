@@ -540,7 +540,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 	}
 
-	mlt_properties_set( b_props, "distort", mlt_properties_get( properties, "distort" ) );
+	mlt_properties_set_int( b_props, "distort", mlt_properties_get_int( properties, "distort" ) );
 	mlt_frame_get_image( b_frame, &b_image, &b_format, &b_width, &b_height, 0 );
 	result.w = b_width;
 	result.h = b_height;
@@ -698,7 +698,7 @@ mlt_transition transition_affine_init( char *arg )
 	{
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sx", 1 );
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sy", 1 );
-		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "distort", NULL );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "distort", 0 );
 		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "start", "0,0:100%x100%" );
 		transition->process = transition_process;
 	}

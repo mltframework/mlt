@@ -10,7 +10,7 @@ inigo \
 		out=199 \
 		a_track=1 \
 		b_track=2 \
-		fill=true \
+		distort=1 \
 -transition \
 	composite:0%,75%:100%x20%:0 \
 		in=50 \

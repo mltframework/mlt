@@ -689,12 +689,18 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 			scaled_height = normalised_height;
 		}
 
-		// Now apply the fill
-		// TODO: Should combine fill/distort in one property
-		if ( mlt_properties_get( properties, "fill" ) != NULL )
+		if ( mlt_properties_get_int( properties, "fill" ) )
 		{
-			scaled_width = ( geometry->item.w / scaled_width ) * scaled_width;
-			scaled_height = ( geometry->item.h / scaled_height ) * scaled_height;
+			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height < normalised_width )
+			{
+				scaled_width = scaled_width * normalised_height / scaled_height;
+				scaled_height = normalised_height;
+			}
+			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width < normalised_height )
+			{
+				scaled_height = scaled_height * normalised_width / scaled_width;
+				scaled_width = normalised_width;
+			}
 		}
 
 		// Save the new scaled dimensions
@@ -708,7 +714,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	}
 
 	// We want to ensure that we bypass resize now...
-	mlt_properties_set( b_props, "distort", "true" );
+	mlt_properties_set_int( b_props, "distort", 1 );
 
 	// Take into consideration alignment for optimisation
 	if ( !mlt_properties_get_int( properties, "titles" ) )
@@ -893,7 +899,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 
 	// Assign this position to the b frame
 	mlt_frame_set_position( b_frame, frame_position );
-	mlt_properties_set( b_props, "distort", "true" );
+	mlt_properties_set_int( b_props, "distort", 1 );
 
 	// Return the frame
 	return b_frame;
@@ -972,7 +978,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL )
 				mlt_properties_set( b_props, "rescale.interp", "hyper" );
-			mlt_properties_set( properties, "fill", NULL );
 			width_b = mlt_properties_get_int( a_props, "dest_width" );
 			height_b = mlt_properties_get_int( a_props, "dest_height" );
 		}

@@ -48,7 +48,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( rescale != NULL && !strcmp( rescale, "none" ) )
 		return mlt_frame_get_image( this, image, format, width, height, writable );
 
-	if ( mlt_properties_get( properties, "distort" ) == NULL )
+	if ( mlt_properties_get_int( properties, "distort" ) == 0 )
 	{
 		// Normalise the input and out display aspect
 		int normalised_width = mlt_properties_get_int( properties, "normalised_width" );

@@ -149,9 +149,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 			if ( mlt_properties_get_int( properties, "distort" ) )
 			{
-				mlt_properties_set( MLT_TRANSITION_PROPERTIES( composite ), "distort", "true" );
-				mlt_properties_set( a_props, "distort", "true" );
-				mlt_properties_set( b_props, "distort", "true" );
+				mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( composite ), "distort", 1 );
+				mlt_properties_set_int( a_props, "distort", 1 );
+				mlt_properties_set_int( b_props, "distort", 1 );
 			}
 
 			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
