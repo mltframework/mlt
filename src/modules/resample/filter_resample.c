@@ -54,6 +54,11 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
+	//fprintf( stderr, "resample_get_audio: output_rate %d\n", output_rate, *frequency );
+	// Return now if now work to do
+	if ( output_rate == *frequency )
+		return 0;
+
 	// Convert to floating point
 	for ( i = 0; i < *samples * *channels; ++i )
 		input_buffer[ i ] = ( float )( (*buffer)[ i ] ) / 32768;

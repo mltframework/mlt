@@ -96,12 +96,14 @@ static inline void serialise_properties( mlt_properties properties, xmlNode *nod
 			 mlt_properties_get_value( properties, i ) != NULL &&
 			 strcmp( name, "westley" ) != 0 )
 		{
-#if 0
-			p = xmlNewChild( node, NULL, "prop", NULL );
+#if 1
+			p = xmlNewChild( node, NULL, "property", NULL );
+			xmlNewProp( p, "name", mlt_properties_get_name( properties, i ) );
+			xmlNodeSetContent( p, mlt_properties_get_value( properties, i ) );
 #else
 			p = node;
-#endif
 			xmlNewProp( p, mlt_properties_get_name( properties, i ), mlt_properties_get_value( properties, i ) );
+#endif
 		}
 	}
 }

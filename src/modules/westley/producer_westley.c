@@ -34,9 +34,10 @@ struct deserialise_context_s
 {
 	mlt_service stack_service[ STACK_SIZE ];
 	int stack_service_size;
-	int track_count;
 	mlt_properties producer_map;
 	mlt_properties destructors;
+	char *property;
+	mlt_properties producer_properties;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -96,11 +97,14 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 static void on_start_multitrack( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
 	mlt_service service = mlt_multitrack_service( mlt_multitrack_init() );
+	mlt_properties properties = mlt_service_properties( service );
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_multitrack_close );
 
+	mlt_properties_set_position( properties, "length", 0 );
+
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( mlt_service_properties( service ), (char*) atts[0], (char*) atts[1] );
+		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
 
 	context_push_service( context, service );
 }
@@ -115,48 +119,26 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 	mlt_properties_set_position( properties, "length", 0 );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
+	{
+		mlt_properties_set( properties, ( char* )atts[0], ( char* )atts[1] );
+		if ( strcmp( atts[ 0 ], "out" ) == 0 )
+			mlt_properties_set( properties, "_westley.out", ( char* )atts[ 1 ] );
+	}
 
 	if ( mlt_properties_get( properties, "id" ) != NULL )
 		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
-
-	if ( mlt_properties_get_position( properties, "length" ) < mlt_properties_get_position( properties, "out" ) )
-	{
-		mlt_position length = mlt_properties_get_position( properties, "out" ) + 1;
-		mlt_properties_set_position( properties, "length", length );
-	}
 
 	context_push_service( context, service );
 }
 
 static void on_start_producer( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
-	mlt_properties properties = mlt_properties_new();
-	mlt_service service = NULL;
+	mlt_properties properties = context->producer_properties = mlt_properties_new();
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
 		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
 	}
-
-	service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "resource" ) ) );
-
-	if ( service == NULL && mlt_properties_get( properties, "mlt_service" ) != NULL )
-	{
-		service = MLT_SERVICE( mlt_factory_producer( mlt_properties_get( properties, "mlt_service" ),
-			mlt_properties_get( properties, "resource" ) ) );
-	}
-
-	track_service( context->destructors, service, (mlt_destructor) mlt_producer_close );
-
-	// Add the producer to the producer map	
-	if ( mlt_properties_get( properties, "id" ) != NULL )
-		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
-
-	mlt_properties_inherit( mlt_service_properties( service ), properties );
-	mlt_properties_close( properties );
-
-	context_push_service( context, service );
 }
 
 static void on_start_blank( deserialise_context context, const xmlChar *name, const xmlChar **atts)
@@ -199,104 +181,45 @@ static void on_start_entry_track( deserialise_context context, const xmlChar *na
 
 static void on_start_filter( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
-	char *id;
-	mlt_properties properties = mlt_properties_new();
-	char key[11];
-	key[ 10 ] = '\0';
-
-	// Get the producer from the stack
-	mlt_service producer = context_pop_service( context );
+	mlt_properties properties = context->producer_properties = mlt_properties_new();
 
 	// Set the properties
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
-
-	// Create the filter
-	mlt_service service = MLT_SERVICE( mlt_factory_filter( mlt_properties_get( properties, "mlt_service" ), NULL ) );
-
-	track_service( context->destructors, service, (mlt_destructor) mlt_filter_close );
-	
-	// Connect the filter to the producer
-	mlt_filter_connect( MLT_FILTER( service ), producer,
-		mlt_properties_get_int( properties, "track" ) );
-
-	// Set in and out from producer if non existant
-	if ( mlt_properties_get( properties, "in" ) == NULL )
-		mlt_properties_set_position( properties, "in", mlt_producer_get_in( MLT_PRODUCER( producer ) ) );
-	if ( mlt_properties_get( properties, "out" ) == NULL )
-		mlt_properties_set_position( properties, "out", mlt_producer_get_out( MLT_PRODUCER( producer ) ) );
-
-	// Propogate the properties
-	mlt_properties_inherit( mlt_service_properties( service ), properties );
-	mlt_properties_close( properties );
-
-	// Get the parent producer from the stack
-	mlt_service tractor = context_pop_service( context );
-
-	if ( tractor != NULL )
-	{
-		// Connect the filter to the tractor
-		if ( strcmp( mlt_properties_get( mlt_service_properties( tractor ), "resource" ), "<tractor>" ) == 0 )
-			mlt_tractor_connect( MLT_TRACTOR( tractor ), service );
-
-		// Push the parent producer back onto the stack
-		context_push_service( context, tractor );
-	}
-
-	// If a producer alias is in the producer_map, get it
-	snprintf( key, 10, "%p", producer );
-	if ( mlt_properties_get_data( context->producer_map, key, NULL ) != NULL )
-		producer = mlt_properties_get_data( context->producer_map, key, NULL );
-	
-	// Put the producer in the producer map
-	id = mlt_properties_get( mlt_service_properties( producer ), "id" );
-	if ( id != NULL )
-		mlt_properties_set_data( context->producer_map, id, service, 0, NULL, NULL );
-	
-	// For filter chain support, add an alias to the producer map
-	snprintf( key, 10, "%p", service );
-	mlt_properties_set_data( context->producer_map, key, producer, 0, NULL, NULL );
-
-	// Push the filter onto the stack
-	context_push_service( context, service );
 }
 
 static void on_start_transition( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
-	mlt_properties properties = mlt_properties_new();
-
-	// Get the producer from the stack
-	mlt_service producer = context_pop_service( context );
+	mlt_properties properties = context->producer_properties = mlt_properties_new();
 
 	// Set the properties
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
+}
 
-	// Create the transition
-	mlt_service service = MLT_SERVICE( mlt_factory_transition( mlt_properties_get( properties, "mlt_service" ), NULL ) );
+static void on_start_property( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+{
+	mlt_properties properties = context->producer_properties;
+	char *value = NULL;
 
-	track_service( context->destructors, service, (mlt_destructor) mlt_transition_close );
+	if ( properties == NULL )
+		return;
+	
+	// Set the properties
+	for ( ; atts != NULL && *atts != NULL; atts += 2 )
+	{
+		if ( strcmp( atts[ 0 ], "name" ) == 0 )
+		{
+			context->property = strdup( atts[ 1 ] );
+		}
+		else if ( strcmp( atts[ 0 ], "value" ) == 0 )
+		{
+			value = (char*) atts[ 1 ];
+		}
+	}
 
-	// Propogate the properties
-	mlt_properties_inherit( mlt_service_properties( service ), properties );
-	mlt_properties_close( properties );
-
-	// Connect the filter to the producer
-	mlt_transition_connect( MLT_TRANSITION( service ), producer,
-		mlt_properties_get_int( mlt_service_properties( service ), "a_track" ),
-		mlt_properties_get_int( mlt_service_properties( service ), "b_track" ) );
-
-	// Get the tractor from the stack
-	mlt_service tractor = context_pop_service( context );
-
-	// Connect the tractor to the transition
-	mlt_tractor_connect( MLT_TRACTOR( tractor ), service );
-
-	// Push the tractor back onto the stack
-	context_push_service( context, tractor );
-
-	// Push the transition onto the stack
-	context_push_service( context, service );
+	if ( context->property != NULL && value != NULL )
+		mlt_properties_set( properties, context->property, value );
 }
 
 static void on_end_multitrack( deserialise_context context, const xmlChar *name )
@@ -321,11 +244,25 @@ static void on_end_multitrack( deserialise_context context, const xmlChar *name 
 
 static void on_end_playlist( deserialise_context context, const xmlChar *name )
 {
-	// Get the producer (playlist) from the stack
-	mlt_service producer = context_pop_service( context );
+	// Get the playlist from the stack
+	mlt_service service = context_pop_service( context );
+	mlt_properties properties = mlt_service_properties( service );
 
-	// Push the producer back onto the stack
-	context_push_service( context, producer );
+	mlt_position in = mlt_properties_get_position( properties, "in" );
+	mlt_position out;
+
+	if ( mlt_properties_get( properties, "_westley.out" ) != NULL )
+		out = mlt_properties_get_position( properties, "_westley.out" );
+	else
+		out = mlt_properties_get_position( properties, "length" ) - 1;
+
+	if ( mlt_properties_get_position( properties, "length" ) < out )
+		mlt_properties_set_position( properties, "length", out  + 1 );
+
+	mlt_producer_set_in_and_out( MLT_PRODUCER( service ), in, out );
+
+	// Push the playlist back onto the stack
+	context_push_service( context, service );
 }
 
 static void on_end_track( deserialise_context context, const xmlChar *name )
@@ -339,7 +276,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 	// Set the track on the multitrack
 	mlt_multitrack_connect( MLT_MULTITRACK( service ),
 		MLT_PRODUCER( producer ),
-		context->track_count++ );
+		mlt_multitrack_count( MLT_MULTITRACK( service ) ) );
 
 	// Push the multitrack back onto the stack
 	context_push_service( context, service );
@@ -368,11 +305,180 @@ static void on_end_tractor( deserialise_context context, const xmlChar *name )
 	// Get and discard the last producer
 	mlt_producer multitrack = MLT_PRODUCER( context_pop_service( context ) );
 
+	// Get the tractor
+	mlt_service tractor = context_pop_service( context );
+	multitrack = mlt_properties_get_data( mlt_service_properties( tractor ), "multitrack", NULL );
+
 	// Inherit the producer's properties
 	mlt_properties properties = mlt_producer_properties( multitrack );
 	mlt_properties_set_position( properties, "length", mlt_producer_get_out( multitrack ) + 1 );
 	mlt_producer_set_in_and_out( multitrack, 0, mlt_producer_get_out( multitrack ) );
 	mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( multitrack ) );
+
+	// Push the playlist back onto the stack
+	context_push_service( context, tractor );
+}
+
+static void on_end_property( deserialise_context context, const xmlChar *name )
+{
+	// Close this property handling
+	free( context->property );
+	context->property = NULL;
+}
+
+static void on_end_producer( deserialise_context context, const xmlChar *name )
+{
+	mlt_properties properties = context->producer_properties;
+	mlt_service service = NULL;
+	
+	if ( properties == NULL )
+		return;
+		
+	// Instatiate the producer
+	service = MLT_SERVICE( mlt_factory_producer( "fezzik", mlt_properties_get( properties, "resource" ) ) );
+	
+	if ( service == NULL && mlt_properties_get( properties, "mlt_service" ) != NULL )
+	{
+		service = MLT_SERVICE( mlt_factory_producer( mlt_properties_get( properties, "mlt_service" ),
+			mlt_properties_get( properties, "resource" ) ) );
+	}
+
+	track_service( context->destructors, service, (mlt_destructor) mlt_producer_close );
+
+	// Add the producer to the producer map
+	if ( mlt_properties_get( properties, "id" ) != NULL )
+		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
+
+	mlt_properties_inherit( mlt_service_properties( service ), properties );
+	mlt_properties_close( properties );
+	context->producer_properties = NULL;
+	properties = mlt_service_properties( service );
+
+	// Set in and out
+	mlt_producer_set_in_and_out( MLT_PRODUCER( service ),
+		mlt_properties_get_position( properties, "in" ),
+		mlt_properties_get_position( properties, "out" ) );
+
+	// Push the new producer onto the stack
+	context_push_service( context, service );
+}
+
+static void on_end_filter( deserialise_context context, const xmlChar *name )
+{
+	mlt_properties properties = context->producer_properties;
+	if ( properties == NULL )
+		return;
+
+	char *id;
+	char key[11];
+	key[ 10 ] = '\0';
+
+	// Get the producer from the stack
+	mlt_service producer = context_pop_service( context );
+//fprintf( stderr, "connecting filter to %s\n", mlt_properties_get( mlt_service_properties( producer ), "resource" ) );
+
+	// Create the filter
+	mlt_service service = MLT_SERVICE( mlt_factory_filter( mlt_properties_get( properties, "mlt_service" ), NULL ) );
+
+	track_service( context->destructors, service, (mlt_destructor) mlt_filter_close );
+
+	// Connect the filter to the producer
+	mlt_filter_connect( MLT_FILTER( service ), producer,
+		mlt_properties_get_int( properties, "track" ) );
+
+	// Set in and out from producer if non existant
+	if ( mlt_properties_get( properties, "in" ) == NULL )
+		mlt_properties_set_position( properties, "in", mlt_producer_get_in( MLT_PRODUCER( producer ) ) );
+	if ( mlt_properties_get( properties, "out" ) == NULL )
+		mlt_properties_set_position( properties, "out", mlt_producer_get_out( MLT_PRODUCER( producer ) ) );
+
+	// Propogate the properties
+	mlt_properties_inherit( mlt_service_properties( service ), properties );
+	mlt_properties_close( properties );
+	context->producer_properties = NULL;
+	properties = mlt_service_properties( service );
+
+	// Set in and out
+//fprintf( stderr, "setting filter in %lld out %lld\n", mlt_properties_get_position( properties, "in" ), mlt_properties_get_position( properties, "out" ) );
+	mlt_filter_set_in_and_out( MLT_FILTER( service ), 
+		mlt_properties_get_position( properties, "in" ),
+		mlt_properties_get_position( properties, "out" ) );
+
+	// Get the parent producer from the stack
+	mlt_service tractor = context_pop_service( context );
+
+	if ( tractor != NULL )
+	{
+//fprintf( stderr, "connecting tractor %s to filter\n", mlt_properties_get( mlt_service_properties( tractor ), "resource" ) );
+		// Connect the tractor to the filter
+		if ( strcmp( mlt_properties_get( mlt_service_properties( tractor ), "resource" ), "<tractor>" ) == 0 )
+			mlt_tractor_connect( MLT_TRACTOR( tractor ), service );
+
+		// Push the parent producer back onto the stack
+		context_push_service( context, tractor );
+	}
+
+//fprintf( stderr, "setting filter in %lld out %lld\n", mlt_properties_get_position( properties, "in" ), mlt_properties_get_position( properties, "out" ) );
+	// If a producer alias is in the producer_map, get it
+	snprintf( key, 10, "%p", producer );
+	if ( mlt_properties_get_data( context->producer_map, key, NULL ) != NULL )
+		producer = mlt_properties_get_data( context->producer_map, key, NULL );
+
+	// Put the producer in the producer map
+	id = mlt_properties_get( mlt_service_properties( producer ), "id" );
+	if ( id != NULL )
+		mlt_properties_set_data( context->producer_map, id, service, 0, NULL, NULL );
+
+	// For filter chain support, add an alias to the producer map
+	snprintf( key, 10, "%p", service );
+	mlt_properties_set_data( context->producer_map, key, producer, 0, NULL, NULL );
+
+	// Push the filter onto the stack
+	context_push_service( context, service );
+
+}
+
+static void on_end_transition( deserialise_context context, const xmlChar *name )
+{
+	mlt_properties properties = context->producer_properties;
+	if ( properties == NULL )
+		return;
+
+	// Get the producer from the stack
+	mlt_service producer = context_pop_service( context );
+
+	// Create the transition
+	mlt_service service = MLT_SERVICE( mlt_factory_transition( mlt_properties_get( properties, "mlt_service" ), NULL ) );
+
+	track_service( context->destructors, service, (mlt_destructor) mlt_transition_close );
+
+	// Propogate the properties
+	mlt_properties_inherit( mlt_service_properties( service ), properties );
+	mlt_properties_close( properties );
+	context->producer_properties = NULL;
+	properties = mlt_service_properties( service );
+
+	// Set in and out
+	mlt_transition_set_in_and_out( MLT_TRANSITION( service ),
+		mlt_properties_get_position( properties, "in" ),
+		mlt_properties_get_position( properties, "out" ) );
+
+	// Connect the filter to the producer
+	mlt_transition_connect( MLT_TRANSITION( service ), producer,
+		mlt_properties_get_int( properties, "a_track" ),
+		mlt_properties_get_int( properties, "b_track" ) );
+
+	// Get the tractor from the stack
+	mlt_service tractor = context_pop_service( context );
+
+	// Connect the tractor to the transition
+	mlt_tractor_connect( MLT_TRACTOR( tractor ), service );
+
+	// Push the tractor back onto the stack
+	context_push_service( context, tractor );
+
+	// Push the transition onto the stack
+	context_push_service( context, service );
 }
 
 static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **atts)
@@ -395,6 +501,8 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_filter( context, name, atts );
 	else if ( strcmp( name, "transition" ) == 0 )
 		on_start_transition( context, name, atts );
+	else if ( strcmp( name, "property" ) == 0 )
+		on_start_property( context, name, atts );
 }
 
 static void on_end_element( void *ctx, const xmlChar *name )
@@ -411,8 +519,29 @@ static void on_end_element( void *ctx, const xmlChar *name )
 		on_end_entry( context, name );
 	else if ( strcmp( name, "tractor" ) == 0 )
 		on_end_tractor( context, name );
+	else if ( strcmp( name, "property" ) == 0 )
+		on_end_property( context, name );
+	else if ( strcmp( name, "producer" ) == 0 )
+		on_end_producer( context, name );
+	else if ( strcmp( name, "filter" ) == 0 )
+		on_end_filter( context, name );
+	else if ( strcmp( name, "transition" ) == 0 )
+		on_end_transition( context, name );
 }
 
+static void on_characters( void *ctx, const xmlChar *ch, int len )
+{
+	deserialise_context context = ( deserialise_context ) ctx;
+	char *value = calloc( len + 1, 1 );
+
+	value[ len ] = 0;
+	strncpy( value, (const char*) ch, len );
+
+	if ( context->property != NULL && context->producer_properties != NULL )
+		mlt_properties_set( context->producer_properties, context->property, value );
+		
+	free( value);
+}
 
 mlt_producer producer_westley_init( char *filename )
 {
@@ -428,6 +557,7 @@ mlt_producer producer_westley_init( char *filename )
 	mlt_properties_set_int( context->destructors, "registered", 0 );
 	sax->startElement = on_start_element;
 	sax->endElement = on_end_element;
+	sax->characters = on_characters;
 
 	if ( !init )
 	{

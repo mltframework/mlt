@@ -56,8 +56,20 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	mlt_frame_get_image( this, &input, format, &iwidth, &iheight, 0 );
 
+	// Determine maximum size within the aspect ratio:
+	double aspect_ratio = mlt_frame_get_aspect_ratio( this );
+	float display_aspect_ratio = 4.0 / 3.0; // (float)iwidth / (float)iheight;
+	if ( *width < *height * aspect_ratio )
+		oheight = *width / aspect_ratio;
+	else
+		owidth = *height * aspect_ratio;
+	if ( ( float )owidth * display_aspect_ratio < *width )
+		owidth = ( int )( ( float )owidth * display_aspect_ratio );
+	else if ( ( float )oheight * display_aspect_ratio < *height )
+		oheight = ( int )( ( float )oheight * display_aspect_ratio );
+
 	// If width and height are correct, don't do anything
-	if ( iwidth != owidth || iheight != oheight )
+	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) )
 	{
 		if ( *format == mlt_image_yuv422 )
 		{

@@ -223,6 +223,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	dv_parse_header( decoder, dv_data );
 
 	// Obtain required values
+	//fprintf( stderr, "libdv: frequency %d\n", decoder->audio->frequency );
 	*frequency = decoder->audio->frequency;
 	*samples = decoder->audio->samples_this_frame;
 	*channels = decoder->audio->num_channels;

@@ -605,6 +605,7 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 		mlt_properties_set_data( properties, "image", output, owidth * oheight * 2, free, NULL );
 		mlt_properties_set_int( properties, "width", owidth );
 		mlt_properties_set_int( properties, "height", oheight );
+		mlt_frame_set_aspect_ratio( this, 4.0/3.0/*( float )owidth / oheight*/ );
 
 		// Return the output
 		return output;
@@ -714,16 +715,16 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	int16_t *src, *dest;
 	//static int16_t *extra_src = NULL, *extra_dest = NULL;
 	static int extra_src_samples = 0, extra_dest_samples = 0;
-	int frequency_src = *channels, frequency_dest = *channels;
+	int frequency_src = *frequency, frequency_dest = *frequency;
 	int channels_src = *channels, channels_dest = *channels;
 	int samples_src = *samples, samples_dest = *samples;
 	int i, j;
 	double d = 0, s = 0;
 
 	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
-	//fprintf( stderr, "frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "_position" ) );
+	//fprintf( stderr, "mix: frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "_position" ) );
 	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
-	//fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
+	//fprintf( stderr, "mix: frame src  samples %d channels %d\n", samples_src, channels_src );
 	src = p_src;
 	dest = p_dest;
 	if ( channels_src > 6 )
@@ -763,6 +764,7 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	
 	*channels = channels_src < channels_dest ? channels_src : channels_dest;
 	*buffer = p_dest;
+	*frequency = frequency_dest;
 
 	// Mixdown
 	for ( i = 0; i < *samples; i++ )

@@ -185,6 +185,8 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	//fprintf( stderr, "filter_volume: frequency %d\n", *frequency );
+	return 0;
 
 	// Determine numeric limits
 	int bytes_per_samp = (samp_width - 1) / 8 + 1;

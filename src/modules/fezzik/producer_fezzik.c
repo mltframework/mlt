@@ -133,6 +133,7 @@ mlt_producer producer_fezzik_init( char *arg )
 
 			// Now attach normalising filters
 			last = create_filter( tractor, last, "rescale" );
+			last = create_filter( tractor, last, "resize" );
 			last = create_filter( tractor, last, "resample" );
 
 			// Connect the tractor to the last
