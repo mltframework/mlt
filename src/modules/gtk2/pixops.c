@@ -435,7 +435,7 @@ pixops_process ( guchar *dest_buf,
 		x = render_x0 * x_step + scaled_x_offset;
 		x_start = x >> SCALE_SHIFT;
 
-		while ( 0 && x_start < 0 && outbuf < outbuf_end )
+		while ( x_start < 0 && outbuf < outbuf_end )
 		{
 			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
 			                filter->x.n, filter->y.n,
@@ -447,8 +447,18 @@ pixops_process ( guchar *dest_buf,
 			x_start = x >> SCALE_SHIFT;
 			dest_x++;
 			outbuf += dest_channels;
+			
+			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
+			                filter->x.n, filter->y.n,
+			                outbuf, dest_x, dest_channels,
+			                line_bufs, src_channels,
+			                x >> SCALE_SHIFT, src_width );
+
+			x += x_step;
+			x_start = x >> SCALE_SHIFT;
+			dest_x++;
+			outbuf += dest_channels;
 		}
-		run_end_index = 720;
 
 		new_outbuf = ( *line_func ) ( run_weights, filter->x.n, filter->y.n,
 		                              outbuf, dest_x,
@@ -738,7 +748,7 @@ yuv422_scale ( guchar *dest_buf,
 	filter.overall_alpha = 1.0;
 	make_weights ( &filter, interp_type, scale_x, scale_y );
 
-fprintf( stderr, "RESCALE: %d %d\n", filter.x.n, filter.y.n );
+//fprintf( stderr, "RESCALE: %d %d\n", filter.x.n, filter.y.n );
 	if ( filter.x.n == 2 && filter.y.n == 2 )
 	{
 #ifdef USE_MMX
