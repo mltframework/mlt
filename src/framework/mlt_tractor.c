@@ -86,6 +86,9 @@ mlt_tractor mlt_tractor_new( )
 			mlt_properties_set( props, "resource", "<tractor>" );
 			mlt_properties_set( props, "mlt_type", "mlt_producer" );
 			mlt_properties_set( props, "mlt_service", "tractor" );
+			mlt_properties_set_position( props, "in", 0 );
+			mlt_properties_set_position( props, "out", 0 );
+			mlt_properties_set_position( props, "length", 0 );
 			mlt_properties_set_data( props, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
 			mlt_properties_set_data( props, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
 
@@ -142,6 +145,20 @@ mlt_multitrack mlt_tractor_multitrack( mlt_tractor this )
 	return mlt_properties_get_data( mlt_tractor_properties( this ), "multitrack", NULL );
 }
 
+/** Ensure the tractors in/out points match the multitrack.
+*/
+
+void mlt_tractor_refresh( mlt_tractor this )
+{
+	mlt_multitrack multitrack = mlt_tractor_multitrack( this );
+	mlt_properties properties = mlt_multitrack_properties( multitrack );
+	mlt_properties self = mlt_tractor_properties( this );
+	mlt_multitrack_refresh( multitrack );
+	mlt_properties_set_position( self, "in", 0 );
+	mlt_properties_set_position( self, "out", mlt_properties_get_position( properties, "out" ) );
+	mlt_properties_set_position( self, "length", mlt_properties_get_position( properties, "length" ) );
+}
+
 /** Connect the tractor.
 */
 
@@ -154,6 +171,24 @@ int mlt_tractor_connect( mlt_tractor this, mlt_service producer )
 		this->producer = producer;
 
 	return ret;
+}
+
+/** Set the producer for a specific track.
+*/
+
+int mlt_tractor_set_track( mlt_tractor this, mlt_producer producer, int index )
+{
+	int error = mlt_multitrack_connect( mlt_tractor_multitrack( this ), producer, index );
+	mlt_tractor_refresh( this );
+	return error;
+}
+
+/** Get the producer for a specific track.
+*/
+
+mlt_producer mlt_tractor_get_track( mlt_tractor this, int index )
+{
+	return mlt_multitrack_track( mlt_tractor_multitrack( this ), index );
 }
 
 static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )

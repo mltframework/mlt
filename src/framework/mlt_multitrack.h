@@ -34,6 +34,7 @@ extern int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, i
 extern mlt_position mlt_multitrack_clip( mlt_multitrack self, mlt_whence whence, int index );
 extern void mlt_multitrack_close( mlt_multitrack self );
 extern int mlt_multitrack_count( mlt_multitrack self );
+extern void mlt_multitrack_refresh( mlt_multitrack self );
 extern mlt_producer mlt_multitrack_track( mlt_multitrack self, int track );
 
 #endif
