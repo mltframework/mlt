@@ -259,6 +259,10 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		// Set the position
 		result = mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
+		// Mark as a test card
+		mlt_properties_set_int( mlt_frame_properties( *frame ), "test_image", 1 );
+		mlt_properties_set_int( mlt_frame_properties( *frame ), "test_audio", 1 );
+
 		// Calculate the next position
 		mlt_producer_prepare_next( this );
 	}
