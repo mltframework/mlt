@@ -21,12 +21,14 @@
 #include "config.h"
 #include "mlt_factory.h"
 #include "mlt_repository.h"
+#include "mlt_properties.h"
 
 #include <stdlib.h>
 
 /** Singleton repositories
 */
 
+static mlt_properties object_list = NULL;
 static mlt_repository producers = NULL;
 static mlt_repository filters = NULL;
 static mlt_repository transitions = NULL;
@@ -35,12 +37,22 @@ static mlt_repository consumers = NULL;
 /** Construct the factories.
 */
 
-int mlt_factory_init( )
+int mlt_factory_init( char *prefix )
 {
-	producers = mlt_repository_init( PREFIX_DATA "/producers.dat", "mlt_create_producer" );
-	filters = mlt_repository_init( PREFIX_DATA "/filters.dat", "mlt_create_filter" );
-	transitions = mlt_repository_init( PREFIX_DATA "/transitions.dat", "mlt_create_transition" );
-	consumers = mlt_repository_init( PREFIX_DATA "/consumers.dat", "mlt_create_consumer" );
+	// If no directory is specified, default to install directory
+	if ( prefix == NULL )
+		prefix = PREFIX_DATA;
+
+	// Create the object list.
+	object_list = calloc( sizeof( struct mlt_properties_s ), 1 );
+	mlt_properties_init( object_list, NULL );
+
+	// Create a repository for each service type
+	producers = mlt_repository_init( object_list, prefix, "producers.dat", "mlt_create_producer" );
+	filters = mlt_repository_init( object_list, prefix, "filters.dat", "mlt_create_filter" );
+	transitions = mlt_repository_init( object_list, prefix, "transitions.dat", "mlt_create_transition" );
+	consumers = mlt_repository_init( object_list, prefix, "consumers.dat", "mlt_create_consumer" );
+
 	return 0;
 }
 
@@ -63,7 +75,7 @@ mlt_filter mlt_factory_filter( char *service, void *input )
 /** Fetch a transition from the repository.
 */
 
-mlt_transition mlt_transition_filter( char *service, void *input )
+mlt_transition mlt_factory_transition( char *service, void *input )
 {
 	return ( mlt_transition )mlt_repository_fetch( transitions, service, input );
 }
@@ -85,5 +97,7 @@ void mlt_factory_close( )
 	mlt_repository_close( filters );
 	mlt_repository_close( transitions );
 	mlt_repository_close( consumers );
+	mlt_properties_close( object_list );
+	free( object_list );
 }
 

@@ -21,6 +21,8 @@
 #ifndef _MLT_REPOSITORY_H_
 #define _MLT_REPOSITORY_H_
 
+#include "mlt_types.h"
+
 /** Repository structure forward reference.
 */
 
@@ -29,7 +31,7 @@ typedef struct mlt_repository_s *mlt_repository;
 /** Public functions.
 */
 
-extern mlt_repository mlt_repository_init( char *file, char *symbol );
+extern mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, char *file, char *symbol );
 extern void *mlt_repository_fetch( mlt_repository this, char *service, void *input );
 extern void mlt_repository_close( mlt_repository this );
 

@@ -1,10 +1,10 @@
 README
 ------
 
-	This document provides a description of the VPS project organisation.
+	This document provides a description of the MLT project organisation.
 
 	It provides *CRITICAL* architecture information, so please read carefully
-	if you plan to extend or use the VPS code base.
+	if you plan to extend or use the MLT code base.
 
 Directories
 -----------
@@ -14,7 +14,6 @@ Directories
 	+ docs					- Location of all text and source format 
 							  documentation
 	+ src					- All project source is provided here
-		+ client			- Client API to access the server
 		+ framework			- The media framework - this code is 100% posix
 							  and as such contain no implementations 
 							  requiring additional libraries
@@ -24,7 +23,8 @@ Directories
 			+ ffmpeg		- ffmpeg dependent modules and test code
 			+ mainconcept	- mainconcept dependent modules and test code
 			+ SDL			- SDL dependent modules and test code
-		+ server			- The server implementation
+		+ valerie			- Client API to access the server
+		+ miracle			- The server implementation
 
 	Additional subdirectories may be nested below those shown and should be
 	documented in their parent or here.

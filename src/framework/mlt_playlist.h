@@ -31,7 +31,7 @@ extern mlt_producer mlt_playlist_producer( mlt_playlist this );
 extern mlt_service mlt_playlist_service( mlt_playlist this );
 extern int mlt_playlist_append( mlt_playlist this, mlt_producer producer );
 extern int mlt_playlist_pad( mlt_playlist this, mlt_timecode length );
-extern mlt_playlist_close( mlt_playlist this );
+extern void mlt_playlist_close( mlt_playlist this );
 
 #endif
 

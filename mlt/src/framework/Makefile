@@ -16,13 +16,14 @@ OBJS = $(FRAMEWORK_OBJS)
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS=-g -Wall -D_FILE_OFFSET_BITS=64 -pthread 
+CFLAGS = -g -Wall -D_FILE_OFFSET_BITS=64 -pthread 
 
-all:	libmlt.a
+LDFLAGS = -lm -ldl -lpthread
 
-libmlt.a: $(OBJS)
-		$(AR) rvu $@ $(OBJS)
-		ranlib $@
+all:	libmlt.so
+
+libmlt.so: $(OBJS)
+		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -31,7 +32,7 @@ dist-clean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(FRAMEWORK_OBJS) libmlt.a
+		rm -f $(FRAMEWORK_OBJS) libmlt.so
 
 ifneq ($(wildcard .depend),)
 include .depend

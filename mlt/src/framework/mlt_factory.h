@@ -23,7 +23,7 @@
 
 #include "mlt_types.h"
 
-extern int mlt_factory_init( );
+extern int mlt_factory_init( char *prefix );
 extern mlt_producer mlt_factory_producer( char *name, void *input );
 extern mlt_filter mlt_factory_filter( char *name, void *input );
 extern mlt_transition mlt_factory_transition( char *name, void *input );

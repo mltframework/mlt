@@ -1,10 +1,10 @@
 
-TARGET = factory.o \
-		 libmltdv.so
+TARGET = ../libmltdv.so
 
-OBJS = producer_libdv.o 
+OBJS = factory.o \
+	   producer_libdv.o 
 
-CFLAGS=-I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 LDFLAGS=-ldv -lpthread
 

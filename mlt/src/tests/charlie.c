@@ -1,15 +1,11 @@
-#include "mlt_producer.h"
-#include "mlt_consumer.h"
-#include "mlt_filter.h"
-#include "mlt_tractor.h"
-#include "mlt_transition.h"
-#include "mlt_multitrack.h"
+#include <framework/mlt_factory.h>
 
-#include "producer_libdv.h"
-#include "producer_ppm.h"
-#include "filter_deinterlace.h"
-#include "filter_greyscale.h"
-#include "consumer_sdl.h"
+#include <framework/mlt_producer.h>
+#include <framework/mlt_consumer.h>
+#include <framework/mlt_filter.h>
+#include <framework/mlt_tractor.h>
+#include <framework/mlt_transition.h>
+#include <framework/mlt_multitrack.h>
 
 #include <stdio.h>
 
@@ -19,23 +15,26 @@ int main( int argc, char **argv )
 	char *file1 = NULL;
 	char *file2 = NULL;
 
-	// Start the consumer...
-	mlt_consumer sdl_out = consumer_sdl_init( NULL );
-
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
+	mlt_factory_init( "../modules" );
 
 	if ( argc >= 2 )
 		file1 = argv[ 1 ];
 	if ( argc >= 3 )
 		file2 = argv[ 2 ];
 
+	// Start the consumer...
+	mlt_consumer sdl_out = mlt_factory_consumer( "sdl", NULL );
+
+	fprintf( stderr, "Press return to continue\n" );
+	fgets( temp, 132, stdin );
+
 	// Create the producer(s)
+	mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );
+	mlt_producer dv2 = mlt_factory_producer( "libdv", file2 );
 	//mlt_producer dv1 = producer_ppm_init( NULL );
 	//mlt_producer dv2 = producer_ppm_init( NULL );
-	mlt_producer dv1 = producer_libdv_init( file1 );
-	mlt_producer dv2 = producer_libdv_init( file2 );
 
+	// Connect a producer to our sdl consumer
 	mlt_consumer_connect( sdl_out, mlt_producer_service( dv1 ) );
 
 	fprintf( stderr, "Press return to continue\n" );
@@ -47,12 +46,12 @@ int main( int argc, char **argv )
 	mlt_multitrack_connect( multitrack, dv2, 1 );
 
 	// Create a filter and associate it to track 0
-	mlt_filter filter = filter_deinterlace_init( NULL );
+	mlt_filter filter = mlt_factory_filter( "deinterlace", NULL );
 	mlt_filter_connect( filter, mlt_multitrack_service( multitrack ), 0 );
 	mlt_filter_set_in_and_out( filter, 0, 5 );
 
 	// Create another
-	mlt_filter greyscale = filter_greyscale_init( NULL );
+	mlt_filter greyscale = mlt_factory_filter( "greyscale", NULL );
 	mlt_filter_connect( greyscale, mlt_filter_service( filter ), 0 );
 	mlt_filter_set_in_and_out( greyscale, 0, 10 );
 
@@ -68,12 +67,15 @@ int main( int argc, char **argv )
 	fgets( temp, 132, stdin );
 
 	// Close everything...
-	mlt_consumer_close( sdl_out );
-	mlt_tractor_close( tractor );
-	mlt_filter_close( filter );
-	mlt_multitrack_close( multitrack );
-	mlt_producer_close( dv1 );
-	mlt_producer_close( dv2 );
+	//mlt_consumer_close( sdl_out );
+	//mlt_tractor_close( tractor );
+	//mlt_filter_close( filter );
+	//mlt_filter_close( greyscale );
+	//mlt_multitrack_close( multitrack );
+	//mlt_producer_close( dv1 );
+	//mlt_producer_close( dv2 );
+
+	mlt_factory_close( );
 
 	return 0;
 }

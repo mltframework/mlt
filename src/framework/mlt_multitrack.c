@@ -238,8 +238,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 			mlt_producer_prepare_next( parent );
 	}
 
-	fprintf( stderr, "timestamp for %d = %f\n", index, ( float )mlt_frame_get_timecode( *frame ) );
-
 	return 0;
 }
 

@@ -1,5 +1,5 @@
 /*
- * mlt_factory.h -- the factory method interfaces
+ * mlt.h -- header file for lazy client and implementation code :-)
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,16 +18,20 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLT_FACTORY_H
-#define _MLT_FACTORY_H
+#ifndef _MLT_H_
+#define _MLT_H_
 
-#include "mlt_types.h"
-
-extern int mlt_factory_init( char *prefix );
-extern mlt_producer mlt_factory_producer( char *name, void *input );
-extern mlt_filter mlt_factory_filter( char *name, void *input );
-extern mlt_transition mlt_factory_transition( char *name, void *input );
-extern mlt_consumer mlt_factory_consumer( char *name, void *input );
-extern void mlt_factory_close( );
+#include "mlt_factory.h"
+#include "mlt_frame.h"
+#include "mlt_multitrack.h"
+#include "mlt_producer.h"
+#include "mlt_transition.h"
+#include "mlt_consumer.h"
+#include "mlt_filter.h"
+#include "mlt_manager.h"
+#include "mlt_playlist.h"
+#include "mlt_properties.h"
+#include "mlt_tractor.h"
 
 #endif
+

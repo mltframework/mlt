@@ -1,5 +1,5 @@
 
-TARGET=libmltcore.so
+TARGET = ../libmltcore.so
 
 OBJS = factory.o \
 	   producer_ppm.o \
@@ -7,7 +7,7 @@ OBJS = factory.o \
 	   filter_greyscale.o \
 	   transition_composite.o
 
-CFLAGS=-I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
 SRCS := $(OBJS:.o=.c)
 
