@@ -9,7 +9,7 @@ all clean depend install:
 	done
 
 dist-clean:
-	rm -f consumers.dat filters.dat producers.dat transitions.dat *.so; \
+	rm -f consumers.dat filters.dat producers.dat transitions.dat; \
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile ] ; \

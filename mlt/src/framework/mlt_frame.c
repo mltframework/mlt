@@ -432,3 +432,197 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 	return ret;
 }
 
+/** A resizing function for yuv422 frames - this does not rescale, but simply
+	resizes. It assumes yuv422 images available on the frame so use with care.
+*/
+
+uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
+{
+	// Get properties
+	mlt_properties properties = mlt_frame_properties( this );
+
+	// Get the input image, width and height
+	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
+	int iwidth = mlt_properties_get_int( properties, "width" );
+	int iheight = mlt_properties_get_int( properties, "height" );
+
+	// If width and height are correct, don't do anything
+	if ( iwidth != owidth || iheight != oheight )
+	{
+		// Create the output image
+		uint8_t *output = malloc( owidth * oheight * 2 );
+
+		// Calculate strides
+		int istride = iwidth * 2;
+		int ostride = owidth * 2;
+
+    	// Coordinates (0,0 is middle of output)
+    	int y, x;
+
+    	// Calculate ranges
+    	int out_x_range = owidth / 2;
+    	int out_y_range = oheight / 2;
+    	int in_x_range = iwidth / 2;
+    	int in_y_range = iheight / 2;
+
+    	// Output pointers
+    	uint8_t *out_line = output;
+    	uint8_t *out_ptr;
+
+    	// Calculate a middle and possibly invalid pointer in the input
+    	uint8_t *in_middle = input + istride * in_y_range + in_x_range * 2;
+    	int in_line = - out_y_range * istride - out_x_range * 2;
+    	int in_ptr;
+
+    	// Loop for the entirety of our output height.
+    	for ( y = - out_y_range; y < out_y_range ; y ++ )
+    	{
+        	// Start at the beginning of the line
+        	out_ptr = out_line;
+	
+        	// Point the start of the current input line (NB: can be out of range)
+        	in_ptr = in_line;
+	
+        	// Loop for the entirety of our output row.
+        	for ( x = - out_x_range; x < out_x_range; x ++ )
+        	{
+            	// Check if x and y are in the valid input range.
+            	if ( abs( x ) < in_x_range && abs( y ) < in_y_range  )
+            	{
+                	// We're in the input range for this row.
+                	*out_ptr ++ = *( in_middle + in_ptr ++ );
+                	*out_ptr ++ = *( in_middle + in_ptr ++ );
+            	}
+            	else
+            	{
+                	// We're not in the input range for this row.
+                	*out_ptr ++ = 16;
+                	*out_ptr ++ = 128;
+                	in_ptr += 2;
+            	}
+        	}
+
+        	// Move to next output line
+        	out_line += ostride;
+
+        	// Move to next input line
+        	in_line += istride;
+    	}
+
+		// Now update the frame
+		mlt_properties_set_data( properties, "image", output, owidth * oheight * 2, free, NULL );
+		mlt_properties_set_int( properties, "width", owidth );
+		mlt_properties_set_int( properties, "height", oheight );
+
+		// Return the output
+		return output;
+	}
+
+	// No change, return input
+	return input;
+}
+
+/** A rescaling function for yuv422 frames - low quality, and provided for testing
+ 	only. It assumes yuv422 images available on the frame so use with care.
+*/
+
+uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
+{
+	// Get properties
+	mlt_properties properties = mlt_frame_properties( this );
+
+	// Get the input image, width and height
+	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
+	int iwidth = mlt_properties_get_int( properties, "width" );
+	int iheight = mlt_properties_get_int( properties, "height" );
+
+	// If width and height are correct, don't do anything
+	if ( iwidth != owidth || iheight != oheight )
+	{
+		// Create the output image
+		uint8_t *output = malloc( owidth * oheight * 2 );
+
+		// Calculate strides
+		int istride = iwidth * 2;
+		int ostride = owidth * 2;
+
+    	// Coordinates (0,0 is middle of output)
+    	int y, x;
+
+		// Derived coordinates
+		int dy, dx;
+
+    	// Calculate ranges
+    	int out_x_range = owidth / 2;
+    	int out_y_range = oheight / 2;
+    	int in_x_range = iwidth / 2;
+    	int in_y_range = iheight / 2;
+
+    	// Output pointers
+    	uint8_t *out_line = output;
+    	uint8_t *out_ptr;
+
+    	// Calculate a middle pointer
+    	uint8_t *in_middle = input + istride * in_y_range + in_x_range * 2;
+    	uint8_t *in_line;
+		uint8_t *in_ptr;
+
+		// Generate the affine transform scaling values
+		float scale_width = ( float )iwidth / ( float )owidth;
+		float scale_height = ( float )iheight / ( float )oheight;
+
+    	// Loop for the entirety of our output height.
+    	for ( y = - out_y_range; y < out_y_range ; y ++ )
+    	{
+			// Calculate the derived y value
+			dy = scale_height * y;
+
+        	// Start at the beginning of the line
+        	out_ptr = out_line;
+	
+        	// Pointer to the middle of the input line
+        	in_line = in_middle + dy * istride;
+	
+        	// Loop for the entirety of our output row.
+        	for ( x = - out_x_range; x < out_x_range; x += 2 )
+        	{
+				// Calculated the derived x
+				dx = scale_width * x;
+
+            	// Check if x and y are in the valid input range.
+            	if ( abs( dx ) < in_x_range && abs( dy ) < in_y_range  )
+            	{
+                	// We're in the input range for this row.
+					in_ptr = in_line + ( dx >> 1 ) * 4;
+                	*out_ptr ++ = *in_ptr ++;
+                	*out_ptr ++ = *in_ptr ++;
+                	*out_ptr ++ = *in_ptr ++;
+                	*out_ptr ++ = *in_ptr ++;
+            	}
+            	else
+            	{
+                	// We're not in the input range for this row.
+                	*out_ptr ++ = 16;
+                	*out_ptr ++ = 128;
+                	*out_ptr ++ = 16;
+                	*out_ptr ++ = 128;
+            	}
+        	}
+
+        	// Move to next output line
+        	out_line += ostride;
+    	}
+
+		// Now update the frame
+		mlt_properties_set_data( properties, "image", output, owidth * oheight * 2, free, NULL );
+		mlt_properties_set_int( properties, "width", owidth );
+		mlt_properties_set_int( properties, "height", oheight );
+
+		// Return the output
+		return output;
+	}
+
+	// No change, return input
+	return input;
+}
+

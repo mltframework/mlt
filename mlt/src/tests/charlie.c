@@ -1,28 +1,90 @@
 #include <framework/mlt.h>
 #include <stdio.h>
+#include <string.h>
+
+mlt_producer create_producer( char *file )
+{
+	mlt_producer result = NULL;
+
+	// 1st Line preferences
+	if ( strstr( file, ".mpg" ) )
+		result = mlt_factory_producer( "mcmpeg", file );
+	else if ( strstr( file, ".mpeg" ) )
+		result = mlt_factory_producer( "mcmpeg", file );
+	else if ( strstr( file, ".dv" ) )
+		result = mlt_factory_producer( "mcdv", file );
+	else if ( strstr( file, ".jpg" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+	else if ( strstr( file, ".png" ) )
+		result = mlt_factory_producer( "pixbuf", file );
+
+	// 2nd Line fallbacks
+	if ( result == NULL && strstr( file, ".dv" ) )
+		result = mlt_factory_producer( "libdv", file );
+
+	return result;
+}
+
+mlt_consumer create_consumer( char *id )
+{
+	return mlt_factory_consumer( id, NULL );
+}
+
+void set_properties( mlt_service service, char *namevalue )
+{
+	mlt_properties properties = mlt_service_properties( service );
+	mlt_properties_parse( properties, namevalue );
+}
+
+void transport( mlt_producer producer )
+{
+	char temp[ 132 ];
+	fprintf( stderr, "Press return to continue\n" );
+	fgets( temp, 132, stdin );
+}
 
 int main( int argc, char **argv )
 {
-	char temp[ 132 ];
-	char *file1 = NULL;
-	char *file2 = NULL;
+	int i;
+	mlt_service  service = NULL;
+	mlt_consumer consumer = NULL;
+	mlt_producer producer = NULL;
 
 	mlt_factory_init( "../modules" );
 
-	if ( argc >= 2 )
-		file1 = argv[ 1 ];
-	if ( argc >= 3 )
-		file2 = argv[ 2 ];
+	// Parse the arguments
+	for ( i = 1; i < argc; i ++ )
+	{
+		if ( !strcmp( argv[ i ], "-vo" ) )
+		{
+			consumer = create_consumer( argv[ ++ i ] );
+			service = mlt_consumer_service( consumer );
+		}
+		else if ( strstr( argv[ i ], "=" ) )
+		{
+			set_properties( service, argv[ i ] );
+		}
+		else
+		{
+			producer = create_producer( argv[ i ] );
+			service = mlt_producer_service( producer );
+		}
+	}
 
-	// Start the consumer...
-	mlt_consumer sdl_out = mlt_factory_consumer( "sdl", NULL );
+	// If we have no consumer, default to sdl
+	if ( consumer == NULL )
+		consumer= mlt_factory_consumer( "sdl", NULL );
 
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
+	// Connect producer to consumer
+	mlt_consumer_connect( consumer, mlt_producer_service( producer ) );
 
+	// Transport functionality
+	transport( producer );
+
+/*
 	// Create the producer(s)
-	mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );
-	mlt_producer dv2 = mlt_factory_producer( "libdv", file2 );
+	mlt_producer dv1 = mlt_factory_producer( "mcmpeg", file1 );
+	mlt_producer dv2 = mlt_factory_producer( "mcmpeg", file2 );
 	//mlt_producer dv1 = producer_ppm_init( NULL );
 	//mlt_producer dv2 = producer_ppm_init( NULL );
 
@@ -55,8 +117,6 @@ int main( int argc, char **argv )
 	mlt_consumer_connect( sdl_out, mlt_tractor_service( tractor ) );
 
 	// Do stuff until we're told otherwise...
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
 
 	// Close everything...
 	//mlt_consumer_close( sdl_out );
@@ -66,6 +126,7 @@ int main( int argc, char **argv )
 	//mlt_multitrack_close( multitrack );
 	//mlt_producer_close( dv1 );
 	//mlt_producer_close( dv2 );
+*/
 
 	mlt_factory_close( );
 
