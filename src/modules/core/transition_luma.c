@@ -372,7 +372,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	if ( luma_bitmap == NULL && resource != NULL )
 	{
-		char *extension = extension = strrchr( resource, '.' );
+		char temp[ 512 ];
+		char *extension = strrchr( resource, '.' );
+
+		if ( strchr( resource, '%' ) )
+		{
+			sprintf( temp, "%s/lumas/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+			resource = temp;
+			extension = strrchr( resource, '.' );
+		}
 
 		// See if it is a PGM
 		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )

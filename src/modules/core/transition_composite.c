@@ -554,6 +554,14 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "luma" );
 
+	char temp[ 512 ];
+
+	if ( strchr( resource, '%' ) )
+	{
+		sprintf( temp, "%s/lumas/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+		resource = temp;
+	}
+
 	if ( resource != NULL && ( luma_bitmap == NULL || luma_width != width || luma_height != height ) )
 	{
 		uint16_t *orig_bitmap = mlt_properties_get_data( properties, "_luma.orig_bitmap", NULL );
