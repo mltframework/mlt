@@ -755,6 +755,9 @@ int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_
 	{
 		playlist_entry *entry = this->list[ clip ];
 		mlt_producer producer = entry->producer;
+		mlt_properties properties = MLT_PLAYLIST_PROPERTIES( this );
+
+		mlt_events_block( properties, properties );
 
 		if ( mlt_producer_is_blank( producer ) )
 		{
@@ -762,9 +765,9 @@ int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_
 			if ( out - in + 1 > mlt_producer_get_length( &this->blank ) )
 			{
 				mlt_properties blank_props = MLT_PRODUCER_PROPERTIES( &this->blank );
-				mlt_events_block( blank_props, blank_props );
-				mlt_producer_set_in_and_out( &this->blank, in, out );
-				mlt_events_unblock( blank_props, blank_props );
+				mlt_properties_set_int( blank_props, "length", out - in + 1 );
+				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "length", out - in + 1 );
+				mlt_producer_set_in_and_out( &this->blank, 0, out - in );
 			}
 		}
 
@@ -781,6 +784,8 @@ int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_
 		}
 
 		mlt_producer_set_in_and_out( producer, in, out );
+		mlt_events_unblock( properties, properties );
+		mlt_playlist_virtual_refresh( this );
 	}
 	return error;
 }
@@ -803,8 +808,17 @@ int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 			mlt_playlist_resize_clip( this, clip, in, in + position );
 			if ( !mlt_producer_is_blank( entry->producer ) )
 			{
+				int i = 0;
+				mlt_properties entry_properties = MLT_PRODUCER_PROPERTIES( entry->producer );
 				mlt_producer split = mlt_producer_cut( entry->producer, in + position + 1, out );
+				mlt_properties split_properties = MLT_PRODUCER_PROPERTIES( split );
 				mlt_playlist_insert( this, split, clip + 1, 0, -1 );
+				for ( i = 0; i < mlt_properties_count( entry_properties ); i ++ )
+				{
+					char *name = mlt_properties_get_name( entry_properties, i );
+					if ( name != NULL && !strncmp( name, "meta.", 5 ) )
+						mlt_properties_set( split_properties, name, mlt_properties_get_value( entry_properties, i ) );
+				}
 				mlt_producer_close( split );
 			}
 			else
@@ -1120,8 +1134,7 @@ void mlt_playlist_consolidate_blanks( mlt_playlist this, int keep_length )
 			playlist_entry *left = this->list[ i - 1 ];
 			playlist_entry *right = this->list[ i ];
 
-			if ( mlt_producer_cut_parent( left->producer ) == mlt_producer_cut_parent( right->producer ) && 
-				 mlt_producer_is_blank( left->producer ) )
+			if ( mlt_producer_is_blank( left->producer ) && mlt_producer_is_blank( right->producer ) )
 			{
 				mlt_playlist_resize_clip( this, i - 1, 0, left->frame_count + right->frame_count - 1 );
 				mlt_playlist_remove( this, i -- );
@@ -1166,9 +1179,9 @@ mlt_producer mlt_playlist_replace_with_blank( mlt_playlist this, int clip )
 		mlt_playlist_remove( this, clip );
 		mlt_playlist_blank( this, out - in );
 		mlt_playlist_move( this, this->count - 1, clip );
-		mlt_producer_set_in_and_out( producer, in, out );
 		mlt_events_unblock( properties, properties );
 		mlt_playlist_virtual_refresh( this );
+		mlt_producer_set_in_and_out( producer, in, out );
 	}
 	return producer;
 }
@@ -1226,11 +1239,18 @@ int mlt_playlist_insert_at( mlt_playlist this, int position, mlt_producer produc
 		mlt_events_block( properties, this );
 		if ( clip < this->count && mlt_playlist_is_blank( this, clip ) )
 		{
-			mlt_playlist_split( this, clip, position - info.start );
-			mlt_playlist_get_clip_info( this, &info, ++ clip );
+			// Split and move to new clip if need be
+			if ( mlt_playlist_split( this, clip, position - info.start ) == 0 )
+				mlt_playlist_get_clip_info( this, &info, ++ clip );
+
+			// Split again if need be
 			if ( length < info.frame_count )
-				mlt_playlist_split( this, clip, length );
+				mlt_playlist_split( this, clip, length - 1 );
+
+			// Remove
 			mlt_playlist_remove( this, clip );
+
+			// Insert
 			mlt_playlist_insert( this, producer, clip, -1, -1 );
 			ret = clip;
 		}

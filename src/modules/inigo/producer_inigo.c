@@ -124,8 +124,8 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_tractor mix = NULL;
 	mlt_playlist playlist = mlt_playlist_init( );
 	mlt_properties group = mlt_properties_new( );
-	mlt_properties properties = group;
 	mlt_tractor tractor = mlt_tractor_new( );
+	mlt_properties properties = MLT_TRACTOR_PROPERTIES( tractor );
 	mlt_field field = mlt_tractor_field( tractor );
 	mlt_properties field_properties = mlt_field_properties( field );
 	mlt_multitrack multitrack = mlt_tractor_multitrack( tractor );
@@ -338,6 +338,9 @@ mlt_producer producer_inigo_init( char **argv )
 			mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
 		}
 		else if ( !strcmp( argv[ i ], "-track" ) ||
+				  !strcmp( argv[ i ], "-null-track" ) ||
+				  !strcmp( argv[ i ], "-video-track" ) ||
+				  !strcmp( argv[ i ], "-audio-track" ) ||
 				  !strcmp( argv[ i ], "-hide-track" ) ||
 				  !strcmp( argv[ i ], "-hide-video" ) ||
 				  !strcmp( argv[ i ], "-hide-audio" ) )
@@ -345,17 +348,20 @@ mlt_producer producer_inigo_init( char **argv )
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
-			mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track ++ );
-			track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
-			playlist = mlt_playlist_init( );
+			if ( mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
+			{
+				mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track ++ );
+				track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
+				playlist = mlt_playlist_init( );
+			}
 			if ( playlist != NULL )
 			{
 				properties = MLT_PLAYLIST_PROPERTIES( playlist );
-				if ( !strcmp( argv[ i ], "-hide-track" ) )
+				if ( !strcmp( argv[ i ], "-null-track" ) || !strcmp( argv[ i ], "-hide-track" ) )
 					mlt_properties_set_int( properties, "hide", 3 );
-				else if ( !strcmp( argv[ i ], "-hide-video" ) )
+				else if ( !strcmp( argv[ i ], "-audio-track" ) || !strcmp( argv[ i ], "-hide-video" ) )
 					mlt_properties_set_int( properties, "hide", 1 );
-				else if ( !strcmp( argv[ i ], "-hide-audio" ) )
+				else if ( !strcmp( argv[ i ], "-video-track" ) || !strcmp( argv[ i ], "-hide-audio" ) )
 					mlt_properties_set_int( properties, "hide", 2 );
 			}
 		}
