@@ -444,9 +444,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				register int i, j;
 				register int half = *width >> 1;
-				uint8_t *Y = ( ( AVPicture * )&frame )->data[ 0 ];
-				uint8_t *U = ( ( AVPicture * )&frame )->data[ 1 ];
-				uint8_t *V = ( ( AVPicture * )&frame )->data[ 2 ];
+				register uint8_t *Y = ( ( AVPicture * )&frame )->data[ 0 ];
+				register uint8_t *U = ( ( AVPicture * )&frame )->data[ 1 ];
+				register uint8_t *V = ( ( AVPicture * )&frame )->data[ 2 ];
 				register uint8_t *d = *buffer;
 				register uint8_t *y, *u, *v;
 
@@ -787,7 +787,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 					mlt_properties_set_double( properties, "discrepancy", discrepancy );
 				}
 
-				if ( discrepancy * current_pts <= ( real_timecode - 0.02 ) )
+				if ( !ignore && discrepancy * current_pts <= ( real_timecode - 0.02 ) )
 					ignore = 1;
 			}
 

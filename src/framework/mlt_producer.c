@@ -70,8 +70,8 @@ int mlt_producer_init( mlt_producer this, void *child )
 				mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
 			mlt_properties_set_double( properties, "_speed", 1.0 );
 			mlt_properties_set_position( properties, "in", 0 );
-			mlt_properties_set_position( properties, "out", 1799999 );
-			mlt_properties_set_position( properties, "length", 1800000 );
+			mlt_properties_set_position( properties, "out", 14999 );
+			mlt_properties_set_position( properties, "length", 15000 );
 			mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
 			mlt_properties_set( properties, "eof", "pause" );
 			mlt_properties_set( properties, "resource", "<producer>" );

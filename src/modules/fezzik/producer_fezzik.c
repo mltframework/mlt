@@ -83,10 +83,6 @@ static mlt_producer create_producer( char *file )
 	if ( result == NULL )
 		result = mlt_factory_producer( "avformat", file );
 
-	// 4th line fallbacks 
-	if ( result == NULL )
-		result = mlt_factory_producer( "ffmpeg", file );
-
 	return result;
 }
 
