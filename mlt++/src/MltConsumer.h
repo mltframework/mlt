@@ -43,6 +43,7 @@ namespace Mlt
 			mlt_service get_service( );
 			virtual int connect( Service &service );
 			int start( );
+			void purge( );
 			int stop( );
 			bool is_stopped( );
 	};

@@ -69,6 +69,11 @@ int Consumer::start( )
 	return mlt_consumer_start( get_consumer( ) );
 }
 
+void Consumer::purge( )
+{
+	mlt_consumer_purge( get_consumer( ) );
+}
+
 int Consumer::stop( )
 {
 	return mlt_consumer_stop( get_consumer( ) );
