@@ -23,12 +23,12 @@ Directories
 	        + ffmpeg        - ffmpeg dependent services
 	        + avformat      - libavformat dependent services
 	        + vorbis        - vorbis dependenent services
-	        + sdl            - SDL dependent services
+	        + sdl           - SDL dependent services
 	        + resample      - libresample dependent services
 	        + gtk2          - pango and pixbuf dependent services
 	        + fezzik        - A giant (meta) service to load and normalise media
-	        + westley         Nice and clever XML services
-	        + vorbis          Ogg Vorbis dependent services
+	        + westley       - Nice and clever XML services
+	        + vorbis        - Ogg Vorbis dependent services
 	        + xine          - Xine-derived sources
 	        + bluefish      - Bluefish dependent services (*)
 	        + mainconcept   - mainconcept dependent services (*)
