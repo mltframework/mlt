@@ -890,6 +890,45 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 	return error;
 }
 
+/** Add a transition to an existing mix.
+*/
+
+int mlt_playlist_mix_add( mlt_playlist this, int clip, mlt_transition transition )
+{
+	mlt_producer producer = mlt_producer_cut_parent( mlt_playlist_get_clip( this, clip ) );
+	mlt_properties properties = producer != NULL ? mlt_producer_properties( producer ) : NULL;
+	mlt_tractor tractor = properties != NULL ? mlt_properties_get_data( properties, "mlt_mix", NULL ) : NULL;
+	int error = transition == NULL || tractor == NULL;
+	if ( error == 0 )
+	{
+		mlt_field field = mlt_tractor_field( tractor );
+		mlt_field_plant_transition( field, transition, 0, 1 );
+		mlt_transition_set_in_and_out( transition, 0, this->list[ clip ]->frame_count - 1 );
+	}
+	return error;
+}
+
+/** Return the clip at the position.
+*/
+
+mlt_producer mlt_playlist_get_clip( mlt_playlist this, int clip )
+{
+	if ( clip > 0 && clip < this->count )
+		return this->list[ clip ]->producer;
+	return NULL;
+}
+
+/** Determine if the clip is a mix.
+*/
+
+int mlt_playlist_clip_is_mix( mlt_playlist this, int clip )
+{
+	mlt_producer producer = mlt_producer_cut_parent( mlt_playlist_get_clip( this, clip ) );
+	mlt_properties properties = producer != NULL ? mlt_producer_properties( producer ) : NULL;
+	mlt_tractor tractor = properties != NULL ? mlt_properties_get_data( properties, "mlt_mix", NULL ) : NULL;
+	return tractor != NULL;
+}
+
 /** Remove a mixed clip - ensure that the cuts included in the mix find their way
 	back correctly on to the playlist.
 */

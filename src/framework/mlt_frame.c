@@ -205,7 +205,11 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	
 	if ( get_image != NULL )
 	{
-		return get_image( this, buffer, format, width, height, writable );
+		int error = 0;
+		mlt_position position = mlt_frame_get_position( this );
+	   	error = get_image( this, buffer, format, width, height, writable );
+		mlt_frame_set_position( this, position );
+		return error;
 	}
 	else if ( mlt_properties_get_data( properties, "image", NULL ) != NULL )
 	{
