@@ -51,11 +51,11 @@ mlt_producer create_tracks( int argc, char **argv )
 	// Create track 0
 	mlt_producer track0 = create_playlist( argc, argv );
 
-	// Create the watermark track
-	mlt_producer track1 = mlt_factory_producer( "fezzik", "pango" );
-
 	// Get the length of track0
 	mlt_position length = mlt_producer_get_playtime( track0 );
+
+	// Create the watermark track
+	mlt_producer track1 = mlt_factory_producer( "fezzik", "pango" );
 
 	// Get the properties of track1
 	mlt_properties properties = mlt_producer_properties( track1 );
@@ -81,11 +81,14 @@ mlt_producer create_tracks( int argc, char **argv )
 	// Now set the properties on the transition
 	properties = mlt_tractor_properties( tractor );
 
-	// Ensure clean up - the first two are required since this function returns the tractor
+	// Ensure clean up and set properties correctly
 	mlt_properties_set_data( properties, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
 	mlt_properties_set_data( properties, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
+	mlt_properties_set_data( properties, "track0", track0, 0, ( mlt_destructor )mlt_producer_close, NULL );
 	mlt_properties_set_data( properties, "track1", track1, 0, ( mlt_destructor )mlt_producer_close, NULL );
 	mlt_properties_set_data( properties, "transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
+	mlt_properties_set_position( properties, "length", length );
+	mlt_properties_set_position( properties, "out", length - 1 );
 
 	// Return the tractor
 	return mlt_tractor_producer( tractor );

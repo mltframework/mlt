@@ -20,18 +20,20 @@
 
 #include <string.h>
 
+#include "producer_colour.h"
+#include "producer_noise.h"
 #include "producer_ppm.h"
 #include "filter_brightness.h"
 #include "filter_channelcopy.h"
 #include "filter_gamma.h"
-#include "filter_luma.h"
 #include "filter_greyscale.h"
+#include "filter_luma.h"
+#include "filter_mirror.h"
 #include "filter_obscure.h"
 #include "filter_resize.h"
 #include "filter_region.h"
 #include "filter_volume.h"
 #include "filter_watermark.h"
-#include "producer_colour.h"
 #include "transition_composite.h"
 #include "transition_luma.h"
 #include "transition_mix.h"
@@ -41,6 +43,8 @@ void *mlt_create_producer( char *id, void *arg )
 {
 	if ( !strcmp( id, "colour" ) )
 		return producer_colour_init( arg );
+	if ( !strcmp( id, "noise" ) )
+		return producer_noise_init( arg );
 	if ( !strcmp( id, "ppm" ) )
 		return producer_ppm_init( arg );
 	return NULL;
@@ -58,6 +62,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_greyscale_init( arg );
 	if ( !strcmp( id, "luma" ) )
 		return filter_luma_init( arg );
+	if ( !strcmp( id, "mirror" ) )
+		return filter_mirror_init( arg );
 	if ( !strcmp( id, "obscure" ) )
 		return filter_obscure_init( arg );
 	if ( !strcmp( id, "region" ) )

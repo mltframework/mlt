@@ -91,7 +91,7 @@ static inline int generate_hash( char *name )
 static inline void mlt_properties_do_mirror( mlt_properties this, char *name )
 {
 	property_list *list = this->private;
-	if ( list->mirror != NULL && strcmp( name, "in" ) && strcmp( name, "out" ) )
+	if ( list->mirror != NULL ) 
 	{
 		char *value = mlt_properties_get( this, name );
 		if ( value != NULL )

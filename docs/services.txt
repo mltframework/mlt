@@ -715,6 +715,39 @@ Filters
 			none
 		
 	
+	mirror
+	
+		Description
+		
+			Provides various mirror and image reversing effects.
+
+		Constructor Argument
+		
+			mirror - horizontal, vertical, diagonal, flip, flop
+			
+		Initialisation Properties
+		
+			int reverse - being 0 or 1
+			int in - in point
+			int out - out point
+			
+		Read Only Properties
+		
+			none
+			
+		Mutable Properties
+		
+			none
+
+		Dependencies
+		
+			none
+			
+		Known Bugs
+		
+			none
+
+
 	obscure
 	
 		Description

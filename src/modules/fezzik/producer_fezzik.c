@@ -42,33 +42,47 @@ static mlt_producer create_producer( char *file )
 {
 	mlt_producer result = NULL;
 
+	// 0th Line - check for service:resource handling
+	if ( strchr( file, ':' ) )
+	{
+		char *temp = strdup( file );
+		char *service = temp;
+		char *resource = strchr( temp, ':' );
+		*resource ++ = '\0';
+		result = mlt_factory_producer( service, resource );
+		free( temp );
+	}
+
 	// 1st Line preferences
-	if ( strstr( file, ".inigo" ) )
-		result = mlt_factory_producer( "inigo_file", file );
-	else if ( strstr( file, ".mpg" ) )
-		result = mlt_factory_producer( "mcmpeg", file );
-	else if ( strstr( file, ".mpeg" ) )
-		result = mlt_factory_producer( "mcmpeg", file );
-	else if ( strstr( file, ".dv" ) )
-		result = mlt_factory_producer( "mcdv", file );
-	else if ( strstr( file, ".dif" ) )
-		result = mlt_factory_producer( "mcdv", file );
-	else if ( strstr( file, ".jpg" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".JPG" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".jpeg" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".png" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".svg" ) )
-		result = mlt_factory_producer( "pixbuf", file );
-	else if ( strstr( file, ".txt" ) )
-		result = mlt_factory_producer( "pango", file );
-	else if ( strstr( file, ".westley" ) )
-		result = mlt_factory_producer( "westley", file );
-	else if ( strstr( file, ".ogg" ) )
-		result = mlt_factory_producer( "vorbis", file );
+	if ( result == NULL )
+	{
+		if ( strstr( file, ".inigo" ) )
+			result = mlt_factory_producer( "inigo_file", file );
+		else if ( strstr( file, ".mpg" ) )
+			result = mlt_factory_producer( "mcmpeg", file );
+		else if ( strstr( file, ".mpeg" ) )
+			result = mlt_factory_producer( "mcmpeg", file );
+		else if ( strstr( file, ".dv" ) )
+			result = mlt_factory_producer( "mcdv", file );
+		else if ( strstr( file, ".dif" ) )
+			result = mlt_factory_producer( "mcdv", file );
+		else if ( strstr( file, ".jpg" ) )
+			result = mlt_factory_producer( "pixbuf", file );
+		else if ( strstr( file, ".JPG" ) )
+			result = mlt_factory_producer( "pixbuf", file );
+		else if ( strstr( file, ".jpeg" ) )
+			result = mlt_factory_producer( "pixbuf", file );
+		else if ( strstr( file, ".png" ) )
+			result = mlt_factory_producer( "pixbuf", file );
+		else if ( strstr( file, ".svg" ) )
+			result = mlt_factory_producer( "pixbuf", file );
+		else if ( strstr( file, ".txt" ) )
+			result = mlt_factory_producer( "pango", file );
+		else if ( strstr( file, ".westley" ) )
+			result = mlt_factory_producer( "westley", file );
+		else if ( strstr( file, ".ogg" ) )
+			result = mlt_factory_producer( "vorbis", file );
+	}
 
 	// 2nd Line fallbacks
 	if ( result == NULL )
@@ -81,20 +95,7 @@ static mlt_producer create_producer( char *file )
 
 	// 3rd line fallbacks 
 	if ( result == NULL )
-		result = mlt_factory_producer( "avformat", file + 
-			( strncmp( file, "avformat:", 9 ) ? 0 : 9 ) );
-
-	// 4th - allow explicit construction
-	if ( result == NULL )
-	{
-		char *arg = strchr( file, ':' );
-		if ( arg )
-		{
-			arg[0] = 0;
-			arg++;
-		}
-		result = mlt_factory_producer( file, arg );
-	}
+		result = mlt_factory_producer( "avformat", file );
 
 	return result;
 }

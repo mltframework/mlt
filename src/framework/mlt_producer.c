@@ -90,6 +90,16 @@ int mlt_producer_init( mlt_producer this, void *child )
 	return error;
 }
 
+/** Create a new producer.
+*/
+
+mlt_producer mlt_producer_new( )
+{
+	mlt_producer this = malloc( sizeof( struct mlt_producer_s ) );
+	mlt_producer_init( this, NULL );
+	return this;
+}
+
 /** Get the parent service object.
 */
 

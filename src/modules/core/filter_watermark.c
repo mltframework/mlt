@@ -115,6 +115,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Make sure the producer is in the correct position
 		mlt_producer_seek( producer, position );
 
+		// Resetting position to appease the composite transition
+		mlt_frame_set_position( frame, position );
+
 		// Get the b frame and process with composite if successful
 		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
 			mlt_transition_process( composite, frame, b_frame );

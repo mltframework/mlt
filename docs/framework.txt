@@ -652,7 +652,6 @@ mlt_properties:
 	To show all the name/value pairs in a properties, it is possible to iterate
 	through them:
 
-	    int i = 0;
 	    for ( i = 0; i < mlt_properties_count( properties ); i ++ )
 	        printf( "%s = %s\n", mlt_properties_get_name( properties, i ),
 	                             mlt_properties_get_value( properties, i ) );
@@ -729,8 +728,10 @@ mlt_deque:
 	* Reverse Polish Notation (RPN) image and audio operations
 	* memory pooling
 
-	The queuing operations are used in typical frame based consumers to allow
-	buffering.
+	The queuing operations are used in:
+	
+	* the consumer base class;
+	* consumer implementations may require further queues.
 
 
 mlt_pool:
@@ -958,6 +959,7 @@ mlt_frame:
 	void *mlt_frame_pop_audio( mlt_frame this );
 	void mlt_frame_close( mlt_frame this );
 
+	
 mlt_service:
 
 	The service base class extends properties and allows 0 to m inputs and 0 to
@@ -992,7 +994,7 @@ mlt_service:
 
 	Typically, only direct descendents of services need invoke these methods and
 	developers are encouraged to use those extensions when definining new
-	services.
+	services. 
 
 
 mlt_producer:
@@ -1058,8 +1060,7 @@ mlt_producer:
 	void mlt_producer_close( mlt_producer this );
 
 	For the sake of discussion here, we'll assume that someone wants to provide
-	a new producer which simply generates green frames and silent audio :-) -
-	we'll call the producer 'green'.
+	a new producer which random noise
 
 	// Forward reference
 	static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int index );

@@ -44,6 +44,7 @@ struct mlt_producer_s
 */
 
 extern int mlt_producer_init( mlt_producer this, void *child );
+extern mlt_producer mlt_producer_new( );
 extern mlt_service mlt_producer_service( mlt_producer this );
 extern mlt_properties mlt_producer_properties( mlt_producer this );
 extern int mlt_producer_seek( mlt_producer this, mlt_position position );

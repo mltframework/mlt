@@ -5,6 +5,7 @@ then
 
 cat << EOF >> ../producers.dat
 colour			libmltcore.so
+noise			libmltcore.so
 ppm				libmltcore.so
 EOF
 
@@ -14,6 +15,7 @@ channelcopy		libmltcore.so
 gamma			libmltcore.so
 greyscale		libmltcore.so
 luma			libmltcore.so
+mirror			libmltcore.so
 obscure			libmltcore.so
 region			libmltcore.so
 resize			libmltcore.so

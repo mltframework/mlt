@@ -492,9 +492,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				if ( got_picture )
 				{
 					if ( pkt.pts != AV_NOPTS_VALUE && pkt.pts != 0  )
-					{
 						current_time = ( double )pkt.pts / 1000000.0;
-					}
 					else
 						current_time = real_timecode;
 

@@ -134,14 +134,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Color the image
 		rgba_color color = parse_color( mlt_properties_get( producer_props, "resource" ) );
 		uint8_t y, u, v;
-		int i;
+		int i = 0;
 		RGB2YUV( color.r, color.g, color.b, y, u, v );
-		color.r = y;
-		color.g = u;
-		color.b = y;
-		color.a = v;
-		for ( i = 0; i < size; i += 4 )
-			memcpy( &image[ i ], &color, 4 );
+
+		while ( i < size )
+		{
+			image[ i ++ ] = y;
+			image[ i ++ ] = u;
+			image[ i ++ ] = y;
+			image[ i ++ ] = v;
+		}
 	}
 
 	// Update the frame
@@ -193,6 +195,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "progressive", 1 );
 
 		// colour is an alias for resource
+		// CY: Do we really need this?
 		if ( mlt_properties_get( producer_props, "colour" ) != NULL )
 			mlt_properties_set( producer_props, "resource", mlt_properties_get( producer_props, "colour" ) );
 		

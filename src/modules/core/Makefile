@@ -2,18 +2,20 @@
 TARGET = ../libmltcore.so
 
 OBJS = factory.o \
+	   producer_colour.o \
+	   producer_noise.o \
 	   producer_ppm.o \
 	   filter_brightness.o \
 	   filter_channelcopy.o \
-	   filter_greyscale.o \
 	   filter_gamma.o \
+	   filter_greyscale.o \
 	   filter_luma.o \
+	   filter_mirror.o \
 	   filter_obscure.o \
 	   filter_region.o \
 	   filter_resize.o \
 	   filter_volume.o \
 	   filter_watermark.o \
-	   producer_colour.o \
 	   transition_composite.o \
 	   transition_luma.o \
 	   transition_mix.o \
