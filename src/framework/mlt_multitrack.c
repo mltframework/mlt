@@ -121,6 +121,10 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 		// If it's allocated then, update our stats
 		if ( producer != NULL )
 		{
+			// If we have more than 1 track, we must be in continue mode
+			if ( this->count > 1 )
+				mlt_properties_set( mlt_producer_properties( producer ), "eof", "continue" );
+			
 			// Determine the longest length
 			length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
 			
@@ -160,10 +164,6 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 
 	if ( result == 0 )
 	{
-		// If it's a playlist, we need to make sure it doesn't pause at end
-		mlt_properties properties = mlt_producer_properties( producer );
-		mlt_properties_set( properties, "eof", "continue" );
-
 		// Resize the producer list if need be
 		if ( track >= this->size )
 		{
