@@ -45,6 +45,7 @@ namespace Mlt {
  */
 
 %include <framework/mlt_types.h>
+%include <framework/mlt_factory.h>
 %include <MltFactory.h>
 %include <MltProperties.h>
 %include <MltFrame.h>

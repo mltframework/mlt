@@ -35,5 +35,5 @@ install:
 	$(INSTALL) -m 755 $(TARGET) $(prefix)/lib
 	$(INSTALL) -d "$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(prefix)/include/mlt++"
-	/sbin/ldconfig || exit 0
+	/sbin/ldconfig || true
 
