@@ -86,6 +86,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 	mlt_frame_get_image( this, image, format, width, height, 1 );
 	deinterlace_yuv( *image, *image, *width * 2, *height );
+	mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
 	return 0;
 }
 

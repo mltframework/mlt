@@ -141,80 +141,16 @@ static int get_value( mlt_properties properties, char *preferred, char *fallback
 /** Composite function.
 */
 
-static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int width_dest, int height_dest, mlt_frame that, struct geometry_s geometry )
+static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry )
 {
 	int ret = 0;
-	uint8_t *p_src;
 	int i, j;
-	int stride_src;
-	int stride_dest;
 	int x_src = 0, y_src = 0;
-
-	mlt_image_format format_src = format_dest;
 	float weight = geometry.mix / 100;
-
-	// Compute the dimensioning rectangle
-	mlt_properties b_props = mlt_frame_properties( that );
-	mlt_transition this = mlt_properties_get_data( b_props, "transition_composite", NULL );
-	mlt_properties properties = mlt_transition_properties( this );
-
-	if ( mlt_properties_get( properties, "distort" ) == NULL )
-	{
-		// Now do additional calcs based on real_width/height etc
-		//int normalised_width = mlt_properties_get_int( b_props, "normalised_width" );
-		//int normalised_height = mlt_properties_get_int( b_props, "normalised_height" );
-		int normalised_width = geometry.w;
-		int normalised_height = geometry.h;
-		int real_width = get_value( b_props, "real_width", "width" );
-		int real_height = get_value( b_props, "real_height", "height" );
-		double input_ar = mlt_frame_get_aspect_ratio( that );
-		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
-		int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
-
-		// Now ensure that our images fit in the normalised frame
-		if ( scaled_width > normalised_width )
-		{
-			scaled_height = scaled_height * normalised_width / scaled_width;
-			scaled_width = normalised_width;
-		}
-		if ( scaled_height > normalised_height )
-		{
-			scaled_width = scaled_width * normalised_height / scaled_height;
-			scaled_height = normalised_height;
-		}
-
-		// Special case 
-		if ( scaled_height == normalised_height )
-			scaled_width = normalised_width;
-
-		// Now we need to align to the geometry
-		if ( scaled_width <= geometry.w && scaled_height <= geometry.h )
-		{
-			// TODO: Should take into account requested alignment here...
-			// Assume centred alignment for now
-			
-			geometry.x = geometry.x + ( geometry.w - scaled_width ) / 2;
-			geometry.y = geometry.y + ( geometry.h - scaled_height ) / 2;
-			geometry.w = scaled_width;
-			geometry.h = scaled_height;
-			mlt_properties_set( b_props, "distort", "true" );
-		}
-		else
-		{
-			mlt_properties_set( b_props, "distort", "true" );
-		}
-	}
-	else
-	{
-		// We want to ensure that we bypass resize now...
-		mlt_properties_set( b_props, "distort", "true" );
-	}
-
 	int x = ( geometry.x * width_dest ) / geometry.nw;
 	int y = ( geometry.y * height_dest ) / geometry.nh;
-	int width_src = ( geometry.w * width_dest ) / geometry.nw;
-	int height_src = ( geometry.h * height_dest ) / geometry.nh;
+	int stride_src = width_src * 2;
+	int stride_dest = width_dest * 2;
 
 	x -= x % 2;
 
@@ -225,14 +161,6 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 	if ( ( x < 0 && -x >= width_src ) || ( y < 0 && -y >= height_src ) )
 		return ret;
 
-	format_src = mlt_image_yuv422;
-	format_dest = mlt_image_yuv422;
-
-	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 1 /* writable */ );
-
-	stride_src = width_src * 2;
-	stride_dest = width_dest * 2;
-	
 	// crop overlay off the left edge of frame
 	if ( x < 0 )
 	{
@@ -260,9 +188,6 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 
 	// offset pointer into frame buffer based upon positive, even coordinates only!
 	p_dest += ( x < 0 ? 0 : x ) * 2 + ( y < 0 ? 0 : y ) * stride_dest;
-
-	// Get the alpha channel of the overlay
-	uint8_t *p_alpha = mlt_frame_get_alpha_mask( that );
 
 	// offset pointer into alpha channel based upon cropping
 	if ( p_alpha )
@@ -306,6 +231,92 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 }
 
 
+/** Get the properly sized image from b_frame.
+*/
+
+static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, int *height, struct geometry_s *geometry )
+{
+	int ret = 0;
+	mlt_image_format format = mlt_image_yuv422;
+
+	// Compute the dimensioning rectangle
+	mlt_properties b_props = mlt_frame_properties( b_frame );
+	mlt_transition this = mlt_properties_get_data( b_props, "transition_composite", NULL );
+	mlt_properties properties = mlt_transition_properties( this );
+
+	if ( mlt_properties_get( properties, "distort" ) == NULL )
+	{
+		// Now do additional calcs based on real_width/height etc
+		//int normalised_width = mlt_properties_get_int( b_props, "normalised_width" );
+		//int normalised_height = mlt_properties_get_int( b_props, "normalised_height" );
+		int normalised_width = geometry->w;
+		int normalised_height = geometry->h;
+		int real_width = get_value( b_props, "real_width", "width" );
+		int real_height = get_value( b_props, "real_height", "height" );
+		double input_ar = mlt_frame_get_aspect_ratio( b_frame );
+		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
+		int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
+		int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
+
+		// Now ensure that our images fit in the normalised frame
+		if ( scaled_width > normalised_width )
+		{
+			scaled_height = scaled_height * normalised_width / scaled_width;
+			scaled_width = normalised_width;
+		}
+		if ( scaled_height > normalised_height )
+		{
+			scaled_width = scaled_width * normalised_height / scaled_height;
+			scaled_height = normalised_height;
+		}
+
+		// Special case
+		if ( scaled_height == normalised_height )
+			scaled_width = normalised_width;
+
+		// Now we need to align to the geometry
+		if ( scaled_width <= geometry->w && scaled_height <= geometry->h )
+		{
+			// TODO: Should take into account requested alignment here...
+			// Assume centred alignment for now
+
+			geometry->x = geometry->x + ( geometry->w - scaled_width ) / 2;
+			geometry->y = geometry->y + ( geometry->h - scaled_height ) / 2;
+			geometry->w = scaled_width;
+			geometry->h = scaled_height;
+			mlt_properties_set( b_props, "distort", "true" );
+		}
+		else
+		{
+			mlt_properties_set( b_props, "distort", "true" );
+		}
+	}
+	else
+	{
+		// We want to ensure that we bypass resize now...
+		mlt_properties_set( b_props, "distort", "true" );
+	}
+
+	int x = ( geometry->x * *width ) / geometry->nw;
+	int y = ( geometry->y * *height ) / geometry->nh;
+	*width = ( geometry->w * *width ) / geometry->nw;
+	*height = ( geometry->h * *height ) / geometry->nh;
+
+	x -= x % 2;
+
+	// optimization points - no work to do
+	if ( *width <= 0 || *height <= 0 )
+		return 1;
+
+	if ( ( x < 0 && -x >= *width ) || ( y < 0 && -y >= *height ) )
+		return 1;
+
+	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 /* writable */ );
+
+	return ret;
+}
+
+
 /** Get the image.
 */
 
@@ -313,6 +324,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 {
 	// Get the b frame from the stack
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
+
+	// This compositer is yuv422 only
+	*format = mlt_image_yuv422;
 
 	// Get the image from the a frame
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
@@ -354,9 +368,18 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// consumer properties from the a_frame
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 		mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
-		
-		// Composite the b_frame on the a_frame
-		composite_yuv( *image, *format, *width, *height, b_frame, result );
+
+		// Get the image from the b frame
+		uint8_t *image_b;
+		int width_b = *width;
+		int height_b = *height;
+		if ( get_b_frame_image( b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
+		{
+			uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
+			
+			// Composite the b_frame on the a_frame
+			composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha, result );
+		}
 	}
 
 	return 0;

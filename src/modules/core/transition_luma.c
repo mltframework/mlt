@@ -249,16 +249,14 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	int luma_height = mlt_properties_get_int( b_props, "luma.height" );
 	float *luma_bitmap = mlt_properties_get_data( b_props, "luma.bitmap", NULL );
 	float luma_softness = mlt_properties_get_double( b_props, "luma.softness" );
-	int progressive = mlt_properties_get_int( b_props, "progressive" );
+	int progressive = mlt_properties_get_int( b_props, "progressive" ) || mlt_properties_get_int( a_props, "consumer_progressive" );
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
 	int reverse = mlt_properties_get_int( b_props, "luma.reverse" );
 
 	// Since we are the consumer of the b_frame, we must pass along this
 	// consumer property from the a_frame
-	mlt_properties_set_double( b_props, "consumer_aspect_ratio",
-		mlt_properties_get_double( mlt_frame_properties( this ), "consumer_aspect_ratio" ) );
-	mlt_properties_set_double( b_props, "consumer_scale",
-		mlt_properties_get_double( mlt_frame_properties( this ), "consumer_scale" ) );
+	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+	mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
 		
 	// Honour the reverse here
 	mix = reverse ? 1 - mix : mix;
@@ -269,7 +267,7 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 		// Composite the frames using a luma map
 		luma_composite( this, b_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
-			luma_softness, progressive > 0 ? -1 : top_field_first, width, height );
+			luma_softness, progressive ? -1 : top_field_first, width, height );
 	else
 		// Dissolve the frames using the time offset for mix value
 		frame_composite_yuv( this, b_frame, 0, 0, mix, width, height );
