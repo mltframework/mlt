@@ -39,7 +39,7 @@ namespace Mlt
 			~ClipInfo( );
 			int clip;
 			Producer *producer;
-			Service *service;
+			Producer *cut;
 			int start;
 			char *resource;
 			int frame_in;
@@ -47,6 +47,7 @@ namespace Mlt
 			int frame_count;
 			int length;
 			float fps;
+			int repeat;
 	};
 
 	class Playlist : public Producer
@@ -76,6 +77,7 @@ namespace Mlt
 			int split( int clip, int position );
 			int join( int clip, int count = 1, int merge = 1 );
 			int mix( int clip, int length, Transition *transition = NULL );
+			int repeat( int clip, int count );
 	};
 }
 

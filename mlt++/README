@@ -76,7 +76,6 @@ CLASS HIERARCHY
 			Frame
 			Service
 				Consumer
-					FilteredConsumer [*]
 				Field
 				Filter
 				Multitrack
@@ -85,7 +84,12 @@ CLASS HIERARCHY
 				Tractor
 				Transition
 
-	[*] These classes have no direct equivalent in the C API.
+	An additional set of classes allow apps to behave as, and communicate with,
+	client/server components - these components provide MLT with unique 
+	possibilties for process to process or system to system communications.
+	
+		Miracle
+		Response
 
 SPECIAL CASES
 -------------

@@ -27,21 +27,22 @@ using namespace Mlt;
 ClipInfo::ClipInfo( mlt_playlist_clip_info *info ) :
 	clip( info->clip ),
 	producer( new Producer( info->producer ) ),
-	service( new Service( info->service ) ),
+	cut( new Producer( info->cut ) ),
 	start( info->start ),
 	resource( strdup( info->resource ) ),
 	frame_in( info->frame_in ),
 	frame_out( info->frame_out ),
 	frame_count( info->frame_count ),
 	length( info->length ),
-	fps( info->fps )
+	fps( info->fps ),
+	repeat( info->repeat )
 {
 }
 
 ClipInfo::~ClipInfo( )
 {
 	delete producer;
-	delete service;
+	delete cut;
 	free( resource );
 }
 
@@ -163,4 +164,9 @@ int Playlist::join( int clip, int count, int merge )
 int Playlist::mix( int clip, int length, Transition *transition )
 {
 	return mlt_playlist_mix( get_playlist( ), clip, length, transition == NULL ? NULL : transition->get_transition( ) );
+}
+
+int Playlist::repeat( int clip, int count )
+{
+	return mlt_playlist_repeat_clip( get_playlist( ), clip, count );
 }
