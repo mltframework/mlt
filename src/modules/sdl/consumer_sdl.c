@@ -40,6 +40,7 @@ struct consumer_sdl_s
 	mlt_properties properties;
 	mlt_deque queue;
 	pthread_t thread;
+	int joined;
 	int running;
 	uint8_t audio_buffer[ 4096 * 10 ];
 	int audio_avail;
@@ -178,6 +179,7 @@ int consumer_start( mlt_consumer parent )
 		pthread_attr_t thread_attributes;
 		
 		this->running = 1;
+		this->joined = 0;
 
 		// Allow the user to force resizing to window size
 		if ( mlt_properties_get_int( this->properties, "resize" ) )
@@ -189,7 +191,7 @@ int consumer_start( mlt_consumer parent )
 		// Inherit the scheduling priority
 		pthread_attr_init( &thread_attributes );
 		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
-	
+
 		pthread_create( &this->thread, &thread_attributes, consumer_thread, this );
 	}
 
@@ -201,7 +203,7 @@ int consumer_stop( mlt_consumer parent )
 	// Get the actual object
 	consumer_sdl this = parent->child;
 
-	if ( this->running )
+	if ( this->joined == 0 )
 	{
 		// Kill the thread and clean up
 		this->running = 0;
@@ -211,6 +213,7 @@ int consumer_stop( mlt_consumer parent )
 		pthread_mutex_unlock( &this->audio_mutex );
 
 		pthread_join( this->thread, NULL );
+		this->joined = 1;
 	}
 
 	return 0;
