@@ -198,9 +198,6 @@ static int consumer_stop( mlt_consumer parent )
 
 		pthread_join( this->thread, NULL );
 		this->joined = 1;
-
-		mlt_frame_close( parent->put );
-		parent->put = NULL;
 	}
 
 	return 0;
@@ -235,6 +232,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	uint8_t *image;
 	int changed = 0;
 
+	void ( *lock )( void ) = mlt_properties_get_data( properties, "app_lock", NULL );
+	void ( *unlock )( void ) = mlt_properties_get_data( properties, "app_unlock", NULL );
+
+	if ( lock != NULL ) lock( );
+
+	sdl_lock_display();
 	
 	// Handle events
 	if ( this->sdl_screen != NULL )
@@ -284,8 +287,14 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		changed = 1;
 	}
 
-	if ( this->sdl_screen == NULL || changed )
+	if ( this->sdl_screen == NULL || changed || mlt_properties_get_int( properties, "changed" ) == 2 )
 	{
+		// open SDL window 
+		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
+		consumer_get_dimensions( &this->window_width, &this->window_height );
+		changed = 1;
+		mlt_properties_set_int( properties, "changed", 0 );
+
 		// Determine frame's display aspect ratio
 		float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * this->width / this->height;
 		
@@ -342,31 +351,22 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_properties_set_int( this->properties, "rect_y", this->rect.y );
 		mlt_properties_set_int( this->properties, "rect_w", this->rect.w );
 		mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
-		
-		// open SDL window 
-		sdl_lock_display();
-		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
-		consumer_get_dimensions( &this->window_width, &this->window_height );
-		sdl_unlock_display();
-		changed = 1;
 	}
-		
-	if ( mlt_properties_get_int( properties, "changed" ) )
+	else
 	{
-		sdl_lock_display();
-		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
-		SDL_SetClipRect( this->sdl_screen, &this->rect );
-		SDL_Flip( this->sdl_screen );
-		consumer_get_dimensions( &this->window_width, &this->window_height );
-		sdl_unlock_display();
+		changed = mlt_properties_get_int( properties, "changed" );
 		mlt_properties_set_int( properties, "changed", 0 );
-		changed = 1;
 	}
-
+		
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
 		 this->last_producer == mlt_properties_get_data( mlt_frame_properties( frame ), "_producer", NULL ) )
+	{
+		sdl_unlock_display( );
+		if ( unlock != NULL )
+			unlock( );
 		return 0;
+	}
 
 	// Update last frame shown info
 	this->last_position = mlt_frame_get_position( frame );
@@ -378,8 +378,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	
 	if ( this->sdl_screen != NULL )
 	{
-		sdl_lock_display();
-
 		// Calculate the scan length
 		int scanlength = this->sdl_screen->pitch / 2;
 
@@ -387,34 +385,34 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		SDL_Rect rect = this->rect;
 
 		// Generate the affine transform scaling values
-		float scale_width = ( float )width / ( float )rect.w;
-		float scale_height = ( float )height / ( float )rect.h;
+		int scale_width = ( width << 16 ) / rect.w;
+		int scale_height = ( height << 16 ) / rect.h;
 
 		// Constants defined for clarity and optimisation
 		int stride = width * 3;
 		uint16_t *start = ( uint16_t * )this->sdl_screen->pixels + rect.y * scanlength + rect.x;
 
-		int y;
+		int x, y, row_index;
+		uint16_t *p;
+		uint8_t *q, *row;
 
 		// Iterate through the screen using a very basic scaling algorithm
-		for ( y = 0; y < rect.h; y ++ )
+		for ( y = 0; y < rect.h && this->last_position != -1; y ++ )
 		{
 			// Obtain the pointer to the current screen row
-			uint16_t *p = start;
+			p = start;
 
 			// Calculate the row_index
-			int row_index = ( int )( scale_height * y );
+			row_index = ( scale_height * y ) >> 16;
 
 			// Calculate the pointer for the y offset (positioned on B instead of R)
-			uint8_t *row = image + stride * row_index;
-
-			int x;
+			row = image + stride * row_index;
 
 			// Iterate through the screen width
 			for ( x = 0; x < rect.w; x ++ )
 			{
 				// Obtain the pixel pointer
-				uint8_t *q = row + ( ( int )( scale_width * x ) * 3 );
+				q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
 
 				// Map the BGR colour from the frame to the SDL format
 				*p ++ = SDL_MapRGB( this->sdl_screen->format, *q, *( q + 1 ), *( q + 2 ) );
@@ -426,9 +424,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 		// Flip it into sight
 		SDL_Flip( this->sdl_screen );
-
-		sdl_unlock_display();
 	}
+
+	sdl_unlock_display();
+
+	if ( unlock != NULL ) unlock( );
 
 	return 0;
 }
@@ -461,8 +461,7 @@ static void *consumer_thread( void *arg )
 	}
 	else
 	{
-		this->sdl_screen = SDL_GetVideoSurface( );
-		mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 1 );
+		mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 2 );
 	}
 
 	// Loop until told not to
@@ -498,9 +497,6 @@ static int consumer_get_dimensions( int *width, int *height )
 	// Specify the SDL Version
 	SDL_VERSION( &wm.version );
 
-	// Lock the display
-	sdl_lock_display();
-
 	// Get the wm structure
 	if ( SDL_GetWMInfo( &wm ) == 1 )
 	{
@@ -525,9 +521,6 @@ static int consumer_get_dimensions( int *width, int *height )
 			*height = attr.height;
 		}
 	}
-
-	// Unlock the display
-	sdl_lock_display();
 
 	return changed;
 }

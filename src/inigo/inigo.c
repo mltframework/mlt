@@ -146,12 +146,13 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	mlt_properties properties = mlt_producer_properties( producer );
 	int silent = mlt_properties_get_int( mlt_consumer_properties( consumer ), "silent" );
 
-	term_init( );
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 	{
 		if ( !silent )
 		{
+			term_init( );
+
 			fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
 			fprintf( stderr, "|1=-10| |2= -5| |3= -2| |4= -1| |5=  0| |6=  1| |7=  2| |8=  5| |9= 10|\n" );
 			fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );

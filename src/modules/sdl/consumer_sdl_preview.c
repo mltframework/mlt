@@ -32,6 +32,8 @@ typedef struct consumer_sdl_s *consumer_sdl;
 struct consumer_sdl_s
 {
 	struct mlt_consumer_s parent;
+	mlt_consumer active;
+	int ignore_change;
 	mlt_consumer play;
 	mlt_consumer still;
 	pthread_t thread;
@@ -50,6 +52,7 @@ static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer this, mlt_frame frame );
+static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer this, SDL_Event *event );
 
 mlt_consumer consumer_sdl_preview_init( char *arg )
 {
@@ -79,6 +82,11 @@ void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_frame fr
 	consumer_sdl this = parent->child;
 	this->last_speed = mlt_properties_get_double( mlt_frame_properties( frame ), "_speed" );
 	mlt_events_fire( mlt_consumer_properties( parent ), "consumer-frame-show", frame, NULL );
+}
+
+static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer parent, SDL_Event *event )
+{
+	mlt_events_fire( mlt_consumer_properties( parent ), "consumer-sdl-event", event, NULL );
 }
 
 static int consumer_start( mlt_consumer parent )
@@ -173,6 +181,14 @@ static void *consumer_thread( void *arg )
 	mlt_properties_pass( play, mlt_consumer_properties( consumer ), "play." );
 	mlt_properties_pass( still, mlt_consumer_properties( consumer ), "still." );
 
+	mlt_properties_set_data( play, "app_lock", mlt_properties_get_data( properties, "app_lock", NULL ), 0, NULL, NULL );
+	mlt_properties_set_data( still, "app_lock", mlt_properties_get_data( properties, "app_lock", NULL ), 0, NULL, NULL );
+	mlt_properties_set_data( play, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
+	mlt_properties_set_data( still, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
+
+	mlt_properties_set_int( play, "put_mode", 1 );
+	mlt_properties_set_int( still, "put_mode", 1 );
+
 	// Loop until told not to
 	while( this->running )
 	{
@@ -185,6 +201,13 @@ static void *consumer_thread( void *arg )
 			// Get the speed of the frame
 			double speed = mlt_properties_get_double( mlt_frame_properties( frame ), "_speed" );
 
+			// Determine which speed to use
+			double use_speed = first ? speed : this->last_speed;
+
+			// Get changed requests to the preview
+			int changed = mlt_properties_get_int( properties, "changed" );
+			mlt_properties_set_int( properties, "changed", 0 );
+
 			// Make sure the recipient knows that this frame isn't really rendered
 			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 0 );
 
@@ -193,24 +216,39 @@ static void *consumer_thread( void *arg )
 				this->running = 0;
 				mlt_frame_close( frame );
 			}
-			else if ( this->last_speed != 1 )
+			else if ( this->ignore_change -- > 0 && this->active != NULL && !mlt_consumer_is_stopped( this->active ) )
+			{
+				mlt_consumer_put_frame( this->active, frame );
+				if ( this->active == this->still )
+					mlt_properties_set_int( still, "changed", changed );
+			}
+			else if ( use_speed != 1 )
 			{
 				if ( !mlt_consumer_is_stopped( this->play ) )
+				{
 					mlt_consumer_stop( this->play );
+				}
 				if ( mlt_consumer_is_stopped( this->still ) )
 				{
-					this->last_speed = speed;
+					this->last_speed = use_speed;
+					this->active = this->still;
+					this->ignore_change = 5;
 					mlt_consumer_start( this->still );
 				}
+				mlt_properties_set_int( still, "changed", changed );
 				mlt_consumer_put_frame( this->still, frame );
 			}
 			else
 			{
 				if ( !mlt_consumer_is_stopped( this->still ) )
+				{
 					mlt_consumer_stop( this->still );
+				}
 				if ( mlt_consumer_is_stopped( this->play ) )
 				{
-					this->last_speed = speed;
+					this->last_speed = use_speed;
+					this->active = this->play;
+					this->ignore_change = 25;
 					mlt_consumer_start( this->play );
 				}
 				mlt_consumer_put_frame( this->play, frame );

@@ -486,7 +486,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			mlt_properties_set_int( this->properties, "rect_y", this->rect.y );
 			mlt_properties_set_int( this->properties, "rect_w", this->rect.w );
 			mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
-			
+
 			// Force an overlay recreation
 			if ( this->sdl_overlay != NULL )
 				SDL_FreeYUVOverlay( this->sdl_overlay );
@@ -494,9 +494,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			// open SDL window with video overlay, if possible
 			sdl_lock_display();
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
-			SDL_SetClipRect( this->sdl_screen, &this->rect );
 			sdl_unlock_display();
-
+			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
+				this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+			SDL_Flip( this->sdl_screen );
+			mlt_properties_set_int( properties, "changed", 0 );
+		
 			if ( this->sdl_screen != NULL )
 			{
 				SDL_SetClipRect( this->sdl_screen, &this->rect );
@@ -511,7 +514,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			sdl_lock_display();
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 			SDL_SetClipRect( this->sdl_screen, &this->rect );
-			SDL_Flip( this->sdl_screen );
 			sdl_unlock_display();
 			mlt_properties_set_int( properties, "changed", 0 );
 		}
@@ -653,6 +655,7 @@ static void *consumer_thread( void *arg )
 	{
 		if ( SDL_GetVideoSurface( ) != NULL )
 			consumer_get_dimensions( &this->window_width, &this->window_height );
+		mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 1 );
 	}
 
 	SDL_InitSubSystem( SDL_INIT_AUDIO );

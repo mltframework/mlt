@@ -235,8 +235,11 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	// Get the service assoicated to the consumer
 	mlt_service service = mlt_consumer_service( this );
 
+	// Get the consumer properties
+	mlt_properties properties = mlt_consumer_properties( this );
+
 	// Get the frame
-	if ( mlt_service_producer( service ) == NULL )
+	if ( mlt_service_producer( service ) == NULL && mlt_properties_get_int( properties, "put_mode" ) )
 	{
 		pthread_mutex_lock( &this->put_mutex );
 		if ( this->put == NULL )
@@ -251,9 +254,6 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 
 	if ( frame != NULL || mlt_service_get_frame( service, &frame, 0 ) == 0 )
 	{
-		// Get the consumer properties
-		mlt_properties properties = mlt_consumer_properties( this );
-
 		// Get the frame properties
 		mlt_properties frame_properties = mlt_frame_properties( frame );
 
@@ -578,6 +578,12 @@ int mlt_consumer_stop( mlt_consumer this )
 	// Check and run a post command
 	if ( mlt_properties_get( properties, "post" ) )
 		system( mlt_properties_get( properties, "post" ) );
+
+	if ( this->put != NULL )
+	{
+		mlt_frame_close( this->put );
+		this->put = NULL;
+	}
 
 	return 0;
 }
