@@ -125,9 +125,6 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	int i; // channel
 	int count = mlt_properties_get_int( filter_properties, "effect_count" );
 
-	// Restore the original get_audio
-	frame->get_audio = mlt_frame_pop_audio( frame );
-
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
 
@@ -337,12 +334,11 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	if ( frame->get_audio != NULL )
+	if ( mlt_frame_is_test_audio( frame ) != 0 )
 	{
 		// Add the filter to the frame
-		mlt_frame_push_audio( frame, frame->get_audio );
 		mlt_frame_push_audio( frame, this );
-		frame->get_audio = filter_get_audio;
+		mlt_frame_push_audio( frame, filter_get_audio );
 		
 		// Parse the window property and allocate smoothing buffer if needed
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );

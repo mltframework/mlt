@@ -374,7 +374,6 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	else
 	{
 		// No audio available on the frame, so get test audio (silence)
-		this->get_audio = NULL;
 		mlt_frame_get_audio( this, buffer, format, frequency, channels, samples );
 	}
 
@@ -424,7 +423,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 			dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
 
 		// Hmm - register audio callback
-		( *frame )->get_audio = producer_get_audio;
+		mlt_frame_push_audio( *frame, producer_get_audio );
 
 		// Push the quality string
 		mlt_frame_push_service( *frame, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "quality" ) );

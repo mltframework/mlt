@@ -186,9 +186,6 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	if ( mlt_properties_get( properties, "volume.limiter" ) != NULL )
 		limiter_level = mlt_properties_get_double( properties, "volume.limiter" );
 	
-	// Restore the original get_audio
-	frame->get_audio = mlt_properties_get_data( properties, "volume.get_audio", NULL );
-
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 //	fprintf( stderr, "filter_volume: frequency %d\n", *frequency );
@@ -435,11 +432,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	// Put a filter reference onto the frame
 	mlt_properties_set_data( properties, "filter_volume", this, 0, NULL, NULL );
 
-	// Backup the original get_audio (it's still needed)
-	mlt_properties_set_data( properties, "volume.get_audio", frame->get_audio, 0, NULL, NULL );
-
 	// Override the get_audio method
-	frame->get_audio = filter_get_audio;
+	mlt_frame_push_audio( frame, filter_get_audio );
 
 	return frame;
 }

@@ -106,13 +106,16 @@ static mlt_geometry transition_parse_keys( mlt_transition this, int normalised_w
 	mlt_position in = mlt_transition_get_in( this );
 	mlt_position out = mlt_transition_get_out( this );
 	int length = out - in + 1;
+	double cycle = mlt_properties_get_double( properties, "cycle" );
 
 	// Get the new style geometry string
 	char *property = mlt_properties_get( properties, "geometry" );
 
 	// Allow a geometry repeat cycle
-	if ( mlt_properties_get_int( properties, "cycle" ) )
-		length = mlt_properties_get_int( properties, "cycle" );
+	if ( cycle >= 1 )
+		length = cycle;
+	else if ( cycle > 0 )
+		length *= cycle;
 
 	// Parse the geometry if we have one
 	mlt_geometry_parse( geometry, property, length, normalised_width, normalised_height );
@@ -730,19 +733,8 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		alignment_calculate( geometry );
 
 	// Adjust to consumer scale
-	int x = geometry->item.x * *width / geometry->nw;
-	int y = geometry->item.y * *height / geometry->nh;
 	*width = geometry->sw * *width / geometry->nw;
 	*height = geometry->sh * *height / geometry->nh;
-
-	//x = ( x | 1 ) ^ 1;
-
-	// optimization points - no work to do
-	if ( *width < 1 || *height < 1 )
-		return 1;
-
-	if ( ( x < 0 && -x >= *width ) || ( y < 0 && -y >= *height ) )
-		return 1;
 
 	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
 
@@ -777,8 +769,11 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 	else
 	{
 		int length = mlt_transition_get_out( this ) - mlt_transition_get_in( this ) + 1;
-		if ( mlt_properties_get_int( properties, "cycle" ) )
-			length = mlt_properties_get_int( properties, "cycle" );
+		double cycle = mlt_properties_get_double( properties, "cycle" );
+		if ( cycle > 1 )
+			length = cycle;
+		else if ( cycle > 0 )
+			length *= cycle;
 		mlt_geometry_refresh( start, mlt_properties_get( properties, "geometry" ), length, normalised_width, normalised_height );
 	}
 
@@ -927,14 +922,24 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Get the transition from the a frame
 	mlt_transition this = mlt_frame_pop_service( a_frame );
 
-	// This compositer is yuv422 only
-	*format = mlt_image_yuv422;
-
-	// Get the image from the a frame
-	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
+	// Get in and out
+	int out = ( int )mlt_frame_pop_service( a_frame );
+	int in = ( int )mlt_frame_pop_service( a_frame );
 
 	// Get the properties from the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+
+	// TODO: clean up always_active behaviour
+	if ( mlt_properties_get_int( properties, "always_active" ) )
+	{
+		mlt_events_block( properties, properties );
+		mlt_properties_set_int( properties, "in", in );
+		mlt_properties_set_int( properties, "out", out );
+		mlt_events_unblock( properties, properties );
+	}
+
+	// This compositer is yuv422 only
+	*format = mlt_image_yuv422;
 
 	if ( b_frame != NULL )
 	{
@@ -959,6 +964,26 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Do the calculation
 		composite_calculate( this, &result, a_frame, position );
 
+		// Since we are the consumer of the b_frame, we must pass along these
+		// consumer properties from the a_frame
+		mlt_properties_set_double( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+		mlt_properties_set_int( b_props, "normalised_width", mlt_properties_get_double( a_props, "normalised_width" ) );
+		mlt_properties_set_int( b_props, "normalised_height", mlt_properties_get_double( a_props, "normalised_height" ) );
+
+		// TODO: Dangerous/temporary optimisation - if nothing to do, then do nothing
+		if ( mlt_properties_get_int( properties, "no_alpha" ) && 
+			 result.item.x == 0 && result.item.y == 0 && result.item.w == *width && result.item.h == *height && result.item.mix == 100 )
+		{
+			mlt_frame_get_image( b_frame, image, format, width, height, 1 );
+			if ( !mlt_frame_is_test_card( a_frame ) )
+				mlt_frame_replace_image( a_frame, *image, *format, *width, *height );
+			return 0;
+		}
+
+		// Get the image from the a frame
+		mlt_frame_get_image( a_frame, image, format, width, height, 1 );
+
 		// Optimisation - no compositing required
 		if ( result.item.mix == 0 || ( result.item.w == 0 && result.item.h == 0 ) )
 			return 0;
@@ -976,13 +1001,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			mlt_properties_set_int( b_props, "dest_width", mlt_properties_get_int( a_props, "dest_width" ) );
 			mlt_properties_set_int( b_props, "dest_height", mlt_properties_get_int( a_props, "dest_height" ) );
 		}
-
-		// Since we are the consumer of the b_frame, we must pass along these
-		// consumer properties from the a_frame
-		mlt_properties_set_double( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-		mlt_properties_set_int( b_props, "normalised_width", mlt_properties_get_double( a_props, "normalised_width" ) );
-		mlt_properties_set_int( b_props, "normalised_height", mlt_properties_get_double( a_props, "normalised_height" ) );
 
 		// Special case for titling...
 		if ( mlt_properties_get_int( properties, "titles" ) )
@@ -1034,6 +1052,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			}
 		}
 	}
+	else
+	{
+		mlt_frame_get_image( a_frame, image, format, width, height, 1 );
+	}
 
 	return 0;
 }
@@ -1046,11 +1068,28 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 	// Get a unique name to store the frame position
 	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
 
-	// Assign the current position to the name
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_frame_get_position( a_frame ) );
+	// UGH - this is a TODO - find a more reliable means of obtaining in/out for the always_active case
+	if ( mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "always_active" ) == 0 )
+	{
+		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "in" ) );
+		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "out" ) );
 
-	// Propogate the transition properties to the b frame
-	mlt_properties_set_double( MLT_FRAME_PROPERTIES( b_frame ), "relative_position", position_calculate( this, mlt_frame_get_position( a_frame ) ) );
+		// Assign the current position to the name
+		mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_frame_get_position( a_frame ) );
+
+		// Propogate the transition properties to the b frame
+		mlt_properties_set_double( MLT_FRAME_PROPERTIES( b_frame ), "relative_position", position_calculate( this, mlt_frame_get_position( a_frame ) ) );
+	}
+	else
+	{
+		mlt_properties props = mlt_properties_get_data( MLT_FRAME_PROPERTIES( b_frame ), "_producer", NULL );
+		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( props, "in" ) );
+		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( props, "out" ) );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame ), "relative_position", mlt_properties_get_int( props, "_frame" ) );
+
+		// Assign the current position to the name
+		mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_properties_get_position( MLT_FRAME_PROPERTIES( b_frame ), "relative_position" ) );
+	}
 	
 	mlt_frame_push_service( a_frame, this );
 	mlt_frame_push_frame( a_frame, b_frame );
@@ -1075,6 +1114,9 @@ mlt_transition transition_composite_init( char *arg )
 		
 		// Default factory
 		mlt_properties_set( properties, "factory", "fezzik" );
+
+		// Inform apps and framework that this is a video only transition
+		mlt_properties_set_int( properties, "_transition_type", 1 );
 
 #ifdef USE_MMX
 		//mlt_properties_set_int( properties, "_MMX", composite_have_mmx() );

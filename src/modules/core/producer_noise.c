@@ -170,7 +170,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_frame_push_get_image( *frame, producer_get_image );
 
 		// Specify the audio
-		( *frame )->get_audio = producer_get_audio;
+		mlt_frame_push_audio( *frame, producer_get_audio );
 	}
 
 	// Calculate the next timecode

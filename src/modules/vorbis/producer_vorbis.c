@@ -171,7 +171,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	mlt_position position = mlt_properties_get_position( frame_properties, "vorbis_position" );
 
 	// Get the producer 
-	mlt_producer this = mlt_properties_get_data( frame_properties, "vorbis_producer", NULL );
+	mlt_producer this = mlt_frame_pop_audio( frame );
 
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
@@ -278,7 +278,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		}
 		else
 		{
-			frame->get_audio = NULL;
 			mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 			audio_used = 0;
 		}
@@ -289,7 +288,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	else
 	{
 		// Get silence and don't touch the context
-		frame->get_audio = NULL;
 		*samples = mlt_sample_calculator( fps, *frequency, position );
 		mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	}
@@ -298,21 +296,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	mlt_properties_set_position( properties, "audio_expected", position + 1 );
 
 	return 0;
-}
-
-/** Set up audio handling.
-*/
-
-static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
-{
-	// Get the properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
-	// Set the audio method
-	frame->get_audio = producer_get_audio;
-
-	// Set the producer on the frame
-	mlt_properties_set_data( properties, "vorbis_producer", this, 0, NULL, NULL );
 }
 
 /** Our get frame implementation.
@@ -330,7 +313,8 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "vorbis_position", mlt_producer_position( this ) );
 
 	// Set up the audio
-	producer_set_up_audio( this, *frame );
+	mlt_frame_push_audio( *frame, this );
+	mlt_frame_push_audio( *frame, producer_get_audio );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( this );

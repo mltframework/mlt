@@ -441,6 +441,9 @@ mlt_transition transition_region_init( void *arg )
 		
 		// Resource defines the shape of the region
 		mlt_properties_set( properties, "resource", arg == NULL ? "rectangle" : arg );
+
+		// Inform apps and framework that this is a video only transition
+		mlt_properties_set_int( properties, "_transition_type", 1 );
 	}
 
 	// Return the transition

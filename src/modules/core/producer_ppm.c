@@ -249,7 +249,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties_set_data( properties, "audio.pipe", audio, 0, NULL, NULL );
 
 	// Hmm - register audio callback
-	( *frame )->get_audio = producer_get_audio;
+	mlt_frame_push_audio( *frame, producer_get_audio );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );

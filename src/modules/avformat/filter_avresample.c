@@ -60,9 +60,6 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	if ( output_rate == 0 )
 		output_rate = *frequency;
 
-	// Restore the original get_audio
-	frame->get_audio = mlt_frame_pop_audio( frame );
-
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
 
@@ -153,16 +150,13 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	// Only call this if we have a means to get audio
-	if ( frame->get_audio != NULL )
+	if ( mlt_frame_is_test_audio( frame ) != 0 )
 	{
-		// Push the original method on to the stack
-		mlt_frame_push_audio( frame, frame->get_audio );
-
 		// Push the filter on to the stack
 		mlt_frame_push_audio( frame, this );
 
 		// Assign our get_audio method
-		frame->get_audio = resample_get_audio;
+		mlt_frame_push_audio( frame, resample_get_audio );
 	}
 
 	return frame;

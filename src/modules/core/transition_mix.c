@@ -30,17 +30,11 @@
 
 static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// Get the properties of the a frame
-	mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
-
 	// Get the b frame from the stack
 	mlt_frame b_frame = mlt_frame_pop_audio( frame );
 
 	// Get the properties of the b frame
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
-
-	// Restore the original get_audio
-	frame->get_audio = mlt_properties_get_data( a_props, "mix.get_audio", NULL );
 
 	double mix_start = 0.5, mix_end = 0.5;
 	if ( mlt_properties_get( b_props, "audio.previous_mix" ) != NULL )
@@ -71,55 +65,73 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	if ( mlt_properties_get( properties, "start" ) != NULL )
 	{
 		// Determine the time position of this frame in the transition duration
-		mlt_position in = mlt_transition_get_in( this );
-		mlt_position out = mlt_transition_get_out( this );
-		mlt_position time = mlt_frame_get_position( b_frame );
+		mlt_properties props = mlt_properties_get_data( MLT_FRAME_PROPERTIES( b_frame ), "_producer", NULL );
+		int always_active = mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "always_active" );
+		mlt_position in = !always_active ? mlt_transition_get_in( this ) : mlt_properties_get_int( props, "in" );
+		mlt_position out = !always_active ? mlt_transition_get_out( this ) : mlt_properties_get_int( props, "out" );
+		int length = mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "length" );
+		mlt_position time = !always_active ? mlt_frame_get_position( b_frame ) : mlt_properties_get_int( props, "_frame" );
 		double mix = ( double )( time - in ) / ( double )( out - in + 1 );
+
+		// TODO: Check the logic here - shouldn't we be computing current and next mixing levels in all cases?
+		if ( length == 0 )
+		{
+			// If there is an end mix level adjust mix to the range
+			if ( mlt_properties_get( properties, "end" ) != NULL )
+			{
+				double start = mlt_properties_get_double( properties, "start" );
+				double end = mlt_properties_get_double( properties, "end" );
+				mix = start + ( end - start ) * mix;
+			}
+			// A negative means total crossfade (uses position)
+			else if ( mlt_properties_get_double( properties, "start" ) >= 0 )
+			{
+				// Otherwise, start/constructor is a constant mix level
+		    	mix = mlt_properties_get_double( properties, "start" );
+			}
 		
-		// If there is an end mix level adjust mix to the range
-		if ( mlt_properties_get( properties, "end" ) != NULL )
-		{
-			double start = mlt_properties_get_double( properties, "start" );
-			double end = mlt_properties_get_double( properties, "end" );
-			mix = start + ( end - start ) * mix;
-		}
-		// A negative means total crossfade (uses position)
-		else if ( mlt_properties_get_double( properties, "start" ) >= 0 )
-		{
-			// Otherwise, start/constructor is a constant mix level
-		    mix = mlt_properties_get_double( properties, "start" );
-		}
+			// Finally, set the mix property on the frame
+			mlt_properties_set_double( b_props, "audio.mix", mix );
 	
-		// Finally, set the mix property on the frame
-		mlt_properties_set_double( b_props, "audio.mix", mix );
+			// Initialise transition previous mix value to prevent an inadvertant jump from 0
+			if ( mlt_properties_get( properties, "previous_mix" ) == NULL )
+				mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
+				
+			// Tell b frame what the previous mix level was
+			mlt_properties_set_double( b_props, "audio.previous_mix", mlt_properties_get_double( properties, "previous_mix" ) );
 
-		// Initialise transition previous mix value to prevent an inadvertant jump from 0
-		if ( mlt_properties_get( properties, "previous_mix" ) == NULL )
+			// Save the current mix level for the next iteration
 			mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
-			
-		// Tell b frame what the previous mix level was
-		mlt_properties_set_double( b_props, "audio.previous_mix", mlt_properties_get_double( properties, "previous_mix" ) );
-
-		// Save the current mix level for the next iteration
-		mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
 		
-		mlt_properties_set_double( b_props, "audio.reverse", mlt_properties_get_double( properties, "reverse" ) );
-	}
+			mlt_properties_set_double( b_props, "audio.reverse", mlt_properties_get_double( properties, "reverse" ) );
+		}
+		else
+		{
+			double level = mlt_properties_get_double( properties, "start" );
+			double mix_start = level;
+			double mix_end = mix_start;
+			double mix_increment = 1.0 / length;
+			if ( time - in < length )
+			{
+				mix_start = mix_start * ( ( double )( time - in ) / length );
+				mix_end = mix_start + mix_increment;
+			}
+			else if ( time > out - length )
+			{
+				mix_end = mix_start * ( ( double )( out - time - in ) / length );
+				mix_start = mix_end - mix_increment;
+			}
 
-	// Ensure that the tractor knows this isn't test audio...
-	if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame ), "test_audio" ) )
-	{
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "test_audio", 0 );
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "silent_audio", 1 );
+			mix_start = mix_start < 0 ? 0 : mix_start > level ? level : mix_start;
+			mix_end = mix_end < 0 ? 0 : mix_end > level ? level : mix_end;
+			mlt_properties_set_double( b_props, "audio.previous_mix", mix_start );
+			mlt_properties_set_double( b_props, "audio.mix", mix_end );
+		}
 	}
-
-	// Backup the original get_audio (it's still needed)
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES( a_frame ), "mix.get_audio", a_frame->get_audio, 0, NULL, NULL );
 
 	// Override the get_audio method
-	a_frame->get_audio = transition_get_audio;
-	
 	mlt_frame_push_audio( a_frame, b_frame );
+	mlt_frame_push_audio( a_frame, transition_get_audio );
 	
 	return a_frame;
 }
@@ -135,7 +147,8 @@ mlt_transition transition_mix_init( char *arg )
 		this->process = transition_process;
 		if ( arg != NULL )
 			mlt_properties_set_double( MLT_TRANSITION_PROPERTIES( this ), "start", atof( arg ) );
-		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( this ), "_accepts_blanks", 1 );
+		// Inform apps and framework that this is an audio only transition
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( this ), "_transition_type", 2 );
 	}
 	return this;
 }

@@ -921,7 +921,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	else
 	{
 		// Get silence and don't touch the context
-		frame->get_audio = NULL;
 		mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	}
 
@@ -984,7 +983,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 		// No codec, no show...
 		if ( codec != NULL )
 		{
-			frame->get_audio = producer_get_audio;
+			mlt_frame_push_audio( frame, producer_get_audio );
 			mlt_properties_set_data( frame_properties, "avformat_producer", this, 0, NULL, NULL );
 		}
 	}

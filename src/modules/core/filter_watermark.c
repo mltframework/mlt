@@ -174,7 +174,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				if ( rescale == NULL || !strcmp( rescale, "none" ) )
 					rescale = "hyper";
 				mlt_transition_process( composite, b_frame, frame );
-				mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_int( a_props, "consumer_aspect_ratio" ) );
 				mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
 				mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 				mlt_properties_set( a_props, "rescale.interp", rescale );

@@ -38,9 +38,6 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	int from = mlt_properties_get_int( properties, "channelcopy.from" );
 	int to = mlt_properties_get_int( properties, "channelcopy.to" );
 
-	// Restore the original get_audio
-	frame->get_audio = mlt_properties_get_data( properties, "channelcopy.get_audio", NULL );
-
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
@@ -76,11 +73,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	mlt_properties_set_int( frame_props, "channelcopy.to", mlt_properties_get_int( properties, "to" ) );
 	mlt_properties_set_int( frame_props, "channelcopy.from", mlt_properties_get_int( properties, "from" ) );
 
-	// Backup the original get_audio (it's still needed)
-	mlt_properties_set_data( frame_props, "channelcopy.get_audio", frame->get_audio, 0, NULL, NULL );
-
 	// Override the get_audio method
-	frame->get_audio = filter_get_audio;
+	mlt_frame_push_audio( frame, filter_get_audio );
 
 	return frame;
 }

@@ -547,6 +547,9 @@ mlt_transition transition_luma_init( char *lumafile )
 		// Set the main property
 		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "resource", lumafile );
 		
+		// Inform apps and framework that this is a video only transition
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 1 );
+
 		return transition;
 	}
 	return NULL;

@@ -700,6 +700,8 @@ mlt_transition transition_affine_init( char *arg )
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sy", 1 );
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "distort", 0 );
 		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "start", "0,0:100%x100%" );
+		// Inform apps and framework that this is a video only transition
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 1 );
 		transition->process = transition_process;
 	}
 	return transition;

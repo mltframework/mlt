@@ -236,9 +236,6 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Get the filter properties
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
-	// Restore the original get_audio
-	frame->get_audio = mlt_frame_pop_audio( frame );
-	
 	int jack_frequency = mlt_properties_get_int( filter_properties, "_sample_rate" );
 
 	// Get the producer's audio
@@ -313,12 +310,11 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	if ( frame->get_audio != NULL )
+	if ( mlt_frame_is_test_audio( frame ) != 0 )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
-		mlt_frame_push_audio( frame, frame->get_audio );
 		mlt_frame_push_audio( frame, this );
-		frame->get_audio = jackrack_get_audio;
+		mlt_frame_push_audio( frame, jackrack_get_audio );
 		
 		if ( mlt_properties_get_int( properties, "_sync" ) )
 			initialise_jack_ports( properties );
