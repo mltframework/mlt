@@ -70,6 +70,90 @@ mlt_geometry mlt_geometry_init( )
 	return this;
 }
 
+/** A linear step
+*/
+
+static inline double linearstep( double start, double end, double position, int length )
+{
+	double o = ( end - start ) / length;
+	return start + position * o;
+}
+
+static void mlt_geometry_virtual_refresh( mlt_geometry this )
+{
+	geometry self = this->local;
+
+	// Parse of all items to ensure unspecified keys are calculated correctly
+	if ( self->item != NULL )
+	{
+		int i = 0;
+		for ( i = 0; i < 5; i ++ )
+		{
+			geometry_item current = self->item;
+			while( current != NULL )
+			{
+				int fixed = current->data.f[ i ];
+				if ( !fixed )
+				{
+					geometry_item prev = current->prev;
+					geometry_item next = current->next;
+
+					float prev_value = 0;
+					float next_value = 0;
+					float value = 0;
+
+					while( prev != NULL && !prev->data.f[ i ] ) prev = prev->prev;
+					while( next != NULL && !next->data.f[ i ] ) next = next->next;
+
+					switch( i )
+					{
+						case 0:
+							if ( prev ) prev_value = prev->data.x;
+							if ( next ) next_value = next->data.x;
+							break;
+						case 1:
+							if ( prev ) prev_value = prev->data.y;
+							if ( next ) next_value = next->data.y;
+							break;
+						case 2:
+							if ( prev ) prev_value = prev->data.w;
+							if ( next ) next_value = next->data.w;
+							break;
+						case 3:
+							if ( prev ) prev_value = prev->data.h;
+							if ( next ) next_value = next->data.h;
+							break;
+						case 4:
+							if ( prev ) prev_value = prev->data.mix;
+							if ( next ) next_value = next->data.mix;
+							break;
+					}
+
+					// This should never happen
+					if ( prev == NULL )
+						current->data.f[ i ] = 1;
+					else if ( next == NULL )
+						value = prev_value;
+					else 
+						value = linearstep( prev_value, next_value, current->data.frame - prev->data.frame, next->data.frame - prev->data.frame );
+
+					switch( i )
+					{
+						case 0: current->data.x = value; break;
+						case 1: current->data.y = value; break;
+						case 2: current->data.w = value; break;
+						case 3: current->data.h = value; break;
+						case 4: current->data.mix = value; break;
+					}
+				}
+
+				// Move to the next item
+				current = current->next;
+			}
+		}
+	}
+}
+
 static int mlt_geometry_drop( mlt_geometry this, geometry_item item )
 {
 	geometry self = this->local;
@@ -79,6 +163,15 @@ static int mlt_geometry_drop( mlt_geometry this, geometry_item item )
 		self->item = item->next;
 		if ( self->item != NULL )
 			self->item->prev = NULL;
+		// To ensure correct seeding, ensure all values are fixed
+		if ( self->item != NULL )
+		{
+			self->item->data.f[0] = 1;
+			self->item->data.f[1] = 1;
+			self->item->data.f[2] = 1;
+			self->item->data.f[3] = 1;
+			self->item->data.f[4] = 1;
+		}
 	}
 	else if ( item->next != NULL )
 	{
@@ -199,12 +292,16 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 	{
 		char *p = strchr( value, '=' );
 		int count = 0;
-		float temp;
+		double temp;
 
 		// Determine if a position has been specified
 		if ( p != NULL )
 		{
-			item->frame = atoi( value );
+			temp = atof( value );
+			if ( temp > -1 && temp < 1 )
+				item->frame = temp * self->length;
+			else
+				item->frame = temp;
 			value = p + 1;
 		}
 
@@ -215,6 +312,17 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 		// Obtain the current value at this position - this allows new
 		// frames to be created which don't specify all values
 		mlt_geometry_fetch( this, item, item->frame );
+
+		// Special case - when an empty string is specified, all values are fixed
+		// TODO: Check if this is logical - it's convenient, but it's also odd...
+		if ( !*value )
+		{
+			item->f[0] = 1;
+			item->f[1] = 1;
+			item->f[2] = 1;
+			item->f[3] = 1;
+			item->f[4] = 1;
+		}
 
 		// Iterate through the remainder of value
 		while( *value )
@@ -236,7 +344,7 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 				}
 
 				// Special case - distort token
-				if ( *p == '!' )
+				if ( *p == '!' || *p == '*' )
 				{
 					p ++;
 					item->distort = 1;
@@ -248,11 +356,11 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 				// Assign to the item
 				switch( count )
 				{
-					case 0: item->x = temp; break;
-					case 1: item->y = temp; break;
-					case 2: item->w = temp; break;
-					case 3: item->h = temp; break;
-					case 4: item->mix = temp; break;
+					case 0: item->x = temp; item->f[0] = 1; break;
+					case 1: item->y = temp; item->f[1] = 1; break;
+					case 2: item->w = temp; item->f[2] = 1; break;
+					case 3: item->h = temp; item->f[3] = 1; break;
+					case 4: item->mix = temp; item->f[4] = 1; break;
 				}
 			}
 			else
@@ -271,15 +379,6 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 	}
 
 	return ret;
-}
-
-/** A linear step
-*/
-
-static inline float linearstep( float start, float end, float position, int length )
-{
-	float o = ( end - start ) / length;
-	return start + position * o;
 }
 
 // Fetch a geometry item for an absolute position
@@ -313,6 +412,11 @@ int mlt_geometry_fetch( mlt_geometry this, mlt_geometry_item item, float positio
 		{
 			memcpy( item, &key->data, sizeof( struct mlt_geometry_item_s ) );
 			item->key = 0;
+			item->f[ 0 ] = 0;
+			item->f[ 1 ] = 0;
+			item->f[ 2 ] = 0;
+			item->f[ 3 ] = 0;
+			item->f[ 4 ] = 0;
 		}
 		// Interpolation is needed - position > key and there is a following key
 		else
@@ -373,6 +477,8 @@ int mlt_geometry_insert( mlt_geometry this, mlt_geometry_item item )
 		}
 		else if ( item->frame > place->data.frame )
 		{
+			if ( place->next )
+				place->next->prev = new;
 			new->next = place->next;
 			new->prev = place;
 			place->next = new;
@@ -385,8 +491,19 @@ int mlt_geometry_insert( mlt_geometry this, mlt_geometry_item item )
 	}
 	else
 	{
+		// Set the first item
 		self->item = new;
+
+		// To ensure correct seeding, ensure all values are fixed
+		self->item->data.f[0] = 1;
+		self->item->data.f[1] = 1;
+		self->item->data.f[2] = 1;
+		self->item->data.f[3] = 1;
+		self->item->data.f[4] = 1;
 	}
+
+	// Refresh all geometries
+	mlt_geometry_virtual_refresh( this );
 
 	// TODO: Error checking
 	return 0;
@@ -408,6 +525,9 @@ int mlt_geometry_remove( mlt_geometry this, int position )
 
 	if ( place != NULL && position == place->data.frame )
 		ret = mlt_geometry_drop( this, place );
+
+	// Refresh all geometries
+	mlt_geometry_virtual_refresh( this );
 
 	return ret;
 }
@@ -459,6 +579,13 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 			{
 				if ( mlt_geometry_fetch( this, &item, item.frame ) )
 					break;
+
+				// To ensure correct seeding, ensure all values are fixed
+				item.f[0] = 1;
+				item.f[1] = 1;
+				item.f[2] = 1;
+				item.f[3] = 1;
+				item.f[4] = 1;
 			}
 			// Typically, we move from key to key
 			else if ( item.frame < out )
@@ -479,9 +606,18 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 			if ( item.frame - in != 0 )
 				sprintf( temp, "%d=", item.frame - in );
 
-			sprintf( temp + strlen( temp ), "%.0f,%.0f:%.0fx%.0f%s", item.x, item.y, item.w, item.h, item.distort ? "!" : "" );
-
-			if ( item.mix )
+			if ( item.f[0] ) 
+				sprintf( temp + strlen( temp ), "%.0f", item.x );
+			strcat( temp, "," );
+			if ( item.f[1] ) 
+				sprintf( temp + strlen( temp ), "%.0f", item.y );
+			strcat( temp, ":" );
+			if ( item.f[2] ) 
+				sprintf( temp + strlen( temp ), "%.0f", item.w );
+			strcat( temp, "x" );
+			if ( item.f[3] ) 
+				sprintf( temp + strlen( temp ), "%.0f", item.h );
+			if ( item.f[4] ) 
 				sprintf( temp + strlen( temp ), ":%.0f", item.mix );
 
 			if ( used + strlen( temp ) > size )

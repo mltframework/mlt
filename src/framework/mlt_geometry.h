@@ -29,12 +29,12 @@ struct mlt_geometry_item_s
 	int key;
 	// The actual frame this corresponds to 
 	int frame;
-	// The mix level
-	float mix;
-	// x,y are upper left
-	float x, y, w, h;
 	// Distort
 	int distort;
+	// x,y are upper left
+	float x, y, w, h, mix;
+	// Indicates which values are fixed
+	int f[ 5 ];
 };
 
 struct mlt_geometry_s
