@@ -159,10 +159,10 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	{
 		output->nw = in->nw;
 		output->nh = in->nh;
-		output->x = in->x + ( out->x - in->x ) * position;
-		output->y = in->y + ( out->y - in->y ) * position;
-		output->w = in->w + ( out->w - in->w ) * position;
-		output->h = in->h + ( out->h - in->h ) * position;
+		output->x = rint( in->x + ( out->x - in->x ) * position + 0.5 );
+		output->y = rint( in->y + ( out->y - in->y ) * position + 0.5 );
+		output->w = rint( in->w + ( out->w - in->w ) * position + 0.5 );
+		output->h = rint( in->h + ( out->h - in->h ) * position + 0.5 );
 		output->mix = in->mix + ( out->mix - in->mix ) * position;
 		output->distort = in->distort;
 	}
@@ -178,14 +178,25 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 		output->distort = out->distort;
 	}
 
-	// DRD> These break on negative values. I do not think they are needed
-	// since yuv_composite takes care of YUYV group alignment
-	//output->x = ( int )floor( output->x ) & 0xfffffffe;
-	//output->w = ( int )floor( output->w ) & 0xfffffffe;
-	//output->sw &= 0xfffffffe;
+	// Definitely incorrect...
+#if 0
+	if ( ( int )output->x & 1 && ( int )output->w & 1 )
+	{
+		output->x -= 1.0;
+		output->w += 1.0;
+	}
+	else if ( ( int )output->x & 1 )
+	{
+		output->x += 1.0;
+	}
+	else if ( ( int )output->w & 1 )
+	{
+		output->w += 1.0;
+	}
+#endif
 }
 
-void transition_destroy_keys( void *arg )
+static void transition_destroy_keys( void *arg )
 {
 	struct geometry_s *ptr = arg;
 	struct geometry_s *next = NULL;
@@ -302,7 +313,7 @@ static int alignment_parse( char* align )
 static void alignment_calculate( struct geometry_s *geometry )
 {
 	geometry->x += ( geometry->w - geometry->sw ) * geometry->halign / 2;
-	geometry->y += ( geometry->h - geometry->sh ) * geometry->valign / 2;
+	geometry->y += ( geometry->h - geometry->sh ) * geometry->valign;
 }
 
 /** Calculate the position for this frame.
@@ -544,10 +555,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	// Adjust to consumer scale
 	int x = geometry.x * width_dest / geometry.nw;
 	int y = geometry.y * height_dest / geometry.nh;
-
-	// Align x to a full YUYV group
-	x = ( x | 1 ) ^ 1;
-	width_src = ( width_src | 1 ) ^ 1;
+	int uneven = ( x & 1 );
 
 	// optimization points - no work to do
 	if ( width_src <= 0 || height_src <= 0 )
@@ -619,6 +627,9 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	stride_src *= step;
 	stride_dest *= step;
 	int alpha_stride = stride_src / bpp;
+
+	if ( uneven )
+		p_src -= 2;
 
 	// now do the compositing only to cropped extents
 	if ( line_fn != NULL )
@@ -846,7 +857,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	*width = geometry->sw * *width / geometry->nw;
 	*height = geometry->sh * *height / geometry->nh;
 
-	x = ( x | 1 ) ^ 1;
+	//x = ( x | 1 ) ^ 1;
 
 	// optimization points - no work to do
 	if ( *width < 1 || *height < 1 )
@@ -961,8 +972,8 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	if ( y + h > height )
 		h = height - y;
 
-	x = ( x | 1 ) ^ 1;
-	w = ( w | 1 ) ^ 1;
+	//x = ( x | 1 ) ^ 1;
+	//w = ( w | 1 ) ^ 1;
 
 	// Now we need to create a new destination image
 	dest = mlt_pool_alloc( w * h * 2 );
