@@ -34,7 +34,7 @@ static inline int get_Y( uint8_t *pixels, int width, int height, int x, int y )
 	}
 	else
 	{
-		uint8_t *pixel = pixels + y * width * 2 + x * 2;
+		uint8_t *pixel = pixels + y * ( width << 1 ) + ( x << 1 );
 		return *pixel;
 	}
 }
@@ -47,13 +47,13 @@ static inline int sqrti( int n )
 	int h = 0;
 
 	while( q <= n )
-		q = 4 * q;
+		q = q << 2;
 
 	while( q != 1 )
 	{
-		q = q / 4;
+		q = q >> 2;
 		h = p + q;
-		p = p / 2;
+		p = p >> 1;
 		if ( r >= h )
 		{
 			p = p + q;
@@ -119,8 +119,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				matrix[ 2 ][ 2 ] = get_Y( *image, *width, *height, x + x_scatter, y + y_scatter );
 
 				// Do calculations
-				sum1 = (matrix[2][0] - matrix[0][0]) + 2*(matrix[2][1] - matrix[0][1]) + (matrix[2][2] - matrix[2][0]);
-				sum2 = (matrix[0][2] - matrix[0][0]) + 2*(matrix[1][2] - matrix[1][0]) + (matrix[2][2] - matrix[2][0]);
+				sum1 = (matrix[2][0] - matrix[0][0]) + ( (matrix[2][1] - matrix[0][1]) << 1 ) + (matrix[2][2] - matrix[2][0]);
+				sum2 = (matrix[0][2] - matrix[0][0]) + ( (matrix[1][2] - matrix[1][0]) << 1 ) + (matrix[2][2] - matrix[2][0]);
 				sum = scale * sqrti( sum1 * sum1 + sum2 * sum2 );
 
 				// Assign value
