@@ -39,7 +39,7 @@ Producer::Producer( char *id, char *service ) :
 Producer::Producer( Service &producer ) :
 	instance( NULL )
 {
-	service_type type = producer.type( );
+	mlt_service_type type = producer.type( );
 	if ( type == producer_type || type == playlist_type || 
 		 type == tractor_type || type == multitrack_type )
 	{
@@ -138,3 +138,12 @@ Producer *Producer::cut( int in, int out )
 	return result;
 }
 
+bool Producer::same_clip( Producer &that )
+{
+	return mlt_producer_cut_parent( get_producer( ) ) == mlt_producer_cut_parent( that.get_producer( ) );
+}
+
+bool Producer::runs_into( Producer &that )
+{
+	return same_clip( that ) && get_out( ) == ( that.get_in( ) - 1 );
+}
