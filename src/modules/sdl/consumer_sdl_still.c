@@ -57,6 +57,7 @@ struct consumer_sdl_s
 	uint8_t *buffer;
 	int last_position;
 	mlt_producer last_producer;
+	int filtered;
 };
 
 /** Forward references to static functions.
@@ -84,12 +85,6 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 	{
 		// Get the parent consumer object
 		mlt_consumer parent = &this->parent;
-
-		// Attach a colour space converter
-		mlt_filter filter = mlt_factory_filter( "avcolour_space", NULL );
-		mlt_properties_set_int( mlt_filter_properties( filter ), "forced", mlt_image_yuv422 );
-		mlt_service_attach( mlt_consumer_service( &this->parent ), filter );
-		mlt_filter_close( filter );
 
 		// We have stuff to clean up, so override the close method
 		parent->close = consumer_close;
@@ -162,7 +157,17 @@ static int consumer_start( mlt_consumer parent )
 	if ( !this->running )
 	{
 		pthread_attr_t thread_attributes;
-		
+
+		// Attach a colour space converter
+		if ( !this->filtered )
+		{
+			mlt_filter filter = mlt_factory_filter( "avcolour_space", NULL );
+			mlt_properties_set_int( mlt_filter_properties( filter ), "forced", mlt_image_yuv422 );
+			mlt_service_attach( mlt_consumer_service( &this->parent ), filter );
+			mlt_filter_close( filter );
+			this->filtered = 1;
+		}
+	
 		consumer_stop( parent );
 
 		this->last_position = -1;
