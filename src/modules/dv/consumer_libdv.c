@@ -104,10 +104,10 @@ static dv_encoder_t *libdv_get_encoder( mlt_consumer this, mlt_frame frame )
 		double fps = mlt_properties_get_double( this_properties, "fps" );
 
 		// Create the encoder
-		encoder = dv_encoder_new( fps != 25, 0, 0 );
+		encoder = dv_encoder_new( 0, 0, 0 );
 
 		// Encoder settings
-		encoder->isPAL = fps = 25;
+		encoder->isPAL = fps == 25;
 		encoder->is16x9 = 0;
 		encoder->vlc_encode_passes = 1;
 		encoder->static_qno = 0;
