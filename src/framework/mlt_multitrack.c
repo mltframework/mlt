@@ -127,7 +127,8 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 				mlt_properties_set( mlt_producer_properties( producer ), "eof", "continue" );
 			
 			// Determine the longest length
-			length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
+			if ( !mlt_properties_get_int( mlt_producer_properties( producer ), "hide" ) )
+				length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
 			
 			// Handle fps
 			if ( fps == 0 )
@@ -259,7 +260,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 		// Get the producer for this track
 		mlt_producer producer = this->list[ i ];
 
-		// If it's assigned...
+		// If it's assigned and not a hidden track
 		if ( producer != NULL )
 		{
 			// Get the properties of this producer
