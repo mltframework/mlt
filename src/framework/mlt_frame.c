@@ -65,8 +65,11 @@ mlt_frame mlt_frame_init( )
 		mlt_properties_set_data( properties, "audio", NULL, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
 
-
+		// Construct stacks for frames and methods
+		this->stack_get_image = mlt_deque_init( );
+		this->stack_frame = mlt_deque_init( );
 	}
+
 	return this;
 }
 
@@ -131,10 +134,7 @@ int mlt_frame_set_position( mlt_frame this, mlt_position value )
 
 int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image )
 {
-	int ret = this->stack_get_image_size >= 10;
-	if ( ret == 0 )
-		this->stack_get_image[ this->stack_get_image_size ++ ] = get_image;
-	return ret;
+	return mlt_deque_push_back( this->stack_get_image, get_image );
 }
 
 /** Pop a get_image callback.
@@ -142,10 +142,7 @@ int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image )
 
 mlt_get_image mlt_frame_pop_get_image( mlt_frame this )
 {
-	mlt_get_image result = NULL;
-	if ( this->stack_get_image_size > 0 )
-		result = this->stack_get_image[ -- this->stack_get_image_size ];
-	return result;
+	return mlt_deque_pop_back( this->stack_get_image );
 }
 
 /** Push a frame.
@@ -153,10 +150,7 @@ mlt_get_image mlt_frame_pop_get_image( mlt_frame this )
 
 int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
 {
-	int ret = this->stack_frame_size >= 10;
-	if ( ret == 0 )
-		this->stack_frame[ this->stack_frame_size ++ ] = that;
-	return ret;
+	return mlt_deque_push_back( this->stack_frame, that );
 }
 
 /** Pop a frame.
@@ -164,10 +158,7 @@ int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
 
 mlt_frame mlt_frame_pop_frame( mlt_frame this )
 {
-	mlt_frame result = NULL;
-	if ( this->stack_frame_size > 0 )
-		result = this->stack_frame[ -- this->stack_frame_size ];
-	return result;
+	return mlt_deque_pop_back( this->stack_frame );
 }
 
 int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
@@ -302,6 +293,8 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 
 void mlt_frame_close( mlt_frame this )
 {
+	mlt_deque_close( this->stack_get_image );
+	mlt_deque_close( this->stack_frame );
 	mlt_properties_close( &this->parent );
 	free( this );
 }

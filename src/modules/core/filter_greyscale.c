@@ -25,26 +25,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/** Greyscale class.
-*/
-
-typedef struct 
-{
-	struct mlt_filter_s parent;
-}
-filter_greyscale;
-
 /** Do it :-).
 */
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	mlt_frame_get_image( this, image, format, width, height, 1 );
-	uint8_t *p = *image;
-	uint8_t *q = *image + *width * *height * 2;
-	while ( p ++ != q )
-		*p ++ = 128;
-	return 0;
+	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	if ( error == 0 && *format == mlt_image_yuv422 )
+	{
+		uint8_t *p = *image;
+		uint8_t *q = *image + *width * *height * 2;
+		while ( p ++ != q )
+			*p ++ = 128;
+	}
+	return error;
 }
 
 /** Filter processing.
@@ -61,13 +55,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_greyscale_init( void *arg )
 {
-	filter_greyscale *this = calloc( sizeof( filter_greyscale ), 1 );
+	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
-	{
-		mlt_filter filter = &this->parent;
-		mlt_filter_init( filter, this );
-		filter->process = filter_process;
-	}
-	return ( mlt_filter )this;
+		this->process = filter_process;
+	return this;
 }
 

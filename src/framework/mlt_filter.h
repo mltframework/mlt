@@ -48,6 +48,7 @@ struct mlt_filter_s
 */
 
 extern int mlt_filter_init( mlt_filter this, void *child );
+extern mlt_filter mlt_filter_new( );
 extern mlt_service mlt_filter_service( mlt_filter this );
 extern mlt_properties mlt_filter_properties( mlt_filter this );
 extern mlt_frame mlt_filter_process( mlt_filter this, mlt_frame that );

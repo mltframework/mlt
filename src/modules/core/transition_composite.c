@@ -360,13 +360,6 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 			scaled_height = normalised_height;
 		}
 
-#if 0
-		// DRD> Why?
-		// Special case
-		if ( scaled_height == normalised_height )
-			scaled_width = normalised_width;
-#endif
-
 		// Now we need to align to the geometry
 		if ( scaled_width <= geometry->w && scaled_height <= geometry->h )
 		{

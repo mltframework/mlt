@@ -48,11 +48,21 @@ int mlt_filter_init( mlt_filter this, void *child )
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
 		mlt_properties_set_int( properties, "track", 0 );
-		mlt_properties_set( properties, "resource", "<filter>" );
 
 		return 0;
 	}
 	return 1;
+}
+
+/** Create a new filter.
+*/
+
+mlt_filter mlt_filter_new( )
+{
+	mlt_filter this = calloc( 1, sizeof( struct mlt_filter_s ) );
+	if ( this != NULL )
+		mlt_filter_init( this, NULL );
+	return this;
 }
 
 /** Get the service associated to this filter

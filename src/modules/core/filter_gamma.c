@@ -31,25 +31,32 @@
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	mlt_frame_get_image( this, image, format, width, height, 1 );
-	uint8_t *p = *image;
-	uint8_t *q = *image + *width * *height * 2;
+	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
-	// Get the gamma value
-	double gamma = mlt_properties_get_double( mlt_frame_properties( this ), "gamma" );
-
-	// Calculate the look up table
-	double exp = 1 / gamma;
-	uint8_t lookup[ 256 ];
-	int i;
-
-	for( i = 0; i < 256; i ++ )
-		lookup[ i ] = ( uint8_t )( pow( ( double )i / 255.0, exp ) * 255 );
-
-	while ( p != q )
+	if ( error != 0 && *format == mlt_image_yuv422 )
 	{
-		*p = lookup[ *p ];
-		p += 2;
+		// Get the gamma value
+		double gamma = mlt_properties_get_double( mlt_frame_properties( this ), "gamma" );
+
+		if ( gamma != 1.0 )
+		{
+			uint8_t *p = *image;
+			uint8_t *q = *image + *width * *height * 2;
+
+			// Calculate the look up table
+			double exp = 1 / gamma;
+			uint8_t lookup[ 256 ];
+			int i;
+
+			for( i = 0; i < 256; i ++ )
+				lookup[ i ] = ( uint8_t )( pow( ( double )i / 255.0, exp ) * 255 );
+
+			while ( p != q )
+			{
+				*p = lookup[ *p ];
+				p += 2;
+			}
+		}
 	}
 
 	return 0;
@@ -61,9 +68,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	double gamma = mlt_properties_get_double( mlt_filter_properties( this ), "gamma" );
-	gamma = gamma <= 0 ? 2 : gamma;
-	mlt_frame_push_get_image( frame, filter_get_image );
+	gamma = gamma <= 0 ? 1 : gamma;
 	mlt_properties_set_double( mlt_frame_properties( frame ), "gamma", gamma );
+	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }
 
@@ -72,13 +79,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_gamma_init( char *arg )
 {
-	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
+	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_filter_init( this, NULL );
 		this->process = filter_process;
-		if ( arg != NULL )
-			mlt_properties_set_double( mlt_filter_properties( this ), "gamma", atof( arg ) );
+		mlt_properties_set( mlt_filter_properties( this ), "gamma", arg == NULL ? "1" : arg );
 	}
 	return this;
 }

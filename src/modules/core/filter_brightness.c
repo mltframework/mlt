@@ -31,21 +31,33 @@
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	mlt_frame_get_image( this, image, format, width, height, 1 );
-	uint8_t *p = *image;
-	uint8_t *q = *image + *width * *height * 2;
+	// Get the image
+	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
-	// Get the brightness level
-	double level = mlt_properties_get_double( mlt_frame_properties( this ), "brightness.level" );
-
-	while ( p != q )
+	// Only process if we have no error and a valid colour space
+	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
-		float x = (float) *p * level;
-		*p = x < 16 ? 16 : x > 235 ? 235 : x;
-		p += 2;
+		// Get the brightness level
+		double level = mlt_properties_get_double( mlt_frame_properties( this ), "brightness" );
+
+		// Only process if level is something other than 1
+		if ( level != 1.0 )
+		{
+			uint8_t *p = *image;
+			uint8_t *q = *image + *width * *height * 2;
+			int32_t x = 0;
+			int32_t m = level * ( 1 << 16 );
+
+			while ( p != q )
+			{
+				x = ( *p * m ) >> 16;
+				*p = x < 16 ? 16 : x > 235 ? 235 : x;
+				p += 2;
+			}
+		}
 	}
 
-	return 0;
+	return error;
 }
 
 /** Filter processing.
@@ -53,6 +65,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
+	// Get the starting brightness level
 	double level = fabs( mlt_properties_get_double( mlt_filter_properties( this ), "start" ) );
 	
 	// If there is an end adjust gain to the range
@@ -66,8 +79,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		double end = fabs( mlt_properties_get_double( mlt_filter_properties( this ), "end" ) );
 		level += ( end - level ) * position;
 	}
+
+	// Push the frame filter
+	mlt_properties_set_double( mlt_frame_properties( frame ), "brightness", level );
 	mlt_frame_push_get_image( frame, filter_get_image );
-	mlt_properties_set_double( mlt_frame_properties( frame ), "brightness.level", level );
+
 	return frame;
 }
 
@@ -76,13 +92,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_brightness_init( char *arg )
 {
-	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
+	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_filter_init( this, NULL );
 		this->process = filter_process;
-		if ( arg != NULL )
-			mlt_properties_set_double( mlt_filter_properties( this ), "start", atof( arg ) );
+		mlt_properties_set( mlt_filter_properties( this ), "start", arg == NULL ? "1" : arg );
 	}
 	return this;
 }

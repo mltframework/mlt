@@ -25,15 +25,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-/** Deinterlace class.
-*/
-
-typedef struct 
-{
-	struct mlt_filter_s parent;
-}
-filter_deinterlace;
-
 /* Linear Blend filter - C version contributed by Rogerio Brito.
    This algorithm has the same interface as the other functions.
 
@@ -55,27 +46,27 @@ static void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc, int width, int height
 	register int x, y;
 	register uint8_t *l0, *l1, *l2, *l3;
 
-	l0 = pdst;		/* target line */
-	l1 = psrc;		/* 1st source line */
-	l2 = l1 + width;	/* 2nd source line = line that follows l1 */
-	l3 = l2 + width;	/* 3rd source line = line that follows l2 */
+	l0 = pdst;			// target line
+	l1 = psrc;			// 1st source line
+	l2 = l1 + width;	// 2nd source line = line that follows l1
+	l3 = l2 + width;	// 3rd source line = line that follows l2
 
-	/* Copy the first line */
+	// Copy the first line
 	memcpy(l0, l1, width);
 	l0 += width;
 
 	for (y = 1; y < height-1; ++y) 
 	{
-		/* computes avg of: l1 + 2*l2 + l3 */
+		// computes avg of: l1 + 2*l2 + l3
 		for (x = 0; x < width; ++x)
 			l0[x] = (l1[x] + (l2[x]<<1) + l3[x]) >> 2;
 
-		/* updates the line pointers */
+		// updates the line pointers
 		l1 = l2; l2 = l3; l3 += width;
 		l0 += width;
 	}
 
-	/* Copy the last line */
+	// Copy the last line
 	memcpy(l0, l1, width);
 }
 
@@ -84,10 +75,25 @@ static void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc, int width, int height
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	mlt_frame_get_image( this, image, format, width, height, 1 );
-	deinterlace_yuv( *image, *image, *width * 2, *height );
-	mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
-	return 0;
+	// Get the input image
+	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+
+	// Only continue if we have no error and the right colour space
+	if ( error == 0 && *format == mlt_image_yuv422 )
+	{
+		// Check that we want progressive and we aren't already progressive
+		if ( !mlt_properties_get_int( mlt_frame_properties( this ), "progressive" ) &&
+			 mlt_properties_get_int( mlt_frame_properties( this ), "consumer_progressive" ) )
+		{
+			// Deinterlace the image
+			deinterlace_yuv( *image, *image, *width * 2, *height );
+
+			// Make sure that others know the frame is deinterlaced
+			mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
+		}
+	}
+
+	return error;
 }
 
 /** Deinterlace filter processing - this should be lazy evaluation here...
@@ -104,14 +110,9 @@ static mlt_frame deinterlace_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_deinterlace_init( void *arg )
 {
-	filter_deinterlace *this = calloc( sizeof( filter_deinterlace ), 1 );
+	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
-	{
-		mlt_filter filter = &this->parent;
-		mlt_filter_init( filter, this );
-		filter->process = deinterlace_process;
-		return &this->parent;
-	}
-	return NULL;
+		this->process = deinterlace_process;
+	return this;
 }
 

@@ -168,10 +168,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	double ttl = mlt_properties_get_int( producer_props, "ttl" );
 
 	// Image index
-	int image_idx = ( int )floor( mlt_producer_position( producer ) / ttl ) % this->count;
-
-	// Update timecode on the frame we're creating
-	mlt_frame_set_position( frame, mlt_producer_position( producer ) );
+	int image_idx = ( int )floor( mlt_frame_get_position( frame ) / ttl ) % this->count;
 
     // optimization for subsequent iterations on single picture
 	if ( width != 0 && this->image != NULL && image_idx == this->image_idx )
@@ -337,6 +334,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Set the producer on the frame properties
 	mlt_properties_set_data( properties, "producer_pixbuf", this, 0, NULL, NULL );
+
+	// Update timecode on the frame we're creating
+	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 	// Refresh the image
 	refresh_image( *frame, 0, 0 );

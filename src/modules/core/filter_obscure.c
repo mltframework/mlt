@@ -148,17 +148,18 @@ static float position_calculate( mlt_filter this, mlt_frame frame )
 /** The averaging function...
 */
 
-void obscure_average( uint8_t *start, int width, int height, int stride, uint8_t *alpha )
+void obscure_average( uint8_t *start, int width, int height, int stride )
 {
 	int y;
 	int x;
-	int Y = ( *start + *( start + 2 ) ) / 2;
-	int U = *( start + 1 );
-	int V = *( start + 3 );
+	register int Y = ( *start + *( start + 2 ) ) / 2;
+	register int U = *( start + 1 );
+	register int V = *( start + 3 );
+	register uint8_t *p;
 
 	for ( y = 0; y < height; y ++ )
 	{
-		uint8_t *p = start + y * stride;
+		p = start + y * stride;
 		for ( x = 0; x < width / 2; x ++ )
 		{
 			Y = ( Y + *p ++ ) / 2;
@@ -170,34 +171,14 @@ void obscure_average( uint8_t *start, int width, int height, int stride, uint8_t
 
 	for ( y = 0; y < height; y ++ )
 	{
-		uint8_t *p = start + y * stride;
-		uint8_t *z = alpha;
-		
-		if ( z != NULL )
-			z += y * stride / 2;
+		p = start + y * stride;
 		
 		for ( x = 0; x < width / 2; x ++ )
 		{
-			if ( z == NULL || ( z != NULL && *z++ > 127 ) )
-			{
-				*p ++ = Y;
-				*p ++ = U;
-			}
-			else
-			{
-				p += 2;
-			}
-				
-			if ( z == NULL || ( z != NULL && *z++ > 127 ) )
-			{
-				
-				*p ++ = Y;
-				*p ++ = V;
-			}
-			else
-			{
-				p += 2;
-			}
+			*p ++ = Y;
+			*p ++ = U;
+			*p ++ = Y;
+			*p ++ = V;
 		}
 	}
 }
@@ -206,7 +187,7 @@ void obscure_average( uint8_t *start, int width, int height, int stride, uint8_t
 /** The obscurer rendering function...
 */
 
-static void obscure_render( uint8_t *image, int width, int height, struct geometry_s result, uint8_t *alpha )
+static void obscure_render( uint8_t *image, int width, int height, struct geometry_s result )
 {
 	int area_x = result.x;
 	int area_y = result.y;
@@ -217,21 +198,19 @@ static void obscure_render( uint8_t *image, int width, int height, struct geomet
 	int mh = result.mask_h;
 	int w;
 	int h;
+	int aw;
+	int ah;
 
 	uint8_t *p = image + area_y * width * 2 + area_x * 2;
-	uint8_t *z = alpha;
-	if ( z != NULL )
-		z += area_y * width + area_x;
 
 	for ( w = 0; w < area_w; w += mw )
 	{
 		for ( h = 0; h < area_h; h += mh )
 		{
-			int aw = w + mw > area_w ? mw - ( w + mw - area_w ) : mw;
-			int ah = h + mh > area_h ? mh - ( h + mh - area_h ) : mh;
+			aw = w + mw > area_w ? mw - ( w + mw - area_w ) : mw;
+			ah = h + mh > area_h ? mh - ( h + mh - area_h ) : mh;
 			if ( aw > 1 && ah > 1 )
-				obscure_average( p + h * width * 2 + w * 2, aw, ah, width * 2,
-					( z == NULL ? z : z + h * width + w ) );
+				obscure_average( p + h * width * 2 + w * 2, aw, ah, width * 2 );
 		}
 	}
 }
@@ -278,7 +257,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			geometry_calculate( &result, &start, &end, position, *width, *height );
 
 			// Now actually render it
-			obscure_render( *image, *width, *height, result, mlt_frame_get_alpha_mask( frame ) );
+			obscure_render( *image, *width, *height, result );
 		}
 	}
 
@@ -320,12 +299,14 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_obscure_init( void *arg )
 {
-	mlt_filter this = calloc( 1, sizeof( struct mlt_filter_s ) );
-	mlt_properties properties = mlt_filter_properties( this );
-	mlt_filter_init( this, NULL );
-	this->process = filter_process;
-	mlt_properties_set( properties, "start", arg != NULL ? arg : "0%,0%:100%x100%" );
-	mlt_properties_set( properties, "end", "" );
+	mlt_filter this = mlt_filter_new( );
+	if ( this != NULL )
+	{
+		mlt_properties properties = mlt_filter_properties( this );
+		this->process = filter_process;
+		mlt_properties_set( properties, "start", arg != NULL ? arg : "0%,0%:100%x100%" );
+		mlt_properties_set( properties, "end", "" );
+	}
 	return this;
 }
 

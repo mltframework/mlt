@@ -22,6 +22,7 @@
 #define _MLT_FRAME_H_
 
 #include "mlt_properties.h"
+#include "mlt_deque.h"
 
 typedef enum
 {
@@ -59,10 +60,8 @@ struct mlt_frame_s
 	uint8_t * ( *get_alpha_mask )( mlt_frame this );
 	
 	// Private properties
-	mlt_get_image stack_get_image[ 10 ];
-	int stack_get_image_size;
-	mlt_frame stack_frame[ 10 ];
-	int stack_frame_size;
+	mlt_deque stack_get_image;
+	mlt_deque stack_frame;
 };
 
 extern mlt_frame mlt_frame_init( );

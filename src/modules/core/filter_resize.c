@@ -39,6 +39,8 @@ static int get_value( mlt_properties properties, char *preferred, char *fallback
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	int error = 0;
+
 	// Get the properties from the frame
 	mlt_properties properties = mlt_frame_properties( this );
 
@@ -69,19 +71,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			scaled_width = input_ar / output_ar * normalised_width;
 			scaled_height = normalised_height;
 		}
-		//fprintf( stderr, "resize: %dx%d from %dx%d input aspect %f output aspect %f\n",
-		//	scaled_width, scaled_height, normalised_width, normalised_height, input_ar, output_ar );
-
-#if 0
-		int real_width = get_value( properties, "real_height", "height" );
-		int real_height = get_value( properties, "real_height", "height" );
-		// DRD> Why?
-		if ( ( real_height * 2 ) == normalised_height )
-		{
-			scaled_width = normalised_width;
-			scaled_height = normalised_height;
-		}
-#endif
 	
 		// Now calculate the actual image size that we want
 		owidth = scaled_width * owidth / normalised_width;
@@ -96,38 +85,47 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_properties_set_int( properties, "resize_height", *height );
 
 	// Now get the image
-	mlt_frame_get_image( this, image, format, &owidth, &oheight, writable );
-	
-	// Correct field order if needed
-	if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 )
+	error = mlt_frame_get_image( this, image, format, &owidth, &oheight, writable );
+
+	// We only know how to process yuv422 at the moment
+	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
-		// Get the input image, width and height
-		int size;
-		uint8_t *image = mlt_properties_get_data( properties, "image", &size );
+		// Correct field order if needed
+		if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 )
+		{
+			// Get the input image, width and height
+			int size;
+			uint8_t *image = mlt_properties_get_data( properties, "image", &size );
 
-		// Keep the original image around to be destroyed on frame close
-		mlt_properties_rename( properties, "image", "original_image" );
+			// Keep the original image around to be destroyed on frame close
+			mlt_properties_rename( properties, "image", "original_image" );
 
-		// Offset the image pointer by one line
-		image += owidth * 2;
-		size -= owidth * 2;
+			// Offset the image pointer by one line
+			image += owidth * 2;
+			size -= owidth * 2;
 
-		// Set the new image pointer with no destructor
-		mlt_properties_set_data( properties, "image", image, size, NULL, NULL );
+			// Set the new image pointer with no destructor
+			mlt_properties_set_data( properties, "image", image, size, NULL, NULL );
 
-		// Set the normalised field order
-		mlt_properties_set_int( properties, "top_field_first", 0 );
+			// Set the normalised field order
+			mlt_properties_set_int( properties, "top_field_first", 0 );
+		}
+
+		if ( !strcmp( mlt_properties_get( properties, "resize.scale" ), "affine" ) )
+		{
+			*image = mlt_frame_rescale_yuv422( this, *width, *height );
+		}
+		else if ( strcmp( mlt_properties_get( properties, "resize.scale" ), "none" ) != 0 )
+		{
+			*image = mlt_frame_resize_yuv422( this, *width, *height );
+		}
+		else
+		{
+			*width = owidth;
+			*height = oheight;
+		}
 	}
 
-	if ( !strcmp( mlt_properties_get( properties, "resize.scale" ), "affine" ) )
-		*image = mlt_frame_rescale_yuv422( this, *width, *height );
-	else if ( strcmp( mlt_properties_get( properties, "resize.scale" ), "none" ) != 0 )
-		*image = mlt_frame_resize_yuv422( this, *width, *height );
-	else
-	{
-		*width = owidth;
-		*height = oheight;
-	}
 	return 0;
 }
 
