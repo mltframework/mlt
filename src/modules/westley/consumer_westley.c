@@ -72,6 +72,8 @@ struct serialise_context_s
 	int tractor_count;
 	int filter_count;
 	int transition_count;
+	int pass;
+	mlt_properties producer_map;
 };
 typedef struct serialise_context_s* serialise_context;
 
@@ -101,7 +103,9 @@ static void serialise_service( serialise_context context, mlt_service service, x
 	int i;
 	xmlNode *child = node;
 	char id[ 31 ];
+	char key[ 11 ];
 	id[ 30 ] = '\0';
+	key[ 10 ] = '\0';
 	
 	// Iterate over consumer/producer connections
 	while ( service != NULL )
@@ -112,16 +116,27 @@ static void serialise_service( serialise_context context, mlt_service service, x
 		// Tell about the producer
 		if ( strcmp( mlt_type, "producer" ) == 0 )
 		{
-			child = xmlNewChild( node, NULL, "producer", NULL );
-
-			// Set the id
-			if ( mlt_properties_get( properties, "id" ) == NULL )
+			if ( context->pass == 0 )
 			{
-				snprintf( id, 30, "producer%d", context->producer_count++ );
-				xmlNewProp( child, "id", id );
+				child = xmlNewChild( node, NULL, "producer", NULL );
+
+				// Set the id
+				if ( mlt_properties_get( properties, "id" ) == NULL )
+				{
+					snprintf( id, 30, "producer%d", context->producer_count++ );
+					xmlNewProp( child, "id", id );
+				}
+				serialise_properties( properties, child );
+
+				// Add producer to the map
+				snprintf( key, 10, "%p", service );
+				mlt_properties_set( context->producer_map, key, id );
 			}
-			
-            serialise_properties( properties, child );
+			else
+			{
+				snprintf( key, 10, "%p", service );
+				xmlNewProp( node, "producer", mlt_properties_get( context->producer_map, key ) );
+			}
 		}
 
 		// Tell about the framework container producers
@@ -130,20 +145,38 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			// Recurse on multitrack's tracks
 			if ( strcmp( mlt_properties_get( properties, "resource" ), "<multitrack>" ) == 0 )
 			{
-				child = xmlNewChild( node, NULL, "multitrack", NULL );
-				
-				// Set the id
-				if ( mlt_properties_get( properties, "id" ) == NULL )
+				if ( context->pass == 0 )
 				{
-					snprintf( id, 30, "multitrack%d", context->multitrack_count++ );
-					xmlNewProp( child, "id", id );
+					// Iterate over the tracks
+					for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
+					{
+						serialise_service( context, MLT_SERVICE( mlt_multitrack_track( MLT_MULTITRACK( service ), i ) ), node );
+					}
 				}
-
-				// Iterate over the tracks
-				for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
+				else
 				{
-					xmlNode *track = xmlNewChild( child, NULL, "track", NULL );
-					serialise_service( context, MLT_SERVICE( mlt_multitrack_track( MLT_MULTITRACK( service ), i ) ), track );
+					// Iterate over the tracks to collect the producers
+					for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
+					{
+						serialise_service( context, MLT_SERVICE( mlt_multitrack_track( MLT_MULTITRACK( service ), i ) ), node );
+					}
+
+					child = xmlNewChild( node, NULL, "multitrack", NULL );
+				
+					// Set the id
+					if ( mlt_properties_get( properties, "id" ) == NULL )
+					{
+						snprintf( id, 30, "multitrack%d", context->multitrack_count++ );
+						xmlNewProp( child, "id", id );
+					}
+
+					// Iterate over the tracks
+					for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
+					{
+						xmlNode *track = xmlNewChild( child, NULL, "track", NULL );
+						snprintf( key, 10, "%p", MLT_SERVICE( mlt_multitrack_track( MLT_MULTITRACK( service ), i ) ) );
+						xmlNewProp( track, "producer", mlt_properties_get( context->producer_map, key ) );
+					}
 				}
 				break;
 			}
@@ -152,55 +185,88 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			else if ( strcmp( mlt_properties_get( properties, "resource" ), "<playlist>" ) == 0 )
 			{
 				mlt_playlist_clip_info info;
-				child = xmlNewChild( node, NULL, "playlist", NULL );
-				
-				// Set the id
-				if ( mlt_properties_get( properties, "id" ) == NULL )
-				{
-					snprintf( id, 30, "playlist%d", context->playlist_count++ );
-					xmlNewProp( child, "id", id );
-				}
 
-				xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
-				xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
-
-				// Iterate over the playlist entries
-				for ( i = 0; i < mlt_playlist_count( MLT_PLAYLIST( service ) ); i++ )
+				if ( context->pass == 0 )
 				{
-					if ( ! mlt_playlist_get_clip_info( MLT_PLAYLIST( service ), &info, i ) )
+					// Iterate over the playlist entries to collect the producers
+					for ( i = 0; i < mlt_playlist_count( MLT_PLAYLIST( service ) ); i++ )
 					{
-						if ( strcmp( mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" ), "blank" ) == 0 )
+						if ( ! mlt_playlist_get_clip_info( MLT_PLAYLIST( service ), &info, i ) )
 						{
-							char length[ 20 ];
-							length[ 19 ] = '\0';
-							xmlNode *entry = xmlNewChild( child, NULL, "blank", NULL );
-							snprintf( length, 19, "%lld", info.frame_count );
-							xmlNewProp( entry, "length", length );
-						}
-						else
-						{
-							xmlNode *entry = xmlNewChild( child, NULL, "entry", NULL );
-							serialise_service( context, MLT_SERVICE( info.producer ), entry );
+							if ( strcmp( mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" ), "blank" ) != 0 )
+							{
+								serialise_service( context, MLT_SERVICE( info.producer ), node );
+							}
 						}
 					}
+					
+					child = xmlNewChild( node, NULL, "playlist", NULL );
+
+					// Set the id
+					if ( mlt_properties_get( properties, "id" ) == NULL )
+					{
+						snprintf( id, 30, "playlist%d", context->playlist_count++ );
+						xmlNewProp( child, "id", id );
+					}
+
+					xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
+					xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
+
+					// Add producer to the map
+					snprintf( key, 10, "%p", service );
+					mlt_properties_set( context->producer_map, key, id );
+				
+					// Iterate over the playlist entries
+					for ( i = 0; i < mlt_playlist_count( MLT_PLAYLIST( service ) ); i++ )
+					{
+						if ( ! mlt_playlist_get_clip_info( MLT_PLAYLIST( service ), &info, i ) )
+						{
+							if ( strcmp( mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" ), "blank" ) == 0 )
+							{
+								char length[ 20 ];
+								length[ 19 ] = '\0';
+								xmlNode *entry = xmlNewChild( child, NULL, "blank", NULL );
+								snprintf( length, 19, "%lld", info.frame_count );
+								xmlNewProp( entry, "length", length );
+							}
+							else
+							{
+								xmlNode *entry = xmlNewChild( child, NULL, "entry", NULL );
+								snprintf( key, 10, "%p", MLT_SERVICE( info.producer ) );
+								xmlNewProp( entry, "producer", mlt_properties_get( context->producer_map, key ) );
+							}
+						}
+					}
+				}
+				else
+				{
+					snprintf( key, 10, "%p", service );
+					xmlNewProp( node, "producer", mlt_properties_get( context->producer_map, key ) );
 				}
 			}
 			
 			// Recurse on tractor's producer
 			else if ( strcmp( mlt_properties_get( properties, "resource" ), "<tractor>" ) == 0 )
 			{
-				child = xmlNewChild( node, NULL, "tractor", NULL );
-
-				// Set the id
-				if ( mlt_properties_get( properties, "id" ) == NULL )
+				if ( context->pass == 0 )
 				{
-					snprintf( id, 30, "tractor%d", context->tractor_count++ );
-					xmlNewProp( child, "id", id );
+					// Recurse on connected producer
+					serialise_service( context, mlt_service_get_producer( service ), node );
 				}
+				else
+				{
+					child = xmlNewChild( node, NULL, "tractor", NULL );
 
-				// Recurse on connected producer
-				serialise_service( context, mlt_service_get_producer( service ), child );
-				
+					// Set the id
+					if ( mlt_properties_get( properties, "id" ) == NULL )
+					{
+						snprintf( id, 30, "tractor%d", context->tractor_count++ );
+						xmlNewProp( child, "id", id );
+					}
+
+					// Recurse on connected producer
+					serialise_service( context, mlt_service_get_producer( service ), child );
+				}
 				break;
 			}
 		}
@@ -211,17 +277,19 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			// Recurse on connected producer
 			serialise_service( context, MLT_SERVICE( MLT_FILTER( service )->producer ), node );
 
-			child = xmlNewChild( node, NULL, "filter", NULL );
-
-			// Set the id
-			if ( mlt_properties_get( properties, "id" ) == NULL )
+			if ( context->pass == 1 )
 			{
-				snprintf( id, 30, "filter%d", context->filter_count++ );
-				xmlNewProp( child, "id", id );
+				child = xmlNewChild( node, NULL, "filter", NULL );
+
+				// Set the id
+				if ( mlt_properties_get( properties, "id" ) == NULL )
+				{
+					snprintf( id, 30, "filter%d", context->filter_count++ );
+					xmlNewProp( child, "id", id );
+				}
+
+				serialise_properties( properties, child );
 			}
-
-			serialise_properties( properties, child );
-
 			break;
 		}
 		
@@ -231,17 +299,19 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			// Recurse on connected producer
 			serialise_service( context, MLT_SERVICE( MLT_TRANSITION( service )->producer ), node );
 
-			child = xmlNewChild( node, NULL, "transition", NULL );
-			
-			// Set the id
-			if ( mlt_properties_get( properties, "id" ) == NULL )
+			if ( context->pass == 1 )
 			{
-				snprintf( id, 30, "transition%d", context->transition_count++ );
-				xmlNewProp( child, "id", id );
-			}
-
-			serialise_properties( properties, child );
+				child = xmlNewChild( node, NULL, "transition", NULL );
 			
+				// Set the id
+				if ( mlt_properties_get( properties, "id" ) == NULL )
+				{
+					snprintf( id, 30, "transition%d", context->transition_count++ );
+					xmlNewProp( child, "id", id );
+				}
+
+				serialise_properties( properties, child );
+			}
 			break;
 		}
 		
@@ -261,8 +331,8 @@ static int consumer_start( mlt_consumer this )
 	mlt_service service = mlt_service_get_producer( mlt_consumer_service( this ) );
 	if ( service != NULL )
 	{
-		struct serialise_context_s context;
-		memset( &context, 0, sizeof( struct serialise_context_s ) );
+		struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
+		context->producer_map = mlt_properties_new();
 		
 		// Remember inigo
 		if ( mlt_properties_get( mlt_service_properties( service ), "mlt_service" ) != NULL &&
@@ -271,9 +341,19 @@ static int consumer_start( mlt_consumer this )
 		
 		// Ensure producer is a framework producer
 		mlt_properties_set( mlt_service_properties( service ), "mlt_type", "mlt_producer" );
-			
-		serialise_service( &context, service, root );
 
+		// In pass one, we serialise the end producers and playlists,
+		// adding them to a map keyed by address.
+		serialise_service( context, service, root );
+
+		// In pass two, we serialise the tractor and reference the
+		// producers and playlists
+		context->pass++;
+		serialise_service( context, service, root );
+
+		mlt_properties_close( context->producer_map );
+		free( context );
+		
 		if ( mlt_properties_get( mlt_consumer_properties( this ), "resource" ) == NULL )
 			xmlDocFormatDump( stderr, doc, 1 );
 		else
