@@ -27,7 +27,6 @@
 #include <string.h>
 #include <signal.h>
 #include <execinfo.h>
-#include <stdio.h>
 
 /* Valerie header files */
 #include <valerie/valerie_util.h>
