@@ -14,6 +14,7 @@ greyscale		libmltcore.so
 resize			libmltcore.so
 volume			libmltcore.so
 obscure			libmltcore.so
+brightness		libmltcore.so
 EOF
 
 cat << EOF >> ../transitions.dat

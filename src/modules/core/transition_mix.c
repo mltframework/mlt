@@ -42,13 +42,19 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 	// Restore the original get_audio
 	frame->get_audio = mlt_properties_get_data( a_props, "mix.get_audio", NULL );
 
-	double mix = 0.5;
+	double mix_start = 0.5, mix_end = 0.5;
+	if ( mlt_properties_get( b_props, "audio.previous_mix" ) != NULL )
+		mix_start = mlt_properties_get_double( b_props, "audio.previous_mix" );
 	if ( mlt_properties_get( b_props, "audio.mix" ) != NULL )
-		mix = mlt_properties_get_double( b_props, "audio.mix" );
+		mix_end = mlt_properties_get_double( b_props, "audio.mix" );
 	if ( mlt_properties_get_int( b_props, "audio.reverse" ) )
-		mix = 1 - mix;
+	{
+		mix_start = 1 - mix_start;
+		mix_end = 1 - mix_end;
+	}
+	//fprintf( stderr, "transition_mix: previous %f current %f\n", mix_start, mix_end );
 
-	mlt_frame_mix_audio( frame, b_frame, mix, buffer, format, frequency, channels, samples );
+	mlt_frame_mix_audio( frame, b_frame, mix_start, mix_end, buffer, format, frequency, channels, samples );
 
 	// Push the b_frame back on for get_image
 	mlt_frame_push_frame( frame, b_frame );
@@ -66,20 +72,41 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
 	// Only if mix is specified, otherwise a producer may set the mix
-	if ( mlt_properties_get( properties, "mix" ) != NULL )
+	if ( mlt_properties_get( properties, "start" ) != NULL )
 	{
-		// A negative means crossfade
-		if ( mlt_properties_get_double( properties, "mix" ) < 0 )
+		// Determine the time position of this frame in the transition duration
+		mlt_position in = mlt_transition_get_in( this );
+		mlt_position out = mlt_transition_get_out( this );
+		mlt_position time = mlt_frame_get_position( b_frame );
+		double mix = ( double )( time - in ) / ( double )( out - in + 1 );
+		
+		// If there is an end mix level adjust mix to the range
+		if ( mlt_properties_get( properties, "end" ) != NULL )
 		{
-			// Determine the time position of this frame in the transition duration
-			mlt_position in = mlt_transition_get_in( this );
-			mlt_position out = mlt_transition_get_out( this );
-			mlt_position time = mlt_frame_get_position( b_frame );
-			double mix = ( double )( time - in ) / ( double )( out - in + 1 );
-			mlt_properties_set_double( b_props, "audio.mix", mix );
+			double start = mlt_properties_get_double( properties, "start" );
+			double end = mlt_properties_get_double( properties, "end" );
+			mix = start + ( end - start ) * mix;
 		}
-		else
-			mlt_properties_set_double( b_props, "audio.mix", mlt_properties_get_double( properties, "mix" ) );
+		// A negative means total crossfade (uses position)
+		else if ( mlt_properties_get_double( properties, "start" ) >= 0 )
+		{
+			// Otherwise, start/constructor is a constant mix level
+		    mix = mlt_properties_get_double( properties, "start" );
+		}
+	
+		// Finally, set the mix property on the frame
+		mlt_properties_set_double( b_props, "audio.mix", mix );
+
+		// Initialise transition previous mix value to prevent an inadvertant jump from 0
+		if ( mlt_properties_get( properties, "previous_mix" ) == NULL )
+			mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
+			
+		// Tell b frame what the previous mix level was
+		mlt_properties_set_double( b_props, "audio.previous_mix", mlt_properties_get_double( properties, "previous_mix" ) );
+
+		// Save the current mix level for the next iteration
+		mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
+		
 		mlt_properties_set_double( b_props, "audio.reverse", mlt_properties_get_double( properties, "reverse" ) );
 	}
 			
@@ -104,7 +131,7 @@ mlt_transition transition_mix_init( char *arg )
 	{
 		this->process = transition_process;
 		if ( arg != NULL )
-			mlt_properties_set_double( mlt_transition_properties( this ), "mix", atof( arg ) );
+			mlt_properties_set_double( mlt_transition_properties( this ), "start", atof( arg ) );
 	}
 	return this;
 }

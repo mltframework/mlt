@@ -11,7 +11,8 @@ OBJS = factory.o \
 	   filter_volume.o \
 	   transition_composite.o \
 	   transition_luma.o \
-	   transition_mix.o
+	   transition_mix.o \
+	   filter_brightness.o
 
 CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 

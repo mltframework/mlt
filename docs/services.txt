@@ -600,6 +600,16 @@ Filters
 			double max_gain - a floating point or decibel value of the maximum gain that
 				can be applied during normalisation.
 				- an unspecified value uses the default 20dB
+
+			string end - a gain value just like the gain property above.
+			             This causes the gain to be interpolated from 'gain' to 'end'
+			             over the duration.
+
+			int window - the size of the normalising smoothing buffer in video frame units.
+			           - the smoothing buffer prevents erratic gain changes.
+			           - the default value is 75 video frames. 
+
+			gain can be applied as a factor to the normalise amplitude!
 			
 		Dependencies
 
@@ -658,6 +668,14 @@ Filters
 		Mutable Properties
 
 			string interpolation - see constructor argument above
+
+			If a property "consumer_aspect_ratio" exists on the frame, then
+			rescaler normalises the producer's aspect ratio and maximises the
+			size of the frame, but may not produce the consumer's requested
+			dimension. Therefore, this option works best in conjunction with the
+			resize filter. This behavior can be disabled by another service by
+			either removing the property, setting it to zero, or setting
+			frame property "distort" to 1.
 
 		Dependencies
 
@@ -746,7 +764,7 @@ Transitions
 
 		Constructor Argument
 
-			mix - see below
+			start - see below
 
 		Initalisation Properties
 
@@ -755,8 +773,11 @@ Transitions
 
 		Mutable Properties
 
-			double mix - the mix level to apply to the second frame.
-			           - any negative value causes an automatic crossfade.
+			double start - the mix level to apply to the second frame.
+			             - any negative value causes an automatic crossfade from 0 to 1.
+			double end - the ending value of the mix level. mix level will be interpolated
+			             from start to end over the in-out range.
+			int reverse - set to 1 to reverse the direction of the mix.
 
 		Read Only Properties
 

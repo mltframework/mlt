@@ -601,7 +601,7 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 	return input;
 }
 
-int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	int ret = 0;
 	int16_t *p_src, *p_dest;
@@ -659,6 +659,10 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	*buffer = p_dest;
 	*frequency = frequency_dest;
 
+	// Compute a smooth ramp over start to end
+	float weight = weight_start;
+	float weight_step = ( weight_end - weight_start ) / *samples;
+
 	// Mixdown
 	for ( i = 0; i < *samples; i++ )
 	{
@@ -670,6 +674,7 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 				s = (double) src[ i * channels_src + j ];
 			dest[ i * channels_dest + j ] = s * weight + d * ( 1.0 - weight );
 		}
+		weight += weight_step;
 	}
 
 	// We have to copy --sigh

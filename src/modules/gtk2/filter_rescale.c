@@ -44,9 +44,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int owidth = *width;
 	int oheight = *height;
 	uint8_t *input = NULL;
-	
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
 	int interp = PIXOPS_INTERP_BILINEAR;
+	double i_aspect_ratio = mlt_frame_get_aspect_ratio( this );
+	double o_aspect_ratio = mlt_properties_get_double( properties, "consumer_aspect_ratio" );
+	
 	if ( strcmp( interps, "nearest" ) == 0 )
 		interp = PIXOPS_INTERP_NEAREST;
 	else if ( strcmp( interps, "tiles" ) == 0 )
@@ -56,19 +58,16 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	mlt_frame_get_image( this, &input, format, &iwidth, &iheight, 0 );
 
-#if 0
-	// Determine maximum size within the aspect ratio:
-	double i_aspect_ratio = mlt_frame_get_aspect_ratio( this );
-	// TODO: this needs to be provided      q
-	#define o_aspect_ratio ( double )( 4.0 / 3.0 )
+	if ( o_aspect_ratio != 0 && o_aspect_ratio != i_aspect_ratio && mlt_properties_get_int( properties, "distort" ) == 0 )
+	{
+		// Determine maximum size within the aspect ratio:
 
-	if ( ( owidth * i_aspect_ratio * o_aspect_ratio ) > owidth )
-		oheight *= o_aspect_ratio / i_aspect_ratio;
-	else
-		owidth *= i_aspect_ratio * o_aspect_ratio;
-
-	fprintf( stderr, "rescale: from %dx%d (%f) to %dx%d\n", iwidth, iheight, i_aspect_ratio, owidth, oheight );
-#endif
+		if ( ( owidth * i_aspect_ratio * o_aspect_ratio ) > owidth )
+			oheight *= o_aspect_ratio / i_aspect_ratio;
+		else
+			owidth *= i_aspect_ratio * o_aspect_ratio;
+		//fprintf( stderr, "rescale: from %dx%d (aspect %f) to %dx%d (aspect %f)\n", iwidth, iheight, i_aspect_ratio, owidth, oheight, o_aspect_ratio );
+	}
 	
 	// If width and height are correct, don't do anything
 	if ( strcmp( interps, "none" ) && input != NULL && ( iwidth != owidth || iheight != oheight ) )

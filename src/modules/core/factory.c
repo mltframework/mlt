@@ -30,6 +30,7 @@
 #include "transition_composite.h"
 #include "transition_luma.h"
 #include "transition_mix.h"
+#include "filter_brightness.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -52,6 +53,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_resize_init( arg );
 	if ( !strcmp( id, "volume" ) )
 		return filter_volume_init( arg );
+	if ( !strcmp( id, "brightness" ) )
+		return filter_brightness_init( arg );
 	return NULL;
 }
 
