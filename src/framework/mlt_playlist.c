@@ -828,16 +828,25 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 	{
 		playlist_entry *clip_a = this->list[ clip ];
 		playlist_entry *clip_b = this->list[ clip + 1 ];
-		mlt_producer track_a;
-		mlt_producer track_b;
+		mlt_producer track_a = NULL;
+		mlt_producer track_b = NULL;
 		mlt_tractor tractor = mlt_tractor_new( );
 		mlt_events_block( mlt_playlist_properties( this ), this );
 
-		// TODO: Check length is valid for both clips and resize if necessary.
+		// Check length is valid for both clips and resize if necessary.
+		int max_size = clip_a->frame_count > clip_b->frame_count ? clip_a->frame_count : clip_b->frame_count;
+		length = length > max_size ? max_size : length;
 
-		// Create the a and b tracks/cuts
-		track_a = mlt_producer_cut( clip_a->producer, clip_a->frame_out - length + 1, clip_a->frame_out );
-		track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in, clip_b->frame_in + length - 1 );
+		// Create the a and b tracks/cuts if necessary - note that no cuts are required if the length matches
+		if ( length != clip_a->frame_count )
+			track_a = mlt_producer_cut( clip_a->producer, clip_a->frame_out - length + 1, clip_a->frame_out );
+		else
+			track_a = clip_a->producer;
+
+		if ( length != clip_b->frame_count )
+			track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in, clip_b->frame_in + length - 1 );
+		else
+			track_b = clip_b->producer;
 
 		// Set the tracks on the tractor
 		mlt_tractor_set_track( tractor, track_a, 0 );
@@ -855,8 +864,19 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 			mlt_transition_set_in_and_out( transition, 0, length - 1 );
 		}
 
+		// Close our references to the tracks if we created new cuts above (the tracks can still be used here)
+		if ( track_a != clip_a->producer )
+			mlt_producer_close( track_a );
+		if ( track_b != clip_b->producer )
+			mlt_producer_close( track_b );
+
 		// Check if we have anything left on the right hand clip
-		if ( clip_b->frame_out - clip_b->frame_in > length )
+		if ( track_b == clip_b->producer )
+		{
+			clip_b->preservation_hack = 1;
+			mlt_playlist_remove( this, clip + 2 );
+		}
+		else if ( clip_b->frame_out - clip_b->frame_in > length )
 		{
 			mlt_playlist_resize_clip( this, clip + 2, clip_b->frame_in + length, clip_b->frame_out );
 			mlt_properties_set_data( mlt_producer_properties( clip_b->producer ), "mix_in", tractor, 0, NULL, NULL );
@@ -869,7 +889,12 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 		}
 
 		// Check if we have anything left on the left hand clip
-		if ( clip_a->frame_out - clip_a->frame_in > length )
+		if ( track_a == clip_a->producer )
+		{
+			clip_a->preservation_hack = 1;
+			mlt_playlist_remove( this, clip );
+		}
+		else if ( clip_a->frame_out - clip_a->frame_in > length )
 		{
 			mlt_playlist_resize_clip( this, clip, clip_a->frame_in, clip_a->frame_out - length );
 			mlt_properties_set_data( mlt_producer_properties( clip_a->producer ), "mix_out", tractor, 0, NULL, NULL );
@@ -881,10 +906,9 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 			mlt_playlist_remove( this, clip );
 		}
 
+		// Unblock and force a fire off of change events to listeners
 		mlt_events_unblock( mlt_playlist_properties( this ), this );
 		mlt_playlist_virtual_refresh( this );
-		mlt_producer_close( track_a );
-		mlt_producer_close( track_b );
 		mlt_tractor_close( tractor );
 	}
 	return error;
