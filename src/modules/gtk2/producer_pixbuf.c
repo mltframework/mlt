@@ -219,10 +219,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Refresh the image
 	refresh_image( frame, *width, *height );
 
-	// Determine format
-	//mlt_producer this = mlt_properties_get_data( properties, "producer_pixbuf", NULL );
-	//*format = ( mlt_properties_get_int( mlt_producer_properties( this ), "bpp" ) == 4 ) ? mlt_image_rgb24a : mlt_image_rgb24;
-
 	// May need to know the size of the image to clone it
 	int size = 0;
 

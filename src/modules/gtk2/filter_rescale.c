@@ -65,8 +65,17 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 
 	// Let the producer know what we are actually requested to obtain
-	mlt_properties_set_int( properties, "rescale_width", *width );
-	mlt_properties_set_int( properties, "rescale_height", *height );
+	if ( *format == mlt_image_yuv422 && strcmp( interps, "none" ) )
+	{
+		mlt_properties_set_int( properties, "rescale_width", *width );
+		mlt_properties_set_int( properties, "rescale_height", *height );
+	}
+	else
+	{
+		// When no scaling is requested, revert the requested dimensions if possible
+		mlt_properties_set_int( properties, "rescale_width", ( iwidth / 2 ) * 2 );
+		mlt_properties_set_int( properties, "rescale_height", ( iheight /2 ) * 2 );
+	}
 
 	// Get the image as requested
 	mlt_frame_get_image( this, &input, format, &iwidth, &iheight, writable );
