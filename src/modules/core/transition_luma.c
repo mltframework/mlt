@@ -452,6 +452,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
 	int reverse = mlt_properties_get_int( properties, "reverse" );
 
+	if ( mlt_properties_get( a_props, "rescale.interp" ) == NULL )
+		mlt_properties_set( a_props, "rescale.interp", "nearest" );
+
 	// Since we are the consumer of the b_frame, we must pass along this
 	// consumer property from the a_frame
 	if ( !strcmp( mlt_properties_get( a_props, "rescale.interp" ), "none" ) )

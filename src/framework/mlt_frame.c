@@ -200,6 +200,8 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_get_image get_image = mlt_frame_pop_get_image( this );
 	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
+
+	*width = *width >> 1 << 1;
 	
 	if ( get_image != NULL )
 	{
