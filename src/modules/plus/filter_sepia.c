@@ -81,8 +81,8 @@ mlt_filter filter_sepia_init( char *arg )
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( mlt_filter_properties( this ), "u", "50" );
-		mlt_properties_set( mlt_filter_properties( this ), "v", "50" );
+		mlt_properties_set( mlt_filter_properties( this ), "u", "75" );
+		mlt_properties_set( mlt_filter_properties( this ), "v", "150" );
 	}
 	return this;
 }
