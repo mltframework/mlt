@@ -169,6 +169,9 @@ static int producer_open( mlt_producer this, char *file )
 	AVFormatParameters *params = NULL;
 	char *standard = NULL;
 	char *mrl = strchr( file, ':' );
+
+	// AV option (0 = both, 1 = video, 2 = audio)
+	int av = 0;
 	
 	// Only if there is not a protocol specification that avformat can handle
 	if ( mrl && !url_exist( file ) )
@@ -228,6 +231,8 @@ static int producer_open( mlt_producer this, char *file )
 					standard = strdup( value );
 					params->standard = standard;
 				}
+				else if ( !strcmp( name, "av" ) )
+					av = atoi( value );
 			}
 			free( name );
 			mrl = strchr( mrl, '&' );
@@ -271,14 +276,15 @@ static int producer_open( mlt_producer this, char *file )
                 mlt_properties_set_double( properties, "start_time", context->start_time );
 			
 			// Check if we're seekable (something funny about mpeg here :-/)
-			mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) ) >= 0 );
+			if ( strcmp( file, "pipe:" ) )
+				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) ) >= 0 );
 
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "audio_index", audio_index );
 			mlt_properties_set_int( properties, "video_index", video_index );
 			
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
-			if ( audio_index != -1 && video_index != -1 )
+			if ( av == 0 && strcmp( file, "pipe:" ) && audio_index != -1 && video_index != -1 )
 			{
 				// We'll use the open one as our video_context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
@@ -290,7 +296,7 @@ static int producer_open( mlt_producer this, char *file )
 				// Audio context
 				mlt_properties_set_data( properties, "audio_context", context, 0, producer_file_close, NULL );
 			}
-			else if ( video_index != -1 )
+			else if ( av != 2 && video_index != -1 )
 			{
 				// We only have a video context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
