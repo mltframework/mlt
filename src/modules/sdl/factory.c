@@ -41,6 +41,10 @@ void *mlt_create_consumer( char *id, void *arg )
 {
 	if ( !strcmp( id, "sdl" ) )
 		return consumer_sdl_init( arg );
+	if ( !strcmp( id, "sdl_still" ) )
+		return consumer_sdl_still_init( arg );
+	if ( !strcmp( id, "sdl_preview" ) )
+		return consumer_sdl_preview_init( arg );
 	return NULL;
 }
 

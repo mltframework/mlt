@@ -88,6 +88,11 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 
 		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
 		mlt_events_register( properties, "consumer-stopped", NULL );
+
+		// Create the push mutex and condition
+		pthread_mutex_init( &this->put_mutex, NULL );
+		pthread_cond_init( &this->put_cond, NULL );
+
 	}
 	return error;
 }
@@ -188,6 +193,37 @@ int mlt_consumer_start( mlt_consumer this )
 	return 0;
 }
 
+/** An alternative method to feed frames into the consumer - only valid if
+	the consumer itself is not connected.
+*/
+
+int mlt_consumer_put_frame( mlt_consumer this, mlt_frame frame )
+{
+	int error = 1;
+
+	// Get the service assoicated to the consumer
+	mlt_service service = mlt_consumer_service( this );
+
+	if ( mlt_service_producer( service ) == NULL )
+	{
+		pthread_mutex_lock( &this->put_mutex );
+		if ( this->put != NULL )
+			pthread_cond_wait( &this->put_cond, &this->put_mutex );
+		if ( this->put == NULL )
+			this->put = frame;
+		else
+			mlt_frame_close( frame );
+		pthread_cond_broadcast( &this->put_cond );
+		pthread_mutex_unlock( &this->put_mutex );
+	}
+	else
+	{
+		mlt_frame_close( frame );
+	}
+
+	return error;
+}
+
 /** Protected method for consumer to get frames from connected service
 */
 
@@ -200,7 +236,20 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	mlt_service service = mlt_consumer_service( this );
 
 	// Get the frame
-	if ( mlt_service_get_frame( service, &frame, 0 ) == 0 )
+	if ( mlt_service_producer( service ) == NULL )
+	{
+		pthread_mutex_lock( &this->put_mutex );
+		if ( this->put == NULL )
+			pthread_cond_wait( &this->put_cond, &this->put_mutex );
+		frame = this->put;
+		this->put = NULL;
+		pthread_cond_broadcast( &this->put_cond );
+		pthread_mutex_unlock( &this->put_mutex );
+		if ( frame != NULL )
+			mlt_service_apply_filters( service, frame, 0 );
+	}
+
+	if ( frame != NULL || mlt_service_get_frame( service, &frame, 0 ) == 0 )
 	{
 		// Get the consumer properties
 		mlt_properties properties = mlt_consumer_properties( this );
@@ -415,6 +464,11 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 		pthread_cond_broadcast( &this->cond );
 		pthread_mutex_unlock( &this->mutex );
 
+		// Broadcast to the put condition in case it's waiting
+		pthread_mutex_lock( &this->put_mutex );
+		pthread_cond_broadcast( &this->put_cond );
+		pthread_mutex_unlock( &this->put_mutex );
+
 		// Join the thread
 		pthread_join( this->ahead_thread, NULL );
 
@@ -513,6 +567,11 @@ int mlt_consumer_stop( mlt_consumer this )
 	if ( mlt_properties_get_int( properties, "real_time" ) )
 		consumer_read_ahead_stop( this );
 
+	// Just in case...
+	pthread_mutex_lock( &this->put_mutex );
+	pthread_cond_broadcast( &this->put_cond );
+	pthread_mutex_unlock( &this->put_mutex );
+
 	// Kill the test card
 	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 
@@ -548,6 +607,11 @@ void mlt_consumer_close( mlt_consumer this )
 		// Make sure it only gets called once
 		this->close = NULL;
 		this->parent.close = NULL;
+
+		// Destroy the push mutex and condition
+		pthread_cond_broadcast( &this->put_cond );
+		pthread_mutex_destroy( &this->put_mutex );
+		pthread_cond_destroy( &this->put_cond );
 
 		// Call the childs close if available
 		if ( consumer_close != NULL )

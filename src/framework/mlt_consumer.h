@@ -49,6 +49,9 @@ struct mlt_consumer_s
 	pthread_t ahead_thread;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
+	pthread_mutex_t put_mutex;
+	pthread_cond_t put_cond;
+	mlt_frame put;
 };
 
 /** Public final methods
@@ -61,6 +64,7 @@ extern mlt_properties mlt_consumer_properties( mlt_consumer self );
 extern int mlt_consumer_connect( mlt_consumer self, mlt_service producer );
 extern int mlt_consumer_start( mlt_consumer self );
 extern void mlt_consumer_purge( mlt_consumer self );
+extern int mlt_consumer_put_frame( mlt_consumer self, mlt_frame frame );
 extern mlt_frame mlt_consumer_get_frame( mlt_consumer self );
 extern mlt_frame mlt_consumer_rt_frame( mlt_consumer self );
 extern int mlt_consumer_stop( mlt_consumer self );

@@ -24,5 +24,7 @@
 #include <framework/mlt_consumer.h>
 
 extern mlt_consumer consumer_sdl_init( char * );
+extern mlt_consumer consumer_sdl_still_init( char * );
+extern mlt_consumer consumer_sdl_preview_init( char * );
 
 #endif

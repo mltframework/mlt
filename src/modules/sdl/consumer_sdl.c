@@ -494,6 +494,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			// open SDL window with video overlay, if possible
 			sdl_lock_display();
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+			SDL_SetClipRect( this->sdl_screen, &this->rect );
 			sdl_unlock_display();
 
 			if ( this->sdl_screen != NULL )
@@ -637,14 +638,24 @@ static void *consumer_thread( void *arg )
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
 
-	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
+	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
 	{
-		fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
-		return NULL;
+		if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
+		{
+			fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
+			return NULL;
+		}
+
+		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+		SDL_EnableUNICODE( 1 );
+	}
+	else
+	{
+		if ( SDL_GetVideoSurface( ) != NULL )
+			consumer_get_dimensions( &this->window_width, &this->window_height );
 	}
 
-	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-	SDL_EnableUNICODE( 1 );
+	SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 	// Loop until told not to
 	while( this->running )
@@ -700,7 +711,11 @@ static void *consumer_thread( void *arg )
 	// internal cleanup
 	if ( this->sdl_overlay != NULL )
 		SDL_FreeYUVOverlay( this->sdl_overlay );
-	SDL_Quit( );
+
+	SDL_QuitSubSystem( SDL_INIT_AUDIO );
+
+	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
+		SDL_Quit( );
 
 	while( mlt_deque_count( this->queue ) )
 		mlt_frame_close( mlt_deque_pop_back( this->queue ) );

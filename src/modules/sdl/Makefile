@@ -3,7 +3,9 @@ include ../../../config.mak
 TARGET = ../libmltsdl.so
 
 OBJS = factory.o \
-	   consumer_sdl.o 
+	   consumer_sdl.o \
+	   consumer_sdl_preview.o \
+	   consumer_sdl_still.o 
 
 CFLAGS += -I../.. `sdl-config --cflags`
 
