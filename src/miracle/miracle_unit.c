@@ -582,8 +582,20 @@ void miracle_unit_step( miracle_unit unit, int64_t offset )
 
 int miracle_unit_set( miracle_unit unit, char *name_value )
 {
-	mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
-	mlt_properties properties = mlt_playlist_properties( playlist );
+	mlt_properties properties = NULL;
+
+	if ( strncmp( name_value, "consumer.", 9 ) )
+	{
+		mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
+		properties = mlt_playlist_properties( playlist );
+	}
+	else
+	{
+		mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
+		properties = mlt_consumer_properties( consumer );
+		name_value += 9;
+	}
+
 	return mlt_properties_parse( properties, name_value );
 }
 

@@ -213,6 +213,9 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		int height = mlt_properties_get_int( this_properties, "height" );
 		uint8_t *image = NULL;
 
+		if ( mlt_properties_get( this_properties, "rescale" ) != NULL )
+			mlt_properties_set( mlt_frame_properties( frame ), "rescale.interp", mlt_properties_get( this_properties, "rescale" ) );
+
 		// Get the image
 		mlt_frame_get_image( frame, &image, &fmt, &width, &height, 0 );
 
