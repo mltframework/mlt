@@ -34,7 +34,7 @@
 
 #include "ui.h"
 
-#define BUFFER_LEN 2048 * 20
+#define BUFFER_LEN 2048 * 3
 
 static void *jackrack_thread( void *arg )
 {
@@ -51,7 +51,7 @@ static void *jackrack_thread( void *arg )
 	return NULL;
 }
 
-static void initialise_jack_ports( mlt_properties properties, int channels, int samples )
+static void initialise_jack_ports( mlt_properties properties )
 {
 	int i;
 	char mlt_name[20], rack_name[30];
@@ -60,8 +60,7 @@ static void initialise_jack_ports( mlt_properties properties, int channels, int 
 	jack_nframes_t jack_buffer_size = jack_get_buffer_size( jack_client );
 	
 	// Propogate these for the Jack processing callback
-	mlt_properties_set_int( properties, "_channels", channels );
-	mlt_properties_set_int( properties, "_samples", samples );
+	int channels = mlt_properties_get_int( properties, "channels" );
 
 	// Start JackRack
 	if ( mlt_properties_get( properties, "src" ) )
@@ -69,7 +68,7 @@ static void initialise_jack_ports( mlt_properties properties, int channels, int 
 		pthread_t *jackrack_pthread = mlt_pool_alloc( sizeof( pthread_t ) );
 
 		snprintf( rack_name, sizeof( rack_name ), "jackrack%d", getpid() );
-		ui_t *jackrack = ui_new( rack_name, mlt_properties_get_int( properties, "_channels" ), 0, 0 );
+		ui_t *jackrack = ui_new( rack_name, mlt_properties_get_int( properties, "channels" ), 0, 0 );
 		jack_rack_open_file( jackrack, mlt_properties_get( properties, "src" ) );		
 		
 		mlt_properties_set_data( properties, "jackrack", jackrack, 0, NULL, NULL );
@@ -88,7 +87,7 @@ static void initialise_jack_ports( mlt_properties properties, int channels, int 
 	float **jack_output_buffers = mlt_pool_alloc( sizeof(float *) * jack_buffer_size );
 	float **jack_input_buffers = mlt_pool_alloc( sizeof(float *) * jack_buffer_size );
 
-	// Set properties for self-destruction	
+	// Set properties - released inside filter_close
 	mlt_properties_set_data( properties, "output_buffers", output_buffers, sizeof( jack_ringbuffer_t *) * channels, NULL, NULL );
 	mlt_properties_set_data( properties, "input_buffers", input_buffers, sizeof( jack_ringbuffer_t *) * channels, NULL, NULL );
 	mlt_properties_set_data( properties, "jack_output_ports", jack_output_ports, sizeof( jack_port_t *) * channels, NULL, NULL );
@@ -156,11 +155,12 @@ static int jack_process (jack_nframes_t frames, void * data)
 {
 	mlt_filter filter = (mlt_filter) data;
  	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	int channels = mlt_properties_get_int( properties, "_channels" );
+	int channels = mlt_properties_get_int( properties, "channels" );
+	int frame_size = mlt_properties_get_int( properties, "_samples" ) * sizeof(float);
+	int sync = mlt_properties_get_int( properties, "_sync" );
 	int err = 0;
 	int i;
-	static size_t total_size = 0;
-	size_t first_ring_size = mlt_properties_get_int( properties, "_samples" ) * sizeof(float);
+	static int total_size = 0;
   
 	jack_ringbuffer_t **output_buffers = mlt_properties_get_data( properties, "output_buffers", NULL );
 	if ( output_buffers == NULL )
@@ -189,33 +189,35 @@ static int jack_process (jack_nframes_t frames, void * data)
 		ring_size = jack_ringbuffer_read_space( output_buffers[i] );
 		jack_ringbuffer_read( output_buffers[i], ( char * )jack_output_buffers[i], ring_size < jack_size ? ring_size : jack_size );
 		
-		// Do not start returning audio until we have sent first mlt frame
-		if ( first_ring_size != -sizeof(float) && i == 0 )
-			total_size += ring_size;
-		if ( first_ring_size == -sizeof(float) || total_size >= first_ring_size )
+		// Return audio through in port
+		jack_input_buffers[i] = jack_port_get_buffer( jack_input_ports[i], frames );
+		if ( ! jack_input_buffers[i] )
 		{
-			// Return audio through in port
-			jack_input_buffers[i] = jack_port_get_buffer( jack_input_ports[i], frames );
-			if ( ! jack_input_buffers[i] )
-			{
-				fprintf( stderr, "%s: no jack buffer for input port %d\n", __FUNCTION__, i );
-				err = 1;
-				break;
-			}
-			
+			fprintf( stderr, "%s: no jack buffer for input port %d\n", __FUNCTION__, i );
+			err = 1;
+			break;
+		}
+		
+		// Do not start returning audio until we have sent first mlt frame
+		if ( sync && i == 0 && frame_size > 0 )
+			total_size += ring_size;
+		//fprintf(stderr, "sync %d frame_size %d ring_size %d jack_size %d\n", sync, frame_size, ring_size, jack_size );
+		
+		if ( ! sync || ( frame_size > 0  && total_size >= frame_size ) )
+		{
 			ring_size = jack_ringbuffer_write_space( input_buffers[i] );
 			jack_ringbuffer_write( input_buffers[i], ( char * )jack_input_buffers[i], ring_size < jack_size ? ring_size : jack_size );
 			
-			// Tell mlt that audio is available
-			if ( first_ring_size != -sizeof(float) && i == ( channels - 1 ) 
-				 && pthread_mutex_trylock( output_lock) == 0 )
+			if ( sync )
 			{
+				// Tell mlt that audio is available
+				pthread_mutex_lock( output_lock);
 				pthread_cond_signal( output_ready );
-				pthread_mutex_unlock( output_lock );
+				pthread_mutex_unlock( output_lock);
+
+				// Clear sync phase
+				mlt_properties_set_int( properties, "_sync", 0 );
 			}
-			
-			// Set flag to skip this henceforth
-			mlt_properties_set_int( properties, "_samples", -1 );
 		}
 	}
 
@@ -241,16 +243,15 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, &jack_frequency, channels, samples );
-	//fprintf( stderr, "%s: %d frames %d channels\n", __FUNCTION__, *samples, *channels );
 	
-	// Deal with sample rate differences
+	// TODO: Deal with sample rate differences
 	if ( *frequency != jack_frequency )
 		fprintf( stderr, "mismatching frequencies in filter jackrack\n" );
 	*frequency = jack_frequency;
 
 	// Initialise Jack ports and connections if needed
-	if ( ! mlt_properties_get_data( filter_properties, "jack_output_ports", NULL ) )
-		initialise_jack_ports( filter_properties, *channels, *samples );
+	if ( mlt_properties_get_int( filter_properties, "_samples" ) == 0 )
+		mlt_properties_set_int( filter_properties, "_samples", *samples );
 	
 	// Get the filter-specific properties
 	jack_ringbuffer_t **output_buffers = mlt_properties_get_data( filter_properties, "output_buffers", NULL );
@@ -266,8 +267,6 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Convert to floats and write into output ringbuffer
 	if ( jack_ringbuffer_write_space( output_buffers[0] ) >= ( *samples * sizeof(float) ) )
 	{
-		//fprintf( stderr, "%s: buffer overrun!\n", __FUNCTION__ );
-		//pthread_cond_wait( &output_ready, &output_lock );
 		for ( i = 0; i < *samples; i++ )
 			for ( j = 0; j < *channels; j++ )
 			{
@@ -275,33 +274,35 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				jack_ringbuffer_write( output_buffers[j], ( char * )&sample, sizeof(float) );
 			}
 	}
-	//else
-	//	fprintf( stderr, "%s: out buffer size %d\n", __FUNCTION__, jack_ringbuffer_write_space( output_buffers[0] ) );
-	
-	// Read from input ringbuffer and convert from floats
-	while ( mlt_properties_get_int( filter_properties, "_samples" ) != -1
+
+	// Synchronization phase - wait for signal from Jack process
+	while ( mlt_properties_get_int( filter_properties, "_sync" )
 		    && jack_ringbuffer_read_space( input_buffers[ *channels - 1 ] ) < ( *samples * sizeof(float) ) )
 		pthread_cond_wait( output_ready, output_lock );
 		
-	// Initialise to silence, but repeat last frame if available in case of 
-	// buffer underrun
-	sample = 0;
-	q = *buffer;
-	for ( i = 0; i < *samples; i++ )
-		for ( j = 0; j < *channels; j++ )
-		{
-			jack_ringbuffer_read( input_buffers[j], ( char * )&sample, sizeof(float) );
-
-			if ( sample > 1.0 )
-				sample = 1.0;
-			else if ( sample < -1.0 )
-				sample = -1.0;
-		
-			if ( sample > 0 )
-				*q ++ = 32767 * sample;
-			else
-				*q ++ = 32768 * sample;
-		}
+	// Read from input ringbuffer and convert from floats
+	//if ( jack_ringbuffer_read_space( input_buffers[0] ) >= ( *samples * sizeof(float) ) )
+	{
+		// Initialise to silence, but repeat last frame if available in case of 
+		// buffer underrun
+		sample = 0;
+		q = *buffer;
+		for ( i = 0; i < *samples; i++ )
+			for ( j = 0; j < *channels; j++ )
+			{
+				jack_ringbuffer_read( input_buffers[j], ( char * )&sample, sizeof(float) );
+	
+				if ( sample > 1.0 )
+					sample = 1.0;
+				else if ( sample < -1.0 )
+					sample = -1.0;
+			
+				if ( sample > 0 )
+					*q ++ = 32767 * sample;
+				else
+					*q ++ = 32768 * sample;
+			}
+	}
 
 	return 0;
 }
@@ -314,9 +315,13 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	if ( frame->get_audio != NULL )
 	{
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		mlt_frame_push_audio( frame, frame->get_audio );
 		mlt_frame_push_audio( frame, this );
 		frame->get_audio = jackrack_get_audio;
+		
+		if ( mlt_properties_get_int( properties, "_sync" ) )
+			initialise_jack_ports( properties );
 	}
 
 	return frame;
@@ -332,7 +337,7 @@ void filter_close( mlt_filter this )
 	
 	jack_deactivate( jack_client );
 	jack_client_close( jack_client );
-	for ( i = 0; i < mlt_properties_get_int( properties, "_channels" ); i++ )
+	for ( i = 0; i < mlt_properties_get_int( properties, "channels" ); i++ )
 	{
 		snprintf( mlt_name, sizeof( mlt_name ), "obuf%d", i );
 		jack_ringbuffer_free( mlt_properties_get_data( properties, mlt_name, NULL ) );
@@ -391,6 +396,8 @@ mlt_filter filter_jackrack_init( char *arg )
 			mlt_properties_set_int( properties, "_sample_rate", jack_get_sample_rate( jack_client ) );
 			mlt_properties_set_data( properties, "output_lock", output_lock, 0, NULL, NULL );
 			mlt_properties_set_data( properties, "output_ready", output_ready, 0, NULL, NULL );
+			mlt_properties_set_int( properties, "_sync", 1 );
+			mlt_properties_set_int( properties, "channels", 2 );
 		}
 	}
 	return this;
