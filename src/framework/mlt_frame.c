@@ -219,7 +219,6 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		if ( test_frame != NULL )
 		{
 			mlt_properties test_properties = mlt_frame_properties( test_frame );
-			mlt_properties_set( test_properties, "rescale.interp", "nearest" );
 			mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
 			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
@@ -237,8 +236,8 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	}
 	else
 	{
-		uint8_t *p;
-		uint8_t *q;
+		register uint8_t *p;
+		register uint8_t *q;
 		int size = 0;
 
 		*width = *width == 0 ? 720 : *width;
@@ -309,7 +308,14 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 
 	if ( this->get_audio != NULL )
 	{
-		return this->get_audio( this, buffer, format, frequency, channels, samples );
+		this->get_audio( this, buffer, format, frequency, channels, samples );
+	}
+	else if ( mlt_properties_get_data( properties, "audio", NULL ) )
+	{
+		*buffer = mlt_properties_get_data( properties, "audio", NULL );
+		*frequency = mlt_properties_get_int( properties, "audio_frequency" );
+		*channels = mlt_properties_get_int( properties, "audio_channels" );
+		*samples = mlt_properties_get_int( properties, "audio_samples" );
 	}
 	else
 	{
@@ -324,6 +330,11 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 		mlt_properties_set_data( properties, "audio", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "test_audio", 1 );
 	}
+
+	mlt_properties_set_int( properties, "audio_frequency", *frequency );
+	mlt_properties_set_int( properties, "audio_channels", *channels );
+	mlt_properties_set_int( properties, "audio_samples", *samples );
+
 	return 0;
 }
 

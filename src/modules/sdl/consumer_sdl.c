@@ -246,7 +246,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	if ( this->audio_avail >= len )
 	{
 		// Place in the audio buffer
-		SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+		memcpy( stream, this->audio_buffer, len );
 
 		// Remove len from the audio available
 		this->audio_avail -= len;
@@ -600,7 +600,7 @@ static void *consumer_thread( void *arg )
 				mlt_position difference = scheduled - elapsed;
 
 				// If the frame is quite some way in the future, go get another
-				if ( difference > 80000 && mlt_deque_count( this->queue ) < 6 )
+				if ( difference >= 30000 && mlt_deque_count( this->queue ) < 10 )
 					break;
 
 				// Smooth playback a bit

@@ -238,8 +238,23 @@ static void *consumer_read_ahead_thread( void *arg )
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
 
+	// See if video is turned off
+	int video_off = mlt_properties_get_int( properties, "video_off" );
+
+	// Get the audio settings
+	mlt_audio_format afmt = mlt_audio_pcm;
+	int counter = 0;
+	double fps = mlt_properties_get_double( properties, "fps" );
+	int channels = mlt_properties_get_int( properties, "channels" );
+	int frequency = mlt_properties_get_int( properties, "frequency" );
+	int samples = 0;
+	int16_t *pcm = NULL;
+
+	// See if audio is turned off
+	int audio_off = mlt_properties_get_int( properties, "audio_off" );
+
 	// Get the maximum size of the buffer
-	int buffer = mlt_properties_get_int( properties, "buffer" );
+	int buffer = mlt_properties_get_int( properties, "buffer" ) + 1;
 
 	// General frame variable
 	mlt_frame frame = NULL;
@@ -294,11 +309,20 @@ static void *consumer_read_ahead_thread( void *arg )
 			count = 1;
 		}
 
+		// Always process audio
+		if ( !audio_off )
+		{
+			samples = mlt_sample_calculator( fps, frequency, counter++ );
+			mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
+			frame->get_audio = NULL;
+		}
+
 		// Get the image
 		if ( ( time_frame + time_image ) / count < 40000 )
 		{
 			// Get the image, mark as rendered and time it
-			mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+			if ( !video_off )
+				mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
 			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
 			time_image += time_difference( &ante );
 
