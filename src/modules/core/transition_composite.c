@@ -213,27 +213,48 @@ static struct geometry_s *transition_parse_keys( mlt_transition this,  int norma
 	// Pointer
 	struct geometry_s *ptr = start;
 
-	// Parse the start property
-	geometry_parse( start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
-
-	// Parse the keys in between
-	for ( i = 0; i < mlt_properties_count( properties ); i ++ )
+	// Check if we're using the new style geometry
+	if ( mlt_properties_get( properties, "geometry" ) )
 	{
-		// Get the name of the property
-		char *name = mlt_properties_get_name( properties, i );
+		// Sundry vars
+		int i;
+		int frame = 0;
 
-		// Check that it's valid
-		if ( !strncmp( name, "key[", 4 ) )
+		// Obtain the geometry data - this is presented in the form:
+		// x,y:WxH[!][:mix][;f=x,y:WxH[!][:mix]]*
+		char *data = mlt_properties_get( properties, "geometry" );
+
+		// Split the data on the ; to seperate the values
+		mlt_tokeniser tokens = mlt_tokeniser_init( );
+		mlt_tokeniser_parse_new( tokens, data, ";" );
+
+		// Parse the first entry
+		geometry_parse( start, NULL, mlt_tokeniser_get_string( tokens, 0 ), normalised_width, normalised_height );
+
+		// Iterate through the remainder
+		for ( i = 1; i < mlt_tokeniser_count( tokens ); i ++ )
 		{
-			// Get the value of the property
-			char *value = mlt_properties_get_value( properties, i );
+			// Get the current value
+			char *value = mlt_tokeniser_get_string( tokens, i );
 
-			// Determine the frame number
-			int frame = atoi( name + 4 );
+			// Used to determine the position
+			float position = 0;
+
+			// Determine the position of the / delimiter
+			char *p = strchr( value, '=' );
+
+			// Ensure that it has a frame and extract that value
+			if ( p )
+			{
+				frame = atoi( value );
+				value = p + 1;
+			}
+			else
+			{
+				fprintf( stderr, "Malformed geometry - no frame in %s (%d)\n", value, i );
+			}
 
 			// Determine the position
-			float position = 0;
-			
 			if ( frame >= 0 && frame < ( out - in ) )
 				position = ( float )frame / ( float )( out - in + 1 );
 			else if ( frame < 0 && - frame < ( out - in ) )
@@ -255,20 +276,80 @@ static struct geometry_s *transition_parse_keys( mlt_transition this,  int norma
 				// Allow the next to be appended after this one
 				ptr = temp;
 			}
-			else
+		}
+
+		// Close the tokens
+		mlt_tokeniser_close( tokens );
+
+		// Parse the end
+		geometry_parse( end, ptr, NULL, normalised_width, normalised_height );
+		if ( out > 0 )
+			end->position = ( float )( out - in ) / ( float )( out - in + 1 );
+		else
+			end->position = 1;
+	}
+	else
+	{
+		// DEPRECATED: Multiple keys for geometry information is inefficient and too rigid for 
+		// practical use
+
+		// Parse the start property
+		geometry_parse( start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
+
+		// Parse the keys in between
+		for ( i = 0; i < mlt_properties_count( properties ); i ++ )
+		{
+			// Get the name of the property
+			char *name = mlt_properties_get_name( properties, i );
+	
+			// Check that it's valid
+			if ( !strncmp( name, "key[", 4 ) )
 			{
-				fprintf( stderr, "Key out of order - skipping %s\n", name );
+				// Get the value of the property
+				char *value = mlt_properties_get_value( properties, i );
+	
+				// Determine the frame number
+				int frame = atoi( name + 4 );
+	
+				// Determine the position
+				float position = 0;
+				
+				if ( frame >= 0 && frame < ( out - in ) )
+					position = ( float )frame / ( float )( out - in + 1 );
+				else if ( frame < 0 && - frame < ( out - in ) )
+					position = ( float )( out - in + frame ) / ( float )( out - in + 1 );
+	
+				// For now, we'll exclude all keys received out of order
+				if ( position > ptr->position )
+				{
+					// Create a new geometry
+					struct geometry_s *temp = calloc( 1, sizeof( struct geometry_s ) );
+	
+					// Parse and add to the list
+					geometry_parse( temp, ptr, value, normalised_width, normalised_height );
+	
+					// Assign the position and frame
+					temp->frame = frame;
+					temp->position = position;
+	
+					// Allow the next to be appended after this one
+					ptr = temp;
+				}
+				else
+				{
+					fprintf( stderr, "Key out of order - skipping %s\n", name );
+				}
 			}
 		}
+
+		// Parse the end
+		geometry_parse( end, ptr, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
+		if ( out > 0 )
+			end->position = ( float )( out - in ) / ( float )( out - in + 1 );
+		else
+			end->position = 1;
 	}
 	
-	// Parse the end
-	geometry_parse( end, ptr, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
-	if ( out > 0 )
-		end->position = ( float )( out - in ) / ( float )( out - in + 1 );
-	else
-		end->position = 1;
-
 	return start;
 }
 
