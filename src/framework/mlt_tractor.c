@@ -206,8 +206,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( properties, "width" ) );
 	mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( properties, "height" ) );
 	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
-	if ( mlt_properties_get_int( properties, "distort" ) )
-		mlt_properties_set_int( frame_properties, "distort", mlt_properties_get_int( properties, "distort" ) );
+	mlt_properties_set_int( frame_properties, "distort", mlt_properties_get_int( properties, "distort" ) );
 	mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_double( properties, "consumer_deinterlace" ) );
 	mlt_properties_set_int( frame_properties, "normalised_width", mlt_properties_get_double( properties, "normalised_width" ) );
@@ -218,8 +217,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( properties, "height", *height );
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
 	mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
-	if ( mlt_properties_get_int( frame_properties, "distort" ) )
-		mlt_properties_set_int( properties, "distort", mlt_properties_get_int( frame_properties, "distort" ) );
+	mlt_properties_set_int( properties, "distort", mlt_properties_get_int( frame_properties, "distort" ) );
 	data = mlt_frame_get_alpha_mask( frame );
 	mlt_properties_set_data( properties, "alpha", data, 0, NULL, NULL );
 	return 0;
@@ -321,11 +319,18 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 					{
 						// Move the contents of this queue on to the output frames data queue
 						mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
+						mlt_deque temp = mlt_deque_init( );
 						while ( mlt_deque_count( sub_queue ) )
 						{
-							void *p = mlt_deque_pop_back( sub_queue );
-							mlt_deque_push_back( data_queue, p );
+							mlt_properties p = mlt_deque_pop_back( sub_queue );
+							if ( mlt_properties_get_int( p, "frame_lock" ) == 0 )
+								mlt_deque_push_back( data_queue, p );
+							else
+								mlt_deque_push_back( temp, p );
 						}
+						while( mlt_deque_count( temp ) )
+							mlt_deque_push_front( sub_queue, mlt_deque_pop_back( temp ) );
+						mlt_deque_close( temp );
 					}
 				}
 
