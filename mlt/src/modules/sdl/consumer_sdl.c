@@ -48,6 +48,10 @@ struct consumer_sdl_s
 	int window_height;
 	int width;
 	int height;
+	int playing;
+	mlt_frame *queue;
+	int size;
+	int count;
 };
 
 /** Forward references to static functions.
@@ -104,7 +108,6 @@ mlt_consumer consumer_sdl_init( char *arg )
 			this->height = 576;
 		}
 
-
 		// Create the the thread
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 
@@ -141,7 +144,7 @@ void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 
 	pthread_mutex_lock( &this->audio_mutex );
 
-	// Experimental - block until audio received
+	// Block until audio received
 	while ( this->running && len > this->audio_avail )
 		pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
 
@@ -170,6 +173,10 @@ void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		// No audio left
 		this->audio_avail = 0;
 	}
+
+	// We're definitely playing now
+	this->playing = 1;
+
 	pthread_cond_broadcast( &this->audio_cond );
 	pthread_mutex_unlock( &this->audio_mutex );
 }
@@ -254,108 +261,131 @@ static void *consumer_thread( void *arg )
 			pthread_cond_broadcast( &this->audio_cond );
 			pthread_mutex_unlock( &this->audio_mutex );
 
-			// Get the image, width and height
-			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-
-			if ( sdl_screen != NULL )
+			if ( this->count == this->size )
 			{
-				SDL_Event event;
-
-				changed = consumer_get_dimensions( &this->window_width, &this->window_height );
-
-				while ( SDL_PollEvent( &event ) )
-				{
-					switch( event.type )
-					{
-						case SDL_VIDEORESIZE:
-							this->window_width = event.resize.w;
-							this->window_height = event.resize.h;
-							changed = 1;
-							break;
-						case SDL_KEYDOWN:
-							{
-								mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );
-								void (*callback)( mlt_producer, char * ) = mlt_properties_get_data( properties, "transport_callback", NULL );
-								if ( callback != NULL && producer != NULL )
-									callback( producer, SDL_GetKeyName(event.key.keysym.sym) );
-							}
-							break;
-					}
-				}
-
-				if ( width != this->width || height != this->height )
-				{
-					this->width = width;
-					this->height = height;
-					changed = 1;
-				}
+				this->size += 25;
+				this->queue = realloc( this->queue, sizeof( mlt_frame ) * this->size );
 			}
+			this->queue[ this->count ++ ] = frame;
 
-			if ( sdl_screen == NULL || changed )
+			if ( this->playing )
 			{
-				double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
+				// We're working on the oldest frame now
+				frame = this->queue[ 0 ];
 
-				if ( mlt_properties_get_double( properties, "aspect_ratio" ) )
-					aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
+				// Shunt the frames in the queue down
+				int i = 0;
+				for ( i = 1; i < this->count; i ++ )
+					this->queue[ i - 1 ] = this->queue[ i ];
+				this->count --;
 
-				if ( this->window_width == 0 || this->window_height == 0 )
-				{
-					this->window_width = width;
-					this->window_height = height;
-				}
-
-				// open SDL window with video overlay, if possible
-				sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, sdl_flags );
+				// Get the image, width and height
+				mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 
 				if ( sdl_screen != NULL )
 				{
-					SDL_Rect rect;
-					if ( this->window_width < this->window_height * aspect_ratio )
-					{
-						rect.w = this->window_width;
-						rect.h = this->window_width / aspect_ratio;
-					}
-					else
-					{
-						rect.w = this->window_height * aspect_ratio;
-						rect.h = this->window_height;
-					}
+					SDL_Event event;
 
-					rect.x = ( this->window_width - rect.w ) / 2;
-					rect.y = ( this->window_height - rect.h ) / 2;
+					changed = consumer_get_dimensions( &this->window_width, &this->window_height );
 
-					SDL_SetClipRect( sdl_screen, &rect );
-					
-					// Force an overlay recreation
-					if ( sdl_overlay != NULL )
-						SDL_FreeYUVOverlay( sdl_overlay );
-					sdl_lock_display();
-					sdl_overlay = SDL_CreateYUVOverlay( this->width, this->height, SDL_YUY2_OVERLAY, sdl_screen );
-					sdl_unlock_display();
+					while ( SDL_PollEvent( &event ) )
+					{
+						switch( event.type )
+						{
+							case SDL_VIDEORESIZE:
+								this->window_width = event.resize.w;
+								this->window_height = event.resize.h;
+								changed = 1;
+								break;
+							case SDL_KEYDOWN:
+								{
+									mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );
+									void (*callback)( mlt_producer, char * ) = mlt_properties_get_data( properties, "transport_callback", NULL );
+									if ( callback != NULL && producer != NULL )
+										callback( producer, SDL_GetKeyName(event.key.keysym.sym) );
+								}
+								break;
+						}
+					}
+	
+					if ( width != this->width || height != this->height )
+					{
+						this->width = width;
+						this->height = height;
+						changed = 1;
+					}
 				}
-			}
-			
-			if ( sdl_screen != NULL && sdl_overlay != NULL )
-			{
-				buffer = sdl_overlay->pixels[ 0 ];
-				if ( sdl_lock_display() )
+
+				if ( sdl_screen == NULL || changed )
 				{
-					if ( SDL_LockYUVOverlay( sdl_overlay ) >= 0 )
+					double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
+	
+					if ( mlt_properties_get_double( properties, "aspect_ratio" ) )
+						aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
+	
+					if ( this->window_width == 0 || this->window_height == 0 )
 					{
-						mlt_resize_yuv422( buffer, this->width, this->height, image, width, height );
-						SDL_UnlockYUVOverlay( sdl_overlay );
-						SDL_DisplayYUVOverlay( sdl_overlay, &sdl_screen->clip_rect );
+						this->window_width = width;
+						this->window_height = height;
 					}
-					sdl_unlock_display();
+	
+					// open SDL window with video overlay, if possible
+					sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, sdl_flags );
+	
+					if ( sdl_screen != NULL )
+					{
+						SDL_Rect rect;
+						if ( this->window_width < this->window_height * aspect_ratio )
+						{
+							rect.w = this->window_width;
+							rect.h = this->window_width / aspect_ratio;
+						}
+						else
+						{
+							rect.w = this->window_height * aspect_ratio;
+							rect.h = this->window_height;
+						}
+
+						rect.x = ( this->window_width - rect.w ) / 2;
+						rect.y = ( this->window_height - rect.h ) / 2;
+
+						SDL_SetClipRect( sdl_screen, &rect );
+					
+						// Force an overlay recreation
+						if ( sdl_overlay != NULL )
+							SDL_FreeYUVOverlay( sdl_overlay );
+						sdl_lock_display();
+						sdl_overlay = SDL_CreateYUVOverlay( this->width, this->height, SDL_YUY2_OVERLAY, sdl_screen );
+						sdl_unlock_display();
+					}
+				}
+			
+				if ( sdl_screen != NULL && sdl_overlay != NULL )
+				{
+					buffer = sdl_overlay->pixels[ 0 ];
+					if ( sdl_lock_display() )
+					{
+						if ( SDL_LockYUVOverlay( sdl_overlay ) >= 0 )
+						{
+							mlt_resize_yuv422( buffer, this->width, this->height, image, width, height );
+							SDL_UnlockYUVOverlay( sdl_overlay );
+							SDL_DisplayYUVOverlay( sdl_overlay, &sdl_screen->clip_rect );
+						}
+						sdl_unlock_display();
+					}
 				}
 			}
 			else
 			{
-				// TODO: allocate buffer?
+				frame = NULL;
 			}
 
 			// Close the frame
-			mlt_frame_close( frame );
+			if ( frame != NULL )
+				mlt_frame_close( frame );
+
+			if ( this->count )
+				mlt_frame_get_image( this->queue[ this->count - 1 ], &image, &vfmt, &width, &height, 0 );
 		}
 		else
 		{
