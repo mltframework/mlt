@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltField.cpp - Field wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,21 +18,46 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
-
-#include "MltConsumer.h"
-#include "MltFactory.h"
 #include "MltField.h"
 #include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMultitrack.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltService.h"
-#include "MltTractor.h"
 #include "MltTransition.h"
+using namespace Mlt;
 
-#endif
+Field::Field( mlt_field field ) :
+	instance( field )
+{
+	inc_ref( );
+}
+
+Field::Field( Field &field ) :
+	instance( field.get_field( ) )
+{
+	inc_ref( );
+}
+
+Field::~Field( )
+{
+	mlt_field_close( instance );
+}
+
+mlt_field Field::get_field( )
+{
+	return instance;
+}
+
+mlt_service Field::get_service( )
+{
+	return mlt_field_service( get_field( ) );
+}
+
+int Field::plant_filter( Filter &filter, int track )
+{
+	return mlt_field_plant_filter( get_field( ), filter.get_filter( ), track );
+}
+
+int Field::plant_transition( Transition &transition, int a_track, int b_track )
+{
+	return mlt_field_plant_transition( get_field( ), transition.get_transition( ), a_track, b_track );
+}
+
+

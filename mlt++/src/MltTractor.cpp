@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltTractor.cpp - Tractor wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,21 +18,50 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
-
-#include "MltConsumer.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMultitrack.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltService.h"
 #include "MltTractor.h"
-#include "MltTransition.h"
+#include "MltMultitrack.h"
+#include "MltField.h"
+using namespace Mlt;
 
-#endif
+Tractor::Tractor( ) :
+	instance( mlt_tractor_new( ) )
+{
+}
+
+Tractor::Tractor( mlt_tractor tractor ) :
+	instance( tractor )
+{
+	inc_ref( );
+}
+
+Tractor::Tractor( Tractor &tractor ) :
+	instance( tractor.get_tractor( ) )
+{
+	inc_ref( );
+}
+
+Tractor::~Tractor( )
+{
+	mlt_tractor_close( instance );
+}
+
+mlt_tractor Tractor::get_tractor( )
+{
+	return instance;
+}
+
+mlt_producer Tractor::get_producer( )
+{
+	return mlt_tractor_producer( get_tractor( ) );
+}
+
+Multitrack *Tractor::multitrack( )
+{
+	return new Multitrack( mlt_tractor_multitrack( get_tractor( ) ) );
+}
+
+Field *Tractor::field( )
+{
+	return new Field( mlt_tractor_field( get_tractor( ) ) );
+}
+

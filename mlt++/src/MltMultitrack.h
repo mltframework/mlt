@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltMultitrack.h - Multitrack wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,21 +18,33 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
+#ifndef _MLTPP_MULTITRACK_H_
+#define _MLTPP_MULTITRACK_H_
 
-#include "MltConsumer.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMultitrack.h"
-#include "MltPlaylist.h"
+#include <framework/mlt.h>
+
 #include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltService.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+
+namespace Mlt
+{
+	class Producer;
+
+	class Multitrack : public Producer
+	{
+		private:
+			mlt_multitrack instance;
+		public:
+			Multitrack( mlt_multitrack multitrack );
+			Multitrack( Multitrack &multitrack );
+			virtual ~Multitrack( );
+			mlt_multitrack get_multitrack( );
+			mlt_producer get_producer( );
+			int connect( Producer &producer, int index );
+			int clip( mlt_whence whence, int index );
+			int count( );
+			Producer *track( int index );
+	};
+}
 
 #endif
+

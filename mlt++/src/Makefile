@@ -7,14 +7,17 @@ TARGET = libmlt++.so
 
 OBJS = MltConsumer.o \
 	   MltFactory.o \
+	   MltField.o \
 	   MltFilter.o \
 	   MltFilteredConsumer.o \
 	   MltFrame.o \
+	   MltMultitrack.o \
 	   MltPlaylist.o \
 	   MltProducer.o \
 	   MltProperties.o \
 	   MltService.o \
-	   MltTransition.o
+	   MltTractor.o \
+	   MltTransition.o 
 
 SRCS = $(OBJS:.o=.cpp)
 

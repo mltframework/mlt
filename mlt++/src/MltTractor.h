@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltTractor.h - Tractor wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,21 +18,34 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
+#ifndef _MLTPP_TRACTOR_H_
+#define _MLTPP_TRACTOR_H_
 
-#include "MltConsumer.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMultitrack.h"
-#include "MltPlaylist.h"
+#include <framework/mlt.h>
+
 #include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltService.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+
+namespace Mlt
+{
+	class Producer;
+	class Field;
+	class Multitrack;
+
+	class Tractor : public Producer
+	{
+		private:
+			mlt_tractor instance;
+		public:
+			Tractor( );
+			Tractor( mlt_tractor tractor );
+			Tractor( Tractor &Tractor );
+			virtual ~Tractor( );
+			mlt_tractor get_tractor( );
+			mlt_producer get_producer( );
+			Multitrack *multitrack( );
+			Field *field( );
+	};
+}
 
 #endif
+

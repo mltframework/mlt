@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltField.h - Field wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,21 +18,33 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
+#ifndef _MLTPP_FIELD_H_
+#define _MLTPP_FIELD_H_
 
-#include "MltConsumer.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMultitrack.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
+#include <framework/mlt.h>
+
 #include "MltService.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+
+namespace Mlt
+{
+	class Service;
+	class Filter;
+	class Transition;
+
+	class Field : public Service
+	{
+		private:
+			mlt_field instance;
+		public:
+			Field( mlt_field field );
+			Field( Field &field );
+			virtual ~Field( );
+			mlt_field get_field( );
+			mlt_service get_service( );
+			int plant_filter( Filter &filter, int track = 0 );
+			int plant_transition( Transition &transition, int a_track = 0, int b_track = 1 );
+	};
+}
 
 #endif
+

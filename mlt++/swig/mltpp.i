@@ -40,6 +40,9 @@ namespace Mlt {
 %newobject Producer::filter( int );
 %newobject Playlist::current( );
 %newobject Playlist::clip_info( int );
+%newobject Multitrack::track( int index );
+%newobject Tractor::multitrack( );
+%newobject Tractor::field( );
 }
 
 /** Classes to wrap.
@@ -55,5 +58,9 @@ namespace Mlt {
 %include <MltPlaylist.h>
 %include <MltConsumer.h>
 %include <MltFilter.h>
+%include <MltTransition.h>
+%include <MltMultitrack.h>
+%include <MltField.h>
+%include <MltTractor.h>
 %include <MltFilteredConsumer.h>
 
