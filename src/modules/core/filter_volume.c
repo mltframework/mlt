@@ -210,8 +210,8 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		}
 	}
 	
-	if ( gain > 1.0 && normalise )
-		fprintf(stderr, "filter_volume: limiter level %f gain %f\n", limiter_level, gain );
+//	if ( gain > 1.0 && normalise )
+//		fprintf(stderr, "filter_volume: limiter level %f gain %f\n", limiter_level, gain );
 
 	if ( max_gain > 0 && gain > max_gain )
 		gain = max_gain;
