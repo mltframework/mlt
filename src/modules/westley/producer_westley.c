@@ -1,5 +1,5 @@
 /*
- * producer_libdv.c -- a libxml2 parser of mlt service networks
+ * producer_westley.c -- a libxml2 parser of mlt service networks
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
@@ -395,8 +395,11 @@ static void on_end_element( void *ctx, const xmlChar *name )
 
 mlt_producer producer_westley_init( char *filename )
 {
+	static int init = 0;
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
+	mlt_properties properties = NULL;
+	int i = 0;
 
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
@@ -405,19 +408,50 @@ mlt_producer producer_westley_init( char *filename )
 	sax->startElement = on_start_element;
 	sax->endElement = on_end_element;
 
-	xmlInitParser();
+	if ( !init )
+	{
+		xmlInitParser();
+		init = 1;
+	}
+
 	xmlSAXUserParseFile( sax, context, filename );
-	xmlCleanupParser();
 	free( sax );
 
-	mlt_properties_close( context->producer_map );
+	// Need the complete producer list for various reasons
+	properties = context->destructors;
 
+	// Get the last producer on the stack
 	mlt_service service = context_pop_service( context );
-	// make the returned service destroy the connected services
-	mlt_properties_set_data( mlt_service_properties( service ), "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
-	free( context );
 
-	mlt_properties_set( mlt_service_properties( service ), "resource", filename );
+	// Do we actually have a producer here?
+	if ( service != NULL )
+	{
+		// Now make sure we don't have a reference to the service in the properties
+		for ( i = mlt_properties_count( properties ) - 1; i >= 1; i -- )
+		{
+			char *name = mlt_properties_get_name( properties, i );
+			if ( mlt_properties_get_data( properties, name, NULL ) == service )
+			{
+				mlt_properties_set_data( properties, name, service, 0, NULL, NULL );
+				break;
+			}
+		}
+	
+		// make the returned service destroy the connected services
+		mlt_properties_set_data( mlt_service_properties( service ), "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
+
+		// Now assign additional properties
+		mlt_properties_set( mlt_service_properties( service ), "resource", filename );
+	}
+	else
+	{
+		// Clean up
+		mlt_properties_close( properties );
+	}
+
+	free( context->stack_service );
+	mlt_properties_close( context->producer_map );
+	free( context );
 
 	return MLT_PRODUCER( service );
 }

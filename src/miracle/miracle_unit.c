@@ -142,10 +142,7 @@ static mlt_producer create_producer( miracle_unit unit, char *file )
 	{
 		// 1st Line preferences
 		if ( strstr( file, ".inigo" ) )
-		{
-			char *args[ 2 ] = { file, NULL };
-			result = mlt_factory_producer( "inigo", args );
-		}
+			result = mlt_factory_producer( "inigo_file", file );
 		else if ( strstr( file, ".westley" ) )
 			result = mlt_factory_producer( "westley", file );
 		else if ( strstr( file, ".mpg" ) )

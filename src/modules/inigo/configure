@@ -5,6 +5,7 @@ then
 
 cat << EOF >> ../producers.dat
 inigo			libmltinigo.so
+inigo_file		libmltinigo.so
 EOF
 
 fi

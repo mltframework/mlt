@@ -29,7 +29,6 @@
 struct mlt_repository_s
 {
 	struct mlt_properties_s parent;
-	mlt_properties object_list;
 };
 
 static char *construct_full_file( char *output, char *prefix, char *file )
@@ -51,7 +50,6 @@ static char *chomp( char *input )
 static mlt_properties construct_object( char *prefix, char *id )
 {
 	mlt_properties output = mlt_properties_new( );
-	mlt_properties_init( output, NULL );
 	mlt_properties_set( output, "prefix", prefix );
 	mlt_properties_set( output, "id", id );
 	return output;
@@ -60,7 +58,6 @@ static mlt_properties construct_object( char *prefix, char *id )
 static mlt_properties construct_service( mlt_properties object, char *id )
 {
 	mlt_properties output = mlt_properties_new( );
-	mlt_properties_init( output, NULL );
 	mlt_properties_set_data( output, "object", object, 0, NULL, NULL );
 	mlt_properties_set( output, "id", id );
 	return output;
@@ -98,7 +95,7 @@ static void *construct_instance( mlt_properties service_properties, char *symbol
 			fprintf( stderr, "Failed to load plugin: %s\n", dlerror() );
 
 		// Set it on the properties
-		mlt_properties_set_data( object_properties, "dlopen", object, 0, ( void (*)( void * ) )dlclose, NULL );
+		mlt_properties_set_data( object_properties, "dlopen", object, 0, ( mlt_destructor )dlclose, NULL );
 	}
 
 	// Now check if we have this symbol pointer
@@ -126,9 +123,6 @@ mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, ch
 
 	// Add the symbol to THIS repository properties.
 	mlt_properties_set( &this->parent, "_symbol", symbol );
-
-	// Asociate the repository to the global object_list
-	this->object_list = object_list;
 
 	// Construct full file
 	construct_full_file( full_file, prefix, data );

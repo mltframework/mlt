@@ -26,7 +26,7 @@
 
 #include <framework/mlt.h>
 
-static mlt_producer parse_inigo( char *file )
+mlt_producer producer_inigo_file_init( char *file )
 {
 	FILE *input = fopen( file, "r" );
 	char **args = calloc( sizeof( char * ), 1000 );
@@ -58,13 +58,22 @@ static mlt_producer parse_inigo( char *file )
 	return result;
 }
 
-static mlt_producer create_producer( char *file )
+static void track_service( mlt_field field, void *service, mlt_destructor destructor )
+{
+	mlt_properties properties = mlt_field_properties( field );
+	int registered = mlt_properties_get_int( properties, "registered" );
+	char *key = mlt_properties_get( properties, "registered" );
+	mlt_properties_set_data( properties, key, service, 0, destructor, NULL );
+	mlt_properties_set_int( properties, "registered", ++ registered );
+}
+
+static mlt_producer create_producer( mlt_field field, char *file )
 {
 	mlt_producer result = NULL;
 
 	// 1st Line preferences
 	if ( strstr( file, ".inigo" ) )
-		result = parse_inigo( file );
+		result = mlt_factory_producer( "inigo_file", file );
 	else if ( strstr( file, ".mpg" ) )
 		result = mlt_factory_producer( "mcmpeg", file );
 	else if ( strstr( file, ".mpeg" ) )
@@ -102,16 +111,10 @@ static mlt_producer create_producer( char *file )
 	if ( result == NULL )
 		result = mlt_factory_producer( "ffmpeg", file );
 
-	return result;
-}
+	if ( result != NULL )
+		track_service( field, result, ( mlt_destructor )mlt_producer_close );
 
-static void track_service( mlt_field field, void *service, mlt_destructor destructor )
-{
-	mlt_properties properties = mlt_field_properties( field );
-	int registered = mlt_properties_get_int( properties, "registered" );
-	char *key = mlt_properties_get( properties, "registered" );
-	mlt_properties_set_data( properties, key, service, 0, destructor, NULL );
-	mlt_properties_set_int( properties, "registered", ++ registered );
+	return result;
 }
 
 static mlt_filter create_filter( mlt_field field, char *id, int track )
@@ -201,6 +204,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
 			mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track ++ );
+			track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
 			playlist = mlt_playlist_init( );
 		}
 		else if ( strstr( argv[ i ], "=" ) )
@@ -211,7 +215,7 @@ mlt_producer producer_inigo_init( char **argv )
 		{
 			if ( producer != NULL )
 				mlt_playlist_append( playlist, producer );
-			producer = create_producer( argv[ i ] );
+			producer = create_producer( field, argv[ i ] );
 			if ( producer != NULL )
 			{
 				properties = mlt_producer_properties( producer );
@@ -232,16 +236,16 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 	}
 
-	// Connect producer to playlist
+	// Connect last producer to playlist
 	if ( producer != NULL )
 		mlt_playlist_append( playlist, producer );
 
-	// We must have a producer at this point
+	// Track the last playlist too
+	track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
+
+	// We must have a playlist to connect
 	if ( mlt_playlist_count( playlist ) > 0 )
-	{
-		// Connect multitrack to producer
 		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track );
-	}
 
 	mlt_tractor tractor = mlt_field_tractor( field );
 	mlt_producer prod = mlt_tractor_producer( tractor );

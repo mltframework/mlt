@@ -24,6 +24,8 @@
 
 void *mlt_create_producer( char *id, void *arg )
 {
+	if ( !strcmp( id, "inigo_file" ) )
+		return producer_inigo_file_init( arg );
 	if ( !strcmp( id, "inigo" ) )
 		return producer_inigo_init( arg );
 	return NULL;

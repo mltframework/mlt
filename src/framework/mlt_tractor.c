@@ -41,6 +41,7 @@ struct mlt_tractor_s
 */
 
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int track );
+static void producer_close( mlt_producer this );
 
 /** Constructor for the tractor.
 
@@ -55,10 +56,12 @@ mlt_tractor mlt_tractor_init( )
 		mlt_producer producer = &this->parent;
 		if ( mlt_producer_init( producer, this ) == 0 )
 		{
-			producer->get_frame = producer_get_frame;
 			mlt_properties_set( mlt_producer_properties( producer ), "resource", "<tractor>" );
 			mlt_properties_set( mlt_producer_properties( producer ), "mlt_type", "mlt_producer" );
 			mlt_properties_set( mlt_producer_properties( producer ), "mlt_service", "tractor" );
+
+			producer->get_frame = producer_get_frame;
+			producer->close = producer_close;
 		}
 		else
 		{
@@ -202,7 +205,16 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 
 void mlt_tractor_close( mlt_tractor this )
 {
+	this->parent.close = NULL;
 	mlt_producer_close( &this->parent );
 	free( this );
+}
+
+/** Close the producer.
+*/
+
+void producer_close( mlt_producer this )
+{
+	mlt_tractor_close( this->child );
 }
 

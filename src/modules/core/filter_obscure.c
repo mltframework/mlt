@@ -257,7 +257,7 @@ mlt_filter filter_obscure_init( void *arg )
 	mlt_properties properties = mlt_filter_properties( this );
 	mlt_filter_init( this, NULL );
 	this->process = filter_process;
-	mlt_properties_set( properties, "start", "40,40:20x20" );
+	mlt_properties_set( properties, "start", "0,0:100x100" );
 	mlt_properties_set( properties, "end", "" );
 	return this;
 }

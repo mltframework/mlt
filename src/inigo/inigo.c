@@ -205,9 +205,6 @@ int main( int argc, char **argv )
 		// Get inigo's properties
 		mlt_properties inigo_props = mlt_producer_properties( inigo );
 
-		// Get the field service from inigo
-		mlt_field field = mlt_properties_get_data( inigo_props, "field", 0 );
-
 		// Get the last group
 		mlt_properties group = mlt_properties_get_data( inigo_props, "group", 0 );
 
@@ -252,8 +249,8 @@ int main( int argc, char **argv )
 			mlt_properties properties = mlt_consumer_properties( consumer );
 			mlt_properties_inherit( properties, group );
 
-			// Connect consumer to tractor
-			mlt_consumer_connect( consumer, mlt_field_service( field ) );
+			// Connect consumer to inigo
+			mlt_consumer_connect( consumer, mlt_producer_service( inigo ) );
 
 			// Start the consumer
 			mlt_consumer_start( consumer );

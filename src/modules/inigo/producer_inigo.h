@@ -23,6 +23,7 @@
 
 #include <framework/mlt_producer.h>
 
+extern mlt_producer producer_inigo_file_init( char *args );
 extern mlt_producer producer_inigo_init( char **args );
 
 #endif

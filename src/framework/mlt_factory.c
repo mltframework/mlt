@@ -22,6 +22,7 @@
 #include "mlt.h"
 #include "mlt_repository.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,8 +52,7 @@ int mlt_factory_init( char *prefix )
 		mlt_prefix = strdup( prefix );
 
 		// Create the object list.
-		object_list = calloc( sizeof( struct mlt_properties_s ), 1 );
-		mlt_properties_init( object_list, NULL );
+		object_list = mlt_properties_new( );
 
 		// Create a repository for each service type
 		producers = mlt_repository_init( object_list, prefix, "producers.dat", "mlt_create_producer" );
