@@ -31,13 +31,27 @@
 
 mlt_property mlt_property_init( )
 {
-	return calloc( 1, sizeof( struct mlt_property_s ) );
+	mlt_property this = malloc( sizeof( struct mlt_property_s ) );
+	if ( this != NULL )
+	{
+		this->types = 0;
+		this->prop_int = 0;
+		this->prop_position = 0;
+		this->prop_double = 0;
+		this->prop_int64 = 0;
+		this->prop_string = NULL;
+		this->data = NULL;
+		this->length = 0;
+		this->destructor = NULL;
+		this->serialiser = NULL;
+	}
+	return this;
 }
 
 /** Clear a property.
 */
 
-void mlt_property_clear( mlt_property this )
+static inline void mlt_property_clear( mlt_property this )
 {
 	// Special case data handling
 	if ( this->types & mlt_prop_data && this->destructor != NULL )
@@ -47,8 +61,17 @@ void mlt_property_clear( mlt_property this )
 	if ( this->types & mlt_prop_string )
 		free( this->prop_string );
 
-	// We can wipe it now.
-	memset( this, 0, sizeof( struct mlt_property_s ) );
+	// Wipe stuff
+	this->types = 0;
+	this->prop_int = 0;
+	this->prop_position = 0;
+	this->prop_double = 0;
+	this->prop_int64 = 0;
+	this->prop_string = NULL;
+	this->data = NULL;
+	this->length = 0;
+	this->destructor = NULL;
+	this->serialiser = NULL;
 }
 
 /** Set an int on this property.

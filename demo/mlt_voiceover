@@ -1,15 +1,13 @@
 inigo \
 	clip1.dv \
 	clip2.mpeg \
--track 
-	"+voice over demo.txt" \
+-track "+voice over demo.txt" \
 		out=299 \
 		font="Sans Bold 72" \
 		fgcolour=0x00000000 \
 		bgcolour=0xff9933aa \
 		pad=10 \
--track 
-	music1.ogg \
+-track music1.ogg \
 -transition \
 	composite:0%,80%:100%x20% \
 	distort=1 \

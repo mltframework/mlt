@@ -38,6 +38,7 @@ typedef struct
 	mlt_property *value;
 	int count;
 	int size;
+	mlt_properties mirror;
 }
 property_list;
 
@@ -87,17 +88,14 @@ static inline int generate_hash( char *name )
 	real producer.
 */
 
-static void mlt_properties_do_mirror( mlt_properties this, char *name )
+static inline void mlt_properties_do_mirror( mlt_properties this, char *name )
 {
-	if ( strcmp( name, "in" ) && strcmp( name, "out" ) )
+	property_list *list = this->private;
+	if ( list->mirror != NULL && strcmp( name, "in" ) && strcmp( name, "out" ) )
 	{
-		mlt_properties mirror = mlt_properties_get_data( this, "mlt_mirror", NULL );
-		if ( mirror != NULL )
-		{
-			char *value = mlt_properties_get( this, name );
-			if ( value != NULL )
-				mlt_properties_set( mirror, name, value );
-		}
+		char *value = mlt_properties_get( this, name );
+		if ( value != NULL )
+			mlt_properties_set( list->mirror, name, value );
 	}
 }
 
@@ -106,7 +104,8 @@ static void mlt_properties_do_mirror( mlt_properties this, char *name )
 
 void mlt_properties_mirror( mlt_properties this, mlt_properties that )
 {
-	mlt_properties_set_data( this, "mlt_mirror", that, 0, NULL, NULL );
+	property_list *list = this->private;
+	list->mirror = that;
 }
 
 /** Inherit all serialisable properties from that into this.
@@ -157,18 +156,21 @@ static inline mlt_property mlt_properties_find( mlt_properties this, char *name 
 	property_list *list = this->private;
 	mlt_property value = NULL;
 	int key = generate_hash( name );
-	int i = list->hash[ key ];
+	int i = list->hash[ key ] - 1;
 
-	// Check if we're hashed
-	if ( list->count > 0 &&
-		 name[ 0 ] == list->name[ i ][ 0 ] && 
-		 !strcmp( list->name[ i ], name ) )
-		value = list->value[ i ];
-
-	// Locate the item 
-	for ( i = 0; value == NULL && i < list->count; i ++ )
-		if ( name[ 0 ] == list->name[ i ][ 0 ] && !strcmp( list->name[ i ], name ) )
+	if ( i >= 0 )
+	{
+		// Check if we're hashed
+		if ( list->count > 0 &&
+		 	name[ 0 ] == list->name[ i ][ 0 ] && 
+		 	!strcmp( list->name[ i ], name ) )
 			value = list->value[ i ];
+
+		// Locate the item 
+		for ( i = list->count - 1; value == NULL && i >= 0; i -- )
+			if ( name[ 0 ] == list->name[ i ][ 0 ] && !strcmp( list->name[ i ], name ) )
+				value = list->value[ i ];
+	}
 
 	return value;
 }
@@ -194,7 +196,8 @@ static mlt_property mlt_properties_add( mlt_properties this, char *name )
 	list->value[ list->count ] = mlt_property_init( );
 
 	// Assign to hash table
-	list->hash[ key ] = list->count;
+	if ( list->hash[ key ] == 0 )
+		list->hash[ key ] = list->count + 1;
 
 	// Return and increment count accordingly
 	return list->value[ list->count ++ ];
@@ -453,6 +456,7 @@ int mlt_properties_rename( mlt_properties this, char *source, char *dest )
 			{
 				free( list->name[ i ] );
 				list->name[ i ] = strdup( dest );
+				list->hash[ generate_hash( dest ) ] = i + 1;
 				break;
 			}
 		}

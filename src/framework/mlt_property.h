@@ -67,7 +67,6 @@ typedef struct mlt_property_s
 */
 
 extern mlt_property mlt_property_init( );
-extern void mlt_property_clear( mlt_property this );
 extern int mlt_property_set_int( mlt_property this, int value );
 extern int mlt_property_set_double( mlt_property this, double value );
 extern int mlt_property_set_position( mlt_property this, mlt_position value );

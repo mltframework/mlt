@@ -40,7 +40,14 @@ struct mlt_deque_s
 
 mlt_deque mlt_deque_init( )
 {
-	return calloc( 1, sizeof( struct mlt_deque_s ) );
+	mlt_deque this = malloc( sizeof( struct mlt_deque_s ) );
+	if ( this != NULL )
+	{
+		this->list = NULL;
+		this->size = 0;
+		this->count = 0;
+	}
+	return this;
 }
 
 /** Return the number of items in the deque.
@@ -58,8 +65,8 @@ static int mlt_deque_allocate( mlt_deque this )
 {
 	if ( this->count == this->size )
 	{
-		this->list = realloc( this->list, sizeof( void * ) * ( this->size + 10 ) );
-		this->size += 10;
+		this->list = realloc( this->list, sizeof( void * ) * ( this->size + 20 ) );
+		this->size += 20;
 	}
 	return this->list == NULL;
 }
