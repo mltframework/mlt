@@ -24,7 +24,7 @@ $(TARGET): $(OBJS) $(ASM_OBJS)
 have_mmx.o:
 	$(CC) -o $@ -c have_mmx.S
 
-scale_line_22_33_mmx.o:
+scale_line_22_33_mmx.o: scale_line_22_33_mmx.S
 	$(CC) -o $@ -c scale_line_22_33_mmx.S
 
 depend:	$(SRCS)
