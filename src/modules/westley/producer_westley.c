@@ -979,7 +979,7 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 
 	value[ len ] = 0;
 	strncpy( value, (const char*) ch, len );
-	
+
 	if ( context->stack_node_size > 0 )
 		xmlNodeAddContent( context->stack_node[ context->stack_node_size - 1 ], ( xmlChar* )value );
 

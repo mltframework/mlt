@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<!-- MLT westley DTD v0.1.0 -->
+
+<!ELEMENT westley (producer | playlist | tractor | multitrack)+ >
+<!ELEMENT property ANY >
+<!ATTLIST property 
+    name     CDATA    #REQUIRED
+    value    CDATA    #IMPLIED
+>
+<!ELEMENT producer (property)* >
+<!ATTLIST producer
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+    mlt_service  CDATA    #IMPLIED
+>
+<!ELEMENT filter (property)* >
+<!ATTLIST filter
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+    mlt_service  CDATA    #IMPLIED
+    track    CDATA    #IMPLIED
+>
+<!ELEMENT transition (property)* >
+<!ATTLIST transition
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+    mlt_service  CDATA    #IMPLIED
+    a_track  CDATA    #IMPLIED
+    b_track  CDATA    #IMPLIED
+>
+<!ELEMENT playlist (entry | blank | producer | playlist | tractor | multitrack)+ >
+<!ATTLIST playlist
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+>
+<!ELEMENT entry (producer | playlist | tractor | multitrack | filter | transition)* >
+<!ATTLIST entry
+    producer IDREF    #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+>
+<!ELEMENT blank EMPTY >
+<!ATTLIST blank
+    length   CDATA    #REQUIRED
+>
+<!ELEMENT tractor (multitrack, (filter | transition)*) >
+<!ATTLIST tractor
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+>
+<!ELEMENT multitrack (track | producer | playlist | tractor | multitrack)+ >
+<!ATTLIST multitrack
+    id       ID       #IMPLIED
+>
+<!ELEMENT track (producer | playlist | tractor | multitrack | filter | transition)* >
+<!ATTLIST track
+    producer IDREF    #IMPLIED
+>

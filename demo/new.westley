@@ -22,33 +22,29 @@
     <transition in="25" out="49" a_track="0" b_track="1">
       <property name="mlt_service">luma</property>
     </transition>
-    <transition in="75" out="99" a_track="0" b_track="1" reverse="1">
-      <property name="mlt_service">luma</property>
+    <transition in="75" out="99" a_track="0" b_track="1" mlt_service="luma">
+	  <property name="reverse" value="1"/>
     </transition>
   </entry>
 
   <entry>
     <multitrack>
 	  <playlist>
-        <producer id="foo" in="100" out="149">
-	      <property name="resource">clip2.mpeg</property>
-		</producer>
+        <entry producer="foo" in="100" out="149"/>
 		<blank length="25"/>
         <entry producer="foo" in="10" out="59"/>
 	  </playlist>
 	  <playlist>
 		<blank length="25"/>
-		<producer id="bar" in="100" out="149">
-		  <property name="resource">clip3.mpeg</property>
-		</producer>
+		<entry producer="bar" in="100" out="149"/>
 		<entry out="99" producer="bar"/>
 	  </playlist>
     </multitrack>
     <transition in="25" out="49" a_track="0" b_track="1">
       <property name="mlt_service">luma</property>
     </transition>
-    <transition in="75" out="99" a_track="0" b_track="1" reverse="1">
-      <property name="mlt_service">luma</property>
+    <transition in="75" out="99" a_track="0" b_track="1" mlt_service="luma">
+      <property name="reverse">1</property>
     </transition>
   </entry>
 

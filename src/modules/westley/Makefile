@@ -28,6 +28,7 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
+	install -m 644 westley.dtd "$(prefix)/share/mlt/modules"
 
 ifneq ($(wildcard .depend),)
 include .depend
