@@ -267,11 +267,14 @@ static int producer_open( mlt_producer this, char *file )
 				mlt_properties_set_position( properties, "length", frames - 1 );
 			}
 
-			// Check if we're seekable
-			mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, 0 ) == 0 );
-
 			// Find default audio and video streams
 			find_default_streams( context, &audio_index, &video_index );
+
+			// Check if we're seekable (something funny about mpeg here :-/)
+			if ( strstr( file, ".mpg" ) == NULL && strstr( file, ".mpeg" ) == NULL )
+				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, context->start_time ) >= 0 );
+			else
+				mlt_properties_set_int( properties, "seekable", 1 );
 
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "audio_index", audio_index );
@@ -421,7 +424,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else
 		{
 			// Set to the real timecode
-			av_seek_frame( context, -1, real_timecode * 1000000.0 );
+			av_seek_frame( context, -1, context->start_time + real_timecode * 1000000.0 );
 	
 			// Remove the cached info relating to the previous position
 			mlt_properties_set_double( properties, "current_time", real_timecode );
@@ -780,7 +783,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		else
 		{
 			// Set to the real timecode
-			if ( !seekable || av_seek_frame( context, -1, real_timecode * 1000000.0 ) != 0 )
+			if ( !seekable || av_seek_frame( context, -1, context->start_time + real_timecode * 1000000.0 ) != 0 )
 				paused = 1;
 
 			// Clear the usage in the audio buffer

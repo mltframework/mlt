@@ -234,8 +234,6 @@ static void *consumer_read_ahead_thread( void *arg )
 	// Get the properties of the consumer
 	mlt_properties properties = mlt_consumer_properties( this );
 
-	char *service = mlt_properties_get( properties, "mlt_service" );
-
 	// Get the width and height
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
@@ -293,11 +291,8 @@ static void *consumer_read_ahead_thread( void *arg )
 			skipped = 0;
 			time_frame = 0;
 			time_image = 0;
-			time_wait = 0;
 			count = 1;
 		}
-
-		//fprintf( stderr, "%s: %d %d %lld %lld\n", service, mlt_deque_count( this->queue ), buffer, ( time_frame + time_image ) / count, ( time_wait / count ) );
 
 		// Get the image
 		if ( ( time_frame + time_image ) / count < 40000 )
@@ -312,12 +307,8 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 		else
 		{
-			fprintf( stderr, "Dropped a frame for %s\n", service );
-
 			// Increment the number of sequentially skipped frames
 			skipped ++;
-
-			time_wait = 0;
 
 			// If we've reached an unacceptable level, reset everything
 			if ( skipped > 10 )

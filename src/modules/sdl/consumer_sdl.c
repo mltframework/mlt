@@ -55,6 +55,7 @@ struct consumer_sdl_s
 	int sdl_flags;
 	SDL_Surface *sdl_screen;
 	SDL_Overlay *sdl_overlay;
+	SDL_Rect rect;
 	uint8_t *buffer;
 };
 
@@ -109,6 +110,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// Default progressive true
 		mlt_properties_set_int( this->properties, "progressive", 0 );
 
+		// Default audio buffer
+		mlt_properties_set_int( this->properties, "audio_buffer", 1024 );
+
 		// Get sample aspect ratio
 		this->aspect_ratio = mlt_properties_get_double( this->properties, "aspect_ratio" );
 		
@@ -142,7 +146,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 		}
 
 		// Set the sdl flags
-		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE;
+		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
 
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
@@ -303,13 +307,15 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		SDL_AudioSpec request;
 		SDL_AudioSpec got;
 
+		int audio_buffer = mlt_properties_get_int( properties, "audio_buffer" );
+
 		// specify audio format
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
 		this->playing = 0;
 		request.freq = frequency;
 		request.format = AUDIO_S16;
 		request.channels = channels;
-		request.samples = 1024;
+		request.samples = audio_buffer;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
@@ -406,8 +412,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 		if ( this->sdl_screen == NULL || changed )
 		{
-			SDL_Rect rect;
-			
 			// Determine frame's display aspect ratio
 			float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * this->width / this->height;
 			
@@ -423,18 +427,18 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				if ( ( (int)( this_aspect * 1000 ) == (int)( this->display_aspect * 1000 ) ) && 
 					 ( (int)( mlt_frame_get_aspect_ratio( frame ) * 1000 ) == (int)( this->aspect_ratio * 1000 ) ) )
 				{
-					rect.w = this->window_width;
-					rect.h = this->window_height;
+					this->rect.w = this->window_width;
+					this->rect.h = this->window_height;
 				}
 				else
 				{
 					// Use hardware scaler to normalise display aspect ratio
-					rect.w = frame_aspect / this_aspect * this->window_width + 0.5;
-					rect.h = this->window_height;
-					if ( rect.w > this->window_width )
+					this->rect.w = frame_aspect / this_aspect * this->window_width + 0.5;
+					this->rect.h = this->window_height;
+					if ( this->rect.w > this->window_width )
 					{
-						rect.w = this->window_width;
-						rect.h = this_aspect / frame_aspect * this->window_height + 0.5;
+						this->rect.w = this->window_width;
+						this->rect.h = this_aspect / frame_aspect * this->window_height + 0.5;
 					}
 				}
 			}
@@ -442,23 +446,23 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			// not corresponding exactly with image resolution.
 			else if ( (int)( this_aspect * 1000 ) == (int)( this->display_aspect * 1000 ) ) 
 			{
-				rect.w = this->window_width;
-				rect.h = this->window_height;
+				this->rect.w = this->window_width;
+				this->rect.h = this->window_height;
 			}
 			// Use hardware scaler to normalise sample aspect ratio
 			else if ( this->window_height * frame_aspect > this->window_width )
 			{
-				rect.w = this->window_width;
-				rect.h = this->window_width / frame_aspect + 0.5;
+				this->rect.w = this->window_width;
+				this->rect.h = this->window_width / frame_aspect + 0.5;
 			}
 			else
 			{
-				rect.w = this->window_height * frame_aspect + 0.5;
-				rect.h = this->window_height;
+				this->rect.w = this->window_height * frame_aspect + 0.5;
+				this->rect.h = this->window_height;
 			}
 			
-			rect.x = ( this->window_width - rect.w ) / 2;
-			rect.y = ( this->window_height - rect.h ) / 2;
+			this->rect.x = ( this->window_width - this->rect.w ) / 2;
+			this->rect.y = ( this->window_height - this->rect.h ) / 2;
 			
 			// Force an overlay recreation
 			if ( this->sdl_overlay != NULL )
@@ -469,13 +473,23 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 			if ( this->sdl_screen != NULL )
 			{
-				SDL_SetClipRect( this->sdl_screen, &rect );
+				SDL_SetClipRect( this->sdl_screen, &this->rect );
 				sdl_lock_display();
 				this->sdl_overlay = SDL_CreateYUVOverlay( this->width, this->height, SDL_YUY2_OVERLAY, this->sdl_screen );
 				sdl_unlock_display();
 			}
 		}
 			
+		if ( mlt_properties_get_int( properties, "changed" ) )
+		{
+			sdl_lock_display();
+			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+			SDL_SetClipRect( this->sdl_screen, &this->rect );
+			SDL_Flip( this->sdl_screen );
+			sdl_unlock_display();
+			mlt_properties_set_int( properties, "changed", 0 );
+		}
+
 		if ( this->sdl_screen != NULL && this->sdl_overlay != NULL )
 		{
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
@@ -487,6 +501,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}
 		}
+
 	}
 
 	return 0;
