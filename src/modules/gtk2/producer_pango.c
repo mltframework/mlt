@@ -101,7 +101,7 @@ mlt_producer producer_pango_init( const char *filename )
 		g_type_init();
 
 		// Get the properties interface
-		mlt_properties properties = mlt_producer_properties( &this->parent );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
 
 		// Set the default properties
 		mlt_properties_set( properties, "fgcolour", "0xffffffff" );
@@ -269,7 +269,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	GdkPixbuf *pixbuf = NULL;
 
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the producer pango for this frame
 	producer_pango this = mlt_properties_get_data( properties, "producer_pango", NULL );
@@ -278,7 +278,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_producer producer = &this->parent;
 
 	// Obtain the producer properties
-	mlt_properties producer_props = mlt_producer_properties( producer );
+	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Get producer properties
 	char *fg = mlt_properties_get( producer_props, "fgcolour" );
@@ -409,7 +409,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
@@ -419,7 +419,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Determine format
 	//mlt_producer this = mlt_properties_get_data( properties, "producer_pango", NULL );
-	//*format = ( mlt_properties_get_int( mlt_producer_properties( this ), "bpp" ) == 4 ) ? mlt_image_rgb24a : mlt_image_rgb24;
+	//*format = ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( this ), "bpp" ) == 4 ) ? mlt_image_rgb24a : mlt_image_rgb24;
 
 	// May need to know the size of the image to clone it
 	int size = 0;
@@ -454,7 +454,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static uint8_t *producer_get_alpha_mask( mlt_frame this )
 {
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Return the alpha mask
 	return mlt_properties_get_data( properties, "alpha", NULL );
@@ -468,7 +468,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	*frame = mlt_frame_init( );
 
 	// Obtain properties of frame and producer
-	mlt_properties properties = mlt_frame_properties( *frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 	// Set the producer on the frame properties
 	mlt_properties_set_data( properties, "producer_pango", this, 0, NULL, NULL );

@@ -42,7 +42,7 @@ int mlt_transition_init( mlt_transition this, void *child )
 	this->child = child;
 	if ( mlt_service_init( service, this ) == 0 )
 	{
-		mlt_properties properties = mlt_transition_properties( this );
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 		service->get_frame = transition_get_frame;
 		service->close = ( mlt_destructor )mlt_transition_close;
@@ -82,7 +82,7 @@ mlt_service mlt_transition_service( mlt_transition this )
 
 mlt_properties mlt_transition_properties( mlt_transition this )
 {
-	return mlt_service_properties( mlt_transition_service( this ) );
+	return MLT_TRANSITION_PROPERTIES( this );
 }
 
 /** Connect this transition with a producers a and b tracks.
@@ -93,7 +93,7 @@ int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_tra
 	int ret = mlt_service_connect_producer( &this->parent, producer, a_track );
 	if ( ret == 0 )
 	{
-		mlt_properties properties = mlt_transition_properties( this );
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 		this->producer = producer;
 		mlt_properties_set_int( properties, "a_track", a_track );
 		mlt_properties_set_int( properties, "b_track", b_track );
@@ -106,7 +106,7 @@ int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_tra
 
 void mlt_transition_set_in_and_out( mlt_transition this, mlt_position in, mlt_position out )
 {
-	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 	mlt_properties_set_position( properties, "in", in );
 	mlt_properties_set_position( properties, "out", out );
 }
@@ -116,7 +116,7 @@ void mlt_transition_set_in_and_out( mlt_transition this, mlt_position in, mlt_po
 
 int mlt_transition_get_a_track( mlt_transition this )
 {
-	return mlt_properties_get_int( mlt_transition_properties( this ), "a_track" );
+	return mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "a_track" );
 }
 
 /** Get the index of the b track.
@@ -124,7 +124,7 @@ int mlt_transition_get_a_track( mlt_transition this )
 
 int mlt_transition_get_b_track( mlt_transition this )
 {
-	return mlt_properties_get_int( mlt_transition_properties( this ), "b_track" );
+	return mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "b_track" );
 }
 
 /** Get the in point.
@@ -132,7 +132,7 @@ int mlt_transition_get_b_track( mlt_transition this )
 
 mlt_position mlt_transition_get_in( mlt_transition this )
 {
-	return mlt_properties_get_position( mlt_transition_properties( this ), "in" );
+	return mlt_properties_get_position( MLT_TRANSITION_PROPERTIES( this ), "in" );
 }
 
 /** Get the out point.
@@ -140,7 +140,7 @@ mlt_position mlt_transition_get_in( mlt_transition this )
 
 mlt_position mlt_transition_get_out( mlt_transition this )
 {
-	return mlt_properties_get_position( mlt_transition_properties( this ), "out" );
+	return mlt_properties_get_position( MLT_TRANSITION_PROPERTIES( this ), "out" );
 }
 
 /** Process the frame.
@@ -175,7 +175,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 {
 	mlt_transition this = service->child;
 
-	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 	int accepts_blanks = mlt_properties_get_int( properties, "_accepts_blanks" );
 	int a_track = mlt_properties_get_int( properties, "a_track" );
@@ -214,11 +214,11 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			{
 				int hide = 0;
 				*frame = mlt_transition_process( this, this->a_frame, this->b_frame );
-				if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_image" ) )
+				if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this->a_frame ), "test_image" ) )
 					hide = 1;
-				if ( !mlt_properties_get_int( mlt_frame_properties( this->a_frame ), "test_audio" ) )
+				if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this->a_frame ), "test_audio" ) )
 					hide |= 2;
-				mlt_properties_set_int( mlt_frame_properties( this->b_frame ), "hide", hide );
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES( this->b_frame ), "hide", hide );
 			}
 			this->a_held = 0;
 		}
@@ -249,7 +249,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 
 void mlt_transition_close( mlt_transition this )
 {
-	if ( this != NULL && mlt_properties_dec_ref( mlt_transition_properties( this ) ) <= 0 )
+	if ( this != NULL && mlt_properties_dec_ref( MLT_TRANSITION_PROPERTIES( this ) ) <= 0 )
 	{
 		this->parent.close = NULL;
 		if ( this->close != NULL )

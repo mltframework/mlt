@@ -37,13 +37,13 @@
 static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the filter service
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 
 	// Get the filter properties
-	mlt_properties filter_properties = mlt_filter_properties( filter );
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the resample information
 	int output_rate = mlt_properties_get_int( filter_properties, "frequency" );
@@ -190,11 +190,11 @@ mlt_filter filter_resample_init( char *arg )
 			void *output_buffer = mlt_pool_alloc( BUFFER_LEN );
 			this->process = filter_process;
 			if ( arg != NULL )
-				mlt_properties_set_int( mlt_filter_properties( this ), "frequency", atoi( arg ) );
-			mlt_properties_set_int( mlt_filter_properties( this ), "channels", 2 );
-			mlt_properties_set_data( mlt_filter_properties( this ), "state", state, 0, (mlt_destructor)src_delete, NULL );
-			mlt_properties_set_data( mlt_filter_properties( this ), "input_buffer", input_buffer, BUFFER_LEN, mlt_pool_release, NULL );
-			mlt_properties_set_data( mlt_filter_properties( this ), "output_buffer", output_buffer, BUFFER_LEN, mlt_pool_release, NULL );
+				mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "frequency", atoi( arg ) );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "channels", 2 );
+			mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "state", state, 0, (mlt_destructor)src_delete, NULL );
+			mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "input_buffer", input_buffer, BUFFER_LEN, mlt_pool_release, NULL );
+			mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "output_buffer", output_buffer, BUFFER_LEN, mlt_pool_release, NULL );
 		}
 		else
 		{

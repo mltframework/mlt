@@ -53,7 +53,7 @@ mlt_producer producer_vorbis_init( char *file )
 		if ( mlt_producer_init( this, NULL ) == 0 )
 		{
 			// Get the properties
-			mlt_properties properties = mlt_producer_properties( this );
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 			// Set the resource property (required for all producers)
 			mlt_properties_set( properties, "resource", file );
@@ -113,7 +113,7 @@ static int producer_open( mlt_producer this, char *file )
 		if ( error == 0 )
 		{
 			// Get the properties
-			mlt_properties properties = mlt_producer_properties( this );
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 			// Assign the ov structure
 			mlt_properties_set_data( properties, "ogg_vorbis_file", ov, 0, producer_file_close, NULL );
@@ -150,7 +150,7 @@ static int producer_open( mlt_producer this, char *file )
 static double producer_time_of_frame( mlt_producer this, mlt_position position )
 {
 	// Get the properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Obtain the fps
 	double fps = mlt_properties_get_double( properties, "fps" );
@@ -165,7 +165,7 @@ static double producer_time_of_frame( mlt_producer this, mlt_position position )
 static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties from the frame
-	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the frame number of this frame
 	mlt_position position = mlt_properties_get_position( frame_properties, "vorbis_position" );
@@ -174,7 +174,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	mlt_producer this = mlt_properties_get_data( frame_properties, "vorbis_producer", NULL );
 
 	// Get the producer properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Get the ogg vorbis file
 	OggVorbis_File *ov = mlt_properties_get_data( properties, "ogg_vorbis_file", NULL );
@@ -306,7 +306,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 {
 	// Get the properties
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Set the audio method
 	frame->get_audio = producer_get_audio;
@@ -327,7 +327,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
 	// Set the position of this producer
-	mlt_properties_set_position( mlt_frame_properties( *frame ), "vorbis_position", mlt_producer_position( this ) );
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "vorbis_position", mlt_producer_position( this ) );
 
 	// Set up the audio
 	producer_set_up_audio( this, *frame );

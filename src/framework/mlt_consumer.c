@@ -42,7 +42,7 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 	if ( error == 0 )
 	{
 		// Get the properties from the service
-		mlt_properties properties = mlt_service_properties( &this->parent );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
 
 		// Get the normalisation preference
 		char *normalisation = mlt_environment( "MLT_NORMALISATION" );
@@ -132,7 +132,7 @@ mlt_service mlt_consumer_service( mlt_consumer this )
 
 mlt_properties mlt_consumer_properties( mlt_consumer this )
 {
-	return this != NULL ? mlt_service_properties( &this->parent ) : NULL;
+	return this != NULL ? MLT_SERVICE_PROPERTIES( &this->parent ) : NULL;
 }
 
 /** Connect the consumer to the producer.
@@ -149,7 +149,7 @@ int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 int mlt_consumer_start( mlt_consumer this )
 {
 	// Get the properies
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Determine if there's a test card producer
 	char *test_card = mlt_properties_get( properties, "test_card" );
@@ -170,7 +170,7 @@ int mlt_consumer_start( mlt_consumer this )
 			if ( producer != NULL )
 			{
 				// Test card should loop I guess...
-				mlt_properties_set( mlt_producer_properties( producer ), "eof", "pause" );
+				mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "pause" );
 				mlt_producer_set_speed( producer, 0 );
 				mlt_producer_set_in_and_out( producer, 0, 0 );
 
@@ -208,7 +208,7 @@ int mlt_consumer_put_frame( mlt_consumer this, mlt_frame frame )
 	int error = 1;
 
 	// Get the service assoicated to the consumer
-	mlt_service service = mlt_consumer_service( this );
+	mlt_service service = MLT_CONSUMER_SERVICE( this );
 
 	if ( mlt_service_producer( service ) == NULL )
 	{
@@ -246,10 +246,10 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	mlt_frame frame = NULL;
 
 	// Get the service assoicated to the consumer
-	mlt_service service = mlt_consumer_service( this );
+	mlt_service service = MLT_CONSUMER_SERVICE( this );
 
 	// Get the consumer properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Get the frame
 	if ( mlt_service_producer( service ) == NULL && mlt_properties_get_int( properties, "put_mode" ) )
@@ -279,7 +279,7 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	if ( frame != NULL )
 	{
 		// Get the frame properties
-		mlt_properties frame_properties = mlt_frame_properties( frame );
+		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 		// Get the test card producer
 		mlt_producer test_card = mlt_properties_get_data( properties, "test_card_producer", NULL );
@@ -316,7 +316,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	mlt_consumer this = arg;
 
 	// Get the properties of the consumer
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Get the width and height
 	int width = mlt_properties_get_int( properties, "width" );
@@ -369,7 +369,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		frame->get_audio = NULL;
 	}
 
-	mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
 
 	// Get the starting time (can ignore the times above)
 	gettimeofday( &ante, NULL );
@@ -399,7 +399,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		count ++;
 
 		// All non normal playback frames should be shown
-		if ( mlt_properties_get_int( mlt_frame_properties( frame ), "_speed" ) != 1 )
+		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
 		{
 			skipped = 0;
 			time_frame = 0;
@@ -415,7 +415,7 @@ static void *consumer_read_ahead_thread( void *arg )
 			// Get the image, mark as rendered and time it
 			if ( !video_off )
 				mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
-			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
 		}
 		else
 		{
@@ -534,7 +534,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 	mlt_frame frame = NULL;
 
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check if the user has requested real time or not
 	if ( this->real_time )
@@ -566,7 +566,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 
 		// This isn't true, but from the consumers perspective it is
 		if ( frame != NULL )
-			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
 	}
 
 	return frame;
@@ -577,8 +577,8 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 
 void mlt_consumer_stopped( mlt_consumer this )
 {
-	mlt_properties_set_int( mlt_consumer_properties( this ), "running", 0 );
-	mlt_events_fire( mlt_consumer_properties( this ), "consumer-stopped", NULL );
+	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "running", 0 );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-stopped", NULL );
 }
 
 /** Stop the consumer.
@@ -587,7 +587,7 @@ void mlt_consumer_stopped( mlt_consumer this )
 int mlt_consumer_stop( mlt_consumer this )
 {
 	// Get the properies
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Stop the consumer
 	if ( this->stop != NULL )
@@ -635,7 +635,7 @@ int mlt_consumer_is_stopped( mlt_consumer this )
 
 void mlt_consumer_close( mlt_consumer this )
 {
-	if ( this != NULL && mlt_properties_dec_ref( mlt_consumer_properties( this ) ) <= 0 )
+	if ( this != NULL && mlt_properties_dec_ref( MLT_CONSUMER_PROPERTIES( this ) ) <= 0 )
 	{
 		// Get the childs close function
 		void ( *consumer_close )( ) = this->close;

@@ -90,8 +90,8 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		parent->close = consumer_close;
 
 		// get a handle on properties
-		mlt_service service = mlt_consumer_service( parent );
-		this->properties = mlt_service_properties( service );
+		mlt_service service = MLT_CONSUMER_SERVICE( parent );
+		this->properties = MLT_SERVICE_PROPERTIES( service );
 
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
@@ -162,8 +162,8 @@ static int consumer_start( mlt_consumer parent )
 		if ( !this->filtered )
 		{
 			mlt_filter filter = mlt_factory_filter( "avcolour_space", NULL );
-			mlt_properties_set_int( mlt_filter_properties( filter ), "forced", mlt_image_yuv422 );
-			mlt_service_attach( mlt_consumer_service( &this->parent ), filter );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "forced", mlt_image_yuv422 );
+			mlt_service_attach( MLT_CONSUMER_SERVICE( parent ), filter );
 			mlt_filter_close( filter );
 			this->filtered = 1;
 		}
@@ -416,14 +416,14 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	}
 	else
 	{
-		changed = mlt_properties_get_int( properties, "changed" ) | mlt_properties_get_int( mlt_frame_properties( frame ), "refresh" );
+		changed = mlt_properties_get_int( properties, "changed" ) | mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "refresh" );
 		mlt_properties_set_int( properties, "changed", 0 );
 	}
 
 	
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
-		 this->last_producer == mlt_properties_get_data( mlt_frame_properties( frame ), "_producer", NULL ) )
+		 this->last_producer == mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL ) )
 	{
 		sdl_unlock_display( );
 		if ( unlock != NULL )
@@ -433,7 +433,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 	// Update last frame shown info
 	this->last_position = mlt_frame_get_position( frame );
-	this->last_producer = mlt_properties_get_data( mlt_frame_properties( frame ), "_producer", NULL );
+	this->last_producer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL );
 
 	// Get the image, width and height
 	if ( image == NULL )
@@ -444,9 +444,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		// Something? (or everything?) is too sensitive to aspect ratio
 		//width = this->rect.w;
 		//height = this->rect.h;
-		//mlt_properties_set( mlt_frame_properties( frame ), "distort", "true" );
-		//mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_width", width );
-		//mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_height", height );
+		//mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "distort", "true" );
+		//mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_width", width );
+		//mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_height", height );
 
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 	}
@@ -486,7 +486,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
 	}
 	
-	if ( this->sdl_screen != NULL )
+	if ( !mlt_consumer_is_stopped( &this->parent ) && this->sdl_screen != NULL && this->sdl_screen->pixels != NULL )
 	{
 		memset( this->sdl_screen->pixels, 0, this->window_width * this->window_height * this->sdl_screen->format->BytesPerPixel );
 
@@ -533,9 +533,9 @@ static void *consumer_thread( void *arg )
 
 	// internal intialization
 	mlt_frame frame = NULL;
-	struct timespec tm = { 0, 10000000 };
+	struct timespec tm = { 0, 99999999 };
 
-	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
+	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
 	{
 		if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
 		{
@@ -548,12 +548,12 @@ static void *consumer_thread( void *arg )
 	}
 	else
 	{
-		mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 2 );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "changed", 2 );
 		if ( SDL_GetVideoSurface( ) != NULL )
 		{
 			this->sdl_screen = SDL_GetVideoSurface( );
 			consumer_get_dimensions( &this->window_width, &this->window_height );
-			mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 0 );
+			mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "changed", 0 );
 		}
 	}
 
@@ -572,7 +572,7 @@ static void *consumer_thread( void *arg )
 		}
 	}
 
-	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
+	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
 		SDL_Quit( );
 
 	this->sdl_screen = NULL;

@@ -229,7 +229,7 @@ static valerie_response valerie_remote_push( valerie_remote remote, char *comman
 	if ( service != NULL )
 	{
 		mlt_consumer consumer = mlt_factory_consumer( "westley", "buffer" );
-		mlt_properties properties = mlt_consumer_properties( consumer );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		char *buffer = NULL;
 		mlt_consumer_connect( consumer, service );
 		mlt_consumer_start( consumer );

@@ -177,7 +177,7 @@ static struct geometry_s *transition_parse_keys( mlt_transition this,  int norma
 	int i = 0;
 
 	// Get the properties of the transition
-	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
@@ -257,10 +257,10 @@ static struct geometry_s *transition_parse_keys( mlt_transition this,  int norma
 struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transition this, mlt_frame a_frame, float position )
 {
 	// Get the properties from the transition
-	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 	// Get the properties from the frame
-	mlt_properties a_props = mlt_frame_properties( a_frame );
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 	
 	// Structures for geometry
 	struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
@@ -476,13 +476,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_transition this = mlt_frame_pop_service( a_frame );
 
 	// Get the properties of the transition
-	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 	// Get the properties of the a frame
-	mlt_properties a_props = mlt_frame_properties( a_frame );
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 
 	// Get the properties of the b frame
-	mlt_properties b_props = mlt_frame_properties( b_frame );
+	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// Image, format, width, height and image for the b frame
 	uint8_t *b_image = NULL;
@@ -670,10 +670,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 static mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
 	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( mlt_transition_properties( transition ), "_unique_id" );
+	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( transition ), "_unique_id" );
 
 	// Assign the current position to the name
-	mlt_properties a_props = mlt_frame_properties( a_frame );
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 	mlt_properties_set_position( a_props, name, mlt_frame_get_position( a_frame ) );
 
 	// Push the transition on to the frame
@@ -696,10 +696,10 @@ mlt_transition transition_affine_init( char *arg )
 	mlt_transition transition = mlt_transition_new( );
 	if ( transition != NULL )
 	{
-		mlt_properties_set_int( mlt_transition_properties( transition ), "sx", 1 );
-		mlt_properties_set_int( mlt_transition_properties( transition ), "sy", 1 );
-		mlt_properties_set( mlt_transition_properties( transition ), "distort", NULL );
-		mlt_properties_set( mlt_transition_properties( transition ), "start", "0,0:100%x100%" );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sx", 1 );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sy", 1 );
+		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "distort", NULL );
+		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "start", "0,0:100%x100%" );
 		transition->process = transition_process;
 	}
 	return transition;

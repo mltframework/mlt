@@ -31,7 +31,7 @@ typedef int ( *image_scaler )( mlt_frame this, uint8_t **image, mlt_image_format
 static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Get the properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get the rescaling interpolsation
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
@@ -162,7 +162,7 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
     	}
 
 		this->get_alpha_mask = NULL;
-		mlt_properties_set_data( mlt_frame_properties( this ), "alpha", output, 0, mlt_pool_release, NULL );
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output, 0, mlt_pool_release, NULL );
 	}
 }
 
@@ -172,13 +172,13 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the frame properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get the filter from the stack
 	mlt_filter filter = mlt_frame_pop_service( this );
 
 	// Get the filter properties
-	mlt_properties filter_properties = mlt_filter_properties( filter );
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the image scaler method
 	image_scaler scaler_method = mlt_properties_get_data( filter_properties, "method", NULL );
@@ -203,7 +203,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Default from the scaler if not specifed on the frame
 		if ( interps == NULL )
 		{
-			interps = mlt_properties_get( mlt_filter_properties( filter ), "interpolation" );
+			interps = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "interpolation" );
 			mlt_properties_set( properties, "rescale.interp", interps );
 		}
 	
@@ -332,7 +332,7 @@ mlt_filter filter_rescale_init( char *arg )
 	if ( this != NULL )
 	{
 		// Get the properties
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 		// Set the process method
 		this->process = filter_process;

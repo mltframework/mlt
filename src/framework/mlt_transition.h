@@ -53,6 +53,9 @@ struct mlt_transition_s
 /** Public final methods
 */
 
+#define MLT_TRANSITION_SERVICE( transition )		( &( transition )->parent )
+#define MLT_TRANSITION_PROPERTIES( transition )		MLT_SERVICE_PROPERTIES( MLT_TRANSITION_SERVICE( transition ) )
+
 extern int mlt_transition_init( mlt_transition self, void *child );
 extern mlt_transition mlt_transition_new( );
 extern mlt_service mlt_transition_service( mlt_transition self );

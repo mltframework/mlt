@@ -57,6 +57,9 @@ struct mlt_consumer_s
 /** Public final methods
 */
 
+#define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )
+#define MLT_CONSUMER_PROPERTIES( consumer )	MLT_SERVICE_PROPERTIES( MLT_CONSUMER_SERVICE( consumer ) )
+
 extern int mlt_consumer_init( mlt_consumer self, void *child );
 extern mlt_consumer mlt_consumer_new( );
 extern mlt_service mlt_consumer_service( mlt_consumer self );

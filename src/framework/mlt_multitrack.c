@@ -27,26 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct mlt_track_s
-{
-	mlt_producer producer;
-	mlt_event event;
-};
-
-typedef struct mlt_track_s *mlt_track;
-
-/** Private definition.
-*/
-
-struct mlt_multitrack_s
-{
-	// We're extending producer here
-	struct mlt_producer_s parent;
-	mlt_track *list;
-	int size;
-	int count;
-};
-
 /** Forward reference.
 */
 
@@ -65,7 +45,7 @@ mlt_multitrack mlt_multitrack_init( )
 		mlt_producer producer = &this->parent;
 		if ( mlt_producer_init( producer, this ) == 0 )
 		{
-			mlt_properties properties = mlt_multitrack_properties( this );
+			mlt_properties properties = MLT_MULTITRACK_PROPERTIES( this );
 			producer->get_frame = producer_get_frame;
 			mlt_properties_set_data( properties, "multitrack", this, 0, NULL, NULL );
 			mlt_properties_set( properties, "log_id", "multitrack" );
@@ -98,7 +78,7 @@ mlt_producer mlt_multitrack_producer( mlt_multitrack this )
 
 mlt_service mlt_multitrack_service( mlt_multitrack this )
 {
-	return mlt_producer_service( mlt_multitrack_producer( this ) );
+	return MLT_MULTITRACK_SERVICE( this );
 }
 
 /** Get the properties associated this multitrack.
@@ -106,7 +86,7 @@ mlt_service mlt_multitrack_service( mlt_multitrack this )
 
 mlt_properties mlt_multitrack_properties( mlt_multitrack this )
 {
-	return mlt_service_properties( mlt_multitrack_service( this ) );
+	return MLT_MULTITRACK_PROPERTIES( this );
 }
 
 /** Initialise position related information.
@@ -117,7 +97,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	int i = 0;
 
 	// Obtain the properties of this multitrack
-	mlt_properties properties = mlt_multitrack_properties( this );
+	mlt_properties properties = MLT_MULTITRACK_PROPERTIES( this );
 
 	// We need to ensure that the multitrack reports the longest track as its length
 	mlt_position length = 0;
@@ -137,10 +117,10 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 		{
 			// If we have more than 1 track, we must be in continue mode
 			if ( this->count > 1 )
-				mlt_properties_set( mlt_producer_properties( producer ), "eof", "continue" );
+				mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "continue" );
 			
 			// Determine the longest length
-			//if ( !mlt_properties_get_int( mlt_producer_properties( producer ), "hide" ) )
+			//if ( !mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "hide" ) )
 				length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
 			
 			// Handle fps
@@ -155,7 +135,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 				fprintf( stderr, "Warning: fps mismatch on track %d\n", i );
 
 				// It should be safe to impose fps on an image producer, but not necessarily safe for video
-				mlt_properties_set_double( mlt_producer_properties( producer ), "fps", fps );
+				mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( producer ), "fps", fps );
 			}
 		}
 	}
@@ -185,7 +165,7 @@ static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack this 
 int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int track )
 {
 	// Connect to the producer to ourselves at the specified track
-	int result = mlt_service_connect_producer( mlt_multitrack_service( this ), mlt_producer_service( producer ), track );
+	int result = mlt_service_connect_producer( MLT_MULTITRACK_SERVICE( this ), MLT_PRODUCER_SERVICE( producer ), track );
 
 	if ( result == 0 )
 	{
@@ -211,9 +191,9 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 
 		// Assign the track in our list here
 		this->list[ track ]->producer = producer;
-		this->list[ track ]->event = mlt_events_listen( mlt_producer_properties( producer ), this, 
+		this->list[ track ]->event = mlt_events_listen( MLT_PRODUCER_PROPERTIES( producer ), this, 
 									 "producer-changed", ( mlt_listener )mlt_multitrack_listener );
-		mlt_properties_inc_ref( mlt_producer_properties( producer ) );
+		mlt_properties_inc_ref( MLT_PRODUCER_PROPERTIES( producer ) );
 		mlt_event_inc_ref( this->list[ track ]->event );
 		
 		// Increment the track count if need be
@@ -301,7 +281,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 		if ( producer != NULL )
 		{
 			// Get the properties of this producer
-			mlt_properties properties = mlt_producer_properties( producer );
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 			// Determine if it's a playlist
 			mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
@@ -335,7 +315,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 			break;
 
 		case mlt_whence_relative_current:
-			position = mlt_producer_position( mlt_multitrack_producer( this ) );
+			position = mlt_producer_position( MLT_MULTITRACK_PRODUCER( this ) );
 			for ( i = 0; i < count - 2; i ++ ) 
 				if ( position >= map[ i ] && position < map[ i + 1 ] )
 					break;
@@ -399,13 +379,13 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		mlt_producer producer = this->list[ index ]->producer;
 
 		// Get the track hide property
-		int hide = mlt_properties_get_int( mlt_producer_properties( mlt_producer_cut_parent( producer ) ), "hide" );
+		int hide = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( producer ) ), "hide" );
 
 		// Obtain the current position
 		mlt_position position = mlt_producer_frame( parent );
 
 		// Get the parent properties
-		mlt_properties producer_properties = mlt_producer_properties( parent );
+		mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( parent );
 
 		// Get the speed
 		double speed = mlt_properties_get_double( producer_properties, "_speed" );
@@ -414,10 +394,10 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		mlt_producer_seek( producer, position );
 
 		// Get the frame from the producer
-		mlt_service_get_frame( mlt_producer_service( producer ), frame, 0 );
+		mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), frame, 0 );
 
 		// Indicate speed of this producer
-		mlt_properties properties = mlt_frame_properties( *frame );
+		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 		mlt_properties_set_double( properties, "_speed", speed );
 		mlt_properties_set_position( properties, "_position", position );
 		mlt_properties_set_int( properties, "hide", hide );
@@ -434,7 +414,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		if ( index >= this->count )
 		{
 			// Let tractor know if we've reached the end
-			mlt_properties_set_int( mlt_frame_properties( *frame ), "last_track", 1 );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "last_track", 1 );
 
 			// Move to the next frame
 			mlt_producer_prepare_next( parent );
@@ -449,7 +429,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 
 void mlt_multitrack_close( mlt_multitrack this )
 {
-	if ( this != NULL && mlt_properties_dec_ref( mlt_multitrack_properties( this ) ) <= 0 )
+	if ( this != NULL && mlt_properties_dec_ref( MLT_MULTITRACK_PROPERTIES( this ) ) <= 0 )
 	{
 		int i = 0;
 		for ( i = 0; i < this->count; i ++ )

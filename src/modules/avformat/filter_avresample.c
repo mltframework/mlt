@@ -35,13 +35,13 @@
 static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the filter service
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 
 	// Get the filter properties
-	mlt_properties filter_properties = mlt_filter_properties( filter );
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the resample information
 	int output_rate = mlt_properties_get_int( filter_properties, "frequency" );
@@ -190,13 +190,13 @@ mlt_filter filter_avresample_init( char *arg )
 
 		// Deal with argument
 		if ( arg != NULL )
-			mlt_properties_set( mlt_filter_properties( this ), "frequency", arg );
+			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "frequency", arg );
 
 		// Default to 2 channel output
-		mlt_properties_set_int( mlt_filter_properties( this ), "channels", 2 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "channels", 2 );
 
 		// Store the buffer
-		mlt_properties_set_data( mlt_filter_properties( this ), "buffer", buffer, size, mlt_pool_release, NULL );
+		mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "buffer", buffer, size, mlt_pool_release, NULL );
 	}
 
 	return this;

@@ -85,14 +85,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	// Check that we want progressive and we aren't already progressive
 	if ( *format == mlt_image_yuv422 &&
-		 !mlt_properties_get_int( mlt_frame_properties( this ), "progressive" ) &&
-		 mlt_properties_get_int( mlt_frame_properties( this ), "consumer_deinterlace" ) )
+		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) &&
+		 mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" ) )
 	{
 		// Get the input image
 		error = mlt_frame_get_image( this, image, format, width, height, 1 );
 		
 		// Determine deinterlace method
-		char *method_str = mlt_properties_get( mlt_filter_properties( filter ), "method" );
+		char *method_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "method" );
 		int method = DEINTERLACE_LINEARBLEND;
 		
 		if ( strcmp( method_str, "bob" ) == 0 )
@@ -108,7 +108,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		deinterlace_yuv( *image, image, *width * 2, *height, method );
 		
 		// Make sure that others know the frame is deinterlaced
-		mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "progressive", 1 );
 	}
 	else
 	{
@@ -142,7 +142,7 @@ mlt_filter filter_deinterlace_init( void *arg )
 	if ( this != NULL )
 	{
 		this->process = deinterlace_process;
-		mlt_properties_set( mlt_filter_properties( this ), "method", arg == NULL ? "linearblend" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "method", arg == NULL ? "linearblend" : arg );
 	}
 	return this;
 }

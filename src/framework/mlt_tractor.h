@@ -23,6 +23,19 @@
 
 #include "mlt_producer.h"
 
+/** Private structure.
+*/
+
+struct mlt_tractor_s
+{
+	struct mlt_producer_s parent;
+	mlt_service producer;
+};
+
+#define MLT_TRACTOR_PRODUCER( tractor )		( &( tractor )->parent )
+#define MLT_TRACTOR_SERVICE( tractor )		MLT_PRODUCER_SERVICE( MLT_TRACTOR_PRODUCER( tractor ) )
+#define MLT_TRACTOR_PROPERTIES( tractor )	MLT_SERVICE_PROPERTIES( MLT_TRACTOR_SERVICE( tractor ) )
+
 extern mlt_tractor mlt_tractor_init( );
 extern mlt_tractor mlt_tractor_new( );
 extern mlt_service mlt_tractor_service( mlt_tractor self );

@@ -136,7 +136,7 @@ mlt_producer producer_libdv_init( char *filename )
 	if ( filename != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
-		mlt_properties properties = mlt_producer_properties( producer );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 		// Register transport implementation with the producer
 		producer->close = ( mlt_destructor )producer_close;
@@ -199,7 +199,7 @@ static int producer_collect_info( producer_libdv this )
 		if ( valid )
 		{
 			// Get the properties
-			mlt_properties properties = mlt_producer_properties( &this->parent );
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
 
 			// Get a dv_decoder
 			dv_decoder_t *dv_decoder = dv_decoder_alloc( );
@@ -254,7 +254,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	uint8_t *pixels[3] = { NULL, NULL, NULL };
 	
 	// Get the frames properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get a dv_decoder
 	dv_decoder_t *decoder = dv_decoder_alloc( );
@@ -329,7 +329,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	int16_t *audio_channels[ 4 ];
 	
 	// Get the frames properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get a dv_decoder
 	dv_decoder_t *decoder = dv_decoder_alloc( );
@@ -404,7 +404,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		 read_frame( this->fd, data, &this->is_pal ) )
 	{
 		// Get the frames properties
-		mlt_properties properties = mlt_frame_properties( *frame );
+		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 		// Get a dv_decoder
 		dv_decoder_t *dv_decoder = dv_decoder_alloc( );
@@ -427,7 +427,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		( *frame )->get_audio = producer_get_audio;
 
 		// Push the quality string
-		mlt_frame_push_service( *frame, mlt_properties_get( mlt_producer_properties( producer ), "quality" ) );
+		mlt_frame_push_service( *frame, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "quality" ) );
 
 		// Push the get_image method on to the stack
 		mlt_frame_push_get_image( *frame, producer_get_image );

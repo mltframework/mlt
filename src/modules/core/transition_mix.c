@@ -31,13 +31,13 @@
 static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the a frame
-	mlt_properties a_props = mlt_frame_properties( frame );
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the b frame from the stack
 	mlt_frame b_frame = mlt_frame_pop_audio( frame );
 
 	// Get the properties of the b frame
-	mlt_properties b_props = mlt_frame_properties( b_frame );
+	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// Restore the original get_audio
 	frame->get_audio = mlt_properties_get_data( a_props, "mix.get_audio", NULL );
@@ -52,7 +52,6 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 		mix_start = 1 - mix_start;
 		mix_end = 1 - mix_end;
 	}
-	//fprintf( stderr, "transition_mix: previous %f current %f\n", mix_start, mix_end );
 
 	mlt_frame_mix_audio( frame, b_frame, mix_start, mix_end, buffer, format, frequency, channels, samples );
 
@@ -65,8 +64,8 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 
 static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
-	mlt_properties properties = mlt_transition_properties( this );
-	mlt_properties b_props = mlt_frame_properties( b_frame );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// Only if mix is specified, otherwise a producer may set the mix
 	if ( mlt_properties_get( properties, "start" ) != NULL )
@@ -108,14 +107,14 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	}
 
 	// Ensure that the tractor knows this isn't test audio...
-	if ( mlt_properties_get_int( mlt_frame_properties( a_frame ), "test_audio" ) )
+	if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame ), "test_audio" ) )
 	{
-		mlt_properties_set_int( mlt_frame_properties( a_frame ), "test_audio", 0 );
-		mlt_properties_set_int( mlt_frame_properties( a_frame ), "silent_audio", 1 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "test_audio", 0 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "silent_audio", 1 );
 	}
 
 	// Backup the original get_audio (it's still needed)
-	mlt_properties_set_data( mlt_frame_properties( a_frame ), "mix.get_audio", a_frame->get_audio, 0, NULL, NULL );
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES( a_frame ), "mix.get_audio", a_frame->get_audio, 0, NULL, NULL );
 
 	// Override the get_audio method
 	a_frame->get_audio = transition_get_audio;
@@ -135,8 +134,8 @@ mlt_transition transition_mix_init( char *arg )
 	{
 		this->process = transition_process;
 		if ( arg != NULL )
-			mlt_properties_set_double( mlt_transition_properties( this ), "start", atof( arg ) );
-		mlt_properties_set_int( mlt_transition_properties( this ), "_accepts_blanks", 1 );
+			mlt_properties_set_double( MLT_TRANSITION_PROPERTIES( this ), "start", atof( arg ) );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( this ), "_accepts_blanks", 1 );
 	}
 	return this;
 }

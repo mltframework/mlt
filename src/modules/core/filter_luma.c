@@ -36,7 +36,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 	int error = 0;
 	mlt_filter filter = mlt_frame_pop_service( this );
-	mlt_properties properties = mlt_filter_properties( filter );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_transition luma = mlt_properties_get_data( properties, "luma", NULL );
 	mlt_frame b_frame = mlt_properties_get_data( properties, "frame", NULL );
 	int out = mlt_properties_get_int( properties, "period" );
@@ -50,7 +50,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		luma = mlt_factory_transition( "luma", resource );
 		if ( luma != NULL )
 		{
-			mlt_properties luma_properties = mlt_transition_properties( luma );
+			mlt_properties luma_properties = MLT_TRANSITION_PROPERTIES( luma );
 			mlt_properties_set_int( luma_properties, "in", 0 );
 			mlt_properties_set_int( luma_properties, "out", out );
 			mlt_properties_set_int( luma_properties, "reverse", 1 );
@@ -68,7 +68,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		( mlt_properties_get( properties, "blur" ) != NULL || 
 		  mlt_frame_get_position( this ) % ( out + 1 ) != out ) )
 	{
-		mlt_properties luma_properties = mlt_transition_properties( luma );
+		mlt_properties luma_properties = MLT_TRANSITION_PROPERTIES( luma );
 		mlt_properties_pass( luma_properties, properties, "luma." );
 		mlt_transition_process( luma, this, b_frame );
 	}
@@ -77,14 +77,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( error == 0 )
 	{
-		mlt_properties a_props = mlt_frame_properties( this );
+		mlt_properties a_props = MLT_FRAME_PROPERTIES( this );
 		int size = 0;
 		uint8_t *src = mlt_properties_get_data( a_props, "image", &size );
 		uint8_t *dst = mlt_pool_alloc( size );
 
 		if ( dst != NULL )
 		{
-			mlt_properties b_props = mlt_frame_properties( b_frame );
+			mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 			memcpy( dst, src, size );
 			mlt_properties_set_data( b_props, "image", dst, size, mlt_pool_release, NULL );
 			mlt_properties_set_int( b_props, "width", *width );
@@ -117,7 +117,7 @@ mlt_filter filter_luma_init( void *arg )
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		this->process = filter_process;
 		if ( arg != NULL )
 			mlt_properties_set( properties, "resource", arg );

@@ -97,8 +97,8 @@ mlt_consumer consumer_sdl_init( char *arg )
 		parent->close = consumer_close;
 
 		// get a handle on properties
-		mlt_service service = mlt_consumer_service( parent );
-		this->properties = mlt_service_properties( service );
+		mlt_service service = MLT_CONSUMER_SERVICE( parent );
+		this->properties = MLT_SERVICE_PROPERTIES( service );
 
 		// Set the default volume
 		mlt_properties_set_double( this->properties, "volume", 1.0 );
@@ -341,7 +341,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 	if ( init_audio == 0 )
 	{
-		mlt_properties properties = mlt_frame_properties( frame );
+		mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 		bytes = ( samples * channels * 2 );
 		pthread_mutex_lock( &this->audio_mutex );
 		while ( this->running && bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
@@ -573,7 +573,7 @@ static void *video_thread( void *arg )
 		pthread_mutex_unlock( &this->video_mutex );
 
 		// Get the properties
-		properties =  mlt_frame_properties( next );
+		properties =  MLT_FRAME_PROPERTIES( next );
 
 		// Get the speed of the frame
 		speed = mlt_properties_get_double( properties, "_speed" );
@@ -647,7 +647,7 @@ static void *consumer_thread( void *arg )
 
 	this->bpp = mlt_properties_get_int( this->properties, "bpp" );
 
-	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
+	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
 	{
 		if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
 		{
@@ -668,7 +668,7 @@ static void *consumer_thread( void *arg )
 		}
 	}
 
-	if ( !mlt_properties_get_int( mlt_consumer_properties( consumer ), "audio_off" ) )
+	if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "audio_off" ) )
 		SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 	// Loop until told not to
@@ -681,7 +681,7 @@ static void *consumer_thread( void *arg )
 		if ( frame != NULL )
 		{
 			// Get the frame properties
-			properties =  mlt_frame_properties( frame );
+			properties =  MLT_FRAME_PROPERTIES( frame );
 
 			// Play audio
 			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
@@ -726,10 +726,10 @@ static void *consumer_thread( void *arg )
 	if ( this->sdl_overlay != NULL )
 		SDL_FreeYUVOverlay( this->sdl_overlay );
 
-	if ( !mlt_properties_get_int( mlt_consumer_properties( consumer ), "audio_off" ) )
+	if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "audio_off" ) )
 		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 
-	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
+	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
 		SDL_Quit( );
 
 	while( mlt_deque_count( this->queue ) )

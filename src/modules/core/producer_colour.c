@@ -41,7 +41,7 @@ mlt_producer producer_colour_init( char *colour )
 	if ( producer != NULL && mlt_producer_init( producer, NULL ) == 0 )
 	{
 		// Get the properties interface
-		mlt_properties properties = mlt_producer_properties( producer );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	
 		// Callback registration
 		producer->get_frame = producer_get_frame;
@@ -109,13 +109,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int size = 0;
 	
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the producer for this frame
 	mlt_producer producer = mlt_properties_get_data( properties, "producer_colour", NULL );
 
 	// Obtain properties of producer
-	mlt_properties producer_props = mlt_producer_properties( producer );
+	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Get the current image and dimensions cached in the producer
 	uint8_t *image = mlt_properties_get_data( producer_props, "image", &size );
@@ -183,10 +183,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	if ( *frame != NULL )
 	{
 		// Obtain properties of frame and producer
-		mlt_properties properties = mlt_frame_properties( *frame );
+		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 		// Obtain properties of producer
-		mlt_properties producer_props = mlt_producer_properties( producer );
+		mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
 		// Determine if we're producing PAL or NTSC
 		int is_pal = mlt_properties_get_double( producer_props, "fps" ) == 25.0;

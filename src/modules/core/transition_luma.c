@@ -37,8 +37,8 @@ static float position_calculate( mlt_transition this, mlt_frame frame )
 	mlt_position out = mlt_transition_get_out( this );
 
 	// Get the position of the frame
-	char *name = mlt_properties_get( mlt_transition_properties( this ), "_unique_id" );
-	mlt_position position = mlt_properties_get_position( mlt_frame_properties( frame ), name );
+	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
+	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name );
 
 	// Now do the calcs
 	return ( float )( position - in ) / ( float )( out - in + 1 );
@@ -354,13 +354,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_transition transition = mlt_frame_pop_service( a_frame );
 
 	// Get the properties of the transition
-	mlt_properties properties = mlt_transition_properties( transition );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 
 	// Get the properties of the a frame
-	mlt_properties a_props = mlt_frame_properties( a_frame );
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 
 	// Get the properties of the b frame
-	mlt_properties b_props = mlt_frame_properties( b_frame );
+	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// The cached luma map information
 	int luma_width = mlt_properties_get_int( properties, "width" );
@@ -403,7 +403,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			if ( producer != NULL )
 			{
 				// Get the producer properties
-				mlt_properties producer_properties = mlt_producer_properties( producer );
+				mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
 				// Ensure that we loop
 				mlt_properties_set( producer_properties, "eof", "loop" );
@@ -415,13 +415,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				mlt_frame luma_frame = NULL;
 
 				// Get the luma frame
-				if ( mlt_service_get_frame( mlt_producer_service( producer ), &luma_frame, 0 ) == 0 )
+				if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &luma_frame, 0 ) == 0 )
 				{
 					uint8_t *luma_image;
 					mlt_image_format luma_format = mlt_image_yuv422;
 
 					// Get image from the luma producer
-					mlt_properties_set( mlt_frame_properties( luma_frame ), "rescale.interp", "none" );
+					mlt_properties_set( MLT_FRAME_PROPERTIES( luma_frame ), "rescale.interp", "none" );
 					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
 
 					// Generate the luma map
@@ -504,10 +504,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 static mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
 	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( mlt_transition_properties( transition ), "_unique_id" );
+	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( transition ), "_unique_id" );
 
 	// Assign the current position to the name
-	mlt_properties_set_position( mlt_frame_properties( a_frame ), name, mlt_frame_get_position( a_frame ) );
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_frame_get_position( a_frame ) );
 
 	// Push the transition on to the frame
 	mlt_frame_push_service( a_frame, transition );
@@ -533,10 +533,10 @@ mlt_transition transition_luma_init( char *lumafile )
 		transition->process = transition_process;
 		
 		// Default factory
-		mlt_properties_set( mlt_transition_properties( transition ), "factory", "fezzik" );
+		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "factory", "fezzik" );
 
 		// Set the main property
-		mlt_properties_set( mlt_transition_properties( transition ), "resource", lumafile );
+		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "resource", lumafile );
 		
 		return transition;
 	}

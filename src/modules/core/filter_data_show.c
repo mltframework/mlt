@@ -36,7 +36,7 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 	int type_len = strlen( type );
 
 	// Get the properties of the data show filter
-	mlt_properties filter_properties = mlt_filter_properties( filter );
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the profile properties
 	mlt_properties profile_properties = mlt_properties_get_data( filter_properties, "profile_properties", NULL );
@@ -80,7 +80,7 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 			if ( result == NULL && !strcmp( name, type ) && result == NULL )
 				result = mlt_factory_filter( value, NULL );
 			else if ( result != NULL && !strncmp( name, type, type_len ) && name[ type_len ] == '.' )
-				mlt_properties_set( mlt_filter_properties( result ), name + type_len + 1, value );
+				mlt_properties_set( MLT_FILTER_PROPERTIES( result ), name + type_len + 1, value );
 			else if ( result != NULL )
 				break;
 		}
@@ -98,7 +98,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 	int error = 1;
 
 	// Get the properties of the data show filter
-	mlt_properties filter_properties = mlt_filter_properties( filter );
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the type requested by the feeding filter
 	char *type = mlt_properties_get( feed, "type" );
@@ -123,7 +123,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 	if ( requested != NULL )
 	{
 		int i = 0;
-		mlt_properties properties = mlt_filter_properties( requested );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( requested );
 		static char *prefix = "properties.";
 		int len = strlen( prefix );
 
@@ -171,7 +171,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter filter = mlt_frame_pop_service( frame );
 
 	// Get the frame properties
-	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Fetch the data queue
 	mlt_deque data_queue = mlt_properties_get_data( frame_properties, "data_queue", NULL );
@@ -221,7 +221,7 @@ mlt_filter filter_data_show_init( char *arg )
 	if ( this != NULL )
 	{
 		// Get the properties
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 		// Assign the argument (default to titles)
 		mlt_properties_set( properties, "profile", arg == NULL ? NULL : arg );

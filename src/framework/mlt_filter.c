@@ -39,7 +39,7 @@ int mlt_filter_init( mlt_filter this, void *child )
 	this->child = child;
 	if ( mlt_service_init( service, this ) == 0 )
 	{
-		mlt_properties properties = mlt_service_properties( service );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
 		// Override the get_frame method
 		service->get_frame = filter_get_frame;
@@ -82,7 +82,7 @@ mlt_service mlt_filter_service( mlt_filter this )
 
 mlt_properties mlt_filter_properties( mlt_filter this )
 {
-	return mlt_service_properties( mlt_filter_service( this ) );
+	return MLT_SERVICE_PROPERTIES( MLT_FILTER_SERVICE( this ) );
 }
 
 /** Connect this filter to a producers track. Note that a filter only operates
@@ -96,7 +96,7 @@ int mlt_filter_connect( mlt_filter this, mlt_service producer, int index )
 	// If the connection was successful, grab the producer, track and reset in/out
 	if ( ret == 0 )
 	{
-		mlt_properties properties = mlt_service_properties( &this->parent );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
 		mlt_properties_set_int( properties, "track", index );
@@ -110,7 +110,7 @@ int mlt_filter_connect( mlt_filter this, mlt_service producer, int index )
 
 void mlt_filter_set_in_and_out( mlt_filter this, mlt_position in, mlt_position out )
 {
-	mlt_properties properties = mlt_service_properties( &this->parent );
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
 	mlt_properties_set_position( properties, "in", in );
 	mlt_properties_set_position( properties, "out", out );
 }
@@ -120,7 +120,7 @@ void mlt_filter_set_in_and_out( mlt_filter this, mlt_position in, mlt_position o
 
 int mlt_filter_get_track( mlt_filter this )
 {
-	mlt_properties properties = mlt_service_properties( &this->parent );
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
 	return mlt_properties_get_int( properties, "track" );
 }
 
@@ -129,7 +129,7 @@ int mlt_filter_get_track( mlt_filter this )
 
 mlt_position mlt_filter_get_in( mlt_filter this )
 {
-	mlt_properties properties = mlt_service_properties( &this->parent );
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
 	return mlt_properties_get_position( properties, "in" );
 }
 
@@ -138,7 +138,7 @@ mlt_position mlt_filter_get_in( mlt_filter this )
 
 mlt_position mlt_filter_get_out( mlt_filter this )
 {
-	mlt_properties properties = mlt_service_properties( &this->parent );
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
 	return mlt_properties_get_position( properties, "out" );
 }
 
@@ -196,7 +196,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 
 void mlt_filter_close( mlt_filter this )
 {
-	if ( this != NULL && mlt_properties_dec_ref( mlt_filter_properties( this ) ) <= 0 )
+	if ( this != NULL && mlt_properties_dec_ref( MLT_FILTER_PROPERTIES( this ) ) <= 0 )
 	{
 		if ( this->close != NULL )
 		{

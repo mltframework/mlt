@@ -67,7 +67,7 @@ mlt_consumer consumer_null_init( char *arg )
 static int consumer_start( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check that we're not already running
 	if ( !mlt_properties_get_int( properties, "running" ) )
@@ -98,7 +98,7 @@ static int consumer_start( mlt_consumer this )
 static int consumer_stop( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check that we're running
 	if ( mlt_properties_get_int( properties, "running" ) )
@@ -122,7 +122,7 @@ static int consumer_stop( mlt_consumer this )
 static int consumer_is_stopped( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 	return !mlt_properties_get_int( properties, "running" );
 }
 
@@ -135,7 +135,7 @@ static void *consumer_thread( void *arg )
 	mlt_consumer this = arg;
 
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Frame and size
 	mlt_frame frame = NULL;

@@ -297,8 +297,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	
 	// Check that we want progressive and we aren't already progressive
 	if ( *format == mlt_image_yuv422 &&
-		 !mlt_properties_get_int( mlt_frame_properties( this ), "progressive" ) &&
-		 mlt_properties_get_int( mlt_frame_properties( this ), "consumer_deinterlace" ) )
+		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) &&
+		 mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" ) )
 	{
 		// Create a picture
 		AVPicture *output = mlt_pool_alloc( sizeof( AVPicture ) );
@@ -317,7 +317,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		mlt_pool_release( output );
 
 		// Make sure that others know the frame is deinterlaced
-		mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "progressive", 1 );
 	}
 	else
 	{

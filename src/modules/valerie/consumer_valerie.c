@@ -46,19 +46,19 @@ mlt_consumer consumer_valerie_init( char *arg )
 		{
 			char *temp = NULL;
 			int port = atoi( strchr( arg, ':' ) + 1 );
-			mlt_properties_set( mlt_consumer_properties( this ), "server", arg );
-			temp = mlt_properties_get( mlt_consumer_properties( this ), "server" );
+			mlt_properties_set( MLT_CONSUMER_PROPERTIES( this ), "server", arg );
+			temp = mlt_properties_get( MLT_CONSUMER_PROPERTIES( this ), "server" );
 			*( strchr( temp, ':' ) ) = '\0';
-			mlt_properties_set_int( mlt_consumer_properties( this ), "port", port );
+			mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "port", port );
 		}
 		else
 		{
-			mlt_properties_set( mlt_consumer_properties( this ), "server", arg == NULL ? "localhost" : arg );
-			mlt_properties_set_int( mlt_consumer_properties( this ), "port", 5250 );
+			mlt_properties_set( MLT_CONSUMER_PROPERTIES( this ), "server", arg == NULL ? "localhost" : arg );
+			mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "port", 5250 );
 		}
 
-		mlt_properties_set_int( mlt_consumer_properties( this ), "unit", 0 );
-		mlt_properties_set( mlt_consumer_properties( this ), "command", "append" );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "unit", 0 );
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES( this ), "command", "append" );
 
 		// Allow thread to be started/stopped
 		this->start = consumer_start;
@@ -78,10 +78,10 @@ mlt_consumer consumer_valerie_init( char *arg )
 static int consumer_start( mlt_consumer this )
 {
 	// Get the producer service
-	mlt_service service = mlt_service_producer( mlt_consumer_service( this ) );
+	mlt_service service = mlt_service_producer( MLT_CONSUMER_SERVICE( this ) );
 
 	// Get the properties object
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Get all the properties now
 	char *server = mlt_properties_get( properties, "server" );
@@ -101,10 +101,10 @@ static int consumer_start( mlt_consumer this )
 	if ( service != NULL )
 	{
 		if ( title != NULL )
-			mlt_properties_set( mlt_service_properties( service ), "title", title );
-		else if ( mlt_properties_get( mlt_service_properties( service ), "title" ) == NULL )
-			mlt_properties_set( mlt_service_properties( service ), "title", "Anonymous Submission" );
-		title = mlt_properties_get( mlt_service_properties( service ), "title" );
+			mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), "title", title );
+		else if ( mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "title" ) == NULL )
+			mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), "title", "Anonymous Submission" );
+		title = mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "title" );
 	}
 
 	strcpy( command, cmd == NULL ? "" : cmd );

@@ -115,9 +115,9 @@ static inline void convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter filter = mlt_frame_pop_service( this );
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	int output_format = *format;
-	mlt_image_format forced = mlt_properties_get_int( mlt_filter_properties( filter ), "forced" );
+	mlt_image_format forced = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "forced" );
 	int error = 0;
 
 	// Allow this filter to force processing in a colour space other than requested

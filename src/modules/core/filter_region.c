@@ -33,7 +33,7 @@
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	// Get the properties of the filter
-	mlt_properties properties = mlt_filter_properties( this );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 	// Get the region transition
 	mlt_transition transition = mlt_properties_get_data( properties, "_transition", NULL );
@@ -48,11 +48,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_properties_set_data( properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
 
 		// Pass a reference to this filter down
-		mlt_properties_set_data( mlt_transition_properties( transition ), "_region_filter", this, 0, NULL, NULL );
+		mlt_properties_set_data( MLT_TRANSITION_PROPERTIES( transition ), "_region_filter", this, 0, NULL, NULL );
 	}
 
 	// Pass all properties down
-	mlt_properties_pass( mlt_transition_properties( transition ), properties, "" );
+	mlt_properties_pass( MLT_TRANSITION_PROPERTIES( transition ), properties, "" );
 
 	// Process the frame
 	return mlt_transition_process( transition, frame, NULL );
@@ -70,7 +70,7 @@ mlt_filter filter_region_init( void *arg )
 	if ( this != NULL )
 	{
 		// Get the properties from the filter
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 		// Assign the filter process method
 		this->process = filter_process;

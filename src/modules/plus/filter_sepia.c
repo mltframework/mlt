@@ -45,8 +45,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		uint8_t *q = *image + *height * *width * 2;
 
 		// Get u and v values
-		int u = mlt_properties_get_int( mlt_filter_properties( filter ), "u" );
-		int v = mlt_properties_get_int( mlt_filter_properties( filter ), "v" );
+		int u = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "u" );
+		int v = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "v" );
 
 		// Loop through image
 		while ( p != q )
@@ -81,8 +81,8 @@ mlt_filter filter_sepia_init( char *arg )
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( mlt_filter_properties( this ), "u", "75" );
-		mlt_properties_set( mlt_filter_properties( this ), "v", "150" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "u", "75" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "v", "150" );
 	}
 	return this;
 }

@@ -36,7 +36,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
 		// Get the gamma value
-		double gamma = mlt_properties_get_double( mlt_frame_properties( this ), "gamma" );
+		double gamma = mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "gamma" );
 
 		if ( gamma != 1.0 )
 		{
@@ -67,9 +67,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	double gamma = mlt_properties_get_double( mlt_filter_properties( this ), "gamma" );
+	double gamma = mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "gamma" );
 	gamma = gamma <= 0 ? 1 : gamma;
-	mlt_properties_set_double( mlt_frame_properties( frame ), "gamma", gamma );
+	mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), "gamma", gamma );
 	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }
@@ -83,7 +83,7 @@ mlt_filter filter_gamma_init( char *arg )
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( mlt_filter_properties( this ), "gamma", arg == NULL ? "1" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "gamma", arg == NULL ? "1" : arg );
 	}
 	return this;
 }

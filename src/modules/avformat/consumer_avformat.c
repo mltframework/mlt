@@ -141,7 +141,7 @@ mlt_consumer consumer_avformat_init( char *arg )
 	if ( this != NULL )
 	{
 		// Get properties from the consumer
-		mlt_properties properties = mlt_consumer_properties( this );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 		// Assign close callback
 		this->close = consumer_close;
@@ -228,7 +228,7 @@ mlt_consumer consumer_avformat_init( char *arg )
 static int consumer_start( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check that we're not already running
 	if ( !mlt_properties_get_int( properties, "running" ) )
@@ -285,7 +285,7 @@ static int consumer_start( mlt_consumer this )
 static int consumer_stop( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check that we're running
 	if ( mlt_properties_get_int( properties, "running" ) )
@@ -309,7 +309,7 @@ static int consumer_stop( mlt_consumer this )
 static int consumer_is_stopped( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 	return !mlt_properties_get_int( properties, "running" );
 }
 
@@ -319,7 +319,7 @@ static int consumer_is_stopped( mlt_consumer this )
 static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int codec_id )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Create a new stream
 	AVStream *st = av_new_stream( oc, 1 );
@@ -405,7 +405,7 @@ static void close_audio( AVFormatContext *oc, AVStream *st )
 static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int codec_id )
 {
  	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Create a new stream
 	AVStream *st = av_new_stream( oc, 0 );
@@ -564,7 +564,7 @@ static void *consumer_thread( void *arg )
 	mlt_consumer this = arg;
 
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Get the terminate on pause property
 	int terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
@@ -760,7 +760,7 @@ static void *consumer_thread( void *arg )
 			frames ++;
 
 			// Default audio args
-			frame_properties = mlt_frame_properties( frame );
+			frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 			// Check for the terminated condition
 			terminated = terminate_on_pause && mlt_properties_get_double( frame_properties, "_speed" ) == 0.0;
@@ -841,7 +841,7 @@ static void *consumer_thread( void *arg )
  					AVCodecContext *c;
 
 					frame = mlt_deque_pop_front( queue );
-					frame_properties = mlt_frame_properties( frame );
+					frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 					c = &video_st->codec;
  					
@@ -857,8 +857,8 @@ static void *consumer_thread( void *arg )
 						// This will cause some fx to go awry....
 						if ( mlt_properties_get_int( properties, "transcode" ) )
 						{
-							mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_width", img_height * 4.0 / 3.0 );
-							mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_height", img_height );
+							mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_width", img_height * 4.0 / 3.0 );
+							mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_height", img_height );
 						}
 
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );

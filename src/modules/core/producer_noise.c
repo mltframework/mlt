@@ -55,10 +55,10 @@ mlt_producer producer_noise_init( void *arg )
 	// Initialise the producer
 	if ( this != NULL )
 	{
-		int is_pal = mlt_properties_get_int( mlt_producer_properties( this ), "normalised_height" ) == 576;
+		int is_pal = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( this ), "normalised_height" ) == 576;
 
 		// Synthetic - aspect ratio of 1
-		mlt_properties_set_double( mlt_producer_properties( this ), "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
+		mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( this ), "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
 
 		// Callback registration
 		this->get_frame = producer_get_frame;
@@ -71,7 +71,7 @@ mlt_producer producer_noise_init( void *arg )
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Calculate the size of the image
 	int size = *width * *height * 2;
@@ -111,7 +111,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the frame properties
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	int size = 0;
 
@@ -149,10 +149,10 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	if ( *frame != NULL )
 	{
 		// Obtain properties of frame
-		mlt_properties properties = mlt_frame_properties( *frame );
+		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 		// Obtain properties of producer
-		mlt_properties producer_props = mlt_producer_properties( this );
+		mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( this );
 
 		// Determine if we're producing PAL or NTSC
 		int is_pal = mlt_properties_get_double( producer_props, "fps" ) == 25.0;

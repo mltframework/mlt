@@ -220,7 +220,7 @@ static void obscure_render( uint8_t *image, int width, int height, struct geomet
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the frame properties
-	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Pop the top of stack now
 	mlt_filter this = mlt_frame_pop_service( frame );
@@ -234,7 +234,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if ( this != NULL )
 		{
 			// Get the filter properties
-			mlt_properties properties = mlt_filter_properties( this );
+			mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 			// Obtain the normalised width and height from the frame
 			int normalised_width = mlt_properties_get_int( frame_properties, "normalised_width" );
@@ -285,7 +285,7 @@ mlt_filter filter_obscure_init( void *arg )
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		this->process = filter_process;
 		mlt_properties_set( properties, "start", arg != NULL ? arg : "0%,0%:100%x100%" );
 		mlt_properties_set( properties, "end", "" );

@@ -57,7 +57,7 @@ mlt_producer producer_avformat_init( char *file )
 		if ( mlt_producer_init( this, NULL ) == 0 )
 		{
 			// Get the properties
-			mlt_properties properties = mlt_producer_properties( this );
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 			// Set the resource property (required for all producers)
 			mlt_properties_set( properties, "resource", file );
@@ -156,7 +156,7 @@ static int producer_open( mlt_producer this, char *file )
 	AVFormatContext *context = NULL;
 
 	// Get the properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// We will treat everything with the producer fps
 	double fps = mlt_properties_get_double( properties, "fps" );
@@ -334,7 +334,7 @@ static int producer_open( mlt_producer this, char *file )
 static double producer_time_of_frame( mlt_producer this, mlt_position position )
 {
 	// Get the properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Obtain the fps
 	double fps = mlt_properties_get_double( properties, "fps" );
@@ -420,7 +420,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the properties from the frame
-	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the frame number of this frame
 	mlt_position position = mlt_properties_get_position( frame_properties, "avformat_position" );
@@ -429,7 +429,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_producer this = mlt_properties_get_data( frame_properties, "avformat_producer", NULL );
 
 	// Get the producer properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Fetch the video_context
 	AVFormatContext *context = mlt_properties_get_data( properties, "video_context", NULL );
@@ -634,7 +634,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 {
 	// Get the properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Fetch the video_context
 	AVFormatContext *context = mlt_properties_get_data( properties, "video_context", NULL );
@@ -643,7 +643,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	int index = mlt_properties_get_int( properties, "video_index" );
 
 	// Get the frame properties
-	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	if ( context != NULL && index != -1 )
 	{
@@ -727,7 +727,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties from the frame
-	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the frame number of this frame
 	mlt_position position = mlt_properties_get_position( frame_properties, "avformat_position" );
@@ -736,7 +736,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	mlt_producer this = mlt_properties_get_data( frame_properties, "avformat_producer", NULL );
 
 	// Get the producer properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Fetch the audio_context
 	AVFormatContext *context = mlt_properties_get_data( properties, "audio_context", NULL );
@@ -938,7 +938,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 {
 	// Get the properties
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Fetch the audio_context
 	AVFormatContext *context = mlt_properties_get_data( properties, "audio_context", NULL );
@@ -950,7 +950,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 	if ( context != NULL && index != -1 )
 	{
 		// Get the frame properties
-		mlt_properties frame_properties = mlt_frame_properties( frame );
+		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 		// Get the audio stream
 		AVStream *stream = context->streams[ index ];
@@ -1002,7 +1002,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
 	// Set the position of this producer
-	mlt_properties_set_position( mlt_frame_properties( *frame ), "avformat_position", mlt_producer_frame( this ) );
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", mlt_producer_frame( this ) );
 
 	// Set up the video
 	producer_set_up_video( this, *frame );
@@ -1011,7 +1011,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	producer_set_up_audio( this, *frame );
 
 	// Set the aspect_ratio
-	mlt_properties_set_double( mlt_frame_properties( *frame ), "aspect_ratio", mlt_properties_get_double( mlt_producer_properties( this ), "aspect_ratio" ) );
+	mlt_properties_set_double( MLT_FRAME_PROPERTIES( *frame ), "aspect_ratio", mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( this ), "aspect_ratio" ) );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( this );

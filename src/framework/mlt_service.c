@@ -119,7 +119,7 @@ mlt_service_type mlt_service_identify( mlt_service this )
 	mlt_service_type type = invalid_type;
 	if ( this != NULL )
 	{
-		mlt_properties properties = mlt_service_properties( this );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
 		char *mlt_type = mlt_properties_get( properties, "mlt_type" );
 		char *resource = mlt_properties_get( properties, "resource" );
 		if ( mlt_type == NULL )
@@ -191,7 +191,7 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 		if ( producer != NULL )
 		{
 			mlt_service_lock( producer );
-			mlt_properties_inc_ref( mlt_service_properties( producer ) );
+			mlt_properties_inc_ref( MLT_SERVICE_PROPERTIES( producer ) );
 			mlt_service_unlock( producer );
 		}
 
@@ -320,8 +320,8 @@ mlt_properties mlt_service_properties( mlt_service self )
 void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 {
 	int i;
-	mlt_properties frame_properties = mlt_frame_properties( frame );
-	mlt_properties service_properties = mlt_service_properties( this );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+	mlt_properties service_properties = MLT_SERVICE_PROPERTIES( this );
 	mlt_service_base *base = this->local;
 	mlt_position position = mlt_frame_get_position( frame );
 	mlt_position this_in = mlt_properties_get_position( service_properties, "in" );
@@ -341,7 +341,7 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 					mlt_properties_set_position( frame_properties, "in", in == 0 ? this_in : in );
 					mlt_properties_set_position( frame_properties, "out", out == 0 ? this_out : out );
 					mlt_filter_process( base->filters[ i ], frame );
-					mlt_service_apply_filters( mlt_filter_service( base->filters[ i ] ), frame, index + 1 );
+					mlt_service_apply_filters( MLT_FILTER_SERVICE( base->filters[ i ] ), frame, index + 1 );
 				}
 			}
 		}
@@ -356,9 +356,8 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 	mlt_service_lock( this );
 	if ( this != NULL && this->get_frame != NULL )
 	{
-		char uniq[ 20 ];
 		int result = 0;
-		mlt_properties properties = mlt_service_properties( this );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
 		mlt_properties_inc_ref( properties );
@@ -366,17 +365,14 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 		result = this->get_frame( this, frame, index );
 		if ( result == 0 )
 		{
-			properties = mlt_frame_properties( *frame );
+			properties = MLT_FRAME_PROPERTIES( *frame );
 			if ( in >=0 && out > 0 )
 			{
 				mlt_properties_set_position( properties, "in", in );
 				mlt_properties_set_position( properties, "out", out );
 			}
 			mlt_service_apply_filters( this, *frame, 1 );
-			sprintf( uniq, "gf_%p", this );
-			if ( mlt_properties_get_data( properties, uniq, NULL ) != NULL )
-				fprintf( stderr, "%s is not unique in this frame\n", uniq );
-			mlt_properties_set_data( properties, uniq, this, 0, ( mlt_destructor )mlt_service_close, NULL );
+			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), this );
 		}
 		else
 		{
@@ -391,7 +387,7 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 
 static void mlt_service_filter_changed( mlt_service owner, mlt_service this )
 {
-	mlt_events_fire( mlt_service_properties( this ), "service-changed", NULL );
+	mlt_events_fire( MLT_SERVICE_PROPERTIES( this ), "service-changed", NULL );
 }
 
 /** Attach a filter.
@@ -403,7 +399,7 @@ int mlt_service_attach( mlt_service this, mlt_filter filter )
 	if ( error == 0 )
 	{
 		int i = 0;
-		mlt_properties properties = mlt_service_properties( this );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
 		mlt_service_base *base = this->local;
 
 		for ( i = 0; error == 0 && i < base->filter_count; i ++ )
@@ -420,8 +416,8 @@ int mlt_service_attach( mlt_service this, mlt_filter filter )
 
 			if ( base->filters != NULL )
 			{
-				mlt_properties props = mlt_filter_properties( filter );
-				mlt_properties_inc_ref( mlt_filter_properties( filter ) );
+				mlt_properties props = MLT_FILTER_PROPERTIES( filter );
+				mlt_properties_inc_ref( MLT_FILTER_PROPERTIES( filter ) );
 				base->filters[ base->filter_count ++ ] = filter;
 				mlt_events_fire( properties, "service-changed", NULL );
 				mlt_events_listen( props, this, "service-changed", ( mlt_listener )mlt_service_filter_changed );
@@ -446,7 +442,7 @@ int mlt_service_detach( mlt_service this, mlt_filter filter )
 	{
 		int i = 0;
 		mlt_service_base *base = this->local;
-		mlt_properties properties = mlt_service_properties( this );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
 
 		for ( i = 0; i < base->filter_count; i ++ )
 			if ( base->filters[ i ] == filter )
@@ -458,7 +454,7 @@ int mlt_service_detach( mlt_service this, mlt_filter filter )
 			for ( i ++ ; i < base->filter_count; i ++ )
 				base->filters[ i - 1 ] = base->filters[ i ];
 			base->filter_count --;
-			mlt_events_disconnect( mlt_filter_properties( filter ), this );
+			mlt_events_disconnect( MLT_FILTER_PROPERTIES( filter ), this );
 			mlt_filter_close( filter );
 			mlt_events_fire( properties, "service-changed", NULL );
 		}
@@ -487,7 +483,7 @@ mlt_filter mlt_service_filter( mlt_service this, int index )
 void mlt_service_close( mlt_service this )
 {
 	mlt_service_lock( this );
-	if ( this != NULL && mlt_properties_dec_ref( mlt_service_properties( this ) ) <= 0 )
+	if ( this != NULL && mlt_properties_dec_ref( MLT_SERVICE_PROPERTIES( this ) ) <= 0 )
 	{
 		mlt_service_unlock( this );
 		if ( this->close != NULL )
@@ -499,7 +495,7 @@ void mlt_service_close( mlt_service this )
 			mlt_service_base *base = this->local;
 			int i = 0;
 			int count = base->filter_count;
-			mlt_events_block( mlt_service_properties( this ), this );
+			mlt_events_block( MLT_SERVICE_PROPERTIES( this ), this );
 			while( count -- )
 				mlt_service_detach( this, base->filters[ 0 ] );
 			free( base->filters );

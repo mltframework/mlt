@@ -42,8 +42,27 @@ typedef struct
 }
 mlt_playlist_clip_info;
 
+/** Private definition.
+*/
+
+typedef struct playlist_entry_s playlist_entry;
+
+struct mlt_playlist_s
+{
+	struct mlt_producer_s parent;
+	struct mlt_producer_s blank;
+
+	int size;
+	int count;
+	playlist_entry **list;
+};
+
 /** Public final methods
 */
+
+#define MLT_PLAYLIST_PRODUCER( playlist )	( &( playlist )->parent )
+#define MLT_PLAYLIST_SERVICE( playlist )	MLT_PRODUCER_SERVICE( MLT_PLAYLIST_PRODUCER( playlist ) )
+#define MLT_PLAYLIST_PROPERTIES( playlist )	MLT_SERVICE_PROPERTIES( MLT_PLAYLIST_SERVICE( playlist ) )
 
 extern mlt_playlist mlt_playlist_init( );
 extern mlt_producer mlt_playlist_producer( mlt_playlist self );

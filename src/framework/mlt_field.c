@@ -63,7 +63,7 @@ mlt_field mlt_field_init( )
 		this->tractor = mlt_tractor_init( );
 
 		// The first plant will be connected to the mulitrack
-		this->producer = mlt_multitrack_service( this->multitrack );
+		this->producer = MLT_MULTITRACK_SERVICE( this->multitrack );
 
 		// Connect the tractor to the multitrack
 		mlt_tractor_connect( this->tractor, this->producer );
@@ -88,7 +88,7 @@ mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
 		this->tractor = tractor;
 
 		// The first plant will be connected to the mulitrack
-		this->producer = mlt_multitrack_service( this->multitrack );
+		this->producer = MLT_MULTITRACK_SERVICE( this->multitrack );
 
 		// Connect the tractor to the multitrack
 		mlt_tractor_connect( this->tractor, this->producer );
@@ -103,7 +103,7 @@ mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
 
 mlt_service mlt_field_service( mlt_field this )
 {
-	return this != NULL ? mlt_tractor_service( this->tractor ) : NULL;
+	return MLT_TRACTOR_SERVICE( this->tractor );
 }
 
 /** Get the multi track.
@@ -127,7 +127,7 @@ mlt_tractor mlt_field_tractor( mlt_field this )
 
 mlt_properties mlt_field_properties( mlt_field this )
 {
-	return mlt_service_properties( mlt_field_service( this ) );
+	return MLT_SERVICE_PROPERTIES( mlt_field_service( this ) );
 }
 
 /** Plant a filter.
@@ -142,7 +142,7 @@ int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track )
 	if ( result == 0 )
 	{
 		// This is now the new producer
-		this->producer = mlt_filter_service( that );
+		this->producer = MLT_FILTER_SERVICE( that );
 
 		// Reconnect tractor to new producer
 		mlt_tractor_connect( this->tractor, this->producer );
@@ -166,7 +166,7 @@ int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track
 	if ( result == 0 )
 	{
 		// This is now the new producer
-		this->producer = mlt_transition_service( that );
+		this->producer = MLT_TRANSITION_SERVICE( that );
 
 		// Reconnect tractor to new producer
 		mlt_tractor_connect( this->tractor, this->producer );

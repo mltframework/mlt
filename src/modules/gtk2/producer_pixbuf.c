@@ -70,7 +70,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 		mlt_producer producer = &this->parent;
 
 		// Get the properties interface
-		mlt_properties properties = mlt_producer_properties( &this->parent );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
 	
 		// Callback registration
 		producer->get_frame = producer_get_frame;
@@ -93,7 +93,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	GError *error = NULL;
 
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the producer for this frame
 	producer_pixbuf this = mlt_properties_get_data( properties, "producer_pixbuf", NULL );
@@ -102,7 +102,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_producer producer = &this->parent;
 
 	// Obtain properties of producer
-	mlt_properties producer_props = mlt_producer_properties( producer );
+	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Get the time to live for each frame
 	double ttl = mlt_properties_get_int( producer_props, "ttl" );
@@ -215,7 +215,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
@@ -266,7 +266,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static uint8_t *producer_get_alpha_mask( mlt_frame this )
 {
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Return the alpha mask
 	return mlt_properties_get_data( properties, "alpha", NULL );
@@ -277,9 +277,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Get the real structure for this producer
 	producer_pixbuf this = producer->child;
 
-	if ( this->count == 0 && mlt_properties_get( mlt_producer_properties( producer ), "resource" ) != NULL )
+	if ( this->count == 0 && mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "resource" ) != NULL )
 	{
-		mlt_properties properties = mlt_producer_properties( producer );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 		char *filename = mlt_properties_get( properties, "resource" );
 		
 		// Read xml string
@@ -376,7 +376,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	if ( *frame != NULL && this->count > 0 )
 	{
 		// Obtain properties of frame and producer
-		mlt_properties properties = mlt_frame_properties( *frame );
+		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 		// Determine if we're rendering for PAL or NTSC
 		int is_pal = mlt_properties_get_int( properties, "normalised_height" ) == 576;

@@ -8,7 +8,7 @@
 
 static void transport_action( mlt_producer producer, char *value )
 {
-	mlt_properties properties = mlt_producer_properties( producer );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
 
 	mlt_properties_set_int( properties, "stats_off", 0 );
@@ -134,7 +134,7 @@ static mlt_consumer create_consumer( char *id, mlt_producer producer )
 	mlt_consumer consumer = mlt_factory_consumer( id, arg );
 	if ( consumer != NULL )
 	{
-		mlt_properties properties = mlt_consumer_properties( consumer );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		mlt_properties_set_data( properties, "transport_callback", transport_action, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "transport_producer", producer, 0, NULL, NULL );
 	}
@@ -143,8 +143,8 @@ static mlt_consumer create_consumer( char *id, mlt_producer producer )
 
 static void transport( mlt_producer producer, mlt_consumer consumer )
 {
-	mlt_properties properties = mlt_producer_properties( producer );
-	int silent = mlt_properties_get_int( mlt_consumer_properties( consumer ), "silent" );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
+	int silent = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "silent" );
 	struct timespec tm = { 0, 40000 };
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
@@ -213,7 +213,7 @@ int main( int argc, char **argv )
 	if ( argc > 1 && inigo != NULL && mlt_producer_get_length( inigo ) > 0 )
 	{
 		// Get inigo's properties
-		mlt_properties inigo_props = mlt_producer_properties( inigo );
+		mlt_properties inigo_props = MLT_PRODUCER_PROPERTIES( inigo );
 
 		// Get the last group
 		mlt_properties group = mlt_properties_get_data( inigo_props, "group", 0 );
@@ -256,11 +256,11 @@ int main( int argc, char **argv )
 		if ( consumer != NULL && store == NULL )
 		{
 			// Apply group settings
-			mlt_properties properties = mlt_consumer_properties( consumer );
+			mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 			mlt_properties_inherit( properties, group );
 
 			// Connect consumer to inigo
-			mlt_consumer_connect( consumer, mlt_producer_service( inigo ) );
+			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( inigo ) );
 
 			// Start the consumer
 			mlt_consumer_start( consumer );

@@ -23,8 +23,32 @@
 
 #include "mlt_producer.h"
 
+/** Private definition.
+*/
+
+struct mlt_track_s
+{
+	mlt_producer producer;
+	mlt_event event;
+};
+
+typedef struct mlt_track_s *mlt_track;
+
+struct mlt_multitrack_s
+{
+	// We're extending producer here
+	struct mlt_producer_s parent;
+	mlt_track *list;
+	int size;
+	int count;
+};
+
 /** Public final methods
 */
+
+#define MLT_MULTITRACK_PRODUCER( multitrack )	( &( multitrack )->parent )
+#define MLT_MULTITRACK_SERVICE( multitrack )	MLT_PRODUCER_SERVICE( MLT_MULTITRACK_PRODUCER( multitrack ) )
+#define MLT_MULTITRACK_PROPERTIES( multitrack )	MLT_SERVICE_PROPERTIES( MLT_MULTITRACK_SERVICE( multitrack ) )
 
 extern mlt_multitrack mlt_multitrack_init( );
 extern mlt_producer mlt_multitrack_producer( mlt_multitrack self );

@@ -47,7 +47,7 @@ property_list;
 /** Memory leak checks.
 */
 
-//#define _MLT_PROPERTY_CHECKS_
+//#define _MLT_PROPERTY_CHECKS_ 2
 
 #ifdef _MLT_PROPERTY_CHECKS_
 static int properties_created = 0;
@@ -698,10 +698,12 @@ void mlt_properties_close( mlt_properties this )
 			property_list *list = this->local;
 			int index = 0;
 
-#ifdef _MLT_PROPERTY_CHECKS_
+#if _MLT_PROPERTY_CHECKS_ == 1
 			// Show debug info
 			mlt_properties_debug( this, "Closing", stderr );
+#endif
 
+#ifdef _MLT_PROPERTY_CHECKS_
 			// Increment destroyed count
 			properties_destroyed ++;
 

@@ -32,7 +32,7 @@
 static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Get the properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get the requested interpolation method
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
@@ -144,7 +144,7 @@ mlt_filter filter_rescale_init( char *arg )
 	if ( this != NULL )
 	{
 		// Get the properties
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 		// Set the inerpolation
 		mlt_properties_set( properties, "interpolation", arg == NULL ? "bilinear" : arg );

@@ -38,7 +38,11 @@ struct mlt_frame_s
 	// Private properties
 	mlt_deque stack_image;
 	mlt_deque stack_audio;
+	mlt_deque stack_service;
 };
+
+#define MLT_FRAME_PROPERTIES( frame )		( &( frame )->parent )
+#define MLT_FRAME_SERVICE_STACK( frame )	( ( frame )->stack_service )
 
 extern mlt_frame mlt_frame_init( );
 extern mlt_properties mlt_frame_properties( mlt_frame self );
@@ -60,6 +64,7 @@ extern int mlt_frame_push_service( mlt_frame self, void *that );
 extern void *mlt_frame_pop_service( mlt_frame self );
 extern int mlt_frame_push_audio( mlt_frame self, void *that );
 extern void *mlt_frame_pop_audio( mlt_frame self );
+extern mlt_deque mlt_frame_service_stack( mlt_frame self );
 extern mlt_producer mlt_frame_get_original_producer( mlt_frame self );
 extern void mlt_frame_close( mlt_frame self );
 

@@ -47,7 +47,7 @@ mlt_producer producer_inigo_file_init( char *file )
 
 	if ( result != NULL )
 	{
-		mlt_properties properties = mlt_producer_properties( result );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( result );
 		mlt_properties_set( properties, "resource", file );
 	}
 
@@ -179,7 +179,7 @@ mlt_producer producer_inigo_init( char **argv )
 				else if ( type == 2 )
 					mlt_service_attach( ( mlt_service )mlt_producer_cut_parent( producer ), filter );
 
-				properties = mlt_filter_properties( filter );
+				properties = MLT_FILTER_PROPERTIES( filter );
 				mlt_properties_inherit( properties, group );
 			}
 		}
@@ -195,7 +195,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_repeat_clip( playlist, mlt_playlist_count( playlist ) - 1, repeat );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
-				properties = mlt_producer_properties( producer );
+				properties = MLT_PRODUCER_PROPERTIES( producer );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-split" ) )
@@ -212,7 +212,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_split( playlist, mlt_playlist_count( playlist ) - 1, split );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
-				properties = mlt_producer_properties( producer );
+				properties = MLT_PRODUCER_PROPERTIES( producer );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-swap" ) )
@@ -226,7 +226,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_move( playlist, mlt_playlist_count( playlist ) - 2, mlt_playlist_count( playlist ) - 1 );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
-				properties = mlt_producer_properties( producer );
+				properties = MLT_PRODUCER_PROPERTIES( producer );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-join" ) )
@@ -241,7 +241,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_join( playlist, mlt_playlist_count( playlist ) - clips - 1, clips, 0 );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
-				properties = mlt_producer_properties( producer );
+				properties = MLT_PRODUCER_PROPERTIES( producer );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-remove" ) )
@@ -255,7 +255,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_remove( playlist, mlt_playlist_count( playlist ) - 1 );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
-				properties = mlt_producer_properties( producer );
+				properties = MLT_PRODUCER_PROPERTIES( producer );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-mix" ) )
@@ -298,7 +298,7 @@ mlt_producer producer_inigo_init( char **argv )
 				transition = mlt_factory_transition( id, arg );
 				if ( transition != NULL )
 				{
-					properties = mlt_transition_properties( transition );
+					properties = MLT_TRANSITION_PROPERTIES( transition );
 					mlt_properties_inherit( properties, group );
 					mlt_field_plant_transition( field, transition, 0, 1 );
 					mlt_properties_set_position( properties, "in", 0 );
@@ -317,7 +317,7 @@ mlt_producer producer_inigo_init( char **argv )
 			mlt_filter filter = create_filter( field, argv[ ++ i ], track );
 			if ( filter != NULL )
 			{
-				properties = mlt_filter_properties( filter );
+				properties = MLT_FILTER_PROPERTIES( filter );
 				mlt_properties_inherit( properties, group );
 			}
 		}
@@ -326,7 +326,7 @@ mlt_producer producer_inigo_init( char **argv )
 			mlt_transition transition = create_transition( field, argv[ ++ i ], track - 1 );
 			if ( transition != NULL )
 			{
-				properties = mlt_transition_properties( transition );
+				properties = MLT_TRANSITION_PROPERTIES( transition );
 				mlt_properties_inherit( properties, group );
 			}
 		}
@@ -345,12 +345,12 @@ mlt_producer producer_inigo_init( char **argv )
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
-			mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track ++ );
+			mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track ++ );
 			track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
 			playlist = mlt_playlist_init( );
 			if ( playlist != NULL )
 			{
-				properties = mlt_playlist_properties( playlist );
+				properties = MLT_PLAYLIST_PROPERTIES( playlist );
 				if ( !strcmp( argv[ i ], "-hide-track" ) )
 					mlt_properties_set_int( properties, "hide", 3 );
 				else if ( !strcmp( argv[ i ], "-hide-video" ) )
@@ -372,7 +372,7 @@ mlt_producer producer_inigo_init( char **argv )
 			producer = create_producer( field, argv[ i ] );
 			if ( producer != NULL )
 			{
-				properties = mlt_producer_properties( producer );
+				properties = MLT_PRODUCER_PROPERTIES( producer );
 				mlt_properties_inherit( properties, group );
 			}
 		}
@@ -399,15 +399,15 @@ mlt_producer producer_inigo_init( char **argv )
 
 	// We must have a playlist to connect
 	if ( mlt_playlist_count( playlist ) > 0 )
-		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track );
+		mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track );
 
-	mlt_producer prod = mlt_tractor_producer( tractor );
+	mlt_producer prod = MLT_TRACTOR_PRODUCER( tractor );
 	mlt_producer_optimise( prod );
-	mlt_properties props = mlt_tractor_properties( tractor );
+	mlt_properties props = MLT_TRACTOR_PROPERTIES( tractor );
 	mlt_properties_set_data( props, "group", group, 0, ( mlt_destructor )mlt_properties_close, NULL );
-	mlt_properties_set_position( props, "length", mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) + 1 );
-	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) );
-	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( mlt_multitrack_producer( multitrack ) ) );
+	mlt_properties_set_position( props, "length", mlt_producer_get_out( MLT_MULTITRACK_PRODUCER( multitrack ) ) + 1 );
+	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( MLT_MULTITRACK_PRODUCER( multitrack ) ) );
+	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( MLT_MULTITRACK_PRODUCER( multitrack ) ) );
 	if ( title != NULL )
 		mlt_properties_set( props, "title", strchr( title, '/' ) ? strrchr( title, '/' ) + 1 : title );
 

@@ -156,7 +156,7 @@ mlt_producer mlt_factory_producer( char *service, void *input )
 		mlt_events_fire( event_object, "producer-create-done", service, input, obj, NULL );
 		if ( obj != NULL )
 		{
-			mlt_properties properties = mlt_producer_properties( obj );
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( obj );
 			mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 			mlt_properties_set( properties, "mlt_type", "producer" );
 			if ( mlt_properties_get_int( properties, "_mlt_service_hidden" ) == 0 )
@@ -184,7 +184,7 @@ mlt_filter mlt_factory_filter( char *service, void *input )
 
 	if ( obj != NULL )
 	{
-		mlt_properties properties = mlt_filter_properties( obj );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( obj );
 		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "filter" );
 		mlt_properties_set( properties, "mlt_service", service );
@@ -210,7 +210,7 @@ mlt_transition mlt_factory_transition( char *service, void *input )
 
 	if ( obj != NULL )
 	{
-		mlt_properties properties = mlt_transition_properties( obj );
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( obj );
 		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "transition" );
 		mlt_properties_set( properties, "mlt_service", service );
@@ -240,11 +240,11 @@ mlt_consumer mlt_factory_consumer( char *service, void *input )
 	if ( obj != NULL )
 	{
 		mlt_filter filter = mlt_factory_filter( "data_show", NULL );
-		mlt_properties properties = mlt_consumer_properties( obj );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( obj );
 		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "consumer" );
 		mlt_properties_set( properties, "mlt_service", service );
-		mlt_service_attach( mlt_consumer_service( obj ), filter );
+		mlt_service_attach( MLT_CONSUMER_SERVICE( obj ), filter );
 		mlt_filter_close( filter );
 	}
 	return obj;

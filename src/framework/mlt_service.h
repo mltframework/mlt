@@ -44,6 +44,8 @@ struct mlt_service_s
 /** The public API.
 */
 
+#define MLT_SERVICE_PROPERTIES( service )	( &( service )->parent )
+
 extern int mlt_service_init( mlt_service self, void *child );
 extern void mlt_service_lock( mlt_service self );
 extern void mlt_service_unlock( mlt_service self );

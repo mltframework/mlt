@@ -45,6 +45,9 @@ struct mlt_producer_s
 /** Public final methods
 */
 
+#define MLT_PRODUCER_SERVICE( producer )	( &( producer )->parent )
+#define MLT_PRODUCER_PROPERTIES( producer )	MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) )
+
 extern int mlt_producer_init( mlt_producer self, void *child );
 extern mlt_producer mlt_producer_new( );
 extern mlt_service mlt_producer_service( mlt_producer self );

@@ -48,7 +48,7 @@ mlt_producer producer_hold_init( char *arg )
 	if ( this != NULL && producer != NULL )
 	{
 		// Get the properties of this producer
-		mlt_properties properties = mlt_producer_properties( this );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 		// Store the producer
 		mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
@@ -83,36 +83,36 @@ mlt_producer producer_hold_init( char *arg )
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the properties of the frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the real frame
 	mlt_frame real_frame = mlt_frame_pop_service( frame );
 
 	// Get the image from the real frame
 	int size = 0;
-	*buffer = mlt_properties_get_data( mlt_frame_properties( real_frame ), "image", &size );
-	*width = mlt_properties_get_int( mlt_frame_properties( real_frame ), "width" );
-	*height = mlt_properties_get_int( mlt_frame_properties( real_frame ), "height" );
+	*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", &size );
+	*width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( real_frame ), "width" );
+	*height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( real_frame ), "height" );
 
 	// If this is the first time, get it from the producer
 	if ( *buffer == NULL )
 	{
-		mlt_properties_pass( mlt_frame_properties( real_frame ), properties, "" );
+		mlt_properties_pass( MLT_FRAME_PROPERTIES( real_frame ), properties, "" );
 
 		// We'll deinterlace on the downstream deinterlacer
-		mlt_properties_set_int( mlt_frame_properties( real_frame ), "consumer_deinterlace", 1 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( real_frame ), "consumer_deinterlace", 1 );
 
 		// We want distorted to ensure we don't hit the resize filter twice
-		mlt_properties_set_int( mlt_frame_properties( real_frame ), "distort", 1 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( real_frame ), "distort", 1 );
 
 		// Get the image
 		mlt_frame_get_image( real_frame, buffer, format, width, height, writable );
 	
 		// Make sure we get the size
-		*buffer = mlt_properties_get_data( mlt_frame_properties( real_frame ), "image", &size );
+		*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", &size );
 	}
 
-	mlt_properties_pass( properties, mlt_frame_properties( real_frame ), "" );
+	mlt_properties_pass( properties, MLT_FRAME_PROPERTIES( real_frame ), "" );
 
 	// Set the values obtained on the frame
 	if ( *buffer != NULL )
@@ -139,7 +139,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
 	// Get the properties of this producer
-	mlt_properties properties = mlt_producer_properties( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Construct a new frame
 	*frame = mlt_frame_init( );
@@ -163,7 +163,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 			mlt_producer_seek( producer, position );
 
 			// Get the real frame
-			mlt_service_get_frame( mlt_producer_service( producer ), &real_frame, index );
+			mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &real_frame, index );
 
 			// Ensure that the real frame gets wiped eventually
 			mlt_properties_set_data( properties, "real_frame", real_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
@@ -171,9 +171,9 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		else
 		{
 			// Temporary fix - ensure that we aren't seen as a test frame
-			int8_t *image = mlt_properties_get_data( mlt_frame_properties( real_frame ), "image", NULL );
-			mlt_properties_set_data( mlt_frame_properties( *frame ), "image", image, 0, NULL, NULL );
-			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_image", 0 );
+			int8_t *image = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", NULL );
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( *frame ), "image", image, 0, NULL, NULL );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_image", 0 );
 		}
 
 		// Stack the real frame and method
@@ -181,7 +181,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_frame_push_service( *frame, producer_get_image );
 
 		// Ensure that the consumer sees what the real frame has
-		mlt_properties_pass( mlt_frame_properties( *frame ), mlt_frame_properties( real_frame ), "" );
+		mlt_properties_pass( MLT_FRAME_PROPERTIES( *frame ), MLT_FRAME_PROPERTIES( real_frame ), "" );
 	}
 
 	// Move to the next position

@@ -35,7 +35,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter this = mlt_frame_pop_service( frame );
 
 	// Get the mirror type
-	mlt_properties properties = mlt_filter_properties( this );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 	// Get the properties
 	char *mirror = mlt_properties_get( properties, "mirror" );
@@ -261,7 +261,7 @@ mlt_filter filter_mirror_init( void *arg )
 	if ( this != NULL )
 	{
 		// Get the properties
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 		// Set the default mirror type
 		mlt_properties_set_or_default( properties, "mirror", arg, "horizontal" );

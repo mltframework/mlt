@@ -78,7 +78,7 @@ miracle_unit miracle_unit_init( int index, char *constructor )
 		mlt_properties_set( this->properties, "arg", arg );
 		mlt_properties_set_data( this->properties, "consumer", consumer, 0, ( mlt_destructor )mlt_consumer_close, NULL );
 		mlt_properties_set_data( this->properties, "playlist", playlist, 0, ( mlt_destructor )mlt_playlist_close, NULL );
-		mlt_consumer_connect( consumer, mlt_playlist_service( playlist ) );
+		mlt_consumer_connect( consumer, MLT_PLAYLIST_SERVICE( playlist ) );
 	}
 
 	return this;
@@ -145,7 +145,7 @@ void miracle_unit_set_notifier( miracle_unit this, valerie_notifier notifier, ch
 {
 	mlt_properties properties = this->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-	mlt_properties playlist_properties = mlt_playlist_properties( playlist );
+	mlt_properties playlist_properties = MLT_PLAYLIST_PROPERTIES( playlist );
 
 	mlt_properties_set( properties, "root", root_dir );
 	mlt_properties_set_data( properties, "notifier", notifier, 0, NULL, NULL );
@@ -180,7 +180,7 @@ static void clear_unit( miracle_unit unit )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 
 	mlt_playlist_clear( unit->old_playlist );
 	copy_playlist( unit->old_playlist, playlist );
@@ -199,14 +199,14 @@ static void clean_unit( miracle_unit unit )
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 	mlt_playlist_clip_info info;
 	int current = mlt_playlist_current_clip( playlist );
-	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 	mlt_position position = mlt_producer_frame( producer );
 	double speed = mlt_producer_get_speed( producer );
 	mlt_playlist_get_clip_info( playlist, &info, current );
 
 	if ( info.producer != NULL )
 	{
-		mlt_properties_inc_ref( mlt_producer_properties( info.producer ) );
+		mlt_properties_inc_ref( MLT_PRODUCER_PROPERTIES( info.producer ) );
 		position -= info.start;
 		clear_unit( unit );
 		mlt_playlist_append_io( playlist, info.producer, info.frame_in, info.frame_out );
@@ -235,7 +235,7 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 		mlt_playlist_clip_info info;
 		char *title;
 		mlt_playlist_get_clip_info( playlist , &info, i );
-		title = mlt_properties_get( mlt_producer_properties( info.producer ), "title" );
+		title = mlt_properties_get( MLT_PRODUCER_PROPERTIES( info.producer ), "title" );
 		if ( title == NULL )
 			title = strip_root( unit, info.resource );
 		valerie_response_printf( response, 10240, "%d \"%s\" %d %d %d %d %.2f\n", 
@@ -398,7 +398,7 @@ void miracle_unit_play( miracle_unit_t *unit, int speed )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
 	mlt_producer_set_speed( producer, ( double )speed / 1000 );
 	mlt_consumer_start( consumer );
@@ -416,7 +416,7 @@ void miracle_unit_terminate( miracle_unit unit )
 {
 	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
 	mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
-	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 	mlt_producer_set_speed( producer, 0 );
 	mlt_consumer_stop( consumer );
 	miracle_unit_status_communicate( unit );
@@ -490,7 +490,7 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 	{
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-		mlt_producer producer = mlt_playlist_producer( playlist );
+		mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 		mlt_producer clip = mlt_playlist_current( playlist );
 
 		mlt_playlist_clip_info info;
@@ -499,7 +499,7 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 
 		if ( info.resource != NULL && strcmp( info.resource, "" ) )
 		{
-			char *title = mlt_properties_get( mlt_producer_properties( info.producer ), "title" );
+			char *title = mlt_properties_get( MLT_PRODUCER_PROPERTIES( info.producer ), "title" );
 			if ( title == NULL )
 				title = strip_root( unit, info.resource );
 			strncpy( status->clip, title, sizeof( status->clip ) );
@@ -546,7 +546,7 @@ void miracle_unit_change_position( miracle_unit unit, int clip, int32_t position
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 	mlt_playlist_clip_info info;
 
 	if ( clip < 0 )
@@ -639,7 +639,7 @@ void miracle_unit_step( miracle_unit unit, int32_t offset )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-	mlt_producer producer = mlt_playlist_producer( playlist );
+	mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 	mlt_position position = mlt_producer_frame( producer );
 	mlt_producer_seek( producer, position + offset );
 }
@@ -690,12 +690,12 @@ int miracle_unit_set( miracle_unit unit, char *name_value )
 	if ( strncmp( name_value, "consumer.", 9 ) )
 	{
 		mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
-		properties = mlt_playlist_properties( playlist );
+		properties = MLT_PLAYLIST_PROPERTIES( playlist );
 	}
 	else
 	{
 		mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
-		properties = mlt_consumer_properties( consumer );
+		properties = MLT_CONSUMER_PROPERTIES( consumer );
 		name_value += 9;
 	}
 
@@ -705,7 +705,7 @@ int miracle_unit_set( miracle_unit unit, char *name_value )
 char *miracle_unit_get( miracle_unit unit, char *name )
 {
 	mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
-	mlt_properties properties = mlt_playlist_properties( playlist );
+	mlt_properties properties = MLT_PLAYLIST_PROPERTIES( playlist );
 	return mlt_properties_get( properties, name );
 }
 

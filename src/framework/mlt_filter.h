@@ -44,6 +44,9 @@ struct mlt_filter_s
 /** Public final methods
 */
 
+#define MLT_FILTER_SERVICE( filter )		( &( filter )->parent )
+#define MLT_FILTER_PROPERTIES( filter )		MLT_SERVICE_PROPERTIES( MLT_FILTER_SERVICE( filter ) )
+
 extern int mlt_filter_init( mlt_filter self, void *child );
 extern mlt_filter mlt_filter_new( );
 extern mlt_service mlt_filter_service( mlt_filter self );

@@ -34,7 +34,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int error = 0;
 
 	// Get the properties from the frame
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Pop the top of stack now
 	mlt_filter filter = mlt_frame_pop_service( this );
@@ -94,7 +94,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
 		// Get the requested scale operation
-		char *op = mlt_properties_get( mlt_filter_properties( filter ), "scale" );
+		char *op = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "scale" );
 
 		// Correct field order if needed
 		if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 )
@@ -161,7 +161,7 @@ mlt_filter filter_resize_init( char *arg )
 	if ( mlt_filter_init( this, this ) == 0 )
 	{
 		this->process = filter_process;
-		mlt_properties_set( mlt_filter_properties( this ), "scale", arg == NULL ? "off" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "scale", arg == NULL ? "off" : arg );
 	}
 	return this;
 }

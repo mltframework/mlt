@@ -167,7 +167,7 @@ double signal_max_power( int16_t *buffer, int channels, int samples, int16_t *pe
 static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the a frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	double gain = mlt_properties_get_double( properties, "volume.gain" );
 	double max_gain = mlt_properties_get_double( properties, "volume.max_gain" );
 	double limiter_level = 0.5; /* -6 dBFS */
@@ -181,7 +181,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	mlt_filter this = mlt_properties_get_data( properties, "filter_volume", NULL );
 
 	// Get the properties from the filter
-	mlt_properties filter_props = mlt_filter_properties( this );
+	mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
 
 	if ( mlt_properties_get( properties, "volume.limiter" ) != NULL )
 		limiter_level = mlt_properties_get_double( properties, "volume.limiter" );
@@ -283,8 +283,8 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	mlt_properties properties = mlt_frame_properties( frame );
-	mlt_properties filter_props = mlt_filter_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+	mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
 
 	// Parse the gain property
 	if ( mlt_properties_get( properties, "gain" ) == NULL )
@@ -452,7 +452,7 @@ mlt_filter filter_volume_init( char *arg )
 	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
 	if ( this != NULL && mlt_filter_init( this, NULL ) == 0 )
 	{
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		this->process = filter_process;
 		if ( arg != NULL )
 			mlt_properties_set( properties, "gain", arg );

@@ -56,7 +56,7 @@ mlt_consumer consumer_libdv_init( char *arg )
 	if ( this != NULL && mlt_consumer_init( this, NULL ) == 0 )
 	{
 		// Get properties from the consumer
-		mlt_properties properties = mlt_consumer_properties( this );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 		// Assign close callback
 		this->close = consumer_close;
@@ -92,7 +92,7 @@ mlt_consumer consumer_libdv_init( char *arg )
 static int consumer_start( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check that we're not already running
 	if ( !mlt_properties_get_int( properties, "running" ) )
@@ -123,7 +123,7 @@ static int consumer_start( mlt_consumer this )
 static int consumer_stop( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check that we're running
 	if ( mlt_properties_get_int( properties, "running" ) )
@@ -151,7 +151,7 @@ static int consumer_stop( mlt_consumer this )
 static int consumer_is_stopped( mlt_consumer this )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 	return !mlt_properties_get_int( properties, "running" );
 }
 
@@ -161,7 +161,7 @@ static int consumer_is_stopped( mlt_consumer this )
 static dv_encoder_t *libdv_get_encoder( mlt_consumer this, mlt_frame frame )
 {
 	// Get the properties of the consumer
-	mlt_properties this_properties = mlt_consumer_properties( this );
+	mlt_properties this_properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Obtain the dv_encoder
 	dv_encoder_t *encoder = mlt_properties_get_data( this_properties, "dv_encoder", NULL );
@@ -200,13 +200,13 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 	dv_encoder_t *encoder = libdv_get_encoder( this, frame );
 
 	// Get the properties of the consumer
-	mlt_properties this_properties = mlt_consumer_properties( this );
+	mlt_properties this_properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// This will hold the size of the dv frame
 	int size = 0;
 
 	// Is the image rendered
-	int rendered = mlt_properties_get_int( mlt_frame_properties( frame ), "rendered" );
+	int rendered = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "rendered" );
 
 	// Get width and height
 	int width = mlt_properties_get_int( this_properties, "width" );
@@ -260,10 +260,10 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_frame frame )
 {
 	// Get the properties of the consumer
-	mlt_properties this_properties = mlt_consumer_properties( this );
+	mlt_properties this_properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Get the properties of the frame
-	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the dv_encoder
 	dv_encoder_t *encoder = libdv_get_encoder( this, frame );
@@ -335,7 +335,7 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 static void consumer_output( mlt_consumer this, uint8_t *dv_frame, int size, mlt_frame frame )
 {
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	FILE *output = stdout;
 	char *target = mlt_properties_get( properties, "target" );
@@ -371,7 +371,7 @@ static void *consumer_thread( void *arg )
 	mlt_consumer this = arg;
 
 	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Get the terminate_on_pause property
 	int top = mlt_properties_get_int( properties, "terminate_on_pause" );
@@ -398,7 +398,7 @@ static void *consumer_thread( void *arg )
 		if ( frame != NULL )
 		{
 			// Terminate on pause
-			if ( top && mlt_properties_get_double( mlt_frame_properties( frame ), "_speed" ) == 0 )
+			if ( top && mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0 )
 			{
 				mlt_frame_close( frame );
 				break;

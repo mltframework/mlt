@@ -52,7 +52,7 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 	if ( filter != NULL )
 	{
 		// Properties of this
-		mlt_properties properties = mlt_transition_properties( this );
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 		// String to hold the property name
 		char id[ 256 ];
@@ -67,11 +67,11 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 		sprintf( key, "%s.", name );
 
 		// Just in case, let's assume that the filter here has a composite
-		mlt_properties_set( mlt_filter_properties( filter ), "composite.start", "0%,0%:100%x100%" );
-		mlt_properties_set( mlt_filter_properties( filter ), "composite.fill", "true" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "composite.start", "0%,0%:100%x100%" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "composite.fill", "true" );
 
 		// Pass all the key properties on the filter down
-		mlt_properties_pass( mlt_filter_properties( filter ), properties, key );
+		mlt_properties_pass( MLT_FILTER_PROPERTIES( filter ), properties, key );
 
 		// Ensure that filter is assigned
 		mlt_properties_set_data( properties, id, filter, 0, ( mlt_destructor )mlt_filter_close, NULL );
@@ -94,19 +94,19 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 	uint8_t *alpha = NULL;
 
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get the shape frame
 	mlt_frame shape_frame = mlt_properties_get_data( properties, "shape_frame", NULL );
 
 	// Get the width and height of the image
-	int region_width = mlt_properties_get_int( mlt_frame_properties( this ), "width" );
-	int region_height = mlt_properties_get_int( mlt_frame_properties( this ), "height" );
+	int region_width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "width" );
+	int region_height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "height" );
 	uint8_t *image = NULL;
 	mlt_image_format format = mlt_image_yuv422;
 					
 	// Get the shape image to trigger alpha creation
-	mlt_properties_set( mlt_frame_properties( shape_frame ), "distort", "true" );
+	mlt_properties_set( MLT_FRAME_PROPERTIES( shape_frame ), "distort", "true" );
 	mlt_frame_get_image( shape_frame, &image, &format, &region_width, &region_height, 0 );
 
 	alpha = mlt_frame_get_alpha_mask( shape_frame );
@@ -122,7 +122,7 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 			*p ++ = *image ++;
 			image ++;
 		}
-		mlt_properties_set_data( mlt_frame_properties( shape_frame ), "alpha", alpha, 
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( shape_frame ), "alpha", alpha, 
 								 region_width * region_height, mlt_pool_release, NULL );
 	}
 
@@ -144,7 +144,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	mlt_transition this = mlt_frame_pop_service( frame );
 
 	// Get the properties of the transition
-	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 	// Get the composite from the transition
 	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
@@ -156,7 +156,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	char *name = mlt_properties_get( properties, "_unique_id" );
 
 	// Get the original producer position
-	mlt_position position = mlt_properties_get_position( mlt_frame_properties( frame ), name );
+	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name );
 
 	// Create a composite if we don't have one
 	if ( composite == NULL )
@@ -168,7 +168,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		if ( composite != NULL )
 		{
 			// Get the properties
-			mlt_properties composite_properties = mlt_transition_properties( composite );
+			mlt_properties composite_properties = MLT_TRANSITION_PROPERTIES( composite );
 
 			// We want to ensure that we don't get a wobble...
 			mlt_properties_set( composite_properties, "distort", "true" );
@@ -184,7 +184,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	else
 	{
 		// Pass all current properties down
-		mlt_properties composite_properties = mlt_transition_properties( composite );
+		mlt_properties composite_properties = MLT_TRANSITION_PROPERTIES( composite );
 		mlt_properties_pass( composite_properties, properties, "composite." );
 	}
 
@@ -248,7 +248,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 
 				if ( temp != NULL )
 				{
-					mlt_properties_pass( mlt_filter_properties( temp ), properties, key );
+					mlt_properties_pass( MLT_FILTER_PROPERTIES( temp ), properties, key );
 					count ++;
 				}
 			}
@@ -280,7 +280,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			b_frame = composite_copy_region( composite, frame, position );
 
 			// Ensure a destructor
-			mlt_properties_set_data( mlt_frame_properties( frame ), name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
 
 		// Set the position of the b_frame
@@ -290,7 +290,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		while ( filter != NULL )
 		{
 			// Stack this filter
-			if ( mlt_properties_get_int( mlt_filter_properties( filter ), "off" ) == 0 )
+			if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "off" ) == 0 )
 				mlt_filter_process( filter, b_frame );
 
 			// Generate the key for the next
@@ -303,7 +303,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		// Allow filters to be attached to a region filter
 		filter = mlt_properties_get_data( properties, "_region_filter", NULL );
 		if ( filter != NULL )
-			mlt_service_apply_filters( mlt_filter_service( filter ), b_frame, 0 );
+			mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), b_frame, 0 );
 
 		// Hmm - this is probably going to go wrong....
 		mlt_frame_set_position( frame, position );
@@ -343,7 +343,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 				if ( producer != NULL )
 				{
 					// Get the producer properties
-					mlt_properties producer_properties = mlt_producer_properties( producer );
+					mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
 					// Ensure that we loop
 					mlt_properties_set( producer_properties, "eof", "loop" );
@@ -366,10 +366,10 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 				mlt_producer_seek( producer, position );
 
 				// Get the shape frame
-				if ( mlt_service_get_frame( mlt_producer_service( producer ), &shape_frame, 0 ) == 0 )
+				if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &shape_frame, 0 ) == 0 )
 				{
 					// Ensure that the shape frame will be closed
-					mlt_properties_set_data( mlt_frame_properties( b_frame ), "shape_frame", shape_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+					mlt_properties_set_data( MLT_FRAME_PROPERTIES( b_frame ), "shape_frame", shape_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
 					// Specify the callback for evaluation
 					b_frame->get_alpha_mask = filter_get_alpha_mask;
@@ -390,10 +390,10 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
 	// Get the properties of the frame
-	mlt_properties properties = mlt_frame_properties( a_frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( a_frame );
 
 	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( mlt_transition_properties( this ), "_unique_id" );
+	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
 
 	// Assign the current position to the name
 	mlt_properties_set_position( properties, name, mlt_frame_get_position( a_frame ) );
@@ -423,7 +423,7 @@ mlt_transition transition_region_init( void *arg )
 	if ( this != NULL )
 	{
 		// Get the properties from the transition
-		mlt_properties properties = mlt_transition_properties( this );
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
 		// Assign the transition process method
 		this->process = transition_process;

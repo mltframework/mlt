@@ -70,6 +70,7 @@ mlt_frame mlt_frame_init( )
 		// Construct stacks for frames and methods
 		this->stack_image = mlt_deque_init( );
 		this->stack_audio = mlt_deque_init( );
+		this->stack_service = mlt_deque_init( );
 	}
 
 	return this;
@@ -88,7 +89,7 @@ mlt_properties mlt_frame_properties( mlt_frame this )
 
 int mlt_frame_is_test_card( mlt_frame this )
 {
-	return mlt_deque_count( this->stack_image ) == 0 || mlt_properties_get_int( mlt_frame_properties( this ), "test_image" );
+	return mlt_deque_count( this->stack_image ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_image" );
 }
 
 /** Check if we have a way to derive something than test audio.
@@ -96,7 +97,7 @@ int mlt_frame_is_test_card( mlt_frame this )
 
 int mlt_frame_is_test_audio( mlt_frame this )
 {
-	return this->get_audio == NULL || mlt_properties_get_int( mlt_frame_properties( this ), "test_audio" );
+	return this->get_audio == NULL || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_audio" );
 }
 
 /** Get the aspect ratio of the frame.
@@ -104,7 +105,7 @@ int mlt_frame_is_test_audio( mlt_frame this )
 
 double mlt_frame_get_aspect_ratio( mlt_frame this )
 {
-	return mlt_properties_get_double( mlt_frame_properties( this ), "aspect_ratio" );
+	return mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "aspect_ratio" );
 }
 
 /** Set the aspect ratio of the frame.
@@ -112,7 +113,7 @@ double mlt_frame_get_aspect_ratio( mlt_frame this )
 
 int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
 {
-	return mlt_properties_set_double( mlt_frame_properties( this ), "aspect_ratio", value );
+	return mlt_properties_set_double( MLT_FRAME_PROPERTIES( this ), "aspect_ratio", value );
 }
 
 /** Get the position of this frame.
@@ -120,7 +121,7 @@ int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
 
 mlt_position mlt_frame_get_position( mlt_frame this )
 {
-	int pos = mlt_properties_get_position( mlt_frame_properties( this ), "_position" );
+	int pos = mlt_properties_get_position( MLT_FRAME_PROPERTIES( this ), "_position" );
 	return pos < 0 ? 0 : pos;
 }
 
@@ -129,7 +130,7 @@ mlt_position mlt_frame_get_position( mlt_frame this )
 
 int mlt_frame_set_position( mlt_frame this, mlt_position value )
 {
-	return mlt_properties_set_position( mlt_frame_properties( this ), "_position", value );
+	return mlt_properties_set_position( MLT_FRAME_PROPERTIES( this ), "_position", value );
 }
 
 /** Stack a get_image callback.
@@ -196,9 +197,17 @@ void *mlt_frame_pop_audio( mlt_frame this )
 	return mlt_deque_pop_back( this->stack_audio );
 }
 
+/** Return the service stack
+*/
+
+mlt_deque mlt_frame_service_stack( mlt_frame this )
+{
+	return this->stack_service;
+}
+
 int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	mlt_get_image get_image = mlt_frame_pop_get_image( this );
 	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
 
@@ -222,10 +231,10 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	else if ( producer != NULL )
 	{
 		mlt_frame test_frame = NULL;
-		mlt_service_get_frame( mlt_producer_service( producer ), &test_frame, 0 );
+		mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &test_frame, 0 );
 		if ( test_frame != NULL )
 		{
-			mlt_properties test_properties = mlt_frame_properties( test_frame );
+			mlt_properties test_properties = MLT_FRAME_PROPERTIES( test_frame );
 			mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 			mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
 			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
@@ -311,7 +320,7 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 
 int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	int hide = mlt_properties_get_int( properties, "test_audio" );
 
 	if ( hide == 0 && this->get_audio != NULL )
@@ -345,13 +354,34 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 	mlt_properties_set_int( properties, "audio_channels", *channels );
 	mlt_properties_set_int( properties, "audio_samples", *samples );
 
+	if ( mlt_properties_get( properties, "meta.volume" ) )
+	{
+		double value = mlt_properties_get_double( properties, "meta.volume" );
+		if ( value == 0.0 )
+		{
+			memset( *buffer, 0, *samples * *channels * 2 );
+			mlt_properties_set_double( properties, "meta.volume", 1.0 );
+		}
+		else if ( value != 1.0 )
+		{
+			int total = *samples * *channels;
+			int16_t *p = *buffer;
+			while ( total -- )
+			{
+				*p = *p * value;
+				p ++;
+			}
+			mlt_properties_set_double( properties, "meta.volume", 1.0 );
+		}
+	}
+
 	return 0;
 }
 
 unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 {
 	int16_t *pcm = NULL;
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	mlt_audio_format format = mlt_audio_pcm;
 	int frequency = 32000; // lower frequency available?
 	int channels = 2;
@@ -405,16 +435,19 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 mlt_producer mlt_frame_get_original_producer( mlt_frame this )
 {
 	if ( this != NULL )
-		return mlt_properties_get_data( mlt_frame_properties( this ), "_producer", NULL );
+		return mlt_properties_get_data( MLT_FRAME_PROPERTIES( this ), "_producer", NULL );
 	return NULL;
 }
 
 void mlt_frame_close( mlt_frame this )
 {
-	if ( this != NULL && mlt_properties_dec_ref( mlt_frame_properties( this ) ) <= 0 )
+	if ( this != NULL && mlt_properties_dec_ref( MLT_FRAME_PROPERTIES( this ) ) <= 0 )
 	{
 		mlt_deque_close( this->stack_image );
 		mlt_deque_close( this->stack_audio );
+		while( mlt_deque_peek_back( this->stack_service ) )
+			mlt_service_close( mlt_deque_pop_back( this->stack_service ) );
+		mlt_deque_close( this->stack_service );
 		mlt_properties_close( &this->parent );
 		free( this );
 	}
@@ -715,7 +748,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 {
 	// Get properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get the input image, width and height
 	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
@@ -760,7 +793,7 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 {
 	// Get properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	// Get the input image, width and height
 	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
@@ -857,17 +890,15 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 	double d = 0, s = 0;
 
 	mlt_frame_get_audio( this, &dest, format, &frequency_dest, &channels_dest, &samples_dest );
-	//fprintf( stderr, "mix: frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "_position" ) );
 	mlt_frame_get_audio( that, &src, format, &frequency_src, &channels_src, &samples_src );
-	//fprintf( stderr, "mix: frame src  samples %d channels %d\n", samples_src, channels_src );
 
-	int silent = mlt_properties_get_int( mlt_frame_properties( this ), "silent_audio" );
-	mlt_properties_set_int( mlt_frame_properties( this ), "silent_audio", 0 );
+	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "silent_audio" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "silent_audio", 0 );
 	if ( silent )
 		memset( dest, 0, samples_dest * channels_dest * sizeof( int16_t ) );
 
-	silent = mlt_properties_get_int( mlt_frame_properties( that ), "silent_audio" );
-	mlt_properties_set_int( mlt_frame_properties( that ), "silent_audio", 0 );
+	silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( that ), "silent_audio" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( that ), "silent_audio", 0 );
 	if ( silent )
 		memset( src, 0, samples_src * channels_src * sizeof( int16_t ) );
 

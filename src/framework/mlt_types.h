@@ -71,7 +71,6 @@ typedef struct mlt_properties_s *mlt_properties;
 typedef struct mlt_event_struct *mlt_event;
 typedef struct mlt_service_s *mlt_service;
 typedef struct mlt_producer_s *mlt_producer;
-typedef struct mlt_manager_s *mlt_manager;
 typedef struct mlt_playlist_s *mlt_playlist;
 typedef struct mlt_multitrack_s *mlt_multitrack;
 typedef struct mlt_filter_s *mlt_filter;

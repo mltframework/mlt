@@ -45,7 +45,7 @@ mlt_producer producer_ppm_init( void *command )
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
-		mlt_properties properties = mlt_producer_properties( producer );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
@@ -69,7 +69,7 @@ mlt_producer producer_ppm_init( void *command )
 static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the frames properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	if ( mlt_properties_get_int( properties, "has_image" ) )
 	{
@@ -162,7 +162,7 @@ static void producer_ppm_position( producer_ppm this, uint64_t requested )
 static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the frames properties
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
 	FILE *pipe = mlt_properties_get_data( properties, "audio.pipe", NULL );
 
@@ -214,7 +214,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	producer_ppm_position( this, mlt_producer_frame( producer ) );
 
 	// Get the frames properties
-	mlt_properties properties = mlt_frame_properties( *frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 	FILE *video = this->video;
 	FILE *audio = this->audio;

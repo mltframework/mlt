@@ -79,11 +79,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
 		// Get the charcoal scatter value
-		int x_scatter = mlt_properties_get_double( mlt_filter_properties( filter ), "x_scatter" );
-		int y_scatter = mlt_properties_get_double( mlt_filter_properties( filter ), "y_scatter" );
-		float scale = mlt_properties_get_double( mlt_filter_properties( filter ), "scale" );
-		float mix = mlt_properties_get_double( mlt_filter_properties( filter ), "mix" );
-		int invert = mlt_properties_get_int( mlt_filter_properties( filter ), "invert" );
+		int x_scatter = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "x_scatter" );
+		int y_scatter = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "y_scatter" );
+		float scale = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "scale" );
+		float mix = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "mix" );
+		int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" );
 
 		// We'll process pixel by pixel
 		int x = 0;
@@ -135,7 +135,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		*image = temp;
 
 		// Store new and destroy old
-		mlt_properties_set_data( mlt_frame_properties( this ), "image", *image, *width * *height * 2, mlt_pool_release, NULL );
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "image", *image, *width * *height * 2, mlt_pool_release, NULL );
 	}
 
 	return error;
@@ -162,10 +162,10 @@ mlt_filter filter_charcoal_init( char *arg )
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( mlt_filter_properties( this ), "x_scatter", "1" );
-		mlt_properties_set( mlt_filter_properties( this ), "y_scatter", "1" );
-		mlt_properties_set( mlt_filter_properties( this ), "scale", "1.5" );
-		mlt_properties_set( mlt_filter_properties( this ), "mix", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "x_scatter", "1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "y_scatter", "1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "scale", "1.5" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mix", "0" );
 	}
 	return this;
 }

@@ -90,7 +90,7 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 				sprintf( id, "_effect_%d_%d", count, channel );
 
 				// Save the effect state
-				mlt_properties_set_data( mlt_filter_properties( this ), id, eff, 0, mlt_pool_release, NULL );
+				mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), id, eff, 0, mlt_pool_release, NULL );
 				error = 0;
 			}
 		}
@@ -110,13 +110,13 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the filter service
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 
 	// Get the filter properties
-	mlt_properties filter_properties = mlt_filter_properties( filter );
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the properties
 	st_sample_t *input_buffer = mlt_properties_get_data( filter_properties, "input_buffer", NULL );
@@ -345,7 +345,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		frame->get_audio = filter_get_audio;
 		
 		// Parse the window property and allocate smoothing buffer if needed
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		int window = mlt_properties_get_int( properties, "window" );
 		if ( mlt_properties_get( properties, "smooth_buffer" ) == NULL && window > 1 )
 		{
@@ -371,7 +371,7 @@ mlt_filter filter_sox_init( char *arg )
 	{
 		void *input_buffer = mlt_pool_alloc( BUFFER_LEN );
 		void *output_buffer = mlt_pool_alloc( BUFFER_LEN );
-		mlt_properties properties = mlt_filter_properties( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		
 		this->process = filter_process;
 		

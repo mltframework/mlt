@@ -114,7 +114,7 @@ static void create_filter( mlt_producer producer, char *effect, int *created )
 	mlt_filter filter = mlt_factory_filter( id, arg );
 	if ( filter != NULL )
 	{
-		mlt_properties_set_int( mlt_filter_properties( filter ), "_fezzik", 1 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_fezzik", 1 );
 		mlt_producer_attach( producer, filter );
 		mlt_filter_close( filter );
 		*created = 1;
@@ -164,7 +164,7 @@ mlt_producer producer_fezzik_init( char *arg )
 		producer = create_producer( arg );
 
 	if ( producer != NULL )
-		properties = mlt_producer_properties( producer );
+		properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Attach filters if we have a producer and it isn't already westley'd :-)
 	if ( producer != NULL && mlt_properties_get( properties, "westley" ) == NULL && mlt_properties_get( properties, "_westley" ) == NULL )

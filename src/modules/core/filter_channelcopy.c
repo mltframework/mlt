@@ -33,7 +33,7 @@
 static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the a frame
-	mlt_properties properties = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	int i, j;
 	int from = mlt_properties_get_int( properties, "channelcopy.from" );
 	int to = mlt_properties_get_int( properties, "channelcopy.to" );
@@ -69,8 +69,8 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	mlt_properties properties = mlt_filter_properties( this );
-	mlt_properties frame_props = mlt_frame_properties( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+	mlt_properties frame_props = MLT_FRAME_PROPERTIES( frame );
 
 	// Propogate the parameters
 	mlt_properties_set_int( frame_props, "channelcopy.to", mlt_properties_get_int( properties, "to" ) );
@@ -95,9 +95,9 @@ mlt_filter filter_channelcopy_init( char *arg )
 	{
 		this->process = filter_process;
 		if ( arg != NULL )
-			mlt_properties_set_int( mlt_filter_properties( this ), "to", atoi( arg ) );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "to", atoi( arg ) );
 		else
-			mlt_properties_set_int( mlt_filter_properties( this ), "to", 1 );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "to", 1 );
 	}
 	return this;
 }
