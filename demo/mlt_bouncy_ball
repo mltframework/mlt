@@ -1,9 +1,9 @@
 inigo \
-clip3.mpeg \
+clip3.dv \
 -track \
-clip1.mpeg \
+clip1.dv \
 -transition \
-region:circle.png \
+region \
 composite.start=10%,10%:20%x20% \
 composite.key[33]=30%,70%:25%x25% \
 composite.key[66]=70%,30%:15%x15% \

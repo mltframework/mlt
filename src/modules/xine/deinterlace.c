@@ -36,6 +36,7 @@
 #include "xineutils.h"
 
 #define xine_fast_memcpy memcpy
+#define xine_fast_memmove memmove
 
 /*
    DeinterlaceFieldBob algorithm
@@ -644,7 +645,7 @@ static void deinterlace_linearblend_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
   int n;
 
   /* Copy first line */
-  xine_fast_memcpy(pdst, psrc[0], LineLength);
+  xine_fast_memmove(pdst, psrc[0], LineLength);
 
   for (Line = 1; Line < height - 1; ++Line)
   {
@@ -694,7 +695,7 @@ static void deinterlace_linearblend_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
   }
 
   /* Copy last line */
-  xine_fast_memcpy(pdst + Line * LineLength,
+  xine_fast_memmove(pdst + Line * LineLength,
                    psrc[0] + Line * LineLength, LineLength);
 
   /* clear out the MMX registers ready for doing floating point

@@ -3,6 +3,7 @@ include ../../config.mak
 TARGET = libmlt.so
 
 OBJS = mlt_frame.o \
+	   mlt_geometry.o \
 	   mlt_deque.o \
 	   mlt_property.o \
 	   mlt_properties.o \
@@ -37,6 +38,7 @@ INCS = mlt_consumer.h \
 	   mlt_deque.h \
 	   mlt_field.h \
 	   mlt_frame.h \
+	   mlt_geometry.h \
 	   mlt_playlist.h \
 	   mlt_producer.h \
 	   mlt_property.h \

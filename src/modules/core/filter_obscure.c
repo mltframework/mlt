@@ -43,7 +43,7 @@ struct geometry_s
 /** Parse a value from a geometry string.
 */
 
-static float parse_value( char **ptr, int normalisation, char delim, float defaults )
+static inline float parse_value( char **ptr, int normalisation, char delim, float defaults )
 {
 	float value = defaults;
 
@@ -85,6 +85,10 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 	}
 	else
 	{
+		geometry->x = 0;
+		geometry->y = 0;
+		geometry->w = nw;
+		geometry->h = nh;
 		geometry->mask_w = 20;
 		geometry->mask_h = 20;
 	}

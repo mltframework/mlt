@@ -40,6 +40,7 @@ extern "C"
 #include "mlt_tractor.h"
 #include "mlt_tokeniser.h"
 #include "mlt_parser.h"
+#include "mlt_geometry.h"
 
 #ifdef __cplusplus
 }
