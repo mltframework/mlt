@@ -853,6 +853,14 @@ static void *consumer_thread( void *arg )
 						uint8_t *q;
 
 						mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+
+						// This will cause some fx to go awry....
+						if ( mlt_properties_get_int( properties, "transcode" ) )
+						{
+							mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_width", img_height * 4.0 / 3.0 );
+							mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_height", img_height );
+						}
+
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
 
 						q = image;

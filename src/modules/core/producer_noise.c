@@ -55,8 +55,10 @@ mlt_producer producer_noise_init( void *arg )
 	// Initialise the producer
 	if ( this != NULL )
 	{
+		int is_pal = mlt_properties_get_int( mlt_producer_properties( this ), "normalised_height" ) == 576;
+
 		// Synthetic - aspect ratio of 1
-		mlt_properties_set_double( mlt_producer_properties( this ), "aspect_ratio", 1 );
+		mlt_properties_set_double( mlt_producer_properties( this ), "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
 
 		// Callback registration
 		this->get_frame = producer_get_frame;
@@ -156,7 +158,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		int is_pal = mlt_properties_get_double( producer_props, "fps" ) == 25.0;
 
 		// Aspect ratio is 1?
-		mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 128.0/117.0 : 72.0/79.0 );
+		mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );

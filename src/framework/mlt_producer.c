@@ -78,12 +78,12 @@ int mlt_producer_init( mlt_producer this, void *child )
 			if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )
 			{
 				mlt_properties_set_double( properties, "fps", 25.0 );
-				mlt_properties_set_double( properties, "aspect_ratio", 72.0 / 79.0 );
+				mlt_properties_set_double( properties, "aspect_ratio", 59.0 / 54.0 );
 			}
 			else
 			{
 				mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
-				mlt_properties_set_double( properties, "aspect_ratio", 128.0 / 117.0 );
+				mlt_properties_set_double( properties, "aspect_ratio", 10.0 / 11.0 );
 			}
 			mlt_properties_set_double( properties, "_speed", 1.0 );
 			mlt_properties_set_position( properties, "in", 0 );

@@ -176,6 +176,8 @@ static int consumer_start( mlt_consumer parent )
 			mlt_properties_set_int( this->properties, "height", this->height );
 		}
 
+		//this->width = this->height * this->display_aspect;
+
 		// Inherit the scheduling priority
 		pthread_attr_init( &thread_attributes );
 		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
@@ -228,8 +230,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	mlt_properties properties = this->properties;
 
 	mlt_image_format vfmt = mlt_image_rgb24;
-	int width = this->width, height = this->height;
-	uint8_t *image;
+	int height = this->height;
+	int width = this->width;
+	uint8_t *image = NULL;
 	int changed = 0;
 
 	void ( *lock )( void ) = mlt_properties_get_data( properties, "app_lock", NULL );
@@ -276,13 +279,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 	}
 
-	if ( width != this->width || height != this->height || 
-		 ( ( int )( this->last_frame_aspect * 1000 ) != ( int )( mlt_frame_get_aspect_ratio( frame ) * 1000 ) &&
+	if ( ( ( int )( this->last_frame_aspect * 1000 ) != ( int )( mlt_frame_get_aspect_ratio( frame ) * 1000 ) &&
 		 ( mlt_frame_get_aspect_ratio( frame ) != 1.0 || this->last_frame_aspect == 0.0 ) ) )
-
 	{
-		this->width = width;
-		this->height = height;
 		this->last_frame_aspect = mlt_frame_get_aspect_ratio( frame );
 		changed = 1;
 	}
@@ -293,58 +292,25 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
 		if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 16, this->sdl_flags );
+
 		changed = 1;
 		mlt_properties_set_int( properties, "changed", 0 );
 
-		// Determine frame's display aspect ratio
-		float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * this->width / this->height;
-		
-		// Determine window's new display aspect ratio
-		float this_aspect = ( float )this->window_width / this->window_height;
+		// May as well use the mlt rescaler...
+		//if ( mlt_properties_get( properties, "rescale" ) != NULL && !strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
+			//mlt_properties_set( properties, "rescale", "nearest" );
 
-		// If using hardware scaler
-		if ( mlt_properties_get( properties, "rescale" ) != NULL &&
-			!strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
-		{
-			// Special case optimisation to negate odd effect of sample aspect ratio
-			// not corresponding exactly with image resolution.
-			if ( ( (int)( this_aspect * 1000 ) == (int)( this->display_aspect * 1000 ) ) && 
-				 ( (int)( mlt_frame_get_aspect_ratio( frame ) * 1000 ) == (int)( this->aspect_ratio * 1000 ) ) )
-			{
-				this->rect.w = this->window_width;
-				this->rect.h = this->window_height;
-			}
-			else
-			{
-				// Use hardware scaler to normalise display aspect ratio
-				this->rect.w = frame_aspect / this_aspect * this->window_width;
-				this->rect.h = this->window_height;
-				if ( this->rect.w > this->window_width )
-				{
-					this->rect.w = this->window_width;
-					this->rect.h = this_aspect / frame_aspect * this->window_height;
-				}
-			}
-		}
-		// Special case optimisation to negate odd effect of sample aspect ratio
-		// not corresponding exactly with image resolution.
-		else if ( (int)( this_aspect * 1000 ) == (int)( this->display_aspect * 1000 ) ) 
+		// Determine window's new display aspect ratio
+		float this_aspect = this->display_aspect / ( ( float )this->window_width / ( float )this->window_height );
+
+		this->rect.w = this_aspect * this->window_width;
+		this->rect.h = this->window_height;
+		if ( this->rect.w > this->window_width )
 		{
 			this->rect.w = this->window_width;
-			this->rect.h = this->window_height;
+			this->rect.h = ( 1.0 / this_aspect ) * this->window_height;
 		}
-		// Use hardware scaler to normalise sample aspect ratio
-		else if ( this->window_height * this->display_aspect > this->window_width )
-		{
-			this->rect.w = this->window_width;
-			this->rect.h = this->window_width / this->display_aspect;
-		}
-		else
-		{
-			this->rect.w = this->window_height * this->display_aspect;
-			this->rect.h = this->window_height;
-		}
-		
+
 		this->rect.x = ( this->window_width - this->rect.w ) / 2;
 		this->rect.y = ( this->window_height - this->rect.h ) / 2;
 
@@ -374,9 +340,21 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	this->last_producer = mlt_properties_get_data( mlt_frame_properties( frame ), "_producer", NULL );
 
 	// Get the image, width and height
-	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
-	mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-	
+	if ( image == NULL )
+	{
+		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+
+		// I would like to provide upstream scaling here, but this is incorrect
+		// Something? (or everything?) is too sensitive to aspect ratio
+		//width = this->rect.w;
+		//height = this->rect.h;
+		//mlt_properties_set( mlt_frame_properties( frame ), "distort", "true" );
+		//mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_width", width );
+		//mlt_properties_set_int( mlt_frame_properties( frame ), "normalised_height", height );
+
+		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
+	}
+
 	if ( this->sdl_screen != NULL )
 	{
 		// Calculate the scan length

@@ -199,7 +199,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 128.0/117.0 : 72.0/79.0 );
+		mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
 
 		// colour is an alias for resource
 		if ( mlt_properties_get( producer_props, "colour" ) != NULL )

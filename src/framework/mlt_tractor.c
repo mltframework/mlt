@@ -212,9 +212,10 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
 	if ( mlt_properties_get( properties, "distort" ) )
 		mlt_properties_set( frame_properties, "distort", mlt_properties_get( properties, "distort" ) );
-	mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
 	mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_double( properties, "consumer_deinterlace" ) );
+	mlt_properties_set_int( frame_properties, "normalised_width", mlt_properties_get_double( properties, "normalised_width" ) );
+	mlt_properties_set_int( frame_properties, "normalised_height", mlt_properties_get_double( properties, "normalised_height" ) );
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );

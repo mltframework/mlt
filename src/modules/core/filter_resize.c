@@ -62,6 +62,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		double input_ar = mlt_frame_get_aspect_ratio( this ) * real_width / real_height;
 		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight;
 		
+		//fprintf( stderr, "normalised %dx%d output %dx%d %f %f\n", normalised_width, normalised_height, owidth, oheight, ( float )output_ar, ( float )mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight );
+
 		// Optimised for the input_ar > output_ar case (e.g. widescreen on standard)
 		int scaled_width = input_ar / output_ar * normalised_width + 0.5;
 		int scaled_height = normalised_height;

@@ -204,6 +204,9 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_data( play, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
 	mlt_properties_set_data( still, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
 
+	mlt_properties_set_int( play, "progressive", 1 );
+	mlt_properties_set_int( still, "progressive", 1 );
+
 	mlt_properties_set_int( play, "put_mode", 1 );
 	mlt_properties_set_int( still, "put_mode", 1 );
 
@@ -259,7 +262,6 @@ static void *consumer_thread( void *arg )
 				{
 					this->last_speed = use_speed;
 					this->active = this->still;
-					this->ignore_change = 5;
 					mlt_consumer_start( this->still );
 				}
 				mlt_properties_set_int( still, "changed", changed );

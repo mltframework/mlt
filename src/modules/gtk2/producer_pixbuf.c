@@ -374,6 +374,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Obtain properties of frame and producer
 		mlt_properties properties = mlt_frame_properties( *frame );
 
+		// Determine if we're rendering for PAL or NTSC
+		int is_pal = mlt_properties_get_int( properties, "normalised_height" ) == 576;
+
 		// Set the producer on the frame properties
 		mlt_properties_set_data( properties, "producer_pixbuf", this, 0, NULL, NULL );
 
@@ -388,7 +391,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", 1 );
+		mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
 
 		// Set alpha call back
 		( *frame )->get_alpha_mask = producer_get_alpha_mask;

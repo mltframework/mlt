@@ -866,13 +866,13 @@ static struct geometry_s *composite_calculate( struct geometry_s *result, mlt_tr
 	// Structures for geometry
 	struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
 
-	// Now parse the geometries
-	if ( start == NULL || mlt_properties_get_int( properties, "refresh" ) )
-	{
-		// Obtain the normalised width and height from the a_frame
-		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
-		int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
+	// Obtain the normalised width and height from the a_frame
+	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
+	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
 
+	// Now parse the geometries
+	if ( start == NULL || mlt_properties_get_int( properties, "refresh" ) || start->nw != normalised_width || start->nh != normalised_height )
+	{
 		// Parse the transitions properties
 		start = transition_parse_keys( this, normalised_width, normalised_height );
 
@@ -1051,6 +1051,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// consumer properties from the a_frame
 		mlt_properties_set_double( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+		mlt_properties_set_int( b_props, "normalised_width", mlt_properties_get_double( a_props, "normalised_width" ) );
+		mlt_properties_set_int( b_props, "normalised_height", mlt_properties_get_double( a_props, "normalised_height" ) );
 
 		// Special case for titling...
 		if ( mlt_properties_get_int( properties, "titles" ) )

@@ -145,7 +145,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 {
 	mlt_properties properties = mlt_producer_properties( producer );
 	int silent = mlt_properties_get_int( mlt_consumer_properties( consumer ), "silent" );
-
+	struct timespec tm = { 0, 40000 };
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 	{
@@ -167,12 +167,16 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 
 		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 		{
-			int value = term_read( );
+			int value = silent ? -1 : term_read( );
+
 			if ( value != -1 )
 				transport_action( producer, ( char * )&value );
 
 			if ( !silent && mlt_properties_get_int( properties, "stats_off" ) == 0 )
 				fprintf( stderr, "Current Position: %10d\r", mlt_producer_position( producer ) );
+
+			if ( silent )
+				nanosleep( &tm, NULL );
 		}
 
 		if ( !silent )

@@ -386,7 +386,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			SDL_Event event;
 	
 			changed = consumer_get_dimensions( &this->window_width, &this->window_height );
-	
+
 			while ( SDL_PollEvent( &event ) )
 			{
 				mlt_events_fire( this->properties, "consumer-sdl-event", &event, NULL );
@@ -420,7 +420,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		if ( width != this->width || height != this->height || 
 			 ( ( int )( this->last_frame_aspect * 1000 ) != ( int )( mlt_frame_get_aspect_ratio( frame ) * 1000 ) &&
 			 ( mlt_frame_get_aspect_ratio( frame ) != 1.0 || this->last_frame_aspect == 0.0 ) ) )
-
 		{
 			this->width = width;
 			this->height = height;
@@ -430,12 +429,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 		if ( this->running && ( this->sdl_screen == NULL || changed ) )
 		{
-			// Determine frame's display aspect ratio
-			float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * this->width / this->height;
-			
-			// Determine window's new display aspect ratio
-			float this_aspect = ( float )this->window_width / this->window_height;
-
 			// Force an overlay recreation
 			if ( this->sdl_overlay != NULL )
 				SDL_FreeYUVOverlay( this->sdl_overlay );
@@ -446,9 +439,17 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			sdl_unlock_display();
 			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 				this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
-			SDL_Flip( this->sdl_screen );
+			//SDL_Flip( this->sdl_screen );
 			mlt_properties_set_int( properties, "changed", 0 );
-		
+
+			// Determine window's new display aspect ratio
+			float this_aspect = ( float )this->window_width / this->window_height;
+
+			// Determine frame's display aspect ratio
+			float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
+			this->width = width;
+			this->height = height;
+
 			// If using hardware scaler
 			if ( mlt_properties_get( properties, "rescale" ) != NULL &&
 				!strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
@@ -508,13 +509,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				sdl_unlock_display();
 			}
 		}
-			
-		if ( mlt_properties_get_int( properties, "changed" ) )
+		else if ( mlt_properties_get_int( properties, "changed" ) )
 		{
 			sdl_lock_display();
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 			SDL_SetClipRect( this->sdl_screen, &this->rect );
-			SDL_Flip( this->sdl_screen );
+			//SDL_Flip( this->sdl_screen );
 			sdl_unlock_display();
 			mlt_properties_set_int( properties, "changed", 0 );
 		}
@@ -658,7 +658,8 @@ static void *consumer_thread( void *arg )
 			consumer_get_dimensions( &this->window_width, &this->window_height );
 	}
 
-	SDL_InitSubSystem( SDL_INIT_AUDIO );
+	if ( !mlt_properties_get_int( mlt_consumer_properties( consumer ), "audio_off" ) )
+		SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 	// Loop until told not to
 	while( this->running )
@@ -715,7 +716,8 @@ static void *consumer_thread( void *arg )
 	if ( this->sdl_overlay != NULL )
 		SDL_FreeYUVOverlay( this->sdl_overlay );
 
-	SDL_QuitSubSystem( SDL_INIT_AUDIO );
+	if ( !mlt_properties_get_int( mlt_consumer_properties( consumer ), "audio_off" ) )
+		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 
 	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
 		SDL_Quit( );

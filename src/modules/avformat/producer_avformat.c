@@ -691,7 +691,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			else
 			{
 				int is_pal = mlt_properties_get_double( properties, "fps" ) == 25.0;
-				mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 128.0/117.0 : 72.0/79.0 );
+				mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
 			}
 
 			//fprintf( stderr, "AVFORMAT: sample aspect %f %dx%d\n", av_q2d( codec_context->sample_aspect_ratio ), codec_context->width, codec_context->height );
