@@ -295,19 +295,19 @@ static void sigsegv_handler()
 	char **strings;
 	size_t i;
 
-	fprintf( stderr, "\a\nMiracle experienced a segmentation fault.\n"
+	miracle_log( LOG_CRIT, "\a\nMiracle experienced a segmentation fault.\n"
 		"Dumping stack from the offending thread\n\n" );
 	size = backtrace( array, 10 );
 	strings = backtrace_symbols( array, size );
 
-	fprintf( stderr, "Obtained %zd stack frames.\n", size );
+	miracle_log( LOG_CRIT, "Obtained %zd stack frames.\n", size );
 
 	for ( i = 0; i < size; i++ )
-		 fprintf( stderr, "%s\n", strings[ i ] );
+		 miracle_log( LOG_CRIT, "%s\n", strings[ i ] );
 
 	free( strings );
 
-	fprintf( stderr, "\nDone dumping - exiting.\n" );
+	miracle_log( LOG_CRIT, "\nDone dumping - exiting.\n" );
 	exit( EXIT_FAILURE );
 }
 
