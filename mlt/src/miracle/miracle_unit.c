@@ -593,6 +593,20 @@ void miracle_unit_step( miracle_unit unit, int64_t offset )
 	//return dv_player_get_eof_action( player );
 //}
 
+int miracle_unit_set( miracle_unit unit, char *name_value )
+{
+	mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
+	mlt_properties properties = mlt_playlist_properties( playlist );
+	return mlt_properties_parse( properties, name_value );
+}
+
+char *miracle_unit_get( miracle_unit unit, char *name )
+{
+	mlt_playlist playlist = mlt_properties_get_data( unit->properties, "playlist", NULL );
+	mlt_properties properties = mlt_playlist_properties( playlist );
+	return mlt_properties_get( properties, name );
+}
+
 /** Release the unit
 
     \todo error handling

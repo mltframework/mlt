@@ -69,6 +69,8 @@ extern void                 miracle_unit_step( miracle_unit unit, int64_t offset
 extern void                 miracle_unit_close( miracle_unit unit );
 extern void                 miracle_unit_suspend( miracle_unit );
 extern void                 miracle_unit_restore( miracle_unit );
+extern int					miracle_unit_set( miracle_unit, char *name_value );
+extern char *				miracle_unit_get( miracle_unit, char *name );
 extern int					miracle_unit_get_current_clip( miracle_unit );
 
 

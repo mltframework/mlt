@@ -238,6 +238,16 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 		mlt_producer_seek_frame( producer, position + entry->frame_out );
 		mlt_producer_set_speed( producer, 0 );
 	}
+	else if ( !strcmp( eof, "loop" ) && total > 0 )
+	{
+		playlist_entry *entry = this->list[ 0 ];
+		mlt_producer this_producer = mlt_playlist_producer( this );
+		mlt_producer_seek_frame( this_producer, 0 );
+		producer = entry->producer;
+		position = entry->frame_in;
+		position += mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) );
+		mlt_producer_seek_frame( producer, position );
+	}
 	else
 	{
 		mlt_producer_seek( mlt_playlist_producer( this ), 0 );
