@@ -162,7 +162,6 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		if ( width != this->width || height != this->height )
 		{
 			pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
-			mlt_properties_set_int( producer_props, "bpp", gdk_pixbuf_get_has_alpha( pixbuf ) ? 4 : 3 );
 			free( this->image );
 			free( this->alpha );
 			this->image = NULL;
@@ -190,28 +189,34 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			// Store the width/height of the pixbuf temporarily
 			this->width = gdk_pixbuf_get_width( pixbuf );
 			this->height = gdk_pixbuf_get_height( pixbuf );
-			
-			mlt_properties_set_int( producer_props, "bpp", gdk_pixbuf_get_has_alpha( pixbuf ) ? 4 : 3 );
 		}
 	}
 
-	int bpp = mlt_properties_get_int( producer_props, "bpp" );
-	
 	// If we have a pixbuf
 	if ( pixbuf && width > 0 )
 	{
+		char *interps = mlt_properties_get( properties, "rescale.interp" );
+		int interp = GDK_INTERP_BILINEAR;
+
+		if ( strcmp( interps, "nearest" ) == 0 )
+			interp = GDK_INTERP_NEAREST;
+		else if ( strcmp( interps, "tiles" ) == 0 )
+			interp = GDK_INTERP_TILES;
+		else if ( strcmp( interps, "hyper" ) == 0 )
+			interp = GDK_INTERP_HYPER;
+
+//		fprintf( stderr, "SCALING PIXBUF from %dx%d to %dx%d was %dx%d\n", gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), width, height, this->width, this->height );
 		
 		// Note - the original pixbuf is already safe and ready for destruction
-		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_NEAREST );
+		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
 		
 		// Store width and height
 		this->width = width;
 		this->height = height;
 		
-		//fprintf( stderr, "SCALING PIXBUF from %dx%d to %dx%d %dx%d\n", gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), width, height, this->width, this->height );
 		// Allocate/define image
 		// IRRIGATE ME
-		uint8_t *image = malloc( width * ( height + 1 ) * bpp );
+		uint8_t *image = malloc( width * ( height + 1 ) * 2 );
 		uint8_t *alpha = NULL;
 
 		// Extract YUV422 and alpha

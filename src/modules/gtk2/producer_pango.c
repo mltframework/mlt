@@ -55,6 +55,24 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 	rgba_color fg, rgba_color bg, int pad, int align );
 
+/** Parse the alignment property.
+*/
+
+static int alignment_parse( char* align )
+{
+	int ret = pango_align_left;
+
+	if ( align == NULL );
+	else if ( isdigit( align[ 0 ] ) )
+		ret = atoi( align );
+	else if ( align[ 0 ] == 'c' || align[ 0 ] == 'm' )
+		ret = pango_align_center;
+	else if ( align[ 0 ] == 'r' )
+		ret = pango_align_right;
+
+	return ret;
+}
+
 mlt_producer producer_pango_init( const char *filename )
 {
 	producer_pango this = calloc( sizeof( struct producer_pango_s ), 1 );
@@ -224,16 +242,16 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Get producer properties
 	char *fg = mlt_properties_get( producer_props, "fgcolour" );
 	char *bg = mlt_properties_get( producer_props, "bgcolour" );
-	int align = mlt_properties_get_int( producer_props, "align" );
+	int align = alignment_parse( mlt_properties_get( producer_props, "align" ) );
 	int pad = mlt_properties_get_int( producer_props, "pad" );
 	char *markup = mlt_properties_get( producer_props, "markup" );
 	char *text = mlt_properties_get( producer_props, "text" );
 	char *font = mlt_properties_get( producer_props, "font" );
 
 	// See if any properties changed
-	int property_changed = ( this->fgcolor == NULL || strcmp( fg, this->fgcolor ) );
-	property_changed = property_changed || ( this->bgcolor == NULL || strcmp( bg, this->bgcolor ) );
-	property_changed = property_changed || ( align != this->align );
+	int property_changed = ( align != this->align );
+	property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
+	property_changed = property_changed || ( this->bgcolor == NULL || ( bg && strcmp( bg, this->bgcolor ) ) );
 	property_changed = property_changed || ( pad != this->pad );
 	property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
 	property_changed = property_changed || ( text && this->text && strcmp( text, this->text ) );
@@ -272,11 +290,9 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			// Store the width/height of the pixbuf temporarily
 			this->width = gdk_pixbuf_get_width( pixbuf );
 			this->height = gdk_pixbuf_get_height( pixbuf );
-
-			mlt_properties_set_int( producer_props, "bpp", gdk_pixbuf_get_has_alpha( pixbuf ) ? 4 : 3 );
 		}
 	}
-	else if ( this->image == NULL || width != this->width || height != this->height )
+	else if ( width > 0 && ( this->image == NULL || width != this->width || height != this->height ) )
 	{
 		free( this->image );
 		free( this->alpha );
@@ -284,16 +300,25 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		this->alpha = NULL;
 
 		pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
-		mlt_properties_set_int( producer_props, "bpp", gdk_pixbuf_get_has_alpha( pixbuf ) ? 4 : 3 );
 	}
-
-	int bpp = mlt_properties_get_int( producer_props, "bpp" );
 
 	// If we have a pixbuf and a valid width
 	if ( pixbuf && width > 0 )
 	{
+		char *interps = mlt_properties_get( properties, "rescale.interp" );
+		int interp = GDK_INTERP_BILINEAR;
+
+		if ( strcmp( interps, "nearest" ) == 0 )
+			interp = GDK_INTERP_NEAREST;
+		else if ( strcmp( interps, "tiles" ) == 0 )
+			interp = GDK_INTERP_TILES;
+		else if ( strcmp( interps, "hyper" ) == 0 )
+			interp = GDK_INTERP_HYPER;
+
+//		fprintf( stderr, "SCALING PANGO from %dx%d to %dx%d was %dx%d\n", gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), width, height, this->width, this->height );
+			
 		// Note - the original pixbuf is already safe and ready for destruction
-		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_NEAREST );
+		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
 
 		// Store width and height
 		this->width = width;
@@ -301,7 +326,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 		// Allocate/define image
 		// IRRIGATE ME
-		uint8_t *image = malloc( width * ( height + 1 ) * bpp );
+		uint8_t *image = malloc( width * ( height + 1 ) * 2 );
 		uint8_t *alpha = NULL;
 
 		// Allocate the alpha mask
@@ -328,7 +353,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
 
 	// pass the image data without destructor
-	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * bpp, NULL, NULL );
+	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * 2, NULL, NULL );
 	mlt_properties_set_data( properties, "alpha", this->alpha, this->width * this->height, NULL, NULL );
 }
 

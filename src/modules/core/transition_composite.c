@@ -23,19 +23,24 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 /** Geometry struct.
 */
 
 struct geometry_s
 {
-	int nw;
-	int nh;
+	int nw; // normalised width
+	int nh; // normalised height
+	int sw; // scaled width, not including consumer scale based upon w/nw
+	int sh; // scaled height, not including consumer scale based upon h/nh
 	float x;
 	float y;
 	float w;
 	float h;
 	float mix;
+	int halign; // horizontal alignment: 0=left, 1=center, 2=right
+	int valign; // vertical alignment: 0=top, 1=middle, 2=bottom
 };
 
 /** Parse a value from a geometry string.
@@ -78,8 +83,8 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 	{
 		geometry->x = defaults->x;
 		geometry->y = defaults->y;
-		geometry->w = defaults->w;
-		geometry->h = defaults->h;
+		geometry->w = geometry->sw = defaults->w;
+		geometry->h = geometry->sh = defaults->h;
 		geometry->mix = defaults->mix;
 	}
 	else
@@ -93,8 +98,8 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 		char *ptr = property;
 		geometry->x = parse_value( &ptr, nw, ',', geometry->x );
 		geometry->y = parse_value( &ptr, nh, ':', geometry->y );
-		geometry->w = parse_value( &ptr, nw, 'x', geometry->w );
-		geometry->h = parse_value( &ptr, nh, ':', geometry->h );
+		geometry->w = geometry->sw = parse_value( &ptr, nw, 'x', geometry->w );
+		geometry->h = geometry->sh = parse_value( &ptr, nh, ':', geometry->h );
 		geometry->mix = parse_value( &ptr, 100, ' ', geometry->mix );
 	}
 }
@@ -107,11 +112,38 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	// Calculate this frames geometry
 	output->nw = in->nw;
 	output->nh = in->nh;
-	output->x = in->x + ( out->x - in->x ) * position;
-	output->y = in->y + ( out->y - in->y ) * position;
+	output->x = in->x + ( out->x - in->x ) * position + 0.5;
+	output->y = in->y + ( out->y - in->y ) * position + 0.5;
 	output->w = in->w + ( out->w - in->w ) * position;
 	output->h = in->h + ( out->h - in->h ) * position;
 	output->mix = in->mix + ( out->mix - in->mix ) * position;
+}
+
+/** Parse the alignment properties into the geometry.
+*/
+
+static int alignment_parse( char* align )
+{
+	int ret = 0;
+	
+	if ( align == NULL );
+	else if ( isdigit( align[ 0 ] ) )
+		ret = atoi( align );
+	else if ( align[ 0 ] == 'c' || align[ 0 ] == 'm' )
+		ret = 1;
+	else if ( align[ 0 ] == 'r' || align[ 0 ] == 'b' )
+		ret = 2;
+
+	return ret;
+}
+
+/** Adjust position according to scaled size and alignment properties.
+*/
+
+static void alignment_calculate( struct geometry_s *geometry )
+{
+	geometry->x += ( geometry->w - geometry->sw ) * geometry->halign / 2 + 0.5;
+	geometry->y += ( geometry->h - geometry->sh ) * geometry->valign / 2 + 0.5;
 }
 
 /** Calculate the position for this frame.
@@ -130,6 +162,26 @@ static float position_calculate( mlt_transition this, mlt_frame frame )
 	return ( float )( position - in ) / ( float )( out - in + 1 );
 }
 
+/** Calculate the field delta for this frame - position between two frames.
+*/
+
+static float delta_calculate( mlt_transition this, mlt_frame frame )
+{
+	// Get the in and out position
+	mlt_position in = mlt_transition_get_in( this );
+	mlt_position out = mlt_transition_get_out( this );
+
+	// Get the position of the frame
+	mlt_position position = mlt_frame_get_position( frame );
+
+	// Now do the calcs
+	float x = ( float )( position - in ) / ( float )( out - in + 1 );
+	position++;
+	float y = ( float )( position - in ) / ( float )( out - in + 1 );
+
+	return ( y - x ) / 2.0;
+}
+
 static int get_value( mlt_properties properties, char *preferred, char *fallback )
 {
 	int value = mlt_properties_get_int( properties, preferred );
@@ -141,16 +193,18 @@ static int get_value( mlt_properties properties, char *preferred, char *fallback
 /** Composite function.
 */
 
-static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry )
+static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *p_alpha, struct geometry_s geometry, int field )
 {
 	int ret = 0;
 	int i, j;
 	int x_src = 0, y_src = 0;
 	float weight = geometry.mix / 100;
-	int x = ( geometry.x * width_dest ) / geometry.nw;
-	int y = ( geometry.y * height_dest ) / geometry.nh;
 	int stride_src = width_src * 2;
 	int stride_dest = width_dest * 2;
+
+	// Adjust to consumer scale
+	int x = geometry.x * width_dest / geometry.nw + 0.5;
+	int y = geometry.y * height_dest / geometry.nh + 0.5;
 
 	x -= x % 2;
 
@@ -193,6 +247,27 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	if ( p_alpha )
 		p_alpha += x_src + y_src * stride_src / 2;
 
+	// Assuming lower field first
+	// Special care is taken to make sure the b_frame is aligned to the correct field.
+	// field 0 = lower field and y should be odd (y is 0-based).
+	// field 1 = upper field and y should be even.
+	if ( ( field > -1 ) && ( y % 2 == field ) )
+	{
+		if ( y == 0 )
+			p_dest += stride_dest;
+		else
+			p_dest -= stride_dest;
+	}
+
+	// On the second field, use the other lines from b_frame
+	if ( field == 1 )
+	{
+		p_src += stride_src;
+		if ( p_alpha )
+			p_alpha += stride_src / 2;
+		height_src--;
+	}
+
 	uint8_t *p = p_src;
 	uint8_t *q = p_dest;
 	uint8_t *o = p_dest;
@@ -202,14 +277,16 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	uint8_t UV;
 	uint8_t a;
 	float value;
+	int step = ( field > -1 ) ? 2 : 1;
 
 	// now do the compositing only to cropped extents
-	for ( i = 0; i < height_src; i++ )
+	for ( i = 0; i < height_src; i += step )
 	{
-		p = p_src;
-		q = p_dest;
-		o = p_dest;
-		z = p_alpha;
+		p = &p_src[ i * stride_src ];
+		q = &p_dest[ i * stride_dest ];
+		o = &p_dest[ i * stride_dest ];
+		if ( p_alpha )
+			z = &p_alpha[ i * stride_src / 2 ];
 
 		for ( j = 0; j < width_src; j ++ )
 		{
@@ -220,11 +297,6 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 			*o ++ = (uint8_t)( Y * value + *q++ * ( 1 - value ) );
 			*o ++ = (uint8_t)( UV * value + *q++ * ( 1 - value ) );
 		}
-
-		p_src += stride_src;
-		p_dest += stride_dest;
-		if ( p_alpha )
-			p_alpha += stride_src / 2;
 	}
 
 	return ret;
@@ -239,6 +311,10 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 	int ret = 0;
 	mlt_image_format format = mlt_image_yuv422;
 
+	// Initialise the scaled dimensions from the computed
+	geometry->sw = geometry->w;
+	geometry->sh = geometry->h;
+
 	// Compute the dimensioning rectangle
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 	mlt_transition this = mlt_properties_get_data( b_props, "transition_composite", NULL );
@@ -247,16 +323,17 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 	if ( mlt_properties_get( properties, "distort" ) == NULL )
 	{
 		// Now do additional calcs based on real_width/height etc
-		//int normalised_width = mlt_properties_get_int( b_props, "normalised_width" );
-		//int normalised_height = mlt_properties_get_int( b_props, "normalised_height" );
 		int normalised_width = geometry->w;
 		int normalised_height = geometry->h;
-		int real_width = get_value( b_props, "real_width", "width" );
+		//int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_frame_get_aspect_ratio( b_frame );
 		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
-		int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
+		//int scaled_width = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_width;
+		//int scaled_height = ( input_ar > output_ar ? input_ar / output_ar : output_ar / input_ar ) * real_height;
+		int scaled_width = ( float )geometry->nw / geometry->nh / output_ar * real_height * input_ar;
+		int scaled_height = real_height;
+		//fprintf( stderr, "composite: real %dx%d scaled %dx%d normalised %dx%d\n", real_width, real_height, scaled_width, scaled_height, normalised_width, normalised_height );
 
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
@@ -277,13 +354,10 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 		// Now we need to align to the geometry
 		if ( scaled_width <= geometry->w && scaled_height <= geometry->h )
 		{
-			// TODO: Should take into account requested alignment here...
-			// Assume centred alignment for now
-
-			geometry->x = geometry->x + ( geometry->w - scaled_width ) / 2;
-			geometry->y = geometry->y + ( geometry->h - scaled_height ) / 2;
-			geometry->w = scaled_width;
-			geometry->h = scaled_height;
+			// Save the new scaled dimensions
+			geometry->sw = scaled_width;
+			geometry->sh = scaled_height;
+			
 			mlt_properties_set( b_props, "distort", "true" );
 		}
 		else
@@ -297,12 +371,18 @@ static int get_b_frame_image( mlt_frame b_frame, uint8_t **image, int *width, in
 		mlt_properties_set( b_props, "distort", "true" );
 	}
 
-	int x = ( geometry->x * *width ) / geometry->nw;
-	int y = ( geometry->y * *height ) / geometry->nh;
-	*width = ( geometry->w * *width ) / geometry->nw;
-	*height = ( geometry->h * *height ) / geometry->nh;
+	// Take into consideration alignment for optimisation
+	alignment_calculate( geometry );
+
+	// Adjust to consumer scale
+	int x = geometry->x * *width / geometry->nw + 0.5;
+	int y = geometry->y * *height / geometry->nh + 0.5;
+	*width = geometry->sw * *width / geometry->nw;
+	*height = geometry->sh * *height / geometry->nh;
 
 	x -= x % 2;
+
+	//fprintf( stderr, "composite calculated %d,%d:%dx%d\n", x, y, *width, *height );
 
 	// optimization points - no work to do
 	if ( *width <= 0 || *height <= 0 )
@@ -352,6 +432,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Calculate the position
 		float position = position_calculate( this, a_frame );
+		float delta = delta_calculate( this, a_frame );
 
 		// Obtain the normalised width and height from the a_frame
 		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
@@ -361,24 +442,45 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
 		geometry_parse( &end, &start, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
 
-		// Do the calculation
-		geometry_calculate( &result, &start, &end, position );
+		// Now parse the alignment
+		result.halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
+		result.valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 		mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
 
+		// Do the calculation
+		geometry_calculate( &result, &start, &end, position );
+
 		// Get the image from the b frame
 		uint8_t *image_b;
 		int width_b = *width;
 		int height_b = *height;
+		
 		if ( get_b_frame_image( b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
 		{
 			uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
-			
-			// Composite the b_frame on the a_frame
-			composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha, result );
+			int progressive = mlt_properties_get_int( a_props, "progressive" ) ||
+					mlt_properties_get_int( a_props, "consumer_progressive" ) ||
+					mlt_properties_get_int( properties, "progressive" );
+			int field;
+
+			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
+			{
+				// Assume lower field (0) first
+				float field_position = position + field * delta;
+				
+				// Do the calculation
+				geometry_calculate( &result, &start, &end, field_position );
+
+				// Align
+				alignment_calculate( &result );
+
+				// Composite the b_frame on the a_frame
+				composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha, result, progressive ? -1 : field );
+			}
 		}
 	}
 

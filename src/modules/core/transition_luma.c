@@ -34,7 +34,7 @@ typedef struct
 	struct mlt_transition_s parent;
 	char *filename;
 	int width;
-	int height;                                      		
+	int height;
 	float *bitmap;
 }
 transition_luma;
@@ -57,6 +57,42 @@ static inline float smoothstep( float edge1, float edge2, float a )
 	a = ( a - edge1 ) / ( edge2 - edge1 );
 
 	return ( a * a * ( 3 - 2 * a ) );
+}
+
+/** Calculate the position for this frame.
+*/
+
+static float position_calculate( mlt_transition this, mlt_frame frame )
+{
+	// Get the in and out position
+	mlt_position in = mlt_transition_get_in( this );
+	mlt_position out = mlt_transition_get_out( this );
+
+	// Get the position of the frame
+	mlt_position position = mlt_frame_get_position( frame );
+
+	// Now do the calcs
+	return ( float )( position - in ) / ( float )( out - in + 1 );
+}
+
+/** Calculate the field delta for this frame - position between two frames.
+*/
+
+static float delta_calculate( mlt_transition this, mlt_frame frame )
+{
+	// Get the in and out position
+	mlt_position in = mlt_transition_get_in( this );
+	mlt_position out = mlt_transition_get_out( this );
+
+	// Get the position of the frame
+	mlt_position position = mlt_frame_get_position( frame );
+
+	// Now do the calcs
+	float x = ( float )( position - in ) / ( float )( out - in + 1 );
+	position++;
+	float y = ( float )( position - in ) / ( float )( out - in + 1 );
+
+	return ( y - x ) / 2.0;
 }
 
 static int frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float weight, int *width, int *height )
@@ -243,13 +279,16 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
 	// Arbitrary composite defaults
-	float frame_delta = 1 / mlt_properties_get_double( b_props, "fps" );
 	float mix = mlt_properties_get_double( b_props, "image.mix" );
+	float frame_delta = mlt_properties_get_double( b_props, "luma.delta" );
 	int luma_width = mlt_properties_get_int( b_props, "luma.width" );
 	int luma_height = mlt_properties_get_int( b_props, "luma.height" );
 	float *luma_bitmap = mlt_properties_get_data( b_props, "luma.bitmap", NULL );
 	float luma_softness = mlt_properties_get_double( b_props, "luma.softness" );
-	int progressive = mlt_properties_get_int( b_props, "progressive" ) || mlt_properties_get_int( a_props, "consumer_progressive" );
+	int progressive = mlt_properties_get_int( b_props, "progressive" ) ||
+			mlt_properties_get_int( a_props, "consumer_progressive" ) ||
+			mlt_properties_get_int( b_props, "luma.progressive" );
+
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
 	int reverse = mlt_properties_get_int( b_props, "luma.reverse" );
 
@@ -260,6 +299,7 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 		
 	// Honour the reverse here
 	mix = reverse ? 1 - mix : mix;
+	frame_delta *= reverse ? -1.0 : 1.0;
 
 	// Ensure we get scaling on the b_frame
 	mlt_properties_set( b_props, "rescale.interp", "nearest" );
@@ -401,14 +441,9 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 		}
 	}
 
-	// Determine the time position of this frame in the transition duration
-	mlt_position in = mlt_transition_get_in( transition );
-	mlt_position out = mlt_transition_get_out( transition );
-	mlt_position time = mlt_frame_get_position( b_frame );
-	float pos = ( float )( time - in ) / ( float )( out - in + 1 );
-	
 	// Set the b frame properties
-	mlt_properties_set_double( b_props, "image.mix", pos );
+	mlt_properties_set_double( b_props, "image.mix", position_calculate( transition, b_frame ) );
+	mlt_properties_set_double( b_props, "luma.delta", delta_calculate( transition, b_frame ) );
 	mlt_properties_set_int( b_props, "luma.width", this->width );
 	mlt_properties_set_int( b_props, "luma.height", this->height );
 	mlt_properties_set_data( b_props, "luma.bitmap", this->bitmap, 0, NULL, NULL );
