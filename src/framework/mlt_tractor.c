@@ -44,8 +44,6 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int track
 static void producer_close( mlt_producer this );
 
 /** Constructor for the tractor.
-
-	TODO: thread this service...
 */
 
 mlt_tractor mlt_tractor_init( )
@@ -119,7 +117,6 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
-	mlt_properties_inherit( properties, mlt_frame_properties( frame ) );
 	return 0;
 }
 
@@ -127,6 +124,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 {
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_frame frame = mlt_frame_pop_audio( this );
+	mlt_properties_inherit( mlt_frame_properties( frame ), properties );
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	mlt_properties_set_data( properties, "audio", *buffer, 0, NULL, NULL );
 	mlt_properties_set_int( properties, "frequency", *frequency );
@@ -220,6 +218,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_inherit( mlt_frame_properties( *frame ), mlt_frame_properties( video ) );
 			}
 
+			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_audio", audio == NULL );
+			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_image", video == NULL );
 		}
 		else if ( producer != NULL )
 		{
