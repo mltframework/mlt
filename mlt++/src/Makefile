@@ -1,6 +1,6 @@
 include ../config.mak
 CXXFLAGS = -Wall -fPIC -DPIC -pthread `mlt-config --cflags`
-LDFLAGS = `mlt-config --libs`
+LDFLAGS = `mlt-config --libs` `mlt-config miracle --libs`
 INSTALL = install
 
 TARGET = libmlt++.so
@@ -18,7 +18,8 @@ OBJS = MltConsumer.o \
 	   MltProperties.o \
 	   MltService.o \
 	   MltTractor.o \
-	   MltTransition.o 
+	   MltTransition.o \
+	   MltMiracle.o
 
 SRCS = $(OBJS:.o=.cpp)
 

@@ -66,6 +66,7 @@ namespace Mlt {
 %include <MltField.h>
 %include <MltTractor.h>
 %include <MltFilteredConsumer.h>
+%include <MltMiracle.h>
 
 #if defined(SWIGRUBY)
 

@@ -1,12 +1,6 @@
 
-#include <iostream>
-#include <string>
-using namespace std;
-
 #include <Mlt.h>
 using namespace Mlt;
-
-#include <time.h>
 
 int main( int argc, char **argv )
 {

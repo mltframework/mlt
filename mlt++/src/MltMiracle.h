@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltMiracle.h - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,23 +18,33 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
+#ifndef _MLTPP_MIRACLE_H_
+#define _MLTPP_MIRACLE_H_
 
-#include "MltConsumer.h"
-#include "MltEvent.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMultitrack.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
+#include <miracle/miracle_server.h>
 #include "MltService.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
-#include "MltMiracle.h"
+
+namespace Mlt
+{
+	class Service;
+
+	class Miracle
+	{
+		private:
+			miracle_server server;
+			void *_real;
+			parser_execute _execute;
+			parser_push _push;
+		public:
+			Miracle( char *name, int port = 5250, char *config = NULL );
+			virtual ~Miracle( );
+			bool start( );
+			bool is_running( );
+			virtual valerie_response execute( char *command );
+			virtual valerie_response push( char *command, Service *service );
+			void wait_for_shutdown( );
+	};
+}
 
 #endif
+

@@ -1,14 +1,19 @@
 CXXFLAGS=-Wall `mlt-config --cflags` -I ../src
-LDFLAGS=--L../src -lmlt++
+LDFLAGS=-L../src -lmlt++
 CC=c++
 
-all:	play
+all:		play server
 
-play:	play.o
+play:		play.o
 
-play.o:	play.cpp
+play.o:		play.cpp
+
+server:		server.o
+
+server.o:	server.cpp
 
 clean:
 	$(RM) play play.o
+	$(RM) server server.o
 
 install:

@@ -13,7 +13,6 @@ Hello World
 
 	An example of use is as follows:
 
-	#include <time.h>
 	#include <mlt++/Mlt.h>
 	using namespace Mlt;
 
@@ -23,7 +22,7 @@ Hello World
 		Producer p( "pango:" );
 		p.set( "text", "Hello World" );
 		Consumer c( "sdl" );
-		Event *e = Consumer.setup_wait_for( "consumer-stopped" );
+		Event *e = c.setup_wait_for( "consumer-stopped" );
 		c.connect( p );
 		c.start( );
 		c.wait_for( e );
@@ -63,7 +62,6 @@ Playlists
 	As a simple example of the Playlist in action, we'll convert the example
 	above into an application which plays multiple video or audio files.
 
-	#include <time.h>
 	#include <mlt++/Mlt.h>
 	using namespace Mlt;
 
@@ -79,7 +77,7 @@ Playlists
 		}
 		Consumer c( "sdl" );
 		c.connect( list );
-		Event *e = Consumer.setup_wait_for( "consumer-stopped" );
+		Event *e = c.setup_wait_for( "consumer-stopped" );
 		c.start( );
 		c.wait_for( e );
 		delete e;
@@ -111,7 +109,6 @@ Filters
 	logo of some sort. We'll just use some black text on a partially 
 	transparent red background.
 
-	#include <time.h>
 	#include <mlt++/Mlt.h>
 	using namespace Mlt;
 
@@ -132,7 +129,7 @@ Filters
 		list.attach( f );
 		Consumer c( "sdl" );
 		c.connect( list );
-		Event *e = Consumer.setup_wait_for( "consumer-stopped" );
+		Event *e = c.setup_wait_for( "consumer-stopped" );
 		c.start( );
 		c.wait_for( e );
 		delete e;
@@ -196,6 +193,43 @@ Transition
 
 	The tractor returned will now mix the audio from the original video and the audio.
 
+
+Events
+------
+
+	Typically, applications need to be informed when changes occur in an mlt++ object.
+	This facilitates application services such as undo/redo management, or project
+	rendering in a timeline type widget and many other types of operations which an
+	application needs.
+
+	As an example, consider the following:
+
+	class Westley
+	{
+		private:
+			Consumer consumer;
+			Tractor &tractor;
+		public:
+			Westley( MltTractor &tractor ) :
+				tractor( tractor ),
+				consumer( "westley" )
+			{
+				consumer.connect( tractor );
+				tractor.listen( tractor, "producer-changed", ( mlt_listener )Westley::listener );
+			}
+			
+			static void listener( Properties *tractor, Westley *object )
+			{
+				object->activate( );
+			}
+
+			void activate( )
+			{
+				consumer.start( );
+			}
+	};
+
+	
 
 That's All Folks...
 -------------------
