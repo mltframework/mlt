@@ -170,26 +170,30 @@ int main( int argc, char **argv )
 		// Parse the arguments
 		for ( i = 1; i < argc; i ++ )
 		{
-			if ( !strcmp( argv[ i ], "-serialise" ) )
-			{
-				i ++;
-			}
-			else if ( !strcmp( argv[ i ], "-consumer" ) )
+			if ( !strcmp( argv[ i ], "-consumer" ) )
 			{
 				consumer = create_consumer( argv[ ++ i ], inigo );
 				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
 					mlt_properties_parse( group, argv[ ++ i ] );
 			}
+			else if ( !strcmp( argv[ i ], "-serialise" ) )
+			{
+				i ++;
+			}
 			else
 			{
 				if ( store != NULL )
 					fprintf( store, "%s\n", argv[ i ] );
+
+				i ++;
+
 				while ( argv[ i ] != NULL && argv[ i ][ 0 ] != '-' )
 				{
-					i += 2;
-					if ( store != NULL && argv[ i ] != NULL && argv[ i ][ 0 ] != '-' )
+					if ( store != NULL )
 						fprintf( store, "%s\n", argv[ i ] );
+					i += 1;
 				}
+
 				i --;
 			}
 		}

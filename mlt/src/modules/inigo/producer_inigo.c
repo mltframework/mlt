@@ -219,11 +219,14 @@ mlt_producer producer_inigo_init( char **argv )
 		else
 		{
 			if ( !strcmp( argv[ i ], "-serialise" ) )
-				i ++;
+				i += 2;
 			else if ( !strcmp( argv[ i ], "-consumer" ) )
+				i += 2;
+
+			while ( argv[ i ] != NULL && strchr( argv[ i ], '=' ) )
 				i ++;
-			else while ( argv[ i ] != NULL && argv[ i ][ 0 ] != '-' )
-				i ++;
+
+			i --;
 		}
 	}
 
