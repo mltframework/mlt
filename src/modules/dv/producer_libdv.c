@@ -154,7 +154,7 @@ static int producer_collect_info( producer_libdv this )
 			// Parse the header for meta info
 			dv_parse_header( this->dv_decoder, dv_data );
 			mlt_properties_set_double( properties, "aspect_ratio", 
-				dv_format_wide( this->dv_decoder ) ? ( this->is_pal ? 512/351 : 96/79 ) : ( this->is_pal ? 128/117 : 72/79 ) );
+				dv_format_wide( this->dv_decoder ) ? ( this->is_pal ? 512.0/351.0 : 96.0/79.0 ) : ( this->is_pal ? 128.0/117.0 : 72.0/79.0 ) );
 		}
 
 		mlt_pool_release( dv_data );
