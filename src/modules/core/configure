@@ -19,7 +19,6 @@ mirror			libmltcore.so
 obscure			libmltcore.so
 region			libmltcore.so
 resize			libmltcore.so
-volume			libmltcore.so
 watermark		libmltcore.so
 EOF
 
