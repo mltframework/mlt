@@ -923,8 +923,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_transition this = mlt_frame_pop_service( a_frame );
 
 	// Get in and out
-	int out = ( int )mlt_frame_pop_service( a_frame );
-	int in = ( int )mlt_frame_pop_service( a_frame );
+	int out = mlt_frame_pop_service_int( a_frame );
+	int in = mlt_frame_pop_service_int( a_frame );
 
 	// Get the properties from the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
@@ -1071,8 +1071,8 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 	// UGH - this is a TODO - find a more reliable means of obtaining in/out for the always_active case
 	if ( mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "always_active" ) == 0 )
 	{
-		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "in" ) );
-		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "out" ) );
+		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "in" ) );
+		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "out" ) );
 
 		// Assign the current position to the name
 		mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_frame_get_position( a_frame ) );
@@ -1083,8 +1083,8 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 	else
 	{
 		mlt_properties props = mlt_properties_get_data( MLT_FRAME_PROPERTIES( b_frame ), "_producer", NULL );
-		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( props, "in" ) );
-		mlt_frame_push_service( a_frame, ( void * )mlt_properties_get_int( props, "out" ) );
+		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( props, "in" ) );
+		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( props, "out" ) );
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame ), "relative_position", mlt_properties_get_int( props, "_frame" ) );
 
 		// Assign the current position to the name
