@@ -71,11 +71,11 @@ int main( int argc, char **argv )
 
 	// Close everything...
 	mlt_consumer_close( consumer );
-	//mlt_tractor_close( tractor );
+	mlt_tractor_close( tractor );
 	//mlt_filter_close( filter );
-	//mlt_multitrack_close( multitrack );
-	//mlt_producer_close( dv1 );
-	//mlt_producer_close( dv2 );
+	mlt_multitrack_close( multitrack );
+	mlt_producer_close( dv1 );
+	mlt_producer_close( dv2 );
 
 	return 0;
 }

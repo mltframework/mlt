@@ -351,8 +351,12 @@ static void consumer_close( mlt_consumer parent )
 
 	// Kill the thread and clean up
 	this->running = 0;
-	pthread_join( this->thread, NULL );
 
+	pthread_mutex_lock( &this->audio_mutex );
+	pthread_cond_broadcast( &this->audio_cond );
+	pthread_mutex_unlock( &this->audio_mutex );
+
+	pthread_join( this->thread, NULL );
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );
 		

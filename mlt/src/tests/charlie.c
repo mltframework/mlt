@@ -81,6 +81,10 @@ int main( int argc, char **argv )
 	// Transport functionality
 	transport( producer );
 
+	// Close the services
+	mlt_consumer_close( consumer );
+	mlt_producer_close( producer );
+
 /*
 	// Create the producer(s)
 	mlt_producer dv1 = mlt_factory_producer( "mcmpeg", file1 );
