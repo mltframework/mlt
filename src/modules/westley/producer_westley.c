@@ -141,6 +141,33 @@ static void track_service( mlt_properties properties, void *service, mlt_destruc
 }
 
 
+// Prepend the property value with the server root
+static inline void qualify_property( deserialise_context context, mlt_properties properties, char *name )
+{
+	char *resource = mlt_properties_get( properties, name );
+	if ( resource != NULL )
+	{
+		// Qualify file name properties	
+		char *root = mlt_properties_get( context->producer_map, "_root" );
+		if ( root != NULL )
+		{
+			char *full_resource = malloc( strlen( root ) + strlen( resource ) + 1 );
+			if ( resource[ 0 ] != '/' )
+			{
+				strcpy( full_resource, root );
+				strcat( full_resource, resource );
+			}
+			else
+			{
+				strcpy( full_resource, resource );
+			}
+			mlt_properties_set( properties, name, full_resource );
+			free( full_resource );
+		}
+	}
+}
+
+
 // Forward declarations
 static void on_end_track( deserialise_context context, const xmlChar *name );
 static void on_end_entry( deserialise_context context, const xmlChar *name );
@@ -638,11 +665,15 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 	if ( properties == NULL )
 		return;
 		
+	qualify_property( context, properties, "resource" );
 	char *resource = mlt_properties_get( properties, "resource" );
 	// Let Kino-SMIL src be a synonym for resource
 	if ( resource == NULL )
+	{
+		qualify_property( context, properties, "src" );
 		resource = mlt_properties_get( properties, "src" );
-	
+	}
+
 	// Instantiate the producer
 	if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
 	{
@@ -657,20 +688,9 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 	}
 	if ( service == NULL && resource != NULL )
 	{
-		char *root = mlt_properties_get( context->producer_map, "_root" );
-		char *full_resource = malloc( strlen( root ) + strlen( resource ) + 1 );
-		if ( resource[ 0 ] != '/' )
-		{
-			strcpy( full_resource, root );
-			strcat( full_resource, resource );
-		}
-		else
-		{
-			strcpy( full_resource, resource );
-		}
-		service = MLT_SERVICE( mlt_factory_producer( "fezzik", full_resource ) );
-		free( full_resource );
+		service = MLT_SERVICE( mlt_factory_producer( "fezzik", resource ) );
 	}
+	
 	if ( service == NULL )
 		return;
 	track_service( context->destructors, service, (mlt_destructor) mlt_producer_close );
@@ -793,6 +813,11 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		mlt_properties_set_position( properties, "out", mlt_producer_get_out( MLT_PRODUCER( producer ) ) );
 
 	// Propogate the properties
+	qualify_property( context, properties, "resource" );
+	qualify_property( context, properties, "luma" );
+	qualify_property( context, properties, "luma.resource" );
+	qualify_property( context, properties, "composite.luma" );
+	qualify_property( context, properties, "producer.resource" );
 	mlt_properties_inherit( mlt_service_properties( service ), properties );
 	mlt_properties_close( properties );
 	context->producer_properties = NULL;
@@ -861,6 +886,11 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 	track_service( context->destructors, service, (mlt_destructor) mlt_transition_close );
 
 	// Propogate the properties
+	qualify_property( context, properties, "resource" );
+	qualify_property( context, properties, "luma" );
+	qualify_property( context, properties, "luma.resource" );
+	qualify_property( context, properties, "composite.luma" );
+	qualify_property( context, properties, "producer.resource" );
 	mlt_properties_inherit( mlt_service_properties( service ), properties );
 	mlt_properties_close( properties );
 	context->producer_properties = NULL;
