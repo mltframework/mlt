@@ -175,6 +175,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_int( properties, "height", oheight );
 
 			// Return the output
+			*format = mlt_image_yuv422;
 			*width = owidth;
 			*height = oheight;
 			*image = output;

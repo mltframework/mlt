@@ -500,8 +500,8 @@ static void *consumer_thread( void *arg )
 		if ( frame != NULL )
 		{
 			// SDL adapts display aspect, but set this so pixel aspect can be normalised
-			mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_aspect_ratio",
-				mlt_frame_get_aspect_ratio( frame ) );
+//			mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_aspect_ratio",
+//				mlt_frame_get_aspect_ratio( frame ) );
 			
 			init_audio = consumer_play_audio( this, frame, init_audio );
 			consumer_play_video( this, frame );

@@ -120,6 +120,12 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 		int width_b = mlt_properties_get_double( b_props, "real_width" );
 		int height_b = mlt_properties_get_double( b_props, "real_height" );
 
+		// Maximise the dimensioning rectangle to the aspect of the b_frame
+		if ( mlt_properties_get_double( b_props, "aspect_ratio" ) * height_src > width_src )
+			height_src = ( double )width_src / mlt_properties_get_double( b_props, "aspect_ratio" ) + 0.5;
+		else
+			width_src = mlt_properties_get_double( b_props, "aspect_ratio" ) * height_src + 0.5;
+
 		// See if we need to normalise pixel aspect ratio
 		// We can use consumer_aspect_ratio because the a_frame will take on this aspect
 		double aspect = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
@@ -133,24 +139,29 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 
 			// Normalise pixel aspect
 			if ( iaspect != 0 && iaspect != oaspect )
+			{
 				width_b = iaspect / oaspect * ( double )width_b + 0.5;
+				width_src = iaspect / oaspect * ( double )width_src + 0.5;
+			}
 				
 			// Tell rescale not to normalise display aspect
 			mlt_frame_set_aspect_ratio( that, aspect );
 		}
-
-		// Constrain the overlay to the dimensioning rectangle
-		if ( width_b < width_src )
-			width_src = width_b;
-		if ( height_b < height_src )
-			height_src = height_b;
-
+		
 		// Adjust overall scale for consumer
 		double consumer_scale = mlt_properties_get_double( b_props, "consumer_scale" );
 		if ( consumer_scale > 0 )
 		{
-			width_src = consumer_scale * width_src + 0.5;
-			height_src = consumer_scale * height_src + 0.5;
+			width_b = consumer_scale * width_b + 0.5;
+			height_b = consumer_scale * height_b + 0.5;
+		}
+
+//		fprintf( stderr, "bounding rect %dx%d for overlay %dx%d\n",	width_src, height_src, width_b, height_b );
+		// Constrain the overlay to the dimensioning rectangle
+		if ( width_b < width_src && height_b < height_src )
+		{
+			width_src = width_b;
+			height_src = height_b;
 		}
 	}
 	else if ( mlt_properties_get( b_props, "real_width" ) != NULL )
