@@ -5,6 +5,7 @@ then
 	cat << EOF
 FFMPEG/avformat options:
 
+  --avformat-cvs          - Obtain ffmpeg from CVS
   --avformat-shared=path  - Link against a shared installation of ffmpeg (default)
   --avformat-static=path  - Link against a static ffmpeg dev tree
   --avformat-ldextra=libs - Provide additional libs to link with
@@ -17,6 +18,7 @@ else
 	export static_ffmpeg=
 	export shared_ffmpeg=`whereis ffmpeg | cut -f 2 -d' '`
 	export extra_libs=
+	export cvs_ffmpeg=
 
 	if [ "$shared_ffmpeg" != "" ]
 	then
@@ -32,10 +34,19 @@ else
 			--avformat-static=* )	static_ffmpeg="${i#--avformat-static=}" ;;
 			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
 			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
+			--avformat-cvs )		cvs_ffmpeg=true ;;
 		esac
 	done
 
-	if [ "$static_ffmpeg" != "" ]
+	if [ "$cvs_ffmpeg" != "" ]
+	then
+		[ ! -d "ffmpeg" ] && cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co ffmpeg
+		[ -d "ffmpeg" ] && ( cd ffmpeg ; cvs -z9 update -PdA ; ./configure )
+		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec" >> config.mak
+		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec" >> config.mak
+		echo "LOCAL_FFMPEG=1" >> config.mak
+		extra_libs="$extra_libs -lz"
+	elif [ "$static_ffmpeg" != "" ]
 	then 
 		if [ -d "$static_ffmpeg" ]
 		then
@@ -52,7 +63,8 @@ else
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
 			echo "LDFLAGS+=-L$shared_ffmpeg" >> config.mak
 		else
-			echo "avformat: No build environment found."
+			echo "avformat: No build environment found. "
+			echo "          Try configuring mlt with --avformat-cvs."
 			touch ../disable-avformat
 			exit 0
 		fi
