@@ -45,7 +45,7 @@ Properties::Properties( mlt_properties properties ) :
 	inc_ref( );
 }
 
-Properties::Properties( char *file ) :
+Properties::Properties( const char *file ) :
 	instance( NULL )
 {
 	instance = mlt_properties_load( file );
@@ -101,52 +101,52 @@ int Properties::count( )
 	return mlt_properties_count( get_properties( ) );
 }
 
-char *Properties::get( char *name )
+char *Properties::get( const char *name )
 {
 	return mlt_properties_get( get_properties( ), name );
 }
 
-int Properties::get_int( char *name )
+int Properties::get_int( const char *name )
 {
 	return mlt_properties_get_int( get_properties( ), name );
 }
 
-double Properties::get_double( char *name )
+double Properties::get_double( const char *name )
 {
 	return mlt_properties_get_double( get_properties( ), name );
 }
 
-void *Properties::get_data( char *name, int &size )
+void *Properties::get_data( const char *name, int &size )
 {
 	return mlt_properties_get_data( get_properties( ), name, &size );
 }
 
-int Properties::set( char *name, char *value )
+int Properties::set( const char *name, const char *value )
 {
 	return mlt_properties_set( get_properties( ), name, value );
 }
 
-int Properties::set( char *name, int value )
+int Properties::set( const char *name, int value )
 {
 	return mlt_properties_set_int( get_properties( ), name, value );
 }
 
-int Properties::set( char *name, double value )
+int Properties::set( const char *name, double value )
 {
 	return mlt_properties_set_double( get_properties( ), name, value );
 }
 
-int Properties::set( char *name, void *value, int size, mlt_destructor destructor, mlt_serialiser serialiser )
+int Properties::set( const char *name, void *value, int size, mlt_destructor destructor, mlt_serialiser serialiser )
 {
 	return mlt_properties_set_data( get_properties( ), name, value, size, destructor, serialiser );
 }
 
-int Properties::pass_values( Properties &that, char *prefix )
+int Properties::pass_values( Properties &that, const char *prefix )
 {
 	return mlt_properties_pass( get_properties( ), that.get_properties( ), prefix );
 }
 
-int Properties::parse( char *namevalue )
+int Properties::parse( const char *namevalue )
 {
 	return mlt_properties_parse( get_properties( ), namevalue );
 }
@@ -176,7 +176,7 @@ int Properties::inherit( Properties &that )
 	return mlt_properties_inherit( get_properties( ), that.get_properties( ) );
 }
 
-int Properties::rename( char *source, char *dest )
+int Properties::rename( const char *source, const char *dest )
 {
 	return mlt_properties_rename( get_properties( ), source, dest );
 }
@@ -186,12 +186,20 @@ void Properties::dump( FILE *output )
 	mlt_properties_dump( get_properties( ), output );
 }
 
-void Properties::debug( char *title, FILE *output )
+void Properties::debug( const char *title, FILE *output )
 {
 	mlt_properties_debug( get_properties( ), title, output );
 }
 
-int Properties::save( char *file )
+void Properties::load( const char *file )
+{
+	mlt_properties properties = mlt_properties_load( file );
+	if ( properties != NULL )
+		mlt_properties_pass( get_properties( ), properties, "" );
+	mlt_properties_close( properties );
+}
+
+int Properties::save( const char *file )
 {
 	int error = 0;
 	FILE *f = fopen( file, "w" );
