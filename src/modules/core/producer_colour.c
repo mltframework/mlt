@@ -124,7 +124,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// See if we need to regenerate
 	if ( *width != current_width || *height != current_height )
 	{
-	fprintf( stderr, "%dx%d\n", *width, *height );
 		// Allocate the image
 		size = *width * *height * 2;
 		image = mlt_pool_alloc( size );
