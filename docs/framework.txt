@@ -959,7 +959,7 @@ mlt_frame:
 	void *mlt_frame_pop_audio( mlt_frame this );
 	void mlt_frame_close( mlt_frame this );
 
-	
+
 mlt_service:
 
 	The service base class extends properties and allows 0 to m inputs and 0 to
@@ -1042,6 +1042,7 @@ mlt_producer:
 
 	The public interface is defined by the following functions:
 
+	mlt_producer mlt_producer_new( );
 	int mlt_producer_init( mlt_producer this, void *child );
 	mlt_service mlt_producer_service( mlt_producer this );
 	mlt_properties mlt_producer_properties( mlt_producer this );
@@ -1059,45 +1060,6 @@ mlt_producer:
 	void mlt_producer_prepare_next( mlt_producer this );
 	void mlt_producer_close( mlt_producer this );
 
-	For the sake of discussion here, we'll assume that someone wants to provide
-	a new producer which random noise
-
-	// Forward reference
-	static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int index );
-
-	mlt_producer producer_green( void *arg )
-	{
-		// Create a new producer
-		mlt_producer this = mlt_producer_new( );
-
-		// Check that we were allocated a new producer
-		if ( this != NULL )
-		{
-			// Get the service 
-			mlt_service service = mlt_producer_service( this );
-
-			// We need to override the get_frame method
-			service->get_frame = producer_get_frame;
-		}
-
-		// Return this producer
-		return this;
-	}
-
-	static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
-	{
-		// Create a new frame
-		*frame = mlt_frame_init( );
-
-		// Specify the get_image
-		mlt_frame_push_get_image( *frame, producer_get_image );
-
-		// Specify the get_audio
-		mlt_frame_push_audio( *frame, producer_get_audio );
-
-		// Return that all was successful
-		return 0;
-	}
 
 mlt_filter:
 
@@ -1180,6 +1142,4 @@ mlt_playlist:
 
 mlt_tractor:
 
-
-mlt_factory
 

@@ -23,8 +23,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <fnmatch.h>
 
 #include <framework/mlt.h>
+
+static mlt_properties dictionary = NULL;
 
 static void track_service( mlt_tractor tractor, void *service, mlt_destructor destructor )
 {
@@ -38,11 +42,29 @@ static void track_service( mlt_tractor tractor, void *service, mlt_destructor de
 	free( real );
 }
 
+static mlt_producer create_from( char *file, char *services )
+{
+	mlt_producer producer = NULL;
+	char *temp = strdup( services );
+	char *service = temp;
+	do
+	{
+		char *p = strchr( service, ',' );
+		if ( p != NULL )
+			*p ++ = '\0';
+		producer = mlt_factory_producer( service, file );
+		service = p;
+	}
+	while ( producer == NULL && service != NULL );
+	free( temp );
+	return producer;
+}
+
 static mlt_producer create_producer( char *file )
 {
 	mlt_producer result = NULL;
 
-	// 0th Line - check for service:resource handling
+	// 1st Line - check for service:resource handling
 	if ( strchr( file, ':' ) )
 	{
 		char *temp = strdup( file );
@@ -53,49 +75,38 @@ static mlt_producer create_producer( char *file )
 		free( temp );
 	}
 
-	// 1st Line preferences
+	// 2nd Line preferences
 	if ( result == NULL )
 	{
-		if ( strstr( file, ".inigo" ) )
-			result = mlt_factory_producer( "inigo_file", file );
-		else if ( strstr( file, ".mpg" ) )
-			result = mlt_factory_producer( "mcmpeg", file );
-		else if ( strstr( file, ".mpeg" ) )
-			result = mlt_factory_producer( "mcmpeg", file );
-		else if ( strstr( file, ".dv" ) )
-			result = mlt_factory_producer( "mcdv", file );
-		else if ( strstr( file, ".dif" ) )
-			result = mlt_factory_producer( "mcdv", file );
-		else if ( strstr( file, ".jpg" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".JPG" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".jpeg" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".png" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".svg" ) )
-			result = mlt_factory_producer( "pixbuf", file );
-		else if ( strstr( file, ".txt" ) )
-			result = mlt_factory_producer( "pango", file );
-		else if ( strstr( file, ".westley" ) )
-			result = mlt_factory_producer( "westley", file );
-		else if ( strstr( file, ".ogg" ) )
-			result = mlt_factory_producer( "vorbis", file );
-	}
+		int i = 0;
+		char *lookup = strdup( file );
+		char *p = lookup;
 
-	// 2nd Line fallbacks
-	if ( result == NULL )
-	{
-		if ( strstr( file, ".dv" ) )
-			result = mlt_factory_producer( "libdv", file );
-		else if ( strstr( file, ".dif" ) )
-			result = mlt_factory_producer( "libdv", file );
-	}
+		// We only need to load the dictionary once
+		if ( dictionary == NULL )
+		{
+			char temp[ 1024 ];
+			sprintf( temp, "%s/fezzik.dict", mlt_factory_prefix( ) );
+			dictionary = mlt_properties_load( temp );
+		}
 
-	// 3rd line fallbacks 
-	if ( result == NULL )
-		result = mlt_factory_producer( "avformat", file );
+		// Convert the lookup string to lower case
+		while ( *p )
+		{
+			*p = tolower( *p );
+			p ++;
+		}
+
+		// Iterate through the dictionary
+		for ( i = 0; result == NULL && i < mlt_properties_count( dictionary ); i ++ )
+		{
+			char *name = mlt_properties_get_name( dictionary, i );
+			if ( fnmatch( name, lookup, 0 ) == 0 )
+				result = create_from( file, mlt_properties_get_value( dictionary, i ) );
+		}
+
+		free( lookup );
+	}
 
 	return result;
 }
@@ -121,6 +132,7 @@ mlt_producer producer_fezzik_init( char *arg )
 {
 	// Create the producer that the tractor will contain
 	mlt_producer producer = NULL;
+
 	if ( arg != NULL )
 		producer = create_producer( arg );
 

@@ -92,11 +92,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Generate random noise
 		while ( p != *buffer )
 		{
-			value = fast_rand( );
+			value = fast_rand( ) & 0xff;
 			*( -- p ) = 128;
-			*( -- p ) = value & 0xff;
-			*( -- p ) = 128;
-			*( -- p ) = ( ( value & 0xff00 ) >> 8 ) & 0xf0;
+			*( -- p ) = value < 16 ? 16 : value > 240 ? 240 : value;
 		}
 	}
 

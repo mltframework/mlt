@@ -74,6 +74,45 @@ mlt_properties mlt_properties_new( )
 	return this;
 }
 
+/** Load properties from a file.
+*/
+
+mlt_properties mlt_properties_load( char *filename )
+{
+	// Construct a standalone properties object
+	mlt_properties this = mlt_properties_new( );
+
+	if ( this != NULL )
+	{
+		// Open the file
+		FILE *file = fopen( filename, "r" );
+
+		// Load contents of file
+		if ( file != NULL )
+		{
+			// Temp string
+			char temp[ 1024 ];
+
+			// Read each string from the file
+			while( fgets( temp, 1024, file ) )
+			{
+				// Chomp the string
+				temp[ strlen( temp ) - 1 ] = '\0';
+
+				// Parse and set the property
+				if ( strcmp( temp, "" ) )
+					mlt_properties_parse( this, temp );
+			}
+
+			// Close the file
+			fclose( file );
+		}
+	}
+
+	// Return the pointer
+	return this;
+}
+
 static inline int generate_hash( char *name )
 {
 	int hash = 0;

@@ -1,4 +1,4 @@
-SUBDIRS = core gtk2 dv sdl mainconcept bluefish ffmpeg resample inigo avformat vorbis speex westley fezzik xine
+include make.inc
 
 all clean depend install:
 	list='$(SUBDIRS)'; \
@@ -9,7 +9,7 @@ all clean depend install:
 	done
 
 dist-clean:
-	rm -f consumers.dat filters.dat producers.dat transitions.dat; \
+	rm -f consumers.dat filters.dat producers.dat transitions.dat make.inc; \
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile ] ; \

@@ -3,6 +3,9 @@
 # Clean up disables if not in help mode
 [ "$help" != "1" ] && rm -f disable-* producers.dat filters.dat transitions.dat consumers.dat
 
+# Create the make.inc file
+echo SUBDIRS = `find -type d -maxdepth 1 | grep -v CVS | grep -v "^.$" | sed 's/\.\///'` > make.inc
+
 # Iterate through arguments
 for i in $*
 do
