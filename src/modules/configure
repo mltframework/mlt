@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 
 # Clean up disables if not in help mode
 [ "$help" != "1" ] && rm -f disable-* producers.dat filters.dat transitions.dat consumers.dat
 
 # Create the make.inc file
-echo SUBDIRS = `find -type d -maxdepth 1 | grep -v CVS | grep -v "^.$" | sed 's/\.\///'` > make.inc
+echo SUBDIRS = `find . -type d -maxdepth 1 | grep -v CVS | grep -v "^.$" | sed 's/\.\///'` > make.inc
 
 # Iterate through arguments
 for i in "$@"
@@ -22,10 +22,11 @@ do
 		if [ "$gpl" = "true" -o ! -f $i/gpl ]
 		then
 			[ "$help" = "0" ] && echo "Configuring modules/$i:"
-			pushd $i > /dev/null
+			olddir2=`pwd`
+			cd $i
 			./configure "$@"
 			[ $? != 0 ] && exit 1
-			popd > /dev/null
+			cd $olddir2
 		elif [ "$help" = "0" ]
 		then
 			touch disable-$i

@@ -131,7 +131,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 			this->height = mlt_properties_get_int( this->properties, "height" );
 			
 			// Default window size
-			this->window_width = ( float )this->height * this->display_aspect + 0.5;
+			this->window_width = ( float )this->height * this->display_aspect;
 			this->window_height = this->height;
 		}
 		else
@@ -447,7 +447,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 					if ( this->rect.w > this->window_width )
 					{
 						this->rect.w = this->window_width;
-						this->rect.h = this_aspect / frame_aspect * this->window_height + 0.5;
+						this->rect.h = this_aspect / frame_aspect * this->window_height;
 					}
 				}
 			}
@@ -462,11 +462,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			else if ( this->window_height * this->display_aspect > this->window_width )
 			{
 				this->rect.w = this->window_width;
-				this->rect.h = this->window_width / this->display_aspect + 0.5;
+				this->rect.h = this->window_width / this->display_aspect;
 			}
 			else
 			{
-				this->rect.w = this->window_height * this->display_aspect + 0.5;
+				this->rect.w = this->window_height * this->display_aspect;
 				this->rect.h = this->window_height;
 			}
 			

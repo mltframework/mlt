@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 function show_help
 {
@@ -120,10 +120,11 @@ do
 	if [ -x src/$i/configure ]
 	then
 		[ $help = 0 ] && echo "Configuring `basename $i`:"
-		pushd src/$i > /dev/null
+		olddir=`pwd`
+		cd src/$i
 		./configure "$@"
 		[ $? != 0 ] && exit 1
-		popd > /dev/null
+		cd $olddir
 	fi
 done
 

@@ -1033,7 +1033,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			
 			int32_t luma_softness = mlt_properties_get_double( properties, "softness" ) * ( 1 << 16 );
 			uint16_t *luma_bitmap = get_luma( properties, width_b, height_b );
-			composite_line_fn line_fn = mlt_properties_get_int( properties, "_MMX" ) ? composite_line_yuv_mmx : NULL;
+			//composite_line_fn line_fn = mlt_properties_get_int( properties, "_MMX" ) ? composite_line_yuv_mmx : NULL;
+			composite_line_fn line_fn = NULL;
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
