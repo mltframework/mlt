@@ -1,4 +1,4 @@
-SUBDIRS = core gtk2 dv sdl mainconcept bluefish ffmpeg resample inigo avformat vorbis speex westley fezzik
+SUBDIRS = core gtk2 dv sdl mainconcept bluefish ffmpeg resample inigo avformat vorbis speex westley fezzik xine
 
 all clean depend install:
 	list='$(SUBDIRS)'; \

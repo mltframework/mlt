@@ -22,7 +22,6 @@
 
 #include "producer_ppm.h"
 #include "filter_brightness.h"
-#include "filter_deinterlace.h"
 #include "filter_gamma.h"
 #include "filter_luma.h"
 #include "filter_greyscale.h"
@@ -50,8 +49,6 @@ void *mlt_create_filter( char *id, void *arg )
 {
 	if ( !strcmp( id, "brightness" ) )
 		return filter_brightness_init( arg );
-	if ( !strcmp( id, "deinterlace" ) )
-		return filter_deinterlace_init( arg );
 	if ( !strcmp( id, "gamma" ) )
 		return filter_gamma_init( arg );
 	if ( !strcmp( id, "greyscale" ) )

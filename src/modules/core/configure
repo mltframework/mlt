@@ -4,13 +4,12 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
-ppm				libmltcore.so
 colour			libmltcore.so
+ppm				libmltcore.so
 EOF
 
 cat << EOF >> ../filters.dat
 brightness		libmltcore.so
-deinterlace		libmltcore.so
 gamma			libmltcore.so
 greyscale		libmltcore.so
 luma			libmltcore.so

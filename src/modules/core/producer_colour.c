@@ -48,9 +48,7 @@ mlt_producer producer_colour_init( char *colour )
 		producer->close = producer_close;
 
 		// Set the default properties
-		if ( colour == NULL )
-			colour = "0x000000ff";
-		mlt_properties_set( properties, "resource", colour );
+		mlt_properties_set( properties, "resource", colour == NULL ? "0x000000ff" : colour );
 		
 		return producer;
 	}

@@ -19,6 +19,7 @@
  */
 
 #include "filter_deinterlace.h"
+#include "deinterlace.h"
 
 #include <framework/mlt_frame.h>
 
@@ -41,6 +42,7 @@
      screen aren't deinterlaced.
 
 */
+#if 0
 static void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc, int width, int height )
 {
 	register int x, y;
@@ -69,6 +71,7 @@ static void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc, int width, int height
 	// Copy the last line
 	memcpy(l0, l1, width);
 }
+#endif
 
 /** Do it :-).
 */
@@ -77,6 +80,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 	int error = 0;
 	
+	// Pop the service off the stack
+	mlt_filter filter = mlt_frame_pop_service( this );
+
 	// Check that we want progressive and we aren't already progressive
 	if ( *format == mlt_image_yuv422 &&
 		 !mlt_properties_get_int( mlt_frame_properties( this ), "progressive" ) &&
@@ -85,8 +91,21 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Get the input image
 		error = mlt_frame_get_image( this, image, format, width, height, 1 );
 		
+		// Determine deinterlace method
+		char *method_str = mlt_properties_get( mlt_filter_properties( filter ), "method" );
+		int method = DEINTERLACE_LINEARBLEND;
+		
+		if ( strcmp( method_str, "bob" ) == 0 )
+			method = DEINTERLACE_BOB;
+		else if ( strcmp( method_str, "weave" ) == 0 )
+			method = DEINTERLACE_BOB;
+		else if ( strcmp( method_str, "greedy" ) == 0 )
+			method = DEINTERLACE_GREEDY;
+		else if ( strcmp( method_str, "onefield" ) == 0 )
+			method = DEINTERLACE_ONEFIELD;
+			
 		// Deinterlace the image
-		deinterlace_yuv( *image, *image, *width * 2, *height );
+		deinterlace_yuv( *image, image, *width * 2, *height, method );
 		
 		// Make sure that others know the frame is deinterlaced
 		mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
@@ -105,7 +124,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame deinterlace_process( mlt_filter this, mlt_frame frame )
 {
+	// Push this on to the service stack
+	mlt_frame_push_service( frame, this );
+
+	// Push the get_image method on to the stack
 	mlt_frame_push_get_image( frame, filter_get_image );
+	
 	return frame;
 }
 
@@ -116,7 +140,10 @@ mlt_filter filter_deinterlace_init( void *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
+	{
 		this->process = deinterlace_process;
+		mlt_properties_set( mlt_filter_properties( this ), "method", arg == NULL ? "linearblend" : arg );
+	}
 	return this;
 }
 
