@@ -22,17 +22,22 @@
 #define _MLTPP_FACTORY_H_
 
 #include <framework/mlt.h>
-#include "MltProducer.h"
-#include "MltFilter.h"
-#include "MltTransition.h"
-#include "MltConsumer.h"
 
 namespace Mlt
 {
+	class Producer;
+	class Filter;
+	class Transition;
+	class Consumer;
+
 	class Factory
 	{
 		public:
 			static int init( char *arg = NULL );
+			static Producer *producer( char *id, char *arg = NULL );
+			static Filter *filter( char *id, char *arg = NULL );
+			static Transition *transition( char *id, char *arg = NULL );
+			static Consumer *consumer( char *id, char *arg = NULL );
 			static void close( );
 	};
 }

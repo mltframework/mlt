@@ -51,7 +51,7 @@ namespace Mlt
 			int set( char *name, int value );
 			int set( char *name, double value );
 			int set( char *name, void *value, int size, mlt_destructor destroy = NULL, mlt_serialiser serial = NULL );
-			int pass( Properties &that, char *prefix );
+			int pass_values( Properties &that, char *prefix );
 			int parse( char *namevalue );
 			char *get_name( int index );
 			char *get( int index );

@@ -19,11 +19,35 @@
  */
 
 #include "MltFactory.h"
+#include "MltProducer.h"
+#include "MltFilter.h"
+#include "MltTransition.h"
+#include "MltConsumer.h"
 using namespace Mlt;
 
 int Factory::init( char *arg )
 {
 	return mlt_factory_init( arg );
+}
+
+Producer *Factory::producer( char *id, char *arg )
+{
+	return new Producer( id, arg );
+}
+
+Filter *Factory::filter( char *id, char *arg )
+{
+	return new Filter( id, arg );
+}
+
+Transition *Factory::transition( char *id, char *arg )
+{
+	return new Transition( id, arg );
+}
+
+Consumer *Factory::consumer( char *id, char *arg )
+{
+	return new Consumer( id, arg );
 }
 
 void Factory::close( )

@@ -37,22 +37,6 @@ ClipInfo::ClipInfo( mlt_playlist_clip_info *info ) :
 {
 }
 
-ClipInfo::ClipInfo( Playlist &playlist, int index )
-{
-	mlt_playlist_clip_info info;
-	mlt_playlist_get_clip_info( playlist.get_playlist( ), &info, index );
-	clip = info.clip;
-	producer = new Producer( info.producer );
-	service = new Service( info.service );
-	start = info.start;
-	resource = strdup( info.resource );
-	frame_in = info.frame_in;
-	frame_out = info.frame_out;
-	frame_count = info.frame_count;
-	length = info.length;
-	fps = info.fps;
-}
-
 ClipInfo::~ClipInfo( )
 {
 	delete producer;
@@ -156,5 +140,4 @@ int Playlist::resize_clip( int clip, mlt_position in, mlt_position out )
 {
 	return mlt_playlist_resize_clip( get_playlist( ), clip, in, out );
 }
-
 

@@ -35,7 +35,6 @@ namespace Mlt
 	{
 		public:
 			ClipInfo( mlt_playlist_clip_info *info );
-			ClipInfo( Playlist &playlist, int i );
 			~ClipInfo( );
 			int clip;
 			Producer *producer;

@@ -81,4 +81,3 @@ int Filter::get_track( )
 	return mlt_filter_get_track( get_filter( ) );
 }
 
-

@@ -54,6 +54,12 @@ Producer::~Producer( )
 	if ( destroy )
 		mlt_producer_close( instance );
 }
+
+mlt_producer Producer::get_producer( )
+{
+	return instance;
+}
+
 mlt_service Producer::get_service( )
 {
 	return mlt_producer_service( get_producer( ) );
@@ -113,10 +119,4 @@ mlt_position Producer::get_playtime( )
 {
 	return mlt_producer_get_playtime( get_producer( ) );
 }
-
-mlt_producer Producer::get_producer( )
-{
-	return instance;
-}
-
 

@@ -6,3 +6,6 @@ play:	play.o
 
 play.o:	play.cpp
 
+clean:
+	$(RM) play play.o
+

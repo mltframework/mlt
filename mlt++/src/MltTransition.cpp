@@ -56,4 +56,3 @@ mlt_service Transition::get_service( )
 	return mlt_transition_service( get_transition( ) );
 }
 
-

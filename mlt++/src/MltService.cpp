@@ -36,10 +36,6 @@ Service::Service( mlt_service service ) :
 {
 }
 
-Service::~Service( )
-{
-}
-
 mlt_service Service::get_service( )
 {
 	return instance;
@@ -71,5 +67,4 @@ Frame *Service::get_frame( int index )
 	mlt_service_get_frame( get_service( ), &frame, index );
 	return new Frame( frame );
 }
-
 

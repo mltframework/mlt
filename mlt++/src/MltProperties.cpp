@@ -108,7 +108,7 @@ int Properties::set( char *name, void *value, int size, mlt_destructor destructo
 	return mlt_properties_set_data( get_properties( ), name, value, size, destructor, serialiser );
 }
 
-int Properties::pass( Properties &that, char *prefix )
+int Properties::pass_values( Properties &that, char *prefix )
 {
 	return mlt_properties_pass( get_properties( ), that.get_properties( ), prefix );
 }

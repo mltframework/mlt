@@ -32,21 +32,31 @@ USAGE
 
 	Factory methods:
 
-		mlt_factory_init		=>	Mlt::Factory::init
-		mlt_factory_producer	=>	Mlt::Factory::producer
-		etc
+		mlt_factory_init        ==> Mlt::Factory::init
+		mlt_factory_producer    ==> Mlt::Factory::producer
+		mlt_factory_filter      ==> Mlt::Factory::filter
+		mlt_factory_transition  ==> Mlt::Factory::transition
+		mlt_factory_consumer    ==> Mlt::Factory::consumer
+		mlt_factory_close       ==> Mlt::Factory::close
+
+	NB: Factory usage for service construction is optional.
 
 	Types:
 
-		mlt_producer			==>	Mlt::Producer
-		mlt_consumer			==>	Mlt::Consumer
-		etc
+		mlt_properties          ==> Mlt::Properties
+		mlt_frame               ==> Mlt::Frame
+		mlt_service             ==> Mlt::Service
+		mlt_producer            ==> Mlt::Producer
+		mlt_filter              ==> Mlt::Filter
+		mlt_transition          ==> Mlt::Transition
+		mlt_consumer            ==> Mlt::Consumer
 
 	Methods:
 
-		mlt_type_method			==> Mlt:Type.method
-	ie:	mlt_playlist_append		==> Mlt::Playlist.append
-		etc
+		mlt_type_method         ==> Mlt::Type.method
+	ie:	mlt_playlist_append     ==> Mlt::Playlist.append
+
+	Parent methods are available directly on children.
 
 	Additionally, you can specify:
 
@@ -85,8 +95,8 @@ SPECIAL CASES
 
 		Mlt::Service *Mlt::Service.consumer( );
 
-	Note that you get an object back - it is never the original object, but a 
-	wrapping object. This is done to keep consistency with the C api which may 
+	Note that you get an object back - it is never the original c++ object, but 
+	a wrapping object. This is done to keep consistency with the C api which may 
 	instantiate C instances - therefore it cannot be assumed that a C++ object 
 	exists for all mlt service instances.
 
@@ -108,4 +118,8 @@ LIMITATIONS
 	networks constructed can be serialised and used by existing applications
 	which are based on the C API (such as miracle).
 
+SWIG
+----
+
+	Experimental swig bindings based on mlt++ are provided.
 
