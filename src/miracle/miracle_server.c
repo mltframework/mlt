@@ -156,8 +156,6 @@ static void *miracle_server_run( void *arg )
 	pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
 	/* pthread_attr_setschedpolicy( &thread_attributes, SCHED_RR ); */
 
-	server->shutdown = 0;
-
 	while ( !server->shutdown )
 	{
 		/* Wait for a new connection. */
@@ -192,6 +190,8 @@ int miracle_server_execute( miracle_server server )
 	int index = 0;
 	struct sockaddr_in ServerAddr;
 	int flag = 1;
+
+	server->shutdown = 0;
 
 	ServerAddr.sin_family = AF_INET;
 	ServerAddr.sin_port = htons( server->port );
