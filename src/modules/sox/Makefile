@@ -9,7 +9,7 @@ CFLAGS += -I../../ -I/usr/include/sox
 
 LDFLAGS += -lst -lpopt -lvorbis -logg -lvorbisfile -lvorbisenc
 
-LDFLAGS+=-L../../framework -lmlt
+LDFLAGS+=-L../../framework -lmlt -lmad
 
 SRCS := $(OBJS:.o=.c)
 
