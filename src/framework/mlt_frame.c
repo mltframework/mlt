@@ -341,47 +341,51 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 
 unsigned char *mlt_frame_get_waveform( mlt_frame this, double fps, int w, int h )
 {
-	/* Currently, w is not honored - the user must scale to desired height.
-	   Get the integer property waveform_width after calling to see the 
-	   produced width (currently equal to # samples). */
 	int16_t *pcm = NULL;
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_audio_format format = mlt_audio_pcm;
-	int frequency = 32000; /* lower frequency available? */
+	int frequency = 32000; // lower frequency available?
 	int channels = 2;
 	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
 	
-	/* get the pcm data */
+	// Get the pcm data
 	mlt_frame_get_audio( this, &pcm, &format, &frequency, &channels, &samples );
-	mlt_properties_set_int( properties, "waveform_width", samples );
 	
-	/* make an 8-bit buffer large enough to hold rendering */
-	int size = samples * h;
+	// Make an 8-bit buffer large enough to hold rendering
+	int size = w * h;
 	unsigned char *bitmap = ( unsigned char* )mlt_pool_alloc( size );
 	if ( bitmap != NULL )
 		memset( bitmap, 0, size );
 	mlt_properties_set_data( properties, "waveform", bitmap, size, ( mlt_destructor )mlt_pool_release, NULL );
 	
-	/* render - pcm data has channels interleaved */
-	int vertical_resolution = h / channels;
+	// Render vertical lines
+	int16_t *ubound = pcm + samples * channels;
+	int skip = samples / w - 1;
 	int i, j, k;
 	
-	for ( i = 0; i < samples; i++ )
+	// Iterate sample stream and along x coordinate
+	for ( i = 0; i < w && pcm < ubound; i++ )
 	{
+		// pcm data has channels interleaved
 		for ( j = 0; j < channels; j++ )
 		{
-			/* the height of a "bar" is the ratio of the sample multiplied by the vertical resolution */
-			int pcm_scaled = ( int )( ( double )( *pcm ) / 32768 * vertical_resolution / 2 );
+			// The height of a line is the ratio of the sample multiplied by 
+			// half the vertical resolution
+			int pcm_scaled = ( int )( ( double )( *pcm ) / 32768 * h / 2 );
 			int height = pcm_scaled < 0 ? -pcm_scaled : pcm_scaled;
-			int offset = j * samples * vertical_resolution;
-			int displacement = pcm_scaled < 0 ? ( vertical_resolution / 2 ) : ( vertical_resolution / 2 - pcm_scaled );
-			unsigned char *p = &bitmap[ offset + i + displacement * samples ];
+			// Determine the starting y coordinate - left channel above center,
+			// right channel below - currently assumes 2 channels
+			int displacement = ( h / 2 ) - ( 1 - j ) * height;
+			// Position buffer pointer using y coordinate, stride, and x coordinate
+			unsigned char *p = &bitmap[ i + displacement * w ];
 			
+			// Draw vertical line
 			for ( k = 0; k < height; k++ )
-				p[ samples * k ] = 0xFF;
+				p[ w * k ] = 0xFF;
 			
 			pcm++;
 		}
+		pcm += skip * channels;
 	}
 
 	return bitmap;
