@@ -280,18 +280,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 		for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
 		{
 			mlt_producer producer = mlt_producer_cut_parent( mlt_multitrack_track( MLT_MULTITRACK( service ), i ) );
-			char *resource_s = mlt_properties_get( mlt_producer_properties( producer ), "resource" );
-			if ( resource_s != NULL && !strcmp( resource_s, "<tractor>" ) )
-			{
-				serialise_tractor( context, MLT_SERVICE( producer ), node );
-				context->pass ++;
-				serialise_tractor( context, MLT_SERVICE( producer ), node );
-				context->pass --;
-			}
-			else
-			{
-				serialise_service( context, MLT_SERVICE( producer ), node );
-			}
+			serialise_service( context, MLT_SERVICE( producer ), node );
 		}
 	}
 	else
@@ -351,14 +340,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					mlt_producer producer = mlt_producer_cut_parent( info.producer );
 					char *service_s = mlt_properties_get( mlt_producer_properties( producer ), "mlt_service" );
 					char *resource_s = mlt_properties_get( mlt_producer_properties( producer ), "resource" );
-					if ( resource_s != NULL && !strcmp( resource_s, "<tractor>" ) )
-					{
-						serialise_tractor( context, MLT_SERVICE( producer ), node );
-						context->pass ++;
-						serialise_tractor( context, MLT_SERVICE( producer ), node );
-						context->pass --;
-					}
-					else if ( resource_s != NULL && !strcmp( resource_s, "<playlist>" ) )
+					if ( resource_s != NULL && !strcmp( resource_s, "<playlist>" ) )
 						serialise_playlist( context, MLT_SERVICE( producer ), node );
 					else if ( service_s != NULL && strcmp( service_s, "blank" ) != 0 )
 						serialise_service( context, MLT_SERVICE( producer ), node );
@@ -514,7 +496,20 @@ static void serialise_service( serialise_context context, mlt_service service, x
 		// Tell about the producer
 		if ( strcmp( mlt_type, "producer" ) == 0 )
 		{
-			serialise_producer( context, service, node );
+			char *mlt_service = mlt_properties_get( properties, "mlt_service" );
+			if ( mlt_properties_get( properties, "westley" ) == NULL && !strcmp( mlt_service, "tractor" ) )
+			{
+				context->pass = 0;
+				serialise_tractor( context, service, node );
+				context->pass = 1;
+				serialise_tractor( context, service, node );
+				context->pass = 0;
+				break;
+			}
+			else
+			{
+				serialise_producer( context, service, node );
+			}
 			if ( mlt_properties_get( properties, "westley" ) != NULL )
 				break;
 		}
@@ -540,7 +535,11 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			// Recurse on tractor's producer
 			else if ( strcmp( resource, "<tractor>" ) == 0 )
 			{
+				context->pass = 0;
 				serialise_tractor( context, service, node );
+				context->pass = 1;
+				serialise_tractor( context, service, node );
+				context->pass = 0;
 				break;
 			}
 
@@ -657,12 +656,13 @@ static int consumer_start( mlt_consumer this )
 		{
 			xmlDocFormatDump( stdout, doc, 1 );
 		}
-		else if ( !strcmp( resource, "buffer" ) )
+		else if ( strchr( resource, '.' ) == NULL )
 		{
 			xmlChar *buffer = NULL;
 			int length = 0;
 			xmlDocDumpMemory( doc, &buffer, &length );
-			mlt_properties_set_data( properties, "buffer", buffer, length, xmlFree, NULL );
+			mlt_properties_set( properties, resource, buffer );
+			xmlFree( buffer );
 		}
 		else
 		{

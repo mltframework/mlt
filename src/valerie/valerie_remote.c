@@ -233,7 +233,7 @@ static valerie_response valerie_remote_push( valerie_remote remote, char *comman
 		char *buffer = NULL;
 		mlt_consumer_connect( consumer, service );
 		mlt_consumer_start( consumer );
-		buffer = mlt_properties_get_data( properties, "buffer", NULL );
+		buffer = mlt_properties_get( properties, "buffer" );
 		response = valerie_remote_receive( remote, command, buffer );
 		mlt_consumer_close( consumer );
 	}
