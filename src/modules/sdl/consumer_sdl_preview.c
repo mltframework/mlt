@@ -258,6 +258,7 @@ static void *consumer_thread( void *arg )
 		// Get a frame from the attached producer
 		frame = mlt_consumer_get_frame( consumer );
 
+
 		// Ensure that we have a frame
 		if ( frame != NULL )
 		{
@@ -267,11 +268,17 @@ static void *consumer_thread( void *arg )
 			// Determine which speed to use
 			double use_speed = speed;
 
+			// Lock during the operation
+			mlt_service_lock( MLT_CONSUMER_SERVICE( consumer ) );
+
 			// Get refresh request for the current frame (effect changes in still mode)
 			int refresh = mlt_properties_get_int( properties, "refresh" );
 
 			// Decrement refresh and clear changed
 			mlt_properties_set_int( properties, "refresh", refresh > 0 ? refresh - 1 : 0 );
+
+			// Unlock after the operation
+			mlt_service_unlock( MLT_CONSUMER_SERVICE( consumer ) );
 
 			// Set the changed property on this frame for the benefit of still
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "refresh", refresh );
@@ -335,10 +342,12 @@ static void *consumer_thread( void *arg )
 			if ( this->running )
 			{
 				mlt_properties active = MLT_CONSUMER_PROPERTIES( this->active );
+				mlt_service_lock( MLT_CONSUMER_SERVICE( consumer ) );
 				mlt_properties_set_int( properties, "rect_x", mlt_properties_get_int( active, "rect_x" ) );
 				mlt_properties_set_int( properties, "rect_y", mlt_properties_get_int( active, "rect_y" ) );
 				mlt_properties_set_int( properties, "rect_w", mlt_properties_get_int( active, "rect_w" ) );
 				mlt_properties_set_int( properties, "rect_h", mlt_properties_get_int( active, "rect_h" ) );
+				mlt_service_unlock( MLT_CONSUMER_SERVICE( consumer ) );
 			}
 
 			if ( this->active == this->still )
