@@ -228,14 +228,14 @@ static void *consumer_read_ahead_thread( void *arg )
 	int64_t time_image = 0;
 
 	// Get the first frame
-	gettimeofday( &ante, NULL );
 	frame = mlt_consumer_get_frame( this );
-	time_frame = time_difference( &ante );
 
 	// Get the image of the first frame
 	mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
 	mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
-	time_image = time_difference( &ante );
+
+	// Get the starting time (can ignore the times above)
+	gettimeofday( &ante, NULL );
 
 	// Continue to read ahead
 	while ( this->ahead )
@@ -257,18 +257,12 @@ static void *consumer_read_ahead_thread( void *arg )
 		count ++;
 
 		// Get the image
-		if ( ( time_frame + time_image + time_wait ) / count < 40000 )
+		if ( ( time_frame + time_image ) / count < ( 40000 - ( time_wait / count ) ) )
 		{
 			// Get the image, mark as rendered and time it
 			mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
 			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
 			time_image += time_difference( &ante );
-		}
-		else
-		{
-			// This is wrong, but it avoids slower machines getting starved 
-			// It is, after all, impossible to go back in time :-/
-			time_image -= ( time_image / count / 8 );
 		}
 	}
 

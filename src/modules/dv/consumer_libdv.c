@@ -369,11 +369,15 @@ static void *consumer_thread( void *arg )
 	// Allocate a single PAL frame for encoding
 	uint8_t *dv_frame = malloc( frame_size_625_50 );
 
+	// Frame and size
+	mlt_frame frame = NULL;
+	int size = 0;
+
 	// Loop while running
 	while( mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
-		mlt_frame frame = mlt_consumer_rt_frame( this );
+		frame = mlt_consumer_rt_frame( this );
 
 		// Check that we have a frame to work with
 		if ( frame != NULL )
@@ -382,7 +386,7 @@ static void *consumer_thread( void *arg )
 			if ( libdv_get_encoder( this, frame ) != NULL )
 			{
 				// Encode the image
-				int size = video( this, dv_frame, frame );
+				size = video( this, dv_frame, frame );
 
 				// Encode the audio
 				if ( size > 0 )
