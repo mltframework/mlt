@@ -58,19 +58,18 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 #if 0
 	// Determine maximum size within the aspect ratio:
-	double aspect_ratio = mlt_frame_get_aspect_ratio( this );
-	// TODO: these need to be provided
-	double dsar = oheight < 576 ? (8.0 / 9.0) : (48.0 / 45.0);
-	double ssar = iheight < 576 ? (8.0 / 9.0) : (48.0 / 45.0);
+	double i_aspect_ratio = mlt_frame_get_aspect_ratio( this );
+	// TODO: this needs to be provided      q
+	#define o_aspect_ratio ( double )( 4.0 / 3.0 )
 
-	if ( ( (double) owidth * dsar / iwidth * ssar ) < ( (double) oheight / iheight ) )
-		oheight = (double) owidth * dsar / aspect_ratio;
+	if ( ( owidth * i_aspect_ratio * o_aspect_ratio ) > owidth )
+		oheight *= o_aspect_ratio / i_aspect_ratio;
 	else
-		owidth = (int)( ( aspect_ratio * oheight / dsar ) + 0.5 ) >> 1 << 1;
+		owidth *= i_aspect_ratio * o_aspect_ratio;
 
-	fprintf( stderr, "rescale: from %dx%d (%f) to %dx%d\n", iwidth, iheight, aspect_ratio, owidth, oheight );
+	fprintf( stderr, "rescale: from %dx%d (%f) to %dx%d\n", iwidth, iheight, i_aspect_ratio, owidth, oheight );
 #endif
-
+	
 	// If width and height are correct, don't do anything
 	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) )
 	{
