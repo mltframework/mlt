@@ -1,2 +1,2 @@
 #!/bin/sh
-echo "miracle	-I$prefix/mlt -D_REENTRANT	-lmiracle" >> ../../packages.dat
+echo "miracle	-I$prefix/include/mlt -D_REENTRANT	-lmiracle" >> ../../packages.dat
