@@ -13,10 +13,11 @@ OBJS = factory.o \
 	   filter_resize.o \
 	   filter_volume.o \
 	   filter_watermark.o \
+	   producer_colour.o \
 	   transition_composite.o \
 	   transition_luma.o \
 	   transition_mix.o \
-	   producer_colour.o 
+	   transition_region.o 
 
 CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
@@ -39,3 +40,4 @@ clean:
 ifneq ($(wildcard .depend),)
 include .depend
 endif
+

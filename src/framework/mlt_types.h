@@ -27,6 +27,16 @@
 
 typedef enum
 {
+	mlt_image_none = 0,
+	mlt_image_rgb24,
+	mlt_image_rgb24a,
+	mlt_image_yuv422,
+	mlt_image_yuv420p
+}
+mlt_image_format;
+
+typedef enum
+{
 	mlt_whence_relative_start,
 	mlt_whence_relative_current,
 	mlt_whence_relative_end

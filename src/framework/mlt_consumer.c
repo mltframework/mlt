@@ -128,6 +128,11 @@ int mlt_consumer_start( mlt_consumer this )
 				system( mlt_properties_get( properties, "ante" ) );
 		}
 	}
+	else
+	{
+		// Allow the hash table to speed things up
+		mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
+	}
 
 	// Start the service
 	if ( this->start != NULL )
@@ -156,19 +161,20 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 		// Get the frame properties
 		mlt_properties frame_properties = mlt_frame_properties( frame );
 
-		// Attach the test frame producer to it.
+		// Get the test card producer
 		mlt_producer test_card = mlt_properties_get_data( properties, "test_card_producer", NULL );
-		mlt_properties_set_data( frame_properties, "test_card_producer", test_card, 0, NULL, NULL );
+
+		// Attach the test frame producer to it.
+		if ( test_card != NULL )
+			mlt_properties_set_data( frame_properties, "test_card_producer", test_card, 0, NULL, NULL );
 
 		// Attach the rescale property
-		if ( mlt_properties_get( properties, "rescale" ) != NULL )
-			mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale" ) );
+		mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale" ) );
 
 		// Aspect ratio and other jiggery pokery
 		mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
 		mlt_properties_set_int( frame_properties, "consumer_progressive", mlt_properties_get_int( properties, "progressive" ) );
 		mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "deinterlace" ) );
-		
 	}
 
 	// Return the frame

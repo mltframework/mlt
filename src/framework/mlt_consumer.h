@@ -22,6 +22,7 @@
 #define _MLT_CONSUMER_H_
 
 #include "mlt_service.h"
+#include <pthread.h>
 
 /** The interface definition for all consumers.
 */
@@ -40,6 +41,13 @@ struct mlt_consumer_s
 	// Private data
 	void *private;
 	void *child;
+
+	int ahead;
+	int width;
+	int height;
+	mlt_image_format format;
+	mlt_deque queue;
+	pthread_t ahead_thread;
 };
 
 /** Public final methods

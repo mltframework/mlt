@@ -26,16 +26,6 @@
 
 typedef enum
 {
-	mlt_image_none = 0,
-	mlt_image_rgb24,
-	mlt_image_rgb24a,
-	mlt_image_yuv422,
-	mlt_image_yuv420p
-}
-mlt_image_format;
-
-typedef enum
-{
 	mlt_video_standard_pal = 0,
 	mlt_video_standard_ntsc
 }

@@ -31,10 +31,11 @@
 #include "filter_region.h"
 #include "filter_volume.h"
 #include "filter_watermark.h"
+#include "producer_colour.h"
 #include "transition_composite.h"
 #include "transition_luma.h"
 #include "transition_mix.h"
-#include "producer_colour.h"
+#include "transition_region.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -78,6 +79,8 @@ void *mlt_create_transition( char *id, void *arg )
 		return transition_luma_init( arg );
 	if ( !strcmp( id, "mix" ) )
 		return transition_mix_init( arg );
+	if ( !strcmp( id, "region" ) )
+		return transition_region_init( arg );
 	return NULL;
 }
 

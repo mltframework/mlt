@@ -156,14 +156,14 @@ static inline mlt_property mlt_properties_find( mlt_properties this, char *name 
 {
 	property_list *list = this->private;
 	mlt_property value = NULL;
-	int i = 0;
 	int key = generate_hash( name );
+	int i = list->hash[ key ];
 
 	// Check if we're hashed
 	if ( list->count > 0 &&
-		 name[ 0 ] == list->name[ list->hash[ key ] ][ 0 ] && 
-		 !strcmp( list->name[ list->hash[ key ] ], name ) )
-		value = list->value[ list->hash[ key ] ];
+		 name[ 0 ] == list->name[ i ][ 0 ] && 
+		 !strcmp( list->name[ i ], name ) )
+		value = list->value[ i ];
 
 	// Locate the item 
 	for ( i = 0; value == NULL && i < list->count; i ++ )

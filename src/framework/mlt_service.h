@@ -63,7 +63,6 @@ struct mlt_service_s
 */
 
 extern int mlt_service_init( mlt_service this, void *child );
-//extern mlt_properties mlt_service_properties( mlt_service this );
 extern int mlt_service_connect_producer( mlt_service this, mlt_service producer, int index );
 extern mlt_service_state mlt_service_get_state( mlt_service this );
 extern void mlt_service_close( mlt_service this );
