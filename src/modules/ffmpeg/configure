@@ -7,5 +7,9 @@ cat << EOF >> ../producers.dat
 ffmpeg			libmltffmpeg.so
 EOF
 
+cat << EOF >> ../filters.dat
+ffmpeg_dub		libmltffmpeg.so
+EOF
+
 fi
 

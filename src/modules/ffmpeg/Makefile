@@ -2,7 +2,8 @@
 TARGET = ../libmltffmpeg.so
 
 OBJS = factory.o \
-	   producer_ffmpeg.o
+	   producer_ffmpeg.o \
+	   filter_ffmpeg_dub.o
 
 CFLAGS = -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 

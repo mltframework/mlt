@@ -89,6 +89,8 @@ mlt_producer producer_pixbuf_init( const char *filename )
 					gap ++;
 				}
 			} 
+			mlt_properties_set_timecode( properties, "out", this->count );
+			mlt_properties_set_timecode( properties, "playtime", this->count );
 		}
 		else if ( strstr( filename, "/.all." ) != NULL )
 		{
@@ -115,6 +117,8 @@ mlt_producer producer_pixbuf_init( const char *filename )
 				free( de[ i ] );
 			}
 
+			mlt_properties_set_timecode( properties, "out", this->count );
+			mlt_properties_set_timecode( properties, "playtime", this->count );
 			free( de );
 			free( dir_name );
 		}
@@ -122,6 +126,8 @@ mlt_producer producer_pixbuf_init( const char *filename )
 		{
 			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
 			this->filenames[ this->count ++ ] = strdup( filename );
+			mlt_properties_set_timecode( properties, "out", 1 );
+			mlt_properties_set_timecode( properties, "playtime", 1 );
 		}
 
 		// Initialise gobject types

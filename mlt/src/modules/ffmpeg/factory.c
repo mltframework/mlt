@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "producer_ffmpeg.h"
+#include "filter_ffmpeg_dub.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -31,6 +32,8 @@ void *mlt_create_producer( char *id, void *arg )
 
 void *mlt_create_filter( char *id, void *arg )
 {
+	if ( !strcmp( id, "ffmpeg_dub" ) )
+		return filter_ffmpeg_dub_init( arg );
 	return NULL;
 }
 

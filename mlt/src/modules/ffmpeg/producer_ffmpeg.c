@@ -219,6 +219,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	mlt_properties properties = mlt_frame_properties( this );
 
 	producer_ffmpeg producer = mlt_properties_get_data( properties, "producer_ffmpeg", NULL );
+	mlt_properties producer_properties = mlt_producer_properties( &producer->parent );
 
 	int skip = mlt_properties_get_int( properties, "skip" );
 
@@ -244,7 +245,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 				producer->end_of_audio = 1;
 			}
 		}
-		while( skip -- );
+		while( producer->audio != NULL && skip -- );
 	}
 	else
 	{
@@ -253,6 +254,9 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 
 	// Pass the data on the frame properties
 	mlt_properties_set_data( properties, "audio", *buffer, size, free, NULL );
+
+	// Set the producer properties
+	mlt_properties_set_int( producer_properties, "end_of_clip", producer->end_of_video && producer->end_of_audio );
 
 	return 0;
 }

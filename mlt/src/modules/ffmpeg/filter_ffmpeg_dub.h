@@ -1,5 +1,5 @@
 /*
- * factory.c -- the factory method interfaces
+ * filter_ffmpeg_dub.h -- simple ffmpeg dub test case
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,32 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+#ifndef _FILTER_FFMPEG_DUB_H_
+#define _FILTER_FFMPEG_DUB_H_
 
-#include "producer_ffmpeg.h"
-#include "filter_ffmpeg_dub.h"
+#include <framework/mlt_filter.h>
 
-void *mlt_create_producer( char *id, void *arg )
-{
-	if ( !strcmp( id, "ffmpeg" ) )
-		return producer_ffmpeg_init( arg );
-	return NULL;
-}
+extern mlt_filter filter_ffmpeg_dub_init( char *file );
 
-void *mlt_create_filter( char *id, void *arg )
-{
-	if ( !strcmp( id, "ffmpeg_dub" ) )
-		return filter_ffmpeg_dub_init( arg );
-	return NULL;
-}
-
-void *mlt_create_transition( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( char *id, void *arg )
-{
-	return NULL;
-}
-
+#endif
