@@ -115,16 +115,61 @@ mlt_consumer consumer_avformat_init( char *arg )
 		mlt_properties_set_data( properties, "sample_fifo", sample_fifo_init( ), 0, ( mlt_destructor )sample_fifo_close, NULL );
 		mlt_properties_set_data( properties, "frame_queue", mlt_deque_init( ), 0, ( mlt_destructor )mlt_deque_close, NULL );
 
-		// Set avformat defaults
+		// Set avformat defaults (all lifted from ffmpeg.c)
 		mlt_properties_set_int( properties, "audio_bit_rate", 128000 );
 		mlt_properties_set_int( properties, "video_bit_rate", 200 * 1000 );
 		mlt_properties_set_int( properties, "video_bit_rate_tolerance", 4000 * 1000 );
 		mlt_properties_set_int( properties, "frame_rate_base", 1 );
 		mlt_properties_set_int( properties, "gop_size", 12 );
-		mlt_properties_set_int( properties, "max_b_frames", 0 );
-		mlt_properties_set_int( properties, "mb_decision", 0 );
+		mlt_properties_set_int( properties, "b_frames", 0 );
+		mlt_properties_set_int( properties, "mb_decision", FF_MB_DECISION_SIMPLE );
 		mlt_properties_set_double( properties, "qscale", 0 );
 		mlt_properties_set_int( properties, "me_method", ME_EPZS );
+		mlt_properties_set_int( properties, "mb_cmp", FF_CMP_SAD );
+		mlt_properties_set_int( properties, "ildct_cmp", FF_CMP_VSAD );
+		mlt_properties_set_int( properties, "sub_cmp", FF_CMP_SAD );
+		mlt_properties_set_int( properties, "cmp", FF_CMP_SAD );
+		mlt_properties_set_int( properties, "pre_cmp", FF_CMP_SAD );
+		mlt_properties_set_int( properties, "pre_me", 0 );
+		mlt_properties_set_double( properties, "lumi_mask", 0 );
+		mlt_properties_set_double( properties, "dark_mask", 0 );
+		mlt_properties_set_double( properties, "scplx_mask", 0 );
+		mlt_properties_set_double( properties, "tcplx_mask", 0 );
+		mlt_properties_set_double( properties, "p_mask", 0 );
+		mlt_properties_set_int( properties, "qns", 0 );
+		mlt_properties_set_int( properties, "video_qmin", 2 );
+		mlt_properties_set_int( properties, "video_qmax", 31 );
+		mlt_properties_set_int( properties, "video_lmin", 2*FF_QP2LAMBDA );
+		mlt_properties_set_int( properties, "video_lmax", 31*FF_QP2LAMBDA );
+		mlt_properties_set_int( properties, "video_mb_qmin", 2 );
+		mlt_properties_set_int( properties, "video_mb_qmax", 31 );
+		mlt_properties_set_int( properties, "video_qdiff", 3 );
+		mlt_properties_set_double( properties, "video_qblur", 0.5 );
+		mlt_properties_set_double( properties, "video_qcomp", 0.5 );
+		mlt_properties_set_int( properties, "video_rc_max_rate", 0 );
+		mlt_properties_set_int( properties, "video_rc_min_rate", 0 );
+		mlt_properties_set_int( properties, "video_rc_buffer_size", 0 );
+		mlt_properties_set_double( properties, "video_rc_buffer_aggressivity", 1.0 );
+		mlt_properties_set_double( properties, "video_rc_initial_cplx", 0 );
+		mlt_properties_set_double( properties, "video_i_qfactor", 1.25 );
+		mlt_properties_set_double( properties, "video_b_qfactor", 1.25 );
+		mlt_properties_set_double( properties, "video_i_qoffset", -0.8 );
+		mlt_properties_set_double( properties, "video_b_qoffset", 0 );
+		mlt_properties_set_int( properties, "video_intra_quant_bias", FF_DEFAULT_QUANT_BIAS );
+		mlt_properties_set_int( properties, "video_inter_quant_bias", FF_DEFAULT_QUANT_BIAS );
+		mlt_properties_set_int( properties, "dct_algo", 0 );
+		mlt_properties_set_int( properties, "idct_algo", 0 );
+		mlt_properties_set_int( properties, "me_threshold", 0 );
+		mlt_properties_set_int( properties, "mb_threshold", 0 );
+		mlt_properties_set_int( properties, "intra_dc_precision", 0 );
+		mlt_properties_set_int( properties, "strict", 0 );
+		mlt_properties_set_int( properties, "error_rate", 0 );
+		mlt_properties_set_int( properties, "noise_reduction", 0 );
+		mlt_properties_set_int( properties, "sc_threshold", 0 );
+		mlt_properties_set_int( properties, "me_range", 0 );
+		mlt_properties_set_int( properties, "coder", 0 );
+		mlt_properties_set_int( properties, "context", 0 );
+		mlt_properties_set_int( properties, "predictor", 0 );
 
 		// Ensure termination at end of the stream
 		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
@@ -342,16 +387,37 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->frame_rate_base = mlt_properties_get_double( properties, "frame_rate_base" );
 		c->frame_rate_base = 1;
 		c->gop_size = mlt_properties_get_int( properties, "gop_size" );
-	 	c->max_b_frames = mlt_properties_get_int( properties, "max_b_frames" );
-		if ( c->max_b_frames )
+
+		if ( mlt_properties_get_int( properties, "b_frames" ) )
 		{
+	 		c->max_b_frames = mlt_properties_get_int( properties, "b_frames" );
 			c->b_frame_strategy = 0;
 			c->b_quant_factor = 2.0;
 		}
 
 	 	c->mb_decision = mlt_properties_get_int( properties, "mb_decision" );
 		c->sample_aspect_ratio = av_d2q( mlt_properties_get_double( properties, "aspect_ratio" ), 255 );
-
+		c->mb_cmp = mlt_properties_get_int( properties, "mb_cmp" );
+		c->ildct_cmp = mlt_properties_get_int( properties, "ildct_cmp" );
+		c->me_sub_cmp = mlt_properties_get_int( properties, "sub_cmp" );
+		c->me_cmp = mlt_properties_get_int( properties, "cmp" );
+		c->me_pre_cmp = mlt_properties_get_int( properties, "pre_cmp" );
+		c->pre_me = mlt_properties_get_int( properties, "pre_me" );
+		c->lumi_masking = mlt_properties_get_double( properties, "lumi_mask" );
+		c->dark_masking = mlt_properties_get_double( properties, "dark_mask" );
+		c->spatial_cplx_masking = mlt_properties_get_double( properties, "scplx_mask" );
+		c->temporal_cplx_masking = mlt_properties_get_double( properties, "tcplx_mask" );
+		c->p_masking = mlt_properties_get_double( properties, "p_mask" );
+		c->quantizer_noise_shaping= mlt_properties_get_int( properties, "qns" );
+		c->qmin = mlt_properties_get_int( properties, "video_qmin" );
+		c->qmax = mlt_properties_get_int( properties, "video_qmax" );
+		c->lmin = mlt_properties_get_int( properties, "video_lmin" );
+		c->lmax = mlt_properties_get_int( properties, "video_lmax" );
+		c->mb_qmin = mlt_properties_get_int( properties, "video_mb_qmin" );
+		c->mb_qmax = mlt_properties_get_int( properties, "video_mb_qmax" );
+		c->max_qdiff = mlt_properties_get_int( properties, "video_qdiff" );
+		c->qblur = mlt_properties_get_double( properties, "video_qblur" );
+		c->qcompress = mlt_properties_get_double( properties, "video_qcomp" );
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
 		{
@@ -365,6 +431,30 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			!strcmp( oc->oformat->name, "3gp" ) )
 			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
+		c->rc_max_rate = mlt_properties_get_int( properties, "video_rc_max_rate" );
+		c->rc_min_rate = mlt_properties_get_int( properties, "video_rc_min_rate" );
+		c->rc_buffer_size = mlt_properties_get_int( properties, "video_rc_buffer_size" );
+		c->rc_buffer_aggressivity= mlt_properties_get_double( properties, "video_rc_buffer_aggressivity" );
+		c->rc_initial_cplx= mlt_properties_get_double( properties, "video_rc_initial_cplx" );
+		c->i_quant_factor = mlt_properties_get_double( properties, "video_i_qfactor" );
+		c->b_quant_factor = mlt_properties_get_double( properties, "video_b_qfactor" );
+		c->i_quant_offset = mlt_properties_get_double( properties, "video_i_qoffset" );
+		c->b_quant_offset = mlt_properties_get_double( properties, "video_b_qoffset" );
+		c->intra_quant_bias = mlt_properties_get_int( properties, "video_intra_quant_bias" );
+		c->inter_quant_bias = mlt_properties_get_int( properties, "video_inter_quant_bias" );
+		c->dct_algo = mlt_properties_get_int( properties, "dct_algo" );
+		c->idct_algo = mlt_properties_get_int( properties, "idct_algo" );
+		c->me_threshold= mlt_properties_get_int( properties, "me_threshold" );
+		c->mb_threshold= mlt_properties_get_int( properties, "mb_threshold" );
+		c->intra_dc_precision= mlt_properties_get_int( properties, "intra_dc_precision" );
+		c->strict_std_compliance = mlt_properties_get_int( properties, "strict" );
+		c->error_rate = mlt_properties_get_int( properties, "error_rate" );
+		c->noise_reduction= mlt_properties_get_int( properties, "noise_reduction" );
+		c->scenechange_threshold= mlt_properties_get_int( properties, "sc_threshold" );
+		c->me_range = mlt_properties_get_int( properties, "me_range" );
+		c->coder_type= mlt_properties_get_int( properties, "coder" );
+		c->context_model= mlt_properties_get_int( properties, "context" );
+		c->prediction_method= mlt_properties_get_int( properties, "predictor" );
 		c->me_method = mlt_properties_get_int( properties, "me_method" );
  	}
 	else
@@ -440,6 +530,7 @@ static void *consumer_thread( void *arg )
 
 	// Get the terminate on pause property
 	int terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
+	int terminated = 0;
 
 	// Determine if feed is slow (for realtime stuff)
 	int real_time_output = mlt_properties_get_int( properties, "real_time" );
@@ -619,7 +710,7 @@ static void *consumer_thread( void *arg )
 	gettimeofday( &ante, NULL );
 
 	// Loop while running
-	while( mlt_properties_get_int( properties, "running" ) )
+	while( mlt_properties_get_int( properties, "running" ) && !terminated )
 	{
 		// Get the frame
 		frame = mlt_consumer_rt_frame( this );
@@ -632,6 +723,9 @@ static void *consumer_thread( void *arg )
 
 			// Default audio args
 			frame_properties = mlt_frame_properties( frame );
+
+			// Check for the terminated condition
+			terminated = terminate_on_pause && mlt_properties_get_double( frame_properties, "_speed" ) == 0.0;
 
 			// Get audio and append to the fifo
 			if ( audio_st )
@@ -647,112 +741,109 @@ static void *consumer_thread( void *arg )
 				mlt_deque_push_back( queue, frame );
 			else
 				mlt_frame_close( frame );
+		}
 
-			// While we have stuff to process, process...
-			while ( 1 )
+		// While we have stuff to process, process...
+		while ( 1 )
+		{
+	 		// Compute current audio and video time
+	 		if (audio_st)
+	 			audio_pts = (double)audio_st->pts.val * oc->pts_num / oc->pts_den;
+			else
+	 			audio_pts = 0.0;
+	
+			if (video_st)
+	 			video_pts = (double)video_st->pts.val * oc->pts_num / oc->pts_den;
+ 			else
+	 			video_pts = 0.0;
+
+ 			// Write interleaved audio and video frames
+ 			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
 			{
-	 			// Compute current audio and video time
-	 			if (audio_st)
-		 			audio_pts = (double)audio_st->pts.val * oc->pts_num / oc->pts_den;
-	 			else
-		 			audio_pts = 0.0;
-	 
-	 			if (video_st)
-		 			video_pts = (double)video_st->pts.val * oc->pts_num / oc->pts_den;
-	 			else
-		 			video_pts = 0.0;
-
-	 			// Write interleaved audio and video frames
-	 			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
+				if ( channels * audio_input_frame_size < sample_fifo_used( fifo ) )
 				{
-					if ( channels * audio_input_frame_size < sample_fifo_used( fifo ) )
-					{
-		 				int out_size;
- 						AVCodecContext *c;
+	 				int out_size;
+ 					AVCodecContext *c;
 
- 						c = &audio_st->codec;
+					c = &audio_st->codec;
 
-						sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
+					sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
 
- 						out_size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
+					out_size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
 
- 						// Write the compressed frame in the media file
- 						if (av_write_frame(oc, audio_st->index, audio_outbuf, out_size) != 0) 
-	 						fprintf(stderr, "Error while writing audio frame\n");
-					}
-					else
-					{
-						break;
-					}
+ 					// Write the compressed frame in the media file
+ 					if (av_write_frame(oc, audio_st->index, audio_outbuf, out_size) != 0) 
+ 						fprintf(stderr, "Error while writing audio frame\n");
 				}
-	 			else if ( video_st )
+				else
 				{
-					if ( mlt_deque_count( queue ) )
+					break;
+				}
+			}
+ 			else if ( video_st )
+			{
+				if ( mlt_deque_count( queue ) )
+				{
+ 					int out_size, ret;
+ 					AVCodecContext *c;
+
+					frame = mlt_deque_pop_front( queue );
+					frame_properties = mlt_frame_properties( frame );
+
+					c = &video_st->codec;
+ 					
+					if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 					{
- 						int out_size, ret;
- 						AVCodecContext *c;
- 
-						frame = mlt_deque_pop_front( queue );
-						frame_properties = mlt_frame_properties( frame );
+						int i = 0;
+						int j = 0;
+						uint8_t *p;
+						uint8_t *q;
 
-						if ( terminate_on_pause && mlt_properties_get_double( frame_properties, "_speed" ) == 0.0 )
+						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
+
+						q = image;
+
+						for ( i = 0; i < height; i ++ )
 						{
-							mlt_properties_set_int( properties, "running", 0 );
-							break;
-						}
-
- 						c = &video_st->codec;
- 						
-						if ( mlt_properties_get_int( frame_properties, "rendered" ) )
-						{
-							int i = 0;
-							int j = 0;
-							uint8_t *p;
-							uint8_t *q;
-
-							mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
-
-							q = image;
-
-							for ( i = 0; i < height; i ++ )
+							p = input->data[ 0 ] + i * input->linesize[ 0 ];
+							j = width;
+							while( j -- )
 							{
-								p = input->data[ 0 ] + i * input->linesize[ 0 ];
-								j = width;
-								while( j -- )
-								{
-									*p ++ = *q ++;
-									*p ++ = *q ++;
-								}
+								*p ++ = *q ++;
+								*p ++ = *q ++;
 							}
-
-							img_convert( ( AVPicture * )output, PIX_FMT_YUV420P, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
 						}
- 
- 						if (oc->oformat->flags & AVFMT_RAWPICTURE) 
-						{
-	 						// raw video case. The API will change slightly in the near future for that
-	 						ret = av_write_frame(oc, video_st->index, (uint8_t *)output, sizeof(AVPicture));
- 						} 
-						else 
-						{
-	 						// Encode the image
-	 						out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
 
-	 						// If zero size, it means the image was buffered
-	 						if (out_size != 0) 
-							{
-		 						// write the compressed frame in the media file
-		 						// XXX: in case of B frames, the pts is not yet valid
-		 						ret = av_write_frame( oc, video_st->index, video_outbuf, out_size );
-	 						} 
- 						}
- 						frame_count++;
-						mlt_frame_close( frame );
+						img_convert( ( AVPicture * )output, PIX_FMT_YUV420P, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
 					}
-					else
+ 
+ 					if (oc->oformat->flags & AVFMT_RAWPICTURE) 
 					{
-						break;
-					}
+	 					// raw video case. The API will change slightly in the near future for that
+	 					ret = av_write_frame(oc, video_st->index, (uint8_t *)output, sizeof(AVPicture));
+ 					} 
+					else 
+					{
+						// Set the quality
+						output->quality = video_st->quality;
+
+	 					// Encode the image
+	 					out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
+
+	 					// If zero size, it means the image was buffered
+	 					if (out_size != 0) 
+						{
+		 					// write the compressed frame in the media file
+		 					// XXX: in case of B frames, the pts is not yet valid
+		 					ret = av_write_frame( oc, video_st->index, video_outbuf, out_size );
+	 					} 
+ 					}
+ 					frame_count++;
+					mlt_frame_close( frame );
+				}
+				else
+				{
+					break;
 				}
 			}
 		}
@@ -798,6 +889,9 @@ static void *consumer_thread( void *arg )
 
 	// Free the stream
 	av_free(oc);
+
+	// Just in case we terminated on pause
+	mlt_properties_set_int( properties, "running", 0 );
 
 	return NULL;
 }
