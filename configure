@@ -92,7 +92,7 @@ set +x
 export build_dir=`dirname $0`
 export prefix=/usr/local
 export help=0
-export version=0.0.3
+export version=0.1.0
 export debug=true
 export mmx=true
 export gpl=false
