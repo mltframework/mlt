@@ -1176,11 +1176,15 @@ static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	// Add our parameters if not already
 	params_to_entities( context );
 	
-	e = xmlGetDocEntity( context->entity_doc, name );
+	e = xmlGetPredefinedEntity( name );
 	
 	// Send signal to on_characters that an entity substitutin is pending
-	if ( e != NULL )
-		context->entity_is_replace = 1;
+	if ( e == NULL )
+	{
+		e = xmlGetDocEntity( context->entity_doc, name );
+		if ( e != NULL )
+			context->entity_is_replace = 1;
+	}
 	
 	return e;
 }
@@ -1252,10 +1256,25 @@ static void parse_url( mlt_properties properties, char *url )
 		mlt_properties_set( properties, name, value );
 }
 
+// Quick workaround to avoid unecessary libxml2 warnings
+static int file_exists( char *file )
+{
+	char *name = strdup( file );
+	int exists = 0;
+	if ( name != NULL && strchr( name, '?' ) )
+		*( strchr( name, '?' ) ) = '\0';
+	if ( name != NULL )
+	{
+		FILE *f = fopen( name, "r" );
+		exists = f != NULL;
+		if ( exists ) fclose( f );
+	}
+	free( name );
+	return exists;
+}
+
 mlt_producer producer_westley_init( int info, char *data )
 {
-	if ( data == NULL )
-		return NULL;
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
 	mlt_properties properties = NULL;
@@ -1263,6 +1282,13 @@ mlt_producer producer_westley_init( int info, char *data )
 	struct _xmlParserCtxt *xmlcontext;
 	int well_formed = 0;
 	char *filename = NULL;
+
+	if ( data == NULL || !strcmp( data, "" ) || ( info == 0 && !file_exists( data ) ) )
+		return NULL;
+
+	context = calloc( 1, sizeof( struct deserialise_context_s ) );
+	if ( context == NULL )
+		return NULL;
 
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
@@ -1306,7 +1332,7 @@ mlt_producer producer_westley_init( int info, char *data )
 	sax->cdataBlock = on_characters;
 	sax->internalSubset = on_internal_subset;
 	sax->entityDecl = on_entity_declaration;
-	//sax->getEntity = on_get_entity;
+	sax->getEntity = on_get_entity;
 
 	// Setup libxml2 SAX parsing
 	xmlInitParser(); 
