@@ -33,7 +33,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
-	if ( error != 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
 		// Get the gamma value
 		double gamma = mlt_properties_get_double( mlt_frame_properties( this ), "gamma" );
@@ -87,4 +87,3 @@ mlt_filter filter_gamma_init( char *arg )
 	}
 	return this;
 }
-
