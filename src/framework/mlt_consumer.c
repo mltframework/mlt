@@ -315,6 +315,8 @@ static void *consumer_read_ahead_thread( void *arg )
 
 static void consumer_read_ahead_start( mlt_consumer this )
 {
+	pthread_attr_t thread_attributes;
+	
 	// We're running now
 	this->ahead = 1;
 
@@ -327,8 +329,12 @@ static void consumer_read_ahead_start( mlt_consumer this )
 	// Create the condition
 	pthread_cond_init( &this->cond, NULL );
 
+	// Inherit the scheduling priority
+	pthread_attr_init( &thread_attributes );
+	pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
+	
 	// Create the read ahead 
-	pthread_create( &this->ahead_thread, NULL, consumer_read_ahead_thread, this );
+	pthread_create( &this->ahead_thread, &thread_attributes, consumer_read_ahead_thread, this );
 
 }
 

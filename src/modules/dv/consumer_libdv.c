@@ -98,6 +98,7 @@ static int consumer_start( mlt_consumer this )
 	{
 		// Allocate a thread
 		pthread_t *thread = calloc( 1, sizeof( pthread_t ) );
+		pthread_attr_t thread_attributes;
 
 		// Assign the thread to properties
 		mlt_properties_set_data( properties, "thread", thread, sizeof( pthread_t ), free, NULL );
@@ -105,8 +106,12 @@ static int consumer_start( mlt_consumer this )
 		// Set the running state
 		mlt_properties_set_int( properties, "running", 1 );
 
+		// Inherit the scheduling priority
+		pthread_attr_init( &thread_attributes );
+		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
+		
 		// Create the thread
-		pthread_create( thread, NULL, consumer_thread, this );
+		pthread_create( thread, &thread_attributes, consumer_thread, this );
 	}
 	return 0;
 }
@@ -425,4 +430,3 @@ static void consumer_close( mlt_consumer this )
 	// Free the memory
 	free( this );
 }
-
