@@ -46,7 +46,6 @@ static miracle_server server = NULL;
 static void main_cleanup( )
 {
 	miracle_server_shutdown( server );
-	mlt_factory_close( );
 }
 
 /** Report usage and exit.
@@ -67,9 +66,6 @@ int main( int argc, char **argv )
 	int index = 0;
 	int background = 1;
 	struct timespec tm = { 5, 0 };
-
-	// Construct the factory
-	mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
 
 	server = miracle_server_init( argv[ 0 ] );
 

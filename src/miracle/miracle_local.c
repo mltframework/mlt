@@ -83,6 +83,9 @@ valerie_parser miracle_parser_init_local( )
 			local->parser = parser;
 			local->root_dir[0] = '/';
 		}
+
+		// Construct the factory
+		mlt_factory_init( getenv( "MLT_REPOSITORY" ) );
 	}
 	return parser;
 }
@@ -452,4 +455,5 @@ static void miracle_local_close( miracle_local local )
 	pthread_kill_other_threads_np();
 	miracle_log( LOG_DEBUG, "Clean shutdown." );
 	free( local );
+	mlt_factory_close( );
 }
