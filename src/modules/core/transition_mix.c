@@ -106,7 +106,14 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 		
 		mlt_properties_set_double( b_props, "audio.reverse", mlt_properties_get_double( properties, "reverse" ) );
 	}
-			
+
+	// Ensure that the tractor knows this isn't test audio...
+	if ( mlt_properties_get_int( mlt_frame_properties( a_frame ), "test_audio" ) )
+	{
+		mlt_properties_set_int( mlt_frame_properties( a_frame ), "test_audio", 0 );
+		mlt_properties_set_int( mlt_frame_properties( a_frame ), "silent_audio", 1 );
+	}
+
 	// Backup the original get_audio (it's still needed)
 	mlt_properties_set_data( mlt_frame_properties( a_frame ), "mix.get_audio", a_frame->get_audio, 0, NULL, NULL );
 

@@ -859,7 +859,17 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 	//fprintf( stderr, "mix: frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "_position" ) );
 	mlt_frame_get_audio( that, &src, format, &frequency_src, &channels_src, &samples_src );
 	//fprintf( stderr, "mix: frame src  samples %d channels %d\n", samples_src, channels_src );
-	
+
+	int silent = mlt_properties_get_int( mlt_frame_properties( this ), "silent_audio" );
+	mlt_properties_set_int( mlt_frame_properties( this ), "silent_audio", 0 );
+	if ( silent )
+		memset( dest, 0, samples_dest * channels_dest * sizeof( int16_t ) );
+
+	silent = mlt_properties_get_int( mlt_frame_properties( that ), "silent_audio" );
+	mlt_properties_set_int( mlt_frame_properties( that ), "silent_audio", 0 );
+	if ( silent )
+		memset( src, 0, samples_src * channels_src * sizeof( int16_t ) );
+
 	if ( channels_src > 6 )
 		channels_src = 0;
 	if ( channels_dest > 6 )
