@@ -305,7 +305,7 @@ valerie_error_code valerie_unit_clip_insert( valerie this, int unit, valerie_cli
 {
 	char temp[ 100 ];
 	valerie_interpret_clip_offset( temp, offset, clip );
-	return valerie_execute( this, 1024, "INSERT U%d %s %s %d %d", unit, file, temp, in, out );
+	return valerie_execute( this, 1024, "INSERT U%d \"%s\" %s %d %d", unit, file, temp, in, out );
 }
 
 /** Play the unit at normal speed.
