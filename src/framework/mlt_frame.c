@@ -475,6 +475,11 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	int istride = iwidth * 2;
 	int ostride = owidth * 2;
 
+	iwidth = iwidth - ( iwidth % 4 );
+	owidth = owidth - ( owidth % 4 );
+	iheight = iheight - ( iheight % 2 );
+	oheight = oheight - ( oheight % 2 );
+
    	// Coordinates (0,0 is middle of output)
    	int y;
 
@@ -486,7 +491,7 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 
    	// Output pointers
    	uint8_t *out_line = output;
-   	uint8_t *out_ptr;
+   	uint8_t *out_ptr = out_line;
 
    	// Calculate a middle and possibly invalid pointer in the input
    	uint8_t *in_middle = input + istride * ( iheight / 2 ) + ( iwidth / 2 ) * 2;
@@ -506,8 +511,8 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 			out_ptr = memfill( out_ptr, black, 2, out_x_range - in_x_range );
 
        		// We're in the input range for this row.
-			memcpy( out_ptr, in_middle + in_line, 4 * in_x_range );
-			out_ptr += 4 * in_x_range;
+			memcpy( out_ptr, in_middle + in_line, 2 * iwidth );
+			out_ptr += 2 * iwidth;
 
 			// Fill the outer part with black
 			out_ptr = memfill( out_ptr, black, 2, out_x_range - in_x_range );
@@ -585,6 +590,8 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 		// Calculate strides
 		int istride = iwidth * 2;
 		int ostride = owidth * 2;
+
+		iwidth = iwidth - ( iwidth % 4 );
 
     	// Coordinates (0,0 is middle of output)
     	int y, x;

@@ -175,6 +175,8 @@ FILE *producer_ffmpeg_run_audio( producer_ffmpeg this )
 
 static void producer_ffmpeg_position( producer_ffmpeg this, uint64_t requested, int *skip )
 {
+	*skip = 0;
+
 	if ( this->open && requested > this->expected )
 	{
 		// Skip the following n frames
@@ -313,8 +315,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Read it
 		while( skip -- )
 		{
-			fread( this->buffer, width * height * 3 / 2, 1, video );
-			read_ffmpeg_header( this, &width, &height );
+			if ( fread( this->buffer, width * height * 3 / 2, 1, video ) == 1 )
+				read_ffmpeg_header( this, &width, &height );
+			else
+				skip = 0;
 		}
 
 		fread( this->buffer, width * height * 3 / 2, 1, video );
@@ -366,7 +370,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties_set_double( properties, "speed", speed );
 
 	// Set the out point on the producer
-	mlt_producer_set_in_and_out( &this->parent, mlt_producer_get_in( &this->parent ), mlt_producer_position( &this->parent ) + 0.1 );
+	mlt_producer_set_in_and_out( &this->parent, mlt_producer_get_in( &this->parent ), mlt_producer_position( &this->parent ) + 1 );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );

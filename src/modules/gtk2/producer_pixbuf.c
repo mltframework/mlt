@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
@@ -38,6 +39,15 @@ typedef enum
 	SIGNAL_FORMAT_PAL,
 	SIGNAL_FORMAT_NTSC
 } mlt_signal_format;
+
+static int filter_files( const struct dirent *de )
+{
+	if ( de->d_name[ 0 ] != '.' )
+		return 1;
+	else
+		return 0;
+}
+
 
 mlt_producer producer_pixbuf_init( const char *filename )
 {
@@ -80,6 +90,34 @@ mlt_producer producer_pixbuf_init( const char *filename )
 				}
 			} 
 		}
+		else if ( strstr( filename, "/.all." ) != NULL )
+		{
+			char *dir_name = strdup( filename );
+			char *extension = strrchr( filename, '.' );
+			*( strstr( dir_name, "/.all." ) + 1 ) = '\0';
+			char fullname[ 1024 ];
+			strcpy( fullname, dir_name );
+			struct dirent **de = NULL;
+			int n = scandir( fullname, &de, filter_files, alphasort );
+			int i;
+			struct stat info;
+
+			for (i = 0; i < n; i++ )
+			{
+				snprintf( fullname, 1023, "%s%s", dir_name, de[i]->d_name );
+
+				if ( lstat( fullname, &info ) == 0 && 
+				 	( S_ISREG( info.st_mode ) || ( strstr( fullname, extension ) && info.st_mode | S_IXUSR ) ) )
+				{
+					this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+					this->filenames[ this->count ++ ] = strdup( fullname );
+				}
+				free( de[ i ] );
+			}
+
+			free( de );
+			free( dir_name );
+		}
 		else
 		{
 			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
@@ -111,8 +149,12 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	*height = mlt_properties_get_int( properties, "height" );
 
 	// Clone if necessary
-	if ( writable )
+	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
+	// The fault is not in the design of mlt, but in the implementation of pixbuf...
+	//if ( writable )
 	{
+		size = *width * *height * 2;
+
 		// Clone our image
 		uint8_t *copy = malloc( size );
 		memcpy( copy, image, size );
@@ -176,7 +218,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Stack the get image callback
 		mlt_frame_push_get_image( *frame, producer_get_image );
-
 	}
 	else 
 	{
@@ -212,6 +253,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Store width and height
 		this->width = gdk_pixbuf_get_width( pixbuf );
 		this->height = gdk_pixbuf_get_height( pixbuf );
+		this->width -= this->width % 4;
+		this->height -= this->height % 2;
 
 		// Allocate/define image and alpha
 		uint8_t *image = malloc( this->width * this->height * 2 );

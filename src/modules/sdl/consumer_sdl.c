@@ -40,12 +40,13 @@ struct consumer_sdl_s
 	int video;
 	pthread_t thread;
 	int running;
-	uint8_t audio_buffer[ 4096 * 6 ];
+	uint8_t audio_buffer[ 4096 * 3 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
 	pthread_cond_t audio_cond;
 	int window_width;
 	int window_height;
+	float aspect_ratio;
 	int width;
 	int height;
 	int playing;
@@ -94,19 +95,24 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// process actual param
 		if ( arg == NULL || !strcmp( arg, "PAL" ) )
 		{
-			this->window_width = 720;
-			this->window_height = 576;
+			this->width = 720;
+			this->height = 576;
 		}
 		else if ( !strcmp( arg, "NTSC" ) )
 		{
-			this->window_width = 720;
-			this->window_height = 480;
+			this->width = 720;
+			this->height = 480;
 		}
-		else if ( sscanf( arg, "%dx%d", &this->window_width, &this->window_height ) != 2 )
+		else if ( sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
 		{
-			this->window_width = 720;
-			this->window_height = 576;
+			this->width = 720;
+			this->height = 576;
 		}
+
+		// Default window size and aspect ratio
+		this->aspect_ratio = 4.0 / 3.0;
+		this->window_width = (int)( (float)this->height * this->aspect_ratio ) + 1;
+		this->window_height = this->height;
 
 		// Create the the thread
 		pthread_create( &this->thread, NULL, consumer_thread, this );
@@ -181,6 +187,69 @@ void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	pthread_mutex_unlock( &this->audio_mutex );
 }
 
+static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_audio )
+{
+	mlt_audio_format afmt = mlt_audio_pcm;
+	int channels;
+	int samples;
+	int frequency;
+	int16_t *pcm;
+	int bytes;
+
+	mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
+
+	if ( init_audio == 1 )
+	{
+		SDL_AudioSpec request;
+		SDL_AudioSpec got;
+
+		// specify audio format
+		memset( &request, 0, sizeof( SDL_AudioSpec ) );
+		this->playing = 0;
+		request.freq = frequency;
+		request.format = AUDIO_S16;
+		request.channels = channels;
+		request.samples = 1024;
+		request.callback = sdl_fill_audio;
+		request.userdata = (void *)this;
+		if ( SDL_OpenAudio( &request, &got ) != 0 )
+		{
+			fprintf( stderr, "SDL failed to open audio: %s\n", SDL_GetError() );
+			init_audio = 2;
+		}
+		else
+		{
+			if ( got.size != 0 )
+			{
+				SDL_PauseAudio( 0 );
+				init_audio = 0;
+			}
+		}
+	}
+
+	if ( init_audio == 0 )
+	{
+		bytes = ( samples * channels * 2 );
+		pthread_mutex_lock( &this->audio_mutex );
+		while ( bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
+			pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
+		mlt_properties properties = mlt_frame_properties( frame );
+		if ( mlt_properties_get_double( properties, "speed" ) == 1 )
+			memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
+		else
+			memset( &this->audio_buffer[ this->audio_avail ], 0, bytes );
+		this->audio_avail += bytes;
+		pthread_cond_broadcast( &this->audio_cond );
+		pthread_mutex_unlock( &this->audio_mutex );
+	}
+	else
+	{
+		this->playing = 1;
+	}
+
+	return init_audio;
+}
+
 /** Threaded wrapper for pipe.
 */
 
@@ -207,7 +276,6 @@ static void *consumer_thread( void *arg )
 	SDL_Overlay *sdl_overlay = NULL;
 	uint8_t *buffer = NULL;
 	int init_audio = 1;
-	int bytes;
 
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
@@ -221,45 +289,12 @@ static void *consumer_thread( void *arg )
 		// Get a frame from the service (should never return anything other than 0)
 		if ( mlt_service_get_frame( service, &frame, 0 ) == 0 )
 		{
+			init_audio = consumer_play_audio( this, frame, init_audio );
+
 			mlt_image_format vfmt = mlt_image_yuv422;
 			int width = this->width, height = this->height;
 			uint8_t *image;
-
-			mlt_audio_format afmt = mlt_audio_pcm;
-			int channels;
-			int samples;
-			int frequency;
-			int16_t *pcm;
 			int changed = 0;
-
-			mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
-			if ( init_audio == 1 )
-			{
-				SDL_AudioSpec request;
-
-				// specify audio format
-				request.freq = frequency;
-				request.format = AUDIO_S16;
-				request.channels = channels;
-				request.samples = 2048;
-				request.callback = sdl_fill_audio;
-				request.userdata = (void *)this;
-				if ( SDL_OpenAudio( &request, NULL ) < 0 )
-				{
-					fprintf( stderr, "SDL failed to open audio: %s\n", SDL_GetError() );
-					break;
-				}
-				SDL_PauseAudio( 0 );
-				init_audio = 0;
-			}
-			bytes = ( samples * channels * 2 );
-			pthread_mutex_lock( &this->audio_mutex );
-			while ( bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
-				pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
-			memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
-			this->audio_avail += bytes;
-			pthread_cond_broadcast( &this->audio_cond );
-			pthread_mutex_unlock( &this->audio_mutex );
 
 			if ( this->count == this->size )
 			{
@@ -320,37 +355,50 @@ static void *consumer_thread( void *arg )
 				if ( sdl_screen == NULL || changed )
 				{
 					double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
-	
+
 					if ( mlt_properties_get_double( properties, "aspect_ratio" ) )
 						aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 	
+					int full_width = height * aspect_ratio + 1;
+					int full_height = height;
+					float scale_width = (float)full_width / (float)this->window_width;
+					float scale_height = (float)full_height / (float)this->window_height;
+					float display_aspect_ratio = (float)this->window_width / (float)this->window_height;
+
+					SDL_Rect rect;
+	
+					if ( aspect_ratio == 1 )
+					{
+						rect.w = this->window_width;
+						rect.h = this->window_height;
+					}
+					else if ( this->window_width < this->window_height * aspect_ratio )
+					{
+						rect.w = this->window_width;
+						rect.h = this->window_width / aspect_ratio;
+					}
+					else
+					{
+						rect.w = this->window_height * aspect_ratio;
+						rect.h = this->window_height;
+					}
+
+					rect.x = ( this->window_width - rect.w ) / 2;
+					rect.y = ( this->window_height - rect.h ) / 2;
+
+					// Force an overlay recreation
+					if ( sdl_overlay != NULL )
+						SDL_FreeYUVOverlay( sdl_overlay );
+
 					// open SDL window with video overlay, if possible
 					sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, sdl_flags );
 	
 					if ( sdl_screen != NULL )
 					{
-						SDL_Rect rect;
-						if ( this->window_width < this->window_height * aspect_ratio )
-						{
-							rect.w = this->window_width;
-							rect.h = this->window_width / aspect_ratio;
-						}
-						else
-						{
-							rect.w = this->window_height * aspect_ratio;
-							rect.h = this->window_height;
-						}
-
-						rect.x = ( this->window_width - rect.w ) / 2;
-						rect.y = ( this->window_height - rect.h ) / 2;
-
 						SDL_SetClipRect( sdl_screen, &rect );
 					
-						// Force an overlay recreation
-						if ( sdl_overlay != NULL )
-							SDL_FreeYUVOverlay( sdl_overlay );
 						sdl_lock_display();
-						sdl_overlay = SDL_CreateYUVOverlay( this->width, this->height, SDL_YUY2_OVERLAY, sdl_screen );
+						sdl_overlay = SDL_CreateYUVOverlay( this->width - (this->width % 4), this->height- (this->height % 2 ), SDL_YUY2_OVERLAY, sdl_screen );
 						sdl_unlock_display();
 					}
 				}
@@ -358,15 +406,11 @@ static void *consumer_thread( void *arg )
 				if ( sdl_screen != NULL && sdl_overlay != NULL )
 				{
 					buffer = sdl_overlay->pixels[ 0 ];
-					if ( sdl_lock_display() )
+					if ( SDL_LockYUVOverlay( sdl_overlay ) >= 0 )
 					{
-						if ( SDL_LockYUVOverlay( sdl_overlay ) >= 0 )
-						{
-							mlt_resize_yuv422( buffer, this->width, this->height, image, width, height );
-							SDL_UnlockYUVOverlay( sdl_overlay );
-							SDL_DisplayYUVOverlay( sdl_overlay, &sdl_screen->clip_rect );
-						}
-						sdl_unlock_display();
+						mlt_resize_yuv422( buffer, this->width - (this->width % 4 ), this->height- (this->height % 2 ), image, width, height );
+						SDL_UnlockYUVOverlay( sdl_overlay );
+						SDL_DisplayYUVOverlay( sdl_overlay, &sdl_screen->clip_rect );
 					}
 				}
 			}

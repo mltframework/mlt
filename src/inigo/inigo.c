@@ -55,7 +55,7 @@ void transport_action( mlt_producer producer, char *value )
 			mlt_producer_seek( producer, 0 );
 			break;
 		case '1':
-			mlt_producer_set_speed( producer, -5 );
+			mlt_producer_set_speed( producer, -10 );
 			break;
 		case '2':
 			mlt_producer_set_speed( producer, -2.5 );
@@ -79,7 +79,7 @@ void transport_action( mlt_producer producer, char *value )
 			mlt_producer_set_speed( producer, 2.5 );
 			break;
 		case '9':
-			mlt_producer_set_speed( producer, 5 );
+			mlt_producer_set_speed( producer, 10 );
 			break;
 	}
 }
