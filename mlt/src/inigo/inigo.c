@@ -147,6 +147,20 @@ mlt_filter create_filter( mlt_field field, char *id, int track )
 	return filter;
 }
 
+mlt_transition create_transition( mlt_field field, char *id, int track )
+{
+	char *arg = strchr( id, ':' );
+	if ( arg != NULL )
+		*arg ++ = '\0';
+	mlt_transition transition = mlt_factory_transition( id, arg );
+	if ( transition != NULL )
+	{
+		mlt_field_plant_transition( field, transition, track, track + 1 );
+		track_service( field, transition, ( mlt_destructor )mlt_transition_close );
+	}
+	return transition;
+}
+
 void set_properties( mlt_properties properties, char *namevalue )
 {
 	mlt_properties_parse( properties, namevalue );
@@ -218,10 +232,19 @@ int main( int argc, char **argv )
 		}
 		else if ( !strcmp( argv[ i ], "-filter" ) )
 		{
-			mlt_filter filter = create_filter( field, argv[ ++ i ], 0 );
+			mlt_filter filter = create_filter( field, argv[ ++ i ], track );
 			if ( filter != NULL )
 			{
 				properties = mlt_filter_properties( filter );
+				mlt_properties_inherit( properties, group );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-transition" ) )
+		{
+			mlt_transition transition = create_transition( field, argv[ ++ i ], track );
+			if ( transition != NULL )
+			{
+				properties = mlt_transition_properties( transition );
 				mlt_properties_inherit( properties, group );
 			}
 		}
@@ -294,6 +317,8 @@ int main( int argc, char **argv )
 		fprintf( stderr, "Usage: inigo [ -group [ name=value ]* ]\n"
 						 "             [ -consumer id[:arg] [ name=value ]* ]\n"
         				 "             [ -filter id[:arg] [ name=value ] * ]\n"
+        				 "             [ -transition id[:arg] [ name=value ] * ]\n"
+						 "             [ -blank time ]\n"
         				 "             [ producer [ name=value ] * ]+\n" );
 	}
 
