@@ -972,7 +972,8 @@ Filters
 
 	    Description
 
-	        Adjust an audio stream's volume level
+	        Adjust an audio stream's volume level 
+				- based on the 'normalize' utility
 	        
 	    Constructor Argument
 
