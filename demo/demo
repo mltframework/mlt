@@ -68,7 +68,7 @@ eof
 		"7" ) export MLT_CONSUMER="sdl rescale=none" ;;
 	esac
 
-	while [ $option != 0 -a "$MLT_CONSUMER" != "" ]
+	while [ "$option" != "0" -a "$MLT_CONSUMER" != "" ]
 	do
 		echo Choose Demo
 		echo
@@ -79,6 +79,8 @@ eof
 		echo -n "Option: "
 		read option
 		echo
+
+		[ "$option" == "" ] && break
 	
 		demo=`get_demo $option`
 		usable=`check_dependencies $option`
