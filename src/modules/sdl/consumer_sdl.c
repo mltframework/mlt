@@ -454,14 +454,14 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				this->rect.h = this->window_height;
 			}
 			// Use hardware scaler to normalise sample aspect ratio
-			else if ( this->window_height * frame_aspect > this->window_width )
+			else if ( this->window_height * this->display_aspect > this->window_width )
 			{
 				this->rect.w = this->window_width;
-				this->rect.h = this->window_width / frame_aspect + 0.5;
+				this->rect.h = this->window_width / this->display_aspect + 0.5;
 			}
 			else
 			{
-				this->rect.w = this->window_height * frame_aspect + 0.5;
+				this->rect.w = this->window_height * this->display_aspect + 0.5;
 				this->rect.h = this->window_height;
 			}
 			
