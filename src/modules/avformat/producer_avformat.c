@@ -418,7 +418,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = position - expected;
 		}
-		else
+		else if ( position < expected || position - expected >= 12 )
 		{
 			// Set to the real timecode
 			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 );
@@ -765,7 +765,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = position - expected;
 		}
-		else
+		else if ( position < expected || position - expected >= 12 )
 		{
 			// Set to the real timecode
 			if ( av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 ) != 0 )
