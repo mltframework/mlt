@@ -20,6 +20,26 @@ OBJS = mlt_frame.o \
 	   mlt_pool.o \
 	   mlt_tokeniser.o
 
+INCS = mlt_consumer.h \
+	   mlt_factory.h \
+	   mlt_filter.h \
+	   mlt.h \
+	   mlt_multitrack.h \
+	   mlt_pool.h \
+	   mlt_properties.h \
+	   mlt_repository.h \
+	   mlt_tractor.h \
+	   mlt_types.h \
+	   mlt_deque.h \
+	   mlt_field.h \
+	   mlt_frame.h \
+	   mlt_playlist.h \
+	   mlt_producer.h \
+	   mlt_property.h \
+	   mlt_service.h  \
+	   mlt_transition.h \
+	   mlt_tokeniser.h
+
 SRCS := $(OBJS:.o=.c)
 
 CFLAGS += -rdynamic -DPREFIX="\"$(prefix)\""
@@ -43,26 +63,7 @@ clean:
 install:
 	install -m 755 $(TARGET) $(prefix)/lib/libmlt.so
 	install -d "$(prefix)/include/mlt/framework"
-	install -m 644 mlt_consumer.h \
-			mlt_factory.h \
-			mlt_filter.h \
-			mlt.h \
-			mlt_multitrack.h \
-			mlt_pool.h \
-			mlt_properties.h \
-			mlt_repository.h \
-			mlt_tractor.h \
-			mlt_types.h \
-			mlt_deque.h \
-			mlt_field.h \
-			mlt_frame.h \
-			mlt_playlist.h \
-			mlt_producer.h \
-			mlt_property.h \
-			mlt_service.h  \
-			mlt_transition.h \
-			mlt_tokeniser.h \
-            "$(prefix)/include/mlt/framework"
+	install -m 644 $(INCS) "$(prefix)/include/mlt/framework"
 
 ifneq ($(wildcard .depend),)
 include .depend

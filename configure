@@ -55,7 +55,7 @@ function build_config
 		echo "LIBDL=-ldl"
 
 		echo "OPTIMISATIONS=-O4 -pipe -ffast-math -fomit-frame-pointer"
-		echo "CFLAGS+=-Wall \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE) -pthread"
+		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE) -pthread"
 	) > config.mak
 
 	echo "#!/bin/sh" > mlt-config

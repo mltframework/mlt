@@ -280,6 +280,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 			if ( hide )
 				xmlNewProp( track, "hide", hide == 1 ? "video" : ( hide == 2 ? "audio" : "both" ) );
 		}
+		serialise_producer_filters( context, service, child );
 	}
 }
 
@@ -349,6 +350,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 				}
 			}
 		}
+
+		serialise_producer_filters( context, service, child );
 	}
 	else if ( strcmp( (const char*) node->name, "tractor" ) != 0 )
 	{
@@ -383,6 +386,7 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 
 		// Recurse on connected producer
 		serialise_service( context, mlt_service_producer( service ), child );
+		serialise_producer_filters( context, service, child );
 	}
 }
 

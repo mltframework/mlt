@@ -339,13 +339,14 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 	return 0;
 }
 
-unsigned char *mlt_frame_get_waveform( mlt_frame this, double fps, int w, int h )
+unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 {
 	int16_t *pcm = NULL;
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_audio_format format = mlt_audio_pcm;
 	int frequency = 32000; // lower frequency available?
 	int channels = 2;
+	double fps = mlt_properties_get_double( properties, "fps" );
 	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
 	
 	// Get the pcm data

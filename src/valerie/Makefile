@@ -12,6 +12,16 @@ OBJS = valerie.o \
 	   valerie_remote.o \
 	   valerie_socket.o
 
+INCS = valerie.h \
+	   valerie_notifier.h \
+	   valerie_parser.h \
+	   valerie_remote.h \
+	   valerie_response.h \
+	   valerie_socket.h \
+	   valerie_status.h \
+	   valerie_tokeniser.h \
+	   valerie_util.h
+
 SRCS := $(OBJS:.o=.c)
 
 LDFLAGS += -lpthread
@@ -33,17 +43,7 @@ clean:
 install: 	all
 	install -m 755 $(TARGET) $(prefix)/lib/libvalerie.so
 	mkdir -p "$(prefix)/include/mlt/valerie"
-	install -m 644 \
-			valerie.h \
-			valerie_notifier.h \
-			valerie_parser.h \
-			valerie_remote.h \
-			valerie_response.h \
-			valerie_socket.h \
-			valerie_status.h \
-			valerie_tokeniser.h \
-			valerie_util.h \
-            "$(prefix)/include/mlt/valerie"
+	install -m 644 $(INCS) "$(prefix)/include/mlt/valerie"
 
 ifneq ($(wildcard .depend),)
 include .depend
