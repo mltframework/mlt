@@ -524,16 +524,7 @@ static mlt_producer mlt_producer_clone( mlt_producer this )
 	char *service = mlt_properties_get( properties, "mlt_service" );
 
 	if ( service != NULL )
-	{
-		char temp[ 1024 ];
-		strncpy( temp, service, 1024 );
-		if ( resource != NULL )
-		{
-			strcat( temp, ":" );
-			strncat( temp, resource, 1023 - strlen( temp ) );
-		}
-		clone = mlt_factory_producer( "fezzik", temp );
-	}
+		clone = mlt_factory_producer( service, resource );
 
 	if ( clone == NULL && resource != NULL )
 		clone = mlt_factory_producer( "fezzik", resource );
