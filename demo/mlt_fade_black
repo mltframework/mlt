@@ -1,7 +1,7 @@
 inigo \
 clip3.mpeg in=100 out=299 \
--track \
-colour:black out=49 -blank 99 colour:black out=49 \
+-hide-track \
+colour:black \
 -transition \
 luma in=0 out=49 a_track=0 b_track=1 reverse=1 \
 -transition \

@@ -1,8 +1,8 @@
 inigo \
 	clip1.dv \
--track cg=1 \
+-hide-track \
 	watermark1.png out=9999 \
--track cg=1 \
+-hide-track \
 	"+title over gfx.txt" fgcolour=0x000000ff \
 -transition \
 	composite start=30%,20%:40%x60% \
