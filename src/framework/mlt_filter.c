@@ -155,12 +155,9 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 		int ret = mlt_service_get_frame( this->producer, frame, index );
 		if ( ret == 0 )
 		{
-			if ( !mlt_frame_is_test_card( *frame ) )
-			{
-				mlt_position position = mlt_frame_get_position( *frame );
-				if ( position >= in && ( out == 0 || position < out ) )
-					*frame = filter_process( this, *frame );
-			}
+			mlt_position position = mlt_frame_get_position( *frame );
+			if ( position >= in && ( out == 0 || position < out ) )
+				*frame = filter_process( this, *frame );
 			return 0;
 		}
 		else

@@ -182,11 +182,11 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	}
 	else
 	{
-		if ( test_card.vfmt != *format )
+		if ( test_card.vfmt != *format || test_card.width != *width || test_card.height != *height || test_card.image == NULL )
 		{
 			uint8_t *p;
 			uint8_t *q;
-			
+
 			test_card.vfmt = *format;
 			test_card.width = *width == 0 ? 720 : *width;
 			test_card.height = *height == 0 ? 576 : *height;
@@ -223,6 +223,21 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		*width = test_card.width;
 		*height = test_card.height;
 		*buffer = test_card.image;
+
+		mlt_properties_set_int( properties, "width", *width );
+		mlt_properties_set_int( properties, "height", *height );
+
+		if ( writable )
+		{
+			uint8_t *copy = malloc( *width * *height * 2 );
+			memcpy( copy, *buffer, *width * *height * 2 );
+			mlt_properties_set_data( properties, "image", copy, *width * *height * 2, free, NULL );
+			*buffer = copy;
+		}
+		else
+		{
+			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
+		}
 	}
 
 	return 0;
