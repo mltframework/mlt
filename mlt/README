@@ -1,0 +1,115 @@
+README
+------
+
+	This document provides a description of the VPS project organisation.
+
+	It provides *CRITICAL* architecture information, so please read carefully
+	if you plan to extend or use the VPS code base.
+
+Directories
+-----------
+
+	The directory heirarchy is defined as follows:
+
+	+ docs					- Location of all text and source format 
+							  documentation
+	+ src					- All project source is provided here
+		+ client			- Client API to access the server
+		+ framework			- The media framework - this code is 100% posix
+							  and as such contain no implementations 
+							  requiring additional libraries
+		+ modules			- All components are defined here with a 
+							  subdirectory for each dependency
+			+ bluefish		- Bluefish dependent modules and test code
+			+ ffmpeg		- ffmpeg dependent modules and test code
+			+ mainconcept	- mainconcept dependent modules and test code
+			+ SDL			- SDL dependent modules and test code
+		+ server			- The server implementation
+
+	Additional subdirectories may be nested below those shown and should be
+	documented in their parent or here.
+
+Configuration
+-------------
+
+	Configuration is triggered from the top level directory via a 
+	./configure script.
+
+	Each source bearing subdirectory shown above have their own configure
+	script which are called automatically from the top level.
+
+	Typically, new modules can be introduced without modification to the 
+	configure script and arguments are accepted and passed through to all 
+	subdirectories.
+
+	Top level usage is:
+
+	./configure --help			- report all configure options
+	./configure --prefix=[dir]	- target install directory (default: /usr/local)
+	./configure --disable-[mod] - do not compile specified module(s)
+	./configure --[other]		- pass through to children
+
+Compilation
+-----------
+
+	Makefiles are generated during configuration and these are based on
+	a per directory template which must be provided by the developer.
+
+Installation
+------------
+
+	The install is triggered by running make install or make install-strip
+	from the top level directory.
+	
+	The framework produces a single shared object which is installed in 
+	$prefix/lib/ and public header files which are installed in
+	$prefix/include/mlt/framework.
+
+	The client produces a single shared object which is installed in 
+	$prefix/lib/ and public header which are installed in 
+	$prefix/include/mlt/client.
+
+	The server produces a single exectuable which is installed in
+	$prefix/bin/. This is linked against the framework shared object and
+	posix libs but not against any of the modules.
+
+	The modules produce a shared object per module and a text file containing
+	a list of modules provided by this build. These are installed in
+	$prefix/share/mlt/. It is at the discretion of the module to install
+	additional support files. 
+	
+	To allow the development of external components, mlt-client-config and
+	mlt-framework-config scripts are generated and installed in $prefix/bin.
+
+	After install, only those modules listed are usable by the server. No
+	module is loaded unless explicitly requested via server configuration
+	or usage.
+
+	External modules are also placed in this $prefix/share/mlt, and the 
+	installation of those must modify the text file accordingly before they
+	will be considered at runtime.
+
+Development
+-----------
+
+	All compilation in the project has {top-level-dir}/src on the include path. 
+	All headers are included as:
+
+		#include <framework/file.h>
+	
+	All external modules have {prefix}/include/mlt on the include path. All 
+	headers should also be included as:
+
+		#include <framework/file.h>
+
+	This allows migration of source between external and internal
+	modules. The configuration and Makefile template requirements will require
+	attention though.
+
+Summary
+-------
+
+	1.	The server will interact with public interfaces from the framework only;
+	2.	The modules must expose public framework interfaces only;
+	3.	All modules are dynamically loaded at runtime.
+
