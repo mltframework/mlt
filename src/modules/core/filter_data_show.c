@@ -166,6 +166,44 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 	return error;
 }
 
+void process_queue( mlt_deque data_queue, mlt_frame frame, mlt_filter filter )
+{
+	if ( data_queue != NULL )
+	{
+		// Create a new queue for those that we can't handle
+		mlt_deque temp_queue = mlt_deque_init( );
+
+		// Iterate through each entry on the queue
+		while ( mlt_deque_peek_front( data_queue ) != NULL )
+		{
+			// Get the data feed
+			mlt_properties feed = mlt_deque_pop_front( data_queue );
+
+			if ( mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "debug" ) != NULL )
+				mlt_properties_debug( feed, mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "debug" ), stderr );
+
+			// Process the data feed...
+			if ( process_feed( feed, filter, frame ) == 0 )
+				mlt_properties_close( feed );
+			else
+				mlt_deque_push_back( temp_queue, feed );
+		}
+	
+		// Now put the unprocessed feeds back on the stack
+		while ( mlt_deque_peek_front( temp_queue ) )
+		{
+			// Get the data feed
+			mlt_properties feed = mlt_deque_pop_front( temp_queue );
+	
+			// Put it back on the data queue
+			mlt_deque_push_back( data_queue, feed );
+		}
+	
+		// Close the temporary queue
+		mlt_deque_close( temp_queue );
+	}
+}
+
 /** Get the image.
 */
 
@@ -177,37 +215,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-	// Fetch the data queue
-	mlt_deque data_queue = mlt_properties_get_data( frame_properties, "data_queue", NULL );
+	// Track specific
+	process_queue( mlt_properties_get_data( frame_properties, "data_queue", NULL ), frame, filter );
 
-	// Create a new queue for those that we can't handle
-	mlt_deque temp_queue = mlt_deque_init( );
-
-	// Iterate through each entry on the queue
-	while ( data_queue != NULL && mlt_deque_peek_front( data_queue ) != NULL )
-	{
-		// Get the data feed
-		mlt_properties feed = mlt_deque_pop_front( data_queue );
-
-		// Process the data feed...
-		if ( process_feed( feed, filter, frame ) == 0 )
-			mlt_properties_close( feed );
-		else
-			mlt_deque_push_back( temp_queue, feed );
-	}
-
-	// Now put the unprocessed feeds back on the stack
-	while ( data_queue != NULL && mlt_deque_peek_front( temp_queue ) )
-	{
-		// Get the data feed
-		mlt_properties feed = mlt_deque_pop_front( temp_queue );
-
-		// Put it back on the data queue
-		mlt_deque_push_back( data_queue, feed );
-	}
-
-	// Close the temporary queue
-	mlt_deque_close( temp_queue );
+	// Global
+	process_queue( mlt_properties_get_data( frame_properties, "global_queue", NULL ), frame, filter );
 
 	// Need to get the image
 	return mlt_frame_get_image( frame, image, format, width, height, 1 );
