@@ -25,7 +25,7 @@ OBJS = factory.o \
 	   transition_region.o \
 	   consumer_null.o
 
-ASM_OBJS = composite_line_yuv_mmx.o
+ASM_OBJS = 
 
 CFLAGS += -I../..
 
