@@ -228,11 +228,10 @@ mlt_event mlt_events_listen( mlt_properties this, void *service, char *id, mlt_l
 					event->listener = listener;
 					event->service = service;
 					mlt_properties_set_data( listeners, temp, event, 0, ( mlt_destructor )mlt_event_close, NULL );
+					mlt_event_inc_ref( event );
 				}
 			}
 
-			if ( event != NULL )
-				mlt_event_inc_ref( event );
 		}
 	}
 	return event;
