@@ -19,6 +19,8 @@
  */
 
 %module mltpp
+%include "carrays.i"
+%array_class(unsigned char, unsignedCharArray);
 
 %{
 #include <mlt++/Mlt.h>

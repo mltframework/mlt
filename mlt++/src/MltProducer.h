@@ -42,17 +42,17 @@ namespace Mlt
 			virtual ~Producer( );
 			virtual mlt_producer get_producer( );
 			mlt_service get_service( );
-			int seek( mlt_position position );
-			mlt_position position( );
-			mlt_position frame( );
+			int seek( int position );
+			int position( );
+			int frame( );
 			int set_speed( double speed );
 			double get_speed( );
 			double get_fps( );
-			int set_in_and_out( mlt_position in, mlt_position out );
-			mlt_position get_in( );
-			mlt_position get_out( );
-			mlt_position get_length( );
-			mlt_position get_playtime( );
+			int set_in_and_out( int in, int out );
+			int get_in( );
+			int get_out( );
+			int get_length( );
+			int get_playtime( );
 	};
 }
 

@@ -69,7 +69,7 @@ Service *Service::consumer( )
 Frame *Service::get_frame( int index )
 {
 	mlt_frame frame = NULL;
-	mlt_service_get_frame( get_service( ), &frame, index );
+	mlt_service_get_frame( get_connection( ), &frame, index );
 	return new Frame( frame );
 }
 

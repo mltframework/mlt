@@ -65,17 +65,17 @@ mlt_service Producer::get_service( )
 	return mlt_producer_service( get_producer( ) );
 }
 	
-int Producer::seek( mlt_position position )
+int Producer::seek( int position )
 {
 	return mlt_producer_seek( get_producer( ), position );
 }
 
-mlt_position Producer::position( )
+int Producer::position( )
 {
 	return mlt_producer_position( get_producer( ) );
 }
 
-mlt_position Producer::frame( )
+int Producer::frame( )
 {
 	return mlt_producer_frame( get_producer( ) );
 }
@@ -95,27 +95,27 @@ double Producer::get_fps( )
 	return mlt_producer_get_fps( get_producer( ) );
 }
 
-int Producer::set_in_and_out( mlt_position in, mlt_position out )
+int Producer::set_in_and_out( int in, int out )
 {
 	return mlt_producer_set_in_and_out( get_producer( ), in, out );
 }
 
-mlt_position Producer::get_in( )
+int Producer::get_in( )
 {
 	return mlt_producer_get_in( get_producer( ) );
 }
 
-mlt_position Producer::get_out( )
+int Producer::get_out( )
 {
 	return mlt_producer_get_out( get_producer( ) );
 }
 
-mlt_position Producer::get_length( )
+int Producer::get_length( )
 {
 	return mlt_producer_get_length( get_producer( ) );
 }
 
-mlt_position Producer::get_playtime( )
+int Producer::get_playtime( )
 {
 	return mlt_producer_get_playtime( get_producer( ) );
 }
