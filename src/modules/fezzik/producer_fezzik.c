@@ -179,6 +179,9 @@ mlt_producer producer_fezzik_init( char *arg )
 			// We need to ensure that all further properties are mirrored in the producer
 			mlt_properties_mirror( properties, mlt_producer_properties( producer ) );
 
+			// Ensure that the inner producer ignores the in point
+			mlt_properties_set_int( mlt_producer_properties( producer ), "ignore_points", 1 );
+
 			// Now, we return the producer of the tractor
 			producer = mlt_tractor_producer( tractor );
 		}

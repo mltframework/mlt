@@ -123,18 +123,19 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 {
 	// Determine eof handling
 	char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
+	int use_points = 1 - mlt_properties_get_int( mlt_producer_properties( this ), "ignore_points" );
 
 	// Check bounds
 	if ( position < 0 )
 	{
 		position = 0;
 	}
-	else if ( !strcmp( eof, "pause" ) && position >= mlt_producer_get_playtime( this ) )
+	else if ( use_points && !strcmp( eof, "pause" ) && position >= mlt_producer_get_playtime( this ) )
 	{
 		mlt_producer_set_speed( this, 0 );
 		position = mlt_producer_get_playtime( this ) - 1;
 	}
-	else if ( !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( this ) )
+	else if ( use_points && !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( this ) )
 	{
 		position = position % mlt_producer_get_playtime( this );
 	}
@@ -143,7 +144,7 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 	mlt_properties_set_position( mlt_producer_properties( this ), "_position", position );
 
 	// Calculate the absolute frame
-	mlt_properties_set_position( mlt_producer_properties( this ), "_frame", mlt_producer_get_in( this ) + position );
+	mlt_properties_set_position( mlt_producer_properties( this ), "_frame", use_points * mlt_producer_get_in( this ) + position );
 
 	return 0;
 }

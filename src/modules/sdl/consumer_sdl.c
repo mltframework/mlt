@@ -103,7 +103,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 		mlt_properties_set( this->properties, "rescale", "nearest" );
 
 		// Default buffer for low latency
-		mlt_properties_set_int( this->properties, "buffer", 8 );
+		mlt_properties_set_int( this->properties, "buffer", 2 );
 
 		// Default progressive true
 		mlt_properties_set_int( this->properties, "progressive", 0 );

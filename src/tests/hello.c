@@ -55,7 +55,7 @@ mlt_producer create_tracks( int argc, char **argv )
 	mlt_position length = mlt_producer_get_playtime( track0 );
 
 	// Create the watermark track
-	mlt_producer track1 = mlt_factory_producer( "fezzik", "pango" );
+	mlt_producer track1 = mlt_factory_producer( "fezzik", "pango:" );
 
 	// Get the properties of track1
 	mlt_properties properties = mlt_producer_properties( track1 );

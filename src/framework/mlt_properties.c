@@ -100,7 +100,7 @@ mlt_properties mlt_properties_load( char *filename )
 				temp[ strlen( temp ) - 1 ] = '\0';
 
 				// Parse and set the property
-				if ( strcmp( temp, "" ) )
+				if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
 					mlt_properties_parse( this, temp );
 			}
 
