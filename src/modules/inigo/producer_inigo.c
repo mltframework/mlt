@@ -144,7 +144,7 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else if ( !strcmp( argv[ i ], "-transition" ) )
 		{
-			mlt_transition transition = create_transition( field, argv[ ++ i ], track );
+			mlt_transition transition = create_transition( field, argv[ ++ i ], track - 1 );
 			if ( transition != NULL )
 			{
 				properties = mlt_transition_properties( transition );

@@ -663,7 +663,7 @@ static void *consumer_thread( void *arg )
 		fmt = guess_format( "mpeg", NULL, NULL );
 
 	// We need a filename - default to stdout?
-	if ( filename == NULL )
+	if ( filename == NULL || !strcmp( filename, "" ) )
 		filename = "pipe:";
 
 	// Get the codec ids selected
@@ -723,7 +723,7 @@ static void *consumer_thread( void *arg )
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
 		{
-			if (url_fopen(&oc->pb, filename, URL_RDWR) < 0) 
+			if (url_fopen(&oc->pb, filename, URL_WRONLY) < 0) 
 			{
 				fprintf(stderr, "Could not open '%s'\n", filename);
 				mlt_properties_set_int( properties, "running", 0 );
