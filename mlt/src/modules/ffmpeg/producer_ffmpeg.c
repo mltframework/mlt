@@ -88,6 +88,8 @@ mlt_producer producer_ffmpeg_init( char *file )
 		mlt_properties_set_int( properties, "audio_channels", 2 );
 		mlt_properties_set_int( properties, "audio_track", 0 );
 
+		mlt_properties_set( properties, "log_id", file );
+
 		this->buffer = malloc( 1024 * 1024 * 2 );
 
 		return producer;
@@ -119,7 +121,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	return 0;
 }
 
-FILE *producer_ffmpeg_run_video( producer_ffmpeg this )
+FILE *producer_ffmpeg_run_video( producer_ffmpeg this, mlt_timecode position )
 {
 	if ( this->video == NULL )
 	{
@@ -140,9 +142,6 @@ FILE *producer_ffmpeg_run_video( producer_ffmpeg this )
 			float video_rate = mlt_properties_get_double( properties, "fps" );
 			char *video_size = mlt_properties_get( properties, "video_size" );
 			char command[ 1024 ] = "";
-			float position = mlt_producer_position( &this->parent );
-
-			if ( video_loop || position < 0 ) position = 0;
 
 			sprintf( command, "%s/ffmpeg/video.sh \"%s\" \"%s\" \"%s\" %f %f 2>/dev/null",
 							  mlt_prefix,
@@ -150,7 +149,7 @@ FILE *producer_ffmpeg_run_video( producer_ffmpeg this )
 							  video_file,
 							  video_size,
 							  video_rate,
-							  position );
+							  ( float )position );
 
 			this->video = popen( command, "r" );
 		}
@@ -158,7 +157,7 @@ FILE *producer_ffmpeg_run_video( producer_ffmpeg this )
 	return this->video;
 }
 
-FILE *producer_ffmpeg_run_audio( producer_ffmpeg this )
+FILE *producer_ffmpeg_run_audio( producer_ffmpeg this, mlt_timecode position )
 {
 	// Get the producer
 	mlt_producer producer = &this->parent;
@@ -179,15 +178,12 @@ FILE *producer_ffmpeg_run_audio( producer_ffmpeg this )
 			int channels = mlt_properties_get_int( properties, "audio_channels" );
 			int track = mlt_properties_get_int( properties, "audio_track" );
 			char command[ 1024 ] = "";
-			float position = mlt_producer_position( &this->parent );
-
-			if ( audio_loop || position < 0 ) position = 0;
 
 			sprintf( command, "%s/ffmpeg/audio.sh \"%s\" \"%s\" %f %d %d %d 2>/dev/null",
 							  mlt_prefix,
 							  audio_type,
 							  audio_file,
-							  position,
+							  ( float )position,
 							  frequency,
 							  channels,
 							  track );
@@ -226,13 +222,13 @@ static void producer_ffmpeg_position( producer_ffmpeg this, uint64_t requested, 
 	}
 
 	// This is the next frame we expect
-	this->expected = mlt_producer_frame( &this->parent ) + 1;
+	this->expected = requested + 1;
 
 	// Open the pipe
-	this->video = producer_ffmpeg_run_video( this );
+	this->video = producer_ffmpeg_run_video( this, 0 );
 
 	// Open the audio pipe
-	this->audio = producer_ffmpeg_run_audio( this );
+	this->audio = producer_ffmpeg_run_audio( this, 0 );
 
 	// We should be open now
 	this->open = 1;
@@ -437,7 +433,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Set the audio pipe
 	mlt_properties_set_data( properties, "producer_ffmpeg", this, 0, NULL, NULL );
-	mlt_properties_set_int( properties, "end_of_clip", this->end_of_video && this->end_of_audio );
 
 	// Hmm - register audio callback
 	( *frame )->get_audio = producer_get_audio;
@@ -445,14 +440,24 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Get the additional properties
 	double aspect_ratio = mlt_properties_get_double( producer_properties, "aspect_ratio" );
 	double speed = mlt_properties_get_double( producer_properties, "speed" );
+	char *video_file = mlt_properties_get( producer_properties, "video_file" );
 
 	// Set them on the frame
 	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
 	mlt_properties_set_double( properties, "speed", speed );
+	if ( strchr( video_file, '/' ) != NULL )
+		mlt_properties_set( properties, "file", strrchr( video_file, '/' ) + 1 );
+	else
+		mlt_properties_set( properties, "file", video_file );
+
 
 	// Set the out point on the producer
 	if ( this->end_of_video && this->end_of_audio )
+	{
+		mlt_properties_set_int( properties, "end_of_clip", 1 );
+		mlt_properties_set_timecode( producer_properties, "length", mlt_producer_position( &this->parent ) );
 		mlt_producer_set_in_and_out( &this->parent, mlt_producer_get_in( &this->parent ), mlt_producer_position( &this->parent ) );
+	}
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );

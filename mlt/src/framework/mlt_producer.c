@@ -58,10 +58,11 @@ int mlt_producer_init( mlt_producer this, void *child )
 		mlt_properties_set_double( properties, "fps", 25.0 );
 		mlt_properties_set_double( properties, "speed", 1.0 );
 		mlt_properties_set_timecode( properties, "in", 0.0 );
-		mlt_properties_set_timecode( properties, "out", 3600.0 );
-		mlt_properties_set_timecode( properties, "length", 3600.0 );
+		mlt_properties_set_timecode( properties, "out", 36000.0 );
+		mlt_properties_set_timecode( properties, "length", 36000.0 );
 		mlt_properties_set_int( properties, "known_length", 1 );
 		mlt_properties_set_double( properties, "aspect_ratio", 4.0 / 3.0 );
+		mlt_properties_set( properties, "log_id", "multitrack" );
 
 		// Override service get_frame
 		parent->get_frame = producer_get_frame;

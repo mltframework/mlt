@@ -60,6 +60,7 @@ mlt_multitrack mlt_multitrack_init( )
 			mlt_properties properties = mlt_multitrack_properties( this );
 			producer->get_frame = producer_get_frame;
 			mlt_properties_set_data( properties, "multitrack", this, 0, NULL, NULL );
+			mlt_properties_set( properties, "log_id", "multitrack" );
 		}
 		else
 		{
@@ -121,7 +122,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 		if ( producer != NULL )
 		{
 			// Determine the longest length
-			length = mlt_producer_get_length( producer ) > length ? mlt_producer_get_length( producer ) : length;
+			length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
 			
 			// Handle fps
 			if ( fps == 0 )
@@ -147,6 +148,9 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 }
 
 /** Connect a producer to a given track.
+
+  	Note that any producer can be connected here, but see special case treatment
+	of playlist in clip point determination below.
 */
 
 int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int track )
@@ -178,6 +182,75 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 	}
 
 	return result;
+}
+
+/** Determine the clip point.
+
+  	Special case here: a 'producer' has no concept of multiple clips - only the 
+	playlist and multitrack producers have clip functionality. Further to that a 
+	multitrack determines clip information from any connected tracks that happen 
+	to be playlists.
+
+	Additionally, it must locate clips in the correct order, for example, consider
+	the following track arrangement:
+
+	playlist1 |0.0     |b0.0      |0.1          |0.1         |0.2           |
+	playlist2 |b1.0  |1.0           |b1.1     |1.1             |
+
+	Note - b clips represent blanks. They are also reported as clip positions.
+
+	When extracting clip positions from these playlists, we should get a sequence of:
+
+	0.0, 1.0, b0.0, 0.1, b1.1, 1.1, 0.1, 0.2, [out of playlist2], [out of playlist1]
+*/
+
+mlt_timecode mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
+{
+	int first = 1;
+	mlt_timecode position = 0;
+	int i = 0;
+
+	// Loop through each of the tracks
+	for ( i = 0; i < this->count; i ++ )
+	{
+		// Get the producer for this track
+		mlt_producer producer = this->list[ i ];
+
+		// If it's assigned...
+		if ( producer != NULL )
+		{
+			// Get the properties of this producer
+			mlt_properties properties = mlt_producer_properties( producer );
+
+			// Determine if it's a playlist
+			mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+
+			// We only consider playlists
+			if ( playlist != NULL )
+			{
+				// Locate the smallest timecode
+				if ( first )
+				{
+					// First position found
+					position = mlt_playlist_clip( playlist, whence, index );
+	
+					// We're no longer first
+					first = 0;
+				}
+				else
+				{
+					// Obtain the clip position in this playlist
+					mlt_timecode position2 = mlt_playlist_clip( playlist, whence, index );
+
+					// If this position is prior to the first, then use it
+					if ( position2 < position )
+						position = position2;
+				}
+			}
+		}
+	}
+
+	return position;
 }
 
 /** Get frame method.
@@ -236,71 +309,24 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		// Generate a test frame
 		*frame = mlt_frame_init( );
 
-		// Let tractor know if we've reached the end
-		mlt_properties_set_int( mlt_frame_properties( *frame ), "last_track", index >= this->count );
-
 		// Update timecode on the frame we're creating
 		mlt_frame_set_timecode( *frame, mlt_producer_position( parent ) );
 
 		// Move on to the next frame
 		if ( index >= this->count )
+		{
+			// Let tractor know if we've reached the end
+			mlt_properties_set_int( mlt_frame_properties( *frame ), "last_track", 1 );
+
+			// Move to the next frame
 			mlt_producer_prepare_next( parent );
+		}
 
 		// Refresh our stats
 		mlt_multitrack_refresh( this );
 	}
 
 	return 0;
-}
-
-/** Determine the clip point.
-*/
-
-mlt_timecode mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
-{
-	int first = 1;
-	mlt_timecode position = 0;
-	int i = 0;
-
-	for ( i = 0; i < this->count; i ++ )
-	{
-		// Get the producer
-		mlt_producer producer = this->list[ i ];
-
-		if ( producer != NULL )
-		{
-			// Get the properties of this producer
-			mlt_properties properties = mlt_producer_properties( producer );
-
-			// Determine if it's a playlist
-			mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-
-			// We only consider playlists
-			if ( playlist != NULL )
-			{
-				// Locate the smallest timecode
-				if ( first )
-				{
-					// First position found
-					position = mlt_playlist_clip( playlist, whence, index );
-	
-					// We're no longer first
-					first = 0;
-				}
-				else
-				{
-					// Obtain the clip position in this playlist
-					mlt_timecode position2 = mlt_playlist_clip( playlist, whence, index );
-
-					// If this position is prior to the first, then use it
-					if ( position2 < position )
-						position = position2;
-				}
-			}
-		}
-	}
-
-	return position;
 }
 
 /** Close this instance.

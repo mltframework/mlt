@@ -113,6 +113,8 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	// Get the fps of the first producer
 	double fps = mlt_properties_get_double( mlt_playlist_properties( this ), "first_fps" );
 
+	mlt_timecode playtime = mlt_producer_get_playtime( mlt_playlist_producer( this ) ) + out - in;
+
 	// If fps is 0
 	if ( fps == 0 )
 	{
@@ -147,6 +149,8 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 
 	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", fps );
 	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps );
+	mlt_properties_set_timecode( mlt_playlist_properties( this ), "length", playtime );
+	mlt_properties_set_timecode( mlt_playlist_properties( this ), "out", playtime );
 
 	return 0;
 }

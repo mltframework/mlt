@@ -89,7 +89,6 @@ void transport_action( mlt_producer producer, char *value )
 				{
 					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, -1 );
 					mlt_producer_seek( producer, time );
-					mlt_producer_prepare_next( producer );
 				}
 				break;
 			case 'k':
@@ -97,7 +96,6 @@ void transport_action( mlt_producer producer, char *value )
 				{
 					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 0 );
 					mlt_producer_seek( producer, time );
-					mlt_producer_prepare_next( producer );
 				}
 				break;
 			case 'l':
@@ -105,7 +103,6 @@ void transport_action( mlt_producer producer, char *value )
 				{
 					mlt_timecode time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 1 );
 					mlt_producer_seek( producer, time );
-					mlt_producer_prepare_next( producer );
 				}
 				break;
 		}
