@@ -25,6 +25,7 @@
 #include "mlt_deque.h"
 
 typedef int ( *mlt_get_image )( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
+typedef int ( *mlt_get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
 
 struct mlt_frame_s
 {
@@ -32,7 +33,6 @@ struct mlt_frame_s
 	struct mlt_properties_s parent;
 
 	// Virtual methods
-	int ( *get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
 	uint8_t * ( *get_alpha_mask )( mlt_frame self );
 	
 	// Private properties
@@ -52,6 +52,7 @@ extern double mlt_frame_get_aspect_ratio( mlt_frame self );
 extern int mlt_frame_set_aspect_ratio( mlt_frame self, double value );
 extern mlt_position mlt_frame_get_position( mlt_frame self );
 extern int mlt_frame_set_position( mlt_frame self, mlt_position value );
+extern void mlt_frame_replace_image( mlt_frame self, uint8_t *image, mlt_image_format format, int width, int height );
 extern int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame self );
 extern int mlt_frame_get_audio( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );

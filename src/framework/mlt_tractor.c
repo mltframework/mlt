@@ -344,7 +344,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			if ( audio != NULL )
 			{
 				mlt_frame_push_audio( *frame, audio );
-				( *frame )->get_audio = producer_get_audio;
+				mlt_frame_push_audio( *frame, producer_get_audio );
 			}
 
 			if ( video != NULL )

@@ -503,6 +503,10 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		// We're done with the clone now
 		mlt_properties_set_data( parent_properties, "use_clone", NULL, 0, NULL, NULL );
 
+		// This is useful and required by always_active transitions to determine in/out points of the cut
+		if ( mlt_properties_get_data( MLT_FRAME_PROPERTIES( *frame ), "_producer", NULL ) == MLT_PRODUCER_SERVICE( parent ) )
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( *frame ), "_producer", this, 0, NULL, NULL );
+
 		mlt_properties_set_double( MLT_FRAME_PROPERTIES( *frame ), "_speed", speed );
 		mlt_producer_prepare_next( this );
 	}

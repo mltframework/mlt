@@ -156,92 +156,150 @@ mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_fr
 		return this->process( this, a_frame, b_frame );
 }
 
-/** Get a frame from this filter.
+/** Get a frame from this transition.
 
-	The logic is complex here. A transition is applied to frames on the a and b tracks
-	specified in the connect method above. Since all frames are obtained via this 
-	method for all tracks, we have to take special care that we only obtain the a and
-	b frames once - we do this on the first call to get a frame from either a or b.
-	
-	After that, we have 2 cases to resolve:
-	
-	1) 	if the track is the a_track and we're in the time zone, then we need to call the
-		process method to do the effect on the frame and remember we've passed it on
-		otherwise, we pass on the a_frame unmolested;
-	2)	For all other tracks, we get the frames on demand.
+	The logic is complex here. A transition is typically applied to frames on the a and 
+	b tracks specified in the connect method above and only if both contain valid info
+	for the transition type (this is either audio or image).
+
+	However, the fixed a_track may not always contain data of the correct type, eg:
+
+	+---------+                               +-------+
+	|c1       |                               |c5     | <-- A(0,1) <-- B(0,2) <-- get frame
+	+---------+                     +---------+-+-----+        |          |
+	                                |c4         |       <------+          |
+	         +----------+-----------+-+---------+                         |
+	         |c2        |c3           |                 <-----------------+
+	         +----------+-------------+
+
+	During the overlap of c1 and c2, there is nothing for the A transition to do, so this
+	results in a no operation, but B is triggered. During the overlap of c2 and c3, again, 
+	the A transition is inactive and because the B transition is pointing at track 0, 
+	it too would be inactive. This isn't an ideal situation - it's better if the B 
+	transition simply treats the frames from c3 as though they're the a track.
+
+	For this to work, we cache all frames coming from all tracks between the a and b 
+	tracks.  Before we process, we determine that the b frame contains someting of the 
+	right type and then we determine which frame to use as the a frame (selecting a
+	matching frame from a_track to b_track - 1). If both frames contain data of the 
+	correct type, we process the transition.
+
+	This method is invoked for each track and we return the cached frames as needed.
+	We clear the cache only when the requested frame is flagged as a 'last_track' frame.
 */
 
 static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
 {
+	int error = 0;
 	mlt_transition this = service->child;
 
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
-	int accepts_blanks = mlt_properties_get_int( properties, "_accepts_blanks" );
+	int accepts_blanks = mlt_properties_get_int( properties, "accepts_blanks" );
 	int a_track = mlt_properties_get_int( properties, "a_track" );
 	int b_track = mlt_properties_get_int( properties, "b_track" );
 	mlt_position in = mlt_properties_get_position( properties, "in" );
 	mlt_position out = mlt_properties_get_position( properties, "out" );
 	int always_active = mlt_properties_get_int( properties, "always_active" );
+	int type = mlt_properties_get_int( properties, "_transition_type" );
+	int reverse_order = 0;
 
-	if ( ( index == a_track || index == b_track ) && !( this->a_held || this->b_held ) )
+	// Ensure that we have the correct order
+	if ( a_track > b_track )
 	{
-		mlt_service_get_frame( this->producer, &this->a_frame, a_track );
-		mlt_service_get_frame( this->producer, &this->b_frame, b_track );
-		this->a_held = 1;
-		this->b_held = 1;
+		reverse_order = 1;
+		a_track = b_track;
+		b_track = mlt_properties_get_int( properties, "a_track" );
+	}
+
+	// Only act on this operation once per multitrack iteration from the tractor
+	if ( !this->held )
+	{
+		int active = 0;
+		int i = 0;
+		int a_frame = a_track;
+		int b_frame = b_track;
+		mlt_position position;
+		int ( *invalid )( mlt_frame ) = type == 1 ? mlt_frame_is_test_card : mlt_frame_is_test_audio;
+
+		// Initialise temporary store
+		if ( this->frames == NULL )
+			this->frames = calloc( sizeof( mlt_frame ), b_track + 1 );
+
+		// Get all frames between a and b
+		for( i = a_track; i <= b_track; i ++ )
+			mlt_service_get_frame( this->producer, &this->frames[ i ], i );
+
+		// We're holding these frames until the last_track frame property is received
+		this->held = 1;
+
+		// When we need to locate the a_frame
+		switch( type )
+		{
+			case 1:
+			case 2:
+				// Some transitions (esp. audio) may accept blank frames
+				active = accepts_blanks;
+
+				// If we're not active then...
+				if ( !active )
+				{
+					// Hunt for the a_frame
+					while( a_frame <= b_frame && invalid( this->frames[ a_frame ] ) )
+						a_frame ++;
+
+					// Determine if we're active now
+					active = a_frame != b_frame && !invalid( this->frames[ b_frame ] );
+				}
+				break;
+
+			default:
+				fprintf( stderr, "invalid transition type\n" );
+				break;
+		}
+
+		// Now handle the non-always active case
+		if ( active && !always_active )
+		{
+			// For non-always-active transitions, we need the current position of the a frame
+			position = mlt_frame_get_position( this->frames[ a_frame ] );
+
+			// If a is in range, we're active
+			active = position >= in && position <= out;
+		}
+
+		// Finally, process the a and b frames
+		if ( active )
+		{
+			mlt_frame a_frame_ptr = this->frames[ !reverse_order ? a_frame : b_frame ];
+			mlt_frame b_frame_ptr = this->frames[ !reverse_order ? b_frame : a_frame ];
+			int a_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide" );
+			int b_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide" );
+
+			// Process the transition
+			*frame = mlt_transition_process( this, a_frame_ptr, b_frame_ptr );
+
+			// We need to ensure that the tractor doesn't consider this frame for output
+			if ( *frame == a_frame_ptr )
+				b_hide |= type;
+			else
+				a_hide |= type;
+
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide", a_hide );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide", b_hide );
+		}
 	}
 	
-	// Special case track processing
-	if ( index == a_track )
-	{
-		// Determine if we're in the right time zone
-		mlt_position position = mlt_frame_get_position( this->a_frame );
-		if ( always_active || ( position >= in && position <= out ) )
-		{
-			if ( !accepts_blanks && ( this->b_frame == NULL || ( mlt_frame_is_test_card( this->b_frame ) && mlt_frame_is_test_audio( this->b_frame ) ) ) )
-			{
-				*frame = this->a_frame;
-			}
-			else if ( !accepts_blanks && ( this->a_frame == NULL || ( mlt_frame_is_test_card( this->a_frame ) && mlt_frame_is_test_audio( this->a_frame ) ) ) )
-			{
-				mlt_frame t = this->a_frame;
-				this->a_frame = this->b_frame;
-				this->b_frame = t;
-				*frame = this->a_frame;
-			}
-			else
-			{
-				int hide = 0;
-				*frame = mlt_transition_process( this, this->a_frame, this->b_frame );
-				if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this->a_frame ), "test_image" ) )
-					hide = 1;
-				if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this->a_frame ), "test_audio" ) )
-					hide |= 2;
-				mlt_properties_set_int( MLT_FRAME_PROPERTIES( this->b_frame ), "hide", hide );
-			}
-			this->a_held = 0;
-		}
-		else
-		{
-			// Pass on the 'a frame' and remember that we've done it
-			*frame = this->a_frame;
-			this->a_held = 0;
-		}
-		return 0;
-	}
-	if ( index == b_track )
-	{
-		// Pass on the 'b frame' and remember that we've done it
-		*frame = this->b_frame;
-		this->b_held = 0;
-		return 0;
-	}
+	// Obtain the frame from the cache or the producer we're attached to
+	if ( index >= a_track && index <= b_track )
+		*frame = this->frames[ index ];
 	else
-	{
-		// Pass through
-		return mlt_service_get_frame( this->producer, frame, index );
-	}
+		error = mlt_service_get_frame( this->producer, frame, index );
+
+	// Determine if that was the last track
+	this->held = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( *frame ), "last_track" );
+
+	return error;
 }
 
 /** Close the transition.
@@ -259,6 +317,7 @@ void mlt_transition_close( mlt_transition this )
 		else
 		{
 			mlt_service_close( &this->parent );
+			free( this->frames );
 			free( this );
 		}
 	}

@@ -366,7 +366,6 @@ static void *consumer_read_ahead_thread( void *arg )
 	{
 		samples = mlt_sample_calculator( fps, frequency, counter++ );
 		mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
-		frame->get_audio = NULL;
 	}
 
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
@@ -439,7 +438,6 @@ static void *consumer_read_ahead_thread( void *arg )
 		{
 			samples = mlt_sample_calculator( fps, frequency, counter++ );
 			mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
-			frame->get_audio = NULL;
 		}
 
 		// Increment the time take for this frame

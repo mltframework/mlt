@@ -44,10 +44,8 @@ struct mlt_transition_s
 	mlt_service producer;
 	
 	// Private
-	mlt_frame a_frame;
-	mlt_frame b_frame;
-	int a_held;
-	int b_held;
+	mlt_frame *frames;
+	int held;
 };
 
 /** Public final methods

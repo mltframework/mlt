@@ -92,12 +92,12 @@ int mlt_frame_is_test_card( mlt_frame this )
 	return mlt_deque_count( this->stack_image ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_image" );
 }
 
-/** Check if we have a way to derive something than test audio.
+/** Check if we have a way to derive something other than test audio.
 */
 
 int mlt_frame_is_test_audio( mlt_frame this )
 {
-	return this->get_audio == NULL || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_audio" );
+	return mlt_deque_count( this->stack_audio ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_audio" );
 }
 
 /** Get the aspect ratio of the frame.
@@ -204,6 +204,42 @@ mlt_deque mlt_frame_service_stack( mlt_frame this )
 {
 	return this->stack_service;
 }
+
+/** [EXPERIMENTAL] Replace image stack with the information provided.
+
+  	This might prove to be unreliable and restrictive - the idea is that a transition
+	which normally uses two images may decide to only use the b frame (ie: in the case
+	of a composite where the b frame completely obscures the a frame).
+
+	The image must be writable and the destructor for the image itself must be taken
+	care of on another frame and that frame cannot have a replace applied to it... 
+	Further it assumes that no alpha mask is in use.
+
+	For these reasons, it can only be used in a specific situation - when you have 
+	multiple tracks each with their own transition and these transitions are applied
+	in a strictly reversed order (ie: highest numbered [lowest track] is processed 
+	first).
+
+	More reliable approach - the cases should be detected during the process phase
+	and the upper tracks should simply not be invited to stack...
+*/
+
+void mlt_frame_replace_image( mlt_frame this, uint8_t *image, mlt_image_format format, int width, int height )
+{
+	// Herein lies the potential problem for this function - it makes a potentially 
+	// dangerous assumption that all content on the image stack can be removed without a destructor
+	while( mlt_deque_pop_back( this->stack_image ) ) ;
+
+	// Update the information 
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "image", image, 0, NULL, NULL );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "width", width );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "height", height );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "format", format );
+	this->get_alpha_mask = NULL;
+}
+
+/** Get the image associated to the frame.
+*/
 
 int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -320,13 +356,14 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 
 int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
+	mlt_get_audio get_audio = mlt_frame_pop_audio( this );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	int hide = mlt_properties_get_int( properties, "test_audio" );
 
-	if ( hide == 0 && this->get_audio != NULL )
+	if ( hide == 0 && get_audio != NULL )
 	{
 		mlt_position position = mlt_frame_get_position( this );
-		this->get_audio( this, buffer, format, frequency, channels, samples );
+		get_audio( this, buffer, format, frequency, channels, samples );
 		mlt_frame_set_position( this, position );
 	}
 	else if ( mlt_properties_get_data( properties, "audio", NULL ) )
