@@ -14,20 +14,23 @@ Directories
 	+ docs					- Location of all text and source format 
 							  documentation
 	+ src					- All project source is provided here
-		+ framework			- The media framework - this code is 100% posix
-							  and as such contain no implementations 
-							  requiring additional libraries
-		+ modules			- All components are defined here with a 
-							  subdirectory for each dependency
-			+ bluefish		- Bluefish dependent modules and test code
+		+ framework			- The media framework
+		+ modules			- All components are defined here
+			+ core			- Non-dependent MLT service
+			+ dv			- libdv services
 			+ ffmpeg		- ffmpeg dependent modules and test code
-			+ mainconcept	- mainconcept dependent modules and test code
-			+ SDL			- SDL dependent modules and test code
+			+ sdl			- SDL dependent modules and test code
+			+ bluefish		- Bluefish dependent modules and test code (*)
+			+ mainconcept	- mainconcept dependent modules and test code (*)
+		+ inigo				- A media playing test application
 		+ valerie			- Client API to access the server
 		+ miracle			- The server implementation
+		+ tests				- Reserved for regression and unit tests
 
 	Additional subdirectories may be nested below those shown and should be
 	documented in their parent or here.
+
+	(*) Not posted to CVS due to licensing issues.
 
 Configuration
 -------------
@@ -49,6 +52,9 @@ Configuration
 	./configure --disable-[mod] - do not compile specified module(s)
 	./configure --[other]		- pass through to children
 
+	NB: This script must be run to register new services after a CVS checkout
+	or subsequent update.
+	
 Compilation
 -----------
 
@@ -73,9 +79,9 @@ Installation
 	$prefix/bin/. This is linked against the framework shared object and
 	posix libs but not against any of the modules.
 
-	The modules produce a shared object per module and a text file containing
-	a list of modules provided by this build. These are installed in
-	$prefix/share/mlt/. It is at the discretion of the module to install
+	The modules produce a shared object per module and update text files
+	containing a list of modules provided by this build. These are installed 
+	in $prefix/share/mlt/. It is at the discretion of the module to install
 	additional support files. 
 	
 	To allow the development of external components, mlt-client-config and
@@ -102,8 +108,8 @@ Development
 
 		#include <framework/file.h>
 
-	This allows migration of source between external and internal
-	modules. The configuration and Makefile template requirements will require
+	This allows migration of source between external and internal modules. 
+	The configuration and Makefile template requirements will require
 	attention though.
 
 Summary

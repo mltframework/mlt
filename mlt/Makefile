@@ -1,4 +1,4 @@
-SUBDIRS = src/framework src/valerie src/modules # src/miracle src/humperdink
+SUBDIRS = src/framework src/modules src/inigo src/valerie # src/miracle src/humperdink
 
 all clean dist-clean depend install:
 	list='$(SUBDIRS)'; \

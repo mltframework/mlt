@@ -40,7 +40,7 @@ done
 [ $help = 1 ] && show_help
 
 # Iterate through each of the components
-for i in framework modules valerie miracle humperdink
+for i in framework modules inigo valerie miracle humperdink
 do
 	if [ -x src/$i/configure ]
 	then

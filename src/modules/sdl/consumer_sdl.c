@@ -234,7 +234,7 @@ static void *consumer_thread( void *arg )
 				request.freq = frequency;
 				request.format = AUDIO_S16;
 				request.channels = channels;
-				request.samples = 1024;
+				request.samples = 512;
 				request.callback = sdl_fill_audio;
 				request.userdata = (void *)this;
 				if ( SDL_OpenAudio( &request, NULL ) < 0 )

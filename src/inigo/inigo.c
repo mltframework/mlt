@@ -34,6 +34,10 @@ mlt_producer create_producer( char *file )
 	else if ( result == NULL && strstr( file, ".dif" ) )
 		result = mlt_factory_producer( "libdv", file );
 
+	// 3rd line fallbacks 
+	if ( result == NULL )
+		result = mlt_factory_producer( "ppm", file );
+
 	return result;
 }
 

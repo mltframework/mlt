@@ -116,7 +116,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 		// Inherit it from the producer
 		fps = mlt_producer_get_fps( producer );
 	}
-	else
+	else if ( fps != mlt_properties_get_double( mlt_producer_properties( producer ), "fps" ) )
 	{
 		// Generate a warning for now - the following attempt to fix may fail
 		fprintf( stderr, "Warning: fps mismatch on playlist producer %d\n", this->count );

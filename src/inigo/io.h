@@ -1,6 +1,6 @@
 /*
- * filter_resize.h -- resizing filter
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * io.h -- dv1394d client demo input/output
+ * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,11 +18,28 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _FILTER_RESIZE_H_
-#define _FILTER_RESIZE_H_
+#ifndef _DEMO_IO_H_
+#define _DEMO_IO_H_
 
-#include <framework/mlt_filter.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-extern mlt_filter filter_resize_init( char *arg );
+extern char *chomp( char * );
+extern char *trim( char * );
+extern char *strip_quotes( char * );
+extern char *get_string( char *, int, char * );
+extern int *get_int( int *, int );
+extern void term_init( );
+extern int term_read( );
+extern void term_exit( );
+extern char get_keypress( );
+extern void wait_for_any_key( char * );
+extern void beep( );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

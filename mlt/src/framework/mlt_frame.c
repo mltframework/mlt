@@ -432,6 +432,14 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 	return ret;
 }
 
+void *memfill( void *dst, void *src, int l, int elements )
+{
+	int i = 0;
+	for ( i = 0; i < elements; i ++ )
+		dst = memcpy( dst, src, l ) + l;
+	return dst;
+}
+
 void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight )
 {
 	// Calculate strides
@@ -439,22 +447,23 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	int ostride = owidth * 2;
 
    	// Coordinates (0,0 is middle of output)
-   	int y, x;
+   	int y;
 
    	// Calculate ranges
    	int out_x_range = owidth / 2;
    	int out_y_range = oheight / 2;
-   	int in_x_range = iwidth / 2;
-   	int in_y_range = iheight / 2;
+   	int in_x_range = iwidth / 2 < out_x_range ? iwidth / 2 : out_x_range;
+   	int in_y_range = iheight / 2 < out_y_range ? iheight / 2 : out_y_range;
 
    	// Output pointers
    	uint8_t *out_line = output;
    	uint8_t *out_ptr;
 
    	// Calculate a middle and possibly invalid pointer in the input
-   	uint8_t *in_middle = input + istride * in_y_range + in_x_range * 2;
-   	int in_line = - out_y_range * istride - out_x_range * 2;
-   	int in_ptr;
+   	uint8_t *in_middle = input + istride * ( iheight / 2 ) + ( iwidth / 2 ) * 2;
+   	int in_line = - in_y_range * istride - in_x_range * 2;
+
+	uint8_t black[ 2 ] = { 16, 128 };
 
    	// Loop for the entirety of our output height.
    	for ( y = - out_y_range; y < out_y_range ; y ++ )
@@ -462,33 +471,29 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
        	// Start at the beginning of the line
        	out_ptr = out_line;
 
-       	// Point the start of the current input line (NB: can be out of range)
-       	in_ptr = in_line;
+		if ( abs( y ) < iheight / 2 )
+		{
+			// Fill the outer part with black
+			out_ptr = memfill( out_ptr, black, 2, out_x_range - in_x_range );
 
-       	// Loop for the entirety of our output row.
-       	for ( x = - out_x_range; x < out_x_range; x ++ )
-       	{
-           	// Check if x and y are in the valid input range.
-           	if ( abs( x ) < in_x_range && abs( y ) < in_y_range  )
-           	{
-               	// We're in the input range for this row.
-               	*out_ptr ++ = *( in_middle + in_ptr ++ );
-               	*out_ptr ++ = *( in_middle + in_ptr ++ );
-           	}
-           	else
-           	{
-               	// We're not in the input range for this row.
-               	*out_ptr ++ = 16;
-               	*out_ptr ++ = 128;
-               	in_ptr += 2;
-           	}
-       	}
+       		// We're in the input range for this row.
+			memcpy( out_ptr, in_middle + in_line, 4 * in_x_range );
+			out_ptr += 4 * in_x_range;
+
+			// Fill the outer part with black
+			out_ptr = memfill( out_ptr, black, 2, out_x_range - in_x_range );
+
+       		// Move to next input line
+       		in_line += istride;
+		}
+		else
+		{
+			// Fill whole line with black
+			out_ptr = memfill( out_ptr, black, 2, owidth );
+		}
 
        	// Move to next output line
        	out_line += ostride;
-
-       	// Move to next input line
-       	in_line += istride;
    	}
 }
 
@@ -590,7 +595,7 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
         	in_line = in_middle + dy * istride;
 	
         	// Loop for the entirety of our output row.
-        	for ( x = - out_x_range; x < out_x_range; x += 2 )
+        	for ( x = - out_x_range; x < out_x_range; x += 1 )
         	{
 				// Calculated the derived x
 				dx = scale_width * x;
@@ -599,17 +604,13 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
             	if ( abs( dx ) < in_x_range && abs( dy ) < in_y_range  )
             	{
                 	// We're in the input range for this row.
-					in_ptr = in_line + ( dx >> 1 ) * 4;
-                	*out_ptr ++ = *in_ptr ++;
-                	*out_ptr ++ = *in_ptr ++;
+					in_ptr = in_line + ( dx >> 1 ) * 4 - 2 * ( x & 1 );
                 	*out_ptr ++ = *in_ptr ++;
                 	*out_ptr ++ = *in_ptr ++;
             	}
             	else
             	{
                 	// We're not in the input range for this row.
-                	*out_ptr ++ = 16;
-                	*out_ptr ++ = 128;
                 	*out_ptr ++ = 16;
                 	*out_ptr ++ = 128;
             	}

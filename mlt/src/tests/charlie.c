@@ -156,6 +156,8 @@ int main( int argc, char **argv )
 
 	// Construct the field
 	field = mlt_field_init( );
+
+	// We need to track the number of registered filters
 	mlt_properties properties = mlt_field_properties( field );
 	mlt_properties_set_int( properties, "registered", 0 );
 
