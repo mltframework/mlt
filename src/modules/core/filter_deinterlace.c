@@ -75,22 +75,26 @@ static void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc, int width, int height
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	// Get the input image
-	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
-
-	// Only continue if we have no error and the right colour space
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	int error = 0;
+	
+	// Check that we want progressive and we aren't already progressive
+	if ( *format == mlt_image_yuv422 &&
+		 !mlt_properties_get_int( mlt_frame_properties( this ), "progressive" ) &&
+		 mlt_properties_get_int( mlt_frame_properties( this ), "consumer_deinterlace" ) )
 	{
-		// Check that we want progressive and we aren't already progressive
-		if ( !mlt_properties_get_int( mlt_frame_properties( this ), "progressive" ) &&
-			 mlt_properties_get_int( mlt_frame_properties( this ), "consumer_deinterlace" ) )
-		{
-			// Deinterlace the image
-			deinterlace_yuv( *image, *image, *width * 2, *height );
-
-			// Make sure that others know the frame is deinterlaced
-			mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
-		}
+		// Get the input image
+		error = mlt_frame_get_image( this, image, format, width, height, 1 );
+		
+		// Deinterlace the image
+		deinterlace_yuv( *image, *image, *width * 2, *height );
+		
+		// Make sure that others know the frame is deinterlaced
+		mlt_properties_set_int( mlt_frame_properties( this ), "progressive", 1 );
+	}
+	else
+	{
+		// Get the input image
+		error = mlt_frame_get_image( this, image, format, width, height, writable );
 	}
 
 	return error;
