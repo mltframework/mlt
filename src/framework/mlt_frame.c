@@ -120,7 +120,8 @@ int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
 
 mlt_position mlt_frame_get_position( mlt_frame this )
 {
-	return mlt_properties_get_position( mlt_frame_properties( this ), "_position" );
+	int pos = mlt_properties_get_position( mlt_frame_properties( this ), "_position" );
+	return pos < 0 ? 0 : pos;
 }
 
 /** Set the position of this frame.

@@ -45,6 +45,7 @@ extern mlt_properties mlt_properties_new( );
 extern mlt_properties mlt_properties_load( char *file );
 extern int mlt_properties_inc_ref( mlt_properties self );
 extern int mlt_properties_dec_ref( mlt_properties self );
+extern int mlt_properties_ref_count( mlt_properties self );
 extern void mlt_properties_mirror( mlt_properties self, mlt_properties that );
 extern int mlt_properties_inherit( mlt_properties self, mlt_properties that );
 extern int mlt_properties_pass( mlt_properties self, mlt_properties that, char *prefix );

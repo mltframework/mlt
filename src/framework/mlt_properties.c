@@ -202,6 +202,19 @@ int mlt_properties_dec_ref( mlt_properties this )
 	return 0;
 }
 
+/** Return the ref count of this object.
+*/
+
+int mlt_properties_ref_count( mlt_properties this )
+{
+	if ( this != NULL )
+	{
+		property_list *list = this->local;
+		return list->ref_count;
+	}
+	return 0;
+}
+
 /** Allow the specification of a mirror.
 */
 

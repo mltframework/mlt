@@ -446,7 +446,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 	}
 
-	if ( 1 )
+	if ( image != NULL )
 	{
 		char *rescale = mlt_properties_get( properties, "rescale" );
 		if ( rescale != NULL && strcmp( rescale, "none" ) )
@@ -512,7 +512,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 	if ( unlock != NULL ) unlock( );
 
-	return 0;
+	return 1;
 }
 
 /** Threaded wrapper for pipe.
@@ -528,7 +528,7 @@ static void *consumer_thread( void *arg )
 
 	// internal intialization
 	mlt_frame frame = NULL;
-	struct timespec tm = { 0, 400000 };
+	struct timespec tm = { 0, 1000000 };
 
 	if ( mlt_properties_get_int( mlt_consumer_properties( consumer ), "sdl_started" ) == 0 )
 	{
@@ -561,9 +561,9 @@ static void *consumer_thread( void *arg )
 		// Ensure that we have a frame
 		if ( frame != NULL )
 		{
-			consumer_play_video( this, frame );
+			if ( consumer_play_video( this, frame ) == 0 )
+				nanosleep( &tm, NULL );
 			mlt_frame_close( frame );
-			nanosleep( &tm, NULL );
 		}
 	}
 

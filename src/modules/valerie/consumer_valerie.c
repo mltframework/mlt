@@ -86,15 +86,34 @@ static int consumer_start( mlt_consumer this )
 	// Get all the properties now
 	char *server = mlt_properties_get( properties, "server" );
 	int port = mlt_properties_get_int( properties, "port" );
-	char *command = mlt_properties_get( properties, "command" );
+	char *cmd = mlt_properties_get( properties, "command" );
 	int unit = mlt_properties_get_int( properties, "unit" );
 	char *title = mlt_properties_get( properties, "title" );
+	char command[ 2048 ];
 
 	// If this is a reuse, then a valerie object will exist
 	valerie connection = mlt_properties_get_data( properties, "connection", NULL );
 
 	// Special case - we can get a doc too...
 	char *doc = mlt_properties_get( properties, "westley" );
+
+	// Set the title if provided
+	if ( service != NULL )
+	{
+		if ( title != NULL )
+			mlt_properties_set( mlt_service_properties( service ), "title", title );
+		else if ( mlt_properties_get( mlt_service_properties( service ), "title" ) == NULL )
+			mlt_properties_set( mlt_service_properties( service ), "title", "Anonymous Submission" );
+		title = mlt_properties_get( mlt_service_properties( service ), "title" );
+	}
+
+	strcpy( command, cmd == NULL ? "" : cmd );
+	if ( strstr( command, "title=" ) == NULL && title != NULL )
+	{
+		strcat( command, " title=\"" );
+		strcat( command, title );
+		strcat( command, "\"" );
+	}
 
 	if ( service != NULL || doc != NULL )
 	{
@@ -124,12 +143,6 @@ static int consumer_start( mlt_consumer this )
 			if ( doc == NULL )
 			{
 				int error;
-
-				// Set the title if provided
-				if ( title != NULL )
-					mlt_properties_set( mlt_service_properties( service ), "title", title );
-				else if ( mlt_properties_get( mlt_service_properties( service ), "title" ) == NULL )
-					mlt_properties_set( mlt_service_properties( service ), "title", "Anonymous Submission" );
 
 				// Push the service
 				error = valerie_unit_push( connection, unit, command, service );
