@@ -266,13 +266,13 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int32_t in,
 
 	if ( instance != NULL )
 	{
-		clear_unit( unit );
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
-		mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
-		mlt_consumer_purge( consumer );
+		int original = mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) );
 		mlt_playlist_append_io( playlist, instance, in, out );
+		mlt_playlist_remove_region( playlist, 0, original );
 		miracle_log( LOG_DEBUG, "loaded clip %s", clip );
+		update_generation( unit );
 		miracle_unit_status_communicate( unit );
 		mlt_producer_close( instance );
 		return valerie_ok;
