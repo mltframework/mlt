@@ -44,6 +44,10 @@ int mlt_filter_init( mlt_filter this, void *child )
 		// Override the get_frame method
 		service->get_frame = filter_get_frame;
 
+		// Define the destructor
+		service->close = ( mlt_destructor )mlt_filter_close;
+		service->close_object = this;
+
 		// Default in, out, track properties
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
@@ -192,9 +196,17 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 
 void mlt_filter_close( mlt_filter this )
 {
-	if ( this->close != NULL )
-		this->close( this );
-	else
-		mlt_service_close( &this->parent );
-	free( this );
+	if ( this != NULL && mlt_properties_dec_ref( mlt_filter_properties( this ) ) <= 0 )
+	{
+		if ( this->close != NULL )
+		{
+			this->close( this );
+		}
+		else
+		{
+			this->parent.close = NULL;
+			mlt_service_close( &this->parent );
+		}
+		free( this );
+	}
 }

@@ -61,6 +61,8 @@ extern int mlt_playlist_insert( mlt_playlist self, mlt_producer producer, int wh
 extern int mlt_playlist_remove( mlt_playlist self, int where );
 extern int mlt_playlist_move( mlt_playlist self, int from, int to );
 extern int mlt_playlist_resize_clip( mlt_playlist self, int clip, mlt_position in, mlt_position out );
+extern int mlt_playlist_split( mlt_playlist self, int clip, mlt_position position );
+extern int mlt_playlist_join( mlt_playlist self, int clip, int count, int merge );
 extern void mlt_playlist_close( mlt_playlist self );
 
 #endif

@@ -73,6 +73,10 @@ mlt_playlist mlt_playlist_init( )
 		// Override the producer get_frame
 		producer->get_frame = producer_get_frame;
 
+		// Define the destructor
+		producer->close = ( mlt_destructor )mlt_playlist_close;
+		producer->close_object = this;
+
 		// Initialise blank
 		mlt_producer_init( &this->blank, NULL );
 		mlt_properties_set( mlt_producer_properties( &this->blank ), "mlt_service", "blank" );
@@ -186,6 +190,8 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	mlt_producer_set_speed( producer, 0 );
 
 	this->count ++;
+
+	mlt_properties_inc_ref( mlt_producer_properties( producer ) );
 
 	return mlt_playlist_virtual_refresh( this );
 }
@@ -442,6 +448,9 @@ int mlt_playlist_count( mlt_playlist this )
 
 int mlt_playlist_clear( mlt_playlist this )
 {
+	int i;
+	for ( i = 0; i < this->count; i ++ )
+		mlt_producer_close( this->list[ i ]->producer );
 	this->count = 0;
 	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", 0 );
 	return mlt_playlist_virtual_refresh( this );
@@ -514,6 +523,9 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 
 		// Get the clip info of the clip to be removed
 		mlt_playlist_get_clip_info( this, &where_info, where );
+
+		// Close the producer associated to the clip info
+		mlt_producer_close( where_info.producer );
 
 		// Reorganise the list
 		for ( i = where + 1; i < this->count; i ++ )
@@ -620,6 +632,68 @@ int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_
 	return error;
 }
 
+/** Split a clip on the playlist at the given position.
+*/
+
+int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
+{
+	int error = clip < 0 || clip >= this->count;
+	if ( error == 0 )
+	{
+		playlist_entry *entry = this->list[ clip ];
+		if ( position > 0 && position < entry->frame_count )
+		{
+			int in = entry->frame_in;
+			int out = entry->frame_out;
+			mlt_playlist_resize_clip( this, clip, in, in + position );
+			mlt_playlist_insert( this, entry->producer, clip + 1, in + position + 1, out );
+		}
+		else
+		{
+			error = 1;
+		}
+	}
+	return error;
+}
+
+/** Join 1 or more consecutive clips.
+*/
+
+int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
+{
+	int error = clip < 0 || ( clip + 1 ) >= this->count;
+	if ( error == 0 )
+	{
+		int i = clip;
+		mlt_playlist new_clip = mlt_playlist_init( );
+		if ( clip + count >= this->count )
+			count = this->count - clip;
+		for ( i = 0; i <= count; i ++ )
+		{
+			playlist_entry *entry = this->list[ clip ];
+			char *resource = mlt_properties_get( mlt_producer_properties( entry->producer ), "resource" );
+			if ( merge && resource != NULL && !strcmp( resource, "<playlist>" ) )
+			{
+				mlt_playlist old_clip = ( mlt_playlist )entry->producer;
+				while( old_clip->count )
+				{
+					entry = old_clip->list[ 0 ];
+					mlt_playlist_append_io( new_clip, entry->producer, entry->frame_in, entry->frame_out );
+					mlt_playlist_remove( old_clip, 0 );
+				}
+			}
+			else
+			{
+				mlt_playlist_append_io( new_clip, entry->producer, entry->frame_in, entry->frame_out );
+			}
+			mlt_playlist_remove( this, clip );
+		}
+		mlt_playlist_insert( this, mlt_playlist_producer( new_clip ), clip, 0, -1 );
+		mlt_playlist_close( new_clip );
+	}
+	return error;
+}
+
 /** Get the current frame.
 */
 
@@ -662,11 +736,18 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 void mlt_playlist_close( mlt_playlist this )
 {
-	int i = 0;
-	mlt_producer_close( &this->parent );
-	mlt_producer_close( &this->blank );
-	for ( i = 0; i < this->count; i ++ )
-		free( this->list[ i ] );
-	free( this->list );
-	free( this );
+	if ( this != NULL && mlt_properties_dec_ref( mlt_playlist_properties( this ) ) <= 0 )
+	{
+		int i = 0;
+		this->parent.close = NULL;
+		mlt_producer_close( &this->parent );
+		mlt_producer_close( &this->blank );
+		for ( i = 0; i < this->count; i ++ )
+		{
+			mlt_producer_close( this->list[ i ]->producer );
+			free( this->list[ i ] );
+		}
+		free( this->list );
+		free( this );
+	}
 }

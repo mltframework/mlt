@@ -33,6 +33,8 @@ struct mlt_service_s
 
 	// Protected virtual
 	int ( *get_frame )( mlt_service self, mlt_frame_ptr frame, int index );
+	mlt_destructor close;
+	void *close_object;
 
 	// Private data
 	void *local;

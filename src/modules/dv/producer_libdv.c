@@ -139,7 +139,7 @@ mlt_producer producer_libdv_init( char *filename )
 		mlt_properties properties = mlt_producer_properties( producer );
 
 		// Register transport implementation with the producer
-		producer->close = producer_close;
+		producer->close = ( mlt_destructor )producer_close;
 
 		// Register our get_frame implementation with the producer
 		producer->get_frame = producer_get_frame;

@@ -48,7 +48,7 @@ mlt_producer producer_ppm_init( void *command )
 		mlt_properties properties = mlt_producer_properties( producer );
 
 		producer->get_frame = producer_get_frame;
-		producer->close = producer_close;
+		producer->close = ( mlt_destructor )producer_close;
 
 		if ( command != NULL )
 		{

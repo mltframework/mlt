@@ -62,7 +62,7 @@ mlt_producer producer_hold_init( char *arg )
 
 		// Override the get_frame method
 		this->get_frame = producer_get_frame;
-		this->close = producer_close;
+		this->close = ( mlt_destructor )producer_close;
 	}
 	else
 	{

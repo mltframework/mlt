@@ -59,6 +59,8 @@ static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 
 int mlt_service_init( mlt_service this, void *child )
 {
+	int error = 0;
+
 	// Initialise everything to NULL
 	memset( this, 0, sizeof( struct mlt_service_s ) );
 
@@ -72,7 +74,14 @@ int mlt_service_init( mlt_service this, void *child )
 	this->get_frame = service_get_frame;
 	
 	// Initialise the properties
-	return mlt_properties_init( &this->parent, this );
+	error = mlt_properties_init( &this->parent, this );
+	if ( error == 0 )
+	{
+		this->parent.close = ( mlt_destructor )mlt_service_close;
+		this->parent.close_object = this;
+	}
+
+	return error;
 }
 
 /** Connect a producer service.
@@ -110,6 +119,13 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 	// If we have space, assign the input
 	if ( base->in != NULL && index >= 0 && index < base->size )
 	{
+		// Get the current service
+		mlt_service current = base->in[ index ];
+
+		// Increment the reference count on this producer
+		if ( producer != NULL )
+			mlt_properties_inc_ref( mlt_service_properties( producer ) );
+
 		// Now we disconnect the producer service from its consumer
 		mlt_service_disconnect( producer );
 		
@@ -122,6 +138,9 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 
 		// Now we connect the producer to its connected consumer
 		mlt_service_connect( producer, this );
+
+		// Close the current service
+		mlt_service_close( current );
 
 		// Inform caller that all went well
 		return 0;
@@ -142,7 +161,7 @@ static void mlt_service_disconnect( mlt_service this )
 		// Get the service base
 		mlt_service_base *base = this->local;
 
-		// There's a bit more required here...
+		// Disconnect
 		base->out = NULL;
 	}
 }
@@ -242,9 +261,24 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 
 void mlt_service_close( mlt_service this )
 {
-	mlt_service_base *base = this->local;
-	free( base->in );
-	free( base );
-	mlt_properties_close( &this->parent );
+	if ( this != NULL && mlt_properties_dec_ref( mlt_service_properties( this ) ) <= 0 )
+	{
+		if ( this->close != NULL )
+		{
+			this->close( this->close_object );
+		}
+		else
+		{
+			mlt_service_base *base = this->local;
+			int i = 0;
+			for ( i = 0; i < base->count; i ++ )
+				if ( base->in[ i ] != NULL )
+					mlt_service_close( base->in[ i ] );
+			free( base->in );
+			free( base );
+			this->parent.close = NULL;
+			mlt_properties_close( &this->parent );
+		}
+	}
 }
 

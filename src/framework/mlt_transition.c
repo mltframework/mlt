@@ -45,6 +45,8 @@ int mlt_transition_init( mlt_transition this, void *child )
 		mlt_properties properties = mlt_transition_properties( this );
 
 		service->get_frame = transition_get_frame;
+		service->close = ( mlt_destructor )mlt_transition_close;
+		service->close_object = this;
 
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
@@ -230,8 +232,12 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 
 void mlt_transition_close( mlt_transition this )
 {
-	if ( this->close != NULL )
-		this->close( this );
-	else
-		mlt_service_close( &this->parent );
+	if ( this != NULL && mlt_properties_dec_ref( mlt_transition_properties( this ) ) <= 0 )
+	{
+		this->parent.close = NULL;
+		if ( this->close != NULL )
+			this->close( this );
+		else
+			mlt_service_close( &this->parent );
+	}
 }

@@ -33,7 +33,8 @@ struct mlt_producer_s
 
 	// Public virtual methods
 	int ( *get_frame )( mlt_producer, mlt_frame_ptr, int );
-	void ( *close )( mlt_producer );
+	mlt_destructor close;
+	void *close_object;
 
 	// Private data
 	void *local;

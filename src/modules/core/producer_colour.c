@@ -45,7 +45,7 @@ mlt_producer producer_colour_init( char *colour )
 	
 		// Callback registration
 		producer->get_frame = producer_get_frame;
-		producer->close = producer_close;
+		producer->close = ( mlt_destructor )producer_close;
 
 		// Set the default properties
 		mlt_properties_set( properties, "resource", colour == NULL ? "0x000000ff" : colour );

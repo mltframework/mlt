@@ -40,11 +40,14 @@ typedef struct
 	int count;
 	int size;
 	mlt_properties mirror;
+	int ref_count;
 }
 property_list;
 
 /** Memory leak checks.
 */
+
+//#define _MLT_PROPERTY_CHECKS_
 
 #ifdef _MLT_PROPERTY_CHECKS_
 static int properties_created = 0;
@@ -71,6 +74,9 @@ int mlt_properties_init( mlt_properties this, void *child )
 
 		// Allocate the local structure
 		this->local = calloc( sizeof( property_list ), 1 );
+
+		// Increment the ref count
+		( ( property_list * )this->local )->ref_count = 1;
 	}
 
 	// Check that initialisation was successful
@@ -154,6 +160,32 @@ static inline void mlt_properties_do_mirror( mlt_properties this, char *name )
 		if ( value != NULL )
 			mlt_properties_set( list->mirror, name, value );
 	}
+}
+
+/** Maintain ref count to allow multiple uses of an mlt object.
+*/
+
+int mlt_properties_inc_ref( mlt_properties this )
+{
+	if ( this != NULL )
+	{
+		property_list *list = this->local;
+		return ++ list->ref_count;
+	}
+	return 0;
+}
+
+/** Maintain ref count to allow multiple uses of an mlt object.
+*/
+
+int mlt_properties_dec_ref( mlt_properties this )
+{
+	if ( this != NULL )
+	{
+		property_list *list = this->local;
+		return -- list->ref_count;
+	}
+	return 0;
 }
 
 /** Allow the specification of a mirror.
@@ -595,39 +627,65 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
 }
 
+void mlt_properties_debug( mlt_properties this, char *title, FILE *output )
+{
+	fprintf( stderr, "%s: ", title );
+	if ( this != NULL )
+	{
+		property_list *list = this->local;
+		int i = 0;
+		fprintf( output, "[ ref=%d", list->ref_count );
+		for ( i = 0; i < list->count; i ++ )
+			if ( mlt_properties_get( this, list->name[ i ] ) != NULL )
+				fprintf( output, ", %s=%s", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
+		fprintf( output, " ]" );
+	}
+	fprintf( stderr, "\n" );
+}
+
 /** Close the list.
 */
 
 void mlt_properties_close( mlt_properties this )
 {
-	if ( this != NULL )
+	if ( this != NULL && mlt_properties_dec_ref( this ) <= 0 )
 	{
-		property_list *list = this->local;
-		int index = 0;
-
-		// Clean up names and values
-		for ( index = list->count - 1; index >= 0; index -- )
+		if ( this->close != NULL )
 		{
-			free( list->name[ index ] );
-			mlt_property_close( list->value[ index ] );
+			this->close( this->close_object );
 		}
-
-		// Clear up the list
-		free( list->name );
-		free( list->value );
-		free( list );
-
-		// Free this now if this has no child
-		if ( this->child == NULL )
-			free( this );
+		else
+		{
+			property_list *list = this->local;
+			int index = 0;
 
 #ifdef _MLT_PROPERTY_CHECKS_
-		// Increment destroyed count
-		properties_destroyed ++;
+			// Show debug info
+			mlt_properties_debug( this, "Closing", stderr );
 
-		// Show current stats - these should match when the app is closed
-		fprintf( stderr, "Created %d, destroyed %d\n", properties_created, properties_destroyed );
+			// Increment destroyed count
+			properties_destroyed ++;
+
+			// Show current stats - these should match when the app is closed
+			fprintf( stderr, "Created %d, destroyed %d\n", properties_created, properties_destroyed );
 #endif
+
+			// Clean up names and values
+			for ( index = list->count - 1; index >= 0; index -- )
+			{
+				free( list->name[ index ] );
+				mlt_property_close( list->value[ index ] );
+			}
+	
+			// Clear up the list
+			free( list->name );
+			free( list->value );
+			free( list );
+	
+			// Free this now if this has no child
+			if ( this->child == NULL )
+				free( this );
+		}
 	}
 }
 

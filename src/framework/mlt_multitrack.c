@@ -407,12 +407,15 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 
 void mlt_multitrack_close( mlt_multitrack this )
 {
-	// Close the producer
-	mlt_producer_close( &this->parent );
+	if ( this != NULL && mlt_properties_dec_ref( mlt_multitrack_properties( this ) ) <= 0 )
+	{
+		// Close the producer
+		mlt_producer_close( &this->parent );
 
-	// Free the list
-	free( this->list );
+		// Free the list
+		free( this->list );
 
-	// Free the object
-	free( this );
+		// Free the object
+		free( this );
+	}
 }

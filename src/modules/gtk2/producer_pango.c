@@ -95,7 +95,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_producer producer = &this->parent;
 
 		producer->get_frame = producer_get_frame;
-		producer->close = producer_close;
+		producer->close = ( mlt_destructor )producer_close;
 
 		// This is required to initialise gdk-pixbuf
 		g_type_init();

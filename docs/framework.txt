@@ -23,8 +23,8 @@ Preamble:
 
 	This document is split roughly into 3 sections. The first section provides a
 	basic overview of MLT, the second section shows how it's used and the final
-	section shows shows structure and design, with an emphasis on how the system
-	is extended.
+	section shows structure and design, with an emphasis on how the system is 
+	extended.
 
 
 Target Audience:
@@ -303,11 +303,7 @@ Playlists:
 
 	Instead of invoking mlt_factory_producer directly, we'll create a new
 	function called create_playlist. This function is responsible for creating
-	the playlist, creating each producer, appending to the playlist and ensuring
-	that all the producers are cleaned up when the playlist is destroyed. The
-	last point is important - a close on the playlist won't explicitly close these 
-	producers. In this example, we use unique "data" properties with destructors
-	to ensure closing.
+	the playlist, creating each producer and appending to the playlist.
 
 	mlt_producer create_playlist( int argc, char **argv )
 	{
@@ -321,25 +317,27 @@ Playlists:
 	    int i = 0;
 	    for ( i = 1; i < argc; i ++ )
 	    {
-	        // Define the unique key
-	        char key[ 256 ];
-
 	        // Create the producer
 	        mlt_producer producer = mlt_factory_producer( NULL, argv[ i ] );
 
 	        // Add it to the playlist
 	        mlt_playlist_append( playlist, producer );
 
-	        // Create a unique key for this producer
-	        sprintf( key, "producer%d", i );
-
-	        // Now we need to ensure the producers are destroyed
-	        mlt_properties_set_data( properties, key, producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+			// Close the producer (see below)
+			mlt_producer_close( producer );
 	    }
 
 	    // Return the playlist as a producer
 	    return mlt_playlist_producer( playlist );
 	}
+
+	Notice that we close the producer after the append. Actually, what we're 
+	doing is closing our reference to it - the playlist creates its own reference
+	to the producer on append and insert, and it will close its reference 
+	when the playlist is destroyed[*].
+
+	Note also that if you append multiple instances of the same producer, it 
+	will create multiple references to it.
 
 	Now all we need do is to replace these lines in the main function:
 
@@ -352,6 +350,10 @@ Playlists:
 	    mlt_producer world = create_playlist( argc, argv );
 
 	and we have a means to play multiple clips.
+
+	[*] This reference functionality was introduced in mlt 0.1.2 - it is 100%
+	compatable with the early mechanism of registering the reference and 
+	destructor with the properties of the playlist object.
 
 
 Filters:
@@ -578,6 +580,9 @@ Multiple Tracks and Transitions:
 
 	and we have a means to play multiple clips with a horribly obtrusive
 	watermark - just what the world needed, right? ;-)
+
+	Incidentally, the same thing could be achieved with the more trivial
+	watermark filter inserted between the producer and the consumer.
 
 
 SECTION 3 - STRUCTURE AND DESIGN

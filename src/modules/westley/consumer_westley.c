@@ -205,8 +205,11 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 				if ( info.producer != NULL )
 				{
 					char *service_s = mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" );
+					char *resource_s = mlt_properties_get( mlt_producer_properties( info.producer ), "resource" );
 					if ( service_s != NULL && strcmp( service_s, "blank" ) != 0 )
 						serialise_service( context, MLT_SERVICE( info.producer ), node );
+					else if ( resource_s != NULL && !strcmp( resource_s, "<playlist>" ) )
+						serialise_playlist( context, MLT_SERVICE( info.producer ), node );
 				}
 			}
 		}
@@ -243,11 +246,14 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 				}
 				else
 				{
+					char temp[ 20 ];
 					xmlNode *entry = xmlNewChild( child, NULL, "entry", NULL );
 					snprintf( key, 10, "%p", MLT_SERVICE( info.producer ) );
 					xmlNewProp( entry, "producer", mlt_properties_get( context->producer_map, key ) );
-					xmlNewProp( entry, "in", mlt_properties_get( mlt_producer_properties( info.producer ), "in" ) );
-					xmlNewProp( entry, "out", mlt_properties_get( mlt_producer_properties( info.producer ), "out" ) );
+					sprintf( temp, "%d", info.frame_in );
+					xmlNewProp( entry, "in", temp );
+					sprintf( temp, "%d", info.frame_out );
+					xmlNewProp( entry, "out", temp );
 				}
 			}
 		}
@@ -270,7 +276,7 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 	if ( context->pass == 0 )
 	{
 		// Recurse on connected producer
-		serialise_service( context, mlt_service_get_producer( service ), node );
+		serialise_service( context, mlt_service_producer( service ), node );
 	}
 	else
 	{
@@ -287,7 +293,7 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
 		// Recurse on connected producer
-		serialise_service( context, mlt_service_get_producer( service ), child );
+		serialise_service( context, mlt_service_producer( service ), child );
 	}
 }
 
@@ -404,7 +410,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 		}
 		
 		// Get the next connected service
-		service = mlt_service_get_producer( service );
+		service = mlt_service_producer( service );
 	}
 }
 
@@ -443,18 +449,12 @@ xmlDocPtr westley_make_doc( mlt_service service )
 
 static int consumer_start( mlt_consumer this )
 {
-	mlt_service inigo = NULL;
 	xmlDocPtr doc = NULL;
 	
 	// Get the producer service
-	mlt_service service = mlt_service_get_producer( mlt_consumer_service( this ) );
+	mlt_service service = mlt_service_producer( mlt_consumer_service( this ) );
 	if ( service != NULL )
 	{
-		// Remember inigo
-		if ( mlt_properties_get( mlt_service_properties( service ), "mlt_service" ) != NULL &&
-				strcmp( mlt_properties_get( mlt_service_properties( service ), "mlt_service" ), "inigo" ) == 0 )
-			inigo = service;
-		
 		doc = westley_make_doc( service );
 		
 		if ( mlt_properties_get( mlt_consumer_properties( this ), "resource" ) == NULL )

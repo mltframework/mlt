@@ -71,7 +71,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 	
 		// Callback registration
 		producer->get_frame = producer_get_frame;
-		producer->close = producer_close;
+		producer->close = ( mlt_destructor )producer_close;
 
 		// Set the default properties
 		mlt_properties_set( properties, "resource", filename );

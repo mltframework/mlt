@@ -341,7 +341,7 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 
 void mlt_frame_close( mlt_frame this )
 {
-	if ( this != NULL )
+	if ( this != NULL && mlt_properties_dec_ref( mlt_frame_properties( this ) ) <= 0 )
 	{
 		mlt_deque_close( this->stack_image );
 		mlt_deque_close( this->stack_audio );

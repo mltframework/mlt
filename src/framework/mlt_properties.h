@@ -32,6 +32,8 @@ struct mlt_properties_s
 {
 	void *child;
 	void *local;
+	mlt_destructor close;
+	void *close_object;
 };
 
 /** Public interface.
@@ -40,6 +42,8 @@ struct mlt_properties_s
 extern int mlt_properties_init( mlt_properties, void *child );
 extern mlt_properties mlt_properties_new( );
 extern mlt_properties mlt_properties_load( char *file );
+extern int mlt_properties_inc_ref( mlt_properties self );
+extern int mlt_properties_dec_ref( mlt_properties self );
 extern void mlt_properties_mirror( mlt_properties self, mlt_properties that );
 extern int mlt_properties_inherit( mlt_properties self, mlt_properties that );
 extern int mlt_properties_pass( mlt_properties self, mlt_properties that, char *prefix );
@@ -61,6 +65,7 @@ extern void *mlt_properties_get_data( mlt_properties self, char *name, int *leng
 extern int mlt_properties_rename( mlt_properties self, char *source, char *dest );
 extern int mlt_properties_count( mlt_properties self );
 extern void mlt_properties_dump( mlt_properties self, FILE *output );
+extern void mlt_properties_debug( mlt_properties self, char *title, FILE *output );
 extern void mlt_properties_close( mlt_properties self );
 
 #endif

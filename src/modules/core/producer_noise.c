@@ -60,7 +60,7 @@ mlt_producer producer_noise_init( void *arg )
 
 		// Callback registration
 		this->get_frame = producer_get_frame;
-		this->close = producer_close;
+		this->close = ( mlt_destructor )producer_close;
 	}
 
 	return this;

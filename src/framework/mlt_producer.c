@@ -58,6 +58,13 @@ int mlt_producer_init( mlt_producer this, void *child )
 			// The parent is the service
 			mlt_service parent = &this->parent;
 	
+			// Define the parent close
+			parent->close = ( mlt_destructor )mlt_producer_close;
+			parent->close_object = this;
+
+			// For convenience, we'll assume the close_object is this
+			this->close_object = this;
+
 			// Get the properties of the parent
 			mlt_properties properties = mlt_service_properties( parent );
 	
@@ -309,8 +316,13 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 
 void mlt_producer_close( mlt_producer this )
 {
-	if ( this->close != NULL )
-		this->close( this );
-	else
-		mlt_service_close( &this->parent );
+	if ( this != NULL && mlt_properties_dec_ref( mlt_producer_properties( this ) ) <= 0 )
+	{
+		this->parent.close = NULL;
+
+		if ( this->close != NULL )
+			this->close( this->close_object );
+		else
+			mlt_service_close( &this->parent );
+	}
 }

@@ -520,15 +520,19 @@ int mlt_consumer_is_stopped( mlt_consumer this )
 
 void mlt_consumer_close( mlt_consumer this )
 {
-	// Get the childs close function
-	void ( *consumer_close )( ) = this->close;
+	if ( this != NULL && mlt_properties_dec_ref( mlt_consumer_properties( this ) ) <= 0 )
+	{
+		// Get the childs close function
+		void ( *consumer_close )( ) = this->close;
 
-	// Make sure it only gets called once
-	this->close = NULL;
+		// Make sure it only gets called once
+		this->close = NULL;
+		this->parent.close = NULL;
 
-	// Call the childs close if available
-	if ( consumer_close != NULL )
-		consumer_close( this );
-	else
-		mlt_service_close( &this->parent );
+		// Call the childs close if available
+		if ( consumer_close != NULL )
+			consumer_close( this );
+		else
+			mlt_service_close( &this->parent );
+	}
 }
