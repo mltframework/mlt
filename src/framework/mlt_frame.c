@@ -394,15 +394,18 @@ int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int 
 int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float weight )
 {
 	int ret = 0;
-	int x_start = 0;
 	int width_src, height_src;
 	int width_dest, height_dest;
 	mlt_image_format format_src, format_dest;
 	uint8_t *p_src, *p_dest;
-	int x_end;
 	int i, j;
 	int stride_src;
 	int stride_dest;
+	int x_src = 0, y_src = 0;
+
+	// optimization point - no work to do
+	if ( ( x < 0 && -x >= width_src ) || ( y < 0 && -y >= height_src ) )
+		return ret;
 
 	format_src = mlt_image_yuv422;
 	format_dest = mlt_image_yuv422;
@@ -410,52 +413,68 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 	mlt_frame_get_image( this, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
 	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
 	
-	x_end = width_src;
-	
 	stride_src = width_src * 2;
 	stride_dest = width_dest * 2;
-	uint8_t *lower = p_dest;
-	uint8_t *upper = p_dest + height_dest * stride_dest;
-
-	p_dest += ( y * stride_dest ) + ( x * 2 );
-
+	
+	// crop overlay off the left edge of frame
 	if ( x < 0 )
 	{
-		x_start = -x;
-		x_end += x_start;
+		x_src = -x;
+		width_src -= x_src;
+		x = 0;
 	}
+	
+	// crop overlay beyond right edge of frame
+	else if ( x + width_src > width_dest )
+		width_src = width_dest - x;
 
-	uint8_t *z = mlt_frame_get_alpha_mask( that );
+	// crop overlay off the top edge of the frame
+	if ( y < 0 )
+	{
+		y_src = -y;
+		height_src -= y_src;
+	}
+	// crop overlay below bottom edge of frame
+	else if ( y + height_src > height_dest )
+		height_src = height_dest - y;
 
+	// offset pointer into overlay buffer based on cropping
+	p_src += x_src * 2 + y_src * stride_src;
+
+	// offset pointer into frame buffer based upon positive, even coordinates only!
+//	if ( interlaced && y % 2 )
+//		++y;
+	p_dest += ( x < 0 ? 0 : x ) * 2 + ( y < 0 ? 0 : y ) * stride_dest;
+
+	// Get the alpha channel of the overlay
+	uint8_t *p_alpha = mlt_frame_get_alpha_mask( that );
+
+	// offset pointer into alpha channel based upon cropping
+	if ( p_alpha )
+		p_alpha += x_src + y_src * stride_src / 2;
+
+	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i++ )
 	{
 		uint8_t *p = p_src;
 		uint8_t *q = p_dest;
 		uint8_t *o = p_dest;
+		uint8_t *z = p_alpha;
 
 		for ( j = 0; j < width_src; j ++ )
 		{
-			if ( q >= lower && q < upper && j >= x_start && j < x_end )
-			{
 				uint8_t y = *p ++;
 				uint8_t uv = *p ++;
 				uint8_t a = ( z == NULL ) ? 255 : *z ++;
 				float value = ( weight * ( float ) a / 255.0 );
 				*o ++ = (uint8_t)( y * value + *q++ * ( 1 - value ) );
 				*o ++ = (uint8_t)( uv * value + *q++ * ( 1 - value ) );
-			}
-			else
-			{
-				p += 2;
-				o += 2;
-				q += 2;
-				if ( z != NULL )
-					z += 1;
-			}
 		}
 
 		p_src += stride_src;
 		p_dest += stride_dest;
+		if ( p_alpha )
+			p_alpha += stride_src / 2;
 	}
 
 	return ret;

@@ -25,16 +25,6 @@
 
 typedef struct producer_pango_s *producer_pango;
 
-struct producer_pango_s
-{
-	struct mlt_producer_s parent;
-	char *markup;
-	int width;
-	int height;
-	uint8_t *image;
-	uint8_t *alpha;
-};
-
 typedef enum
 {
 	pango_align_left = 0,

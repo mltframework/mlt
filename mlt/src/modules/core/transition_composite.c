@@ -48,20 +48,20 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
 	// Arbitrary composite defaults
-	int x = 50;
-	int y = 50;
-	double weight = 1.0;
+	int x = 0;
+	int y = 0;
+	double mix = 1.0;
 
 	// Override from b frame properties if provided
 	if ( mlt_properties_get( b_props, "x" ) != NULL )
 		x = mlt_properties_get_int( b_props, "x" );
 	if ( mlt_properties_get( b_props, "y" ) != NULL )
 		y = mlt_properties_get_int( b_props, "y" );
-	if ( mlt_properties_get( b_props, "weight" ) != NULL )
-		weight = mlt_properties_get_double( b_props, "weight" );
+	if ( mlt_properties_get( b_props, "mix" ) != NULL )
+		mix = mlt_properties_get_double( b_props, "mix" );
 
 	// Composite the b_frame on the a_frame
-	mlt_frame_composite_yuv( this, b_frame, x, y, weight );
+	mlt_frame_composite_yuv( this, b_frame, x, y, mix );
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( a_props, "width" );
