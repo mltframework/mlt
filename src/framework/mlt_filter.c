@@ -62,6 +62,11 @@ mlt_service mlt_filter_service( mlt_filter this )
 	return &this->parent;
 }
 
+mlt_properties mlt_filter_properties( mlt_filter this )
+{
+	return mlt_service_properties( mlt_filter_service( this ) );
+}
+
 /** Connect this filter to a producers track. Note that a filter only operates
 	on a single track, and by default it operates on the entirety of that track.
 */

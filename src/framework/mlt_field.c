@@ -22,6 +22,8 @@
 #include "mlt_service.h"
 #include "mlt_filter.h"
 #include "mlt_transition.h"
+#include "mlt_multitrack.h"
+#include "mlt_tractor.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -31,49 +33,41 @@
 
 struct mlt_field_s
 {
-	// We extending service here
-	struct mlt_service_s parent;
-
 	// This is the producer we're connected to
 	mlt_service producer;
+
+	// Multitrack
+	mlt_multitrack multitrack;
+
+	// Tractor
+	mlt_tractor tractor;
 };
 
-/** Forward declarations
-*/
-
-static int service_get_frame( mlt_service service, mlt_frame_ptr frame, int index );
-
-/** Constructor. This service needs to know its producer at construction.
-
-  	When the first filter or transition is planted, we connect it immediately to
-	the producer of the field, and all subsequent plants are then connected to the
-	previous plant. This immediate connection requires the producer prior to the first
-	plant.
+/** Constructor.
 	
-	It's a kind of arbitrary decsion - we could generate a dummy service here and 
-	then connect the dummy in the normal connect manner. Behaviour may change in the
-	future (say, constructing a dummy when producer service is NULL). However, the
-	current solution is quite clean, if slightly out of sync with the rest of the
-	mlt framework.
+  	We construct a multitrack and a tractor here.
 */
 
-mlt_field mlt_field_init( mlt_service producer )
+mlt_field mlt_field_init( )
 {
 	// Initialise the field
 	mlt_field this = calloc( sizeof( struct mlt_field_s ), 1 );
 
-	// Get the service
-	mlt_service service = &this->parent;
+	// Initialise it
+	if ( this != NULL )
+	{
+		// Construct a multitrack
+		this->multitrack = mlt_multitrack_init( );
 
-	// Initialise the service
-	mlt_service_init( service, this );
+		// Construct a tractor
+		this->tractor = mlt_tractor_init( );
 
-	// Override the get_frame method
-	service->get_frame = service_get_frame;
+		// The first plant will be connected to the mulitrack
+		this->producer = mlt_multitrack_service( this->multitrack );
 
-	// Connect to the producer immediately
-	if ( mlt_service_connect_producer( service, producer, 0 ) == 0 )
-		this->producer = producer;
+		// Connect the tractor to the multitrack
+		mlt_tractor_connect( this->tractor, this->producer );
+	}
 
 	// Return this
 	return this;
@@ -84,7 +78,15 @@ mlt_field mlt_field_init( mlt_service producer )
 
 mlt_service mlt_field_service( mlt_field this )
 {
-	return &this->parent;
+	return mlt_tractor_service( this->tractor );
+}
+
+/** Get the multi track.
+*/
+
+mlt_multitrack mlt_field_multitrack( mlt_field this )
+{
+	return this->multitrack;
 }
 
 /** Get the properties associated to this field.
@@ -92,7 +94,7 @@ mlt_service mlt_field_service( mlt_field this )
 
 mlt_properties mlt_field_properties( mlt_field this )
 {
-	return mlt_service_properties( &this->parent );
+	return mlt_service_properties( mlt_field_service( this ) );
 }
 
 /** Plant a filter.
@@ -106,8 +108,11 @@ int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track )
 	// If sucessful, then we'll use this for connecting in the future
 	if ( result == 0 )
 	{
-		// Update last
+		// This is now the new producer
 		this->producer = mlt_filter_service( that );
+
+		// Reconnect tractor to new producer
+		mlt_tractor_connect( this->tractor, this->producer );
 	}
 
 	return result;
@@ -124,20 +129,14 @@ int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track
 	// If sucessful, then we'll use this for connecting in the future
 	if ( result == 0 )
 	{
-		// Update last
+		// This is now the new producer
 		this->producer = mlt_transition_service( that );
+
+		// Reconnect tractor to new producer
+		mlt_tractor_connect( this->tractor, this->producer );
 	}
 
 	return 0;
-}
-
-/** Get a frame.
-*/
-
-static int service_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
-{
-	mlt_field this = service->child;
-	return mlt_service_get_frame( this->producer, frame, index );
 }
 
 /** Close the field.
@@ -145,7 +144,8 @@ static int service_get_frame( mlt_service service, mlt_frame_ptr frame, int inde
 
 void mlt_field_close( mlt_field this )
 {
-	mlt_service_close( &this->parent );
+	mlt_tractor_close( this->tractor );
+	mlt_multitrack_close( this->multitrack );
 	free( this );
 }
 

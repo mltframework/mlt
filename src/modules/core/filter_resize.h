@@ -1,7 +1,7 @@
 /*
- * producer_pixbuf.h -- raster image loader based upon gdk-pixbuf
+ * filter_resize.h -- resizing filter
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,28 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _PRODUCER_PIXBUF_H_
-#define _PRODUCER_PIXBUF_H_
+#ifndef _FILTER_RESIZE_H_
+#define _FILTER_RESIZE_H_
 
-#include <framework/mlt_producer.h>
+#include <framework/mlt_filter.h>
 
-typedef struct producer_pixbuf_s *producer_pixbuf;
-
-struct producer_pixbuf_s
-{
-	struct mlt_producer_s parent;
-
-	// File name list
-	char **filenames;
-	int count;
-	int image_idx;
-
-	int width;
-	int height;
-	uint8_t *image;
-	uint8_t *alpha;
-};
-
-extern mlt_producer producer_pixbuf_init( const char *filename );
+extern mlt_filter filter_deinterlace_init( void *arg );
 
 #endif

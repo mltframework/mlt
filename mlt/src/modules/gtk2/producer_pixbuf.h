@@ -28,8 +28,12 @@ typedef struct producer_pixbuf_s *producer_pixbuf;
 struct producer_pixbuf_s
 {
 	struct mlt_producer_s parent;
-	char *filename;
-	int counter;
+
+	// File name list
+	char **filenames;
+	int count;
+	int image_idx;
+
 	int width;
 	int height;
 	uint8_t *image;

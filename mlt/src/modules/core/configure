@@ -10,6 +10,7 @@ EOF
 cat << EOF >> ../filters.dat
 deinterlace		libmltcore.so
 greyscale		libmltcore.so
+resize			libmltcore.so
 EOF
 
 cat << EOF >> ../transitions.dat

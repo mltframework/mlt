@@ -42,14 +42,11 @@ playlist_entry;
 struct mlt_playlist_s
 {
 	struct mlt_producer_s parent;
+	struct mlt_producer_s blank;
+
 	int size;
 	int count;
-	mlt_producer *list;
-	mlt_producer blank;
-
-	int virtual_size;
-	int virtual_count;
-	playlist_entry **virtual_list;
+	playlist_entry **list;
 };
 
 /** Forward declarations
@@ -73,11 +70,8 @@ mlt_playlist mlt_playlist_init( )
 		// Override the producer get_frame
 		producer->get_frame = producer_get_frame;
 
-		// Create a producer
-		this->blank = calloc( sizeof( struct mlt_producer_s ), 1 );
-
-		// Initialise it
-		mlt_producer_init( this->blank, NULL );
+		// Initialise blank
+		mlt_producer_init( &this->blank, NULL );
 	}
 	
 	return this;
@@ -99,56 +93,27 @@ mlt_service mlt_playlist_service( mlt_playlist this )
 	return mlt_producer_service( &this->parent );
 }
 
-/** Store a producer in the playlist.
+/** Append to the virtual playlist.
 */
 
-static int mlt_playlist_store( mlt_playlist this, mlt_producer producer )
+static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_timecode in, mlt_timecode out )
 {
-	int i;
-
-	// If it's already added, return the index
-	for ( i = 0; i < this->count; i ++ )
-	{
-		if ( producer == this->list[ i ] )
-			return i;
-	}
-
 	// Check that we have room
 	if ( this->count >= this->size )
 	{
-		this->list = realloc( this->list, ( this->size + 10 ) * sizeof( mlt_producer ) );
+		int i;
+		this->list = realloc( this->list, ( this->size + 10 ) * sizeof( playlist_entry * ) );
 		for ( i = this->size; i < this->size + 10; i ++ )
 			this->list[ i ] = NULL;
 		this->size += 10;
 	}
 
-	// Add this producer to the list
-	this->list[ this->count ] = producer;
+	this->list[ this->count ] = calloc( sizeof( playlist_entry ), 1 );
+	this->list[ this->count ]->producer = producer;
+	this->list[ this->count ]->in = in;
+	this->list[ this->count ]->playtime = out - in;
 
-	return this->count ++;
-}
-
-/** Append to the virtual playlist.
-*/
-
-static int mlt_playlist_virtual_append( mlt_playlist this, int position, mlt_timecode in, mlt_timecode out )
-{
-	// Check that we have room
-	if ( this->virtual_count >= this->virtual_size )
-	{
-		int i;
-		this->virtual_list = realloc( this->virtual_list, ( this->virtual_size + 10 ) * sizeof( playlist_entry * ) );
-		for ( i = this->virtual_size; i < this->virtual_size + 10; i ++ )
-			this->virtual_list[ i ] = NULL;
-		this->virtual_size += 10;
-	}
-
-	this->virtual_list[ this->virtual_count ] = malloc( sizeof( playlist_entry ) );
-	this->virtual_list[ this->virtual_count ]->producer = this->list[ position ];
-	this->virtual_list[ this->virtual_count ]->in = in;
-	this->virtual_list[ this->virtual_count ]->playtime = out - in;
-
-	this->virtual_count ++;
+	this->count ++;
 
 	return 0;
 }
@@ -159,7 +124,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, int position, mlt_tim
 static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 {
 	// Default producer to blank
-	mlt_producer producer = this->blank;
+	mlt_producer producer = &this->blank;
 
 	// Map playlist position to real producer in virtual playlist
 	mlt_timecode position = mlt_producer_position( &this->parent );
@@ -167,19 +132,19 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 	// Loop through the virtual playlist
 	int i = 0;
 
-	for ( i = 0; i < this->virtual_count; i ++ )
+	for ( i = 0; i < this->count; i ++ )
 	{
-		if ( position < this->virtual_list[ i ]->playtime )
+		if ( position < this->list[ i ]->playtime )
 		{
 			// Found it, now break
-			producer = this->virtual_list[ i ]->producer;
-			position += this->virtual_list[ i ]->in;
+			producer = this->list[ i ]->producer;
+			position += this->list[ i ]->in;
 			break;
 		}
 		else
 		{
 			// Decrement position by length of this entry
-			position -= this->virtual_list[ i ]->playtime;
+			position -= this->list[ i ]->playtime;
 		}
 	}
 
@@ -194,13 +159,8 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 
 int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 {
-	// Get the position of the producer in the list
-	int position = mlt_playlist_store( this, producer );
-
 	// Append to virtual list
-	mlt_playlist_virtual_append( this, position, 0, mlt_producer_get_playtime( producer ) );
-
-	return 0;
+	return mlt_playlist_virtual_append( this, producer, 0, mlt_producer_get_playtime( producer ) );
 }
 
 /** Append a blank to the playlist of a given length.
@@ -208,13 +168,8 @@ int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 
 int mlt_playlist_blank( mlt_playlist this, mlt_timecode length )
 {
-	// Get the position of the producer in the list
-	int position = mlt_playlist_store( this, this->blank );
-
 	// Append to the virtual list
-	mlt_playlist_virtual_append( this, position, 0, length );
-
-	return 0;
+	return mlt_playlist_virtual_append( this, &this->blank, 0, length );
 }
 
 /** Get the current frame.
@@ -246,7 +201,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 void mlt_playlist_close( mlt_playlist this )
 {
 	mlt_producer_close( &this->parent );
-	mlt_producer_close( this->blank );
-	free( this->blank );
+	mlt_producer_close( &this->blank );
 	free( this );
 }

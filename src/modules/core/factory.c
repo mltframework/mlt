@@ -22,6 +22,7 @@
 
 #include "filter_deinterlace.h"
 #include "filter_greyscale.h"
+#include "filter_resize.h"
 #include "producer_ppm.h"
 #include "transition_composite.h"
 
@@ -38,6 +39,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_deinterlace_init( arg );
 	if ( !strcmp( id, "greyscale" ) )
 		return filter_greyscale_init( arg );
+	if ( !strcmp( id, "resize" ) )
+		return filter_resize_init( arg );
 	return NULL;
 }
 

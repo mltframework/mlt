@@ -114,7 +114,7 @@ static void sdl_unlock_display( )
 		SDL_UnlockSurface( screen );
 }
 
-void sdl_fill_audio( void *udata, Uint8 *stream, int len )
+void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 {
 	consumer_sdl this = udata;
 

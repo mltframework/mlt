@@ -20,10 +20,15 @@
 
 #include "producer_pixbuf.h"
 #include <framework/mlt_frame.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <math.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
@@ -44,15 +49,44 @@ mlt_producer producer_pixbuf_init( const char *filename )
 		producer->get_frame = producer_get_frame;
 		producer->close = producer_close;
 
-		this->filename = strdup( filename );
-		this->counter = -1;
-		
 		// Get the properties interface
 		mlt_properties properties = mlt_producer_properties( &this->parent );
 	
 		// Set the default properties
 		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
+		mlt_properties_set_double( properties, "ttl", 5 );
 		
+		// Obtain filenames
+		if ( strchr( filename, '%' ) != NULL )
+		{
+			// handle picture sequences
+			int i = 0;
+			int gap = 0;
+			char full[1024];
+
+			while ( gap < 100 )
+			{
+				struct stat buf;
+				snprintf( full, 1023, filename, i ++ );
+				if ( stat( full, &buf ) == 0 )
+				{
+					this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+					this->filenames[ this->count ++ ] = strdup( full );
+					gap = 0;
+				}
+				else
+				{
+					gap ++;
+				}
+			} 
+		}
+		else
+		{
+			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
+			this->filenames[ this->count ++ ] = strdup( filename );
+		}
+
+		// Initialise gobject types
 		g_type_init();
 
 		return producer;
@@ -117,8 +151,17 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Obtain properties of frame
 	mlt_properties properties = mlt_frame_properties( *frame );
 
+	// Get the time to live for each frame
+	double ttl = mlt_properties_get_double( mlt_producer_properties( producer ), "ttl" );
+
+	// Image index
+	int image_idx = ( int )floor( mlt_producer_position( producer ) / ttl ) % this->count;
+
+	// Update timecode on the frame we're creating
+	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );
+
     // optimization for subsequent iterations on single picture
-	if ( this->image != NULL )
+	if ( this->image != NULL && image_idx == this->image_idx )
 	{
 		// Set width/height
 		mlt_properties_set_int( properties, "width", this->width );
@@ -135,31 +178,19 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_frame_push_get_image( *frame, producer_get_image );
 
 	}
-	else if ( strchr( this->filename, '%' ) != NULL )
+	else 
 	{
-		// handle picture sequences
-		char filename[1024];
-		filename[1023] = 0;
-		int current = this->counter;
-		do
-		{
-			++this->counter;
-			snprintf( filename, 1023, this->filename, this->counter );
-			pixbuf = gdk_pixbuf_new_from_file( filename, &error );
-			// allow discontinuity in frame numbers up to 99
-			error = NULL;
-		} while ( pixbuf == NULL && ( this->counter - current ) < 100 );
-	}
-	else
-	{
-		pixbuf = gdk_pixbuf_new_from_file( this->filename, &error );
+		free( this->image );
+		free( this->alpha );
+		this->image_idx = image_idx;
+		pixbuf = gdk_pixbuf_new_from_file( this->filenames[ image_idx ], &error );
 	}
 
 	// If we have a pixbuf
 	if ( pixbuf )
 	{
 		// Scale to adjust for sample aspect ratio
-		if ( mlt_properties_get_int( properties, "video_stadnard" ) == mlt_video_standard_pal )
+		if ( mlt_properties_get_int( properties, "video_standard" ) == mlt_video_standard_pal )
 		{
 			GdkPixbuf *temp = pixbuf;
 			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
@@ -215,22 +246,12 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "height", this->height );
 
 		// Pass alpha and image on properties with or without destructor
-		if ( this->counter >= 0 )
-		{
-			// if picture sequence pass the image and alpha data with destructor
-			mlt_properties_set_data( properties, "image", image, 0, free, NULL );
-			mlt_properties_set_data( properties, "alpha", alpha, 0, free, NULL );
-		}
-		else
-		{
-			// if single picture, reference the image and alpha in the producer
-			this->image = image;
-			this->alpha = alpha;
+		this->image = image;
+		this->alpha = alpha;
 
-			// pass the image and alpha data without destructor
-			mlt_properties_set_data( properties, "image", image, 0, NULL, NULL );
-			mlt_properties_set_data( properties, "alpha", alpha, 0, NULL, NULL );
-		}
+		// pass the image and alpha data without destructor
+		mlt_properties_set_data( properties, "image", image, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "alpha", alpha, 0, NULL, NULL );
 
 		// Set alpha call back
 		( *frame )->get_alpha_mask = producer_get_alpha_mask;
@@ -238,9 +259,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Push the get_image method
 		mlt_frame_push_get_image( *frame, producer_get_image );
 	}
-
-	// Update timecode on the frame we're creating
-	mlt_frame_set_timecode( *frame, mlt_producer_position( producer ) );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );
@@ -251,8 +269,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_pixbuf this = parent->child;
-	if ( this->filename )
-		free( this->filename );
 	if ( this->image )
 		free( this->image );
 	if ( this->alpha )
