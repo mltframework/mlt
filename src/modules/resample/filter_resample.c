@@ -45,6 +45,9 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	float *output_buffer = mlt_properties_get_data( properties, "resample.output_buffer", NULL );
 	int i;
 
+	if ( output_rate == 0 )
+		output_rate = *frequency;
+
 	// Restore the original get_audio
 	frame->get_audio = mlt_properties_get_data( properties, "resample.get_audio", NULL );
 
@@ -87,8 +90,8 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				(*buffer)[ i ] = lrint( 32768.0 * sample );
 		}
 	}
-	//else
-		//fprintf( stderr, "resample_get_audio: %s\n", src_strerror( i ) );
+	else
+		fprintf( stderr, "resample_get_audio: %s %d,%d,%d\n", src_strerror( i ), *frequency, *samples, output_rate );
 	
 	return 0;
 }
@@ -144,7 +147,7 @@ mlt_filter filter_resample_init( char *arg )
 		}
 		else
 		{
-			//fprintf( stderr, "filter_resample_init: %s\n", src_strerror( error ) );
+			fprintf( stderr, "filter_resample_init: %s\n", src_strerror( error ) );
 		}
 	}
 	return this;
