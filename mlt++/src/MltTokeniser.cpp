@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltTokeniser.cpp - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,26 +18,39 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
-
-#include "MltConsumer.h"
-#include "MltEvent.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMiracle.h"
-#include "MltMultitrack.h"
-#include "MltParser.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltResponse.h"
-#include "MltService.h"
+#include <stdlib.h>
 #include "MltTokeniser.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+using namespace Mlt;
 
-#endif
+Tokeniser::Tokeniser( char *text, char *delimiter )
+{
+	tokens = mlt_tokeniser_init( );
+	if ( text != NULL )
+		mlt_tokeniser_parse_new( tokens, text, delimiter );
+}
+
+Tokeniser::~Tokeniser( )
+{
+	mlt_tokeniser_close( tokens );
+}
+
+int Tokeniser::parse( char *text, char *delimiter )
+{
+	return mlt_tokeniser_parse_new( tokens, text, delimiter );
+}
+
+int Tokeniser::count( )
+{
+	return mlt_tokeniser_count( tokens );
+}
+
+char *Tokeniser::get( int index )
+{
+	return mlt_tokeniser_get_string( tokens, index );
+}
+
+char *Tokeniser::input( )
+{
+	return mlt_tokeniser_get_input( tokens );
+}
+

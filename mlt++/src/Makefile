@@ -20,6 +20,7 @@ OBJS = MltConsumer.o \
 	   MltProperties.o \
 	   MltResponse.o \
 	   MltService.o \
+	   MltTokeniser.o \
 	   MltTractor.o \
 	   MltTransition.o
 

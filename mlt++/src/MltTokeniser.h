@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltTokeniser.h - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,26 +18,26 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
+#ifndef _MLTPP_TOKENISER_H
+#define _MLTPP_TOKENISER_H
 
-#include "MltConsumer.h"
-#include "MltEvent.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMiracle.h"
-#include "MltMultitrack.h"
-#include "MltParser.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltResponse.h"
-#include "MltService.h"
-#include "MltTokeniser.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+#include <framework/mlt.h>
+
+namespace Mlt
+{
+	class Tokeniser
+	{
+		private:
+			mlt_tokeniser tokens;
+		public:
+			Tokeniser( char *text = NULL, char *delimiter = " " );
+			~Tokeniser( );
+			int parse( char *text, char *delimiter = " " );
+			int count( );
+			char *get( int index );
+			char *input( );
+	};
+}
 
 #endif
+
