@@ -56,6 +56,7 @@ extern int mlt_producer_set_speed( mlt_producer self, double speed );
 extern double mlt_producer_get_speed( mlt_producer self );
 extern double mlt_producer_get_fps( mlt_producer self );
 extern int mlt_producer_set_in_and_out( mlt_producer self, mlt_position in, mlt_position out );
+extern int mlt_producer_clear( mlt_producer self );
 extern mlt_position mlt_producer_get_in( mlt_producer self );
 extern mlt_position mlt_producer_get_out( mlt_producer self );
 extern mlt_position mlt_producer_get_playtime( mlt_producer self );

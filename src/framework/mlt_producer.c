@@ -109,7 +109,7 @@ int mlt_producer_init( mlt_producer this, void *child )
 static void mlt_producer_property_changed( mlt_service owner, mlt_producer this, char *name )
 {
 	if ( !strcmp( name, "in" ) || !strcmp( name, "out" ) || !strcmp( name, "length" ) )
-		mlt_events_fire( mlt_producer_properties( this ), "producer-changed", NULL );
+		mlt_events_fire( mlt_producer_properties( mlt_producer_cut_parent( this ) ), "producer-changed", NULL );
 }
 
 /** Listener for service changes.
@@ -117,7 +117,7 @@ static void mlt_producer_property_changed( mlt_service owner, mlt_producer this,
 
 static void mlt_producer_service_changed( mlt_service owner, mlt_producer this )
 {
-	mlt_events_fire( mlt_producer_properties( this ), "producer-changed", NULL );
+	mlt_events_fire( mlt_producer_properties( mlt_producer_cut_parent( this ) ), "producer-changed", NULL );
 }
 
 /** Create a new producer.
@@ -300,10 +300,26 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_positio
 	// Set the values
 	mlt_events_block( properties, properties );
 	mlt_properties_set_position( properties, "in", in );
-	mlt_properties_set_position( properties, "out", out );
 	mlt_events_unblock( properties, properties );
-	mlt_events_fire( properties, "producer-changed", NULL );
+	mlt_properties_set_position( properties, "out", out );
 
+	return 0;
+}
+
+/** Physically reduce the producer (typically a cut) to a 0 length.
+  	Essentially, all 0 length cuts should be immediately removed by containers.
+*/
+
+int mlt_producer_clear( mlt_producer this )
+{
+	if ( this != NULL )
+	{
+		mlt_properties properties = mlt_producer_properties( this );
+		mlt_events_block( properties, properties );
+		mlt_properties_set_position( properties, "in", 0 );
+		mlt_events_unblock( properties, properties );
+		mlt_properties_set_position( properties, "out", -1 );
+	}
 	return 0;
 }
 

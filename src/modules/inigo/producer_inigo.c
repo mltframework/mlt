@@ -150,10 +150,15 @@ mlt_producer producer_inigo_init( char **argv )
 		else if ( !strcmp( argv[ i ], "-attach" ) )
 		{
 			mlt_filter filter = create_attach( field, argv[ ++ i ], track );
-			if ( filter != NULL )
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			if ( filter != NULL && mlt_playlist_count( playlist ) > 0 )
 			{
-				if ( properties != NULL )
-					mlt_service_attach( ( mlt_service )properties, filter );
+				mlt_playlist_clip_info info;
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				producer = info.cut;
+				mlt_service_attach( ( mlt_service )producer, filter );
 				properties = mlt_filter_properties( filter );
 				mlt_properties_inherit( properties, group );
 			}
@@ -190,6 +195,20 @@ mlt_producer producer_inigo_init( char **argv )
 				properties = mlt_producer_properties( producer );
 			}
 		}
+		else if ( !strcmp( argv[ i ], "-swap" ) )
+		{
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			if ( mlt_playlist_count( playlist ) >= 2 )
+			{
+				mlt_playlist_clip_info info;
+				mlt_playlist_move( playlist, mlt_playlist_count( playlist ) - 2, mlt_playlist_count( playlist ) - 1 );
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				producer = info.cut;
+				properties = mlt_producer_properties( producer );
+			}
+		}
 		else if ( !strcmp( argv[ i ], "-join" ) )
 		{
 			int clips = atoi( argv[ ++ i ] );
@@ -200,6 +219,20 @@ mlt_producer producer_inigo_init( char **argv )
 			{
 				mlt_playlist_clip_info info;
 				mlt_playlist_join( playlist, mlt_playlist_count( playlist ) - clips - 1, clips, 0 );
+				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
+				producer = info.cut;
+				properties = mlt_producer_properties( producer );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-remove" ) )
+		{
+			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
+				mlt_playlist_append( playlist, producer );
+			producer = NULL;
+			if ( mlt_playlist_count( playlist ) > 0 )
+			{
+				mlt_playlist_clip_info info;
+				mlt_playlist_remove( playlist, mlt_playlist_count( playlist ) - 1 );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
 				properties = mlt_producer_properties( producer );
@@ -220,6 +253,7 @@ mlt_producer producer_inigo_init( char **argv )
 					if ( mlt_properties_get_data( ( mlt_properties )info.producer, "mlt_mix", NULL ) == NULL )
 						mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 2 );
 					mix = ( mlt_tractor )mlt_properties_get_data( ( mlt_properties )info.producer, "mlt_mix", NULL );
+					properties = NULL;
 				}
 				else
 				{
@@ -229,24 +263,6 @@ mlt_producer producer_inigo_init( char **argv )
 			else
 			{
 				fprintf( stderr, "Invalid position for a mix...\n" );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-filter" ) )
-		{
-			mlt_filter filter = create_filter( field, argv[ ++ i ], track );
-			if ( filter != NULL )
-			{
-				properties = mlt_filter_properties( filter );
-				mlt_properties_inherit( properties, group );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-transition" ) )
-		{
-			mlt_transition transition = create_transition( field, argv[ ++ i ], track - 1 );
-			if ( transition != NULL )
-			{
-				properties = mlt_transition_properties( transition );
-				mlt_properties_inherit( properties, group );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-mixer" ) )
@@ -274,6 +290,24 @@ mlt_producer producer_inigo_init( char **argv )
 			else
 			{
 				fprintf( stderr, "Invalid mixer...\n" );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-filter" ) )
+		{
+			mlt_filter filter = create_filter( field, argv[ ++ i ], track );
+			if ( filter != NULL )
+			{
+				properties = mlt_filter_properties( filter );
+				mlt_properties_inherit( properties, group );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-transition" ) )
+		{
+			mlt_transition transition = create_transition( field, argv[ ++ i ], track - 1 );
+			if ( transition != NULL )
+			{
+				properties = mlt_transition_properties( transition );
+				mlt_properties_inherit( properties, group );
 			}
 		}
 		else if ( !strcmp( argv[ i ], "-blank" ) )
