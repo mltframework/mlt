@@ -778,6 +778,9 @@ static void *consumer_thread( void *arg )
 					mlt_properties_set_data( properties, "sample_fifo", fifo, 0, ( mlt_destructor )sample_fifo_close, NULL );
 				}
 
+				if ( mlt_properties_get_double( frame_properties, "_speed" ) != 1.0 )
+					memset( pcm, 0, samples * channels * 2 );
+
 				// Append the samples
 				sample_fifo_append( fifo, pcm, samples * channels );
 				total_time += ( samples * 1000000 ) / frequency;
@@ -928,7 +931,7 @@ static void *consumer_thread( void *arg )
 			}
 		}
 
-		if ( real_time_output && frames % 25 == 0 )
+		if ( real_time_output && frames % 12 == 0 )
 		{
 			long passed = time_difference( &ante );
 			if ( fifo != NULL )

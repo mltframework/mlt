@@ -464,6 +464,8 @@ int miracle_unit_transfer( miracle_unit dest_unit, miracle_unit src_unit )
 			mlt_playlist_append_io( dest_playlist, info.producer, info.frame_in, info.frame_out );
 	}
 
+	update_generation( dest_unit );
+
 	mlt_playlist_close( tmp_playlist );
 
 	return 0;
