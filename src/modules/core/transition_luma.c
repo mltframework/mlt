@@ -95,7 +95,7 @@ static float delta_calculate( mlt_transition this, mlt_frame frame )
 	return ( y - x ) / 2.0;
 }
 
-static int frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float weight, int *width, int *height )
+static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, int *width, int *height )
 {
 	int ret = 0;
 	int width_src = *width, height_src = *height;
@@ -105,11 +105,6 @@ static int frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, fl
 	int i, j;
 	int stride_src;
 	int stride_dest;
-	int x_src = 0, y_src = 0;
-
-	// optimization point - no work to do
-	if ( ( x < 0 && -x >= width_src ) || ( y < 0 && -y >= height_src ) )
-		return ret;
 
 	format_src = mlt_image_yuv422;
 	format_dest = mlt_image_yuv422;
@@ -117,76 +112,30 @@ static int frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, fl
 	mlt_frame_get_image( this, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
 	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
 
-	stride_src = width_src * 2;
-	stride_dest = width_dest * 2;
+	stride_src = width_src << 1;
+	stride_dest = width_dest << 1;
 	
-	// crop overlay off the left edge of frame
-	if ( x < 0 )
-	{
-		x_src = -x;
-		width_src -= x_src;
-		x = 0;
-	}
-	
-	// crop overlay beyond right edge of frame
-	else if ( x + width_src > width_dest )
-		width_src = width_dest - x;
-
-	// crop overlay off the top edge of the frame
-	if ( y < 0 )
-	{
-		y_src = -y;
-		height_src -= y_src;
-	}
-	// crop overlay below bottom edge of frame
-	else if ( y + height_src > height_dest )
-		height_src = height_dest - y;
-
-	// offset pointer into overlay buffer based on cropping
-	p_src += x_src * 2 + y_src * stride_src;
-
-	// offset pointer into frame buffer based upon positive, even coordinates only!
-	p_dest += ( x < 0 ? 0 : x ) * 2 + ( y < 0 ? 0 : y ) * stride_dest;
-
-	// Get the alpha channel of the overlay
-	uint8_t *p_alpha = mlt_frame_get_alpha_mask( that );
-
-	// offset pointer into alpha channel based upon cropping
-	if ( p_alpha )
-		p_alpha += x_src + y_src * stride_src / 2;
-
 	uint8_t *p = p_src;
 	uint8_t *q = p_dest;
 	uint8_t *o = p_dest;
-	uint8_t *z = p_alpha;
 
 	uint8_t Y;
 	uint8_t UV;
-	uint8_t a;
-	float value;
+	float weight_complement = 1 - weight;
 
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i++ )
 	{
-		p = p_src;
-		q = p_dest;
-		o = p_dest;
-		z = p_alpha;
+		p = &p_src[ i * stride_src ];
+		o = q = &p_dest[ i * stride_dest ];
 
 		for ( j = 0; j < width_src; j ++ )
 		{
 			Y = *p ++;
 			UV = *p ++;
-			a = ( z == NULL ) ? 255 : *z ++;
-			value = ( weight * ( float ) a / 255.0 );
-			*o ++ = (uint8_t)( Y * value + *q++ * ( 1 - value ) );
-			*o ++ = (uint8_t)( UV * value + *q++ * ( 1 - value ) );
+			*o ++ = (uint8_t)( Y * weight + *q++ * weight_complement );
+			*o ++ = (uint8_t)( UV * weight + *q++ * weight_complement );
 		}
-
-		p_src += stride_src;
-		p_dest += stride_dest;
-		if ( p_alpha )
-			p_alpha += stride_src / 2;
 	}
 
 	return ret;
@@ -310,7 +259,7 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 			luma_softness, progressive ? -1 : top_field_first, width, height );
 	else
 		// Dissolve the frames using the time offset for mix value
-		frame_composite_yuv( this, b_frame, 0, 0, mix, width, height );
+		dissolve_yuv( this, b_frame, mix, width, height );
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( a_props, "width" );
