@@ -42,7 +42,15 @@ int mlt_transition_init( mlt_transition this, void *child )
 	this->child = child;
 	if ( mlt_service_init( service, this ) == 0 )
 	{
+		mlt_properties properties = mlt_transition_properties( this );
+
 		service->get_frame = transition_get_frame;
+
+		mlt_properties_set_timecode( properties, "in", 0 );
+		mlt_properties_set_timecode( properties, "out", 0 );
+		mlt_properties_set_int( properties, "a_track", 0 );
+		mlt_properties_set_int( properties, "b_track", 1 );
+
 		return 0;
 	}
 	return 1;
@@ -72,11 +80,10 @@ int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_tra
 	int ret = mlt_service_connect_producer( &this->parent, producer, a_track );
 	if ( ret == 0 )
 	{
+		mlt_properties properties = mlt_transition_properties( this );
 		this->producer = producer;
-		this->a_track = a_track;
-		this->b_track = b_track;
-		this->in = 0;
-		this->out = 0;
+		mlt_properties_set_int( properties, "a_track", a_track );
+		mlt_properties_set_int( properties, "b_track", b_track );
 	}
 	return ret;
 }
@@ -86,8 +93,9 @@ int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_tra
 
 void mlt_transition_set_in_and_out( mlt_transition this, mlt_timecode in, mlt_timecode out )
 {
-	this->in = in;
-	this->out = out;
+	mlt_properties properties = mlt_transition_properties( this );
+	mlt_properties_set_timecode( properties, "in", in );
+	mlt_properties_set_timecode( properties, "out", out );
 }
 
 /** Get the index of the a track.
@@ -95,7 +103,8 @@ void mlt_transition_set_in_and_out( mlt_transition this, mlt_timecode in, mlt_ti
 
 int mlt_transition_get_a_track( mlt_transition this )
 {
-	return this->a_track;
+	mlt_properties properties = mlt_transition_properties( this );
+	return mlt_properties_get_int( properties, "a_track" );
 }
 
 /** Get the index of the b track.
@@ -103,7 +112,8 @@ int mlt_transition_get_a_track( mlt_transition this )
 
 int mlt_transition_get_b_track( mlt_transition this )
 {
-	return this->b_track;
+	mlt_properties properties = mlt_transition_properties( this );
+	return mlt_properties_get_int( properties, "b_track" );
 }
 
 /** Get the in point.
@@ -111,7 +121,8 @@ int mlt_transition_get_b_track( mlt_transition this )
 
 mlt_timecode mlt_transition_get_in( mlt_transition this )
 {
-	return this->in;
+	mlt_properties properties = mlt_transition_properties( this );
+	return mlt_properties_get_timecode( properties, "in" );
 }
 
 /** Get the out point.
@@ -119,7 +130,8 @@ mlt_timecode mlt_transition_get_in( mlt_transition this )
 
 mlt_timecode mlt_transition_get_out( mlt_transition this )
 {
-	return this->out;
+	mlt_properties properties = mlt_transition_properties( this );
+	return mlt_properties_get_timecode( properties, "out" );
 }
 
 /** Process the frame.
@@ -167,20 +179,27 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 {
 	mlt_transition this = service->child;
 
+	mlt_properties properties = mlt_transition_properties( this );
+
+	int a_track = mlt_properties_get_int( properties, "a_track" );
+	int b_track = mlt_properties_get_int( properties, "b_track" );
+	mlt_timecode in = mlt_properties_get_timecode( properties, "in" );
+	mlt_timecode out = mlt_properties_get_timecode( properties, "out" );
+
 	// Fetch a and b frames together...
-	if ( ( index == this->a_track || index == this->b_track ) &&
+	if ( ( index == a_track || index == b_track ) &&
 		 ( this->a_frame == NULL && this->b_frame == NULL ) )
 	{
-		mlt_service_get_frame( this->producer, &this->a_frame, this->a_track );
-		mlt_service_get_frame( this->producer, &this->b_frame, this->b_track );
+		mlt_service_get_frame( this->producer, &this->a_frame, a_track );
+		mlt_service_get_frame( this->producer, &this->b_frame, b_track );
 	}
 	
 	// Special case track processing
-	if ( index == this->a_track )
+	if ( index == a_track )
 	{
 		// Determine if we're in the right time zone
 		mlt_timecode timecode = mlt_frame_get_timecode( this->a_frame );
-		if ( timecode >= this->in && timecode < this->out )
+		if ( timecode >= in && timecode < out )
 		{
 			// Process the transition
 			*frame = transition_process( this, this->a_frame, this->b_frame );
@@ -197,7 +216,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		}			
 		return 0;
 	}
-	if ( index == this->b_track )
+	if ( index == b_track )
 	{
 		if ( this->b_frame == NULL )
 		{
@@ -207,7 +226,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		else
 		{
 			mlt_timecode timecode = mlt_frame_get_timecode( this->b_frame );
-			if ( timecode >= this->in && timecode < this->out )
+			if ( timecode >= in && timecode < out )
 			{
 				// We're in the zone, but the 'a frame' has not been requested yet
 				*frame = mlt_frame_init( );

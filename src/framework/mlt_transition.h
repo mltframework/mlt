@@ -42,10 +42,6 @@ struct mlt_transition_s
 	
 	// track and in/out points
 	mlt_service producer;
-	int a_track;
-	int b_track;
-	mlt_timecode in;
-	mlt_timecode out;
 	
 	// Private
 	mlt_frame a_frame;

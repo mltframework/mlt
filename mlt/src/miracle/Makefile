@@ -1,7 +1,8 @@
 TARGET = miracle
 
-OBJS = miracle.o \
-	   miracle_log.o \
+APP_OBJS = miracle.o
+
+LIB_OBJS = miracle_log.o \
 	   miracle_server.o \
 	   miracle_connection.o \
 	   miracle_local.o \
@@ -9,25 +10,30 @@ OBJS = miracle.o \
 	   miracle_commands.o \
 	   miracle_unit_commands.o
 
+OBJS = $(APP_OBJS) $(LIB_OBJS)
+
 CFLAGS = -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
 
 LDFLAGS = -L ../valerie -lvalerie -L ../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 
-all: $(TARGET)
+all: 		$(TARGET)
 
-$(TARGET): $(OBJS)
-		$(CC) -o $@ $(OBJS) $(LDFLAGS)
+$(TARGET): 	$(APP_OBJS) libmiracle.so
+			$(CC) -o $@ $(APP_OBJS) -L. -lmiracle $(LDFLAGS)
 
-depend:	$(SRCS)
-		$(CC) -MM $(CFLAGS) $^ 1>.depend
+libmiracle.so:	$(LIB_OBJS)
+			$(CC) -shared -o $@ $(LIB_OBJS) $(LDFLAGS)
+
+depend:		$(SRCS)
+			$(CC) -MM $(CFLAGS) $^ 1>.depend
 
 dist-clean:	clean
-		rm -f .depend
+			rm -f .depend
 
 clean:	
-		rm -f $(OBJS) $(TARGET)
+			rm -f $(OBJS) $(TARGET) libmiracle.so
 
 ifneq ($(wildcard .depend),)
 include .depend
