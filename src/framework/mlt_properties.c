@@ -343,7 +343,7 @@ void mlt_properties_close( mlt_properties this )
 	int index = 0;
 
 	// Clean up names and values
-	for ( index = 0; index < list->count; index ++ )
+	for ( index = list->count - 1; index >= 0; index -- )
 	{
 		free( list->name[ index ] );
 		mlt_property_close( list->value[ index ] );
