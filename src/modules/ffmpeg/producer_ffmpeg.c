@@ -465,8 +465,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	if ( video != NULL && read_ffmpeg_header( this, &width, &height ) == 2 )
 	{
 		// Allocate an image
-		// IRRIGATE ME
-		uint8_t *image = malloc( width * ( height + 1 ) * 2 );
+		void *release = NULL;
+		uint8_t *image = mlt_pool_allocate( width * ( height + 1 ) * 2, &release );
 		
 		// Read it
 		while( skip -- )
@@ -483,7 +483,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_convert_yuv420p_to_yuv422( this->buffer, width, height, width, image );
 
 		// Pass the data on the frame properties
-		mlt_properties_set_data( properties, "image", image, width * ( height + 1 ) * 2, free, NULL );
+		mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", image, width * ( height + 1 ) * 2, NULL, NULL );
 		mlt_properties_set_int( properties, "width", width );
 		mlt_properties_set_int( properties, "height", height );
 		mlt_properties_set_int( properties, "has_image", 1 );

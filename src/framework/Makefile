@@ -15,7 +15,8 @@ OBJS = mlt_frame.o \
 	   mlt_field.o \
 	   mlt_tractor.o \
 	   mlt_factory.o \
-	   mlt_repository.o
+	   mlt_repository.o \
+	   mlt_pool.o
 
 SRCS := $(OBJS:.o=.c)
 

@@ -51,6 +51,9 @@ int mlt_factory_init( char *prefix )
 		// Store the prefix for later retrieval
 		mlt_prefix = strdup( prefix );
 
+		// Initialise the pool
+		mlt_pool_init( );
+
 		// Create the object list.
 		object_list = mlt_properties_new( );
 
@@ -147,6 +150,7 @@ void mlt_factory_close( )
 		mlt_properties_close( object_list );
 		free( mlt_prefix );
 		mlt_prefix = NULL;
+		mlt_pool_close( );
 	}
 }
 

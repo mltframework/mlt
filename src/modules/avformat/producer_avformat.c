@@ -339,13 +339,17 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( output == NULL )
 	{
 		int size = avpicture_get_size( PIX_FMT_YUV422, *width, *height );
-		// IRRIGATE ME
+		void *frame_release = NULL;
+		void *buffer_release = NULL;
 		size += *width * 2;
-		uint8_t *buf = malloc( size );
-		output = malloc( sizeof( AVPicture ) );
+		uint8_t *buf = mlt_pool_allocate( size, &buffer_release );
+		output = mlt_pool_allocate( sizeof( AVPicture ), &frame_release );
+		memset( output, 0, sizeof( AVPicture ) );
 		avpicture_fill( output, buf, PIX_FMT_YUV422, *width, *height );
-		mlt_properties_set_data( properties, "video_output_frame", output, 0, av_free, NULL );
-		mlt_properties_set_data( properties, "video_output_buffer", buf, 0, free, NULL );
+		mlt_properties_set_data( properties, "video_output_frame_release", frame_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "video_output_buffer_release", buffer_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "video_output_frame", output, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "video_output_buffer", buf, 0, NULL, NULL );
 	}
 
 	// Seek if necessary
@@ -381,12 +385,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image = mlt_properties_get_data( properties, "current_image", &size );
 
 		// Duplicate it
-		// IRRIGATE ME
-		*buffer = malloc( size );
+		void *release = NULL;
+		*buffer = mlt_pool_allocate( size, &release );
 		memcpy( *buffer, image, size );
 
 		// Set this on the frame properties
-		mlt_properties_set_data( frame_properties, "image", *buffer, size, free, NULL );
+		mlt_properties_set_data( frame_properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
 	}
 	else
 	{
@@ -440,22 +445,24 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		{
 			// Get current image and size
 			int size = 0;
+			void *release = NULL;
 			uint8_t *image = mlt_properties_get_data( properties, "current_image", &size );
 
 			if ( image == NULL || size != *width * *height * 2 )
 			{
+				void *current_image_release = NULL;
 				size = *width * ( *height + 1 ) * 2;
-				// IRRIGATE ME
-				image = malloc( size );
-				mlt_properties_set_data( properties, "current_image", image, size, free, NULL );
+				image = mlt_pool_allocate( size, &current_image_release );
+				mlt_properties_set_data( properties, "current_image_release", current_image_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+				mlt_properties_set_data( properties, "current_image", image, size, NULL, NULL );
 			}
 
-			// IRRIGATE ME
-			*buffer = malloc( size );
+			*buffer = mlt_pool_allocate( size, &release );
 			img_convert( output, PIX_FMT_YUV422, (AVPicture *)&frame, codec_context->pix_fmt, *width, *height );
 			memcpy( image, output->data[ 0 ], size );
 			memcpy( *buffer, output->data[ 0 ], size );
-			mlt_properties_set_data( frame_properties, "image", *buffer, size, free, NULL );
+			mlt_properties_set_data( frame_properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+			mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
 
 			if ( current_time == 0 && source_fps != 0 )
 			{
@@ -644,11 +651,15 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Check for audio buffer and create if necessary
 	if ( audio_buffer == NULL )
 	{
+		// Audio buffer release pointer
+		void *buffer_release = NULL;
+
 		// Allocate the audio buffer
-		audio_buffer = malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+		audio_buffer = mlt_pool_allocate( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ), &buffer_release );
 
 		// And store it on properties for reuse
-		mlt_properties_set_data( properties, "audio_buffer", audio_buffer, 0, free, NULL );
+		mlt_properties_set_data( properties, "audio_buffer_release", buffer_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "audio_buffer", audio_buffer, 0, NULL, NULL );
 	}
 
 	// Seek if necessary
@@ -681,7 +692,8 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	{
 		int ret = 0;
 		int got_audio = 0;
-		int16_t temp[ AVCODEC_MAX_AUDIO_FRAME_SIZE / 2 ];
+		void *temp_release = NULL;
+		int16_t *temp = mlt_pool_allocate( sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE, &temp_release );
 
 		memset( &pkt, 0, sizeof( pkt ) );
 
@@ -762,11 +774,13 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		// Now handle the audio if we have enough
 		if ( audio_used >= *samples )
 		{
-			*buffer = malloc( *samples * *channels * sizeof( int16_t ) );
+			void *buffer_release = NULL;
+			*buffer = mlt_pool_allocate( *samples * *channels * sizeof( int16_t ), &buffer_release );
 			memcpy( *buffer, audio_buffer, *samples * *channels * sizeof( int16_t ) );
 			audio_used -= *samples;
 			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * *channels * sizeof( int16_t ) );
-			mlt_properties_set_data( frame_properties, "audio", *buffer, 0, free, NULL );
+			mlt_properties_set_data( frame_properties, "audio_release", buffer_release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+			mlt_properties_set_data( frame_properties, "audio", *buffer, 0, NULL, NULL );
 		}
 		else
 		{
@@ -777,6 +791,9 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		
 		// Store the number of audio samples still available
 		mlt_properties_set_int( properties, "audio_used", audio_used );
+
+		// Release the temporary audio
+		mlt_pool_release( temp_release );
 	}
 	else
 	{

@@ -23,6 +23,8 @@
 
 #include <stdint.h>
 
+#include "mlt_pool.h"
+
 typedef enum
 {
 	mlt_whence_relative_start,

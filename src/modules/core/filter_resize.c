@@ -46,6 +46,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int owidth = *width;
 	int oheight = *height;
 
+	// Hmmm...
+	char *rescale = mlt_properties_get( properties, "rescale.interp" );
+	if ( rescale != NULL && !strcmp( rescale, "none" ) )
+		return mlt_frame_get_image( this, image, format, width, height, writable );
+
 	if ( mlt_properties_get( properties, "distort" ) == NULL )
 	{
 		// Now do additional calcs based on real_width/height etc
@@ -71,7 +76,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 
 		if ( input_ar == output_ar && scaled_height == normalised_height )
+		{
 			scaled_width = normalised_width;
+		}
+		else if ( ( real_height * 2 ) == normalised_height )
+		{
+			scaled_width = normalised_width;
+			scaled_height = normalised_height;
+		}
 	
 		// Now calculate the actual image size that we want
 		owidth = scaled_width * owidth / normalised_width;

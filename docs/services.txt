@@ -30,12 +30,7 @@ Producers
 
 		Oddities
 
-			There seems to be a discrepancy between audio and video pts (time
-			stamps) which causes audio seeking to be unreliable in some cases.
-			If audio playback is broken, try adding discrepancy=3 as a
-			property.
-
-			Not sure of the exact reasons, but am investigating. 
+			MPEG video remains elusive.
 
 		Known Bugs
 

@@ -46,6 +46,7 @@ extern int mlt_properties_parse( mlt_properties this, char *namevalue );
 extern char *mlt_properties_get( mlt_properties this, char *name );
 extern char *mlt_properties_get_name( mlt_properties this, int index );
 extern char *mlt_properties_get_value( mlt_properties this, int index );
+extern void *mlt_properties_get_data_at( mlt_properties this, int index, int *size );
 extern int mlt_properties_get_int( mlt_properties this, char *name );
 extern int mlt_properties_set_int( mlt_properties this, char *name, int value );
 extern double mlt_properties_get_double( mlt_properties this, char *name );

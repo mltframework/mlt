@@ -224,6 +224,17 @@ char *mlt_properties_get_value( mlt_properties this, int index )
 	return NULL;
 }
 
+/** Get a data value by index.
+*/
+
+void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
+{
+	property_list *list = this->private;
+	if ( index >= 0 && index < list->count )
+		return mlt_property_get_data( list->value[ index ], size );
+	return NULL;
+}
+
 /** Return the number of items in the list.
 */
 

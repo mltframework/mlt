@@ -83,10 +83,11 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 		// Convert to requested format
 		if ( *format == mlt_image_yuv422 )
 		{
-			// IRRIGATE ME
-			uint8_t *image = malloc( *width * ( *height + 1 ) * 2 );
+			void *release = NULL;
+			uint8_t *image = mlt_pool_allocate( *width * ( *height + 1 ) * 2, &release );
 			mlt_convert_rgb24_to_yuv422( rgb, *width, *height, *width * 3, image );
-			mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, free, NULL );
+			mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+			mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, NULL, NULL );
 			*buffer = image;
 		}
 		else if ( *format == mlt_image_rgb24 )
@@ -223,16 +224,16 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Read the video
 	if ( video != NULL && read_ppm_header( video, &width, &height ) == 2 )
 	{
-
 		// Allocate an image
-		// IRRIGATE ME
-		uint8_t *image = malloc( width * ( height + 1 ) * 3 );
+		void *release = NULL;
+		uint8_t *image = mlt_pool_allocate( width * ( height + 1 ) * 3, &release );
 		
 		// Read it
 		fread( image, width * height * 3, 1, video );
 
 		// Pass the data on the frame properties
-		mlt_properties_set_data( properties, "image", image, width * ( height + 1 ) * 3, free, NULL );
+		mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", image, width * ( height + 1 ) * 3, NULL, NULL );
 		mlt_properties_set_int( properties, "width", width );
 		mlt_properties_set_int( properties, "height", height );
 		mlt_properties_set_int( properties, "has_image", 1 );

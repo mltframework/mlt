@@ -111,8 +111,9 @@ static int read_frame( int fd, uint8_t* frame_buf, int *isPAL )
 static int producer_collect_info( producer_libdv this )
 {
 	int valid = 0;
-	// IRRIGATE ME
-	uint8_t *dv_data = malloc( frame_size_625_50 );
+
+	void *release = NULL;
+	uint8_t *dv_data = mlt_pool_allocate( frame_size_625_50, &release );
 
 	if ( dv_data != NULL )
 	{
@@ -156,7 +157,7 @@ static int producer_collect_info( producer_libdv this )
 			mlt_properties_set_double( properties, "aspect_ratio", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
 		}
 
-		free( dv_data );
+		mlt_pool_release( release );
 	}
 
 	return valid;
@@ -187,11 +188,12 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	if ( *format == mlt_image_yuv422 )
 	{
 		// Allocate an image
-		// IRRIGATE ME
-		uint8_t *image = malloc( *width * ( *height + 1 ) * 2 );
+		void *release = NULL;
+		uint8_t *image = mlt_pool_allocate( *width * ( *height + 1 ) * 2, &release );
 
 		// Pass to properties for clean up
-		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, free, NULL );
+		mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, NULL, NULL );
 
 		// Decode the image
 		pitches[ 0 ] = *width * 2;
@@ -204,11 +206,12 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	else if ( *format == mlt_image_rgb24 )
 	{
 		// Allocate an image
-		// IRRIGATE ME
-		uint8_t *image = malloc( *width * ( *height + 1 ) * 3 );
+		void *release = NULL;
+		uint8_t *image = mlt_pool_allocate( *width * ( *height + 1 ) * 3, &release );
 
 		// Pass to properties for clean up
-		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 3, free, NULL );
+		mlt_properties_set_data( properties, "image_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 3, NULL, NULL );
 
 		// Decode the frame
 		pitches[ 0 ] = 720 * 3;
@@ -224,8 +227,10 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 
 static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
+	void *release = NULL;
 	int16_t *p;
 	int i, j;
+	void *audio_release[ 4 ] = { NULL, NULL, NULL, NULL };
 	int16_t *audio_channels[ 4 ];
 	
 	// Get the frames properties
@@ -248,13 +253,14 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 
 	// Create a temporary workspace
 	for ( i = 0; i < 4; i++ )
-		audio_channels[ i ] = malloc( DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
+		audio_channels[ i ] = mlt_pool_allocate( DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ), &audio_release[ i ] );
 
 	// Create a workspace for the result
-	*buffer = malloc( *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
+	*buffer = mlt_pool_allocate( *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ), &release );
 
 	// Pass the allocated audio buffer as a property
-	mlt_properties_set_data( properties, "audio", *buffer, *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ), free, NULL );
+	mlt_properties_set_data( properties, "audio_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+	mlt_properties_set_data( properties, "audio", *buffer, *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ), NULL, NULL );
 
 	// Decode the audio
 	dv_decode_full_audio( decoder, dv_data, audio_channels );
@@ -267,7 +273,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 
 	// Free the temporary work space
 	for ( i = 0; i < 4; i++ )
-		free( audio_channels[ i ] );
+		mlt_pool_release( audio_release[ i ] );
 
 	return 0;
 }
@@ -275,7 +281,8 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	producer_libdv this = producer->child;
-	uint8_t *data = malloc( frame_size_625_50 );
+	void *release = NULL;
+	uint8_t *data = mlt_pool_allocate( frame_size_625_50, &release );
 	
 	// Obtain the current frame number
 	uint64_t position = mlt_producer_frame( producer );
@@ -298,7 +305,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_data( properties, "dv_decoder", this->dv_decoder, 0, NULL, NULL );
 
 		// Pass the dv data
-		mlt_properties_set_data( properties, "dv_data", data, frame_size_625_50, free, NULL );
+		mlt_properties_set_data( properties, "dv_data_release", release, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "dv_data", data, frame_size_625_50, NULL, NULL );
 
 		// Update other info on the frame
 		mlt_properties_set_int( properties, "width", 720 );
@@ -318,7 +326,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 	else
 	{
-		free( data );
+		mlt_pool_release( release );
 	}
 
 	// Update timecode on the frame we're creating

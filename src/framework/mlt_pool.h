@@ -1,7 +1,7 @@
 /*
- * producer_pixbuf.h -- raster image loader based upon gdk-pixbuf
+ * mlt_pool.h -- memory pooling functionality
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,11 +18,12 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _PRODUCER_PIXBUF_H_
-#define _PRODUCER_PIXBUF_H_
+#ifndef _MLT_POOL_H
+#define _MLT_POOL_H
 
-#include <framework/mlt_producer.h>
-
-extern mlt_producer producer_pixbuf_init( char *filename );
+extern void mlt_pool_init( );
+extern void *mlt_pool_allocate( int size, void **release );
+extern void mlt_pool_release( void *release );
+extern void mlt_pool_close( );
 
 #endif

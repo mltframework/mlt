@@ -325,6 +325,7 @@ static int transition_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 
 static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 {
+	void *release = NULL;
 	uint8_t *data = NULL;
 	while (1)
 	{
@@ -379,8 +380,7 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 		bpp = maxval > 255 ? 2 : 1;
 		
 		// allocate temporary storage for the raw data
-		// IRRIGATE ME
-		data = malloc( *width * *height * bpp );
+		data = mlt_pool_allocate( *width * *height * bpp, &release );
 		if ( data == NULL )
 			break;
 
@@ -390,6 +390,7 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 		
 		// allocate the luma bitmap
 		// IRRIGATE ME
+		// Difficult here - need to change the function prototype....
 		*map =  p = (float*) malloc( *width * *height * sizeof( float ) );
 		if ( *map == NULL )
 			break;
@@ -406,8 +407,8 @@ static void luma_read_pgm( FILE *f, float **map, int *width, int *height )
 		break;
 	}
 		
-	if ( data != NULL )
-		free( data );
+	if ( release != NULL )
+		mlt_pool_release( release );
 }
 
 
