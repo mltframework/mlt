@@ -195,8 +195,8 @@ mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 	// Special case - allow for a cut of the entire producer (this will squeeze all other cuts to 0)
 	if ( in <= 0 )
 		in = 0;
-	if ( out >= mlt_producer_get_playtime( parent ) && !mlt_producer_is_blank( this ) )
-		out = mlt_producer_get_playtime( parent ) - 1;
+	if ( ( out < 0 || out >= mlt_producer_get_playtime( parent ) ) && !mlt_producer_is_blank( this ) )
+		out = mlt_producer_get_playtime( parent );
 
 	mlt_properties_inc_ref( parent_props );
 	mlt_properties_set_int( properties, "_cut", 1 );

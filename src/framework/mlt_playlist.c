@@ -825,7 +825,7 @@ int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 				mlt_playlist_insert( this, &this->blank, clip + 1, 0, out - position - 1 );
 			}
 			mlt_events_unblock( mlt_playlist_properties( this ), this );
-			mlt_events_fire( mlt_playlist_properties( this ), "producer-changed", NULL );
+			mlt_playlist_virtual_refresh( this );
 		}
 		else
 		{
@@ -1068,7 +1068,7 @@ static int mlt_playlist_unmix( mlt_playlist this, int clip )
 		mlt_properties_set_data( properties, "mlt_mix", NULL, 0, NULL, NULL );
 		mlt_playlist_remove( this, clip );
 		mlt_events_unblock( mlt_playlist_properties( this ), this );
-		mlt_events_fire( mlt_playlist_properties( this ), "producer-changed", NULL );
+		mlt_playlist_virtual_refresh( this );
 	}
 	return error;
 }
@@ -1184,6 +1184,186 @@ mlt_producer mlt_playlist_replace_with_blank( mlt_playlist this, int clip )
 		mlt_playlist_virtual_refresh( this );
 	}
 	return producer;
+}
+
+void mlt_playlist_insert_blank( mlt_playlist this, int clip, int length )
+{
+	if ( this != NULL && length > 0 )
+	{
+		mlt_properties properties = mlt_playlist_properties( this );
+		mlt_events_block( properties, properties );
+		mlt_playlist_blank( this, length );
+		mlt_playlist_move( this, this->count - 1, clip );
+		mlt_events_unblock( properties, properties );
+		mlt_playlist_virtual_refresh( this );
+	}
+}
+
+void mlt_playlist_pad_blanks( mlt_playlist this, int position, int length, int find )
+{
+	if ( this != NULL && length != 0 )
+	{
+		int clip = mlt_playlist_get_clip_index_at( this, position );
+		mlt_properties properties = mlt_playlist_properties( this );
+		mlt_events_block( properties, properties );
+		if ( find && clip < this->count && !mlt_playlist_is_blank( this, clip ) )
+			clip ++;
+		if ( clip < this->count && mlt_playlist_is_blank( this, clip ) )
+		{
+			mlt_playlist_clip_info info;
+			mlt_playlist_get_clip_info( this, &info, clip );
+			if ( info.frame_out + length > info.frame_in )
+				mlt_playlist_resize_clip( this, clip, info.frame_in, info.frame_out + length );
+			else
+				mlt_playlist_remove( this, clip );
+		}
+		else if ( find && clip < this->count && length > 0  )
+		{
+			mlt_playlist_insert_blank( this, clip, length );
+		}
+		mlt_events_unblock( properties, properties );
+		mlt_playlist_virtual_refresh( this );
+	}
+}
+
+int mlt_playlist_insert_at( mlt_playlist this, int position, mlt_producer producer, int mode )
+{
+	int ret = this == NULL || position < 0 || producer == NULL;
+	if ( ret == 0 )
+	{
+		mlt_properties properties = mlt_playlist_properties( this );
+		int length = mlt_producer_get_playtime( producer );
+		int clip = mlt_playlist_get_clip_index_at( this, position );
+		mlt_playlist_clip_info info;
+		mlt_playlist_get_clip_info( this, &info, clip );
+		mlt_events_block( properties, this );
+		if ( clip < this->count && mlt_playlist_is_blank( this, clip ) )
+		{
+			mlt_playlist_split( this, clip, position - info.start );
+			mlt_playlist_get_clip_info( this, &info, ++ clip );
+			if ( length < info.frame_count )
+				mlt_playlist_split( this, clip, length );
+			mlt_playlist_remove( this, clip );
+			mlt_playlist_insert( this, producer, clip, -1, -1 );
+			ret = clip;
+		}
+		else if ( clip < this->count )
+		{
+			if ( position > info.start + info.frame_count / 2 )
+				clip ++;
+			if ( mode == 1 && clip < this->count && mlt_playlist_is_blank( this, clip ) )
+			{
+				mlt_playlist_get_clip_info( this, &info, clip );
+				if ( length < info.frame_count )
+					mlt_playlist_split( this, clip, length );
+				mlt_playlist_remove( this, clip );
+			}
+			mlt_playlist_insert( this, producer, clip, -1, -1 );
+			ret = clip;
+		}
+		else 
+		{
+			if ( mode == 1 )
+				mlt_playlist_blank( this, position - mlt_properties_get_int( properties, "length" ) );
+			mlt_playlist_append( this, producer );
+			ret = this->count - 1;
+		}
+		mlt_events_unblock( properties, this );
+		mlt_playlist_virtual_refresh( this );
+	}
+	else
+	{
+		ret = -1;
+	}
+	return ret;
+}
+
+int mlt_playlist_clip_start( mlt_playlist this, int clip )
+{
+	mlt_playlist_clip_info info;
+	if ( mlt_playlist_get_clip_info( this, &info, clip ) == 0 )
+		return info.start;
+	return 0;
+}
+
+int mlt_playlist_clip_length( mlt_playlist this, int clip )
+{
+	mlt_playlist_clip_info info;
+	if ( mlt_playlist_get_clip_info( this, &info, clip ) == 0 )
+		return info.frame_count;
+	return 0;
+}
+
+int mlt_playlist_blanks_from( mlt_playlist this, int clip, int bounded )
+{
+	int count = 0;
+	mlt_playlist_clip_info info;
+	if ( this != NULL && clip < this->count )
+	{
+		mlt_playlist_get_clip_info( this, &info, clip );
+		if ( mlt_playlist_is_blank( this, clip ) )
+			count += info.frame_count;
+		if ( bounded == 0 )
+			bounded = this->count;
+		for ( clip ++; clip < this->count && bounded >= 0; clip ++ )
+		{
+			mlt_playlist_get_clip_info( this, &info, clip );
+			if ( mlt_playlist_is_blank( this, clip ) )
+				count += info.frame_count;
+			else
+				bounded --;
+		}
+	}
+	return count;
+}
+
+int mlt_playlist_remove_region( mlt_playlist this, int position, int length )
+{
+	int index = mlt_playlist_get_clip_index_at( this, position );
+	if ( index >= 0 && index < this->count )
+	{
+		mlt_properties properties = mlt_playlist_properties( this );
+		int clip_start = mlt_playlist_clip_start( this, index );
+		int clip_length = mlt_playlist_clip_length( this, index );
+		int list_length = mlt_producer_get_playtime( mlt_playlist_producer( this ) );
+		mlt_events_block( properties, this );
+
+		if ( position + length > list_length )
+			length -= ( position + length - list_length );
+
+		if ( clip_start < position )
+		{
+			mlt_playlist_split( this, index ++, position - clip_start );
+			clip_length -= position - clip_start;
+		}
+
+		while( length > 0 )
+		{
+			if ( mlt_playlist_clip_length( this, index ) > length )
+				mlt_playlist_split( this, index, length );
+			length -= mlt_playlist_clip_length( this, index );
+			mlt_playlist_remove( this, index );
+		}
+	
+		mlt_playlist_consolidate_blanks( this, 0 );
+		mlt_events_unblock( properties, this );
+		mlt_playlist_virtual_refresh( this );
+
+		// Just to be sure, we'll get the clip index again...
+		index = mlt_playlist_get_clip_index_at( this, position );
+	}
+	return index;
+}
+
+int mlt_playlist_move_region( mlt_playlist this, int position, int length, int new_position )
+{
+	if ( this != NULL )
+	{
+		mlt_playlist temp = mlt_playlist_init( );
+		int original_size = mlt_producer_get_playtime( mlt_playlist_producer( temp ) );
+		mlt_playlist_close( temp );
+	}
+	return 0;
 }
 
 /** Get the current frame.

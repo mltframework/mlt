@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 /** IMPORTANT NOTES
 
@@ -48,6 +49,7 @@ typedef struct
 	int filter_count;
 	int filter_size;
 	mlt_filter *filters;
+	pthread_mutex_t mutex;
 }
 mlt_service_base;
 
@@ -88,6 +90,7 @@ int mlt_service_init( mlt_service this, void *child )
 		mlt_events_init( &this->parent );
 		mlt_events_register( &this->parent, "service-changed", NULL );
 		mlt_events_register( &this->parent, "property-changed", ( mlt_transmitter )mlt_service_property_changed );
+		pthread_mutex_init( &( ( mlt_service_base * )this->local )->mutex, NULL );
 	}
 
 	return error;
@@ -97,6 +100,18 @@ static void mlt_service_property_changed( mlt_listener listener, mlt_properties 
 {
 	if ( listener != NULL )
 		listener( owner, this, ( char * )args[ 0 ] );
+}
+
+void mlt_service_lock( mlt_service this )
+{
+	if ( this != NULL )
+		pthread_mutex_lock( &( ( mlt_service_base * )this->local )->mutex );
+}
+
+void mlt_service_unlock( mlt_service this )
+{
+	if ( this != NULL )
+		pthread_mutex_unlock( &( ( mlt_service_base * )this->local )->mutex );
 }
 
 mlt_service_type mlt_service_identify( mlt_service this )
@@ -174,7 +189,11 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 
 		// Increment the reference count on this producer
 		if ( producer != NULL )
+		{
+			mlt_service_lock( producer );
 			mlt_properties_inc_ref( mlt_service_properties( producer ) );
+			mlt_service_unlock( producer );
+		}
 
 		// Now we disconnect the producer service from its consumer
 		mlt_service_disconnect( producer );
@@ -334,25 +353,39 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 
 int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 {
+	mlt_service_lock( this );
 	if ( this != NULL && this->get_frame != NULL )
 	{
+		char uniq[ 20 ];
 		int result = 0;
 		mlt_properties properties = mlt_service_properties( this );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
+		mlt_properties_inc_ref( properties );
+		mlt_service_unlock( this );
 		result = this->get_frame( this, frame, index );
 		if ( result == 0 )
 		{
+			properties = mlt_frame_properties( *frame );
 			if ( in >=0 && out > 0 )
 			{
-				properties = mlt_frame_properties( *frame );
 				mlt_properties_set_position( properties, "in", in );
 				mlt_properties_set_position( properties, "out", out );
 			}
 			mlt_service_apply_filters( this, *frame, 1 );
+			sprintf( uniq, "gf_%p", this );
+			if ( mlt_properties_get_data( properties, uniq, NULL ) != NULL )
+				fprintf( stderr, "%s is not unique in this frame\n", uniq );
+			mlt_properties_set_data( properties, uniq, this, 0, ( mlt_destructor )mlt_service_close, NULL );
+		}
+		else
+		{
+			fprintf( stderr, "Ugh case\n" );
+			mlt_service_close( this );
 		}
 		return result;
 	}
+	mlt_service_unlock( this );
 	*frame = mlt_frame_init( );
 	return 0;
 }
@@ -454,8 +487,10 @@ mlt_filter mlt_service_filter( mlt_service this, int index )
 
 void mlt_service_close( mlt_service this )
 {
+	mlt_service_lock( this );
 	if ( this != NULL && mlt_properties_dec_ref( mlt_service_properties( this ) ) <= 0 )
 	{
+		mlt_service_unlock( this );
 		if ( this->close != NULL )
 		{
 			this->close( this->close_object );
@@ -474,9 +509,14 @@ void mlt_service_close( mlt_service this )
 					mlt_service_close( base->in[ i ] );
 			this->parent.close = NULL;
 			free( base->in );
+			pthread_mutex_destroy( &base->mutex );
 			free( base );
 			mlt_properties_close( &this->parent );
 		}
+	}
+	else
+	{
+		mlt_service_unlock( this );
 	}
 }
 
