@@ -13,24 +13,20 @@ Hello World
 
 	An example of use is as follows:
 
-	#include <mlt++/Mlt.h>
-	using namespace Mlt;
+	    #include <mlt++/Mlt.h>
+	    using namespace Mlt;
 
-	int main( void )
-	{
-		Factory::init( );
-		Producer p( "pango:" );
-		p.set( "text", "Hello World" );
-		Consumer c( "sdl" );
-		Event *e = c.setup_wait_for( "consumer-stopped" );
-		c.connect( p );
-		c.start( );
-		c.wait_for( e );
-		delete e;
-		return 0;
-	}
+	    int main( void )
+	    {
+	        Factory::init( );
+	        Producer p( "pango:", "Hello World" );
+	        Consumer c( "sdl" );
+	        c.connect( p );
+	        c.run( );
+	        return 0;
+	    }
 
-	This is a fairly typical example of use of mlt++ - create a 'producer' (an
+	This is a fairly typical example of mlt++ usage - create a 'producer' (an
 	object which produces 'frames'), create a 'consumer' (an object which consumes
 	frames), connect them together, start the consumer and wait until done (here
 	we just wait for the user to close the window).
@@ -62,31 +58,28 @@ Playlists
 	As a simple example of the Playlist in action, we'll convert the example
 	above into an application which plays multiple video or audio files.
 
-	#include <mlt++/Mlt.h>
-	using namespace Mlt;
+	    #include <mlt++/Mlt.h>
+	    using namespace Mlt;
 
-	int main( int argc, char **argv )
-	{
-		Factory::init( );
-		Playlist list;
-		for ( int i = 1; i < argc; i ++ )
-		{
-			Producer p( argv[i] );
-			if ( p.is_valid( ) )
-				list.append( p );
-		}
-		Consumer c( "sdl" );
-		c.connect( list );
-		Event *e = c.setup_wait_for( "consumer-stopped" );
-		c.start( );
-		c.wait_for( e );
-		delete e;
-		return 0;
-	}
+	    int main( int argc, char **argv )
+	    {
+	        Factory::init( );
+	        Playlist list;
+	        for ( int i = 1; i < argc; i ++ )
+	        {
+	            Producer p( argv[i] );
+	            if ( p.is_valid( ) )
+	                list.append( p );
+	        }
+	        Consumer c( "sdl" );
+	        c.connect( list );
+	        c.run( );
+	        return 0;
+	    }
 
 	Now you can run the program as:
 
-		./player *.avi *.mp3 *.jpg etc
+	    ./player *.avi *.mp3 *.jpg etc
 
 	In this case, we construct a playlist by simply appending producers to it.
 	Notice that although the scope of the Producer is limited to the inner 
@@ -114,26 +107,23 @@ Filters
 
 	int main( int argc, char **argv )
 	{
-		Factory::init( );
-		Playlist list;
-		for ( int i = 1; i < argc; i ++ )
-		{
-			Producer p( argv[i] );
-			if ( p.is_valid( ) )
-				list.append( p );
-		}
-		Filter f( "watermark", "pango:" );
-		f.set( "producer.text", "MLT++" );
-		f.set( "producer.fgcolour", "0x000000ff" );
-		f.set( "producer.bgcolour", "0xff000080" );
-		list.attach( f );
-		Consumer c( "sdl" );
-		c.connect( list );
-		Event *e = c.setup_wait_for( "consumer-stopped" );
-		c.start( );
-		c.wait_for( e );
-		delete e;
-		return 0;
+	    Factory::init( );
+	    Playlist list;
+	    for ( int i = 1; i < argc; i ++ )
+	    {
+	        Producer p( argv[i] );
+	        if ( p.is_valid( ) )
+	            list.append( p );
+	    }
+	    Filter f( "watermark", "pango:" );
+	    f.set( "producer.text", "MLT++" );
+	    f.set( "producer.fgcolour", "0x000000ff" );
+	    f.set( "producer.bgcolour", "0xff000080" );
+	    list.attach( f );
+	    Consumer c( "sdl" );
+	    c.connect( list );
+	    c.run( );
+	    return 0;
 	}
 
 	Notice that the watermark filter reuses the 'pango' producer we showed in the
@@ -148,6 +138,30 @@ Filters
 	that are obtained from the playlist are watermarked. 
 
 
+Cuts
+----
+
+	When you add a clip to a playlist, the a cut object is created - this is merely a
+	wrapper for the producer, spanning the specified in and out points. 
+
+	Whenever you retrieve a clip from a playlist, you will always get a cut object.
+	This allows you to attach filters to a specific part of a producer and should
+	the position of the cut in the playlist change, then the filter will remain
+	correctly associated to it.
+
+	A producer and a cut are generally identical in behaviour, but should you need to
+	distinguish between them, you can use:
+
+	    if ( producer.is_cut( ) )
+
+	and to retrieve the parent of a cut, you can use:
+
+	    Producer parent = producer.parent_cut( );
+
+	Filters that are attached directly to a parent are executed before any filters
+	attached to the cut.
+
+
 Tractor
 -------
 
@@ -155,17 +169,17 @@ Tractor
 	tracks. 
 
 	Stepping away from the player example we've been tinkering with for a minute,
-	let's assume we want to do something like dubbing a video with some audio. This
+	let's assume we want to do something like dub a video with some audio. This
 	a very trivial thing to do:
 
 	Tractor *dub( char *video_file, char *audio_file )
 	{
-		Tractor *tractor = new Tractor( );
-		Producer video( video_file );
-		Producer audio( audio_file );
-		tractor->set_track( video, 0 );
-		tractor->set_track( audio, 1 );
-		return tractor;
+	    Tractor *tractor = new Tractor( );
+	    Producer video( video_file );
+	    Producer audio( audio_file );
+	    tractor->set_track( video, 0 );
+	    tractor->set_track( audio, 1 );
+	    return tractor;
 	}
 
 	That's all that needs to be done - you can now connect the returned object to a
@@ -181,17 +195,32 @@ Transition
 
 	Tractor *mix( char *video_file, char *audio_file )
 	{
-		Tractor *tractor = new Tractor( );
-		Transition mix( "mix" );
-		Producer video( video_file );
-		Producer audio( audio_file );
-		tractor.set_track( video, 0 );
-		tractor.set_track( audio, 1 );
-		tractor.field.plant_transition( mix, 0, 1 );
-		return tractor;
+	    Tractor *tractor = new Tractor( );
+	    Transition mix( "mix" );
+	    Producer video( video_file );
+	    Producer audio( audio_file );
+	    tractor.set_track( video, 0 );
+	    tractor.set_track( audio, 1 );
+	    tractor.field.plant_transition( mix, 0, 1 );
+	    return tractor;
 	}
 
-	The tractor returned will now mix the audio from the original video and the audio.
+	The tractor returned will now mix the audio from the original video and the 
+	audio.
+
+
+Mix
+---
+
+	There is a convenience function which simplifies the process of applying 
+	transitions betwee adjacent cuts on a playlist. This is often preferable 
+	to use over the constuction of your own tractor and transition set up.
+
+	To apply a 25 frame luma transition between the first and second cut on 
+	the playlist, you could use:
+
+	    Transition luma;
+	    playlist.mix( 0, 25, luma );
 
 
 Events
@@ -204,32 +233,75 @@ Events
 
 	As an example, consider the following:
 
-	class Westley
-	{
-		private:
-			Consumer consumer;
-			Tractor &tractor;
-		public:
-			Westley( MltTractor &tractor ) :
-				tractor( tractor ),
-				consumer( "westley" )
-			{
-				consumer.connect( tractor );
-				tractor.listen( tractor, "producer-changed", ( mlt_listener )Westley::listener );
-			}
-			
-			static void listener( Properties *tractor, Westley *object )
-			{
-				object->activate( );
-			}
-
-			void activate( )
-			{
-				consumer.start( );
-			}
-	};
-
+	    class Westley
+	    {
+	        private:
+	            Consumer consumer;
+	            Tractor &tractor;
+	        public:
+	            Westley( MltTractor &tractor ) :
+	                tractor( tractor ),
+	                consumer( "westley" )
+	            {
+	                consumer.connect( tractor );
+	                tractor.listen( tractor, "producer-changed", 
+	                                ( mlt_listener )Westley::listener );
+	            }
+	            
+	            static void listener( Properties *tractor, Westley *object )
+	            {
+	                object->activate( );
+	            }
 	
+	            void activate( )
+	            {
+	                consumer.start( );
+	            }
+	    };
+
+	Now, each time the tractor is changed, the westley representation is output to 
+	stderr.
+
+
+Servers and Westley Docs
+------------------------
+
+	One of the key features of MLT is its server capabilities. This feature
+	allows you to pass westley documents seamlessly from one process to 
+	another and even to different computers on your network. 
+
+	The miracle playout server is one such example of an application which 
+	uses this functionality - you can build your own servers into your own
+	processes with ease.
+
+	A server process would be running as follows:
+
+	    #include <mlt++/Miracle>
+	    using namespace Mlt;
+	
+	    int main( void )
+	    {
+	        Miracle miracle( "miracle", 5250 );
+	        miracle.start( );
+	        miracle.execute( "uadd sdl" );
+	        miracle.execute( "play u0" );
+	        miracle.wait_for_shutdown( );
+	        return 0;
+	    }
+
+	Typically, when you have an MLT object such as a producer or a playlist,
+	you can send a westley representation of this to a running server with:
+
+	    Conumser valerie( "valerie", "localhost:5250" );
+	    valerie.connect( producer );
+	    valerie.start( );
+
+	The effect of the push will be to append the producer on to the first
+	unit (u0).
+
+	You can completely customise the miracle server - an example of this
+	is shown below.
+
 
 That's All Folks...
 -------------------
@@ -273,8 +345,8 @@ Properties
 
 	void dump( Properties &properties )
 	{
-		for ( int i = 0; i < properties.count( ); i ++ )
-			cout << Properties.get_name( i ) << " = " << Properties.get( i ) << endl;
+	    for ( int i = 0; i < properties.count( ); i ++ )
+	        cout << Properties.get_name( i ) << " = " << Properties.get( i ) << endl;
 	}
 
 	Note that the properties object handles type conversion, so the following
@@ -312,10 +384,90 @@ Services
 
 	bool do_we_have_a_producer( Service &service )
 	{
-		Producer producer( service );
-		return producer.is_valid( );
+	    Producer producer( service );
+	    return producer.is_valid( );
 	}
 
 
 Events
 ------
+
+
+Servers and Westley Docs
+------------------------
+
+	For various reasons, you might want to serialise a producer to a string.
+	To do this, you just need to specify a property to write to:
+
+	    Consumer westley( "westley", "buffer" );
+	    westley.connect( producer );
+	    westley.start( );
+	    buffer = westley.get( "buffer" );
+
+	You can use any name you want, and you can change it using the "resource"
+	property. Any name with a '.' in it is considered to be a file. Hence, you
+	can use a westley consumer to store multiple instances of the same MLT 
+	object - useful if you want to provide undo/redo capabilities in an
+	editing application.
+
+	Should you receive an xml document as a string, and you want to send it
+	on to a server, you can use:
+
+	    Conumser valerie( "valerie", "localhost:5250" );
+	    valerie.set( "westley", buffer );
+	    valerie.start( );
+
+	If you need to obtain an MLT object from a string:
+
+	    Producer producer( "westley-xml", buffer );
+    
+	The following shows a working example of an extended server:
+
+	    class ShotcutServer : public Miracle
+	    {
+	        public:
+	            ShotcutServer( char *id, int port ) :
+	                Miracle( id, port )
+	            {
+	            }
+    
+	            void set_receive_doc( bool doc )
+	            {
+	                set( "push-parser-off", doc );
+	            }
+
+	            // Reject all commands other than push/receive
+	            Response *execute( char *command )
+	            {
+	                valerie_response response = valerie_response_init( );
+	                valerie_response_set_error( response, 400, "Not OK" );
+	                return new Response( response );
+	            }
+	
+	            // Push document handler
+	            Response *received( char *command, char *doc )
+	            {
+	                valerie_response response = valerie_response_init( );
+	                // Use doc in some way and assign Response
+	                if ( doc != NULL )
+	                    valerie_response_set_error( response, 200, "OK" );
+	                return new Response( response );
+	            }
+
+	            // Push service handler
+	            Response *push( char *command, Service *service )
+	            {
+	                valerie_response response = valerie_response_init( );
+	                // Use service in some way and assign Response
+	                if ( service != NULL )
+	                    valerie_response_set_error( response, 200, "OK" );
+	                return new Response( response );
+	            }
+	    };
+
+	NB: Should you be incorporating this into a GUI application, remember that the
+	execute, received and push methods are invoked from a thread - make sure that 
+	you honour the locking requirements of your GUI toolkit before interacting with
+	the UI.
+
+
