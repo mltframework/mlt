@@ -26,6 +26,11 @@
 #include <stdlib.h>
 #include <math.h>
 
+static inline int clamp( int v, int l, int u )
+{
+	return v < l ? l : ( v > u ? u : v );
+}
+
 /** Do it :-).
 */
 
@@ -43,8 +48,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		while ( p != q )
 		{
-			*p ++ = 251 - *r ++;
-			*p ++ = 251 - *r ++;
+			*p ++ = clamp( 251 - *r ++, 16, 235 );
+			*p ++ = clamp( 256 - *r ++, 16, 240 );
 		}
 	}
 
