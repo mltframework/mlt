@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltEvent.h - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,22 +18,27 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
+#ifndef _MLTPP_EVENT_H_
+#define _MLTPP_EVENT_H_
 
-#include "MltConsumer.h"
-#include "MltEvent.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltMultitrack.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltService.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+#include <framework/mlt.h>
+
+namespace Mlt 
+{
+	class Event 
+	{
+		private:
+			mlt_event instance;
+		public:
+			Event( mlt_event );
+			Event( Event & );
+			~Event( );
+			mlt_event get_event( );
+			bool is_valid( );
+			void block( );
+			void unblock( );
+	};
+}
 
 #endif
+

@@ -19,6 +19,7 @@
  */
 
 #include "MltProperties.h"
+#include "MltEvent.h"
 using namespace Mlt;
 
 Properties::Properties( ) :
@@ -187,3 +188,30 @@ int Properties::save( char *file )
 	}
 	return error;
 }
+
+void Properties::listen( char *id, void *object, mlt_listener listener )
+{
+	char key[ 128 ];
+	mlt_event event = mlt_events_listen( get_properties( ), object, id, listener );
+	if ( event != NULL )
+	{
+		sprintf( key, "_%p", event );
+		mlt_properties_set_data( get_properties( ), key, event, 0, ( mlt_destructor )mlt_event_close, NULL );
+	}
+}
+
+Event *Properties::setup_wait_for( char *id )
+{
+	return new Event( mlt_events_setup_wait_for( get_properties( ), id ) );
+}
+
+void Properties::wait_for( Event *event, bool destroy )
+{
+	mlt_events_wait_for( get_properties( ), event->get_event( ) );
+	if ( destroy )
+	{
+		mlt_events_close_wait_for( get_properties( ), event->get_event( ) );
+		delete event;
+	}
+}
+

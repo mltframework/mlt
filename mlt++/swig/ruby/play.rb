@@ -21,6 +21,9 @@ raise "Unable to open sdl consumer" if !consumer.is_valid
 # Turn off the default rescaling
 consumer.set( "rescale", "none" )
 
+# Set up a 'wait for' event
+event = consumer.setup_wait_for( "consumer-stopped" )
+
 # Start the consumer
 consumer.start
 
@@ -28,9 +31,7 @@ consumer.start
 consumer.connect( producer )
 
 # Wait until the user stops the consumer
-while !consumer.is_stopped
-	sleep( 1 )
-end
+consumer.wait_for( event )
 
 # Clean up consumer
 consumer.stop

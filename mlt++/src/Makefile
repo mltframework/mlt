@@ -6,6 +6,7 @@ INSTALL = install
 TARGET = libmlt++.so
 
 OBJS = MltConsumer.o \
+	   MltEvent.o \
 	   MltFactory.o \
 	   MltField.o \
 	   MltFilter.o \
