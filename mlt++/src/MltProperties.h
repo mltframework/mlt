@@ -56,6 +56,7 @@ namespace Mlt
 			int get_int( const char *name );
 			double get_double( const char *name );
 			void *get_data( const char *name, int &size );
+			void *get_data( const char *name );
 			int set( const char *name, const char *value );
 			int set( const char *name, int value );
 			int set( const char *name, double value );

@@ -31,12 +31,14 @@ namespace Mlt
 			valerie_response _response;
 		public:
 			Response( valerie_response response );
+			Response( int error, char *message );
 			~Response( );
 			valerie_response get_response( );
 			int error_code( );
 			char *error_string( );
 			char *get( int );
 			int count( );
+			int write( const char *data );
 	};
 }
 

@@ -121,6 +121,11 @@ void *Properties::get_data( const char *name, int &size )
 	return mlt_properties_get_data( get_properties( ), name, &size );
 }
 
+void *Properties::get_data( const char *name )
+{
+	return mlt_properties_get_data( get_properties( ), name, NULL );
+}
+
 int Properties::set( const char *name, const char *value )
 {
 	return mlt_properties_set( get_properties( ), name, value );

@@ -1,0 +1,356 @@
+Server Customisation
+
+Copyright (C) 2005 Ushodaya Enterprises Limited
+Authors: Charles Yates <charles.yates@pandora.be>
+Last Revision: 2005-03-16
+
+
+INTRODUCTION
+
+	This document describes how miracle can be customised. The emphasis is on
+	showing simple examples of various aspects of the servers capabilities 
+	rather than on focussing on the MLT++ API.
+
+
+THE BASIC CUSTOM SERVER
+
+	The most basic custom server exposes the entire DVCP protocol and is roughly 
+	equivalent to the miracle server iteself, but in this case, it lacks the 
+	initialisation from /etc/miracle.conf and the port is hardcoded to 5290:
+
+	#include <iostream.h>
+	using namespace std;
+
+	#include <MltMiracle.h>
+	using namespace Mlt;
+	
+	int main( int argc, char **argv )
+	{
+		Miracle server( "miracle++", 5290 );
+		if ( server.start( ) )
+		{
+			server.execute( "uadd sdl" );
+			server.execute( "play u0" );
+			server.wait_for_shutdown( );
+		}
+		else
+		{
+			cerr << "Failed to start server" << endl;
+		}
+		return 0;
+	}
+
+	Note that after the server is started, this example submits the hard coded
+	commands specified - further units and property settings can of course be
+	specified via the DVCP protocol.
+
+	To specify initial DVCP commands from /etc/miracle.conf, it is sufficient to
+	specify an additional argument in the server constructor.
+
+	The wait_for_shutdown call is not required if the server is integrated in
+	a user interface application.
+
+
+CUSTOMISATION
+
+	This document focusses on the following areas of customisation:
+
+	* the Miracle server class
+	* extending the command set
+	* accessing the units
+	* the Response object
+	* handling pushed westley documents
+	* accessiving events
+
+
+THE MIRACLE SERVER CLASS
+
+	The full public interface of the server is as follows:
+
+	class Miracle : public Properties
+	{
+		public:
+			Miracle( char *name, int port = 5290, char *config = NULL );
+			virtual ~Miracle( );
+			mlt_properties get_properties( );
+			bool start( );
+			bool is_running( );
+			virtual Response *execute( char *command );
+			virtual Response *received( char *command, char *doc );
+			virtual Response *push( char *command, Service *service );
+			void wait_for_shutdown( );
+			static void log_level( int );
+			Properties *unit( int );
+	};
+
+	The focus of this document is on the 3 virtual methods (execute, received and
+	push). Some further information is provided about the unit properties method
+	and the types of functionality that it provides.
+
+
+EXTENDING THE COMMAND SET
+
+	The simplest customisation is carried out by overriding the the 'execute' 
+	method - the following shows a simple example:
+
+	#include <iostream.h>
+	#include <string>
+	#include <sstring>
+	using namespace std;
+
+	#include <MltMiracle.h>
+	#include <MltResponse.h>
+	using namespace Mlt;
+
+	class Custom : 
+		public Miracle
+	{
+		public:
+			Custom( char *name = "Custom", int port = 5290, char *config = NULL ) :
+				Miracle( name, port, config )
+			{
+			}
+
+			Response *execute( char *command )
+			{
+				cerr << "command = " << command << endl;
+				return Miracle::execute( command );
+			}
+	};
+	
+	int main( int argc, char **argv )
+	{
+		Custom server( "miracle++", 5290 );
+		if ( server.start( ) )
+		{
+			server.execute( "uadd sdl" );
+			server.execute( "play u0" );
+			server.wait_for_shutdown( );
+		}
+		else
+		{
+			cerr << "Failed to start server" << endl;
+		}
+		return 0;
+	}
+
+	All this does is output each command and pass control over to the original
+	implementation. 
+
+	When you execute this, you will see the following output:
+
+	(5) Starting server on 5290.
+	command = uadd sdl
+	(5) miracle++ version 0.0.1 listening on port 5290
+	command = play u0
+	(7) Received signal 2 - shutting down.
+
+	Note that all commands except the PUSH are passed through this method before 
+	they are executed and this includes those coming from the main function itself. 
+
+
+ACCESSING UNIT PROPERTIES
+
+	A unit consists of two objects - a playlist and a consumer. Your custom 
+	server can access these by obtaining the Properties object associated to a unit
+	via the 'unit' method. 
+	
+	As a simple example we can replace our execute method above with the following:
+
+		Response *execute( char *command )
+		{
+			if ( !strcmp( command, "debug" ) )
+			{
+				int i = 0;
+				while( unit( i ) != NULL )
+					unit( i ++ )->debug( );
+				return new Response( 200, "Diagnostics output" );
+			}
+			return Miracle::execute( command );
+		}
+
+	When this runs and you send a 'debug' command via DVCP, the server will output
+	some information on stderr, like:
+
+	(5) Starting server on 5290.
+	(5) Server version 0.0.1 listening on port 5290
+	(5) Connection established with localhost (7)
+	Object: [ ref=3, unit=0, generation=0, constructor=sdl, id=sdl, arg=(nil), 
+	consumer=0x80716a0, playlist=0x807f8a8, root=/, notifier=0x8087c28 ]
+	(6) localhost "debug" 100
+
+	You can extract the objects using:
+
+		Playlist playlist( ( mlt_playlist )( unit( i )->get_data( "playlist", NULL ) ) );
+		Consumer consumer( ( mlt_consumer )( unit( i )->get_data( "consumer", NULL ) ) );
+	
+	and use the standard MLT++ wrapping methods to interact with them or you can 
+	bypass these and using the C API directly.
+
+	Obviously, this opens a lot of possibilities for the types of editing operations
+	than can be carried out over the DVCP protocol - for example, you can attach filters
+	apply mixes/transitions between neighbouring cuts or carry out specific operations
+	on cuts.
+
+
+THE RESPONSE OBJECT
+
+	The example above doesn't do anything particularly useful - in order to extend 
+	things in more interesting ways, we should be able to carry information back to 
+	the client. In the code above, we introduced the Response object to carry an 
+	error code and a description - it can also be used to carry arbitrary large
+	blocks of data.
+
+		Response *execute( char *command )
+		{
+			Response *response = NULL;
+			if ( !strcmp( command, "debug" ) )
+			{
+				response = new Response( 200, "Diagnostics output" );
+				for( int i = 0; unit( i ) != NULL; i ++ )
+				{
+					Properties *properties = unit( i );
+					stringstream output;
+					output << string( "Unit " ) << i << endl;
+					for ( int j = 0; j < properties->count( ); j ++ )
+						output << properties->get_name( j ) << " = " << properties->get( j ) << endl;
+					response->write( output.str( ).c_str( ) );
+				}
+			}
+			return response == NULL ? Miracle::execute( command ) : response;
+		}
+
+	Now when you connect to the server via a telnet session, you can access the 
+	'debug' command as follows:
+
+		$ telnet localhost 5290
+		Trying 127.0.0.1...
+		Connected to localhost (127.0.0.1).
+		Escape character is '^]'.
+		100 VTR Ready
+		debug
+		201 OK
+		Unit 0
+		unit = 0
+		generation = 0
+		constructor = sdl
+		id = sdl
+		arg =
+
+	Note that the '200' return code specified is automatically promoted to a 201
+	because of the multiple lines.
+
+	Alternatively, you can invoke response->write as many times as you like - each
+	string submitted is simply appended to the object in a similar way to writing
+	to a file or socket. Note that the client doesn't receive anything until the
+	response is returned from this method (ie: there's currently no support to 
+	stream results back to the client).
+	
+
+HANDLING PUSHED DOCUMENTS
+
+	The custom class receives PUSH'd westley either via the received or push 
+	method. 
+
+	The default handling is to simply append a pushed document on to the end of
+	first unit 0.
+
+	You can test this in the server defined above from the command line, for
+	example:
+
+	$ inigo noise: -consumer valerie:localhost:5290
+
+	By default, the 'push' method is used - this means that the xml document 
+	received is automatically deserialised by the server itself and then offered
+	to the push method for handling - an example of this would be:
+
+		Response *push( char *command, Service *service )
+		{
+			int size;
+			Playlist playlist( ( mlt_playlist )( unit( 0 )->get_data( "playlist", size ) ) );
+			Producer producer( *service );
+			if ( producer.is_valid( ) && playlist.is_valid( ) )
+			{
+				playlist.lock( );
+				playlist.clear( );
+				playlist.append( producer );
+				playlist.unlock( );
+				return new Response( 200, "OK" );
+			}
+			return new Response( 400, "Invalid" );
+		}
+
+	With this method, each service pushed into the server will automatically
+	replace whatever is currently playing.
+
+	Note that the 'received' method is not invoked by default - if you wish to
+	receive the XML document and carry out any additional processing prior to
+	processing, you should set the 'push-parser-off' property on the server to 1.
+	This can be done by placing the following line in your classes constructor:
+
+		set( "push-parser-off", 1 );
+
+	When this property is set, the received method is used instead of the push - 
+	in this scenario, your implementation is responsible for all handling
+	of the document.
+
+	To simulate this, you can try the following method:
+
+		Response *received( char *command, char *document )
+		{
+			cerr << document;
+			Producer producer( "westley-xml", document );
+			return push( command, &producer );
+		}
+
+	When you push your videos in to the server via the inigo command above (or 
+	from other tools, such as those in the shotcut suite), you will see the xml 
+	in the servers stderr output. If you need to carry out some operations on the 
+	xml document (such as replacing low quality videos used in the editing process 
+	with their original) the received mechanism is the one that you would want to 
+	use.
+
+
+OTHER MANIPULATIONS
+
+	What you do with the received MLT Service is largely up to you. As shown above,
+	you have flexibility in how the item is scheduled and you can carry out 
+	manipulations on either the xml document and/or the deserialised producer.
+
+	Typically, shotcut and inigo produce 'tractor' objects - these can be easily
+	manipulated in the push method - for example, to remove a track from the 
+	output, we could do something like:
+
+	TBD
+
+
+EVENT HANDLING
+
+	The MLT framework generates events which your custom server can use to do
+	various runtime manipulations. For the purpose of this document, I'll focus
+	on 'consumer-frame-render' - this event is fired immediately before a frame
+	is rendered.
+
+	TBD
+
+
+DISABLING DVCP
+
+	In some cases, it is desirable to fully disable the entire DVCP command set
+	and handle the PUSH in an application specific way (for example, the shotcut 
+	applications all do this). The simplest way of doing this is to generate a
+	response that signifies the rejection of the command. In this example, the 
+	'shutdown' command is also handled:
+
+		Response *execute( char *command )
+		{
+			if ( !strcmp( command, "shutdown" ) )
+				exit( 0 );
+			return new Response( 400, "Invalid Command" );
+		}
+		
+	If you use this method in the code above, your server does nothing - no units 
+	are defined, so even a PUSH will be rejected. 
+
+
+

@@ -18,12 +18,21 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <string.h>
 #include "MltResponse.h"
 using namespace Mlt;
 
 Response::Response( valerie_response response ) :
 	_response( response )
 {
+}
+
+Response::Response( int error, char *message ) :
+	_response( NULL )
+{
+	_response = valerie_response_init( );
+	if ( _response != NULL )
+		valerie_response_set_error( _response, error, message );
 }
 
 Response::~Response( )
@@ -56,4 +65,8 @@ int Response::count( )
 	return valerie_response_count( get_response( ) );
 }
 
+int Response::write( const char *data )
+{
+	return valerie_response_write( get_response( ), ( char * )data, strlen( data ) );
+}
 
