@@ -17,14 +17,15 @@ int main( int argc, char **argv )
 		file2 = argv[ 2 ];
 
 	// Start the consumer...
-	mlt_consumer sdl_out = mlt_factory_consumer( "sdl", NULL );
+	mlt_consumer consumer = mlt_factory_consumer( "bluefish", NULL );
 
 	// Create the producer(s)
-	mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );
+	mlt_producer dv1 = mlt_factory_producer( "mcmpeg", file1 );
+
 	//mlt_producer dv1 = producer_pixbuf_init( file1 );
 	//mlt_producer dv2 = producer_libdv_init( file2 );
 	//mlt_producer dv2 = mlt_factory_producer( "pixbuf", file2 );
-	mlt_producer dv2 = mlt_factory_producer( "pango", "<span font_desc=\"Sans Bold 24\">Mutton Lettuce Tomato</span>" );
+	mlt_producer dv2 = mlt_factory_producer( "pango", "<span font_desc=\"Sans Bold 36\">Mutton <span font_desc=\"Luxi Serif Bold Oblique 36\">Lettuce</span> Tomato</span>" );
 
 	// Register producers(s) with a multitrack object
 	mlt_multitrack multitrack = mlt_multitrack_init( );
@@ -32,13 +33,13 @@ int main( int argc, char **argv )
 	mlt_multitrack_connect( multitrack, dv2, 1 );
 
 	// Create a filter and associate it to track 0
-	mlt_filter filter = mlt_factory_filter( "deinterlace", NULL );
-	mlt_filter_connect( filter, mlt_multitrack_service( multitrack ), 0 );
-	mlt_filter_set_in_and_out( filter, 0, 1000 );
+//	mlt_filter filter = mlt_factory_filter( "deinterlace", NULL );
+//	mlt_filter_connect( filter, mlt_multitrack_service( multitrack ), 0 );
+//	mlt_filter_set_in_and_out( filter, 0, 1000 );
 
 	// Define a transition
 	mlt_transition transition = mlt_factory_transition( "composite", NULL );
-	mlt_transition_connect( transition, mlt_filter_service( filter ), 0, 1 );
+	mlt_transition_connect( transition, mlt_multitrack_service( multitrack ), 0, 1 );
 	mlt_transition_set_in_and_out( transition, 0, 1000 );
 
 	// Buy a tractor and connect it to the filter
@@ -46,14 +47,14 @@ int main( int argc, char **argv )
 	mlt_tractor_connect( tractor, mlt_transition_service( transition ) );
 
 	// Connect the tractor to the consumer
-	mlt_consumer_connect( sdl_out, mlt_tractor_service( tractor ) );
+	mlt_consumer_connect( consumer, mlt_tractor_service( tractor ) );
 
 	// Do stuff until we're told otherwise...
 	fprintf( stderr, "Press return to continue\n" );
 	fgets( temp, 132, stdin );
 
 	// Close everything...
-	//mlt_consumer_close( sdl_out );
+	mlt_consumer_close( consumer );
 	//mlt_tractor_close( tractor );
 	//mlt_filter_close( filter );
 	//mlt_multitrack_close( multitrack );

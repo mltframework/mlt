@@ -5,6 +5,7 @@ then
 
 cat << EOF >> ../producers.dat
 pixbuf			libmltgtk2.so
+pango			libmltgtk2.so
 EOF
 
 fi

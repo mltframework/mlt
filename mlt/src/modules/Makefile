@@ -1,9 +1,11 @@
-SUBDIRS = core gtk2 dv sdl # bluefish mcmpeg
+SUBDIRS = core gtk2 dv sdl mainconcept bluefish
 
 all clean depend install:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
-		[ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@; \
+		if [ -d $$subdir ] ; \
+			then [ ! -f disable-$$subdir ] && $(MAKE) -C $$subdir $@; \
+		fi \
 	done
 
 dist-clean:
