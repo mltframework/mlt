@@ -14,5 +14,5 @@ prefix=`dirname $prefix`
 [ ! -d "$prefix" ] && echo "Invalid prefix $prefix - aborting" && exit 1
 
 echo "prefix=$prefix" > config.mak
-echo "MLT++ configured - installed in $prefix."
+echo "MLT++ configured - will be installed in $prefix."
 

@@ -71,7 +71,7 @@ Miracle::Miracle( char *name, int port, char *config )
 
 Miracle::~Miracle( )
 {
-	miracle_server_shutdown( server );
+	miracle_server_close( server );
 }
 
 bool Miracle::start( )
