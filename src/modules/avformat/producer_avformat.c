@@ -514,7 +514,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = position - expected;
 		}
-		else if ( codec_context->has_b_frames == 0 || ( position < expected || position - expected >= 12 ) )
+		else if ( seekable && ( position < expected || position - expected >= 12 ) )
 		{
 			// Set to the real timecode
 			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 );
@@ -541,6 +541,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		int ret = 0;
 		int got_picture = 0;
+		int must_decode = 1;
+
+		// Temporary hack to improve intra frame only
+		if ( !strcmp( codec_context->codec->name, "mjpeg" ) )
+			must_decode = 0;
 
 		memset( &pkt, 0, sizeof( pkt ) );
 
@@ -559,16 +564,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// We only deal with video from the selected video_index
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
+				// Determine time code of the packet
+				if ( pkt.pts != AV_NOPTS_VALUE )
+					current_time = ( double )pkt.pts / 1000000.0;
+				else
+					current_time = real_timecode;
+
 				// Decode the image
-				ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
+				if ( must_decode || current_time >= real_timecode )
+					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
 
 				if ( got_picture )
 				{
-					if ( pkt.pts != AV_NOPTS_VALUE )
-						current_time = ( double )pkt.pts / 1000000.0;
-					else
-						current_time = real_timecode;
-
 					// Handle ignore
 					if ( ( int )( current_time * 100 ) < ( int )( real_timecode * 100 ) - 7 )
 					{
@@ -577,7 +584,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else if ( current_time >= real_timecode )
 					{
-						//current_time = real_timecode;
 						ignore = 0;
 					}
 					else if ( ignore -- )
