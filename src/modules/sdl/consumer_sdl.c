@@ -533,6 +533,9 @@ static void *video_thread( void *arg )
 	mlt_properties properties = NULL;
 	double speed = 0;
 
+	// Get real time flag
+	int real_time = mlt_properties_get_int( this->properties, "real_time" );
+
 	// Get the current time
 	gettimeofday( &now, NULL );
 
@@ -569,7 +572,7 @@ static void *video_thread( void *arg )
 			mlt_position difference = scheduled - elapsed;
 
 			// Smooth playback a bit
-			if ( difference > 20000 && speed == 1.0 )
+			if ( real_time && ( difference > 20000 && speed == 1.0 ) )
 			{
 				tm.tv_sec = difference / 1000000;
 				tm.tv_nsec = ( difference % 1000000 ) * 500;
@@ -577,11 +580,11 @@ static void *video_thread( void *arg )
 			}
 
 			// Show current frame if not too old
-			if ( difference > -10000 || speed != 1.0 || mlt_deque_count( this->queue ) < 2 )
+			if ( !real_time || ( difference > -10000 || speed != 1.0 || mlt_deque_count( this->queue ) < 2 ) )
 				consumer_play_video( this, next );
 
 			// If the queue is empty, recalculate start to allow build up again
-			if ( mlt_deque_count( this->queue ) == 0 && speed == 1.0 )
+			if ( real_time && ( mlt_deque_count( this->queue ) == 0 && speed == 1.0 ) )
 			{
 				gettimeofday( &now, NULL );
 				start = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - scheduled + 20000;
