@@ -381,6 +381,8 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 	out of sync.
 
 	See playlist logic too.
+
+	This is not as clean as it should be... 
 */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index )
@@ -391,14 +393,28 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 	// Check if we have a track for this index
 	if ( index < this->count && this->list[ index ] != NULL )
 	{
+		// Determine the in point
+		int in = mlt_producer_is_cut( this->list[ index ]->producer ) ? mlt_producer_get_in( this->list[ index ]->producer ) : 0;
+
 		// Get the producer for this track
-		mlt_producer producer = this->list[ index ]->producer;
+		mlt_producer producer = mlt_producer_cut_parent( this->list[ index ]->producer );
 
 		// Obtain the current position
 		mlt_position position = mlt_producer_frame( parent );
 
+		// Get the clone index
+		int clone_index = mlt_properties_get_int( mlt_producer_properties( this->list[ index ]->producer ), "_clone" );
+
+		// Additionally, check if we're supposed to use a clone here
+		if ( clone_index > 0 )
+		{
+			char key[ 25 ];
+			sprintf( key, "_clone.%d", clone_index - 1 );
+			producer = mlt_properties_get_data( mlt_producer_properties( producer ), key, NULL );
+		}
+
 		// Make sure we're at the same point
-		mlt_producer_seek( producer, position );
+		mlt_producer_seek( producer, in + position );
 
 		// Get the frame from the producer
 		mlt_service_get_frame( mlt_producer_service( producer ), frame, 0 );

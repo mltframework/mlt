@@ -440,7 +440,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		if ( clone_index > 0 )
 		{
 			char key[ 25 ];
-			sprintf( key, "_clone.%d", clone_index );
+			sprintf( key, "_clone.%d", clone_index - 1 );
 			clone = mlt_properties_get_data( mlt_producer_properties( mlt_producer_cut_parent( this ) ), key, NULL );
 			clone = clone == NULL ? this : clone;
 		}
