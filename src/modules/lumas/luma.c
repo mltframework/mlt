@@ -20,11 +20,13 @@ typedef struct
 	int pflip;
 	int pflop;
 	int quart;
+	int rotate;
 }
 luma;
 
 void luma_init( luma *this )
 {
+	memset( this, 0, sizeof( luma ) );
 	this->type = 0;
 	this->w = 720;
 	this->h = 576;
@@ -77,6 +79,13 @@ uint16_t *luma_render( luma *this )
 	{
 		this->w *= 2;
 		this->h *= 2;
+	}
+
+	if ( this->rotate )
+	{
+		int t = this->w;
+		this->w = this->h;
+		this->h = t;
 	}
 
 	int max = ( 1 << 16 ) - 1;
@@ -298,6 +307,26 @@ uint16_t *luma_render( luma *this )
 		}
 	}
 
+	if ( this->rotate )
+	{
+		uint16_t *image2 = malloc( this->w * this->h * sizeof( uint16_t ) );
+		for ( i = 0; i < this->h; i ++ )
+		{
+			p = image + i * this->w;
+			r = image2 + this->h - i - 1;
+			for ( j = 0; j < this->w; j ++ )
+			{
+				*r = *( p ++ );
+				r += this->h;
+			}
+		}
+		i = this->w;
+		this->w = this->h;
+		this->h = i;
+		free( image );
+		image = image2;
+	}
+
 	return image;
 }
 
@@ -345,6 +374,8 @@ int main( int argc, char **argv )
 			this.pflop = atoi( argv[ ++ arg ] );
 		else if ( !strcmp( argv[ arg ], "-quart" ) )
 			this.quart = atoi( argv[ ++ arg ] );
+		else if ( !strcmp( argv[ arg ], "-rotate" ) )
+			this.rotate = atoi( argv[ ++ arg ] );
 		else
 			fprintf( stderr, "ignoring %s\n", argv[ arg ] );
 	}

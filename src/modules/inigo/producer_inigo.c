@@ -79,26 +79,30 @@ static mlt_producer create_producer( mlt_field field, char *file )
 
 static mlt_filter create_attach( mlt_field field, char *id, int track )
 {
-	char *arg = strchr( id, ':' );
+	char *temp = strdup( id );
+	char *arg = strchr( temp, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( id, arg );
+	mlt_filter filter = mlt_factory_filter( temp, arg );
 	if ( filter != NULL )
 		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
+	free( temp );
 	return filter;
 }
 
 static mlt_filter create_filter( mlt_field field, char *id, int track )
 {
-	char *arg = strchr( id, ':' );
+	char *temp = strdup( id );
+	char *arg = strchr( temp, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( id, arg );
+	mlt_filter filter = mlt_factory_filter( temp, arg );
 	if ( filter != NULL )
 	{
 		mlt_field_plant_filter( field, filter, track );
 		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
 	}
+	free( temp );
 	return filter;
 }
 
@@ -149,11 +153,12 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else if ( !strcmp( argv[ i ], "-attach" ) || 
 				  !strcmp( argv[ i ], "-attach-cut" ) ||
+				  !strcmp( argv[ i ], "-attach-track" ) ||
 				  !strcmp( argv[ i ], "-attach-clip" ) )
 		{
 			int type = !strcmp( argv[ i ], "-attach" ) ? 0 : 
 					   !strcmp( argv[ i ], "-attach-cut" ) ? 1 : 
-					   2;
+					   !strcmp( argv[ i ], "-attach-track" ) ? 2 : 3;
 			mlt_filter filter = create_attach( field, argv[ ++ i ], track );
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 			{
@@ -177,8 +182,16 @@ mlt_producer producer_inigo_init( char **argv )
 				else if ( type == 1 )
 					mlt_service_attach( ( mlt_service )producer, filter );
 				else if ( type == 2 )
+					mlt_service_attach( ( mlt_service )playlist, filter );
+				else if ( type == 3 )
 					mlt_service_attach( ( mlt_service )mlt_producer_cut_parent( producer ), filter );
 
+				properties = MLT_FILTER_PROPERTIES( filter );
+				mlt_properties_inherit( properties, group );
+			}
+			else if ( filter != NULL )
+			{
+				mlt_service_attach( ( mlt_service )playlist, filter );
 				properties = MLT_FILTER_PROPERTIES( filter );
 				mlt_properties_inherit( properties, group );
 			}

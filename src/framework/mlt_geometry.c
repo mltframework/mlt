@@ -279,7 +279,7 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 static inline float linearstep( float start, float end, float position, int length )
 {
 	float o = ( end - start ) / length;
-	return start + position * o + 0.5;
+	return start + position * o;
 }
 
 // Fetch a geometry item for an absolute position

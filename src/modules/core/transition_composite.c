@@ -878,14 +878,17 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 		x = 0;
 	}
 
-	// Copy the region of the image
-	p = image + y * ss + x * 2;
-
-	while ( h -- )
+	if ( w > 0 && h > 0 )
 	{
-		inline_memcpy( dest, p, w * 2 );
-		dest += ds;
-		p += ss;
+		// Copy the region of the image
+		p = image + y * ss + x * 2;
+
+		while ( h -- )
+		{
+			inline_memcpy( dest, p, w * 2 );
+			dest += ds;
+			p += ss;
+		}
 	}
 
 	// Assign this position to the b frame

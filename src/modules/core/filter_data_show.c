@@ -44,27 +44,21 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 	// Obtain the profile_properties if we haven't already
 	if ( profile_properties == NULL )
 	{
+		char temp[ 512 ];
+
 		// Get the profile requested
-		char *profile = mlt_properties_get( filter_properties, "profile" );
+		char *profile = mlt_properties_get( filter_properties, "resource" );
+
+		// If none is specified, pick up the default for this normalisation
+		if ( profile == NULL )
+			sprintf( temp, "%s/feeds/%s/data_fx.properties", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ) );
+		else if ( strchr( profile, '%' ) )
+			sprintf( temp, "%s/feeds/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( profile, '%' ) + 1 );
+		else
+			strcpy( temp, profile );
 
 		// Load the specified profile or use the default
-		if ( profile != NULL )
-		{
-			profile_properties = mlt_properties_load( profile );
-		}
-		else
-		{
-			// Sometimes C can be laborious.. 
-			static char *default_file = "/data_fx.properties";
-			char *temp = malloc( strlen( mlt_factory_prefix( ) ) + strlen( default_file ) + 1 );
-			if ( temp != NULL )
-			{
-				strcpy( temp, mlt_factory_prefix( ) );
-				strcat( temp, default_file );
-				profile_properties = mlt_properties_load( temp );
-				free( temp );
-			}
-		}
+		profile_properties = mlt_properties_load( temp );
 
 		// Store for later retrieval
 		mlt_properties_set_data( filter_properties, "profile_properties", profile_properties, 0, ( mlt_destructor )mlt_properties_close, NULL );
@@ -176,6 +170,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Fetch the data queue
 	mlt_deque data_queue = mlt_properties_get_data( frame_properties, "data_queue", NULL );
 
+	// Create a new queue for those that we can't handle
+	mlt_deque temp_queue = mlt_deque_init( );
+
 	// Iterate through each entry on the queue
 	while ( data_queue != NULL && mlt_deque_peek_front( data_queue ) != NULL )
 	{
@@ -183,11 +180,24 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties feed = mlt_deque_pop_front( data_queue );
 
 		// Process the data feed...
-		process_feed( feed, filter, frame );
-
-		// Close the feed
-		mlt_properties_close( feed );
+		if ( process_feed( feed, filter, frame ) == 0 )
+			mlt_properties_close( feed );
+		else
+			mlt_deque_push_back( temp_queue, feed );
 	}
+
+	// Now put the unprocessed feeds back on the stack
+	while ( data_queue != NULL && mlt_deque_peek_front( temp_queue ) )
+	{
+		// Get the data feed
+		mlt_properties feed = mlt_deque_pop_front( temp_queue );
+
+		// Put it back on the data queue
+		mlt_deque_push_back( data_queue, feed );
+	}
+
+	// Close the temporary queue
+	mlt_deque_close( temp_queue );
 
 	// Need to get the image
 	return mlt_frame_get_image( frame, image, format, width, height, 1 );
@@ -224,7 +234,7 @@ mlt_filter filter_data_show_init( char *arg )
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 		// Assign the argument (default to titles)
-		mlt_properties_set( properties, "profile", arg == NULL ? NULL : arg );
+		mlt_properties_set( properties, "resource", arg == NULL ? NULL : arg );
 
 		// Specify the processing method
 		this->process = filter_process;

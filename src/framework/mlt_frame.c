@@ -569,7 +569,7 @@ uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, 
 {
 	uint8_t *output = NULL;
 
-	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) )
+	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) && ( owidth > 6 && oheight > 6 ) )
 	{
 		iwidth = iwidth - ( iwidth % 2 );
 		owidth = owidth - ( owidth % 2 );
@@ -651,14 +651,21 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	int istride = iwidth * 2;
 	int ostride = owidth * 2;
 
-	iwidth = iwidth - ( iwidth % 4 );
-	owidth = owidth - ( owidth % 4 );
+	iwidth = iwidth - ( iwidth % 2 );
+	owidth = owidth - ( owidth % 2 );
 	//iheight = iheight - ( iheight % 2 );
 	//oheight = oheight - ( oheight % 2 );
-
+	
 	// Optimisation point
-	if ( iwidth == owidth && iheight == oheight )
+	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || oheight <= 6 ) )
+	{
+		return;
+	}
+	else if ( iwidth == owidth && iheight == oheight )
+	{
 		memcpy( output, input, iheight * istride );
+		return;
+	}
 
    	// Coordinates (0,0 is middle of output)
    	int y;
