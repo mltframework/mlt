@@ -30,6 +30,7 @@ typedef struct
 {
 	int clip;
 	mlt_producer producer;
+	mlt_service service;
 	mlt_position start;
 	char *resource;
 	mlt_position frame_in;

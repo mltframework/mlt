@@ -193,10 +193,11 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 /** Seek in the virtual playlist.
 */
 
-static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
+static mlt_service mlt_playlist_virtual_seek( mlt_playlist this )
 {
 	// Default producer to blank
 	mlt_producer producer = NULL;
+	mlt_service service = NULL;
 
 	// Map playlist position to real producer in virtual playlist
 	mlt_position position = mlt_producer_frame( &this->parent );
@@ -264,7 +265,14 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 		producer = &this->blank;
 	}
 
-	return producer;
+	if ( producer != NULL )
+	{
+		service = mlt_producer_service( producer );
+		while ( mlt_service_consumer( service ) != NULL )
+			service = mlt_service_consumer( service );
+	}
+
+	return service;
 }
 
 /** Invoked when a producer indicates that it has prematurely reached its end.
@@ -409,6 +417,15 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 		info->length = mlt_producer_get_length( producer );
 		info->fps = mlt_producer_get_fps( producer );
 	}
+
+	// Determine the consuming filter service
+	if ( info->producer != NULL )
+	{
+		info->service = mlt_producer_service( info->producer );
+		while ( mlt_service_consumer( info->service ) != NULL )
+			info->service = mlt_service_consumer( info->service );
+	}
+
 	return error;
 }
 
@@ -612,10 +629,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_playlist this = producer->child;
 
 	// Get the real producer
-	mlt_producer real = mlt_playlist_virtual_seek( this );
+	mlt_service real = mlt_playlist_virtual_seek( this );
 
 	// Get the frame
-	mlt_service_get_frame( mlt_producer_service( real ), frame, index );
+	mlt_service_get_frame( real, frame, index );
 
 	// Check if we're at the end of the clip
 	mlt_properties properties = mlt_frame_properties( *frame );
