@@ -439,9 +439,10 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 		if ( this->ahead == 0 )
 		{
 			int buffer = mlt_properties_get_int( properties, "buffer" );
+			int prefill = mlt_properties_get_int( properties, "prefill" );
 			consumer_read_ahead_start( this );
 			if ( buffer > 1 )
-				size = buffer;
+				size = prefill > 0 && prefill < buffer ? prefill : buffer;
 		}
 	
 		// Get frame from queue
