@@ -24,7 +24,6 @@ XFER
 Incorrect Behaviour
 ------------------------------------------------------------------------------
 killall miracle does not work. requires killall -HUP
-LOAD commences play
 STOP does not play the test card (white silence) (=pause)
 USTA when stopped reports "paused"
 REW when stopped does not rewind to the beginning of the clip.
@@ -35,6 +34,7 @@ SIN/SOUT do not leave the unit in a paused state
 
 Different Intentional Behaviour
 ------------------------------------------------------------------------------
+LOAD commences play
 STOP does not terminate audio/video output
 
 

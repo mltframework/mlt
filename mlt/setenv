@@ -3,7 +3,8 @@
 
 export MLT_REPOSITORY=`pwd`/src/modules
 
-export LD_LIBRARY_PATH=`pwd`/src/framework:\
+export LD_LIBRARY_PATH=\
+`pwd`/src/framework:\
 `pwd`/src/valerie:\
 `pwd`/src/miracle:\
 `pwd`/src/modules/bluefish:\
@@ -11,9 +12,10 @@ export LD_LIBRARY_PATH=`pwd`/src/framework:\
 `pwd`/../mpeg_sdk_demo/bin:\
 `pwd`/../dv_sdk
 
-export PATH=$PATH:\
+export PATH=\
 `pwd`/src/albino:\
 `pwd`/src/inigo:\
 `pwd`/src/humperdink:\
-`pwd`/src/miracle
+`pwd`/src/miracle:\
+$PATH
 

@@ -25,10 +25,12 @@ Directories
 		+ inigo				- A media playing test application
 		+ valerie			- Client API to access the server
 		+ miracle			- The server implementation
+		+ humperdink		- The evil demo
+		+ albino			- The simple but nice demo
 		+ tests				- Reserved for regression and unit tests
 
 	Additional subdirectories may be nested below those shown and should be
-	documented in their parent or here.
+	documented in their parent.
 
 	(*) Not posted to CVS due to licensing issues.
 
@@ -61,8 +63,20 @@ Compilation
 	Makefiles are generated during configuration and these are based on
 	a per directory template which must be provided by the developer.
 
+Testing
+-------
+
+	To execute the mlt tools without installation, or to test a new version
+	on a system with an already installed mlt version, you should run:
+
+	. setenv
+
+	NB: This applies to your current shell only.
+
 Installation
 ------------
+
+	* NOT IMPLEMENTED YET *
 
 	The install is triggered by running make install or make install-strip
 	from the top level directory.
