@@ -765,7 +765,8 @@ int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 	if ( error == 0 )
 	{
 		playlist_entry *entry = this->list[ clip ];
-		if ( position >= 0 && position < entry->frame_count )
+		position = position < 0 ? entry->frame_count + position - 1 : position;
+		if ( position >= 0 && position <= entry->frame_count )
 		{
 			mlt_producer split = NULL;
 			int in = entry->frame_in;
@@ -804,6 +805,8 @@ int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 			playlist_entry *entry = this->list[ clip ];
 			mlt_playlist_append( new_clip, entry->producer );
 			mlt_playlist_repeat_clip( new_clip, i, entry->repeat );
+			if ( entry->frame_count == entry->repeat )
+				mlt_properties_set_int( mlt_playlist_properties( new_clip ), "hide", 2 );
 			entry->preservation_hack = 1;
 			mlt_playlist_remove( this, clip );
 		}

@@ -211,7 +211,14 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	uint8_t *data = NULL;
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_frame frame = mlt_frame_pop_service( this );
-	mlt_properties_inherit( mlt_frame_properties( frame ), properties );
+	mlt_properties frame_properties = mlt_frame_properties( frame );
+	mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( properties, "width" ) );
+	mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( properties, "height" ) );
+	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
+	mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
+	mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
+	mlt_properties_set_int( frame_properties, "consumer_progressive", mlt_properties_get_double( properties, "consumer_progressive" ) );
+	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_double( properties, "consumer_deinterlace" ) );
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );
@@ -227,7 +234,6 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 {
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_frame frame = mlt_frame_pop_audio( this );
-	mlt_properties_inherit( mlt_frame_properties( frame ), properties );
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	mlt_properties_set_data( properties, "audio", *buffer, 0, NULL, NULL );
 	mlt_properties_set_int( properties, "frequency", *frequency );
@@ -318,15 +324,17 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			{
 				mlt_frame_push_audio( *frame, audio );
 				( *frame )->get_audio = producer_get_audio;
-				mlt_properties_inherit( mlt_frame_properties( *frame ), mlt_frame_properties( audio ) );
 			}
 
 			if ( video != NULL )
 			{
-				mlt_properties_set_data( mlt_frame_properties( *frame ), "data_queue", data_queue, 0, NULL, NULL );
+				mlt_properties video_properties = mlt_frame_properties( video );
 				mlt_frame_push_service( *frame, video );
 				mlt_frame_push_service( *frame, producer_get_image );
-				mlt_properties_inherit( mlt_frame_properties( *frame ), mlt_frame_properties( video ) );
+				mlt_properties_set_data( frame_properties, "data_queue", data_queue, 0, NULL, NULL );
+				mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( video_properties, "width" ) );
+				mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( video_properties, "height" ) );
+				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
 			}
 
 			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_audio", audio == NULL );

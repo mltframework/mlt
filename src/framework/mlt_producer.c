@@ -442,10 +442,15 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 			char key[ 25 ];
 			sprintf( key, "_clone.%d", clone_index - 1 );
 			clone = mlt_properties_get_data( mlt_producer_properties( mlt_producer_cut_parent( this ) ), key, NULL );
+			if ( clone == NULL ) fprintf( stderr, "requested clone doesn't exist\n" );
 			clone = clone == NULL ? this : clone;
 		}
-		mlt_producer_seek( clone, mlt_properties_get_int( properties, "_position" ) );
-		result = producer_get_frame( mlt_producer_service( mlt_producer_cut_parent( clone ) ), frame, index );
+		else
+		{
+			clone = mlt_producer_cut_parent( this );
+		}
+		mlt_producer_seek( clone, mlt_producer_get_in( this ) + mlt_properties_get_int( properties, "_position" ) );
+		result = producer_get_frame( mlt_producer_service( clone ), frame, index );
 		double speed = mlt_producer_get_speed( this );
 		mlt_properties_set_double( mlt_frame_properties( *frame ), "_speed", speed );
 		mlt_producer_prepare_next( clone );
@@ -502,6 +507,9 @@ static mlt_producer mlt_producer_clone( mlt_producer this )
 
 	if ( clone == NULL && resource != NULL )
 		clone = mlt_factory_producer( "fezzik", resource );
+
+	if ( clone != NULL )
+		mlt_properties_inherit( mlt_producer_properties( clone ), properties );
 
 	return clone;
 }

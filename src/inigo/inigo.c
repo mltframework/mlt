@@ -144,33 +144,38 @@ static mlt_consumer create_consumer( char *id, mlt_producer producer )
 static void transport( mlt_producer producer, mlt_consumer consumer )
 {
 	mlt_properties properties = mlt_producer_properties( producer );
+	int silent = mlt_properties_get_int( mlt_consumer_properties( consumer ), "silent" );
 
 	term_init( );
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 	{
-		fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
-		fprintf( stderr, "|1=-10| |2= -5| |3= -2| |4= -1| |5=  0| |6=  1| |7=  2| |8=  5| |9= 10|\n" );
-		fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
+		if ( !silent )
+		{
+			fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
+			fprintf( stderr, "|1=-10| |2= -5| |3= -2| |4= -1| |5=  0| |6=  1| |7=  2| |8=  5| |9= 10|\n" );
+			fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
 
-		fprintf( stderr, "+---------------------------------------------------------------------+\n" );
-		fprintf( stderr, "|               H = back 1 minute,  L = forward 1 minute              |\n" );
-		fprintf( stderr, "|                 h = previous frame,  l = next frame                 |\n" );
-		fprintf( stderr, "|           g = start of clip, j = next clip, k = previous clip       |\n" );
-		fprintf( stderr, "|                0 = restart, q = quit, space = play                  |\n" );
-		fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+			fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+			fprintf( stderr, "|               H = back 1 minute,  L = forward 1 minute              |\n" );
+			fprintf( stderr, "|                 h = previous frame,  l = next frame                 |\n" );
+			fprintf( stderr, "|           g = start of clip, j = next clip, k = previous clip       |\n" );
+			fprintf( stderr, "|                0 = restart, q = quit, space = play                  |\n" );
+			fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+		}
 
 		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 		{
 			int value = term_read( );
 			if ( value != -1 )
 				transport_action( producer, ( char * )&value );
-	
-			if ( mlt_properties_get_int( properties, "stats_off" ) == 0 )
+
+			if ( !silent && mlt_properties_get_int( properties, "stats_off" ) == 0 )
 				fprintf( stderr, "Current Position: %10d\r", mlt_producer_position( producer ) );
 		}
 
-		fprintf( stderr, "\n" );
+		if ( !silent )
+			fprintf( stderr, "\n" );
 	}
 }
 
