@@ -71,7 +71,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 #endif
 	
 	// If width and height are correct, don't do anything
-	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) )
+	if ( strcmp( interps, "none" ) && input != NULL && ( iwidth != owidth || iheight != oheight ) )
 	{
 		if ( *format == mlt_image_yuv422 )
 		{

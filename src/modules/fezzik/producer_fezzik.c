@@ -149,6 +149,9 @@ mlt_producer producer_fezzik_init( char *arg )
 			// and fezzik doesn't overdo it with throwing rocks...
 			mlt_properties_set( properties, "westley", "was here" );
 
+			// We need to ensure that all further properties are mirrored in the producer
+			mlt_properties_mirror( properties, mlt_producer_properties( producer ) );
+
 			// Now, we return the producer of the tractor
 			producer = mlt_tractor_producer( tractor );
 		}

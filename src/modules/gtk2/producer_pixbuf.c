@@ -65,7 +65,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 		// Set the default properties
 		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
-		mlt_properties_set_double( properties, "ttl", 5 );
+		mlt_properties_set_int( properties, "ttl", 25 );
 		
 		// Obtain filenames
 		if ( strchr( filename, '%' ) != NULL )
@@ -117,7 +117,6 @@ mlt_producer producer_pixbuf_init( char *filename )
 				free( de[ i ] );
 			}
 
-			mlt_properties_set_position( properties, "out", this->count * 25 );
 			free( de );
 			free( dir_name );
 		}
@@ -137,10 +136,125 @@ mlt_producer producer_pixbuf_init( char *filename )
 	return NULL;
 }
 
-static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+static void refresh_image( mlt_frame frame, int width, int height )
+{
+	// Pixbuf 
+	GdkPixbuf *pixbuf = NULL;
+	GError *error = NULL;
+
+	// Obtain properties of frame
+	mlt_properties properties = mlt_frame_properties( frame );
+
+	// Obtain the producer pango for this frame
+	producer_pixbuf this = mlt_properties_get_data( properties, "producer_pixbuf", NULL );
+
+	// Obtain the producer 
+	mlt_producer producer = &this->parent;
+
+	// Obtain properties of producer
+	mlt_properties producer_props = mlt_producer_properties( producer );
+
+	// Get the time to live for each frame
+	double ttl = mlt_properties_get_int( producer_props, "ttl" );
+
+	// Image index
+	int image_idx = ( int )floor( mlt_producer_position( producer ) / ttl ) % this->count;
+
+	// Update timecode on the frame we're creating
+	mlt_frame_set_position( frame, mlt_producer_position( producer ) );
+
+    // optimization for subsequent iterations on single picture
+	if ( this->image != NULL && image_idx == this->image_idx )
+	{
+		if ( width != this->width || height != this->height )
+		{
+			pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
+		}
+	}
+	else 
+	{
+		free( this->image );
+		this->image = NULL;
+		free( this->alpha );
+		this->alpha = NULL;
+		this->image_idx = image_idx;
+		pixbuf = gdk_pixbuf_new_from_file( this->filenames[ image_idx ], &error );
+
+		if ( pixbuf != NULL )
+		{
+			// Register this pixbuf for destruction and reuse
+			mlt_properties_set_data( producer_props, "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
+
+			mlt_properties_set_int( producer_props, "real_width", gdk_pixbuf_get_width( pixbuf ) );
+			mlt_properties_set_int( producer_props, "real_height", gdk_pixbuf_get_height( pixbuf ) );
+
+			// Store the width/height of the pixbuf temporarily
+			this->width = gdk_pixbuf_get_width( pixbuf );
+			this->height = gdk_pixbuf_get_height( pixbuf );
+		}
+	}
+
+	// If we have a pixbuf
+	if ( pixbuf && width > 0 )
+	{
+		// Note - the original pixbuf is already safe and ready for destruction
+		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_HYPER );
+
+		// Store width and height
+		this->width = gdk_pixbuf_get_width( pixbuf );
+		this->height = gdk_pixbuf_get_height( pixbuf );
+
+		// Allocate/define image and alpha
+		uint8_t *image = malloc( this->width * this->height * 2 );
+		uint8_t *alpha = NULL;
+
+		// Extract YUV422 and alpha
+		if ( gdk_pixbuf_get_has_alpha( pixbuf ) )
+		{
+			// Allocate the alpha mask
+			alpha = malloc( this->width * this->height );
+
+			// Convert the image
+			mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
+										  this->width, this->height,
+										  gdk_pixbuf_get_rowstride( pixbuf ),
+										  image, alpha );
+		}
+		else
+		{ 
+			// No alpha to extract
+			mlt_convert_rgb24_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
+										 this->width, this->height,
+										 gdk_pixbuf_get_rowstride( pixbuf ),
+										 image );
+		}
+
+		// Finished with pixbuf now
+		g_object_unref( pixbuf );
+
+		// Pass alpha and image on properties with or without destructor
+		this->image = image;
+		this->alpha = alpha;
+	}
+
+	// Set width/height of frame
+	mlt_properties_set_int( properties, "width", this->width );
+	mlt_properties_set_int( properties, "height", this->height );
+	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "real_width" ) );
+	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
+
+	// pass the image and alpha data without destructor
+	mlt_properties_set_data( properties, "image", this->image, this->width * this->height * 2, NULL, NULL );
+	mlt_properties_set_data( properties, "alpha", this->alpha, this->width * this->height, NULL, NULL );
+}
+
+static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( this );
+	mlt_properties properties = mlt_frame_properties( frame );
+
+	// Refresh the image
+	refresh_image( frame, *width, *height );
 
 	// May need to know the size of the image to clone it
 	int size = 0;
@@ -187,144 +301,26 @@ static uint8_t *producer_get_alpha_mask( mlt_frame this )
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
+	// Get the real structure for this producer
 	producer_pixbuf this = producer->child;
-	GdkPixbuf *pixbuf = NULL;
-	GError *error = NULL;
 
 	// Generate a frame
 	*frame = mlt_frame_init( );
 
-	// Obtain properties of frame
+	// Obtain properties of frame and producer
 	mlt_properties properties = mlt_frame_properties( *frame );
 
-	// Obtain properties of producer
-	mlt_properties producer_props = mlt_producer_properties( producer );
+	// Set the producer on the frame properties
+	mlt_properties_set_data( properties, "producer_pixbuf", this, 0, NULL, NULL );
 
-	// Get the time to live for each frame
-	double ttl = mlt_properties_get_double( producer_props, "ttl" );
+	// Refresh the pango image
+	refresh_image( *frame, 0, 0 );
 
-	// Image index
-	int image_idx = ( int )floor( mlt_producer_position( producer ) / ttl ) % this->count;
+	// Set alpha call back
+	( *frame )->get_alpha_mask = producer_get_alpha_mask;
 
-	// Update timecode on the frame we're creating
-	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
-
-    // optimization for subsequent iterations on single picture
-	if ( this->image != NULL && image_idx == this->image_idx )
-	{
-		// Set width/height
-		mlt_properties_set_int( properties, "width", this->width );
-		mlt_properties_set_int( properties, "height", this->height );
-
-		// Set the compositing properties
-		if ( mlt_properties_get( producer_props, "x" ) != NULL )
-			mlt_properties_set_int( properties, "x", mlt_properties_get_int( producer_props, "x" ) );
-		if ( mlt_properties_get( producer_props, "y" ) != NULL )
-			mlt_properties_set_int( properties, "y", mlt_properties_get_int( producer_props, "y" ) );
-		if ( mlt_properties_get( producer_props, "mix" ) != NULL )
-			mlt_properties_set_double( properties, "image.mix",  mlt_properties_get_double( producer_props, "mix" ) );
-
-		// if picture sequence pass the image and alpha data without destructor
-		mlt_properties_set_data( properties, "image", this->image, 0, NULL, NULL );
-		mlt_properties_set_data( properties, "alpha", this->alpha, 0, NULL, NULL );
-
-		// Set alpha mask call back
-        ( *frame )->get_alpha_mask = producer_get_alpha_mask;
-
-		// Stack the get image callback
-		mlt_frame_push_get_image( *frame, producer_get_image );
-	}
-	else 
-	{
-		free( this->image );
-		free( this->alpha );
-		this->image_idx = image_idx;
-		pixbuf = gdk_pixbuf_new_from_file( this->filenames[ image_idx ], &error );
-	}
-
-	// If we have a pixbuf
-	if ( pixbuf )
-	{
-		// Scale to adjust for sample aspect ratio
-		if ( mlt_properties_get_int( properties, "video_standard" ) == mlt_video_standard_pal )
-		{
-			GdkPixbuf *temp = pixbuf;
-			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
-				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 45.0/48.0),
-				gdk_pixbuf_get_height( pixbuf ), GDK_INTERP_HYPER );
-			pixbuf = scaled;
-			g_object_unref( temp );
-		}
-		else
-		{
-			GdkPixbuf *temp = pixbuf;
-			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
-				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 9.0/8.0 ),
-				gdk_pixbuf_get_height( pixbuf ), GDK_INTERP_HYPER );
-			pixbuf = scaled;
-			g_object_unref( temp );
-		}
-
-		// Store width and height
-		this->width = gdk_pixbuf_get_width( pixbuf );
-		this->height = gdk_pixbuf_get_height( pixbuf );
-		this->width -= this->width % 4;
-		this->height -= this->height % 2;
-
-		// Allocate/define image and alpha
-		uint8_t *image = malloc( this->width * this->height * 2 );
-		uint8_t *alpha = NULL;
-
-		// Extract YUV422 and alpha
-		if ( gdk_pixbuf_get_has_alpha( pixbuf ) )
-		{
-			// Allocate the alpha mask
-			alpha = malloc( this->width * this->height );
-
-			// Convert the image
-			mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
-										  this->width, this->height,
-										  gdk_pixbuf_get_rowstride( pixbuf ),
-										  image, alpha );
-		}
-		else
-		{ 
-			// No alpha to extract
-			mlt_convert_rgb24_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
-										 this->width, this->height,
-										 gdk_pixbuf_get_rowstride( pixbuf ),
-										 image );
-		}
-
-		// Finished with pixbuf now
-		g_object_unref( pixbuf );
-
-		// Set width/height of frame
-		mlt_properties_set_int( properties, "width", this->width );
-		mlt_properties_set_int( properties, "height", this->height );
-
-		// Set the compositing properties
-		if ( mlt_properties_get( producer_props, "x" ) != NULL )
-			mlt_properties_set_int( properties, "x", mlt_properties_get_int( producer_props, "x" ) );
-		if ( mlt_properties_get( producer_props, "y" ) != NULL )
-			mlt_properties_set_int( properties, "y", mlt_properties_get_int( producer_props, "y" ) );
-		if ( mlt_properties_get( producer_props, "mix" ) != NULL )
-			mlt_properties_set_double( properties, "mix",  mlt_properties_get_double( producer_props, "mix" ) );
-
-		// Pass alpha and image on properties with or without destructor
-		this->image = image;
-		this->alpha = alpha;
-
-		// pass the image and alpha data without destructor
-		mlt_properties_set_data( properties, "image", image, this->width * this->height * 2, NULL, NULL );
-		mlt_properties_set_data( properties, "alpha", alpha, this->width * this->height, NULL, NULL );
-
-		// Set alpha call back
-		( *frame )->get_alpha_mask = producer_get_alpha_mask;
-
-		// Push the get_image method
-		mlt_frame_push_get_image( *frame, producer_get_image );
-	}
+	// Push the get_image method
+	mlt_frame_push_get_image( *frame, producer_get_image );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );
@@ -335,10 +331,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_pixbuf this = parent->child;
-	if ( this->image )
-		free( this->image );
-	if ( this->alpha )
-		free( this->alpha );
+	free( this->image );
+	free( this->alpha );
 	parent->close = NULL;
 	mlt_producer_close( parent );
 	free( this );

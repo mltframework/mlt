@@ -72,6 +72,30 @@ mlt_properties mlt_properties_new( )
 	return this;
 }
 
+/** Special case - when a container (such as fezzik) is protecting another 
+	producer, we need to ensure that properties are passed through to the
+	real producer.
+*/
+
+static void mlt_properties_do_mirror( mlt_properties this, char *name )
+{
+	mlt_properties mirror = mlt_properties_get_data( this, "mlt_mirror", NULL );
+	if ( mirror != NULL )
+	{
+		char *value = mlt_properties_get( this, name );
+		if ( value != NULL )
+			mlt_properties_set( mirror, name, value );
+	}
+}
+
+/** Allow the specification of a mirror.
+*/
+
+void mlt_properties_mirror( mlt_properties this, mlt_properties that )
+{
+	mlt_properties_set_data( this, "mlt_mirror", that, 0, NULL, NULL );
+}
+
 /** Inherit all serialisable properties from that into this.
 */
 
@@ -158,7 +182,10 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 
 	// Set it if not NULL
 	if ( property != NULL )
+	{
 		error = mlt_property_set_string( property, value );
+		mlt_properties_do_mirror( this, name );
+	}
 
 	return error;
 }
@@ -251,7 +278,10 @@ int mlt_properties_set_int( mlt_properties this, char *name, int value )
 
 	// Set it if not NULL
 	if ( property != NULL )
+	{
 		error = mlt_property_set_int( property, value );
+		mlt_properties_do_mirror( this, name );
+	}
 
 	return error;
 }
@@ -277,7 +307,10 @@ int mlt_properties_set_double( mlt_properties this, char *name, double value )
 
 	// Set it if not NULL
 	if ( property != NULL )
+	{
 		error = mlt_property_set_double( property, value );
+		mlt_properties_do_mirror( this, name );
+	}
 
 	return error;
 }
@@ -303,7 +336,10 @@ int mlt_properties_set_position( mlt_properties this, char *name, mlt_position v
 
 	// Set it if not NULL
 	if ( property != NULL )
+	{
 		error = mlt_property_set_position( property, value );
+		mlt_properties_do_mirror( this, name );
+	}
 
 	return error;
 }

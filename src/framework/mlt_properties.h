@@ -38,6 +38,7 @@ struct mlt_properties_s
 
 extern int mlt_properties_init( mlt_properties, void *child );
 extern mlt_properties mlt_properties_new( );
+extern void mlt_properties_mirror( mlt_properties this, mlt_properties that );
 extern int mlt_properties_inherit( mlt_properties this, mlt_properties that );
 extern int mlt_properties_set( mlt_properties this, char *name, char *value );
 extern int mlt_properties_parse( mlt_properties this, char *namevalue );

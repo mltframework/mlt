@@ -108,7 +108,31 @@ static int composite_yuv( uint8_t *p_dest, mlt_image_format format_dest, int wid
 	int width_src = ( int )( ( float )width_dest * geometry.w / 100 );
 	int height_src = ( int )( ( float )height_dest * geometry.h / 100 );
 
+	mlt_properties b_props = mlt_frame_properties( that );
+	mlt_transition this = mlt_properties_get_data( b_props, "transition_composite", NULL );
+	mlt_properties properties = mlt_transition_properties( this );
+
+	if ( mlt_properties_get( properties, "distort" ) == NULL &&
+		 mlt_properties_get( mlt_frame_properties( that ), "real_width" ) != NULL )
+	{
+		int width_b = mlt_properties_get_int( mlt_frame_properties( that ), "real_width" );
+		int height_b = mlt_properties_get_int( mlt_frame_properties( that ), "real_height" );
+
+		if ( width_b < width_src )
+			width_src = width_b;
+		if ( height_b < height_src )
+			height_src = height_b;
+		mlt_properties_set( mlt_frame_properties( that ), "rescale.interp", "none" );
+	}
+	else if ( mlt_properties_get( mlt_frame_properties( that ), "real_width" ) != NULL )
+	{
+		mlt_properties_set( mlt_frame_properties( that ), "rescale.interp", "none" );
+	}
+
 	x -= x % 2;
+
+	if ( width_src <= 0 || height_src <= 0 )
+		return ret;
 
 	// optimization point - no work to do
 	if ( ( x < 0 && -x >= width_src ) || ( y < 0 && -y >= height_src ) )

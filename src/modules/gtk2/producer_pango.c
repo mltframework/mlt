@@ -88,6 +88,16 @@ mlt_producer producer_pango_init( const char *filename )
 			mlt_properties_set( properties, "resource", "pango" );
 			mlt_properties_set( properties, "markup", "" );
 		}
+		else if ( filename[ 0 ] == '+' )
+		{
+			char *markup = strdup( filename + 1 );
+			( *strrchr( markup, '.' ) ) = '\0';
+			while ( strchr( markup, '~' ) )
+				( *strchr( markup, '~' ) ) = '\n';
+			mlt_properties_set( properties, "resource", ( char * )filename );
+			mlt_properties_set( properties, "markup", markup );
+			free( markup );
+		}
 		else
 		{
 			FILE *f = fopen( filename, "r" );
@@ -112,10 +122,13 @@ mlt_producer producer_pango_init( const char *filename )
 					}
 				}
 				fclose( f );
+
+				if ( markup[ strlen( markup ) - 1 ] == '\n' ) 
+					markup[ strlen( markup ) - 1 ] = '\0';
+
 				mlt_properties_set( properties, "resource", ( char * ) filename );
 				mlt_properties_set( properties, "markup", ( char * ) ( markup == NULL ? "" : markup ) );
-				if ( markup )
-					free( markup );
+				free( markup );
 			}
 			else
 			{
@@ -211,12 +224,15 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			// Register this pixbuf for destruction and reuse
 			mlt_properties_set_data( producer_props, "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
 
+			mlt_properties_set_int( producer_props, "real_width", gdk_pixbuf_get_width( pixbuf ) );
+			mlt_properties_set_int( producer_props, "real_height", gdk_pixbuf_get_height( pixbuf ) );
+
 			// Store the width/height of the pixbuf temporarily
 			this->width = gdk_pixbuf_get_width( pixbuf );
 			this->height = gdk_pixbuf_get_height( pixbuf );
 		}
 	}
-	else if ( width != this->width || height != this->height )
+	else if ( this->image == NULL || width != this->width || height != this->height )
 	{
 		pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
 	}
@@ -224,15 +240,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// If we have a pixbuf and a valid width
 	if ( pixbuf && width > 0 )
 	{
-		int delete = 0;
-
-		// Scale to width/height requested
-		if ( width != this->width && height != this->height )
-		{
-			// Note - the original pixbuf is already safe and ready for destruction
-			pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_HYPER );
-			delete = 1;
-		}
+		// Note - the original pixbuf is already safe and ready for destruction
+		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, GDK_INTERP_HYPER );
 
 		// Store width and height
 		this->width = gdk_pixbuf_get_width( pixbuf );
@@ -264,8 +273,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 
 		// Finished with pixbuf now
-		if ( delete )
-			g_object_unref( pixbuf );
+		g_object_unref( pixbuf );
 		
 		// if single picture, reference the image and alpha in the producer
 		free( this->image );
@@ -277,6 +285,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Set width/height
 	mlt_properties_set_int( properties, "width", this->width );
 	mlt_properties_set_int( properties, "height", this->height );
+	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "real_width" ) );
+	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
 
 	// pass the image and alpha data without destructor
 	mlt_properties_set_data( properties, "image", this->image, this->width * this->height * 2, NULL, NULL );
