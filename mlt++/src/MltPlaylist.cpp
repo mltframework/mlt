@@ -89,17 +89,17 @@ int Playlist::clear( )
 	return mlt_playlist_clear( get_playlist( ) );
 }
 
-int Playlist::append( Producer &producer, mlt_position in, mlt_position out )
+int Playlist::append( Producer &producer, int in, int out )
 {
 	return mlt_playlist_append_io( get_playlist( ), producer.get_producer( ), in, out );
 }
 
-int Playlist::blank( mlt_position length )
+int Playlist::blank( int length )
 {
 	return mlt_playlist_blank( get_playlist( ), length );
 }
 
-mlt_position Playlist::clip( mlt_whence whence, int index )
+int Playlist::clip( mlt_whence whence, int index )
 {
 	return mlt_playlist_clip( get_playlist( ), whence, index );
 }
@@ -121,7 +121,7 @@ ClipInfo *Playlist::clip_info( int index )
 	return new ClipInfo( &info );
 }
 
-int Playlist::insert( Producer &producer, int where, mlt_position in, mlt_position out )
+int Playlist::insert( Producer &producer, int where, int in, int out )
 {
 	return mlt_playlist_insert( get_playlist( ), producer.get_producer( ), where, in, out );
 }
@@ -136,7 +136,7 @@ int Playlist::move( int from, int to )
 	return mlt_playlist_move( get_playlist( ), from, to );
 }
 
-int Playlist::resize_clip( int clip, mlt_position in, mlt_position out )
+int Playlist::resize_clip( int clip, int in, int out )
 {
 	return mlt_playlist_resize_clip( get_playlist( ), clip, in, out );
 }

@@ -39,12 +39,12 @@ namespace Mlt
 			int clip;
 			Producer *producer;
 			Service *service;
-			mlt_position start;
+			int start;
 			char *resource;
-			mlt_position frame_in;
-			mlt_position frame_out;
-			mlt_position frame_count;
-			mlt_position length;
+			int frame_in;
+			int frame_out;
+			int frame_count;
+			int length;
 			float fps;
 	};
 
@@ -62,16 +62,16 @@ namespace Mlt
 			mlt_producer get_producer( );
 			int count( );
 			int clear( );
-			int append( Producer &producer, mlt_position in = -1, mlt_position out = -1 );
-			int blank( mlt_position length );
-			mlt_position clip( mlt_whence whence, int index );
+			int append( Producer &producer, int in = -1, int out = -1 );
+			int blank( int length );
+			int clip( mlt_whence whence, int index );
 			int current_clip( );
 			Producer *current( );
 			ClipInfo *clip_info( int index );
-			int insert( Producer &producer, int where, mlt_position in = -1, mlt_position out = -1 );
+			int insert( Producer &producer, int where, int in = -1, int out = -1 );
 			int remove( int where );
 			int move( int from, int to );
-			int resize_clip( int clip, mlt_position in, mlt_position out );
+			int resize_clip( int clip, int in, int out );
 	};
 }
 

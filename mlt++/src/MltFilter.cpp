@@ -61,17 +61,17 @@ int Filter::connect( Service &service, int index )
 	return mlt_filter_connect( get_filter( ), service.get_service( ), index );
 }
 
-void Filter::set_in_and_out( mlt_position in, mlt_position out )
+void Filter::set_in_and_out( int in, int out )
 {
 	mlt_filter_set_in_and_out( get_filter( ), in, out );
 }
 
-mlt_position Filter::get_in( )
+int Filter::get_in( )
 {
 	return mlt_filter_get_in( get_filter( ) );
 }
 
-mlt_position Filter::get_out( )
+int Filter::get_out( )
 {
 	return mlt_filter_get_out( get_filter( ) );
 }

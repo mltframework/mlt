@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
 # Required modules
 require 'mltpp'
@@ -14,11 +14,11 @@ size = "192x144" if size.nil?
 raise "Usage: thumbs.rb file name [ size ]" if file.nil? || name.nil?
 
 # Create the producer
-producer = Mltpp::Factory::producer( file )
+producer = Mltpp::Producer.new( file )
 raise "Unable to load #{file}" if !producer.is_valid
 
 # Construct the playlist
-playlist = Mltpp::PlaylistInstance.new( )
+playlist = Mltpp::Playlist.new( )
 
 # Get the out point
 out = producer.get_int( "out" );
@@ -27,7 +27,7 @@ out = producer.get_int( "out" );
 [ 0, 0.25, 0.5, 0.75, 1 ].each { |x| playlist.append( producer, x*out, x*out ) }
 
 # Create the thumb nail generator
-generator = Mltpp::Factory::consumer( "avformat", "#{name}%d.jpg" )
+generator = Mltpp::Consumer.new( "avformat", "#{name}%d.jpg" )
 generator.set( "real_time", "0" )
 generator.set( "progressive", "1" )
 generator.set( "size", size )

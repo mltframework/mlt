@@ -42,9 +42,9 @@ namespace Mlt
 			virtual mlt_filter get_filter( );
 			mlt_service get_service( );
 			int connect( Service &service, int index = 0 );
-			void set_in_and_out( mlt_position in, mlt_position out );
-			mlt_position get_in( );
-			mlt_position get_out( );
+			void set_in_and_out( int in, int out );
+			int get_in( );
+			int get_out( );
 			int get_track( );
 	};
 }

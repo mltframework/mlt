@@ -1,4 +1,4 @@
-#!/bin/env sh
+#!/usr/bin/env sh
 
 which swig > /dev/null 2>&1
 [ $? != 0 ] && echo Please install swig

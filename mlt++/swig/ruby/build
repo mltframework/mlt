@@ -1,4 +1,4 @@
-#!/bin/env ruby
+#!/usr/bin/env ruby
 require 'mkmf'
 system( "ln -sf ../mltpp.i mltpp.i" )
 system( "swig -c++ -ruby -I/usr/local/include/mlt++ `mlt-config --cflags` mltpp.i" )
