@@ -294,7 +294,7 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 	track_service( context->destructors, service, (mlt_destructor) mlt_tractor_close );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (char*) atts[0], (char*) atts[1] );
+		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 
 	if ( mlt_properties_get( properties, "id" ) != NULL )
 		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
@@ -348,7 +348,7 @@ static void on_start_multitrack( deserialise_context context, const xmlChar *nam
 		mlt_service service = MLT_SERVICE( mlt_tractor_multitrack( MLT_TRACTOR( parent ) ) );
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
-			mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
+			mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 
 		if ( mlt_properties_get( properties, "id" ) != NULL )
 			mlt_properties_set_data( context->producer_map, mlt_properties_get( properties,"id" ), service, 0, NULL, NULL );
@@ -382,7 +382,7 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( properties, ( char* )atts[0], ( char* )atts[1] );
+		mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 
 		// Out will be overwritten later as we append, so we need to save it
 		if ( strcmp( atts[ 0 ], "out" ) == 0 )
@@ -428,7 +428,7 @@ static void on_start_producer( deserialise_context context, const xmlChar *name,
 	context_push_service( context, service, mlt_dummy_producer_type );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
+		mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 }
 
 static void on_end_producer( deserialise_context context, const xmlChar *name )
@@ -596,7 +596,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( temp, (char*) atts[0], (char*) atts[1] );
+		mlt_properties_set( temp, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 		
 		// Look for the producer attribute
 		if ( strcmp( atts[ 0 ], "producer" ) == 0 )
@@ -679,7 +679,7 @@ static void on_start_track( deserialise_context context, const xmlChar *name, co
 	
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (char*) atts[0], (char*) atts[1] );
+		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 		
 		// Look for the producer attribute
 		if ( strcmp( atts[ 0 ], "producer" ) == 0 )
@@ -929,8 +929,8 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 				value = (char*) atts[ 1 ];
 		}
 
-		if ( context->property != NULL && value != NULL )
-			mlt_properties_set( properties, context->property, value );
+		if ( context->property != NULL )
+			mlt_properties_set( properties, context->property, value == NULL ? "" : value );
 	
 		// Tell parser to collect any further nodes for serialisation
 		context->is_value = 1;

@@ -231,6 +231,8 @@ static valerie_response valerie_remote_push( valerie_remote remote, char *comman
 		mlt_consumer consumer = mlt_factory_consumer( "westley", "buffer" );
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		char *buffer = NULL;
+		// Temporary hack
+		mlt_properties_set( properties, "store", "nle_" );
 		mlt_consumer_connect( consumer, service );
 		mlt_consumer_start( consumer );
 		buffer = mlt_properties_get( properties, "buffer" );

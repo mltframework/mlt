@@ -214,6 +214,9 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 					count ++;
 			}
 		}
+	
+		// Look for the first filter again
+		filter = mlt_properties_get_data( properties, "_filter_0", NULL );
 	}
 	else
 	{

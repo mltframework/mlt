@@ -309,10 +309,25 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				sprintf( label, "_%s_%d", id, count ++ );
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
-				// We want the last data_queue 
+				// We want the first data_queue, but after that, all queues are appended
 				if ( !done && mlt_properties_get_data( temp_properties, "data_queue", NULL ) != NULL && 
 				     mlt_deque_count( mlt_properties_get_data( temp_properties, "data_queue", NULL ) ) != 0 )
-					data_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
+				{
+					if ( data_queue == NULL )
+					{
+						data_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
+					}
+					else
+					{
+						// Move the contents of this queue on to the output frames data queue
+						mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
+						while ( mlt_deque_count( sub_queue ) )
+						{
+							void *p = mlt_deque_pop_back( sub_queue );
+							mlt_deque_push_back( data_queue, p );
+						}
+					}
+				}
 
 				// Pick up first video and audio frames
 				if ( !done && !mlt_frame_is_test_audio( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 2 ) )

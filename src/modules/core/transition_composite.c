@@ -612,7 +612,10 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int alpha_stride = stride_src / bpp;
 
 	if ( uneven )
-		p_src -= 2;
+	{
+		p_dest += 2;
+		width_src --;
+	}
 
 	// now do the compositing only to cropped extents
 	if ( line_fn != NULL )
@@ -832,7 +835,8 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	mlt_properties_set( b_props, "distort", "true" );
 
 	// Take into consideration alignment for optimisation
-	alignment_calculate( geometry );
+	if ( !mlt_properties_get_int( properties, "titles" ) )
+		alignment_calculate( geometry );
 
 	// Adjust to consumer scale
 	int x = geometry->x * *width / geometry->nw;
@@ -1086,6 +1090,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				
 				// Do the calculation if we need to
 				geometry_calculate( &result, start, field_position );
+
+				if ( mlt_properties_get_int( properties, "titles" ) )
+				{
+					result.nw = result.w = *width;
+					result.nh = result.h = *height;
+					result.sw = width_b;
+					result.sh = height_b;
+				}
 
 				// Align
 				alignment_calculate( &result );

@@ -85,35 +85,36 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	{
 		int i = 0;
 		int count = mlt_properties_count( frame_properties );
-		char inactive[ 512 ];
 
 		for ( i = 0; i < count; i ++ )
 		{
 			char *name = mlt_properties_get_name( frame_properties, i );
-			if ( !strncmp( name, "meta.attr.", 10 ) && strstr( name, ".inactive" ) == NULL )
+
+			// Only deal with meta.attr.name values here - these should have a value of 1 to be considered
+			// Additional properties of the form are meta.attr.name.property are passed down on the feed
+			if ( !strncmp( name, "meta.attr.", 10 ) && strchr( name + 10, '.' ) == NULL && mlt_properties_get_int( frame_properties, name ) == 1 )
 			{
-				char *value = mlt_properties_get( frame_properties, name );
-				sprintf( inactive, "%s.inactive", name );
-				if ( value != NULL && strcmp( value, "" ) && mlt_properties_get_int( frame_properties, inactive ) == 0 )
-				{
-					// Create a new data feed
-					mlt_properties feed = mlt_properties_new( );
+				// Temp var to hold name + '.' for pass method
+				char temp[ 132 ];
 
-					// Assign it the base properties
-					mlt_properties_set( feed, "id", mlt_properties_get( filter_properties, "_unique_id" ) );
-					mlt_properties_set( feed, "type", strrchr( name, '.' ) + 1 );
-					mlt_properties_set_position( feed, "position", mlt_frame_get_position( frame ) );
+				// Create a new data feed
+				mlt_properties feed = mlt_properties_new( );
 
-					// Assign in/out of service we're connected to
-					mlt_properties_set_position( feed, "in", mlt_properties_get_position( frame_properties, "in" ) );
-					mlt_properties_set_position( feed, "out", mlt_properties_get_position( frame_properties, "out" ) );
+				// Assign it the base properties
+				mlt_properties_set( feed, "id", mlt_properties_get( filter_properties, "_unique_id" ) );
+				mlt_properties_set( feed, "type", strrchr( name, '.' ) + 1 );
+				mlt_properties_set_position( feed, "position", mlt_frame_get_position( frame ) );
 
-					// Assign the value to the feed
-					mlt_properties_set( feed, "markup", value );
+				// Assign in/out of service we're connected to
+				mlt_properties_set_position( feed, "in", mlt_properties_get_position( frame_properties, "in" ) );
+				mlt_properties_set_position( feed, "out", mlt_properties_get_position( frame_properties, "out" ) );
 
-					// Push it on to the queue
-					mlt_deque_push_back( data_queue, feed );
-				}
+				// Pass all meta properties 
+				sprintf( temp, "%s.", name );
+				mlt_properties_pass( feed, frame_properties, temp );
+
+				// Push it on to the queue
+				mlt_deque_push_back( data_queue, feed );
 			}
 		}
 	}

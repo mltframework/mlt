@@ -1172,7 +1172,7 @@ void mlt_playlist_consolidate_blanks( mlt_playlist this, int keep_length )
 			}
 		}
 
-		if ( !keep_length )
+		if ( !keep_length && this->count > 0 )
 		{
 			playlist_entry *last = this->list[ this->count - 1 ];
 			if ( mlt_producer_is_blank( last->producer ) )

@@ -436,7 +436,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		// Clone our image
 		uint8_t *copy = mlt_pool_alloc( size );
-		memcpy( copy, image, size );
+		if ( copy != NULL )
+			memcpy( copy, image, size );
 
 		// We're going to pass the copy on
 		image = copy;
@@ -552,7 +553,7 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	else if ( text != NULL && strcmp( text, "" ) != 0 )
 		pango_layout_set_text( layout, text, strlen( text ) );
 	else
-		return NULL;
+		pango_layout_set_text( layout, "  ", 2 );
 	pango_layout_get_pixel_size( layout, &w, &h );
 
 	pixbuf = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE /* has alpha */, 8, w + 2 * pad, h + 2 * pad );

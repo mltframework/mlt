@@ -639,6 +639,9 @@ void mlt_consumer_close( mlt_consumer this )
 		// Get the childs close function
 		void ( *consumer_close )( ) = this->close;
 
+		// Just in case...
+		mlt_consumer_stop( this );
+
 		// Make sure it only gets called once
 		this->close = NULL;
 		this->parent.close = NULL;
