@@ -40,7 +40,7 @@ else
 
 	if [ "$cvs_ffmpeg" != "" ]
 	then
-		[ ! -d "ffmpeg" ] && cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co -D "8/5/2004 15:30 CET" ffmpeg
+		[ ! -d "ffmpeg" ] && cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co -D "10/11/2004 20:30 CET" ffmpeg
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
 		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec" >> config.mak
@@ -62,7 +62,7 @@ else
 		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/lib/libavformat.so" ]
 		then
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
-			echo "LDFLAGS+=-L$shared_ffmpeg" >> config.mak
+			echo "LDFLAGS+=-L$shared_ffmpeg/lib" >> config.mak
 		else
 			echo "avformat: No build environment found. "
 			echo "          Try configuring mlt with --avformat-cvs."

@@ -281,7 +281,7 @@ static int producer_open( mlt_producer this, char *file )
 			
 			// Check if we're seekable (something funny about mpeg here :-/)
 			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 ) )
-				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) ) >= 0 );
+				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ), AVSEEK_FLAG_BACKWARD ) >= 0 );
 			else
 				av_bypass = 1;
 
@@ -517,7 +517,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else if ( seekable && ( position < expected || position - expected >= 12 ) )
 		{
 			// Set to the real timecode
-			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 );
+			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD );
 	
 			// Remove the cached info relating to the previous position
 			mlt_properties_set_double( properties, "current_time", real_timecode );
@@ -818,7 +818,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		else if ( position < expected || position - expected >= 12 )
 		{
 			// Set to the real timecode
-			if ( av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 ) != 0 )
+			if ( av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD ) != 0 )
 				paused = 1;
 
 			// Clear the usage in the audio buffer
