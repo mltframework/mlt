@@ -159,19 +159,19 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 		fprintf( stderr, "|           g = start of clip, j = next clip, k = previous clip       |\n" );
 		fprintf( stderr, "|                0 = restart, q = quit, space = play                  |\n" );
 		fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+
+		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
+		{
+			int value = term_read( );
+			if ( value != -1 )
+				transport_action( producer, ( char * )&value );
+	
+			if ( mlt_properties_get_int( properties, "stats_off" ) == 0 )
+				fprintf( stderr, "Current Position: %10d\r", mlt_producer_position( producer ) );
+		}
+
+		fprintf( stderr, "\n" );
 	}
-
-	while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
-	{
-		int value = term_read( );
-		if ( value != -1 )
-			transport_action( producer, ( char * )&value );
-
-		if ( mlt_properties_get_int( properties, "stats_off" ) == 0 )
-			fprintf( stderr, "Current Position: %10d\r", mlt_producer_position( producer ) );
-	}
-
-	fprintf( stderr, "\n" );
 }
 
 int main( int argc, char **argv )
@@ -271,13 +271,16 @@ int main( int argc, char **argv )
 	{
 		fprintf( stderr, "Usage: inigo [ -group [ name=value ]* ]\n"
 						 "             [ -consumer id[:arg] [ name=value ]* ]\n"
-        				 "             [ -filter filter[:arg] [ name=value ] * ]\n"
-        				 "             [ -attach filter[:arg] [ name=value ] * ]\n"
+						 "             [ -filter filter[:arg] [ name=value ] * ]\n"
+						 "             [ -attach filter[:arg] [ name=value ] * ]\n"
 						 "             [ -mix length [ -mixer transition ]* ]\n"
-        				 "             [ -transition id[:arg] [ name=value ] * ]\n"
+						 "             [ -transition id[:arg] [ name=value ] * ]\n"
 						 "             [ -blank frames ]\n"
 						 "             [ -track ]\n"
-        				 "             [ producer [ name=value ] * ]+\n" );
+						 "             [ -split relative-frame ]\n"
+						 "             [ -join clips ]\n"
+						 "             [ -repeat times ]\n"
+						 "             [ producer [ name=value ] * ]+\n" );
 	}
 
 	// Close the consumer
