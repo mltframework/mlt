@@ -260,6 +260,8 @@ Factories:
 	+------------------+------------------------------------+------------------+
 	|MLT_CONSUMER      |The default consumer                |"sdl" or other    |
 	+------------------+------------------------------------+------------------+
+	|MLT_TEST_CARD     |The default test card producer      |any producer      |
+	+------------------+------------------------------------+------------------+
 
 	These values are initialised from the environment variables of the same
 	name.

@@ -219,13 +219,14 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		if ( test_frame != NULL )
 		{
 			mlt_properties test_properties = mlt_frame_properties( test_frame );
-			mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
-			mlt_properties_set( test_properties, "rescale.interp", "nearest" );
+			mlt_properties_pass( properties, test_properties, "" );
 			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
 			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
+			mlt_properties_set( properties, "rescale.interps", "none" );
+			mlt_properties_set( properties, "scale", "off" );
 		}
 		else
 		{

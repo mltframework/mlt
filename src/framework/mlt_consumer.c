@@ -78,6 +78,9 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		// Default of all consumers is real time
 		mlt_properties_set_int( properties, "real_time", 1 );
 
+		// Default to environment test card
+		mlt_properties_set( properties, "test_card", mlt_environment( "MLT_TEST_CARD" ) );
+
 		// Hmm - default all consumers to yuv422 :-/
 		this->format = mlt_image_yuv422;
 	}

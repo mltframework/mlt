@@ -50,13 +50,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
 	int interp = PIXOPS_INTERP_BILINEAR;
 	
-	if ( strcmp( interps, "nearest" ) == 0 )
-		interp = PIXOPS_INTERP_NEAREST;
-	else if ( strcmp( interps, "tiles" ) == 0 )
-		interp = PIXOPS_INTERP_TILES;
-	else if ( strcmp( interps, "hyper" ) == 0 )
-		interp = PIXOPS_INTERP_HYPER;
-
 	// If real_width/height exist, we want that as minimum information
 	if ( mlt_properties_get_int( properties, "real_width" ) )
 	{
@@ -79,6 +72,16 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	// Get the image as requested
 	mlt_frame_get_image( this, &input, format, &iwidth, &iheight, writable );
+
+	// Get rescale interpretation again, in case the producer wishes to override scaling
+	interps = mlt_properties_get( properties, "rescale.interp" );
+
+	if ( strcmp( interps, "nearest" ) == 0 )
+		interp = PIXOPS_INTERP_NEAREST;
+	else if ( strcmp( interps, "tiles" ) == 0 )
+		interp = PIXOPS_INTERP_TILES;
+	else if ( strcmp( interps, "hyper" ) == 0 )
+		interp = PIXOPS_INTERP_HYPER;
 
 	if ( input != NULL )
 	{

@@ -169,7 +169,14 @@ int consumer_start( mlt_consumer parent )
 		pthread_attr_t thread_attributes;
 		
 		this->running = 1;
-		
+
+		// Allow the user to force resizing to window size
+		if ( mlt_properties_get_int( this->properties, "resize" ) )
+		{
+			mlt_properties_set_int( this->properties, "width", this->width );
+			mlt_properties_set_int( this->properties, "height", this->height );
+		}
+
 		// Inherit the scheduling priority
 		pthread_attr_init( &thread_attributes );
 		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
