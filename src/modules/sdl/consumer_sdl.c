@@ -53,7 +53,7 @@ struct consumer_sdl_s
 
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_get_dimensions( int *width, int *height );
+static int consumer_get_dimensions( int *width, int *height );
 
 /** This is what will be called by the factory - anything can be passed in
 	via the argument, but keep it simple.
@@ -202,6 +202,7 @@ static void *consumer_thread( void *arg )
 			int samples;
 			int frequency;
 			int16_t *pcm;
+			int changed = 0;
 
 			mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
 			if ( init_audio == 1 )
@@ -234,32 +235,55 @@ static void *consumer_thread( void *arg )
 
 			// Get the image, width and height
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-			if ( width != this->window_width || height != this->window_height )
+
+			if ( sdl_screen != NULL )
 			{
-				SDL_Rect rect;
-				this->window_width = rect.w = width;
-				this->window_height = rect.h = height;
+				SDL_Event event;
+
+				changed = consumer_get_dimensions( &this->window_width, &this->window_height );
+
+				while ( SDL_PollEvent( &event ) )
+				{
+					switch( event.type )
+					{
+						case SDL_VIDEORESIZE:
+							this->window_width = event.resize.w;
+							this->window_height = event.resize.h;
+							changed = 1;
+							break;
+					}
+				}
+			}
+
+			if ( sdl_screen == NULL || changed )
+			{
+				double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
+
+				if ( this->window_width == 0 || this->window_height == 0 )
+				{
+					this->window_width = width;
+					this->window_height = height;
+				}
 
 				// open SDL window with video overlay, if possible
-				if ( sdl_screen == NULL )
-					sdl_screen = SDL_SetVideoMode( width, height, 0, sdl_flags );
+				sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, sdl_flags );
+
 				if ( sdl_screen != NULL )
 				{
-					rect.x = rect.y = 0;
-
-
-					// XXX: this is a little hack until we have some sort of aspect
-					// ratio property on images.
-					if ( rect.h <= 486 )
+					SDL_Rect rect;
+					if ( this->window_width < this->window_height * aspect_ratio )
 					{
-						rect.w = 640;
-						rect.x = ( 720 - 640 ) / 2;
+						rect.w = this->window_width;
+						rect.h = this->window_width / aspect_ratio;
 					}
 					else
 					{
-						rect.h = 540;
-						rect.y = ( 576 - 540 ) / 2;
+						rect.w = this->window_height * aspect_ratio;
+						rect.h = this->window_height;
 					}
+
+					rect.x = ( this->window_width - rect.w ) / 2;
+					rect.y = ( this->window_height - rect.h ) / 2;
 
 					SDL_SetClipRect( sdl_screen, &rect );
 					
@@ -310,8 +334,10 @@ static void *consumer_thread( void *arg )
 	return NULL;
 }
 
-static void consumer_get_dimensions( int *width, int *height )
+static int consumer_get_dimensions( int *width, int *height )
 {
+	int changed = 0;
+
 	// SDL windows manager structure
 	SDL_SysWMinfo wm;
 
@@ -334,11 +360,16 @@ static void consumer_get_dimensions( int *width, int *height )
 			XWindowAttributes attr;
 			XGetWindowAttributes( display, window, &attr );
 
+			// Determine whether window has changed
+			changed = *width != attr.width || *height != attr.height;
+
 			// Return width and height
 			*width = attr.width;
 			*height = attr.height;
 		}
 	}
+
+	return changed;
 }
 
 /** Callback to allow override of the close method.

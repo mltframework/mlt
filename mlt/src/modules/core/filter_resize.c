@@ -22,6 +22,7 @@
 
 #include <framework/mlt_frame.h>
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -33,6 +34,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int owidth = *width;
 	int oheight = *height;
 	mlt_frame_get_image( this, image, format, &owidth, &oheight, 0 );
+	if ( *width == 0 )
+		*width = 720;
+	if ( *height == 0 )
+		*height = 576;
 	if ( !strcmp( mlt_properties_get( mlt_frame_properties( this ), "resize.scale" ), "affine" ) )
 		*image = mlt_frame_rescale_yuv422( this, *width, *height );
 	else
