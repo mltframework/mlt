@@ -1,0 +1,52 @@
+/*
+ * mlt_parser.h -- service parsing functionality
+ * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Author: Charles Yates <charles.yates@pandora.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#ifndef _MLT_PARSER_H_
+#define _MLT_PARSER_H_
+
+#include "mlt_types.h"
+
+struct mlt_parser_s
+{
+	struct mlt_properties_s parent;
+	int ( *on_invalid )( mlt_parser self, mlt_service object );
+	int ( *on_unknown )( mlt_parser self, mlt_service object );
+	int ( *on_start_producer )( mlt_parser self, mlt_producer object );
+	int ( *on_end_producer )( mlt_parser self, mlt_producer object );
+	int ( *on_start_playlist )( mlt_parser self, mlt_playlist object );
+	int ( *on_end_playlist )( mlt_parser self, mlt_playlist object );
+	int ( *on_start_tractor )( mlt_parser self, mlt_tractor object );
+	int ( *on_end_tractor )( mlt_parser self, mlt_tractor object );
+	int ( *on_start_multitrack )( mlt_parser self, mlt_multitrack object );
+	int ( *on_end_multitrack )( mlt_parser self, mlt_multitrack object );
+	int ( *on_start_track )( mlt_parser self );
+	int ( *on_end_track )( mlt_parser self );
+	int ( *on_start_filter )( mlt_parser self, mlt_filter object );
+	int ( *on_end_filter )( mlt_parser self, mlt_filter object );
+	int ( *on_start_transition )( mlt_parser self, mlt_transition object );
+	int ( *on_end_transition )( mlt_parser self, mlt_transition object );
+};
+
+extern mlt_parser mlt_parser_new( );
+extern mlt_properties mlt_parser_properties( mlt_parser self );
+extern int mlt_parser_start( mlt_parser self, mlt_service object );
+extern void mlt_parser_close( mlt_parser self );
+
+#endif

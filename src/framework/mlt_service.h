@@ -45,6 +45,7 @@ struct mlt_service_s
 */
 
 extern int mlt_service_init( mlt_service self, void *child );
+extern mlt_service_type mlt_service_identify( mlt_service self );
 extern int mlt_service_connect_producer( mlt_service self, mlt_service producer, int index );
 extern int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index );
 extern mlt_properties mlt_service_properties( mlt_service self );

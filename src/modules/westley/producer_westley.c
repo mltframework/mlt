@@ -54,7 +54,7 @@ enum service_type
 	mlt_transition_type,
 	mlt_consumer_type,
 	mlt_field_type,
-	mlt_service_type,
+	mlt_services_type,
 	mlt_dummy_filter_type,
 	mlt_dummy_transition_type,
 	mlt_dummy_producer_type,
@@ -1383,6 +1383,9 @@ mlt_producer producer_westley_init( int info, char *data )
 
 		// Assign the title
 		mlt_properties_set( properties, "title", title );
+
+		// Optimise for overlapping producers
+		mlt_producer_optimise( MLT_PRODUCER( service ) );
 
 		// Handle deep copies
 		if ( getenv( "MLT_WESTLEY_DEEP" ) == NULL )

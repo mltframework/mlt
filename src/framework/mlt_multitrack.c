@@ -391,17 +391,14 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 	// Check if we have a track for this index
 	if ( index < this->count && this->list[ index ] != NULL )
 	{
-		// Determine the in point
-		int in = mlt_producer_is_cut( this->list[ index ]->producer ) ? mlt_producer_get_in( this->list[ index ]->producer ) : 0;
-
 		// Get the producer for this track
-		mlt_producer producer = mlt_producer_cut_parent( this->list[ index ]->producer );
+		mlt_producer producer = this->list[ index ]->producer;
 
 		// Obtain the current position
 		mlt_position position = mlt_producer_frame( parent );
 
 		// Make sure we're at the same point
-		mlt_producer_seek( producer, in + position );
+		mlt_producer_seek( producer, position );
 
 		// Get the frame from the producer
 		mlt_service_get_frame( mlt_producer_service( producer ), frame, 0 );
@@ -431,9 +428,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 			// Move to the next frame
 			mlt_producer_prepare_next( parent );
 		}
-
-		// Refresh our stats
-		//mlt_multitrack_refresh( this );
 	}
 
 	return 0;

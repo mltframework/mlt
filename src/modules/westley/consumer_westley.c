@@ -313,7 +313,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 
 			char *id = westley_get_id( context, MLT_SERVICE( parent ), westley_existing );
 			xmlNewProp( track, "producer", id );
-			if ( mlt_properties_get_int( properties, "cut" ) == 1 )
+			if ( mlt_properties_get_int( properties, "_cut" ) == 1 )
 			{
 				xmlNewProp( track, "in", mlt_properties_get( properties, "in" ) );
 				xmlNewProp( track, "out", mlt_properties_get( properties, "out" ) );

@@ -7,6 +7,7 @@ OBJS = mlt_frame.o \
 	   mlt_property.o \
 	   mlt_properties.o \
 	   mlt_events.o \
+	   mlt_parser.o \
 	   mlt_service.o \
 	   mlt_producer.o \
 	   mlt_multitrack.o \
@@ -29,6 +30,7 @@ INCS = mlt_consumer.h \
 	   mlt_pool.h \
 	   mlt_properties.h \
 	   mlt_events.h \
+	   mlt_parser.h \
 	   mlt_repository.h \
 	   mlt_tractor.h \
 	   mlt_types.h \

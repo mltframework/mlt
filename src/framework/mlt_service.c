@@ -99,6 +99,41 @@ static void mlt_service_property_changed( mlt_listener listener, mlt_properties 
 		listener( owner, this, ( char * )args[ 0 ] );
 }
 
+mlt_service_type mlt_service_identify( mlt_service this )
+{
+	mlt_service_type type = invalid_type;
+	if ( this != NULL )
+	{
+		mlt_properties properties = mlt_service_properties( this );
+		char *mlt_type = mlt_properties_get( properties, "mlt_type" );
+		char *resource = mlt_properties_get( properties, "resource" );
+		if ( mlt_type == NULL )
+			type = unknown_type;
+		else if ( !strcmp( mlt_type, "producer" ) )
+			type = producer_type;
+		else if ( !strcmp( mlt_type, "mlt_producer" ) )
+		{
+			if ( resource == NULL || !strcmp( resource, "<producer>" ) )
+				type = producer_type;
+			else if ( !strcmp( resource, "<playlist>" ) )
+				type = playlist_type;
+			else if ( !strcmp( resource, "<tractor>" ) )
+				type = tractor_type;
+			else if ( !strcmp( resource, "<multitrack>" ) )
+				type = multitrack_type;
+		}
+		else if ( !strcmp( mlt_type, "filter" ) )
+			type = filter_type;
+		else if ( !strcmp( mlt_type, "transition" ) )
+			type = transition_type;
+		else if ( !strcmp( mlt_type, "consumer" ) )
+			type = consumer_type;
+		else
+			type = unknown_type;
+	}
+	return type;
+}
+
 /** Connect a producer service.
 	Returns: > 0 warning, == 0 success, < 0 serious error
 			 1 = this service does not accept input

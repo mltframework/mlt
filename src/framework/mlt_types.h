@@ -50,6 +50,21 @@ typedef enum
 }
 mlt_whence;
 
+typedef enum 
+{
+	invalid_type,
+	unknown_type,
+	producer_type,
+	playlist_type,
+	tractor_type,
+	multitrack_type,
+	filter_type,
+	transition_type,
+	consumer_type,
+	field_type
+}
+mlt_service_type;
+
 typedef int32_t mlt_position;
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr;
 typedef struct mlt_properties_s *mlt_properties;
@@ -64,6 +79,7 @@ typedef struct mlt_transition_s *mlt_transition;
 typedef struct mlt_tractor_s *mlt_tractor;
 typedef struct mlt_field_s *mlt_field;
 typedef struct mlt_consumer_s *mlt_consumer;
+typedef struct mlt_parser_s *mlt_parser;
 typedef struct mlt_deque_s *mlt_deque;
 
 typedef void ( *mlt_destructor )( void * );

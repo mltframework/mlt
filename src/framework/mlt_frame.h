@@ -60,6 +60,7 @@ extern int mlt_frame_push_service( mlt_frame self, void *that );
 extern void *mlt_frame_pop_service( mlt_frame self );
 extern int mlt_frame_push_audio( mlt_frame self, void *that );
 extern void *mlt_frame_pop_audio( mlt_frame self );
+extern mlt_producer mlt_frame_get_original_producer( mlt_frame self );
 extern void mlt_frame_close( mlt_frame self );
 
 /* convenience functions */

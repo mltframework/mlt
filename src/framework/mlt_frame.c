@@ -400,6 +400,12 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	return bitmap;
 }
 
+mlt_producer mlt_frame_get_original_producer( mlt_frame this )
+{
+	if ( this != NULL )
+		return mlt_properties_get_data( mlt_frame_properties( this ), "_producer", NULL );
+	return NULL;
+}
 
 void mlt_frame_close( mlt_frame this )
 {

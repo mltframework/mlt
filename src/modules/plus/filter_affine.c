@@ -70,7 +70,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_pass( mlt_producer_properties( producer ), properties, "producer." );
 			mlt_properties_pass( mlt_transition_properties( transition ), properties, "transition." );
 			mlt_service_get_frame( mlt_producer_service( producer ), &a_frame, 0 );
-			mlt_properties_set( mlt_frame_properties( a_frame ), "rescale_interp", "nearest" );
+			mlt_properties_set( mlt_frame_properties( a_frame ), "rescale.interp", "nearest" );
 			mlt_properties_set( mlt_frame_properties( a_frame ), "distort", "true" );
 			mlt_properties_set_double( mlt_frame_properties( a_frame ), "consumer_aspect_ratio", 
 									   mlt_properties_get_double( frame_properties, "consumer_aspect_ratio" ) );

@@ -835,10 +835,6 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 		track_a = mlt_producer_cut( clip_a->producer, clip_a->frame_out - length + 1, clip_a->frame_out );
 		track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in, clip_b->frame_in + length - 1 );
 
-		// Temporary - for the benefit of westley serialisation
-		mlt_properties_set_int( mlt_producer_properties( track_a ), "cut", 1 );
-		mlt_properties_set_int( mlt_producer_properties( track_b ), "cut", 1 );
-
 		// Set the tracks on the tractor
 		mlt_tractor_set_track( tractor, track_a, 0 );
 		mlt_tractor_set_track( tractor, track_b, 1 );
@@ -913,7 +909,7 @@ int mlt_playlist_mix_add( mlt_playlist this, int clip, mlt_transition transition
 
 mlt_producer mlt_playlist_get_clip( mlt_playlist this, int clip )
 {
-	if ( clip > 0 && clip < this->count )
+	if ( clip >= 0 && clip < this->count )
 		return this->list[ clip ]->producer;
 	return NULL;
 }

@@ -402,6 +402,7 @@ mlt_producer producer_inigo_init( char **argv )
 		mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist ), track );
 
 	mlt_producer prod = mlt_tractor_producer( tractor );
+	mlt_producer_optimise( prod );
 	mlt_properties props = mlt_tractor_properties( tractor );
 	mlt_properties_set_data( props, "group", group, 0, ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties_set_position( props, "length", mlt_producer_get_out( mlt_multitrack_producer( multitrack ) ) + 1 );
