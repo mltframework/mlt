@@ -173,6 +173,9 @@ static int producer_open( mlt_producer this, char *file )
 	// AV option (0 = both, 1 = video, 2 = audio)
 	int av = 0;
 	
+	// Setting lowest log level
+	av_log_set_level( -1 );
+
 	// Only if there is not a protocol specification that avformat can handle
 	if ( mrl && !url_exist( file ) )
 	{
@@ -259,6 +262,7 @@ static int producer_open( mlt_producer this, char *file )
 			// We will default to the first audio and video streams found
 			int audio_index = -1;
 			int video_index = -1;
+			int av_bypass = 0;
 
 			// Now set properties where we can (use default unknowns if required)
 			if ( context->duration != AV_NOPTS_VALUE ) 
@@ -276,15 +280,17 @@ static int producer_open( mlt_producer this, char *file )
                 mlt_properties_set_double( properties, "start_time", context->start_time );
 			
 			// Check if we're seekable (something funny about mpeg here :-/)
-			if ( strcmp( file, "pipe:" ) )
+			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 ) )
 				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) ) >= 0 );
+			else
+				av_bypass = 1;
 
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "audio_index", audio_index );
 			mlt_properties_set_int( properties, "video_index", video_index );
 			
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
-			if ( av == 0 && strcmp( file, "pipe:" ) && audio_index != -1 && video_index != -1 )
+			if ( av == 0 && !av_bypass && audio_index != -1 && video_index != -1 )
 			{
 				// We'll use the open one as our video_context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
@@ -311,6 +317,8 @@ static int producer_open( mlt_producer this, char *file )
 				// Something has gone wrong
 				error = -1;
 			}
+
+			mlt_properties_set_int( properties, "av_bypass", av_bypass );
 		}
 	}
 
@@ -465,6 +473,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Generate the size in bytes
 	int size = 0; 
 
+	// Hopefully provide better support for streams...
+	int av_bypass = mlt_properties_get_int( properties, "av_bypass" );
+
 	// Set the result arguments that we know here (only *buffer is now required)
 	*width = codec_context->width;
 	*height = codec_context->height;
@@ -503,7 +514,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = position - expected;
 		}
-		else if ( codec_context->gop_size == 0 || ( position < expected || position - expected >= 12 ) )
+		else if ( codec_context->has_b_frames == 0 || ( position < expected || position - expected >= 12 ) )
 		{
 			// Set to the real timecode
 			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 );
@@ -518,7 +529,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	
 	// Duplicate the last image if necessary
 	if ( av_frame != NULL && ( paused || mlt_properties_get_double( properties, "current_time" ) >= real_timecode ) &&
-		 strcmp( mlt_properties_get( properties, "resource" ), "pipe:" ) )
+		 av_bypass == 0 )
 	{
 		// Duplicate it
 		convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
