@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "MltPlaylist.h"
+#include "MltTransition.h"
 using namespace Mlt;
 
 ClipInfo::ClipInfo( mlt_playlist_clip_info *info ) :
@@ -157,4 +158,9 @@ int Playlist::split( int clip, int position )
 int Playlist::join( int clip, int count, int merge )
 {
 	return mlt_playlist_join( get_playlist( ), clip, count, merge );
+}
+
+int Playlist::mix( int clip, int length, Transition *transition )
+{
+	return mlt_playlist_mix( get_playlist( ), clip, length, transition == NULL ? NULL : transition->get_transition( ) );
 }

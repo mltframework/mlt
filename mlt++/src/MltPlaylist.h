@@ -30,6 +30,7 @@ namespace Mlt
 	class Producer;
 	class Service;
 	class Playlist;
+	class Transition;
 
 	class ClipInfo
 	{
@@ -74,6 +75,7 @@ namespace Mlt
 			int resize_clip( int clip, int in, int out );
 			int split( int clip, int position );
 			int join( int clip, int count = 1, int merge = 1 );
+			int mix( int clip, int length, Transition *transition = NULL );
 	};
 }
 
