@@ -679,11 +679,12 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		if ( codec != NULL )
 		{
 			double source_fps = 0;
+			int norm_aspect_ratio = mlt_properties_get_int( properties, "norm_aspect_ratio" );
 
 			// XXX: We won't know the real aspect ratio until an image is decoded
 			// but we do need it now (to satisfy filter_resize) - take a guess based
 			// on pal/ntsc
-			if ( codec_context->sample_aspect_ratio.num > 0 )
+			if ( !norm_aspect_ratio && codec_context->sample_aspect_ratio.num > 0 )
 			{
 				mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
 			}

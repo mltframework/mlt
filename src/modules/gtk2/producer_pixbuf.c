@@ -303,8 +303,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 				this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
 				this->filenames[ this->count ++ ] = strdup( fullname );
 
-				mlt_properties_set_position( properties, "out", 250 );
-
 				// Teehe - when the producer closes, delete the temp file and the space allo
 				mlt_properties_set_data( properties, "__temporary_file__", this->filenames[ this->count - 1 ], 0, ( mlt_destructor )unlink, NULL );
 			}
@@ -332,7 +330,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 					gap ++;
 				}
 			}
-			mlt_properties_set_position( properties, "out", this->count * 250 );
 		}
 		else if ( strstr( filename, "/.all." ) != NULL )
 		{
@@ -366,7 +363,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		{
 			this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
 			this->filenames[ this->count ++ ] = strdup( filename );
-			mlt_properties_set_position( properties, "out", 250 );
 		}
 	}
 
