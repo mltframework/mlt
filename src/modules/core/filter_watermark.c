@@ -132,6 +132,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Get the b frame and process with composite if successful
 		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
 		{
+			// Set the b frame to be in the same position
+			mlt_frame_set_position( b_frame, position );
+
 			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
 			{
 				// Apply all filters that are attached to this filter to the b frame
@@ -150,7 +153,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_transition_process( composite, b_frame, frame );
 				mlt_properties_set( a_props, "rescale.interp", "nearest" );
 				mlt_properties_set( b_props, "rescale.interp", "nearest" );
-				mlt_properties_set_int( b_props, "consumer_aspect_ratio", 1 );
+				mlt_properties_set_int( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 				mlt_service_apply_filters( mlt_filter_service( this ), frame, 0 );
 				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
 				mlt_properties_set_data( b_props, "image", *image, 0, NULL, NULL );
@@ -184,7 +187,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	char *name = mlt_properties_get( mlt_filter_properties( this ), "_unique_id" );
 
 	// Assign the current position to the name
-	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) );
+	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) - mlt_filter_get_in( this ) );
 
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, this );

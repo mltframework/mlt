@@ -546,8 +546,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int y = geometry.y * height_dest / geometry.nh;
 
 	// Align x to a full YUYV group
-	x &= 0xfffffffe;
-	width_src &= 0xfffffffe;
+	x = ( x | 1 ) ^ 1;
+	width_src = ( width_src | 1 ) ^ 1;
 
 	// optimization points - no work to do
 	if ( width_src <= 0 || height_src <= 0 )
@@ -845,7 +845,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	*width = geometry->sw * *width / geometry->nw;
 	*height = geometry->sh * *height / geometry->nh;
 
-	x &= 0xfffffffe;
+	x = ( x | 1 ) ^ 1;
 
 	// optimization points - no work to do
 	if ( *width < 1 || *height < 1 )
@@ -960,8 +960,8 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	if ( y + h > height )
 		h = height - y;
 
-	x &= 0xfffffffe;
-	w &= 0xfffffffe;
+	x = ( x | 1 ) ^ 1;
+	w = ( w | 1 ) ^ 1;
 
 	// Now we need to create a new destination image
 	dest = mlt_pool_alloc( w * h * 2 );
