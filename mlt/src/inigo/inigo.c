@@ -186,7 +186,7 @@ int main( int argc, char **argv )
 					fprintf( store, "%s\n", argv[ i ] );
 				while ( argv[ i ] != NULL && argv[ i ][ 0 ] != '-' )
 				{
-					i ++;
+					i += 2;
 					if ( store != NULL && argv[ i ] != NULL && argv[ i ][ 0 ] != '-' )
 						fprintf( store, "%s\n", argv[ i ] );
 				}
