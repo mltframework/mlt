@@ -435,7 +435,7 @@ pixops_process ( guchar *dest_buf,
 		x = render_x0 * x_step + scaled_x_offset;
 		x_start = x >> SCALE_SHIFT;
 
-		while ( x_start < 0 && outbuf < outbuf_end )
+		while ( 0 && x_start < 0 && outbuf < outbuf_end )
 		{
 			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
 			                filter->x.n, filter->y.n,
@@ -448,6 +448,7 @@ pixops_process ( guchar *dest_buf,
 			dest_x++;
 			outbuf += dest_channels;
 		}
+		run_end_index = 720;
 
 		new_outbuf = ( *line_func ) ( run_weights, filter->x.n, filter->y.n,
 		                              outbuf, dest_x,
