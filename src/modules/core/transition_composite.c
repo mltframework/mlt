@@ -103,12 +103,17 @@ static mlt_geometry transition_parse_keys( mlt_transition this, int normalised_w
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
 	mlt_position out = mlt_transition_get_out( this );
+	int length = out - in + 1;
 
 	// Get the new style geometry string
 	char *property = mlt_properties_get( properties, "geometry" );
 
+	// Allow a geometry repeat cycle
+	if ( mlt_properties_get_int( properties, "cycle" ) )
+		length = mlt_properties_get_int( properties, "cycle" );
+
 	// Parse the geometry if we have one
-	mlt_geometry_parse( geometry, property, out - in + 1, normalised_width, normalised_height );
+	mlt_geometry_parse( geometry, property, length, normalised_width, normalised_height );
 
 	// Check if we're using the old style geometry
 	if ( property == NULL )
@@ -458,7 +463,6 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	// field 1 = upper field and y should be even.
 	if ( ( field > -1 ) && ( y % 2 == field ) )
 	{
-		//fprintf( stderr, "field %d y %d\n", field, y );
 		if ( ( field == 1 && y < height_dest - 1 ) || ( field == 0 && y == 0 ) )
 			p_dest += stride_dest;
 		else
@@ -689,6 +693,8 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 			scaled_height = normalised_height;
 		}
 
+		// Honour the fill request - this will scale the image to fill width or height while maintaining a/r
+		// ????: Shouln't this be the default behaviour?
 		if ( mlt_properties_get_int( properties, "fill" ) )
 		{
 			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height < normalised_width )
@@ -768,6 +774,8 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 	else
 	{
 		int length = mlt_transition_get_out( this ) - mlt_transition_get_in( this ) + 1;
+		if ( mlt_properties_get_int( properties, "cycle" ) )
+			length = mlt_properties_get_int( properties, "cycle" );
 		mlt_geometry_refresh( start, mlt_properties_get( properties, "geometry" ), length, normalised_width, normalised_height );
 	}
 

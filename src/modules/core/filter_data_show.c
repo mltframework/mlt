@@ -100,9 +100,6 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 	// Fetch the filter associated to this type
 	mlt_filter requested = mlt_properties_get_data( filter_properties, type, NULL );
 
-	// Calculate the length of the feed
-	int length = mlt_properties_get_int( feed, "out" ) - mlt_properties_get_int( feed, "in" ) + 1;
-
 	// If it doesn't exist, then create it now
 	if ( requested == NULL )
 	{
@@ -121,6 +118,18 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 		static char *prefix = "properties.";
 		int len = strlen( prefix );
 
+		// Determine if this is an absolute or relative feed
+		int absolute = mlt_properties_get_int( feed, "absolute" );
+
+		// Make do with what we have
+		int length = !absolute ? 
+					 mlt_properties_get_int( feed, "out" ) - mlt_properties_get_int( feed, "in" ) + 1 :
+					 mlt_properties_get_int( feed, "out" ) + 1;
+
+		// Repeat period
+		int period = mlt_properties_get_int( properties, "period" );
+		period = period == 0 ? 1 : period;
+
 		// Pass properties from feed into requested
 		for ( i = 0; i < mlt_properties_count( properties ); i ++ )
 		{
@@ -130,8 +139,6 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 			{
 				if ( !strncmp( name + len, "length[", 7 ) )
 				{
-					int period = mlt_properties_get_int( properties, "period" );
-					period = period == 0 ? 1 : period;
 					mlt_properties_set_position( properties, key, length / period );
 				}
 				else
@@ -144,7 +151,10 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 		}
 
 		// Set the original position on the frame
-		mlt_frame_set_position( frame, mlt_properties_get_int( feed, "position" ) - mlt_properties_get_int( feed, "in" ) );
+		if ( absolute == 0 )
+			mlt_frame_set_position( frame, mlt_properties_get_int( feed, "position" ) - mlt_properties_get_int( feed, "in" ) );
+		else
+			mlt_frame_set_position( frame, mlt_properties_get_int( feed, "position" ) );
 
 		// Process the filter
 		mlt_filter_process( requested, frame );

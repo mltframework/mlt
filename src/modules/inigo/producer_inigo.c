@@ -251,7 +251,11 @@ mlt_producer producer_inigo_init( char **argv )
 			if ( mlt_playlist_count( playlist ) > 0 )
 			{
 				mlt_playlist_clip_info info;
-				mlt_playlist_join( playlist, mlt_playlist_count( playlist ) - clips - 1, clips, 0 );
+				int clip = clips <= 0 ? 0 : mlt_playlist_count( playlist ) - clips - 1;
+				if ( clip < 0 ) clip = 0;
+				if ( clip >= mlt_playlist_count( playlist ) ) clip = mlt_playlist_count( playlist ) - 2;
+				if ( clips < 0 ) clips =  mlt_playlist_count( playlist ) - 1;
+				mlt_playlist_join( playlist, clip, clips, 0 );
 				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
 				producer = info.cut;
 				properties = MLT_PRODUCER_PROPERTIES( producer );

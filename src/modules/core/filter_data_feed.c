@@ -115,6 +115,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 				// Push it on to the queue
 				mlt_deque_push_back( data_queue, feed );
+
+				// Make sure this attribute only gets processed once
+				mlt_properties_set_int( frame_properties, name, 0 );
 			}
 		}
 	}
