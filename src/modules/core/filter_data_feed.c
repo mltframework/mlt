@@ -94,7 +94,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			{
 				char *value = mlt_properties_get( frame_properties, name );
 				sprintf( inactive, "%s.inactive", name );
-				if ( value != NULL && mlt_properties_get_int( frame_properties, inactive ) == 0 )
+				if ( value != NULL && strcmp( value, "" ) && mlt_properties_get_int( frame_properties, inactive ) == 0 )
 				{
 					// Create a new data feed
 					mlt_properties feed = mlt_properties_new( );
