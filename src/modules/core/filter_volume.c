@@ -29,7 +29,6 @@
 #include <string.h>
 
 #define MAX_CHANNELS 6
-#define SMOOTH_BUFFER_SIZE 75  /* smooth over 3 seconds on PAL */
 #define EPSILON 0.00001
 
 /* The normalise functions come from the normalize utility:
@@ -194,19 +193,27 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 	if ( normalise )
 	{
+		int window = mlt_properties_get_int( properties, "volume.window" );
 		double *smooth_buffer = mlt_properties_get_data( properties, "volume.smooth_buffer", NULL );
 		int *smooth_index = mlt_properties_get_data( properties, "volume.smooth_index", NULL );
 
-		// Compute the signal power and put into smoothing buffer
-		smooth_buffer[ *smooth_index ] = signal_max_power( *buffer, *channels, *samples, &peak );
-//		fprintf( stderr, "filter_volume: raw power %f ", smooth_buffer[ *smooth_index ] );
-		if ( smooth_buffer[ *smooth_index ] > EPSILON )
+		if ( window > 0 && smooth_buffer != NULL )
 		{
-			*smooth_index = ( *smooth_index + 1 ) % SMOOTH_BUFFER_SIZE;
+			// Compute the signal power and put into smoothing buffer
+			smooth_buffer[ *smooth_index ] = signal_max_power( *buffer, *channels, *samples, &peak );
+//			fprintf( stderr, "filter_volume: raw power %f ", smooth_buffer[ *smooth_index ] );
+			if ( smooth_buffer[ *smooth_index ] > EPSILON )
+			{
+				*smooth_index = ( *smooth_index + 1 ) % window;
 
-			// Smooth the data and compute the gain
-//			fprintf( stderr, "smoothed %f\n", get_smoothed_data( smooth_buffer, SMOOTH_BUFFER_SIZE ) );
-			gain *= amplitude / get_smoothed_data( smooth_buffer, SMOOTH_BUFFER_SIZE );
+				// Smooth the data and compute the gain
+				//fprintf( stderr, "smoothed %f over %d frames\n", get_smoothed_data( smooth_buffer, window ), window );
+				gain *= amplitude / get_smoothed_data( smooth_buffer, window );
+			}
+		}
+		else
+		{
+			gain = amplitude / signal_max_power( *buffer, *channels, *samples, &peak );
 		}
 	}
 	
@@ -345,7 +352,22 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_properties_set_double( properties, "volume.amplitude", amplitude );
 	}
 
+	int window = mlt_properties_get_int( filter_props, "window" );
+	if ( mlt_properties_get( filter_props, "smooth_buffer" ) == NULL && window > 1 )
+	{
+		// Create a smoothing buffer for the calculated "max power" of frame of audio used in normalisation
+		double *smooth_buffer = (double*) calloc( window, sizeof( double ) );
+		int i;
+		for ( i = 0; i < window; i++ )
+			smooth_buffer[ i ] = -1.0;
+		mlt_properties_set_data( filter_props, "smooth_buffer", smooth_buffer, 0, free, NULL );
+		int *smooth_index = calloc( 1, sizeof( int ) );
+		
+		mlt_properties_set_data( filter_props, "smooth_index", smooth_index, 0, free, NULL );
+	}
+	
 	// Propogate the smoothing buffer properties
+	mlt_properties_set_int( properties, "volume.window", window );
 	mlt_properties_set_data( properties, "volume.smooth_buffer",
 		mlt_properties_get_data( filter_props, "smooth_buffer", NULL ), 0, NULL, NULL );
 	mlt_properties_set_data( properties, "volume.smooth_index",
@@ -373,14 +395,8 @@ mlt_filter filter_volume_init( char *arg )
 		if ( arg != NULL )
 			mlt_properties_set( properties, "gain", arg );
 
-		// Create a smoothing buffer for the calculated "max power" of frame of audio used in normalisation
-		double *smooth_buffer = (double*) calloc( SMOOTH_BUFFER_SIZE, sizeof( double ) );
-		int i;
-		for ( i = 0; i < SMOOTH_BUFFER_SIZE; i++ )
-			smooth_buffer[ i ] = -1.0;
-		mlt_properties_set_data( mlt_filter_properties( this ), "smooth_buffer", smooth_buffer, 0, free, NULL );
-		int *smooth_index = calloc( 1, sizeof( int ) );
-		mlt_properties_set_data( mlt_filter_properties( this ), "smooth_index", smooth_index, 0, free, NULL );
+		mlt_properties_set_int( properties, "window", 75 );
+		mlt_properties_set( properties, "max_gain", "20dB" );
 	}
 	return this;
 }
