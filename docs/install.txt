@@ -1,11 +1,15 @@
+Installation Documentation
+
+Copyright (C) 2004 Ushodaya Enterprises Limited
+Author: Charles Yates <charles.yates@pandora.be>
+Last Revision: 2004-04-13
+
+
 INSTALL
 -------
 
 	This document provides a description of the MLT project installation and
 	organisation.
-
-	It provides *CRITICAL* architecture information, so please read carefully
-	if you plan to extend or use the MLT code base.
 
 
 Directories
@@ -43,6 +47,51 @@ Directories
 	documented in their parent.
 
 	(*) Not posted to CVS due to licensing issues.
+
+
+Dependencies
+------------
+
+	The MLT core is dependent on:
+
+	* a C99 compliant C compiler
+	* posix threading
+	* standard posix libraries
+
+	The MLT applications and libraries provided are all dependent on the core.
+
+	The modules have the following dependencies:
+
+	----------- ----------------------------------------------------------
+	MODULE      DESCRIPTION
+	----------- ----------------------------------------------------------
+	avformat    Provided from ffmpeg CVS and compiled as a shared library.
+	            URL: http://ffmpeg.sf.net
+	----------- ----------------------------------------------------------
+	bluefish    Bluefish hardware and software development kit
+	            URL: http://www.bluefish444.com
+	----------- ----------------------------------------------------------
+	dv          libdv 0.102 or later.
+	            URL: http://libdv.sf.net
+	----------- ----------------------------------------------------------
+	gtk2        GTK2 and associated dependencies.
+	            URL: http://www.gtk.org
+	----------- ----------------------------------------------------------
+	mainconcept Mainconcept MPEG and DVCPRO Release SDKs.
+	            URL: http://www.mainconcept.com
+	----------- ----------------------------------------------------------
+	resample    libsamplerate 0.15 or later 
+	            URL: http://www.mega-nerd.com/SRC/
+	----------- ----------------------------------------------------------
+	sdl         SDL 1.2 or later.
+	            URL: http://www.libsdl.org
+	----------- ----------------------------------------------------------
+	vorbis      libvorbis 1.0.1 or later.
+	            URL: http://www.vorbis.com/
+	----------- ----------------------------------------------------------
+	westley     libxml2 2.5 or later.
+	            URL: http://www.xmlsoft.org/
+	----------- ----------------------------------------------------------
 
 
 Configuration
@@ -84,7 +133,7 @@ Testing
 
 	. setenv
 
-	NB: This applies to your current shell only.
+	NB: This applies to your current shell only and it assumes sh or bash.
 
 
 Installation
