@@ -24,13 +24,13 @@
 #include "mlt_types.h"
 
 extern mlt_deque mlt_deque_init( );
-extern int mlt_deque_count( mlt_deque this );
-extern int mlt_deque_push_back( mlt_deque this, void *item );
-extern void *mlt_deque_pop_back( mlt_deque this );
-extern int mlt_deque_push_front( mlt_deque this, void *item );
-extern void *mlt_deque_pop_front( mlt_deque this );
-extern void *mlt_deque_peek_back( mlt_deque this );
-extern void *mlt_deque_peek_front( mlt_deque this );
-extern void mlt_deque_close( mlt_deque this );
+extern int mlt_deque_count( mlt_deque self );
+extern int mlt_deque_push_back( mlt_deque self, void *item );
+extern void *mlt_deque_pop_back( mlt_deque self );
+extern int mlt_deque_push_front( mlt_deque self, void *item );
+extern void *mlt_deque_pop_front( mlt_deque self );
+extern void *mlt_deque_peek_back( mlt_deque self );
+extern void *mlt_deque_peek_front( mlt_deque self );
+extern void mlt_deque_close( mlt_deque self );
 
 #endif

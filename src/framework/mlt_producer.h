@@ -36,29 +36,29 @@ struct mlt_producer_s
 	void ( *close )( mlt_producer );
 
 	// Private data
-	void *private;
+	void *local;
 	void *child;
 };
 
 /** Public final methods
 */
 
-extern int mlt_producer_init( mlt_producer this, void *child );
+extern int mlt_producer_init( mlt_producer self, void *child );
 extern mlt_producer mlt_producer_new( );
-extern mlt_service mlt_producer_service( mlt_producer this );
-extern mlt_properties mlt_producer_properties( mlt_producer this );
-extern int mlt_producer_seek( mlt_producer this, mlt_position position );
-extern mlt_position mlt_producer_position( mlt_producer this );
-extern mlt_position mlt_producer_frame( mlt_producer this );
-extern int mlt_producer_set_speed( mlt_producer this, double speed );
-extern double mlt_producer_get_speed( mlt_producer this );
-extern double mlt_producer_get_fps( mlt_producer this );
-extern int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_position out );
-extern mlt_position mlt_producer_get_in( mlt_producer this );
-extern mlt_position mlt_producer_get_out( mlt_producer this );
-extern mlt_position mlt_producer_get_playtime( mlt_producer this );
-extern mlt_position mlt_producer_get_length( mlt_producer this );
-extern void mlt_producer_prepare_next( mlt_producer this );
-extern void mlt_producer_close( mlt_producer this );
+extern mlt_service mlt_producer_service( mlt_producer self );
+extern mlt_properties mlt_producer_properties( mlt_producer self );
+extern int mlt_producer_seek( mlt_producer self, mlt_position position );
+extern mlt_position mlt_producer_position( mlt_producer self );
+extern mlt_position mlt_producer_frame( mlt_producer self );
+extern int mlt_producer_set_speed( mlt_producer self, double speed );
+extern double mlt_producer_get_speed( mlt_producer self );
+extern double mlt_producer_get_fps( mlt_producer self );
+extern int mlt_producer_set_in_and_out( mlt_producer self, mlt_position in, mlt_position out );
+extern mlt_position mlt_producer_get_in( mlt_producer self );
+extern mlt_position mlt_producer_get_out( mlt_producer self );
+extern mlt_position mlt_producer_get_playtime( mlt_producer self );
+extern mlt_position mlt_producer_get_length( mlt_producer self );
+extern void mlt_producer_prepare_next( mlt_producer self );
+extern void mlt_producer_close( mlt_producer self );
 
 #endif

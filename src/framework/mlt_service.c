@@ -65,8 +65,8 @@ int mlt_service_init( mlt_service this, void *child )
 	// Assign the child
 	this->child = child;
 
-	// Generate private space
-	this->private = calloc( sizeof( mlt_service_base ), 1 );
+	// Generate local space
+	this->local = calloc( sizeof( mlt_service_base ), 1 );
 
 	// Associate the methods
 	this->get_frame = service_get_frame;
@@ -87,7 +87,7 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 	int i = 0;
 
 	// Get the service base
-	mlt_service_base *base = this->private;
+	mlt_service_base *base = this->local;
 
 	// Check if the producer is already registered with this service
 	for ( i = 0; i < base->count; i ++ )
@@ -138,7 +138,7 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 static void mlt_service_disconnect( mlt_service this )
 {
 	// Get the service base
-	mlt_service_base *base = this->private;
+	mlt_service_base *base = this->local;
 
 	// There's a bit more required here...
 	base->out = NULL;
@@ -150,7 +150,7 @@ static void mlt_service_disconnect( mlt_service this )
 static void mlt_service_connect( mlt_service this, mlt_service that )
 {
 	// Get the service base
-	mlt_service_base *base = this->private;
+	mlt_service_base *base = this->local;
 
 	// There's a bit more required here...
 	base->out = that;
@@ -164,7 +164,7 @@ mlt_service mlt_service_get_producer( mlt_service this )
 	mlt_service producer = NULL;
 
 	// Get the service base
-	mlt_service_base *base = this->private;
+	mlt_service_base *base = this->local;
 
 	if ( base->in != NULL )
 		producer = base->in[ 0 ];
@@ -177,7 +177,7 @@ mlt_service mlt_service_get_producer( mlt_service this )
 
 static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 {
-	mlt_service_base *base = this->private;
+	mlt_service_base *base = this->local;
 	if ( index < base->count )
 	{
 		mlt_service producer = base->in[ index ];
@@ -201,7 +201,7 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 
 void mlt_service_close( mlt_service this )
 {
-	mlt_service_base *base = this->private;
+	mlt_service_base *base = this->local;
 	free( base->in );
 	free( base );
 	mlt_properties_close( &this->parent );

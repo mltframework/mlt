@@ -39,7 +39,7 @@ struct mlt_consumer_s
 	void ( *close )( mlt_consumer );
 
 	// Private data
-	void *private;
+	void *local;
 	void *child;
 
 	int real_time;
@@ -54,16 +54,16 @@ struct mlt_consumer_s
 /** Public final methods
 */
 
-extern int mlt_consumer_init( mlt_consumer this, void *child );
+extern int mlt_consumer_init( mlt_consumer self, void *child );
 extern mlt_consumer mlt_consumer_new( );
-extern mlt_service mlt_consumer_service( mlt_consumer this );
-extern mlt_properties mlt_consumer_properties( mlt_consumer this );
-extern int mlt_consumer_connect( mlt_consumer this, mlt_service producer );
-extern int mlt_consumer_start( mlt_consumer this );
-extern mlt_frame mlt_consumer_get_frame( mlt_consumer this );
-extern mlt_frame mlt_consumer_rt_frame( mlt_consumer this );
-extern int mlt_consumer_stop( mlt_consumer this );
-extern int mlt_consumer_is_stopped( mlt_consumer this );
+extern mlt_service mlt_consumer_service( mlt_consumer self );
+extern mlt_properties mlt_consumer_properties( mlt_consumer self );
+extern int mlt_consumer_connect( mlt_consumer self, mlt_service producer );
+extern int mlt_consumer_start( mlt_consumer self );
+extern mlt_frame mlt_consumer_get_frame( mlt_consumer self );
+extern mlt_frame mlt_consumer_rt_frame( mlt_consumer self );
+extern int mlt_consumer_stop( mlt_consumer self );
+extern int mlt_consumer_is_stopped( mlt_consumer self );
 extern void mlt_consumer_close( mlt_consumer );
 
 #endif

@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
+ * along with self program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -32,30 +32,30 @@ struct mlt_service_s
 	struct mlt_properties_s parent;
 
 	// Protected virtual
-	int ( *get_frame )( mlt_service this, mlt_frame_ptr frame, int index );
+	int ( *get_frame )( mlt_service self, mlt_frame_ptr frame, int index );
 
 	// Private data
-	void *private;
+	void *local;
 	void *child;
 };
 
 /** The public API.
 */
 
-extern int mlt_service_init( mlt_service this, void *child );
-extern int mlt_service_connect_producer( mlt_service this, mlt_service producer, int index );
-extern int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
-extern void mlt_service_close( mlt_service this );
+extern int mlt_service_init( mlt_service self, void *child );
+extern int mlt_service_connect_producer( mlt_service self, mlt_service producer, int index );
+extern int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index );
+extern void mlt_service_close( mlt_service self );
 
-// I'm not sure about this one - leaving it out of docs for now (only used in consumer_westley)
-extern mlt_service mlt_service_get_producer( mlt_service this );
+// I'm not sure about self one - leaving it out of docs for now (only used in consumer_westley)
+extern mlt_service mlt_service_get_producer( mlt_service self );
 
 /** Return the properties object.
 */
 
-static inline mlt_properties mlt_service_properties( mlt_service this )
+static inline mlt_properties mlt_service_properties( mlt_service self )
 {
-	return &this->parent;
+	return &self->parent;
 }
 
 #endif

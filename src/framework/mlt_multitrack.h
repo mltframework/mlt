@@ -27,14 +27,14 @@
 */
 
 extern mlt_multitrack mlt_multitrack_init( );
-extern mlt_producer mlt_multitrack_producer( mlt_multitrack this );
-extern mlt_service mlt_multitrack_service( mlt_multitrack this );
-extern mlt_properties mlt_multitrack_properties( mlt_multitrack this );
-extern int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int track );
-extern mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index );
-extern void mlt_multitrack_close( mlt_multitrack this );
-extern int mlt_multitrack_count( mlt_multitrack this );
-extern mlt_producer mlt_multitrack_track( mlt_multitrack this, int track );
+extern mlt_producer mlt_multitrack_producer( mlt_multitrack self );
+extern mlt_service mlt_multitrack_service( mlt_multitrack self );
+extern mlt_properties mlt_multitrack_properties( mlt_multitrack self );
+extern int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int track );
+extern mlt_position mlt_multitrack_clip( mlt_multitrack self, mlt_whence whence, int index );
+extern void mlt_multitrack_close( mlt_multitrack self );
+extern int mlt_multitrack_count( mlt_multitrack self );
+extern mlt_producer mlt_multitrack_track( mlt_multitrack self, int track );
 
 #endif
 

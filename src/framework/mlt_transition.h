@@ -53,17 +53,17 @@ struct mlt_transition_s
 /** Public final methods
 */
 
-extern int mlt_transition_init( mlt_transition this, void *child );
+extern int mlt_transition_init( mlt_transition self, void *child );
 extern mlt_transition mlt_transition_new( );
-extern mlt_service mlt_transition_service( mlt_transition this );
-extern mlt_properties mlt_transition_properties( mlt_transition this );
-extern int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_track, int b_track );
-extern void mlt_transition_set_in_and_out( mlt_transition this, mlt_position in, mlt_position out );
-extern int mlt_transition_get_a_track( mlt_transition this );
-extern int mlt_transition_get_b_track( mlt_transition this );
-extern mlt_position mlt_transition_get_in( mlt_transition this );
-extern mlt_position mlt_transition_get_out( mlt_transition this );
-extern mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame );
-extern void mlt_transition_close( mlt_transition this );
+extern mlt_service mlt_transition_service( mlt_transition self );
+extern mlt_properties mlt_transition_properties( mlt_transition self );
+extern int mlt_transition_connect( mlt_transition self, mlt_service producer, int a_track, int b_track );
+extern void mlt_transition_set_in_and_out( mlt_transition self, mlt_position in, mlt_position out );
+extern int mlt_transition_get_a_track( mlt_transition self );
+extern int mlt_transition_get_b_track( mlt_transition self );
+extern mlt_position mlt_transition_get_in( mlt_transition self );
+extern mlt_position mlt_transition_get_out( mlt_transition self );
+extern mlt_frame mlt_transition_process( mlt_transition self, mlt_frame a_frame, mlt_frame b_frame );
+extern void mlt_transition_close( mlt_transition self );
 
 #endif

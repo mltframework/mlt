@@ -24,7 +24,7 @@
 #include "mlt_properties.h"
 #include "mlt_deque.h"
 
-typedef int ( *mlt_get_image )( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
+typedef int ( *mlt_get_image )( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 
 struct mlt_frame_s
 {
@@ -32,8 +32,8 @@ struct mlt_frame_s
 	struct mlt_properties_s parent;
 
 	// Virtual methods
-	int ( *get_audio )( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
-	uint8_t * ( *get_alpha_mask )( mlt_frame this );
+	int ( *get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
+	uint8_t * ( *get_alpha_mask )( mlt_frame self );
 	
 	// Private properties
 	mlt_deque stack_image;
@@ -41,34 +41,34 @@ struct mlt_frame_s
 };
 
 extern mlt_frame mlt_frame_init( );
-extern mlt_properties mlt_frame_properties( mlt_frame this );
-extern int mlt_frame_is_test_card( mlt_frame this );
-extern int mlt_frame_is_test_audio( mlt_frame this );
-extern double mlt_frame_get_aspect_ratio( mlt_frame this );
-extern int mlt_frame_set_aspect_ratio( mlt_frame this, double value );
-extern mlt_position mlt_frame_get_position( mlt_frame this );
-extern int mlt_frame_set_position( mlt_frame this, mlt_position value );
-extern int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
-extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame this );
-extern int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
-extern int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image );
-extern mlt_get_image mlt_frame_pop_get_image( mlt_frame this );
-extern int mlt_frame_push_frame( mlt_frame this, mlt_frame that );
-extern mlt_frame mlt_frame_pop_frame( mlt_frame this );
-extern int mlt_frame_push_service( mlt_frame this, void *that );
-extern void *mlt_frame_pop_service( mlt_frame this );
-extern int mlt_frame_push_audio( mlt_frame this, void *that );
-extern void *mlt_frame_pop_audio( mlt_frame this );
-extern void mlt_frame_close( mlt_frame this );
+extern mlt_properties mlt_frame_properties( mlt_frame self );
+extern int mlt_frame_is_test_card( mlt_frame self );
+extern int mlt_frame_is_test_audio( mlt_frame self );
+extern double mlt_frame_get_aspect_ratio( mlt_frame self );
+extern int mlt_frame_set_aspect_ratio( mlt_frame self, double value );
+extern mlt_position mlt_frame_get_position( mlt_frame self );
+extern int mlt_frame_set_position( mlt_frame self, mlt_position value );
+extern int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
+extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame self );
+extern int mlt_frame_get_audio( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
+extern int mlt_frame_push_get_image( mlt_frame self, mlt_get_image get_image );
+extern mlt_get_image mlt_frame_pop_get_image( mlt_frame self );
+extern int mlt_frame_push_frame( mlt_frame self, mlt_frame that );
+extern mlt_frame mlt_frame_pop_frame( mlt_frame self );
+extern int mlt_frame_push_service( mlt_frame self, void *that );
+extern void *mlt_frame_pop_service( mlt_frame self );
+extern int mlt_frame_push_audio( mlt_frame self, void *that );
+extern void *mlt_frame_pop_audio( mlt_frame self );
+extern void mlt_frame_close( mlt_frame self );
 
 /* convenience functions */
 extern int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha );
 extern int mlt_convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv );
 extern int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int stride, uint8_t *yuv );
-extern uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight );
-extern uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight );
+extern uint8_t *mlt_frame_resize_yuv422( mlt_frame self, int owidth, int oheight );
+extern uint8_t *mlt_frame_rescale_yuv422( mlt_frame self, int owidth, int oheight );
 extern void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight );
-extern int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
+extern int mlt_frame_mix_audio( mlt_frame self, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 
 /* this macro scales rgb into the yuv gamut, y is scaled by 219/255 and uv by 224/255 */

@@ -31,7 +31,7 @@
 struct mlt_properties_s
 {
 	void *child;
-	void *private;
+	void *local;
 };
 
 /** Public interface.
@@ -40,27 +40,27 @@ struct mlt_properties_s
 extern int mlt_properties_init( mlt_properties, void *child );
 extern mlt_properties mlt_properties_new( );
 extern mlt_properties mlt_properties_load( char *file );
-extern void mlt_properties_mirror( mlt_properties this, mlt_properties that );
-extern int mlt_properties_inherit( mlt_properties this, mlt_properties that );
-extern int mlt_properties_pass( mlt_properties this, mlt_properties that, char *prefix );
-extern int mlt_properties_set( mlt_properties this, char *name, char *value );
-extern int mlt_properties_set_or_default( mlt_properties this, char *name, char *value, char *def );
-extern int mlt_properties_parse( mlt_properties this, char *namevalue );
-extern char *mlt_properties_get( mlt_properties this, char *name );
-extern char *mlt_properties_get_name( mlt_properties this, int index );
-extern char *mlt_properties_get_value( mlt_properties this, int index );
-extern void *mlt_properties_get_data_at( mlt_properties this, int index, int *size );
-extern int mlt_properties_get_int( mlt_properties this, char *name );
-extern int mlt_properties_set_int( mlt_properties this, char *name, int value );
-extern double mlt_properties_get_double( mlt_properties this, char *name );
-extern int mlt_properties_set_double( mlt_properties this, char *name, double value );
-extern mlt_position mlt_properties_get_position( mlt_properties this, char *name );
-extern int mlt_properties_set_position( mlt_properties this, char *name, mlt_position value );
-extern int mlt_properties_set_data( mlt_properties this, char *name, void *value, int length, mlt_destructor, mlt_serialiser );
-extern void *mlt_properties_get_data( mlt_properties this, char *name, int *length );
-extern int mlt_properties_rename( mlt_properties this, char *source, char *dest );
-extern int mlt_properties_count( mlt_properties this );
-extern void mlt_properties_dump( mlt_properties this, FILE *output );
-extern void mlt_properties_close( mlt_properties this );
+extern void mlt_properties_mirror( mlt_properties self, mlt_properties that );
+extern int mlt_properties_inherit( mlt_properties self, mlt_properties that );
+extern int mlt_properties_pass( mlt_properties self, mlt_properties that, char *prefix );
+extern int mlt_properties_set( mlt_properties self, char *name, char *value );
+extern int mlt_properties_set_or_default( mlt_properties self, char *name, char *value, char *def );
+extern int mlt_properties_parse( mlt_properties self, char *namevalue );
+extern char *mlt_properties_get( mlt_properties self, char *name );
+extern char *mlt_properties_get_name( mlt_properties self, int index );
+extern char *mlt_properties_get_value( mlt_properties self, int index );
+extern void *mlt_properties_get_data_at( mlt_properties self, int index, int *size );
+extern int mlt_properties_get_int( mlt_properties self, char *name );
+extern int mlt_properties_set_int( mlt_properties self, char *name, int value );
+extern double mlt_properties_get_double( mlt_properties self, char *name );
+extern int mlt_properties_set_double( mlt_properties self, char *name, double value );
+extern mlt_position mlt_properties_get_position( mlt_properties self, char *name );
+extern int mlt_properties_set_position( mlt_properties self, char *name, mlt_position value );
+extern int mlt_properties_set_data( mlt_properties self, char *name, void *value, int length, mlt_destructor, mlt_serialiser );
+extern void *mlt_properties_get_data( mlt_properties self, char *name, int *length );
+extern int mlt_properties_rename( mlt_properties self, char *source, char *dest );
+extern int mlt_properties_count( mlt_properties self );
+extern void mlt_properties_dump( mlt_properties self, FILE *output );
+extern void mlt_properties_close( mlt_properties self );
 
 #endif

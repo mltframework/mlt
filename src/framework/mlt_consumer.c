@@ -284,6 +284,16 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Increment the count
 		count ++;
 
+		// All non normal playback frames should be shown
+		if ( mlt_properties_get_int( mlt_frame_properties( frame ), "_speed" ) != 1 )
+		{
+			skipped = 0;
+			time_frame = 0;
+			time_image = 0;
+			time_wait = 0;
+			count = 1;
+		}
+
 		// Get the image
 		if ( ( time_frame + time_image ) / count < ( 40000 - ( time_wait / count ) ) )
 		{

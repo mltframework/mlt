@@ -68,12 +68,12 @@ int mlt_properties_init( mlt_properties this, void *child )
 		// Assign the child of the object
 		this->child = child;
 
-		// Allocate the private structure
-		this->private = calloc( sizeof( property_list ), 1 );
+		// Allocate the local structure
+		this->local = calloc( sizeof( property_list ), 1 );
 	}
 
 	// Check that initialisation was successful
-	return this != NULL && this->private == NULL;
+	return this != NULL && this->local == NULL;
 }
 
 /** Constructor for stand alone object.
@@ -146,7 +146,7 @@ static inline int generate_hash( char *name )
 
 static inline void mlt_properties_do_mirror( mlt_properties this, char *name )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	if ( list->mirror != NULL ) 
 	{
 		char *value = mlt_properties_get( this, name );
@@ -160,7 +160,7 @@ static inline void mlt_properties_do_mirror( mlt_properties this, char *name )
 
 void mlt_properties_mirror( mlt_properties this, mlt_properties that )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	list->mirror = that;
 }
 
@@ -209,7 +209,7 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, char *prefix 
 
 static inline mlt_property mlt_properties_find( mlt_properties this, char *name )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	mlt_property value = NULL;
 	int key = generate_hash( name );
 	int i = list->hash[ key ] - 1;
@@ -236,7 +236,7 @@ static inline mlt_property mlt_properties_find( mlt_properties this, char *name 
 
 static mlt_property mlt_properties_add( mlt_properties this, char *name )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	int key = generate_hash( name );
 
 	// Check that we have space and resize if necessary
@@ -317,7 +317,7 @@ char *mlt_properties_get( mlt_properties this, char *name )
 
 char *mlt_properties_get_name( mlt_properties this, int index )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	if ( index >= 0 && index < list->count )
 		return list->name[ index ];
 	return NULL;
@@ -328,7 +328,7 @@ char *mlt_properties_get_name( mlt_properties this, int index )
 
 char *mlt_properties_get_value( mlt_properties this, int index )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	if ( index >= 0 && index < list->count )
 		return mlt_property_get_string( list->value[ index ] );
 	return NULL;
@@ -339,7 +339,7 @@ char *mlt_properties_get_value( mlt_properties this, int index )
 
 void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	if ( index >= 0 && index < list->count )
 		return mlt_property_get_data( list->value[ index ], size );
 	return NULL;
@@ -350,7 +350,7 @@ void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
 
 int mlt_properties_count( mlt_properties this )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	return list->count;
 }
 
@@ -515,7 +515,7 @@ int mlt_properties_rename( mlt_properties this, char *source, char *dest )
 
 	if ( value == NULL )
 	{
-		property_list *list = this->private;
+		property_list *list = this->local;
 		int i = 0;
 
 		// Locate the item 
@@ -539,7 +539,7 @@ int mlt_properties_rename( mlt_properties this, char *source, char *dest )
 
 void mlt_properties_dump( mlt_properties this, FILE *output )
 {
-	property_list *list = this->private;
+	property_list *list = this->local;
 	int i = 0;
 	for ( i = 0; i < list->count; i ++ )
 		if ( mlt_properties_get( this, list->name[ i ] ) != NULL )
@@ -553,7 +553,7 @@ void mlt_properties_close( mlt_properties this )
 {
 	if ( this != NULL )
 	{
-		property_list *list = this->private;
+		property_list *list = this->local;
 		int index = 0;
 
 		// Clean up names and values

@@ -18,13 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _VALERIE_TOKENISER_H_
-#define _VALERIE_TOKENISER_H_
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#ifndef _MLT_TOKENISER_H_
+#define _MLT_TOKENISER_H_
 
 /** Structure for tokeniser.
 */
@@ -42,14 +37,10 @@ typedef struct
 */
 
 extern mlt_tokeniser mlt_tokeniser_init( );
-extern int mlt_tokeniser_parse_new( mlt_tokeniser, char *, char * );
-extern char *mlt_tokeniser_get_input( mlt_tokeniser );
-extern int mlt_tokeniser_count( mlt_tokeniser );
-extern char *mlt_tokeniser_get_string( mlt_tokeniser, int );
-extern void mlt_tokeniser_close( mlt_tokeniser );
-
-#ifdef __cplusplus
-}
-#endif
+extern int mlt_tokeniser_parse_new( mlt_tokeniser self, char *text, char *delimiter );
+extern char *mlt_tokeniser_get_input( mlt_tokeniser self );
+extern int mlt_tokeniser_count( mlt_tokeniser self );
+extern char *mlt_tokeniser_get_string( mlt_tokeniser self, int index );
+extern void mlt_tokeniser_close( mlt_tokeniser self );
 
 #endif

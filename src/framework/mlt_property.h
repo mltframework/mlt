@@ -67,19 +67,19 @@ typedef struct mlt_property_s
 */
 
 extern mlt_property mlt_property_init( );
-extern int mlt_property_set_int( mlt_property this, int value );
-extern int mlt_property_set_double( mlt_property this, double value );
-extern int mlt_property_set_position( mlt_property this, mlt_position value );
-extern int mlt_property_set_uint64( mlt_property this, uint64_t value );
-extern int mlt_property_set_string( mlt_property this, char *value );
-extern int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser );
-extern int mlt_property_get_int( mlt_property this );
-extern double mlt_property_get_double( mlt_property this );
-extern mlt_position mlt_property_get_position( mlt_property this );
-extern int64_t mlt_property_get_int64( mlt_property this );
-extern char *mlt_property_get_string( mlt_property this );
-extern void *mlt_property_get_data( mlt_property this, int *length );
-extern void mlt_property_close( mlt_property this );
+extern int mlt_property_set_int( mlt_property self, int value );
+extern int mlt_property_set_double( mlt_property self, double value );
+extern int mlt_property_set_position( mlt_property self, mlt_position value );
+extern int mlt_property_set_uint64( mlt_property self, uint64_t value );
+extern int mlt_property_set_string( mlt_property self, char *value );
+extern int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser );
+extern int mlt_property_get_int( mlt_property self );
+extern double mlt_property_get_double( mlt_property self );
+extern mlt_position mlt_property_get_position( mlt_property self );
+extern int64_t mlt_property_get_int64( mlt_property self );
+extern char *mlt_property_get_string( mlt_property self );
+extern void *mlt_property_get_data( mlt_property self, int *length );
+extern void mlt_property_close( mlt_property self );
 
 #endif
 

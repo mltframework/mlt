@@ -44,23 +44,23 @@ mlt_playlist_clip_info;
 */
 
 extern mlt_playlist mlt_playlist_init( );
-extern mlt_producer mlt_playlist_producer( mlt_playlist this );
-extern mlt_service mlt_playlist_service( mlt_playlist this );
-extern mlt_properties mlt_playlist_properties( mlt_playlist this );
-extern int mlt_playlist_count( mlt_playlist this );
-extern int mlt_playlist_clear( mlt_playlist this );
-extern int mlt_playlist_append( mlt_playlist this, mlt_producer producer );
-extern int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, mlt_position in, mlt_position out );
-extern int mlt_playlist_blank( mlt_playlist this, mlt_position length );
-extern mlt_position mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index );
-extern int mlt_playlist_current_clip( mlt_playlist this );
-extern mlt_producer mlt_playlist_current( mlt_playlist this );
-extern int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index );
-extern int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, mlt_position in, mlt_position out );
-extern int mlt_playlist_remove( mlt_playlist this, int where );
-extern int mlt_playlist_move( mlt_playlist this, int from, int to );
-extern int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_position out );
-extern void mlt_playlist_close( mlt_playlist this );
+extern mlt_producer mlt_playlist_producer( mlt_playlist self );
+extern mlt_service mlt_playlist_service( mlt_playlist self );
+extern mlt_properties mlt_playlist_properties( mlt_playlist self );
+extern int mlt_playlist_count( mlt_playlist self );
+extern int mlt_playlist_clear( mlt_playlist self );
+extern int mlt_playlist_append( mlt_playlist self, mlt_producer producer );
+extern int mlt_playlist_append_io( mlt_playlist self, mlt_producer producer, mlt_position in, mlt_position out );
+extern int mlt_playlist_blank( mlt_playlist self, mlt_position length );
+extern mlt_position mlt_playlist_clip( mlt_playlist self, mlt_whence whence, int index );
+extern int mlt_playlist_current_clip( mlt_playlist self );
+extern mlt_producer mlt_playlist_current( mlt_playlist self );
+extern int mlt_playlist_get_clip_info( mlt_playlist self, mlt_playlist_clip_info *info, int index );
+extern int mlt_playlist_insert( mlt_playlist self, mlt_producer producer, int where, mlt_position in, mlt_position out );
+extern int mlt_playlist_remove( mlt_playlist self, int where );
+extern int mlt_playlist_move( mlt_playlist self, int from, int to );
+extern int mlt_playlist_resize_clip( mlt_playlist self, int clip, mlt_position in, mlt_position out );
+extern void mlt_playlist_close( mlt_playlist self );
 
 #endif
 
