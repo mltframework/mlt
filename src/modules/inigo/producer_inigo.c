@@ -170,9 +170,9 @@ mlt_producer producer_inigo_init( char **argv )
 				{
 					mlt_playlist_clip_info info;
 					mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-					if ( mlt_properties_get_int( ( mlt_properties )info.producer, "mlt_mix" ) == 0 )
+					if ( mlt_properties_get_data( ( mlt_properties )info.producer, "mlt_mix", NULL ) == NULL )
 						mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 2 );
-					mix = ( mlt_tractor )info.producer;
+					mix = ( mlt_tractor )mlt_properties_get_data( ( mlt_properties )info.producer, "mlt_mix", NULL );
 				}
 				else
 				{

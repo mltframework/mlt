@@ -236,12 +236,13 @@ static inline void serialise_service_filters( serialise_context context, mlt_ser
 static void serialise_producer( serialise_context context, mlt_service service, xmlNode *node )
 {
 	xmlNode *child = node;
-	mlt_properties properties = mlt_service_properties( service );
+	mlt_service parent = MLT_SERVICE( mlt_producer_cut_parent( MLT_PRODUCER( service ) ) );
 	
 	if ( context->pass == 0 )
 	{
+		mlt_properties properties = mlt_service_properties( parent );
 		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, service, westley_producer );
+		char *id = westley_get_id( context, parent, westley_producer );
 		if ( id == NULL )
 			return;
 
@@ -259,9 +260,11 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 	}
 	else
 	{
-		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, service, westley_existing );
-		xmlNewProp( node, "producer", id );
+		char *id = westley_get_id( context, parent, westley_existing );
+		mlt_properties properties = mlt_service_properties( service );
+		xmlNewProp( node, "parent", id );
+		xmlNewProp( node, "in", mlt_properties_get( properties, "in" ) );
+		xmlNewProp( node, "out", mlt_properties_get( properties, "out" ) );
 	}
 }
 
@@ -288,9 +291,14 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 			xmlNode *track = xmlNewChild( node, NULL, "track", NULL );
 			int hide = 0;
 			mlt_producer producer = mlt_multitrack_track( MLT_MULTITRACK( service ), i );
+			mlt_properties properties = mlt_producer_properties( producer );
 
-			char *id = westley_get_id( context, MLT_SERVICE( producer ), westley_existing );
+			mlt_service parent = MLT_SERVICE( mlt_producer_cut_parent( producer ) );
+
+			char *id = westley_get_id( context, MLT_SERVICE( parent ), westley_existing );
 			xmlNewProp( track, "producer", id );
+			xmlNewProp( track, "in", mlt_properties_get( properties, "in" ) );
+			xmlNewProp( track, "out", mlt_properties_get( properties, "out" ) );
 			
 			hide = mlt_properties_get_int( context->hide_map, id );
 			if ( hide )

@@ -719,17 +719,22 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 		if ( multitrack != NULL )
 		{
 			// Set the track on the multitrack
-			mlt_multitrack_connect( multitrack, producer, mlt_multitrack_count( multitrack ) );
 
 			// Set producer i/o if specified
 			if ( mlt_properties_get( track_props, "in" ) != NULL ||
 				mlt_properties_get( track_props, "out" ) != NULL )
 			{
-				mlt_producer_set_in_and_out( MLT_PRODUCER( producer ),
+				mlt_producer cut = mlt_producer_cut( MLT_PRODUCER( producer ),
 					mlt_properties_get_position( track_props, "in" ),
 					mlt_properties_get_position( track_props, "out" ) );
+				mlt_multitrack_connect( multitrack, cut, mlt_multitrack_count( multitrack ) );
+				mlt_producer_close( cut );
 			}
-	
+			else
+			{
+				mlt_multitrack_connect( multitrack, producer, mlt_multitrack_count( multitrack ) );
+			}
+
 			// Set the hide state of the track producer
 			char *hide_s = mlt_properties_get( track_props, "hide" );
 			if ( hide_s != NULL )
