@@ -47,7 +47,7 @@ property_list;
 /** Memory leak checks.
 */
 
-#define _MLT_PROPERTY_CHECKS_
+//#define _MLT_PROPERTY_CHECKS_
 
 #ifdef _MLT_PROPERTY_CHECKS_
 static int properties_created = 0;
