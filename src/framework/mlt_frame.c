@@ -397,9 +397,9 @@ int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int 
 int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float weight )
 {
 	int ret = 0;
-	int width_src, height_src;
-	int width_dest, height_dest;
-	mlt_image_format format_src, format_dest;
+	int width_src = 0, height_src = 0;
+	int width_dest = 0, height_dest = 0;
+	mlt_image_format format_src = mlt_image_yuv422, format_dest = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
 	int i, j;
 	int stride_src;
@@ -416,7 +416,7 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 	//fprintf( stderr, "call get_image on frame a\n"), fflush( stderr );
 	mlt_frame_get_image( this, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
 	//fprintf( stderr, "call get_image on frame b\n"), fflush( stderr );
-	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 1 /* writable */ );
+	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
 
 	//fprintf( stderr, "mlt_frame_composite_yuv %dx%d -> %dx%d\n", width_src, height_src, width_dest, height_dest );
 	//fflush(stderr);
