@@ -19,6 +19,7 @@
  */
 
 #include "MltFrame.h"
+#include "MltProducer.h"
 using namespace Mlt;
 
 Frame::Frame( mlt_frame frame ) :
@@ -82,3 +83,7 @@ unsigned char *Frame::get_waveform( int w, int h )
 	return mlt_frame_get_waveform( get_frame( ), w, h );
 }
 
+Producer *Frame::get_original_producer( )
+{
+	return new Producer( mlt_frame_get_original_producer( get_frame( ) ) );
+}

@@ -32,20 +32,6 @@ namespace Mlt
 	class Filter;
 	class Frame;
 
-	enum service_type
-	{
-		invalid_type,
-		unknown_type,
-		producer_type,
-		playlist_type,
-		tractor_type,
-		multitrack_type,
-		filter_type,
-		transition_type,
-		consumer_type,
-		field_type
-	};
-
 	class Service : public Properties
 	{
 		private:
@@ -61,7 +47,7 @@ namespace Mlt
 			Service *consumer( );
 			Service *producer( );
 			Frame *get_frame( int index = 0 );
-			service_type type( );
+			mlt_service_type type( );
 			int attach( Filter &filter );
 			int detach( Filter &filter );
 			Filter *filter( int index );

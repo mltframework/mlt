@@ -14,6 +14,7 @@ OBJS = MltConsumer.o \
 	   MltFrame.o \
 	   MltMiracle.o \
 	   MltMultitrack.o \
+	   MltParser.o \
 	   MltPlaylist.o \
 	   MltProducer.o \
 	   MltProperties.o \

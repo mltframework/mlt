@@ -48,6 +48,7 @@ namespace Mlt {
 %newobject Tractor::multitrack( );
 %newobject Tractor::field( );
 %newobject Tractor::track( int );
+%newobject Frame::get_original_producer( );
 %newobject Miracle::execute( char * );
 %newobject Miracle::push( char *, Service & );
 }
@@ -70,6 +71,7 @@ namespace Mlt {
 %include <MltMultitrack.h>
 %include <MltField.h>
 %include <MltTractor.h>
+%include <MltParser.h>
 %include <MltFilteredConsumer.h>
 %include <MltMiracle.h>
 %include <MltResponse.h>

@@ -1,0 +1,67 @@
+/**
+ * MltParser.h - MLT Wrapper
+ * Copyright (C) 2004-2005 Charles Yates
+ * Author: Charles Yates <charles.yates@pandora.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#ifndef _MLTPP_PARSER_H_
+#define _MLTPP_PARSER_H_
+
+#include <framework/mlt.h>
+#include "MltProperties.h"
+
+namespace Mlt
+{
+	class Properties;
+	class Service;
+	class Producer;
+	class Playlist;
+	class Tractor;
+	class Multitrack;
+	class Filter;
+	class Transition;
+
+	class Parser : public Properties
+	{
+		private:
+			mlt_parser parser;
+		protected:
+			virtual mlt_properties get_properties( );	
+		public:
+			Parser( );
+			~Parser( );
+			int start( Service &service );
+			virtual int on_invalid( Service *object );
+			virtual int on_unknown( Service *object );
+			virtual int on_start_producer( Producer *object );
+			virtual int on_end_producer( Producer *object );
+			virtual int on_start_playlist( Playlist *object );
+			virtual int on_end_playlist( Playlist *object );
+			virtual int on_start_tractor( Tractor *object );
+			virtual int on_end_tractor( Tractor *object );
+			virtual int on_start_multitrack( Multitrack *object );
+			virtual int on_end_multitrack( Multitrack *object );
+			virtual int on_start_track( );
+			virtual int on_end_track( );
+			virtual int on_start_filter( Filter *object );
+			virtual int on_end_filter( Filter *object );
+			virtual int on_start_transition( Transition *object );
+			virtual int on_end_transition( Transition *object );
+	};
+}
+
+#endif

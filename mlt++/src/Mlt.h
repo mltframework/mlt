@@ -30,6 +30,7 @@
 #include "MltFrame.h"
 #include "MltMiracle.h"
 #include "MltMultitrack.h"
+#include "MltParser.h"
 #include "MltPlaylist.h"
 #include "MltProducer.h"
 #include "MltProperties.h"

@@ -82,38 +82,9 @@ Frame *Service::get_frame( int index )
 	return result;
 }
 
-service_type Service::type( )
+mlt_service_type Service::type( )
 {
-	service_type type = invalid_type;
-	if ( is_valid( ) )
-	{
-		char *mlt_type = get( "mlt_type" );
-		char *resource = get( "resource" );
-		if ( mlt_type == NULL )
-			type = unknown_type;
-		else if ( !strcmp( mlt_type, "producer" ) )
-			type = producer_type;
-		else if ( !strcmp( mlt_type, "mlt_producer" ) )
-		{
-			if ( resource == NULL )
-				type = producer_type;
-			else if ( !strcmp( resource, "<playlist>" ) )
-				type = playlist_type;
-			else if ( !strcmp( resource, "<tractor>" ) )
-				type = tractor_type;
-			else if ( !strcmp( resource, "<multitrack>" ) )
-				type = multitrack_type;
-		}
-		else if ( !strcmp( mlt_type, "filter" ) )
-			type = filter_type;
-		else if ( !strcmp( mlt_type, "transition" ) )
-			type = transition_type;
-		else if ( !strcmp( mlt_type, "consumer" ) )
-			type = consumer_type;
-		else
-			type = unknown_type;
-	}
-	return type;
+	return mlt_service_identify( get_service( ) );
 }
 
 int Service::attach( Filter &filter )
