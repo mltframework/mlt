@@ -255,6 +255,7 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 								 info.length, 
 								 info.fps );
 	}
+	valerie_response_printf( response, 1024, "\n" );
 }
 
 /** Load a clip into the unit clearing existing play list.
