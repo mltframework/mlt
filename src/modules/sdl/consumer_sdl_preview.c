@@ -61,6 +61,22 @@ mlt_consumer consumer_sdl_preview_init( char *arg )
 	{
 		// Get the parent consumer object
 		mlt_consumer parent = &this->parent;
+
+		// Get the properties
+		mlt_properties properties = mlt_consumer_properties( parent );
+
+		// Get the width and height
+		int width = mlt_properties_get_int( properties, "width" );
+		int height = mlt_properties_get_int( properties, "height" );
+
+		// Process actual param
+		if ( arg == NULL || sscanf( arg, "%dx%d", &width, &height ) == 2 )
+		{
+			mlt_properties_set_int( properties, "width", width );
+			mlt_properties_set_int( properties, "height", height );
+		}
+
+		// Create child consumers
 		this->play = mlt_factory_consumer( "sdl", arg );
 		this->still = mlt_factory_consumer( "sdl_still", arg );
 		mlt_properties_set( mlt_consumer_properties( parent ), "real_time", "0" );
