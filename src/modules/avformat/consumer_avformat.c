@@ -851,6 +851,7 @@ static void *consumer_thread( void *arg )
 						uint8_t *p;
 						uint8_t *q;
 
+						mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
 
 						q = image;

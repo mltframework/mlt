@@ -220,6 +220,7 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		uint8_t *image = NULL;
 
 		// Get the image
+		mlt_events_fire( this_properties, "consumer-frame-show", frame, NULL );
 		mlt_frame_get_image( frame, &image, &fmt, &width, &height, 0 );
 
 		// Check that we get what we expected

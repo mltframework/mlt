@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
+
 /** Public final methods
 */
 
@@ -84,9 +86,16 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		// Hmm - default all consumers to yuv422 :-/
 		this->format = mlt_image_yuv422;
 
+		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
 		mlt_events_register( properties, "consumer-stopped", NULL );
 	}
 	return error;
+}
+
+static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( mlt_frame )args[ 0 ] );
 }
 
 /** Create a new consumer.

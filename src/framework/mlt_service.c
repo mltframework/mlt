@@ -86,6 +86,7 @@ int mlt_service_init( mlt_service this, void *child )
 		this->parent.close_object = this;
 
 		mlt_events_init( &this->parent );
+		mlt_events_register( &this->parent, "service-changed", NULL );
 		mlt_events_register( &this->parent, "property-changed", ( mlt_transmitter )mlt_service_property_changed );
 	}
 
@@ -298,6 +299,11 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 	return 0;
 }
 
+static void mlt_service_filter_changed( mlt_service owner, mlt_service this )
+{
+	mlt_events_fire( mlt_service_properties( this ), "service-changed", NULL );
+}
+
 /** Attach a filter.
 */
 
@@ -324,9 +330,12 @@ int mlt_service_attach( mlt_service this, mlt_filter filter )
 
 			if ( base->filters != NULL )
 			{
+				mlt_properties props = mlt_filter_properties( filter );
 				mlt_properties_inc_ref( mlt_filter_properties( filter ) );
 				base->filters[ base->filter_count ++ ] = filter;
 				mlt_events_fire( properties, "service-changed", NULL );
+				mlt_events_listen( props, this, "service-changed", ( mlt_listener )mlt_service_filter_changed );
+				mlt_events_listen( props, this, "property-changed", ( mlt_listener )mlt_service_filter_changed );
 			}
 			else
 			{
@@ -359,6 +368,7 @@ int mlt_service_detach( mlt_service this, mlt_filter filter )
 			for ( i ++ ; i < base->filter_count; i ++ )
 				base->filters[ i - 1 ] = base->filters[ i ];
 			base->filter_count --;
+			mlt_events_disconnect( mlt_filter_properties( filter ), this );
 			mlt_filter_close( filter );
 			mlt_events_fire( properties, "service-changed", NULL );
 		}
@@ -397,6 +407,7 @@ void mlt_service_close( mlt_service this )
 			mlt_service_base *base = this->local;
 			int i = 0;
 			int count = base->filter_count;
+			mlt_events_block( mlt_service_properties( this ), this );
 			while( count -- )
 				mlt_service_detach( this, base->filters[ 0 ] );
 			free( base->filters );

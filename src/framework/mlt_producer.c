@@ -32,6 +32,7 @@
 
 static int producer_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 static void mlt_producer_property_changed( mlt_service owner, mlt_producer this, char *name );
+static void mlt_producer_service_changed( mlt_service owner, mlt_producer this );
 
 /** Constructor
 */
@@ -93,6 +94,7 @@ int mlt_producer_init( mlt_producer this, void *child )
 			// Override service get_frame
 			parent->get_frame = producer_get_frame;
 
+			mlt_events_listen( properties, this, "service-changed", ( mlt_listener )mlt_producer_service_changed );
 			mlt_events_listen( properties, this, "property-changed", ( mlt_listener )mlt_producer_property_changed );
 			mlt_events_register( properties, "producer-changed", NULL );
 		}
@@ -108,6 +110,14 @@ static void mlt_producer_property_changed( mlt_service owner, mlt_producer this,
 {
 	if ( !strcmp( name, "in" ) || !strcmp( name, "out" ) || !strcmp( name, "length" ) )
 		mlt_events_fire( mlt_producer_properties( this ), "producer-changed", NULL );
+}
+
+/** Listener for service changes.
+*/
+
+static void mlt_producer_service_changed( mlt_service owner, mlt_producer this )
+{
+	mlt_events_fire( mlt_producer_properties( this ), "producer-changed", NULL );
 }
 
 /** Create a new producer.
