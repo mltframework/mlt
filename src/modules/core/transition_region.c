@@ -119,7 +119,7 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 		alpha = p;
 		while ( size -- )
 		{
-			*p ++ = *image ++;
+			*p ++ = ( int )( ( ( *image ++ - 16 ) * 299 ) / 255 );
 			image ++;
 		}
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", alpha, region_width * region_height, mlt_pool_release, NULL );
@@ -176,7 +176,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			mlt_properties composite_properties = MLT_TRANSITION_PROPERTIES( composite );
 
 			// We want to ensure that we don't get a wobble...
-			mlt_properties_set_int( composite_properties, "distort", 1 );
+			//mlt_properties_set_int( composite_properties, "distort", 1 );
 			mlt_properties_set_int( composite_properties, "progressive", 1 );
 
 			// Pass all the composite. properties on the transition down

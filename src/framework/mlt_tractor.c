@@ -308,8 +308,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
 				// We want the first data_queue, but after that, all queues are appended
-				if ( !done && mlt_properties_get_data( temp_properties, "data_queue", NULL ) != NULL && 
-				     mlt_deque_count( mlt_properties_get_data( temp_properties, "data_queue", NULL ) ) != 0 )
+				if ( !done && mlt_properties_get_data( temp_properties, "data_queue", NULL ) != NULL )
 				{
 					if ( data_queue == NULL )
 					{

@@ -101,7 +101,7 @@ mlt_properties mlt_properties_new( )
 /** Load properties from a file.
 */
 
-mlt_properties mlt_properties_load( char *filename )
+mlt_properties mlt_properties_load( const char *filename )
 {
 	// Construct a standalone properties object
 	mlt_properties this = mlt_properties_new( );
@@ -151,7 +151,7 @@ mlt_properties mlt_properties_load( char *filename )
 	return this;
 }
 
-static inline int generate_hash( char *name )
+static inline int generate_hash( const char *name )
 {
 	int hash = 0;
 	int i = 1;
@@ -165,7 +165,7 @@ static inline int generate_hash( char *name )
 	real producer.
 */
 
-static inline void mlt_properties_do_mirror( mlt_properties this, char *name )
+static inline void mlt_properties_do_mirror( mlt_properties this, const char *name )
 {
 	property_list *list = this->local;
 	if ( list->mirror != NULL ) 
@@ -246,7 +246,7 @@ int mlt_properties_inherit( mlt_properties this, mlt_properties that )
 /** Pass all properties from 'that' that match the prefix to 'this' (excluding the prefix).
 */
 
-int mlt_properties_pass( mlt_properties this, mlt_properties that, char *prefix )
+int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *prefix )
 {
 	int count = mlt_properties_count( that );
 	int length = strlen( prefix );
@@ -267,7 +267,7 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, char *prefix 
 /** Locate a property by name
 */
 
-static inline mlt_property mlt_properties_find( mlt_properties this, char *name )
+static inline mlt_property mlt_properties_find( mlt_properties this, const char *name )
 {
 	property_list *list = this->local;
 	mlt_property value = NULL;
@@ -294,7 +294,7 @@ static inline mlt_property mlt_properties_find( mlt_properties this, char *name 
 /** Add a new property.
 */
 
-static mlt_property mlt_properties_add( mlt_properties this, char *name )
+static mlt_property mlt_properties_add( mlt_properties this, const char *name )
 {
 	property_list *list = this->local;
 	int key = generate_hash( name );
@@ -303,7 +303,7 @@ static mlt_property mlt_properties_add( mlt_properties this, char *name )
 	if ( list->count == list->size )
 	{
 		list->size += 50;
-		list->name = realloc( list->name, list->size * sizeof( char * ) );
+		list->name = realloc( list->name, list->size * sizeof( const char * ) );
 		list->value = realloc( list->value, list->size * sizeof( mlt_property ) );
 	}
 
@@ -322,7 +322,7 @@ static mlt_property mlt_properties_add( mlt_properties this, char *name )
 /** Fetch a property by name - this includes add if not found.
 */
 
-static mlt_property mlt_properties_fetch( mlt_properties this, char *name )
+static mlt_property mlt_properties_fetch( mlt_properties this, const char *name )
 {
 	// Try to find an existing property first
 	mlt_property property = mlt_properties_find( this, name );
@@ -338,7 +338,7 @@ static mlt_property mlt_properties_fetch( mlt_properties this, char *name )
 /** Set the property.
 */
 
-int mlt_properties_set( mlt_properties this, char *name, char *value )
+int mlt_properties_set( mlt_properties this, const char *name, const char *value )
 {
 	int error = 1;
 
@@ -348,7 +348,7 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 	// Set it if not NULL
 	if ( property == NULL )
 	{
-		fprintf( stderr, "Whoops\n" );
+		fprintf( stderr, "Whoops - %s not found (should never occur)\n", name );
 	}
 	else if ( value == NULL )
 	{
@@ -360,7 +360,7 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 		error = mlt_property_set_string( property, value );
 		mlt_properties_do_mirror( this, name );
 	}
-	else if ( property != NULL && value[ 0 ] == '@' )
+	else if ( value[ 0 ] == '@' )
 	{
 		int total = 0;
 		int current = 0;
@@ -417,7 +417,7 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 /** Set or default the property.
 */
 
-int mlt_properties_set_or_default( mlt_properties this, char *name, char *value, char *def )
+int mlt_properties_set_or_default( mlt_properties this, const char *name, const char *value, const char *def )
 {
 	return mlt_properties_set( this, name, value == NULL ? def : value );
 }
@@ -425,7 +425,7 @@ int mlt_properties_set_or_default( mlt_properties this, char *name, char *value,
 /** Get a string value by name.
 */
 
-char *mlt_properties_get( mlt_properties this, char *name )
+char *mlt_properties_get( mlt_properties this, const char *name )
 {
 	mlt_property value = mlt_properties_find( this, name );
 	return value == NULL ? NULL : mlt_property_get_string( value );
@@ -476,7 +476,7 @@ int mlt_properties_count( mlt_properties this )
 /** Set a value by parsing a name=value string
 */
 
-int mlt_properties_parse( mlt_properties this, char *namevalue )
+int mlt_properties_parse( mlt_properties this, const char *namevalue )
 {
 	char *name = strdup( namevalue );
 	char *value = NULL;
@@ -515,7 +515,7 @@ int mlt_properties_parse( mlt_properties this, char *namevalue )
 /** Get a value associated to the name.
 */
 
-int mlt_properties_get_int( mlt_properties this, char *name )
+int mlt_properties_get_int( mlt_properties this, const char *name )
 {
 	mlt_property value = mlt_properties_find( this, name );
 	return value == NULL ? 0 : mlt_property_get_int( value );
@@ -524,7 +524,7 @@ int mlt_properties_get_int( mlt_properties this, char *name )
 /** Set a value associated to the name.
 */
 
-int mlt_properties_set_int( mlt_properties this, char *name, int value )
+int mlt_properties_set_int( mlt_properties this, const char *name, int value )
 {
 	int error = 1;
 
@@ -546,7 +546,7 @@ int mlt_properties_set_int( mlt_properties this, char *name, int value )
 /** Get a value associated to the name.
 */
 
-double mlt_properties_get_double( mlt_properties this, char *name )
+double mlt_properties_get_double( mlt_properties this, const char *name )
 {
 	mlt_property value = mlt_properties_find( this, name );
 	return value == NULL ? 0 : mlt_property_get_double( value );
@@ -555,7 +555,7 @@ double mlt_properties_get_double( mlt_properties this, char *name )
 /** Set a value associated to the name.
 */
 
-int mlt_properties_set_double( mlt_properties this, char *name, double value )
+int mlt_properties_set_double( mlt_properties this, const char *name, double value )
 {
 	int error = 1;
 
@@ -577,7 +577,7 @@ int mlt_properties_set_double( mlt_properties this, char *name, double value )
 /** Get a value associated to the name.
 */
 
-mlt_position mlt_properties_get_position( mlt_properties this, char *name )
+mlt_position mlt_properties_get_position( mlt_properties this, const char *name )
 {
 	mlt_property value = mlt_properties_find( this, name );
 	return value == NULL ? 0 : mlt_property_get_position( value );
@@ -586,7 +586,7 @@ mlt_position mlt_properties_get_position( mlt_properties this, char *name )
 /** Set a value associated to the name.
 */
 
-int mlt_properties_set_position( mlt_properties this, char *name, mlt_position value )
+int mlt_properties_set_position( mlt_properties this, const char *name, mlt_position value )
 {
 	int error = 1;
 
@@ -608,7 +608,7 @@ int mlt_properties_set_position( mlt_properties this, char *name, mlt_position v
 /** Get a value associated to the name.
 */
 
-void *mlt_properties_get_data( mlt_properties this, char *name, int *length )
+void *mlt_properties_get_data( mlt_properties this, const char *name, int *length )
 {
 	mlt_property value = mlt_properties_find( this, name );
 	return value == NULL ? NULL : mlt_property_get_data( value, length );
@@ -617,7 +617,7 @@ void *mlt_properties_get_data( mlt_properties this, char *name, int *length )
 /** Set a value associated to the name.
 */
 
-int mlt_properties_set_data( mlt_properties this, char *name, void *value, int length, mlt_destructor destroy, mlt_serialiser serialise )
+int mlt_properties_set_data( mlt_properties this, const char *name, void *value, int length, mlt_destructor destroy, mlt_serialiser serialise )
 {
 	int error = 1;
 
@@ -636,7 +636,7 @@ int mlt_properties_set_data( mlt_properties this, char *name, void *value, int l
 /** Rename a property.
 */
 
-int mlt_properties_rename( mlt_properties this, char *source, char *dest )
+int mlt_properties_rename( mlt_properties this, const char *source, const char *dest )
 {
 	mlt_property value = mlt_properties_find( this, dest );
 
@@ -673,7 +673,7 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
 }
 
-void mlt_properties_debug( mlt_properties this, char *title, FILE *output )
+void mlt_properties_debug( mlt_properties this, const char *title, FILE *output )
 {
 	fprintf( output, "%s: ", title );
 	if ( this != NULL )

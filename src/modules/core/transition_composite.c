@@ -384,8 +384,8 @@ void composite_line_yuv( uint8_t *dest, uint8_t *src, int width_src, uint8_t *al
 	for ( j = 0; j < width_src; j ++ )
 	{
 		a = ( alpha == NULL ) ? 255 : *alpha ++;
-		mix = ( luma == NULL ) ? weight : linearstep( luma[ j ], luma[ j ] + softness, weight );
-		mix = ( mix * ( a + 1 ) ) >> 8;
+		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
+		mix = ( mix * a ) >> 8;
 		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
 		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
@@ -527,7 +527,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 */
 
 static inline void
-scale_luma ( uint16_t *dest_buf, int dest_width, int dest_height, const uint16_t *src_buf, int src_width, int src_height )
+scale_luma ( uint16_t *dest_buf, int dest_width, int dest_height, const uint16_t *src_buf, int src_width, int src_height, int invert )
 {
 	register int i, j;
 	register int x_step = ( src_width << 16 ) / dest_width;
@@ -541,7 +541,7 @@ scale_luma ( uint16_t *dest_buf, int dest_width, int dest_height, const uint16_t
 		
 		for ( j = 0; j < dest_width; j++ )
 		{
-			*dest_buf++ = src[ x >> 16 ];
+			*dest_buf++ = src[ x >> 16 ] ^ invert;
 			x += x_step;
 		}
 		y += y_step;
@@ -554,6 +554,7 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 	int luma_width = mlt_properties_get_int( properties, "_luma.width" );
 	int luma_height = mlt_properties_get_int( properties, "_luma.height" );
 	uint16_t *luma_bitmap = mlt_properties_get_data( properties, "_luma.bitmap", NULL );
+	int invert = mlt_properties_get_int( properties, "luma_invert" );
 	
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "luma" );
@@ -647,7 +648,7 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 		}
 		// Scale luma map
 		luma_bitmap = mlt_pool_alloc( width * height * sizeof( uint16_t ) );
-		scale_luma( luma_bitmap, width, height, orig_bitmap, luma_width, luma_height );
+		scale_luma( luma_bitmap, width, height, orig_bitmap, luma_width, luma_height, invert * ( ( 1 << 16 ) - 1 ) );
 
 		// Remember the scaled luma size to prevent unnecessary scaling
 		mlt_properties_set_int( properties, "_luma.width", width );
@@ -1015,8 +1016,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				if ( mlt_properties_get_int( properties, "titles" ) )
 				{
-					result.nw = result.item.w = *width;
-					result.nh = result.item.h = *height;
+					result.item.w = *width * ( result.item.w / result.nw );
+					result.nw = result.item.w;
+					result.item.h = *height * ( result.item.h / result.nh );
+					result.nh = *height;
 					result.sw = width_b;
 					result.sh = height_b;
 				}
@@ -1066,7 +1069,7 @@ mlt_transition transition_composite_init( char *arg )
 		this->process = composite_process;
 		
 		// Default starting motion and zoom
-		mlt_properties_set( properties, "start", arg != NULL ? arg : "85%,5%:10%x10%" );
+		mlt_properties_set( properties, "start", arg != NULL ? arg : "0,0:100%x100%" );
 		
 		// Default factory
 		mlt_properties_set( properties, "factory", "fezzik" );

@@ -139,7 +139,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 			{
 				if ( !strncmp( name + len, "length[", 7 ) )
 				{
-					mlt_properties_set_position( properties, key, length / period );
+					mlt_properties_set_position( properties, key, ( length - period ) / period );
 				}
 				else
 				{

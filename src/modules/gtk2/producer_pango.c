@@ -541,6 +541,7 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	FT_Bitmap bitmap;
 	uint8_t *src = NULL;
 	uint8_t* dest = NULL;
+	uint8_t *d, *s, a;
 	int stride;
 
 	pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
@@ -575,18 +576,23 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	src = bitmap.buffer;
 	x = ( gdk_pixbuf_get_width( pixbuf ) - w - 2 * pad ) * align / 2 + pad;
 	dest = gdk_pixbuf_get_pixels( pixbuf ) + 4 * x + pad * stride;
-	for ( j = 0; j < h; j++ )
+	j = h;
+
+	while( j -- )
 	{
-		uint8_t *d = dest;
-		for ( i = 0; i < w; i++ )
+		d = dest;
+		s = src;
+		i = w;
+		while( i -- )
 		{
-			float a = ( float ) bitmap.buffer[ j * bitmap.pitch + i ] / 255.0;
-			*d++ = ( int ) ( a * fg.r + ( 1 - a ) * bg.r );
-			*d++ = ( int ) ( a * fg.g + ( 1 - a ) * bg.g );
-			*d++ = ( int ) ( a * fg.b + ( 1 - a ) * bg.b );
-			*d++ = ( int ) ( a * fg.a + ( 1 - a ) * bg.a );
+			a = *s ++;
+			*d++ = ( a * fg.r + ( 255 - a ) * bg.r ) >> 8;
+			*d++ = ( a * fg.g + ( 255 - a ) * bg.g ) >> 8;
+			*d++ = ( a * fg.b + ( 255 - a ) * bg.b ) >> 8;
+			*d++ = ( a * fg.a + ( 255 - a ) * bg.a ) >> 8;
 		}
 		dest += stride;
+		src += bitmap.pitch;
 	}
 	mlt_pool_release( bitmap.buffer );
 	g_object_unref( layout );

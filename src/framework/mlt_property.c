@@ -110,7 +110,7 @@ int mlt_property_set_position( mlt_property this, mlt_position value )
 /** Set a string on this property.
 */
 
-int mlt_property_set_string( mlt_property this, char *value )
+int mlt_property_set_string( mlt_property this, const char *value )
 {
 	if ( value != this->prop_string )
 	{
@@ -153,6 +153,16 @@ int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destr
 	return 0;
 }
 
+static inline int mlt_property_atoi( const char *value )
+{
+	if ( value == NULL )
+		return 0;
+	else if ( value[0] == '0' && value[1] == 'x' )
+		return strtol( value + 2, NULL, 16 );
+	else 
+		return strtol( value, NULL, 10 );
+}
+
 /** Get an int from this property.
 */
 
@@ -167,7 +177,7 @@ int mlt_property_get_int( mlt_property this )
 	else if ( this->types & mlt_prop_int64 )
 		return ( int )this->prop_int64;
 	else if ( this->types & mlt_prop_string )
-		return atoi( this->prop_string );
+		return mlt_property_atoi( this->prop_string );
 	return 0;
 }
 
@@ -207,6 +217,16 @@ mlt_position mlt_property_get_position( mlt_property this )
 	return 0;
 }
 
+static inline int64_t mlt_property_atoll( const char *value )
+{
+	if ( value == NULL )
+		return 0;
+	else if ( value[0] == '0' && value[1] == 'x' )
+		return strtoll( value + 2, NULL, 16 );
+	else 
+		return strtoll( value, NULL, 10 );
+}
+
 /** Get an int64 from this property.
 */
 
@@ -221,7 +241,7 @@ int64_t mlt_property_get_int64( mlt_property this )
 	else if ( this->types & mlt_prop_position )
 		return ( int64_t )this->prop_position;
 	else if ( this->types & mlt_prop_string )
-		return ( int64_t )atol( this->prop_string );
+		return mlt_property_atoll( this->prop_string );
 	return 0;
 }
 

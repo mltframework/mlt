@@ -151,38 +151,45 @@ static float position_calculate( mlt_filter this, mlt_frame frame )
 /** The averaging function...
 */
 
-void obscure_average( uint8_t *start, int width, int height, int stride )
+static inline void obscure_average( uint8_t *start, int width, int height, int stride )
 {
-	int y;
-	int x;
+	register int y;
+	register int x;
 	register int Y = ( *start + *( start + 2 ) ) / 2;
 	register int U = *( start + 1 );
 	register int V = *( start + 3 );
 	register uint8_t *p;
+	register int components = width >> 1;
 
-	for ( y = 0; y < height; y ++ )
+	y = height;
+	while( y -- )
 	{
-		p = start + y * stride;
-		for ( x = 0; x < width / 2; x ++ )
+		p = start;
+		x = components;
+		while( x -- )
 		{
-			Y = ( Y + *p ++ ) / 2;
-			U = ( U + *p ++ ) / 2;
-			Y = ( Y + *p ++ ) / 2;
-			V = ( V + *p ++ ) / 2;
+			Y = ( Y + *p ++ ) >> 1;
+			U = ( U + *p ++ ) >> 1;
+			Y = ( Y + *p ++ ) >> 1;
+			V = ( V + *p ++ ) >> 1;
 		}
+		start += stride;
 	}
 
-	for ( y = 0; y < height; y ++ )
+	start -= height * stride;
+	y = height;
+	while( y -- )
 	{
-		p = start + y * stride;
-		
-		for ( x = 0; x < width / 2; x ++ )
+		p = start;
+		x = components;
+		while( x -- )
 		{
 			*p ++ = Y;
 			*p ++ = U;
 			*p ++ = Y;
 			*p ++ = V;
 		}
+		start += stride;
 	}
 }
 
@@ -213,7 +220,7 @@ static void obscure_render( uint8_t *image, int width, int height, struct geomet
 			aw = w + mw > area_w ? mw - ( w + mw - area_w ) : mw;
 			ah = h + mh > area_h ? mh - ( h + mh - area_h ) : mh;
 			if ( aw > 1 && ah > 1 )
-				obscure_average( p + h * width * 2 + w * 2, aw, ah, width * 2 );
+				obscure_average( p + h * ( width << 1 ) + ( w << 1 ), aw, ah, width << 1 );
 		}
 	}
 }

@@ -208,11 +208,6 @@ mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 	mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_fezzik", 1 );
 	mlt_producer_attach( result, filter );
 	mlt_filter_close( filter );
-	filter = mlt_factory_filter( "data_show", "%obscure.properties" );
-	mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_fezzik", 1 );
-	mlt_producer_attach( result, filter );
-	mlt_filter_close( filter );
-	mlt_events_unblock( MLT_PRODUCER_PROPERTIES( result ), MLT_PRODUCER_PROPERTIES( result ) );
 
 	return result;
 }

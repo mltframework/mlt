@@ -88,7 +88,7 @@ do
 			if [ "$MLT_CONSUMER" == "westley:" ]
 			then	export WESTLEY_CONSUMER="westley:$demo.westley"
 					bash $demo -consumer $WESTLEY_CONSUMER
-					inigo +$demo.txt out=100 $demo.westley $demo.westley -filter watermark:watermark1.png composite.fill=true
+					inigo +$demo.txt out=100 $demo.westley $demo.westley -filter watermark:watermark1.png composite.fill=1 composite.geometry=85%,5%:10%x10%
 			elif [ "$MLT_CONSUMER" == "westley" ]
 			then	bash $demo -consumer $MLT_CONSUMER | less
 			else	bash $demo -consumer $MLT_CONSUMER
