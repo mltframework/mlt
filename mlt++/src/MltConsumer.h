@@ -34,7 +34,8 @@ namespace Mlt
 		private:
 			mlt_consumer instance;
 		public:
-			Consumer( char *id, char *service = NULL );
+			Consumer( );
+			Consumer( char *id , char *service = NULL );
 			Consumer( Service &consumer );
 			Consumer( Consumer &consumer );
 			Consumer( mlt_consumer consumer );
@@ -42,6 +43,7 @@ namespace Mlt
 			virtual mlt_consumer get_consumer( );
 			mlt_service get_service( );
 			virtual int connect( Service &service );
+			int run( );
 			int start( );
 			void purge( );
 			int stop( );

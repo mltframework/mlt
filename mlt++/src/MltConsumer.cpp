@@ -21,12 +21,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include "MltConsumer.h"
+#include "MltEvent.h"
 using namespace Mlt;
+
+Consumer::Consumer( ) :
+	instance( NULL )
+{
+	instance = mlt_factory_consumer( NULL, NULL );
+}
 
 Consumer::Consumer( char *id, char *arg ) :
 	instance( NULL )
 {
-	if ( arg != NULL )
+	if ( id == NULL || arg != NULL )
 	{
 		instance = mlt_factory_consumer( id, arg );
 	}
@@ -109,3 +116,14 @@ bool Consumer::is_stopped( )
 	return mlt_consumer_is_stopped( get_consumer( ) ) != 0;
 }
 
+int Consumer::run( )
+{
+	int ret = start( );
+	if ( !is_stopped( ) )
+	{
+		Event *e = setup_wait_for( "consumer-stopped" );
+		wait_for( e );
+		delete e;
+	}
+	return ret;
+}

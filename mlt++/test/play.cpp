@@ -6,11 +6,9 @@ int main( int argc, char **argv )
 {
 	Factory::init( NULL );
 	Producer producer( argv[ 1 ] );
-	Consumer consumer( "sdl" );
+	Consumer consumer;
 	consumer.set( "rescale", "none" );
 	consumer.connect( producer );
-	Event *event = consumer.setup_wait_for( "consumer-stopped" );
-	consumer.start( );
-	consumer.wait_for( event, false );
+	consumer.run( );
 	return 0;
 }
