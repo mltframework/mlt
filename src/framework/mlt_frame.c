@@ -322,10 +322,12 @@ void mlt_frame_close( mlt_frame this )
 }
 
 /***** convenience functions *****/
+
+/* this macro scales rgb into the yuv gamut, y is scaled by 219/255 and uv by 224/255 */
 #define RGB2YUV(r, g, b, y, u, v)\
-  y = (306*r + 601*g + 117*b)  >> 10;\
-  u = ((-172*r - 340*g + 512*b) >> 10)  + 128;\
-  v = ((512*r - 429*g - 83*b) >> 10) + 128;\
+  y = ((257*r + 504*g + 98*b) >> 10) + 16;\
+  u = ((-148*r - 291*g + 439*b) >> 10) + 128;\
+  v = ((439*r - 368*g - 71*b) >> 10) + 128;\
   y = y < 16 ? 16 : y;\
   u = u < 16 ? 16 : u;\
   v = v < 16 ? 16 : v;\
@@ -333,6 +335,18 @@ void mlt_frame_close( mlt_frame this )
   u = u > 240 ? 240 : u;\
   v = v > 240 ? 240 : v
 
+/* this macro assumes the user has already scaled their rgb down into the broadcast limits */
+#define RGB2YUV_UNSCALED(r, g, b, y, u, v)\
+  y = (299*r + 587*g + 114*b) >> 10;\
+  u = ((-169*r - 331*g + 500*b) >> 10) + 128;\
+  v = ((500*r - 419*g - 81*b) >> 10) + 128;\
+  y = y < 16 ? 16 : y;\
+  u = u < 16 ? 16 : u;\
+  v = v < 16 ? 16 : v;\
+  y = y > 235 ? 235 : y;\
+  u = u > 240 ? 240 : u;\
+  v = v > 240 ? 240 : v
+  
 int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha )
 {
 	int ret = 0;
