@@ -64,7 +64,7 @@ mlt_producer producer_libdv_init( char *filename )
 
 		// Create the dv_decoder
 		this->dv_decoder = dv_decoder_new( FALSE, FALSE, FALSE );
-		this->dv_decoder->quality = DV_QUALITY_BEST;
+		this->dv_decoder->quality = DV_QUALITY_COLOR | DV_QUALITY_AC_1;
 		this->dv_decoder->audio->arg_audio_emphasis = 2;
 		dv_set_audio_correction( this->dv_decoder, DV_AUDIO_CORRECT_AVERAGE );
 
@@ -239,7 +239,6 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	dv_parse_header( decoder, dv_data );
 
 	// Obtain required values
-	//fprintf( stderr, "libdv: frequency %d\n", decoder->audio->frequency );
 	*frequency = decoder->audio->frequency;
 	*samples = decoder->audio->samples_this_frame;
 	*channels = decoder->audio->num_channels;
@@ -334,7 +333,7 @@ static void producer_close( mlt_producer parent )
 	producer_libdv this = parent->child;
 
 	// Free the dv deconder
-	dv_decoder_free( this->dv_decoder );
+	//dv_decoder_free( this->dv_decoder );
 
 	// Close the file
 	if ( this->fd > 0 )

@@ -99,7 +99,6 @@ mlt_producer producer_pango_init( const char *filename )
 
 		if ( filename == NULL )
 		{
-			mlt_properties_set( properties, "resource", "pango" );
 			mlt_properties_set( properties, "markup", "" );
 		}
 		else if ( filename[ 0 ] == '+' || strstr( filename, "/+" ) )
@@ -149,7 +148,6 @@ mlt_producer producer_pango_init( const char *filename )
 			}
 			else
 			{
-				mlt_properties_set( properties, "resource", "pango" );
 				mlt_properties_set( properties, "markup", "" );
 			}
 		}

@@ -38,6 +38,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_properties properties = mlt_filter_properties( filter );
 	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
+	char *name = mlt_properties_get( properties, "_unique_id" );
 
 	if ( composite == NULL )
 	{
@@ -68,7 +69,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	{
 		mlt_service service = mlt_producer_service( producer );
 		mlt_frame b_frame = NULL;
+		mlt_properties frame_properties = mlt_frame_properties( this );
+		mlt_position position = mlt_properties_get_position( frame_properties, name );
 
+		mlt_producer_seek( producer, position );
 		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
 			mlt_transition_process( composite, this, b_frame );
 
@@ -89,6 +93,15 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
+	// Get the properties of the frame
+	mlt_properties properties = mlt_frame_properties( frame );
+
+	// Get a unique name to store the frame position
+	char *name = mlt_properties_get( mlt_filter_properties( this ), "_unique_id" );
+
+	// Assign the current position to the name
+	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) );
+
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, this );
 

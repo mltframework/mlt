@@ -167,8 +167,11 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Get the time to live for each frame
 	double ttl = mlt_properties_get_int( producer_props, "ttl" );
 
+	// Get the original position of this frame
+	mlt_position position = mlt_properties_get_position( properties, "pixbuf_position" );
+
 	// Image index
-	int image_idx = ( int )floor( mlt_frame_get_position( frame ) / ttl ) % this->count;
+	int image_idx = ( int )floor( ( double )position / ttl ) % this->count;
 
     // optimization for subsequent iterations on single picture
 	if ( width != 0 && this->image != NULL && image_idx == this->image_idx )
@@ -329,27 +332,33 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Generate a frame
 	*frame = mlt_frame_init( );
 
-	// Obtain properties of frame and producer
-	mlt_properties properties = mlt_frame_properties( *frame );
+	if ( *frame != NULL && this->count > 0 )
+	{
+		// Obtain properties of frame and producer
+		mlt_properties properties = mlt_frame_properties( *frame );
 
-	// Set the producer on the frame properties
-	mlt_properties_set_data( properties, "producer_pixbuf", this, 0, NULL, NULL );
+		// Set the producer on the frame properties
+		mlt_properties_set_data( properties, "producer_pixbuf", this, 0, NULL, NULL );
 
-	// Update timecode on the frame we're creating
-	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
+		// Update timecode on the frame we're creating
+		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
-	// Refresh the image
-	refresh_image( *frame, 0, 0 );
+		// Ensure that we have a way to obtain the position in the get_image
+		mlt_properties_set_position( properties, "pixbuf_position", mlt_producer_position( producer ) );
 
-	// Set producer-specific frame properties
-	mlt_properties_set_int( properties, "progressive", 1 );
-	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "real_width" ) / mlt_properties_get_double( properties, "real_height" ) );
+		// Refresh the image
+		refresh_image( *frame, 0, 0 );
 
-	// Set alpha call back
-	( *frame )->get_alpha_mask = producer_get_alpha_mask;
+		// Set producer-specific frame properties
+		mlt_properties_set_int( properties, "progressive", 1 );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "real_width" )/mlt_properties_get_double( properties, "real_height" ) );
 
-	// Push the get_image method
-	mlt_frame_push_get_image( *frame, producer_get_image );
+		// Set alpha call back
+		( *frame )->get_alpha_mask = producer_get_alpha_mask;
+
+		// Push the get_image method
+		mlt_frame_push_get_image( *frame, producer_get_image );
+	}
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );

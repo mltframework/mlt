@@ -35,6 +35,7 @@ static mlt_repository producers = NULL;
 static mlt_repository filters = NULL;
 static mlt_repository transitions = NULL;
 static mlt_repository consumers = NULL;
+static int unique_id = 0;
 
 /** Construct the factories.
 */
@@ -84,6 +85,7 @@ mlt_producer mlt_factory_producer( char *service, void *input )
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_producer_properties( obj );
+		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "producer" );
 		if ( mlt_properties_get_int( properties, "_mlt_service_hidden" ) == 0 )
 			mlt_properties_set( properties, "mlt_service", service );
@@ -100,6 +102,7 @@ mlt_filter mlt_factory_filter( char *service, void *input )
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_filter_properties( obj );
+		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "filter" );
 		mlt_properties_set( properties, "mlt_service", service );
 	}
@@ -115,6 +118,7 @@ mlt_transition mlt_factory_transition( char *service, void *input )
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_transition_properties( obj );
+		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "transition" );
 		mlt_properties_set( properties, "mlt_service", service );
 	}
@@ -130,6 +134,7 @@ mlt_consumer mlt_factory_consumer( char *service, void *input )
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_consumer_properties( obj );
+		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "consumer" );
 		mlt_properties_set( properties, "mlt_service", service );
 	}
