@@ -599,6 +599,11 @@ int mlt_consumer_stop( mlt_consumer this )
 
 	// Just in case...
 	pthread_mutex_lock( &this->put_mutex );
+	if ( this->put != NULL )
+	{
+		mlt_frame_close( this->put );
+		this->put = NULL;
+	}
 	pthread_cond_broadcast( &this->put_cond );
 	pthread_mutex_unlock( &this->put_mutex );
 
@@ -608,12 +613,6 @@ int mlt_consumer_stop( mlt_consumer this )
 	// Check and run a post command
 	if ( mlt_properties_get( properties, "post" ) )
 		system( mlt_properties_get( properties, "post" ) );
-
-	if ( this->put != NULL )
-	{
-		mlt_frame_close( this->put );
-		this->put = NULL;
-	}
 
 	return 0;
 }
