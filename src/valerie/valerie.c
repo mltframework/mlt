@@ -184,7 +184,7 @@ valerie_error_code valerie_unit_add( valerie this, char *guid, int *unit )
 	if ( error == valerie_ok )
 	{
 		int length = valerie_response_count( this->last_response );
-		char *line = valerie_response_get_line( this->last_response, length - 2 );
+		char *line = valerie_response_get_line( this->last_response, length - 1 );
 		if ( line == NULL || sscanf( line, "U%d", unit ) != 1 )
 			error = valerie_unit_creation_failed;
 	}
