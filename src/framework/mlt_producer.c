@@ -51,6 +51,9 @@ int mlt_producer_init( mlt_producer this, void *child )
 		// Initialise the service
 		if ( mlt_service_init( &this->parent, this ) == 0 )
 		{
+			// Get the normalisation preference
+			char *normalisation = getenv( "MLT_NORMALISATION" );
+
 			// The parent is the service
 			mlt_service parent = &this->parent;
 	
@@ -61,7 +64,10 @@ int mlt_producer_init( mlt_producer this, void *child )
 			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
 			mlt_properties_set_position( properties, "_position", 0.0 );
 			mlt_properties_set_double( properties, "_frame", 0 );
-			mlt_properties_set_double( properties, "fps", 25.0 );
+			if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )
+				mlt_properties_set_double( properties, "fps", 25.0 );
+			else
+				mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
 			mlt_properties_set_double( properties, "_speed", 1.0 );
 			mlt_properties_set_position( properties, "in", 0 );
 			mlt_properties_set_position( properties, "out", 1799999 );

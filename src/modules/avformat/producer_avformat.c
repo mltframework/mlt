@@ -469,14 +469,14 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	// Get the video_index
 	int index = mlt_properties_get_int( properties, "video_index" );
 
+	// Get the frame properties
+	mlt_properties frame_properties = mlt_frame_properties( frame );
+
 	// Lock the mutex now
 	pthread_mutex_lock( &avformat_mutex );
 
 	if ( context != NULL && index != -1 )
 	{
-		// Get the frame properties
-		mlt_properties frame_properties = mlt_frame_properties( frame );
-
 		// Get the video stream
 		AVStream *stream = context->streams[ index ];
 
@@ -527,6 +527,14 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			mlt_frame_push_get_image( frame, producer_get_image );
 			mlt_properties_set_data( frame_properties, "avformat_producer", this, 0, NULL, NULL );
 		}
+		else
+		{
+			mlt_properties_set_int( frame_properties, "test_image", 1 );
+		}
+	}
+	else
+	{
+		mlt_properties_set_int( frame_properties, "test_image", 1 );
 	}
 
 	// Unlock the mutex now

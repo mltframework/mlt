@@ -60,11 +60,9 @@ mlt_consumer consumer_libdv_init( char *arg )
 		// Assign close callback
 		this->close = consumer_close;
 
-		// Interpret the constructor argument
-		if ( arg == NULL || !strcmp( arg, "PAL" ) )
-			mlt_properties_set_double( properties, "fps", 25 );
-		else
-			mlt_properties_set_double( properties, "fps", 29.97 );
+		// Interpret the argument
+		if ( arg != NULL )
+			mlt_properties_set( properties, "target", arg );
 
 		// Set the encode and output handling method
 		mlt_properties_set_data( properties, "video", consumer_encode_video, 0, NULL, NULL );
@@ -132,6 +130,10 @@ static int consumer_stop( mlt_consumer this )
 
 		// Wait for termination
 		pthread_join( *thread, NULL );
+
+		// Close the output file :-) - this is obtuse - doesn't matter if output file
+		// exists or not - the destructor will kick in if it does
+		mlt_properties_set_data( properties, "output_file", NULL, 0, NULL, NULL );
 	}
 
 	return 0;
@@ -176,10 +178,6 @@ static dv_encoder_t *libdv_get_encoder( mlt_consumer this, mlt_frame frame )
 
 		// Store the encoder on the properties
 		mlt_properties_set_data( this_properties, "dv_encoder", encoder, 0, ( mlt_destructor )dv_encoder_free, NULL );
-
-		// Convenience for image dimensions
-		mlt_properties_set_int( this_properties, "width", 720 );
-		mlt_properties_set_int( this_properties, "height", fps == 25 ? 576 : 480 );
 	}
 
 	// Return the encoder
@@ -210,9 +208,6 @@ static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_fram
 		int height = mlt_properties_get_int( this_properties, "height" );
 		uint8_t *image = NULL;
 		int is_test = 0;
-
-		if ( mlt_properties_get( this_properties, "rescale" ) != NULL )
-			mlt_properties_set( mlt_frame_properties( frame ), "rescale.interp", mlt_properties_get( this_properties, "rescale" ) );
 
 		// Get the image
 		mlt_frame_get_image( frame, &image, &fmt, &width, &height, 0 );
@@ -374,17 +369,14 @@ static void *consumer_thread( void *arg )
 	// Allocate a single PAL frame for encoding
 	uint8_t *dv_frame = malloc( frame_size_625_50 );
 
-	// Get the service associated to the consumer
-	mlt_service service = mlt_consumer_service( this );
-
-	// Define a frame pointer
-	mlt_frame frame;
-
 	// Loop while running
 	while( mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
-		if ( mlt_service_get_frame( service, &frame, 0 ) == 0 )
+		mlt_frame frame = mlt_consumer_get_frame( this );
+
+		// Check that we have a frame to work with
+		if ( frame != NULL )
 		{
 			// Obtain the dv_encoder
 			if ( libdv_get_encoder( this, frame ) != NULL )

@@ -15,7 +15,6 @@ Not Implemented
 NLS
 USET points=ignore
 USET eof=terminate
-XFER
 
 
 Incorrect Behaviour

@@ -20,6 +20,9 @@
 
 #include "config.h"
 #include "mlt_consumer.h"
+#include "mlt_factory.h"
+#include "mlt_producer.h"
+#include "mlt_frame.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,9 +32,38 @@
 
 int mlt_consumer_init( mlt_consumer this, void *child )
 {
+	int error = 0;
 	memset( this, 0, sizeof( struct mlt_consumer_s ) );
 	this->child = child;
-	return mlt_service_init( &this->parent, this );
+	error = mlt_service_init( &this->parent, this );
+	if ( error == 0 )
+	{
+		// Get the properties from the service
+		mlt_properties properties = mlt_service_properties( &this->parent );
+
+		// Get the normalisation preference
+		char *normalisation = getenv( "MLT_NORMALISATION" );
+
+		// Deal with normalisation
+		if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )
+		{
+			mlt_properties_set( properties, "normalisation", "PAL" );
+			mlt_properties_set_double( properties, "fps", 25.0 );
+			mlt_properties_set_int( properties, "width", 720 );
+			mlt_properties_set_int( properties, "height", 576 );
+		}
+		else
+		{
+			mlt_properties_set( properties, "normalisation", "NTSC" );
+			mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
+			mlt_properties_set_int( properties, "width", 720 );
+			mlt_properties_set_int( properties, "height", 480 );
+		}
+
+		// Default rescaler for all consumers
+		mlt_properties_set( properties, "rescale", "bilinear" );
+	}
+	return error;
 }
 
 /** Get the parent service object.
@@ -63,9 +95,66 @@ int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 
 int mlt_consumer_start( mlt_consumer this )
 {
+	// Get the properies
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	// Determine if there's a test card producer
+	char *test_card = mlt_properties_get( properties, "test_card" );
+
+	// Deal with it now.
+	if ( test_card != NULL )
+	{
+		// Create a test card producer
+		mlt_producer producer = mlt_factory_producer( "fezzik", test_card );
+
+		// Do we have a producer
+		if ( producer != NULL )
+		{
+			// Set the test card on the consumer
+			mlt_properties_set_data( properties, "test_card_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+		}
+	}
+
+	// Start the service
 	if ( this->start != NULL )
 		return this->start( this );
+
 	return 0;
+}
+
+/** Protected method :-/ for consumer to get frames from connected service
+*/
+
+mlt_frame mlt_consumer_get_frame( mlt_consumer this )
+{
+	// Frame to return
+	mlt_frame frame = NULL;
+
+	// Get the service assoicated to the consumer
+	mlt_service service = mlt_consumer_service( this );
+
+	// Get the frame
+	if ( mlt_service_get_frame( service, &frame, 0 ) == 0 )
+	{
+		// Get the consumer properties
+		mlt_properties properties = mlt_consumer_properties( this );
+
+		// Get the frame properties
+		mlt_properties frame_properties = mlt_frame_properties( frame );
+
+		// Attach the test frame producer to it.
+		mlt_producer test_card = mlt_properties_get_data( properties, "test_card_producer", NULL );
+		mlt_properties_set_data( frame_properties, "test_card_producer", test_card, 0, NULL, NULL );
+
+		// Attach the rescale property
+		if ( mlt_properties_get( properties, "rescale" ) != NULL )
+			mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale" ) );
+
+		// TODO: Aspect ratio and other jiggery pokery
+	}
+
+	// Return the frame
+	return frame;
 }
 
 /** Stop the consumer.
@@ -83,8 +172,16 @@ int mlt_consumer_stop( mlt_consumer this )
 
 int mlt_consumer_is_stopped( mlt_consumer this )
 {
+	// Get the properies
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	// Stop the consumer
 	if ( this->is_stopped != NULL )
 		return this->is_stopped( this );
+
+	// Kill the test card
+	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
+
 	return 0;
 }
 

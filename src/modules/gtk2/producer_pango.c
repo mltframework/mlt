@@ -72,7 +72,6 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties properties = mlt_producer_properties( &this->parent );
 
 		// Set the default properties
-		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
 		mlt_properties_set( properties, "fgcolour", "0xffffffff" );
 		mlt_properties_set( properties, "bgcolour", "0x00000000" );
 		mlt_properties_set_int( properties, "align", pango_align_left );
@@ -85,15 +84,18 @@ mlt_producer producer_pango_init( const char *filename )
 			mlt_properties_set( properties, "resource", "pango" );
 			mlt_properties_set( properties, "markup", "" );
 		}
-		else if ( filename[ 0 ] == '+' )
+		else if ( filename[ 0 ] == '+' || strstr( filename, "/+" ) )
 		{
-			char *markup = strdup( filename + 1 );
+			char *copy = strdup( filename + 1 );
+			char *markup = copy;
+			if ( strstr( markup, "/+" ) )
+				markup = strstr( markup, "/+" ) + 2;
 			( *strrchr( markup, '.' ) ) = '\0';
 			while ( strchr( markup, '~' ) )
 				( *strchr( markup, '~' ) ) = '\n';
 			mlt_properties_set( properties, "resource", ( char * )filename );
 			mlt_properties_set( properties, "markup", markup );
-			free( markup );
+			free( copy );
 		}
 		else
 		{

@@ -64,7 +64,6 @@ mlt_producer producer_pixbuf_init( char *filename )
 	
 		// Set the default properties
 		mlt_properties_set( properties, "resource", filename );
-		mlt_properties_set_int( properties, "video_standard", mlt_video_standard_pal );
 		mlt_properties_set_int( properties, "ttl", 25 );
 		
 		// Obtain filenames

@@ -46,9 +46,6 @@ mlt_consumer consumer_westley_init( char *arg )
 	// If no malloc'd and consumer init ok
 	if ( this != NULL && mlt_consumer_init( this, NULL ) == 0 )
 	{
-		// We have stuff to clean up, so override the close method
-		//parent->close = consumer_close;
-
 		// Allow thread to be started/stopped
 		this->start = consumer_start;
 		this->is_stopped = consumer_is_stopped;

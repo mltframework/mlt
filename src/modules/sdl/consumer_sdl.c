@@ -98,28 +98,14 @@ mlt_consumer consumer_sdl_init( char *arg )
 		pthread_mutex_init( &this->audio_mutex, NULL );
 		pthread_cond_init( &this->audio_cond, NULL);
 		
-		// Default fps
-		mlt_properties_set_double( this->properties, "fps", 25 );
-
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
 
 		// process actual param
-		if ( arg == NULL || !strcmp( arg, "PAL" ) )
+		if ( arg == NULL || sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
 		{
-			this->width = 720;
-			this->height = 576;
-		}
-		else if ( !strcmp( arg, "NTSC" ) )
-		{
-			this->width = 720;
-			this->height = 480;
-			mlt_properties_set_double( this->properties, "fps", 29.97 );
-		}
-		else if ( sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
-		{
-			this->width = 720;
-			this->height = 576;
+			this->width = mlt_properties_get_int( this->properties, "width" );
+			this->height = mlt_properties_get_int( this->properties, "height" );
 		}
 
 		// Default window size and aspect ratio
@@ -345,9 +331,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	}
 	this->queue[ this->count ++ ] = frame;
 
-	if ( mlt_properties_get( properties, "rescale" ) != NULL )
-		mlt_properties_set( mlt_frame_properties( frame ), "rescale.interp", mlt_properties_get( properties, "rescale" ) );
-
 	if ( this->playing )
 	{
 		// We're working on the oldest frame now
@@ -491,12 +474,6 @@ static void *consumer_thread( void *arg )
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
 
-	// Get the service assoicated to the consumer
-	mlt_service service = mlt_consumer_service( consumer );
-
-	// Define a frame pointer
-	mlt_frame frame;
-
 	// internal intialization
 	int init_audio = 1;
 
@@ -509,8 +486,11 @@ static void *consumer_thread( void *arg )
 	// Loop until told not to
 	while( this->running )
 	{
-		// Get a frame from the service (should never return anything other than 0)
-		if ( mlt_service_get_frame( service, &frame, 0 ) == 0 )
+		// Get a frame from the attached producer
+		mlt_frame frame = mlt_consumer_get_frame( consumer );
+
+		// Ensure that we have a frame
+		if ( frame != NULL )
 		{
 			init_audio = consumer_play_audio( this, frame, init_audio );
 			consumer_play_video( this, frame );

@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "mlt_frame.h"
+#include "mlt_producer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -154,6 +155,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 {
 	mlt_properties properties = mlt_frame_properties( this );
 	mlt_get_image get_image = mlt_frame_pop_get_image( this );
+	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
 	
 	if ( get_image != NULL )
 	{
@@ -165,6 +167,26 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		*buffer = mlt_properties_get_data( properties, "image", NULL );
 		*width = mlt_properties_get_int( properties, "width" );
 		*height = mlt_properties_get_int( properties, "height" );
+	}
+	else if ( producer != NULL )
+	{
+		mlt_frame test_frame = NULL;
+		mlt_service_get_frame( mlt_producer_service( producer ), &test_frame, 0 );
+		if ( test_frame != NULL )
+		{
+			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
+			mlt_properties_inherit( mlt_frame_properties( this ), mlt_frame_properties( test_frame ) );
+			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+
+			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
+			mlt_properties_set_int( properties, "width", *width );
+			mlt_properties_set_int( properties, "height", *height );
+		}
+		else
+		{
+			mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
+			mlt_frame_get_image( this, buffer, format, width, height, writable );
+		}
 	}
 	else
 	{
@@ -211,7 +233,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 			case mlt_image_yuv420p:
 				size = size * 3 / 2;
 				*buffer = malloc( size );
-				if ( *buffer )
+					if ( *buffer )
 					memset( *buffer, 255, size );
 				break;
 		}

@@ -70,10 +70,19 @@ mlt_producer producer_libdv_init( char *filename )
 
 		// Open the file if specified
 		this->fd = open( filename, O_RDONLY );
-		producer_collect_info( this );
 
-		// Set the resource property (required for all producers)
-		mlt_properties_set( properties, "resource", filename );
+		// Collect info
+		if ( this->fd != -1 && producer_collect_info( this ) )
+		{
+			// Set the resource property (required for all producers)
+			mlt_properties_set( properties, "resource", filename );
+		}
+		else
+		{
+			// Reject this file
+			mlt_producer_close( producer );
+			producer = NULL;
+		}
 
 		// Return the producer
 		return producer;
@@ -130,10 +139,16 @@ static int producer_collect_info( producer_libdv this )
 
 			// Calculate default in/out points
 			double fps = this->is_pal ? 25 : 30000.0 / 1001.0;
-			mlt_properties_set_double( properties, "fps", fps );
-			mlt_properties_set_position( properties, "length", this->frames_in_file );
-			mlt_properties_set_position( properties, "in", 0 );
-			mlt_properties_set_position( properties, "out", this->frames_in_file - 1 );
+			if ( mlt_properties_get_double( properties, "fps" ) == fps )
+			{
+				mlt_properties_set_position( properties, "length", this->frames_in_file );
+				mlt_properties_set_position( properties, "in", 0 );
+				mlt_properties_set_position( properties, "out", this->frames_in_file - 1 );
+			}
+			else
+			{
+				valid = 0;
+			}
 
 			// Parse the header for meta info
 			dv_parse_header( this->dv_decoder, dv_data );
@@ -321,7 +336,7 @@ static void producer_close( mlt_producer parent )
 	//dv_decoder_free( this->dv_decoder );
 
 	// Close the file
-	if ( this->fd != 0 )
+	if ( this->fd > 0 )
 		close( this->fd );
 
 	// Close the parent
