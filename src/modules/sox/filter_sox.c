@@ -28,7 +28,7 @@
 #include <string.h>
 #include <math.h>
 
-#include <sox/st.h>
+#include <st.h>
 
 #define BUFFER_LEN 8192
 #define AMPLITUDE_NORM 0.2511886431509580 /* -12dBFS */
