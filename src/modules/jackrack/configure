@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if [ "$help" != "1" ]
+then
+
+cat << EOF >> ../filters.dat
+jackrack		libmltjackrack.so
+EOF
+
+fi
