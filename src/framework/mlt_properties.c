@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 /* ---------------- // Private Implementation // ---------------- */
 
@@ -286,9 +287,57 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 	mlt_property property = mlt_properties_fetch( this, name );
 
 	// Set it if not NULL
-	if ( property != NULL )
+	if ( property != NULL && ( value == NULL || value[ 0 ] != '@' ) )
 	{
 		error = mlt_property_set_string( property, value );
+		mlt_properties_do_mirror( this, name );
+	}
+	else if ( property != NULL && value[ 0 ] == '@' )
+	{
+		int total = 0;
+		int current = 0;
+		char id[ 255 ];
+		char op = '+';
+
+		value ++;
+
+		while ( *value != '\0' )
+		{
+			int length = strcspn( value, "+-*/" );
+
+			// Get the identifier
+			strncpy( id, value, length );
+			id[ length ] = '\0';
+			value += length;
+
+			// Determine the value
+			if ( isdigit( id[ 0 ] ) )
+				current = atof( id );
+			else
+				current = mlt_properties_get_int( this, id );
+
+			// Apply the operation
+			switch( op )
+			{
+				case '+':
+					total += current;
+					break;
+				case '-':
+					total -= current;
+					break;
+				case '*':
+					total *= current;
+					break;
+				case '/':
+					total /= current;
+					break;
+			}
+
+			// Get the next op
+			op = *value != '\0' ? *value ++ : ' ';
+		}
+
+		error = mlt_property_set_int( property, total );
 		mlt_properties_do_mirror( this, name );
 	}
 
