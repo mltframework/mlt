@@ -228,6 +228,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
+			mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
 			mlt_properties_set( properties, "rescale.interp", "none" );
 			mlt_properties_set( properties, "scale", "off" );
 		}
