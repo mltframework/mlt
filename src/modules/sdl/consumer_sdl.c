@@ -274,7 +274,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		request.freq = frequency;
 		request.format = AUDIO_S16;
 		request.channels = channels;
-		request.samples = 2048;
+		request.samples = 4096;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
@@ -514,7 +514,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	if ( frame != NULL )
 		mlt_frame_close( frame );
 
-	return error;
+	return error || frame == NULL;
 }
 
 /** Threaded wrapper for pipe.
@@ -561,7 +561,7 @@ static void *consumer_thread( void *arg )
 		while ( !done )
 		{
 			// Play audio
-			if ( sizeof( this->audio_buffer ) - this->audio_avail > 8192 || mlt_deque_count( this->queue ) == 1 )
+			if ( sizeof( this->audio_buffer ) - this->audio_avail > 8192 || mlt_deque_count( this->queue ) < 2 )
 			{
 				init_audio = consumer_play_audio( this, frame, init_audio, &duration );
 				done = 1;
