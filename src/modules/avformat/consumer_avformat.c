@@ -35,17 +35,54 @@
 // avformat header files
 #include <avformat.h>
 
+//
+// This structure should be extended and made globally available in mlt
+//
+
 typedef struct
 {
 	int16_t *buffer;
 	int size;
 	int used;
+	double time;
+	int frequency;
+	int channels;
 }
 *sample_fifo, sample_fifo_s;
 
-sample_fifo sample_fifo_init( )
+sample_fifo sample_fifo_init( int frequency, int channels )
 {
-	return calloc( 1, sizeof( sample_fifo_s ) );
+	sample_fifo this = calloc( 1, sizeof( sample_fifo_s ) );
+	this->frequency = frequency;
+	this->channels = channels;
+	return this;
+}
+
+// sample_fifo_clear and check are temporarily aborted (not working as intended)
+
+void sample_fifo_clear( sample_fifo this, double time )
+{
+	int words = ( float )( time - this->time ) * this->frequency * this->channels;
+	if ( ( int )( ( float )time * 100 ) < ( int )( ( float )this->time * 100 ) && this->used > words && words > 0 )
+	{
+		memmove( this->buffer, &this->buffer[ words ], ( this->used - words ) * sizeof( int16_t ) );
+		this->used -= words;
+		this->time = time;
+	}
+	else if ( ( int )( ( float )time * 100 ) != ( int )( ( float )this->time * 100 ) )
+	{
+		this->used = 0;
+		this->time = time;
+	}
+}
+
+void sample_fifo_check( sample_fifo this, double time )
+{
+	if ( this->used == 0 )
+	{
+		if ( ( int )( ( float )time * 100 ) < ( int )( ( float )this->time * 100 ) )
+			this->time = time;
+	}
 }
 
 void sample_fifo_append( sample_fifo this, int16_t *samples, int count )
@@ -73,6 +110,8 @@ int sample_fifo_fetch( sample_fifo this, int16_t *samples, int count )
 	memcpy( samples, this->buffer, count * sizeof( int16_t ) );
 	this->used -= count;
 	memmove( this->buffer, &this->buffer[ count ], this->used * sizeof( int16_t ) );
+
+	this->time += ( double )count / this->channels / this->frequency;
 
 	return count;
 }
@@ -112,7 +151,6 @@ mlt_consumer consumer_avformat_init( char *arg )
 			mlt_properties_set( properties, "target", arg );
 
 		// sample and frame queue
-		mlt_properties_set_data( properties, "sample_fifo", sample_fifo_init( ), 0, ( mlt_destructor )sample_fifo_close, NULL );
 		mlt_properties_set_data( properties, "frame_queue", mlt_deque_init( ), 0, ( mlt_destructor )mlt_deque_close, NULL );
 
 		// Set avformat defaults (all lifted from ffmpeg.c)
@@ -732,6 +770,15 @@ static void *consumer_thread( void *arg )
 			{
 				samples = mlt_sample_calculator( fps, frequency, count );
 				mlt_frame_get_audio( frame, &pcm, &aud_fmt, &frequency, &channels, &samples );
+
+				// Create the fifo if we don't have one
+				if ( fifo == NULL )
+				{
+					fifo = sample_fifo_init( frequency, channels );
+					mlt_properties_set_data( properties, "sample_fifo", fifo, 0, ( mlt_destructor )sample_fifo_close, NULL );
+				}
+
+				// Append the samples
 				sample_fifo_append( fifo, pcm, samples * channels );
 				total_time += ( samples * 1000000 ) / frequency;
 			}
@@ -748,12 +795,12 @@ static void *consumer_thread( void *arg )
 		{
 	 		// Compute current audio and video time
 	 		if (audio_st)
-	 			audio_pts = (double)audio_st->pts.val * oc->pts_num / oc->pts_den;
+	 			audio_pts = (double)audio_st->pts.val * audio_st->time_base.num / audio_st->time_base.den;
 			else
 	 			audio_pts = 0.0;
 	
 			if (video_st)
-	 			video_pts = (double)video_st->pts.val * oc->pts_num / oc->pts_den;
+	 			video_pts = (double)video_st->pts.val * video_st->time_base.num / video_st->time_base.den;
  			else
 	 			video_pts = 0.0;
 

@@ -62,9 +62,6 @@ mlt_producer producer_avformat_init( char *file )
 			// Set the resource property (required for all producers)
 			mlt_properties_set( properties, "resource", file );
 
-			// TEST: audio sync tweaking
-			mlt_properties_set_double( properties, "discrepancy", 1 );
-
 			// Register our get_frame implementation
 			this->get_frame = producer_get_frame;
 
@@ -270,11 +267,11 @@ static int producer_open( mlt_producer this, char *file )
 			// Find default audio and video streams
 			find_default_streams( context, &audio_index, &video_index );
 
+            if ( context->start_time != AV_NOPTS_VALUE )
+                mlt_properties_set_double( properties, "start_time", context->start_time );
+			
 			// Check if we're seekable (something funny about mpeg here :-/)
-			if ( strstr( file, ".mpg" ) == NULL && strstr( file, ".mpeg" ) == NULL )
-				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, context->start_time ) >= 0 );
-			else
-				mlt_properties_set_int( properties, "seekable", 1 );
+			mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) ) >= 0 );
 
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "audio_index", audio_index );
@@ -385,6 +382,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// We may want to use the source fps if available
 	double source_fps = mlt_properties_get_double( properties, "source_fps" );
 
+	// Get the seekable status
+	int seekable = mlt_properties_get_int( properties, "seekable" );
+
 	// Set the result arguments that we know here (only *buffer is now required)
 	*format = mlt_image_yuv422;
 	*width = codec_context->width;
@@ -413,7 +413,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// We're paused - use last image
 			paused = 1;
 		}
-		else if ( position > expected && ( position - expected ) < 250 )
+		else if ( !seekable && position > expected && ( position - expected ) < 250 )
 		{
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = position - expected;
@@ -421,7 +421,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else
 		{
 			// Set to the real timecode
-			av_seek_frame( context, -1, context->start_time + real_timecode * 1000000.0 );
+			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 );
 	
 			// Remove the cached info relating to the previous position
 			mlt_properties_set_double( properties, "current_time", real_timecode );
@@ -760,7 +760,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 			// We're paused - silence required
 			paused = 1;
 		}
-		else if ( position > expected && ( position - expected ) < 250 )
+		else if ( !seekable && position > expected && ( position - expected ) < 250 )
 		{
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = position - expected;
@@ -768,7 +768,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		else
 		{
 			// Set to the real timecode
-			if ( !seekable || av_seek_frame( context, -1, context->start_time + real_timecode * 1000000.0 ) != 0 )
+			if ( av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0 ) != 0 )
 				paused = 1;
 
 			// Clear the usage in the audio buffer
@@ -839,25 +839,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 				// If we're behind, ignore this packet
 				float current_pts = (float)pkt.pts / 1000000.0;
-				double discrepancy = mlt_properties_get_double( properties, "discrepancy" );
-				if ( current_pts != 0 && real_timecode != 0 )
-				{
-					if ( discrepancy != 1 )
-						discrepancy = ( discrepancy + ( real_timecode / current_pts ) ) / 2;
-					else
-						discrepancy = real_timecode / current_pts;
-					if ( discrepancy > 0.9 && discrepancy < 1.1 )
-						discrepancy = 1.0;
-					else
-						discrepancy = floor( discrepancy + 0.5 );
-
-					if ( discrepancy == 0 )
-						discrepancy = 1.0;
-
-					mlt_properties_set_double( properties, "discrepancy", discrepancy );
-				}
-
-				if ( seekable && ( !ignore && discrepancy * current_pts <= ( real_timecode - 0.02 ) ) )
+				if ( seekable && ( !ignore && current_pts <= ( real_timecode - 0.02 ) ) )
 					ignore = 1;
 			}
 
