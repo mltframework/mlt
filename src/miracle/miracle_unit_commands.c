@@ -181,6 +181,20 @@ int miracle_clean( command_argument cmd_arg )
 	return RESPONSE_SUCCESS;
 }
 
+int miracle_wipe( command_argument cmd_arg )
+{
+	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
+	
+	if (unit == NULL)
+		return RESPONSE_INVALID_UNIT;
+	else
+	{
+		if ( miracle_unit_wipe( unit ) != valerie_ok )
+			return RESPONSE_BAD_FILE;
+	}
+	return RESPONSE_SUCCESS;
+}
+
 int miracle_clear( command_argument cmd_arg )
 {
 	miracle_unit unit = miracle_get_unit(cmd_arg->unit);

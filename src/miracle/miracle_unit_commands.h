@@ -34,6 +34,7 @@ extern response_codes miracle_load( command_argument );
 extern response_codes miracle_insert( command_argument );
 extern response_codes miracle_remove( command_argument );
 extern response_codes miracle_clean( command_argument );
+extern response_codes miracle_wipe( command_argument );
 extern response_codes miracle_clear( command_argument );
 extern response_codes miracle_move( command_argument );
 extern response_codes miracle_append( command_argument );

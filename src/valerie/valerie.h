@@ -100,6 +100,7 @@ extern valerie_error_code valerie_unit_append( valerie, int, char *, int32_t, in
 extern valerie_error_code valerie_unit_receive( valerie, int, char *, char * );
 extern valerie_error_code valerie_unit_push( valerie, int, char *, mlt_service );
 extern valerie_error_code valerie_unit_clean( valerie, int );
+extern valerie_error_code valerie_unit_wipe( valerie, int );
 extern valerie_error_code valerie_unit_clear( valerie, int );
 extern valerie_error_code valerie_unit_clip_move( valerie, int, valerie_clip_offset, int, valerie_clip_offset, int );
 extern valerie_error_code valerie_unit_clip_remove( valerie, int, valerie_clip_offset, int );

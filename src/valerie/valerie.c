@@ -346,6 +346,14 @@ valerie_error_code valerie_unit_clear( valerie this, int unit )
 	return valerie_execute( this, 1024, "CLEAR U%d", unit );
 }
 
+/** Wipe the unit - this function removes all clips before the current one.
+*/
+
+valerie_error_code valerie_unit_wipe( valerie this, int unit )
+{
+	return valerie_execute( this, 1024, "WIPE U%d", unit );
+}
+
 /** Move clips on the units playlist.
 */
 

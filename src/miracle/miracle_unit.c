@@ -69,7 +69,6 @@ miracle_unit miracle_unit_init( int index, char *constructor )
 		mlt_playlist playlist = mlt_playlist_init( );
 		this = calloc( sizeof( miracle_unit_t ), 1 );
 		this->properties = mlt_properties_new( );
-		this->old_playlist = mlt_playlist_init( );
 		mlt_properties_init( this->properties, this );
 		mlt_properties_set_int( this->properties, "unit", index );
 		mlt_properties_set_int( this->properties, "generation", 0 );
@@ -82,19 +81,6 @@ miracle_unit miracle_unit_init( int index, char *constructor )
 	}
 
 	return this;
-}
-
-static void copy_playlist( mlt_playlist dest, mlt_playlist src )
-{
-	int i;
-
-	for ( i = 0; i < mlt_playlist_count( src ); i ++ )
-	{
-		mlt_playlist_clip_info info;
-		mlt_playlist_get_clip_info( src, &info, i );
-		if ( info.producer != NULL )
-			mlt_playlist_append_io( dest, info.producer, info.frame_in, info.frame_out );
-	}
 }
 
 static char *strip_root( miracle_unit unit, char *file )
@@ -182,10 +168,10 @@ static void clear_unit( miracle_unit unit )
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 	mlt_producer producer = MLT_PLAYLIST_PRODUCER( playlist );
 
-	mlt_playlist_clear( unit->old_playlist );
-	copy_playlist( unit->old_playlist, playlist );
+	mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 	mlt_playlist_clear( playlist );
 	mlt_producer_seek( producer, 0 );
+	mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 
 	update_generation( unit );
 }
@@ -209,10 +195,33 @@ static void clean_unit( miracle_unit unit )
 		mlt_properties_inc_ref( MLT_PRODUCER_PROPERTIES( info.producer ) );
 		position -= info.start;
 		clear_unit( unit );
+		mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 		mlt_playlist_append_io( playlist, info.producer, info.frame_in, info.frame_out );
 		mlt_producer_seek( producer, position );
 		mlt_producer_set_speed( producer, speed );
+		mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 		mlt_producer_close( info.producer );
+	}
+	
+	update_generation( unit );
+}
+
+/** Remove everything up to the current clip from the unit.
+*/
+
+static void wipe_unit( miracle_unit unit )
+{
+	mlt_properties properties = unit->properties;
+	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_playlist_clip_info info;
+	int current = mlt_playlist_current_clip( playlist );
+	mlt_playlist_get_clip_info( playlist, &info, current );
+
+	if ( info.producer != NULL && info.start > 0 )
+	{
+		mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
+		mlt_playlist_remove_region( playlist, 0, info.start - 1 );
+		mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 	}
 	
 	update_generation( unit );
@@ -269,8 +278,10 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int32_t in,
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 		int original = mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) );
+		mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 		mlt_playlist_append_io( playlist, instance, in, out );
 		mlt_playlist_remove_region( playlist, 0, original );
+		mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 		miracle_log( LOG_DEBUG, "loaded clip %s", clip );
 		update_generation( unit );
 		miracle_unit_status_communicate( unit );
@@ -290,7 +301,9 @@ valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 		fprintf( stderr, "inserting clip %s before %d\n", clip, index );
+		mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 		mlt_playlist_insert( playlist, instance, index, in, out );
+		mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 		miracle_log( LOG_DEBUG, "inserted clip %s at %d", clip, index );
 		update_generation( unit );
 		miracle_unit_status_communicate( unit );
@@ -305,7 +318,9 @@ valerie_error_code miracle_unit_remove( miracle_unit unit, int index )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 	mlt_playlist_remove( playlist, index );
+	mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 	miracle_log( LOG_DEBUG, "removed clip at %d", index );
 	update_generation( unit );
 	miracle_unit_status_communicate( unit );
@@ -316,6 +331,14 @@ valerie_error_code miracle_unit_clean( miracle_unit unit )
 {
 	clean_unit( unit );
 	miracle_log( LOG_DEBUG, "Cleaned playlist" );
+	miracle_unit_status_communicate( unit );
+	return valerie_ok;
+}
+
+valerie_error_code miracle_unit_wipe( miracle_unit unit )
+{
+	wipe_unit( unit );
+	miracle_log( LOG_DEBUG, "Wiped playlist" );
 	miracle_unit_status_communicate( unit );
 	return valerie_ok;
 }
@@ -334,7 +357,9 @@ valerie_error_code miracle_unit_move( miracle_unit unit, int src, int dest )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 	mlt_playlist_move( playlist, src, dest );
+	mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 	miracle_log( LOG_DEBUG, "moved clip %d to %d", src, dest );
 	update_generation( unit );
 	miracle_unit_status_communicate( unit );
@@ -358,8 +383,10 @@ valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, int32_t i
 	{
 		mlt_properties properties = unit->properties;
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+		mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 		mlt_playlist_append_io( playlist, instance, in, out );
 		miracle_log( LOG_DEBUG, "appended clip %s", clip );
+		mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 		update_generation( unit );
 		miracle_unit_status_communicate( unit );
 		mlt_producer_close( instance );
@@ -379,7 +406,9 @@ valerie_error_code miracle_unit_append_service( miracle_unit unit, mlt_service s
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
+	mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 	mlt_playlist_append( playlist, ( mlt_producer )service );
+	mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 	miracle_log( LOG_DEBUG, "appended clip" );
 	update_generation( unit );
 	miracle_unit_status_communicate( unit );
@@ -456,6 +485,8 @@ int miracle_unit_transfer( miracle_unit dest_unit, miracle_unit src_unit )
 
 	clear_unit( src_unit );
 
+	mlt_service_lock( MLT_PLAYLIST_SERVICE( dest_playlist ) );
+
 	for ( i = 0; i < mlt_playlist_count( tmp_playlist ); i ++ )
 	{
 		mlt_playlist_clip_info info;
@@ -464,7 +495,10 @@ int miracle_unit_transfer( miracle_unit dest_unit, miracle_unit src_unit )
 			mlt_playlist_append_io( dest_playlist, info.producer, info.frame_in, info.frame_out );
 	}
 
+	mlt_service_unlock( MLT_PLAYLIST_SERVICE( dest_playlist ) );
+
 	update_generation( dest_unit );
+	miracle_unit_status_communicate( dest_unit );
 
 	mlt_playlist_close( tmp_playlist );
 
@@ -509,12 +543,12 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 			status->fps = mlt_producer_get_fps( producer );
 			status->in = info.frame_in;
 			status->out = info.frame_out;
-			status->position = mlt_producer_position( clip );
+			status->position = mlt_producer_frame( clip );
 			status->length = mlt_producer_get_length( clip );
 			strncpy( status->tail_clip, title, sizeof( status->tail_clip ) );
 			status->tail_in = info.frame_in;
 			status->tail_out = info.frame_out;
-			status->tail_position = mlt_producer_position( clip );
+			status->tail_position = mlt_producer_frame( clip );
 			status->tail_length = mlt_producer_get_length( clip );
 			status->clip_index = mlt_playlist_current_clip( playlist );
 			status->seek_flag = 1;
@@ -604,7 +638,9 @@ int miracle_unit_set_clip_in( miracle_unit unit, int index, int32_t position )
 	if ( error == 0 )
 	{
 		miracle_unit_play( unit, 0 );
+		mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 		error = mlt_playlist_resize_clip( playlist, index, position, info.frame_out );
+		mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 		update_generation( unit );
 		miracle_unit_change_position( unit, index, 0 );
 	}
@@ -625,7 +661,9 @@ int miracle_unit_set_clip_out( miracle_unit unit, int index, int32_t position )
 	if ( error == 0 )
 	{
 		miracle_unit_play( unit, 0 );
+		mlt_service_lock( MLT_PLAYLIST_SERVICE( playlist ) );
 		error = mlt_playlist_resize_clip( playlist, index, info.frame_in, position );
+		mlt_service_unlock( MLT_PLAYLIST_SERVICE( playlist ) );
 		update_generation( unit );
 		miracle_unit_status_communicate( unit );
 		miracle_unit_change_position( unit, index, -1 );
@@ -723,7 +761,6 @@ void miracle_unit_close( miracle_unit unit )
 	{
 		miracle_log( LOG_DEBUG, "closing unit..." );
 		miracle_unit_terminate( unit );
-		mlt_playlist_close( unit->old_playlist );
 		mlt_properties_close( unit->properties );
 		free( unit );
 		miracle_log( LOG_DEBUG, "... unit closed." );

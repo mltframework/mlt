@@ -233,6 +233,9 @@ REMOVE {unit} [ [+|-]clip ]
 CLEAN {unit}
 	Removes all by the playing clip.
 	
+WIPE {unit}
+	Removes all clips before the playing clip.
+	
 MOVE {unit} [+|-]clip [ [+|-]clip ]
 	Move a clip in the playlist to position specified or position relative to the
 	currently playing clip.
