@@ -249,6 +249,8 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 
 		// Set the id
 		xmlNewProp( child, "id", id );
+		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
+		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
 
