@@ -166,3 +166,41 @@ Bouncy, Bouncy Ball
 
 	A variation on the above Bouncy, Bouncy demo that applies a shape, or
 	alpha producer, to the the compositing region.
+
+J Cut
+
+	A J cut is an edit where the audio cuts before the video.
+	It gets its name from the way it looks on a NLE timeline user interface.
+	When the audio cuts over, it does an audio crossfade over the duration of 
+	one frame. This makes the audio cut slightly less abrupt and avoids any 
+	"click" due to mismatched sample levels at the edit point. The video edit
+	is a hard cut.
+
+L Cut
+
+	An L cut is an edit where the video cuts before the audio.
+	It gets its name from the way it looks on a NLE timeline user interface.
+	This demo shows a very quick dissolve over 5 frames for a soft video cut.
+	Like the J Cut demo, an audio crossfade for the duration of one frame makes
+	an audio edit nearly instantaneous while being slightly softened and 
+	avoiding aberrations.
+
+Fade from/to black/silence
+
+	Of course, it is possible using MLT to fade from black on video and silence
+	on audio as well fade to black and silence.
+	
+Push wipe
+
+	A push wipe is a somewhat fancier transition than most standard wipes
+	because it involves motion. The new video clip "pushes" the old video
+	clip off one edge. If you can preview on an analog monitor you will notice
+	how smooth the motion is due to field-based rendering.
+	
+Ticker tape
+
+	A very minimal reverse crawling title neard the bottom of the screen.
+	The goal of the demo is show fluid motion of the field-based rendering of
+	the compositor when viewed on an analog monitor using a DV or BlueFish444
+	consumer. The demo also shows the potientional for using and extending the
+	existing set of services for a full blown news ticker implementation.

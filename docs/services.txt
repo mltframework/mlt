@@ -1224,7 +1224,7 @@ Consumers
 			string standard - "PAL" (default) or "NTSC"
 			                - default is based upon MLT_NORMALISATION 
 							  environment variable, which defaults to PAL.
-			int frames - the number of DMA video frames. default is 4.
+			int frames - the number of DMA video frames. default is 8.
 			             minimum is 2. maximum on my system is 11.
 			int buffer - the number of frames to buffer within MLT, minimum 1, 
 			             default 25.

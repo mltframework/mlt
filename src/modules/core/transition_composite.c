@@ -552,7 +552,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	}
 	
 	// crop overlay beyond right edge of frame
-	else if ( x + width_src > width_dest )
+	if ( x + width_src > width_dest )
 		width_src = width_dest - x;
 
 	// crop overlay off the top edge of the frame
@@ -561,8 +561,9 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 		y_src = -y;
 		height_src -= y_src;
 	}
+	
 	// crop overlay below bottom edge of frame
-	else if ( y + height_src > height_dest )
+	if ( y + height_src > height_dest )
 		height_src = height_dest - y;
 
 	// offset pointer into overlay buffer based on cropping
@@ -995,7 +996,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
 			uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
-			int progressive = mlt_properties_get_int( a_props, "progressive" ) ||
+			int progressive = 
 					mlt_properties_get_int( a_props, "consumer_progressive" ) ||
 					mlt_properties_get_int( properties, "progressive" );
 			int field;

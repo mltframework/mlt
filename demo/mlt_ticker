@@ -1,0 +1,16 @@
+inigo \
+clip1.dv out=299 \
+-track \
+colour:black out=299 \
+-track \
+"+The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog..txt" \
+out=299 \
+-transition \
+composite a_track=0 b_track=1 out=299 \
+start=0,70%:100%x64:100 \
+distort=true \
+-transition \
+composite a_track=0 b_track=2 out=299 \
+start=100%,70%:999%x20% \
+end=-299%,70%:999%x20% \
+$*

@@ -1,0 +1,13 @@
+inigo \
+clip3.mpeg in=100 out=299 \
+-track \
+colour:black \
+-transition \
+luma in=0 out=49 a_track=0 b_track=1 reverse=1 \
+-transition \
+luma in=150 out=199 a_track=0 b_track=1 \
+-filter \
+volume in=0 out=49 track=0 gain=0 end=1.0 \
+-filter \
+volume in=150 out=199 track=0 gain=1.0 end=0 \
+$*
