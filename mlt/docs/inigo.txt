@@ -1,3 +1,16 @@
+INIGO
+-----
+
+Preamble:
+
+	inigo was developed as a test tool for the MLT framework. It can
+	be thought of as a powerful, if somewhat obscure, multitrack
+	command line oriented video editor.
+
+	The following details the usage of the tool and as a result,
+	provides a lot of insight into the workings of the MLT framework.
+
+
 Usage:
 
 	inigo [ -group [ name=value ]* ]
@@ -8,12 +21,23 @@ Usage:
 	      [ -track ]
 	      [ producer [ name=value ] * ]+
 	      [ -serialise file.inigo ]
-	
+
+
 General rules:
 
 	1. Order is incredibly important;
+
 	2. Error checking on command line parsing is weak;
-	3. This document does not duplicate the information in services.txt.
+
+	3. Please refer to services.txt for details on services 
+	available;
+
+	4. The MLT framework, from which inigo has inherited its 
+	naming convention - is very ego-centric. Producers produce 
+	MLT frame objects and consumers consume MLT frame objects. 
+	The distinction is important - a DV producer does not produce 
+	DV and a DV consumer does not consume DV.
+
 
 Terminoligy:
 
@@ -21,7 +45,7 @@ Terminoligy:
 	devices (such as dv1394 input or video4linux). Hence, the more
 	generic term is used [yes, the more generic usage is out of
 	scope for now...].
-	
+
 	'Filters' are frame modifiers - they always guarantee that for
 	every frame they receive, they output *precisely* one frame.
 	Never more, never less, ever.
@@ -44,7 +68,8 @@ Terminoligy:
 	Consumers have no say in the flow of frames [though they may
 	give the illusion that they do]. They get frames from a
 	connected producer, use them, destroy them and get more.
-	
+
+
 Basics:
 
 	To play a file with the default SDL PAL consumer, usage is:
@@ -54,6 +79,7 @@ Basics:
 	Note that 'file' can be anything that inigo has a known
 	'producer' mapping for (so this can be anything from .dv to
 	.txt).
+
 
 Properties:
 
@@ -68,7 +94,8 @@ Properties:
 	validity of others are dependent on the producer - however,
 	properties will always be assigned, but it doesn't mean they
 	will be used.
-	
+
+
 Multiple Files:
 
 	Multiple files of different types can be used:
@@ -78,7 +105,8 @@ Multiple Files:
 	Properties can be assigned to each file:
 	
 	$ inigo a.dv in=50 out=100 b.mpg out=500 c.png out=500
-	
+
+
 Filters:
 
 	The Multiple Files examples above will logically playout one
@@ -95,7 +123,8 @@ Filters:
 
 	It should also be stressed that filters are applied in the order
 	in which they're specified.
-	
+
+
 Filter Properties:
 
 	As with producers, properties may be specified on filters too.
@@ -107,7 +136,8 @@ Filter Properties:
 	
 	Again, filters have their own set of rules about properties and
 	will silently ignore properties that do not apply.
-	
+
+
 Groups:
 
 	The -group switch is provided to force default properties on the
@@ -129,7 +159,8 @@ Groups:
 	To shed the group properties, you can use any empty group:
 	
 	$ inigo -group in=0 out=49 clip* -group -filter greyscale
-	
+
+
 Introducing Tracks and Blanks:
 
 	So far, all of the examples have shown the definition of a
@@ -155,8 +186,8 @@ Introducing Tracks and Blanks:
 	Playout will show the first 50 frames of a and the 51st frame
 	shown will be the 51st frame of b.
 	
-	To show have the 51st frame be the first frame of b, we can use
-	the -blank switch:
+	To have the 51st frame be the first frame of b, we can use the 
+	-blank switch:
 	
 	$ inigo a.dv out=49 -track -blank 49 b.dv
 	
@@ -171,7 +202,8 @@ Introducing Tracks and Blanks:
 	Now playout will continue as though a and b clips are on the
 	same track (which is about as useful as reversing the process of
 	slicing bread).
-	
+
+
 Transitions:
 
 	Where tracks become useful is in the placing of transitions.
@@ -187,14 +219,15 @@ Transitions:
 	
 	+-------+
 	|a      |
-	+----+--+---------------+
-	     |b                 |
-	     +------------------+
+	+---+---+--------------+
+	    |b                 |
+	    +------------------+
 	
 	Playout will now show the first 25 frames of a and then a fade
 	transition for 25 frames between a and b, and will finally
 	playout the remainder of b.
-	
+
+
 Reversing a Transition:
 
 	When we visualise a track definition, we also see situtations
@@ -202,9 +235,9 @@ Reversing a Transition:
 	
 	+-------+              +----------+
 	|a1     |              |a2        |
-	+----+--+--------------+----+-----+
-	     |b                     |
-	     +----------------------+
+	+---+---+--------------+----+-----+
+	    |b                      |
+	    +-----------------------+
 	
 	In this case, we have two transitions, a1 to b and b to a2. 
 	
@@ -215,7 +248,8 @@ Reversing a Transition:
 	        -transition luma in=100 out=124 reverse=1 \
 	        -track \
 	        -blank 24 b.dv out=99
-	
+
+
 Filters and Tracks:
 
 	A filter applies to a [specified region of a] single track, so
@@ -227,7 +261,8 @@ Filters and Tracks:
 	the consumer is requesting, and you may not want to unecessarily
 	resize a video track if you will be later rescaling it for
 	composition).
-	
+
+
 Serialisation:
 
 	Inigo has a built in serialisation mechanism - you can build up
@@ -237,7 +272,8 @@ Serialisation:
 	The saved file can be subsequently used as a clip by either
 	miracle or inigo. Take care though - paths to files are saved as
 	provided on the command line....
-	
+
+
 Missing Features:
 
 	Some filters/transitions should be applied on the output frame

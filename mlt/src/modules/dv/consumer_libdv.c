@@ -34,6 +34,9 @@
 #include <libdv/dv.h>
 
 // Forward references.
+static int consumer_start( mlt_consumer this );
+static int consumer_stop( mlt_consumer this );
+static int consumer_is_stopped( mlt_consumer this );
 static int consumer_encode_video( mlt_consumer this, uint8_t *dv_frame, mlt_frame frame );
 static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_frame frame );
 static void consumer_output( mlt_consumer this, uint8_t *dv_frame, int size, mlt_frame frame );
@@ -54,26 +57,24 @@ mlt_consumer consumer_libdv_init( char *arg )
 		// Get properties from the consumer
 		mlt_properties properties = mlt_consumer_properties( this );
 
-		// Allocate a thread
-		pthread_t *thread = calloc( 1, sizeof( pthread_t ) );
-
 		// Assign close callback
 		this->close = consumer_close;
 
-		// Assign all properties
+		// Interpret the constructor argument
 		if ( arg == NULL || !strcmp( arg, "PAL" ) )
 			mlt_properties_set_double( properties, "fps", 25 );
 		else
 			mlt_properties_set_double( properties, "fps", 29.97 );
 
-		mlt_properties_set_data( properties, "thread", thread, sizeof( pthread_t ), free, NULL );
+		// Set the encode and output handling method
 		mlt_properties_set_data( properties, "video", consumer_encode_video, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "audio", consumer_encode_audio, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "output", consumer_output, 0, NULL, NULL );
 
-		// Create the thread (this should not happen immediately)
-		mlt_properties_set_int( properties, "running", 1 );
-		pthread_create( thread, NULL, consumer_thread, this );
+		// Set up start/stop/terminated callbacks
+		this->start = consumer_start;
+		this->stop = consumer_stop;
+		this->is_stopped = consumer_is_stopped;
 	}
 	else
 	{
@@ -84,6 +85,66 @@ mlt_consumer consumer_libdv_init( char *arg )
 
 	// Return this
 	return this;
+}
+
+/** Start the consumer.
+*/
+
+static int consumer_start( mlt_consumer this )
+{
+	// Get the properties
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	// Check that we're not already running
+	if ( !mlt_properties_get_int( properties, "running" ) )
+	{
+		// Allocate a thread
+		pthread_t *thread = calloc( 1, sizeof( pthread_t ) );
+
+		// Assign the thread to properties
+		mlt_properties_set_data( properties, "thread", thread, sizeof( pthread_t ), free, NULL );
+
+		// Set the running state
+		mlt_properties_set_int( properties, "running", 1 );
+
+		// Create the thread
+		pthread_create( thread, NULL, consumer_thread, this );
+	}
+	return 0;
+}
+
+/** Stop the consumer.
+*/
+
+static int consumer_stop( mlt_consumer this )
+{
+	// Get the properties
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	// Check that we're running
+	if ( mlt_properties_get_int( properties, "running" ) )
+	{
+		// Get the thread
+		pthread_t *thread = mlt_properties_get_data( properties, "thread", NULL );
+
+		// Stop the thread
+		mlt_properties_set_int( properties, "running", 0 );
+
+		// Wait for termination
+		pthread_join( *thread, NULL );
+	}
+
+	return 0;
+}
+
+/** Determine if the consumer is stopped.
+*/
+
+static int consumer_is_stopped( mlt_consumer this )
+{
+	// Get the properties
+	mlt_properties properties = mlt_consumer_properties( this );
+	return !mlt_properties_get_int( properties, "running" );
 }
 
 /** Get or create a new libdv encoder.
@@ -288,18 +349,26 @@ static void *consumer_thread( void *arg )
 		// Get the frame
 		if ( mlt_service_get_frame( service, &frame, 0 ) == 0 )
 		{
-			// Encode the image
-			int size = video( this, dv_frame, frame );
+			// Obtain the dv_encoder
+			if ( libdv_get_encoder( this, frame ) != NULL )
+			{
+				// Encode the image
+				int size = video( this, dv_frame, frame );
 
-			// Encode the audio
-			if ( size > 0 )
-				audio( this, dv_frame, frame );
+				// Encode the audio
+				if ( size > 0 )
+					audio( this, dv_frame, frame );
 
-			// Output the frame
-			output( this, dv_frame, size, frame );
+				// Output the frame
+				output( this, dv_frame, size, frame );
 
-			// Close the frame
-			mlt_frame_close( frame );
+				// Close the frame
+				mlt_frame_close( frame );
+			}
+			else
+			{
+				fprintf( stderr, "Unable to obtain dv encoder.\n" );
+			}
 		}
 	}
 
@@ -314,17 +383,8 @@ static void *consumer_thread( void *arg )
 
 static void consumer_close( mlt_consumer this )
 {
-	// Get the properties
-	mlt_properties properties = mlt_consumer_properties( this );
-
-	// Get the thread
-	pthread_t *thread = mlt_properties_get_data( properties, "thread", NULL );
-
-	// Stop the thread
-	mlt_properties_set_int( properties, "running", 0 );
-
-	// Wait for termination
-	pthread_join( *thread, NULL );
+	// Stop the consumer
+	mlt_consumer_stop( this );
 
 	// Close the parent
 	mlt_consumer_close( this );
