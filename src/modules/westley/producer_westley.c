@@ -342,6 +342,18 @@ static void on_end_entry( deserialise_context context, const xmlChar *name )
 	context_push_service( context, service );
 }
 
+static void on_end_tractor( deserialise_context context, const xmlChar *name )
+{
+	// Discard the last producer
+	mlt_producer multitrack = MLT_PRODUCER( context_pop_service( context ) );
+
+	// Inherit the producer's properties
+	mlt_properties properties = mlt_producer_properties( multitrack );
+	mlt_properties_set_position( properties, "length", mlt_producer_get_out( multitrack ) + 1 );
+	mlt_producer_set_in_and_out( multitrack, 0, mlt_producer_get_out( multitrack ) );
+	mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( multitrack ) );
+}
+
 static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **atts)
 {
 	deserialise_context context = ( deserialise_context ) ctx;
@@ -377,10 +389,7 @@ static void on_end_element( void *ctx, const xmlChar *name )
 	else if ( strcmp( name, "entry" ) == 0 )
 		on_end_entry( context, name );
 	else if ( strcmp( name, "tractor" ) == 0 )
-	{
-		// Discard the last producer
-		context_pop_service( context );
-	}
+		on_end_tractor( context, name );
 }
 
 
@@ -407,6 +416,8 @@ mlt_producer producer_westley_init( char *filename )
 	// make the returned service destroy the connected services
 	mlt_properties_set_data( mlt_service_properties( service ), "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
 	free( context );
+
+	mlt_properties_set( mlt_service_properties( service ), "resource", filename );
 
 	return MLT_PRODUCER( service );
 }

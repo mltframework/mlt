@@ -355,7 +355,7 @@ static int consumer_start( mlt_consumer this )
 		free( context );
 		
 		if ( mlt_properties_get( mlt_consumer_properties( this ), "resource" ) == NULL )
-			xmlDocFormatDump( stderr, doc, 1 );
+			xmlDocFormatDump( stdout, doc, 1 );
 		else
 			xmlSaveFormatFile( mlt_properties_get( mlt_consumer_properties( this ), "resource" ), doc, 1 );
 	}
