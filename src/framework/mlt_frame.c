@@ -371,7 +371,7 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, double fps, int w, int h 
 		for ( j = 0; j < channels; j++ )
 		{
 			/* the height of a "bar" is the ratio of the sample multiplied by the vertical resolution */
-			int pcm_scaled = ( int )( ( double )( *pcm ) / 32767 * vertical_resolution );
+			int pcm_scaled = ( int )( ( double )( *pcm ) / 32768 * vertical_resolution / 2 );
 			int height = pcm_scaled < 0 ? -pcm_scaled : pcm_scaled;
 			int offset = j * samples * vertical_resolution;
 			int displacement = pcm_scaled < 0 ? ( vertical_resolution / 2 ) : ( vertical_resolution / 2 - pcm_scaled );
@@ -383,6 +383,7 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, double fps, int w, int h 
 			pcm++;
 		}
 	}
+
 	return bitmap;
 }
 
