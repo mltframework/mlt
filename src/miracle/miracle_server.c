@@ -77,6 +77,7 @@ miracle_server miracle_server_init( char *id )
 		server->id = id;
 		server->port = DEFAULT_TCP_PORT;
 		server->socket = -1;
+		server->shutdown = 1;
 		mlt_events_init( &server->parent );
 		mlt_events_register( &server->parent, "command-received", ( mlt_transmitter )miracle_command_received );
 		mlt_events_register( &server->parent, "doc-received", ( mlt_transmitter )miracle_doc_received );
@@ -154,6 +155,8 @@ static void *miracle_server_run( void *arg )
 	pthread_attr_init( &thread_attributes );
 	pthread_attr_setinheritsched( &thread_attributes, PTHREAD_INHERIT_SCHED );
 	/* pthread_attr_setschedpolicy( &thread_attributes, SCHED_RR ); */
+
+	server->shutdown = 0;
 
 	while ( !server->shutdown )
 	{
