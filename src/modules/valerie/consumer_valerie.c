@@ -42,14 +42,27 @@ mlt_consumer consumer_valerie_init( char *arg )
 	// If no malloc'd and consumer init ok
 	if ( this != NULL && mlt_consumer_init( this, NULL ) == 0 )
 	{
+		if ( arg != NULL && strchr( arg, ':' ) )
+		{
+			char *temp = NULL;
+			int port = atoi( strchr( arg, ':' ) + 1 );
+			mlt_properties_set( mlt_consumer_properties( this ), "server", arg );
+			temp = mlt_properties_get( mlt_consumer_properties( this ), "server" );
+			*( strchr( temp, ':' ) ) = '\0';
+			mlt_properties_set_int( mlt_consumer_properties( this ), "port", port );
+		}
+		else
+		{
+			mlt_properties_set( mlt_consumer_properties( this ), "server", arg == NULL ? "localhost" : arg );
+			mlt_properties_set_int( mlt_consumer_properties( this ), "port", 5250 );
+		}
+
+		mlt_properties_set_int( mlt_consumer_properties( this ), "unit", 0 );
+		mlt_properties_set( mlt_consumer_properties( this ), "command", "append" );
+
 		// Allow thread to be started/stopped
 		this->start = consumer_start;
 		this->is_stopped = consumer_is_stopped;
-
-		mlt_properties_set( mlt_consumer_properties( this ), "server", arg == NULL ? "localhost" : arg );
-		mlt_properties_set_int( mlt_consumer_properties( this ), "port", 5250 );
-		mlt_properties_set_int( mlt_consumer_properties( this ), "unit", 0 );
-		mlt_properties_set( mlt_consumer_properties( this ), "command", "append" );
 
 		// Return the consumer produced
 		return this;

@@ -1400,6 +1400,7 @@ mlt_producer producer_westley_init( int info, char *data )
 		else
 		{
 			// Allow the project to be edited
+			mlt_properties_set( properties, "_westley", "was here" );
 			mlt_properties_set_int( properties, "_mlt_service_hidden", 1 );
 		}
 	}
