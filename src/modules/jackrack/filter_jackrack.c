@@ -24,11 +24,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <samplerate.h>
-#define __USE_ISOC99 1
-#include <math.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 #include <pthread.h>
