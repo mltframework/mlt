@@ -9,6 +9,7 @@ OBJS = factory.o \
 	   filter_gamma.o \
 	   filter_luma.o \
 	   filter_obscure.o \
+	   filter_region.o \
 	   filter_resize.o \
 	   filter_volume.o \
 	   filter_watermark.o \

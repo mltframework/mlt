@@ -1,7 +1,7 @@
 /*
- * transition_composite.h -- compose one image over another using alpha channel
+ * filter_region.h -- region filter
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,14 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _TRANSITION_COMPOSITE_H_
-#define _TRANSITION_COMPOSITE_H_
+#ifndef _FILTER_REGION_H_
+#define _FILTER_REGION_H_
 
-#include <framework/mlt_transition.h>
+#include <framework/mlt_filter.h>
 
-extern mlt_transition transition_composite_init( char *arg );
-
-// Courtesy functionality - allows regionalised filtering
-extern mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame );
+extern mlt_filter filter_region_init( void *arg );
 
 #endif

@@ -28,6 +28,7 @@
 #include "filter_greyscale.h"
 #include "filter_obscure.h"
 #include "filter_resize.h"
+#include "filter_region.h"
 #include "filter_volume.h"
 #include "filter_watermark.h"
 #include "transition_composite.h"
@@ -55,6 +56,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_luma_init( arg );
 	if ( !strcmp( id, "obscure" ) )
 		return filter_obscure_init( arg );
+	if ( !strcmp( id, "region" ) )
+		return filter_region_init( arg );
 	if ( !strcmp( id, "resize" ) )
 		return filter_resize_init( arg );
 	if ( !strcmp( id, "volume" ) )

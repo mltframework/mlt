@@ -148,12 +148,18 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	// Calculate this frames geometry
 	output->nw = in->nw;
 	output->nh = in->nh;
-	output->x = in->x + ( out->x - in->x ) * position + 0.5;
-	output->y = in->y + ( out->y - in->y ) * position + 0.5;
+	output->x = in->x + ( out->x - in->x ) * position;
+	output->y = in->y + ( out->y - in->y ) * position;
 	output->w = in->w + ( out->w - in->w ) * position;
 	output->h = in->h + ( out->h - in->h ) * position;
+	output->sw = output->w;
+	output->sh = output->h;
 	output->mix = in->mix + ( out->mix - in->mix ) * position;
 	output->distort = in->distort;
+
+	output->x = ( int )floor( output->x ) & 0xfffffffe;
+	output->w = ( int )floor( output->w ) & 0xfffffffe;
+	output->sw &= 0xfffffffe;
 }
 
 void transition_destroy_keys( void *arg )
@@ -274,14 +280,14 @@ static int alignment_parse( char* align )
 
 static void alignment_calculate( struct geometry_s *geometry )
 {
-	geometry->x += ( geometry->w - geometry->sw ) * geometry->halign / 2 + 0.5;
-	geometry->y += ( geometry->h - geometry->sh ) * geometry->valign / 2 + 0.5;
+	geometry->x += ( geometry->w - geometry->sw ) * geometry->halign / 2;
+	geometry->y += ( geometry->h - geometry->sh ) * geometry->valign / 2;
 }
 
 /** Calculate the position for this frame.
 */
 
-static inline float position_calculate( mlt_transition this, mlt_frame frame )
+static float position_calculate( mlt_transition this, mlt_frame frame )
 {
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
@@ -334,12 +340,12 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 	int stride_dest = width_dest * bpp;
 
 	// Adjust to consumer scale
-	int x = geometry.x * width_dest / geometry.nw + 0.5;
-	int y = geometry.y * height_dest / geometry.nh + 0.5;
+	int x = geometry.x * width_dest / geometry.nw;
+	int y = geometry.y * height_dest / geometry.nh;
 
-	if ( bpp == 2 )
-		x -= x % 2;
-		
+	x &= 0xfffffffe;
+	width_src &= 0xfffffffe;
+
 	// optimization points - no work to do
 	if ( width_src <= 0 || height_src <= 0 )
 		return ret;
@@ -452,10 +458,6 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 	mlt_properties properties = mlt_transition_properties( this );
 
-	// ???: Not getting the logic of this...
-	geometry->sw = geometry->w;
-	geometry->sh = geometry->h;
-
 	if ( mlt_properties_get( properties, "distort" ) == NULL && geometry->distort == 0 )
 	{
 		// Adjust b_frame pixel aspect
@@ -505,8 +507,8 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	alignment_calculate( geometry );
 
 	// Adjust to consumer scale
-	int x = geometry->x * *width / geometry->nw + 0.5;
-	int y = geometry->y * *height / geometry->nh + 0.5;
+	int x = geometry->x * *width / geometry->nw;
+	int y = geometry->y * *height / geometry->nh;
 	*width = geometry->sw * *width / geometry->nw;
 	*height = geometry->sh * *height / geometry->nh;
 
@@ -534,6 +536,110 @@ static uint8_t *transition_get_alpha_mask( mlt_frame this )
 	return mlt_properties_get_data( properties, "alpha", NULL );
 }
 
+struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transition this, mlt_frame a_frame, float position )
+{
+	// Get the properties from the transition
+	mlt_properties properties = mlt_transition_properties( this );
+
+	// Get the properties from the frame
+	mlt_properties a_props = mlt_frame_properties( a_frame );
+	
+	// Structures for geometry
+	struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
+
+	// Now parse the geometries
+	if ( start == NULL )
+	{
+		// Obtain the normalised width and height from the a_frame
+		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
+		int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
+
+		// Parse the transitions properties
+		start = transition_parse_keys( this, normalised_width, normalised_height );
+	}
+
+	// Do the calculation
+	geometry_calculate( result, start, position );
+
+	// Now parse the alignment
+	result->halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
+	result->valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
+
+	return start;
+}
+
+mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame )
+{
+	// Create a frame to return
+	mlt_frame b_frame = mlt_frame_init( );
+
+	// Get the properties of the a frame
+	mlt_properties a_props = mlt_frame_properties( a_frame );
+
+	// Get the properties of the b frame
+	mlt_properties b_props = mlt_frame_properties( b_frame );
+
+	// Get the position
+	float position = position_calculate( this, a_frame );
+
+	// Destination image
+	uint8_t *dest = NULL;
+
+	// Get the image and dimensions
+	uint8_t *image = mlt_properties_get_data( a_props, "image", NULL );
+	int width = mlt_properties_get_int( a_props, "width" );
+	int height = mlt_properties_get_int( a_props, "height" );
+
+	// Pointers for copy operation
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
+
+	// Corrdinates
+	int w = 0;
+	int h = 0;
+	int x = 0;
+	int y = 0;
+
+	// Will need to know region to copy
+	struct geometry_s result;
+
+	// Calculate the region now
+	composite_calculate( &result, this, a_frame, position );
+
+	// Need to scale down to actual dimensions
+	x = result.x * width / result.nw ;
+	y = result.y * height / result.nh;
+	w = result.sw * width / result.nw;
+	h = result.sh * height / result.nh;
+
+	x &= 0xfffffffe;
+	w &= 0xfffffffe;
+
+	// Now we need to create a new destination image
+	dest = mlt_pool_alloc( w * h * 2 );
+
+	// Copy the region of the image
+	p = image + y * width * 2 + x * 2;
+	q = dest;
+	r = dest + w * h * 2; 
+
+	while ( q < r )
+	{
+		memcpy( q, p, w * 2 );
+		q += w * 2;
+		p += width * 2;
+	}
+
+	// Assign to the new frame
+	mlt_properties_set_data( b_props, "image", dest, w * h * 2, mlt_pool_release, NULL );
+	mlt_properties_set_int( b_props, "width", w );
+	mlt_properties_set_int( b_props, "height", h );
+
+	// Return the frame
+	return b_frame;
+}
+
 /** Get the image.
 */
 
@@ -542,11 +648,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Get the b frame from the stack
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
 
-	// This compositer is yuv422 only
-	*format = mlt_image_yuv422;
-
 	// Get the transition from the a frame
 	mlt_transition this = mlt_frame_pop_service( a_frame );
+
+	// This compositer is yuv422 only
+	*format = mlt_image_yuv422;
 
 	// Get the image from the a frame
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
@@ -564,34 +670,18 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Structures for geometry
 		struct geometry_s result;
-		struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
 
 		// Calculate the position
 		float position = mlt_properties_get_double( b_props, "relative_position" );
 		float delta = delta_calculate( this, a_frame );
 
-		// Now parse the geometries
-		if ( start == NULL )
-		{
-			// Obtain the normalised width and height from the a_frame
-			int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
-			int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
-
-			// Parse the transitions properties
-			start = transition_parse_keys( this, normalised_width, normalised_height );
-		}
+		// Do the calculation
+		struct geometry_s *start = composite_calculate( &result, this, a_frame, position );
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 		mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
-
-		// Do the calculation
-		geometry_calculate( &result, start, position );
-
-		// Now parse the alignment
-		result.halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
-		result.valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;

@@ -31,58 +31,104 @@
 /** Do it :-).
 */
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	// Error we will return
 	int error = 0;
-	mlt_filter filter = mlt_frame_pop_service( this );
-	mlt_properties properties = mlt_filter_properties( filter );
-	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
-	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
-	char *name = mlt_properties_get( properties, "_unique_id" );
 
+	// Get the watermark filter object
+	mlt_filter this = mlt_frame_pop_service( frame );
+
+	// Get the properties of the filter
+	mlt_properties properties = mlt_filter_properties( this );
+
+	// Get the producer from the filter
+	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
+
+	// Get the composite from the filter
+	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
+
+	// Create a composite if we don't have one
 	if ( composite == NULL )
 	{
+		// Create composite via the factory
 		composite = mlt_factory_transition( "composite", NULL );
+
+		// If we have one
 		if ( composite != NULL )
 		{
+			// Get the properties
 			mlt_properties composite_properties = mlt_transition_properties( composite );
+
+			// Pass all the composite. properties on the filter down
 			mlt_properties_pass( composite_properties, properties, "composite." );
+
+			// Register the composite for reuse/destruction
 			mlt_properties_set_data( properties, "composite", composite, 0, ( mlt_destructor )mlt_transition_close, NULL );
 		}
 	}
 
+	// Create a producer if don't have one
 	if ( producer == NULL )
 	{
+		// Get the resource to use
 		char *resource = mlt_properties_get( properties, "resource" );
+
+		// Get the factory producer service
 		char *factory = mlt_properties_get( properties, "factory" );
+
+		// Create the producer
 		producer = mlt_factory_producer( factory, resource );
+
+		// If we have one
 		if ( producer != NULL )
 		{
+			// Get the producer properties
 			mlt_properties producer_properties = mlt_producer_properties( producer );
+
+			// Ensure that we loop
 			mlt_properties_set( producer_properties, "eof", "loop" );
+
+			// Now pass all producer. properties on the filter down
 			mlt_properties_pass( producer_properties, properties, "producer." );
+
+			// Register the producer for reuse/destruction
 			mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 		}
 	}
 
+	// Only continue if we have both producer and composite
 	if ( composite != NULL && producer != NULL )
 	{
+		// Get the service of the producer
 		mlt_service service = mlt_producer_service( producer );
+
+		// We will get the 'b frame' from the producer
 		mlt_frame b_frame = NULL;
-		mlt_properties frame_properties = mlt_frame_properties( this );
-		mlt_position position = mlt_properties_get_position( frame_properties, name );
 
+		// Get the unique id of the filter (used to reacquire the producer position)
+		char *name = mlt_properties_get( properties, "_unique_id" );
+
+		// Get the original producer position
+		mlt_position position = mlt_properties_get_position( mlt_frame_properties( frame ), name );
+
+		// Make sure the producer is in the correct position
 		mlt_producer_seek( producer, position );
+
+		// Get the b frame and process with composite if successful
 		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
-			mlt_transition_process( composite, this, b_frame );
+			mlt_transition_process( composite, frame, b_frame );
 
-		error = mlt_frame_get_image( this, image, format, width, height, 1 );
+		// Get the image
+		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
+		// Close the b frame
 		mlt_frame_close( b_frame );
 	}
 	else
 	{
-		error = mlt_frame_get_image( this, image, format, width, height, 1 );
+		// Get the image from the frame without running fx
+		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	}
 
 	return error;
