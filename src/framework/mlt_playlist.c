@@ -23,6 +23,7 @@
 #include "mlt_playlist.h"
 #include "mlt_frame.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 /** Virtual playlist entry.
@@ -93,11 +94,37 @@ mlt_service mlt_playlist_service( mlt_playlist this )
 	return mlt_producer_service( &this->parent );
 }
 
+/** Get the propertues associated to this playlist.
+*/
+
+mlt_properties mlt_playlist_properties( mlt_playlist this )
+{
+	return mlt_producer_properties( &this->parent );
+}
+
 /** Append to the virtual playlist.
 */
 
 static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_timecode in, mlt_timecode out )
 {
+	// Get the fps of the first producer
+	double fps = mlt_properties_get_double( mlt_playlist_properties( this ), "first_fps" );
+
+	// If fps is 0
+	if ( fps == 0 )
+	{
+		// Inherit it from the producer
+		fps = mlt_producer_get_fps( producer );
+	}
+	else
+	{
+		// Generate a warning for now - the following attempt to fix may fail
+		fprintf( stderr, "Warning: fps mismatch on playlist producer %d\n", this->count );
+
+		// It should be safe to impose fps on an image producer, but not necessarily safe for video
+		mlt_properties_set_double( mlt_producer_properties( producer ), "fps", fps );
+	}
+
 	// Check that we have room
 	if ( this->count >= this->size )
 	{
@@ -114,6 +141,9 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	this->list[ this->count ]->playtime = out - in;
 
 	this->count ++;
+
+	mlt_properties_set_double( mlt_playlist_properties( this ), "first_fps", fps );
+	mlt_properties_set_double( mlt_playlist_properties( this ), "fps", fps );
 
 	return 0;
 }
