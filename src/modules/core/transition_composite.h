@@ -26,6 +26,6 @@
 extern mlt_transition transition_composite_init( char *arg );
 
 // Courtesy functionality - allows regionalised filtering
-extern mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame );
+extern mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_position position );
 
 #endif

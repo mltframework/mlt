@@ -63,7 +63,7 @@ struct mlt_service_s
 */
 
 extern int mlt_service_init( mlt_service this, void *child );
-extern mlt_properties mlt_service_properties( mlt_service this );
+//extern mlt_properties mlt_service_properties( mlt_service this );
 extern int mlt_service_connect_producer( mlt_service this, mlt_service producer, int index );
 extern mlt_service_state mlt_service_get_state( mlt_service this );
 extern void mlt_service_close( mlt_service this );
@@ -75,6 +75,14 @@ extern int mlt_service_has_output( mlt_service this );
 extern int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 extern int mlt_service_is_active( mlt_service this );
 extern mlt_service mlt_service_get_producer( mlt_service this );
+
+/** Return the properties object.
+*/
+
+static inline mlt_properties mlt_service_properties( mlt_service this )
+{
+	return &this->parent;
+}
 
 #endif
 

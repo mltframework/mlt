@@ -23,6 +23,7 @@
 
 extern void mlt_pool_init( );
 extern void *mlt_pool_alloc( int size );
+extern void *mlt_pool_realloc( void *ptr, int size );
 extern void mlt_pool_release( void *release );
 extern void mlt_pool_close( );
 

@@ -41,6 +41,21 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 static int avformat_initialised = 0;
 static pthread_mutex_t avformat_mutex;
 
+void *av_malloc( unsigned int size )
+{
+	return mlt_pool_alloc( size );
+}
+
+void *av_realloc( void *ptr, unsigned int size )
+{
+	return mlt_pool_realloc( ptr, size );
+}
+
+void av_free( void *ptr )
+{
+	return mlt_pool_release( ptr );
+}
+
 /** Constructor for libavformat.
 */
 
@@ -72,8 +87,8 @@ mlt_producer producer_avformat_init( char *file )
 			// Initialise avformat if necessary
 			if ( avformat_initialised == 0 )
 			{
-				pthread_mutex_init( &avformat_mutex, NULL );
 				avformat_initialised = 1;
+				pthread_mutex_init( &avformat_mutex, NULL );
 				av_register_all( );
 			}
 

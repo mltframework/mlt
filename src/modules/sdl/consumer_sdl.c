@@ -55,6 +55,7 @@ struct consumer_sdl_s
 	SDL_Surface *sdl_screen;
 	SDL_Overlay *sdl_overlay;
 	uint8_t *buffer;
+	int time_taken;
 };
 
 /** Forward references to static functions.
@@ -335,6 +336,15 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
 	mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_scale", ( double )height / mlt_properties_get_double( properties, "height" ) );
 
+	if ( !this->playing )
+	{
+		struct timeb render;
+		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
+		ftime( &render );
+		this->time_taken = ( ( int64_t )render.time * 1000 + render.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
+		mlt_properties_set( mlt_frame_properties( frame ), "rendered", "true" );
+	}
+
 	// Push this frame to the back of the queue
 	mlt_deque_push_back( this->queue, frame );
 	frame = NULL;
@@ -354,7 +364,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 			{
 				frame = mlt_deque_pop_front( this->queue );
 			}
-			else if ( playtime > elapsed + 60 || mlt_deque_count( this->queue ) < 12 )
+			else if ( playtime > elapsed + 100 )
 			{
 				// no frame to show or remove
 				frame = NULL;
@@ -362,9 +372,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 			}
 			else if ( playtime < elapsed - 20 )
 			{
-				if ( candidate != NULL )
-					mlt_frame_close( candidate );
+				mlt_frame_close( candidate );
 				candidate = mlt_deque_pop_front( this->queue );
+				if ( mlt_properties_get( mlt_frame_properties( frame ), "rendered" ) == NULL )
+				{
+					mlt_frame_close( candidate );
+					candidate = NULL;
+				}
 				frame = NULL;
 			}
 			else
@@ -380,21 +394,17 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 			mlt_frame_close( candidate );
 	}
 
+	struct timeb render;
+	ftime( &render );
+
 	if ( this->playing && frame != NULL )
 	{
-		struct timeb after;
 
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-
-		ftime( &after );
-		//fprintf( stderr, "showing %lld at %lld\n", playtime, elapsed );
-		int processing = ( ( int64_t )after.time * 1000 + after.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
-
-		int delay = playtime - elapsed - processing;
-		struct timespec slow = { 0, ( delay % 1000 ) * 500000 };
-		if ( slow.tv_nsec > 1000000 )
-			nanosleep( &slow, NULL );
+		ftime( &render );
+		if ( mlt_properties_get( mlt_frame_properties( frame ), "rendered" ) == NULL )
+			this->time_taken = ( ( int64_t )render.time * 1000 + render.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
 
 		// Handle events
 		if ( this->sdl_screen != NULL )
@@ -503,6 +513,33 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	// Close the frame
 	if ( frame != NULL )
 		mlt_frame_close( frame );
+
+	struct timeb after;
+	ftime( &after );
+	int processing = ( ( int64_t )after.time * 1000 + after.millitm ) - ( ( int64_t )render.time * 1000 + render.millitm );
+	int delay = playtime - elapsed - processing;
+
+	if ( delay > this->time_taken && mlt_deque_count( this->queue ) )
+	{
+		mlt_frame next = mlt_deque_peek_front( this->queue );
+		playtime = mlt_properties_get_position( mlt_frame_properties( next ), "playtime" );
+		if ( playtime > elapsed + delay )
+		{
+			struct timeb render;
+			mlt_frame_get_image( next, &image, &vfmt, &width, &height, 0 );
+			ftime( &render );
+			this->time_taken = ( ( int64_t )render.time * 1000 + render.millitm ) - ( ( int64_t )after.time * 1000 + after.millitm );
+			mlt_properties_set( mlt_frame_properties( next ), "rendered", "true" );
+		}
+		else
+		{
+			this->time_taken /= 2;
+		}
+	}
+	else
+	{
+		this->time_taken /= 2;
+	}
 
 	return 0;
 }

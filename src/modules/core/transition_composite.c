@@ -285,14 +285,11 @@ static void alignment_calculate( struct geometry_s *geometry )
 /** Calculate the position for this frame.
 */
 
-static float position_calculate( mlt_transition this, mlt_frame frame )
+static float position_calculate( mlt_transition this, mlt_position position )
 {
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
 	mlt_position out = mlt_transition_get_out( this );
-
-	// Get the position
-	mlt_position position = mlt_frame_get_position( frame );
 
 	// Now do the calcs
 	return ( float )( position - in ) / ( float )( out - in + 1 );
@@ -562,7 +559,7 @@ struct geometry_s *composite_calculate( struct geometry_s *result, mlt_transitio
 	return start;
 }
 
-mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame )
+mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_position frame_position )
 {
 	// Create a frame to return
 	mlt_frame b_frame = mlt_frame_init( );
@@ -574,7 +571,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame )
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 
 	// Get the position
-	float position = position_calculate( this, a_frame );
+	float position = position_calculate( this, frame_position );
 
 	// Destination image
 	uint8_t *dest = NULL;
@@ -629,6 +626,9 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame )
 	mlt_properties_set_data( b_props, "image", dest, w * h * 2, mlt_pool_release, NULL );
 	mlt_properties_set_int( b_props, "width", w );
 	mlt_properties_set_int( b_props, "height", h );
+
+	// Assign this position to the b frame
+	mlt_frame_set_position( b_frame, frame_position );
 
 	// Return the frame
 	return b_frame;
@@ -719,7 +719,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
 	// Propogate the transition properties to the b frame
-	mlt_properties_set_double( mlt_frame_properties( b_frame ), "relative_position", position_calculate( this, a_frame ) );
+	mlt_properties_set_double( mlt_frame_properties( b_frame ), "relative_position", position_calculate( this, mlt_frame_get_position( a_frame ) ) );
 	mlt_frame_push_service( a_frame, this );
 	mlt_frame_push_get_image( a_frame, transition_get_image );
 	mlt_frame_push_frame( a_frame, b_frame );

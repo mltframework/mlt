@@ -33,6 +33,7 @@
 
 typedef struct
 {
+	int hash[ 199 ];
 	char **name;
 	mlt_property *value;
 	int count;
@@ -70,6 +71,15 @@ mlt_properties mlt_properties_new( )
 
 	// Return the pointer
 	return this;
+}
+
+static inline int generate_hash( char *name )
+{
+	int hash = 0;
+	int i = 1;
+	while ( *name )
+		hash = ( hash + ( i ++ * ( *name ++ & 31 ) ) ) % 199;
+	return hash;
 }
 
 /** Special case - when a container (such as fezzik) is protecting another 
@@ -142,15 +152,22 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, char *prefix 
 /** Locate a property by name
 */
 
-static mlt_property mlt_properties_find( mlt_properties this, char *name )
+static inline mlt_property mlt_properties_find( mlt_properties this, char *name )
 {
-	mlt_property value = NULL;
 	property_list *list = this->private;
+	mlt_property value = NULL;
 	int i = 0;
+	int key = generate_hash( name );
+
+	// Check if we're hashed
+	if ( list->count > 0 &&
+		 name[ 0 ] == list->name[ list->hash[ key ] ][ 0 ] && 
+		 !strcmp( list->name[ list->hash[ key ] ], name ) )
+		value = list->value[ list->hash[ key ] ];
 
 	// Locate the item 
 	for ( i = 0; value == NULL && i < list->count; i ++ )
-		if ( !strcmp( list->name[ i ], name ) )
+		if ( name[ 0 ] == list->name[ i ][ 0 ] && !strcmp( list->name[ i ], name ) )
 			value = list->value[ i ];
 
 	return value;
@@ -162,6 +179,7 @@ static mlt_property mlt_properties_find( mlt_properties this, char *name )
 static mlt_property mlt_properties_add( mlt_properties this, char *name )
 {
 	property_list *list = this->private;
+	int key = generate_hash( name );
 
 	// Check that we have space and resize if necessary
 	if ( list->count == list->size )
@@ -174,6 +192,9 @@ static mlt_property mlt_properties_add( mlt_properties this, char *name )
 	// Assign name/value pair
 	list->name[ list->count ] = strdup( name );
 	list->value[ list->count ] = mlt_property_init( );
+
+	// Assign to hash table
+	list->hash[ key ] = list->count;
 
 	// Return and increment count accordingly
 	return list->value[ list->count ++ ];

@@ -212,7 +212,7 @@ mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 
 static int position_compare( const void *p1, const void *p2 )
 {
-	return *( int64_t * )p1 - *( int64_t * )p2;
+	return *( mlt_position * )p1 - *( mlt_position * )p2;
 }
 
 static int add_unique( mlt_position *array, int size, mlt_position position )
@@ -251,7 +251,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 	mlt_position position = 0;
 	int i = 0;
 	int j = 0;
-	int64_t *map = malloc( 1000 * sizeof( mlt_position ) );
+	mlt_position *map = malloc( 1000 * sizeof( mlt_position ) );
 	int count = 0;
 
 	for ( i = 0; i < this->count; i ++ )
@@ -284,7 +284,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 	}
 
 	// Now sort the map
-	qsort( map, count, sizeof( int64_t ), position_compare );
+	qsort( map, count, sizeof( mlt_position ), position_compare );
 
 	// Now locate the requested index
 	switch( whence )

@@ -75,14 +75,6 @@ int mlt_service_init( mlt_service this, void *child )
 	return mlt_properties_init( &this->parent, this );
 }
 
-/** Return the properties object.
-*/
-
-mlt_properties mlt_service_properties( mlt_service this )
-{
-	return &this->parent;
-}
-
 /** Connect a producer service.
 	Returns: > 0 warning, == 0 success, < 0 serious error
 			 1 = this service does not accept input

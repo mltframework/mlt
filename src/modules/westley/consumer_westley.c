@@ -233,7 +233,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 								char length[ 20 ];
 								length[ 19 ] = '\0';
 								xmlNode *entry = xmlNewChild( child, NULL, "blank", NULL );
-								snprintf( length, 19, "%lld", info.frame_count );
+								snprintf( length, 19, "%d", info.frame_count );
 								xmlNewProp( entry, "length", length );
 							}
 							else

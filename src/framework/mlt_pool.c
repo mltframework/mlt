@@ -242,6 +242,47 @@ void *mlt_pool_alloc( int size )
 	return pool_fetch( pool );
 }
 
+/** Allocate size bytes from the pool.
+*/
+
+void *mlt_pool_realloc( void *ptr, int size )
+{
+	// Result to return
+	void *result = NULL;
+
+	// Check if we actually have an address
+	if ( ptr != NULL )
+	{
+		// Get the release pointer
+		mlt_release that = ptr - sizeof( struct mlt_release_s );
+
+		// If the current pool this ptr belongs to is big enough
+		if ( size > that->pool->size - sizeof( struct mlt_release_s ) )
+		{
+			// Allocate
+			result = mlt_pool_alloc( size );
+
+			// Copy
+			memcpy( result, ptr, that->pool->size - sizeof( struct mlt_release_s ) );
+
+			// Release
+			mlt_pool_release( ptr );
+		}
+		else
+		{
+			// Nothing to do
+			result = ptr;
+		}
+	}
+	else
+	{
+		// Simply allocate
+		result = mlt_pool_alloc( size );
+	}
+
+	return result;
+}
+
 /** Release the allocated memory.
 */
 

@@ -31,7 +31,7 @@
 
 mlt_property mlt_property_init( )
 {
-	return calloc( sizeof( struct mlt_property_s ), 1 );
+	return calloc( 1, sizeof( struct mlt_property_s ) );
 }
 
 /** Clear a property.
@@ -219,7 +219,7 @@ char *mlt_property_get_string( mlt_property this )
 		{
 			this->types |= mlt_prop_string;
 			this->prop_string = malloc( 32 );
-			sprintf( this->prop_string, "%lld", this->prop_position );
+			sprintf( this->prop_string, "%d", this->prop_position );
 		}
 		else if ( this->types & mlt_prop_int64 )
 		{

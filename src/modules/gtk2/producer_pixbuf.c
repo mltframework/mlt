@@ -401,11 +401,9 @@ static void producer_close( mlt_producer parent )
 	mlt_pool_release( this->image );
 	parent->close = NULL;
 	mlt_producer_close( parent );
-	while ( *this->filenames )
-	{
-		free( *this->filenames );
-		this->filenames++;
-	}
+	while ( this->count -- )
+		free( this->filenames[ this->count ] );
+	free( this->filenames );
 	free( this );
 }
 
