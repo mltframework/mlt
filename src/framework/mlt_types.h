@@ -37,6 +37,13 @@ mlt_image_format;
 
 typedef enum
 {
+	mlt_audio_none = 0,
+	mlt_audio_pcm
+}
+mlt_audio_format;
+
+typedef enum
+{
 	mlt_whence_relative_start,
 	mlt_whence_relative_current,
 	mlt_whence_relative_end

@@ -239,6 +239,14 @@ int mlt_properties_set( mlt_properties this, char *name, char *value )
 	return error;
 }
 
+/** Set or default the property.
+*/
+
+int mlt_properties_set_or_default( mlt_properties this, char *name, char *value, char *def )
+{
+	return mlt_properties_set( this, name, value == NULL ? def : value );
+}
+
 /** Get a string value by name.
 */
 

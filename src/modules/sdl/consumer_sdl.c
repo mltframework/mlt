@@ -347,6 +347,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 						this->window_height = event.resize.h;
 						changed = 1;
 						break;
+					case SDL_QUIT:
+						this->running = 0;
+						break;
 					case SDL_KEYDOWN:
 						{
 							mlt_producer producer = mlt_properties_get_data( properties, "transport_producer", NULL );

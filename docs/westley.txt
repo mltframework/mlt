@@ -125,7 +125,6 @@ Playlists:
 
 Interlude - Introducing Multitracks:
 
-	
 	So far we've defined basic producers and playlists/tracks - the tractor is
 	the element that allows us to arrange our tracks and specify filters and
 	transitions. Similarly to a playlist, a tractor is a container.

@@ -11,6 +11,9 @@ endif
 
 all: $(TARGET)
 
+hello:		hello.o
+			$(CC) hello.o -o $@ -L ../framework -L ../modules -lmlt
+
 pango:		pango.o
 			$(CC) pango.o -o $@ $(LDFLAGS)
 

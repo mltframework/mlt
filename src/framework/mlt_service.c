@@ -47,7 +47,7 @@ typedef struct
 }
 mlt_service_base;
 
-/** Friends?
+/** Private methods
 */
 
 static void mlt_service_disconnect( mlt_service this );
@@ -88,14 +88,6 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 
 	// Get the service base
 	mlt_service_base *base = this->private;
-
-	// Does this service accept input?
-	if ( mlt_service_accepts_input( this ) == 0 )
-		return 1;
-
-	// Does the producer service accept output connections?
-	if ( mlt_service_accepts_output( producer ) == 0 )
-		return 2;
 
 	// Check if the producer is already registered with this service
 	for ( i = 0; i < base->count; i ++ )
@@ -143,7 +135,7 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 /** Disconnect this service from its consumer.
 */
 
-void mlt_service_disconnect( mlt_service this )
+static void mlt_service_disconnect( mlt_service this )
 {
 	// Get the service base
 	mlt_service_base *base = this->private;
@@ -155,7 +147,7 @@ void mlt_service_disconnect( mlt_service this )
 /** Associate this service to the its consumer.
 */
 
-void mlt_service_connect( mlt_service this, mlt_service that )
+static void mlt_service_connect( mlt_service this, mlt_service that )
 {
 	// Get the service base
 	mlt_service_base *base = this->private;
@@ -163,7 +155,6 @@ void mlt_service_connect( mlt_service this, mlt_service that )
 	// There's a bit more required here...
 	base->out = that;
 }
-
 
 /** Get the first connected producer service.
 */
@@ -180,78 +171,8 @@ mlt_service mlt_service_get_producer( mlt_service this )
 	
 	return producer;
 }
- 
 
-/** Get the service state.
-*/
-
-mlt_service_state mlt_service_get_state( mlt_service this )
-{
-	mlt_service_state state = mlt_state_unknown;
-	if ( mlt_service_has_input( this ) )
-		state |= mlt_state_providing;
-	if ( mlt_service_has_output( this ) )
-		state |= mlt_state_connected;
-	if ( state != ( mlt_state_providing | mlt_state_connected ) )
-		state |= mlt_state_dormant;
-	return state;
-}
-
-/** Get the maximum number of inputs accepted.
-	Returns: -1 for many, 0 for none or n for fixed.
-*/
-
-int mlt_service_accepts_input( mlt_service this )
-{
-	if ( this->accepts_input == NULL )
-		return -1;
-	else
-		return this->accepts_input( this );
-}
-
-/** Get the maximum number of outputs accepted.
-*/
-
-int mlt_service_accepts_output( mlt_service this )
-{
-	if ( this->accepts_output == NULL )
-		return 1;
-	else
-		return this->accepts_output( this );
-}
-
-/** Determines if this service has input
-*/
-
-int mlt_service_has_input( mlt_service this )
-{
-	if ( this->has_input == NULL )
-		return 1;
-	else
-		return this->has_input( this );
-}
-
-/** Determine if this service has output
-*/
-
-int mlt_service_has_output( mlt_service this )
-{
-	mlt_service_base *base = this->private;
-	if ( this->has_output == NULL )
-		return base->out != NULL;
-	else
-		return this->has_output( this );
-}
-
-/** Check if the service is active.
-*/
-
-int mlt_service_is_active( mlt_service this )
-{
-	return !( mlt_service_get_state( this ) & mlt_state_dormant );
-}
-
-/** Obtain a frame to pass on.
+/** Default implementation of get_frame.
 */
 
 static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
@@ -266,6 +187,9 @@ static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 	*frame = mlt_frame_init( );
 	return 0;
 }
+
+/** Obtain a frame.
+*/
 
 int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 {

@@ -46,6 +46,10 @@ int mlt_factory_init( char *prefix )
 	// Only initialise once
 	if ( mlt_prefix == NULL )
 	{
+		// Allow user over rides
+		if ( prefix == NULL )
+			prefix = getenv( "MLT_REPOSITORY" );
+
 		// If no directory is specified, default to install directory
 		if ( prefix == NULL )
 			prefix = PREFIX_DATA;
@@ -58,7 +62,9 @@ int mlt_factory_init( char *prefix )
 
 		// Create the global properties
 		global_properties = mlt_properties_new( );
-		mlt_properties_set( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ) );
+		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
+		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "fezzik" );
+		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
 
 		// Create the object list.
 		object_list = mlt_properties_new( );
@@ -94,7 +100,15 @@ char *mlt_environment( char *name )
 
 mlt_producer mlt_factory_producer( char *service, void *input )
 {
-	mlt_producer obj = mlt_repository_fetch( producers, service, input );
+	mlt_producer obj = NULL;
+
+	// Pick up the default normalising producer if necessary
+	if ( service == NULL )
+		service = mlt_environment( "MLT_PRODUCER" );
+
+	// Try to instantiate via the specified service
+	obj = mlt_repository_fetch( producers, service, input );
+
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_producer_properties( obj );
@@ -143,7 +157,13 @@ mlt_transition mlt_factory_transition( char *service, void *input )
 
 mlt_consumer mlt_factory_consumer( char *service, void *input )
 {
-	mlt_consumer obj = mlt_repository_fetch( consumers, service, input );
+	mlt_consumer obj = NULL;
+
+	if ( service == NULL )
+		service = mlt_environment( "MLT_CONSUMER" );
+
+	obj = mlt_repository_fetch( consumers, service, input );
+
 	if ( obj != NULL )
 	{
 		mlt_properties properties = mlt_consumer_properties( obj );

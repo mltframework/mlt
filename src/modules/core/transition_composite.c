@@ -817,7 +817,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	*width = geometry->sw * *width / geometry->nw;
 	*height = geometry->sh * *height / geometry->nh;
 
-	x -= x % 2;
+	x &= 0xfffffffe;
 
 	// optimization points - no work to do
 	if ( *width < 1 || *height < 1 )

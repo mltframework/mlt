@@ -43,6 +43,7 @@ extern void mlt_properties_mirror( mlt_properties this, mlt_properties that );
 extern int mlt_properties_inherit( mlt_properties this, mlt_properties that );
 extern int mlt_properties_pass( mlt_properties this, mlt_properties that, char *prefix );
 extern int mlt_properties_set( mlt_properties this, char *name, char *value );
+extern int mlt_properties_set_or_default( mlt_properties this, char *name, char *value, char *def );
 extern int mlt_properties_parse( mlt_properties this, char *namevalue );
 extern char *mlt_properties_get( mlt_properties this, char *name );
 extern char *mlt_properties_get_name( mlt_properties this, int index );

@@ -24,20 +24,6 @@
 #include "mlt_properties.h"
 #include "mlt_deque.h"
 
-typedef enum
-{
-	mlt_video_standard_pal = 0,
-	mlt_video_standard_ntsc
-}
-mlt_video_standard;
-
-typedef enum
-{
-	mlt_audio_none = 0,
-	mlt_audio_pcm
-}
-mlt_audio_format;
-
 typedef int ( *mlt_get_image )( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 
 struct mlt_frame_s
@@ -62,21 +48,17 @@ extern double mlt_frame_get_aspect_ratio( mlt_frame this );
 extern int mlt_frame_set_aspect_ratio( mlt_frame this, double value );
 extern mlt_position mlt_frame_get_position( mlt_frame this );
 extern int mlt_frame_set_position( mlt_frame this, mlt_position value );
-
 extern int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame this );
 extern int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
-
 extern int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image );
 extern mlt_get_image mlt_frame_pop_get_image( mlt_frame this );
 extern int mlt_frame_push_frame( mlt_frame this, mlt_frame that );
 extern mlt_frame mlt_frame_pop_frame( mlt_frame this );
 extern int mlt_frame_push_service( mlt_frame this, void *that );
 extern void *mlt_frame_pop_service( mlt_frame this );
-
 extern int mlt_frame_push_audio( mlt_frame this, void *that );
 extern void *mlt_frame_pop_audio( mlt_frame this );
-
 extern void mlt_frame_close( mlt_frame this );
 
 /* convenience functions */

@@ -23,22 +23,6 @@
 
 #include "mlt_properties.h"
 
-/** State of a service.
-
-    Note that a service may be dormant even though it's fully connected,
-	providing or consuming.
-*/
-
-typedef enum
-{
-	mlt_state_unknown   = 0,
-	mlt_state_dormant   = 1,
-	mlt_state_connected = 2,
-	mlt_state_providing = 4,
-	mlt_state_consuming = 8
-}
-mlt_service_state;
-
 /** The interface definition for all services.
 */
 
@@ -48,10 +32,6 @@ struct mlt_service_s
 	struct mlt_properties_s parent;
 
 	// Protected virtual
-	int ( *accepts_input )( mlt_service this );
-	int ( *accepts_output )( mlt_service this );
-	int ( *has_input )( mlt_service this );
-	int ( *has_output )( mlt_service this );
 	int ( *get_frame )( mlt_service this, mlt_frame_ptr frame, int index );
 
 	// Private data
@@ -64,15 +44,10 @@ struct mlt_service_s
 
 extern int mlt_service_init( mlt_service this, void *child );
 extern int mlt_service_connect_producer( mlt_service this, mlt_service producer, int index );
-extern mlt_service_state mlt_service_get_state( mlt_service this );
+extern int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 extern void mlt_service_close( mlt_service this );
 
-extern int mlt_service_accepts_input( mlt_service this );
-extern int mlt_service_accepts_output( mlt_service this );
-extern int mlt_service_has_input( mlt_service this );
-extern int mlt_service_has_output( mlt_service this );
-extern int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
-extern int mlt_service_is_active( mlt_service this );
+// I'm not sure about this one - leaving it out of docs for now (only used in consumer_westley)
 extern mlt_service mlt_service_get_producer( mlt_service this );
 
 /** Return the properties object.
