@@ -301,6 +301,17 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "width", 720 );
 		mlt_properties_set_int( properties, "height", this->is_pal ? 576 : 480 );
 		mlt_properties_set_int( properties, "top_field_first", 0 );
+
+		char *quality = mlt_properties_get( mlt_producer_properties( producer ), "quality" );
+		if ( quality != NULL )
+		{
+			if ( strncmp( quality, "fast", 4 ) == 0 )
+				this->dv_decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_DC );
+			else if ( strncmp( quality, "best", 4 ) == 0 )
+				this->dv_decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_AC_2 );
+			else
+				this->dv_decoder->quality = ( DV_QUALITY_COLOR | DV_QUALITY_AC_1 );
+		}
 		
 		// Parse the header for meta info
 		dv_parse_header( this->dv_decoder, data );

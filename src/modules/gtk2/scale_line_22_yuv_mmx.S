@@ -25,16 +25,16 @@ _pixops_scale_line_22_yuv_mmx:
 /*
  * Arguments
  *		
- * weights:	 8(%ebp)
+ * weights:	     8(%ebp)
  * p (dest):    12(%ebp)	%esi
  * q1 (src0):   16(%ebp)	
  * q2 (src1):   20(%ebp)	
  * xstep:       24(%ebp)	
  * p_end:       28(%ebp)
  * xinit:       32(%ebp)
- * destx:       36(%ebp)
+ * dest_x:      36(%ebp)
  *
-*/
+ */
 
 /*
  * Function call entry
@@ -63,75 +63,44 @@ _pixops_scale_line_22_yuv_mmx:
 	cmpl 28(%ebp),%esi # dest == dest_end ?
 	jnb  .out
 
-	addl $65536, %ebx
-	.p2align 4,,7
-	pxor %mm4, %mm4
-
 /* For the body of this loop, %mm0, %mm1, %mm2, %mm3 hold the 4 adjoining
  * points we are interpolating between, as:
  *
- *  00UV00Y200UV00Y1
+ *  00VV00Y200UU00Y1
  */
 
-.loop:
-
+	pxor %mm4, %mm4
 /*
- * Load current values from pixel 1
+ * Load next component values into mm1 (src0) and mm3 (src1)
  */
-	movl %ebx, %edx          # x_scaled = x ...
-	sarl $15, %edx           # >> 16
-	andl $-2, %edx           # x_scaled *= channels
-	movl %edx, -24(%ebp)     # save x_scaled
+	movl %ebx, %eax          # x_scaled
+	sarl $15, %eax
+	andl $0xfffffffe, %eax
+	movl %eax, %edx          # x_aligned
+	andl $0xfffffffc, %edx
 
 	movl 16(%ebp), %edi      # get src0
-	movzbl (%edi,%edx), %ecx # current y = src0[ x_scaled ]
-
-	andl $-4, %edx           # x_aligned
-
-	movl 36(%ebp), %eax      # uv_index = dest_x ...
-	andl $1, %eax            # ( dest_x & 1 ) ...
-	sall $1, %eax            # << 1
-	addl %eax, %edx          # x_aligned += uv_index
-	movl %edx, -20(%ebp)     # save x_aligned
-
-	movzbl 1(%edi,%edx), %eax # uv = src0[ x_aligned + 1 ]
-	shll $8, %eax           # position uv
-	orl %eax, %ecx           # store uv
-
-	movd %ecx, %mm0          # move to mmx0
-	punpcklbw %mm4, %mm0
-
-	/* this is the next x, not simply x_scaled again */
-	movl %ebx, %edx          # x_scaled = x ...
-	addl 24(%ebp), %edx      # + x_step
-	sarl $15, %edx           # >> 16
-	andl $-2, %edx           # x_scaled *= channels
-	movl %edx, -16(%ebp)     # save next x_scaled
-
-	movzbl (%edi,%edx), %ecx # next y = src0[ x_scaled ]
-	orl %eax, %ecx           # store uv
-
+	movl (%edi,%eax), %ecx   # get y
+	andl $0x00ff00ff, %ecx   # mask off y
+	movl (%edi,%edx), %eax   # get uv
+	andl $0xff00ff00, %eax   # mask off uv
+	orl %eax, %ecx           # composite y, uv
 	movd %ecx, %mm1          # move to mmx1
 	punpcklbw %mm4, %mm1
 
 	movl 20(%ebp), %edi      # get src1
-	movl -24(%ebp), %edx     # restore x_scaled
-	movzbl (%edi,%edx), %ecx # current y = src1[ x_scaled ]
-
-	movl -20(%ebp), %edx     # restore x_aligned
-	movzbl 1(%edi,%edx), %eax # uv = src1[ x_aligned + 1 ]
-	shll $8, %eax            # position uv
-	orl %eax, %ecx           # store uv
-
-	movd %ecx, %mm2          # move to mmx2
-	punpcklbw %mm4, %mm2
-
-	movl -16(%ebp), %edx     # restore next x_scaled
-	movzbl (%edi,%edx), %ecx # next y = src0[ x_scaled ]
-	orl %eax, %ecx           # store uv
-
+	movl (%edi,%edx), %ecx   # get y
+	andl $0x00ff00ff, %ecx   # mask off y
+	movl (%edi,%edx), %eax   # get uv
+	andl $0xff00ff00, %eax   # mask off uv
+	orl %eax, %ecx           # composite y, uv
 	movd %ecx, %mm3          # move to mmx3
 	punpcklbw %mm4, %mm3
+
+	jmp .newx
+
+	.p2align 4,,7
+.loop:
 
 /* short *pixel_weights = weights + ((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * n_x * n_y
  *                                             16             4                  0xf            2     2
@@ -171,17 +140,59 @@ _pixops_scale_line_22_yuv_mmx:
 	packuswb %mm7, %mm7
 	movd %mm7, %eax
 
-	movb %al, 0(%esi)        # dest[ 0 ] = y
-	shrl $8, %eax
-	movb %al, 1(%esi)        # dest[ 1 ] = uv
+	movb %al, (%esi)         # *dest = y
+	
+	movl 36(%ebp), %ecx      # get dest_x
+	andl $1, %ecx            # select u or v
+	sall $1, %ecx            # determine offset
+	addl $1, %ecx            # relative to x_aligned
+	sall $3, %ecx            # offset * 8 bits/byte
+
+	movd %mm7, %eax
+	shrl %cl, %eax
+	movb %al, 1(%esi)        # *dest = uv
 
 	addl $2, %esi            # dest += 2
-
 	cmpl %esi,28(%ebp)       # if dest == dest_end
 	je   .out                # then exit
 
-	addl 24(%ebp), %ebx      # x += x_step
 	addl $1, 36(%ebp)        # dest_x++
+
+.newx:
+
+	addl 24(%ebp), %ebx      # x += x_step
+/*
+ * Load current component values into mm0 (src0) and mm2 (src1)
+ */
+	movq %mm1, %mm0
+	movq %mm3, %mm2
+
+/*
+ * Load next component values into mm1 (src0) and mm3 (src1)
+ */
+	movl %ebx, %eax          # x_scaled
+	sarl $15, %eax
+	andl $0xfffffffe, %eax
+	movl %eax, %edx          # x_aligned
+	andl $0xfffffffc, %edx
+
+	movl 16(%ebp), %edi      # get src0
+	movl (%edi,%eax), %ecx   # get y
+	andl $0x00ff00ff, %ecx   # mask off y
+	movl (%edi,%edx), %eax   # get uv
+	andl $0xff00ff00, %eax   # mask off uv
+	orl %eax, %ecx           # composite y, uv
+	movd %ecx, %mm1          # move to mmx1
+	punpcklbw %mm4, %mm1
+
+	movl 20(%ebp), %edi      # get src1
+	movl (%edi,%edx), %ecx   # get y
+	andl $0x00ff00ff, %ecx   # mask off y
+	movl (%edi,%edx), %eax   # get uv
+	andl $0xff00ff00, %eax   # mask off uv
+	orl %eax, %ecx           # composite y, uv
+	movd %ecx, %mm3          # move to mmx3
+	punpcklbw %mm4, %mm3
 
 	jmp .loop
 
