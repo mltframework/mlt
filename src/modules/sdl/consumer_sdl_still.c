@@ -422,7 +422,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_properties_set_int( properties, "changed", 0 );
 	}
 
-	
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
 		 this->last_producer == mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL ) )
@@ -535,7 +534,6 @@ static void *consumer_thread( void *arg )
 
 	// internal intialization
 	mlt_frame frame = NULL;
-	struct timespec tm = { 0, 10000000 };
 
 	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
 	{
@@ -568,8 +566,7 @@ static void *consumer_thread( void *arg )
 		// Ensure that we have a frame
 		if ( frame != NULL )
 		{
-			if ( consumer_play_video( this, frame ) == 0 )
-				nanosleep( &tm, NULL );
+			consumer_play_video( this, frame );
 			mlt_frame_close( frame );
 		}
 	}

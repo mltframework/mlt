@@ -23,6 +23,7 @@
 #include <framework/mlt_factory.h>
 #include <framework/mlt_producer.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
@@ -41,6 +42,9 @@ struct consumer_sdl_s
 	int running;
 	int sdl_flags;
 	double last_speed;
+
+	pthread_cond_t refresh_cond;
+	pthread_mutex_t refresh_mutex;
 };
 
 /** Forward references to static functions.
@@ -53,6 +57,7 @@ static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer this, mlt_frame frame );
 static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer this, SDL_Event *event );
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer this, char *name );
 
 mlt_consumer consumer_sdl_preview_init( char *arg )
 {
@@ -90,6 +95,9 @@ mlt_consumer consumer_sdl_preview_init( char *arg )
 		mlt_events_listen( MLT_CONSUMER_PROPERTIES( this->still ), this, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
 		mlt_events_listen( MLT_CONSUMER_PROPERTIES( this->play ), this, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
 		mlt_events_listen( MLT_CONSUMER_PROPERTIES( this->still ), this, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
+		pthread_cond_init( &this->refresh_cond, NULL );
+		pthread_mutex_init( &this->refresh_mutex, NULL );
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), this, "property-changed", ( mlt_listener )consumer_refresh_cb );
 		return parent;
 	}
 	free( this );
@@ -106,6 +114,20 @@ void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_frame fr
 static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer parent, SDL_Event *event )
 {
 	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-sdl-event", event, NULL );
+}
+
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *name )
+{
+	if ( !strcmp( name, "refresh" ) )
+	{
+		consumer_sdl this = parent->child;
+		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "refresh" ) )
+		{
+			pthread_mutex_lock( &this->refresh_mutex );
+			pthread_cond_broadcast( &this->refresh_cond );
+			pthread_mutex_unlock( &this->refresh_mutex );
+		}
+	}
 }
 
 static int consumer_start( mlt_consumer parent )
@@ -148,6 +170,10 @@ static int consumer_stop( mlt_consumer parent )
 
 		// Kill the thread and clean up
 		this->running = 0;
+
+		pthread_mutex_lock( &this->refresh_mutex );
+		pthread_cond_broadcast( &this->refresh_cond );
+		pthread_mutex_unlock( &this->refresh_mutex );
 
 		if ( this->play ) mlt_consumer_stop( this->play );
 		if ( this->still ) mlt_consumer_stop( this->still );
@@ -239,17 +265,13 @@ static void *consumer_thread( void *arg )
 			double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
 			// Determine which speed to use
-			double use_speed = first ? speed : this->last_speed;
-
-			// Get changed requests to the preview (focus changes)
-			int changed = mlt_properties_get_int( properties, "changed" );
+			double use_speed = speed;
 
 			// Get refresh request for the current frame (effect changes in still mode)
 			int refresh = mlt_properties_get_int( properties, "refresh" );
 
 			// Decrement refresh and clear changed
 			mlt_properties_set_int( properties, "refresh", refresh > 0 ? refresh - 1 : 0 );
-			mlt_properties_set_int( properties, "changed", 0 );
 
 			// Set the changed property on this frame for the benefit of still
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "refresh", refresh );
@@ -260,8 +282,8 @@ static void *consumer_thread( void *arg )
 			// Optimisation to reduce latency
 			if ( speed == 1.0 )
 			{
-				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
-					mlt_consumer_purge( this->play );
+				//if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
+					//mlt_consumer_purge( this->play );
 				last_position = mlt_frame_get_position( frame );
 			}
 			else
@@ -279,7 +301,6 @@ static void *consumer_thread( void *arg )
 			else if ( this->ignore_change -- > 0 && this->active != NULL && !mlt_consumer_is_stopped( this->active ) )
 			{
 				mlt_consumer_put_frame( this->active, frame );
-				mlt_properties_set_int( still, "changed", changed );
 			}
 			// If we aren't playing normally, then use the still
 			else if ( use_speed != 1 )
@@ -290,9 +311,9 @@ static void *consumer_thread( void *arg )
 				{
 					this->last_speed = use_speed;
 					this->active = this->still;
+					this->ignore_change = 0;
 					mlt_consumer_start( this->still );
 				}
-				mlt_properties_set_int( still, "changed", changed );
 				mlt_consumer_put_frame( this->still, frame );
 			}
 			// Otherwise use the normal player
@@ -307,7 +328,6 @@ static void *consumer_thread( void *arg )
 					this->ignore_change = 25;
 					mlt_consumer_start( this->play );
 				}
-				mlt_properties_set_int( still, "changed", changed );
 				mlt_consumer_put_frame( this->play, frame );
 			}
 
@@ -319,6 +339,14 @@ static void *consumer_thread( void *arg )
 				mlt_properties_set_int( properties, "rect_y", mlt_properties_get_int( active, "rect_y" ) );
 				mlt_properties_set_int( properties, "rect_w", mlt_properties_get_int( active, "rect_w" ) );
 				mlt_properties_set_int( properties, "rect_h", mlt_properties_get_int( active, "rect_h" ) );
+			}
+
+			if ( this->active == this->still )
+			{
+				pthread_mutex_lock( &this->refresh_mutex );
+				if ( speed == 0 && mlt_properties_get_int( properties, "refresh" ) == 0 )
+					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
+				pthread_mutex_unlock( &this->refresh_mutex );
 			}
 
 			// We are definitely not waiting on the first frame any more
