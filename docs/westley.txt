@@ -499,9 +499,9 @@ Entities and Parameterisation:
 	prevent shell filename expansion, or similar.
 	
 	Needless to say, the ability to parameterise westley XML compositions is
-	an extremely powerful tool. The above example is avialable in 
-	demo/entity.westley for you to try out. Override the message from inigo:
-	inigo 'westley:entity.westley?msg:Amazing!'
+	an extremely powerful tool. An example for you to play with is available in 
+	demo/entity.westley. Try overriding the name from inigo:
+	inigo 'westley:entity.westley?name:Charlie'
 	
 	Technically, the entity declaration is not needed in the head of the XML
 	document if you always supply the parameter. However, you run the risk

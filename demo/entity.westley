@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <!DOCTYPE westley [
-	<!ENTITY msg "Hello world!">
+	<!ENTITY name "Westley">
 ]>
 <westley>
   <producer id="producer0">
     <property name="mlt_service">pango</property>
-	<property name="text" value="&msg;"/>
+	<property name="text">Hello &name;,
+My name is Inigo Montoya.</property>
   </producer>
 </westley>

@@ -53,6 +53,7 @@ struct deserialise_context_s
 	xmlNodePtr stack_node[ STACK_SIZE ];
 	int stack_node_size;
 	xmlDocPtr entity_doc;
+	int entity_is_replace;
 	int depth;
 	int branch[ STACK_SIZE ];
 	const xmlChar *publicId;
@@ -982,8 +983,26 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 	if ( context->stack_node_size > 0 )
 		xmlNodeAddContent( context->stack_node[ context->stack_node_size - 1 ], ( xmlChar* )value );
 
-	else if ( context->property != NULL && context->producer_properties != NULL )
-		mlt_properties_set( context->producer_properties, context->property, value );
+	// libxml2 generates an on_characters immediately after a get_entity within
+	// an element value, and we ignore it because it is called again during
+	// actual substitution.
+	else if ( context->property != NULL && context->producer_properties != NULL
+		&& context->entity_is_replace == 0 )
+	{
+		char *s = mlt_properties_get( context->producer_properties, context->property );
+		if ( s != NULL )
+		{
+			// Append new text to existing content
+			char *new = calloc( strlen( s ) + len + 1, 1 );
+			strcat( new, s );
+			strcat( new, value );
+			mlt_properties_set( context->producer_properties, context->property, new );
+			free( new );
+		}
+		else
+			mlt_properties_set( context->producer_properties, context->property, value );
+	}
+	context->entity_is_replace = 0;
 		
 	free( value);
 }
@@ -1038,6 +1057,7 @@ xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 {
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
+	xmlEntityPtr e = NULL;
 
 	// Setup for entity declarations if not ready
 	if ( xmlGetIntSubset( context->entity_doc ) == NULL )
@@ -1050,7 +1070,13 @@ xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	// Add our parameters if not already
 	params_to_entities( context );
 	
-	return xmlGetDocEntity( context->entity_doc, name );
+	e = xmlGetDocEntity( context->entity_doc, name );
+	
+	// Send signal to on_characters that an entity substitutin is pending
+	if ( e != NULL )
+		context->entity_is_replace = 1;
+	
+	return e;
 }
 
 /** Convert a hexadecimal character to its value.
@@ -1122,6 +1148,8 @@ static void parse_url( mlt_properties properties, char *url )
 
 mlt_producer producer_westley_init( char *url )
 {
+	if ( url == NULL )
+		return NULL;
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
 	mlt_properties properties = NULL;
