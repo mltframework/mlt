@@ -772,8 +772,13 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 		mlt_playlist track_b = mlt_playlist_init( );
 		mlt_properties_set_int( mlt_tractor_properties( tractor ), "mlt_mix", 1 );
 		mlt_events_block( mlt_playlist_properties( this ), this );
-		mlt_playlist_resize_clip( this, clip, clip_a->frame_in, clip_a->frame_out - length );
-		mlt_playlist_resize_clip( this, clip + 1, clip_b->frame_in + length, clip_b->frame_out );
+
+		clip_a->frame_out = clip_a->frame_out - length;
+		clip_a->frame_count = clip_a->frame_out - clip_a->frame_in + 1;
+
+		clip_b->frame_in = clip_b->frame_in + length;
+		clip_b->frame_count = clip_b->frame_out - clip_b->frame_in + 1;
+
 		mlt_tractor_set_track( tractor, mlt_playlist_producer( track_a ), 0 );
 		mlt_tractor_set_track( tractor, mlt_playlist_producer( track_b ), 1 );
 		mlt_playlist_append_io( track_a, clip_a->producer, clip_a->frame_out + 1, clip_a->frame_out + length );
@@ -797,6 +802,25 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 			mlt_field_plant_transition( field, transition, 0, 1 );
 			mlt_transition_set_in_and_out( transition, 0, length - 1 );
 		}
+
+		if ( clip_b->frame_count <= 0 )
+		{
+			mlt_properties properties = mlt_producer_properties( clip_b->producer );
+			int mlt_mix = mlt_properties_get_int( properties, "mlt_mix" );
+			mlt_properties_set_int( properties, "mlt_mix", 0 );
+			mlt_playlist_remove( this, clip + 2 );
+			mlt_properties_set_int( properties, "mlt_mix", mlt_mix );
+		}
+
+		if ( clip_a->frame_count <= 0 )
+		{
+			mlt_properties properties = mlt_producer_properties( clip_a->producer );
+			int mlt_mix = mlt_properties_get_int( properties, "mlt_mix" );
+			mlt_properties_set_int( properties, "mlt_mix", 0 );
+			mlt_playlist_remove( this, clip );
+			mlt_properties_set_int( properties, "mlt_mix", mlt_mix );
+		}
+
 		mlt_events_unblock( mlt_playlist_properties( this ), this );
 		mlt_events_fire( mlt_playlist_properties( this ), "producer-changed", NULL );
 		mlt_playlist_close( track_a );
@@ -833,6 +857,14 @@ static int mlt_playlist_unmix( mlt_playlist this, int clip )
 			clip_a->mix_out = NULL;
 			clip_a->mix_out_length = 0;
 		}
+		else
+		{
+			mlt_tractor tractor = ( mlt_tractor )mix->producer;
+			mlt_playlist playlist = ( mlt_playlist )mlt_tractor_get_track( tractor, 0 );
+			mlt_producer producer = playlist->list[ 0 ]->producer;
+			mlt_playlist_insert( this, producer, clip, playlist->list[0]->frame_in, playlist->list[0]->frame_out );
+			clip ++;
+		}
 
 		if ( clip_b != NULL )
 		{
@@ -840,6 +872,13 @@ static int mlt_playlist_unmix( mlt_playlist this, int clip )
 			clip_b->frame_count += length;
 			clip_b->mix_in = NULL;
 			clip_b->mix_in_length = 0;
+		}
+		else
+		{
+			mlt_tractor tractor = ( mlt_tractor )mix->producer;
+			mlt_playlist playlist = ( mlt_playlist )mlt_tractor_get_track( tractor, 1 );
+			mlt_producer producer = playlist->list[ 0 ]->producer;
+			mlt_playlist_insert( this, producer, clip + 1, playlist->list[0]->frame_in, playlist->list[0]->frame_out );
 		}
 
 		mlt_properties_set_int( mlt_producer_properties( mix->producer ), "mlt_mix", 0 );
