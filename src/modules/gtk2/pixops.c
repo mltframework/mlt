@@ -93,20 +93,19 @@ pixops_scale_nearest ( guchar *dest_buf,
                        double scale_y )
 {
 	register int i, j;
-	register int x;
 	register int x_step = ( 1 << SCALE_SHIFT ) / scale_x;
 	register int y_step = ( 1 << SCALE_SHIFT ) / scale_y;
+	register int x, x_scaled;
 
 	for ( i = 0; i < ( render_y1 - render_y0 ); i++ )
 	{
 		const guchar *src = src_buf + ( ( ( i + render_y0 ) * y_step + ( y_step >> 1 ) ) >> SCALE_SHIFT ) * src_rowstride;
 		guchar *dest = dest_buf + i * dest_rowstride;
-
 		x = render_x0 * x_step + ( x_step >> 1 );
-
+		
 		for ( j = 0; j < ( render_x1 - render_x0 ); j++ )
 		{
-			int x_scaled = x >> SCALE_SHIFT;
+			x_scaled = x >> SCALE_SHIFT;
 			*dest++ = src[ x_scaled << 1 ];
 			*dest++ = src[ ( ( x_scaled >> 1 ) << 2 ) + ( ( j & 1 ) << 1 ) + 1 ];
 			x += x_step;
@@ -121,17 +120,18 @@ scale_line ( int *weights, int n_x, int n_y,
              guchar **src,
              int x_init, int x_step, int src_width )
 {
-	int x = x_init;
-	register int i, j, dx = 0;
+	register int x = x_init;
+	register int i, j, x_scaled, y_index, uv_index;
 
 	while ( dest < dest_end )
 	{
-		int x_scaled = x >> SCALE_SHIFT;
-		int *pixel_weights;
 		unsigned int y = 0, uv = 0;
+		int *pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * n_x * n_y;
 
-		pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * n_x * n_y;
-
+		x_scaled = x >> SCALE_SHIFT;
+		y_index = x_scaled << 1;
+		uv_index = ( ( x_scaled >> 1 ) << 2 ) + ( ( dest_x & 1 ) << 1 ) + 1;
+		
 		for ( i = 0; i < n_y; i++ )
 		{
 			int *line_weights = pixel_weights + n_x * i;
@@ -141,8 +141,8 @@ scale_line ( int *weights, int n_x, int n_y,
 			{
 				unsigned int ta = line_weights[ j ];
 
-				y  += ta * q[ ( x_scaled << 1 ) ];
-				uv += ta * q[ ( ( x_scaled >> 1 ) << 2 ) + ( ( dx & 1 ) << 1 ) + 1 ];
+				y  += ta * q[ y_index ];
+				uv += ta * q[ uv_index ];
 			}
 		}
 
@@ -150,7 +150,7 @@ scale_line ( int *weights, int n_x, int n_y,
 		*dest++ = ( uv + 0xffff ) >> SCALE_SHIFT;
 
 		x += x_step;
-		dx++;
+		dest_x++;
 	}
 
 	return dest;
@@ -188,48 +188,47 @@ scale_line_22_33 ( int *weights, int n_x, int n_y,
                    guchar **src,
                    int x_init, int x_step, int src_width )
 {
-	int x = x_init;
-	guchar *src0 = src[ 0 ];
-	guchar *src1 = src[ 1 ];
-	int dx = 0;
+	register int x = x_init;
+	register guchar *src0 = src[ 0 ];
+	register guchar *src1 = src[ 1 ];
+	register unsigned int p;
+	register guchar *q0, *q1;
+	register int w1, w2, w3, w4;
+	register int x_scaled, x_aligned, uv_index;
 
 	while ( dest < dest_end )
 	{
-		unsigned int y, uv;
-		int x_scaled = x >> SCALE_SHIFT;
-		int *pixel_weights;
-		guchar *q0, *q1;
-		int w1, w2, w3, w4;
-		int x_aligned = ( ( x_scaled >> 1 ) << 2 );
-		int uv_index = ( ( dx & 1 ) << 1 ) + 1;
-
-		pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * 4;
+		int *pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * 4;
+		
+		x_scaled = x >> SCALE_SHIFT;
 
 		w1 = pixel_weights[ 0 ];
 		w2 = pixel_weights[ 1 ];
 		w3 = pixel_weights[ 2 ];
 		w4 = pixel_weights[ 3 ];
 
+		/* process Y */
 		q0 = src0 + ( x_scaled << 1 );
 		q1 = src1 + ( x_scaled << 1 );
+		p  = w1 * q0[ 0 ];
+		p += w2 * q0[ 2 ];
+		p += w3 * q1[ 0 ];
+		p += w4 * q1[ 2 ];
+		*dest++ = ( p + 0x8000 ) >> SCALE_SHIFT;
 
-		y  = w1 * q0[ 0 ];
-		y += w2 * q0[ 2 ];
-		y += w3 * q1[ 0 ];
-		y += w4 * q1[ 2 ];
-		*dest++ = ( y + 0x8000 ) >> 16;
-
+		/* process U/V */
+		x_aligned = ( ( x_scaled >> 1 ) << 2 );
 		q0 = src0 + x_aligned;
 		q1 = src1 + x_aligned;
-
-		uv  = w1 * q0[ uv_index ];
-		uv += w2 * q0[ uv_index ];
-		uv += w3 * q1[ uv_index ];
-		uv += w4 * q1[ uv_index ];
-		*dest++ = ( uv + 0x8000 ) >> 16;
+		uv_index = ( ( dest_x & 1 ) << 1 ) + 1;
+		p  = w1 * q0[ uv_index ];
+		p += w2 * q0[ uv_index ];
+		p += w3 * q1[ uv_index ];
+		p += w4 * q1[ uv_index ];
+		*dest++ = ( p + 0x8000 ) >> SCALE_SHIFT;
 
 		x += x_step;
-		dx++;
+		dest_x++;
 	}
 
 	return dest;
@@ -243,7 +242,8 @@ process_pixel ( int *weights, int n_x, int n_y,
                 int x_start, int src_width )
 {
 	register unsigned int y = 0, uv = 0;
-	register int i, j, dx = 0;
+	register int i, j;
+	int uv_index = ( ( dest_x & 1 ) << 1 ) + 1;
 
 	for ( i = 0; i < n_y; i++ )
 	{
@@ -256,24 +256,23 @@ process_pixel ( int *weights, int n_x, int n_y,
 			if ( x_start + j < 0 )
 			{
 				y  += ta * src[ i ][ 0 ];
-				uv += ta * src[ i ][ ( ( dx & 1 ) << 1 ) + 1 ];
+				uv += ta * src[ i ][ uv_index ];
 			}
 			else if ( x_start + j < src_width )
 			{
 				y  += ta * src[ i ][ ( x_start + j ) << 1 ];
-				uv += ta * src[ i ][ ( ( ( x_start + j ) >> 1 ) << 2) + ( ( dx & 1 ) << 1 ) + 1 ];
+				uv += ta * src[ i ][ ( ( ( x_start + j ) >> 1 ) << 2) + uv_index ];
 			}
 			else
 			{
 				y  += ta * src[ i ][ ( src_width - 1 ) << 1 ];
-				uv += ta * src[ i ][ ( ( ( src_width - 1 ) >> 1 ) << 2) + ( ( dx & 1 ) << 1 ) + 1 ];
+				uv += ta * src[ i ][ ( ( ( src_width - 1 ) >> 1 ) << 2) + uv_index ];
 			}
 		}
 	}
 
 	*dest++ = ( y  + 0xffffff ) >> 24;
 	*dest++ = ( uv + 0xffffff ) >> 24;
-	dx++;
 }
 
 
@@ -437,17 +436,6 @@ pixops_process ( guchar *dest_buf,
 
 		while ( x_start < 0 && outbuf < outbuf_end )
 		{
-			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
-			                filter->x.n, filter->y.n,
-			                outbuf, dest_x, dest_channels,
-			                line_bufs, src_channels,
-			                x >> SCALE_SHIFT, src_width );
-
-			x += x_step;
-			x_start = x >> SCALE_SHIFT;
-			dest_x++;
-			outbuf += dest_channels;
-			
 			process_pixel ( run_weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * ( filter->x.n * filter->y.n ),
 			                filter->x.n, filter->y.n,
 			                outbuf, dest_x, dest_channels,
@@ -748,7 +736,6 @@ yuv422_scale ( guchar *dest_buf,
 	filter.overall_alpha = 1.0;
 	make_weights ( &filter, interp_type, scale_x, scale_y );
 
-//fprintf( stderr, "RESCALE: %d %d\n", filter.x.n, filter.y.n );
 	if ( filter.x.n == 2 && filter.y.n == 2 )
 	{
 #ifdef USE_MMX
