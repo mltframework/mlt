@@ -665,7 +665,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
-	if ( mlt_properties_get( properties, "distort" ) == NULL && mlt_properties_get( b_props, "distort" ) == NULL && geometry->item.distort == 0 )
+	if ( mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
 	{
 		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->item.w;
