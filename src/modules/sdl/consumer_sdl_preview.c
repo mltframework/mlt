@@ -354,9 +354,9 @@ static void *consumer_thread( void *arg )
 			if ( this->active == this->still )
 			{
 				pthread_mutex_lock( &this->refresh_mutex );
-				if ( speed == 0 && this->refresh_count == 0 )
+				if ( speed == 0 && this->refresh_count <= 0 )
 					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
-				this->refresh_count = 0;
+				this->refresh_count --;
 				pthread_mutex_unlock( &this->refresh_mutex );
 			}
 

@@ -418,7 +418,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	}
 	else
 	{
-		changed = mlt_properties_get_int( properties, "changed" ) | mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "refresh" );
+		changed = 1;
 		mlt_properties_set_int( properties, "changed", 0 );
 	}
 
