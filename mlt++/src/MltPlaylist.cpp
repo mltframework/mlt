@@ -24,6 +24,21 @@
 #include "MltTransition.h"
 using namespace Mlt;
 
+ClipInfo::ClipInfo( ) :
+	clip( 0 ),
+	producer( NULL ),
+	cut( NULL ),
+	start( 0 ),
+	resource( NULL ),
+	frame_in( 0 ),
+	frame_out( 0 ),
+	frame_count( 0 ),
+	length( 0 ),
+	fps( 0 ),
+	repeat( 0 )
+{
+}
+
 ClipInfo::ClipInfo( mlt_playlist_clip_info *info ) :
 	clip( info->clip ),
 	producer( new Producer( info->producer ) ),
@@ -44,6 +59,24 @@ ClipInfo::~ClipInfo( )
 	delete producer;
 	delete cut;
 	free( resource );
+}
+
+void ClipInfo::update( mlt_playlist_clip_info *info )
+{
+	delete producer;
+	delete cut;
+	free( resource );
+	clip = info->clip;
+	producer = new Producer( info->producer );
+	cut = new Producer( info->cut );
+	start = info->start;
+	resource = strdup( info->resource );
+	frame_in = info->frame_in;
+	frame_out = info->frame_out;
+	frame_count = info->frame_count;
+	length = info->length;
+	fps = info->fps;
+	repeat = info->repeat;
 }
 
 Playlist::Playlist( ) :
@@ -124,11 +157,14 @@ Producer *Playlist::current( )
 	return new Producer( mlt_playlist_current( get_playlist( ) ) );
 }
 
-ClipInfo *Playlist::clip_info( int index )
+ClipInfo *Playlist::clip_info( int index, ClipInfo *info )
 {
-	mlt_playlist_clip_info info;
-	mlt_playlist_get_clip_info( get_playlist( ), &info, index );
-	return new ClipInfo( &info );
+	mlt_playlist_clip_info clip_info;
+	mlt_playlist_get_clip_info( get_playlist( ), &clip_info, index );
+	if ( info == NULL )
+		return new ClipInfo( &clip_info );
+	info->update( &clip_info );
+	return info;
 }
 
 int Playlist::insert( Producer &producer, int where, int in, int out )
@@ -178,12 +214,14 @@ int Playlist::repeat( int clip, int count )
 
 Producer *Playlist::get_clip( int clip )
 {
-	return new Producer( mlt_playlist_get_clip( get_playlist( ), clip ) );
+	mlt_producer producer = mlt_playlist_get_clip( get_playlist( ), clip );
+	return producer != NULL ? new Producer( producer ) : NULL;
 }
 
 Producer *Playlist::get_clip_at( int position )
 {
-	return new Producer( mlt_playlist_get_clip_at( get_playlist( ), position ) );
+	mlt_producer producer = mlt_playlist_get_clip_at( get_playlist( ), position );
+	return producer != NULL ? new Producer( producer ) : NULL;
 }
 
 int Playlist::get_clip_index_at( int position )
@@ -196,3 +234,20 @@ bool Playlist::is_mix( int clip )
 	return mlt_playlist_clip_is_mix( get_playlist( ), clip ) != 0;
 }
 
+bool Playlist::is_blank( int clip )
+{
+	return mlt_playlist_is_blank( get_playlist( ), clip );
+}
+
+Producer *Playlist::replace_with_blank( int clip )
+{
+	mlt_producer producer = mlt_playlist_replace_with_blank( get_playlist( ), clip );
+	Producer *object = producer != NULL ? new Producer( producer ) : NULL;
+	mlt_producer_close( producer );
+	return object;
+}
+
+void Playlist::consolidate_blanks( int keep_length )
+{
+	return mlt_playlist_consolidate_blanks( get_playlist( ), keep_length );
+}

@@ -46,6 +46,8 @@ namespace Mlt
 			virtual ~Properties( );
 			int inc_ref( );
 			int dec_ref( );
+			void block( void *object = NULL );
+			void unblock( void *object = NULL );
 			bool is_valid( );
 			int count( );
 			char *get( char *name );

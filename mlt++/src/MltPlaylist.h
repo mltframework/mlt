@@ -35,8 +35,10 @@ namespace Mlt
 	class ClipInfo
 	{
 		public:
+			ClipInfo( );
 			ClipInfo( mlt_playlist_clip_info *info );
 			~ClipInfo( );
+			void update( mlt_playlist_clip_info *info );
 			int clip;
 			Producer *producer;
 			Producer *cut;
@@ -69,7 +71,7 @@ namespace Mlt
 			int clip( mlt_whence whence, int index );
 			int current_clip( );
 			Producer *current( );
-			ClipInfo *clip_info( int index );
+			ClipInfo *clip_info( int index, ClipInfo *info = NULL );
 			int insert( Producer &producer, int where, int in = -1, int out = -1 );
 			int remove( int where );
 			int move( int from, int to );
@@ -83,6 +85,9 @@ namespace Mlt
 			Producer *get_clip_at( int position );
 			int get_clip_index_at( int position );
 			bool is_mix( int clip );
+			bool is_blank( int clip );
+			void consolidate_blanks( int keep_length = 0 );
+			Producer *replace_with_blank( int clip );
 	};
 }
 

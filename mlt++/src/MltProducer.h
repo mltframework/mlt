@@ -57,8 +57,10 @@ namespace Mlt
 			int get_playtime( );
 			Producer *cut( int in = 0, int out = -1 );
 			bool is_cut( );
+			bool is_blank( );
 			bool same_clip( Producer &that );
 			bool runs_into( Producer &that );
+			void optimise( );
 	};
 }
 

@@ -30,6 +30,8 @@ namespace Mlt
 	class Producer;
 	class Field;
 	class Multitrack;
+	class Transition;
+	class Filter;
 
 	class Tractor : public Producer
 	{
@@ -49,6 +51,10 @@ namespace Mlt
 			int set_track( Producer &producer, int index );
 			Producer *track( int index );
 			int count( );
+			void plant_transition( Transition &transition, int a_track = 0, int b_track = 1 );
+			void plant_transition( Transition *transition, int a_track = 0, int b_track = 1 );
+			void plant_filter( Filter &filter, int track = 0 );
+			void plant_filter( Filter *filter, int track = 0 );
 	};
 }
 

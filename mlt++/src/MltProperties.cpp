@@ -73,6 +73,16 @@ int Properties::dec_ref( )
 	return mlt_properties_dec_ref( get_properties( ) );
 }
 
+void Properties::block( void *object )
+{
+	mlt_events_block( get_properties( ), object );
+}
+
+void Properties::unblock( void *object )
+{
+	mlt_events_unblock( get_properties( ), object );
+}
+
 bool Properties::is_valid( )
 {
 	return get_properties( ) != NULL;

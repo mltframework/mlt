@@ -21,6 +21,8 @@
 #include "MltTractor.h"
 #include "MltMultitrack.h"
 #include "MltField.h"
+#include "MltTransition.h"
+#include "MltFilter.h"
 using namespace Mlt;
 
 Tractor::Tractor( ) :
@@ -95,3 +97,25 @@ int Tractor::count( )
 {
 	return mlt_multitrack_count( mlt_tractor_multitrack( get_tractor( ) ) );
 }
+
+void Tractor::plant_transition( Transition &transition, int a_track, int b_track )
+{
+	mlt_field_plant_transition( mlt_tractor_field( get_tractor( ) ), transition.get_transition( ), a_track, b_track );
+}
+
+void Tractor::plant_transition( Transition *transition, int a_track, int b_track )
+{
+	if ( transition != NULL )
+		mlt_field_plant_transition( mlt_tractor_field( get_tractor( ) ), transition->get_transition( ), a_track, b_track );
+}
+
+void Tractor::plant_filter( Filter &filter, int track )
+{
+	mlt_field_plant_filter( mlt_tractor_field( get_tractor( ) ), filter.get_filter( ), track );
+}
+
+void Tractor::plant_filter( Filter *filter, int track )
+{
+	mlt_field_plant_filter( mlt_tractor_field( get_tractor( ) ), filter->get_filter( ), track );
+}
+

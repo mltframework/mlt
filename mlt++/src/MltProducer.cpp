@@ -148,6 +148,11 @@ bool Producer::is_cut( )
 	return mlt_producer_is_cut( get_producer( ) );
 }
 
+bool Producer::is_blank( )
+{
+	return mlt_producer_is_blank( get_producer( ) );
+}
+
 bool Producer::same_clip( Producer &that )
 {
 	return mlt_producer_cut_parent( get_producer( ) ) == mlt_producer_cut_parent( that.get_producer( ) );
@@ -156,4 +161,9 @@ bool Producer::same_clip( Producer &that )
 bool Producer::runs_into( Producer &that )
 {
 	return same_clip( that ) && get_out( ) == ( that.get_in( ) - 1 );
+}
+
+void Producer::optimise( )
+{
+	mlt_producer_optimise( get_producer( ) );
 }
