@@ -234,6 +234,22 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	return 0;
 }
 
+static void destroy_data_queue( void *arg )
+{
+	if ( arg != NULL )
+	{
+		// Assign the correct type
+		mlt_deque queue = arg;
+
+		// Iterate through each item and destroy them
+		while ( mlt_deque_peek_front( queue ) != NULL )
+			mlt_properties_close( mlt_deque_pop_back( queue ) );
+
+		// Close the deque
+		mlt_deque_close( queue );
+	}
+}
+
 /** Get the next frame.
 */
 
@@ -258,6 +274,12 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		// Or a specific producer
 		mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 
+		// The output frame will hold the 'global' data feeds (ie: those which are targetted for the final frame)
+		mlt_deque data_queue = mlt_deque_init( );
+
+		// Determine whether this tractor feeds to the consumer or stops here
+		int global_feed = mlt_properties_get_int( properties, "global_feed" );
+
 		// If we don't have one, we're in trouble... 
 		if ( multitrack != NULL )
 		{
@@ -273,9 +295,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			// We'll store audio and video frames to use here
 			mlt_frame audio = NULL;
 			mlt_frame video = NULL;
-
-			// Determine which data_queue to pass on...
-			void *data_queue = NULL;
 
 			// Temporary properties
 			mlt_properties temp_properties = NULL;
@@ -307,29 +326,33 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				sprintf( label, "_%s_%d", id, count ++ );
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
-				// We want the first data_queue, but after that, all queues are appended
+				// We want to append all 'final' feeds to the global queue
 				if ( !done && mlt_properties_get_data( temp_properties, "data_queue", NULL ) != NULL )
 				{
-					if ( data_queue == NULL )
+					// Move the contents of this queue on to the output frames data queue
+					mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
+					mlt_deque temp = mlt_deque_init( );
+					while ( mlt_deque_count( sub_queue ) )
 					{
-						data_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
+						mlt_properties p = mlt_deque_pop_back( sub_queue );
+						if ( mlt_properties_get_int( p, "final" ) )
+							mlt_deque_push_back( data_queue, p );
+						else
+							mlt_deque_push_back( temp, p );
 					}
-					else
+					while( mlt_deque_count( temp ) )
+						mlt_deque_push_front( sub_queue, mlt_deque_pop_back( temp ) );
+					mlt_deque_close( temp );
+				}
+
+				// Now do the same with the global queue but without the conditional behaviour
+				if ( mlt_properties_get_data( temp_properties, "global_queue", NULL ) != NULL )
+				{
+					mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "global_queue", NULL );
+					while ( mlt_deque_count( sub_queue ) )
 					{
-						// Move the contents of this queue on to the output frames data queue
-						mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
-						mlt_deque temp = mlt_deque_init( );
-						while ( mlt_deque_count( sub_queue ) )
-						{
-							mlt_properties p = mlt_deque_pop_back( sub_queue );
-							if ( mlt_properties_get_int( p, "frame_lock" ) == 0 )
-								mlt_deque_push_back( data_queue, p );
-							else
-								mlt_deque_push_back( temp, p );
-						}
-						while( mlt_deque_count( temp ) )
-							mlt_deque_push_front( sub_queue, mlt_deque_pop_back( temp ) );
-						mlt_deque_close( temp );
+						mlt_properties p = mlt_deque_pop_back( sub_queue );
+						mlt_deque_push_back( data_queue, p );
 					}
 				}
 
@@ -352,13 +375,19 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties video_properties = MLT_FRAME_PROPERTIES( video );
 				mlt_frame_push_service( *frame, video );
 				mlt_frame_push_service( *frame, producer_get_image );
-				mlt_properties_set_data( frame_properties, "data_queue", data_queue, 0, NULL, NULL );
+				if ( global_feed )
+					mlt_properties_set_data( frame_properties, "data_queue", data_queue, 0, NULL, NULL );
+				mlt_properties_set_data( video_properties, "global_queue", data_queue, 0, destroy_data_queue, NULL );
 				mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( video_properties, "width" ) );
 				mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( video_properties, "height" ) );
 				mlt_properties_set_int( frame_properties, "real_width", mlt_properties_get_int( video_properties, "real_width" ) );
 				mlt_properties_set_int( frame_properties, "real_height", mlt_properties_get_int( video_properties, "real_height" ) );
 				mlt_properties_set_int( frame_properties, "progressive", mlt_properties_get_int( video_properties, "progressive" ) );
 				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
+			}
+			else
+			{
+				destroy_data_queue( data_queue );
 			}
 
 			mlt_frame_set_position( *frame, mlt_producer_frame( parent ) );
