@@ -6,7 +6,7 @@ OBJS = factory.o \
 	   consumer_westley.o \
 	   producer_westley.o
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread `xml2-config --cflags`
+CFLAGS += -I../../ `xml2-config --cflags`
 
 LDFLAGS = `xml2-config --libs`
 

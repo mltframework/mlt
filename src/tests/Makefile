@@ -2,14 +2,9 @@ include ../../config.mak
 
 TARGET = dan charlie pango pixbuf dissolve luma
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I .. -Wall -rdynamic -pthread
+CFLAGS += -I.. -rdynamic
 
 LDFLAGS = -L ../framework -L ../modules -lmlt -lmltdv -lmltsdl
-
-ifeq ($(MLT_GPROF),true)
-CFLAGS+=-p
-LDFLAGS+=-p
-endif
 
 all: $(TARGET)
 

@@ -14,14 +14,7 @@ OBJS = valerie.o \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS=-O4 -pipe -ffast-math -fomit-frame-pointer -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
-
 LDFLAGS=-ldv -lpthread
-
-ifeq ($(MLT_GPROF),true)
-CFLAGS+=-p
-LDFLAGS+=-p
-endif
 
 all: $(TARGET)
 

@@ -24,7 +24,7 @@ OBJS = factory.o \
 
 ASM_OBJS = composite_line_yuv_mmx.o
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -DUSE_MMX -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS += -I../..
 
 SRCS := $(OBJS:.o=.c)
 

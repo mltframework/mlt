@@ -4,9 +4,9 @@ TARGET = albino
 
 OBJS = albino.o
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
+CFLAGS += -I.. -rdynamic
 
-LDFLAGS = -L ../valerie -L ../miracle -L ../framework -lmiracle -lmlt -lvalerie
+LDFLAGS = -L ../miracle -lmiracle 
 
 SRCS := $(OBJS:.o=.c)
 

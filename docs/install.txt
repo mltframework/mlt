@@ -111,6 +111,9 @@ Configuration
 
 	./configure --help          - report all configure options
 	./configure --prefix=[dir]  - target install directory (default: /usr/local)
+	./configure --disable-debug - turn off debugging
+	./configure --disable-mmx   - turn off MMX usage
+	./configure --cpu='cpu'     - tune build for a specific cpu
 	./configure --disable-[mod] - do not compile specified module(s)
 	./configure --[other]       - pass through to children
 

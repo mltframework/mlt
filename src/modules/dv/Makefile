@@ -6,7 +6,7 @@ OBJS = factory.o \
 	   producer_libdv.o \
 	   consumer_libdv.o
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS += -I../..
 
 LDFLAGS=-ldv -lpthread
 

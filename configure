@@ -9,12 +9,16 @@ Funky non-autotool config script for MLT.
 
 	--help                  - this information
 	--prefix=directory      - install prefix for path (default: $prefix)
+	--disable-debug         - Compile without debug support (default: on)
+	--disable-mmx           - Compile without MMX support (default: on)
+	--cpu='cpu'             - Compile for a specific CPU/architectre (default: none)
 EOF
 
 	for i in src/modules/*
 	do
-		[ -d $i ] && [ "`basename $i`" != "CVS" ] && echo "	--disable-`basename $i`"
-	done
+		[ -d $i ] && [ "`basename $i`" != "CVS" ] && basename $i
+	done |
+	awk '{ printf( "   --disable-%-14.14s- Disable the %s module\n", $1, $1 ); }'
 
 	echo
 }
@@ -22,13 +26,33 @@ EOF
 function build_config
 {
 	(
-		echo version=$version
-		echo prefix=$prefix
-		echo bindir=$prefix/bin
+		echo "version=$version"
+		echo "prefix=$prefix"
+		echo "bindir=$prefix/bin"
+
+		[ "$mmx" = "true" ] && 
+		echo "MMX_FLAGS=-DUSE_MMX"
+
+		[ "$debug" = "true" ] && 
+		echo "DEBUG_FLAGS=-g"
+
+		echo "LARGE_FILE=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE"
+
+		[ "$cpu" != "" ] &&
+		echo "TARGET_ARCH=-march=$cpu" &&
+		echo "TARGET_CPU=-mcpu=$cpu"
+
+		echo "OPTIMISATIONS=-O4 \$(TARGET_ARCH) \$(TARGET_CPU) -pipe -ffast-math -fomit-frame-pointer"
+		echo "CFLAGS=-Wall \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE) -pthread"
 	) > config.mak
 
 	echo "#!/bin/sh" > mlt-config
-	sed 's/^/export /' < config.mak >> mlt-config
+	(
+		echo export version=$version
+		echo export prefix=$prefix
+		echo export bindir=$prefix/bin
+	) >> mlt-config
+
 	cat < mlt-config-template >> mlt-config
 
 	echo -n > packages.dat
@@ -57,13 +81,19 @@ export build_dir=`dirname $0`
 export prefix=/usr/local
 export help=0
 export version=0.1.0
+export debug=true
+export mmx=true
+export cpu=
 
 # Iterate through arguments
 for i in $*
 do
 	case $i in
-		--help )		help=1 ;;
-		--prefix=* )	prefix="${i#--prefix=}" ;;
+		--help )			help=1 ;;
+		--prefix=* )		prefix="${i#--prefix=}" ;;
+		--disable-debug )	debug=false ;;
+		--disable-mmx )		mmx=false ;;
+		--cpu=* )			cpu="${i#--cpu=}" ;;
 	esac
 done
 

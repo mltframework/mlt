@@ -14,14 +14,9 @@ LIB_OBJS = miracle_log.o \
 
 OBJS = $(APP_OBJS) $(LIB_OBJS)
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I .. -Wall -g -D_FILE_OFFSET_BITS=64 -pthread -rdynamic
+CFLAGS += -I.. -rdynamic
 
 LDFLAGS = -L ../valerie -lvalerie -L ../framework -lmlt
-
-ifeq ($(MLT_GPROF),true)
-CFLAGS+=-p
-LDFLAGS+=-p
-endif
 
 SRCS := $(OBJS:.o=.c)
 

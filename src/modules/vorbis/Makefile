@@ -5,7 +5,7 @@ TARGET = ../libmltvorbis.so
 OBJS = factory.o \
 	   producer_vorbis.o
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I../../ -Wall -g -D_FILE_OFFSET_BITS=64
+CFLAGS += -I../..
 
 LDFLAGS = -lvorbisfile -lvorbis
 
