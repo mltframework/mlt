@@ -22,6 +22,7 @@
 #define _MLTPP_MIRACLE_H_
 
 #include <miracle/miracle_server.h>
+#include <miracle/miracle_log.h>
 #include "MltService.h"
 
 namespace Mlt
@@ -48,6 +49,7 @@ namespace Mlt
 			virtual Response *received( char *command, char *doc );
 			virtual Response *push( char *command, Service *service );
 			void wait_for_shutdown( );
+			static void log_level( int );
 	};
 }
 

@@ -145,3 +145,7 @@ void Miracle::wait_for_shutdown( )
 		nanosleep( &tm, NULL );
 }
 
+void Miracle::log_level( int threshold )
+{
+	miracle_log_init( log_stderr, threshold );
+}
