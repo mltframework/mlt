@@ -373,11 +373,11 @@ Consumers
 		
 		Constructor Argument
 
-			int video_standard - 0 = PAL, 1 = NTSC
+			string video_standard - "PAL" (default) or "NTSC"
 			
 		Initialisation Properties
 
-			int video_standard - see above
+			int video_standard - 0 = PAL, 1 = NTSC
 			
 		Read Only Properties
 
