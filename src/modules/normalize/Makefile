@@ -5,7 +5,7 @@ TARGET = ../libmltnormalize.so
 OBJS = factory.o \
 	   filter_volume.o 
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I../../ -Wall -g
+CFLAGS += -I../..
 
 SRCS := $(OBJS:.o=.c)
 

@@ -5,9 +5,9 @@ TARGET = ../libmltsox.so
 OBJS = factory.o \
 	   filter_sox.o 
 
-CFLAGS = -O4 -pipe -ffast-math -fomit-frame-pointer -I../../ -Wall -g 
+CFLAGS += -I../../
 
-LDFLAGS = -lst
+LDFLAGS += -lst
 
 SRCS := $(OBJS:.o=.c)
 

@@ -8,7 +8,7 @@ OBJS = factory.o \
 
 CFLAGS += -I../..
 
-LDFLAGS += -ldv -lpthread
+LDFLAGS += -ldv 
 
 SRCS := $(OBJS:.o=.c)
 
