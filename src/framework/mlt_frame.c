@@ -369,10 +369,11 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, double fps, int w, int h 
 		// pcm data has channels interleaved
 		for ( j = 0; j < channels; j++ )
 		{
-			// The height of a line is the ratio of the sample multiplied by 
+			// Determine sample's magnitude from 2s complement;
+			int pcm_magnitude = *pcm < 0 ? ~(*pcm) + 1 : *pcm;
+			// The height of a line is the ratio of the magnitude multiplied by 
 			// half the vertical resolution
-			int pcm_scaled = ( int )( ( double )( *pcm ) / 32768 * h / 2 );
-			int height = pcm_scaled < 0 ? -pcm_scaled : pcm_scaled;
+			int height = ( int )( ( double )( pcm_magnitude ) / 32768 * h / 2 );
 			// Determine the starting y coordinate - left channel above center,
 			// right channel below - currently assumes 2 channels
 			int displacement = ( h / 2 ) - ( 1 - j ) * height;
