@@ -38,10 +38,10 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	mlt_properties producer_properties = mlt_producer_properties( producer );
 
 	// Get the original get_audio
-	int ( *get_audio )( mlt_frame, int16_t **, mlt_audio_format *, int *, int *, int * ) = mlt_properties_get_data( frame_properties, "get_audio", NULL );
+	frame->get_audio = mlt_properties_get_data( frame_properties, "get_audio", NULL );
 
 	// Call the original get_audio
-	get_audio( frame, buffer, format, frequency, channels, samples );
+	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
 	// Now if our producer is still producing, override the audio
 	if ( !mlt_properties_get_int( producer_properties, "end_of_clip" ) )
@@ -51,6 +51,9 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 
 		// We need a frame from the producer
 		mlt_frame producer_frame;
+
+		// Set the FPS
+		mlt_properties_set_double( producer_properties, "fps", mlt_properties_get_double( frame_properties, "fps" ) );
 
 		// Seek to the position
 		mlt_producer_seek_frame( producer, ( int64_t )position );
@@ -88,14 +91,22 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	// Obtain the frame properties
 	mlt_properties frame_properties = mlt_frame_properties( frame );
 	
-	// Backup the original get_audio (it's still needed)
-	mlt_properties_set_data( frame_properties, "get_audio", frame->get_audio, 0, NULL, NULL );
+	// Get the producer properties
+	mlt_properties producer_properties = mlt_producer_properties( producer );
 
-	// Pass the producer on the frame
-	mlt_properties_set_data( frame_properties, "producer", producer, 0, NULL, NULL );
+	// Only do this if we have not reached end of clip and ffmpeg_dub has not already been done
+	if ( !mlt_properties_get_int( producer_properties, "end_of_clip" ) &&
+		 mlt_properties_get_data( frame_properties, "get_audio", NULL ) == NULL )
+	{
+		// Backup the original get_audio (it's still needed)
+		mlt_properties_set_data( frame_properties, "get_audio", frame->get_audio, 0, NULL, NULL );
 
-	// Override the get_audio method
-	frame->get_audio = filter_get_audio;
+		// Pass the producer on the frame
+		mlt_properties_set_data( frame_properties, "producer", producer, 0, NULL, NULL );
+
+		// Override the get_audio method
+		frame->get_audio = filter_get_audio;
+	}
 
 	return frame;
 }

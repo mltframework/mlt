@@ -18,11 +18,10 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _PRODUCER_Y4M_H_
-#define _PRODUCER_Y4M_H_
+#ifndef _PRODUCER_FFMPEG_H_
+#define _PRODUCER_FFMPEG_H_
 
 #include <framework/mlt_producer.h>
-#include <stdio.h>
 
 extern mlt_producer producer_ffmpeg_init( char *file );
 

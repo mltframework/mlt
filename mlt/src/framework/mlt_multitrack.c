@@ -141,6 +141,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	mlt_properties_set_timecode( properties, "length", length );
 	mlt_properties_set_timecode( properties, "out", length );
 	mlt_properties_set_timecode( properties, "playtime", length - mlt_properties_get_timecode( properties, "in" ) );
+	mlt_properties_set_double( properties, "fps", fps );
 }
 
 /** Connect a producer to a given track.

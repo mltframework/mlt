@@ -24,10 +24,12 @@
 #include "mlt_properties.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 /** Singleton repositories
 */
 
+static char *mlt_prefix = NULL;
 static mlt_properties object_list = NULL;
 static mlt_repository producers = NULL;
 static mlt_repository filters = NULL;
@@ -43,6 +45,9 @@ int mlt_factory_init( char *prefix )
 	if ( prefix == NULL )
 		prefix = PREFIX_DATA;
 
+	// Store the prefix for later retrieval
+	mlt_prefix = strdup( prefix );
+
 	// Create the object list.
 	object_list = calloc( sizeof( struct mlt_properties_s ), 1 );
 	mlt_properties_init( object_list, NULL );
@@ -54,6 +59,14 @@ int mlt_factory_init( char *prefix )
 	consumers = mlt_repository_init( object_list, prefix, "consumers.dat", "mlt_create_consumer" );
 
 	return 0;
+}
+
+/** Fetch the prefix used in this instance.
+*/
+
+const char *mlt_factory_prefix( )
+{
+	return mlt_prefix;
 }
 
 /** Fetch a producer from the repository.
@@ -98,6 +111,7 @@ void mlt_factory_close( )
 	mlt_repository_close( transitions );
 	mlt_repository_close( consumers );
 	mlt_properties_close( object_list );
+	free( mlt_prefix );
 	free( object_list );
 }
 

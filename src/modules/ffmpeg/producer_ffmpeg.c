@@ -19,7 +19,11 @@
  */
 
 #include "producer_ffmpeg.h"
+
 #include <framework/mlt_frame.h>
+#include <framework/mlt_factory.h>
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -62,18 +66,27 @@ mlt_producer producer_ffmpeg_init( char *file )
 
 		// Set the properties
 		mlt_properties_set( properties, "mlt_type", "producer_ffmpeg" );
-		mlt_properties_set_int( properties, "known_length", 0 );
-		mlt_properties_set( properties, "video_type", file );
+
 		if ( file != NULL && !strcmp( file, "v4l" ) )
 		{
+			mlt_properties_set( properties, "video_type", "v4l" );
 			mlt_properties_set( properties, "video_file", "/dev/video0" );
+			mlt_properties_set( properties, "video_size", "640x480" );
+			mlt_properties_set( properties, "audio_type", "dsp" );
 			mlt_properties_set( properties, "audio_file", "/dev/dsp" );
 		}
 		else
 		{
+			mlt_properties_set( properties, "video_type", "file" );
 			mlt_properties_set( properties, "video_file", file );
+			mlt_properties_set( properties, "video_size", "" );
+			mlt_properties_set( properties, "audio_type", "file" );
 			mlt_properties_set( properties, "audio_file", file );
 		}
+
+		mlt_properties_set_int( properties, "audio_rate", 48000 );
+		mlt_properties_set_int( properties, "audio_channels", 2 );
+		mlt_properties_set_int( properties, "audio_track", 0 );
 
 		this->buffer = malloc( 1024 * 1024 * 2 );
 
@@ -108,33 +121,38 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 
 FILE *producer_ffmpeg_run_video( producer_ffmpeg this )
 {
-	// Get the producer
-	mlt_producer producer = &this->parent;
-
-	// Get the properties of the producer
-	mlt_properties properties = mlt_producer_properties( producer );
-
-	char *video_type = mlt_properties_get( properties, "video_type" );
-	char *video_file = mlt_properties_get( properties, "video_file" );
-	int video_loop = mlt_properties_get_int( properties, "video_loop" );
-
 	if ( this->video == NULL )
 	{
+		// Get the producer
+		mlt_producer producer = &this->parent;
+
+		// Get the properties of the producer
+		mlt_properties properties = mlt_producer_properties( producer );
+
+		// Get the video loop property
+		int video_loop = mlt_properties_get_int( properties, "video_loop" );
+
 		if ( !this->open || video_loop )
 		{
+			const char *mlt_prefix = mlt_factory_prefix( );
+			char *video_type = mlt_properties_get( properties, "video_type" );
+			char *video_file = mlt_properties_get( properties, "video_file" );
+			float video_rate = mlt_properties_get_double( properties, "fps" );
+			char *video_size = mlt_properties_get( properties, "video_size" );
 			char command[ 1024 ] = "";
-			float fps = mlt_producer_get_fps( &this->parent );
 			float position = mlt_producer_position( &this->parent );
 
 			if ( video_loop ) position = 0;
 
-			if ( video_type != NULL && !strcmp( video_type, "v4l" ) )
-				sprintf( command, "ffmpeg -r %f -s 640x480 -vd \"%s\" -f imagepipe -f yuv4mpegpipe - 2>/dev/null", fps, video_file );
-			else if ( video_file != NULL && strcmp( video_file, "" ) )
-				sprintf( command, "ffmpeg -i \"%s\" -ss %f -f imagepipe -r %f -f yuv4mpegpipe - 2>/dev/null", video_file, position, fps );
+			sprintf( command, "%s/ffmpeg/video.sh \"%s\" \"%s\" \"%s\" %f %f 2>/dev/null",
+							  mlt_prefix,
+							  video_type,
+							  video_file,
+							  video_size,
+							  video_rate,
+							  position );
 
-			if ( strcmp( command, "" ) )
-				this->video = popen( command, "r" );
+			this->video = popen( command, "r" );
 		}
 	}
 	return this->video;
@@ -148,26 +166,33 @@ FILE *producer_ffmpeg_run_audio( producer_ffmpeg this )
 	// Get the properties of the producer
 	mlt_properties properties = mlt_producer_properties( producer );
 
-	char *video_type = mlt_properties_get( properties, "video_type" );
-	char *audio_file = mlt_properties_get( properties, "audio_file" );
-	int audio_loop = mlt_properties_get_int( properties, "audio_loop" );
-
 	if ( this->audio == NULL )
 	{
+		int audio_loop = mlt_properties_get_int( properties, "audio_loop" );
+
 		if ( !this->open || audio_loop )
 		{
+			const char *mlt_prefix = mlt_factory_prefix( );
+			char *audio_type = mlt_properties_get( properties, "audio_type" );
+			char *audio_file = mlt_properties_get( properties, "audio_file" );
+			int frequency = mlt_properties_get_int( properties, "audio_rate" );
+			int channels = mlt_properties_get_int( properties, "audio_channels" );
+			int track = mlt_properties_get_int( properties, "audio_track" );
 			char command[ 1024 ] = "";
 			float position = mlt_producer_position( &this->parent );
 
 			if ( audio_loop ) position = 0;
 
-			if ( video_type != NULL && !strcmp( video_type, "v4l" ) )
-				sprintf( command, "ffmpeg -ad \"%s\" -f s16le -ar 48000 -ac 2 - 2>/dev/null", audio_file );
-			else if ( audio_file != NULL )
-				sprintf( command, "ffmpeg -i \"%s\" -ss %f -f s16le -ar 48000 -ac 2 - 2>/dev/null", audio_file, position );
+			sprintf( command, "%s/ffmpeg/audio.sh \"%s\" \"%s\" %f %d %d %d 2>/dev/null",
+							  mlt_prefix,
+							  audio_type,
+							  audio_file,
+							  position,
+							  frequency,
+							  channels,
+							  track );
 
-			if ( strcmp( command, "" ) )
-				this->audio = popen( command, "r" );
+			this->audio = popen( command, "r" );
 		}
 	}
 	return this->audio;
@@ -213,6 +238,57 @@ static void producer_ffmpeg_position( producer_ffmpeg this, uint64_t requested, 
 	this->open = 1;
 }
 
+static int sample_calculator( float fps, int frequency, int64_t position )
+{
+	int samples = 0;
+
+	if ( fps == 25 )
+	{
+		samples = frequency / 25;
+	}
+	else if ( fps >= 29.97 && fps < 29.98 )
+	{
+		samples = frequency / 30;
+
+		switch ( frequency )
+		{
+			case 48000:
+				if ( position % 5 != 0 )
+					samples += 2;
+				break;
+			case 44100:
+				if ( position % 300 == 0 )
+					samples = 1471;
+				else if ( position % 30 == 0 )
+					samples = 1470;
+				else if ( position % 2 == 0 )
+					samples = 1472;
+				else
+					samples = 1471;
+				break;
+			case 32000:
+				if ( position % 30 == 0 )
+					samples = 1068;
+				else if ( position % 29 == 0 )
+					samples = 1067;
+				else if ( position % 4 == 2 )
+					samples = 1067;
+				else
+					samples = 1068;
+				break;
+			default:
+				samples = 0;
+		}
+	}
+	else
+	{
+		if ( fps != 0 )
+			samples = frequency / fps;
+	}
+
+	return samples;
+}
+
 static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the frames properties
@@ -221,14 +297,15 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	producer_ffmpeg producer = mlt_properties_get_data( properties, "producer_ffmpeg", NULL );
 	mlt_properties producer_properties = mlt_producer_properties( &producer->parent );
 
+	int64_t target = mlt_properties_get_double( properties, "target" );
 	int skip = mlt_properties_get_int( properties, "skip" );
 
-	*frequency = 48000;
-	*channels = 2;
-	*samples = 1920;
+	float fps = mlt_properties_get_double( producer_properties, "fps" );
+	*frequency = mlt_properties_get_int( producer_properties, "audio_rate" );
+	*channels = mlt_properties_get_int( producer_properties, "audio_channels" );
 
-	// Size
-	int size = *samples * *channels * 2;
+	// Maximum Size (?)
+	int size = ( *frequency / 25 ) * *channels * 2;
 
 	// Allocate an image
 	*buffer = malloc( size );
@@ -238,7 +315,8 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	{
 		do
 		{
-			if ( fread( *buffer, size, 1, producer->audio ) != 1 )
+			*samples = sample_calculator( fps, *frequency, target - skip );
+			if ( fread( *buffer, *samples * *channels * 2, 1, producer->audio ) != 1 )
 			{
 				pclose( producer->audio );
 				producer->audio = NULL;
@@ -249,6 +327,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	}
 	else
 	{
+		*samples = sample_calculator( fps, *frequency, target );
 		memset( *buffer, 0, size );
 	}
 
@@ -303,11 +382,15 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Are we at the position expected?
 	producer_ffmpeg_position( this, mlt_producer_frame( producer ), &skip );
 
+	// Get properties objects
+	mlt_properties producer_properties = mlt_producer_properties( &this->parent );
+
 	// Get the frames properties
 	mlt_properties properties = mlt_frame_properties( *frame );
 
 	FILE *video = this->video;
 
+	mlt_properties_set_double( properties, "target", mlt_producer_frame( producer ) );
 	mlt_properties_set_int( properties, "skip", skip );
 
 	// Read the video
@@ -345,8 +428,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Clean up
 		if ( this->video != NULL )
 		{
+			int video_loop = mlt_properties_get_int( producer_properties, "video_loop" );
+
 			// Inform caller that end of clip is reached
-			this->end_of_video = 1;
+			this->end_of_video = !video_loop;
 			pclose( this->video );
 			this->video = NULL;
 		}
@@ -361,9 +446,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Hmm - register audio callback
 	( *frame )->get_audio = producer_get_audio;
-
-	// Get properties objects
-	mlt_properties producer_properties = mlt_producer_properties( &this->parent );
 
 	// Get the additional properties
 	double aspect_ratio = mlt_properties_get_double( producer_properties, "aspect_ratio" );

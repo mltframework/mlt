@@ -279,6 +279,10 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		mlt_producer_prepare_next( this );
 	}
 
+	// Copy the fps of the producer onto the frame
+	mlt_properties properties = mlt_frame_properties( *frame );
+	mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( this ) );
+
 	return 0;
 }
 
