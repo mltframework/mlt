@@ -1,5 +1,5 @@
 /*
- * producer_pixbuf.h -- raster image loader based upon gdk-pixbuf
+ * producer_pango.h -- a pango-based titler
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
@@ -18,18 +18,17 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _PRODUCER_PIXBUF_H_
-#define _PRODUCER_PIXBUF_H_
+#ifndef _PRODUCER_PANGO_H_
+#define _PRODUCER_PANGO_H_
 
 #include <framework/mlt_producer.h>
 
-typedef struct producer_pixbuf_s *producer_pixbuf;
+typedef struct producer_pango_s *producer_pango;
 
-struct producer_pixbuf_s
+struct producer_pango_s
 {
 	struct mlt_producer_s parent;
-	char *filename;
-	int counter;
+	char *markup;
 	int width;
 	int height;
 	uint8_t *image;
@@ -37,6 +36,6 @@ struct producer_pixbuf_s
 	int is_pal;
 };
 
-extern mlt_producer producer_pixbuf_init( const char *filename );
+extern mlt_producer producer_pango_init( const char *markup );
 
 #endif

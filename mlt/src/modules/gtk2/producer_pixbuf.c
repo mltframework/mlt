@@ -40,6 +40,7 @@ mlt_producer producer_pixbuf_init( const char *filename )
 
 		this->filename = strdup( filename );
 		this->counter = -1;
+		this->is_pal = 1;
 		g_type_init();
 
 		return producer;
@@ -83,7 +84,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	return 0;
 }
 
-uint8_t *producer_get_alpha_mask( mlt_frame this )
+static uint8_t *producer_get_alpha_mask( mlt_frame this )
 {
 	// Obtain properties of frame
 	mlt_properties properties = mlt_frame_properties( this );
@@ -145,6 +146,26 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// If we have a pixbuf
 	if ( pixbuf )
 	{
+		// Scale to adjust for sample aspect ratio
+		if ( this->is_pal )
+		{
+			GdkPixbuf *temp = pixbuf;
+			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
+				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 54.0/59.0),
+				gdk_pixbuf_get_height( pixbuf ), GDK_INTERP_HYPER );
+			pixbuf = scaled;
+			g_object_unref( temp );
+		}
+		else
+		{
+			GdkPixbuf *temp = pixbuf;
+			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf,
+				(gint) ( (float) gdk_pixbuf_get_width( pixbuf ) * 11.0/10.0 ),
+				gdk_pixbuf_get_height( pixbuf ), GDK_INTERP_HYPER );
+			pixbuf = scaled;
+			g_object_unref( temp );
+		}
+
 		// Store width and height
 		this->width = gdk_pixbuf_get_width( pixbuf );
 		this->height = gdk_pixbuf_get_height( pixbuf );

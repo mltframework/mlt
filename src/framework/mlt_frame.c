@@ -309,6 +309,16 @@ int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stri
 			*d++ = y1;
 			*d++ = (v0+v1) >> 1;
 		}
+		if ( width % 2 )
+		{
+			r = *s++;
+			g = *s++;
+			b = *s++;
+			*alpha++ = *s++;
+			RGB2YUV (r, g, b, y0, u0 , v0);
+			*d++ = y0;
+			*d++ = u0;
+		}
 	}
 	return ret;
 }
@@ -338,6 +348,15 @@ int mlt_convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int stride
 			*d++ = (u0+u1) >> 1;
 			*d++ = y1;
 			*d++ = (v0+v1) >> 1;
+		}
+		if ( width % 2 )
+		{
+			r = *s++;
+			g = *s++;
+			b = *s++;
+			RGB2YUV (r, g, b, y0, u0 , v0);
+			*d++ = y0;
+			*d++ = u0;
 		}
 	}
 	return ret;

@@ -21,11 +21,14 @@
 #include <string.h>
 
 #include "producer_pixbuf.h"
+#include "producer_pango.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
 	if ( !strcmp( id, "pixbuf" ) )
 		return producer_pixbuf_init( arg );
+	else if ( !strcmp( id, "pango" ) )
+		return producer_pango_init( arg );
 	return NULL;
 }
 

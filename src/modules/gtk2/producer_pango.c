@@ -1,5 +1,5 @@
 /*
- * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
+ * producer_pango.c -- a pango-based titler
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
@@ -18,19 +18,29 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "producer_pixbuf.h"
+#include "producer_pango.h"
 #include <framework/mlt_frame.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include <pango/pangoft2.h>
+#include <freetype/freetype.h>
 
+// special color type used by internal pango routines
+typedef struct
+{
+	uint8_t r, g, b, a;
+} rgba_color;
+
+// Forward declarations
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
+static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
+static GdkPixbuf *pango_get_pixbuf( const char *markup, rgba_color fg, rgba_color bg, int pad, int align );
 
-mlt_producer producer_pixbuf_init( const char *filename )
+mlt_producer producer_pango_init( const char *markup )
 {
-	producer_pixbuf this = calloc( sizeof( struct producer_pixbuf_s ), 1 );
+	producer_pango this = calloc( sizeof( struct producer_pango_s ), 1 );
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;
@@ -38,8 +48,7 @@ mlt_producer producer_pixbuf_init( const char *filename )
 		producer->get_frame = producer_get_frame;
 		producer->close = producer_close;
 
-		this->filename = strdup( filename );
-		this->counter = -1;
+		this->markup = strdup( markup );
 		this->is_pal = 1;
 		g_type_init();
 
@@ -95,9 +104,8 @@ static uint8_t *producer_get_alpha_mask( mlt_frame this )
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
-	producer_pixbuf this = producer->child;
+	producer_pango this = producer->child;
 	GdkPixbuf *pixbuf = NULL;
-	GError *error = NULL;
 
 	// Generate a frame
 	*frame = mlt_frame_init( );
@@ -123,24 +131,16 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_frame_push_get_image( *frame, producer_get_image );
 
 	}
-	else if ( strchr( this->filename, '%' ) != NULL )
-	{
-		// handle picture sequences
-		char filename[1024];
-		filename[1023] = 0;
-		int current = this->counter;
-		do
-		{
-			++this->counter;
-			snprintf( filename, 1023, this->filename, this->counter );
-			pixbuf = gdk_pixbuf_new_from_file( filename, &error );
-			// allow discontinuity in frame numbers up to 99
-			error = NULL;
-		} while ( pixbuf == NULL && ( this->counter - current ) < 100 );
-	}
 	else
 	{
-		pixbuf = gdk_pixbuf_new_from_file( this->filename, &error );
+		// the following four will be replaced by properties
+		rgba_color fg = { 0xff, 0xff, 0xff, 0xff };
+		rgba_color bg = { 0, 0, 0, 0x7f };
+		int pad = 8;
+		int align = 0; /* left */
+		
+		// Render the title
+		pixbuf = pango_get_pixbuf( this->markup, fg, bg, pad, align );
 	}
 
 	// If we have a pixbuf
@@ -202,23 +202,13 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "width", this->width );
 		mlt_properties_set_int( properties, "height", this->height );
 
-		// Pass alpha and image on properties with or without destructor
-		if ( this->counter >= 0 )
-		{
-			// if picture sequence pass the image and alpha data with destructor
-			mlt_properties_set_data( properties, "image", image, 0, free, NULL );
-			mlt_properties_set_data( properties, "alpha", alpha, 0, free, NULL );
-		}
-		else
-		{
-			// if single picture, reference the image and alpha in the producer
-			this->image = image;
-			this->alpha = alpha;
+		// if single picture, reference the image and alpha in the producer
+		this->image = image;
+		this->alpha = alpha;
 
-			// pass the image and alpha data without destructor
-			mlt_properties_set_data( properties, "image", image, 0, NULL, NULL );
-			mlt_properties_set_data( properties, "alpha", alpha, 0, NULL, NULL );
-		}
+		// pass the image and alpha data without destructor
+		mlt_properties_set_data( properties, "image", image, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "alpha", alpha, 0, NULL, NULL );
 
 		// Set alpha call back
 		( *frame )->get_alpha_mask = producer_get_alpha_mask;
@@ -238,9 +228,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_close( mlt_producer parent )
 {
-	producer_pixbuf this = parent->child;
-	if ( this->filename )
-		free( this->filename );
+	producer_pango this = parent->child;
+	if ( this->markup )
+		free( this->markup );
 	if ( this->image )
 		free( this->image );
 	if ( this->alpha )
@@ -248,5 +238,85 @@ static void producer_close( mlt_producer parent )
 	parent->close = NULL;
 	mlt_producer_close( parent );
 	free( this );
+}
+
+static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
+{
+	int ww = gdk_pixbuf_get_width( pixbuf );
+	int hh = gdk_pixbuf_get_height( pixbuf );
+	uint8_t *p = gdk_pixbuf_get_pixels( pixbuf );
+	int i, j;
+
+	for ( j = 0; j < hh; j++ )
+	{
+		for ( i = 0; i < ww; i++ )
+		{
+			*p++ = bg.r;
+			*p++ = bg.g;
+			*p++ = bg.b;
+			*p++ = bg.a;
+		}
+	}
+}
+
+static GdkPixbuf *pango_get_pixbuf( const char *markup, rgba_color fg, rgba_color bg, int pad, int align )
+{
+	PangoFT2FontMap *fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
+	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
+	PangoLayout *layout = pango_layout_new( context );
+//	PangoFontDescription *font;
+	int w, h, x;
+	int i, j;
+	GdkPixbuf *pixbuf = NULL;
+	FT_Bitmap bitmap;
+	uint8_t *src = NULL;
+	uint8_t* dest = NULL;
+	int stride;
+
+	pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
+	pango_layout_set_width( layout, -1 ); // set wrapping constraints
+//	pango_layout_set_font_description( layout, "Sans 48" );
+//	pango_layout_set_spacing( layout, space );
+	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
+	pango_layout_set_markup( layout, markup, (markup == NULL ? 0 : strlen( markup ) ) );
+	pango_layout_get_pixel_size( layout, &w, &h );
+
+	pixbuf = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE /* has alpha */, 8, w + 2 * pad, h + 2 * pad );
+	pango_draw_background( pixbuf, bg );
+
+	stride = gdk_pixbuf_get_rowstride( pixbuf );
+
+	bitmap.width     = w;
+	bitmap.pitch     = 32 * ( ( w + 31 ) / 31 );
+	bitmap.rows      = h;
+	bitmap.buffer    = ( unsigned char * ) calloc( 1, h * bitmap.pitch );
+	bitmap.num_grays = 256;
+	bitmap.pixel_mode = ft_pixel_mode_grays;
+
+	pango_ft2_render_layout( &bitmap, layout, 0, 0 );
+
+	src = bitmap.buffer;
+	x = ( gdk_pixbuf_get_width( pixbuf ) - w - 2 * pad ) * align / 2 + pad;
+	dest = gdk_pixbuf_get_pixels( pixbuf ) + 4 * x + pad * stride;
+	for ( j = 0; j < h; j++ )
+	{
+		uint8_t *d = dest;
+		for ( i = 0; i < w; i++ )
+		{
+			float a = ( float ) bitmap.buffer[ j * bitmap.pitch + i ] / 255.0;
+			*d++ = ( int ) ( a * fg.r + ( 1 - a ) * bg.r );
+			*d++ = ( int ) ( a * fg.g + ( 1 - a ) * bg.g );
+			*d++ = ( int ) ( a * fg.b + ( 1 - a ) * bg.b );
+			*d++ = ( int ) ( a * fg.a + ( 1 - a ) * bg.a );
+		}
+		dest += stride;
+	}
+	free( bitmap.buffer );
+
+	g_object_unref( layout );
+	g_object_unref( context );
+	g_object_unref( fontmap );
+
+	return pixbuf;
 }
 

@@ -2,11 +2,12 @@
 TARGET = ../libmltgtk2.so
 
 OBJS = factory.o \
-	   producer_pixbuf.o 
+	   producer_pixbuf.o \
+	   producer_pango.o
 
-CFLAGS = `pkg-config gdk-pixbuf-2.0 --cflags` -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS = `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 
-LDFLAGS = `pkg-config gdk-pixbuf-2.0 --libs`
+LDFLAGS = `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
 
 SRCS := $(OBJS:.o=.c)
 
