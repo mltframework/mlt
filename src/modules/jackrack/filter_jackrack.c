@@ -355,6 +355,9 @@ void filter_close( mlt_filter this )
 		pthread_join( *jackrack_pthread, NULL );
 		mlt_pool_release( jackrack_pthread );
 	}
+	
+	this->parent.close = NULL;
+	mlt_service_close( &this->parent );
 }
 
 /** Constructor for the filter.
@@ -378,12 +381,13 @@ mlt_filter filter_jackrack_init( char *arg )
 			jack_set_process_callback( jack_client, jack_process, this );
 			//TODO: jack_on_shutdown( jack_client, jack_shutdown_cb, this );
 			this->process = filter_process;
+			this->close = filter_close;
 			pthread_mutex_init( output_lock, NULL );
 			pthread_cond_init( output_ready, NULL );
 			
 			mlt_properties_set( properties, "src", arg );
 			mlt_properties_set( properties, "_client_name", name );
-			mlt_properties_set_data( properties, "jack_client", jack_client, 0, ( mlt_destructor )filter_close, NULL );
+			mlt_properties_set_data( properties, "jack_client", jack_client, 0, NULL, NULL );
 			mlt_properties_set_int( properties, "_sample_rate", jack_get_sample_rate( jack_client ) );
 			mlt_properties_set_data( properties, "output_lock", output_lock, 0, NULL, NULL );
 			mlt_properties_set_data( properties, "output_ready", output_ready, 0, NULL, NULL );
