@@ -115,6 +115,10 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 
 mlt_position mlt_producer_position( mlt_producer this )
 {
+	//char *resource = mlt_properties_get( mlt_producer_properties( this ), "resource" );
+	//mlt_position frame = mlt_properties_get_position( mlt_producer_properties( this ), "frame" );
+	//mlt_position position = mlt_properties_get_position( mlt_producer_properties( this ), "position" );
+	//fprintf( stderr, "%s: %lld %lld\n", resource, frame, position );
 	return mlt_properties_get_position( mlt_producer_properties( this ), "position" );
 }
 
@@ -123,10 +127,6 @@ mlt_position mlt_producer_position( mlt_producer this )
 
 mlt_position mlt_producer_frame( mlt_producer this )
 {
-	//char *resource = mlt_properties_get( mlt_producer_properties( this ), "resource" );
-	//mlt_position frame = mlt_properties_get_position( mlt_producer_properties( this ), "frame" );
-	//mlt_position position = mlt_properties_get_position( mlt_producer_properties( this ), "position" );
-	//fprintf( stderr, "%s: %lld %lld\n", resource, frame, position );
 	return mlt_properties_get_position( mlt_producer_properties( this ), "frame" );
 }
 

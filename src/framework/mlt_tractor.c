@@ -135,7 +135,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			mlt_producer target = mlt_multitrack_producer( multitrack );
 			mlt_producer_seek( target, mlt_producer_frame( parent ) );
 			mlt_producer_set_speed( target, mlt_producer_get_speed( parent ) );
-			mlt_producer_set_in_and_out( parent, mlt_producer_get_in( target ), mlt_producer_get_out( target ) );
+			//mlt_producer_set_in_and_out( parent, mlt_producer_get_in( target ), mlt_producer_get_out( target ) );
 		}
 		else
 		{
@@ -158,7 +158,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				*frame = temp;
 			}
 			else if ( ( !mlt_frame_is_test_card( temp ) || !mlt_frame_is_test_audio( temp ) ) && looking &&
-					    mlt_producer_position( parent ) == mlt_properties_get_position( mlt_frame_properties( temp ), "position" ) )
+					    mlt_producer_frame( parent ) == mlt_frame_get_position( temp ) )
 			{
 				*frame = temp;
 				looking = 0;
