@@ -1,7 +1,7 @@
 inigo \
 colour:black out=199 \
 -track \
-hold:avformat:clip1.mpeg out=149 clip1.mpeg \
+hold:clip1.mpeg out=149 clip1.mpeg \
 -track \
 clip2.mpeg out=199 \
 -track \
