@@ -491,8 +491,23 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 void *memfill( void *dst, void *src, int l, int elements )
 {
 	int i = 0;
-	for ( i = 0; i < elements; i ++ )
-		dst = memcpy( dst, src, l ) + l;
+	if ( l == 2 )
+	{
+		uint8_t *p = dst;
+		uint8_t *src1 = src;
+		uint8_t *src2 = src + 1;
+		for ( i = 0; i < elements; i ++ )
+		{
+			*p ++ = *src1;
+			*p ++ = *src2;
+		}
+		dst = p;
+	}
+	else
+	{
+		for ( i = 0; i < elements; i ++ )
+			dst = memcpy( dst, src, l ) + l;
+	}
 	return dst;
 }
 
