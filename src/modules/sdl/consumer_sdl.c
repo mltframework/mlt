@@ -268,9 +268,6 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		SDL_AudioSpec request;
 		SDL_AudioSpec got;
 
-		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-		SDL_EnableUNICODE( 1 );
-
 		// specify audio format
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
 		this->playing = 0;
@@ -353,7 +350,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 			playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
 
 			// Check if frame is in the future or past
-			if ( playtime > elapsed + 60 || mlt_deque_count( this->queue ) < 12 )
+			if ( mlt_deque_count( this->queue ) > 25 )
+			{
+				frame = mlt_deque_pop_front( this->queue );
+			}
+			else if ( playtime > elapsed + 60 || mlt_deque_count( this->queue ) < 12 )
 			{
 				// no frame to show or remove
 				frame = NULL;
@@ -381,20 +382,19 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 
 	if ( this->playing && frame != NULL )
 	{
-		//struct timeb after;
+		struct timeb after;
 
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 
-		//ftime( &after );
+		ftime( &after );
 		//fprintf( stderr, "showing %lld at %lld\n", playtime, elapsed );
-		//elapsed += ( ( int64_t )after.time * 1000 + after.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
+		int processing = ( ( int64_t )after.time * 1000 + after.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
 
-		//playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
-		//struct timespec slow = { 0, ( playtime - elapsed ) * 500 };
-		//if ( slow.tv_nsec > 20000 )
-			//nanosleep( &slow, NULL );
-
+		int delay = playtime - elapsed - processing;
+		struct timespec slow = { 0, ( delay % 1000 ) * 500000 };
+		if ( slow.tv_nsec > 1000000 )
+			nanosleep( &slow, NULL );
 
 		// Handle events
 		if ( this->sdl_screen != NULL )
@@ -533,7 +533,10 @@ static void *consumer_thread( void *arg )
 		fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
 		return NULL;
 	}
-	
+
+	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+	SDL_EnableUNICODE( 1 );
+
 	// Loop until told not to
 	while( this->running )
 	{
