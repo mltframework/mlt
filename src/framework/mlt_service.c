@@ -271,6 +271,10 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 	mlt_service_base *base = this->local;
 	mlt_position position = mlt_properties_get_position( frame_properties, "_position" );
 
+	// Hmm - special case for cuts - apply filters from the parent first
+	if ( mlt_properties_get_int( filter_properties, "_cut" ) )
+		mlt_service_apply_filters( ( mlt_service )mlt_properties_get_data( filter_properties, "_cut_parent", NULL ), frame, 0 );
+
 	if ( index == 0 || mlt_properties_get_int( filter_properties, "_filter_private" ) == 0 )
 	{
 		// Process the frame with the attached filters

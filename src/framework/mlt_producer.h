@@ -64,6 +64,9 @@ extern void mlt_producer_prepare_next( mlt_producer self );
 extern int mlt_producer_attach( mlt_producer self, mlt_filter filter );
 extern int mlt_producer_detach( mlt_producer self, mlt_filter filter );
 extern mlt_filter mlt_producer_filter( mlt_producer self, int index );
+extern mlt_producer mlt_producer_cut( mlt_producer self, int in, int out );
+extern int mlt_producer_is_cut( mlt_producer self );
+extern mlt_producer mlt_producer_cut_parent( mlt_producer self );
 extern void mlt_producer_close( mlt_producer self );
 
 #endif

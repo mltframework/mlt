@@ -323,19 +323,20 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 			{
 				if ( info.producer != NULL )
 				{
-					char *service_s = mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" );
-					char *resource_s = mlt_properties_get( mlt_producer_properties( info.producer ), "resource" );
+					mlt_producer producer = mlt_producer_cut_parent( info.producer );
+					char *service_s = mlt_properties_get( mlt_producer_properties( producer ), "mlt_service" );
+					char *resource_s = mlt_properties_get( mlt_producer_properties( producer ), "resource" );
 					if ( resource_s != NULL && !strcmp( resource_s, "<tractor>" ) )
 					{
-						serialise_tractor( context, MLT_SERVICE( info.producer ), node );
+						serialise_tractor( context, MLT_SERVICE( producer ), node );
 						context->pass ++;
-						serialise_tractor( context, MLT_SERVICE( info.producer ), node );
+						serialise_tractor( context, MLT_SERVICE( producer ), node );
 						context->pass --;
 					}
 					else if ( service_s != NULL && strcmp( service_s, "blank" ) != 0 )
-						serialise_service( context, MLT_SERVICE( info.producer ), node );
+						serialise_service( context, MLT_SERVICE( producer ), node );
 					else if ( resource_s != NULL && !strcmp( resource_s, "<playlist>" ) )
-						serialise_playlist( context, MLT_SERVICE( info.producer ), node );
+						serialise_playlist( context, MLT_SERVICE( producer ), node );
 				}
 			}
 		}
@@ -353,7 +354,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 		{
 			if ( ! mlt_playlist_get_clip_info( MLT_PLAYLIST( service ), &info, i ) )
 			{
-				char *service_s = mlt_properties_get( mlt_producer_properties( info.producer ), "mlt_service" );
+				mlt_producer producer = mlt_producer_cut_parent( info.producer );
+				char *service_s = mlt_properties_get( mlt_producer_properties( producer ), "mlt_service" );
 				if ( service_s != NULL && strcmp( service_s, "blank" ) == 0 )
 				{
 					char length[ 20 ];
@@ -366,12 +368,14 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 				{
 					char temp[ 20 ];
 					xmlNode *entry = xmlNewChild( child, NULL, "entry", NULL );
-					id = westley_get_id( context, MLT_SERVICE( info.producer ), westley_existing );
+					id = westley_get_id( context, MLT_SERVICE( producer ), westley_existing );
 					xmlNewProp( entry, "producer", id );
 					sprintf( temp, "%d", info.frame_in );
 					xmlNewProp( entry, "in", temp );
 					sprintf( temp, "%d", info.frame_out );
 					xmlNewProp( entry, "out", temp );
+					if ( mlt_producer_is_cut( info.producer ) )
+						serialise_service_filters( context, mlt_producer_service( info.producer ), entry );
 				}
 			}
 		}

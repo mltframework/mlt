@@ -215,9 +215,18 @@ static void mlt_playlist_listener( mlt_producer producer, mlt_playlist this )
 /** Append to the virtual playlist.
 */
 
-static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer, mlt_position in, mlt_position out )
+static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, mlt_position in, mlt_position out )
 {
+	mlt_producer producer = mlt_producer_is_cut( source ) ? source : mlt_producer_cut( source, in, out );
 	mlt_properties properties = mlt_producer_properties( producer );
+
+	// If we have a cut, then use the in/out points from the cut
+	if ( mlt_producer_is_cut( source ) )
+	{
+		mlt_properties_inc_ref( properties );
+		in = mlt_producer_get_in( source );
+		out = mlt_producer_get_out( source );
+	}
 
 	// Check that we have room
 	if ( this->count >= this->size )
@@ -243,7 +252,6 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 
 	this->count ++;
 
-	mlt_properties_inc_ref( properties );
 
 	return mlt_playlist_virtual_refresh( this );
 }
@@ -296,7 +304,6 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this )
 	// Seek in real producer to relative position
 	if ( producer != NULL )
 	{
-		position += this->list[ i ]->frame_in;
 		mlt_producer_seek( producer, position );
 	}
 	else if ( !strcmp( eof, "pause" ) && total > 0 )
@@ -315,7 +322,7 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this )
 		mlt_producer this_producer = mlt_playlist_producer( this );
 		mlt_producer_seek( this_producer, 0 );
 		producer = entry->producer;
-		mlt_producer_seek( producer, entry->frame_in );
+		mlt_producer_seek( producer, 0 );
 	}
 	else
 	{

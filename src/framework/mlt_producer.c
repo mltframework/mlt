@@ -130,6 +130,53 @@ mlt_producer mlt_producer_new( )
 	return this;
 }
 
+/** Determine if producer is a cut.
+*/
+
+int mlt_producer_is_cut( mlt_producer this )
+{
+	return mlt_properties_get_int( mlt_producer_properties( this ), "_cut" );
+}
+
+/** Obtain the parent producer.
+*/
+
+mlt_producer mlt_producer_cut_parent( mlt_producer this )
+{
+	mlt_properties properties = mlt_producer_properties( this );
+	if ( mlt_producer_is_cut( this ) )
+		return mlt_properties_get_data( properties, "_cut_parent", NULL );
+	else
+		return this;
+}
+
+/** Create a cut of this producer
+*/
+
+mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
+{
+	mlt_producer result = mlt_producer_new( );
+	mlt_producer parent = mlt_producer_cut_parent( this );
+	mlt_properties properties = mlt_producer_properties( result );
+	mlt_properties parent_props = mlt_producer_properties( parent );
+
+	// Special case - allow for a cut of the entire producer (this will squeeze all other cuts to 0)
+	if ( in <= 0 )
+		in = 0;
+	if ( out >= mlt_producer_get_playtime( parent ) )
+		out = mlt_producer_get_playtime( parent ) - 1;
+
+	mlt_properties_inc_ref( parent_props );
+	mlt_properties_set_int( properties, "_cut", 1 );
+	mlt_properties_set_data( properties, "_cut_parent", parent, 0, ( mlt_destructor )mlt_producer_close, NULL );
+	mlt_properties_set_position( properties, "length", mlt_properties_get_position( parent_props, "length" ) );
+	mlt_properties_set_position( properties, "in", 0 );
+	mlt_properties_set_position( properties, "out", 0 );
+	mlt_producer_set_in_and_out( result, in, out );
+
+	return result;
+}
+
 /** Get the parent service object.
 */
 
@@ -152,8 +199,13 @@ mlt_properties mlt_producer_properties( mlt_producer this )
 int mlt_producer_seek( mlt_producer this, mlt_position position )
 {
 	// Determine eof handling
-	char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
-	int use_points = 1 - mlt_properties_get_int( mlt_producer_properties( this ), "ignore_points" );
+	mlt_properties properties = mlt_producer_properties( this );
+	char *eof = mlt_properties_get( properties, "eof" );
+	int use_points = 1 - mlt_properties_get_int( properties, "ignore_points" );
+
+	// Recursive behaviour for cuts...
+	if ( mlt_producer_is_cut( this ) )
+		mlt_producer_seek( mlt_producer_cut_parent( this ), position + mlt_producer_get_in( this ) );
 
 	// Check bounds
 	if ( position < 0 )
@@ -303,40 +355,52 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	int result = 1;
 	mlt_producer this = service->child;
 
-	// Determine eof handling
-	char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
-
-	// A properly instatiated producer will have a get_frame method...
-	if ( this->get_frame == NULL || ( !strcmp( eof, "continue" ) && mlt_producer_position( this ) > mlt_producer_get_out( this ) ) )
+	if ( !mlt_producer_is_cut( this ) )
 	{
-		// Generate a test frame
-		*frame = mlt_frame_init( );
+		// Determine eof handling
+		char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
 
-		// Set the position
-		result = mlt_frame_set_position( *frame, mlt_producer_position( this ) );
+		// A properly instatiated producer will have a get_frame method...
+		if ( this->get_frame == NULL || ( !strcmp( eof, "continue" ) && mlt_producer_position( this ) > mlt_producer_get_out( this ) ) )
+		{
+			// Generate a test frame
+			*frame = mlt_frame_init( );
 
-		// Mark as a test card
-		mlt_properties_set_int( mlt_frame_properties( *frame ), "test_image", 1 );
-		mlt_properties_set_int( mlt_frame_properties( *frame ), "test_audio", 1 );
+			// Set the position
+			result = mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
-		// Calculate the next position
-		mlt_producer_prepare_next( this );
+			// Mark as a test card
+			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_image", 1 );
+			mlt_properties_set_int( mlt_frame_properties( *frame ), "test_audio", 1 );
+
+			// Calculate the next position
+			mlt_producer_prepare_next( this );
+		}
+		else
+		{
+			// Get the frame from the implementation
+			result = this->get_frame( this, frame, index );
+		}
+
+		// Copy the fps and speed of the producer onto the frame
+		mlt_properties properties = mlt_frame_properties( *frame );
+		double speed = mlt_producer_get_speed( this );
+		mlt_properties_set_double( properties, "_speed", speed );
+		mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( this ) );
+		mlt_properties_set_int( properties, "test_audio", mlt_frame_is_test_audio( *frame ) );
+		mlt_properties_set_int( properties, "test_image", mlt_frame_is_test_card( *frame ) );
 	}
 	else
 	{
-		// Get the frame from the implementation
-		result = this->get_frame( this, frame, index );
+		mlt_properties properties = mlt_producer_properties( this );
+		mlt_producer_seek( this, mlt_properties_get_int( properties, "_position" ) );
+		result = producer_get_frame( mlt_producer_service( mlt_producer_cut_parent( this ) ), frame, index );
+		double speed = mlt_producer_get_speed( this );
+		mlt_properties_set_double( mlt_frame_properties( *frame ), "_speed", speed );
+		mlt_producer_prepare_next( this );
 	}
 
-	// Copy the fps and speed of the producer onto the frame
-	mlt_properties properties = mlt_frame_properties( *frame );
-	mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( this ) );
-	double speed = mlt_producer_get_speed( this );
-	mlt_properties_set_double( properties, "_speed", speed );
-	mlt_properties_set_int( properties, "test_audio", mlt_frame_is_test_audio( *frame ) );
-	mlt_properties_set_int( properties, "test_image", mlt_frame_is_test_card( *frame ) );
-
-	return 0;
+	return result;
 }
 
 /** Attach a filter.

@@ -599,7 +599,76 @@ static void on_start_blank( deserialise_context context, const xmlChar *name, co
 	}
 }
 
-static void on_start_entry_track( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+static void on_start_entry( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+{
+	mlt_producer entry = NULL;
+	mlt_properties temp = mlt_properties_new( );
+
+	for ( ; atts != NULL && *atts != NULL; atts += 2 )
+	{
+		mlt_properties_set( temp, (char*) atts[0], (char*) atts[1] );
+		
+		// Look for the producer attribute
+		if ( strcmp( atts[ 0 ], "producer" ) == 0 )
+		{
+			mlt_producer producer = mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL );
+			if ( producer !=  NULL )
+				mlt_properties_set_data( temp, "producer", producer, 0, NULL, NULL );
+		}
+	}
+
+	// If we have a valid entry
+	if ( mlt_properties_get_data( temp, "producer", NULL ) != NULL )
+	{
+		mlt_playlist_clip_info info;
+		enum service_type parent_type;
+		mlt_service parent = context_pop_service( context, &parent_type );
+		mlt_producer producer = mlt_properties_get_data( temp, "producer", NULL );
+
+		if ( parent_type == mlt_playlist_type )
+		{
+			// Append the producer to the playlist
+			if ( mlt_properties_get( temp, "in" ) != NULL || mlt_properties_get( temp, "out" ) != NULL )
+			{
+				mlt_playlist_append_io( MLT_PLAYLIST( parent ), producer,
+					mlt_properties_get_position( temp, "in" ), 
+					mlt_properties_get_position( temp, "out" ) );
+			}
+			else
+			{
+				mlt_playlist_append( MLT_PLAYLIST( parent ), producer );
+			}
+
+			mlt_playlist_get_clip_info( MLT_PLAYLIST( parent ), &info, mlt_playlist_count( MLT_PLAYLIST( parent ) ) - 1 );
+			entry = info.producer;
+		}
+		else
+		{
+			fprintf( stderr, "Entry not part of a playlist...\n" );
+		}
+
+		context_push_service( context, parent, parent_type );
+	}
+
+	// Push the cut onto the stack
+	context_push_service( context, mlt_producer_service( entry ), mlt_entry_type );
+
+	mlt_properties_close( temp );
+}
+
+static void on_end_entry( deserialise_context context, const xmlChar *name )
+{
+	// Get the entry from the stack
+	enum service_type entry_type;
+	mlt_service entry = context_pop_service( context, &entry_type );
+
+	if ( entry == NULL && entry_type != mlt_entry_type )
+	{
+		fprintf( stderr, "Invalid state at end of entry\n" );
+	}
+}
+
+static void on_start_track( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
 	// use a dummy service to hold properties to allow arbitrary nesting
 	mlt_service service = calloc( 1, sizeof( struct mlt_service_s ) );
@@ -608,10 +677,7 @@ static void on_start_entry_track( deserialise_context context, const xmlChar *na
 	// Push the dummy service onto the stack
 	context_push_service( context, service, mlt_entry_type );
 	
-	if ( strcmp( name, "entry" ) == 0 )
-		mlt_properties_set( mlt_service_properties( service ), "resource", "<entry>" );
-	else
-		mlt_properties_set( mlt_service_properties( service ), "resource", "<track>" );
+	mlt_properties_set( mlt_service_properties( service ), "resource", "<track>" );
 	
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
@@ -685,50 +751,6 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 	else
 	{
 		fprintf( stderr, "Invalid state at end of track\n" );
-	}
-}
-
-static void on_end_entry( deserialise_context context, const xmlChar *name )
-{
-	// Get the entry from the stack
-	enum service_type entry_type;
-	mlt_service entry = context_pop_service( context, &entry_type );
-
-	if ( entry != NULL && entry_type == mlt_entry_type )
-	{
-		mlt_properties entry_props = mlt_service_properties( entry );
-		enum service_type parent_type;
-		mlt_service parent = context_pop_service( context, &parent_type );
-		mlt_producer producer = mlt_properties_get_data( entry_props, "producer", NULL );
-
-		if ( parent_type == mlt_playlist_type )
-		{
-			// Append the producer to the playlist
-			if ( mlt_properties_get( mlt_service_properties( entry ), "in" ) != NULL ||
-				mlt_properties_get( mlt_service_properties( entry ), "out" ) != NULL )
-			{
-				mlt_playlist_append_io( MLT_PLAYLIST( parent ), producer,
-					mlt_properties_get_position( mlt_service_properties( entry ), "in" ), 
-					mlt_properties_get_position( mlt_service_properties( entry ), "out" ) );
-			}
-			else
-			{
-				mlt_playlist_append( MLT_PLAYLIST( parent ), producer );
-			}
-		}
-		else
-		{
-			fprintf( stderr, "Invalid position for an entry...\n" );
-		}
-
-		if ( parent != NULL )
-			context_push_service( context, parent, parent_type );
-
-		mlt_service_close( entry );
-	}
-	else
-	{
-		fprintf( stderr, "Invalid state at end of entry\n" );
 	}
 }
 
@@ -994,8 +1016,10 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_producer( context, name, atts );
 	else if ( strcmp( name, "blank" ) == 0 )
 		on_start_blank( context, name, atts );
-	else if ( strcmp( name, "entry" ) == 0 || strcmp( name, "track" ) == 0 )
-		on_start_entry_track( context, name, atts );
+	else if ( strcmp( name, "entry" ) == 0 )
+		on_start_entry( context, name, atts );
+	else if ( strcmp( name, "track" ) == 0 )
+		on_start_track( context, name, atts );
 	else if ( strcmp( name, "filter" ) == 0 )
 		on_start_filter( context, name, atts );
 	else if ( strcmp( name, "transition" ) == 0 )
