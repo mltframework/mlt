@@ -3,9 +3,7 @@ include ../../../config.mak
 TARGET = ../libmltffmpeg.so
 
 OBJS = factory.o \
-	   producer_ffmpeg.o \
-	   filter_ffmpeg_dub.o \
-	   consumer_ffmpeg.o
+	   producer_ffmpeg.o
 
 CFLAGS += -I../..
 
