@@ -91,16 +91,13 @@ static inline void serialise_properties( mlt_properties properties, xmlNode *nod
 		if ( name != NULL &&
 			 name[ 0 ] != '_' &&
 			 mlt_properties_get_value( properties, i ) != NULL &&
-			 strcmp( name, "westley" ) != 0 )
+			 strcmp( name, "westley" ) != 0 &&
+			 strcmp( name, "in" ) != 0 &&
+			 strcmp( name, "out" ) != 0 )
 		{
-#if 1
 			p = xmlNewChild( node, NULL, "property", NULL );
 			xmlNewProp( p, "name", mlt_properties_get_name( properties, i ) );
 			xmlNodeSetContent( p, mlt_properties_get_value( properties, i ) );
-#else
-			p = node;
-			xmlNewProp( p, mlt_properties_get_name( properties, i ), mlt_properties_get_value( properties, i ) );
-#endif
 		}
 	}
 }
@@ -301,6 +298,8 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				{
 					snprintf( id, ID_SIZE, "filter%d", context->filter_count++ );
 					xmlNewProp( child, "id", id );
+					xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
+					xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 				}
 
 				serialise_properties( properties, child );
@@ -323,6 +322,8 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				{
 					snprintf( id, ID_SIZE, "transition%d", context->transition_count++ );
 					xmlNewProp( child, "id", id );
+					xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
+					xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 				}
 
 				serialise_properties( properties, child );
