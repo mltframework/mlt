@@ -178,6 +178,7 @@ static void *consumer_thread( void *arg )
 	// internal intialization
 	int first = 1;
 	mlt_frame frame = NULL;
+	int last_position = -1;
 
 	// properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -255,6 +256,18 @@ static void *consumer_thread( void *arg )
 
 			// Make sure the recipient knows that this frame isn't really rendered
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 0 );
+
+			// Optimisation to reduce latency
+			if ( speed == 1.0 )
+			{
+				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
+					mlt_consumer_purge( this->play );
+				last_position = mlt_frame_get_position( frame );
+			}
+			else
+			{
+				last_position = -1;
+			}
 
 			// If we're not the first frame and both consumers are stopped, then stop ourselves
 			if ( !first && mlt_consumer_is_stopped( this->play ) && mlt_consumer_is_stopped( this->still ) )

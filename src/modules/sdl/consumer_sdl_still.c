@@ -123,7 +123,9 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		this->window_height = this->height;
 
 		// Set the sdl flags
-		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
+		//this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
+		// Experimental settings
+		this->sdl_flags = SDL_RESIZABLE | SDL_DOUBLEBUF;
 
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
@@ -486,7 +488,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
 	}
 	
-	if ( !mlt_consumer_is_stopped( &this->parent ) && this->sdl_screen != NULL && this->sdl_screen->pixels != NULL )
+	if ( !mlt_consumer_is_stopped( &this->parent ) && SDL_GetVideoSurface( ) != NULL && this->sdl_screen != NULL && this->sdl_screen->pixels != NULL )
 	{
 		memset( this->sdl_screen->pixels, 0, this->window_width * this->window_height * this->sdl_screen->format->BytesPerPixel );
 
@@ -533,7 +535,7 @@ static void *consumer_thread( void *arg )
 
 	// internal intialization
 	mlt_frame frame = NULL;
-	struct timespec tm = { 0, 99999999 };
+	struct timespec tm = { 0, 10000000 };
 
 	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
 	{

@@ -222,7 +222,7 @@ int mlt_consumer_put_frame( mlt_consumer this, mlt_frame frame )
 			tm.tv_nsec = now.tv_usec * 1000;
 			pthread_cond_timedwait( &this->put_cond, &this->put_mutex, &tm );
 		}
-		if ( this->put == NULL )
+		if ( !mlt_consumer_is_stopped( this ) && this->put == NULL )
 			this->put = frame;
 		else
 			mlt_frame_close( frame );
