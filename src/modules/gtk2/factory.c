@@ -26,6 +26,7 @@
 
 void *mlt_create_producer( char *id, void *arg )
 {
+	g_type_init( );
 	if ( !strcmp( id, "pixbuf" ) )
 		return producer_pixbuf_init( arg );
 	else if ( !strcmp( id, "pango" ) )
@@ -35,6 +36,7 @@ void *mlt_create_producer( char *id, void *arg )
 
 void *mlt_create_filter( char *id, void *arg )
 {
+	g_type_init( );
 	if ( !strcmp( id, "gtkrescale" ) )
 		return filter_rescale_init( arg );
 	return NULL;

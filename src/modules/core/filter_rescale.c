@@ -140,6 +140,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int owidth = *width;
 		int oheight = *height;
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
+		int wanted_format = *format;
 
 		// Default from the scaler if not specifed on the frame
 		if ( interps == NULL )
@@ -186,6 +187,15 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			{
 				// Call the local scaler
 				scaler_method( this, image, *format, mlt_image_yuv422, iwidth, iheight, owidth, oheight );
+				*width = owidth;
+				*height = oheight;
+			}
+			else if ( *format == mlt_image_rgb24 && wanted_format == mlt_image_rgb24 )
+			{
+				// Call the local scaler
+				scaler_method( this, image, *format, mlt_image_rgb24, iwidth, iheight, owidth, oheight );
+
+				// Return the output
 				*width = owidth;
 				*height = oheight;
 			}
