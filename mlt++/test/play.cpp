@@ -18,14 +18,13 @@ int main( int argc, char **argv )
 	filter->connect( *producer );
 	consumer->connect( *filter );
 	consumer->start( );
+	struct timespec tm = { 1, 0 };
 	while ( !consumer->is_stopped( ) )
-	{
-		struct timespec tm = { 1, 0 };
 		nanosleep( &tm, NULL );
-	}
 	consumer->stop( );
 	delete consumer;
 	delete producer;
 	delete filter;
+	Factory::close( );
 	return 0;
 }

@@ -1,4 +1,4 @@
-prefix = /usr/local
+include ../config.mak
 CXXFLAGS = -Wall -pthread `mlt-config --cflags`
 LDFLAGS = `mlt-config --libs`
 INSTALL = install
@@ -33,3 +33,5 @@ install:
 	$(INSTALL) -m 755 $(TARGET) $(prefix)/lib
 	$(INSTALL) -d "$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(prefix)/include/mlt++"
+	/sbin/ldconfig || exit 0
+

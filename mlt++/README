@@ -1,0 +1,92 @@
+MLT++
+-----
+
+	This mlt sub-project provides a C++ wrapping for the MLT library.
+
+INSTALLATION
+------------
+
+	./configure [ --prefix=path ]
+	make
+	make install
+
+USAGE
+-----
+
+	Use the following definitions in a Makefile to compile and link with mlt++:
+
+	CXXFLAGS=`mlt-config -Wall`
+	LDFLAGS=-lmlt++
+
+	All definitions are placed in an Mlt namespace, and adhere closely to the C
+	naming convention. Mappings always follow the pattern:
+
+	Factory methods:
+
+		mlt_factory_init		=>	Mlt::Factory::init
+		mlt_factory_producer	=>	Mlt::Factory::producer
+		etc
+
+	Types:
+
+		mlt_producer			==>	Mlt::Producer
+		mlt_consumer			==>	Mlt::Consumer
+		etc
+
+	Methods:
+
+		mlt_type_method			==> Mlt:Type.method
+	ie:	mlt_playlist_append		==> Mlt::Playlist.append
+		etc
+
+	Enumerators and macros are reused directly from the C library.
+
+CLASS HIERARCHY
+---------------
+
+	The currently mapped objects are shown in the following hierarchy:
+
+		Factory
+		Properties
+			Frame
+			Service
+				Consumer
+				Filter
+				Producer
+					Playlist
+				Transition
+
+SPECIAL CASES
+-------------
+
+	Care should be taken with wrapper objects. 
+
+	Taking, as an example, the C function that returns the immediate consumer of
+	a service:
+
+		mlt_service mlt_service_consumer( mlt_service );
+
+	This maps to:
+
+		Mlt::Service *Mlt::Service.consumer( );
+
+	Note that you get an object back - it is never the original object, but a 
+	wrapping object. This is done to keep consistency with the C api which may 
+	instantiate C instances - therefore there it cannot be assumed that a C++ 
+	object exists for all mlt service instances.
+
+	As such, it is mandatory that you delete these objects. The original will 
+	not be affected. Further to that, all modifications (to properties or its
+	state of connection) will be reflected in the original object.
+
+	This excludes the use of the RTTI to determine the real type of the object -
+	this can only be done by parsing the objects properties.
+
+LIMITATIONS
+-----------
+
+	The mechanisms for the definition of new services have deliberately not 
+	been exposed by the C++ wrappings - this is done to ensure that service 
+	networks constructed can be serialised and used by existing applications
+	which are based on the C API (such as miracle).
+

@@ -33,12 +33,18 @@ int Service::connect_producer( Service &producer, int index )
 
 Service *Service::producer( )
 {
-	return new ServiceInstance( mlt_service_producer( get_service( ) ) );
+	if ( get_service( ) != NULL )
+		return new ServiceInstance( mlt_service_producer( get_service( ) ) );
+	else
+		return NULL;
 }
 
 Service *Service::consumer( )
 {
-	return new ServiceInstance( mlt_service_consumer( get_service( ) ) );
+	if ( get_service( ) != NULL )
+		return new ServiceInstance( mlt_service_consumer( get_service( ) ) );
+	else
+		return NULL;
 }
 
 Frame *Service::get_frame( int index )
