@@ -48,6 +48,7 @@ namespace Mlt
 			void refresh( );
 			int set_track( Producer &producer, int index );
 			Producer *track( int index );
+			int count( );
 	};
 }
 

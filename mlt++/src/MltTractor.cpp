@@ -87,5 +87,11 @@ int Tractor::set_track( Producer &producer, int index )
 
 Producer *Tractor::track( int index )
 {
-	return new Producer( mlt_tractor_get_track( get_tractor( ), index ) );
+	mlt_producer producer = mlt_tractor_get_track( get_tractor( ), index );
+	return producer != NULL ? new Producer( producer ) : NULL;
+}
+
+int Tractor::count( )
+{
+	return mlt_multitrack_count( mlt_tractor_multitrack( get_tractor( ) ) );
 }

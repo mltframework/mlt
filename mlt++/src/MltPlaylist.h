@@ -80,6 +80,8 @@ namespace Mlt
 			int mix_add( int clip, Transition *transition );
 			int repeat( int clip, int count );
 			Producer *get_clip( int clip );
+			Producer *get_clip_at( int position );
+			int get_clip_index_at( int position );
 			bool is_mix( int clip );
 	};
 }

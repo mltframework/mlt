@@ -181,6 +181,16 @@ Producer *Playlist::get_clip( int clip )
 	return new Producer( mlt_playlist_get_clip( get_playlist( ), clip ) );
 }
 
+Producer *Playlist::get_clip_at( int position )
+{
+	return new Producer( mlt_playlist_get_clip_at( get_playlist( ), position ) );
+}
+
+int Playlist::get_clip_index_at( int position )
+{
+	return mlt_playlist_get_clip_index_at( get_playlist( ), position );
+}
+
 bool Playlist::is_mix( int clip )
 {
 	return mlt_playlist_clip_is_mix( get_playlist( ), clip ) != 0;
