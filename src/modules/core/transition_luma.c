@@ -34,7 +34,7 @@ typedef struct
 	struct mlt_transition_s parent;
 	char *filename;
 	int width;
-	int height;
+	int height;                                      		
 	double *bitmap;
 }
 transition_luma;
@@ -313,7 +313,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 
 	// If the filename property changed, reload the map
 	char *luma_file = mlt_properties_get( properties, "filename" );
-	if ( luma_file != NULL && luma_file != this->filename )
+	if ( luma_file != NULL && ( this->filename == NULL || ( this->filename && strcmp( luma_file, this->filename ) ) ) )
 	{
 		int width = mlt_properties_get_int( b_props, "width" );
 		int height = mlt_properties_get_int( b_props, "height" );
@@ -321,12 +321,16 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 		FILE *pipe;
 		
 		command[ 511 ] = '\0';
-		this->filename = luma_file;
+		if ( this->filename )
+			free( this->filename );
+		this->filename = strdup( luma_file );
 		snprintf( command, 511, "anytopnm %s | pnmscale -width %d -height %d", luma_file, width, height );
 		//pipe = popen( command, "r" );
 		pipe = fopen( luma_file, "r" );
 		if ( pipe != NULL )
 		{
+			if ( this->bitmap )
+				free( this->bitmap );
 			luma_read_pgm( pipe, &this->bitmap, &this->width, &this->height );
 			//pclose( pipe );
 			fclose( pipe );
@@ -393,8 +397,9 @@ static void transition_close( mlt_transition parent )
 	if ( this->bitmap )
 		free( this->bitmap );
 	
-	parent->close = NULL;
-	mlt_transition_close( parent );
+	if ( this->filename )
+		free( this->filename );
+
 	free( this );
 }
 

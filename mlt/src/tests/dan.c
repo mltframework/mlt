@@ -19,13 +19,13 @@ int main( int argc, char **argv )
 	// Start the consumer...
 	int vstd = mlt_video_standard_ntsc;
 	//mlt_consumer consumer = mlt_factory_consumer( "bluefish", &vstd );
-	mlt_consumer consumer = mlt_factory_consumer( "sdl", "NTSC" );
+	mlt_consumer consumer = mlt_factory_consumer( "sdl", "PAL" );
 
 	// Create the producer(s)
-	mlt_producer dv1 = mlt_factory_producer( "mcdv", file1 );
-	mlt_producer_set_in_and_out( dv1, 300, 305 );
+	mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );
+	mlt_producer_set_in_and_out( dv1, 0, 5 );
 	
-	mlt_producer dv2 = mlt_factory_producer( "mcdv", file2 );
+	mlt_producer dv2 = mlt_factory_producer( "libdv", file2 );
 	//mlt_producer_set_in_and_out( dv2, 10.0, 30.0 );
 
 #if 0
@@ -56,6 +56,7 @@ int main( int argc, char **argv )
 
 	mlt_playlist playlist1 = mlt_playlist_init();
 	mlt_playlist_append( playlist1, dv1 );
+	mlt_playlist_blank( playlist1, 1.0 );
 
 	mlt_playlist playlist2 = mlt_playlist_init();
 	mlt_playlist_blank( playlist2, 3.0 );
@@ -75,7 +76,7 @@ int main( int argc, char **argv )
 	mlt_transition transition = mlt_factory_transition( "luma", NULL );
 	mlt_transition_connect( transition, mlt_multitrack_service( multitrack ), 0, 1 );
 	mlt_transition_set_in_and_out( transition, 3.0, 5.0 );
-	mlt_properties_set( mlt_transition_properties( transition ), "filename", "clock.pgm" );
+	//mlt_properties_set( mlt_transition_properties( transition ), "filename", "clock.pgm" );
 	mlt_properties_set_double( mlt_transition_properties( transition ), "softness", 0.1 );
 
 	// Buy a tractor and connect it to the filter

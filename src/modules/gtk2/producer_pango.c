@@ -288,8 +288,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_double( properties, "mix",  mlt_properties_get_double( producer_props, "mix" ) );
 
 		// if picture sequence pass the image and alpha data without destructor
-		mlt_properties_set_data( properties, "image", this->image, 0, NULL, NULL );
-		mlt_properties_set_data( properties, "alpha", this->alpha, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "image", this->image, this->width * this->height * 2, NULL, NULL );
+		mlt_properties_set_data( properties, "alpha", this->alpha, this->width * this->height, NULL, NULL );
 
 		// Set alpha mask call back
 		( *frame )->get_alpha_mask = producer_get_alpha_mask;

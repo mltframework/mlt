@@ -197,8 +197,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Obtain properties of frame
 	mlt_properties properties = mlt_frame_properties( *frame );
 
+	// Obtain properties of producer
+	mlt_properties producer_props = mlt_producer_properties( producer );
+
 	// Get the time to live for each frame
-	double ttl = mlt_properties_get_double( mlt_producer_properties( producer ), "ttl" );
+	double ttl = mlt_properties_get_double( producer_props, "ttl" );
 
 	// Image index
 	int image_idx = ( int )floor( mlt_producer_position( producer ) / ttl ) % this->count;
@@ -212,6 +215,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Set width/height
 		mlt_properties_set_int( properties, "width", this->width );
 		mlt_properties_set_int( properties, "height", this->height );
+
+		// Set the compositing properties
+		mlt_properties_set_int( properties, "x", mlt_properties_get_int( producer_props, "x" ) );
+		mlt_properties_set_int( properties, "y", mlt_properties_get_int( producer_props, "y" ) );
+		mlt_properties_set_double( properties, "mix",  mlt_properties_get_double( producer_props, "mix" ) );
 
 		// if picture sequence pass the image and alpha data without destructor
 		mlt_properties_set_data( properties, "image", this->image, 0, NULL, NULL );
@@ -292,13 +300,18 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "width", this->width );
 		mlt_properties_set_int( properties, "height", this->height );
 
+		// Set the compositing properties
+		mlt_properties_set_int( properties, "x", mlt_properties_get_int( producer_props, "x" ) );
+		mlt_properties_set_int( properties, "y", mlt_properties_get_int( producer_props, "y" ) );
+		mlt_properties_set_double( properties, "mix",  mlt_properties_get_double( producer_props, "mix" ) );
+
 		// Pass alpha and image on properties with or without destructor
 		this->image = image;
 		this->alpha = alpha;
 
 		// pass the image and alpha data without destructor
-		mlt_properties_set_data( properties, "image", image, 0, NULL, NULL );
-		mlt_properties_set_data( properties, "alpha", alpha, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "image", image, this->width * this->height * 2, NULL, NULL );
+		mlt_properties_set_data( properties, "alpha", alpha, this->width * this->height, NULL, NULL );
 
 		// Set alpha call back
 		( *frame )->get_alpha_mask = producer_get_alpha_mask;

@@ -412,10 +412,15 @@ int mlt_frame_composite_yuv( mlt_frame this, mlt_frame that, int x, int y, float
 
 	format_src = mlt_image_yuv422;
 	format_dest = mlt_image_yuv422;
-	
+
+	//fprintf( stderr, "call get_image on frame a\n"), fflush( stderr );
 	mlt_frame_get_image( this, &p_dest, &format_dest, &width_dest, &height_dest, 1 /* writable */ );
-	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 0 /* writable */ );
-	
+	//fprintf( stderr, "call get_image on frame b\n"), fflush( stderr );
+	mlt_frame_get_image( that, &p_src, &format_src, &width_src, &height_src, 1 /* writable */ );
+
+	//fprintf( stderr, "mlt_frame_composite_yuv %dx%d -> %dx%d\n", width_src, height_src, width_dest, height_dest );
+	//fflush(stderr);
+	//return ret;
 	stride_src = width_src * 2;
 	stride_dest = width_dest * 2;
 	
@@ -698,16 +703,23 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	int16_t *src, *dest;
 	static int16_t *extra_src = NULL, *extra_dest = NULL;
 	static int extra_src_samples = 0, extra_dest_samples = 0;
-	int frequency_src, frequency_dest;
-	int channels_src, channels_dest;
-	int samples_src, samples_dest;
+	int frequency_src = 0, frequency_dest = 0;
+	int channels_src = 0, channels_dest = 0;
+	int samples_src = 0, samples_dest = 0;
 	int i, j;
 
 	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
+	//fprintf( stderr, "frame dest samples %d channels %d timecode %f\n", samples_dest, channels_dest, mlt_properties_get_timecode( mlt_frame_properties( this ), "timecode" ) );
 	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
-	//fprintf( stderr, "frame dest samples %d channels %d\n", samples_dest, channels_dest );
 	//fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
-	
+	if ( channels_src > 6 )
+		channels_src = 0;
+	if ( channels_dest > 6 )
+		channels_dest = 0;
+	if ( samples_src > 4000 )
+		samples_src = 0;
+	if ( samples_dest > 4000 )
+		samples_dest = 0;
 
 #if 0
 	// Append new samples to leftovers
