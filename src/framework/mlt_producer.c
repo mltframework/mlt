@@ -397,8 +397,20 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 
 	if ( !mlt_producer_is_cut( this ) )
 	{
+		// Get the properties of this producer
+		mlt_properties properties = mlt_producer_properties( this );
+
 		// Determine eof handling
 		char *eof = mlt_properties_get( mlt_producer_properties( this ), "eof" );
+
+		// Get the speed of the producer
+		double speed = mlt_producer_get_speed( this );
+
+		// We need to use the clone if it's specified
+		mlt_producer clone = mlt_properties_get_data( properties, "use_clone", NULL );
+
+		// If no clone is specified, use this
+		clone = clone == NULL ? this : clone;
 
 		// A properly instatiated producer will have a get_frame method...
 		if ( this->get_frame == NULL || ( !strcmp( eof, "continue" ) && mlt_producer_position( this ) > mlt_producer_get_out( this ) ) )
@@ -419,12 +431,11 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		else
 		{
 			// Get the frame from the implementation
-			result = this->get_frame( this, frame, index );
+			result = this->get_frame( clone, frame, index );
 		}
 
 		// Copy the fps and speed of the producer onto the frame
-		mlt_properties properties = mlt_frame_properties( *frame );
-		double speed = mlt_producer_get_speed( this );
+		properties = mlt_frame_properties( *frame );
 		mlt_properties_set_double( properties, "_speed", speed );
 		mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( this ) );
 		mlt_properties_set_int( properties, "test_audio", mlt_frame_is_test_audio( *frame ) );
@@ -434,9 +445,21 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	}
 	else
 	{
+		// Get the parent of this cut
+		mlt_producer parent = mlt_producer_cut_parent( this );
+
+		// Get the properties of the parent
+		mlt_properties parent_properties = mlt_producer_properties( parent );
+
+		// Get the properties of the cut
 		mlt_properties properties = mlt_producer_properties( this );
+
+		// Determine the clone index
 		int clone_index = mlt_properties_get_int( properties, "_clone" );
+
+		// Determine the clone to use
 		mlt_producer clone = this;
+
 		if ( clone_index > 0 )
 		{
 			char key[ 25 ];
@@ -447,13 +470,20 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		}
 		else
 		{
-			clone = mlt_producer_cut_parent( this );
+			clone = parent;
 		}
+
+		// We need to seek to the correct position in the clone
 		mlt_producer_seek( clone, mlt_producer_get_in( this ) + mlt_properties_get_int( properties, "_position" ) );
-		result = producer_get_frame( mlt_producer_service( clone ), frame, index );
-		double speed = mlt_producer_get_speed( this );
-		mlt_properties_set_double( mlt_frame_properties( *frame ), "_speed", speed );
-		mlt_producer_prepare_next( clone );
+
+		// Assign the clone property to the parent
+		mlt_properties_set_data( parent_properties, "use_clone", clone, 0, NULL, NULL );
+
+		// Now get the frame from the parents service
+		result = mlt_service_get_frame( mlt_producer_service( parent ), frame, index );
+
+		// We're done with the clone now
+		mlt_properties_set_data( parent_properties, "use_clone", NULL, 0, NULL, NULL );
 	}
 
 	return result;

@@ -819,12 +819,13 @@ static void *consumer_thread( void *arg )
 
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
  					// Write the compressed frame in the media file
-					pkt.pts= c->coded_frame->pts;
+					if ( c->coded_frame )
+						pkt.pts= c->coded_frame->pts;
 					pkt.flags |= PKT_FLAG_KEY;
 					pkt.stream_index= audio_st->index;
 					pkt.data= audio_outbuf;
 
- 					if ( av_write_frame( oc, &pkt ) != 0) 
+ 					if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
  						fprintf(stderr, "Error while writing audio frame\n");
 				}
 				else
@@ -897,7 +898,8 @@ static void *consumer_thread( void *arg )
 							AVPacket pkt;
 							av_init_packet( &pkt );
 
-							pkt.pts= c->coded_frame->pts;
+							if ( c->coded_frame )
+								pkt.pts= c->coded_frame->pts;
 							if(c->coded_frame->key_frame)
 								pkt.flags |= PKT_FLAG_KEY;
 							pkt.stream_index= video_st->index;
@@ -905,7 +907,7 @@ static void *consumer_thread( void *arg )
 							pkt.size= out_size;
 
              				// write the compressed frame in the media file
-							ret = av_write_frame(oc, &pkt);
+							ret = av_interleaved_write_frame(oc, &pkt);
 	 					} 
  					}
  					frame_count++;

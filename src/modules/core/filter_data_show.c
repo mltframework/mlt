@@ -150,7 +150,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 		}
 
 		// Set the original position on the frame
-		mlt_frame_set_position( frame, mlt_properties_get_int( feed, "position" ) );
+		mlt_frame_set_position( frame, mlt_properties_get_int( feed, "position" ) - mlt_properties_get_int( feed, "in" ) );
 
 		// Process the filter
 		mlt_filter_process( requested, frame );

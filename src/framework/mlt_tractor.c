@@ -328,10 +328,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			// Now stack callbacks
 			if ( audio != NULL )
 			{
-				mlt_properties audio_properties = mlt_frame_properties( audio );
 				mlt_frame_push_audio( *frame, audio );
 				( *frame )->get_audio = producer_get_audio;
-				mlt_properties_set_position( frame_properties, "_position", mlt_properties_get_position( audio_properties, "_position" ) );
 			}
 
 			if ( video != NULL )
@@ -343,7 +341,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( video_properties, "width" ) );
 				mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( video_properties, "height" ) );
 				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
-				mlt_properties_set_position( frame_properties, "_position", mlt_properties_get_position( video_properties, "_position" ) );
 			}
 
 			mlt_frame_set_position( *frame, mlt_producer_frame( parent ) );

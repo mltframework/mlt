@@ -308,14 +308,6 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 	mlt_position this_in = mlt_properties_get_position( service_properties, "in" );
 	mlt_position this_out = mlt_properties_get_position( service_properties, "out" );
 
-	// Hmm - special case for cuts - apply filters from the parent first
-	if ( mlt_properties_get_int( service_properties, "_cut" ) )
-	{
-		mlt_service_apply_filters( ( mlt_service )mlt_properties_get_data( service_properties, "_cut_parent", NULL ), frame, 0 );
-		position -= this_in;
-		mlt_frame_set_position( frame, position );
-	}
-
 	if ( index == 0 || mlt_properties_get_int( service_properties, "_filter_private" ) == 0 )
 	{
 		// Process the frame with the attached filters
@@ -329,20 +321,11 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 				{
 					mlt_properties_set_position( frame_properties, "in", 0 );
 					mlt_properties_set_position( frame_properties, "out", out == 0 ? this_out - this_in : out - in );
-					mlt_frame_set_position( frame, position - in );
 					mlt_filter_process( base->filters[ i ], frame );
 					mlt_service_apply_filters( mlt_filter_service( base->filters[ i ] ), frame, index + 1 );
-					mlt_frame_set_position( frame, position + in );
 				}
 			}
 		}
-	}
-
-	if ( mlt_properties_get_int( service_properties, "_cut" ) )
-	{
-		mlt_properties_set_position( frame_properties, "in", this_in );
-		mlt_properties_set_position( frame_properties, "out", this_out );
-		mlt_frame_set_position( frame, position + this_in );
 	}
 }
 
