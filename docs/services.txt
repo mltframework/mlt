@@ -1417,6 +1417,7 @@ Consumers
 	                            ratio to square pixels.
 	        int progressive - indicates whether to use progressive or field-
 	                          based rendering, default 0 (off).
+		int audio_buffer - size of the sdl audio buffer (default: 1024)
 	        
 	    Read Only Properties
 

@@ -201,11 +201,6 @@ mlt_producer mlt_tractor_get_track( mlt_tractor this, int index )
 	return mlt_multitrack_track( mlt_tractor_multitrack( this ), index );
 }
 
-static uint8_t *mlt_tractor_alpha_mask( mlt_frame frame )
-{
-	return mlt_properties_get_data( mlt_frame_properties( frame ), "alpha", NULL );
-}
-
 static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	uint8_t *data = NULL;
@@ -215,18 +210,21 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( properties, "width" ) );
 	mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( properties, "height" ) );
 	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
+	if ( mlt_properties_get( properties, "distort" ) )
+		mlt_properties_set( frame_properties, "distort", mlt_properties_get( properties, "distort" ) );
 	mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
 	mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
-	mlt_properties_set_int( frame_properties, "consumer_progressive", mlt_properties_get_double( properties, "consumer_progressive" ) );
 	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_double( properties, "consumer_deinterlace" ) );
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
+	mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
+	if ( mlt_properties_get( frame_properties, "distort" ) )
+		mlt_properties_set( properties, "distort", mlt_properties_get( frame_properties, "distort" ) );
 	data = mlt_frame_get_alpha_mask( frame );
 	mlt_properties_set_data( properties, "alpha", data, 0, NULL, NULL );
-	this->get_alpha_mask = mlt_tractor_alpha_mask;
 	return 0;
 }
 
@@ -340,6 +338,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_data( frame_properties, "data_queue", data_queue, 0, NULL, NULL );
 				mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( video_properties, "width" ) );
 				mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( video_properties, "height" ) );
+				mlt_properties_set_int( frame_properties, "real_width", mlt_properties_get_int( video_properties, "real_width" ) );
+				mlt_properties_set_int( frame_properties, "real_height", mlt_properties_get_int( video_properties, "real_height" ) );
+				mlt_properties_set_int( frame_properties, "progressive", mlt_properties_get_int( video_properties, "progressive" ) );
 				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
 			}
 

@@ -201,6 +201,7 @@ void *parser_thread( void *arg )
 {
 	struct hostent *he;
 	connection_t *connection = arg;
+	mlt_properties owner = connection->owner;
 	char address[ 512 ];
 	char command[ 1024 ];
 	int fd = connection->fd;
@@ -223,6 +224,8 @@ void *parser_thread( void *arg )
 
 		while( !error && connection_read( fd, command, 1024 ) )
 		{
+			response = NULL;
+
 			if ( !strncmp( command, "PUSH ", 5 ) )
 			{
 				char temp[ 20 ];
@@ -245,7 +248,9 @@ void *parser_thread( void *arg )
 				buffer[ bytes ] = '\0';
 				if ( bytes > 0 && total == bytes )
 					service = ( mlt_service )mlt_factory_producer( "westley-xml", buffer );
-				response = valerie_parser_push( parser, command, service );
+				mlt_events_fire( owner, "push-received", &response, command, service, NULL );
+				if ( response == NULL )
+					response = valerie_parser_push( parser, command, service );
 				error = connection_send( fd, response );
 				valerie_response_close( response );
 				mlt_service_close( service );
@@ -253,7 +258,9 @@ void *parser_thread( void *arg )
 			}
 			else if ( strncmp( command, "STATUS", 6 ) )
 			{
-				response = valerie_parser_execute( parser, command );
+				mlt_events_fire( owner, "command-received", &response, command, NULL );
+				if ( response == NULL )
+					response = valerie_parser_execute( parser, command );
 				miracle_log( LOG_INFO, "%s \"%s\" %d", address, command, valerie_response_get_error_code( response ) );
 				error = connection_send( fd, response );
 				valerie_response_close( response );

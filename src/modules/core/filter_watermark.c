@@ -142,7 +142,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			// Set the b frame to be in the same position and have same consumer requirements
 			mlt_frame_set_position( b_frame, position );
 			mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-			mlt_properties_set_int( b_props, "consumer_progressive", mlt_properties_get_double( a_props, "consumer_progressive" ) );
+			mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
+
+			if ( mlt_properties_get_int( properties, "distort" ) )
+			{
+				mlt_properties_set( mlt_transition_properties( composite ), "distort", "true" );
+				mlt_properties_set( a_props, "distort", "true" );
+				mlt_properties_set( b_props, "distort", "true" );
+			}
 
 			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
 			{
@@ -157,15 +164,27 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			}
 			else
 			{
+				char temp[ 132 ];
+				int count = 0;
+				uint8_t *alpha = NULL;
 				mlt_transition_process( composite, b_frame, frame );
+				mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
+				mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 				mlt_properties_set( a_props, "rescale.interp", "nearest" );
 				mlt_properties_set( b_props, "rescale.interp", "nearest" );
-				mlt_service_apply_filters( mlt_filter_service( this ), frame, 0 );
+				mlt_service_apply_filters( mlt_filter_service( this ), b_frame, 0 );
 				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
-				mlt_properties_set_data( b_props, "image", *image, 0, NULL, NULL );
-				mlt_properties_set_data( a_props, "image", *image, *width * *height * 2, mlt_pool_release, NULL );
+				alpha = mlt_frame_get_alpha_mask( b_frame );
+				mlt_properties_set_data( a_props, "image", *image, *width * *height * 2, NULL, NULL );
+				mlt_properties_set_data( a_props, "alpha", alpha, *width * *height, NULL, NULL );
 				mlt_properties_set_int( a_props, "width", *width );
 				mlt_properties_set_int( a_props, "height", *height );
+				mlt_properties_set_int( a_props, "progressive", 1 );
+				mlt_properties_inc_ref( b_props );
+				strcpy( temp, "_b_frame" );
+				while( mlt_properties_get_data( a_props, temp, NULL ) != NULL )
+					sprintf( temp, "_b_frame%d", count ++ );
+				mlt_properties_set_data( a_props, temp, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 			}
 		}
 

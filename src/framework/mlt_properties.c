@@ -648,6 +648,8 @@ void mlt_properties_debug( mlt_properties this, char *title, FILE *output )
 		for ( i = 0; i < list->count; i ++ )
 			if ( mlt_properties_get( this, list->name[ i ] ) != NULL )
 				fprintf( output, ", %s=%s", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
+			else
+				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_data( this, list->name[ i ], NULL ) );
 		fprintf( output, " ]" );
 	}
 	fprintf( stderr, "\n" );

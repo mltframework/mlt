@@ -128,7 +128,7 @@ static void transport_action( mlt_producer producer, char *value )
 
 static mlt_consumer create_consumer( char *id, mlt_producer producer )
 {
-	char *arg = strchr( id, ':' );
+	char *arg = id != NULL ? strchr( id, ':' ) : NULL;
 	if ( arg != NULL )
 		*arg ++ = '\0';
 	mlt_consumer consumer = mlt_factory_consumer( id, arg );
@@ -246,7 +246,7 @@ int main( int argc, char **argv )
 
 		// If we have no consumer, default to sdl
 		if ( store == NULL && consumer == NULL )
-			consumer = create_consumer( "sdl", inigo );
+			consumer = create_consumer( NULL, inigo );
 
 		if ( consumer != NULL && store == NULL )
 		{

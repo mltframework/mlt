@@ -46,6 +46,18 @@
 
 #define VERSION "0.0.1"
 
+static void miracle_command_received( mlt_listener listener, mlt_properties owner, miracle_server this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( valerie_response ** )args[ 0 ], ( char * )args[ 1 ] );
+}
+
+static void miracle_push_received( mlt_listener listener, mlt_properties owner, miracle_server this, void **args )
+{
+	if ( listener != NULL )
+		listener( owner, this, ( valerie_response ** )args[ 0 ], ( char * )args[ 1 ], ( mlt_service )args[ 2 ] );
+}
+
 /** Initialise a server structure.
 */
 
@@ -53,11 +65,15 @@ miracle_server miracle_server_init( char *id )
 {
 	miracle_server server = malloc( sizeof( miracle_server_t ) );
 	if ( server != NULL )
-	{
 		memset( server, 0, sizeof( miracle_server_t ) );
+	if ( server != NULL && mlt_properties_init( &server->parent, server ) == 0 )
+	{
 		server->id = id;
 		server->port = DEFAULT_TCP_PORT;
 		server->socket = -1;
+		mlt_events_init( &server->parent );
+		mlt_events_register( &server->parent, "command-received", ( mlt_transmitter )miracle_command_received );
+		mlt_events_register( &server->parent, "push-received", ( mlt_transmitter )miracle_push_received );
 	}
 	return server;
 }
@@ -141,6 +157,7 @@ static void *miracle_server_run( void *arg )
 			   our server thread. The thread should free this when it terminates. */
 
 			tmp = (connection_t*) malloc( sizeof(connection_t) );
+			tmp->owner = &server->parent;
 			tmp->parser = server->parser;
 			tmp->fd = accept( server->socket, (struct sockaddr*) &(tmp->sin), &socksize );
 
@@ -287,8 +304,9 @@ void miracle_server_shutdown( miracle_server server )
 
 void miracle_server_close( miracle_server server )
 {
-	if ( server != NULL )
+	if ( server != NULL && mlt_properties_dec_ref( &server->parent ) <= 0 )
 	{
+		mlt_properties_close( &server->parent );
 		miracle_server_shutdown( server );
 		free( server );
 	}

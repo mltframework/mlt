@@ -75,6 +75,9 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 	int32_t weigh = weight * ( 1 << 16 );
 	int32_t weigh_complement = ( 1 - weight ) * ( 1 << 16 );
 
+	if ( mlt_properties_get( &this->parent, "distort" ) )
+		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &this->parent, "distort" ) );
+	mlt_properties_set_int( &that->parent, "consumer_deinterlace", mlt_properties_get_int( &this->parent, "consumer_deinterlace" ) );
 	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 );
 	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
 
@@ -129,6 +132,9 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	format_src = mlt_image_yuv422;
 	format_dest = mlt_image_yuv422;
 
+	if ( mlt_properties_get( &a_frame->parent, "distort" ) )
+		mlt_properties_set( &b_frame->parent, "distort", mlt_properties_get( &a_frame->parent, "distort" ) );
+	mlt_properties_set_int( &b_frame->parent, "consumer_deinterlace", mlt_properties_get_int( &a_frame->parent, "consumer_deinterlace" ) );
 	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 );
 	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 );
 
@@ -446,7 +452,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	
 	float luma_softness = mlt_properties_get_double( properties, "softness" );
 	int progressive = 
-			mlt_properties_get_int( a_props, "consumer_progressive" ) ||
+			mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
 			mlt_properties_get_int( properties, "progressive" ) ||
 			mlt_properties_get_int( b_props, "luma.progressive" );
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );

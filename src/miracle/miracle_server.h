@@ -42,6 +42,7 @@ extern "C"
 
 typedef struct
 {
+	struct mlt_properties_s parent;
 	char *id;
 	int port;
 	int socket;

@@ -303,9 +303,9 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 
 uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 {
-	if ( this->get_alpha_mask != NULL )
+	if ( this != NULL && this->get_alpha_mask != NULL )
 		return this->get_alpha_mask( this );
-	return NULL;
+	return this == NULL ? NULL : mlt_properties_get_data( &this->parent, "alpha", NULL );
 }
 
 int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
@@ -531,6 +531,86 @@ int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int 
 	return ret;
 }
 
+uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, int iheight )
+{
+	uint8_t *output = NULL;
+
+	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) )
+	{
+		iwidth = iwidth - ( iwidth % 2 );
+		owidth = owidth - ( owidth % 2 );
+
+		output = mlt_pool_alloc( owidth * oheight );
+
+   		// Coordinates (0,0 is middle of output)
+   		int y;
+
+   		// Calculate ranges
+   		int out_x_range = owidth / 2;
+   		int out_y_range = oheight / 2;
+   		int in_x_range = iwidth / 2 < out_x_range ? iwidth / 2 : out_x_range;
+   		int in_y_range = iheight / 2 < out_y_range ? iheight / 2 : out_y_range;
+
+   		// Output pointers
+   		uint8_t *out_line = output;
+   		uint8_t *out_ptr = out_line;
+
+   		// Calculate a middle and possibly invalid pointer in the input
+   		uint8_t *in_middle = input + iwidth * ( iheight / 2 ) + ( iwidth / 2 );
+   		int in_line = - in_y_range * iwidth - in_x_range;
+
+		int elements;
+
+		// Fill whole section with black
+		y = out_y_range - ( iheight / 2 );
+		int blank_elements = owidth * y;
+		elements = blank_elements;
+		while ( elements -- )
+			*out_line ++ = 0;
+
+		int active_width = iwidth;
+		int inactive_width = out_x_range - in_x_range;
+		uint8_t *p = NULL;
+		uint8_t *end = NULL;
+
+   		// Loop for the entirety of our output height.
+		while ( iheight -- )
+   		{
+       		// Start at the beginning of the line
+       		out_ptr = out_line;
+
+			// Fill the outer part with black
+			elements = inactive_width;
+			while ( elements -- )
+				*out_ptr ++ = 0;
+
+   			// We're in the input range for this row.
+			p = in_middle + in_line;
+			end = out_ptr + active_width;
+			while ( out_ptr != end )
+				*out_ptr ++ = *p ++;
+
+			// Fill the outer part with black
+			elements = inactive_width;
+			while ( elements -- )
+				*out_ptr ++ = 0;
+	
+  			// Move to next input line
+   			in_line += iwidth;
+
+       		// Move to next output line
+       		out_line += owidth;
+   		}
+
+		// Fill whole section with black
+		elements = blank_elements;
+		while ( elements -- )
+			*out_line ++ = 0;
+	}
+
+	return output;
+}
+
 void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight )
 {
 	// Calculate strides
@@ -539,8 +619,8 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 
 	iwidth = iwidth - ( iwidth % 4 );
 	owidth = owidth - ( owidth % 4 );
-	iheight = iheight - ( iheight % 2 );
-	oheight = oheight - ( oheight % 2 );
+	//iheight = iheight - ( iheight % 2 );
+	//oheight = oheight - ( oheight % 2 );
 
 	// Optimisation point
 	if ( iwidth == owidth && iheight == oheight )
@@ -638,6 +718,8 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 
 	// Get the input image, width and height
 	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
+	uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+
 	int iwidth = mlt_properties_get_int( properties, "width" );
 	int iheight = mlt_properties_get_int( properties, "height" );
 
@@ -654,6 +736,14 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "width", owidth );
 		mlt_properties_set_int( properties, "height", oheight );
+
+		// We should resize the alpha too
+		alpha = mlt_resize_alpha( alpha, owidth, oheight, iwidth, iheight );
+		if ( alpha != NULL )
+		{
+			mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
+			this->get_alpha_mask = NULL;
+		}
 
 		// Return the output
 		return output;

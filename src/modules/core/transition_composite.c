@@ -786,7 +786,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 	mlt_properties properties = mlt_transition_properties( this );
 
-	if ( mlt_properties_get( properties, "distort" ) == NULL && geometry->distort == 0 )
+	if ( mlt_properties_get( properties, "distort" ) == NULL && mlt_properties_get( b_props, "distort" ) == NULL && geometry->distort == 0 )
 	{
 		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->w;
@@ -980,6 +980,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 
 	// Assign this position to the b frame
 	mlt_frame_set_position( b_frame, frame_position );
+	mlt_properties_set( b_props, "distort", "true" );
 
 	// Return the frame
 	return b_frame;
@@ -1048,7 +1049,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
-		mlt_properties_set_double( b_props, "consumer_progressive", mlt_properties_get_double( a_props, "consumer_progressive" ) );
+		mlt_properties_set_double( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
 		// Special case for titling...
@@ -1067,7 +1068,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			uint8_t *src = image_b;
 			uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
 			int progressive = 
-					mlt_properties_get_int( a_props, "consumer_progressive" ) ||
+					mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
 					mlt_properties_get_int( properties, "progressive" );
 			int field;
 			

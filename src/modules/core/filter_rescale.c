@@ -108,6 +108,64 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 	return 0;
 }
 
+static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight )
+{
+	uint8_t *input = mlt_frame_get_alpha_mask( this );
+	
+	if ( input != NULL )
+	{
+		uint8_t *output = mlt_pool_alloc( owidth * oheight );
+
+		// Derived coordinates
+		int dy, dx;
+
+    	// Calculate ranges
+    	int out_x_range = owidth / 2;
+    	int out_y_range = oheight / 2;
+    	int in_x_range = iwidth / 2;
+    	int in_y_range = iheight / 2;
+
+    	// Output pointers
+    	register uint8_t *out_line = output;
+    	register uint8_t *out_ptr;
+
+    	// Calculate a middle pointer
+    	uint8_t *in_middle = input + iwidth * in_y_range + in_x_range;
+    	uint8_t *in_line;
+
+		// Generate the affine transform scaling values
+		register int scale_width = ( iwidth << 16 ) / owidth;
+		register int scale_height = ( iheight << 16 ) / oheight;
+		register int base = 0;
+
+		int outer = out_x_range * scale_width;
+		int bottom = out_y_range * scale_height;
+
+    	// Loop for the entirety of our output height.
+    	for ( dy = - bottom; dy < bottom; dy += scale_height )
+    	{
+        	// Start at the beginning of the line
+        	out_ptr = out_line;
+	
+        	// Pointer to the middle of the input line
+        	in_line = in_middle + ( dy >> 16 ) * iwidth;
+
+        	// Loop for the entirety of our output row.
+        	for ( dx = - outer; dx < outer; dx += scale_width )
+        	{
+				base = dx >> 15;
+				*out_ptr ++ = *( in_line + base );
+        	}
+
+        	// Move to next output line
+        	out_line += owidth;
+    	}
+
+		this->get_alpha_mask = NULL;
+		mlt_properties_set_data( mlt_frame_properties( this ), "alpha", output, 0, mlt_pool_release, NULL );
+	}
+}
+
 /** Do it :-).
 */
 
@@ -133,7 +191,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 
 	// There can be problems with small images - avoid them (by hacking - gah)
-	if ( *width >= 2 && *height >= 6 )
+	if ( *width >= 6 && *height >= 6 )
 	{
 		int iwidth = *width;
 		int iheight = *height;
@@ -171,7 +229,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	
 		// Get the image as requested
 		mlt_frame_get_image( this, image, format, &iwidth, &iheight, writable );
-	
+
 		// Get rescale interpretation again, in case the producer wishes to override scaling
 		interps = mlt_properties_get( properties, "rescale.interp" );
 	
@@ -189,6 +247,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				scaler_method( this, image, *format, mlt_image_yuv422, iwidth, iheight, owidth, oheight );
 				*width = owidth;
 				*height = oheight;
+
+				// Scale the alpha
+				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else if ( *format == mlt_image_rgb24 && wanted_format == mlt_image_rgb24 )
 			{
@@ -198,6 +259,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				// Return the output
 				*width = owidth;
 				*height = oheight;
+
+				// Scale the alpha
+				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else if ( *format == mlt_image_rgb24 || *format == mlt_image_rgb24a )
 			{
@@ -208,6 +272,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				*format = mlt_image_yuv422;
 				*width = owidth;
 				*height = oheight;
+
+				// Scale the alpha
+				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else
 			{
@@ -239,15 +306,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	return 0;
 }
 
-static uint8_t *producer_get_alpha_mask( mlt_frame this )
-{
-	// Obtain properties of frame
-	mlt_properties properties = mlt_frame_properties( this );
-
-	// Return the alpha mask
-	return mlt_properties_get_data( properties, "alpha", NULL );
-}
-
 /** Filter processing.
 */
 
@@ -258,9 +316,6 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 	// Push the get image method
 	mlt_frame_push_service( frame, filter_get_image );
-
-	// Set alpha call back
-	frame->get_alpha_mask = producer_get_alpha_mask;
 
 	return frame;
 }

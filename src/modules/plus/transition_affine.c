@@ -587,6 +587,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		int y_offset = ( int )result.h >> 1;
 
 		uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
+		uint8_t *mask = mlt_pool_alloc( b_width * b_height );
+		uint8_t *pmask = mask;
 		float mix;
 
 		affine_t affine;
@@ -613,6 +615,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		dz = MapZ( affine.matrix, 0, 0 );
 
+		if ( mask != NULL )
+			memset( mask, 0, b_width * b_height );
+
 		for ( y = lower_y; y < upper_y; y ++ )
 		{
 			p = q;
@@ -626,12 +631,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				{
 					if ( alpha == NULL )
 					{
+						*pmask ++ = 255;
 						dx += dx & 1;
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) );
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
 					}
 					else
 					{
+						*pmask ++ = *( alpha + dy * b_width + dx );
 						mix = ( float )*( alpha + dy * b_width + dx ) / 255.0;
 						dx += dx & 1;
 						*p = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) );
@@ -643,11 +650,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				else
 				{
 					p += 2;
+					pmask ++;
 				}
 			}
 
 			q += a_stride;
 		}
+
+		b_frame->get_alpha_mask = NULL;
+		mlt_properties_set_data( b_props, "alpha", mask, 0, mlt_pool_release, NULL );
 	}
 
 	return 0;

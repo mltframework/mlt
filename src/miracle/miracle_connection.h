@@ -38,6 +38,7 @@ extern "C"
 
 typedef struct 
 {
+	mlt_properties owner;
 	int fd;
 	struct sockaddr_in sin;
 	valerie_parser parser;
