@@ -192,7 +192,7 @@ int main( int argc, char **argv )
 
 	// If we have no consumer, default to sdl
 	if ( consumer == NULL )
-		consumer = create_consumer( "sdl:PAL", mlt_multitrack_producer( multitrack ) );
+		consumer = create_consumer( "sdl", mlt_multitrack_producer( multitrack ) );
 
 	// Connect producer to playlist
 	if ( producer != NULL )
