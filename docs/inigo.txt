@@ -41,7 +41,7 @@ General rules:
 	produces DV frames.
 
 
-Terminoligy:
+Terminology:
 
 	'Producers' typically refer to files but may also indicate
 	devices (such as dv1394 input or video4linux). Hence, the more

@@ -118,7 +118,9 @@ static void on_start_producer( deserialise_context context, const xmlChar *name,
 	mlt_service service = NULL;
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
+	{
 		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
+	}
 
 	if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
 	{
@@ -204,6 +206,12 @@ static void on_start_filter( deserialise_context context, const xmlChar *name, c
 	// Connect the filter to the producer
 	mlt_filter_connect( MLT_FILTER( service ), producer,
 		mlt_properties_get_int( properties, "track" ) );
+
+	// Set in and out from producer if non existant
+	if ( mlt_properties_get( properties, "in" ) == NULL )
+		mlt_properties_set_position( properties, "in", mlt_producer_get_in( MLT_PRODUCER( producer ) ) );
+	if ( mlt_properties_get( properties, "out" ) == NULL )
+		mlt_properties_set_position( properties, "out", mlt_producer_get_out( MLT_PRODUCER( producer ) ) );
 
 	// Propogate the properties
 	mlt_properties_inherit( mlt_service_properties( service ), properties );
@@ -344,7 +352,7 @@ static void on_end_entry( deserialise_context context, const xmlChar *name )
 
 static void on_end_tractor( deserialise_context context, const xmlChar *name )
 {
-	// Discard the last producer
+	// Get and discard the last producer
 	mlt_producer multitrack = MLT_PRODUCER( context_pop_service( context ) );
 
 	// Inherit the producer's properties
@@ -436,12 +444,19 @@ mlt_producer producer_westley_init( char *filename )
 				break;
 			}
 		}
+
+		// We are done referencing destructor property list
+		// Set this var to service properties for convenience
+		properties = mlt_service_properties( service );
 	
 		// make the returned service destroy the connected services
-		mlt_properties_set_data( mlt_service_properties( service ), "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
+		mlt_properties_set_data( properties, "__destructors__", context->destructors, 0, (mlt_destructor) mlt_properties_close, NULL );
 
 		// Now assign additional properties
-		mlt_properties_set( mlt_service_properties( service ), "resource", filename );
+		mlt_properties_set( properties, "resource", filename );
+
+		// This tells consumer_westley not to deep copy
+		mlt_properties_set( properties, "westley", "was here" );
 	}
 	else
 	{

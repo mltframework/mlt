@@ -721,9 +721,9 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 	double d = 0, s = 0;
 
 	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
-	fprintf( stderr, "frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "position" ) );
+	//fprintf( stderr, "frame dest samples %d channels %d position %lld\n", samples_dest, channels_dest, mlt_properties_get_position( mlt_frame_properties( this ), "position" ) );
 	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
-	fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
+	//fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
 	src = p_src;
 	dest = p_dest;
 	if ( channels_src > 6 )

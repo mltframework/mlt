@@ -26,6 +26,8 @@
 #include <pthread.h>
 #include <libxml/tree.h>
 
+#define ID_SIZE 128
+
 /** Forward references to static functions.
 */
 
@@ -86,7 +88,8 @@ static inline void serialise_properties( mlt_properties properties, xmlNode *nod
 	// Enumerate the properties
 	for ( i = 0; i < mlt_properties_count( properties ); i++ )
 	{
-		if ( mlt_properties_get_value( properties, i ) != NULL )
+		if ( mlt_properties_get_value( properties, i ) != NULL &&
+			strcmp( mlt_properties_get_name( properties, i ), "westley" ) != 0 )
 		{
 #if 0
 			p = xmlNewChild( node, NULL, "prop", NULL );
@@ -102,9 +105,9 @@ static void serialise_service( serialise_context context, mlt_service service, x
 {
 	int i;
 	xmlNode *child = node;
-	char id[ 31 ];
+	char id[ ID_SIZE + 1 ];
 	char key[ 11 ];
-	id[ 30 ] = '\0';
+	id[ ID_SIZE ] = '\0';
 	key[ 10 ] = '\0';
 	
 	// Iterate over consumer/producer connections
@@ -123,9 +126,11 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				// Set the id
 				if ( mlt_properties_get( properties, "id" ) == NULL )
 				{
-					snprintf( id, 30, "producer%d", context->producer_count++ );
+					snprintf( id, ID_SIZE, "producer%d", context->producer_count++ );
 					xmlNewProp( child, "id", id );
 				}
+				else
+					strncpy( id, mlt_properties_get( properties, "id" ), ID_SIZE );
 				serialise_properties( properties, child );
 
 				// Add producer to the map
@@ -137,6 +142,8 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				snprintf( key, 10, "%p", service );
 				xmlNewProp( node, "producer", mlt_properties_get( context->producer_map, key ) );
 			}
+			if ( mlt_properties_get( properties, "westley" ) != NULL )
+				break;
 		}
 
 		// Tell about the framework container producers
@@ -166,7 +173,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 					// Set the id
 					if ( mlt_properties_get( properties, "id" ) == NULL )
 					{
-						snprintf( id, 30, "multitrack%d", context->multitrack_count++ );
+						snprintf( id, ID_SIZE, "multitrack%d", context->multitrack_count++ );
 						xmlNewProp( child, "id", id );
 					}
 
@@ -205,9 +212,11 @@ static void serialise_service( serialise_context context, mlt_service service, x
 					// Set the id
 					if ( mlt_properties_get( properties, "id" ) == NULL )
 					{
-						snprintf( id, 30, "playlist%d", context->playlist_count++ );
+						snprintf( id, ID_SIZE, "playlist%d", context->playlist_count++ );
 						xmlNewProp( child, "id", id );
 					}
+					else
+						strncpy( id, mlt_properties_get( properties, "id" ), ID_SIZE );
 
 					xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
 					xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
@@ -238,7 +247,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 						}
 					}
 				}
-				else
+				else if ( strcmp( (const char*) node->name, "tractor" ) != 0 )
 				{
 					snprintf( key, 10, "%p", service );
 					xmlNewProp( node, "producer", mlt_properties_get( context->producer_map, key ) );
@@ -260,9 +269,12 @@ static void serialise_service( serialise_context context, mlt_service service, x
 					// Set the id
 					if ( mlt_properties_get( properties, "id" ) == NULL )
 					{
-						snprintf( id, 30, "tractor%d", context->tractor_count++ );
+						snprintf( id, ID_SIZE, "tractor%d", context->tractor_count++ );
 						xmlNewProp( child, "id", id );
 					}
+					
+					xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
+					xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
 
 					// Recurse on connected producer
 					serialise_service( context, mlt_service_get_producer( service ), child );
@@ -284,7 +296,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				// Set the id
 				if ( mlt_properties_get( properties, "id" ) == NULL )
 				{
-					snprintf( id, 30, "filter%d", context->filter_count++ );
+					snprintf( id, ID_SIZE, "filter%d", context->filter_count++ );
 					xmlNewProp( child, "id", id );
 				}
 
@@ -306,7 +318,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				// Set the id
 				if ( mlt_properties_get( properties, "id" ) == NULL )
 				{
-					snprintf( id, 30, "transition%d", context->transition_count++ );
+					snprintf( id, ID_SIZE, "transition%d", context->transition_count++ );
 					xmlNewProp( child, "id", id );
 				}
 
