@@ -161,7 +161,7 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	if ( mlt_frame_is_test_audio( frame ) != 0 )
+	//if ( mlt_frame_is_test_audio( frame ) != 0 )
 	{
 		mlt_frame_push_audio( frame, this );
 		mlt_frame_push_audio( frame, resample_get_audio );
