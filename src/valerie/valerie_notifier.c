@@ -93,7 +93,9 @@ int valerie_notifier_wait( valerie_notifier this, valerie_status status )
 	}
 	else
 	{
-		error = -1;
+		pthread_mutex_lock( &this->mutex );
+		valerie_status_copy( status, &this->last );
+		pthread_mutex_unlock( &this->mutex );
 	}
 	pthread_mutex_unlock( &this->cond_mutex );
 

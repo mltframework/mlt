@@ -20,15 +20,15 @@ XFER
 
 Incorrect Behaviour
 ------------------------------------------------------------------------------
-killall miracle does not work. requires killall -HUP
-USTA when stopped reports "paused"
 CLEAN removes all clips (as opposed to leaving the currently playing one)
-USET eof=pause is partially supported
 
 
 Different Intentional Behaviour
 ------------------------------------------------------------------------------
 
+Different forced Behaviour
+------------------------------------------------------------------------------
+killall miracle does not work when the SDL consumer is in use. requires killall -HUP
 
 MLT Bugs
 ------------------------------------------------------------------------------

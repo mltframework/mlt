@@ -79,12 +79,15 @@ mlt_properties mlt_properties_new( )
 
 static void mlt_properties_do_mirror( mlt_properties this, char *name )
 {
-	mlt_properties mirror = mlt_properties_get_data( this, "mlt_mirror", NULL );
-	if ( mirror != NULL )
+	if ( strcmp( name, "in" ) && strcmp( name, "out" ) )
 	{
-		char *value = mlt_properties_get( this, name );
-		if ( value != NULL )
-			mlt_properties_set( mirror, name, value );
+		mlt_properties mirror = mlt_properties_get_data( this, "mlt_mirror", NULL );
+		if ( mirror != NULL )
+		{
+			char *value = mlt_properties_get( this, name );
+			if ( value != NULL )
+				mlt_properties_set( mirror, name, value );
+		}
 	}
 }
 

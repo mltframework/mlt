@@ -21,6 +21,8 @@
 #ifndef _VALERIE_STATUS_H_
 #define _VALERIE_STATUS_H_
 
+#include "stdint.h"
+
 #ifdef __cplusplus
 extern "C"
 {

@@ -104,9 +104,18 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 
 	// Check bounds
 	if ( position < 0 )
+	{
 		position = 0;
+	}
 	else if ( !strcmp( eof, "pause" ) && position >= mlt_producer_get_playtime( this ) )
+	{
+		mlt_producer_set_speed( this, 0 );
 		position = mlt_producer_get_playtime( this ) - 1;
+	}
+	else if ( !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( this ) )
+	{
+		position = position % mlt_producer_get_playtime( this );
+	}
 
 	// Set the position
 	mlt_properties_set_position( mlt_producer_properties( this ), "_position", position );

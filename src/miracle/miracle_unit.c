@@ -193,6 +193,7 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 {
 	int i;
 	mlt_properties properties = unit->properties;
+	char *root_dir = mlt_properties_get( properties, "root" );
 	int generation = mlt_properties_get_int( properties, "generation" );
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 
@@ -202,8 +203,11 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 	{
 		mlt_playlist_clip_info info;
 		mlt_playlist_get_clip_info( playlist , &info, i );
+		char *resource = info.resource;
+		if ( root_dir != NULL && !strncmp( resource, root_dir, strlen( root_dir ) ) )
+			resource += strlen( root_dir );
 		valerie_response_printf( response, 10240, "%d \"%s\" %lld %lld %lld %lld %.2f\n", 
-								 i, info.resource, 
+								 i, resource, 
 								 info.frame_in, 
 								 info.frame_out,
 								 info.frame_count, 
@@ -389,6 +393,7 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 	if ( !error )
 	{
 		mlt_properties properties = unit->properties;
+		char *root_dir = mlt_properties_get( properties, "root" );		
 		mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 		mlt_producer producer = mlt_playlist_producer( playlist );
 		mlt_producer clip = mlt_playlist_current( playlist );
@@ -399,14 +404,20 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 
 		if ( info.resource != NULL && strcmp( info.resource, "" ) )
 		{
-			strncpy( status->clip, info.resource, sizeof( status->clip ) );
+			if ( root_dir == NULL || strncmp( info.resource, root_dir, strlen( root_dir ) ) )
+				strncpy( status->clip, info.resource, sizeof( status->clip ) );
+			else
+				strncpy( status->clip, info.resource + strlen( root_dir ), sizeof( status->clip ) );
 			status->speed = (int)( mlt_producer_get_speed( producer ) * 1000.0 );
 			status->fps = mlt_producer_get_fps( producer );
 			status->in = info.frame_in;
 			status->out = info.frame_out;
 			status->position = mlt_producer_position( clip );
 			status->length = mlt_producer_get_length( clip );
-			strncpy( status->tail_clip, info.resource, sizeof( status->tail_clip ) );
+			if ( root_dir == NULL || strncmp( info.resource, root_dir, strlen( root_dir ) ) )
+				strncpy( status->tail_clip, info.resource, sizeof( status->tail_clip ) );
+			else
+				strncpy( status->clip, info.resource + strlen( root_dir ), sizeof( status->clip ) );
 			status->tail_in = info.frame_in;
 			status->tail_out = info.frame_out;
 			status->tail_position = mlt_producer_position( clip );

@@ -178,7 +178,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer producer
 	this->list[ this->count ]->frame_out = out;
 	this->list[ this->count ]->frame_count = out - in + 1;
 
-	mlt_properties_set( mlt_producer_properties( producer ), "eof", "continue" );
+	mlt_properties_set( mlt_producer_properties( producer ), "eof", "pause" );
 
 	mlt_producer_set_speed( producer, 0 );
 
@@ -197,6 +197,8 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 
 	// Map playlist position to real producer in virtual playlist
 	mlt_position position = mlt_producer_frame( &this->parent );
+
+	mlt_position original = position;
 
 	// Total number of frames
 	int64_t total = 0;
@@ -240,10 +242,11 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 	{
 		playlist_entry *entry = this->list[ this->count - 1 ];
 		mlt_producer this_producer = mlt_playlist_producer( this );
-		mlt_producer_seek( this_producer, total - 1 - mlt_producer_get_in( this_producer ) );
+		mlt_producer_seek( this_producer, original - 1 );
 		producer = entry->producer;
 		mlt_producer_seek( producer, entry->frame_out );
 		mlt_producer_set_speed( this_producer, 0 );
+		mlt_producer_set_speed( producer, 0 );
 	}
 	else if ( !strcmp( eof, "loop" ) && total > 0 )
 	{
