@@ -407,18 +407,18 @@ static void affine_offset( float this[3][3], int x, int y )
 }
 
 // Obtain the mapped x coordinate of the input
-static inline int MapX( float this[3][3], int x, int y )
+static inline double MapX( float this[3][3], int x, int y )
 {
 	return this[0][0] * x + this[0][1] * y + this[0][2];
 }
 
 // Obtain the mapped y coordinate of the input
-static inline int MapY( float this[3][3], int x, int y )
+static inline double MapY( float this[3][3], int x, int y )
 {
 	return this[1][0] * x + this[1][1] * y + this[1][2];
 }
 
-static inline float MapZ( float this[3][3], int x, int y )
+static inline double MapZ( float this[3][3], int x, int y )
 {
 	return this[2][0] * x + this[2][1] * y + this[2][2];
 }
@@ -550,10 +550,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	{
 		register int x, y;
 		register int dx, dy;
+		double dz;
 		float sw, sh;
 
 		// Get values from the transition
-		float rotate_x = mlt_properties_get_double( properties, "rotate" );
+		float rotate_x = mlt_properties_get_double( properties, "rotate_x" );
 		float rotate_y = mlt_properties_get_double( properties, "rotate_y" );
 		float rotate_z = mlt_properties_get_double( properties, "rotate_z" );
 		float fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
@@ -607,14 +608,16 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		q = *image;
 
+		dz = MapZ( affine.matrix, 0, 0 );
+
 		for ( y = lower_y; y < upper_y; y ++ )
 		{
 			p = q;
 
 			for ( x = lower_x; x < upper_x; x ++ )
 			{
-				dx = MapX( affine.matrix, x, y ) + x_offset;
-				dy = MapY( affine.matrix, x, y ) + y_offset;
+				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
+				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
 
 				if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
 				{

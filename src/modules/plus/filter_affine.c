@@ -101,7 +101,7 @@ mlt_filter filter_affine_init( char *arg )
 	{
 		this->process = filter_process;
 		mlt_properties_set( mlt_filter_properties( this ), "background", "colour:black" );
-		mlt_properties_set( mlt_filter_properties( this ), "transition.rotate", "10" );
+		mlt_properties_set( mlt_filter_properties( this ), "transition.rotate_x", "10" );
 	}
 	return this;
 }
