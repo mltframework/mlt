@@ -128,12 +128,13 @@ void transport( mlt_producer producer )
 {
 	mlt_properties properties = mlt_producer_properties( producer );
 
+	term_init( );
 	fprintf( stderr, "Press 'q' to continue\n" );
-
 	while( mlt_properties_get_int( properties, "done" ) == 0 )
 	{
-		char value = get_keypress( );
-		transport_action( producer, &value );
+		int value = term_read( );
+		if ( value != -1 )
+			transport_action( producer, ( char * )&value );
 	}
 }
 
