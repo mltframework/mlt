@@ -55,6 +55,7 @@ namespace Mlt
 			void plant_transition( Transition *transition, int a_track = 0, int b_track = 1 );
 			void plant_filter( Filter &filter, int track = 0 );
 			void plant_filter( Filter *filter, int track = 0 );
+			bool locate_cut( Producer *producer, int &track, int &cut );
 	};
 }
 

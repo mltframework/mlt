@@ -36,14 +36,12 @@ Properties::Properties( bool dummy ) :
 Properties::Properties( Properties &properties ) :
 	instance( properties.get_properties( ) )
 {
-	fprintf( stderr, "Incrementing ref count on properties #1\n" );
 	inc_ref( );
 }
 
 Properties::Properties( mlt_properties properties ) :
 	instance( properties )
 {
-	fprintf( stderr, "Incrementing ref count on properties #2\n" );
 	inc_ref( );
 }
 
@@ -73,6 +71,11 @@ int Properties::dec_ref( )
 	return mlt_properties_dec_ref( get_properties( ) );
 }
 
+int Properties::ref_count( )
+{
+	return mlt_properties_ref_count( get_properties( ) );
+}
+
 void Properties::block( void *object )
 {
 	mlt_events_block( get_properties( ), object );
@@ -81,6 +84,11 @@ void Properties::block( void *object )
 void Properties::unblock( void *object )
 {
 	mlt_events_unblock( get_properties( ), object );
+}
+
+void Properties::fire_event( const char *event )
+{
+	mlt_events_fire( get_properties( ), ( char * )event, NULL );
 }
 
 bool Properties::is_valid( )

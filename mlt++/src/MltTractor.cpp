@@ -23,6 +23,7 @@
 #include "MltField.h"
 #include "MltTransition.h"
 #include "MltFilter.h"
+#include "MltPlaylist.h"
 using namespace Mlt;
 
 Tractor::Tractor( ) :
@@ -119,3 +120,23 @@ void Tractor::plant_filter( Filter *filter, int track )
 	mlt_field_plant_filter( mlt_tractor_field( get_tractor( ) ), filter->get_filter( ), track );
 }
 
+bool Tractor::locate_cut( Producer *producer, int &track, int &cut )
+{
+	bool found = false;
+
+	for ( track = 0; producer != NULL && !found && track < count( ); track ++ )
+	{
+		Playlist playlist( ( mlt_playlist )mlt_tractor_get_track( get_tractor( ), track ) );
+		for ( cut = 0; !found && cut < playlist.count( ); cut ++ )
+		{
+			Producer *clip = playlist.get_clip( cut );
+			found = producer->get_producer( ) == clip->get_producer( );
+			delete clip;
+		}
+	}
+
+	track --;
+	cut --;
+
+	return found;
+}
