@@ -800,7 +800,7 @@ int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 	{
 		playlist_entry *entry = this->list[ clip ];
 		position = position < 0 ? entry->frame_count + position - 1 : position;
-		if ( position >= 0 && position <= entry->frame_count )
+		if ( position >= 0 && position < entry->frame_count - 1 )
 		{
 			int in = entry->frame_in;
 			int out = entry->frame_out;
@@ -834,6 +834,37 @@ int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 		}
 	}
 	return error;
+}
+
+/** Split the playlist at the absolute position.
+*/
+
+int mlt_playlist_split_at( mlt_playlist this, mlt_position position, int left )
+{
+	int result = this == NULL ? -1 : 0;
+	if ( !result )
+	{
+		if ( position >= 0 && position < mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( this ) ) )
+		{
+			int clip = mlt_playlist_get_clip_index_at( this, position );
+			mlt_playlist_clip_info info;
+			mlt_playlist_get_clip_info( this, &info, clip );
+			if ( left && position != info.start )
+				mlt_playlist_split( this, clip, position - info.start - 1 );
+			else if ( !left )
+				mlt_playlist_split( this, clip, position - info.start );
+			result = position;
+		}
+		else if ( position <= 0 )
+		{
+			result = 0;
+		}
+		else
+		{
+			result = mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( this ) );
+		}
+	}
+	return result;
 }
 
 /** Join 1 or more consecutive clips.
@@ -1188,7 +1219,7 @@ mlt_producer mlt_playlist_replace_with_blank( mlt_playlist this, int clip )
 
 void mlt_playlist_insert_blank( mlt_playlist this, int clip, int length )
 {
-	if ( this != NULL && length > 0 )
+	if ( this != NULL && length >= 0 )
 	{
 		mlt_properties properties = MLT_PLAYLIST_PROPERTIES( this );
 		mlt_events_block( properties, properties );
@@ -1240,7 +1271,7 @@ int mlt_playlist_insert_at( mlt_playlist this, int position, mlt_producer produc
 		if ( clip < this->count && mlt_playlist_is_blank( this, clip ) )
 		{
 			// Split and move to new clip if need be
-			if ( mlt_playlist_split( this, clip, position - info.start ) == 0 )
+			if ( position != info.start && mlt_playlist_split( this, clip, position - info.start ) == 0 )
 				mlt_playlist_get_clip_info( this, &info, ++ clip );
 
 			// Split again if need be
