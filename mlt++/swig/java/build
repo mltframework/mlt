@@ -1,0 +1,34 @@
+#!/bin/env sh
+
+path=`which java 2> /dev/null`
+
+if [ $? = 0 ]
+then
+	# Locate the path for the include
+	path=`dirname $path`
+	path=`dirname $path`
+
+	# Change this as needed
+	export JAVA_INCLUDE="-I$path/include -I$path/include/linux"
+
+	ln -sf ../mltpp.i .
+
+	# Invoke swig
+	mkdir -p src_swig/net/sourceforge/mltpp
+	swig -c++ -I/usr/local/include/mlt++ `mlt-config --cflags` -java -outdir src_swig/net/sourceforge/mltpp -package net.sourceforge.mltpp mltpp.i || exit $?
+
+	# Compile the wrapper
+	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I/usr/local/include/mlt++ `mlt-config --cflags` mltpp_wrap.cxx $JAVA_INCLUDE || exit $?
+	
+	# Create the module
+	ld -shared mltpp_wrap.o -lmlt++ -o libmltpp_java.so || exit $?
+
+	# Compile the test
+	javac `find src_swig -name '*.java'` || exit $?
+
+	export CLASSPATH=`pwd`/src_swig
+	javac Play.java
+else
+	echo "Java command not found"
+	exit 1
+fi

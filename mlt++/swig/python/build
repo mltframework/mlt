@@ -1,0 +1,25 @@
+#!/bin/sh
+
+path=`which python 2> /dev/null`
+
+if [ $? == 0 ]
+then
+	# Change this as needed
+	export PYTHON_INCLUDE=`python -c "import sys;print \"%s/include/python%d.%d\"%(sys.prefix,sys.version_info[0],sys.version_info[1])"`
+
+	[ ! -d "$PYTHON_INCLUDE" ] && echo python development missing && exit 1
+
+	ln -sf ../mltpp.i .
+
+	# Invoke swig
+	swig -c++ -I/usr/local/include/mlt++ `mlt-config --cflags` -python mltpp.i || exit $?
+
+	# Compile the wrapper
+	g++ -D_GNU_SOURCE -c -rdynamic -pthread `mlt-config --cflags` -I$PYTHON_INCLUDE mltpp_wrap.cxx || exit $?
+
+	# Create the module
+	ld -shared mltpp_wrap.o -lmlt++ -o _mltpp.so || exit $?
+else
+	echo Python not installed.
+	exit 1
+fi
