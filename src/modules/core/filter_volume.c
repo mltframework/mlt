@@ -202,16 +202,17 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	{
 		int window = mlt_properties_get_int( filter_props, "window" );
 		double *smooth_buffer = mlt_properties_get_data( filter_props, "smooth_buffer", NULL );
-		int *smooth_index = mlt_properties_get_data( filter_props, "smooth_index", NULL );
 
 		if ( window > 0 && smooth_buffer != NULL )
 		{
+			int smooth_index = mlt_properties_get_int( filter_props, "_smooth_index" );
+			
 			// Compute the signal power and put into smoothing buffer
-			smooth_buffer[ *smooth_index ] = signal_max_power( *buffer, *channels, *samples, &peak );
-//			fprintf( stderr, "filter_volume: raw power %f ", smooth_buffer[ *smooth_index ] );
-			if ( smooth_buffer[ *smooth_index ] > EPSILON )
+			smooth_buffer[ smooth_index ] = signal_max_power( *buffer, *channels, *samples, &peak );
+//			fprintf( stderr, "filter_volume: raw power %f ", smooth_buffer[ smooth_index ] );
+			if ( smooth_buffer[ smooth_index ] > EPSILON )
 			{
-				*smooth_index = ( *smooth_index + 1 ) % window;
+				mlt_properties_set_int( filter_props, "_smooth_index", ( smooth_index + 1 ) % window );
 
 				// Smooth the data and compute the gain
 //				fprintf( stderr, "smoothed %f over %d frames\n", get_smoothed_data( smooth_buffer, window ), window );
@@ -429,9 +430,6 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		for ( i = 0; i < window; i++ )
 			smooth_buffer[ i ] = -1.0;
 		mlt_properties_set_data( filter_props, "smooth_buffer", smooth_buffer, 0, free, NULL );
-		int *smooth_index = calloc( 1, sizeof( int ) );
-		
-		mlt_properties_set_data( filter_props, "smooth_index", smooth_index, 0, free, NULL );
 	}
 	
 	// Put a filter reference onto the frame
@@ -464,4 +462,3 @@ mlt_filter filter_volume_init( char *arg )
 	}
 	return this;
 }
-
