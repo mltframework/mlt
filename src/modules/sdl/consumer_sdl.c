@@ -199,9 +199,13 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
 	mlt_audio_format afmt = mlt_audio_pcm;
-	int channels = 0;
-	int samples;
-	int frequency;
+
+	// Set the preferred params of the test card signal
+	int channels = 2;
+	int frequency = 48000;
+	static int counter = 0;
+	int samples = mlt_sample_calculator( ( this->height < 576 ? 29.97 : 25 ), frequency, counter++ );
+	
 	int16_t *pcm;
 	int bytes;
 

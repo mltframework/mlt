@@ -239,17 +239,20 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 	}
 	else
 	{
+		if ( *samples <= 0 )
+			*samples = 1920;
+		if ( *channels <= 0 )
+			*channels = 2;
+		if ( *frequency <= 0 )
+			*frequency = 48000;
 		if ( test_card.afmt != *format )
 		{
 			test_card.afmt = *format;
-			test_card.audio = realloc( test_card.audio, 1920 * 2 * sizeof( int16_t ) );
-			memset( test_card.audio, 0, 1920 * 2 * sizeof( int16_t ) );
+			test_card.audio = realloc( test_card.audio, *samples * *channels * sizeof( int16_t ) );
+			memset( test_card.audio, 0, *samples * *channels * sizeof( int16_t ) );
 		}
 		
 		*buffer = test_card.audio;
-		*frequency = 48000;
-		*channels = 2;
-		*samples = 1920;
 	}
 	return 0;
 }
@@ -692,6 +695,9 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 {
 	int ret = 0;
 	int16_t *p_src, *p_dest;
+	int16_t *src, *dest;
+	static int16_t *extra_src = NULL, *extra_dest = NULL;
+	static int extra_src_samples = 0, extra_dest_samples = 0;
 	int frequency_src, frequency_dest;
 	int channels_src, channels_dest;
 	int samples_src, samples_dest;
@@ -699,20 +705,86 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight, int16_t *
 
 	mlt_frame_get_audio( this, &p_dest, format, &frequency_dest, &channels_dest, &samples_dest );
 	mlt_frame_get_audio( that, &p_src, format, &frequency_src, &channels_src, &samples_src );
+	//fprintf( stderr, "frame dest samples %d channels %d\n", samples_dest, channels_dest );
+	//fprintf( stderr, "frame src  samples %d channels %d\n", samples_src, channels_src );
+	
 
-	*samples = samples_src < samples_dest ? samples_src : samples_dest;
+#if 0
+	// Append new samples to leftovers
+	if ( extra_dest_samples > 0 )
+	{
+		fprintf( stderr, "prepending %d samples to dest\n", extra_dest_samples );
+		dest = realloc( extra_dest, ( samples_dest + extra_dest_samples ) * 2 * channels_dest );
+		memcpy( &extra_dest[ extra_dest_samples * channels_dest ], p_dest, samples_dest * 2 * channels_dest );
+	}
+	else
+		dest = p_dest;
+	if ( extra_src_samples > 0 )
+	{
+		fprintf( stderr, "prepending %d samples to src\n", extra_src_samples );
+		src = realloc( extra_src, ( samples_src + extra_src_samples ) * 2 * channels_src );
+		memcpy( &extra_src[ extra_src_samples * channels_src ], p_src, samples_src * 2 * channels_src );
+	}
+	else
+		src = p_src;
+#else
+	src = p_src;
+	dest = p_dest;
+#endif
+
+	// determine number of samples to process	
+	if ( samples_src + extra_src_samples < samples_dest + extra_dest_samples )
+		*samples = samples_src + extra_src_samples;
+	else if ( samples_dest + extra_dest_samples < samples_src + extra_src_samples )
+		*samples = samples_dest + extra_dest_samples;
+	
 	*channels = channels_src < channels_dest ? channels_src : channels_dest;
 	*buffer = p_dest;
 
+	// Mixdown
 	for ( i = 0; i < *samples; i++ )
 	{
 		for ( j = 0; j < *channels; j++ )
 		{
-			double dest = (double) p_dest[ i * channels_dest + j ];
-			double src = (double) p_src[ i * channels_src + j ];
-			p_dest[ i * channels_dest + j ] = src * weight + dest * ( 1.0 - weight );
+			double d = (double) dest[ i * channels_dest + j ];
+			double s = (double) src[ i * channels_src + j ];
+			dest[ i * channels_dest + j ] = s * weight + d * ( 1.0 - weight );
 		}
 	}
+
+	// We have to copy --sigh
+	if ( dest != p_dest )
+		memcpy( p_dest, dest, *samples * 2 * *channels );
+
+#if 0
+	// Store the leftovers
+	if ( samples_src + extra_src_samples < samples_dest + extra_dest_samples )
+	{
+		extra_dest_samples = ( samples_dest + extra_dest_samples ) - ( samples_src + extra_src_samples );
+		size_t size = extra_dest_samples * 2 * channels_dest;
+		fprintf( stderr, "storing %d samples from dest\n", extra_dest_samples );
+		if ( extra_dest )
+			free( extra_dest );
+		extra_dest = malloc( size );
+		if ( extra_dest )
+			memcpy( extra_dest, &p_dest[ ( samples_dest - extra_dest_samples - 1 ) * channels_dest ], size );
+		else
+			extra_dest_samples = 0;
+	}
+	else if ( samples_dest + extra_dest_samples < samples_src + extra_src_samples )
+	{
+		extra_src_samples = ( samples_src + extra_src_samples ) - ( samples_dest + extra_dest_samples );
+		size_t size = extra_src_samples * 2 * channels_src;
+		fprintf( stderr, "storing %d samples from src\n", extra_dest_samples );
+		if ( extra_src )
+			free( extra_src );
+		extra_src = malloc( size );
+		if ( extra_src )
+			memcpy( extra_src, &p_src[ ( samples_src - extra_src_samples - 1 ) * channels_src ], size );
+		else
+			extra_src_samples = 0;
+	}
+#endif
 	
 	return ret;
 }

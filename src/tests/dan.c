@@ -23,9 +23,9 @@ int main( int argc, char **argv )
 
 	// Create the producer(s)
 	mlt_producer dv1 = mlt_factory_producer( "mcdv", file1 );
-	mlt_producer_set_in_and_out( dv1, 300.0, 303.0 );
+	mlt_producer_set_in_and_out( dv1, 300, 305 );
 	
-	mlt_producer dv2 = mlt_factory_producer( "mcmpeg", file2 );
+	mlt_producer dv2 = mlt_factory_producer( "mcdv", file2 );
 	//mlt_producer_set_in_and_out( dv2, 10.0, 30.0 );
 
 #if 0
@@ -43,22 +43,22 @@ int main( int argc, char **argv )
 	//mlt_producer dv2 = producer_libdv_init( file2 );
 	//mlt_producer dv2 = mlt_factory_producer( "pixbuf", file2 );
 #if 0
-	mlt_producer dv2 = mlt_factory_producer( "pango", NULL ); //"<span font_desc=\"Sans Bold 36\">Mutton <span font_desc=\"Luxi Serif Bold Oblique 36\">Lettuce</span> Tomato</span>" );
-	mlt_properties_set( mlt_producer_properties( dv2 ), "font", "Sans Bold 36" );
-	mlt_properties_set( mlt_producer_properties( dv2 ), "text", "Mutton Lettuce\nTomato" );
-	mlt_properties_set_int( mlt_producer_properties( dv2 ), "video_standard", mlt_video_standard_ntsc );
-	mlt_properties_set_int( mlt_producer_properties( dv2 ), "bgcolor", 0x0000007f );
-	mlt_properties_set_int( mlt_producer_properties( dv2 ), "pad", 8 );
-	mlt_properties_set_int( mlt_producer_properties( dv2 ), "align", 1 );
-	mlt_properties_set_int( mlt_producer_properties( dv2 ), "x", -20 );
-	mlt_properties_set_int( mlt_producer_properties( dv2 ), "y", 40 );
+	mlt_producer title = mlt_factory_producer( "pango", NULL ); //"<span font_desc=\"Sans Bold 36\">Mutton <span font_desc=\"Luxi Serif Bold Oblique 36\">Lettuce</span> Tomato</span>" );
+	mlt_properties_set_int( mlt_producer_properties( title ), "video_standard", mlt_video_standard_ntsc );
+	mlt_properties_set( mlt_producer_properties( title ), "font", "Sans Bold 36" );
+	mlt_properties_set( mlt_producer_properties( title ), "text", "Mutton Lettuce\nTomato" );
+	mlt_properties_set_int( mlt_producer_properties( title ), "bgcolor", 0x0000007f );
+	mlt_properties_set_int( mlt_producer_properties( title ), "pad", 8 );
+	mlt_properties_set_int( mlt_producer_properties( title ), "align", 1 );
+	mlt_properties_set_int( mlt_producer_properties( title ), "x", 20 );
+	mlt_properties_set_int( mlt_producer_properties( title ), "y", 40 );
 #endif
 
 	mlt_playlist playlist1 = mlt_playlist_init();
 	mlt_playlist_append( playlist1, dv1 );
 
 	mlt_playlist playlist2 = mlt_playlist_init();
-	mlt_playlist_blank( playlist2, 1.0 );
+	mlt_playlist_blank( playlist2, 3.0 );
 	mlt_playlist_append( playlist2, dv2 );
 	
 	// Register producers(s) with a multitrack object
@@ -74,8 +74,8 @@ int main( int argc, char **argv )
 	// Define a transition
 	mlt_transition transition = mlt_factory_transition( "luma", NULL );
 	mlt_transition_connect( transition, mlt_multitrack_service( multitrack ), 0, 1 );
-	mlt_transition_set_in_and_out( transition, 1.0, 3.0 );
-	//mlt_properties_set( mlt_transition_properties( transition ), "filename", "clock.pgm" );
+	mlt_transition_set_in_and_out( transition, 3.0, 5.0 );
+	mlt_properties_set( mlt_transition_properties( transition ), "filename", "clock.pgm" );
 	mlt_properties_set_double( mlt_transition_properties( transition ), "softness", 0.1 );
 
 	// Buy a tractor and connect it to the filter
@@ -92,7 +92,7 @@ int main( int argc, char **argv )
 	// Close everything...
 	mlt_consumer_close( consumer );
 	mlt_tractor_close( tractor );
-//	mlt_filter_close( filter );
+	mlt_transition_close( transition );
 	mlt_multitrack_close( multitrack );
 	mlt_producer_close( dv1 );
 	mlt_producer_close( dv2 );

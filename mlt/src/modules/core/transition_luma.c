@@ -352,12 +352,13 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_frame_push_frame( a_frame, b_frame );
 
 /************************ AUDIO ***************************/
+#if 1
 	// Backup the original get_audio (it's still needed)
 	mlt_properties_set_data( mlt_frame_properties( a_frame ), "get_audio", a_frame->get_audio, 0, NULL, NULL );
 
 	// Override the get_audio method
 	a_frame->get_audio = transition_get_audio;
-
+#endif
 	return a_frame;
 }
 
