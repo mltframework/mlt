@@ -79,6 +79,9 @@ mlt_playlist mlt_playlist_init( )
 
 		// Indicate that this producer is a playlist
 		mlt_properties_set_data( mlt_playlist_properties( this ), "playlist", this, 0, NULL, NULL );
+
+		// Specify the eof condition
+		mlt_properties_set( mlt_playlist_properties( this ), "eof", "pause" );
 	}
 	
 	return this;
@@ -194,6 +197,9 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 	int64_t position = mlt_producer_frame_position( &this->parent, pos );
 	int64_t total = 0;
 
+	mlt_properties properties = mlt_playlist_properties( this );
+	char *eof = mlt_properties_get( properties, "eof" );
+
 	// Loop through the virtual playlist
 	int i = 0;
 
@@ -222,14 +228,15 @@ static mlt_producer mlt_playlist_virtual_seek( mlt_playlist this )
 		position += mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) );
 		mlt_producer_seek_frame( producer, position );
 	}
-	else if ( total > 0 )
+	else if ( !strcmp( eof, "pause" ) && total > 0 )
 	{
 		playlist_entry *entry = this->list[ this->count - 1 ];
 		mlt_producer this_producer = mlt_playlist_producer( this );
-		mlt_producer_seek_frame( this_producer, total );
+		mlt_producer_seek_frame( this_producer, total - 1 );
 		producer = entry->producer;
 		position = mlt_producer_frame_position( producer, mlt_producer_get_in( producer ) );
 		mlt_producer_seek_frame( producer, position + entry->frame_out );
+		mlt_producer_set_speed( producer, 0 );
 	}
 	else
 	{

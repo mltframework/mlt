@@ -160,6 +160,10 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 
 	if ( result == 0 )
 	{
+		// If it's a playlist, we need to make sure it doesn't pause at end
+		mlt_properties properties = mlt_producer_properties( producer );
+		mlt_properties_set( properties, "eof", "continue" );
+
 		// Resize the producer list if need be
 		if ( track >= this->size )
 		{
