@@ -872,14 +872,14 @@ int mlt_playlist_split_at( mlt_playlist this, mlt_position position, int left )
 
 int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 {
-	int error = clip < 0 || ( clip ) >= this->count;
+	int error = clip < 0 || clip >= this->count;
 	if ( error == 0 )
 	{
 		int i = clip;
 		mlt_playlist new_clip = mlt_playlist_init( );
 		mlt_events_block( MLT_PLAYLIST_PROPERTIES( this ), this );
 		if ( clip + count >= this->count )
-			count = this->count - clip;
+			count = this->count - clip - 1;
 		for ( i = 0; i <= count; i ++ )
 		{
 			playlist_entry *entry = this->list[ clip ];
