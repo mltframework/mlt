@@ -99,6 +99,7 @@ Producers
 		Dependencies
 
 			mainconcept dv sdk and libdv.
+			"dv_sdk" installed parallel to mlt.
 
 		Known Bugs
 
@@ -129,6 +130,7 @@ Producers
 		Dependencies
 
 			mainconcept mpeg sdk.
+			"mpeg_sdk_demo" installed parallel to mlt.
 
 		Known Bugs
 
@@ -143,7 +145,7 @@ Producers
 
 		Constructor Argument
 
-			'markup' - a string containing Pango markup see:
+			string file - a text file containing Pango markup, see:
 			           http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
 			           - requires xml-like encoding special chars: <, > ( and '&' and '"' ?)
 
@@ -151,9 +153,16 @@ Producers
 
 			timecode in - in point
 			timecode out - out point
+
+		Mutable Properties
+		
 			int video_standard - enum mlt_video_standard from mlt_frame.h
 			                     PAL = 0, NTSC = 1
 			                     this determines proper pixel aspect ratio
+
+			string markup - a string containing Pango markup see:
+			                http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+			              - requires xml-like encoding special chars: <, > ( and '&' and '"' ?)
 
 			int fgcolor - an rgba color specification of the text (i.e. 0xrrggbbaa)
 			int bgcolor - an rgba color of the background rectangle
@@ -173,7 +182,7 @@ Producers
 
 		Read Only Properties
 
-			string resource - "pango"
+			string resource - the text/markup file or "pango" if no file
 
 		Dependencies
 
@@ -205,10 +214,18 @@ Producers
 
 			timecode in - in point
 			timecode out - out point
+
+		Mutable Properties
+
 			int video_standard - enum mlt_video_standard from mlt_frame.h
 			                     PAL = 0, NTSC = 1
 			                     this determines proper pixel aspect ratio
 			double ttl - how long (seconds) to repeat each picture in file sequences
+			int x - the horizontal offset from the left edge of the frame
+			int y - the vertical offset from the top edge of the frame
+			double mix - the opacity factor to apply to the second frame
+			             (used in addition to alpha channel).
+
 
 		Read Only Properties
 
@@ -285,20 +302,65 @@ Transitions
 	composite
 	
 		Description
+
+			An alpha-channel based compositor for two frames.
+			
 		Constructor Argument
-		Initialisation Properties
+
+			none
+			
+		Mutable Properties
+
+			int x - the horizontal offset from the left edge of the frame
+			int y - the vertical offset from the top edge of the frame
+			double mix - the opacity factor to apply to the second frame
+			             (used in addition to alpha channel).
+		
 		Read Only Properties
+
+			none
+		
 		Dependencies
+
+			none
+		
 		Known Bugs
+
+			Need to add field-based rendering.
 
 	luma
 	
 		Description
+
+			A generic dissolve and wipe transition processor. It gets its name
+			from how it uses a grayscale "map" file. As the luma value varies
+			over time, a threshold filter is applied to the map to determine
+			what parts of frame A vs. frame B to show. It only reads PGM
+			files, but it does handle 16 bit PGM. This performs field-based
+			rendering.
+		
 		Constructor Argument
-		Initialisation Properties
+
+			string file - the luma map file name. If not supplied, a dissolve.
+		
+		Mutable Properties
+
+			string filename - same as above
+			double softness - only when using a luma map, how soft to make the
+			                  edges between A and B. 0.0 = no softness. 1.0 =
+			                  too soft.
+			
 		Read Only Properties
+
+			none
+			
 		Dependencies
+
+			none
+			
 		Known Bugs
+
+			The luma map must be the same size as the B frame.
 
 Consumers
 ---------
@@ -306,11 +368,30 @@ Consumers
 	bluefish
 	
 		Description
+
+			BlueFish444 audio and video output module.
+		
 		Constructor Argument
+
+			int video_standard - 0 = PAL, 1 = NTSC
+			
 		Initialisation Properties
+
+			int video_standard - see above
+			
 		Read Only Properties
+
+			none
+		
 		Dependencies
+
+			BlueVelvet SDK installed parallel to mlt in "bluefish."
+		
 		Known Bugs
+
+			If mlt crashes, you must reload the BlueDriver kernel module
+			due to unreleased DMA buffers.
+			Needs an argument or property for multi-card address.
 		
 	ffmpeg
 	
@@ -323,8 +404,30 @@ Consumers
 
 	sdl
 		Description
+
+			Simple DirectMedia Layer audio and video output module.
+			
 		Constructor Argument
-		Initialisation Properties
+
+			string video_standard - "PAL" (default), "NTSC", or "WxH"
+			
+		Mutable Properties
+
+			double volume - audio level factor
+			int video_off - if 1, disable video output
+			int audio_off - if 1, disable audio output
+			int scale_overlay - if 1, resample video from source pixel aspect
+			                    ratio to square pixels.
+			
 		Read Only Properties
+
+			none
+			
 		Dependencies
+
+			libSDL-1.2, libasound, libaudio, libXt, libX11, libXext, libSM, libICE
+		
 		Known Bugs
+
+			?
+
