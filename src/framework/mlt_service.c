@@ -137,11 +137,14 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 
 static void mlt_service_disconnect( mlt_service this )
 {
-	// Get the service base
-	mlt_service_base *base = this->local;
+	if ( this != NULL )
+	{
+		// Get the service base
+		mlt_service_base *base = this->local;
 
-	// There's a bit more required here...
-	base->out = NULL;
+		// There's a bit more required here...
+		base->out = NULL;
+	}
 }
 
 /** Obtain the consumer this service is connected to.
@@ -173,11 +176,14 @@ mlt_service mlt_service_producer( mlt_service this )
 
 static void mlt_service_connect( mlt_service this, mlt_service that )
 {
-	// Get the service base
-	mlt_service_base *base = this->local;
+	if ( this != NULL )
+	{
+		// Get the service base
+		mlt_service_base *base = this->local;
 
-	// There's a bit more required here...
-	base->out = that;
+		// There's a bit more required here...
+		base->out = that;
+	}
 }
 
 /** Get the first connected producer service.
