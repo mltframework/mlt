@@ -41,7 +41,7 @@ struct consumer_sdl_s
 	mlt_deque queue;
 	pthread_t thread;
 	int running;
-	uint8_t audio_buffer[ 4096 * 19 ];
+	uint8_t audio_buffer[ 4096 * 10 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
 	pthread_cond_t audio_cond;
@@ -497,6 +497,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		if ( this->sdl_screen != NULL && this->sdl_overlay != NULL )
 		{
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
+			sdl_lock_display();
 			if ( SDL_LockYUVOverlay( this->sdl_overlay ) >= 0 )
 			{
 				if ( image != NULL )
@@ -504,6 +505,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				SDL_UnlockYUVOverlay( this->sdl_overlay );
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}
+			sdl_unlock_display();
 		}
 	}
 
@@ -523,7 +525,6 @@ static void *video_thread( void *arg )
 	mlt_frame next = NULL;
 	mlt_properties properties = NULL;
 	double speed = 0;
-	int skipped = 0;
 
 	// Get the current time
 	gettimeofday( &now, NULL );
@@ -561,7 +562,7 @@ static void *video_thread( void *arg )
 			mlt_position difference = scheduled - elapsed;
 
 			// Smooth playback a bit
-			if ( difference > 20000 && speed == 1.0 )
+			if ( difference > 10000 && speed == 1.0 )
 			{
 				tm.tv_sec = difference / 1000000;
 				tm.tv_nsec = ( difference % 1000000 ) * 500;
@@ -571,11 +572,9 @@ static void *video_thread( void *arg )
 			// Show current frame if not too old
 			if ( difference > -10000 || speed != 1.0 || mlt_deque_count( this->queue ) < 2 )
 				consumer_play_video( this, next );
-			else
-				skipped ++;
 
 			// If the queue is empty, recalculate start to allow build up again
-			if ( mlt_deque_count( this->queue ) == 0 )
+			if ( mlt_deque_count( this->queue ) == 0 && speed == 1.0 )
 			{
 				gettimeofday( &now, NULL );
 				start = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - scheduled + 20000;
