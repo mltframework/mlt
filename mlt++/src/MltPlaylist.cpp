@@ -192,6 +192,11 @@ int Playlist::split( int clip, int position )
 	return mlt_playlist_split( get_playlist( ), clip, position );
 }
 
+int Playlist::split_at( int position, bool left )
+{
+	return mlt_playlist_split_at( get_playlist( ), position, left );
+}
+
 int Playlist::join( int clip, int count, int merge )
 {
 	return mlt_playlist_join( get_playlist( ), clip, count, merge );

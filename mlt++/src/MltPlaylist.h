@@ -77,6 +77,7 @@ namespace Mlt
 			int move( int from, int to );
 			int resize_clip( int clip, int in, int out );
 			int split( int clip, int position );
+			int split_at( int position, bool left = true );
 			int join( int clip, int count = 1, int merge = 1 );
 			int mix( int clip, int length, Transition *transition = NULL );
 			int mix_add( int clip, Transition *transition );
