@@ -147,7 +147,7 @@ Producers
 
 			string file - a text file containing Pango markup, see:
 			           http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
-			           - requires xml-like encoding special chars: <, > ( and '&' and '"' ?)
+			           - requires xml-like encoding special chars: <, >, & to &lt;, &gt;, &amp;
 
 		Initialisation Properties
 
@@ -162,7 +162,7 @@ Producers
 
 			string markup - a string containing Pango markup see:
 			                http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
-			              - requires xml-like encoding special chars: <, > ( and '&' and '"' ?)
+			              - requires xml-like encoding special chars: <, >, & to &lt;, &gt;, &amp;
 
 			int fgcolor - an rgba color specification of the text (i.e. 0xrrggbbaa)
 			int bgcolor - an rgba color of the background rectangle
