@@ -28,13 +28,8 @@ Producers
 			ffmpeg must be configured as --enable-shared and installed prior
 			to compilation of mlt.
 
-		Oddities
-
-			MPEG video remains elusive.
-
 		Known Bugs
 
-			Fixed frame rate.
 			Audio sync discrepancy with some content.
 			Not all libavformat supported formats are seekable.
 			ogg is currently broken.
@@ -558,62 +553,6 @@ Filters
 
 			none
 
-	volume
-
-		Description
-
-			Adjust an audio stream's volume level
-			
-		Constructor Argument
-
-			gain - a string containing one of:
-				 - a floating point value of the gain adjustment
-				 - a numeric value with the suffix "dB" to adjust in terms of decibels
-				 - "normalise" to normalise the volume to the target amplitude -12dBFS
-			
-		Initialisation Properties
-		
-			int in - in point
-			int out - out point
-			int window - the number of video frames over which to smooth normalisation.
-			             defaults to 75.
-
-		Mutable Properties
-
-			string gain - same as constructor argument above
-
-			string normalise - normalise the volume to the amplitude:
-				- a numeric value with the suffix "dB" to set amplitude in decibels
-				- a floating point value of the relative volume
-				- an unspecified value uses the default -12dBFS
-
-			string limiter - limit all samples above:
-				- a numeric value with the suffix "dB"
-				- a floating point value ( dB = 20 * log10(x) )
-				- an unspecified value uses the default -6dBFS
-
-			double max_gain - a floating point or decibel value of the maximum gain that
-				can be applied during normalisation.
-				- an unspecified value uses the default 20dB
-
-			string end - a gain value just like the gain property above.
-			             This causes the gain to be interpolated from 'gain' to 'end'
-			             over the duration.
-
-			int window - the size of the normalising smoothing buffer in video frame units.
-			           - the smoothing buffer prevents erratic gain changes.
-			           - the default value is 75 video frames. 
-
-			gain can be applied as a factor to the normalise amplitude!
-			
-		Dependencies
-
-			none
-			
-		Known Bugs
-
-			none
-
 	resample
 
 		Description
@@ -675,6 +614,93 @@ Filters
 		Dependencies
 
 			libgdk_pixbuf-2.0, libglib-2.0, libgobject-2.0, libgmodule-2.0
+
+		Known Bugs
+
+			none
+
+	volume
+
+		Description
+
+			Adjust an audio stream's volume level
+			
+		Constructor Argument
+
+			gain - a string containing one of:
+				 - a floating point value of the gain adjustment
+				 - a numeric value with the suffix "dB" to adjust in terms of decibels
+				 - "normalise" to normalise the volume to the target amplitude -12dBFS
+			
+		Initialisation Properties
+		
+			int in - in point
+			int out - out point
+			int window - the number of video frames over which to smooth normalisation.
+			             defaults to 75.
+
+		Mutable Properties
+
+			string gain - same as constructor argument above
+
+			string normalise - normalise the volume to the amplitude:
+				- a numeric value with the suffix "dB" to set amplitude in decibels
+				- a floating point value of the relative volume
+				- an unspecified value uses the default -12dBFS
+
+			string limiter - limit all samples above:
+				- a numeric value with the suffix "dB"
+				- a floating point value ( dB = 20 * log10(x) )
+				- an unspecified value uses the default -6dBFS
+
+			double max_gain - a floating point or decibel value of the maximum gain that
+				can be applied during normalisation.
+				- an unspecified value uses the default 20dB
+
+			string end - a gain value just like the gain property above.
+			             This causes the gain to be interpolated from 'gain' to 'end'
+			             over the duration.
+
+			int window - the size of the normalising smoothing buffer in video frame units.
+			           - the smoothing buffer prevents erratic gain changes.
+			           - the default value is 75 video frames. 
+
+			gain can be applied as a factor to the normalise amplitude!
+			
+		Dependencies
+
+			none
+			
+		Known Bugs
+
+			none
+
+	watermark
+
+		Description
+
+			Add a watermark to the frames.
+
+		Constructor Argument
+
+			resource - the producer to use (ie: a .png)
+
+		Initialisation Properties
+
+			string resource - the producer to use
+			string factory - producer required for the resource ('fezzik')
+			string geometry - composite geometry
+			string distort - control scaling
+			int in - in point
+			int out - out point
+
+		Mutable Properties
+
+			none
+
+		Dependencies
+
+			mlt core modules and optionally, fezzik
 
 		Known Bugs
 

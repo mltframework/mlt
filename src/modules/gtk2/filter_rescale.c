@@ -205,14 +205,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_rescale_init( char *arg )
 {
-	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
-	if ( mlt_filter_init( this, this ) == 0 )
+	mlt_filter this = mlt_filter_new( );
+	if ( this != NULL )
 	{
 		this->process = filter_process;
-		if ( arg != NULL )
-			mlt_properties_set( mlt_filter_properties( this ), "interpolation", arg );
-		else
-			mlt_properties_set( mlt_filter_properties( this ), "interpolation", "bilinear" );
+		mlt_properties_set( mlt_filter_properties( this ), "interpolation", arg == NULL ? "bilinear" : arg );
 	}
 	return this;
 }

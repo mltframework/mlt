@@ -134,8 +134,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_resample_init( char *arg )
 {
-	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
-	if ( this != NULL && mlt_filter_init( this, NULL ) == 0 )
+	mlt_filter this = mlt_filter_new( );
+	if ( this != NULL )
 	{
 		int error;
 		SRC_STATE *state = src_new( RESAMPLE_TYPE, 2 /* channels */, &error );

@@ -21,16 +21,17 @@
 #include <string.h>
 
 #include "producer_ppm.h"
+#include "filter_brightness.h"
 #include "filter_deinterlace.h"
 #include "filter_gamma.h"
 #include "filter_greyscale.h"
 #include "filter_obscure.h"
 #include "filter_resize.h"
 #include "filter_volume.h"
+#include "filter_watermark.h"
 #include "transition_composite.h"
 #include "transition_luma.h"
 #include "transition_mix.h"
-#include "filter_brightness.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -41,6 +42,8 @@ void *mlt_create_producer( char *id, void *arg )
 
 void *mlt_create_filter( char *id, void *arg )
 {
+	if ( !strcmp( id, "brightness" ) )
+		return filter_brightness_init( arg );
 	if ( !strcmp( id, "deinterlace" ) )
 		return filter_deinterlace_init( arg );
 	if ( !strcmp( id, "gamma" ) )
@@ -53,8 +56,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_resize_init( arg );
 	if ( !strcmp( id, "volume" ) )
 		return filter_volume_init( arg );
-	if ( !strcmp( id, "brightness" ) )
-		return filter_brightness_init( arg );
+	if ( !strcmp( id, "watermark" ) )
+		return filter_watermark_init( arg );
 	return NULL;
 }
 

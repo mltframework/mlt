@@ -3,16 +3,17 @@ TARGET = ../libmltcore.so
 
 OBJS = factory.o \
 	   producer_ppm.o \
+	   filter_brightness.o \
 	   filter_deinterlace.o \
 	   filter_greyscale.o \
 	   filter_gamma.o \
 	   filter_obscure.o \
 	   filter_resize.o \
 	   filter_volume.o \
+	   filter_watermark.o \
 	   transition_composite.o \
 	   transition_luma.o \
-	   transition_mix.o \
-	   filter_brightness.o
+	   transition_mix.o 
 
 CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 

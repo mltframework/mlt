@@ -117,25 +117,27 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 mlt_filter filter_ffmpeg_dub_init( char *file )
 {
 	// Create the filter object
-	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
+	mlt_filter this = mlt_filter_new( );
 
 	// Initialise it
-	mlt_filter_init( this, NULL );
+	if ( this != NULL )
+	{
+		// Obtain the properties
+		mlt_properties properties = mlt_filter_properties( this );
 
-	// Overide the filter process method
-	this->process = filter_process;
+		// Create an ffmpeg producer
+		// TODO: THIS SHOULD NOT BE HERE....
+		mlt_producer producer = mlt_factory_producer( "ffmpeg", file );
 
-	// Obtain the properties
-	mlt_properties properties = mlt_filter_properties( this );
+		// Overide the filter process method
+		this->process = filter_process;
 
-	// Create an ffmpeg producer
-	mlt_producer producer = mlt_factory_producer( "ffmpeg", file );
+		// Pass the producer 
+		mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
-	// Pass the producer 
-	mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
-
-	// Initialise the audio frame position
-	mlt_properties_set_position( properties, "dub_position", 0 );
+		// Initialise the audio frame position
+		mlt_properties_set_position( properties, "dub_position", 0 );
+	}
 
 	return this;
 }

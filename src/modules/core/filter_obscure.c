@@ -230,7 +230,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter this = mlt_deque_pop_back( deque );
 
 	// Get the image from the frame
-	if ( mlt_frame_get_image( frame, image, format, width, height, 1 ) == 0 )
+	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+
+	// Get the image from the frame
+	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
 		if ( this != NULL )
 		{
@@ -261,7 +264,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		}
 	}
 
-	return 0;
+	return error;
 }
 
 /** Filter processing.

@@ -293,10 +293,13 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 
 void mlt_frame_close( mlt_frame this )
 {
-	mlt_deque_close( this->stack_get_image );
-	mlt_deque_close( this->stack_frame );
-	mlt_properties_close( &this->parent );
-	free( this );
+	if ( this != NULL )
+	{
+		mlt_deque_close( this->stack_get_image );
+		mlt_deque_close( this->stack_frame );
+		mlt_properties_close( &this->parent );
+		free( this );
+	}
 }
 
 /***** convenience functions *****/

@@ -54,6 +54,7 @@ struct mlt_transition_s
 */
 
 extern int mlt_transition_init( mlt_transition this, void *child );
+extern mlt_transition mlt_transition_new( );
 extern mlt_service mlt_transition_service( mlt_transition this );
 extern mlt_properties mlt_transition_properties( mlt_transition this );
 extern int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_track, int b_track );
@@ -62,6 +63,7 @@ extern int mlt_transition_get_a_track( mlt_transition this );
 extern int mlt_transition_get_b_track( mlt_transition this );
 extern mlt_position mlt_transition_get_in( mlt_transition this );
 extern mlt_position mlt_transition_get_out( mlt_transition this );
+extern mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame );
 extern void mlt_transition_close( mlt_transition this );
 
 #endif

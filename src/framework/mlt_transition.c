@@ -50,11 +50,21 @@ int mlt_transition_init( mlt_transition this, void *child )
 		mlt_properties_set_position( properties, "out", 0 );
 		mlt_properties_set_int( properties, "a_track", 0 );
 		mlt_properties_set_int( properties, "b_track", 1 );
-		mlt_properties_set( properties, "resource", "<transition>" );
 
 		return 0;
 	}
 	return 1;
+}
+
+/** Create a new transition.
+*/
+
+mlt_transition mlt_transition_new( )
+{
+	mlt_transition this = calloc( 1, sizeof( struct mlt_transition_s ) );
+	if ( this != NULL )
+		mlt_transition_init( this, NULL );
+	return this;
 }
 
 /** Get the service associated to the transition.
@@ -136,7 +146,7 @@ mlt_position mlt_transition_get_out( mlt_transition this )
   	If we have no process method (unlikely), we simply return the a_frame unmolested.
 */
 
-static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
+mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
 	if ( this->process == NULL )
 		return a_frame;
@@ -186,7 +196,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		if ( position >= in && position <= out )
 		{
 			// Process the transition
-			*frame = transition_process( this, this->a_frame, this->b_frame );
+			*frame = mlt_transition_process( this, this->a_frame, this->b_frame );
 			this->a_held = 0;
 		}
 		else

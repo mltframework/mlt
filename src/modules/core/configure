@@ -8,13 +8,14 @@ ppm				libmltcore.so
 EOF
 
 cat << EOF >> ../filters.dat
+brightness		libmltcore.so
 deinterlace		libmltcore.so
 gamma			libmltcore.so
 greyscale		libmltcore.so
+obscure			libmltcore.so
 resize			libmltcore.so
 volume			libmltcore.so
-obscure			libmltcore.so
-brightness		libmltcore.so
+watermark		libmltcore.so
 EOF
 
 cat << EOF >> ../transitions.dat

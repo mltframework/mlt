@@ -26,14 +26,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-static int get_value( mlt_properties properties, char *preferred, char *fallback )
-{
-	int value = mlt_properties_get_int( properties, preferred );
-	if ( value == 0 )
-		value = mlt_properties_get_int( properties, fallback );
-	return value;
-}
-
 /** Do it :-).
 */
 
@@ -148,10 +140,7 @@ mlt_filter filter_resize_init( char *arg )
 	if ( mlt_filter_init( this, this ) == 0 )
 	{
 		this->process = filter_process;
-		if ( arg != NULL )
-			mlt_properties_set( mlt_filter_properties( this ), "scale", arg );
-		else
-			mlt_properties_set( mlt_filter_properties( this ), "scale", "off" );
+		mlt_properties_set( mlt_filter_properties( this ), "scale", arg == NULL ? "off" : arg );
 	}
 	return this;
 }

@@ -43,9 +43,6 @@ struct mlt_producer_s
 /** Public final methods
 */
 
-//extern double mlt_producer_convert_position_to_time( mlt_producer this, int64_t frame );
-//extern mlt_position mlt_producer_convert_time_to_position( mlt_producer this, double time );
-
 extern int mlt_producer_init( mlt_producer this, void *child );
 extern mlt_service mlt_producer_service( mlt_producer this );
 extern mlt_properties mlt_producer_properties( mlt_producer this );
