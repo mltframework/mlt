@@ -56,6 +56,14 @@ mlt_service mlt_transition_service( mlt_transition this )
 	return &this->parent;
 }
 
+/** Get the properties interface.
+*/
+
+mlt_properties mlt_transition_properties( mlt_transition this )
+{
+	return mlt_service_properties( mlt_transition_service( this ) );
+}
+
 /** Connect this transition with a producers a and b tracks.
 */
 
@@ -223,7 +231,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 /** Close the transition.
 */
 
-void mlt_transitition_close( mlt_transition this )
+void mlt_transition_close( mlt_transition this )
 {
 	if ( this->close != NULL )
 		this->close( this );

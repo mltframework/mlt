@@ -26,6 +26,7 @@
 #include "filter_resize.h"
 #include "filter_gamma.h"
 #include "transition_composite.h"
+#include "transition_luma.h"
 
 void *mlt_create_producer( char *id, void *arg )
 {
@@ -51,6 +52,8 @@ void *mlt_create_transition( char *id, void *arg )
 {
 	if ( !strcmp( id, "composite" ) )
 		return transition_composite_init( arg );
+	if ( !strcmp( id, "luma" ) )
+		return transition_luma_init( arg );
 	return NULL;
 }
 

@@ -163,9 +163,6 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
 
-	// Parse the header
-	dv_parse_header( decoder, dv_data );
-
 	// Extract an image of the format requested
 	if ( *format == mlt_image_yuv422 )
 	{
@@ -217,9 +214,6 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 
 	// Get the dv data
 	uint8_t *dv_data = mlt_properties_get_data( properties, "dv_data", NULL );
-
-	// Parse the header for meta info
-	dv_parse_header( decoder, dv_data );
 
 	// Obtain required values
 	*frequency = decoder->audio->frequency;
@@ -283,6 +277,12 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Update other info on the frame
 		mlt_properties_set_int( properties, "width", 720 );
 		mlt_properties_set_int( properties, "height", this->is_pal ? 576 : 480 );
+		mlt_properties_set_int( properties, "top_field_first", 0 );
+		
+		// Parse the header for meta info
+		dv_parse_header( this->dv_decoder, data );
+		mlt_properties_set_int( properties, "progressive", dv_is_progressive( this->dv_decoder ) );
+		mlt_properties_set_double( properties, "display_aspect", dv_format_wide( this->dv_decoder ) ? 16.0/9.0 : 4.0/3.0 );
 
 		// Hmm - register audio callback
 		( *frame )->get_audio = producer_get_audio;

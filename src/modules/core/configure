@@ -16,6 +16,7 @@ EOF
 
 cat << EOF >> ../transitions.dat
 composite		libmltcore.so
+luma		libmltcore.so
 EOF
 
 fi

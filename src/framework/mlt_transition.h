@@ -57,12 +57,13 @@ struct mlt_transition_s
 
 extern int mlt_transition_init( mlt_transition this, void *child );
 extern mlt_service mlt_transition_service( mlt_transition this );
+extern mlt_properties mlt_transition_properties( mlt_transition this );
 extern int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_track, int b_track );
 extern void mlt_transition_set_in_and_out( mlt_transition this, mlt_timecode in, mlt_timecode out );
 extern int mlt_transition_get_a_track( mlt_transition this );
 extern int mlt_transition_get_b_track( mlt_transition this );
 extern mlt_timecode mlt_transition_get_in( mlt_transition this );
 extern mlt_timecode mlt_transition_get_out( mlt_transition this );
-extern void mlt_transitition_close( mlt_transition this );
+extern void mlt_transition_close( mlt_transition this );
 
 #endif
