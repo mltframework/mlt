@@ -65,6 +65,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			char *name = mlt_properties_get( properties, "_unique_id" );
 			mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( this ), name );
 			mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
+			mlt_properties_set_position( MLT_TRANSITION_PROPERTIES( transition ), "in", mlt_filter_get_in( filter ) );
+			mlt_properties_set_position( MLT_TRANSITION_PROPERTIES( transition ), "out", mlt_filter_get_out( filter ) );
 			mlt_producer_seek( producer, position );
 			mlt_frame_set_position( this, position );
 			mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), properties, "producer." );

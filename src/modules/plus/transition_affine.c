@@ -497,10 +497,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_position position =  mlt_properties_get_position( a_props, name );
 	mlt_position in = mlt_properties_get_position( properties, "in" );
 	mlt_position out = mlt_properties_get_position( properties, "out" );
+	int mirror = mlt_properties_get_position( properties, "mirror" );
+	int length = out - in + 1;
 
 	// Structures for geometry
 	struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
 	struct geometry_s result;
+
+	if ( mirror && position > length / 2 )
+		position = abs( position - length );
 
 	// Now parse the geometries
 	if ( start == NULL )
@@ -517,7 +522,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// Calculate the region now
-	composite_calculate( &result, this, a_frame, ( float )( position ) / ( out - in + 1 ) );
+	composite_calculate( &result, this, a_frame, ( float )position / length );
 
 	// Fetch the b frame image
 	result.w = ( int )( result.w * *width / result.nw );
@@ -593,13 +598,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		affine_t affine;
 		affine_init( affine.matrix );
-		affine_rotate( affine.matrix, fix_rotate_x + rotate_x * ( position - in ) );
-		affine_rotate_y( affine.matrix, fix_rotate_y + rotate_y * ( position - in ) );
-		affine_rotate_z( affine.matrix, fix_rotate_z + rotate_z * ( position - in ) );
+		affine_rotate( affine.matrix, fix_rotate_x + rotate_x * position );
+		affine_rotate_y( affine.matrix, fix_rotate_y + rotate_y * position );
+		affine_rotate_z( affine.matrix, fix_rotate_z + rotate_z * position );
 		affine_shear( affine.matrix, 
-					  fix_shear_x + shear_x * ( position - in ), 
-					  fix_shear_y + shear_y * ( position - in ),
-					  fix_shear_z + shear_z * ( position - in ) );
+					  fix_shear_x + shear_x * position, 
+					  fix_shear_y + shear_y * position,
+					  fix_shear_z + shear_z * position );
 		affine_offset( affine.matrix, ox, oy );
 
 		lower_x -= ( lower_x & 1 );
