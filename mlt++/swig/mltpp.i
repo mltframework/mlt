@@ -43,6 +43,7 @@ namespace Mlt {
 %newobject Producer::cut( int, int );
 %newobject Playlist::current( );
 %newobject Playlist::clip_info( int );
+%newobject Playlist::get_clip( int );
 %newobject Multitrack::track( int );
 %newobject Tractor::multitrack( );
 %newobject Tractor::field( );

@@ -166,7 +166,23 @@ int Playlist::mix( int clip, int length, Transition *transition )
 	return mlt_playlist_mix( get_playlist( ), clip, length, transition == NULL ? NULL : transition->get_transition( ) );
 }
 
+int Playlist::mix_add( int clip, Transition *transition )
+{
+	return mlt_playlist_mix_add( get_playlist( ), clip, transition == NULL ? NULL : transition->get_transition( ) );
+}
+
 int Playlist::repeat( int clip, int count )
 {
 	return mlt_playlist_repeat_clip( get_playlist( ), clip, count );
 }
+
+Producer *Playlist::get_clip( int clip )
+{
+	return new Producer( mlt_playlist_get_clip( get_playlist( ), clip ) );
+}
+
+bool Playlist::is_mix( int clip )
+{
+	return mlt_playlist_clip_is_mix( get_playlist( ), clip ) != 0;
+}
+
