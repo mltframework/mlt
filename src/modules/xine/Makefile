@@ -9,6 +9,8 @@ OBJS = factory.o \
 
 CFLAGS += -I../../ -DARCH_X86
 
+LDFLAGS+=-L../../framework -lmlt
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

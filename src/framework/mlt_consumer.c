@@ -156,9 +156,6 @@ int mlt_consumer_start( mlt_consumer this )
 				mlt_properties_set_data( properties, "test_card_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 			}
 
-			// Check and run an ante command
-			if ( mlt_properties_get( properties, "ante" ) )
-				system( mlt_properties_get( properties, "ante" ) );
 		}
 	}
 	else
@@ -166,6 +163,10 @@ int mlt_consumer_start( mlt_consumer this )
 		// Allow the hash table to speed things up
 		mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 	}
+
+	// Check and run an ante command
+	if ( mlt_properties_get( properties, "ante" ) )
+		system( mlt_properties_get( properties, "ante" ) );
 
 	// Set the real_time preference
 	this->real_time = mlt_properties_get_int( properties, "real_time" );

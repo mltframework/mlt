@@ -188,6 +188,14 @@ static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 	return 0;
 }
 
+/** Return the properties object.
+*/
+
+mlt_properties mlt_service_properties( mlt_service self )
+{
+	return &self->parent;
+}
+
 /** Obtain a frame.
 */
 
