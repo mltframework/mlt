@@ -833,7 +833,7 @@ Filters
 	        
 	    Constructor Argument
 	    
-	        file - A file whose alpha channel will "shape"  the region.
+	        resource - A file whose alpha channel will "shape"  the region.
 	             - The string "circle" is a shortcut but it requires pixbuf with
 	               the librsvg loader. The circle is automatically stretched
 	               to the region to create an ellipse.
@@ -1135,28 +1135,7 @@ Transitions
 
 	        A generic dissolve and wipe transition processor.
 
-	    Initialisation Properties
-	    
-	        int in - in point
-	        int out - out point
-	        string factory - The name of a factory service used as a non-PGM
-	                         producer loader. The default is Fezzik.
-
-	    Mutable Properties
-
-	        string resource - same as above
-	        double softness - only when using a luma map, how soft to make the
-	                          edges between A and B. 0.0 = no softness. 1.0 =
-	                          too soft.
-	        int reverse - reverse the direction of the transition.
-	        Any property starting with "producer." is passed to the non-PGM luma
-	            producer.
-	        
-	    Read Only Properties
-
-	        none
-	        
-	    Dependencies
+	    Details
 
 	        luma gets its name
 	        from how it uses a grayscale "map" file. As the luma value varies
@@ -1188,6 +1167,7 @@ Transitions
 	        double softness - only when using a luma map, how soft to make the
 	                          edges between A and B. 0.0 = no softness. 1.0 =
 	                          too soft.
+	        int reverse - reverse the direction of the transition.
 	        Any property starting with "producer." is passed to the non-PGM luma
 	            producer.
 	        
