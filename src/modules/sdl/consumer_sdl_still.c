@@ -462,6 +462,8 @@ static void *consumer_thread( void *arg )
 	else
 	{
 		mlt_properties_set_int( mlt_consumer_properties( consumer ), "changed", 2 );
+		if ( SDL_GetVideoSurface( ) != NULL )
+			consumer_get_dimensions( &this->window_width, &this->window_height );
 	}
 
 	// Loop until told not to
