@@ -1,5 +1,5 @@
 /*
- * mlt.h -- header file for lazy client and implementation code :-)
+ * mlt_deque.h -- double ended queue
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,31 +18,19 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLT_H_
-#define _MLT_H_
+#ifndef _MLT_DEQUE_H_
+#define _MLT_DEQUE_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "mlt_types.h"
 
-#include "mlt_factory.h"
-#include "mlt_frame.h"
-#include "mlt_deque.h"
-#include "mlt_multitrack.h"
-#include "mlt_producer.h"
-#include "mlt_transition.h"
-#include "mlt_consumer.h"
-#include "mlt_filter.h"
-#include "mlt_manager.h"
-#include "mlt_playlist.h"
-#include "mlt_properties.h"
-#include "mlt_field.h"
-#include "mlt_tractor.h"
-
-#ifdef __cplusplus
-}
-#endif
+extern mlt_deque mlt_deque_init( );
+extern int mlt_deque_count( mlt_deque this );
+extern int mlt_deque_push_back( mlt_deque this, void *item );
+extern void *mlt_deque_pop_back( mlt_deque this );
+extern int mlt_deque_push_front( mlt_deque this, void *item );
+extern void *mlt_deque_pop_front( mlt_deque this );
+extern void *mlt_deque_peek_back( mlt_deque this );
+extern void *mlt_deque_peek_front( mlt_deque this );
+extern void mlt_deque_close( mlt_deque this );
 
 #endif
-

@@ -662,14 +662,14 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
 		uint8_t *in_ptr;
 
 		// Generate the affine transform scaling values
-		float scale_width = ( float )iwidth / ( float )owidth;
-		float scale_height = ( float )iheight / ( float )oheight;
+		int scale_width = ( iwidth << 16 ) / owidth;
+		int scale_height = ( iheight << 16 ) / oheight;
 
     	// Loop for the entirety of our output height.
     	for ( y = - out_y_range; y < out_y_range ; y ++ )
     	{
 			// Calculate the derived y value
-			dy = scale_height * y;
+			dy = ( scale_height * y ) >> 16;
 
         	// Start at the beginning of the line
         	out_ptr = out_line;
@@ -681,23 +681,13 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
         	for ( x = - out_x_range; x < out_x_range; x += 1 )
         	{
 				// Calculated the derived x
-				dx = scale_width * x;
+				dx = ( scale_width * x ) >> 16;
 
-            	// Check if x and y are in the valid input range.
-            	if ( abs( dx ) < in_x_range && abs( dy ) < in_y_range  )
-            	{
-                	// We're in the input range for this row.
-					in_ptr = in_line + dx * 2;
-                	*out_ptr ++ = *in_ptr ++;
-					in_ptr = in_line + ( ( dx >> 1 ) << 2 ) + ( ( x & 1 ) << 1 ) + 1;
-                	*out_ptr ++ = *in_ptr ++;
-            	}
-            	else
-            	{
-                	// We're not in the input range for this row.
-                	*out_ptr ++ = 16;
-                	*out_ptr ++ = 128;
-            	}
+               	// We're in the input range for this row.
+				in_ptr = in_line + ( dx << 1 );
+               	*out_ptr ++ = *in_ptr ++;
+				in_ptr = in_line + ( ( dx >> 1 ) << 2 ) + ( ( x & 1 ) << 1 ) + 1;
+               	*out_ptr ++ = *in_ptr;
         	}
 
         	// Move to next output line

@@ -152,8 +152,8 @@ int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track
 
 void mlt_field_close( mlt_field this )
 {
-	mlt_tractor_close( this->tractor );
-	mlt_multitrack_close( this->multitrack );
+	//mlt_tractor_close( this->tractor );
+	//mlt_multitrack_close( this->multitrack );
 	free( this );
 }
 

@@ -44,6 +44,7 @@ typedef struct mlt_transition_s *mlt_transition;
 typedef struct mlt_tractor_s *mlt_tractor;
 typedef struct mlt_field_s *mlt_field;
 typedef struct mlt_consumer_s *mlt_consumer;
+typedef struct mlt_deque_s *mlt_deque;
 
 typedef void ( *mlt_destructor )( void * );
 typedef char *( *mlt_serialiser )( void *, int length );

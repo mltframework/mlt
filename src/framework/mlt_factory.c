@@ -145,7 +145,6 @@ void mlt_factory_close( )
 		mlt_repository_close( consumers );
 		mlt_properties_close( object_list );
 		free( mlt_prefix );
-		free( object_list );
 		mlt_prefix = NULL;
 	}
 }

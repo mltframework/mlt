@@ -2,6 +2,7 @@
 TARGET = libmlt.so
 
 OBJS = mlt_frame.o \
+	   mlt_deque.o \
 	   mlt_property.o \
 	   mlt_properties.o \
 	   mlt_service.o \

@@ -50,7 +50,7 @@ static char *chomp( char *input )
 
 static mlt_properties construct_object( char *prefix, char *id )
 {
-	mlt_properties output = calloc( sizeof( struct mlt_properties_s ), 1 );
+	mlt_properties output = mlt_properties_new( );
 	mlt_properties_init( output, NULL );
 	mlt_properties_set( output, "prefix", prefix );
 	mlt_properties_set( output, "id", id );
@@ -59,7 +59,7 @@ static mlt_properties construct_object( char *prefix, char *id )
 
 static mlt_properties construct_service( mlt_properties object, char *id )
 {
-	mlt_properties output = calloc( sizeof( struct mlt_properties_s ), 1 );
+	mlt_properties output = mlt_properties_new( );
 	mlt_properties_init( output, NULL );
 	mlt_properties_set_data( output, "object", object, 0, NULL, NULL );
 	mlt_properties_set( output, "id", id );
@@ -115,12 +115,6 @@ static void *construct_instance( mlt_properties service_properties, char *symbol
 	return symbol_ptr != NULL ? symbol_ptr( service, input ) : NULL;
 }
 
-void destroy_properties( void *arg )
-{
-	mlt_properties_close( arg );
-	free( arg );
-}
-
 mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, char *data, char *symbol )
 {
 	char full_file[ 512 ];
@@ -165,14 +159,14 @@ mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, ch
 					object_properties = construct_object( prefix, object );
 
 					// Add it to the object list
-					mlt_properties_set_data( object_list, object, object_properties, 0, destroy_properties, NULL );
+					mlt_properties_set_data( object_list, object, object_properties, 0, ( mlt_destructor )mlt_properties_close, NULL );
 				}
 
 				// Now construct a property for the service
 				mlt_properties service_properties = construct_service( object_properties, service );
 
 				// Add it to the repository
-				mlt_properties_set_data( &this->parent, service, service_properties, 0, destroy_properties, NULL );
+				mlt_properties_set_data( &this->parent, service, service_properties, 0, ( mlt_destructor )mlt_properties_close, NULL );
 			}
 		}
 
