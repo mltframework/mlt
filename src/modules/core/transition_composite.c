@@ -31,6 +31,7 @@
 
 struct geometry_s
 {
+	float position;
 	float mix;
 	int nw; // normalised width
 	int nh; // normalised height
@@ -42,6 +43,8 @@ struct geometry_s
 	float h;
 	int halign; // horizontal alignment: 0=left, 1=center, 2=right
 	int valign; // vertical alignment: 0=top, 1=middle, 2=bottom
+	int distort;
+	struct geometry_s *next;
 };
 
 /** Parse a value from a geometry string.
@@ -75,8 +78,6 @@ static float parse_value( char **ptr, int normalisation, char delim, float defau
 
 static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defaults, char *property, int nw, int nh )
 {
-	memset( geometry, 0, sizeof( struct geometry_s ) );
-
 	// Assign normalised width and height
 	geometry->nw = nw;
 	geometry->nh = nh;
@@ -88,7 +89,9 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 		geometry->y = defaults->y;
 		geometry->w = geometry->sw = defaults->w;
 		geometry->h = geometry->sh = defaults->h;
+		geometry->distort = defaults->distort;
 		geometry->mix = defaults->mix;
+		defaults->next = geometry;
 	}
 	else
 	{
@@ -96,13 +99,20 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 	}
 
 	// Parse the geomtry string
-	if ( property != NULL )
+	if ( property != NULL && strcmp( property, "" ) )
 	{
 		char *ptr = property;
 		geometry->x = parse_value( &ptr, nw, ',', geometry->x );
 		geometry->y = parse_value( &ptr, nh, ':', geometry->y );
 		geometry->w = geometry->sw = parse_value( &ptr, nw, 'x', geometry->w );
 		geometry->h = geometry->sh = parse_value( &ptr, nh, ':', geometry->h );
+		if ( *ptr == '!' )
+		{
+			geometry->distort = 1;
+			ptr ++;
+			if ( *ptr == ':' )
+				ptr ++;
+		}
 		geometry->mix = parse_value( &ptr, 100, ' ', geometry->mix );
 	}
 }
@@ -110,8 +120,22 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 /** Calculate real geometry.
 */
 
-static void geometry_calculate( struct geometry_s *output, struct geometry_s *in, struct geometry_s *out, float position )
+static void geometry_calculate( struct geometry_s *output, struct geometry_s *in, float position )
 {
+	// Search in for position
+	struct geometry_s *out = in->next;
+
+	while ( out->next != NULL )
+	{
+		if ( position >= in->position && position < out->position )
+			break;
+
+		in = out;
+		out = in->next;
+	}
+
+	position = ( position - in->position ) / ( out->position - in->position );
+
 	// Calculate this frames geometry
 	output->nw = in->nw;
 	output->nh = in->nh;
@@ -120,8 +144,7 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	output->w = in->w + ( out->w - in->w ) * position;
 	output->h = in->h + ( out->h - in->h ) * position;
 	output->mix = in->mix + ( out->mix - in->mix ) * position;
-	if ( output->mix > 100 )
-	fprintf( stderr, "%f = %f + ( %f - %f ) * %f\n", output->mix, in->mix, out->mix, in->mix, position );
+	output->distort = in->distort;
 }
 
 /** Parse the alignment properties into the geometry.
@@ -203,8 +226,6 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, int 
 	int i, j;
 	int x_src = 0, y_src = 0;
 	int32_t weight = ( 1 << 16 ) * ( geometry.mix / 100 );
-	if ( geometry.mix > 100 )
-		fprintf( stderr, "%f %d\n", geometry.mix, weight );
 	int stride_src = width_src * bpp;
 	int stride_dest = width_dest * bpp;
 
@@ -331,7 +352,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	mlt_properties b_props = mlt_frame_properties( b_frame );
 	mlt_properties properties = mlt_transition_properties( this );
 
-	if ( mlt_properties_get( properties, "distort" ) == NULL )
+	if ( mlt_properties_get( properties, "distort" ) == NULL && geometry->distort == 0 )
 	{
 		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->w;
@@ -398,6 +419,98 @@ static uint8_t *transition_get_alpha_mask( mlt_frame this )
 	return mlt_properties_get_data( properties, "alpha", NULL );
 }
 
+void transition_destroy_keys( void *arg )
+{
+	struct geometry_s *ptr = arg;
+	struct geometry_s *next = NULL;
+
+	while ( ptr != NULL )
+	{
+		next = ptr->next;
+		free( ptr );
+		ptr = next;
+	}
+}
+
+static struct geometry_s *transition_parse_keys( mlt_transition this,  int normalised_width, int normalised_height )
+{
+	// Loop variable for property interrogation
+	int i = 0;
+
+	// Get the properties of the transition
+	mlt_properties properties = mlt_transition_properties( this );
+
+	// Get the in and out position
+	mlt_position in = mlt_transition_get_in( this );
+	mlt_position out = mlt_transition_get_out( this );
+
+	// Create the start
+	struct geometry_s *start = calloc( 1, sizeof( struct geometry_s ) );
+
+	// Create the end (we always need two entries)
+	struct geometry_s *end = calloc( 1, sizeof( struct geometry_s ) );
+
+	// Pointer
+	struct geometry_s *ptr = start;
+
+	// Parse the start property
+	geometry_parse( start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
+
+	// Parse the keys in between
+	for ( i = 0; i < mlt_properties_count( properties ); i ++ )
+	{
+		// Get the name of the property
+		char *name = mlt_properties_get_name( properties, i );
+
+		// Check that it's valid
+		if ( !strncmp( name, "key[", 4 ) )
+		{
+			// Get the value of the property
+			char *value = mlt_properties_get_value( properties, i );
+
+			// Determine the frame number
+			int frame = atoi( name + 4 );
+
+			// Determine the position
+			float position = 0;
+			
+			if ( frame >= 0 && frame < ( out - in ) )
+				position = ( float )frame / ( float )( out - in + 1 );
+			else if ( frame < 0 && - frame < ( out - in ) )
+				position = ( float )( out - in + frame ) / ( float )( out - in + 1 );
+
+			// For now, we'll exclude all keys received out of order
+			if ( position > ptr->position )
+			{
+				// Create a new geometry
+				struct geometry_s *temp = calloc( 1, sizeof( struct geometry_s ) );
+
+				// Parse and add to the list
+				geometry_parse( temp, ptr, value, normalised_width, normalised_height );
+
+				// Assign the position
+				temp->position = position;
+
+				// Allow the next to be appended after this one
+				ptr = temp;
+			}
+			else
+			{
+				fprintf( stderr, "Key out of order - skipping %s\n", name );
+			}
+		}
+	}
+	
+	// Parse the end
+	geometry_parse( end, ptr, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
+	end->position = ( float )( out - in ) / ( float )( out - in + 1 );
+
+	// Assign to properties to ensure we get destroyed
+	mlt_properties_set_data( properties, "geometries", start, 0, transition_destroy_keys, NULL );
+
+	return start;
+}
+
 /** Get the image.
 */
 
@@ -428,24 +541,22 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Structures for geometry
 		struct geometry_s result;
-		struct geometry_s start;
-		struct geometry_s end;
+		struct geometry_s *start = mlt_properties_get_data( properties, "geometries", NULL );
 
 		// Calculate the position
 		float position = mlt_properties_get_double( b_props, "relative_position" );
 		float delta = delta_calculate( this, a_frame );
 
-		// Obtain the normalised width and height from the a_frame
-		int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
-		int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
-
 		// Now parse the geometries
-		geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
-		geometry_parse( &end, &start, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
+		if ( start == NULL )
+		{
+			// Obtain the normalised width and height from the a_frame
+			int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
+			int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
 
-		// Now parse the alignment
-		result.halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
-		result.valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
+			// Parse the transitions properties
+			start = transition_parse_keys( this, normalised_width, normalised_height );
+		}
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
@@ -453,7 +564,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
 
 		// Do the calculation
-		geometry_calculate( &result, &start, &end, position );
+		geometry_calculate( &result, start, position );
+
+		// Now parse the alignment
+		result.halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
+		result.valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
 
 		// Get the image from the b frame
 		uint8_t *image_b;
@@ -476,8 +591,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Assume lower field (0) first
 				float field_position = position + field * delta;
 				
-				// Do the calculation
-				geometry_calculate( &result, &start, &end, field_position );
+				// Do the calculation if we need to
+				geometry_calculate( &result, start, field_position );
 
 				// Align
 				alignment_calculate( &result );
@@ -514,7 +629,6 @@ mlt_transition transition_composite_init( char *arg )
 	{
 		this->process = composite_process;
 		mlt_properties_set( mlt_transition_properties( this ), "start", arg != NULL ? arg : "85%,5%:10%x10%" );
-		mlt_properties_set( mlt_transition_properties( this ), "end", "" );
 	}
 	return this;
 }
