@@ -7,7 +7,7 @@
 echo SUBDIRS = `find -type d -maxdepth 1 | grep -v CVS | grep -v "^.$" | sed 's/\.\///'` > make.inc
 
 # Iterate through arguments
-for i in $*
+for i in "$@"
 do
 	case $i in
 		--disable-* )	touch disable-${i#--disable-} ;;
@@ -23,7 +23,7 @@ do
 		then
 			[ "$help" = "0" ] && echo "Configuring modules/$i:"
 			pushd $i > /dev/null
-			./configure $@
+			./configure "$@"
 			[ $? != 0 ] && exit 1
 			popd > /dev/null
 		elif [ "$help" = "0" ]

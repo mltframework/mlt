@@ -470,9 +470,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			if ( this->sdl_screen != NULL )
 			{
 				SDL_SetClipRect( this->sdl_screen, &rect );
-			
 				sdl_lock_display();
-				this->sdl_overlay = SDL_CreateYUVOverlay( this->width - (this->width % 4), this->height - (this->height % 2 ), SDL_YUY2_OVERLAY, this->sdl_screen );
+				this->sdl_overlay = SDL_CreateYUVOverlay( this->width, this->height, SDL_YUY2_OVERLAY, this->sdl_screen );
 				sdl_unlock_display();
 			}
 		}
@@ -482,7 +481,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
 			if ( SDL_LockYUVOverlay( this->sdl_overlay ) >= 0 )
 			{
-				memcpy( this->buffer, image, width * height * 2 );
+				if ( image != NULL )
+					memcpy( this->buffer, image, width * height * 2 );
 				SDL_UnlockYUVOverlay( this->sdl_overlay );
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}

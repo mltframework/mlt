@@ -25,7 +25,7 @@
 #include <framework/mlt_frame.h>
 
 // ffmpeg Header files
-#include <ffmpeg/avformat.h>
+#include <avformat.h>
 
 // System header files
 #include <stdlib.h>

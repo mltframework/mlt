@@ -146,49 +146,6 @@ Producers
 	        none
 
 	
-	ffmpeg (DEPRECATED)
-
-	    Description
-
-	        Test case pipe based producer for video and audio.
-
-	    Constructor Argument
-
-	        'file'    - produce a/v from file
-	        v4l        - produce a/v from video4linux and dsp device
-
-	    Initialisation Properties
-
-	        string video_type - "file" or "v4l"
-	        string video_file - file or v4l device
-	        string video_size - WxH of video to produce (default: "")
-	        int video_loop - loop video until audio exhausted (default: 0)
-	        string audio_type - "file" or "dsp"
-	        string audio_file - file or dsp device
-	        int audio_rate - audio frequency (default: 48000)
-	        int audio_channels - audio channels (default: 2)
-	        int audio_track - audio track to use (default: 0)
-	        int audio_loop - loop audio until video exhausted (default: 0)
-	        int in - in point
-	        int out - out point
-	        double fps - output frames per second (default: 25)
-	        double aspect_ratio - aspect ratio of video
-
-	    Read Only Properties
-
-	        string resource - file or "v4l"
-	        int end_of_clip - holds 1 when input is exhausted
-
-	    Dependencies
-
-	        ffmpeg executable.
-
-	    Known Bugs
-
-	        in point setting is broken.
-
-	        Implementation does not allow fast random access.
-
 	libdv
 
 	    Description

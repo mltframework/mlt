@@ -20,12 +20,9 @@ Configuration
 
 	    ./configure 
 
-	Usage is:
+	More information on usage is found by running:
 
-	./configure --help          - report all configure options
-	./configure --prefix=[dir]  - target install directory (default: /usr/local)
-	./configure --disable-[mod] - do not compile specified module(s)
-	./configure --[other]       - pass through to children
+	    ./configure --help
 
 	NB: This script must be run to register new services after a CVS checkout
 	or subsequent update.

@@ -3,16 +3,22 @@
 function show_help
 {
 	cat << EOF
-Funky non-autotool config script for MLT.
+Non-autotool config script for MLT.
 
-Options are:
+Help options:
 
   --help                  - this information
+
+General build options:
+
   --prefix=directory      - install prefix for path (default: $prefix)
+  --enable-gpl            - Enable GPL components
   --disable-debug         - Compile without debug support (default: on)
   --disable-mmx           - Compile without MMX support (default: on)
-  --enable-gpl            - Enable GPL components
   --cpu='cpu'             - Compile for a specific CPU/architectre (default: none)
+
+Module disables options:
+
 EOF
 
 	for i in src/modules/*
@@ -21,6 +27,8 @@ EOF
 	done |
 	awk '{ printf( "  --disable-%-14.14s- Disable the %s module %s\n", $1, $1, $2 ); }'
 
+	echo
+	echo "  NOTE: libraries marked [GPL] will not be built unless --enable-gpl is stipulated."
 	echo
 }
 
@@ -91,7 +99,7 @@ export gpl=false
 export cpu=
 
 # Iterate through arguments
-for i in $*
+for i in "$@"
 do
 	case $i in
 		--help )			help=1 ;;
@@ -113,7 +121,7 @@ do
 	then
 		[ $help = 0 ] && echo "Configuring `basename $i`:"
 		pushd src/$i > /dev/null
-		./configure $@
+		./configure "$@"
 		[ $? != 0 ] && exit 1
 		popd > /dev/null
 	fi

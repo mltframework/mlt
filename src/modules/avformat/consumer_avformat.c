@@ -33,7 +33,7 @@
 #include <math.h>
 
 // avformat header files
-#include <ffmpeg/avformat.h>
+#include <avformat.h>
 
 typedef struct
 {

@@ -28,7 +28,7 @@
 #include "filter_avresample.h"
 
 // ffmpeg Header files
-#include <ffmpeg/avformat.h>
+#include <avformat.h>
 
 // A static flag used to determine if avformat has been initialised
 static int avformat_initialised = 0;

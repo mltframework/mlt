@@ -1,4 +1,5 @@
 include ../../../config.mak
+include config.mak
 
 TARGET = ../libmltavformat.so
 
@@ -8,9 +9,9 @@ OBJS = factory.o \
 	   filter_avdeinterlace.o \
 	   filter_avresample.o
 
-CFLAGS += -I../..
+CFLAGS+=-I../..
 
-LDFLAGS += -lavformat -lavcodec
+LDFLAGS+=-lavformat -lavcodec $(EXTRA_LIBS)
 
 SRCS := $(OBJS:.o=.c)
 

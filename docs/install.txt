@@ -22,31 +22,31 @@ Directories
 	+ src                   - All project source is provided here
 	    + framework         - The mlt media framework
 	    + modules           - All services are defined here
+	        + avformat      - libavformat dependent services
+	        + bluefish      - Bluefish dependent services (*)
 	        + core          - Independent MLT services
 	        + dv            - libdv dependent services
-	        + ffmpeg        - ffmpeg dependent services
-	        + avformat      - libavformat dependent services
-	        + vorbis        - vorbis dependenent services
-	        + sdl           - SDL dependent services
-	        + resample      - libresample dependent services
-	        + gtk2          - pango and pixbuf dependent services
 	        + fezzik        - A giant (meta) service to load and normalise media
-	        + westley       - Nice and clever XML services
-	        + vorbis        - Ogg Vorbis dependent services
-	        + xine          - Xine-derived sources
-	        + bluefish      - Bluefish dependent services (*)
+	        + gtk2          - pango and pixbuf dependent services
 	        + mainconcept   - mainconcept dependent services (*)
-	    + inigo             - A media playing test application
-	    + valerie           - Client API to access the server
-	    + miracle           - The server implementation
+	        + normalize     - audio normalisation functions (**)
+	        + resample      - libresample dependent services (**)
+	        + sdl           - SDL dependent services
+	        + vorbis        - vorbis dependenent services
+	        + westley       - Nice and clever XML services
+	        + xine          - Xine-derived sources (**)
 	    + albino            - A simple console (protocol level) example
+	    + inigo             - A media playing test application
 	    + humperdink        - A terminal-based example client
+	    + miracle           - The server implementation
 	    + tests             - Reserved for regression and unit tests
+	    + valerie           - Client API to access the server
 
 	Additional subdirectories may be nested below those shown and should be
 	documented in their parent.
 
-	(*) Not posted to CVS due to licensing issues.
+	(*)  Not posted to CVS due to licensing issues.
+	(**) Contains GPL dependencies or code.
 
 
 Dependencies
@@ -81,7 +81,7 @@ Dependencies
 	            URL: http://www.mainconcept.com
 	----------- ----------------------------------------------------------
 	resample    libsamplerate 0.15 or later 
-	            URL: http://www.mega-nerd.com/SRC/
+	            URL: http://www.mega-nerd.com/SRC/ (GPL)
 	----------- ----------------------------------------------------------
 	sdl         SDL 1.2 or later.
 	            URL: http://www.libsdl.org
@@ -107,15 +107,9 @@ Configuration
 	configure script and arguments are accepted and passed through to all 
 	subdirectories.
 
-	Top level usage is:
+	More information on usage is found by running:
 
-	./configure --help          - report all configure options
-	./configure --prefix=[dir]  - target install directory (default: /usr/local)
-	./configure --disable-debug - turn off debugging
-	./configure --disable-mmx   - turn off MMX usage
-	./configure --cpu='cpu'     - tune build for a specific cpu
-	./configure --disable-[mod] - do not compile specified module(s)
-	./configure --[other]       - pass through to children
+	    ./configure --help
 
 	NB: This script must be run to register new services after a CVS checkout
 	or subsequent update.

@@ -229,6 +229,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
 
+	if ( size == 0 )
+	{
+		*width = mlt_properties_get_int( properties, "normalised_width" );
+		*height = mlt_properties_get_int( properties, "normalised_height" );
+		size = *width * ( *height + 1 );
+	}
+
 	// Clone if necessary
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of pixbuf...
@@ -236,7 +243,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		// Clone our image
 		uint8_t *copy = mlt_pool_alloc( size );
-		memcpy( copy, image, size );
+		if ( image != NULL )
+			memcpy( copy, image, size );
 
 		// We're going to pass the copy on
 		image = copy;
@@ -342,8 +350,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 			{
 				snprintf( fullname, 1023, "%s%s", dir_name, de[i]->d_name );
 
-				if ( lstat( fullname, &info ) == 0 &&
-				 	( S_ISREG( info.st_mode ) || ( strstr( fullname, extension ) && info.st_mode | S_IXUSR ) ) )
+				if ( strstr( fullname, extension ) && lstat( fullname, &info ) == 0 &&
+				 	( S_ISREG( info.st_mode ) || info.st_mode | S_IXUSR ) )
 				{
 					this->filenames = realloc( this->filenames, sizeof( char * ) * ( this->count + 1 ) );
 					this->filenames[ this->count ++ ] = strdup( fullname );

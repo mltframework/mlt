@@ -1,7 +1,64 @@
 #!/bin/bash
 
-if [ "$help" != "1" ]
+if [ "$help" = "1" ]
 then
+	cat << EOF
+FFMPEG/avformat options:
+
+  --avformat-shared=path  - Link against a shared installation of ffmpeg (default)
+  --avformat-static=path  - Link against a static ffmpeg dev tree
+  --avformat-ldextra=libs - Provide additional libs to link with
+
+EOF
+
+else
+	echo > config.mak
+
+	export static_ffmpeg=
+	export shared_ffmpeg=`whereis ffmpeg | cut -f 2 -d' '`
+	export extra_libs=
+
+	if [ "$shared_ffmpeg" != "" ]
+	then
+		# Chop ffmpeg 
+		shared_ffmpeg=`dirname $shared_ffmpeg`
+		# Chop bin 
+		shared_ffmpeg=`dirname $shared_ffmpeg`
+	fi
+
+	for i in "$@"
+	do
+		case $i in
+			--avformat-static=* )	static_ffmpeg="${i#--avformat-static=}" ;;
+			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
+			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
+		esac
+	done
+
+	if [ "$static_ffmpeg" != "" ]
+	then 
+		if [ -d "$static_ffmpeg" ]
+		then
+			echo "CFLAGS+=-I$static_ffmpeg/libavformat -I$static_ffmpeg/libavcodec" >> config.mak
+			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec" >> config.mak
+		else
+			echo "avformat: Invalid path specified: $static_ffmpeg"
+			touch ../disable-avformat
+			echo 0
+		fi
+	else 
+		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/lib/libavformat.so" ]
+		then
+			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
+			echo "LDFLAGS+=-L$shared_ffmpeg" >> config.mak
+		else
+			echo "avformat: No build environment found."
+			touch ../disable-avformat
+			exit 0
+		fi
+	fi
+
+	echo "EXTRA_LIBS=$extra_libs" >> config.mak
 
 cat << EOF >> ../producers.dat
 avformat		libmltavformat.so
