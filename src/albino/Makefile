@@ -6,7 +6,7 @@ OBJS = albino.o
 
 CFLAGS += -I.. -rdynamic
 
-LDFLAGS += -L../miracle -lmiracle -L../valerie -lvalerie -L../miracle -lmiracle
+LDFLAGS += -L../miracle -lmiracle -L../valerie -lvalerie -L../miracle -lmiracle -L../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

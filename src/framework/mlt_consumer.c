@@ -234,6 +234,8 @@ static void *consumer_read_ahead_thread( void *arg )
 	// Get the properties of the consumer
 	mlt_properties properties = mlt_consumer_properties( this );
 
+	char *service = mlt_properties_get( properties, "mlt_service" );
+
 	// Get the width and height
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
@@ -269,13 +271,14 @@ static void *consumer_read_ahead_thread( void *arg )
 	while ( this->ahead )
 	{
 		// Put the current frame into the queue
+		time_difference( &ante );
 		pthread_mutex_lock( &this->mutex );
 		while( this->ahead && mlt_deque_count( this->queue ) >= buffer )
 			pthread_cond_wait( &this->cond, &this->mutex );
 		mlt_deque_push_back( this->queue, frame );
 		pthread_cond_broadcast( &this->cond );
 		pthread_mutex_unlock( &this->mutex );
-		time_wait += time_difference( &ante );
+		time_wait = time_difference( &ante );
 
 		// Get the next frame
 		frame = mlt_consumer_get_frame( this );
@@ -294,8 +297,10 @@ static void *consumer_read_ahead_thread( void *arg )
 			count = 1;
 		}
 
+		//fprintf( stderr, "%s: %d %d %lld %lld\n", service, mlt_deque_count( this->queue ), buffer, ( time_frame + time_image ) / count, ( time_wait / count ) );
+
 		// Get the image
-		if ( ( time_frame + time_image ) / count < ( 40000 - ( time_wait / count ) ) )
+		if ( ( time_frame + time_image ) / count < 40000 )
 		{
 			// Get the image, mark as rendered and time it
 			mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
@@ -307,8 +312,12 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 		else
 		{
+			fprintf( stderr, "Dropped a frame for %s\n", service );
+
 			// Increment the number of sequentially skipped frames
 			skipped ++;
+
+			time_wait = 0;
 
 			// If we've reached an unacceptable level, reset everything
 			if ( skipped > 10 )
@@ -316,7 +325,6 @@ static void *consumer_read_ahead_thread( void *arg )
 				skipped = 0;
 				time_frame = 0;
 				time_image = 0;
-				time_wait = 0;
 				count = 0;
 			}
 		}
@@ -402,7 +410,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 			int buffer = mlt_properties_get_int( properties, "buffer" );
 			consumer_read_ahead_start( this );
 			if ( buffer > 1 )
-				size = buffer / 2;
+				size = buffer;
 		}
 	
 		// Get frame from queue

@@ -489,9 +489,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 	}
 
-	// Close the frame
-	mlt_frame_close( frame );
-
 	return 0;
 }
 
@@ -518,6 +515,7 @@ static void *consumer_thread( void *arg )
 	struct timespec tm;
 	mlt_frame next = NULL;
 	mlt_frame frame = NULL;
+	mlt_properties properties = NULL;
 
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
@@ -537,23 +535,24 @@ static void *consumer_thread( void *arg )
 		// Ensure that we have a frame
 		if ( frame != NULL )
 		{
+			// Get the frame properties
+			properties =  mlt_frame_properties( frame );
+
 			// Play audio
 			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
 
-			if ( this->playing )
+			// Determine the start time now
+			if ( this->playing && start == 0 )
 			{
 				// Get the current time
 				gettimeofday( &now, NULL );
 
-				// Determine elapsed time
-				if ( start == 0 )
-					start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
-				else
-					elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec) - start;
+				// Determine start time
+				start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
 			}
 
 			// Set playtime for this frame
-			mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
+			mlt_properties_set_position( properties, "playtime", playtime );
 
 			// Push this frame to the back of the queue
 			mlt_deque_push_back( this->queue, frame );
@@ -562,41 +561,57 @@ static void *consumer_thread( void *arg )
 			playtime += ( duration * 1000 );
 		}
 
-		if ( this->playing )
+		// Pop the next frame
+		next = mlt_deque_pop_front( this->queue );
+
+		while ( next != NULL && this->playing )
 		{
-			// Pop the next frame
-			next = mlt_deque_pop_front( this->queue );
+			// Get the properties
+			properties =  mlt_frame_properties( next );
+
+			// Get the current time
+			gettimeofday( &now, NULL );
+
+			// Get the elapsed time
+			elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - start;
 
 			// See if we have to delay the display of the current frame
-			if ( next != NULL && mlt_properties_get_int( mlt_frame_properties( next ), "rendered" ) == 1 )
+			if ( mlt_properties_get_int( properties, "rendered" ) == 1 )
 			{
-				mlt_position scheduled = mlt_properties_get_position( mlt_frame_properties( next ), "playtime" ) + 5000;
-				if ( scheduled > elapsed && mlt_deque_count( this->queue ) > 25 )
-				{
-					tm.tv_sec = ( scheduled - elapsed ) / 1000000;
-					tm.tv_nsec = ( ( scheduled - elapsed ) % 1000000 ) * 1000;
-					nanosleep( &tm, NULL );
+				// Obtain the scheduled playout time
+				mlt_position scheduled = mlt_properties_get_position( properties, "playtime" );
 
-					// Show current frame
-					consumer_play_video( this, next );
-				}
-				else if ( scheduled > elapsed )
+				// Determine the difference between the elapsed time and the scheduled playout time
+				mlt_position difference = scheduled - elapsed;
+
+				// If the frame is quite some way in the future, go get another
+				if ( difference > 80000 && mlt_deque_count( this->queue ) < 6 )
+					break;
+
+				// Smooth playback a bit
+				if ( difference > 20000 && mlt_properties_get_double( properties, "_speed" ) == 1.0 )
 				{
-					// More time to kill
-					mlt_deque_push_front( this->queue, next );
+					tm.tv_sec = difference / 1000000;
+					tm.tv_nsec = ( difference % 1000000 ) * 1000;
+					nanosleep( &tm, NULL );
 				}
+
+				// Show current frame if not too old
+				if ( difference > -10000 || mlt_properties_get_double( properties, "_speed" ) != 1.0 )
+					consumer_play_video( this, next );
 				else
-				{
-					// Show current frame
-					consumer_play_video( this, next );
-				}
+					start = start - difference;
 			}
-			else
-			{
-				// This is an unrendered frame - just close it
-				mlt_frame_close( next );
-			}
+
+			// This is an unrendered frame - just close it
+			mlt_frame_close( next );
+
+			// Pop the next frame
+			next = mlt_deque_pop_front( this->queue );
 		}
+
+		if ( next != NULL )
+			mlt_deque_push_front( this->queue, next );
 	}
 
 	// internal cleanup

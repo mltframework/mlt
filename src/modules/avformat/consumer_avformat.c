@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-
+#include <sys/time.h>
 #include <math.h>
 
 // avformat header files
@@ -420,6 +420,13 @@ void close_video(AVFormatContext *oc, AVStream *st)
 	avcodec_close(&st->codec);
 }
 
+static inline long time_difference( struct timeval *time1 )
+{
+	struct timeval time2;
+	gettimeofday( &time2, NULL );
+	return time2.tv_sec * 1000000 + time2.tv_usec - time1->tv_sec * 1000000 - time1->tv_usec;
+}
+
 /** The main thread - the argument is simply the consumer.
 */
 
@@ -433,6 +440,12 @@ static void *consumer_thread( void *arg )
 
 	// Get the terminate on pause property
 	int terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
+
+	// Determine if feed is slow (for realtime stuff)
+	int real_time_output = mlt_properties_get_int( properties, "real_time" );
+
+	// Time structures
+	struct timeval ante;
 
 	// Get the frame rate
 	int fps = mlt_properties_get_double( properties, "fps" );
@@ -492,6 +505,10 @@ static void *consumer_thread( void *arg )
 
 	// Loop variable
 	int i;
+
+	// Frames despatched
+	long int frames = 0;
+	long int total_time = 0;
 
 	// Determine the format
 	AVOutputFormat *fmt = NULL;
@@ -584,9 +601,6 @@ static void *consumer_thread( void *arg )
 			}
 		}
 	
-		if ( url_is_streamed( &oc->pb ) )
-			fprintf( stderr, "FUCK!\n" );
-
 		// Write the stream header, if any
 		if ( mlt_properties_get_int( properties, "running" ) )
 			av_write_header( oc );
@@ -601,6 +615,9 @@ static void *consumer_thread( void *arg )
 	if ( audio_st == NULL && video_st == NULL )
 		mlt_properties_set_int( properties, "running", 0 );
 
+	// Get the starting time (can ignore the times above)
+	gettimeofday( &ante, NULL );
+
 	// Loop while running
 	while( mlt_properties_get_int( properties, "running" ) )
 	{
@@ -610,6 +627,9 @@ static void *consumer_thread( void *arg )
 		// Check that we have a frame to work with
 		if ( frame != NULL )
 		{
+			// Increment frames despatched
+			frames ++;
+
 			// Default audio args
 			frame_properties = mlt_frame_properties( frame );
 
@@ -619,6 +639,7 @@ static void *consumer_thread( void *arg )
 				samples = mlt_sample_calculator( fps, frequency, count );
 				mlt_frame_get_audio( frame, &pcm, &aud_fmt, &frequency, &channels, &samples );
 				sample_fifo_append( fifo, pcm, samples * channels );
+				total_time += ( samples * 1000000 ) / frequency;
 			}
 
 			// Encode the image
@@ -733,6 +754,19 @@ static void *consumer_thread( void *arg )
 						break;
 					}
 				}
+			}
+		}
+
+		if ( real_time_output && frames % 25 == 0 )
+		{
+			long passed = time_difference( &ante );
+			long pending = ( ( ( long )sample_fifo_used( fifo ) * 1000 ) / frequency ) * 1000;
+			passed -= pending;
+			if ( passed < total_time )
+			{
+				long total = ( total_time - passed );
+				struct timespec t = { total / 1000000, ( total % 1000000 ) * 1000 };
+				nanosleep( &t, NULL );
 			}
 		}
 	}

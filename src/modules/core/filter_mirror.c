@@ -145,6 +145,42 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				}
 			}
 		}
+		else if ( !strcmp( mirror, "xdiagonal" ) )
+		{
+			uint8_t *end = ( uint8_t *)*image + *width * *height * 2;
+			uint8_t *p = NULL;
+			uint8_t *q = NULL;
+			int i;
+			int j;
+			for ( i = 0; i < *height; i ++ )
+			{
+				p = ( uint8_t * )*image + ( i + 1 ) * *width * 2;
+				q = end - ( i + 1 ) * *width * 2;
+				j = ( ( *width * ( *height - i ) ) / *height ) / 2;
+				if ( !reverse )
+				{
+					while ( j -- )
+					{
+						*q ++ = *( p - 2 );
+						*q ++ = *( p - 3 );
+						*q ++ = *( p - 4 );
+						*q ++ = *( p - 1 );
+						p -= 4;
+					}
+				}
+				else
+				{
+					while ( j -- )
+					{
+						*( p - 2 ) = *q ++;
+						*( p - 3 ) = *q ++;
+						*( p - 4 ) = *q ++;
+						*( p - 1 ) = *q ++;
+						p -= 4;
+					}
+				}
+			}
+		}
 		else if ( !strcmp( mirror, "flip" ) )
 		{
 			uint8_t t[ 4 ];

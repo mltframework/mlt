@@ -267,6 +267,9 @@ static int producer_open( mlt_producer this, char *file )
 				mlt_properties_set_position( properties, "length", frames - 1 );
 			}
 
+			// Check if we're seekable
+			mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, 0 ) == 0 );
+
 			// Find default audio and video streams
 			find_default_streams( context, &audio_index, &video_index );
 
@@ -700,6 +703,9 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Get the audio_index
 	int index = mlt_properties_get_int( properties, "audio_index" );
 
+	// Get the seekable status
+	int seekable = mlt_properties_get_int( properties, "seekable" );
+
 	// Obtain the expected frame numer
 	mlt_position expected = mlt_properties_get_position( properties, "audio_expected" );
 
@@ -729,7 +735,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 	// Flag for paused (silence) 
 	int paused = 0;
-	int locked = 0;
 
 	// Lock the mutex now
 	avformat_lock( );
@@ -775,12 +780,11 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		else
 		{
 			// Set to the real timecode
-			av_seek_frame( context, -1, real_timecode * 1000000.0 );
+			if ( !seekable || av_seek_frame( context, -1, real_timecode * 1000000.0 ) != 0 )
+				paused = 1;
 
 			// Clear the usage in the audio buffer
 			audio_used = 0;
-
-			locked = 1;
 		}
 	}
 
@@ -865,7 +869,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 					mlt_properties_set_double( properties, "discrepancy", discrepancy );
 				}
 
-				if ( !ignore && discrepancy * current_pts <= ( real_timecode - 0.02 ) )
+				if ( seekable && ( !ignore && discrepancy * current_pts <= ( real_timecode - 0.02 ) ) )
 					ignore = 1;
 			}
 
@@ -901,8 +905,9 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	}
 
-	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
-	mlt_properties_set_position( properties, "audio_expected", position + 1 );
+	// Regardless of speed (other than paused), we expect to get the next frame
+	if ( !paused )
+		mlt_properties_set_position( properties, "audio_expected", position + 1 );
 
 	// Unlock the mutex now
 	avformat_unlock( );
