@@ -223,9 +223,9 @@ static void valerie_interpret_clip_offset( char *output, valerie_clip_offset off
 /** Load a file on the specified unit with the specified in/out points.
 */
 
-valerie_error_code valerie_unit_load_clipped( valerie this, int unit, char *file, int64_t in, int64_t out )
+valerie_error_code valerie_unit_load_clipped( valerie this, int unit, char *file, int32_t in, int32_t out )
 {
-	return valerie_execute( this, 10240, "LOAD U%d \"%s\" %lld %lld", unit, file, in, out );
+	return valerie_execute( this, 10240, "LOAD U%d \"%s\" %d %d", unit, file, in, out );
 }
 
 /** Load a file on the specified unit at the end of the current pump.
@@ -239,17 +239,17 @@ valerie_error_code valerie_unit_load_back( valerie this, int unit, char *file )
 /** Load a file on the specified unit at the end of the pump with the specified in/out points.
 */
 
-valerie_error_code valerie_unit_load_back_clipped( valerie this, int unit, char *file, int64_t in, int64_t out )
+valerie_error_code valerie_unit_load_back_clipped( valerie this, int unit, char *file, int32_t in, int32_t out )
 {
-	return valerie_execute( this, 10240, "LOAD U%d \"!%s\" %lld %lld", unit, file, in, out );
+	return valerie_execute( this, 10240, "LOAD U%d \"!%s\" %d %d", unit, file, in, out );
 }
 
 /** Append a file on the specified unit.
 */
 
-valerie_error_code valerie_unit_append( valerie this, int unit, char *file, int64_t in, int64_t out )
+valerie_error_code valerie_unit_append( valerie this, int unit, char *file, int32_t in, int32_t out )
 {
-	return valerie_execute( this, 10240, "APND U%d \"%s\" %lld %lld", unit, file, in, out );
+	return valerie_execute( this, 10240, "APND U%d \"%s\" %d %d", unit, file, in, out );
 }
 
 /** Clean the unit - this function removes all but the currently playing clip.
@@ -293,11 +293,11 @@ valerie_error_code valerie_unit_remove_current_clip( valerie this, int unit )
 /** Insert clip at the specified position.
 */
 
-valerie_error_code valerie_unit_clip_insert( valerie this, int unit, valerie_clip_offset offset, int clip, char *file, int64_t in, int64_t out )
+valerie_error_code valerie_unit_clip_insert( valerie this, int unit, valerie_clip_offset offset, int clip, char *file, int32_t in, int32_t out )
 {
 	char temp[ 100 ];
 	valerie_interpret_clip_offset( temp, offset, clip );
-	return valerie_execute( this, 1024, "INSERT U%d %s %s %lld %lld", unit, file, temp, in, out );
+	return valerie_execute( this, 1024, "INSERT U%d %s %s %d %d", unit, file, temp, in, out );
 }
 
 /** Play the unit at normal speed.
@@ -351,63 +351,63 @@ valerie_error_code valerie_unit_fast_forward( valerie this, int unit )
 /** Step by the number of frames on the specified unit.
 */
 
-valerie_error_code valerie_unit_step( valerie this, int unit, int64_t step )
+valerie_error_code valerie_unit_step( valerie this, int unit, int32_t step )
 {
-	return valerie_execute( this, 1024, "STEP U%d %lld", unit, step );
+	return valerie_execute( this, 1024, "STEP U%d %d", unit, step );
 }
 
 /** Goto the specified frame on the specified unit.
 */
 
-valerie_error_code valerie_unit_goto( valerie this, int unit, int64_t position )
+valerie_error_code valerie_unit_goto( valerie this, int unit, int32_t position )
 {
-	return valerie_execute( this, 1024, "GOTO U%d %lld", unit, position );
+	return valerie_execute( this, 1024, "GOTO U%d %d", unit, position );
 }
 
 /** Goto the specified frame in the clip on the specified unit.
 */
 
-valerie_error_code valerie_unit_clip_goto( valerie this, int unit, valerie_clip_offset offset, int clip, int64_t position )
+valerie_error_code valerie_unit_clip_goto( valerie this, int unit, valerie_clip_offset offset, int clip, int32_t position )
 {
 	char temp[ 100 ];
 	valerie_interpret_clip_offset( temp, offset, clip );
-	return valerie_execute( this, 1024, "GOTO U%d %lld %s", unit, position, temp );
+	return valerie_execute( this, 1024, "GOTO U%d %d %s", unit, position, temp );
 }
 
 /** Set the in point of the loaded file on the specified unit.
 */
 
-valerie_error_code valerie_unit_set_in( valerie this, int unit, int64_t in )
+valerie_error_code valerie_unit_set_in( valerie this, int unit, int32_t in )
 {
-	return valerie_execute( this, 1024, "SIN U%d %lld", unit, in );
+	return valerie_execute( this, 1024, "SIN U%d %d", unit, in );
 }
 
 /** Set the in point of the clip on the specified unit.
 */
 
-valerie_error_code valerie_unit_clip_set_in( valerie this, int unit, valerie_clip_offset offset, int clip, int64_t in )
+valerie_error_code valerie_unit_clip_set_in( valerie this, int unit, valerie_clip_offset offset, int clip, int32_t in )
 {
 	char temp[ 100 ];
 	valerie_interpret_clip_offset( temp, offset, clip );
-	return valerie_execute( this, 1024, "SIN U%d %lld %s", unit, in, temp );
+	return valerie_execute( this, 1024, "SIN U%d %d %s", unit, in, temp );
 }
 
 /** Set the out point of the loaded file on the specified unit.
 */
 
-valerie_error_code valerie_unit_set_out( valerie this, int unit, int64_t out )
+valerie_error_code valerie_unit_set_out( valerie this, int unit, int32_t out )
 {
-	return valerie_execute( this, 1024, "SOUT U%d %lld", unit, out );
+	return valerie_execute( this, 1024, "SOUT U%d %d", unit, out );
 }
 
 /** Set the out point of the clip on the specified unit.
 */
 
-valerie_error_code valerie_unit_clip_set_out( valerie this, int unit, valerie_clip_offset offset, int clip, int64_t in )
+valerie_error_code valerie_unit_clip_set_out( valerie this, int unit, valerie_clip_offset offset, int clip, int32_t in )
 {
 	char temp[ 100 ];
 	valerie_interpret_clip_offset( temp, offset, clip );
-	return valerie_execute( this, 1024, "SOUT U%d %lld %s", unit, in, temp );
+	return valerie_execute( this, 1024, "SOUT U%d %d %s", unit, in, temp );
 }
 
 /** Clear the in point of the loaded file on the specified unit.

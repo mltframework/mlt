@@ -43,11 +43,11 @@ struct mlt_consumer_s
 	void *child;
 
 	int ahead;
-	int width;
-	int height;
 	mlt_image_format format;
 	mlt_deque queue;
 	pthread_t ahead_thread;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
 };
 
 /** Public final methods
@@ -59,6 +59,7 @@ extern mlt_properties mlt_consumer_properties( mlt_consumer this );
 extern int mlt_consumer_connect( mlt_consumer this, mlt_service producer );
 extern int mlt_consumer_start( mlt_consumer this );
 extern mlt_frame mlt_consumer_get_frame( mlt_consumer this );
+extern mlt_frame mlt_consumer_rt_frame( mlt_consumer this, mlt_image_format format );
 extern int mlt_consumer_stop( mlt_consumer this );
 extern int mlt_consumer_is_stopped( mlt_consumer this );
 extern void mlt_consumer_close( mlt_consumer );

@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 /** Public final methods
 */
@@ -181,6 +182,164 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	return frame;
 }
 
+static inline long time_difference( struct timeval *time1 )
+{
+	struct timeval time2;
+	time2.tv_sec = time1->tv_sec;
+	time2.tv_usec = time1->tv_usec;
+	gettimeofday( time1, NULL );
+	return time1->tv_sec * 1000000 + time1->tv_usec - time2.tv_sec * 1000000 - time2.tv_usec;
+}
+
+static void *consumer_read_ahead_thread( void *arg )
+{
+	// The argument is the consumer
+	mlt_consumer this = arg;
+
+	// Get the properties of the consumer
+	mlt_properties properties = mlt_consumer_properties( this );
+
+	// Get the width and height
+	int width = mlt_properties_get_int( properties, "width" );
+	int height = mlt_properties_get_int( properties, "height" );
+
+	// General frame variable
+	mlt_frame frame = NULL;
+	uint8_t *image = NULL;
+
+	// Time structures
+	struct timeval ante;
+
+	// Average time for get_frame and get_image
+	int count = 1;
+	int64_t time_wait = 0;
+	int64_t time_frame = 0;
+	int64_t time_image = 0;
+
+	// Get the first frame
+	gettimeofday( &ante, NULL );
+	frame = mlt_consumer_get_frame( this );
+	time_frame = time_difference( &ante );
+
+	// Get the image of the first frame
+	mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+	mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
+	time_image = time_difference( &ante );
+
+	// Continue to read ahead
+	while ( this->ahead )
+	{
+		// Put the current frame into the queue
+		pthread_mutex_lock( &this->mutex );
+		while( this->ahead && mlt_deque_count( this->queue ) >= 25 )
+			pthread_cond_wait( &this->cond, &this->mutex );
+		mlt_deque_push_back( this->queue, frame );
+		pthread_cond_broadcast( &this->cond );
+		pthread_mutex_unlock( &this->mutex );
+		time_wait += time_difference( &ante );
+
+		// Get the next frame
+		frame = mlt_consumer_get_frame( this );
+		time_frame += time_difference( &ante );
+
+		// Increment the count
+		count ++;
+
+		// Get the image
+		if ( ( time_frame + time_image + time_wait ) / count < 40000 )
+		{
+			// Get the image, mark as rendered and time it
+			mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+			mlt_properties_set_int( mlt_frame_properties( frame ), "rendered", 1 );
+			time_image += time_difference( &ante );
+		}
+		else
+		{
+			// This is wrong, but it avoids slower machines getting starved 
+			// It is, after all, impossible to go back in time :-/
+			time_image -= ( time_image / count / 8 );
+		}
+	}
+
+	// Remove the last frame
+	mlt_frame_close( frame );
+
+	return NULL;
+}
+
+static void consumer_read_ahead_start( mlt_consumer this )
+{
+	// We're running now
+	this->ahead = 1;
+
+	// Create the frame queue
+	this->queue = mlt_deque_init( );
+
+	// Create the mutex
+	pthread_mutex_init( &this->mutex, NULL );
+
+	// Create the condition
+	pthread_cond_init( &this->cond, NULL );
+
+	// Create the read ahead 
+	pthread_create( &this->ahead_thread, NULL, consumer_read_ahead_thread, this );
+
+}
+
+static void consumer_read_ahead_stop( mlt_consumer this )
+{
+	// Make sure we're running
+	if ( this->ahead )
+	{
+		// Inform thread to stop
+		this->ahead = 0;
+
+		// Broadcast to the condition in case it's waiting
+		pthread_mutex_lock( &this->mutex );
+		pthread_cond_broadcast( &this->cond );
+		pthread_mutex_unlock( &this->mutex );
+
+		// Join the thread
+		pthread_join( this->ahead_thread, NULL );
+
+		// Destroy the mutex
+		pthread_mutex_destroy( &this->mutex );
+
+		// Destroy the condition
+		pthread_cond_destroy( &this->cond );
+
+		// Wipe the queue
+		while ( mlt_deque_count( this->queue ) )
+			mlt_frame_close( mlt_deque_pop_back( this->queue ) );
+	}
+}
+
+mlt_frame mlt_consumer_rt_frame( mlt_consumer this, mlt_image_format format )
+{
+	// Frame to return
+	mlt_frame frame = NULL;
+	int size = 1;
+
+
+	// Is the read ahead running?
+	if ( this->ahead == 0 )
+	{
+		this->format = format;
+		consumer_read_ahead_start( this );
+		size = 12;
+	}
+
+	// Get frame from queue
+	pthread_mutex_lock( &this->mutex );
+	while( this->ahead && mlt_deque_count( this->queue ) < size )
+		pthread_cond_wait( &this->cond, &this->mutex );
+	frame = mlt_deque_pop_front( this->queue );
+	pthread_cond_broadcast( &this->cond );
+	pthread_mutex_unlock( &this->mutex );
+
+	return frame;
+}
+
 /** Stop the consumer.
 */
 
@@ -192,6 +351,9 @@ int mlt_consumer_stop( mlt_consumer this )
 	// Stop the consumer
 	if ( this->stop != NULL )
 		this->stop( this );
+
+	// Kill the read ahead
+	consumer_read_ahead_stop( this );
 
 	// Kill the test card
 	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );

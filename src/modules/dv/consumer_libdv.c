@@ -363,7 +363,7 @@ static void *consumer_thread( void *arg )
 	while( mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
-		mlt_frame frame = mlt_consumer_get_frame( this );
+		mlt_frame frame = mlt_consumer_rt_frame( this, mlt_image_yuv422 );
 
 		// Check that we have a frame to work with
 		if ( frame != NULL )

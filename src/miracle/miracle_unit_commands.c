@@ -56,7 +56,7 @@ int miracle_load( command_argument cmd_arg )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		int64_t in = -1, out = -1;
+		int32_t in = -1, out = -1;
 		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 5 )
 		{
 			in = atol( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );
@@ -207,7 +207,7 @@ int miracle_append( command_argument cmd_arg )
 		return RESPONSE_INVALID_UNIT;
 	else
 	{
-		int64_t in = -1, out = -1;
+		int32_t in = -1, out = -1;
 		if ( valerie_tokeniser_count( cmd_arg->tokeniser ) == 5 )
 		{
 			in = atol( valerie_tokeniser_get_string( cmd_arg->tokeniser, 3 ) );

@@ -246,7 +246,7 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 	{
 		mlt_playlist_clip_info info;
 		mlt_playlist_get_clip_info( playlist , &info, i );
-		valerie_response_printf( response, 10240, "%d \"%s\" %lld %lld %lld %lld %.2f\n", 
+		valerie_response_printf( response, 10240, "%d \"%s\" %d %d %d %d %.2f\n", 
 								 i, 
 								 strip_root( unit, info.resource ), 
 								 info.frame_in, 
@@ -267,7 +267,7 @@ void miracle_unit_report_list( miracle_unit unit, valerie_response response )
 	\param out  The ending frame (-1 for maximum)
 */
 
-valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int64_t in, int64_t out, int flush )
+valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int32_t in, int32_t out, int flush )
 {
 	// Now try to create an producer
 	mlt_producer instance = create_producer( clip );
@@ -287,7 +287,7 @@ valerie_error_code miracle_unit_load( miracle_unit unit, char *clip, int64_t in,
 	return valerie_invalid_file;
 }
 
-valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index, int64_t in, int64_t out )
+valerie_error_code miracle_unit_insert( miracle_unit unit, char *clip, int index, int32_t in, int32_t out )
 {
 	mlt_producer instance = locate_producer( unit, clip );
 
@@ -345,7 +345,7 @@ valerie_error_code miracle_unit_move( miracle_unit unit, int src, int dest )
 	\param out  The ending frame (-1 for maximum)
 */
 
-valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, int64_t in, int64_t out )
+valerie_error_code miracle_unit_append( miracle_unit unit, char *clip, int32_t in, int32_t out )
 {
 	mlt_producer instance = locate_producer( unit, clip );
 
@@ -511,7 +511,7 @@ int miracle_unit_get_status( miracle_unit unit, valerie_status status )
 /** Change position in the playlist.
 */
 
-void miracle_unit_change_position( miracle_unit unit, int clip, int64_t position )
+void miracle_unit_change_position( miracle_unit unit, int clip, int32_t position )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
@@ -531,8 +531,8 @@ void miracle_unit_change_position( miracle_unit unit, int clip, int64_t position
 
 	if ( mlt_playlist_get_clip_info( playlist, &info, clip ) == 0 )
 	{
-		int64_t frame_start = info.start;
-		int64_t frame_offset = position;
+		int32_t frame_start = info.start;
+		int32_t frame_offset = position;
 
 		if ( frame_offset < 0 )
 			frame_offset = info.frame_out;
@@ -561,7 +561,7 @@ int	miracle_unit_get_current_clip( miracle_unit unit )
 /** Set a clip's in point
 */
 
-int miracle_unit_set_clip_in( miracle_unit unit, int index, int64_t position )
+int miracle_unit_set_clip_in( miracle_unit unit, int index, int32_t position )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
@@ -582,7 +582,7 @@ int miracle_unit_set_clip_in( miracle_unit unit, int index, int64_t position )
 /** Set a clip's out point.
 */
 
-int miracle_unit_set_clip_out( miracle_unit unit, int index, int64_t position )
+int miracle_unit_set_clip_out( miracle_unit unit, int index, int32_t position )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
@@ -604,7 +604,7 @@ int miracle_unit_set_clip_out( miracle_unit unit, int index, int64_t position )
 /** Step by specified position.
 */
 
-void miracle_unit_step( miracle_unit unit, int64_t offset )
+void miracle_unit_step( miracle_unit unit, int32_t offset )
 {
 	mlt_properties properties = unit->properties;
 	mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );

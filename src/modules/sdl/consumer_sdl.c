@@ -27,7 +27,7 @@
 #include <pthread.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
-#include <sys/timeb.h>
+#include <sys/time.h>
 
 /** This classes definition.
 */
@@ -275,7 +275,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		request.freq = frequency;
 		request.format = AUDIO_S16;
 		request.channels = channels;
-		request.samples = 2048;
+		request.samples = 4096;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
@@ -323,9 +323,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	uint8_t *image;
 	int changed = 0;
 
-	struct timeb before;
-	ftime( &before );
-
 	if ( mlt_properties_get_int( properties, "video_off" ) )
 	{
 		mlt_frame_close( frame );
@@ -336,75 +333,25 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	mlt_properties_set_position( mlt_frame_properties( frame ), "playtime", playtime );
 	mlt_properties_set_double( mlt_frame_properties( frame ), "consumer_scale", ( double )height / mlt_properties_get_double( properties, "height" ) );
 
-	if ( !this->playing )
-	{
-		struct timeb render;
-		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		ftime( &render );
-		this->time_taken = ( ( int64_t )render.time * 1000 + render.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
-		mlt_properties_set( mlt_frame_properties( frame ), "rendered", "true" );
-	}
-
 	// Push this frame to the back of the queue
 	mlt_deque_push_back( this->queue, frame );
 	frame = NULL;
 
 	if ( this->playing )
+		frame = mlt_deque_pop_front( this->queue );
+
+	if ( this->playing && frame != NULL && mlt_properties_get_int( mlt_frame_properties( frame ), "rendered" ) == 1 )
 	{
-		// We might want to use an old frame if the current frame is skipped
-		mlt_frame candidate = NULL;
-
-		while ( frame == NULL && mlt_deque_count( this->queue ) )
-		{
-			frame = mlt_deque_peek_front( this->queue );
-			playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
-
-			// Check if frame is in the future or past
-			if ( mlt_deque_count( this->queue ) > 25 )
-			{
-				frame = mlt_deque_pop_front( this->queue );
-			}
-			else if ( playtime > elapsed + 100 )
-			{
-				// no frame to show or remove
-				frame = NULL;
-				break;
-			}
-			else if ( playtime < elapsed - 20 )
-			{
-				mlt_frame_close( candidate );
-				candidate = mlt_deque_pop_front( this->queue );
-				if ( mlt_properties_get( mlt_frame_properties( frame ), "rendered" ) == NULL )
-				{
-					mlt_frame_close( candidate );
-					candidate = NULL;
-				}
-				frame = NULL;
-			}
-			else
-			{
-				// Get the frame at the front of the queue
-				frame = mlt_deque_pop_front( this->queue );
-			}
-		}
-
-		if ( frame == NULL )
-			frame = candidate;
-		else if ( candidate != NULL )
-			mlt_frame_close( candidate );
-	}
-
-	struct timeb render;
-	ftime( &render );
-
-	if ( this->playing && frame != NULL )
-	{
+		playtime = mlt_properties_get_position( mlt_frame_properties( frame ), "playtime" );
 
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		ftime( &render );
-		if ( mlt_properties_get( mlt_frame_properties( frame ), "rendered" ) == NULL )
-			this->time_taken = ( ( int64_t )render.time * 1000 + render.millitm ) - ( ( int64_t )before.time * 1000 + before.millitm );
+
+		if ( playtime > elapsed + 20000 )
+		{
+			struct timespec tm = { ( playtime - elapsed ) / 1000000, ( ( playtime - elapsed ) % 1000000 ) * 1000 };
+			nanosleep( &tm, NULL );
+		}
 
 		// Handle events
 		if ( this->sdl_screen != NULL )
@@ -514,33 +461,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame, int64_t elap
 	if ( frame != NULL )
 		mlt_frame_close( frame );
 
-	struct timeb after;
-	ftime( &after );
-	int processing = ( ( int64_t )after.time * 1000 + after.millitm ) - ( ( int64_t )render.time * 1000 + render.millitm );
-	int delay = playtime - elapsed - processing;
-
-	if ( delay > this->time_taken && mlt_deque_count( this->queue ) )
-	{
-		mlt_frame next = mlt_deque_peek_front( this->queue );
-		playtime = mlt_properties_get_position( mlt_frame_properties( next ), "playtime" );
-		if ( playtime > elapsed + delay )
-		{
-			struct timeb render;
-			mlt_frame_get_image( next, &image, &vfmt, &width, &height, 0 );
-			ftime( &render );
-			this->time_taken = ( ( int64_t )render.time * 1000 + render.millitm ) - ( ( int64_t )after.time * 1000 + after.millitm );
-			mlt_properties_set( mlt_frame_properties( next ), "rendered", "true" );
-		}
-		else
-		{
-			this->time_taken /= 2;
-		}
-	}
-	else
-	{
-		this->time_taken /= 2;
-	}
-
 	return 0;
 }
 
@@ -559,7 +479,7 @@ static void *consumer_thread( void *arg )
 	int init_audio = 1;
 
 	// Obtain time of thread start
-	struct timeb now;
+	struct timeval now;
 	int64_t start = 0;
 	int64_t elapsed = 0;
 	int duration = 0;
@@ -578,7 +498,7 @@ static void *consumer_thread( void *arg )
 	while( this->running )
 	{
 		// Get a frame from the attached producer
-		mlt_frame frame = mlt_consumer_get_frame( consumer );
+		mlt_frame frame = mlt_consumer_rt_frame( consumer, mlt_image_yuv422 );
 
 		// Ensure that we have a frame
 		if ( frame != NULL )
@@ -589,18 +509,19 @@ static void *consumer_thread( void *arg )
 			if ( this->playing )
 			{
 				// Get the current time
-				ftime( &now );
+				gettimeofday( &now, NULL );
 
 				// Determine elapsed time
 				if ( start == 0 )
-					start = ( int64_t )now.time * 1000 + now.millitm;
+					start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
 				else
-					elapsed = ( ( int64_t )now.time * 1000 + now.millitm ) - start;
+					elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec) - start;
+
 			}
 
 			consumer_play_video( this, frame, elapsed, playtime );
 
-			playtime += duration;
+			playtime += ( duration * 1000 );
 		}
 	}
 
