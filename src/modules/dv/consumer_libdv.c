@@ -1,5 +1,5 @@
 /*
- * producer_libdv.c -- a DV encoder based on libdv
+ * consumer_libdv.c -- a DV encoder based on libdv
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *

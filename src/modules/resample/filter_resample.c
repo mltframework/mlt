@@ -58,10 +58,8 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Duplicate channels as necessary
 	if ( channels_avail < *channels )
 	{
-		int size = *channels * *samples * 2;
+		int size = *channels * *samples * sizeof( int16_t );
 		int16_t *new_buffer = mlt_pool_alloc( size );
-		
-		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
 		
 		// Duplicate the existing channels
 		for ( i = 0; i < *samples; i++ )
@@ -74,10 +72,31 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 			}
 		}
 		
+		// Update the audio buffer now - destroys the old
+		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+		
+		*buffer = new_buffer;
+	}
+	else if ( channels_avail > *channels )
+	{
+		// Nasty hack for ac3 5.1 audio - may be a cause of failure?
+		int size = *channels * *samples * sizeof( int16_t );
+		int16_t *new_buffer = mlt_pool_alloc( size );
+		
+		// Drop all but the first *channels
+		for ( i = 0; i < *samples; i++ )
+		{
+			new_buffer[ ( i * *channels ) + 0 ] = (*buffer)[ ( i * channels_avail ) + 2 ];
+			new_buffer[ ( i * *channels ) + 1 ] = (*buffer)[ ( i * channels_avail ) + 3 ];
+		}
+
+		// Update the audio buffer now - destroys the old
+		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+		
 		*buffer = new_buffer;
 	}
 
-	// Return now if now work to do
+	// Return now if no work to do
 	if ( output_rate == *frequency )
 		return 0;
 

@@ -758,13 +758,18 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	pthread_mutex_lock( &avformat_mutex );
 
 	// Check for resample and create if necessary
-	if ( resample == NULL )
+	if ( resample == NULL && codec_context->channels <= 2 )
 	{
 		// Create the resampler
 		resample = audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate );
 
 		// And store it on properties
 		mlt_properties_set_data( properties, "audio_resample", resample, 0, ( mlt_destructor )audio_resample_close, NULL );
+	}
+	else if ( resample == NULL )
+	{
+		*channels = codec_context->channels;
+		*frequency = codec_context->sample_rate;
 	}
 
 	// Check for audio buffer and create if necessary
@@ -827,7 +832,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
     		uint8_t *ptr = pkt.data;
 			int data_size;
 
-			// We only deal with video from the selected video_index
+			// We only deal with audio from the selected audio_index
 			while ( ptr != NULL && ret >= 0 && pkt.stream_index == index && len > 0 )
 			{
 				// Decode the audio
@@ -844,9 +849,15 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 				if ( data_size > 0 )
 				{
-					int size_out = audio_resample( resample, &audio_buffer[ audio_used * *channels ], temp, data_size / ( codec_context->channels * sizeof( int16_t ) ) );
-
-					audio_used += size_out;
+					if ( resample != NULL )
+					{
+						audio_used += audio_resample( resample, &audio_buffer[ audio_used * *channels ], temp, data_size / ( codec_context->channels * sizeof( int16_t ) ) );
+					}
+					else
+					{
+						memcpy( &audio_buffer[ audio_used * *channels ], temp, data_size );
+						audio_used += data_size / ( codec_context->channels * sizeof( int16_t ) );
+					}
 
 					// Handle ignore
 					while ( ignore && audio_used > *samples )

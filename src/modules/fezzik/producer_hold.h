@@ -1,5 +1,5 @@
 /*
- * factory.c -- the factory method interfaces
+ * producer_hold.h -- a frame holding producer
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,32 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+#ifndef _PRODUCER_HOLD_H_
+#define _PRODUCER_HOLD_H_
 
-#include "producer_fezzik.h"
-#include "producer_hold.h"
+#include <framework/mlt_producer.h>
 
-void *mlt_create_producer( char *id, void *arg )
-{
-	if ( !strcmp( id, "fezzik" ) )
-		return producer_fezzik_init( arg );
-	if ( !strcmp( id, "hold" ) )
-		return producer_hold_init( arg );
-	return NULL;
-}
+extern mlt_producer producer_hold_init( char *args );
 
-void *mlt_create_filter( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( char *id, void *arg )
-{
-	return NULL;
-}
-
+#endif

@@ -5,6 +5,7 @@ then
 
 cat << EOF >> ../producers.dat
 fezzik			libmltfezzik.so
+hold			libmltfezzik.so
 EOF
 
 fi

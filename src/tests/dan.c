@@ -21,7 +21,7 @@ int main( int argc, char **argv )
 		file2 = argv[ 2 ];
 
 	// Start the consumer...
-	int vstd = mlt_video_standard_ntsc;
+	//int vstd = mlt_video_standard_ntsc;
 	//mlt_consumer consumer = mlt_factory_consumer( "bluefish", &vstd );
 	//mlt_consumer consumer = mlt_factory_consumer( "sdl", NULL );
 	mlt_consumer consumer = consumer_libdv_init( NULL );

@@ -2,7 +2,8 @@
 TARGET = ../libmltfezzik.so
 
 OBJS = factory.o \
-	   producer_fezzik.o 
+	   producer_fezzik.o \
+	   producer_hold.o 
 
 CFLAGS = -O3 -I../../ -Wall -g -D_FILE_OFFSET_BITS=64 -pthread
 

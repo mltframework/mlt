@@ -33,7 +33,6 @@ int main( int argc, char **argv )
 	mlt_playlist pl2 = mlt_playlist_init();
 	mlt_producer overlay = mlt_factory_producer( "pixbuf", file2 );
 	mlt_playlist_append( pl2, overlay );
-	mlt_properties_set_int( mlt_producer_properties( overlay ), "video_standard", mlt_video_standard_pal );
 	mlt_properties_set_int( mlt_producer_properties( overlay ), "x", 600 );
 	mlt_properties_set_int( mlt_producer_properties( overlay ), "y", 460 );
 	mlt_properties_set_double( mlt_producer_properties( overlay ), "mix", 0.8 );

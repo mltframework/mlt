@@ -193,6 +193,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
+		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 
 		// colour is an alias for resource
 		// CY: Do we really need this?
