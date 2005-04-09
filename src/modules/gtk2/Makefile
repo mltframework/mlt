@@ -9,7 +9,7 @@ OBJS = factory.o \
 	   pixops.o \
 	   filter_rescale.o
 
-ifdef ($(MMX_FLAGS))
+ifdef MMX_FLAGS
 ASM_OBJS = have_mmx.o scale_line_22_yuv_mmx.o
 endif
 

@@ -432,6 +432,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		// All non normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
 		{
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
 			skipped = 0;
 			time_frame = 0;
 			time_process = 0;
