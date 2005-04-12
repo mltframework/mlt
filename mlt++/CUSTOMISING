@@ -181,8 +181,8 @@ ACCESSING UNIT PROPERTIES
 
 	You can extract the objects using:
 
-		Playlist playlist( ( mlt_playlist )( unit( i )->get_data( "playlist", NULL ) ) );
-		Consumer consumer( ( mlt_consumer )( unit( i )->get_data( "consumer", NULL ) ) );
+		Playlist playlist( ( mlt_playlist )( unit( i )->get_data( "playlist" ) ) );
+		Consumer consumer( ( mlt_consumer )( unit( i )->get_data( "consumer" ) ) );
 	
 	and use the standard MLT++ wrapping methods to interact with them or you can 
 	bypass these and using the C API directly.
@@ -266,8 +266,7 @@ HANDLING PUSHED DOCUMENTS
 
 		Response *push( char *command, Service *service )
 		{
-			int size;
-			Playlist playlist( ( mlt_playlist )( unit( 0 )->get_data( "playlist", size ) ) );
+			Playlist playlist( ( mlt_playlist )( unit( 0 )->get_data( "playlist" ) ) );
 			Producer producer( *service );
 			if ( producer.is_valid( ) && playlist.is_valid( ) )
 			{
