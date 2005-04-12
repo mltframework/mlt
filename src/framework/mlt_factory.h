@@ -23,14 +23,14 @@
 
 #include "mlt_types.h"
 
-extern int mlt_factory_init( char *prefix );
+extern int mlt_factory_init( const char *prefix );
 extern const char *mlt_factory_prefix( );
-extern char *mlt_environment( char *name );
+extern char *mlt_environment( const char *name );
 extern mlt_properties mlt_factory_event_object( );
-extern mlt_producer mlt_factory_producer( char *name, void *input );
-extern mlt_filter mlt_factory_filter( char *name, void *input );
-extern mlt_transition mlt_factory_transition( char *name, void *input );
-extern mlt_consumer mlt_factory_consumer( char *name, void *input );
+extern mlt_producer mlt_factory_producer( const char *name, void *input );
+extern mlt_filter mlt_factory_filter( const char *name, void *input );
+extern mlt_transition mlt_factory_transition( const char *name, void *input );
+extern mlt_consumer mlt_factory_consumer( const char *name, void *input );
 extern void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor );
 extern void mlt_factory_close( );
 

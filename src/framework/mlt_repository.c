@@ -31,7 +31,7 @@ struct mlt_repository_s
 	struct mlt_properties_s parent;
 };
 
-static char *construct_full_file( char *output, char *prefix, char *file )
+static char *construct_full_file( char *output, const char *prefix, const char *file )
 {
 	strcpy( output, prefix );
 	if ( prefix[ strlen( prefix ) - 1 ] != '/' )
@@ -47,7 +47,7 @@ static char *chomp( char *input )
 	return input;
 }
 
-static mlt_properties construct_object( char *prefix, char *id )
+static mlt_properties construct_object( const char *prefix, const char *id )
 {
 	mlt_properties output = mlt_properties_new( );
 	mlt_properties_set( output, "prefix", prefix );
@@ -55,7 +55,7 @@ static mlt_properties construct_object( char *prefix, char *id )
 	return output;
 }
 
-static mlt_properties construct_service( mlt_properties object, char *id )
+static mlt_properties construct_service( mlt_properties object, const char *id )
 {
 	mlt_properties output = mlt_properties_new( );
 	mlt_properties_set_data( output, "object", object, 0, NULL, NULL );
@@ -63,7 +63,7 @@ static mlt_properties construct_service( mlt_properties object, char *id )
 	return output;
 }
 
-static void *construct_instance( mlt_properties service_properties, char *symbol, void *input )
+static void *construct_instance( mlt_properties service_properties, const char *symbol, void *input )
 {
 	// Extract the service
 	char *service = mlt_properties_get( service_properties, "id" );
@@ -75,7 +75,7 @@ static void *construct_instance( mlt_properties service_properties, char *symbol
 	void *object = mlt_properties_get_data( object_properties, "dlopen", NULL );
 
 	// Get the dlsym'd symbol
-	void *( *symbol_ptr )( char *, void * ) = mlt_properties_get_data( object_properties, symbol, NULL );
+	void *( *symbol_ptr )( const char *, void * ) = mlt_properties_get_data( object_properties, symbol, NULL );
 
 	// Check that we have object and open if we don't
 	if ( object == NULL )
@@ -116,7 +116,7 @@ static void *construct_instance( mlt_properties service_properties, char *symbol
 	return symbol_ptr != NULL ? symbol_ptr( service, input ) : NULL;
 }
 
-mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, char *data, char *symbol )
+mlt_repository mlt_repository_init( mlt_properties object_list, const char *prefix, const char *data, const char *symbol )
 {
 	char full_file[ 512 ];
 	FILE *file;
@@ -176,7 +176,7 @@ mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, ch
 	return this;
 }
 
-void *mlt_repository_fetch( mlt_repository this, char *service, void *input )
+void *mlt_repository_fetch( mlt_repository this, const char *service, void *input )
 {
 	// Get the service properties
 	mlt_properties service_properties = mlt_properties_get_data( &this->parent, service, NULL );

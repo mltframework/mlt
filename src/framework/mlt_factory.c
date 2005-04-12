@@ -57,7 +57,7 @@ static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner
 /** Construct the factories.
 */
 
-int mlt_factory_init( char *prefix )
+int mlt_factory_init( const char *prefix )
 {
 	// Only initialise once
 	if ( mlt_prefix == NULL )
@@ -130,7 +130,7 @@ const char *mlt_factory_prefix( )
 /** Get a value from the environment.
 */
 
-char *mlt_environment( char *name )
+char *mlt_environment( const char *name )
 {
 	return mlt_properties_get( global_properties, name );
 }
@@ -138,7 +138,7 @@ char *mlt_environment( char *name )
 /** Fetch a producer from the repository.
 */
 
-mlt_producer mlt_factory_producer( char *service, void *input )
+mlt_producer mlt_factory_producer( const char *service, void *input )
 {
 	mlt_producer obj = NULL;
 
@@ -169,7 +169,7 @@ mlt_producer mlt_factory_producer( char *service, void *input )
 /** Fetch a filter from the repository.
 */
 
-mlt_filter mlt_factory_filter( char *service, void *input )
+mlt_filter mlt_factory_filter( const char *service, void *input )
 {
 	mlt_filter obj = NULL;
 
@@ -195,7 +195,7 @@ mlt_filter mlt_factory_filter( char *service, void *input )
 /** Fetch a transition from the repository.
 */
 
-mlt_transition mlt_factory_transition( char *service, void *input )
+mlt_transition mlt_factory_transition( const char *service, void *input )
 {
 	mlt_transition obj = NULL;
 
@@ -221,7 +221,7 @@ mlt_transition mlt_factory_transition( char *service, void *input )
 /** Fetch a consumer from the repository
 */
 
-mlt_consumer mlt_factory_consumer( char *service, void *input )
+mlt_consumer mlt_factory_consumer( const char *service, void *input )
 {
 	mlt_consumer obj = NULL;
 

@@ -31,8 +31,8 @@ typedef struct mlt_repository_s *mlt_repository;
 /** Public functions.
 */
 
-extern mlt_repository mlt_repository_init( mlt_properties object_list, char *prefix, char *file, char *symbol );
-extern void *mlt_repository_fetch( mlt_repository self, char *service, void *input );
+extern mlt_repository mlt_repository_init( mlt_properties object_list, const char *prefix, const char *file, const char *symbol );
+extern void *mlt_repository_fetch( mlt_repository self, const char *service, void *input );
 extern void mlt_repository_close( mlt_repository self );
 
 #endif
