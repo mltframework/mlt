@@ -1,5 +1,5 @@
 /*
- * mlt_geometry.h -- provides the geometry API
+ * mlt_geometry.c -- provides the geometry API
  * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -281,7 +281,7 @@ void mlt_geometry_set_length( mlt_geometry this, int length )
 	// Get the local/private structure
 	geometry self = this->local;
 
-	// return the length
+	// set the length
 	self->length = length;
 }
 
