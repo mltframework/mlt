@@ -1,6 +1,6 @@
 include ../../../config.mak
 
-TARGET = ../libmltjackrack.so
+TARGET = ../libmltjackrack$(LIBSUF)
 
 OBJS = factory.o \
 	   jack_rack.o \
@@ -28,7 +28,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend

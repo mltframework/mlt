@@ -4,12 +4,12 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
-westley			libmltwestley.so
-westley-xml		libmltwestley.so
+westley			libmltwestley$LIBSUF
+westley-xml		libmltwestley$LIBSUF
 EOF
 
 cat << EOF >> ../consumers.dat
-westley			libmltwestley.so
+westley			libmltwestley$LIBSUF
 EOF
 
 fi

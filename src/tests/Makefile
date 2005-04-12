@@ -2,14 +2,14 @@ include ../../config.mak
 
 TARGET = dan charlie pango pixbuf dissolve luma
 
-CFLAGS += -I.. -rdynamic
+CFLAGS += -I.. $(RDYNAMIC)
 
-LDFLAGS += -L ../framework -L ../modules -lmlt -lmltdv -lmltsdl
+LDFLAGS += -L../framework -L../modules -lmlt -lmltdv -lmltsdl
 
 all: $(TARGET)
 
 hello:		hello.o
-			$(CC) hello.o -o $@ -L ../framework -L ../modules -lmlt
+			$(CC) hello.o -o $@ -L../framework -L../modules -lmlt
 
 pango:		pango.o
 			$(CC) pango.o -o $@ $(LDFLAGS)

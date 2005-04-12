@@ -1,6 +1,6 @@
 include ../../../config.mak
 
-TARGET = ../libmltgtk2.so
+TARGET = ../libmltgtk2$(LIBSUF)
 
 OBJS = factory.o \
 	   consumer_gtk2.o \
@@ -24,7 +24,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS) $(ASM_OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(ASM_OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(ASM_OBJS) $(LDFLAGS)
 
 have_mmx.o:
 	$(CC) -o $@ -c have_mmx.S

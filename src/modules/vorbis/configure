@@ -4,7 +4,7 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
-vorbis		libmltvorbis.so
+vorbis		libmltvorbis$LIBSUF
 EOF
 
 fi

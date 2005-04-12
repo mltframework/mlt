@@ -4,36 +4,36 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
-colour			libmltcore.so
-noise			libmltcore.so
-ppm				libmltcore.so
+colour			libmltcore$LIBSUF
+noise			libmltcore$LIBSUF
+ppm				libmltcore$LIBSUF
 EOF
 
 cat << EOF >> ../filters.dat
-brightness		libmltcore.so
-channelcopy		libmltcore.so
-data_feed		libmltcore.so
-data_show		libmltcore.so
-gamma			libmltcore.so
-greyscale		libmltcore.so
-luma			libmltcore.so
-mirror			libmltcore.so
-obscure			libmltcore.so
-region			libmltcore.so
-rescale			libmltcore.so
-resize			libmltcore.so
-watermark		libmltcore.so
+brightness		libmltcore$LIBSUF
+channelcopy		libmltcore$LIBSUF
+data_feed		libmltcore$LIBSUF
+data_show		libmltcore$LIBSUF
+gamma			libmltcore$LIBSUF
+greyscale		libmltcore$LIBSUF
+luma			libmltcore$LIBSUF
+mirror			libmltcore$LIBSUF
+obscure			libmltcore$LIBSUF
+region			libmltcore$LIBSUF
+rescale			libmltcore$LIBSUF
+resize			libmltcore$LIBSUF
+watermark		libmltcore$LIBSUF
 EOF
 
 cat << EOF >> ../transitions.dat
-composite		libmltcore.so
-luma			libmltcore.so
-mix				libmltcore.so
-region			libmltcore.so
+composite		libmltcore$LIBSUF
+luma			libmltcore$LIBSUF
+mix				libmltcore$LIBSUF
+region			libmltcore$LIBSUF
 EOF
 
 cat << EOF >> ../consumers.dat
-null			libmltcore.so
+null			libmltcore$LIBSUF
 EOF
 
 fi

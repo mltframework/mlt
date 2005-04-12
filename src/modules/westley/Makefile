@@ -1,6 +1,6 @@
 include ../../../config.mak
 
-TARGET = ../libmltwestley.so
+TARGET = ../libmltwestley$(LIBSUF)
 
 OBJS = factory.o \
 	   consumer_westley.o \
@@ -17,7 +17,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend

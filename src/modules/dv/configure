@@ -4,11 +4,11 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
-libdv			libmltdv.so
+libdv			libmltdv$LIBSUF
 EOF
 
 cat << EOF >> ../consumers.dat
-libdv			libmltdv.so
+libdv			libmltdv$LIBSUF
 EOF
 
 fi

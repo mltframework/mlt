@@ -4,8 +4,8 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
-fezzik			libmltfezzik.so
-hold			libmltfezzik.so
+fezzik			libmltfezzik$LIBSUF
+hold			libmltfezzik$LIBSUF
 EOF
 
 fi

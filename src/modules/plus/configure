@@ -7,14 +7,14 @@ cat << EOF >> ../producers.dat
 EOF
 
 cat << EOF >> ../filters.dat
-affine			libmltplus.so
-charcoal		libmltplus.so
-invert			libmltplus.so
-sepia			libmltplus.so
+affine			libmltplus$LIBSUF
+charcoal		libmltplus$LIBSUF
+invert			libmltplus$LIBSUF
+sepia			libmltplus$LIBSUF
 EOF
 
 cat << EOF >> ../transitions.dat
-affine			libmltplus.so
+affine			libmltplus$LIBSUF
 EOF
 
 cat << EOF >> ../consumers.dat

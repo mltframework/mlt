@@ -4,7 +4,7 @@ TARGET = albino
 
 OBJS = albino.o
 
-CFLAGS += -I.. -rdynamic
+CFLAGS += -I.. $(RDYNAMIC)
 
 LDFLAGS += -L../miracle -lmiracle -L../valerie -lvalerie -L../miracle -lmiracle -L../framework -lmlt
 

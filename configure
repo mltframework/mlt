@@ -51,11 +51,24 @@ function build_config
 		echo "TARGETARCH=-march=$cpu" &&
 		echo "TARGETCPU=-mcpu=$cpu"
 
-		[ "`uname`" = "Linux" ] &&
-		echo "LIBDL=-ldl"
-
 		echo "OPTIMISATIONS=-O4 -pipe -ffast-math -fomit-frame-pointer"
-		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE) -pthread"
+		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
+
+		case $targetos in
+		Darwin)
+		echo "CFLAGS+=-DDARWIN"
+		echo "SHFLAGS=-dynamiclib"
+		;;
+		Linux)
+		echo "CFLAGS+=-pthread"
+		echo "SHFLAGS=-shared"
+		echo "LIBDL=-ldl"
+		echo "RDYNAMIC=-rdynamic"
+		;;
+		*)
+		;;
+		esac
+		echo "LIBSUF=$LIBSUF"
 	) > config.mak
 
 	echo "#!/bin/sh" > mlt-config
@@ -97,6 +110,22 @@ export debug=true
 export mmx=true
 export gpl=false
 export cpu=
+
+# Determine OS
+targetos=$(uname -s)
+# Chose appropriate suffix for libraries
+case $targetos in
+	Darwin)
+	LIBSUF=".dylib"
+	;;
+	Linux)
+	LIBSUF=".so"
+	;;
+	*)
+	LIBSUF=".so"
+	;;
+esac
+export LIBSUF
 
 # Iterate through arguments
 for i in "$@"

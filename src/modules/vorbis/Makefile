@@ -1,6 +1,6 @@
 include ../../../config.mak
 
-TARGET = ../libmltvorbis.so
+TARGET = ../libmltvorbis$(LIBSUF)
 
 OBJS = factory.o \
 	   producer_vorbis.o
@@ -16,7 +16,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend

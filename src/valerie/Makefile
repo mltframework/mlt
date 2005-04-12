@@ -1,6 +1,6 @@
 include ../../config.mak
 
-TARGET = libvalerie.so
+TARGET = libvalerie$(LIBSUF)
 
 OBJS = valerie.o \
 	   valerie_notifier.o \
@@ -24,13 +24,13 @@ INCS = valerie.h \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS += -I.. -rdynamic
-LDFLAGS += -L ../framework -lmlt -lpthread
+CFLAGS += -I.. $(RDYNAMIC)
+LDFLAGS += -L../framework -lmlt -lpthread
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -42,7 +42,7 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: 	all
-	install -m 755 $(TARGET) $(prefix)/lib/libvalerie.so
+	install -m 755 $(TARGET) $(prefix)/lib/libvalerie$(LIBSUF)
 	mkdir -p "$(prefix)/include/mlt/valerie"
 	install -m 644 $(INCS) "$(prefix)/include/mlt/valerie"
 

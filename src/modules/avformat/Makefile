@@ -1,7 +1,7 @@
 include ../../../config.mak
 include config.mak
 
-TARGET = ../libmltavformat.so
+TARGET = ../libmltavformat$(LIBSUF)
 
 OBJS = factory.o \
 	   producer_avformat.o \
@@ -30,10 +30,10 @@ all: 	$(TARGET)
 $(TARGET): $(OBJS)
 		if [ $(LOCAL_FFMPEG) ] ; then \
 			$(MAKE) -C ffmpeg all ; \
-			cp -f ffmpeg/libavcodec/libavcodec.so ../../framework/libmltavcodec.so ; \
-			cp -f ffmpeg/libavformat/libavformat.so ../../framework/libmltavformat.so ; \
+			cp -f ffmpeg/libavcodec/libavcodec$(LIBSUF) ../../framework/libmltavcodec$(LIBSUF) ; \
+			cp -f ffmpeg/libavformat/libavformat$(LIBSUF) ../../framework/libmltavformat$(LIBSUF) ; \
 		fi
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dep ; fi
@@ -50,8 +50,8 @@ clean:
 install: all
 		install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
 		if [ $(LOCAL_FFMPEG) ] ; then \
-			install -m 755 ../../framework/libmltavcodec.so "$(prefix)/share/mlt/modules" ; \
-			install -m 755 ../../framework/libmltavformat.so "$(prefix)/share/mlt/modules" ; \
+			install -m 755 ../../framework/libmltavcodec.$(LIBSUF) "$(prefix)/share/mlt/modules" ; \
+			install -m 755 ../../framework/libmltavformat.$(LIBSUF) "$(prefix)/share/mlt/modules" ; \
 		fi
 
 ifneq ($(wildcard .depend),)

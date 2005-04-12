@@ -6,9 +6,9 @@ OBJS = client.o \
        io.o \
 	   remote.o
 
-CFLAGS += -I.. -rdynamic
+CFLAGS += -I.. $(RDYNAMIC)
 
-LDFLAGS += -L ../valerie -L ../framework -lvalerie -lmlt
+LDFLAGS += -L../valerie -L../framework -lvalerie -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

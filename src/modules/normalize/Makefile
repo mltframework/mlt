@@ -1,6 +1,6 @@
 include ../../../config.mak
 
-TARGET = ../libmltnormalize.so
+TARGET = ../libmltnormalize$(LIBSUF)
 
 OBJS = factory.o \
 	   filter_volume.o 
@@ -14,7 +14,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend

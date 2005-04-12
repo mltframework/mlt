@@ -1,6 +1,6 @@
 include ../../../config.mak
 
-TARGET = ../libmltcore.so
+TARGET = ../libmltcore$(LIBSUF)
 
 OBJS = factory.o \
 	   producer_colour.o \
@@ -36,7 +36,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS) $(ASM_OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(ASM_OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(ASM_OBJS) $(LDFLAGS)
 
 composite_line_yuv_mmx.o: composite_line_yuv_mmx.S
 	$(CC) -o $@ -c composite_line_yuv_mmx.S

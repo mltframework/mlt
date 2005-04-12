@@ -4,9 +4,9 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../consumers.dat
-sdl				libmltsdl.so
-sdl_preview		libmltsdl.so
-sdl_still		libmltsdl.so
+sdl				libmltsdl$LIBSUF
+sdl_preview		libmltsdl$LIBSUF
+sdl_still		libmltsdl$LIBSUF
 EOF
 
 fi

@@ -72,7 +72,9 @@ int main( int argc, char **argv )
 	// Use realtime scheduling if possible
 	memset( &scp, '\0', sizeof( scp ) );
 	scp.sched_priority = sched_get_priority_max( SCHED_FIFO ) - 1;
+#ifndef DARWIN
 	sched_setscheduler( 0, SCHED_FIFO, &scp );
+#endif
 
 	mlt_factory_init( NULL );
 

@@ -4,7 +4,7 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../filters.dat
-sox		libmltsox.so
+sox		libmltsox$LIBSUF
 EOF
 
 fi

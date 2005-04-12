@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <netinet/in.h>
+#include <sys/time.h>
 
 /* Application header files */
 #include "valerie_socket.h"

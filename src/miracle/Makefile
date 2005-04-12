@@ -18,19 +18,19 @@ INCS = miracle_server.h \
 
 OBJS = $(APP_OBJS) $(LIB_OBJS)
 
-CFLAGS += -I.. -rdynamic
+CFLAGS += -I.. $(RDYNAMIC)
 
-LDFLAGS += -L ../valerie -lvalerie -L ../framework -lmlt
+LDFLAGS += -L../valerie -lvalerie -L../framework -lmlt 
 
 SRCS := $(OBJS:.o=.c)
 
 all: 		$(TARGET)
 
-$(TARGET): 	$(APP_OBJS) libmiracle.so
+$(TARGET): 	$(APP_OBJS) libmiracle$(LIBSUF)
 			$(CC) -o $@ $(APP_OBJS) -L. -lmiracle $(LDFLAGS)
 
-libmiracle.so:	$(LIB_OBJS)
-			$(CC) -shared -o $@ $(LIB_OBJS) $(LDFLAGS)
+libmiracle$(LIBSUF):	$(LIB_OBJS)
+			$(CC) $(SHFLAGS) -o $@ $(LIB_OBJS) $(LDFLAGS)
 
 depend:		$(SRCS)
 			$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -39,12 +39,12 @@ dist-clean:	clean
 			rm -f .depend
 
 clean:	
-			rm -f $(OBJS) $(TARGET) libmiracle.so
+			rm -f $(OBJS) $(TARGET) libmiracle$(LIBSUF)
 
 install:	all
 	install -d "$(bindir)"
 	install -c -s -m 755 $(TARGET) "$(bindir)"
-	install -m 755 libmiracle.so $(prefix)/lib/libmiracle.so
+	install -m 755 libmiracle$(LIBSUF) $(prefix)/lib/libmiracle$(LIBSUF)
 	mkdir -p "$(prefix)/include/mlt/miracle"
 	install -m 644 $(INCS) "$(prefix)/include/mlt/miracle"
 

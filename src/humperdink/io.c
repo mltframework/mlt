@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 /* Application header files */
 #include "io.h"

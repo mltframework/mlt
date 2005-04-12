@@ -4,8 +4,8 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
-inigo			libmltinigo.so
-inigo_file		libmltinigo.so
+inigo			libmltinigo$LIBSUF
+inigo_file		libmltinigo$LIBSUF
 EOF
 
 fi

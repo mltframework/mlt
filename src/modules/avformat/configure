@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 if [ "$help" = "1" ]
 then
 	cat << EOF
@@ -13,6 +14,18 @@ FFMPEG/avformat options:
 EOF
 
 else
+        targetos=$(uname -s)
+	case $targetos in
+	Darwin)
+		export LIBSUF=.dylib
+		;;
+	Linux)
+		export LIBSUF=.so
+		;;
+	*)
+		;;
+	esac
+		
 	echo > config.mak
 
 	export static_ffmpeg=
@@ -52,6 +65,8 @@ else
 		then
 			echo "CFLAGS+=-I$static_ffmpeg/libavformat -I$static_ffmpeg/libavcodec" >> config.mak
 			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec" >> config.mak
+			[ $targetos = "Darwin" ] &&
+			 	echo "LDFLAGS+=-single_module" >> config.mak
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat
@@ -73,17 +88,17 @@ else
 	echo "EXTRA_LIBS=$extra_libs" >> config.mak
 
 cat << EOF >> ../producers.dat
-avformat		libmltavformat.so
+avformat		libmltavformat$LIBSUF
 EOF
 
 cat << EOF >> ../filters.dat
-avdeinterlace	libmltavformat.so
-avresample		libmltavformat.so
-avcolour_space	libmltavformat.so
+avdeinterlace	libmltavformat$LIBSUF
+avresample		libmltavformat$LIBSUF
+avcolour_space	libmltavformat$LIBSUF
 EOF
 
 cat << EOF >> ../consumers.dat
-avformat		libmltavformat.so
+avformat		libmltavformat$LIBSUF
 EOF
 
 fi

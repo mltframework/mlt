@@ -1,6 +1,6 @@
 include ../../../config.mak
 
-TARGET = ../libmltfezzik.so
+TARGET = ../libmltfezzik$(LIBSUF)
 
 OBJS = factory.o \
 	   producer_fezzik.o \
@@ -15,7 +15,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend

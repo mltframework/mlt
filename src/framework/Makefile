@@ -1,6 +1,6 @@
 include ../../config.mak
 
-TARGET = libmlt.so
+TARGET = libmlt$(LIBSUF)
 
 OBJS = mlt_frame.o \
 	   mlt_geometry.o \
@@ -48,14 +48,14 @@ INCS = mlt_consumer.h \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS += -rdynamic -DPREFIX="\"$(prefix)\""
+CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\""
 
 LDFLAGS += -lm $(LIBDL) -lpthread
 
 all:	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -67,7 +67,7 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install:
-	install -m 755 $(TARGET) $(prefix)/lib/libmlt.so
+	install -m 755 $(TARGET) $(prefix)/lib/libmlt$(LIBSUF)
 	install -d "$(prefix)/include/mlt/framework"
 	install -m 644 $(INCS) "$(prefix)/include/mlt/framework"
 

@@ -5,9 +5,9 @@ TARGET = inigo
 OBJS = inigo.o \
 	   io.o
 
-CFLAGS += -I.. -rdynamic
+CFLAGS += -I.. $(RDYNAMIC)
 
-LDFLAGS += -L ../framework -lmlt 
+LDFLAGS += -L../framework -lmlt 
 
 SRCS := $(OBJS:.o=.c)
 

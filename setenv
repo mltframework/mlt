@@ -14,6 +14,8 @@ export LD_LIBRARY_PATH=\
 `pwd`/../sr_sdk_release:\
 $LD_LIBRARY_PATH
 
+[ $(uname -s) = Darwin ] && export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
+
 export PATH=\
 `pwd`/src/albino:\
 `pwd`/src/inigo:\
