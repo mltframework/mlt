@@ -3,14 +3,17 @@
 if [ "$help" != "1" ]
 then
 
-cat << EOF >> ../producers.dat
-westley			libmltwestley$LIBSUF
-westley-xml		libmltwestley$LIBSUF
-EOF
+	which xml2-config > /dev/null 2>&1
+	disable_xml2=$?
 
-cat << EOF >> ../consumers.dat
-westley			libmltwestley$LIBSUF
-EOF
-
+	if [ "$disable_xml2" == "0" ]
+	then
+		echo "westley			libmltwestley$LIBSUF" >> ../producers.dat
+		echo "westley-xml		libmltwestley$LIBSUF" >> ../producers.dat
+		echo "westley			libmltwestley$LIBSUF" >> ../consumers.dat
+	else
+		echo "- xml2 not found: disabling westley modules"
+		touch ../disable-westley
+	fi
 fi
 
