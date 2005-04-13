@@ -1,22 +1,33 @@
 include ../../../config.mak
+include config.mak
 
 TARGET = ../libmltgtk2$(LIBSUF)
 
-OBJS = factory.o \
-	   consumer_gtk2.o \
-	   producer_pixbuf.o \
-	   producer_pango.o \
-	   pixops.o \
-	   filter_rescale.o
+OBJS = factory.o
+
+ifdef USE_GTK2
+OBJS += consumer_gtk2.o
+CFLAGS += `pkg-config gtk+-2.0 --cflags`
+LDFLAGS += `pkg-config gtk+-2.0 --libs`
+endif
+
+ifdef USE_PIXBUF
+OBJS += producer_pixbuf.o pixops.o filter_rescale.o
+CFLAGS += `pkg-config gdk-pixbuf-2.0 --cflags`
+LDFLAGS += `pkg-config gdk-pixbuf-2.0 --libs`
+endif
 
 ifdef MMX_FLAGS
 ASM_OBJS = have_mmx.o scale_line_22_yuv_mmx.o
 endif
 
-CFLAGS += `pkg-config gtk+-2.0 --cflags` `pkg-config gdk-pixbuf-2.0 --cflags` `pkg-config pangoft2 --cflags` -I../..
+ifdef USE_PANGO
+OBJS += producer_pango.o
+CFLAGS += `pkg-config pangoft2 --cflags`
+LDFLAGS += `pkg-config pangoft2 --libs`
+endif
 
-LDFLAGS += `pkg-config gtk+-2.0 --libs` `pkg-config gdk-pixbuf-2.0 --libs` `pkg-config pangoft2 --libs`
-
+CFLAGS += -I../..
 LDFLAGS+=-L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)

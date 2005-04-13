@@ -18,12 +18,22 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include <string.h>
+
+#ifdef USE_PIXBUF
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include "consumer_gtk2.h"
 #include "producer_pixbuf.h"
-#include "producer_pango.h"
 #include "filter_rescale.h"
+#endif
+
+#ifdef USE_GTK2
+#include "consumer_gtk2.h"
+#endif
+
+#ifdef USE_PANGO
+#include "producer_pango.h"
+#endif
 
 static void initialise( )
 {
@@ -38,18 +48,29 @@ static void initialise( )
 void *mlt_create_producer( char *id, void *arg )
 {
 	initialise( );
+
+#ifdef USE_PIXBUF
 	if ( !strcmp( id, "pixbuf" ) )
 		return producer_pixbuf_init( arg );
-	else if ( !strcmp( id, "pango" ) )
+#endif
+
+#ifdef USE_PANGO
+	if ( !strcmp( id, "pango" ) )
 		return producer_pango_init( arg );
+#endif
+
 	return NULL;
 }
 
 void *mlt_create_filter( char *id, void *arg )
 {
 	initialise( );
+
+#ifdef USE_PIXBUF
 	if ( !strcmp( id, "gtkrescale" ) )
 		return filter_rescale_init( arg );
+#endif
+
 	return NULL;
 }
 
@@ -61,8 +82,12 @@ void *mlt_create_transition( char *id, void *arg )
 void *mlt_create_consumer( char *id, void *arg )
 {
 	initialise( );
+
+#ifdef USE_GTK2
 	if ( !strcmp( id, "gtk2_preview" ) )
 		return consumer_gtk2_preview_init( arg );
+#endif
+
 	return NULL;
 }
 
