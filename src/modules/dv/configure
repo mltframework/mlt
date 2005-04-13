@@ -3,13 +3,17 @@
 if [ "$help" != "1" ]
 then
 
-cat << EOF >> ../producers.dat
-libdv			libmltdv$LIBSUF
-EOF
+	pkg-config libdv 2> /dev/null
+	disable_libdv=$?
 
-cat << EOF >> ../consumers.dat
-libdv			libmltdv$LIBSUF
-EOF
+	if [ "$disable_libdv" == "0" ]
+	then
+		echo "libdv			libmltdv$LIBSUF" >> ../producers.dat
+		echo "libdv			libmltdv$LIBSUF" >> ../consumers.dat
+	else
+		echo "- libdv not found: disabling"
+		touch ../disable-dv
+	fi
 
 fi
 

@@ -10,7 +10,7 @@ then
 	then
 		echo "vorbis		libmltvorbis$LIBSUF" >> ../producers.dat
 	else
-		echo "- ogg vorbis not found - disabling"
+		echo "- ogg vorbis not found: disabling"
 		touch ../disable-vorbis
 	fi
 
