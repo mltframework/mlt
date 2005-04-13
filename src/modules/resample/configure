@@ -3,9 +3,16 @@
 if [ "$help" != "1" ]
 then
 
-cat << EOF >> ../filters.dat
-resample		libmltresample$LIBSUF
-EOF
+	pkg-config samplerate 2> /dev/null
+	disable_samplerate=$?
+
+	if [ "$disable_samplerate" == "0" ]
+	then
+		echo "resample		libmltresample$LIBSUF" >> ../filters.dat
+	else
+		echo "- libsamplerate not found: disabling"
+		touch ../disable-resample
+	fi
 
 fi
 
