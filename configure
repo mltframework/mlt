@@ -117,6 +117,7 @@ targetos=$(uname -s)
 case $targetos in
 	Darwin)
 	LIBSUF=".dylib"
+	mmx=false
 	;;
 	Linux)
 	LIBSUF=".so"
@@ -139,6 +140,12 @@ do
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 	esac
 done
+
+# Double check mmx (may end up disabling mmx on non-linux platforms incorrectly)
+if [ "$mmx" == "true" ]
+then
+	grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
+fi
 
 # Show help if requested
 [ $help = 1 ] && show_help || build_config
