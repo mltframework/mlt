@@ -3,9 +3,16 @@
 if [ "$help" != "1" ]
 then
 
-cat << EOF >> ../producers.dat
-vorbis		libmltvorbis$LIBSUF
-EOF
+	pkg-config vorbisfile 2> /dev/null
+	disable_vorbis=$?
+
+	if [ "$disable_vorbis" == "0" ]
+	then
+		echo "vorbis		libmltvorbis$LIBSUF" >> ../producers.dat
+	else
+		echo "- ogg vorbis not found - disabling"
+		touch ../disable-vorbis
+	fi
 
 fi
 
