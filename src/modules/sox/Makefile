@@ -5,11 +5,9 @@ TARGET = ../libmltsox$(LIBSUF)
 OBJS = factory.o \
 	   filter_sox.o 
 
-CFLAGS += -I../../ -I/usr/include/sox
-
-LDFLAGS += -lst -lpopt -lvorbis -logg -lvorbisfile -lvorbisenc
-
-LDFLAGS+=-L../../framework -lmlt -lmp3lame
+CFLAGS += `libst-config --cflags` -I../../ 
+LDFLAGS += -lst `libst-config --libs`
+LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

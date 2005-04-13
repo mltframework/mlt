@@ -3,8 +3,15 @@
 if [ "$help" != "1" ]
 then
 
-cat << EOF >> ../filters.dat
-sox		libmltsox$LIBSUF
-EOF
+	which libst-config > /dev/null 2>&1
+	disable_sox=$?
+
+	if [ "$disable_sox" == "0" ]
+	then
+		echo "sox		libmltsox$LIBSUF" >> ../filters.dat
+	else
+		echo "- sox not found: disabling"
+		touch ../disable-sox
+	fi
 
 fi
