@@ -3,9 +3,16 @@
 if [ "$help" != "1" ]
 then
 
-cat << EOF >> ../filters.dat
-deinterlace		libmltxine$LIBSUF
-EOF
+	# Horrible hack
+	grep mmx /proc/cpuinfo > /dev/null 2>&1
+	disable_xine=$?
 
+	if [ "$disable_xine" == "0" ]
+	then
+		echo "deinterlace		libmltxine$LIBSUF" >> ../filters.dat
+	else
+		echo "- MMX Capabalities not found: disabling xine deinterlacing module"
+		touch ../disable-xine
+	fi
 fi
 
