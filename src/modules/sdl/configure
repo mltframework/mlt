@@ -3,11 +3,18 @@
 if [ "$help" != "1" ]
 then
 
-cat << EOF >> ../consumers.dat
-sdl				libmltsdl$LIBSUF
-sdl_preview		libmltsdl$LIBSUF
-sdl_still		libmltsdl$LIBSUF
-EOF
+	sdl-config --version > /dev/null 2>&1
+	disable_sdl=$?
+
+	if [ "$disable_sdl" == "0" ]
+	then
+		echo "sdl				libmltsdl$LIBSUF" >> ../consumers.dat
+		echo "sdl_preview		libmltsdl$LIBSUF" >> ../consumers.dat
+		echo "sdl_still			libmltsdl$LIBSUF" >> ../consumers.dat
+	else
+		echo "- sdl development libs not found: disabling"
+		touch ../disable-sdl
+	fi
 
 fi
 
