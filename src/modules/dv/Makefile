@@ -6,9 +6,9 @@ OBJS = factory.o \
 	   producer_libdv.o \
 	   consumer_libdv.o
 
-CFLAGS += -I../..
+CFLAGS += `pkg-config --cflags libdv` -I../..
 
-LDFLAGS += -ldv 
+LDFLAGS += `pkg-config --libs libdv`
 
 LDFLAGS+=-L../../framework -lmlt
 
