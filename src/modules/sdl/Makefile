@@ -7,11 +7,17 @@ OBJS = factory.o \
 	   consumer_sdl_preview.o \
 	   consumer_sdl_still.o 
 
-CFLAGS += -I../.. `sdl-config --cflags`
+ifeq ($(targetos),Darwin)
+	CFLAGS +=-ObjC
+	LDFLAGS +=-lobjc -framework Foundation
+endif
 
-LDFLAGS += `sdl-config --libs`
+CFLAGS +=-I../.. `sdl-config --cflags`
 
-LDFLAGS+=-L../../framework -lmlt
+LDFLAGS +=`sdl-config --libs`
+
+LDFLAGS +=-L../../framework -lmlt
+
 
 SRCS := $(OBJS:.o=.c)
 

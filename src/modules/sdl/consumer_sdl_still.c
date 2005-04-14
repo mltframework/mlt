@@ -590,6 +590,7 @@ static int consumer_get_dimensions( int *width, int *height )
 	// Get the wm structure
 	if ( SDL_GetWMInfo( &wm ) == 1 )
 	{
+#ifndef __DARWIN__
 		// Check that we have the X11 wm
 		if ( wm.subsystem == SDL_SYSWM_X11 ) 
 		{
@@ -610,6 +611,7 @@ static int consumer_get_dimensions( int *width, int *height )
 			*width = attr.width;
 			*height = attr.height;
 		}
+#endif
 	}
 
 	return changed;
