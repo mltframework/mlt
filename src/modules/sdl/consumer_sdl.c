@@ -29,6 +29,13 @@
 #include <SDL/SDL_syswm.h>
 #include <sys/time.h>
 
+#ifdef __DARWIN__
+#	include "consumer_sdl_osx_hack.h"
+#	import <AppKit/NSApplication.h>
+#	import <Foundation/Foundation.h>
+#endif
+
+
 /** This classes definition.
 */
 
@@ -81,6 +88,16 @@ static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt
 
 mlt_consumer consumer_sdl_init( char *arg )
 {
+#ifdef __DARWIN__
+	// Initialize Cocoa
+	NSApplicationLoad();
+	[NSApplication sharedApplication];
+
+	// Spawn a fake thread so that cocoa knows to be multithreaded
+	DummyThread *dummy = [[DummyThread alloc] init];
+	[NSThread detachNewThreadSelector:@selector(startThread:) toTarget:dummy withObject:nil];
+#endif
+
 	// Create the consumer object
 	consumer_sdl this = calloc( sizeof( struct consumer_sdl_s ), 1 );
 
@@ -535,6 +552,10 @@ static void *video_thread( void *arg )
 	// Identify the arg
 	consumer_sdl this = arg;
 
+#ifdef __DARWIN__
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#endif
+
 	// Obtain time of thread start
 	struct timeval now;
 	int64_t start = 0;
@@ -618,6 +639,10 @@ static void *video_thread( void *arg )
 
 	mlt_consumer_stopped( &this->parent );
 
+#ifdef __DARWIN__
+	[pool release];
+#endif
+
 	return NULL;
 }
 
@@ -628,6 +653,10 @@ static void *consumer_thread( void *arg )
 {
 	// Identify the arg
 	consumer_sdl this = arg;
+
+#ifdef __DARWIN__
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#endif
 
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
@@ -738,6 +767,10 @@ static void *consumer_thread( void *arg )
 	this->sdl_overlay = NULL;
 	this->audio_avail = 0;
 
+#ifdef __DARWIN__
+	[pool release];
+#endif
+
 	return NULL;
 }
 
@@ -754,6 +787,7 @@ static int consumer_get_dimensions( int *width, int *height )
 	// Lock the display
 	sdl_lock_display();
 
+#ifndef __DARWIN__
 	// Get the wm structure
 	if ( SDL_GetWMInfo( &wm ) == 1 )
 	{
@@ -778,6 +812,7 @@ static int consumer_get_dimensions( int *width, int *height )
 			*height = attr.height;
 		}
 	}
+#endif
 
 	// Unlock the display
 	sdl_lock_display();
