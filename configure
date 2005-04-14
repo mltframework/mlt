@@ -38,6 +38,7 @@ function build_config
 		echo "version=$version"
 		echo "prefix=$prefix"
 		echo "bindir=$prefix/bin"
+		echo "targetos=$targetos"
 
 		[ "$mmx" = "true" ] && 
 		echo "MMX_FLAGS=-DUSE_MMX"
@@ -56,7 +57,7 @@ function build_config
 
 		case $targetos in
 		Darwin)
-		echo "CFLAGS+=-DDARWIN"
+		echo "CFLAGS+=-D__DARWIN__"
 		echo "SHFLAGS=-dynamiclib"
 		;;
 		Linux)
