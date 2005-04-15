@@ -21,6 +21,9 @@
 * Change log:
 * 
 * $Log$
+* Revision 1.2  2005/04/15 14:37:03  lilo_booter
+* Minor correction
+*
 * Revision 1.1  2005/04/15 14:28:26  lilo_booter
 * Initial version
 *
@@ -100,6 +103,7 @@
 #ifndef _AVI_H
 #define _AVI_H 1
 
+#include <stdint.h>
 #include "riff.h"
 
 #define PACKED(x)	__attribute__((packed)) x
