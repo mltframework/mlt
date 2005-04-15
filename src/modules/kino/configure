@@ -1,0 +1,18 @@
+#!/bin/sh
+
+if [ "$help" != "1" ]
+then
+	# Entirely optional...
+	lqt-config --prefix > /dev/null 2>&1
+	lqt_disabled=$?
+
+	echo > config.h
+	[ "$lqt_disabled" == "0" ] && echo "#define HAVE_LIBQUICKTIME" >> config.h
+	echo > config.mak
+	[ "$lqt_disabled" == "0" ] && echo "HAVE_LIBQUICKTIME=1" >> config.mak
+
+	[ "$lqt_disabled" != "0" ] && echo "- libquicktime not found: only enabling dv avi support"
+
+	echo "kino			libmltkino$LIBSUF" >> ../producers.dat
+fi
+
