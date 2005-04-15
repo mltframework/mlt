@@ -123,6 +123,7 @@ struct producer_libdv_s
 	uint64_t file_size;
 	int frame_size;
 	long frames_in_file;
+	mlt_producer alternative;
 };
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
@@ -136,8 +137,12 @@ mlt_producer producer_libdv_init( char *filename )
 
 	if ( filename != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
+		int destroy = 0;
 		mlt_producer producer = &this->parent;
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
+
+		// Set the resource property (required for all producers)
+		mlt_properties_set( properties, "resource", filename );
 
 		// Register transport implementation with the producer
 		producer->close = ( mlt_destructor )producer_close;
@@ -145,18 +150,34 @@ mlt_producer producer_libdv_init( char *filename )
 		// Register our get_frame implementation with the producer
 		producer->get_frame = producer_get_frame;
 
-		// Open the file if specified
-		this->fd = open( filename, O_RDONLY );
-
-		// Collect info
-		if ( this->fd != -1 && producer_collect_info( this ) )
+		// If we have mov or dv, then we'll use an alternative producer
+		if ( strncasecmp( strrchr( filename, '.' ), ".avi", 4 ) == 0 ||
+			 strncasecmp( strrchr( filename, '.' ), ".dv", 3 ) == 0 ||
+			 strncasecmp( strrchr( filename, '.' ), ".mov", 4 ) == 0 )
 		{
-			// Set the resource property (required for all producers)
-			mlt_properties_set( properties, "resource", filename );
+			// Load via an alternative mechanism
+			this->alternative = mlt_factory_producer( "kino", filename );
+
+			// If it's unavailable, then clean up
+			if ( this->alternative == NULL )
+				destroy = 1;
+			else
+				mlt_properties_pass( properties, MLT_PRODUCER_PROPERTIES( this->alternative ), "" );
+			this->is_pal = mlt_properties_get_int( properties, "fps" ) == 25;
 		}
 		else
 		{
-			// Reject this file
+			// Open the file if specified
+			this->fd = open( filename, O_RDONLY );
+
+			// Collect info
+			if ( this->fd == -1 || !producer_collect_info( this ) )
+				destroy = 1;
+		}
+
+		// If we couldn't open the file, then destroy it now
+		if ( destroy )
+		{
 			mlt_producer_close( producer );
 			producer = NULL;
 		}
@@ -386,58 +407,86 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
+	// Access the private data
 	producer_libdv this = producer->child;
-	uint8_t *data = mlt_pool_alloc( FRAME_SIZE_625_50 );
-	
+
+	// Will carry the frame data
+	uint8_t *data = NULL;
+
 	// Obtain the current frame number
 	uint64_t position = mlt_producer_frame( producer );
 	
-	// Convert timecode to a file position (ensuring that we're on a frame boundary)
-	uint64_t offset = position * this->frame_size;
+	if ( this->alternative == NULL )
+	{
+		// Convert timecode to a file position (ensuring that we're on a frame boundary)
+		uint64_t offset = position * this->frame_size;
 
-	// Create an empty frame
-	*frame = mlt_frame_init( );
+		// Allocate space
+		data = mlt_pool_alloc( FRAME_SIZE_625_50 );
 
-	// Seek and fetch
-	if ( this->fd != 0 && 
-		 lseek( this->fd, offset, SEEK_SET ) == offset &&
-		 read_frame( this->fd, data, &this->is_pal ) )
+		// Create an empty frame
+		*frame = mlt_frame_init( );
+
+		// Seek and fetch
+		if ( this->fd != 0 && 
+		 	 lseek( this->fd, offset, SEEK_SET ) == offset &&
+		 	 read_frame( this->fd, data, &this->is_pal ) )
+		{
+			// Pass the dv data
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( *frame ), "dv_data", data, FRAME_SIZE_625_50, ( mlt_destructor )mlt_pool_release, NULL );
+		}
+		else
+		{
+			mlt_pool_release( data );
+			data = NULL;
+		}
+	}
+	else
+	{
+		// Seek
+		mlt_producer_seek( this->alternative, position );
+		
+		// Fetch
+		mlt_service_get_frame( MLT_PRODUCER_SERVICE( this->alternative ), frame, 0 );
+
+		// Verify
+		if ( *frame != NULL )
+			data = mlt_properties_get_data( MLT_FRAME_PROPERTIES( *frame ), "dv_data", NULL );
+	}
+
+	if ( data != NULL )
 	{
 		// Get the frames properties
 		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
-
+	
 		// Get a dv_decoder
 		dv_decoder_t *dv_decoder = dv_decoder_alloc( );
 
-		// Pass the dv data
-		mlt_properties_set_data( properties, "dv_data", data, FRAME_SIZE_625_50, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_int( properties, "test_image", 0 );
+		mlt_properties_set_int( properties, "test_audio", 0 );
 
 		// Update other info on the frame
 		mlt_properties_set_int( properties, "width", 720 );
 		mlt_properties_set_int( properties, "height", this->is_pal ? 576 : 480 );
 		mlt_properties_set_int( properties, "top_field_first", !this->is_pal ? 0 : ( data[ 5 ] & 0x07 ) == 0 ? 0 : 1 );
-
+	
 		// Parse the header for meta info
 		dv_parse_header( dv_decoder, data );
 		//mlt_properties_set_int( properties, "progressive", dv_is_progressive( dv_decoder ) );
 		mlt_properties_set_double( properties, "aspect_ratio", 
-			dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
-
+				dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
+	
 		// Hmm - register audio callback
 		mlt_frame_push_audio( *frame, producer_get_audio );
-
+	
 		// Push the quality string
 		mlt_frame_push_service( *frame, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "quality" ) );
-
+	
 		// Push the get_image method on to the stack
 		mlt_frame_push_get_image( *frame, producer_get_image );
-
+	
 		// Return the decoder
 		dv_decoder_return( dv_decoder );
-	}
-	else
-	{
-		mlt_pool_release( data );
 	}
 
 	// Update timecode on the frame we're creating
@@ -457,6 +506,9 @@ static void producer_close( mlt_producer parent )
 	// Close the file
 	if ( this->fd > 0 )
 		close( this->fd );
+
+	if ( this->alternative )
+		mlt_producer_close( this->alternative );
 
 	// Close the parent
 	parent->close = NULL;
