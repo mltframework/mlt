@@ -151,9 +151,9 @@ mlt_producer producer_libdv_init( char *filename )
 		producer->get_frame = producer_get_frame;
 
 		// If we have mov or dv, then we'll use an alternative producer
-		if ( strncasecmp( strrchr( filename, '.' ), ".avi", 4 ) == 0 ||
-			 strncasecmp( strrchr( filename, '.' ), ".dv", 3 ) == 0 ||
-			 strncasecmp( strrchr( filename, '.' ), ".mov", 4 ) == 0 )
+		if ( strchr( filename, '.' ) != NULL && (
+			 strncasecmp( strrchr( filename, '.' ), ".avi", 4 ) == 0 ||
+			 strncasecmp( strrchr( filename, '.' ), ".mov", 4 ) == 0 ) )
 		{
 			// Load via an alternative mechanism
 			this->alternative = mlt_factory_producer( "kino", filename );
