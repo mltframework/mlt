@@ -27,7 +27,7 @@
 #include "plugin.h"
 #include "plugin_mgr.h"
 #include "plugin_settings.h"
-#include "ui.h"
+#include "process.h"
 
 typedef struct _saved_plugin saved_plugin_t;
 
@@ -49,18 +49,16 @@ typedef struct _jack_rack jack_rack_t;
 
 struct _jack_rack
 {
-  struct _ui *      ui;
-  
+  plugin_mgr_t *    plugin_mgr;
+  process_info_t *  procinfo;
   unsigned long     channels;
-  
   GSList *          saved_plugins;
 };
 
-jack_rack_t * jack_rack_new     (struct _ui * ui, unsigned long channels);
+jack_rack_t * jack_rack_new     (const char * client_name, unsigned long channels);
 void          jack_rack_destroy (jack_rack_t * jack_rack);
 
-int jack_rack_open_file (struct _ui * ui, const char * filename);
-void jack_rack_send_add_plugin (jack_rack_t * jack_rack, plugin_desc_t * plugin);
+int jack_rack_open_file (jack_rack_t * jack_rack, const char * filename);
 void jack_rack_add_plugin (jack_rack_t * jack_rack, plugin_t * plugin);
 void jack_rack_add_saved_plugin (jack_rack_t * jack_rack, struct _saved_plugin * saved_plugin);
 

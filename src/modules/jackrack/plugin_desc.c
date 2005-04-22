@@ -163,7 +163,7 @@ plugin_desc_add_audio_port_index (unsigned long ** indicies,
 {
   (*current_port_count)++;
   
-  if (*current_port_count == 1)
+  if (*current_port_count == 0)
     *indicies = g_malloc (sizeof (unsigned long) * *current_port_count);
   else
     *indicies = g_realloc (*indicies, sizeof (unsigned long) * *current_port_count);
@@ -193,7 +193,7 @@ plugin_desc_set_port_counts (plugin_desc_t * pd)
             continue;
             
           pd->control_port_count++;
-          if (pd->control_port_count == 1)
+          if (pd->control_port_count == 0)
             pd->control_port_indicies = g_malloc (sizeof (unsigned long) * pd->control_port_count);
           else
             pd->control_port_indicies = g_realloc (pd->control_port_indicies,
@@ -210,7 +210,7 @@ plugin_desc_set_port_counts (plugin_desc_t * pd)
       unsigned long ** port_indicies;
       unsigned long port_count;
       unsigned long i, j;
-      
+     
       if (icount > ocount)
         {
           pd->channels = ocount;

@@ -29,8 +29,6 @@
 
 #include "jack_rack.h"
 #include "lock_free_fifo.h"
-#include "control_message.h"
-#include "ui.h"
 #include "plugin_settings.h"
 
 #ifndef _
@@ -38,14 +36,20 @@
 #endif
 
 jack_rack_t *
-jack_rack_new (ui_t * ui, unsigned long channels)
+jack_rack_new (const char * client_name, unsigned long channels)
 {
   jack_rack_t *rack;
 
   rack = g_malloc (sizeof (jack_rack_t));
   rack->saved_plugins  = NULL;
-  rack->ui             = ui;
   rack->channels       = channels;
+  rack->procinfo = process_info_new (client_name, channels, FALSE, FALSE);
+  if (!rack->procinfo) {
+    g_free (rack);
+    return NULL;
+  }
+  rack->plugin_mgr = plugin_mgr_new ();
+  plugin_mgr_set_plugins (rack->plugin_mgr, channels);
 
   return rack;
 }
@@ -54,6 +58,10 @@ jack_rack_new (ui_t * ui, unsigned long channels)
 void
 jack_rack_destroy (jack_rack_t * jack_rack)
 {
+  process_quit (jack_rack->procinfo);
+  plugin_mgr_destroy (jack_rack->plugin_mgr);
+  process_info_destroy (jack_rack->procinfo);
+  g_slist_free (jack_rack->saved_plugins);
   g_free (jack_rack);
 }
 
@@ -79,29 +87,16 @@ jack_rack_instantiate_plugin (jack_rack_t * jack_rack, plugin_desc_t * desc)
   return plugin;
 }
 
-void
-jack_rack_send_add_plugin (jack_rack_t * jack_rack, plugin_desc_t * desc)
-{
-  plugin_t * plugin;
-  ctrlmsg_t ctrlmsg;
-  
-  plugin = jack_rack_instantiate_plugin (jack_rack, desc);
-  
-  if (!plugin)
-    return;
-  
-  /* send the chain link off to the process() callback */
-  ctrlmsg.type = CTRLMSG_ADD;
-  ctrlmsg.data.add.plugin = plugin;
-  lff_write (jack_rack->ui->ui_to_process, &ctrlmsg);
-}
 
 void
 jack_rack_add_saved_plugin (jack_rack_t * jack_rack, saved_plugin_t * saved_plugin)
 {
+  plugin_t * plugin = jack_rack_instantiate_plugin (jack_rack, saved_plugin->settings->desc);
+  if (!plugin)
+    return;
   jack_rack->saved_plugins = g_slist_append (jack_rack->saved_plugins, saved_plugin);
-  
-  jack_rack_send_add_plugin (jack_rack, saved_plugin->settings->desc);
+  process_add_plugin (jack_rack->procinfo, plugin);
+  jack_rack_add_plugin (jack_rack, plugin);
 }
 
 
@@ -152,8 +147,8 @@ jack_rack_add_plugin (jack_rack_t * jack_rack, plugin_t * plugin)
 
 
 static void
-saved_rack_parse_plugin (saved_rack_t * saved_rack, saved_plugin_t * saved_plugin,
-                         ui_t * ui, const char * filename, xmlNodePtr plugin)
+saved_rack_parse_plugin (jack_rack_t * jack_rack, saved_rack_t * saved_rack, saved_plugin_t * saved_plugin,
+                         const char * filename, xmlNodePtr plugin)
 {
   plugin_desc_t * desc;
   settings_t * settings = NULL;
@@ -171,7 +166,7 @@ saved_rack_parse_plugin (saved_rack_t * saved_rack, saved_plugin_t * saved_plugi
           num = strtoul (content, NULL, 10);
           xmlFree (content);
 
-          desc = plugin_mgr_get_any_desc (ui->plugin_mgr, num);
+          desc = plugin_mgr_get_any_desc (jack_rack->plugin_mgr, num);
           if (!desc)
             {
               fprintf (stderr, _("The file '%s' contains an unknown plugin with ID '%ld'; skipping\n"), filename, num);
@@ -250,7 +245,7 @@ saved_rack_parse_plugin (saved_rack_t * saved_rack, saved_plugin_t * saved_plugi
 }
 
 static void
-saved_rack_parse_jackrack (saved_rack_t * saved_rack, ui_t * ui, const char * filename, xmlNodePtr jackrack)
+saved_rack_parse_jackrack (jack_rack_t * jack_rack, saved_rack_t * saved_rack, const char * filename, xmlNodePtr jackrack)
 {
   xmlNodePtr node;
   xmlChar *content;
@@ -274,13 +269,13 @@ saved_rack_parse_jackrack (saved_rack_t * saved_rack, ui_t * ui, const char * fi
         {
           saved_plugin = g_malloc0 (sizeof (saved_plugin_t));
           saved_rack->plugins = g_slist_append (saved_rack->plugins, saved_plugin);
-          saved_rack_parse_plugin (saved_rack, saved_plugin, ui, filename, node);
+          saved_rack_parse_plugin (jack_rack, saved_rack, saved_plugin, filename, node);
         }
     }
 }
 
 static saved_rack_t *
-saved_rack_new (ui_t * ui, const char * filename, xmlDocPtr doc)
+saved_rack_new (jack_rack_t * jack_rack, const char * filename, xmlDocPtr doc)
 {
   xmlNodePtr node;
   saved_rack_t *saved_rack;
@@ -294,7 +289,7 @@ saved_rack_new (ui_t * ui, const char * filename, xmlDocPtr doc)
   for (node = doc->children; node; node = node->next)
     {
       if (strcmp (node->name, "jackrack") == 0)
-        saved_rack_parse_jackrack (saved_rack, ui, filename, node);
+        saved_rack_parse_jackrack (jack_rack, saved_rack, filename, node);
     }
   
   return saved_rack;
@@ -303,18 +298,17 @@ saved_rack_new (ui_t * ui, const char * filename, xmlDocPtr doc)
 static void
 saved_rack_destroy (saved_rack_t * saved_rack)
 {
-/*  GSList * list;*/
+  GSList * list;
   
-/*  for (list = saved_rack->settings; list; list = g_slist_next (list))
-    settings_destroy ((settings_t *) list->data); */
-/*  g_slist_free (saved_rack->settings); */
-  
+  for (list = saved_rack->plugins; list; list = g_slist_next (list))
+    settings_destroy (((saved_plugin_t *) list->data)->settings);
+  g_slist_free (saved_rack->plugins);
   g_free (saved_rack);
 }
 
 
 int
-jack_rack_open_file (ui_t * ui, const char * filename)
+jack_rack_open_file (jack_rack_t * jack_rack, const char * filename)
 {
   xmlDocPtr doc;
   saved_rack_t * saved_rack;
@@ -334,7 +328,7 @@ jack_rack_open_file (ui_t * ui, const char * filename)
       return 1;
     }
   
-  saved_rack = saved_rack_new (ui, filename, doc);
+  saved_rack = saved_rack_new (jack_rack, filename, doc);
   xmlFreeDoc (doc);
   
   if (!saved_rack)
@@ -346,11 +340,10 @@ jack_rack_open_file (ui_t * ui, const char * filename)
       
       settings_set_sample_rate (saved_plugin->settings, sample_rate);
       
-      jack_rack_add_saved_plugin (ui->jack_rack, saved_plugin);
+      jack_rack_add_saved_plugin (jack_rack, saved_plugin);
     }
   
-  g_slist_free (saved_rack->plugins);  
-  g_free (saved_rack);
+  saved_rack_destroy (saved_rack);
   
   return 0;
 }

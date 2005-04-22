@@ -45,25 +45,27 @@ struct _process_info {
   unsigned long channels;
   LADSPA_Data ** jack_input_buffers;
   LADSPA_Data ** jack_output_buffers;
+  LADSPA_Data *  silent_buffer;
   
-  lff_t * ui_to_process;
-  lff_t * process_to_ui;
+  char * jack_client_name;
+  int quit;
 };
 
 extern jack_nframes_t sample_rate;
 extern jack_nframes_t buffer_size;
 
-struct _ui;
-
-process_info_t * process_info_new (struct _ui * ui, const char * client_name, 
+process_info_t * process_info_new (const char * client_name,
 	unsigned long rack_channels, gboolean connect_inputs, gboolean connect_outputs);
 void process_info_destroy (process_info_t * procinfo);
 
-void process_info_set_channels (process_info_t * procinfo, struct _ui * ui, 
+void process_info_set_channels (process_info_t * procinfo,
 	unsigned long channels, gboolean connect_inputs, gboolean connect_outputs);
 
+int process_ladspa (process_info_t * procinfo, jack_nframes_t frames,
+                    LADSPA_Data ** inputs, LADSPA_Data ** outputs);
 
-int process (jack_nframes_t frames, void * data);
+int process_jack (jack_nframes_t frames, void * data);
 
+void process_quit (process_info_t * procinfo);
 
 #endif /* __JLH_PROCESS_H__ */

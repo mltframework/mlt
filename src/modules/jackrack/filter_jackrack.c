@@ -32,24 +32,9 @@
 #include <pthread.h>
 #include <string.h>
 
-#include "ui.h"
+#include "jack_rack.h"
 
 #define BUFFER_LEN 204800 * 3
-
-static void *jackrack_thread( void *arg )
-{
-	mlt_properties properties = arg;
-	ui_t *jackrack = mlt_properties_get_data( properties, "jackrack", NULL );
-		
-	while ( mlt_properties_get_int( properties, "_done" ) == 0 )
-		if ( ui_loop_iterate( jackrack ) )
-			break;
-		
-	ui_quit( jackrack );
-	ui_destroy( jackrack );
-	
-	return NULL;
-}
 
 static void initialise_jack_ports( mlt_properties properties )
 {
@@ -65,18 +50,12 @@ static void initialise_jack_ports( mlt_properties properties )
 	// Start JackRack
 	if ( mlt_properties_get( properties, "src" ) )
 	{
-		pthread_t *jackrack_pthread = mlt_pool_alloc( sizeof( pthread_t ) );
-
 		snprintf( rack_name, sizeof( rack_name ), "jackrack%d", getpid() );
-		ui_t *jackrack = ui_new( rack_name, mlt_properties_get_int( properties, "channels" ), 0, 0 );
+		jack_rack_t *jackrack = jack_rack_new( rack_name, mlt_properties_get_int( properties, "channels" ) );
 		jack_rack_open_file( jackrack, mlt_properties_get( properties, "src" ) );		
 		
 		mlt_properties_set_data( properties, "jackrack", jackrack, 0, NULL, NULL );
 		mlt_properties_set( properties, "_rack_client_name", rack_name );
-		mlt_properties_set_int( properties, "_done", 0 );
-		mlt_properties_set_data( properties, "jackrack_pthread", jackrack_pthread, 0, NULL, NULL );
-		
-		pthread_create( jackrack_pthread, NULL, jackrack_thread, properties );
 	}
 		
 	// Allocate buffers and ports
@@ -253,14 +232,14 @@ static int jackrack_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Get the filter-specific properties
 	jack_ringbuffer_t **output_buffers = mlt_properties_get_data( filter_properties, "output_buffers", NULL );
 	jack_ringbuffer_t **input_buffers = mlt_properties_get_data( filter_properties, "input_buffers", NULL );
-	pthread_mutex_t *output_lock = mlt_properties_get_data( filter_properties, "output_lock", NULL );
-	pthread_cond_t *output_ready = mlt_properties_get_data( filter_properties, "output_ready", NULL );
+//	pthread_mutex_t *output_lock = mlt_properties_get_data( filter_properties, "output_lock", NULL );
+//	pthread_cond_t *output_ready = mlt_properties_get_data( filter_properties, "output_ready", NULL );
 	
 	// Process the audio
 	int16_t *q = *buffer;
 	float sample[ 2 ][ 10000 ];
 	int i, j;
-	struct timespec tm = { 0, 0 };
+//	struct timespec tm = { 0, 0 };
 
 	// Convert to floats and write into output ringbuffer
 	if ( jack_ringbuffer_write_space( output_buffers[0] ) >= ( *samples * sizeof(float) ) )
@@ -323,7 +302,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 }
 
 
-void filter_close( mlt_filter this )
+static void filter_close( mlt_filter this )
 {
 	int i;
 	char mlt_name[20];
@@ -347,14 +326,9 @@ void filter_close( mlt_filter this )
 	mlt_pool_release( mlt_properties_get_data( properties, "jack_input_buffers", NULL ) );
 	mlt_pool_release( mlt_properties_get_data( properties, "output_lock", NULL ) );
 	mlt_pool_release( mlt_properties_get_data( properties, "output_ready", NULL ) );
-	
-	pthread_t *jackrack_pthread = mlt_properties_get_data( properties, "jackrack_thread", NULL );
-	if ( jackrack_pthread != NULL )
-	{
-		mlt_properties_set_int( properties, "_done", 1 );
-		pthread_join( *jackrack_pthread, NULL );
-		mlt_pool_release( jackrack_pthread );
-	}
+
+	jack_rack_t *jackrack = mlt_properties_get_data( properties, "jackrack", NULL );
+	jack_rack_destroy( jackrack );
 	
 	this->parent.close = NULL;
 	mlt_service_close( &this->parent );

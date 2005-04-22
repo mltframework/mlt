@@ -1,9 +1,9 @@
 Service Documentation
 
-Copyright (C) 2004 Ushodaya Enterprises Limited
+Copyright (C) 2004-2005 Ushodaya Enterprises Limited
 Authors: Charles Yates <charles.yates@pandora.be>
          Dan Dennedy <dan@dennedy.org>
-Last Revision: 2004-11-07
+Last Revision: 2005-04-22
 
 
 SERVICES
@@ -377,6 +377,8 @@ Producers
 
 	        int in - in point
 	        int out - out point
+	        int begin  - when using an image sequence, this sets the starting
+	                     number.
 
 	    Mutable Properties
 
@@ -731,6 +733,48 @@ Filters
 	    Dependencies
 	    
 	        Jack, LADSPA, glib-2.0, libxml2
+	        
+	    Known Bugs
+	    
+			Currently, due to timing and synchronisation issues, the audio
+			is distorted with repeated samples and latency clicks.
+	        no encapsulated resampling and jack runs at a fixed frequency
+	    
+	ladspa
+	
+	    Description
+	    
+	        Runs a JackRack project to process audio through a stack of
+			LADSPA filters without using Jack.
+	        
+	    Constructor Argument
+	    
+	        src - a JackRack file
+			
+		Details
+
+			Due to audio integrity issues with the jackrack filter, this
+			filter is better for runtime, while jackrack is more suitable
+			for prototyping a rack file using the Jack Rack GUI.
+		
+	    Initialisation Properties
+	    
+	        int in - in point
+	        int out - out point
+			
+	    Read Only Properties
+	    
+	        none
+	        
+	    Mutable Properties
+
+			none
+	        
+	    Dependencies
+	    
+	        Jack, LADSPA, glib-2.0, libxml2
+			Jack is still required because this coexists with the jackrack 
+			filter.
 	        
 	    Known Bugs
 	    

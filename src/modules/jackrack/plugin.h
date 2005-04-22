@@ -60,6 +60,7 @@ struct _plugin
 
   const LADSPA_Descriptor *  descriptor;
   void *                     dl_handle;
+  struct _jack_rack *        jack_rack;
   
 };
 
@@ -74,7 +75,7 @@ struct _jack_rack;
 struct _ui;
 
 plugin_t * plugin_new (plugin_desc_t * plugin_desc, struct _jack_rack * jack_rack);
-void       plugin_destroy (plugin_t * plugin, struct _ui *ui);
+void       plugin_destroy (plugin_t * plugin);
 
 void plugin_connect_input_ports (plugin_t * plugin, LADSPA_Data ** inputs);
 void plugin_connect_output_ports (plugin_t * plugin);

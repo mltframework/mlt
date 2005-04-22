@@ -29,7 +29,6 @@
 #include "plugin.h"
 #include "jack_rack.h"
 #include "process.h"
-#include "ui.h"
 
 #define CONTROL_FIFO_SIZE   128
 
@@ -138,7 +137,7 @@ process_remove_plugin (process_info_t * procinfo, plugin_t *plugin)
     procinfo->chain_end = plugin->prev;
     
   /* sort out the aux ports */
-  if (plugin->desc->aux_channels > 0)
+  if (procinfo->jack_client && plugin->desc->aux_channels > 0)
     {
       plugin_t * other;
       
@@ -227,7 +226,7 @@ process_move_plugin (process_info_t * procinfo, plugin_t *plugin, gint up)
 	procinfo->chain_end = plugin;
     }
   
-  if (plugin->desc->aux_channels > 0)
+  if (procinfo->jack_client && plugin->desc->aux_channels > 0)
     {
       plugin_t * other;
       other = up ? plugin->next : plugin->prev;
@@ -257,7 +256,7 @@ process_change_plugin (process_info_t * procinfo,
     procinfo->chain_end = new_plugin;
 
   /* sort out the aux ports */
-  if (plugin->desc->aux_channels > 0)
+  if (procinfo->jack_client && plugin->desc->aux_channels > 0)
     {
       plugin_t * other;
       
@@ -392,7 +391,7 @@ plugin_create_aux_ports (plugin_t * plugin, guint copy, jack_rack_t * jack_rack)
                aux_channel);
       
       holder->aux_ports[i] =
-        jack_port_register (jack_rack->ui->procinfo->jack_client,
+        jack_port_register (jack_rack->procinfo->jack_client,
                             port_name,
                             JACK_DEFAULT_AUDIO_TYPE,
                             desc->aux_are_input ? JackPortIsInput : JackPortIsOutput,
@@ -455,7 +454,7 @@ plugin_init_holder (plugin_t * plugin,
         plugin->descriptor-> connect_port (instance, i, &unused_control_port_output);
     }
   
-  if (plugin->desc->aux_channels > 0)
+  if (jack_rack->procinfo->jack_client && plugin->desc->aux_channels > 0)
     plugin_create_aux_ports (plugin, copy, jack_rack);
   
   if (plugin->descriptor->activate)
@@ -502,6 +501,7 @@ plugin_new (plugin_desc_t * desc, jack_rack_t * jack_rack)
   plugin->next = NULL;
   plugin->prev = NULL;
   plugin->wet_dry_enabled = FALSE;
+  plugin->jack_rack = jack_rack;
   
   /* create audio memory and wet/dry stuff */
   plugin->audio_output_memory   = g_malloc (sizeof (LADSPA_Data *) * jack_rack->channels);
@@ -525,7 +525,7 @@ plugin_new (plugin_desc_t * desc, jack_rack_t * jack_rack)
 
 
 void
-plugin_destroy (plugin_t * plugin, ui_t *ui)
+plugin_destroy (plugin_t * plugin)
 {
   unsigned long i, j;
   int err;
@@ -550,11 +550,11 @@ plugin_destroy (plugin_t * plugin, ui_t *ui)
         }
       
       /* aux ports */
-      if (plugin->desc->aux_channels > 0)
+      if (plugin->jack_rack->procinfo->jack_client && plugin->desc->aux_channels > 0)
         {
           for (j = 0; j < plugin->desc->aux_channels; j++)
             {
-              err = jack_port_unregister (ui->procinfo->jack_client,
+              err = jack_port_unregister (plugin->jack_rack->procinfo->jack_client,
                                           plugin->holders[i].aux_ports[j]);
           
               if (err)
@@ -567,7 +567,7 @@ plugin_destroy (plugin_t * plugin, ui_t *ui)
     
   g_free (plugin->holders);
   
-  for (i = 0; i < ui->jack_rack->channels; i++)
+  for (i = 0; i < plugin->jack_rack->channels; i++)
     {
       g_free (plugin->audio_output_memory[i]);
       lff_free (plugin->wet_dry_fifos + i);

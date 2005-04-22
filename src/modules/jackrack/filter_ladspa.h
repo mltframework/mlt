@@ -1,6 +1,6 @@
 /*
- * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * filter_ladspa.h -- filter audio through LADSPA plugins
+ * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,31 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+#ifndef _FILTER_LADSPA_H_
+#define _FILTER_LADSPA_H_
 
-#include "filter_jackrack.h"
-#include "filter_ladspa.h"
+#include <framework/mlt_filter.h>
 
-void *mlt_create_producer( char *id, void *arg )
-{
-	return NULL;
-}
+extern mlt_filter filter_ladspa_init( char *arg );
 
-void *mlt_create_filter( char *id, void *arg )
-{
-	if ( !strcmp( id, "jackrack" ) )
-		return filter_jackrack_init( arg );
-	else if ( !strcmp( id, "ladspa" ) )
-		return filter_ladspa_init( arg );
-	return NULL;
-}
-
-void *mlt_create_transition( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( char *id, void *arg )
-{
-	return NULL;
-}
+#endif

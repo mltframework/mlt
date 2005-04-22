@@ -37,7 +37,7 @@ struct _plugin_mgr
 
 struct _ui;
 
-plugin_mgr_t * plugin_mgr_new (struct _ui * ui);
+plugin_mgr_t * plugin_mgr_new ();
 void           plugin_mgr_destroy (plugin_mgr_t * plugin_mgr);
 
 void plugin_mgr_set_plugins (plugin_mgr_t * plugin_mgr, unsigned long rack_channels);

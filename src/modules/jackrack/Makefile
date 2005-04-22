@@ -10,8 +10,8 @@ OBJS = factory.o \
 	   plugin_mgr.o \
 	   plugin_settings.o \
 	   process.o \
-	   ui.o \
-	   filter_jackrack.o 
+	   filter_jackrack.o \
+	   filter_ladspa.o
 
 CFLAGS += -I../.. `pkg-config --cflags jack`
 CFLAGS += `xml2-config --cflags`

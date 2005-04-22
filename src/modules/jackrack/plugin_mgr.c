@@ -32,7 +32,6 @@
 
 #include "plugin_mgr.h"
 #include "plugin_desc.h"
-#include "ui.h"
 
 
 static gboolean
@@ -60,7 +59,7 @@ plugin_is_valid (const LADSPA_Descriptor * descriptor)
 }
 
 static void
-plugin_mgr_get_object_file_plugins (ui_t * ui, plugin_mgr_t * plugin_mgr, const char * filename)
+plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * filename)
 {
   const char * dlerr;
   void * dl_handle;
@@ -146,7 +145,7 @@ plugin_mgr_get_object_file_plugins (ui_t * ui, plugin_mgr_t * plugin_mgr, const 
 }
 
 static void
-plugin_mgr_get_dir_plugins (ui_t * ui, plugin_mgr_t * plugin_mgr, const char * dir)
+plugin_mgr_get_dir_plugins (plugin_mgr_t * plugin_mgr, const char * dir)
 {
   DIR * dir_stream;
   struct dirent * dir_entry;
@@ -181,7 +180,7 @@ plugin_mgr_get_dir_plugins (ui_t * ui, plugin_mgr_t * plugin_mgr, const char * d
           strcpy (file_name + dirlen + 1, dir_entry->d_name);
         }
     
-      plugin_mgr_get_object_file_plugins (ui, plugin_mgr, file_name);
+      plugin_mgr_get_object_file_plugins (plugin_mgr, file_name);
       
       g_free (file_name);
     }
@@ -193,7 +192,7 @@ plugin_mgr_get_dir_plugins (ui_t * ui, plugin_mgr_t * plugin_mgr, const char * d
 }
 
 static void
-plugin_mgr_get_path_plugins (ui_t * ui, plugin_mgr_t * plugin_mgr)
+plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
 {
   char * ladspa_path, * dir;
   
@@ -203,7 +202,7 @@ plugin_mgr_get_path_plugins (ui_t * ui, plugin_mgr_t * plugin_mgr)
   
   dir = strtok (ladspa_path, ":");
   do
-    plugin_mgr_get_dir_plugins (ui, plugin_mgr, dir);
+    plugin_mgr_get_dir_plugins (plugin_mgr, dir);
   while ((dir = strtok (NULL, ":")));
 
   g_free (ladspa_path);
@@ -221,7 +220,7 @@ plugin_mgr_sort (gconstpointer a, gconstpointer b)
 }
 
 plugin_mgr_t *
-plugin_mgr_new (ui_t * ui)
+plugin_mgr_new ()
 {
   plugin_mgr_t * pm;
   
@@ -230,7 +229,7 @@ plugin_mgr_new (ui_t * ui)
   pm->plugins = NULL;
   pm->plugin_count = 0;
   
-  plugin_mgr_get_path_plugins (ui, pm);
+  plugin_mgr_get_path_plugins (pm);
   
   if (!pm->all_plugins)
     {
