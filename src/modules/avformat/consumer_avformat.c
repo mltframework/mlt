@@ -416,10 +416,11 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->bit_rate_tolerance = mlt_properties_get_int( properties, "video_bit_rate_tolerance" );
 		c->width = mlt_properties_get_int( properties, "width" );
 		c->height = mlt_properties_get_int( properties, "height" );
-		c->frame_rate = mlt_properties_get_double( properties, "fps" );
-		c->frame_rate_base = mlt_properties_get_double( properties, "frame_rate_base" );
-		c->frame_rate_base = 1;
+		c->time_base.den = mlt_properties_get_double( properties, "fps" );
+		c->time_base.num = mlt_properties_get_double( properties, "frame_rate_base" );
+		c->time_base.num = 1;
 		c->gop_size = mlt_properties_get_int( properties, "gop_size" );
+		c->pix_fmt = PIX_FMT_YUV420P;
 
 		if ( mlt_properties_get_int( properties, "b_frames" ) )
 		{
@@ -625,7 +626,8 @@ static void *consumer_thread( void *arg )
 	AVStream *video_st = NULL;
 
 	// Time stamps
-	double audio_pts, video_pts;
+	double audio_pts = 0;
+	double video_pts = 0;
 
 	// Loop variable
 	int i;
@@ -791,16 +793,15 @@ static void *consumer_thread( void *arg )
 		// While we have stuff to process, process...
 		while ( 1 )
 		{
-	 		// Compute current audio and video time
-	 		if (audio_st)
-	 			audio_pts = (double)audio_st->pts.val * audio_st->time_base.num / audio_st->time_base.den;
+			if (audio_st)
+				audio_pts = (double)audio_st->pts.val * audio_st->time_base.num / audio_st->time_base.den;
 			else
-	 			audio_pts = 0.0;
-	
+				audio_pts = 0.0;
+        
 			if (video_st)
-	 			video_pts = (double)video_st->pts.val * video_st->time_base.num / video_st->time_base.den;
- 			else
-	 			video_pts = 0.0;
+				video_pts = (double)video_st->pts.val * video_st->time_base.num / video_st->time_base.den;
+			else
+				video_pts = 0.0;
 
  			// Write interleaved audio and video frames
  			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
@@ -818,13 +819,15 @@ static void *consumer_thread( void *arg )
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
  					// Write the compressed frame in the media file
 					if ( c->coded_frame )
-						pkt.pts= c->coded_frame->pts;
+						pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st->time_base );
 					pkt.flags |= PKT_FLAG_KEY;
 					pkt.stream_index= audio_st->index;
 					pkt.data= audio_outbuf;
 
  					if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
  						fprintf(stderr, "Error while writing audio frame\n");
+
+					audio_pts += c->frame_size;
 				}
 				else
 				{
@@ -889,6 +892,7 @@ static void *consumer_thread( void *arg )
 						pkt.size= sizeof(AVPicture);
 
 						ret = av_write_frame(oc, &pkt);
+						video_pts += c->frame_size;
  					} 
 					else 
 					{
@@ -905,7 +909,7 @@ static void *consumer_thread( void *arg )
 							av_init_packet( &pkt );
 
 							if ( c->coded_frame )
-								pkt.pts= c->coded_frame->pts;
+								pkt.pts= av_rescale_q( c->coded_frame->pts, c->time_base, video_st->time_base );
 							if(c->coded_frame->key_frame)
 								pkt.flags |= PKT_FLAG_KEY;
 							pkt.stream_index= video_st->index;
@@ -914,6 +918,7 @@ static void *consumer_thread( void *arg )
 
              				// write the compressed frame in the media file
 							ret = av_interleaved_write_frame(oc, &pkt);
+							video_pts += c->frame_size;
 	 					} 
  					}
  					frame_count++;

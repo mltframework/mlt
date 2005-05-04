@@ -196,8 +196,7 @@ static int producer_open( mlt_producer this, char *file )
 			// These are required by video4linux (defaults)
 			params->width = 640;
 			params->height = 480;
-			params->frame_rate = 25;
-			params->frame_rate_base = 1;
+			params->time_base= (AVRational){1,25};
 			params->device = file;
 			params->channels = 2;
 			params->sample_rate = 48000;
@@ -218,9 +217,9 @@ static int producer_open( mlt_producer this, char *file )
 				if ( t )
 					t[0] = 0;
 				if ( !strcmp( name, "frame_rate" ) )
-					params->frame_rate = atoi( value );
+					params->time_base.den = atoi( value );
 				else if ( !strcmp( name, "frame_rate_base" ) )
-					params->frame_rate_base = atoi( value );
+					params->time_base.num = atoi( value );
 				else if ( !strcmp( name, "sample_rate" ) )
 					params->sample_rate = atoi( value );
 				else if ( !strcmp( name, "channels" ) )
@@ -565,8 +564,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
 				// Determine time code of the packet
-				if ( pkt.pts != AV_NOPTS_VALUE )
-					current_time = ( double )pkt.pts / 1000000.0;
+				if ( pkt.dts != AV_NOPTS_VALUE )
+					current_time = av_q2d( stream->time_base ) * pkt.dts;
 				else
 					current_time = real_timecode;
 
@@ -694,10 +693,8 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 				mlt_properties_set_double( properties, "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
 			}
 
-			//fprintf( stderr, "AVFORMAT: sample aspect %f %dx%d\n", av_q2d( codec_context->sample_aspect_ratio ), codec_context->width, codec_context->height );
-
 			// Determine the fps
-			source_fps = ( double )codec_context->frame_rate / ( codec_context->frame_rate_base == 0 ? 1 : codec_context->frame_rate_base );
+			source_fps = ( double )codec_context->time_base.den / ( codec_context->time_base.num == 0 ? 1 : codec_context->time_base.num );
 
 			// We'll use fps if it's available
 			if ( source_fps > 0 && source_fps < 30 )
@@ -888,7 +885,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				}
 
 				// If we're behind, ignore this packet
-				float current_pts = (float)pkt.pts / 1000000.0;
+				float current_pts = av_q2d( stream->time_base ) * pkt.pts;
 				if ( seekable && ( !ignore && current_pts <= ( real_timecode - 0.02 ) ) )
 					ignore = 1;
 			}
