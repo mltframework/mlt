@@ -88,17 +88,17 @@ else
 	echo "EXTRA_LIBS=$extra_libs" >> config.mak
 
 cat << EOF >> ../producers.dat
-avformat		libmltffmpeg$LIBSUF
+avformat		libmltavformat$LIBSUF
 EOF
 
 cat << EOF >> ../filters.dat
-avdeinterlace	libmltffmpeg$LIBSUF
-avresample		libmltffmpeg$LIBSUF
-avcolour_space	libmltffmpeg$LIBSUF
+avdeinterlace	libmltavformat$LIBSUF
+avresample		libmltavformat$LIBSUF
+avcolour_space	libmltavformat$LIBSUF
 EOF
 
 cat << EOF >> ../consumers.dat
-avformat		libmltffmpeg$LIBSUF
+avformat		libmltavformat$LIBSUF
 EOF
 
 fi
