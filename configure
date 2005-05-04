@@ -143,7 +143,7 @@ do
 done
 
 # Double check mmx (may end up disabling mmx on non-linux platforms incorrectly)
-if [ "$mmx" == "true" ]
+if [ "$mmx" = "true" ]
 then
 	grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
 fi
