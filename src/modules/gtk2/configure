@@ -24,19 +24,19 @@ then
 	[ "$disable_pango" != "0" ] && echo "- pango not found: pango titler disabled"
 
 	echo > config.h
-	[ "$disable_gtk2" == "0" ] && echo "#define USE_GTK2" >> config.h
-	[ "$disable_pixbuf" == "0" ] && echo "#define USE_PIXBUF" >> config.h
-	[ "$disable_pango" == "0" ] && echo "#define USE_PANGO" >> config.h
+	[ "$disable_gtk2" = "0" ] && echo "#define USE_GTK2" >> config.h
+	[ "$disable_pixbuf" = "0" ] && echo "#define USE_PIXBUF" >> config.h
+	[ "$disable_pango" = "0" ] && echo "#define USE_PANGO" >> config.h
 
 	echo > config.mak
-	[ "$disable_gtk2" == "0" ] && echo "USE_GTK2=1" >> config.mak
-	[ "$disable_pixbuf" == "0" ] && echo "USE_PIXBUF=1" >> config.mak
-	[ "$disable_pango" == "0" ] && echo "USE_PANGO=1" >> config.mak
+	[ "$disable_gtk2" = "0" ] && echo "USE_GTK2=1" >> config.mak
+	[ "$disable_pixbuf" = "0" ] && echo "USE_PIXBUF=1" >> config.mak
+	[ "$disable_pango" = "0" ] && echo "USE_PANGO=1" >> config.mak
 
-	[ "$disable_pixbuf" == "0" ] && echo "pixbuf			libmltgtk2$LIBSUF" >> ../producers.dat
-	[ "$disable_pango" == "0" ] && echo "pango			libmltgtk2$LIBSUF" >> ../producers.dat
-	[ "$disable_pixbuf" == "0" ] && echo "gtkrescale		libmltgtk2$LIBSUF" >> ../filters.dat
-	[ "$disable_gtk2" == "0" ] && echo "gtk2_preview	libmltgtk2$LIBSUF" >> ../consumers.dat
+	[ "$disable_pixbuf" = "0" ] && echo "pixbuf			libmltgtk2$LIBSUF" >> ../producers.dat
+	[ "$disable_pango" = "0" ] && echo "pango			libmltgtk2$LIBSUF" >> ../producers.dat
+	[ "$disable_pixbuf" = "0" ] && echo "gtkrescale		libmltgtk2$LIBSUF" >> ../filters.dat
+	[ "$disable_gtk2" = "0" ] && echo "gtk2_preview	libmltgtk2$LIBSUF" >> ../consumers.dat
 
 	exit 0
 fi

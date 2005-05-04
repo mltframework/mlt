@@ -7,9 +7,9 @@ then
 	lqt_disabled=$?
 
 	echo > config.h
-	[ "$lqt_disabled" == "0" ] && echo "#define HAVE_LIBQUICKTIME" >> config.h
+	[ "$lqt_disabled" = "0" ] && echo "#define HAVE_LIBQUICKTIME" >> config.h
 	echo > config.mak
-	[ "$lqt_disabled" == "0" ] && echo "HAVE_LIBQUICKTIME=1" >> config.mak
+	[ "$lqt_disabled" = "0" ] && echo "HAVE_LIBQUICKTIME=1" >> config.mak
 
 	[ "$lqt_disabled" != "0" ] && echo "- libquicktime not found: only enabling dv avi support"
 

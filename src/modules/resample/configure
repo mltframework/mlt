@@ -6,7 +6,7 @@ then
 	pkg-config samplerate 2> /dev/null
 	disable_samplerate=$?
 
-	if [ "$disable_samplerate" == "0" ]
+	if [ "$disable_samplerate" = "0" ]
 	then
 		echo "resample		libmltresample$LIBSUF" >> ../filters.dat
 	else

@@ -6,7 +6,7 @@ then
 	pkg-config vorbisfile 2> /dev/null
 	disable_vorbis=$?
 
-	if [ "$disable_vorbis" == "0" ]
+	if [ "$disable_vorbis" = "0" ]
 	then
 		echo "vorbis		libmltvorbis$LIBSUF" >> ../producers.dat
 	else

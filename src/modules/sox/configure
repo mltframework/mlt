@@ -6,7 +6,7 @@ then
 	which libst-config > /dev/null 2>&1
 	disable_sox=$?
 
-	if [ "$disable_sox" == "0" ]
+	if [ "$disable_sox" = "0" ]
 	then
 		echo "sox		libmltsox$LIBSUF" >> ../filters.dat
 	else

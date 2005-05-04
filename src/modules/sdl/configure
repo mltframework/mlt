@@ -6,7 +6,7 @@ then
 	sdl-config --version > /dev/null 2>&1
 	disable_sdl=$?
 
-	if [ "$disable_sdl" == "0" ]
+	if [ "$disable_sdl" = "0" ]
 	then
 		echo "sdl				libmltsdl$LIBSUF" >> ../consumers.dat
 		echo "sdl_preview		libmltsdl$LIBSUF" >> ../consumers.dat
