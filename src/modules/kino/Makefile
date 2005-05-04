@@ -6,7 +6,7 @@ TARGET=../libmltkino.so
 OBJS=factory.o producer_kino.o
 CPPOBJS=kino_wrapper.o avi.o error.o filehandler.o riff.o
 CFLAGS+=-I../../
-LDFLAGS+=-lmlt -lstdc++
+LDFLAGS+=-L../../framework -lmlt -lstdc++
 CXXFLAGS+=$(CFLAGS) -Wno-deprecated
 
 ifdef HAVE_LIBQUICKTIME
