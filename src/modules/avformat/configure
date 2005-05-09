@@ -32,6 +32,7 @@ else
 	export shared_ffmpeg=`whereis ffmpeg | cut -f 2 -d' '`
 	export extra_libs=
 	export cvs_ffmpeg=
+	export avformat_suffix=
 
 	if [ "$shared_ffmpeg" != "" ]
 	then
@@ -48,13 +49,20 @@ else
 			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
 			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
 			--avformat-cvs )		cvs_ffmpeg=true ;;
+			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
 		esac
 	done
 
 	if [ "$cvs_ffmpeg" != "" ]
 	then
-		[ ! -d "ffmpeg" ] && cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co ffmpeg
-		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure --enable-shared )
+		[ ! -d "ffmpeg" ] && ( 
+			echo
+			echo "Checking out ffmpeg/avformat - no password required"
+			echo
+			cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg login
+			cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co ffmpeg
+		)
+		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure --enable-shared --build-suffix="$avformat_suffix" )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
 		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec" >> config.mak
 		echo "LOCAL_FFMPEG=1" >> config.mak
@@ -86,6 +94,7 @@ else
 	fi
 
 	echo "EXTRA_LIBS=$extra_libs" >> config.mak
+	echo "AVFORMAT_SUFFIX=$avformat_suffix" >> config.mak
 
 cat << EOF >> ../producers.dat
 avformat		libmltavformat$LIBSUF

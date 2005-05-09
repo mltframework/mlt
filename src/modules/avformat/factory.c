@@ -87,7 +87,7 @@ static void avformat_init( )
 		pthread_mutex_init( &avformat_mutex, NULL );
 		av_register_all( );
 		mlt_factory_register_for_clean_up( NULL, avformat_destroy );
-		//av_log_set_level( -1 );
+		av_log_set_level( -1 );
 	}
 }
 
