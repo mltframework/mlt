@@ -153,19 +153,21 @@ static void filter_close( mlt_filter this )
 	char mlt_name[20];
 	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 	
-	for ( i = 0; i < mlt_properties_get_int( properties, "channels" ); i++ )
+	if ( mlt_properties_get_data( properties, "jackrack", NULL ) != NULL )
 	{
-		snprintf( mlt_name, sizeof( mlt_name ), "obuf%d", i );
-		mlt_pool_release( mlt_properties_get_data( properties, mlt_name, NULL ) );
-		snprintf( mlt_name, sizeof( mlt_name ), "ibuf%d", i );
-		mlt_pool_release( mlt_properties_get_data( properties, mlt_name, NULL ) );
-	}
-	mlt_pool_release( mlt_properties_get_data( properties, "output_buffers", NULL ) );
-	mlt_pool_release( mlt_properties_get_data( properties, "input_buffers", NULL ) );
-
-	jack_rack_t *jackrack = mlt_properties_get_data( properties, "jackrack", NULL );
-	jack_rack_destroy( jackrack );
+		for ( i = 0; i < mlt_properties_get_int( properties, "channels" ); i++ )
+		{
+			snprintf( mlt_name, sizeof( mlt_name ), "obuf%d", i );
+			mlt_pool_release( mlt_properties_get_data( properties, mlt_name, NULL ) );
+			snprintf( mlt_name, sizeof( mlt_name ), "ibuf%d", i );
+			mlt_pool_release( mlt_properties_get_data( properties, mlt_name, NULL ) );
+		}
+		mlt_pool_release( mlt_properties_get_data( properties, "output_buffers", NULL ) );
+		mlt_pool_release( mlt_properties_get_data( properties, "input_buffers", NULL ) );
 	
+		jack_rack_t *jackrack = mlt_properties_get_data( properties, "jackrack", NULL );
+		jack_rack_destroy( jackrack );
+	}	
 	this->parent.close = NULL;
 	mlt_service_close( &this->parent );
 }
