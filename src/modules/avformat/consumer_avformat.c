@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <pthread.h>
 #include <sys/time.h>
 #include <math.h>
@@ -530,13 +531,46 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 static int open_video(AVFormatContext *oc, AVStream *st)
 {
 	// Get the codec
-	AVCodecContext *c = &st->codec;
+	AVCodecContext *video_enc = &st->codec;
 
 	// find the video encoder
-	AVCodec *codec = avcodec_find_encoder(c->codec_id);
+	AVCodec *codec = avcodec_find_encoder( video_enc->codec_id );
+
+	if( codec && codec->supported_framerates )
+	{
+		const AVRational *p = codec->supported_framerates;
+		AVRational req = ( AVRational ){ video_enc->time_base.den, video_enc->time_base.num };
+		const AVRational *best = NULL;
+		AVRational best_error = (AVRational){ INT_MAX, 1 };
+		for( ; p->den!=0; p++ )
+		{
+			AVRational error= av_sub_q( req, *p );
+			if( error.num < 0 ) 
+				error.num *= -1;
+			if( av_cmp_q( error, best_error ) < 0 )
+			{
+				best_error = error;
+				best = p;
+			}
+		}
+		video_enc->time_base.den = best->num;
+		video_enc->time_base.num = best->den;
+	}
+ 
+	if( codec && codec->pix_fmts )
+	{
+		const enum PixelFormat *p = codec->pix_fmts;
+		for( ; *p!=-1; p++ )
+		{
+			if( *p == video_enc->pix_fmt )
+				break;
+		}
+		if( *p == -1 )
+			video_enc->pix_fmt = codec->pix_fmts[ 0 ];
+	}
 
 	// Open the codec safely
-	return codec != NULL && avcodec_open(c, codec) >= 0;
+	return codec != NULL && avcodec_open( video_enc, codec ) >= 0;
 }
 
 void close_video(AVFormatContext *oc, AVStream *st)
@@ -607,7 +641,7 @@ static void *consumer_thread( void *arg )
 	sample_fifo fifo = mlt_properties_get_data( properties, "sample_fifo", NULL );
 
 	// Need two av pictures for converting
-	AVFrame *output = alloc_picture( PIX_FMT_YUV420P, width, height );
+	AVFrame *output = NULL;
 	AVFrame *input = alloc_picture( PIX_FMT_YUV422, width, height );
 
 	// For receiving images from an mlt_frame
@@ -737,6 +771,9 @@ static void *consumer_thread( void *arg )
 		mlt_properties_set_int( properties, "running", 0 );
 	}
 
+	// Allocate picture
+	output = alloc_picture( video_st->codec.pix_fmt, width, height );
+
 	// Last check - need at least one stream
 	if ( audio_st == NULL && video_st == NULL )
 		mlt_properties_set_int( properties, "running", 0 );
@@ -763,7 +800,7 @@ static void *consumer_thread( void *arg )
 			terminated = terminate_on_pause && mlt_properties_get_double( frame_properties, "_speed" ) == 0.0;
 
 			// Get audio and append to the fifo
-			if ( audio_st )
+			if ( !terminated && audio_st )
 			{
 				samples = mlt_sample_calculator( fps, frequency, count );
 				mlt_frame_get_audio( frame, &pcm, &aud_fmt, &frequency, &channels, &samples );
@@ -784,7 +821,7 @@ static void *consumer_thread( void *arg )
 			}
 
 			// Encode the image
-			if ( video_st )
+			if ( !terminated && video_st )
 				mlt_deque_push_back( queue, frame );
 			else
 				mlt_frame_close( frame );
@@ -877,7 +914,7 @@ static void *consumer_thread( void *arg )
 							}
 						}
 
-						img_convert( ( AVPicture * )output, PIX_FMT_YUV420P, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
+						img_convert( ( AVPicture * )output, video_st->codec.pix_fmt, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
 					}
  
  					if (oc->oformat->flags & AVFMT_RAWPICTURE) 
