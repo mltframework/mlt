@@ -863,9 +863,11 @@ bool QtHandler::Open( const char *s )
 		Close();
 		return false;
 	}
-	if ( strncmp( quicktime_video_compressor( fd, 0 ), QUICKTIME_DV, 4 ) != 0 )
+	char * fcc = quicktime_video_compressor( fd, 0 );
+	if ( strncmp( fcc, QUICKTIME_DV, 4 ) != 0 &&
+	     strncmp( fcc, QUICKTIME_DV_AVID, 4 ) != 0 &&
+	     strncmp( fcc, QUICKTIME_DV_AVID_A, 4 ) != 0 )
 	{
-		fprintf( stderr, "Video in input file (%s) must be in DV format.\n", s );
 		Close();
 		return false;
 	}

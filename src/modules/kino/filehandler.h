@@ -180,7 +180,7 @@ protected:
 
 
 #ifdef HAVE_LIBQUICKTIME
-#include <quicktime/quicktime.h>
+#include <quicktime.h>
 
 class QtHandler: public FileHandler
 {
