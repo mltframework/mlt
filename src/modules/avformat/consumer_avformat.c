@@ -772,7 +772,8 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Allocate picture
-	output = alloc_picture( video_st->codec.pix_fmt, width, height );
+	if ( video_st )
+		output = alloc_picture( video_st->codec.pix_fmt, width, height );
 
 	// Last check - need at least one stream
 	if ( audio_st == NULL && video_st == NULL )
@@ -1003,7 +1004,8 @@ static void *consumer_thread( void *arg )
 		url_fclose(&oc->pb);
 
 	// Clean up input and output frames
-	av_free( output->data[0] );
+	if ( output )
+		av_free( output->data[0] );
 	av_free( output );
 	av_free( input->data[0] );
 	av_free( input );
