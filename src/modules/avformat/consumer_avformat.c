@@ -417,9 +417,8 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->bit_rate_tolerance = mlt_properties_get_int( properties, "video_bit_rate_tolerance" );
 		c->width = mlt_properties_get_int( properties, "width" );
 		c->height = mlt_properties_get_int( properties, "height" );
-		c->time_base.den = mlt_properties_get_double( properties, "fps" );
-		c->time_base.num = mlt_properties_get_double( properties, "frame_rate_base" );
-		c->time_base.num = 1;
+		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_den" );
+		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_num" );
 		c->gop_size = mlt_properties_get_int( properties, "gop_size" );
 		c->pix_fmt = PIX_FMT_YUV420P;
 
