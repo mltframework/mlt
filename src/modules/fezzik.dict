@@ -4,6 +4,7 @@ http://*=avformat
 *.inigo=inigo_file
 *.asf=avformat
 *.avi=mcdv,libdv,avformat
+*.bmp=pixbuf
 *.dv=mcdv,avformat,libdv
 *.dif=mcdv,libdv
 *.gif=pixbuf
