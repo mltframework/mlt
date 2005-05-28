@@ -53,6 +53,8 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		{
 			mlt_properties_set( properties, "normalisation", "PAL" );
 			mlt_properties_set_double( properties, "fps", 25.0 );
+			mlt_properties_set_int( properties, "frame_rate_den", 25 );
+			mlt_properties_set_int( properties, "frame_rate_num", 1 );
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 576 );
 			mlt_properties_set_int( properties, "progressive", 0 );
@@ -62,6 +64,8 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		{
 			mlt_properties_set( properties, "normalisation", "NTSC" );
 			mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
+			mlt_properties_set_int( properties, "frame_rate_den", 30000 );
+			mlt_properties_set_int( properties, "frame_rate_num", 1001 );
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 480 );
 			mlt_properties_set_int( properties, "progressive", 0 );

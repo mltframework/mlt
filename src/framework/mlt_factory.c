@@ -90,10 +90,6 @@ int mlt_factory_init( const char *prefix )
 
 		// Create the global properties
 		global_properties = mlt_properties_new( );
-		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
-		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "fezzik" );
-		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
-		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 
 		// Create the object list.
 		object_list = mlt_properties_new( );
@@ -106,6 +102,15 @@ int mlt_factory_init( const char *prefix )
 
 		// Force a clean up when app closes
 		atexit( mlt_factory_close );
+	}
+
+	// Allow property refresh on a subsequent initialisation
+	if ( global_properties != NULL )
+	{
+		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
+		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "fezzik" );
+		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
+		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 	}
 
 	return 0;
