@@ -242,8 +242,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Clone if necessary
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
-	// The fault is not in the design of mlt, but in the implementation of pixbuf...
-	//if ( writable )
+	// The fault is not in the design of mlt, but in the implementation of the pixbuf producer...
+	if ( image != NULL )
 	{
 		// Clone our image
 		uint8_t *copy = mlt_pool_alloc( size );
@@ -255,6 +255,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		// Now update properties so we free the copy after
 		mlt_properties_set_data( properties, "image", copy, size, mlt_pool_release, NULL );
+	}
+	else
+	{
+		// Fall back to the test card...
+		mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 
 	// Pass on the image
