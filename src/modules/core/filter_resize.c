@@ -91,7 +91,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	error = mlt_frame_get_image( this, image, format, &owidth, &oheight, writable );
 
 	// We only know how to process yuv422 at the moment
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 && *format == mlt_image_yuv422 && *image != NULL )
 	{
 		// Get the requested scale operation
 		char *op = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "scale" );

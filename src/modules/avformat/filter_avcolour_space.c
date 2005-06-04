@@ -125,7 +125,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
    
 	error = mlt_frame_get_image( this, image, format, width, height, 0 );
 
-	if ( error == 0 && *format != output_format && *width > 0 && *height > 0 )
+	if ( error == 0 && *format != output_format && *image != NULL )
 	{
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );

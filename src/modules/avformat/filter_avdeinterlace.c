@@ -80,7 +80,7 @@
 #endif
 
 /* filter parameters: [-1 4 2 4 -1] // 8 */
-static void deinterlace_line(uint8_t *dst, 
+static inline void deinterlace_line(uint8_t *dst, 
 			     const uint8_t *lum_m4, const uint8_t *lum_m3, 
 			     const uint8_t *lum_m2, const uint8_t *lum_m1, 
 			     const uint8_t *lum,
@@ -126,7 +126,7 @@ static void deinterlace_line(uint8_t *dst,
     }
 #endif
 }
-static void deinterlace_line_inplace(uint8_t *lum_m4, uint8_t *lum_m3, uint8_t *lum_m2, uint8_t *lum_m1, uint8_t *lum,
+static inline void deinterlace_line_inplace(uint8_t *lum_m4, uint8_t *lum_m3, uint8_t *lum_m2, uint8_t *lum_m1, uint8_t *lum,
                              int size)
 {
 #ifndef USE_MMX
@@ -172,7 +172,7 @@ static void deinterlace_line_inplace(uint8_t *lum_m4, uint8_t *lum_m3, uint8_t *
 /* deinterlacing : 2 temporal taps, 3 spatial taps linear filter. The
    top field is copied as is, but the bottom field is deinterlaced
    against the top field. */
-static void deinterlace_bottom_field(uint8_t *dst, int dst_wrap,
+static inline void deinterlace_bottom_field(uint8_t *dst, int dst_wrap,
                                     const uint8_t *src1, int src_wrap,
                                     int width, int height)
 {
@@ -201,7 +201,7 @@ static void deinterlace_bottom_field(uint8_t *dst, int dst_wrap,
     deinterlace_line(dst,src_m2,src_m1,src_0,src_0,src_0,width);
 }
 
-static void deinterlace_bottom_field_inplace(uint8_t *src1, int src_wrap,
+static inline void deinterlace_bottom_field_inplace(uint8_t *src1, int src_wrap,
 					     int width, int height)
 {
     uint8_t *src_m1, *src_0, *src_p1, *src_p2;
@@ -295,16 +295,16 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 	int error = 0;
 	
+	// Get the input image
+	error = mlt_frame_get_image( this, image, format, width, height, 1 );
+
 	// Check that we want progressive and we aren't already progressive
-	if ( *format == mlt_image_yuv422 &&
+	if ( *format == mlt_image_yuv422 && *image != NULL &&
 		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) &&
 		 mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" ) )
 	{
 		// Create a picture
 		AVPicture *output = mlt_pool_alloc( sizeof( AVPicture ) );
-
-		// Get the input image
-		error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
 		// Fill the picture
 		if ( *format == mlt_image_yuv422 )
@@ -318,11 +318,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		// Make sure that others know the frame is deinterlaced
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "progressive", 1 );
-	}
-	else
-	{
-		// Get the input image
-		error = mlt_frame_get_image( this, image, format, width, height, writable );
 	}
 
 	return error;
