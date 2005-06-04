@@ -79,27 +79,31 @@ static void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc, int width, int height
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
+	int deinterlace = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" );
 	
 	// Pop the service off the stack
 	mlt_filter filter = mlt_frame_pop_service( this );
 
+	// Determine if we need a writable version or not
+	if ( deinterlace && !writable )
+		 writable = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
+
+	// Get the input image
+	error = mlt_frame_get_image( this, image, format, width, height, writable );
+
 	// Check that we want progressive and we aren't already progressive
-	if ( *format == mlt_image_yuv422 && *image != NULL &&
-		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) &&
-		 mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" ) )
+	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL )
 	{
-		// Get the input image
-		error = mlt_frame_get_image( this, image, format, width, height, 1 );
-		
 		// Determine deinterlace method
 		char *method_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "method" );
 		int method = DEINTERLACE_LINEARBLEND;
+		char *frame_method_str = mlt_properties_get( MLT_FRAME_PROPERTIES( this ), "deinterlace_method" );
+		
+		if ( frame_method_str != NULL )
+			method_str = frame_method_str;
 		
 		if ( method_str == NULL )
-			method_str = mlt_properties_get( MLT_FRAME_PROPERTIES( this ), "deinterlace_method" );
-		
-		if ( method_str == NULL )
-			mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "method", "linearblend" );
+			method = DEINTERLACE_LINEARBLEND;
 		else if ( strcmp( method_str, "bob" ) == 0 )
 			method = DEINTERLACE_BOB;
 		else if ( strcmp( method_str, "weave" ) == 0 )
@@ -114,11 +118,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		
 		// Make sure that others know the frame is deinterlaced
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "progressive", 1 );
-	}
-	else
-	{
-		// Get the input image
-		error = mlt_frame_get_image( this, image, format, width, height, writable );
 	}
 
 	return error;

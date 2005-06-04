@@ -311,6 +311,7 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 		// Aspect ratio and other jiggery pokery
 		mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
 		mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" ) );
+		mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
 	}
 
 	// Return the frame

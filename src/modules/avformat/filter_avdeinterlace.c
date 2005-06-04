@@ -294,14 +294,17 @@ static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
-	
+	int deinterlace = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" );
+
+	// Determine if we need a writable version or not
+	if ( deinterlace && !writable )
+		 writable = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
+
 	// Get the input image
-	error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	error = mlt_frame_get_image( this, image, format, width, height, writable );
 
 	// Check that we want progressive and we aren't already progressive
-	if ( *format == mlt_image_yuv422 && *image != NULL &&
-		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) &&
-		 mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" ) )
+	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL )
 	{
 		// Create a picture
 		AVPicture *output = mlt_pool_alloc( sizeof( AVPicture ) );

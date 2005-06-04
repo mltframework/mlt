@@ -204,6 +204,8 @@ static void *consumer_thread( void *arg )
 	mlt_properties play = MLT_CONSUMER_PROPERTIES( this->play );
 	mlt_properties still = MLT_CONSUMER_PROPERTIES( this->still );
 
+	int progressive = mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" );
+
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
 	{
 		fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
@@ -231,8 +233,10 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_int( play, "height", mlt_properties_get_int( properties, "height" ) );
 	mlt_properties_set_int( still, "height", mlt_properties_get_int( properties, "height" ) );
 
-	mlt_properties_set_int( play, "progressive", 1 );
-	mlt_properties_set_int( still, "progressive", 1 );
+	mlt_properties_set_int( play, "progressive", progressive );
+	mlt_properties_set_int( still, "progressive", progressive );
+	mlt_properties_set( play, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
+	mlt_properties_set( still, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
 
 	mlt_properties_pass( play, MLT_CONSUMER_PROPERTIES( consumer ), "play." );
 	mlt_properties_pass( still, MLT_CONSUMER_PROPERTIES( consumer ), "still." );
