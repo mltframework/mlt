@@ -21,6 +21,45 @@
 * Change log:
 * 
 * $Log$
+* Revision 1.3  2005/06/21 20:59:39  lilo_booter
+* src/framework/mlt_consumer.c src/framework/mlt_consumer.h
+* + Added a general profile handling for size, aspect ratio and display ratio
+*
+* src/framework/mlt_producer.c
+* + Correction to aspect ratio properties
+*
+* src/inigo/inigo.c
+* + Minimalist support for sdl_preview (still not very good)
+*
+* src/modules/avformat/consumer_avformat.c
+* + Takes consumer profile into account
+*
+* src/modules/core/filter_resize.c
+* + Corrections for synthesised producers and aspect ratio (inherits from consumer)
+*
+* src/modules/core/producer_colour.c
+* src/modules/core/producer_noise.c
+* src/modules/gtk2/producer_pango.c
+* + Ensures that resize picks up consumer aspect ratio
+*
+* src/modules/dv/consumer_libdv.c
+* + Honour wide screen output
+*
+* src/modules/gtk2/producer_pixbuf.c
+* + Correction for 1:1 aspect ratio
+*
+* src/modules/kino/Makefile
+* src/modules/kino/avi.cc
+* src/modules/kino/avi.h
+* src/modules/kino/configure
+* src/modules/kino/filehandler.cc
+* + Attempt to allow mov dv files to provide audio
+*
+* src/modules/sdl/consumer_sdl.c
+* src/modules/sdl/consumer_sdl_preview.c
+* src/modules/sdl/consumer_sdl_still.c
+* + Takes consumer profile into account
+*
 * Revision 1.2  2005/04/15 14:37:03  lilo_booter
 * Minor correction
 *
@@ -110,8 +149,8 @@
 
 #define AVI_SMALL_INDEX (0x01)
 #define AVI_LARGE_INDEX (0x02)
-#define AVI_INDEX_OF_INDEXES (0x00)
-#define AVI_INDEX_OF_CHUNKS (0x01)
+#define KINO_AVI_INDEX_OF_INDEXES (0x00)
+#define KINO_AVI_INDEX_OF_CHUNKS (0x01)
 #define AVI_INDEX_2FIELD (0x01)
 
 enum { AVI_PAL, AVI_NTSC, AVI_AUDIO_48KHZ, AVI_AUDIO_44KHZ, AVI_AUDIO_32KHZ };

@@ -53,23 +53,33 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		{
 			mlt_properties_set( properties, "normalisation", "PAL" );
 			mlt_properties_set_double( properties, "fps", 25.0 );
-			mlt_properties_set_int( properties, "frame_rate_den", 25 );
-			mlt_properties_set_int( properties, "frame_rate_num", 1 );
+			mlt_properties_set_int( properties, "frame_rate_num", 25 );
+			mlt_properties_set_int( properties, "frame_rate_den", 1 );
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 576 );
 			mlt_properties_set_int( properties, "progressive", 0 );
 			mlt_properties_set_double( properties, "aspect_ratio", 59.0 / 54.0 );
+			mlt_properties_set_int( properties, "aspect_ratio_num", 59 );
+			mlt_properties_set_int( properties, "aspect_ratio_den", 54 );
+			mlt_properties_set_double( properties, "display_ratio", 4.0 / 3.0 );
+			mlt_properties_set_int( properties, "display_ratio_num", 4 );
+			mlt_properties_set_int( properties, "display_ratio_den", 3 );
 		}
 		else
 		{
 			mlt_properties_set( properties, "normalisation", "NTSC" );
 			mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
-			mlt_properties_set_int( properties, "frame_rate_den", 30000 );
-			mlt_properties_set_int( properties, "frame_rate_num", 1001 );
+			mlt_properties_set_int( properties, "frame_rate_num", 30000 );
+			mlt_properties_set_int( properties, "frame_rate_den", 1001 );
 			mlt_properties_set_int( properties, "width", 720 );
 			mlt_properties_set_int( properties, "height", 480 );
 			mlt_properties_set_int( properties, "progressive", 0 );
 			mlt_properties_set_double( properties, "aspect_ratio", 10.0 / 11.0 );
+			mlt_properties_set_int( properties, "aspect_ratio_num", 10 );
+			mlt_properties_set_int( properties, "aspect_ratio_den", 11 );
+			mlt_properties_set_double( properties, "display_ratio", 4.0 / 3.0 );
+			mlt_properties_set_int( properties, "display_ratio_num", 4 );
+			mlt_properties_set_int( properties, "display_ratio_den", 3 );
 		}
 
 		// Default rescaler for all consumers
@@ -165,6 +175,16 @@ int mlt_consumer_start( mlt_consumer this )
 
 	// Determine if there's a test card producer
 	char *test_card = mlt_properties_get( properties, "test_card" );
+
+	// Handle profiles
+	char *profile = mlt_properties_get( properties, "profile" );
+	int profile_ok = mlt_consumer_profile( properties, profile );
+
+	// Check that everything is OK
+	if ( !profile_ok )
+		fprintf( stderr, "Unrecognised profile %s - continuing with defaults.\n", mlt_properties_get( properties, "profile" ) );
+	else if ( profile_ok < 0 )
+		fprintf( stderr, "Recognised profile %s with warnings - trying to continue with some defaults.\n", mlt_properties_get( properties, "profile" ) );
 
 	// Just to make sure nothing is hanging around...
 	mlt_frame_close( this->put );
@@ -327,6 +347,168 @@ static inline long time_difference( struct timeval *time1 )
 	return time1->tv_sec * 1000000 + time1->tv_usec - time2.tv_sec * 1000000 - time2.tv_usec;
 }
 
+int mlt_consumer_profile( mlt_properties properties, char *profile )
+{
+	double fps = mlt_properties_get_double( properties, "fps" );
+	int recognised = 1;
+	double display_num = 0;
+	double display_den = 0;
+	double pixel_num = 0;
+	double pixel_den = 0;
+	int width = 0;
+	int height = 0;
+
+	if ( fps == 25.0 && profile != NULL )
+	{
+		width = 720;
+		height = 576;
+		display_num = 4;
+		display_den = 3;
+		pixel_num = 59;
+		pixel_den = 54;
+
+		if ( !strcmp( profile, "dv_wide" ) )
+		{
+			display_num = 16;
+			display_den = 9;
+			pixel_num = 118;
+			pixel_den = 81;
+		}
+		else if ( !strncmp( profile, "square_wide", 11 ) )
+		{
+			display_num = 16;
+			display_den = 9;
+			pixel_num = 1;
+			pixel_den = 1;
+			width = 1024;
+			height = 576;
+		}
+		else if ( !strncmp( profile, "square", 6 ) )
+		{
+			pixel_num = 1;
+			pixel_den = 1;
+			width = 768;
+			height = 576;
+		}
+		else if ( !strncmp( profile, "vcd", 3 ) )
+		{
+			width = 352;
+			height = 288;
+		}
+		else if ( !strncmp( profile, "cvd", 3 ) )
+		{
+			width = 352;
+			height = 576;
+			pixel_num = 59;
+			pixel_den = 27;
+		}
+		else if ( !strncmp( profile, "svcd_wide", 9 ) )
+		{
+			width = 480;
+			height = 576;
+			pixel_num = 59;
+			pixel_den = 27;
+			display_num = 16;
+			display_den = 9;
+		}
+		else if ( !strncmp( profile, "svcd", 4 ) )
+		{
+			width = 480;
+			height = 576;
+			pixel_num = 59;
+			pixel_den = 36;
+		}
+		else if ( strncmp( profile, "frame", 5 ) && strcmp( profile, "dv" ) )
+		{
+			recognised = 0;
+		}
+	}
+	else if ( profile != NULL )
+	{
+		width = 720;
+		height = 480;
+		display_num = 4;
+		display_den = 3;
+		pixel_num = 10;
+		pixel_den = 11;
+
+		if ( !strcmp( profile, "dv_wide" ) )
+		{
+			display_num = 16;
+			display_den = 9;
+			pixel_num = 40;
+			pixel_den = 33;
+		}
+		else if ( !strncmp( profile, "square_wide", 11 ) )
+		{
+			display_num = 16;
+			display_den = 9;
+			pixel_num = 1;
+			pixel_den = 1;
+			width = 854;
+			height = 480;
+		}
+		else if ( !strncmp( profile, "square", 6 ) )
+		{
+			pixel_num = 1;
+			pixel_den = 1;
+			width = 640;
+			height = 480;
+		}
+		else if ( !strncmp( profile, "vcd", 3 ) )
+		{
+			width = 352;
+			height = 240;
+		}
+		else if ( !strncmp( profile, "cvd", 3 ) )
+		{
+			width = 352;
+			height = 480;
+			pixel_num = 20;
+			pixel_den = 11;
+		}
+		else if ( !strncmp( profile, "svcd_wide", 9 ) )
+		{
+			width = 480;
+			height = 480;
+			pixel_num = 20;
+			pixel_den = 11;
+			display_num = 16;
+			display_den = 9;
+		}
+		else if ( !strncmp( profile, "svcd", 4 ) )
+		{
+			width = 480;
+			height = 480;
+			pixel_num = 15;
+			pixel_den = 11;
+		}
+		else if ( strncmp( profile, "frame", 5 ) && strcmp( profile, "dv" ) )
+		{
+			recognised = 0;
+		}
+	}
+
+	// If width (or any of the above are 0), we use defaults otherwise we switch to recognised
+	if ( width != 0 && recognised )
+	{
+		if ( recognised && strchr( profile, ':' ) )
+			if ( sscanf( strchr( profile, ':' ) + 1, "%dx%d", &width, &height ) != 2 )
+				recognised = -1;
+
+		mlt_properties_set_int( properties, "width", width );
+		mlt_properties_set_int( properties, "height", height );
+		mlt_properties_set_double( properties, "aspect_ratio", pixel_num / pixel_den );
+		mlt_properties_set_int( properties, "aspect_ratio_num", pixel_num );
+		mlt_properties_set_int( properties, "aspect_ratio_den", pixel_den );
+		mlt_properties_set_double( properties, "display_ratio", display_num / display_den );
+		mlt_properties_set_int( properties, "display_ratio_num", display_num );
+		mlt_properties_set_int( properties, "display_ratio_den", display_den );
+	}
+
+	return recognised;
+}
+
 static void *consumer_read_ahead_thread( void *arg )
 {
 	// The argument is the consumer
@@ -407,6 +589,10 @@ static void *consumer_read_ahead_thread( void *arg )
 	// Continue to read ahead
 	while ( this->ahead )
 	{
+		// Fetch width/height again
+		width = mlt_properties_get_int( properties, "width" );
+		height = mlt_properties_get_int( properties, "height" );
+
 		// Put the current frame into the queue
 		pthread_mutex_lock( &this->mutex );
 		while( this->ahead && mlt_deque_count( this->queue ) >= buffer )

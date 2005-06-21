@@ -38,6 +38,11 @@ using std::setfill;
 #include <time.h>
 #include <sys/time.h>
 
+// libdv header files
+#ifdef HAVE_LIBDV
+#include <libdv/dv.h>
+#endif
+
 #include "filehandler.h"
 #include "error.h"
 #include "riff.h"
@@ -884,30 +889,24 @@ int QtHandler::GetFrame( uint8_t *data, int frameNum )
 	quicktime_set_video_position( fd, frameNum, 0 );
 	quicktime_read_frame( fd, data, 0 );
 
-#if 0
+#ifdef HAVE_LIBDV
 	if ( quicktime_has_audio( fd ) )
 	{
-		AudioInfo info;
-		double samples;
-
 		if ( ! isFullyInitialized )
-		{
-			cerr << ">>> using audio from separarate Quicktime audio track" << endl;
 			AllocateAudioBuffers();
-		}
 
-		info.channels = channels;
-		info.frequency = quicktime_sample_rate( fd, 0 );
-		samples = info.frequency / quicktime_frame_rate( fd, 0 );
-		info.samples = (int) samples;
+		int frequency = quicktime_sample_rate( fd, 0 );
+		int samples = ( int )( frequency / quicktime_frame_rate( fd, 0 ) );
 		for ( int i = 0; i < channels; i++ )
 		{
 			quicktime_set_audio_position( fd, ( int64_t )( frameNum * samples ), 0 );
 			quicktime_decode_audio( fd, audioChannelBuffer[ i ], NULL, (long) samples, i );
 		}
-		frame.EncodeAudio( info, audioChannelBuffer );
+		dv_encoder_t *encoder = dv_encoder_new( 0, 0, 0 );
+		encoder->samples_this_frame = samples;
+		dv_encode_full_audio( encoder, audioChannelBuffer, channels, frequency, data );
+		dv_encoder_free( encoder );
 	}
-	frame.ExtractHeader();
 #endif
 
 	return 0;

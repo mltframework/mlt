@@ -57,9 +57,8 @@ struct consumer_sdl_s
 	pthread_cond_t video_cond;
 	int window_width;
 	int window_height;
-	float aspect_ratio;
-	float display_aspect;
-	double last_frame_aspect;
+	int previous_width;
+	int previous_height;
 	int width;
 	int height;
 	int playing;
@@ -117,6 +116,9 @@ mlt_consumer consumer_sdl_init( char *arg )
 		mlt_service service = MLT_CONSUMER_SERVICE( parent );
 		this->properties = MLT_SERVICE_PROPERTIES( service );
 
+		// Default display aspect ratio
+		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
+		
 		// Set the default volume
 		mlt_properties_set_double( this->properties, "volume", 1.0 );
 
@@ -138,14 +140,8 @@ mlt_consumer consumer_sdl_init( char *arg )
 		// Default audio buffer
 		mlt_properties_set_int( this->properties, "audio_buffer", 512 );
 
-		// Get sample aspect ratio
-		this->aspect_ratio = mlt_properties_get_double( this->properties, "aspect_ratio" );
-
 		// Ensure we don't join on a non-running object
 		this->joined = 1;
-		
-		// Default display aspect ratio
-		this->display_aspect = 4.0 / 3.0;
 		
 		// process actual param
 		if ( arg == NULL || sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
@@ -155,7 +151,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 		}
 
 		// Default window size
-		this->window_width = ( float )this->height * this->display_aspect;
+		this->window_width = ( float )this->height * display_ratio;
 		this->window_height = this->height;
 
 		// Set the sdl flags
@@ -202,6 +198,11 @@ int consumer_start( mlt_consumer parent )
 		{
 			mlt_properties_set_int( this->properties, "width", this->width );
 			mlt_properties_set_int( this->properties, "height", this->height );
+		}
+		else
+		{
+			this->width = mlt_properties_get_int( this->properties, "width" );
+			this->height = mlt_properties_get_int( this->properties, "height" );
 		}
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
@@ -461,8 +462,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			// Determine window's new display aspect ratio
 			float this_aspect = ( float )this->window_width / this->window_height;
 
+			// Get the display aspect ratio
+			double display_ratio = mlt_properties_get_double( properties, "display_ratio" );
+
 			// Determine frame's display aspect ratio
 			float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
+
+			// Store the width and height received
 			this->width = width;
 			this->height = height;
 
@@ -470,42 +476,31 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			if ( mlt_properties_get( properties, "rescale" ) != NULL &&
 				!strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
 			{
-				// Special case optimisation to negate odd effect of sample aspect ratio
-				// not corresponding exactly with image resolution.
-				if ( ( (int)( this_aspect * 1000 ) == (int)( this->display_aspect * 1000 ) ) && 
-					 ( (int)( mlt_frame_get_aspect_ratio( frame ) * 1000 ) == (int)( this->aspect_ratio * 1000 ) ) )
+				// Use hardware scaler to normalise display aspect ratio
+				this->rect.w = frame_aspect / this_aspect * this->window_width;
+				this->rect.h = this->window_height;
+				if ( this->rect.w > this->window_width )
 				{
 					this->rect.w = this->window_width;
-					this->rect.h = this->window_height;
-				}
-				else
-				{
-					// Use hardware scaler to normalise display aspect ratio
-					this->rect.w = frame_aspect / this_aspect * this->window_width;
-					this->rect.h = this->window_height;
-					if ( this->rect.w > this->window_width )
-					{
-						this->rect.w = this->window_width;
-						this->rect.h = this_aspect / frame_aspect * this->window_height;
-					}
+					this->rect.h = this_aspect / frame_aspect * this->window_height;
 				}
 			}
 			// Special case optimisation to negate odd effect of sample aspect ratio
 			// not corresponding exactly with image resolution.
-			else if ( (int)( this_aspect * 1000 ) == (int)( this->display_aspect * 1000 ) ) 
+			else if ( (int)( this_aspect * 1000 ) == (int)( display_ratio * 1000 ) ) 
 			{
 				this->rect.w = this->window_width;
 				this->rect.h = this->window_height;
 			}
 			// Use hardware scaler to normalise sample aspect ratio
-			else if ( this->window_height * this->display_aspect > this->window_width )
+			else if ( this->window_height * display_ratio > this->window_width )
 			{
 				this->rect.w = this->window_width;
-				this->rect.h = this->window_width / this->display_aspect;
+				this->rect.h = this->window_width / display_ratio;
 			}
 			else
 			{
-				this->rect.w = this->window_height * this->display_aspect;
+				this->rect.w = this->window_height * display_ratio;
 				this->rect.h = this->window_height;
 			}
 			
@@ -525,7 +520,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			SDL_SetClipRect( this->sdl_screen, &this->rect );
 			SDL_Flip( this->sdl_screen );
 			sdl_lock_display();
-			this->sdl_overlay = SDL_CreateYUVOverlay( this->width, this->height, SDL_YUY2_OVERLAY, this->sdl_screen );
+			this->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, this->sdl_screen );
 			sdl_unlock_display();
 		}
 

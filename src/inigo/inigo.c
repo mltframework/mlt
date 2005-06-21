@@ -11,6 +11,7 @@ static void transport_action( mlt_producer producer, char *value )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
+	mlt_consumer consumer = mlt_properties_get_data( properties, "transport_consumer", NULL );
 
 	mlt_properties_set_int( properties, "stats_off", 0 );
 
@@ -122,6 +123,8 @@ static void transport_action( mlt_producer producer, char *value )
 				}
 				break;
 		}
+
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
 	}
 
 	mlt_properties_set_int( properties, "stats_off", 0 );
@@ -138,6 +141,7 @@ static mlt_consumer create_consumer( char *id, mlt_producer producer )
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		mlt_properties_set_data( properties, "transport_callback", transport_action, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "transport_producer", producer, 0, NULL, NULL );
+		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( producer ), "transport_consumer", consumer, 0, NULL, NULL );
 	}
 	return consumer;
 }

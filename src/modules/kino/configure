@@ -6,12 +6,18 @@ then
 	lqt-config --prefix > /dev/null 2>&1
 	lqt_disabled=$?
 
+	pkg-config libdv 2> /dev/null
+	libdv_disabled=$?
+
 	echo > config.h
 	[ "$lqt_disabled" = "0" ] && echo "#define HAVE_LIBQUICKTIME" >> config.h
+	[ "$libdv_disabled" = "0" ] && echo "#define HAVE_LIBDV" >> config.h
 	echo > config.mak
 	[ "$lqt_disabled" = "0" ] && echo "HAVE_LIBQUICKTIME=1" >> config.mak
+	[ "$libdv_disabled" = "0" ] && echo "HAVE_LIBDV=1" >> config.mak
 
 	[ "$lqt_disabled" != "0" ] && echo "- libquicktime not found: only enabling dv avi support"
+	[ "$libdv_disabled" != 0 -a "$lqt_disabled" = "0" ] && echo "- libdv not found: mov dv may not have audio"
 
 	echo "kino			libmltkino$LIBSUF" >> ../producers.dat
 fi

@@ -14,6 +14,12 @@ CXXFLAGS+=`lqt-config --cflags`
 LDFLAGS+=`lqt-config --libs`
 endif
 
+ifdef HAVE_LIBDV
+CFLAGS += `pkg-config --cflags libdv`
+LDFLAGS += `pkg-config --libs libdv`
+endif
+
+
 SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cc)
 
 all: 	$(TARGET)

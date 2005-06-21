@@ -75,5 +75,6 @@ extern int mlt_consumer_stop( mlt_consumer self );
 extern int mlt_consumer_is_stopped( mlt_consumer self );
 extern void mlt_consumer_stopped( mlt_consumer self );
 extern void mlt_consumer_close( mlt_consumer );
+extern int mlt_consumer_profile( mlt_properties properties, char *profile );
 
 #endif

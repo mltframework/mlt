@@ -45,9 +45,6 @@ struct consumer_sdl_s
 	int running;
 	int window_width;
 	int window_height;
-	float aspect_ratio;
-	float display_aspect;
-	double last_frame_aspect;
 	int width;
 	int height;
 	int playing;
@@ -86,12 +83,15 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		// Get the parent consumer object
 		mlt_consumer parent = &this->parent;
 
-		// We have stuff to clean up, so override the close method
-		parent->close = consumer_close;
-
 		// get a handle on properties
 		mlt_service service = MLT_CONSUMER_SERVICE( parent );
 		this->properties = MLT_SERVICE_PROPERTIES( service );
+
+		// Get the default display ratio
+		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
+
+		// We have stuff to clean up, so override the close method
+		parent->close = consumer_close;
 
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
@@ -102,14 +102,8 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		// Default progressive true
 		mlt_properties_set_int( this->properties, "progressive", 1 );
 
-		// Get sample aspect ratio
-		this->aspect_ratio = mlt_properties_get_double( this->properties, "aspect_ratio" );
-
 		// Ensure we don't join on a non-running object
 		this->joined = 1;
-		
-		// Default display aspect ratio
-		this->display_aspect = 4.0 / 3.0;
 		
 		// process actual param
 		if ( arg == NULL || sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
@@ -119,7 +113,7 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		}
 
 		// Default window size
-		this->window_width = ( float )this->height * this->display_aspect;
+		this->window_width = ( float )this->height * display_ratio;
 		this->window_height = this->height;
 
 		// Set the sdl flags
@@ -180,8 +174,6 @@ static int consumer_start( mlt_consumer parent )
 			mlt_properties_set_int( this->properties, "width", this->width );
 			mlt_properties_set_int( this->properties, "height", this->height );
 		}
-
-		//this->width = this->height * this->display_aspect;
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
@@ -355,6 +347,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	int width = this->width;
 	uint8_t *image = NULL;
 	int changed = 0;
+	double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
 
 	void ( *lock )( void ) = mlt_properties_get_data( properties, "app_lock", NULL );
 	void ( *unlock )( void ) = mlt_properties_get_data( properties, "app_unlock", NULL );
@@ -431,27 +424,15 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	this->last_producer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL );
 
 	// Get the image, width and height
-	if ( image == NULL )
-	{
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
-
-		// I would like to provide upstream scaling here, but this is incorrect
-		// Something? (or everything?) is too sensitive to aspect ratio
-		//width = this->rect.w;
-		//height = this->rect.h;
-		//mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "distort", "true" );
-		//mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_width", width );
-		//mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_height", height );
-
-		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-	}
+	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+	mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 
 	if ( image != NULL )
 	{
 		char *rescale = mlt_properties_get( properties, "rescale" );
 		if ( rescale != NULL && strcmp( rescale, "none" ) )
 		{
-			float this_aspect = this->display_aspect / ( ( float )this->window_width / ( float )this->window_height );
+			float this_aspect = display_ratio / ( ( float )this->window_width / ( float )this->window_height );
 			this->rect.w = this_aspect * this->window_width;
 			this->rect.h = this->window_height;
 			if ( this->rect.w > this->window_width )

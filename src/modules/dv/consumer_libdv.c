@@ -280,7 +280,7 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 		time_t start = time( NULL );
 		int height = mlt_properties_get_int( this_properties, "height" );
 		int is_pal = height == 576;
-		int is_wide = mlt_properties_get_double( frame_properties, "fps" ) == ( ( double ) 16.0 / 9.0 );
+		int is_wide = mlt_properties_get_int( this_properties, "display_ratio_num" ) == 16;
 
 		// Temporary - audio buffer allocation
 		int16_t *audio_buffers[ 4 ];

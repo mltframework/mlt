@@ -232,6 +232,10 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_int( still, "width", mlt_properties_get_int( properties, "width" ) );
 	mlt_properties_set_int( play, "height", mlt_properties_get_int( properties, "height" ) );
 	mlt_properties_set_int( still, "height", mlt_properties_get_int( properties, "height" ) );
+	mlt_properties_set_double( play, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
+	mlt_properties_set_double( still, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
+	mlt_properties_set_double( play, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
+	mlt_properties_set_double( still, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
 
 	mlt_properties_set_int( play, "progressive", progressive );
 	mlt_properties_set_int( still, "progressive", progressive );

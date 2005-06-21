@@ -43,6 +43,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int owidth = *width;
 	int oheight = *height;
 
+	// Check for the special case - no aspect ratio means no problem :-)
+	if ( mlt_frame_get_aspect_ratio( this ) == 0 )
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
+
 	// Hmmm...
 	char *rescale = mlt_properties_get( properties, "rescale.interp" );
 	if ( rescale != NULL && !strcmp( rescale, "none" ) )
@@ -61,6 +65,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			real_height = mlt_properties_get_int( properties, "height" );
 		double input_ar = mlt_frame_get_aspect_ratio( this ) * real_width / real_height;
 		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight;
+
 		
 		//fprintf( stderr, "normalised %dx%d output %dx%d %f %f\n", normalised_width, normalised_height, owidth, oheight, ( float )output_ar, ( float )mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight );
 
@@ -74,7 +79,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			scaled_width = normalised_width;
 			scaled_height = output_ar / input_ar * normalised_height + 0.5;
 		}
-	
+
 		// Now calculate the actual image size that we want
 		owidth = scaled_width * owidth / normalised_width;
 		oheight = scaled_height * oheight / normalised_height;

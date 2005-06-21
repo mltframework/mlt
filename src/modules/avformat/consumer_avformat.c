@@ -158,7 +158,6 @@ mlt_consumer consumer_avformat_init( char *arg )
 		mlt_properties_set_int( properties, "audio_bit_rate", 128000 );
 		mlt_properties_set_int( properties, "video_bit_rate", 200 * 1000 );
 		mlt_properties_set_int( properties, "video_bit_rate_tolerance", 4000 * 1000 );
-		mlt_properties_set_int( properties, "frame_rate_base", 1 );
 		mlt_properties_set_int( properties, "gop_size", 12 );
 		mlt_properties_set_int( properties, "b_frames", 0 );
 		mlt_properties_set_int( properties, "mb_decision", FF_MB_DECISION_SIMPLE );
@@ -331,6 +330,17 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->bit_rate = mlt_properties_get_int( properties, "audio_bit_rate" );
 		c->sample_rate = mlt_properties_get_int( properties, "frequency" );
 		c->channels = mlt_properties_get_int( properties, "channels" );
+
+		// Allow the user to override the audio fourcc
+		if ( mlt_properties_get( properties, "afourcc" ) )
+		{
+			char *tail = NULL;
+			char *arg = mlt_properties_get( properties, "afourcc" );
+    		int tag = strtol( arg, &tail, 0);
+    		if( !tail || *tail )
+        		tag = arg[ 0 ] + ( arg[ 1 ] << 8 ) + ( arg[ 2 ] << 16 ) + ( arg[ 3 ] << 24 );
+			c->codec_tag = tag;
+		}
 	}
 	else
 	{
@@ -417,8 +427,8 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->bit_rate_tolerance = mlt_properties_get_int( properties, "video_bit_rate_tolerance" );
 		c->width = mlt_properties_get_int( properties, "width" );
 		c->height = mlt_properties_get_int( properties, "height" );
-		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_den" );
-		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_num" );
+		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
+		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
 		c->gop_size = mlt_properties_get_int( properties, "gop_size" );
 		c->pix_fmt = PIX_FMT_YUV420P;
 
@@ -430,7 +440,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		}
 
 	 	c->mb_decision = mlt_properties_get_int( properties, "mb_decision" );
-		c->sample_aspect_ratio = av_d2q( mlt_properties_get_double( properties, "aspect_ratio" ), 255 );
+		c->sample_aspect_ratio = av_d2q( mlt_properties_get_double( properties, "display_ratio" ) * c->height / c->width, 255 );
 		c->mb_cmp = mlt_properties_get_int( properties, "mb_cmp" );
 		c->ildct_cmp = mlt_properties_get_int( properties, "ildct_cmp" );
 		c->me_sub_cmp = mlt_properties_get_int( properties, "sub_cmp" );
@@ -459,10 +469,19 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			st->quality = FF_QP2LAMBDA * mlt_properties_get_double( properties, "qscale" );
 		}
 
-		// Some formats want stream headers to be seperate (hmm)
-		if( !strcmp( oc->oformat->name, "mp4" ) || 
-			!strcmp( oc->oformat->name, "mov" ) || 
-			!strcmp( oc->oformat->name, "3gp" ) )
+		// Allow the user to override the video fourcc
+		if ( mlt_properties_get( properties, "vfourcc" ) )
+		{
+			char *tail = NULL;
+			const char *arg = mlt_properties_get( properties, "vfourcc" );
+    		int tag = strtol( arg, &tail, 0);
+    		if( !tail || *tail )
+        		tag = arg[ 0 ] + ( arg[ 1 ] << 8 ) + ( arg[ 2 ] << 16 ) + ( arg[ 3 ] << 24 );
+			c->codec_tag = tag;
+		}
+
+		// Some formats want stream headers to be seperate
+		if ( oc->oformat->flags & AVFMT_GLOBALHEADER ) 
 			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
 		c->rc_max_rate = mlt_properties_get_int( properties, "video_rc_max_rate" );
@@ -538,7 +557,7 @@ static int open_video(AVFormatContext *oc, AVStream *st)
 	if( codec && codec->supported_framerates )
 	{
 		const AVRational *p = codec->supported_framerates;
-		AVRational req = ( AVRational ){ video_enc->time_base.den, video_enc->time_base.num };
+		AVRational req = ( AVRational ){ video_enc->time_base.num, video_enc->time_base.den };
 		const AVRational *best = NULL;
 		AVRational best_error = (AVRational){ INT_MAX, 1 };
 		for( ; p->den!=0; p++ )
@@ -552,8 +571,8 @@ static int open_video(AVFormatContext *oc, AVStream *st)
 				best = p;
 			}
 		}
-		video_enc->time_base.den = best->num;
-		video_enc->time_base.num = best->den;
+		video_enc->time_base.num = best->num;
+		video_enc->time_base.den = best->den;
 	}
  
 	if( codec && codec->pix_fmts )
