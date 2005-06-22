@@ -144,6 +144,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 			mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
 
+			// Check for the special case - no aspect ratio means no problem :-)
+			if ( mlt_frame_get_aspect_ratio( b_frame ) == 0 )
+				mlt_properties_set_double( b_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+			if ( mlt_frame_get_aspect_ratio( frame ) == 0 )
+				mlt_properties_set_double( a_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+
 			mlt_properties_set_int( b_props, "normalised_width", mlt_properties_get_int( a_props, "normalised_width" ) );
 			mlt_properties_set_int( b_props, "normalised_height", mlt_properties_get_int( a_props, "normalised_height" ) );
 

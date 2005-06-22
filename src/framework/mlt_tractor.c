@@ -323,6 +323,29 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				// Check for last track
 				done = mlt_properties_get_int( temp_properties, "last_track" );
 
+				// Handle fx only tracks
+				if ( mlt_properties_get_int( temp_properties, "meta.fx_cut" ) )
+				{
+					// Take all but the first placeholding producer and dump on to the image stack
+					if ( video )
+					{
+						void *p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) );
+						while ( ( p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) ) ) != NULL )
+							mlt_deque_push_back( MLT_FRAME_IMAGE_STACK( video ), p );
+					}
+
+					// Take all but the first placeholding producer and dump on to the audio stack
+					if ( audio )
+					{
+						void *p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) );
+						while ( ( p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) ) != NULL )
+							mlt_deque_push_back( MLT_FRAME_AUDIO_STACK( audio ), p );
+					}
+
+					// Ensure everything is hidden
+					mlt_properties_set_int( temp_properties, "hide", 3 );
+				}
+
 				// We store all frames with a destructor on the output frame
 				sprintf( label, "_%s_%d", id, count ++ );
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );

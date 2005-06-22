@@ -392,6 +392,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
 	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
 
+	double consumer_ar = mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) ;
+
 	// Structures for geometry
 	struct mlt_geometry_item_s result;
 
@@ -414,15 +416,18 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	b_width = result.w;
 	b_height = result.h;
 
+	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
+		mlt_properties_set_double( b_props, "aspect_ratio", consumer_ar );
+
 	if ( !strcmp( mlt_properties_get( a_props, "rescale.interp" ), "none" ) )
 	{
 		mlt_properties_set( b_props, "rescale.interp", "nearest" );
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "aspect_ratio" ) );
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", consumer_ar );
 	}
 	else
 	{
 		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+		mlt_properties_set_double( b_props, "consumer_aspect_ratio", consumer_ar );
 	}
 
 	mlt_properties_set_int( b_props, "distort", mlt_properties_get_int( properties, "distort" ) );

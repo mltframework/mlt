@@ -55,11 +55,6 @@ mlt_producer producer_noise_init( void *arg )
 	// Initialise the producer
 	if ( this != NULL )
 	{
-		int is_pal = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( this ), "normalised_height" ) == 576;
-
-		// Synthetic - aspect ratio of 1
-		mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( this ), "aspect_ratio", is_pal ? 59.0/54.0 : 10.0/11.0 );
-
 		// Callback registration
 		this->get_frame = producer_get_frame;
 		this->close = ( mlt_destructor )producer_close;

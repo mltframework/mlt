@@ -43,6 +43,8 @@ struct mlt_frame_s
 
 #define MLT_FRAME_PROPERTIES( frame )		( &( frame )->parent )
 #define MLT_FRAME_SERVICE_STACK( frame )	( ( frame )->stack_service )
+#define MLT_FRAME_IMAGE_STACK( frame )		( ( frame )->stack_image )
+#define MLT_FRAME_AUDIO_STACK( frame )		( ( frame )->stack_audio )
 
 extern mlt_frame mlt_frame_init( );
 extern mlt_properties mlt_frame_properties( mlt_frame self );

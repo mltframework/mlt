@@ -710,6 +710,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_frame_get_aspect_ratio( b_frame );
 		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
+		if ( input_ar == 0.0 ) input_ar = output_ar;
 		int scaled_width = input_ar / output_ar * real_width;
 		int scaled_height = real_height;
 			
