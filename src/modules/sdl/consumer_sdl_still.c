@@ -113,7 +113,7 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		}
 
 		// Default window size
-		this->window_width = ( float )this->height * display_ratio;
+		this->window_width = ( double )this->height * display_ratio;
 		this->window_height = this->height;
 
 		// Set the sdl flags
@@ -432,7 +432,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		char *rescale = mlt_properties_get( properties, "rescale" );
 		if ( rescale != NULL && strcmp( rescale, "none" ) )
 		{
-			float this_aspect = display_ratio / ( ( float )this->window_width / ( float )this->window_height );
+			double this_aspect = display_ratio / ( ( double )this->window_width / ( double )this->window_height );
 			this->rect.w = this_aspect * this->window_width;
 			this->rect.h = this->window_height;
 			if ( this->rect.w > this->window_width )
@@ -443,7 +443,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 		else
 		{
-			float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
+			double frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
 			this->rect.w = frame_aspect * this->window_height;
 			this->rect.h = this->window_height;
 			if ( this->rect.w > this->window_width )

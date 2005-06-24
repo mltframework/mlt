@@ -326,20 +326,46 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				// Handle fx only tracks
 				if ( mlt_properties_get_int( temp_properties, "meta.fx_cut" ) )
 				{
-					// Take all but the first placeholding producer and dump on to the image stack
+					mlt_properties copy = video == NULL ? frame_properties : MLT_FRAME_PROPERTIES( video );
+					int i = 0;
+
+					for ( i = 0; i < mlt_properties_count( temp_properties ); i ++ )
+					{
+						char *name = mlt_properties_get_name( temp_properties, i );
+						char *value = mlt_properties_get_value( temp_properties, i );
+						// For animated filters
+						if ( isdigit( name[ 0 ] ) && value != NULL )
+							mlt_properties_set( copy, name, value );
+					}
+
 					if ( video )
 					{
+						// Take all but the first placeholding producer and dump on to the image stack
 						void *p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) );
 						while ( ( p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) ) ) != NULL )
 							mlt_deque_push_back( MLT_FRAME_IMAGE_STACK( video ), p );
 					}
+					else
+					{
+						void *p = NULL;
+						while ( ( p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) ) ) != NULL )
+							mlt_deque_push_back( MLT_FRAME_IMAGE_STACK( *frame ), p );
+						mlt_properties_set_int( frame_properties, "meta.fx_cut", 1 );
+					}
 
-					// Take all but the first placeholding producer and dump on to the audio stack
 					if ( audio )
 					{
+						// Take all but the first placeholding producer and dump on to the audio stack
 						void *p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) );
 						while ( ( p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) ) != NULL )
 							mlt_deque_push_back( MLT_FRAME_AUDIO_STACK( audio ), p );
+					}
+					else
+					{
+						void *p = NULL;
+						while ( ( p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) ) != NULL )
+							mlt_deque_push_back( MLT_FRAME_AUDIO_STACK( *frame ), p );
+						mlt_properties_set_int( frame_properties, "meta.fx_cut", 1 );
 					}
 
 					// Ensure everything is hidden
@@ -385,6 +411,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 					audio = temp;
 				if ( !done && !mlt_frame_is_test_card( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 1 ) )
 					video = temp;
+
 			}
 	
 			// Now stack callbacks

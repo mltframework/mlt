@@ -151,7 +151,7 @@ mlt_consumer consumer_sdl_init( char *arg )
 		}
 
 		// Default window size
-		this->window_width = ( float )this->height * display_ratio;
+		this->window_width = ( double )this->height * display_ratio;
 		this->window_height = this->height;
 
 		// Set the sdl flags
@@ -251,7 +251,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	consumer_sdl this = udata;
 
 	// Get the volume
-	float volume = mlt_properties_get_double( this->properties, "volume" );
+	double volume = mlt_properties_get_double( this->properties, "volume" );
 
 	pthread_mutex_lock( &this->audio_mutex );
 
@@ -279,7 +279,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		memcpy( stream, this->audio_buffer, this->audio_avail );
 
 		// Mix the audio 
-		SDL_MixAudio( stream, stream, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+		SDL_MixAudio( stream, stream, len, ( int )( ( double )SDL_MIX_MAXVOLUME * volume ) );
 
 		// No audio left
 		this->audio_avail = 0;
@@ -460,13 +460,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		if ( this->running )
 		{
 			// Determine window's new display aspect ratio
-			float this_aspect = ( float )this->window_width / this->window_height;
+			double this_aspect = ( double )this->window_width / this->window_height;
 
 			// Get the display aspect ratio
 			double display_ratio = mlt_properties_get_double( properties, "display_ratio" );
 
 			// Determine frame's display aspect ratio
-			float frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
+			double frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
 
 			// Store the width and height received
 			this->width = width;

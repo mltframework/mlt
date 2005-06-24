@@ -70,7 +70,7 @@ static int alignment_parse( char* align )
 /** Calculate real geometry.
 */
 
-static void geometry_calculate( mlt_transition this, struct geometry_s *output, float position )
+static void geometry_calculate( mlt_transition this, struct geometry_s *output, double position )
 {
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 	mlt_geometry geometry = mlt_properties_get_data( properties, "geometries", NULL );
@@ -191,20 +191,20 @@ static int position_calculate( mlt_transition this, mlt_position position )
 /** Calculate the field delta for this frame - position between two frames.
 */
 
-static inline float delta_calculate( mlt_transition this, mlt_frame frame )
+static inline double delta_calculate( mlt_transition this, mlt_frame frame )
 {
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
 	mlt_position out = mlt_transition_get_out( this );
-	float length = out - in + 1;
+	double length = out - in + 1;
 
 	// Get the position of the frame
 	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
 	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name );
 
 	// Now do the calcs
-	float x = ( float )( position - in ) / length;
-	float y = ( float )( position + 1 - in ) / length;
+	double x = ( double )( position - in ) / length;
+	double y = ( double )( position + 1 - in ) / length;
 
 	return length * ( y - x ) / 2.0;
 }
@@ -769,7 +769,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 }
 
 
-static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s *result, mlt_frame a_frame, float position )
+static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s *result, mlt_frame a_frame, double position )
 {
 	// Get the properties from the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
@@ -865,7 +865,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	// Will need to know region to copy
 	struct geometry_s result;
 
-	float delta = delta_calculate( this, a_frame );
+	double delta = delta_calculate( this, a_frame );
 
 	// Calculate the region now
 	composite_calculate( this, &result, a_frame, position + delta / 2 );
@@ -980,8 +980,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		struct geometry_s result;
 
 		// Calculate the position
-		float position = mlt_properties_get_double( b_props, "relative_position" );
-		float delta = delta_calculate( this, a_frame );
+		double position = mlt_properties_get_double( b_props, "relative_position" );
+		double delta = delta_calculate( this, a_frame );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
@@ -1065,7 +1065,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
 				// Assume lower field (0) first
-				float field_position = position + field * delta;
+				double field_position = position + field * delta;
 				
 				// Do the calculation if we need to
 				composite_calculate( this, &result, a_frame, field_position );

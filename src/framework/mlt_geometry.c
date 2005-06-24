@@ -98,9 +98,9 @@ static void mlt_geometry_virtual_refresh( mlt_geometry this )
 					geometry_item prev = current->prev;
 					geometry_item next = current->next;
 
-					float prev_value = 0;
-					float next_value = 0;
-					float value = 0;
+					double prev_value = 0;
+					double next_value = 0;
+					double value = 0;
 
 					while( prev != NULL && !prev->data.f[ i ] ) prev = prev->prev;
 					while( next != NULL && !next->data.f[ i ] ) next = next->next;
