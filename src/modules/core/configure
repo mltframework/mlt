@@ -22,6 +22,7 @@ obscure			libmltcore$LIBSUF
 region			libmltcore$LIBSUF
 rescale			libmltcore$LIBSUF
 resize			libmltcore$LIBSUF
+transition		libmltcore$LIBSUF
 watermark		libmltcore$LIBSUF
 EOF
 

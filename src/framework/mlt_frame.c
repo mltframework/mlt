@@ -971,8 +971,8 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 	int i, j;
 	double d = 0, s = 0;
 
-	mlt_frame_get_audio( this, &dest, format, &frequency_dest, &channels_dest, &samples_dest );
 	mlt_frame_get_audio( that, &src, format, &frequency_src, &channels_src, &samples_src );
+	mlt_frame_get_audio( this, &dest, format, &frequency_dest, &channels_dest, &samples_dest );
 
 	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "silent_audio" );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "silent_audio", 0 );

@@ -185,16 +185,12 @@ static int position_calculate( mlt_transition this, mlt_position position )
 /** Calculate the field delta for this frame - position between two frames.
 */
 
-static inline double delta_calculate( mlt_transition this, mlt_frame frame )
+static inline double delta_calculate( mlt_transition this, mlt_frame frame, mlt_position position )
 {
 	// Get the in and out position
 	mlt_position in = mlt_transition_get_in( this );
 	mlt_position out = mlt_transition_get_out( this );
 	double length = out - in + 1;
-
-	// Get the position of the frame
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
-	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name );
 
 	// Now do the calcs
 	double x = ( double )( position - in ) / length;
@@ -403,6 +399,46 @@ static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8
 	for ( j = 0; j < width; j ++ )
 	{
 		a = *alpha_b ++ | *alpha_a;
+		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
+		mix = ( mix * a ) >> 8;
+		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*alpha_a = mix | *alpha_a;
+		alpha_a ++;
+	}
+}
+
+static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness )
+{
+	register int j;
+	register int a;
+	register int mix;
+	
+	for ( j = 0; j < width; j ++ )
+	{
+		a = *alpha_b ++ & *alpha_a;
+		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
+		mix = ( mix * a ) >> 8;
+		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*alpha_a = mix | *alpha_a;
+		alpha_a ++;
+	}
+}
+
+static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness )
+{
+	register int j;
+	register int a;
+	register int mix;
+	
+	for ( j = 0; j < width; j ++ )
+	{
+		a = *alpha_b ++ ^ *alpha_a;
 		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
 		mix = ( mix * a ) >> 8;
 		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
@@ -853,7 +889,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	// Will need to know region to copy
 	struct geometry_s result;
 
-	double delta = delta_calculate( this, a_frame );
+	double delta = delta_calculate( this, a_frame, frame_position );
 
 	// Calculate the region now
 	composite_calculate( this, &result, a_frame, position + delta / 2 );
@@ -938,6 +974,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_transition this = mlt_frame_pop_service( a_frame );
 
 	// Get in and out
+	double position = mlt_deque_pop_back_double( MLT_FRAME_IMAGE_STACK( a_frame ) );
 	int out = mlt_frame_pop_service_int( a_frame );
 	int in = mlt_frame_pop_service_int( a_frame );
 
@@ -968,14 +1005,20 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		struct geometry_s result;
 
 		// Calculate the position
-		double position = mlt_properties_get_double( b_props, "relative_position" );
-		double delta = delta_calculate( this, a_frame );
+		double delta = delta_calculate( this, a_frame, position );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
 		int width_b = *width;
 		int height_b = *height;
 	
+		// Composites always need scaling... defaulting to lowest
+		char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+		if ( rescale == NULL || !strcmp( rescale, "none" ) )
+			rescale = "nearest";
+		mlt_properties_set( a_props, "rescale.interp", rescale );
+		mlt_properties_set( b_props, "rescale.interp", rescale );
+
 		// Do the calculation
 		composite_calculate( this, &result, a_frame, position );
 
@@ -995,6 +1038,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				mlt_frame_replace_image( a_frame, *image, *format, *width, *height );
 			return 0;
 		}
+
+		if ( a_frame == b_frame )
+			get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result );
 
 		// Get the image from the a frame
 		mlt_frame_get_image( a_frame, image, format, width, height, 1 );
@@ -1026,7 +1072,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			height_b = mlt_properties_get_int( a_props, "dest_height" );
 		}
 
-		if ( get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
+		if ( image_b != NULL || get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
 		{
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
@@ -1043,6 +1089,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 			if ( mlt_properties_get_int( properties, "or" ) )
 				line_fn = composite_line_yuv_or;
+			if ( mlt_properties_get_int( properties, "and" ) )
+				line_fn = composite_line_yuv_and;
+			if ( mlt_properties_get_int( properties, "xor" ) )
+				line_fn = composite_line_yuv_xor;
 
 			if ( mlt_properties_get( properties, "alpha_a" ) )
 				memset( alpha_a, mlt_properties_get_int( properties, "alpha_a" ), *width * *height );
@@ -1089,30 +1139,19 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
-	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
-
 	// UGH - this is a TODO - find a more reliable means of obtaining in/out for the always_active case
 	if ( mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "always_active" ) == 0 )
 	{
 		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "in" ) );
 		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "out" ) );
-
-		// Assign the current position to the name
-		mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_frame_get_position( a_frame ) );
-
-		// Propogate the transition properties to the b frame
-		mlt_properties_set_double( MLT_FRAME_PROPERTIES( b_frame ), "relative_position", position_calculate( this, mlt_frame_get_position( a_frame ) ) );
+		mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( a_frame ), position_calculate( this, mlt_frame_get_position( a_frame ) ) );
 	}
 	else
 	{
 		mlt_properties props = mlt_properties_get_data( MLT_FRAME_PROPERTIES( b_frame ), "_producer", NULL );
 		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( props, "in" ) );
 		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( props, "out" ) );
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame ), "relative_position", mlt_properties_get_int( props, "_frame" ) - mlt_properties_get_int( props, "in" ) );
-
-		// Assign the current position to the name
-		mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_properties_get_position( MLT_FRAME_PROPERTIES( b_frame ), "relative_position" ) );
+		mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( a_frame ), mlt_properties_get_int( props, "_frame" ) - mlt_properties_get_int( props, "in" ) );
 	}
 	
 	mlt_frame_push_service( a_frame, this );

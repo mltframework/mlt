@@ -29,6 +29,7 @@ typedef union
 {
 	void *addr;
 	int value;
+	double floating;
 }
 deque_entry;
 
@@ -214,6 +215,75 @@ int mlt_deque_peek_back_int( mlt_deque this )
 int mlt_deque_peek_front_int( mlt_deque this )
 {
 	return this->count > 0 ? this->list[ 0 ].value : 0;
+}
+
+/** Push an item to the end.
+*/
+
+int mlt_deque_push_back_double( mlt_deque this, double item )
+{
+	int error = mlt_deque_allocate( this );
+
+	if ( error == 0 )
+		this->list[ this->count ++ ].floating = item;
+
+	return error;
+}
+
+/** Pop an item.
+*/
+
+double mlt_deque_pop_back_double( mlt_deque this )
+{
+	return this->count > 0 ? this->list[ -- this->count ].floating : 0;
+}
+
+/** Queue an item at the start.
+*/
+
+int mlt_deque_push_front_double( mlt_deque this, double item )
+{
+	int error = mlt_deque_allocate( this );
+
+	if ( error == 0 )
+	{
+		memmove( &this->list[ 1 ], this->list, ( this->count ++ ) * sizeof( deque_entry ) );
+		this->list[ 0 ].floating = item;
+	}
+
+	return error;
+}
+
+/** Remove an item from the start.
+*/
+
+double mlt_deque_pop_front_double( mlt_deque this )
+{
+	double item = 0;
+
+	if ( this->count > 0 )
+	{
+		item = this->list[ 0 ].floating;
+		memmove( this->list, &this->list[ 1 ], ( -- this->count ) * sizeof( deque_entry ) );
+	}
+
+	return item;
+}
+
+/** Inquire on item at back of deque but don't remove.
+*/
+
+double mlt_deque_peek_back_double( mlt_deque this )
+{
+	return this->count > 0 ? this->list[ this->count - 1 ].floating : 0;
+}
+
+/** Inquire on item at front of deque but don't remove.
+*/
+
+double mlt_deque_peek_front_double( mlt_deque this )
+{
+	return this->count > 0 ? this->list[ 0 ].floating : 0;
 }
 
 /** Close the queue.

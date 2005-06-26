@@ -34,6 +34,7 @@
 #include "filter_rescale.h"
 #include "filter_resize.h"
 #include "filter_region.h"
+#include "filter_transition.h"
 #include "filter_watermark.h"
 #include "transition_composite.h"
 #include "transition_luma.h"
@@ -78,6 +79,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_rescale_init( arg );
 	if ( !strcmp( id, "resize" ) )
 		return filter_resize_init( arg );
+	else if ( !strcmp( id, "transition" ) )
+		return filter_transition_init( arg );
 	if ( !strcmp( id, "watermark" ) )
 		return filter_watermark_init( arg );
 	return NULL;

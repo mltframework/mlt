@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 /** Forward references to static methods.
 */
@@ -252,6 +253,8 @@ static void destroy_data_queue( void *arg )
 }
 
 /** Get the next frame.
+
+	TODO: This function needs to be redesigned...
 */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track )
@@ -408,10 +411,24 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 
 				// Pick up first video and audio frames
 				if ( !done && !mlt_frame_is_test_audio( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 2 ) )
+				{
+					// Order of frame creation is starting to get problematic
+					if ( audio != NULL )
+					{
+						mlt_deque_push_front( MLT_FRAME_AUDIO_STACK( temp ), producer_get_audio );
+						mlt_deque_push_front( MLT_FRAME_AUDIO_STACK( temp ), audio );
+					}
 					audio = temp;
+				}
 				if ( !done && !mlt_frame_is_test_card( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 1 ) )
+				{
+					if ( video != NULL )
+					{
+						mlt_deque_push_front( MLT_FRAME_IMAGE_STACK( temp ), producer_get_image );
+						mlt_deque_push_front( MLT_FRAME_IMAGE_STACK( temp ), video );
+					}
 					video = temp;
-
+				}
 			}
 	
 			// Now stack callbacks
