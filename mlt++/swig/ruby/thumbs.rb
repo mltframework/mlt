@@ -34,10 +34,5 @@ generator.set( "size", size )
 
 # Connect the consumer
 generator.connect( playlist );
-generator.start
-
-# Wait until we're done
-while !generator.is_stopped 
-	sleep 1
-end
+generator.run
 

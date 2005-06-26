@@ -320,7 +320,33 @@ OTHER MANIPULATIONS
 	manipulated in the push method - for example, to remove a track from the 
 	output, we could do something like:
 
-	TBD
+		Response *push( char *command, Service *service )
+		{
+			Playlist playlist( ( mlt_playlist )( unit( 0 )->get_data( "playlist" ) ) );
+			Tractor *tractor( *service );
+			if ( tractor.is_valid( ) && playlist.is_valid( ) )
+			{
+				// Remove track 2 (NB: tracks are indexed from 0 like everything else)
+				Producer *producer = tractor.track( 2 );
+				Playlist track( producer );
+
+				// If we have a valid track then hide video and audio
+				// This is a bit pattern - 1 is video, 2 is audio
+				if ( track.is_valid( ) )
+					track.set( "hide", 3 );
+
+				// You need to delete the reference to the playlist producer here
+				delete producer;
+
+				// Play it
+				playlist.lock( );
+				playlist.clear( );
+				playlist.append( producer );
+				playlist.unlock( );
+				return new Response( 200, "OK" );
+			}
+			return new Response( 400, "Invalid" );
+		}
 
 
 EVENT HANDLING
