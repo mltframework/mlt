@@ -356,7 +356,7 @@ EVENT HANDLING
 	on 'consumer-frame-render' - this event is fired immediately before a frame
 	is rendered.
 
-	TBD
+	See example in test/server.cpp
 
 
 DISABLING DVCP

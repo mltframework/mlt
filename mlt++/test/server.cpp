@@ -98,11 +98,26 @@ class Custom : public Miracle
 			self->frame_render_event( frame );
 		}
 
-		// Do something to the frame here
+		// Remove all supers and attributes
 		void frame_render_event( Frame &frame )
 		{
-		}
+			// Fetch the c double ended queue structure
+			mlt_deque deque = ( mlt_deque )frame.get_data( "data_queue" );
 
+			// While the deque isn't empty
+			while( deque != NULL && mlt_deque_peek_back( deque ) != NULL )
+			{
+				// Fetch the c properties structure
+				mlt_properties cprops = ( mlt_properties )mlt_deque_pop_back( deque );
+
+				// For fun, convert it to c++ and output it :-)
+				Properties properties( cprops );
+				properties.debug( );
+
+				// Wipe it
+				mlt_properties_close( cprops );
+			}
+		}
 };
 	
 int main( int argc, char **argv )
