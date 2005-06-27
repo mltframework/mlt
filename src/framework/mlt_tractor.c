@@ -358,7 +358,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 					if ( audio )
 					{
 						// Take all but the first placeholding producer and dump on to the audio stack
-						void *p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) );
+						void *p = !mlt_frame_is_test_audio( temp ) ? mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) : NULL;
 						while ( ( p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) ) != NULL )
 							mlt_deque_push_back( MLT_FRAME_AUDIO_STACK( audio ), p );
 					}
