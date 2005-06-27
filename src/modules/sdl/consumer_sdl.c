@@ -262,7 +262,10 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	if ( this->audio_avail >= len )
 	{
 		// Place in the audio buffer
-		memcpy( stream, this->audio_buffer, len );
+		if ( volume != 1.0 )
+			SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+		else
+			memcpy( stream, this->audio_buffer, len );
 
 		// Remove len from the audio available
 		this->audio_avail -= len;
@@ -279,7 +282,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		memcpy( stream, this->audio_buffer, this->audio_avail );
 
 		// Mix the audio 
-		SDL_MixAudio( stream, stream, len, ( int )( ( double )SDL_MIX_MAXVOLUME * volume ) );
+		SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
 		// No audio left
 		this->audio_avail = 0;
