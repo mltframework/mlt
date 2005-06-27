@@ -350,9 +350,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 					}
 					else
 					{
-						void *p = NULL;
-						while ( ( p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) ) ) != NULL )
-							mlt_deque_push_back( MLT_FRAME_IMAGE_STACK( *frame ), p );
+						mlt_frame_push_service( *frame, temp );
+						mlt_frame_push_service( *frame, producer_get_image );
 						mlt_properties_set_int( frame_properties, "meta.fx_cut", 1 );
 					}
 
@@ -365,9 +364,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 					}
 					else
 					{
-						void *p = NULL;
-						while ( ( p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) ) != NULL )
-							mlt_deque_push_back( MLT_FRAME_AUDIO_STACK( *frame ), p );
+						mlt_frame_push_audio( *frame, temp );
+						mlt_frame_push_audio( *frame, producer_get_audio );
 						mlt_properties_set_int( frame_properties, "meta.fx_cut", 1 );
 					}
 
