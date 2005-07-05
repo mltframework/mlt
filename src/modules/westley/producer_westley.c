@@ -445,7 +445,6 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 
 		qualify_property( context, properties, "resource" );
 		char *resource = mlt_properties_get( properties, "resource" );
-		int fx_cut = mlt_properties_get_int( properties, "meta.fx_cut" );
 
 		// Let Kino-SMIL src be a synonym for resource
 		if ( resource == NULL )
@@ -455,7 +454,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		}
 
 		// Instantiate the producer
-		if ( !fx_cut && mlt_properties_get( properties, "mlt_service" ) != NULL )
+		if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
 		{
 			char temp[ 1024 ];
 			strncpy( temp, mlt_properties_get( properties, "mlt_service" ), 1024 );
@@ -465,10 +464,6 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 				strncat( temp, resource, 1023 - strlen( temp ) );
 			}
 			producer = MLT_SERVICE( mlt_factory_producer( "fezzik", temp ) );
-		}
-		else
-		{
-			producer = MLT_SERVICE( mlt_factory_producer( mlt_properties_get( properties, "mlt_service" ), resource ) );
 		}
 
 		// Just in case the plugin requested doesn't exist...
