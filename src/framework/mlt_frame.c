@@ -312,7 +312,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 
 		mlt_properties_set_int( properties, "width", *width );
 		mlt_properties_set_int( properties, "height", *height );
-		mlt_properties_set_int( properties, "aspect_ratio", 1 );
+		mlt_properties_set_int( properties, "aspect_ratio", 0 );
 
 		switch( *format )
 		{

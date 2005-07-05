@@ -481,7 +481,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int reverse = mlt_properties_get_int( properties, "reverse" );
 	int invert = mlt_properties_get_int( properties, "invert" );
 
-	if ( mlt_properties_get( a_props, "rescale.interp" ) == NULL )
+	if ( mlt_properties_get( a_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( a_props, "rescale.interp" ), "none" ) )
 		mlt_properties_set( a_props, "rescale.interp", "nearest" );
 
 	// Since we are the consumer of the b_frame, we must pass along this
@@ -490,10 +490,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_properties_set_double( a_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
 		mlt_properties_set_double( b_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-	if ( !strcmp( mlt_properties_get( a_props, "rescale.interp" ), "none" ) )
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "aspect_ratio" ) );
-	else
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
 	// Honour the reverse here
 	if ( mix >= 1.0 )
@@ -503,7 +500,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	frame_delta *= reverse || invert ? -1.0 : 1.0;
 
 	// Ensure we get scaling on the b_frame
-	mlt_properties_set( b_props, "rescale.interp", "nearest" );
+	if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( b_props, "rescale.interp" ), "none" ) )
+		mlt_properties_set( b_props, "rescale.interp", "nearest" );
 
 	if ( mlt_properties_get( properties, "fixed" ) )
 		mix = mlt_properties_get_double( properties, "fixed" );

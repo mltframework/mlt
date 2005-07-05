@@ -1012,6 +1012,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		int width_b = *width;
 		int height_b = *height;
 	
+		// Vars for alphas
+		uint8_t *alpha_a = NULL;
+		uint8_t *alpha_b = NULL;
+
 		// Composites always need scaling... defaulting to lowest
 		char *rescale = mlt_properties_get( a_props, "rescale.interp" );
 		if ( rescale == NULL || !strcmp( rescale, "none" ) )
@@ -1040,10 +1044,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 
 		if ( a_frame == b_frame )
+		{
 			get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result );
+			alpha_b = mlt_frame_get_alpha_mask( b_frame );
+		}
 
 		// Get the image from the a frame
 		mlt_frame_get_image( a_frame, image, format, width, height, 1 );
+		alpha_a = mlt_frame_get_alpha_mask( a_frame );
 
 		// Optimisation - no compositing required
 		if ( result.item.mix == 0 || ( result.item.w == 0 && result.item.h == 0 ) )
@@ -1076,8 +1084,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
-			uint8_t *alpha_b = mlt_frame_get_alpha_mask( b_frame );
-			uint8_t *alpha_a = mlt_frame_get_alpha_mask( a_frame );
 			int progressive = 
 					mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
 					mlt_properties_get_int( properties, "progressive" );
@@ -1085,6 +1091,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			
 			int32_t luma_softness = mlt_properties_get_double( properties, "softness" ) * ( 1 << 16 );
 			uint16_t *luma_bitmap = get_luma( properties, width_b, height_b );
+
+			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha_mask( b_frame ) : alpha_b;
+
 			composite_line_fn line_fn = composite_line_yuv;
 
 			if ( mlt_properties_get_int( properties, "or" ) )

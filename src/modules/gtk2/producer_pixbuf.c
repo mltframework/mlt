@@ -79,6 +79,8 @@ mlt_producer producer_pixbuf_init( char *filename )
 		// Set the default properties
 		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "ttl", 25 );
+		mlt_properties_set_int( properties, "aspect_ratio", 1 );
+		mlt_properties_set_int( properties, "progressive", 1 );
 		
 		return producer;
 	}
@@ -282,10 +284,12 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Get the real structure for this producer
 	producer_pixbuf this = producer->child;
 
-	if ( this->count == 0 && mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "resource" ) != NULL )
+	// Fetch the producers properties
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+
+	if ( this->count == 0 && mlt_properties_get( producer_properties, "resource" ) != NULL )
 	{
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
-		char *filename = mlt_properties_get( properties, "resource" );
+		char *filename = mlt_properties_get( producer_properties, "resource" );
 		
 		// Read xml string
 		if ( strstr( filename, "<svg" ) )
@@ -313,14 +317,14 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 				this->filenames[ this->count ++ ] = strdup( fullname );
 
 				// Teehe - when the producer closes, delete the temp file and the space allo
-				mlt_properties_set_data( properties, "__temporary_file__", this->filenames[ this->count - 1 ], 0, ( mlt_destructor )unlink, NULL );
+				mlt_properties_set_data( producer_properties, "__temporary_file__", this->filenames[ this->count - 1 ], 0, ( mlt_destructor )unlink, NULL );
 			}
 		}
 		// Obtain filenames
 		else if ( strchr( filename, '%' ) != NULL )
 		{
 			// handle picture sequences
-			int i = mlt_properties_get_int( properties, "begin" );
+			int i = mlt_properties_get_int( producer_properties, "begin" );
 			int gap = 0;
 			char full[1024];
 
@@ -396,8 +400,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		refresh_image( *frame, 0, 0 );
 
 		// Set producer-specific frame properties
-		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", 1 );
+		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_properties, "aspect_ratio" ) );
 
 		// Set alpha call back
 		( *frame )->get_alpha_mask = producer_get_alpha_mask;
