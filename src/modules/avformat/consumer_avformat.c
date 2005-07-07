@@ -554,27 +554,6 @@ static int open_video(AVFormatContext *oc, AVStream *st)
 	// find the video encoder
 	AVCodec *codec = avcodec_find_encoder( video_enc->codec_id );
 
-	if( codec && codec->supported_framerates )
-	{
-		const AVRational *p = codec->supported_framerates;
-		AVRational req = ( AVRational ){ video_enc->time_base.num, video_enc->time_base.den };
-		const AVRational *best = NULL;
-		AVRational best_error = (AVRational){ INT_MAX, 1 };
-		for( ; p->den!=0; p++ )
-		{
-			AVRational error= av_sub_q( req, *p );
-			if( error.num < 0 ) 
-				error.num *= -1;
-			if( av_cmp_q( error, best_error ) < 0 )
-			{
-				best_error = error;
-				best = p;
-			}
-		}
-		video_enc->time_base.num = best->num;
-		video_enc->time_base.den = best->den;
-	}
- 
 	if( codec && codec->pix_fmts )
 	{
 		const enum PixelFormat *p = codec->pix_fmts;
@@ -966,7 +945,7 @@ static void *consumer_thread( void *arg )
 
 							if ( c->coded_frame )
 								pkt.pts= av_rescale_q( c->coded_frame->pts, c->time_base, video_st->time_base );
-							if(c->coded_frame->key_frame)
+							if( c->coded_frame && c->coded_frame->key_frame )
 								pkt.flags |= PKT_FLAG_KEY;
 							pkt.stream_index= video_st->index;
 							pkt.data= video_outbuf;
