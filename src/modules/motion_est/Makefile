@@ -4,7 +4,6 @@ TARGET = ../libmltmotion_est.so
 
 OBJS = factory.o \
 	   filter_motion_est.o \
-	   filter_benchmark.o \
 	   filter_crop_detect.o \
 	   filter_autotrack_rectangle.o \
 	   arrow_code.o \

@@ -6,7 +6,6 @@ then
 cat << EOF >> ../filters.dat
 motion_est		libmltmotion_est.so
 vismv			libmltmotion_est.so
-benchmark		libmltmotion_est.so
 crop_detect		libmltmotion_est.so
 autotrack_rectangle	libmltmotion_est.so
 EOF
