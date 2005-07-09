@@ -13,6 +13,7 @@ EOF
 	if [ "$motionest" = "false" ]
 	then
 		touch ../disable-motion-est
+		echo "- motion estimation components disabled. Add --enable-motion-est to enable." 
 	fi
 		
 
