@@ -13,6 +13,7 @@ General build options:
 
   --prefix=directory      - install prefix for path (default: $prefix)
   --enable-gpl            - Enable GPL components
+  --enable-motion-est	  - Enable motion estimation components
   --disable-debug         - Compile without debug support (default: on)
   --disable-mmx           - Compile without MMX support (default: on)
   --cpu='cpu'             - Compile for a specific CPU/architectre (default: none)
@@ -111,6 +112,7 @@ export debug=true
 export mmx=true
 export gpl=false
 export cpu=
+export motionest=false
 
 # Determine OS
 targetos=$(uname -s)
@@ -138,6 +140,7 @@ do
 		--disable-debug )	debug=false ;;
 		--disable-mmx )		mmx=false ;;
 		--enable-gpl )		gpl=true ;;
+		--enable-motion-est )	motionest=true ;;
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 	esac
 done
@@ -174,3 +177,7 @@ build_pkgconfig
 echo "GPL Components are disabled" || 
 echo "GPL License Used" )
 
+if [ "$motionest" = "true" -a "$gpl" = "false" ]
+then
+	echo "Add the --enable-gpl flag to build the motion estimation components."
+fi

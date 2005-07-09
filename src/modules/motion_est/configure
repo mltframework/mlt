@@ -10,4 +10,10 @@ crop_detect		libmltmotion_est.so
 autotrack_rectangle	libmltmotion_est.so
 EOF
 
+	if [ "$motionest" = "false" ]
+	then
+		touch ../disable-motion-est
+	fi
+		
+
 fi
