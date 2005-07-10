@@ -697,6 +697,15 @@ bool AVIHandler::GetOpenDML() const
 #define DV_AUDIO_MAX_SAMPLES 1944
 #endif
 
+// Missing fourcc's in libquicktime (allows compilation)
+#ifndef QUICKTIME_DV_AVID
+#define QUICKTIME_DV_AVID "AVdv"
+#endif
+
+#ifndef QUICKTIME_DV_AVID_A
+#define QUICKTIME_DV_AVID_A "dvcp"
+#endif
+
 QtHandler::QtHandler() : fd( NULL )
 {
 	extension = ".mov";
