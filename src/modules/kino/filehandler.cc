@@ -19,6 +19,10 @@
 
 #include "config.h"
 
+extern "C" {
+#include <framework/mlt_frame.h>
+}
+
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -895,15 +899,22 @@ int QtHandler::GetFrame( uint8_t *data, int frameNum )
 		if ( ! isFullyInitialized )
 			AllocateAudioBuffers();
 
+		// Fetch the frequency of the audio track and calc number of samples needed
 		int frequency = quicktime_sample_rate( fd, 0 );
-		int samples = ( int )( frequency / quicktime_frame_rate( fd, 0 ) );
-		for ( int i = 0; i < channels; i++ )
-		{
-			quicktime_set_audio_position( fd, ( int64_t )( frameNum * samples ), 0 );
-			quicktime_decode_audio( fd, audioChannelBuffer[ i ], NULL, (long) samples, i );
-		}
+		float fps = ( data[ 3 ] & 0x80 ) ? 25.0f : 29.97f;
+		int samples = mlt_sample_calculator( fps, frequency, frameNum );
+		int64_t seek = mlt_sample_calculator_to_now( fps, frequency, frameNum );
+
+		// Obtain a dv encoder and initialise it with minimal info
 		dv_encoder_t *encoder = dv_encoder_new( 0, 0, 0 );
+		encoder->isPAL = ( data[ 3 ] & 0x80 );
 		encoder->samples_this_frame = samples;
+
+		// Seek to the calculated position and decode
+		quicktime_set_audio_position( fd, seek, 0 );
+		lqt_decode_audio( fd, audioChannelBuffer, NULL, (long) samples );
+
+		// Encode the audio on the frame and done
 		dv_encode_full_audio( encoder, audioChannelBuffer, channels, frequency, data );
 		dv_encoder_free( encoder );
 	}

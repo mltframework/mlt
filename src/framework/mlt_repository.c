@@ -90,7 +90,7 @@ static void *construct_instance( mlt_properties service_properties, const char *
 		construct_full_file( full_file, prefix, file );
 
 		// Open the shared object
-		object = dlopen( full_file, RTLD_NOW );
+		object = dlopen( full_file, RTLD_NOW | RTLD_GLOBAL );
 		if ( object != NULL )
 		{
 			// Set it on the properties

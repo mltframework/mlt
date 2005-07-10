@@ -1065,3 +1065,32 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
 
 	return samples;
 }
+
+int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t frame )
+{
+	int64_t samples = 0;
+
+	// TODO: Correct rules for NTSC and drop the * 100 hack
+	if ( ( int )( fps * 100 ) == 2997 )
+	{
+		samples = ( ( double )( frame * frequency ) / 30 );
+		switch( frequency )
+		{
+			case 48000:
+				samples += 2 * ( frame / 5 );
+				break;
+			case 44100:
+				samples += frame + ( frame / 2 ) - ( frame / 30 ) + ( frame / 300 );
+				break;
+			case 32000:
+				samples += ( 2 * frame ) - ( frame / 4 ) - ( frame / 29 );
+				break;
+		}
+	}
+	else if ( fps != 0 )
+	{
+		samples = ( ( frame * frequency ) / ( int )fps );
+	}
+
+	return samples;
+}
