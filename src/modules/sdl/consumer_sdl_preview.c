@@ -168,9 +168,6 @@ static int consumer_stop( mlt_consumer parent )
 		pthread_cond_broadcast( &this->refresh_cond );
 		pthread_mutex_unlock( &this->refresh_mutex );
 
-		if ( this->play ) mlt_consumer_stop( this->play );
-		if ( this->still ) mlt_consumer_stop( this->still );
-
 		pthread_join( this->thread, NULL );
 		this->joined = 1;
 
@@ -253,6 +250,8 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_int( play, "put_mode", 1 );
 	mlt_properties_set_int( still, "put_mode", 1 );
 
+	this->refresh_count = 0;
+
 	// Loop until told not to
 	while( this->running )
 	{
@@ -260,7 +259,7 @@ static void *consumer_thread( void *arg )
 		frame = mlt_consumer_get_frame( consumer );
 
 		// Ensure that we have a frame
-		if ( frame != NULL )
+		if ( this->running && frame != NULL )
 		{
 			// Get the speed of the frame
 			double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
@@ -353,7 +352,7 @@ static void *consumer_thread( void *arg )
 			if ( this->active == this->still )
 			{
 				pthread_mutex_lock( &this->refresh_mutex );
-				if ( speed == 0 && this->refresh_count <= 0 )
+				if ( this->running && speed == 0 && this->refresh_count <= 0 )
 					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
 				this->refresh_count --;
 				pthread_mutex_unlock( &this->refresh_mutex );
@@ -364,12 +363,14 @@ static void *consumer_thread( void *arg )
 		}
 		else
 		{
+			if ( frame ) mlt_frame_close( frame );
+			mlt_consumer_put_frame( this->active, NULL );
 			this->running = 0;
 		}
 	}
 
-	//mlt_consumer_stop( this->play );
-	//mlt_consumer_stop( this->still );
+	if ( this->play ) mlt_consumer_stop( this->play );
+	if ( this->still ) mlt_consumer_stop( this->still );
 
 	//SDL_Quit( );
 

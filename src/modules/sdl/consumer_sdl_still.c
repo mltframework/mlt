@@ -539,13 +539,14 @@ static void *consumer_thread( void *arg )
 		frame = mlt_consumer_rt_frame( consumer );
 
 		// Ensure that we have a frame
-		if ( frame != NULL )
+		if ( this->running && frame != NULL )
 		{
 			consumer_play_video( this, frame );
 			mlt_frame_close( frame );
 		}
 		else
 		{
+			if ( frame ) mlt_frame_close( frame );
 			this->running = 0;
 		}
 	}
