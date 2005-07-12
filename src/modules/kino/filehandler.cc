@@ -706,6 +706,10 @@ bool AVIHandler::GetOpenDML() const
 #define QUICKTIME_DV_AVID_A "dvcp"
 #endif
 
+#ifndef QUICKTIME_DVCPRO
+#define QUICKTIME_DVCPRO "dvpp"
+#endif
+
 QtHandler::QtHandler() : fd( NULL )
 {
 	extension = ".mov";
@@ -884,7 +888,8 @@ bool QtHandler::Open( const char *s )
 	char * fcc = quicktime_video_compressor( fd, 0 );
 	if ( strncmp( fcc, QUICKTIME_DV, 4 ) != 0 &&
 	     strncmp( fcc, QUICKTIME_DV_AVID, 4 ) != 0 &&
-	     strncmp( fcc, QUICKTIME_DV_AVID_A, 4 ) != 0 )
+	     strncmp( fcc, QUICKTIME_DV_AVID_A, 4 ) != 0 && 
+	     strncmp( fcc, QUICKTIME_DVCPRO, 4 ) != 0 )
 	{
 		Close();
 		return false;
