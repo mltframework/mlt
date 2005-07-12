@@ -307,10 +307,10 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	*frame = mlt_frame_init( );
 
 	// Update timecode on the frame we're creating
-	mlt_frame_set_position( *frame, mlt_producer_position( this ) );
+	mlt_frame_set_position( *frame, mlt_producer_frame( this ) );
 
 	// Set the position of this producer
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "vorbis_position", mlt_producer_position( this ) );
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "vorbis_position", mlt_producer_frame( this ) );
 
 	// Set up the audio
 	mlt_frame_push_audio( *frame, this );
