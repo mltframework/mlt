@@ -85,12 +85,18 @@ static void *construct_instance( mlt_properties service_properties, const char *
 		// Get the prefix and id of the shared object
 		char *prefix = mlt_properties_get( object_properties, "prefix" );
 		char *file = mlt_properties_get( object_properties, "id" );
+		int flags = RTLD_NOW;
+
+		// Very temporary hack to allow the quicktime plugins to work
+		// TODO: extend repository to allow this to be used on a case by case basis
+		if ( !strcmp( service, "kino" ) )
+			flags |= RTLD_GLOBAL;
 
 		// Construct the full file
 		construct_full_file( full_file, prefix, file );
 
 		// Open the shared object
-		object = dlopen( full_file, RTLD_NOW | RTLD_GLOBAL );
+		object = dlopen( full_file, flags );
 		if ( object != NULL )
 		{
 			// Set it on the properties
