@@ -205,6 +205,7 @@ mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 	mlt_properties_set_int( properties, "_cut", 1 );
 	mlt_properties_set_data( properties, "_cut_parent", parent, 0, ( mlt_destructor )mlt_producer_close, NULL );
 	mlt_properties_set_position( properties, "length", mlt_properties_get_position( parent_props, "length" ) );
+	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( parent_props, "aspect_ratio" ) );
 	mlt_producer_set_in_and_out( result, in, out );
 
 	// Mini fezzik :-/

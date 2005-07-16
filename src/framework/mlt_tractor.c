@@ -204,15 +204,13 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	mlt_frame frame = mlt_frame_pop_service( this );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( properties, "width" ) );
-	mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( properties, "height" ) );
 	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
 	mlt_properties_set_int( frame_properties, "distort", mlt_properties_get_int( properties, "distort" ) );
 	mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
-	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_double( properties, "consumer_deinterlace" ) );
+	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "consumer_deinterlace" ) );
 	mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
-	mlt_properties_set_int( frame_properties, "normalised_width", mlt_properties_get_double( properties, "normalised_width" ) );
-	mlt_properties_set_int( frame_properties, "normalised_height", mlt_properties_get_double( properties, "normalised_height" ) );
+	mlt_properties_set_int( frame_properties, "normalised_width", mlt_properties_get_int( properties, "normalised_width" ) );
+	mlt_properties_set_int( frame_properties, "normalised_height", mlt_properties_get_int( properties, "normalised_height" ) );
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );
@@ -268,6 +266,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		int done = 0;
 		mlt_frame temp = NULL;
 		int count = 0;
+		int image_count = 0;
 
 		// Get the properties of the parent producer
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( parent );
@@ -327,50 +326,10 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				done = mlt_properties_get_int( temp_properties, "last_track" );
 
 				// Handle fx only tracks
-				if ( mlt_properties_get_int( temp_properties, "meta.fx_cut" ) )
+				if ( mlt_properties_get_int( temp_properties, "fx_cut" ) )
 				{
-					mlt_properties copy = video == NULL ? frame_properties : MLT_FRAME_PROPERTIES( video );
-					int i = 0;
-
-					for ( i = 0; i < mlt_properties_count( temp_properties ); i ++ )
-					{
-						char *name = mlt_properties_get_name( temp_properties, i );
-						char *value = mlt_properties_get_value( temp_properties, i );
-						// For animated filters
-						if ( isdigit( name[ 0 ] ) && value != NULL )
-							mlt_properties_set( copy, name, value );
-					}
-
-					if ( video )
-					{
-						// Take all but the first placeholding producer and dump on to the image stack
-						void *p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) );
-						while ( ( p = mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( temp ) ) ) != NULL )
-							mlt_deque_push_back( MLT_FRAME_IMAGE_STACK( video ), p );
-					}
-					else
-					{
-						mlt_frame_push_service( *frame, temp );
-						mlt_frame_push_service( *frame, producer_get_image );
-						mlt_properties_set_int( frame_properties, "meta.fx_cut", 1 );
-					}
-
-					if ( audio )
-					{
-						// Take all but the first placeholding producer and dump on to the audio stack
-						void *p = !mlt_frame_is_test_audio( temp ) ? mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) : NULL;
-						while ( ( p = mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( temp ) ) ) != NULL )
-							mlt_deque_push_back( MLT_FRAME_AUDIO_STACK( audio ), p );
-					}
-					else
-					{
-						mlt_frame_push_audio( *frame, temp );
-						mlt_frame_push_audio( *frame, producer_get_audio );
-						mlt_properties_set_int( frame_properties, "meta.fx_cut", 1 );
-					}
-
-					// Ensure everything is hidden
-					mlt_properties_set_int( temp_properties, "hide", 3 );
+					int hide = ( video == NULL ? 1 : 0 ) | ( audio == NULL ? 2 : 0 );
+					mlt_properties_set_int( temp_properties, "hide", hide );
 				}
 
 				// We store all frames with a destructor on the output frame
@@ -426,6 +385,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 						mlt_deque_push_front( MLT_FRAME_IMAGE_STACK( temp ), video );
 					}
 					video = temp;
+					mlt_properties_set_int( MLT_FRAME_PROPERTIES( temp ), "image_count", ++ image_count );
+					image_count = 1;
 				}
 			}
 	
@@ -450,6 +411,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_int( frame_properties, "real_height", mlt_properties_get_int( video_properties, "real_height" ) );
 				mlt_properties_set_int( frame_properties, "progressive", mlt_properties_get_int( video_properties, "progressive" ) );
 				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
+				mlt_properties_set_int( frame_properties, "image_count", image_count );
 			}
 			else
 			{

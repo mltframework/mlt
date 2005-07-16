@@ -355,17 +355,26 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 
 int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 {
+	int result = 0;
+
+	// Lock the service
 	mlt_service_lock( this );
+
+	// Ensure that the frame is NULL
+	*frame = NULL;
+
+	// Only process if we have a valid service
 	if ( this != NULL && this->get_frame != NULL )
 	{
-		int result = 0;
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
-		mlt_properties_inc_ref( properties );
+
 		result = this->get_frame( this, frame, index );
+
 		if ( result == 0 )
 		{
+			mlt_properties_inc_ref( properties );
 			properties = MLT_FRAME_PROPERTIES( *frame );
 			if ( in >=0 && out > 0 )
 			{
@@ -374,18 +383,17 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 			}
 			mlt_service_apply_filters( this, *frame, 1 );
 			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), this );
-			mlt_service_unlock( this );
 		}
-		else
-		{
-			mlt_service_unlock( this );
-			mlt_service_close( this );
-		}
-		return result;
 	}
+
+	// Make sure we return a frame
+	if ( *frame == NULL )
+		*frame = mlt_frame_init( );
+
+	// Unlock the service
 	mlt_service_unlock( this );
-	*frame = mlt_frame_init( );
-	return 0;
+
+	return result;
 }
 
 static void mlt_service_filter_changed( mlt_service owner, mlt_service this )

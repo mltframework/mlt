@@ -300,9 +300,10 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	// Parse the header for meta info
 	dv_parse_header( decoder, dv_data );
 	
-	// Assign width and height from properties
-	*width = mlt_properties_get_int( properties, "width" );
-	*height = mlt_properties_get_int( properties, "height" );
+	// Assign width and height according to the frame
+	*width = 720;
+	*height = dv_data[ 3 ] & 0x80 ? 576 : 480;
+
 
 	// Extract an image of the format requested
 	if ( *format == mlt_image_yuv422 )
@@ -475,6 +476,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		//mlt_properties_set_int( properties, "progressive", dv_is_progressive( dv_decoder ) );
 		mlt_properties_set_double( properties, "aspect_ratio", 
 				dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
+		mlt_properties_set_double( properties, "dv_aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
 	
 		// Hmm - register audio callback
 		mlt_frame_push_audio( *frame, producer_get_audio );

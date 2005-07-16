@@ -30,7 +30,8 @@
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_transition transition = mlt_frame_pop_service( this );
-	mlt_transition_process( transition, this, this );
+	if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "image_count" ) >= 1 )
+		mlt_transition_process( transition, this, this );
 	return mlt_frame_get_image( this, image, format, width, height, writable );
 }
 
@@ -75,12 +76,12 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		// Refresh with current user values
 		mlt_properties_pass( MLT_TRANSITION_PROPERTIES( transition ), MLT_FILTER_PROPERTIES( this ), "transition." );
 
-		if ( type & 1 )
+		if ( type & 1 && !mlt_frame_is_test_card( frame ) && !( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "hide" ) & 1 ) )
 		{
 			mlt_frame_push_service( frame, transition );
 			mlt_frame_push_get_image( frame, filter_get_image );
 		}
-		if ( type & 2 )
+		if ( type & 2 && !mlt_frame_is_test_audio( frame ) && !( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "hide" ) & 2 ) )
 		{
 			mlt_frame_push_audio( frame, transition );
 			mlt_frame_push_audio( frame, filter_get_audio );

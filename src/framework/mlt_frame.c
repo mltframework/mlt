@@ -267,6 +267,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	
 	if ( get_image != NULL )
 	{
+		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
 		mlt_position position = mlt_frame_get_position( this );
 	   	error = get_image( this, buffer, format, width, height, writable );
 		mlt_frame_set_position( this, position );

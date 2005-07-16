@@ -39,13 +39,19 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Pop the top of stack now
 	mlt_filter filter = mlt_frame_pop_service( this );
 
+	// Retrieve the aspect ratio
+	double aspect_ratio = mlt_deque_pop_back_double( MLT_FRAME_IMAGE_STACK( this ) );
+
 	// Assign requested width/height from our subordinate
 	int owidth = *width;
 	int oheight = *height;
 
 	// Check for the special case - no aspect ratio means no problem :-)
-	if ( mlt_frame_get_aspect_ratio( this ) == 0 )
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
+	if ( aspect_ratio == 0.0 )
+		aspect_ratio = mlt_properties_get_double( properties, "consumer_aspect_ratio" );
+
+	// Reset the aspect ratio
+	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
 
 	// Hmmm...
 	char *rescale = mlt_properties_get( properties, "rescale.interp" );
@@ -63,9 +69,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			real_width = mlt_properties_get_int( properties, "width" );
 		if ( real_height == 0 )
 			real_height = mlt_properties_get_int( properties, "height" );
-		double input_ar = mlt_frame_get_aspect_ratio( this ) * real_width / real_height;
+		double input_ar = aspect_ratio * real_width / real_height;
 		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight;
-
 		
 		//fprintf( stderr, "normalised %dx%d output %dx%d %f %f\n", normalised_width, normalised_height, owidth, oheight, ( float )output_ar, ( float )mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight );
 
@@ -87,6 +92,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Tell frame we have conformed the aspect to the consumer
 		mlt_frame_set_aspect_ratio( this, mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 	}
+
+	mlt_properties_set_int( properties, "distort", 0 );
 
 	// Now pass on the calculations down the line
 	mlt_properties_set_int( properties, "resize_width", *width );
@@ -148,6 +155,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
+	// Store the aspect ratio reported by the source
+	mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( frame ), mlt_frame_get_aspect_ratio( frame ) );
+
 	// Push this on to the service stack
 	mlt_frame_push_service( frame, this );
 

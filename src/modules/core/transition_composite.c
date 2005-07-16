@@ -732,9 +732,8 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		int normalised_height = geometry->item.h;
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
-		double input_ar = mlt_frame_get_aspect_ratio( b_frame );
+		double input_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
 		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		if ( input_ar == 0.0 ) input_ar = output_ar;
 		int scaled_width = input_ar / output_ar * real_width;
 		int scaled_height = real_height;
 			
@@ -1030,8 +1029,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// consumer properties from the a_frame
 		mlt_properties_set_double( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-		mlt_properties_set_int( b_props, "normalised_width", mlt_properties_get_double( a_props, "normalised_width" ) );
-		mlt_properties_set_int( b_props, "normalised_height", mlt_properties_get_double( a_props, "normalised_height" ) );
 
 		// TODO: Dangerous/temporary optimisation - if nothing to do, then do nothing
 		if ( mlt_properties_get_int( properties, "no_alpha" ) && 
@@ -1080,7 +1077,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			height_b = mlt_properties_get_int( a_props, "dest_height" );
 		}
 
-		if ( image_b != NULL || get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result ) == 0 )
+		if ( *image != image_b && ( image_b != NULL || get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result ) == 0 ) )
 		{
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
@@ -1091,11 +1088,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			
 			int32_t luma_softness = mlt_properties_get_double( properties, "softness" ) * ( 1 << 16 );
 			uint16_t *luma_bitmap = get_luma( properties, width_b, height_b );
+			char *operator = mlt_properties_get( properties, "operator" );
 
 			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha_mask( b_frame ) : alpha_b;
 
 			composite_line_fn line_fn = composite_line_yuv;
 
+			// Silly - this isn't a good solution - deprecating
 			if ( mlt_properties_get_int( properties, "or" ) )
 				line_fn = composite_line_yuv_or;
 			if ( mlt_properties_get_int( properties, "and" ) )
@@ -1103,6 +1102,18 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			if ( mlt_properties_get_int( properties, "xor" ) )
 				line_fn = composite_line_yuv_xor;
 
+			// Replacement and override
+			if ( operator != NULL )
+			{
+				if ( !strcmp( operator, "or" ) )
+					line_fn = composite_line_yuv_or;
+				if ( !strcmp( operator, "and" ) )
+					line_fn = composite_line_yuv_and;
+				if ( !strcmp( operator, "xor" ) )
+					line_fn = composite_line_yuv_xor;
+			}
+
+			// Allow the user to completely obliterate the alpha channels from both frames
 			if ( mlt_properties_get( properties, "alpha_a" ) )
 				memset( alpha_a, mlt_properties_get_int( properties, "alpha_a" ), *width * *height );
 

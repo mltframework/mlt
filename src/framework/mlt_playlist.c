@@ -273,6 +273,7 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 			mlt_service_detach( service, filter );
 			filter = mlt_service_filter( service, 0 );
 		}
+		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "meta.fx_cut", 1 );
 	}
 
 	// Check that we have room
@@ -1450,7 +1451,22 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 
 	// Get the frame
-	mlt_service_get_frame( real, frame, index );
+	if ( !mlt_properties_get_int( MLT_SERVICE_PROPERTIES( real ), "meta.fx_cut" ) )
+	{
+		mlt_service_get_frame( real, frame, index );
+	}
+	else
+	{
+		mlt_producer parent = mlt_producer_cut_parent( ( mlt_producer )real );
+		*frame = mlt_frame_init( );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "fx_cut", 1 );
+		mlt_frame_push_service( *frame, NULL );
+		mlt_frame_push_audio( *frame, NULL );
+		mlt_service_apply_filters( parent, *frame, 0 );
+		mlt_service_apply_filters( real, *frame, 0 );
+		mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( *frame ) );
+		mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( *frame ) );
+	}
 
 	// Check if we're at the end of the clip
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
