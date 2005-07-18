@@ -751,7 +751,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 
 		// Honour the fill request - this will scale the image to fill width or height while maintaining a/r
 		// ????: Shouln't this be the default behaviour?
-		if ( mlt_properties_get_int( properties, "fill" ) )
+		if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
 		{
 			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height < normalised_width )
 			{
@@ -1028,6 +1028,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
 		mlt_properties_set_double( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
+		mlt_properties_set( b_props, "consumer_deinterlace_method", mlt_properties_get( a_props, "consumer_deinterlace_method" ) );
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
 		// TODO: Dangerous/temporary optimisation - if nothing to do, then do nothing
