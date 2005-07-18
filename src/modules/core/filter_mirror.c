@@ -46,6 +46,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the image
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
+	// Get the alpha
+	uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+
 	// If we have an image of the right colour space
 	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
@@ -56,11 +59,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			uint8_t *p = NULL;
 			uint8_t *q = NULL;
+			uint8_t *a = NULL;
+			uint8_t *b = NULL;
 			int i;
 			for ( i = 0; i < *height; i ++ )
 			{
 				p = ( uint8_t * )*image + i * *width * 2;
 				q = p + *width * 2;
+				a = alpha + i * *width;
+				b = a + *width - 1;
 				if ( !reverse )
 				{
 					while ( p < q )
@@ -70,6 +77,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*p ++ = *( q - 4 );
 						*p ++ = *( q - 1 );
 						q -= 4;
+						*a ++ = *b --;
+						*a ++ = *b --;
 					}
 				}
 				else
@@ -81,6 +90,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*( q - 4 ) = *p ++;
 						*( q - 1 ) = *p ++;
 						q -= 4;
+						*b -- = *a ++;
+						*b -- = *a ++;
 					}
 				}
 			}
@@ -90,6 +101,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint16_t *end = ( uint16_t *)*image + *width * *height;
 			uint16_t *p = NULL;
 			uint16_t *q = NULL;
+			uint8_t *a = NULL;
+			uint8_t *b = NULL;
 			int i;
 			int j;
 			for ( i = 0; i < hh; i ++ )
@@ -97,15 +110,23 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				p = ( uint16_t * )*image + i * *width;
 				q = end - ( i + 1 ) * *width;
 				j = *width;
+				a = alpha + i * *width;
+				b = alpha + ( *height - i - 1 ) * *width;
 				if ( !reverse )
 				{
 					while ( j -- )
+					{
 						*p ++ = *q ++;
+						*a ++ = *b ++;
+					}
 				}
 				else
 				{
 					while ( j -- )
+					{
 						*q ++ = *p ++;
+						*b ++ = *a ++;
+					}
 				}
 			}
 		}
@@ -114,6 +135,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint8_t *end = ( uint8_t *)*image + *width * *height * 2;
 			uint8_t *p = NULL;
 			uint8_t *q = NULL;
+			uint8_t *a = NULL;
+			uint8_t *b = NULL;
 			int i;
 			int j;
 			for ( i = 0; i < *height; i ++ )
@@ -121,6 +144,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				p = ( uint8_t * )*image + i * *width * 2;
 				q = end - i * *width * 2;
 				j = ( ( *width * ( *height - i ) ) / *height ) / 2;
+				a = alpha + i * *width;
+				b = alpha + ( *height - i - 1 ) * *width;
 				if ( !reverse )
 				{
 					while ( j -- )
@@ -130,6 +155,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*p ++ = *( q - 4 );
 						*p ++ = *( q - 1 );
 						q -= 4;
+						*a ++ = *b --;
+						*a ++ = *b --;
 					}
 				}
 				else
@@ -141,6 +168,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*( q - 4 ) = *p ++;
 						*( q - 1 ) = *p ++;
 						q -= 4;
+						*b -- = *a ++;
+						*b -- = *a ++;
 					}
 				}
 			}
@@ -152,11 +181,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint8_t *q = NULL;
 			int i;
 			int j;
+			uint8_t *a = NULL;
+			uint8_t *b = NULL;
 			for ( i = 0; i < *height; i ++ )
 			{
 				p = ( uint8_t * )*image + ( i + 1 ) * *width * 2;
 				q = end - ( i + 1 ) * *width * 2;
 				j = ( ( *width * ( *height - i ) ) / *height ) / 2;
+				a = alpha + ( i + 1 ) * *width - 1;
+				b = alpha + ( *height - i - 1 ) * *width;
 				if ( !reverse )
 				{
 					while ( j -- )
@@ -166,6 +199,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*q ++ = *( p - 4 );
 						*q ++ = *( p - 1 );
 						p -= 4;
+						*b ++ = *a --;
+						*b ++ = *a --;
 					}
 				}
 				else
@@ -177,6 +212,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*( p - 4 ) = *q ++;
 						*( p - 1 ) = *q ++;
 						p -= 4;
+						*a -- = *b ++;
+						*a -- = *b ++;
 					}
 				}
 			}
@@ -187,10 +224,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint8_t *p = NULL;
 			uint8_t *q = NULL;
 			int i;
+			uint8_t *a = NULL;
+			uint8_t *b = NULL;
+			uint8_t c;
 			for ( i = 0; i < *height; i ++ )
 			{
 				p = ( uint8_t * )*image + i * *width * 2;
 				q = p + *width * 2;
+				a = alpha + i * *width;
+				b = a + *width - 1;
 				while ( p < q )
 				{
 					t[ 0 ] = p[ 0 ];
@@ -205,6 +247,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					*( -- q ) = t[ 0 ];
 					*( -- q ) = t[ 1 ];
 					*( -- q ) = t[ 2 ];
+					c = *a;
+					*a ++ = *b;
+					*b -- = c;
+					c = *a;
+					*a ++ = *b;
+					*b -- = c;
 				}
 			}
 		}
@@ -214,18 +262,26 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint16_t *p = NULL;
 			uint16_t *q = NULL;
 			uint16_t t;
+			uint8_t *a = NULL;
+			uint8_t *b = NULL;
+			uint8_t c;
 			int i;
 			int j;
 			for ( i = 0; i < hh; i ++ )
 			{
 				p = ( uint16_t * )*image + i * *width;
 				q = end - ( i + 1 ) * *width;
+				a = alpha + i * *width;
+				b = alpha + ( *height - i - 1 ) * *width;
 				j = *width;
 				while ( j -- )
 				{
 					t = *p;
 					*p ++ = *q;
 					*q ++ = t;
+					c = *a;
+					*a ++ = *b;
+					*b ++ = c;
 				}
 			}
 		}
