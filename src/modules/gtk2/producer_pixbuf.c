@@ -219,53 +219,55 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
+	// We need to know the size of the image to clone it
+	int image_size = 0;
+	int alpha_size = 0;
+
+	// Alpha channel
+	uint8_t *alpha = NULL;
+
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
 	// Refresh the image
 	refresh_image( frame, *width, *height );
 
-	// May need to know the size of the image to clone it
-	int size = 0;
-
 	// Get the image
-	uint8_t *image = mlt_properties_get_data( properties, "image", &size );
+	*buffer = mlt_properties_get_data( properties, "image", &image_size );
+	alpha = mlt_properties_get_data( properties, "alpha", &alpha_size );
 
-	// Get width and height
+	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
 
-	if ( size == 0 )
-	{
-		*width = mlt_properties_get_int( properties, "normalised_width" );
-		*height = mlt_properties_get_int( properties, "normalised_height" );
-		size = *width * ( *height + 1 );
-	}
-
-	// Clone if necessary
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of the pixbuf producer...
-	if ( image != NULL )
+	if ( *buffer != NULL )
 	{
-		// Clone our image
-		uint8_t *copy = mlt_pool_alloc( size );
-		if ( image != NULL )
-			memcpy( copy, image, size );
+		// Clone the image and the alpha
+		uint8_t *image_copy = mlt_pool_alloc( image_size );
+		uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
 
-		// We're going to pass the copy on
-		image = copy;
+		memcpy( image_copy, *buffer, image_size );
+
+		// Copy or default the alpha
+		if ( alpha != NULL )
+			memcpy( alpha_copy, alpha, alpha_size );
+		else
+			memset( alpha_copy, 255, alpha_size );
 
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", copy, size, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
+
+		// We're going to pass the copy on
+		*buffer = image_copy;
 	}
 	else
 	{
 		// Fall back to the test card...
 		mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
-
-	// Pass on the image
-	*buffer = image;
 
 	return 0;
 }
