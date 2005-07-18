@@ -49,6 +49,7 @@ mlt_producer producer_colour_init( char *colour )
 
 		// Set the default properties
 		mlt_properties_set( properties, "resource", colour == NULL ? "0x000000ff" : colour );
+		mlt_properties_set( properties, "_resource", "" );
 		
 		return producer;
 	}
@@ -117,16 +118,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Parse the colour
-	rgba_color color = parse_color( mlt_properties_get( producer_props, "resource" ) );
+	// Get the current and previous colour strings
+	char *now = mlt_properties_get( producer_props, "resource" );
+	char *then = mlt_properties_get( producer_props, "_resource" );
 
 	// Get the current image and dimensions cached in the producer
 	uint8_t *image = mlt_properties_get_data( producer_props, "image", &size );
-	int current_width = mlt_properties_get_int( producer_props, "width" );
-	int current_height = mlt_properties_get_int( producer_props, "height" );
+	int current_width = mlt_properties_get_int( producer_props, "_width" );
+	int current_height = mlt_properties_get_int( producer_props, "_height" );
+
+	// Parse the colour
+	rgba_color color = parse_color( now );
 
 	// See if we need to regenerate
-	if ( *width != current_width || *height != current_height )
+	if ( strcmp( now, then ) || *width != current_width || *height != current_height )
 	{
 		// Color the image
 		uint8_t y, u, v;
@@ -138,8 +143,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		// Update the producer
 		mlt_properties_set_data( producer_props, "image", image, size, mlt_pool_release, NULL );
-		mlt_properties_set_int( producer_props, "width", *width );
-		mlt_properties_set_int( producer_props, "height", *height );
+		mlt_properties_set_int( producer_props, "_width", *width );
+		mlt_properties_set_int( producer_props, "_height", *height );
+		mlt_properties_set( producer_props, "_resource", now );
 
 		RGB2YUV( color.r, color.g, color.b, y, u, v );
 
@@ -153,12 +159,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Update the frame
-	mlt_properties_set_data( properties, "image", image, size, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
 	
-	// Clone if necessary
-	if ( writable )
+	// Clone if necessary (deemed always necessary)
+	if ( 1 )
 	{
 		// Create the alpha channel
 		uint8_t *alpha = mlt_pool_alloc( size >> 1 );
