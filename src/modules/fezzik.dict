@@ -18,6 +18,7 @@ http://*=avformat
 *.mov=mcdv,libdv,avformat
 *.mpg=mcmpeg,avformat
 *.mpeg=mcmpeg,avformat
+*.mpl=pango
 *.ogg=vorbis
 *.pgm=pixbuf
 *.png=pixbuf
