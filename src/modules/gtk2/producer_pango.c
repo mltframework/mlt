@@ -27,6 +27,9 @@
 #include <pango/pangoft2.h>
 #include <freetype/freetype.h>
 #include <iconv.h>
+#include <pthread.h>
+
+static pthread_mutex_t pango_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct producer_pango_s
 {
@@ -98,15 +101,14 @@ mlt_producer producer_pango_init( const char *filename )
 	{
 		mlt_producer producer = &this->parent;
 
-		// THIS SHOULD BE MUTEXED...
+		pthread_mutex_lock( &pango_mutex );
 		if ( fontmap == NULL )
 			fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
+		g_type_init();
+		pthread_mutex_unlock( &pango_mutex );
 
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
-
-		// This is required to initialise gdk-pixbuf
-		g_type_init();
 
 		// Get the properties interface
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
@@ -473,6 +475,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
 	// Refresh the image
+	pthread_mutex_lock( &pango_mutex );
 	refresh_image( frame, *width, *height );
 
 	// Get the image
@@ -514,6 +517,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*height = 50;
 	}
 
+	pthread_mutex_unlock( &pango_mutex );
+
 	return 0;
 }
 
@@ -544,11 +549,13 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties_set_position( properties, "pango_position", mlt_producer_frame( producer ) );
 
 	// Refresh the pango image
+	pthread_mutex_lock( &pango_mutex );
 	refresh_image( *frame, 0, 0 );
+	pthread_mutex_unlock( &pango_mutex );
 
 	// Set producer-specific frame properties
 	mlt_properties_set_int( properties, "progressive", 1 );
-	mlt_properties_set_double( properties, "aspect_ratio", 0 );
+	mlt_properties_set_double( properties, "aspect_ratio", 1 );
 
 	// Set alpha call back
 	( *frame )->get_alpha_mask = producer_get_alpha_mask;
