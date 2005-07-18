@@ -20,6 +20,7 @@
 
 #include "producer_pango.h"
 #include <framework/mlt_frame.h>
+#include <framework/mlt_geometry.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -136,6 +137,29 @@ mlt_producer producer_pango_init( const char *filename )
 			mlt_properties_set( properties, "resource", ( char * )filename );
 			mlt_properties_set( properties, "markup", markup );
 			free( copy );
+		}
+		else if ( strstr( filename, ".mpl" ) ) 
+		{
+			int i = 0;
+			mlt_properties contents = mlt_properties_load( filename );
+			mlt_geometry key_frames = mlt_geometry_init( );
+			struct mlt_geometry_item_s item;
+			mlt_properties_set_data( properties, "contents", contents, 0, ( mlt_destructor )mlt_properties_close, NULL );
+			mlt_properties_set_data( properties, "key_frames", key_frames, 0, ( mlt_destructor )mlt_geometry_close, NULL );
+
+			// Make sure we have at least one entry
+			if ( mlt_properties_get( contents, "0" ) == NULL )
+				mlt_properties_set( contents, "0", "" );
+
+			for ( i = 0; i < mlt_properties_count( contents ); i ++ )
+			{
+				char *name = mlt_properties_get_name( contents, i );
+				char *value = mlt_properties_get_value( contents, i );
+				while ( value != NULL && strchr( value, '~' ) )
+					( *strchr( value, '~' ) ) = '\n';
+				item.frame = atoi( name );
+				mlt_geometry_insert( key_frames, &item );
+			}
 		}
 		else
 		{
@@ -301,9 +325,22 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
 	int weight = mlt_properties_get_int( producer_props, "weight" );
 	int size = mlt_properties_get_int( producer_props, "size" );
+	int property_changed = ( align != this->align );
+
+	// Check for file support
+	int position = mlt_properties_get_position( properties, "pango_position" );
+	mlt_properties contents = mlt_properties_get_data( producer_props, "contents", NULL );
+	mlt_geometry key_frames = mlt_properties_get_data( producer_props, "key_frames", NULL );
+	struct mlt_geometry_item_s item;
+	if ( contents != NULL )
+	{
+		char temp[ 20 ];
+		mlt_geometry_prev_key( key_frames, &item, position );
+		sprintf( temp, "%d", item.frame );
+		markup = mlt_properties_get( contents, temp );
+	}
 	
 	// See if any properties changed
-	int property_changed = ( align != this->align );
 	property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
 	property_changed = property_changed || ( this->bgcolor == NULL || ( bg && strcmp( bg, this->bgcolor ) ) );
 	property_changed = property_changed || ( pad != this->pad );
@@ -425,43 +462,57 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
+	// We need to know the size of the image to clone it
+	int image_size = 0;
+	int alpha_size = 0;
+
+	// Alpha channel
+	uint8_t *alpha = NULL;
+
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
 	// Refresh the image
 	refresh_image( frame, *width, *height );
 
-	// Determine format
-	//mlt_producer this = mlt_properties_get_data( properties, "producer_pango", NULL );
-	//*format = ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( this ), "bpp" ) == 4 ) ? mlt_image_rgb24a : mlt_image_rgb24;
-
-	// May need to know the size of the image to clone it
-	int size = 0;
-
 	// Get the image
-	uint8_t *image = mlt_properties_get_data( properties, "image", &size );
+	*buffer = mlt_properties_get_data( properties, "image", &image_size );
+	alpha = mlt_properties_get_data( properties, "alpha", &alpha_size );
 
 	// Get width and height
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
 
-	// Clone if necessary
-	if ( writable )
+	// Always clone here to allow 'animated' text
+	if ( *buffer != NULL )
 	{
-		// Clone our image
-		uint8_t *copy = mlt_pool_alloc( size );
-		if ( copy != NULL && image != NULL )
-			memcpy( copy, image, size );
+		// Clone the image and the alpha
+		uint8_t *image_copy = mlt_pool_alloc( image_size );
+		uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
 
-		// We're going to pass the copy on
-		image = copy;
+		memcpy( image_copy, *buffer, image_size );
+
+		// Copy or default the alpha
+		if ( alpha != NULL )
+			memcpy( alpha_copy, alpha, alpha_size );
+		else
+			memset( alpha_copy, 255, alpha_size );
 
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", copy, size, ( mlt_destructor )mlt_pool_release, NULL );
-	}
+		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
 
-	// Pass on the image
-	*buffer = image;
+		// We're going to pass the copy on
+		*buffer = image_copy;
+	}
+	else
+	{
+		// TODO: Review all cases of invalid images
+		*buffer = mlt_pool_alloc( 50 * 50 * 2 );
+		mlt_properties_set_data( properties, "image", *buffer, image_size, mlt_pool_release, NULL );
+		*width = 50;
+		*height = 50;
+	}
 
 	return 0;
 }
@@ -488,6 +539,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Set the producer on the frame properties
 	mlt_properties_set_data( properties, "producer_pango", this, 0, NULL, NULL );
 
+	// Update timecode on the frame we're creating
+	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
+	mlt_properties_set_position( properties, "pango_position", mlt_producer_frame( producer ) );
+
 	// Refresh the pango image
 	refresh_image( *frame, 0, 0 );
 
@@ -500,9 +555,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Stack the get image callback
 	mlt_frame_push_get_image( *frame, producer_get_image );
-
-	// Update timecode on the frame we're creating
-	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );

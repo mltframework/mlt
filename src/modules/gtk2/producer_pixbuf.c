@@ -265,8 +265,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	else
 	{
-		// Fall back to the test card...
-		mlt_frame_get_image( frame, buffer, format, width, height, writable );
+		// TODO: Review all cases of invalid images
+		*buffer = mlt_pool_alloc( 50 * 50 * 2 );
+		mlt_properties_set_data( properties, "image", *buffer, image_size, mlt_pool_release, NULL );
+		*width = 50;
+		*height = 50;
 	}
 
 	return 0;
