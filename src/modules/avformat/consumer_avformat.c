@@ -322,7 +322,7 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 	// If created, then initialise from properties
 	if ( st != NULL ) 
 	{
-		AVCodecContext *c = &st->codec;
+		AVCodecContext *c = st->codec;
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_AUDIO;
 
@@ -356,7 +356,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	int audio_input_frame_size = 0;
 
 	// Get the context
-	AVCodecContext *c = &st->codec;
+	AVCodecContext *c = st->codec;
 
 	// Find the encoder
 	AVCodec *codec = avcodec_find_encoder( c->codec_id );
@@ -369,7 +369,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 		if ( c->frame_size <= 1 ) 
 		{
 			audio_input_frame_size = audio_outbuf_size / c->channels;
-			switch(st->codec.codec_id) 
+			switch(st->codec->codec_id) 
 			{
 				case CODEC_ID_PCM_S16LE:
 				case CODEC_ID_PCM_S16BE:
@@ -402,7 +402,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 
 static void close_audio( AVFormatContext *oc, AVStream *st )
 {
-	avcodec_close( &st->codec );
+	avcodec_close( st->codec );
 }
 
 /** Add a video output stream 
@@ -418,7 +418,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 
 	if ( st != NULL ) 
 	{
-		AVCodecContext *c = &st->codec;
+		AVCodecContext *c = st->codec;
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_VIDEO;
 
@@ -549,7 +549,7 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 static int open_video(AVFormatContext *oc, AVStream *st)
 {
 	// Get the codec
-	AVCodecContext *video_enc = &st->codec;
+	AVCodecContext *video_enc = st->codec;
 
 	// find the video encoder
 	AVCodec *codec = avcodec_find_encoder( video_enc->codec_id );
@@ -572,7 +572,7 @@ static int open_video(AVFormatContext *oc, AVStream *st)
 
 void close_video(AVFormatContext *oc, AVStream *st)
 {
-	avcodec_close(&st->codec);
+	avcodec_close(st->codec);
 }
 
 static inline long time_difference( struct timeval *time1 )
@@ -770,7 +770,7 @@ static void *consumer_thread( void *arg )
 
 	// Allocate picture
 	if ( video_st )
-		output = alloc_picture( video_st->codec.pix_fmt, width, height );
+		output = alloc_picture( video_st->codec->pix_fmt, width, height );
 
 	// Last check - need at least one stream
 	if ( audio_st == NULL && video_st == NULL )
@@ -847,7 +847,7 @@ static void *consumer_thread( void *arg )
 					AVPacket pkt;
 					av_init_packet( &pkt );
 
-					c = &audio_st->codec;
+					c = audio_st->codec;
 
 					sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
 
@@ -879,7 +879,7 @@ static void *consumer_thread( void *arg )
 					frame = mlt_deque_pop_front( queue );
 					frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-					c = &video_st->codec;
+					c = video_st->codec;
  					
 					if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 					{
@@ -912,7 +912,7 @@ static void *consumer_thread( void *arg )
 							}
 						}
 
-						img_convert( ( AVPicture * )output, video_st->codec.pix_fmt, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
+						img_convert( ( AVPicture * )output, video_st->codec->pix_fmt, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
 					}
  
  					if (oc->oformat->flags & AVFMT_RAWPICTURE) 

@@ -89,7 +89,7 @@ static void find_default_streams( AVFormatContext *context, int *audio_index, in
 	for( i = 0; i < context->nb_streams; i++ ) 
 	{
 		// Get the codec context
-   		AVCodecContext *codec_context = &context->streams[ i ]->codec;
+   		AVCodecContext *codec_context = context->streams[ i ]->codec;
 
 		// Determine the type and obtain the first index of each type
    		switch( codec_context->codec_type ) 
@@ -446,7 +446,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	AVStream *stream = context->streams[ index ];
 
 	// Get codec context
-	AVCodecContext *codec_context = &stream->codec;
+	AVCodecContext *codec_context = stream->codec;
 
 	// Packet
 	AVPacket pkt;
@@ -650,7 +650,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		AVStream *stream = context->streams[ index ];
 
 		// Get codec context
-		AVCodecContext *codec_context = &stream->codec;
+		AVCodecContext *codec_context = stream->codec;
 
 		// Get the codec
 		AVCodec *codec = mlt_properties_get_data( properties, "video_codec", NULL );
@@ -763,7 +763,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	AVStream *stream = context->streams[ index ];
 
 	// Get codec context
-	AVCodecContext *codec_context = &stream->codec;
+	AVCodecContext *codec_context = stream->codec;
 
 	// Packet
 	AVPacket pkt;
@@ -952,7 +952,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 		AVStream *stream = context->streams[ index ];
 
 		// Get codec context
-		AVCodecContext *codec_context = &stream->codec;
+		AVCodecContext *codec_context = stream->codec;
 
 		// Get the codec
 		AVCodec *codec = mlt_properties_get_data( properties, "audio_codec", NULL );
