@@ -146,6 +146,7 @@ mlt_producer producer_pango_init( const char *filename )
 			mlt_properties contents = mlt_properties_load( filename );
 			mlt_geometry key_frames = mlt_geometry_init( );
 			struct mlt_geometry_item_s item;
+			mlt_properties_set( properties, "resource", ( char * )filename );
 			mlt_properties_set_data( properties, "contents", contents, 0, ( mlt_destructor )mlt_properties_close, NULL );
 			mlt_properties_set_data( properties, "key_frames", key_frames, 0, ( mlt_destructor )mlt_geometry_close, NULL );
 
