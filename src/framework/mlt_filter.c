@@ -147,7 +147,8 @@ mlt_position mlt_filter_get_out( mlt_filter this )
 
 mlt_frame mlt_filter_process( mlt_filter this, mlt_frame frame )
 {
-	if ( this->process == NULL )
+	int disable = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "disable" );
+	if ( disable || this->process == NULL )
 		return frame;
 	else
 		return this->process( this, frame );

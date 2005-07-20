@@ -338,7 +338,8 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 			{
 				mlt_position in = mlt_filter_get_in( base->filters[ i ] );
 				mlt_position out = mlt_filter_get_out( base->filters[ i ] );
-				if ( ( in == 0 && out == 0 ) || ( position >= in && ( position <= out || out == 0 ) ) )
+				int disable = mlt_properties_get_int( MLT_FILTER_PROPERTIES( base->filters[ i ] ), "disable" );
+				if ( !disable && ( in == 0 && out == 0 ) || ( position >= in && ( position <= out || out == 0 ) ) )
 				{
 					mlt_properties_set_position( frame_properties, "in", in == 0 ? this_in : in );
 					mlt_properties_set_position( frame_properties, "out", out == 0 ? this_out : out );
