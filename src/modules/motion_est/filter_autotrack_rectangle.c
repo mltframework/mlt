@@ -21,6 +21,7 @@
  */
 
 #include "filter_motion_est.h"
+#include "arrow_code.h"
 
 #include <framework/mlt.h>
 
@@ -43,89 +44,6 @@ static inline int clip(int a, int amin, int amax)
         return amax;
     else
         return a;
-}
-
-
-/**
- * draws an line from (ex, ey) -> (sx, sy).
- * Credits: modified from ffmpeg project
- * @param ystride stride/linesize of the image
- * @param xstride stride/element size of the image
- * @param color color of the arrow
- */
-static void draw_line(uint8_t *buf, int sx, int sy, int ex, int ey, int w, int h, int xstride, int ystride, int color){
-    int t, x, y, fr, f;
-
-//    buf[sy*ystride + sx*xstride]= color;
-    buf[sy*ystride + sx]+= color;
-
-    sx= clip(sx, 0, w-1);
-    sy= clip(sy, 0, h-1);
-    ex= clip(ex, 0, w-1);
-    ey= clip(ey, 0, h-1);
-
-    if(ABS(ex - sx) > ABS(ey - sy)){
-        if(sx > ex){
-            t=sx; sx=ex; ex=t;
-            t=sy; sy=ey; ey=t;
-        }
-        buf+= sx*xstride + sy*ystride;
-        ex-= sx;
-        f= ((ey-sy)<<16)/ex;
-        for(x= 0; x <= ex; x++){
-            y = (x*f)>>16;
-            fr= (x*f)&0xFFFF;
-            buf[ y   *ystride + x*xstride]= (color*(0x10000-fr))>>16;
-            buf[(y+1)*ystride + x*xstride]= (color*         fr )>>16;
-        }
-    }else{
-        if(sy > ey){
-            t=sx; sx=ex; ex=t;
-            t=sy; sy=ey; ey=t;
-        }
-        buf+= sx*xstride + sy*ystride;
-        ey-= sy;
-        if(ey) f= ((ex-sx)<<16)/ey;
-        else   f= 0;
-        for(y= 0; y <= ey; y++){
-            x = (y*f)>>16;
-            fr= (y*f)&0xFFFF;
-            buf[y*ystride + x    *xstride]= (color*(0x10000-fr))>>16;;
-            buf[y*ystride + (x+1)*xstride]= (color*         fr )>>16;;
-        }
-    }
-}
-
-/**
- * draws an arrow from (ex, ey) -> (sx, sy).
- * Credits: modified from ffmpeg project
- * @param stride stride/linesize of the image
- * @param color color of the arrow
- */
-static __attribute__((used)) void draw_arrow(uint8_t *buf, int sx, int sy, int ex, int ey, int w, int h, int xstride, int ystride, int color){
-    int dx,dy;
-
-//    sx= clip(sx, -100, w+100);
-//    sy= clip(sy, -100, h+100);
-//    ex= clip(ex, -100, w+100);
-//    ey= clip(ey, -100, h+100);
-
-	dx= ex - sx;
-	dy= ey - sy;
-
-	if(dx*dx + dy*dy > 3*3){
-		int rx=  dx + dy;
-		int ry= -dx + dy;
-		int length= sqrt((rx*rx + ry*ry)<<8);
-
-		//FIXME subpixel accuracy
-		rx= ROUNDED_DIV(rx*3<<4, length);
-		ry= ROUNDED_DIV(ry*3<<4, length);
-
-		draw_line(buf, sx, sy, sx + rx, sy + ry, w, h, xstride, ystride, color);
-		draw_line(buf, sx, sy, sx - ry, sy + rx, w, h, xstride, ystride, color);
-	}
-	draw_line(buf, sx, sy, ex, ey, w, h, xstride, ystride, color);
 }
 
 void caculate_motion( struct motion_vector_s *vectors,
@@ -166,12 +84,12 @@ void caculate_motion( struct motion_vector_s *vectors,
 		}
 	}
 
-	if ( n == 0 )
-		return;
+	if ( n == 0 ) return;
 
 	average_x /= n;
 	average_y /= n;
 
+	n = 0;
 	int average2_x = 0, average2_y = 0;
 	for( i = left_mb; i <= right_mb; i++ ){
 		for( j = top_mb; j <= bottom_mb; j++ ){
@@ -179,16 +97,17 @@ void caculate_motion( struct motion_vector_s *vectors,
 			if( ABS(CURRENT->dx - average_x) < 5 &&
 			    ABS(CURRENT->dy - average_y) < 5 )
 			{
+				n++;
 				average2_x += CURRENT->dx;
 				average2_y += CURRENT->dy;
 			}
 		}
 	}
-	
-	boundry->x -= average2_x/n;
-	boundry->y -= average2_y/n;
 
+	if ( n == 0 ) return;
 
+	boundry->x -= average2_x / n;
+	boundry->y -= average2_y / n;
 }
 
 // Image stack(able) method
@@ -219,7 +138,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the current geometry item
 	struct mlt_geometry_item_s boundry;
 	mlt_geometry_fetch(geometry, &boundry, position);
-//fprintf(stderr, "process %d\n", position);
 
 	// Get the motion vectors
 	struct motion_vector_s *vectors = mlt_properties_get_data( frame_properties, "motion_est.vectors", NULL );
@@ -238,40 +156,24 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	}
 
+	// Turn the geometry object into a real boy
 	boundry.key = 1;
-
 	boundry.f[0] = 1;
 	boundry.f[1] = 1;
 	boundry.f[2] = 1;
 	boundry.f[3] = 1;
 	boundry.f[4] = 1;
-
-//	boundry.frame = position;
-	
 	mlt_geometry_insert(geometry, &boundry);
 
 
 	if( mlt_properties_get_int( filter_properties, "debug" ) == 1 )
 	{
-		int xstep, ystep;
 
-		// Calculate the size of our steps (the number of bytes that seperate adjacent pixels in X and Y direction)
-		switch( *format ) {
-			case mlt_image_yuv422:
-				xstep = 2;
-				ystep = xstep * *width;
-				break; 
-			default:
-				// I don't know
-				return -1;
-				break;
-		}
-
-		draw_line(*image, boundry.x, boundry.y, boundry.x, boundry.y + boundry.h, *width, *height, xstep, ystep, 0xff);
-		draw_line(*image, boundry.x, boundry.y + boundry.h, boundry.x + boundry.w, boundry.y + boundry.h, *width, *height, xstep, ystep, 0xff);
-		draw_line(*image, boundry.x + boundry.w, boundry.y + boundry.h, boundry.x + boundry.w, boundry.y, *width, *height, xstep, ystep, 0xff);
-		draw_line(*image, boundry.x + boundry.w, boundry.y, boundry.x, boundry.y, *width, *height, xstep, ystep, 0xff);
-
+		init_arrows( format, *width, *height );
+		draw_line(*image, boundry.x, boundry.y, boundry.x, boundry.y + boundry.h, 100);
+		draw_line(*image, boundry.x, boundry.y + boundry.h, boundry.x + boundry.w, boundry.y + boundry.h, 100);
+		draw_line(*image, boundry.x + boundry.w, boundry.y + boundry.h, boundry.x + boundry.w, boundry.y, 100);
+		draw_line(*image, boundry.x + boundry.w, boundry.y, boundry.x, boundry.y, 100);
 	}
 	return error;
 }
@@ -314,9 +216,6 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-
-	//mlt_properties_debug(MLT_SERVICE_PROPERTIES(mlt_service_consumer(mlt_filter_service(this))), "consumer!", stderr);
-
 
         /* modify the frame with the current geometry */
 	mlt_frame_push_service( frame, this);
@@ -380,8 +279,10 @@ mlt_filter filter_autotrack_rectangle_init( char *arg )
 
 		}
 
+		// ... and attach it to the frame
 		mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "geometry", geometry, 0, (mlt_destructor)mlt_geometry_close, (mlt_serialiser)mlt_geometry_serialise );
 
+		// create an instance of the motion_est filter
 		mlt_filter motion_est = mlt_factory_filter("motion_est", NULL);
 		if( motion_est != NULL )
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_motion_est", motion_est, 0, (mlt_destructor)mlt_filter_close, NULL );
@@ -390,8 +291,7 @@ mlt_filter filter_autotrack_rectangle_init( char *arg )
 			return NULL;
 		}
 
-		//mlt_events_init( this );
-		//mlt_events_listen(mlt_service_consumer(mlt_filter_service(this)
+
 	}
 
 	return this;
