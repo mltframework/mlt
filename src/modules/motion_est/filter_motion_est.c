@@ -94,7 +94,7 @@ struct motion_est_context_s
 	/* vector buffers */
 	int former_vectors_valid;		//<! true if the previous frame's buffered motion vector data is valid
 	motion_vector *former_vectors, *current_vectors;
-	motion_vector *bizarro_vectors;
+	motion_vector *denoise_vectors;
 	mlt_position former_frame_position, current_frame_position;
 
 	/* two metrics for diagnostics. lower is a better estimation but beware of local minima  */
@@ -107,8 +107,8 @@ struct motion_est_context_s
 	/* run-time configurable comparison functions */
 	int (*compare_reference)(uint8_t *, uint8_t *, int, int, int, int);
 	int (*compare_optimized)(uint8_t *, uint8_t *, int, int, int, int);
-	int (*vert_deviation_reference)(uint8_t *, int, int, int, int);
-	int (*horiz_deviation_reference)(uint8_t *, int, int, int, int);
+	//int (*vert_deviation_reference)(uint8_t *, int, int, int, int);
+	//int (*horiz_deviation_reference)(uint8_t *, int, int, int, int);
 
 };
 
@@ -447,6 +447,7 @@ static inline int median_predictor(int a, int b, int c) {
 	return b;
 }
 
+#if 0
 inline static int vertical_gradient_reference( uint8_t *block, int xstride, int ystride, int w, int h )
 {
 	int i, j, average, deviation = 0;
@@ -463,7 +464,9 @@ inline static int vertical_gradient_reference( uint8_t *block, int xstride, int 
 
 	return deviation;
 }
+#endif
 
+#if 0
 inline static int horizontal_gradient_reference( uint8_t *block, int xstride, int ystride, int w, int h )
 {
 	int i, j, average, deviation = 0;
@@ -480,11 +483,13 @@ inline static int horizontal_gradient_reference( uint8_t *block, int xstride, in
 
 	return deviation;
 }
+#endif
 
 // Macros for pointer calculations
 #define CURRENT(i,j)	( c->current_vectors + (j)*c->mv_buffer_width + (i) )
 #define FORMER(i,j)	( c->former_vectors + (j)*c->mv_buffer_width + (i) )
 
+#if 0
 void collect_pre_statistics( struct motion_est_context_s *c, uint8_t *image ) {
 
 	int i, j, count = 0;
@@ -499,8 +504,13 @@ void collect_pre_statistics( struct motion_est_context_s *c, uint8_t *image ) {
 	 }
 	}
 }
+#endif
 
+static void median_denoise( motion_vector *v, struct motion_est_context_s *c )
+{
+//	for ( int i = 0; i++
 
+}
 
 /** /brief Motion search
 *
@@ -535,6 +545,7 @@ static void search( struct yuv_data from,			//<! Image data. Motion vector sourc
 		here->msad = MAX_MSAD;
 		count++;
 		n = 0;
+
 
 		/* Stack the predictors [i.e. checked in reverse order] */
 
@@ -816,7 +827,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter filter = mlt_frame_pop_service( frame );
 
 	// Get the motion_est context object
-	struct motion_est_context_s *context = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "context", NULL);
+	struct motion_est_context_s *c = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "context", NULL);
 
 	// Get the new image and frame number
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
@@ -824,81 +835,83 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( error != 0 )
 		mlt_properties_debug( MLT_FRAME_PROPERTIES(frame), "error after mlt_frame_get_image() in motion_est", stderr );
 
-	context->current_frame_position = mlt_frame_get_position( frame );
+	c->current_frame_position = mlt_frame_get_position( frame );
 
 	/* Context Initialization */
-	if ( context->initialized == 0 ) {
+	if ( c->initialized == 0 ) {
 
 		// Get the filter properties object
 		mlt_properties properties = mlt_filter_properties( filter );
 
-		context->width = *width;
-		context->height = *height;
+		c->width = *width;
+		c->height = *height;
 
 		/* Get parameters that may have been overridden */
 		if( mlt_properties_get( properties, "macroblock_width") != NULL )
-			context->macroblock_width = mlt_properties_get_int( properties, "macroblock_width");
+			c->macroblock_width = mlt_properties_get_int( properties, "macroblock_width");
 
 		if( mlt_properties_get( properties, "macroblock_height") != NULL )
-			context->macroblock_height = mlt_properties_get_int( properties, "macroblock_height");
+			c->macroblock_height = mlt_properties_get_int( properties, "macroblock_height");
 
 		if( mlt_properties_get( properties, "prediction_thresh") != NULL )
-			context->initial_thresh = mlt_properties_get_int( properties, "prediction_thresh" );
+			c->initial_thresh = mlt_properties_get_int( properties, "prediction_thresh" );
 		else
-			context->initial_thresh = context->macroblock_width * context->macroblock_height;
+			c->initial_thresh = c->macroblock_width * c->macroblock_height;
 
 		if( mlt_properties_get( properties, "search_method") != NULL )
-			context->search_method = mlt_properties_get_int( properties, "search_method");
+			c->search_method = mlt_properties_get_int( properties, "search_method");
 
 		if( mlt_properties_get( properties, "skip_prediction") != NULL )
-			context->skip_prediction = mlt_properties_get_int( properties, "skip_prediction");
+			c->skip_prediction = mlt_properties_get_int( properties, "skip_prediction");
 
 		if( mlt_properties_get( properties, "limit_x") != NULL )
-			context->limit_x = mlt_properties_get_int( properties, "limit_x");
+			c->limit_x = mlt_properties_get_int( properties, "limit_x");
 
 		if( mlt_properties_get( properties, "limit_y") != NULL )
-			context->limit_y = mlt_properties_get_int( properties, "limit_y");
+			c->limit_y = mlt_properties_get_int( properties, "limit_y");
 
 		if( mlt_properties_get( properties, "check_chroma" ) != NULL )
-			context->check_chroma = mlt_properties_get_int( properties, "check_chroma" );
+			c->check_chroma = mlt_properties_get_int( properties, "check_chroma" );
 
-		init_optimizations( context );
+		init_optimizations( c );
 
 		// Calculate the dimensions in macroblock units
-		context->mv_buffer_width = (*width / context->macroblock_width);
-		context->mv_buffer_height = (*height / context->macroblock_height);
+		c->mv_buffer_width = (*width / c->macroblock_width);
+		c->mv_buffer_height = (*height / c->macroblock_height);
 
 		// Size of the motion vector buffer
-		context->mv_size =  context->mv_buffer_width * context->mv_buffer_height * sizeof(struct motion_vector_s);
+		c->mv_size =  c->mv_buffer_width * c->mv_buffer_height * sizeof(struct motion_vector_s);
 
 		// Allocate the motion vector buffers
-		context->former_vectors = mlt_pool_alloc( context->mv_size ); 
-		context->current_vectors = mlt_pool_alloc( context->mv_size ); 
+		c->former_vectors = mlt_pool_alloc( c->mv_size ); 
+		c->current_vectors = mlt_pool_alloc( c->mv_size ); 
+		c->denoise_vectors = mlt_pool_alloc( c->mv_size ); 
 
 		// Register motion buffers for destruction
-		mlt_properties_set_data( properties, "current_motion_vectors", (void *)context->current_vectors, 0, mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "former_motion_vectors", (void *)context->former_vectors, 0, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "current_motion_vectors", (void *)c->current_vectors, 0, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "former_motion_vectors", (void *)c->former_vectors, 0, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "denoise_motion_vectors", (void *)c->denoise_vectors, 0, mlt_pool_release, NULL );
 
 
-		context->former_vectors_valid = 0;
-		memset( context->former_vectors, 0, context->mv_size );
+		c->former_vectors_valid = 0;
+		memset( c->former_vectors, 0, c->mv_size );
 
 		// Figure out how many blocks should be considered edge blocks
-		context->edge_blocks_x = (context->limit_x + context->macroblock_width - 1) / context->macroblock_width;
-		context->edge_blocks_y = (context->limit_y + context->macroblock_height - 1) / context->macroblock_height;
+		c->edge_blocks_x = (c->limit_x + c->macroblock_width - 1) / c->macroblock_width;
+		c->edge_blocks_y = (c->limit_y + c->macroblock_height - 1) / c->macroblock_height;
 
 		// Calculate the size of our steps (the number of bytes that seperate adjacent pixels in X and Y direction)
 		switch( *format ) {
 			case mlt_image_yuv422:
-				if ( context->check_chroma )
-					context->xstride = 1;
+				if ( c->check_chroma )
+					c->xstride = 1;
 				else
-					context->xstride = 2;
-				context->ystride = context->xstride * *width;
+					c->xstride = 2;
+				c->ystride = c->xstride * *width;
 				break; 
 /*			case mlt_image_yuv420p:
-				context->xstride = 1;
-				context->ystride = context->xstride * *width;
+				c->xstride = 1;
+				c->ystride = c->xstride * *width;
 				break;
 */			default:
 				// I don't know
@@ -906,170 +919,171 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				return -1;
 		}
 
-		if ( context->check_chroma ) {
+		if ( c->check_chroma ) {
 			// Allocate memory for the 444 images
-			context->former_image.y = mlt_pool_alloc( *width * *height * 3 );
-			context->current_image.y = mlt_pool_alloc( *width * *height * 3 );
-			context->current_image.u = context->current_image.y + *width * *height;
-			context->current_image.v = context->current_image.u + *width * *height;
-			context->former_image.u = context->former_image.y + *width * *height;
-			context->former_image.v = context->former_image.u + *width * *height;
+			c->former_image.y = mlt_pool_alloc( *width * *height * 3 );
+			c->current_image.y = mlt_pool_alloc( *width * *height * 3 );
+			c->current_image.u = c->current_image.y + *width * *height;
+			c->current_image.v = c->current_image.u + *width * *height;
+			c->former_image.u = c->former_image.y + *width * *height;
+			c->former_image.v = c->former_image.u + *width * *height;
 			// Register for destruction
-			mlt_properties_set_data( properties, "current_image", (void *)context->current_image.y, 0, mlt_pool_release, NULL );
+			mlt_properties_set_data( properties, "current_image", (void *)c->current_image.y, 0, mlt_pool_release, NULL );
 		}
 		else
 		{
-			context->former_image.y = mlt_pool_alloc( *width * *height * 2 );
+			c->former_image.y = mlt_pool_alloc( *width * *height * 2 );
 		}
 		// Register for destruction
-		mlt_properties_set_data( properties, "former_image", (void *)context->former_image.y, 0, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "former_image", (void *)c->former_image.y, 0, mlt_pool_release, NULL );
 
 
-		context->former_frame_position = context->current_frame_position;
+		c->former_frame_position = c->current_frame_position;
 
-		context->initialized = 1;
+		c->initialized = 1;
 	}
 
 	/* Check to see if somebody else has given us bounds */
-	context->bounds = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "bounds", NULL );
+	c->bounds = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "bounds", NULL );
 
 	/* no bounds were given, they won't change next frame, so use a convient storage place */
-	if( context->bounds == NULL ) {
-		context->bounds = &context->prev_bounds;
-		context->bounds->x = 0;
-		context->bounds->y = 0;
-		context->bounds->w = *width - 1;	// Zero indexed
-		context->bounds->h = *height - 1;	// Zero indexed
+	if( c->bounds == NULL ) {
+		c->bounds = &c->prev_bounds;
+		c->bounds->x = 0;
+		c->bounds->y = 0;
+		c->bounds->w = *width - 1;	// Zero indexed
+		c->bounds->h = *height - 1;	// Zero indexed
 	}
 
 	// translate pixel units (from bounds) to macroblock units
 	// make sure whole macroblock stays within bounds
-	context->left_mb = (context->bounds->x + context->macroblock_width - 1) / context->macroblock_width;
-	context->top_mb = (context->bounds->y + context->macroblock_height - 1) / context->macroblock_height;
-	context->right_mb = (context->bounds->x + context->bounds->w - context->macroblock_width + 1) / context->macroblock_width;
-	context->bottom_mb = (context->bounds->y + context->bounds->h - context->macroblock_height + 1) / context->macroblock_height;
+	c->left_mb = ( c->bounds->x + c->macroblock_width - 1 ) / c->macroblock_width;
+	c->top_mb = ( c->bounds->y + c->macroblock_height - 1 ) / c->macroblock_height;
+	c->right_mb = ( c->bounds->x + c->bounds->w ) / c->macroblock_width - 1;
+	c->bottom_mb = ( c->bounds->y + c->bounds->h ) / c->macroblock_height - 1;
 
 	// Do the same thing for the previous frame's geometry
 	// This will be used for determining validity of predictors
-	context->prev_left_mb = (context->prev_bounds.x + context->macroblock_width - 1) / context->macroblock_width;
-	context->prev_top_mb = (context->prev_bounds.y + context->macroblock_height - 1) / context->macroblock_height;
-	context->prev_right_mb = (context->prev_bounds.x + context->prev_bounds.w - context->macroblock_width - 1)
-									/ context->macroblock_width;
-	context->prev_bottom_mb = (context->prev_bounds.y + context->prev_bounds.h - context->macroblock_height - 1)
-									/ context->macroblock_height;
+	c->prev_left_mb = ( c->prev_bounds.x + c->macroblock_width - 1) / c->macroblock_width;
+	c->prev_top_mb = ( c->prev_bounds.y + c->macroblock_height - 1) / c->macroblock_height;
+	c->prev_right_mb = ( c->prev_bounds.x + c->prev_bounds.w ) / c->macroblock_width - 1;
+	c->prev_bottom_mb = ( c->prev_bounds.y + c->prev_bounds.h ) / c->macroblock_height - 1;
 
 	
 	// If video is advancing, run motion vector algorithm and etc...	
-	if( context->former_frame_position + 1 == context->current_frame_position )
+	if( c->former_frame_position + 1 == c->current_frame_position )
 	{
 		#ifdef BENCHMARK
 		struct timeval start; gettimeofday(&start, NULL );
 		#endif
 
 		// Swap the motion vector buffers and reuse allocated memory
-		struct motion_vector_s *temp = context->current_vectors;
-		context->current_vectors = context->former_vectors;
-		context->former_vectors = temp;
+		struct motion_vector_s *temp = c->current_vectors;
+		c->current_vectors = c->former_vectors;
+		c->former_vectors = temp;
 
 		// Swap the image buffers
-		if ( context->check_chroma ) {
+		if ( c->check_chroma ) {
 			uint8_t *temp_yuv;
-			temp_yuv = context->current_image.y;
-			context->current_image.y = context->former_image.y;
-			context->former_image.y = temp_yuv;
-			temp_yuv = context->current_image.u;
-			context->current_image.u = context->former_image.u;
-			context->former_image.u = temp_yuv;
-			temp_yuv = context->current_image.v;
-			context->current_image.v = context->former_image.v;
-			context->former_image.v = temp_yuv;
+			temp_yuv = c->current_image.y;
+			c->current_image.y = c->former_image.y;
+			c->former_image.y = temp_yuv;
+			temp_yuv = c->current_image.u;
+			c->current_image.u = c->former_image.u;
+			c->former_image.u = temp_yuv;
+			temp_yuv = c->current_image.v;
+			c->current_image.v = c->former_image.v;
+			c->former_image.v = temp_yuv;
 
 			switch ( *format ) {
 				case mlt_image_yuv422:
-					change_422_to_444_planar_rep( *image, context->current_image, context );
+					change_422_to_444_planar_rep( *image, c->current_image, c );
 					break;
 				case mlt_image_yuv420p:
-					change_420p_to_444_planar_rep( *image, context->current_image, context );
+					change_420p_to_444_planar_rep( *image, c->current_image, c );
 					break;
 				default:
 					break;
 			}
 		}
 		else
-			context->current_image.y = *image;
+			c->current_image.y = *image;
 
 		// Find a better place for this
-		memset( context->current_vectors, 0, context->mv_size );
+		memset( c->current_vectors, 0, c->mv_size );
 
 		// Perform the motion search
 
 		//collect_pre_statistics( context, *image );
-		search( context->current_image, context->former_image, context );
-		collect_post_statistics( context );
+		search( c->current_image, c->former_image, c );
+
+		//median_denoise( c->current_vectors, c );
+
+		collect_post_statistics( c );
 
 		#ifdef BENCHMARK
 		struct timeval finish; gettimeofday(&finish, NULL ); int difference = (finish.tv_sec - start.tv_sec) * 1000000 + (finish.tv_usec - start.tv_usec);
-		fprintf(stderr, " in frame %d:%d usec\n", context->current_frame_position, difference);
+		fprintf(stderr, " in frame %d:%d usec\n", c->current_frame_position, difference);
 		#endif
 
 
 
 		// Detect shot changes
-		if( context->comparison_average > 12 * context->macroblock_width * context->macroblock_height ) {
-			//fprintf(stderr, " - SAD: %d   <<Shot change>>\n", context->comparison_average);
+		if( c->comparison_average > 12 * c->macroblock_width * c->macroblock_height ) {
+			//fprintf(stderr, " - SAD: %d   <<Shot change>>\n", c->comparison_average);
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "shot_change", 1);
-		//	context->former_vectors_valid = 0; // Invalidate the previous frame's predictors
-			context->shot_change = 1;
+		//	c->former_vectors_valid = 0; // Invalidate the previous frame's predictors
+			c->shot_change = 1;
 		}
 		else {
-			context->former_vectors_valid = 1;
-			context->shot_change = 0;
-			//fprintf(stderr, " - SAD: %d\n", context->comparison_average);
+			c->former_vectors_valid = 1;
+			c->shot_change = 0;
+			//fprintf(stderr, " - SAD: %d\n", c->comparison_average);
 		}
 
-		if( context->comparison_average != 0 ) {
+		if( c->comparison_average != 0 ) {
 			// Pass the new vector data into the frame
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "motion_est.vectors",
-					 (void*)context->current_vectors, context->mv_size, NULL, NULL );
+					 (void*)c->current_vectors, c->mv_size, NULL, NULL );
 
 		}
 		else {
 			// This fixes the ugliness caused by a duplicate frame
-			temp = context->current_vectors;
-			context->current_vectors = context->former_vectors;
-			context->former_vectors = temp;
+			temp = c->current_vectors;
+			c->current_vectors = c->former_vectors;
+			c->former_vectors = temp;
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "motion_est.vectors",
-					 (void*)context->former_vectors, context->mv_size, NULL, NULL );
+					 (void*)c->former_vectors, c->mv_size, NULL, NULL );
 		}
 
 	}
 	// paused
-	else if( context->former_frame_position == context->current_frame_position )
+	else if( c->former_frame_position == c->current_frame_position )
 	{
 		// Pass the old vector data into the frame if it's valid
-		if( context->former_vectors_valid == 1 )
+		if( c->former_vectors_valid == 1 )
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "motion_est.vectors",
-					 (void*)context->current_vectors, context->mv_size, NULL, NULL );
+					 (void*)c->current_vectors, c->mv_size, NULL, NULL );
 
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "shot_change", context->shot_change);
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "shot_change", c->shot_change);
 	}
 	// there was jump in frame number
 	else
-		context->former_vectors_valid = 0;
+		c->former_vectors_valid = 0;
 
 
 	// Cache our bounding geometry for the next frame's processing
-	if( context->bounds != &context->prev_bounds )
-		memcpy( &context->prev_bounds, context->bounds, sizeof( struct mlt_geometry_item_s ) );
+	if( c->bounds != &c->prev_bounds )
+		memcpy( &c->prev_bounds, c->bounds, sizeof( struct mlt_geometry_item_s ) );
 
 	// Remember which frame this is
-	context->former_frame_position = context->current_frame_position;
+	c->former_frame_position = c->current_frame_position;
 
-	if ( context->check_chroma == 0 )
-		memcpy( context->former_image.y, *image, *width * *height * context->xstride );
+	if ( c->check_chroma == 0 )
+		memcpy( c->former_image.y, *image, *width * *height * c->xstride );
 
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_width", context->macroblock_width );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_height", context->macroblock_height );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_width", c->macroblock_width );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_height", c->macroblock_height );
 
 	return error;
 }
@@ -1122,8 +1136,8 @@ mlt_filter filter_motion_est_init( char *arg )
 
 		/* reference functions that may have optimized versions */
 		context->compare_reference = sad_reference;
-		context->vert_deviation_reference = vertical_gradient_reference;
-		context->horiz_deviation_reference = horizontal_gradient_reference;
+		//context->vert_deviation_reference = vertical_gradient_reference;
+		//context->horiz_deviation_reference = horizontal_gradient_reference;
 
 		// The rest of the buffers will be initialized when the filter is first processed
 		context->initialized = 0;
