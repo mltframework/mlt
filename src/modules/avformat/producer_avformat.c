@@ -276,11 +276,11 @@ static int producer_open( mlt_producer this, char *file )
 			find_default_streams( context, &audio_index, &video_index );
 
             if ( context->start_time != AV_NOPTS_VALUE )
-                mlt_properties_set_double( properties, "start_time", context->start_time );
+                mlt_properties_set_double( properties, "_start_time", context->start_time );
 			
 			// Check if we're seekable (something funny about mpeg here :-/)
 			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 ) )
-				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ), AVSEEK_FLAG_BACKWARD ) >= 0 );
+				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "_start_time" ), AVSEEK_FLAG_BACKWARD ) >= 0 );
 			else
 				av_bypass = 1;
 
@@ -437,7 +437,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int index = mlt_properties_get_int( properties, "video_index" );
 
 	// Obtain the expected frame numer
-	mlt_position expected = mlt_properties_get_position( properties, "video_expected" );
+	mlt_position expected = mlt_properties_get_position( properties, "_video_expected" );
 
 	// Calculate the real time code
 	double real_timecode = producer_time_of_frame( this, position );
@@ -461,7 +461,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int ignore = 0;
 
 	// Current time calcs
-	double current_time = mlt_properties_get_double( properties, "current_time" );
+	double current_time = mlt_properties_get_double( properties, "_current_time" );
 
 	// We may want to use the source fps if available
 	double source_fps = mlt_properties_get_double( properties, "source_fps" );
@@ -516,10 +516,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else if ( seekable && ( position < expected || position - expected >= 12 ) )
 		{
 			// Set to the real timecode
-			av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD );
+			av_seek_frame( context, -1, mlt_properties_get_double( properties, "_start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD );
 	
 			// Remove the cached info relating to the previous position
-			mlt_properties_set_double( properties, "current_time", real_timecode );
+			mlt_properties_set_double( properties, "_current_time", real_timecode );
 
 			mlt_properties_set_data( properties, "av_frame", NULL, 0, NULL, NULL );
 			av_frame = NULL;
@@ -527,7 +527,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	
 	// Duplicate the last image if necessary
-	if ( av_frame != NULL && ( paused || mlt_properties_get_double( properties, "current_time" ) >= real_timecode ) &&
+	if ( av_frame != NULL && ( paused || mlt_properties_get_double( properties, "_current_time" ) >= real_timecode ) &&
 		 av_bypass == 0 )
 	{
 		// Duplicate it
@@ -608,11 +608,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				double fps = mlt_properties_get_double( properties, "fps" );
 				current_time = ceil( source_fps * ( double )position / fps ) * ( 1 / source_fps );
-				mlt_properties_set_double( properties, "current_time", current_time );
+				mlt_properties_set_double( properties, "_current_time", current_time );
 			}
 			else
 			{
-				mlt_properties_set_double( properties, "current_time", current_time );
+				mlt_properties_set_double( properties, "_current_time", current_time );
 			}
 		}
 	}
@@ -622,7 +622,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_get_int( properties, "top_field_first" ) );
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
-	mlt_properties_set_position( properties, "video_expected", position + 1 );
+	mlt_properties_set_position( properties, "_video_expected", position + 1 );
 
 	return 0;
 }
@@ -745,7 +745,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	int seekable = mlt_properties_get_int( properties, "seekable" );
 
 	// Obtain the expected frame numer
-	mlt_position expected = mlt_properties_get_position( properties, "audio_expected" );
+	mlt_position expected = mlt_properties_get_position( properties, "_audio_expected" );
 
 	// Obtain the resample context if it exists (not always needed)
 	ReSampleContext *resample = mlt_properties_get_data( properties, "audio_resample", NULL );
@@ -754,7 +754,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	int16_t *audio_buffer = mlt_properties_get_data( properties, "audio_buffer", NULL );
 
 	// Get amount of audio used
-	int audio_used =  mlt_properties_get_int( properties, "audio_used" );
+	int audio_used =  mlt_properties_get_int( properties, "_audio_used" );
 
 	// Calculate the real time code
 	double real_timecode = producer_time_of_frame( this, position );
@@ -815,7 +815,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		else if ( position < expected || position - expected >= 12 )
 		{
 			// Set to the real timecode
-			if ( av_seek_frame( context, -1, mlt_properties_get_double( properties, "start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD ) != 0 )
+			if ( av_seek_frame( context, -1, mlt_properties_get_double( properties, "_start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD ) != 0 )
 				paused = 1;
 
 			// Clear the usage in the audio buffer
@@ -910,7 +910,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		}
 		
 		// Store the number of audio samples still available
-		mlt_properties_set_int( properties, "audio_used", audio_used );
+		mlt_properties_set_int( properties, "_audio_used", audio_used );
 
 		// Release the temporary audio
 		mlt_pool_release( temp );
@@ -923,7 +923,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 	// Regardless of speed (other than paused), we expect to get the next frame
 	if ( !paused )
-		mlt_properties_set_position( properties, "audio_expected", position + 1 );
+		mlt_properties_set_position( properties, "_audio_expected", position + 1 );
 
 	return 0;
 }
