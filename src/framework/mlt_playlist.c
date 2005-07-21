@@ -1462,7 +1462,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "fx_cut", 1 );
 		mlt_frame_push_service( *frame, NULL );
 		mlt_frame_push_audio( *frame, NULL );
-		mlt_service_apply_filters( parent, *frame, 0 );
+		mlt_service_apply_filters( MLT_PRODUCER_SERVICE( parent ), *frame, 0 );
 		mlt_service_apply_filters( real, *frame, 0 );
 		mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( *frame ) );
 		mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( *frame ) );
