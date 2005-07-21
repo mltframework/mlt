@@ -35,17 +35,6 @@
 #define ROUNDED_DIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
 #define ABS(a) ((a) >= 0 ? (a) : (-(a)))
 
-// ffmpeg borrowed
-static inline int clip(int a, int amin, int amax)
-{
-    if (a < amin)
-        return amin;
-    else if (a > amax)
-        return amax;
-    else
-        return a;
-}
-
 void caculate_motion( struct motion_vector_s *vectors,
 		      mlt_geometry_item boundry,
 		      int macroblock_width,
@@ -57,16 +46,10 @@ void caculate_motion( struct motion_vector_s *vectors,
 
 	// translate pixel units (from bounds) to macroblock units
 	// make sure whole macroblock stay within bounds
-	// I know; it hurts.
-	int left_mb = boundry->x / macroblock_width;
-	    left_mb += ( (int)boundry->x % macroblock_width == 0 ) ? 0 : 1 ;
-	int top_mb = boundry->y / macroblock_height;
-	    top_mb += ( (int)boundry->y % macroblock_height == 0 ) ? 0 : 1 ;
-
-	int right_mb = (boundry->x + boundry->w + 1) / macroblock_width;
-	    right_mb -= ( (int)(boundry->x + boundry->w + 1) % macroblock_width == 0 ) ? 0 : 1 ;
-	int bottom_mb = (boundry->y + boundry->h + 1) / macroblock_height;
-	    bottom_mb -= ( (int)(boundry->y + boundry->h + 1) % macroblock_height == 0 ) ? 0 : 1 ;
+	int left_mb = ( boundry->x + macroblock_width - 1 ) / macroblock_width;
+        int top_mb = ( boundry->y + macroblock_height - 1 ) / macroblock_height;
+        int right_mb = ( boundry->x + boundry->w ) / macroblock_width - 1;
+        int bottom_mb = ( boundry->y + boundry->h ) / macroblock_height - 1;
 
 	int i, j, n = 0;
 
@@ -75,10 +58,9 @@ void caculate_motion( struct motion_vector_s *vectors,
 	#define CURRENT         ( vectors + j*mv_buffer_width + i )
 
 	for( i = left_mb; i <= right_mb; i++ ){
-		for( j = top_mb; j <= bottom_mb; j++ ){
-
+		for( j = top_mb; j <= bottom_mb; j++ )
+		{
 			n++;
-
 			average_x += CURRENT->dx;
 			average_y += CURRENT->dy;
 		}
@@ -94,8 +76,8 @@ void caculate_motion( struct motion_vector_s *vectors,
 	for( i = left_mb; i <= right_mb; i++ ){
 		for( j = top_mb; j <= bottom_mb; j++ ){
 
-			if( ABS(CURRENT->dx - average_x) < 5 &&
-			    ABS(CURRENT->dy - average_y) < 5 )
+			if( ABS(CURRENT->dx - average_x) < 3 &&
+			    ABS(CURRENT->dy - average_y) < 3 )
 			{
 				n++;
 				average2_x += CURRENT->dx;
@@ -106,8 +88,8 @@ void caculate_motion( struct motion_vector_s *vectors,
 
 	if ( n == 0 ) return;
 
-	boundry->x -= average2_x / n;
-	boundry->y -= average2_y / n;
+	boundry->x -= (double)average2_x / (double)n;
+	boundry->y -= (double)average2_y / (double)n;
 }
 
 // Image stack(able) method
@@ -141,9 +123,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Get the motion vectors
 	struct motion_vector_s *vectors = mlt_properties_get_data( frame_properties, "motion_est.vectors", NULL );
-                
+
 	// How did the rectangle move?
-	if( vectors != NULL ) {
+	if( vectors != NULL &&
+	    boundry.key != 1 ) // Paused?
+	{
 
 		int method = mlt_properties_get_int( filter_properties, "method" );
 
@@ -154,27 +138,23 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		caculate_motion( vectors, &boundry, macroblock_width, macroblock_height, mv_buffer_width, method );
 
+
+		// Make the geometry object a real boy
+		boundry.key = 1;
+		boundry.f[0] = 1;
+		boundry.f[1] = 1;
+		boundry.f[2] = 1;
+		boundry.f[3] = 1;
+		boundry.f[4] = 1;
+		mlt_geometry_insert(geometry, &boundry);
 	}
 
-	// Turn the geometry object into a real boy
-	boundry.key = 1;
-	boundry.f[0] = 1;
-	boundry.f[1] = 1;
-	boundry.f[2] = 1;
-	boundry.f[3] = 1;
-	boundry.f[4] = 1;
-	mlt_geometry_insert(geometry, &boundry);
-
-
-	if( mlt_properties_get_int( filter_properties, "debug" ) == 1 )
+       	if( mlt_properties_get_int( filter_properties, "debug" ) == 1 )
 	{
-
 		init_arrows( format, *width, *height );
-		draw_line(*image, boundry.x, boundry.y, boundry.x, boundry.y + boundry.h, 100);
-		draw_line(*image, boundry.x, boundry.y + boundry.h, boundry.x + boundry.w, boundry.y + boundry.h, 100);
-		draw_line(*image, boundry.x + boundry.w, boundry.y + boundry.h, boundry.x + boundry.w, boundry.y, 100);
-		draw_line(*image, boundry.x + boundry.w, boundry.y, boundry.x, boundry.y, 100);
-	}
+		draw_rectangle_outline(*image, boundry.x, boundry.y, boundry.w, boundry.h, 100);
+	}        
+
 	return error;
 }
 
@@ -192,13 +172,12 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 	// Get the frame position
 	mlt_position position = mlt_frame_get_position( frame );
 
-	// gEt the geometry object
+	// Get the geometry object
 	mlt_geometry geometry = mlt_properties_get_data(filter_properties, "geometry", NULL);
 
 	// Get the current geometry item
 	mlt_geometry_item geometry_item = mlt_pool_alloc( sizeof( struct mlt_geometry_item_s ) );
 	mlt_geometry_fetch(geometry, geometry_item, position);
-//fprintf(stderr, "attach %d\n", position);
 
 	mlt_properties_set_data( frame_properties, "bounds", geometry_item, sizeof( struct mlt_geometry_item_s ), mlt_pool_release, NULL );
 
