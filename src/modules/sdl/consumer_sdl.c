@@ -193,17 +193,8 @@ int consumer_start( mlt_consumer parent )
 		this->running = 1;
 		this->joined = 0;
 
-		// Allow the user to force resizing to window size
-		if ( mlt_properties_get_int( this->properties, "resize" ) )
-		{
-			mlt_properties_set_int( this->properties, "width", this->width );
-			mlt_properties_set_int( this->properties, "height", this->height );
-		}
-		else
-		{
-			this->width = mlt_properties_get_int( this->properties, "width" );
-			this->height = mlt_properties_get_int( this->properties, "height" );
-		}
+		this->width = mlt_properties_get_int( this->properties, "width" );
+		this->height = mlt_properties_get_int( this->properties, "height" );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
