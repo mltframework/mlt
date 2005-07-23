@@ -75,14 +75,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		//fprintf( stderr, "normalised %dx%d output %dx%d %f %f\n", normalised_width, normalised_height, owidth, oheight, ( float )output_ar, ( float )mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight );
 
 		// Optimised for the input_ar > output_ar case (e.g. widescreen on standard)
-		int scaled_width = input_ar / output_ar * normalised_width + 0.5;
+		int scaled_width = ( input_ar * normalised_width ) / output_ar + 0.5;
 		int scaled_height = normalised_height;
 
 		// Now ensure that our images fit in the output frame
 		if ( scaled_width > normalised_width )
 		{
 			scaled_width = normalised_width;
-			scaled_height = output_ar / input_ar * normalised_height + 0.5;
+			scaled_height = ( output_ar * normalised_height ) / input_ar + 0.5;
 		}
 
 		// Now calculate the actual image size that we want
