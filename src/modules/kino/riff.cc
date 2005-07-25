@@ -21,6 +21,9 @@
 * Change log:
 * 
 * $Log$
+* Revision 1.2  2005/07/25 07:21:39  lilo_booter
+* + fixes for opendml dv avi
+*
 * Revision 1.1  2005/04/15 14:28:26  lilo_booter
 * Initial version
 *
@@ -612,14 +615,14 @@ void RIFFFile::ParseRIFF( void )
  
 */
 
-void RIFFFile::ReadChunk( int chunk_index, void *data )
+void RIFFFile::ReadChunk( int chunk_index, void *data, off_t data_len )
 {
 	RIFFDirEntry entry;
 
 	entry = GetDirectoryEntry( chunk_index );
 	pthread_mutex_lock( &file_mutex );
 	fail_if( lseek( fd, entry.offset, SEEK_SET ) == ( off_t ) - 1 );
-	fail_neg( read( fd, data, entry.length ) );
+	fail_neg( read( fd, data, data_len ) );
 	pthread_mutex_unlock( &file_mutex );
 }
 

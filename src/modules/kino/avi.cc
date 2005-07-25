@@ -21,6 +21,9 @@
 * Change log:
 * 
 * $Log$
+* Revision 1.3  2005/07/25 07:21:39  lilo_booter
+* + fixes for opendml dv avi
+*
 * Revision 1.2  2005/06/21 20:59:39  lilo_booter
 * src/framework/mlt_consumer.c src/framework/mlt_consumer.h
 * + Added a general profile handling for size, aspect ratio and display ratio
@@ -943,7 +946,7 @@ void AVIFile::ParseRIFF()
 
 	avih_chunk = FindDirectoryEntry( make_fourcc( "avih" ) );
 	if ( avih_chunk != -1 )
-		ReadChunk( avih_chunk, ( void* ) & mainHdr );
+		ReadChunk( avih_chunk, ( void* ) & mainHdr, sizeof( MainAVIHeader ) );
 }
 
 
@@ -952,7 +955,7 @@ void AVIFile::ReadIndex()
 	indx_chunk[ 0 ] = FindDirectoryEntry( make_fourcc( "indx" ) );
 	if ( indx_chunk[ 0 ] != -1 )
 	{
-		ReadChunk( indx_chunk[ 0 ], ( void* ) indx[ 0 ] );
+		ReadChunk( indx_chunk[ 0 ], ( void* ) indx[ 0 ], sizeof( AVISuperIndex ) );
 		index_type = AVI_LARGE_INDEX;
 
 		/* recalc number of frames from each index */
@@ -966,7 +969,7 @@ void AVIFile::ReadIndex()
 	idx1_chunk = FindDirectoryEntry( make_fourcc( "idx1" ) );
 	if ( idx1_chunk != -1 )
 	{
-		ReadChunk( idx1_chunk, ( void* ) idx1 );
+		ReadChunk( idx1_chunk, ( void* ) idx1, sizeof( AVISuperIndex ) );
 		idx1->nEntriesInUse = GetDirectoryEntry( idx1_chunk ).length / 16;
 		index_type = AVI_SMALL_INDEX;
 
@@ -1101,14 +1104,14 @@ bool AVIFile::verifyStreamFormat( FOURCC type )
 
 	while ( ( i = FindDirectoryEntry( strh, j++ ) ) != -1 )
 	{
-		ReadChunk( i, ( void* ) & avi_stream_header );
+		ReadChunk( i, ( void* ) & avi_stream_header, sizeof( AVIStreamHeader ) );
 		if ( avi_stream_header.fccHandler == type )
 			return true;
 	}
 	j = 0;
 	while ( ( i = FindDirectoryEntry( strf, j++ ) ) != -1 )
 	{
-		ReadChunk( i, ( void* ) & bih );
+		ReadChunk( i, ( void* ) & bih, sizeof( BITMAPINFOHEADER ) );
 		if ( ( FOURCC ) bih.biCompression == type )
 			return true;
 	}
@@ -1124,7 +1127,7 @@ bool AVIFile::verifyStream( FOURCC type )
 
 	while ( ( i = FindDirectoryEntry( strh, j++ ) ) != -1 )
 	{
-		ReadChunk( i, ( void* ) & avi_stream_header );
+		ReadChunk( i, ( void* ) & avi_stream_header, sizeof( AVIStreamHeader ) );
 		if ( avi_stream_header.fccType == type )
 			return true;
 	}
@@ -1818,7 +1821,7 @@ void AVIFile::setFccHandler( FOURCC type, FOURCC handler )
 
 			while ( ( k = FindDirectoryEntry( strf, j++ ) ) != -1 )
 			{
-				ReadChunk( k, ( void* ) & bih );
+				ReadChunk( k, ( void* ) & bih, sizeof( BITMAPINFOHEADER ) );
 				bih.biCompression = handler;
 			}
 		}
@@ -1835,7 +1838,7 @@ bool AVIFile::getStreamFormat( void* data, FOURCC type )
 
 	while ( ( result == false ) && ( i = FindDirectoryEntry( strh, j++ ) ) != -1 )
 	{
-		ReadChunk( i, ( void* ) & avi_stream_header );
+		ReadChunk( i, ( void* ) & avi_stream_header, sizeof( AVIStreamHeader ) );
 		if ( avi_stream_header.fccType == type )
 		{
 			FOURCC chunkID;

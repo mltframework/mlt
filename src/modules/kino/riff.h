@@ -21,6 +21,9 @@
 * Change log:
 * 
 * $Log$
+* Revision 1.2  2005/07/25 07:21:39  lilo_booter
+* + fixes for opendml dv avi
+*
 * Revision 1.1  2005/04/15 14:28:26  lilo_booter
 * Initial version
 *
@@ -126,7 +129,7 @@ public:
 	virtual void ParseChunk( int parent );
 	virtual void ParseList( int parent );
 	virtual void ParseRIFF( void );
-	virtual void ReadChunk( int chunk_index, void *data );
+	virtual void ReadChunk( int chunk_index, void *data, off_t data_len );
 	virtual void WriteChunk( int chunk_index, const void *data );
 	virtual void WriteRIFF( void );
 

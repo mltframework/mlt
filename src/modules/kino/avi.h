@@ -21,6 +21,9 @@
 * Change log:
 * 
 * $Log$
+* Revision 1.4  2005/07/25 07:21:39  lilo_booter
+* + fixes for opendml dv avi
+*
 * Revision 1.3  2005/06/21 20:59:39  lilo_booter
 * src/framework/mlt_consumer.c src/framework/mlt_consumer.h
 * + Added a general profile handling for size, aspect ratio and display ratio
@@ -240,6 +243,7 @@ typedef struct
 	LONG biYPelsPerMeter;
 	DWORD biClrUsed;
 	DWORD biClrImportant;
+	char dummy[ 1040 ];
 }
 PACKED(BITMAPINFOHEADER);
 
@@ -270,7 +274,7 @@ typedef struct
 		DWORD dwSize;
 		DWORD dwDuration;
 	}
-	aIndex[ 2014 ];
+	aIndex[ 3198 ];
 }
 PACKED(AVISuperIndex);
 
@@ -288,7 +292,7 @@ typedef struct
 		DWORD dwOffset;
 		DWORD dwSize;
 	}
-	aIndex[ 4028 ];
+	aIndex[ 17895 ];
 }
 PACKED(AVIStdIndex);
 
