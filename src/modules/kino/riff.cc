@@ -21,6 +21,9 @@
 * Change log:
 * 
 * $Log$
+* Revision 1.3  2005/07/25 14:41:29  lilo_booter
+* + Minor correction for entry length being less than the data length
+*
 * Revision 1.2  2005/07/25 07:21:39  lilo_booter
 * + fixes for opendml dv avi
 *
@@ -622,7 +625,7 @@ void RIFFFile::ReadChunk( int chunk_index, void *data, off_t data_len )
 	entry = GetDirectoryEntry( chunk_index );
 	pthread_mutex_lock( &file_mutex );
 	fail_if( lseek( fd, entry.offset, SEEK_SET ) == ( off_t ) - 1 );
-	fail_neg( read( fd, data, data_len ) );
+	fail_neg( read( fd, data, entry.length > data_len ? data_len : entry.length ) );
 	pthread_mutex_unlock( &file_mutex );
 }
 
