@@ -7,14 +7,14 @@ which mlt-config > /dev/null 2>&1
 [ $? != 0 ] && echo "Please install mlt" && exit 1
 
 if [ "$1" = "all" ]
-then languages="java perl python ruby tcl"
+then languages="perl python ruby tcl"
 elif [ "$1" != "" ]
 then languages=$*
 else echo "Usage: ./configure [ all | language * ]"
 	 exit 0
 fi
 
-for i in java perl python ruby tcl
+for i in perl python ruby tcl
 do
 	rm -f .$i
 done
@@ -22,16 +22,21 @@ done
 for i in $languages
 do
 	echo -n "Configuring $i ... "
-	cd $i
-	output=`./build 2>/dev/null`
-	if [ $? == 0 ]
-	then echo "OK"
-		 touch ../.$i
-	elif [ "$output" == "" ]
+	if [ -d "$i" ] 
 	then
-		echo "Failed"
+		cd $i &&
+		output=`./build 2>/dev/null`
+		if [ $? == 0 ]
+		then echo "OK"
+		 	touch ../.$i
+		elif [ "$output" == "" ]
+		then
+			echo "Failed"
+		else
+			echo $output
+		fi
+		cd ..
 	else
-		echo $output
+		echo "Unknown"
 	fi
-	cd ..
 done

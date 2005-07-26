@@ -1,4 +1,4 @@
-SUBDIRS = java perl python ruby tcl
+SUBDIRS = perl python ruby tcl
 
 all clean install:
 	list='$(SUBDIRS)'; \
