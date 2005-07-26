@@ -25,7 +25,7 @@
 
 #include "mlt_pool.h"
 
-typedef enum
+typedef enum mlt_image_format_enum
 {
 	mlt_image_none = 0,
 	mlt_image_rgb24,
@@ -35,14 +35,14 @@ typedef enum
 }
 mlt_image_format;
 
-typedef enum
+typedef enum mlt_audio_format_enum
 {
 	mlt_audio_none = 0,
 	mlt_audio_pcm
 }
 mlt_audio_format;
 
-typedef enum
+typedef enum mlt_whence_enum
 {
 	mlt_whence_relative_start,
 	mlt_whence_relative_current,
@@ -50,7 +50,7 @@ typedef enum
 }
 mlt_whence;
 
-typedef enum 
+typedef enum mlt_service_type_enum
 {
 	invalid_type,
 	unknown_type,
