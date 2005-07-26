@@ -75,6 +75,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Pass all the composite. properties on the filter down
 		mlt_properties_pass( composite_properties, properties, "composite." );
 
+		if ( mlt_properties_get( properties, "composite.out" ) == NULL )
+			mlt_properties_set_int( composite_properties, "out", mlt_properties_get_int( properties, "_out" ) );
+
 		// Force a refresh
 		mlt_properties_set_int( composite_properties, "refresh", 1 );
 	}
@@ -222,6 +225,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 	// Get a unique name to store the frame position
 	char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" );
+
+	// Assign the frame out point to the filter (just in case we need it later)
+	mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "_out", mlt_properties_get_int( properties, "out" ) );
 
 	// Assign the current position to the name
 	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) - mlt_filter_get_in( this ) );
