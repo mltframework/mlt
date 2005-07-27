@@ -63,6 +63,7 @@ mlt_producer producer_kino_init( char *filename )
 			mlt_properties_set_position( properties, "in", 0 );
 			mlt_properties_set_position( properties, "out", kino_wrapper_get_frame_count( wrapper ) - 1 );
 			mlt_properties_set_double( properties, "real_fps", fps );
+			mlt_properties_set( properties, "resource", filename );
 
 			// Register transport implementation with the producer
 			producer->close = ( mlt_destructor )producer_close;
