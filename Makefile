@@ -8,9 +8,10 @@ SUBDIRS = src/framework \
 		  src/albino \
 		  src/modules
 
-all clean depend:
+all clean:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
+		$(MAKE) -s -C $$subdir depend || exit 1; \
 		$(MAKE) -C $$subdir $@ || exit 1; \
 	done
 
