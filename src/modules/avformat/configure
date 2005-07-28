@@ -10,6 +10,7 @@ FFMPEG/avformat options:
   --avformat-shared=path  - Link against a shared installation of ffmpeg (default)
   --avformat-static=path  - Link against a static ffmpeg dev tree
   --avformat-ldextra=libs - Provide additional libs to link with
+  --avformat-suffix=suff  - Specify a custom suffix for an ffmpeg shared build
 
 EOF
 
