@@ -79,6 +79,8 @@ struct motion_est_context_s
 	int edge_blocks_x, edge_blocks_y;
 	int initial_thresh;
 	int check_chroma;			// if check_chroma == 1 then compare chroma
+	int denoise;
+	int previous_msad;
 
 	/* bounds */
 	struct mlt_geometry_item_s prev_bounds;	// Cache last frame's bounds (needed for predictor vectors validity)
@@ -107,8 +109,6 @@ struct motion_est_context_s
 	/* run-time configurable comparison functions */
 	int (*compare_reference)(uint8_t *, uint8_t *, int, int, int, int);
 	int (*compare_optimized)(uint8_t *, uint8_t *, int, int, int, int);
-	//int (*vert_deviation_reference)(uint8_t *, int, int, int, int);
-	//int (*horiz_deviation_reference)(uint8_t *, int, int, int, int);
 
 };
 
@@ -447,68 +447,92 @@ static inline int median_predictor(int a, int b, int c) {
 	return b;
 }
 
-#if 0
-inline static int vertical_gradient_reference( uint8_t *block, int xstride, int ystride, int w, int h )
-{
-	int i, j, average, deviation = 0;
-	for ( i = 0; i < w; i++ ){
-		average = 0;
-		for ( j = 0; j < h; j++ ){
-			average += *(block + i*xstride + j*ystride);
-		}
-		average /= h;
-		for ( j = 0; j < h; j++ ){
-			deviation += ABS(average - block[i*xstride + j*ystride]);
-		}
-	}
-
-	return deviation;
-}
-#endif
-
-#if 0
-inline static int horizontal_gradient_reference( uint8_t *block, int xstride, int ystride, int w, int h )
-{
-	int i, j, average, deviation = 0;
-	for ( j = 0; j < h; j++ ){
-		average = 0;
-		for ( i = 0; i < w; i++ ){
-			average += block[i*xstride + j*ystride];
-		}
-		average /= w;
-		for ( i = 0; i < w; i++ ){
-			deviation += ABS(average - block[i*xstride + j*ystride]);
-		}
-	}
-
-	return deviation;
-}
-#endif
-
 // Macros for pointer calculations
 #define CURRENT(i,j)	( c->current_vectors + (j)*c->mv_buffer_width + (i) )
 #define FORMER(i,j)	( c->former_vectors + (j)*c->mv_buffer_width + (i) )
+#define DENOISE(i,j)	( c->denoise_vectors + (j)*c->mv_buffer_width + (i) )
 
-#if 0
-void collect_pre_statistics( struct motion_est_context_s *c, uint8_t *image ) {
-
-	int i, j, count = 0;
-	uint8_t *p;
-
-	for ( i = c->left_mb; i <= c->right_mb; i++ ){
-	 for ( j = c->top_mb; j <= c->bottom_mb; j++ ){  
-		count++;
-		p = image + i * c->macroblock_width * c->xstride + j * c->macroblock_height * c->ystride;
-		CURRENT(i,j)->vert_dev = c->vert_deviation_reference( p, c->xstride, c->ystride, c->macroblock_width, c->macroblock_height );
-		CURRENT(i,j)->horiz_dev = c->horiz_deviation_reference( p, c->xstride, c->ystride, c->macroblock_width, c->macroblock_height );
-	 }
-	}
+int ncompare (const void * a, const void * b)
+{
+	return ( *(int*)a - *(int*)b );
 }
-#endif
 
+// motion vector denoising
+// for x and y components seperately,
+// change the vector to be the median value of the 9 adjacent vectors
 static void median_denoise( motion_vector *v, struct motion_est_context_s *c )
 {
-//	for ( int i = 0; i++
+	int xvalues[9], yvalues[9];
+
+	int i,j,n;
+	for( i = c->left_mb; i <= c->right_mb; i++ ){
+		for( j = c->top_mb; j <= c->bottom_mb; j++ )
+		{
+			n = 0;
+
+			xvalues[n  ] = CURRENT(i,j)->dx; // Center
+			yvalues[n++] = CURRENT(i,j)->dy;
+
+			if( i > c->left_mb ) // Not in First Column
+			{
+				xvalues[n  ] = CURRENT(i-1,j)->dx; // Left
+				yvalues[n++] = CURRENT(i-1,j)->dy;
+
+				if( j > c->top_mb ) {
+					xvalues[n  ] = CURRENT(i-1,j-1)->dx; // Upper Left
+					yvalues[n++] = CURRENT(i-1,j-1)->dy;
+				}
+
+				if( j < c->bottom_mb ) {
+					xvalues[n  ] = CURRENT(i-1,j+1)->dx; // Bottom Left
+					yvalues[n++] = CURRENT(i-1,j+1)->dy;
+				}
+			}
+			if( i < c->right_mb ) // Not in Last Column
+			{
+				xvalues[n  ] = CURRENT(i+1,j)->dx; // Right
+				yvalues[n++] = CURRENT(i+1,j)->dy;
+				
+				
+				if( j > c->top_mb ) {
+					xvalues[n  ] = CURRENT(i+1,j-1)->dx; // Upper Right
+					yvalues[n++] = CURRENT(i+1,j-1)->dy;
+				}
+
+				if( j < c->bottom_mb ) {
+					xvalues[n  ] = CURRENT(i+1,j+1)->dx; // Bottom Right
+					yvalues[n++] = CURRENT(i+1,j+1)->dy;
+				}
+			}
+			if( j > c->top_mb ) // Not in First Row
+			{
+				xvalues[n  ] = CURRENT(i,j-1)->dx; // Top
+				yvalues[n++] = CURRENT(i,j-1)->dy;
+			}
+
+			if( j < c->bottom_mb ) // Not in Last Row
+			{
+				xvalues[n  ] = CURRENT(i,j+1)->dx; // Bottom
+				yvalues[n++] = CURRENT(i,j+1)->dy;
+			}
+
+			qsort (xvalues, n, sizeof(int), ncompare);
+			qsort (yvalues, n, sizeof(int), ncompare);
+
+			if( n % 2 == 1 ) {
+				DENOISE(i,j)->dx = xvalues[n/2];
+				DENOISE(i,j)->dy = yvalues[n/2];
+			}
+			else {
+				DENOISE(i,j)->dx = (xvalues[n/2] + xvalues[n/2+1])/2;
+				DENOISE(i,j)->dy = (yvalues[n/2] + yvalues[n/2+1])/2;
+			}
+		}
+	}
+
+	motion_vector *t = c->current_vectors;
+	c->current_vectors = c->denoise_vectors;
+	c->denoise_vectors = t;
 
 }
 
@@ -625,117 +649,6 @@ static void search( struct yuv_data from,			//<! Image data. Motion vector sourc
 		full_search( from, to, from_x, from_y, here, c); 
 #endif
 
-
-		/* Do things in Reverse
-		 * Check for occlusions. A block from last frame becomes obscured this frame.
-		 * A bogus motion vector will result. To look for this, run the search in reverse
-		 * and see if the vector is good backwards and forwards. Most occlusions won't be.
-		 * The new source block may not correspond exactly to blocks in the vector buffer
-		 * The opposite case, a block being revealed is inherently ignored.
-		 */
-#if 0
-		if ( here->msad < c->initial_thresh )		// The vector is probably good.
-			continue;
-
-		struct motion_vector_s reverse;
-		reverse.dx = -here->dx;	
-		reverse.dy = -here->dy;
-		reverse.msad = here->msad;
-
-		// calculate psuedo block coordinates
-		from_x += here->dx;
-		from_y += here->dy;
-
-		n = 0;
-#endif
-
-		// Calculate the real block closest to our psuedo block
-#if 0
-		int ri = ( ABS( here->dx ) + c->macroblock_width/2 ) / c->macroblock_width;
-		if ( ri != 0 ) ri *= here->dx / ABS(here->dx);	// Recover sign
-		ri += i;
-		if ( ri < 0 ) ri = 0;
-		else if ( ri >= c->mv_buffer_width ) ri = c->mv_buffer_width;
-
-		int rj = ( ABS( here->dy ) + c->macroblock_height/2 ) / c->macroblock_height;
-		if ( rj != 0 ) rj *= here->dy / ABS(here->dy);	// Recover sign
-		rj += j;
-		if ( rj < 0 ) rj = 0;
-		else if ( rj >= c->mv_buffer_height ) rj = c->mv_buffer_height;
-
-		/* Adjacent to collocated */
-		if( c->former_vectors_valid )
-		{
-			// Top of colocated
-			if( rj > c->prev_top_mb ){// && COL_TOP->valid ){
-				candidates[n  ].dx = -FORMER(ri,rj-1)->dx;
-				candidates[n++].dy = -FORMER(ri,rj-1)->dy;
-			}
-	
-			// Left of colocated
-			if( ri > c->prev_left_mb ){// && COL_LEFT->valid ){
-				candidates[n  ].dx = -FORMER(ri-1,rj)->dx;
-				candidates[n++].dy = -FORMER(ri-1,rj)->dy;
-			}
-	
-			// Right of colocated
-			if( ri < c->prev_right_mb ){// && COL_RIGHT->valid ){
-				candidates[n  ].dx = -FORMER(ri+1,rj)->dx;
-				candidates[n++].dy = -FORMER(ri+1,rj)->dy;
-			}
-	
-			// Bottom of colocated
-			if( rj < c->prev_bottom_mb ){// && COL_BOTTOM->valid ){
-				candidates[n  ].dx = -FORMER(ri,rj+1)->dx;
-				candidates[n++].dy = -FORMER(ri,rj+1)->dy;
-			}
-
-			// And finally, colocated
-			candidates[n  ].dx = -FORMER(ri,rj)->dx;
-			candidates[n++].dy = -FORMER(ri,rj)->dy;
-		}
-#endif
-#if 0
-		// Zero vector
-		candidates[n].dx = 0;
-		candidates[n++].dy = 0;
-
-		check_candidates ( &to, &from, from_x, from_y, candidates, 1, 1, &reverse, c ); 
-
-		/* Scan for the best candidate */
-		while( n ) {
-			n--;
-
-			score = compare( to, from, from_x, from_y,	/* to and from are reversed */
-					 from_x + candidates[n].dx,	/* to x */
-					 from_y + candidates[n].dy,	/* to y */
-					 c);				/* context */
-
-			if ( score < reverse.msad ) {
-				reverse.dx = candidates[n].dx;
-				reverse.dy = candidates[n].dy;
-				reverse.msad = score;
-				if ( score < c->initial_thresh )
-					n=0;		// Simplified version of early termination thresh
-			}
-		}
-
-//		if ( reverse.msad == here->msad)	// If nothing better was found
-//		{					// this is an opportunity
-//							// to skip 4 block comparisons
-//			continue;			// in the diamond search
-//		}
-
-
-		diamond_search( &to, &from, from_x, from_y, &reverse, c); /* to and from are reversed */
-
-		if ( ABS( reverse.dx + here->dx ) + ABS( reverse.dy + here->dy ) > 5  )
-//		if ( here->msad > reverse.msad + c->initial_thresh*10   )
-		{
-			here->valid = 2;
-		}
-
-#endif
 	 } /* End column loop */
 	} /* End row loop */
 
@@ -829,8 +742,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the motion_est context object
 	struct motion_est_context_s *c = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "context", NULL);
 
+		#ifdef BENCHMARK
+		struct timeval start; gettimeofday(&start, NULL );
+		#endif
+
 	// Get the new image and frame number
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+
+		#ifdef BENCHMARK
+		struct timeval finish; gettimeofday(&finish, NULL ); int difference = (finish.tv_sec - start.tv_sec) * 1000000 + (finish.tv_usec - start.tv_usec);
+		fprintf(stderr, " in frame %d:%d usec\n", c->current_frame_position, difference);
+		#endif
 
 	if( error != 0 )
 		mlt_properties_debug( MLT_FRAME_PROPERTIES(frame), "error after mlt_frame_get_image() in motion_est", stderr );
@@ -872,6 +794,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		if( mlt_properties_get( properties, "check_chroma" ) != NULL )
 			c->check_chroma = mlt_properties_get_int( properties, "check_chroma" );
+
+		if( mlt_properties_get( properties, "denoise" ) != NULL )
+			c->denoise = mlt_properties_get_int( properties, "denoise" );
 
 		init_optimizations( c );
 
@@ -939,6 +864,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 
 		c->former_frame_position = c->current_frame_position;
+		c->previous_msad = 0;
 
 		c->initialized = 1;
 	}
@@ -973,9 +899,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// If video is advancing, run motion vector algorithm and etc...	
 	if( c->former_frame_position + 1 == c->current_frame_position )
 	{
-		#ifdef BENCHMARK
-		struct timeval start; gettimeofday(&start, NULL );
-		#endif
 
 		// Swap the motion vector buffers and reuse allocated memory
 		struct motion_vector_s *temp = c->current_vectors;
@@ -1017,20 +940,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		//collect_pre_statistics( context, *image );
 		search( c->current_image, c->former_image, c );
 
-		//median_denoise( c->current_vectors, c );
-
 		collect_post_statistics( c );
 
-		#ifdef BENCHMARK
-		struct timeval finish; gettimeofday(&finish, NULL ); int difference = (finish.tv_sec - start.tv_sec) * 1000000 + (finish.tv_usec - start.tv_usec);
-		fprintf(stderr, " in frame %d:%d usec\n", c->current_frame_position, difference);
-		#endif
 
 
 
 		// Detect shot changes
-		if( c->comparison_average > 12 * c->macroblock_width * c->macroblock_height ) {
-			//fprintf(stderr, " - SAD: %d   <<Shot change>>\n", c->comparison_average);
+		if( c->comparison_average > 10 * c->macroblock_width * c->macroblock_height &&
+		    c->comparison_average > c->previous_msad * 2 )
+		{
+			fprintf(stderr, " - SAD: %d   <<Shot change>>\n", c->comparison_average);
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "shot_change", 1);
 		//	c->former_vectors_valid = 0; // Invalidate the previous frame's predictors
 			c->shot_change = 1;
@@ -1041,7 +960,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			//fprintf(stderr, " - SAD: %d\n", c->comparison_average);
 		}
 
+		c->previous_msad = c->comparison_average;
+
 		if( c->comparison_average != 0 ) {
+
+			// denoise the vector buffer
+			if( c->denoise )
+				median_denoise( c->current_vectors, c );
+
 			// Pass the new vector data into the frame
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "motion_est.vectors",
 					 (void*)c->current_vectors, c->mv_size, NULL, NULL );
@@ -1078,6 +1004,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Remember which frame this is
 	c->former_frame_position = c->current_frame_position;
+
 
 	if ( c->check_chroma == 0 )
 		memcpy( c->former_image.y, *image, *width * *height * c->xstride );
@@ -1133,6 +1060,7 @@ mlt_filter filter_motion_est_init( char *arg )
 		context->limit_y = 64;
 		context->search_method = DIAMOND_SEARCH;
 		context->check_chroma = 0;
+		context->denoise = 1;
 
 		/* reference functions that may have optimized versions */
 		context->compare_reference = sad_reference;

@@ -1,0 +1,69 @@
+COMPILE:
+
+This module performs motion estimation and ancillary functions. To compile this module, you must supply these options to the root configure script:
+
+--enable-gpl --enable-motion-est
+
+
+EXAMPLES:
+
+> inigo -filter motion_est <movie_file>
+
+But that won't be very interesting. Do this to display the motion vectors:
+
+> inigo -filter motion_est -filter vismv <movie_file>
+
+If your using a movie file that contains a crop, you will get better results with this:
+
+> inigo -filter crop_detect -filter motion_est -filter vismv <movie_file>
+
+If your computer is unable to do the above examples in real time, try this:
+
+> inigo -filter motion_est -filter vismv -consumer inigo real_time=0 <movie_file>
+
+If you'd like to see the motion vectors before the median denoising function is applied, do this:
+
+> inigo -filter motion_est denoise=0 -filter vismv <movie_file>
+
+To automatically track an object in the frame, try this:
+
+> inigo -filter autotrack_rectangle:X,Y:WxH debug=1 <movie_file>
+
+(Where X,Y is the origin of the rectangle indexed from upper left and WxH is the dimensions of the rectangle.)
+
+
+NOTES (and deficiencies):
+
+1.  Ignore shot change detection when your using the autotrack_rectangle filter.
+
+2.  Don't assume motion vectors displayed while stepping backwards and forward are that same vectors
+    that would be calculated while playing the footage from start to finish, nonstop. Stepping forward
+    should be fine after a few frames, however.
+
+3.  SSE instructions are lazily assumed. MMX and Altivec would be good too.
+
+4.  Motion estimation is only performed in the luma color space.
+
+5.  Motion vectors should have sub-pixel accuracy.
+
+6.  Motion vectors are not serializable yet.
+
+7.  A diligent test suite is needed.
+
+8.  Multithreaded code will see HUGE benefits on multi-CPU systems. Donations of a multi-core cpu or a
+    multi-cpu system to the author will encourage development.
+
+9.  Macroblock sizes are not dynamic (Though settable at runtime.)
+
+10. Notes (5), (7), and (9) would go a long ways to making this code suitable for a modern video encoder.
+
+11. Shot change works well but arbitrarily chosen thresholds need to be tuned.
+
+12. Given the nature of documentation of other motion estimation code bases, I will GLADLY clarify and
+    document any piece of code upon request.
+
+13. Considerable effort has been put into the speed.
+
+Zachary Drew
+drew0054@tc.umn.edu
+
