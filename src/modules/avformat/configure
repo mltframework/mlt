@@ -65,7 +65,7 @@ else
 		)
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure --enable-shared --build-suffix="$avformat_suffix" )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
-		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec" >> config.mak
+		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil" >> config.mak
 		echo "LOCAL_FFMPEG=1" >> config.mak
 		extra_libs="$extra_libs -lz"
 	elif [ "$static_ffmpeg" != "" ]
