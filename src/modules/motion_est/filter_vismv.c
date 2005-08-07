@@ -38,42 +38,9 @@ static void paint_arrows( uint8_t *image, struct motion_vector_s *vectors, int w
 			x = i*mb_w;
 			y = j*mb_h;
 			p = vectors + (w/mb_w)*j + i;
-#if 0
-			if( p->color == 0 )
-				continue;
-			if( p->quality > 10 ){
-				draw_line(image, x, y, x + mb_w, y, 100);
-				draw_line(image, x, y, x, y + mb_h, 100);
-				draw_line(image, x + mb_w, y, x + mb_w, y + mb_h, 100);
-				draw_line(image, x + mb_w, y + mb_h, x, y + mb_w, 100);
-			}
-			else if ( p->color == 18 ) {
-				draw_line(image, x, y, x + mb_w, y + mb_h, 100);
-				draw_line(image, x, y + mb_h, x + mb_w, y, 100);
-				continue;
-			}
-			else if( p->vert_dev < 150 ){
-				x += mb_w/2;
-				draw_line(image, x, y, x, y + mb_h, 100);
-				continue;
-			}
-			else if( p->horiz_dev < 150 ){
-				y += mb_w/2;
-				draw_line(image, x, y, x+mb_w, y, 100);
-				continue;
-			}
-			else
-#endif
-			/*if ( p->valid == 1 ){
-				x += mb_w/2;
-				y += mb_h/2;
-				draw_arrow(image, x + p->dx, y + p->dy, x, y, 100);
-			} else */
-			if ( p->valid == 3 ) {
-				draw_rectangle_fill(image, x, y, mb_w, mb_h,0);
-			}
+
 			if ( p->valid == 1 ) {
-				//draw_rectangle_outline(image, x, y, mb_w, mb_h,100);
+				//draw_rectangle_outline(image, x-1, y-1, mb_w+1, mb_h+1,100);
 				//x += mb_w/4;
 				//y += mb_h/4;
 				//draw_rectangle_outline(image, x + p->dx, y + p->dy, mb_w, mb_h,100);
@@ -82,32 +49,24 @@ static void paint_arrows( uint8_t *image, struct motion_vector_s *vectors, int w
 				draw_arrow(image, x, y, x + p->dx, y + p->dy, 100);
 				//draw_rectangle_fill(image, x + p->dx, y + p->dy, mb_w, mb_h, 100);
 			}
-		}
-	}
-	//if (count > 300)
-	//	fprintf(stderr, "%d mbs above %d\n", count, mb_w * mb_h * 12);
-}
+			else if ( p->valid == 2 ) {
+				draw_rectangle_outline(image, x+1, y+1, mb_w-2, mb_h-2,100);
+			}
+			else if ( p->valid == 3 ) {
+				draw_rectangle_fill(image, x-p->dx, y-p->dy, mb_w, mb_h,0);
+			}
+			else if ( p->valid == 4 ) {
+				draw_line(image, x, y, x + 4, y, 100);
+				draw_line(image, x, y, x, y + 4, 100);
+				draw_line(image, x + 4, y, x, y + 4, 100);
 
-#if 0
-static void paint_mbs( uint8_t *image, struct motion_vector_s *vectors, int w, int h, int mb_w, int mb_h, int xstep, int ystep )
-{
-	int i, j, x, y;
-	struct motion_vector_s *p;
-	for( i = 0; i < w/mb_w; i++ ){
-		for( j = 0; j < h/mb_h; j++ ){
-			x = i * mb_w;
-			y = j * mb_h;
-			p = vectors + (w/mb_w)*j + i;
-			if( p->color == 0 )
-				continue;
-			draw_line(image, x, y, x + mb_w, y, 100);
-			draw_line(image, x, y, x, y + mb_h, 100);
-			draw_line(image, x + mb_w, y, x + mb_w, y + mb_h, 100);
-			draw_line(image, x + mb_w, y + mb_h, x, y + mb_w, 100);
+				draw_line(image, x+mb_w-1, y+mb_h-1, x+mb_w-5, y+mb_h-1, 100);
+				draw_line(image, x+mb_w-1, y+mb_h-1, x+mb_w-1, y+mb_h-5, 100);
+				draw_line(image, x+mb_w-5, y+mb_h-1, x+mb_w-1, y+mb_h-5, 100);
+			}
 		}
 	}
 }
-#endif
 
 // Image stack(able) method
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
@@ -138,7 +97,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 	if( current_vectors != NULL ) {
 		paint_arrows( *image, current_vectors, *width, *height, macroblock_width, macroblock_height);
-		//paint_mbs( *image, current_vectors, *width, *height, macroblock_width, macroblock_height, xstep, ystep);
 	}
 
 	return error;
