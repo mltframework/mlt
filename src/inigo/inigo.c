@@ -111,8 +111,10 @@ static void transport_action( mlt_producer producer, char *value )
 				if ( producer != NULL )
 				{
 					mlt_position position = mlt_producer_position( producer );
-					mlt_producer_set_speed( producer, 0 );
-					mlt_producer_seek( producer, position + 1 );
+					if ( mlt_producer_get_speed( producer ) != 0 )
+						mlt_producer_set_speed( producer, 0 );
+					else
+						mlt_producer_seek( producer, position + 1 );
 				}
 				break;
 			case 'L':
