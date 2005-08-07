@@ -37,100 +37,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include "arrow_code.h"
 
-#define ROUNDED_DIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
 #define ABS(a) ((a) >= 0 ? (a) : (-(a)))
-
-#ifdef DEBUG
-// ffmpeg borrowed
-static inline int clip(int a, int amin, int amax)
-{
-    if (a < amin)
-        return amin;
-    else if (a > amax)
-	return amax;
-    else
-        return a;
-}
-
-
-/**
- * draws an line from (ex, ey) -> (sx, sy).
- * Credits: modified from ffmpeg project
- * @param ystride stride/linesize of the image
- * @param xstride stride/element size of the image
- * @param color color of the arrow
- */
-static void draw_line(uint8_t *buf, int sx, int sy, int ex, int ey, int w, int h, int xstride, int ystride, int color){
-    int t, x, y, fr, f;
-
-//    buf[sy*ystride + sx*xstride]= color;
-    buf[sy*ystride + sx]+= color;
-
-    sx= clip(sx, 0, w-1);
-    sy= clip(sy, 0, h-1);
-    ex= clip(ex, 0, w-1);
-    ey= clip(ey, 0, h-1);
-
-    if(ABS(ex - sx) > ABS(ey - sy)){
-        if(sx > ex){
-            t=sx; sx=ex; ex=t;
-            t=sy; sy=ey; ey=t;
-        }
-        buf+= sx*xstride + sy*ystride;
-        ex-= sx;
-        f= ((ey-sy)<<16)/ex;
-        for(x= 0; x <= ex; x++){
-            y = (x*f)>>16;
-            fr= (x*f)&0xFFFF;
-            buf[ y   *ystride + x*xstride]= (color*(0x10000-fr))>>16;
-            buf[(y+1)*ystride + x*xstride]= (color*         fr )>>16;
-        }
-    }else{
-        if(sy > ey){
-            t=sx; sx=ex; ex=t;
-            t=sy; sy=ey; ey=t;
-        }
-        buf+= sx*xstride + sy*ystride;
-        ey-= sy;
-        if(ey) f= ((ex-sx)<<16)/ey;
-        else   f= 0;
-        for(y= 0; y <= ey; y++){
-            x = (y*f)>>16;
-            fr= (y*f)&0xFFFF;
-            buf[y*ystride + x    *xstride]= (color*(0x10000-fr))>>16;;
-            buf[y*ystride + (x+1)*xstride]= (color*         fr )>>16;;
-        }
-    }
-}
-
-/**
- * draws an arrow from (ex, ey) -> (sx, sy).
- * Credits: modified from ffmpeg project
- * @param stride stride/linesize of the image
- * @param color color of the arrow
- */
-static void draw_arrow(uint8_t *buf, int sx, int sy, int ex, int ey, int w, int h, int xstride, int ystride, int color){
-    int dx,dy;
-
-	dx= ex - sx;
-	dy= ey - sy;
-
-	if(dx*dx + dy*dy > 3*3){
-		int rx=  dx + dy;
-		int ry= -dx + dy;
-		int length= sqrt((rx*rx + ry*ry)<<4);
-
-		//FIXME subpixel accuracy
-		rx= ROUNDED_DIV(rx*3<<4, length);
-		ry= ROUNDED_DIV(ry*3<<4, length);
-
-		draw_line(buf, sx, sy, sx + rx, sy + ry, w, h, xstride, ystride, color);
-		draw_line(buf, sx, sy, sx - ry, sy + rx, w, h, xstride, ystride, color);
-	}
-	draw_line(buf, sx, sy, ex, ey, w, h, xstride, ystride, color);
-}
-#endif
 
 // Image stack(able) method
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
@@ -165,11 +74,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		mlt_properties_set_data( properties, "bounds", bounds, sizeof( struct mlt_geometry_item_s ), free, NULL );
 	}
 
-//	mlt_properties first = (mlt_properties)  mlt_deque_peek_front( MLT_FRAME_SERVICE_STACK(this) );
-//	int current_producer_id = mlt_properties_get_int( first, "_unique_id");
-//	int former_producer_id = mlt_properties_get_int(properties, "_former_unique_id");
-//	mlt_properties_set_int(properties, "_former_unique_id", current_producer_id);
-
 	// For periodic detection (with offset of 'skip')
 	if( frequency == 0 || (mlt_frame_get_position(this)+skip) % frequency != 0)
 	{
@@ -197,92 +101,104 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 
 	int x, y, average_brightness, deviation; // Scratch variables
+	uint8_t *q;
 
 	// Top crop
 	for( y = 0; y < *height/2; y++ ) {
+		bounds->y = y;
 		average_brightness = 0;
 		deviation = 0;
-		bounds->y = y;
+		q = *image + y*ystride;
 		for( x = 0; x < *width; x++ )
-			average_brightness += *(*image + y*ystride + x*xstride);
+			average_brightness += q[x*xstride];
 
 		average_brightness /= *width;
 
 		for( x = 0; x < *width; x++ )
-			deviation += abs(average_brightness - *(*image + y*ystride + x*xstride));
+			deviation += abs(average_brightness - q[x*xstride]);
 
-		if( deviation >= thresh )
+		if( deviation*10 >= thresh * *width )
 			break;
 	}
 
 	// Bottom crop
 	for( y = *height - 1; y >= *height/2; y-- ) {
+		bounds->h = y;
 		average_brightness = 0;
 		deviation = 0;
-		bounds->h = y;
+		q = *image + y*ystride;
 		for( x = 0; x < *width; x++ )
-			average_brightness += *(*image + y*ystride + x*xstride);
+			average_brightness += q[x*xstride];
 
 		average_brightness /= *width;
 
 		for( x = 0; x < *width; x++ )
-			deviation += abs(average_brightness - *(*image + y*ystride + x*xstride));
+			deviation += abs(average_brightness - q[x*xstride]);
 
-		if( deviation >= thresh )
+		if( deviation*10 >= thresh * *width)
 			break;
 	}
 
 	// Left crop	
 	for( x = 0; x < *width/2; x++ ) {
+		bounds->x = x;
 		average_brightness = 0;
 		deviation = 0;
-		bounds->x = x;
+		q = *image + x*xstride;
 		for( y = 0; y < *height; y++ )
-			average_brightness += *(*image + y*ystride + x*xstride);
+			average_brightness += q[y*ystride];
 
 		average_brightness /= *height;
 
 		for( y = 0; y < *height; y++ )
-			deviation += abs(average_brightness - *(*image + y*ystride + x*xstride));
+			deviation += abs(average_brightness - q[y*ystride]);
 
-		if( deviation >= thresh )
+		if( deviation*10 >= thresh * *width )
 			break;
 	}
 
 	// Right crop
 	for( x = *width - 1; x >= *width/2; x-- ) {
+		bounds->w = x;
 		average_brightness = 0;
 		deviation = 0;
-		bounds->w = x;
+		q = *image + x*xstride;
 		for( y = 0; y < *height; y++ )
-			average_brightness += *(*image + y*ystride + x*xstride);
+			average_brightness += q[y*ystride];
 
 		average_brightness /= *height;
 
 		for( y = 0; y < *height; y++ )
-			deviation += abs(average_brightness - *(*image + y*ystride + x*xstride));
+			deviation += abs(average_brightness - q[y*ystride]);
 
-		if( deviation >= thresh )
+		if( deviation*10 >= thresh * *width )
 			break;
 	}
 
 	/* Debug: Draw arrows to show crop */
 	if( mlt_properties_get_int( properties, "debug") == 1 )
 	{
-		draw_arrow(*image, bounds->x, *height/2, bounds->x+40, *height/2, *width, *height, xstride, ystride, 0xff);
-		draw_arrow(*image, *width/2, bounds->y, *width/2, bounds->y+40, *width, *height, xstride, ystride, 0xff);
-		draw_arrow(*image, bounds->w, *height/2, bounds->w-40, *height/2, *width, *height, xstride, ystride, 0xff);
-		draw_arrow(*image, *width/2, bounds->h, *width/2, bounds->h-40, *width, *height, xstride, ystride, 0xff);
+		init_arrows( format, *width, *height );
 
-		fprintf(stderr, "Top:%f Left:%f Right:%f Bottom:%f\n", bounds->y, bounds->x, bounds->w, bounds->h);
+		draw_arrow(*image, bounds->x, *height/2, bounds->x+50, *height/2, 100);
+		draw_arrow(*image, *width/2, bounds->y, *width/2, bounds->y+50, 100);
+		draw_arrow(*image, bounds->w, *height/2, bounds->w-50, *height/2, 100);
+		draw_arrow(*image, *width/2, bounds->h, *width/2, bounds->h-50, 100);
+		draw_arrow(*image, bounds->x, bounds->y, bounds->x+40, bounds->y+30, 100);
+		draw_arrow(*image, bounds->x, bounds->h, bounds->x+40, bounds->h-30, 100);
+		draw_arrow(*image, bounds->w, bounds->y, bounds->w-40, bounds->y+30, 100);
+		draw_arrow(*image, bounds->w, bounds->h, bounds->w-40, bounds->h-30, 100);
 	}
 
-	bounds->w -= bounds->x;
-	bounds->h -= bounds->y;
+	// Convert to width and correct indexing
+	bounds->w -= bounds->x - 1;
+	bounds->h -= bounds->y - 1;
+
+	if( mlt_properties_get_int( properties, "debug") == 1 )
+		fprintf(stderr, "Top:%f Left:%f Width:%f Height:%f\n", bounds->y, bounds->x, bounds->w, bounds->h);
 
 	/* inject into frame */
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES(this), "bounds", bounds, sizeof( struct mlt_geometry_item_s ), NULL, NULL );
-
 
 	return error;
 }
@@ -315,7 +231,7 @@ mlt_filter filter_crop_detect_init( char *arg )
 
 		/* defaults */
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES(this), "frequency", 1);
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES(this), "thresh", 25);
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES(this), "thresh", 5);
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES(this), "clip", 5);
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES(this), "former_producer_id", -1);
 
