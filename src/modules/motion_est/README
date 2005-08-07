@@ -1,33 +1,54 @@
+INTRO:
+
+This module is designed to provide application agnostic motion estimation.
+I wrote it from scratch because I found the other Open Source code to be
+limited by their difficulty of reuse.
+
+
 COMPILE:
 
-This module performs motion estimation and ancillary functions. To compile this module, you must supply these options to the root configure script:
+To compile this module, you must supply these options to the root configure script:
 
 --enable-gpl --enable-motion-est
 
 
 EXAMPLES:
 
-> inigo -filter motion_est <movie_file>
+Estimate the motion:
 
-But that won't be very interesting. Do this to display the motion vectors:
+	> inigo -filter motion_est <movie_file>
 
-> inigo -filter motion_est -filter vismv <movie_file>
+To display the motion vectors as pretty arrows:
+
+	> inigo -filter motion_est -filter vismv <movie_file>
 
 If your using a movie file that contains a crop, you will get better results with this:
 
-> inigo -filter crop_detect -filter motion_est -filter vismv <movie_file>
+	> inigo -filter crop_detect -filter motion_est -filter vismv <movie_file>
 
 If your computer is unable to do the above examples in real time, try this:
 
-> inigo -filter motion_est -filter vismv -consumer inigo real_time=0 <movie_file>
+	> inigo -filter motion_est -filter vismv -consumer inigo real_time=0 <movie_file>
 
-If you'd like to see the motion vectors before the median denoising function is applied, do this:
+If you'd like to see the motion vectors without the median denoising function, do this:
 
-> inigo -filter motion_est denoise=0 -filter vismv <movie_file>
+	> inigo -filter motion_est denoise=0 -filter vismv <movie_file>
+
+To reconstruct each frame by applying the motion to the previous frame:
+
+	> inigo -filter motion_est show_reconstruction=1 <movie_file>
+
+To compare the reconstructed frame and the real frame (while paused):
+
+	> inigo -filter motion_est show_reconstruction=1 toggle_when_paused=1 <movie_file>
+
+To show the difference (residual) between the reconstructed frame the real frame:
+
+	> inigo -filter motion_est show_residual=1 <movie_file>
 
 To automatically track an object in the frame, try this:
 
-> inigo -filter autotrack_rectangle:X,Y:WxH debug=1 <movie_file>
+	> inigo -filter autotrack_rectangle:X,Y:WxH debug=1 <movie_file>
 
 (Where X,Y is the origin of the rectangle indexed from upper left and WxH is the dimensions of the rectangle.)
 
@@ -40,7 +61,7 @@ NOTES (and deficiencies):
     that would be calculated while playing the footage from start to finish, nonstop. Stepping forward
     should be fine after a few frames, however.
 
-3.  SSE instructions are lazily assumed. MMX and Altivec would be good too.
+3.  SSE instructions are lazily assumed. MMX, Altivec, and SIMD-less would be good too.
 
 4.  Motion estimation is only performed in the luma color space.
 
@@ -48,7 +69,7 @@ NOTES (and deficiencies):
 
 6.  Motion vectors are not serializable yet.
 
-7.  A diligent test suite is needed.
+7.  A diligent test suite is needed. (show_reconstruction & show_residual are a start)
 
 8.  Multithreaded code will see HUGE benefits on multi-CPU systems. Donations of a multi-core cpu or a
     multi-cpu system to the author will encourage development.
@@ -59,10 +80,10 @@ NOTES (and deficiencies):
 
 11. Shot change works well but arbitrarily chosen thresholds need to be tuned.
 
-12. Given the nature of documentation of other motion estimation code bases, I will GLADLY clarify and
+12. Given the documentation of other motion estimation code bases, I will GLADLY clarify and
     document any piece of code upon request.
 
-13. Considerable effort has been put into the speed.
+13. Considerable effort has been put into the speed. I usually experience 10ms or less per frame for PAL on 2.8GHZ p4.
 
 Zachary Drew
 drew0054@tc.umn.edu
