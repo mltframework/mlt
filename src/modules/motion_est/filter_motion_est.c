@@ -6,7 +6,7 @@
  *	Vector optimization coming soon. 
  *
  *	Vector orientation: The vector data that is generated for the current frame specifies
- *	the motion from the previous frame to the current frame. Thus, to know how a macroblock
+ *	the motion from the previous frame to the current frame. To know how a macroblock
  *	in the current frame will move in the future, the next frame is needed.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -32,10 +32,12 @@
 #include <math.h>
 #include <string.h>
 #include <sys/time.h>
-#include <assert.h>
+#include <unistd.h>
 
 #include "sad_sse.h"
 
+#define NDEBUG
+#include <assert.h>
 
 #undef DEBUG
 #undef DEBUG_ASM
@@ -48,45 +50,41 @@
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 #define ABS(a) ((a) >= 0 ? (a) : (-(a)))
 
-#ifdef COUNT_COMPARES
-	int compares;
-#endif
 
 typedef struct motion_vector_s motion_vector;
 
-struct yuv_data
-{
-	uint8_t *y;
-	uint8_t *u;
-	uint8_t *v;
-
-};
-
 struct motion_est_context_s
 {
-	int initialized;				//<! true if filter has been initialized
+	int initialized;				// true if filter has been initialized
+
+#ifdef COUNT_COMPARES
+	int compares;
+#endif
 
 	/* same as mlt_frame's parameters */
 	int width, height;
 
 	/* Operational details */
-	int macroblock_width, macroblock_height;
+	int mb_w, mb_h;
 	int xstride, ystride;
-	//uint8_t *former_image;			//<! Copy of the previous frame's image
-	struct yuv_data former_image, current_image;
-	int search_method, skip_prediction, shot_change;
-	int limit_x, limit_y;			//<! max x and y of a motion vector
-	int edge_blocks_x, edge_blocks_y;
+	uint8_t *cache_image;			// Copy of current frame
+	uint8_t *former_image;			// Copy of former frame	
+	int search_method;
+	int skip_prediction;
+	int shot_change;
+	int limit_x, limit_y;			// max x and y of a motion vector
 	int initial_thresh;
 	int check_chroma;			// if check_chroma == 1 then compare chroma
 	int denoise;
 	int previous_msad;
+	int show_reconstruction;
+	int toggle_when_paused;
+	int show_residual;
 
 	/* bounds */
-	struct mlt_geometry_item_s prev_bounds;	// Cache last frame's bounds (needed for predictor vectors validity)
-	struct mlt_geometry_item_s *bounds;	// Current bounds
+	struct mlt_geometry_item_s bounds;	// Current bounds (from filters crop_detect, autotrack rectangle, or other)
 
-	/* bounds in macroblock units */
+	/* bounds in macroblock units; macroblocks are completely contained within the boundry */
 	int left_mb, prev_left_mb, right_mb, prev_right_mb;
 	int top_mb, prev_top_mb, bottom_mb, prev_bottom_mb;
 
@@ -95,12 +93,13 @@ struct motion_est_context_s
 
 	/* vector buffers */
 	int former_vectors_valid;		//<! true if the previous frame's buffered motion vector data is valid
-	motion_vector *former_vectors, *current_vectors;
+	motion_vector *former_vectors;
+	motion_vector *current_vectors;
 	motion_vector *denoise_vectors;
 	mlt_position former_frame_position, current_frame_position;
 
-	/* two metrics for diagnostics. lower is a better estimation but beware of local minima  */
-	float predictive_misses;		// How often do the prediction metion vectors fail?
+	/* diagnostic metrics */
+	float predictive_misses;		// How often do the prediction motion vectors fail?
 	int comparison_average;			// How far does the best estimation deviate from a perfect comparison?
 	int bad_comparisons;
 	int average_length;
@@ -112,60 +111,56 @@ struct motion_est_context_s
 
 };
 
-
-// Clip the macroblocks as required. Only used for blocks at the edge of the picture
-// "from" is assumed to be unclipped
-inline static int clip( int *from_x,
-			int *from_y,
-			int *to_x,
-			int *to_y,
-			int *w,			//<! macroblock width
-			int *h,			//<! macroblock height
-			int width,		//<! image width
-			int height)		//<! image height
+// This is used to constrains pixel operations between two blocks to be within the image boundry
+inline static int constrain(	int *x, int *y, int *w,	int *h,			
+				const int dx, const int dy,
+				const int left, const int right,
+				const int top, const int bottom)
 {
+	uint32_t penalty = 1 << SHIFT;			// Retain a few extra bits of precision
+	int x2 = *x + dx;
+	int y2 = *y + dy;
+	int w_remains = *w;
+	int h_remains = *h;
 
-	uint32_t penalty = 1 << SHIFT;	// Retain a few extra bits of precision minus floating-point's blemishes
-	int diff;
+	// Origin of macroblock moves left of image boundy
+	if( *x < left || x2 < left ) {
+		w_remains = *w - left + ((*x < x2) ?  *x : x2);
+		*x += *w - w_remains;
+	}
+	// Portion of macroblock moves right of image boundry
+	else if( *x + *w > right || x2 + *w > right )
+		w_remains = right - ((*x > x2) ? *x : x2);
 
-	// Origin of macroblock moves left of absolute boundy
-	if( *to_x < 0 ) {
-		if( *to_x + *w <= 0) return 0;			// Clipped out of existance
-		penalty = (*w * penalty) / (*w + *to_x);	 // Recipricol of the fraction of the block that remains
-		*from_x -= *to_x;
-		*w += *to_x; 
-		*to_x = 0;
+	// Origin of macroblock moves above image boundy
+	if( *y < top || y2 < top ) {
+		h_remains = *h - top + ((*y < y2) ? *y : y2);
+		*y += *h - h_remains;
 	}
-	// Portion of macroblock moves right of absolute boundry
-	else if( *to_x + *w > width ) {
-		if(*to_x >= width) return 0;			// Clipped out of existance
-		diff  = *to_x + *w - width;			// Width of area clipped (0 < diff <  macroblock width)
-		penalty = (*w * penalty) / (*w - diff);		// Recipricol of the fraction of the block that remains
-		*w -= diff;
-	}
-	// Origin of macroblock moves above absolute boundy
-	if( *to_y < 0 ) {
-		if( *to_y + *h <= 0) return 0;			// Clipped out of existance
-		penalty = (*h * penalty) / (*h + *to_y);	// Recipricol of the fraction of the block that remains
-		*from_y -= *to_y;
-		*h += *to_y;
-		*to_y = 0;
-	}
-	// Portion of macroblock moves bellow absolute boundry
-	else if( *to_y + *h > height ) {
-		if(*to_y >= height) return 0;			// Clipped out of existance
-		diff = *to_y + *h - height;			// Height of area clipped (0 < diff < macroblock height)
-		penalty = (*h * penalty) / (*h - diff);		// Recipricol of the fraction of the block that is clipped
-		*h -= diff;
-	}
+	// Portion of macroblock moves bellow image boundry
+	else if( *y + *h > bottom || y2 + *h > bottom )
+		h_remains = bottom - ((*y > y2) ?  *y : y2);
+
+	if( w_remains == *w && h_remains == *h ) return penalty; 
+	if( w_remains <= 0 || h_remains <= 0) return 0;	// Block is clipped out of existance
+	penalty = (*w * *h * penalty)
+		/ ( w_remains * h_remains);		// Recipricol of the fraction of the block that remains
+
+	assert(*x >= left); assert(x2 + *w - w_remains >= left);
+	assert(*y >= top); assert(y2 + *h - h_remains >= top);
+	assert(*x + w_remains <= right); assert(x2 + w_remains <= right);
+	assert(*y + h_remains <= bottom); assert(y2 + h_remains <= bottom);
+
+	*w = w_remains;					// Update the width and height
+	*h = h_remains;
+
 	return penalty;
 }
-
 
 /** /brief Reference Sum of Absolute Differences comparison function
 *
 */
-inline static int sad_reference( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+inline static int sad_reference( uint8_t *block1, uint8_t *block2, const int xstride, const int ystride, const int w, const int h )
 {
 	int i, j, score = 0;
 	for ( j = 0; j < h; j++ ){
@@ -179,98 +174,69 @@ inline static int sad_reference( uint8_t *block1, uint8_t *block2, int xstride, 
 	return score;
 }
 
-inline static void change_422_to_444_planar_rep( uint8_t *image, struct yuv_data yuv, struct motion_est_context_s *c )
-{
-	register uint8_t *p = image;
-	register uint8_t *q = image + c->width * c->height * 2;
-	while ( *p != *q ) {
-		*(yuv.y++) = *(p ++);
-		*(yuv.u++) = *p;
-		*(yuv.u++) = *(p ++);
-		*(yuv.y++) = *(p ++);
-		*(yuv.v++) = *p;
-		*(yuv.v++) = *(p ++);
-	}
-}
-
-// broken
-inline static void change_420p_to_444_planar_rep( uint8_t *image, struct yuv_data yuv, struct motion_est_context_s *c )
-{
-	uint8_t *p = image + c->width * c->height;
-	uint8_t *q = p + c->width*c->height/2;
-	uint8_t *u2, *v2;
-	while( *p != *q ) {
-		u2 = yuv.u + c->width;
-		*yuv.u  ++ = *p;
-		*yuv.u  ++ = *p;
-		*u2 ++ = *p;
-		*u2 ++ = *p ++;
-	}
-
-	*q += c->width*c->height/2;
-	while( *p != *q ) {
-		v2 = yuv.v + c->width;
-		*yuv.v  ++ = *p;
-		*yuv.v  ++ = *p;
-		*v2 ++ = *p;
-		*v2 ++ = *p ++;
-	}
-
-}
 
 /** /brief Abstracted block comparison function
 */
-inline static int compare( uint8_t *from,
-			   uint8_t *to,
-			   int from_x,
-			   int from_y,
-			   int to_x,
-			   int to_y,
+inline static int block_compare( uint8_t *block1,
+			   uint8_t *block2,
+			   int x,
+			   int y,
+			   int dx,
+			   int dy,
 			   struct motion_est_context_s *c)
 {
+
 #ifdef COUNT_COMPARES
-	compares++;
+	c->compares++;
 #endif
 
-	if( ABS(from_x - to_x) >= c->limit_x || ABS(from_y - to_y) >= c->limit_y )
-		return MAX_MSAD;
-
 	int score;
+
+	// Default comparison may be overridden by the slower, more capable reference comparison 
 	int (*cmp)(uint8_t *, uint8_t *, int, int, int, int) = c->compare_optimized;
 
-	int mb_w = c->macroblock_width;
-	int mb_h = c->macroblock_height;
-
-	int penalty = clip(&from_x, &from_y, &to_x, &to_y, &mb_w, &mb_h, c->width, c->height);
-	if ( penalty == 1<<SHIFT)
-	    penalty = clip(&to_x, &to_y, &from_x, &from_y, &mb_w, &mb_h, c->width, c->height);
-
-	if( penalty == 0 )			// Clipped out of existance
+	// vector displacement limited has been exceeded
+	if( ABS( dx ) >= c->limit_x || ABS( dy ) >= c->limit_y )
 		return MAX_MSAD;
-	else if( penalty != 1<<SHIFT )		// SIMD optimized comparison won't work
+
+	int mb_w = c->mb_w;	// Some writeable local copies
+	int mb_h = c->mb_h;
+
+	// Determine if either macroblock got clipped
+	int penalty = constrain( &x, &y, &mb_w,	&mb_h, dx, dy, 0, c->width, 0, c->height);
+
+	// Some gotchas
+	if( penalty == 0 )			// Clipped out of existance: Return worst score
+		return MAX_MSAD;
+	else if( penalty != 1<<SHIFT )		// Nonstandard macroblock dimensions: Disable SIMD optimizizations. 
 		cmp = c->compare_reference;
 
-	uint8_t *from_block = from + from_x * c->xstride + from_y * c->ystride; 
-	uint8_t *to_block = to + to_x * c->xstride + to_y * c->ystride; 
+	// Calculate the memory locations of the macroblocks
+	block1 += x	 * c->xstride + y 	* c->ystride; 
+	block2 += (x+dx) * c->xstride + (y+dy)  * c->ystride; 
 
 	#ifdef DEBUG_ASM	
 	if( penalty == 1<<SHIFT ){
-		score = c->compare_reference( from_block, to_block, c->xstride, c->ystride, mb_w, mb_h );
-		int score2 = c->compare_optimized( from_block, to_block, c->xstride, c->ystride, mb_w, mb_h );
+		score = c->compare_reference( block1, block2, c->xstride, c->ystride, mb_w, mb_h );
+		int score2 = c->compare_optimized( block1, block2, c->xstride, c->ystride, mb_w, mb_h );
 		if ( score != score2 )
 			fprintf(stderr, "Your assembly doesn't work! Reference: %d Asm: %d\n", score, score2);
 	}
 	else
 	#endif
 
-	score = cmp( from_block, to_block, c->xstride, c->ystride, mb_w, mb_h );
+	score = cmp( block1, block2, c->xstride, c->ystride, mb_w, mb_h );
 
-	return ( score * penalty ) >> SHIFT;			// The extra precision is no longer wanted
+	return ( score * penalty ) >> SHIFT;			// Ditch the extra precision
 }
 
-static inline void check_candidates (   struct yuv_data *from, struct yuv_data *to,
-					int from_x, int from_y,
-					motion_vector *candidates, int count, int unique,
+static inline void check_candidates (   uint8_t *ref,
+					uint8_t *candidate_base,
+					const int x,
+					const int y,
+					const motion_vector *candidates,// Contains to_x & to_y
+					const int count,		// Number of candidates
+					const int unique,		// Sometimes we know the candidates are unique
 					motion_vector *result,
 					struct motion_est_context_s *c )
 {
@@ -292,30 +258,11 @@ static inline void check_candidates (   struct yuv_data *from, struct yuv_data *
 			}
 
 			// Luma
-			score = compare( from->y, to->y, from_x, from_y,
-					 from_x + candidates[i].dx,	/* to x */
-					 from_y + candidates[i].dy,	/* to y */
-					 c);
-
-			if ( c->check_chroma ) {
-				if ( score >= result->msad )	// Early term
-					continue;
-
-				// Chroma - U
-				score += compare( from->u, to->u, from_x, from_y,
-						 from_x + candidates[i].dx,	/* to x */
-						 from_y + candidates[i].dy,	/* to y */
-						 c);
-	
-				if ( score >= result->msad )	// Early term
-					continue;
-	
-				// Chroma - V
-				score += compare( from->v, to->v, from_x, from_y,
-						 from_x + candidates[i].dx,	/* to x */
-						 from_y + candidates[i].dy,	/* to y */
-						 c);
-			}
+			score = block_compare( ref, candidate_base,
+						x, y,
+						candidates[i].dx,	// from
+						candidates[i].dy,
+						c);
 
 			if ( score < result->msad ) {	// New minimum
 				result->dx = candidates[i].dx;
@@ -330,12 +277,12 @@ static inline void check_candidates (   struct yuv_data *from, struct yuv_data *
 * Operates on a single macroblock
 */
 static inline void diamond_search(
-			struct yuv_data *from,			//<! Image data from previous frame
-			struct yuv_data *to,			//<! Image data in current frame
-			int mb_x,			//<! X upper left corner of macroblock
-			int mb_y,			//<! U upper left corner of macroblock
-			struct motion_vector_s *result,	//<! Best predicted mv and eventual result
-			struct motion_est_context_s *c)	//<! motion estimation context
+			uint8_t *ref,				//<! Image data from previous frame
+			uint8_t *candidate_base,		//<! Image data in current frame
+			const int x,				//<! X upper left corner of macroblock
+			const int y,				//<! U upper left corner of macroblock
+			struct motion_vector_s *result,		//<! Best predicted mv and eventual result
+			struct motion_est_context_s *c)		//<! motion estimation context
 {
 
 	// diamond search pattern
@@ -382,44 +329,48 @@ static inline void diamond_search(
 			former.dx = best.dx; former.dy = best.dy; 	// Keep track of new former best
 		}
 	
-		check_candidates ( from, to, mb_x, mb_y, candidates, i, 1, result, c ); 
+		check_candidates ( ref, candidate_base, x, y, candidates, i, 1, result, c ); 
+
+		// Which candidate was the best?
 		best.dx = result->dx - current.dx;
 		best.dy = result->dy - current.dy;
 
+		// A better canidate was not found
 		if ( best.dx == 0 && best.dy == 0 )
 			return;
 
 		if ( first == 1 ){
 			first = 0;
-			former.dx = best.dx; former.dy = best.dy; // First iteration, sensible value for former_d*
+			former.dx = best.dx; former.dy = best.dy; // First iteration, sensible value for former.d*
 		}
 	}
 }
 
 /* /brief Full (brute) search 
 * Operates on a single macroblock
-*/
+*/	
+__attribute__((used))
 static void full_search(
-			struct yuv_data *from,			//<! Image data from previous frame
-			struct yuv_data *to,			//<! Image data in current frame
-			int mb_x,			//<! X upper left corner of macroblock
-			int mb_y,			//<! U upper left corner of macroblock
-			struct motion_vector_s *result,	//<! Best predicted mv and eventual result
-			struct motion_est_context_s *c)	//<! motion estimation context
+			uint8_t *ref,				//<! Image data from previous frame
+			uint8_t *candidate_base,		//<! Image data in current frame
+			int x,					//<! X upper left corner of macroblock
+			int y,					//<! U upper left corner of macroblock
+			struct motion_vector_s *result,		//<! Best predicted mv and eventual result
+			struct motion_est_context_s *c)		//<! motion estimation context
 {
 	// Keep track of best candidate
 	int i,j,score;
 
 	// Go loopy
-	for( i = -c->macroblock_width; i <= c->macroblock_width; i++ ){
-		for( j = -c->macroblock_height; j <=  c->macroblock_height; j++ ){
+	for( i = -c->mb_w; i <= c->mb_w; i++ ){
+		for( j = -c->mb_h; j <=  c->mb_h; j++ ){
 
-			score = compare( from->y, to->y,
-					 mb_x,		/* from x */
-					 mb_y,		/* from y */
-					 mb_x + i,	/* to x */
-					 mb_y + j,	/* to y */
-					 c);		/* context */
+			score = block_compare( ref, candidate_base,
+					 	x,
+					 	y,
+					 	x + i,
+					 	y + j,
+					 	c);
 
 			if ( score < result->msad ) {
 				result->dx = i;
@@ -428,23 +379,6 @@ static void full_search(
 			}
 		}
 	}
-}
-
-// Credits: ffmpeg
-// return the median
-static inline int median_predictor(int a, int b, int c) {
-	if ( a > b ){
-		if ( c > b ){
-			if ( c > a  ) b = a;
-			else	  b = c;
-		}
-	} else {
-		if ( b > c ){
-			if ( c > a ) b = c;
-			else	 b = a;
-		}
-	}
-	return b;
 }
 
 // Macros for pointer calculations
@@ -465,8 +399,8 @@ static void median_denoise( motion_vector *v, struct motion_est_context_s *c )
 	int xvalues[9], yvalues[9];
 
 	int i,j,n;
-	for( i = c->left_mb; i <= c->right_mb; i++ ){
-		for( j = c->top_mb; j <= c->bottom_mb; j++ )
+	for( j = c->top_mb; j <= c->bottom_mb; j++ )
+		for( i = c->left_mb; i <= c->right_mb; i++ ){
 		{
 			n = 0;
 
@@ -536,17 +470,36 @@ static void median_denoise( motion_vector *v, struct motion_est_context_s *c )
 
 }
 
+// Credits: ffmpeg
+// return the median
+static inline int median_predictor(int a, int b, int c) {
+	if ( a > b ){
+		if ( c > b ){
+			if ( c > a  ) b = a;
+			else	  b = c;
+		}
+	} else {
+		if ( b > c ){
+			if ( c > a ) b = c;
+			else	 b = a;
+		}
+	}
+	return b;
+}
+
+
 /** /brief Motion search
 *
+* For each macroblock in the current frame, estimate the block from the last frame that
+* matches best.
 *
-* Search for the Vector that best represents the motion *from the last frame *to the current frame
 * Vocab: Colocated - the pixel in the previous frame at the current position
 *
 * Based on enhanced predictive zonal search. [Tourapis 2002]
 */
-static void search( struct yuv_data from,			//<! Image data. Motion vector source in previous frame
-		    struct yuv_data to,			//<! Image data. Motion vector destination current
-		    struct motion_est_context_s *c)	//<! The context
+static void motion_search( uint8_t *from,			//<! Image data.
+		   	   uint8_t *to,				//<! Image data. Rigid grid.
+			   struct motion_est_context_s *c)	//<! The context
 {
 
 #ifdef COUNT_COMPARES
@@ -638,16 +591,21 @@ static void search( struct yuv_data from,			//<! Image data. Motion vector sourc
 		candidates[n  ].dx = 0;
 		candidates[n++].dy = 0;
 
-		int from_x = i * c->macroblock_width;
-		int from_y = j * c->macroblock_height;
-		check_candidates ( &from, &to, from_x, from_y, candidates, n, 0, here, c ); 
+		int x = i * c->mb_w;
+		int y = j * c->mb_h;
+		check_candidates ( to, from, x, y, candidates, n, 0, here, c ); 
 
 
 #ifndef FULLSEARCH
-		diamond_search( &from, &to, from_x, from_y, here, c); 
+		diamond_search( to, from, x, y, here, c); 
 #else
-		full_search( from, to, from_x, from_y, here, c); 
+		full_search( to, from, x, y, here, c); 
 #endif
+
+		assert( x + c->mb_w + here->dx > 0 );	// All macroblocks must have area > 0
+		assert( y + c->mb_h + here->dy > 0 );
+		assert( x + here->dx < c->width );
+		assert( y + here->dy < c->height );
 
 	 } /* End column loop */
 	} /* End row loop */
@@ -693,46 +651,123 @@ void collect_post_statistics( struct motion_est_context_s *c ) {
 
 static void init_optimizations( struct motion_est_context_s *c )
 {
-	if ( c->check_chroma ) {
-		switch(c->macroblock_width){
-			case 8:  if(c->macroblock_height == 8)  c->compare_optimized = sad_sse_8x8;
-				 else				c->compare_optimized = sad_sse_8w;
-				 break;
-			case 16: if(c->macroblock_height == 16) c->compare_optimized = sad_sse_16x16;
-				 else				c->compare_optimized = sad_sse_16w;
-				 break;
-			case 32: if(c->macroblock_height == 32) c->compare_optimized = sad_sse_32x32;
-				 else				c->compare_optimized = sad_sse_32w;
-				 break;
-			case 64: c->compare_optimized = sad_sse_64w;
-				 break;
-			default: c->compare_optimized = sad_reference;
-				 break;
-		}
-	}
-	else
-	{
-		switch(c->macroblock_width){
-			case 4:  if(c->macroblock_height == 4)	c->compare_optimized = sad_sse_422_luma_4x4;
-				 else				c->compare_optimized = sad_sse_422_luma_4w;
-				 break;
-			case 8:  if(c->macroblock_height == 8)  c->compare_optimized = sad_sse_422_luma_8x8;
-				 else				c->compare_optimized = sad_sse_422_luma_8w;
-				 break;
-			case 16: if(c->macroblock_height == 16) c->compare_optimized = sad_sse_422_luma_16x16;
-				 else				c->compare_optimized = sad_sse_422_luma_16w;
-				 break;
-			case 32: if(c->macroblock_height == 32) c->compare_optimized = sad_sse_422_luma_32x32;
-				 else				c->compare_optimized = sad_sse_422_luma_32w;
-				 break;
-			case 64: c->compare_optimized = sad_sse_422_luma_64w;
-				 break;
-			default: c->compare_optimized = sad_reference;
-				 break;
-		}
+	switch(c->mb_w){
+		case 4:  if(c->mb_h == 4)	c->compare_optimized = sad_sse_422_luma_4x4;
+			 else				c->compare_optimized = sad_sse_422_luma_4w;
+			 break;
+		case 8:  if(c->mb_h == 8)  c->compare_optimized = sad_sse_422_luma_8x8;
+			 else				c->compare_optimized = sad_sse_422_luma_8w;
+			 break;
+		case 16: if(c->mb_h == 16) c->compare_optimized = sad_sse_422_luma_16x16;
+			 else				c->compare_optimized = sad_sse_422_luma_16w;
+			 break;
+		case 32: if(c->mb_h == 32) c->compare_optimized = sad_sse_422_luma_32x32;
+			 else				c->compare_optimized = sad_sse_422_luma_32w;
+			 break;
+		case 64: c->compare_optimized = sad_sse_422_luma_64w;
+			 break;
+		default: c->compare_optimized = sad_reference;
+			 break;
 	}
 }
-	
+
+inline static void set_red(uint8_t *image, struct motion_est_context_s *c)
+{
+	int n;
+	for( n = 0; n < c->width * c->height * 2; n+=4 )
+	{
+		image[n]   = 79;
+		image[n+1] = 91;
+		image[n+2] = 79;
+		image[n+3] = 237;
+	}
+		
+}
+
+static void show_residual( uint8_t *result,  struct motion_est_context_s *c )
+{
+	int i, j;
+	int x,y,w,h;
+	int dx, dy;
+	int tx,ty;
+	uint8_t *b, *r;
+
+//	set_red(result,c);
+
+	for( j = c->top_mb; j <= c->bottom_mb; j++ ){  
+	 for( i = c->left_mb; i <= c->right_mb; i++ ){
+
+		dx = CURRENT(i,j)->dx;
+		dy = CURRENT(i,j)->dy;
+		w = c->mb_w;
+		h = c->mb_h;
+		x = i * w;
+		y = j * h;
+
+		// Denoise function caused some blocks to be completely clipped, ignore them	
+		if (constrain( &x, &y, &w, &h, dx, dy, 0, c->width, 0, c->height) == 0 )
+			continue;
+
+		for( ty = y; ty < y + h ; ty++ ){
+		 for( tx = x; tx < x + w ; tx++ ){
+
+			b = c->former_image +  (tx+dx)*c->xstride + (ty+dy)*c->ystride;
+			r = result +		tx*c->xstride + ty*c->ystride;
+
+			r[0] = 16 + ABS( r[0] - b[0] );
+
+			if( dx % 2 == 0 )
+				r[1] = 128 + ABS( r[1] - b[1] );
+			else
+				// FIXME: may exceed boundies
+				r[1] = 128 + ABS( r[1] - ( *(b-1) + b[3] ) /2 );
+		 }
+		}
+	 }
+	}
+}
+
+static void show_reconstruction( uint8_t *result, struct motion_est_context_s *c )
+{
+	int i, j;
+	int x,y,w,h;
+	int dx,dy;
+	uint8_t *r, *s;
+	int tx,ty;
+
+	for( i = c->left_mb; i <= c->right_mb; i++ ){
+	 for( j = c->top_mb; j <= c->bottom_mb; j++ ){  
+
+		dx = CURRENT(i,j)->dx;
+		dy = CURRENT(i,j)->dy;
+		w = c->mb_w;
+		h = c->mb_h;
+		x = i * w;
+		y = j * h;
+
+		// Denoise function caused some blocks to be completely clipped, ignore them	
+		if (constrain( &x, &y, &w, &h, dx, dy, 0, c->width, 0, c->height) == 0 )
+			continue;
+
+		for( ty = y; ty < y + h ; ty++ ){
+		 for( tx = x; tx < x + w ; tx++ ){
+
+			r = result +          tx*c->xstride + ty*c->ystride;
+			s = c->former_image + (tx+dx)*c->xstride + (ty+dy)*c->ystride;
+
+			r[0] = s[0];
+
+			if( dx % 2 == 0 )
+				r[1] = s[1];
+			else
+				// FIXME: may exceed boundies
+				r[1] = ( *(s-1) + s[3] ) /2;
+		 }
+		}
+	 }
+	}
+}
+
 // Image stack(able) method
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -742,17 +777,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the motion_est context object
 	struct motion_est_context_s *c = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "context", NULL);
 
-		#ifdef BENCHMARK
-		struct timeval start; gettimeofday(&start, NULL );
-		#endif
 
 	// Get the new image and frame number
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
-		#ifdef BENCHMARK
-		struct timeval finish; gettimeofday(&finish, NULL ); int difference = (finish.tv_sec - start.tv_sec) * 1000000 + (finish.tv_usec - start.tv_usec);
-		fprintf(stderr, " in frame %d:%d usec\n", c->current_frame_position, difference);
-		#endif
+	#ifdef BENCHMARK
+	struct timeval start; gettimeofday(&start, NULL );
+	#endif
+
 
 	if( error != 0 )
 		mlt_properties_debug( MLT_FRAME_PROPERTIES(frame), "error after mlt_frame_get_image() in motion_est", stderr );
@@ -770,15 +802,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		/* Get parameters that may have been overridden */
 		if( mlt_properties_get( properties, "macroblock_width") != NULL )
-			c->macroblock_width = mlt_properties_get_int( properties, "macroblock_width");
+			c->mb_w = mlt_properties_get_int( properties, "macroblock_width");
 
 		if( mlt_properties_get( properties, "macroblock_height") != NULL )
-			c->macroblock_height = mlt_properties_get_int( properties, "macroblock_height");
+			c->mb_h = mlt_properties_get_int( properties, "macroblock_height");
 
 		if( mlt_properties_get( properties, "prediction_thresh") != NULL )
 			c->initial_thresh = mlt_properties_get_int( properties, "prediction_thresh" );
 		else
-			c->initial_thresh = c->macroblock_width * c->macroblock_height;
+			c->initial_thresh = c->mb_w * c->mb_h;
 
 		if( mlt_properties_get( properties, "search_method") != NULL )
 			c->search_method = mlt_properties_get_int( properties, "search_method");
@@ -798,11 +830,20 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if( mlt_properties_get( properties, "denoise" ) != NULL )
 			c->denoise = mlt_properties_get_int( properties, "denoise" );
 
+		if( mlt_properties_get( properties, "show_reconstruction" ) != NULL )
+			c->show_reconstruction = mlt_properties_get_int( properties, "show_reconstruction" );
+
+		if( mlt_properties_get( properties, "show_residual" ) != NULL )
+			c->show_residual = mlt_properties_get_int( properties, "show_residual" );
+
+		if( mlt_properties_get( properties, "toggle_when_paused" ) != NULL )
+			c->toggle_when_paused = mlt_properties_get_int( properties, "toggle_when_paused" );
+
 		init_optimizations( c );
 
 		// Calculate the dimensions in macroblock units
-		c->mv_buffer_width = (*width / c->macroblock_width);
-		c->mv_buffer_height = (*height / c->macroblock_height);
+		c->mv_buffer_width = (*width / c->mb_w);
+		c->mv_buffer_height = (*height / c->mb_h);
 
 		// Size of the motion vector buffer
 		c->mv_size =  c->mv_buffer_width * c->mv_buffer_height * sizeof(struct motion_vector_s);
@@ -817,51 +858,28 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties_set_data( properties, "former_motion_vectors", (void *)c->former_vectors, 0, mlt_pool_release, NULL );
 		mlt_properties_set_data( properties, "denoise_motion_vectors", (void *)c->denoise_vectors, 0, mlt_pool_release, NULL );
 
-
 		c->former_vectors_valid = 0;
 		memset( c->former_vectors, 0, c->mv_size );
-
-		// Figure out how many blocks should be considered edge blocks
-		c->edge_blocks_x = (c->limit_x + c->macroblock_width - 1) / c->macroblock_width;
-		c->edge_blocks_y = (c->limit_y + c->macroblock_height - 1) / c->macroblock_height;
 
 		// Calculate the size of our steps (the number of bytes that seperate adjacent pixels in X and Y direction)
 		switch( *format ) {
 			case mlt_image_yuv422:
-				if ( c->check_chroma )
-					c->xstride = 1;
-				else
-					c->xstride = 2;
+				c->xstride = 2;
 				c->ystride = c->xstride * *width;
 				break; 
-/*			case mlt_image_yuv420p:
-				c->xstride = 1;
-				c->ystride = c->xstride * *width;
-				break;
-*/			default:
+			default:
 				// I don't know
 				fprintf(stderr, "\"I am unfamiliar with your new fangled pixel format!\" -filter_motion_est\n");
 				return -1;
 		}
 
-		if ( c->check_chroma ) {
-			// Allocate memory for the 444 images
-			c->former_image.y = mlt_pool_alloc( *width * *height * 3 );
-			c->current_image.y = mlt_pool_alloc( *width * *height * 3 );
-			c->current_image.u = c->current_image.y + *width * *height;
-			c->current_image.v = c->current_image.u + *width * *height;
-			c->former_image.u = c->former_image.y + *width * *height;
-			c->former_image.v = c->former_image.u + *width * *height;
-			// Register for destruction
-			mlt_properties_set_data( properties, "current_image", (void *)c->current_image.y, 0, mlt_pool_release, NULL );
-		}
-		else
-		{
-			c->former_image.y = mlt_pool_alloc( *width * *height * 2 );
-		}
-		// Register for destruction
-		mlt_properties_set_data( properties, "former_image", (void *)c->former_image.y, 0, mlt_pool_release, NULL );
+		// Allocate a cache for the previous frame's image
+		c->former_image = mlt_pool_alloc( *width * *height * 2 );
+		c->cache_image = mlt_pool_alloc( *width * *height * 2 );
 
+		// Register for destruction
+		mlt_properties_set_data( properties, "cache_image", (void *)c->cache_image, 0, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "former_image", (void *)c->former_image, 0, mlt_pool_release, NULL );
 
 		c->former_frame_position = c->current_frame_position;
 		c->previous_msad = 0;
@@ -870,32 +888,30 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 
 	/* Check to see if somebody else has given us bounds */
-	c->bounds = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "bounds", NULL );
+	struct mlt_geometry_item_s *bounds = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "bounds", NULL );
 
-	/* no bounds were given, they won't change next frame, so use a convient storage place */
-	if( c->bounds == NULL ) {
-		c->bounds = &c->prev_bounds;
-		c->bounds->x = 0;
-		c->bounds->y = 0;
-		c->bounds->w = *width - 1;	// Zero indexed
-		c->bounds->h = *height - 1;	// Zero indexed
+	if( bounds != NULL ) {
+		// translate pixel units (from bounds) to macroblock units
+		// make sure whole macroblock stays within bounds
+		c->left_mb = ( bounds->x + c->mb_w - 1 ) / c->mb_w;
+		c->top_mb = ( bounds->y + c->mb_h - 1 ) / c->mb_h;
+		c->right_mb = ( bounds->x + bounds->w ) / c->mb_w - 1;
+		c->bottom_mb = ( bounds->y + bounds->h ) / c->mb_h - 1;
+		c->bounds.x = bounds->x;
+		c->bounds.y = bounds->y;
+		c->bounds.w = bounds->w;
+		c->bounds.h = bounds->h;
+	} else {
+		c->left_mb = c->prev_left_mb = 0;
+		c->top_mb = c->prev_top_mb = 0;
+		c->right_mb = c->prev_right_mb = c->mv_buffer_width - 1;	// Zero indexed
+		c->bottom_mb = c->prev_bottom_mb = c->mv_buffer_height - 1;
+		c->bounds.x = 0;
+		c->bounds.y = 0;
+		c->bounds.w = *width;
+		c->bounds.h = *height;
 	}
 
-	// translate pixel units (from bounds) to macroblock units
-	// make sure whole macroblock stays within bounds
-	c->left_mb = ( c->bounds->x + c->macroblock_width - 1 ) / c->macroblock_width;
-	c->top_mb = ( c->bounds->y + c->macroblock_height - 1 ) / c->macroblock_height;
-	c->right_mb = ( c->bounds->x + c->bounds->w ) / c->macroblock_width - 1;
-	c->bottom_mb = ( c->bounds->y + c->bounds->h ) / c->macroblock_height - 1;
-
-	// Do the same thing for the previous frame's geometry
-	// This will be used for determining validity of predictors
-	c->prev_left_mb = ( c->prev_bounds.x + c->macroblock_width - 1) / c->macroblock_width;
-	c->prev_top_mb = ( c->prev_bounds.y + c->macroblock_height - 1) / c->macroblock_height;
-	c->prev_right_mb = ( c->prev_bounds.x + c->prev_bounds.w ) / c->macroblock_width - 1;
-	c->prev_bottom_mb = ( c->prev_bounds.y + c->prev_bounds.h ) / c->macroblock_height - 1;
-
-	
 	// If video is advancing, run motion vector algorithm and etc...	
 	if( c->former_frame_position + 1 == c->current_frame_position )
 	{
@@ -905,48 +921,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		c->current_vectors = c->former_vectors;
 		c->former_vectors = temp;
 
-		// Swap the image buffers
-		if ( c->check_chroma ) {
-			uint8_t *temp_yuv;
-			temp_yuv = c->current_image.y;
-			c->current_image.y = c->former_image.y;
-			c->former_image.y = temp_yuv;
-			temp_yuv = c->current_image.u;
-			c->current_image.u = c->former_image.u;
-			c->former_image.u = temp_yuv;
-			temp_yuv = c->current_image.v;
-			c->current_image.v = c->former_image.v;
-			c->former_image.v = temp_yuv;
-
-			switch ( *format ) {
-				case mlt_image_yuv422:
-					change_422_to_444_planar_rep( *image, c->current_image, c );
-					break;
-				case mlt_image_yuv420p:
-					change_420p_to_444_planar_rep( *image, c->current_image, c );
-					break;
-				default:
-					break;
-			}
-		}
-		else
-			c->current_image.y = *image;
-
-		// Find a better place for this
+		// This is done because filter_vismv doesn't pay attention to frame boundry
 		memset( c->current_vectors, 0, c->mv_size );
 
 		// Perform the motion search
-
-		//collect_pre_statistics( context, *image );
-		search( c->current_image, c->former_image, c );
+		motion_search( c->cache_image, *image, c );
 
 		collect_post_statistics( c );
 
 
-
-
 		// Detect shot changes
-		if( c->comparison_average > 10 * c->macroblock_width * c->macroblock_height &&
+		if( c->comparison_average > 10 * c->mb_w * c->mb_h &&
 		    c->comparison_average > c->previous_msad * 2 )
 		{
 			fprintf(stderr, " - SAD: %d   <<Shot change>>\n", c->comparison_average);
@@ -962,7 +947,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		c->previous_msad = c->comparison_average;
 
-		if( c->comparison_average != 0 ) {
+		if( c->comparison_average != 0 ) { // If the frame is not a duplicate of the previous frame
 
 			// denoise the vector buffer
 			if( c->denoise )
@@ -972,9 +957,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "motion_est.vectors",
 					 (void*)c->current_vectors, c->mv_size, NULL, NULL );
 
+			// Cache the frame's image. Save the old cache. Reuse memory.
+			// After this block, exactly two unique frames will be cached
+			uint8_t *timg = c->cache_image;
+			c->cache_image = c->former_image;
+			c->former_image = timg;
+			memcpy( c->cache_image, *image, *width * *height * c->xstride );
+
+
 		}
 		else {
-			// This fixes the ugliness caused by a duplicate frame
+			// Undo the Swap, This fixes the ugliness caused by a duplicate frame
 			temp = c->current_vectors;
 			c->current_vectors = c->former_vectors;
 			c->former_vectors = temp;
@@ -982,35 +975,70 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					 (void*)c->former_vectors, c->mv_size, NULL, NULL );
 		}
 
+
+		if( c->shot_change == 1)
+			;
+		else if( c->show_reconstruction )
+			show_reconstruction( *image, c );
+		else if( c->show_residual )
+			show_residual( *image, c );
+
 	}
 	// paused
 	else if( c->former_frame_position == c->current_frame_position )
 	{
 		// Pass the old vector data into the frame if it's valid
-		if( c->former_vectors_valid == 1 )
+		if( c->former_vectors_valid == 1 ) {
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "motion_est.vectors",
 					 (void*)c->current_vectors, c->mv_size, NULL, NULL );
+
+			if( c->shot_change == 1)
+				;
+			else if( c->toggle_when_paused == 1 ) {
+				if( c->show_reconstruction )
+					show_reconstruction( *image, c );
+				else if( c->show_residual )
+					show_residual( *image, c );
+				c->toggle_when_paused = 2;
+			}
+			else if( c->toggle_when_paused == 2 )
+				c->toggle_when_paused = 1;
+			else {
+				if( c->show_reconstruction )
+					show_reconstruction( *image, c );
+				else if( c->show_residual )
+					show_residual( *image, c );
+			}
+
+		}
 
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "shot_change", c->shot_change);
 	}
 	// there was jump in frame number
-	else
+	else {
+//		fprintf(stderr, "Warning: there was a frame number jumped from %d to %d.\n", c->former_frame_position, c->current_frame_position);
 		c->former_vectors_valid = 0;
+	}
 
 
 	// Cache our bounding geometry for the next frame's processing
-	if( c->bounds != &c->prev_bounds )
-		memcpy( &c->prev_bounds, c->bounds, sizeof( struct mlt_geometry_item_s ) );
+	c->prev_left_mb = c->left_mb;
+	c->prev_top_mb = c->top_mb;
+	c->prev_right_mb = c->right_mb;
+	c->prev_bottom_mb = c->bottom_mb;
 
 	// Remember which frame this is
 	c->former_frame_position = c->current_frame_position;
 
 
-	if ( c->check_chroma == 0 )
-		memcpy( c->former_image.y, *image, *width * *height * c->xstride );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_width", c->mb_w );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_height", c->mb_h );
 
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_width", c->macroblock_width );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_height", c->macroblock_height );
+	#ifdef BENCHMARK
+	struct timeval finish; gettimeofday(&finish, NULL ); int difference = (finish.tv_sec - start.tv_sec) * 1000000 + (finish.tv_usec - start.tv_usec);
+	fprintf(stderr, " in frame %d:%d usec\n", c->current_frame_position, difference);
+	#endif
+
 
 	return error;
 }
@@ -1053,24 +1081,23 @@ mlt_filter filter_motion_est_init( char *arg )
 		this->process = filter_process;
 
 		/* defaults that may be overridden */
-		context->macroblock_width = 16;
-		context->macroblock_height = 16;
+		context->mb_w = 16;
+		context->mb_h = 16;
 		context->skip_prediction = 0;
 		context->limit_x = 64;
 		context->limit_y = 64;
-		context->search_method = DIAMOND_SEARCH;
+		context->search_method = DIAMOND_SEARCH;	// FIXME: not used
 		context->check_chroma = 0;
 		context->denoise = 1;
+		context->show_reconstruction = 0;
+		context->show_residual = 0;
+		context->toggle_when_paused = 0;
 
 		/* reference functions that may have optimized versions */
 		context->compare_reference = sad_reference;
-		//context->vert_deviation_reference = vertical_gradient_reference;
-		//context->horiz_deviation_reference = horizontal_gradient_reference;
 
 		// The rest of the buffers will be initialized when the filter is first processed
 		context->initialized = 0;
 	}
 	return this;
 }
-
-/** This source code will self destruct in 5...4...3... */
