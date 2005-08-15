@@ -363,7 +363,7 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressiv
 	{
 		int count = this->list[ i ]->frame_count / this->list[ i ]->repeat;
 		*progressive = count == 1;
-		mlt_producer_seek( producer, position % count );
+		mlt_producer_seek( producer, (int)position % count );
 	}
 	else if ( !strcmp( eof, "pause" ) && total > 0 )
 	{
@@ -372,7 +372,7 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressiv
 		mlt_producer this_producer = MLT_PLAYLIST_PRODUCER( this );
 		mlt_producer_seek( this_producer, original - 1 );
 		producer = entry->producer;
-		mlt_producer_seek( producer, entry->frame_out % count );
+		mlt_producer_seek( producer, (int)entry->frame_out % count );
 		mlt_producer_set_speed( this_producer, 0 );
 		mlt_producer_set_speed( producer, 0 );
 		*progressive = count == 1;
@@ -1035,7 +1035,7 @@ mlt_producer mlt_playlist_get_clip( mlt_playlist this, int clip )
 /** Return the clip at the specified position.
 */
 
-mlt_producer mlt_playlist_get_clip_at( mlt_playlist this, int position )
+mlt_producer mlt_playlist_get_clip_at( mlt_playlist this, mlt_position position )
 {
 	int index = 0, total = 0;
 	return mlt_playlist_locate( this, &position, &index, &total );
@@ -1044,7 +1044,7 @@ mlt_producer mlt_playlist_get_clip_at( mlt_playlist this, int position )
 /** Return the clip index of the specified position.
 */
 
-int mlt_playlist_get_clip_index_at( mlt_playlist this, int position )
+int mlt_playlist_get_clip_index_at( mlt_playlist this, mlt_position position )
 {
 	int index = 0, total = 0;
 	mlt_playlist_locate( this, &position, &index, &total );
@@ -1208,7 +1208,7 @@ int mlt_playlist_is_blank( mlt_playlist this, int clip )
 /** Determine if the specified position is a blank.
 */
 
-int mlt_playlist_is_blank_at( mlt_playlist this, int position )
+int mlt_playlist_is_blank_at( mlt_playlist this, mlt_position position )
 {
 	return this == NULL || mlt_producer_is_blank( mlt_playlist_get_clip_at( this, position ) );
 }
@@ -1251,7 +1251,7 @@ void mlt_playlist_insert_blank( mlt_playlist this, int clip, int length )
 	}
 }
 
-void mlt_playlist_pad_blanks( mlt_playlist this, int position, int length, int find )
+void mlt_playlist_pad_blanks( mlt_playlist this, mlt_position position, int length, int find )
 {
 	if ( this != NULL && length != 0 )
 	{
@@ -1278,7 +1278,7 @@ void mlt_playlist_pad_blanks( mlt_playlist this, int position, int length, int f
 	}
 }
 
-int mlt_playlist_insert_at( mlt_playlist this, int position, mlt_producer producer, int mode )
+int mlt_playlist_insert_at( mlt_playlist this, mlt_position position, mlt_producer producer, int mode )
 {
 	int ret = this == NULL || position < 0 || producer == NULL;
 	if ( ret == 0 )
@@ -1376,7 +1376,7 @@ int mlt_playlist_blanks_from( mlt_playlist this, int clip, int bounded )
 	return count;
 }
 
-int mlt_playlist_remove_region( mlt_playlist this, int position, int length )
+int mlt_playlist_remove_region( mlt_playlist this, mlt_position position, int length )
 {
 	int index = mlt_playlist_get_clip_index_at( this, position );
 	if ( index >= 0 && index < this->count )
@@ -1414,7 +1414,7 @@ int mlt_playlist_remove_region( mlt_playlist this, int position, int length )
 	return index;
 }
 
-int mlt_playlist_move_region( mlt_playlist this, int position, int length, int new_position )
+int mlt_playlist_move_region( mlt_playlist this, mlt_position position, int length, int new_position )
 {
 	if ( this != NULL )
 	{

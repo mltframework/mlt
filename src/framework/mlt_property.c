@@ -269,7 +269,7 @@ char *mlt_property_get_string( mlt_property this )
 		{
 			this->types |= mlt_prop_string;
 			this->prop_string = malloc( 32 );
-			sprintf( this->prop_string, "%d", this->prop_position );
+			sprintf( this->prop_string, "%d", (int)this->prop_position ); /* I don't know if this is wanted. -Zach */
 		}
 		else if ( this->types & mlt_prop_int64 )
 		{

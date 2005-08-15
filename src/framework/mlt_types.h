@@ -65,7 +65,14 @@ typedef enum
 }
 mlt_service_type;
 
+/* I don't want to break anyone's applications without warning. -Zach */
+#undef DOUBLE_MLT_POSITION
+#ifdef DOUBLE_MLT_POSITION
+typedef double mlt_position;
+#else
 typedef int32_t mlt_position;
+#endif
+
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr;
 typedef struct mlt_properties_s *mlt_properties;
 typedef struct mlt_event_struct *mlt_event;

@@ -88,21 +88,21 @@ extern int mlt_playlist_join( mlt_playlist self, int clip, int count, int merge 
 extern int mlt_playlist_mix( mlt_playlist self, int clip, int length, mlt_transition transition );
 extern int mlt_playlist_mix_add( mlt_playlist self, int clip, mlt_transition transition );
 extern mlt_producer mlt_playlist_get_clip( mlt_playlist self, int clip );
-extern mlt_producer mlt_playlist_get_clip_at( mlt_playlist self, int position );
-extern int mlt_playlist_get_clip_index_at( mlt_playlist self, int position );
+extern mlt_producer mlt_playlist_get_clip_at( mlt_playlist self, mlt_position position );
+extern int mlt_playlist_get_clip_index_at( mlt_playlist self, mlt_position position );
 extern int mlt_playlist_clip_is_mix( mlt_playlist self, int clip );
 extern void mlt_playlist_consolidate_blanks( mlt_playlist self, int keep_length );
 extern int mlt_playlist_is_blank( mlt_playlist self, int clip );
-extern int mlt_playlist_is_blank_at( mlt_playlist self, int position );
+extern int mlt_playlist_is_blank_at( mlt_playlist self, mlt_position position );
 extern void mlt_playlist_insert_blank( mlt_playlist self, int clip, int length );
-extern void mlt_playlist_pad_blanks( mlt_playlist self, int position, int length, int find );
+extern void mlt_playlist_pad_blanks( mlt_playlist self, mlt_position position, int length, int find );
 extern mlt_producer mlt_playlist_replace_with_blank( mlt_playlist self, int clip );
-extern int mlt_playlist_insert_at( mlt_playlist self, int position, mlt_producer producer, int mode );
+extern int mlt_playlist_insert_at( mlt_playlist self, mlt_position position, mlt_producer producer, int mode );
 extern int mlt_playlist_clip_start( mlt_playlist self, int clip );
 extern int mlt_playlist_clip_length( mlt_playlist self, int clip );
 extern int mlt_playlist_blanks_from( mlt_playlist self, int clip, int bounded );
-extern int mlt_playlist_remove_region( mlt_playlist self, int position, int length );
-extern int mlt_playlist_move_region( mlt_playlist self, int position, int length, int new_position );
+extern int mlt_playlist_remove_region( mlt_playlist self, mlt_position position, int length );
+extern int mlt_playlist_move_region( mlt_playlist self, mlt_position position, int length, int new_position );
 extern void mlt_playlist_close( mlt_playlist self );
 
 #endif

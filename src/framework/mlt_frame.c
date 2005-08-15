@@ -1021,6 +1021,7 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 	return ret;
 }
 
+/* Will this break when mlt_position is converted to double? -Zach */
 int mlt_sample_calculator( float fps, int frequency, int64_t position )
 {
 	int samples = 0;

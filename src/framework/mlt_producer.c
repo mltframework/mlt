@@ -260,7 +260,7 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 	}
 	else if ( use_points && !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( this ) )
 	{
-		position = position % mlt_producer_get_playtime( this );
+		position = (int)position % (int)mlt_producer_get_playtime( this );
 	}
 
 	// Set the position
