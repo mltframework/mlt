@@ -66,7 +66,7 @@ static void transport_action( mlt_producer producer, char *value )
 						if ( time == last )
 							break;
 						last = time;
-						fprintf( stderr, "%d: %d\n", i, time );
+						fprintf( stderr, "%d: %d\n", i, (int)time );
 					}
 				}
 				break;
@@ -180,7 +180,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				transport_action( producer, ( char * )&value );
 
 			if ( !silent && mlt_properties_get_int( properties, "stats_off" ) == 0 )
-				fprintf( stderr, "Current Position: %10d\r", mlt_producer_position( producer ) );
+				fprintf( stderr, "Current Position: %10d\r", (int)mlt_producer_position( producer ) );
 
 			if ( silent )
 				nanosleep( &tm, NULL );

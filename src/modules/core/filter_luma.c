@@ -66,7 +66,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( luma != NULL && 
 		( mlt_properties_get( properties, "blur" ) != NULL || 
-		  mlt_frame_get_position( this ) % ( out + 1 ) != out ) )
+		  (int)mlt_frame_get_position( this ) % ( out + 1 ) != out ) )
 	{
 		mlt_properties luma_properties = MLT_TRANSITION_PROPERTIES( luma );
 		mlt_properties_pass( luma_properties, properties, "luma." );

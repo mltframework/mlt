@@ -75,7 +75,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 
 	// For periodic detection (with offset of 'skip')
-	if( frequency == 0 || (mlt_frame_get_position(this)+skip) % frequency != 0)
+	if( frequency == 0 || (int)mlt_frame_get_position(this)+skip % frequency  != 0)
 	{
 
 		// Inject in stream 

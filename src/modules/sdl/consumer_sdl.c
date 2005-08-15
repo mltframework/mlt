@@ -593,10 +593,10 @@ static void *video_thread( void *arg )
 		if ( mlt_properties_get_int( properties, "rendered" ) == 1 && this->running )
 		{
 			// Obtain the scheduled playout time
-			mlt_position scheduled = mlt_properties_get_position( properties, "playtime" );
+			int64_t scheduled = mlt_properties_get_int( properties, "playtime" );
 
 			// Determine the difference between the elapsed time and the scheduled playout time
-			mlt_position difference = scheduled - elapsed;
+			int64_t difference = scheduled - elapsed;
 
 			// Smooth playback a bit
 			if ( real_time && ( difference > 20000 && speed == 1.0 ) )
@@ -714,7 +714,7 @@ static void *consumer_thread( void *arg )
 			}
 
 			// Set playtime for this frame
-			mlt_properties_set_position( properties, "playtime", playtime );
+			mlt_properties_set_int( properties, "playtime", playtime );
 
 			while ( this->running && mlt_deque_count( this->queue ) > 15 )
 				nanosleep( &tm, NULL );
