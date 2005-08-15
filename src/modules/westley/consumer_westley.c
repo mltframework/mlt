@@ -404,7 +404,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					char length[ 20 ];
 					length[ 19 ] = '\0';
 					xmlNode *entry = xmlNewChild( child, NULL, "blank", NULL );
-					snprintf( length, 19, "%d", info.frame_count );
+					snprintf( length, 19, "%d", (int)info.frame_count );
 					xmlNewProp( entry, "length", length );
 				}
 				else
@@ -413,9 +413,9 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					xmlNode *entry = xmlNewChild( child, NULL, "entry", NULL );
 					id = westley_get_id( context, MLT_SERVICE( producer ), westley_existing );
 					xmlNewProp( entry, "producer", id );
-					sprintf( temp, "%d", info.frame_in );
+					sprintf( temp, "%d", (int)info.frame_in );
 					xmlNewProp( entry, "in", temp );
-					sprintf( temp, "%d", info.frame_out );
+					sprintf( temp, "%d", (int)info.frame_out );
 					xmlNewProp( entry, "out", temp );
 					if ( info.repeat > 1 )
 					{
