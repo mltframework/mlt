@@ -732,11 +732,11 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		int normalised_height = geometry->item.h;
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
-		double input_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
+		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		int scaled_width = input_ar / output_ar * real_width;
+		int scaled_width = ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width;
 		int scaled_height = real_height;
-			
+
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
 		{
@@ -1043,8 +1043,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		if ( a_frame == b_frame )
 		{
+			double aspect_ratio = mlt_frame_get_aspect_ratio( b_frame );
 			get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result );
 			alpha_b = mlt_frame_get_alpha_mask( b_frame );
+			mlt_properties_set_double( a_props, "aspect_ratio", aspect_ratio );
 		}
 
 		// Get the image from the a frame
