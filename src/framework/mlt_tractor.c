@@ -298,6 +298,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			// We'll store audio and video frames to use here
 			mlt_frame audio = NULL;
 			mlt_frame video = NULL;
+			mlt_frame first_video = NULL;
 
 			// Temporary properties
 			mlt_properties temp_properties = NULL;
@@ -385,6 +386,8 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 						mlt_deque_push_front( MLT_FRAME_IMAGE_STACK( temp ), video );
 					}
 					video = temp;
+					if ( first_video == NULL )
+						first_video = temp;
 					mlt_properties_set_int( MLT_FRAME_PROPERTIES( temp ), "image_count", ++ image_count );
 					image_count = 1;
 				}
@@ -399,7 +402,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 
 			if ( video != NULL )
 			{
-				mlt_properties video_properties = MLT_FRAME_PROPERTIES( video );
+				mlt_properties video_properties = MLT_FRAME_PROPERTIES( first_video );
 				mlt_frame_push_service( *frame, video );
 				mlt_frame_push_service( *frame, producer_get_image );
 				if ( global_feed )
