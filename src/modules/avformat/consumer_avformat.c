@@ -440,7 +440,8 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		}
 
 	 	c->mb_decision = mlt_properties_get_int( properties, "mb_decision" );
-		c->sample_aspect_ratio = av_d2q( mlt_properties_get_double( properties, "display_ratio" ) * c->height / c->width, 255 );
+		c->sample_aspect_ratio.den = mlt_properties_get_double( properties, "aspect_ratio_den" );
+		c->sample_aspect_ratio.num = mlt_properties_get_double( properties, "aspect_ratio_num" );
 		c->mb_cmp = mlt_properties_get_int( properties, "mb_cmp" );
 		c->ildct_cmp = mlt_properties_get_int( properties, "ildct_cmp" );
 		c->me_sub_cmp = mlt_properties_get_int( properties, "sub_cmp" );
