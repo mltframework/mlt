@@ -303,7 +303,7 @@ static int iconv_utf8( mlt_properties properties, char *prop_name, const char* e
 static void refresh_image( mlt_frame frame, int width, int height )
 {
 	// Pixbuf 
-	GdkPixbuf *pixbuf = NULL;
+	GdkPixbuf *pixbuf = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", NULL );
 
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -328,41 +328,45 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
 	int weight = mlt_properties_get_int( producer_props, "weight" );
 	int size = mlt_properties_get_int( producer_props, "size" );
-	int property_changed = ( align != this->align );
+	int property_changed = 0;
 
-	// Check for file support
-	int position = mlt_properties_get_position( properties, "pango_position" );
-	mlt_properties contents = mlt_properties_get_data( producer_props, "contents", NULL );
-	mlt_geometry key_frames = mlt_properties_get_data( producer_props, "key_frames", NULL );
-	struct mlt_geometry_item_s item;
-	if ( contents != NULL )
+	if ( pixbuf == NULL )
 	{
-		char temp[ 20 ];
-		mlt_geometry_prev_key( key_frames, &item, position );
-		sprintf( temp, "%d", item.frame );
-		markup = mlt_properties_get( contents, temp );
-	}
+		// Check for file support
+		int position = mlt_properties_get_position( properties, "pango_position" );
+		mlt_properties contents = mlt_properties_get_data( producer_props, "contents", NULL );
+		mlt_geometry key_frames = mlt_properties_get_data( producer_props, "key_frames", NULL );
+		struct mlt_geometry_item_s item;
+		if ( contents != NULL )
+		{
+			char temp[ 20 ];
+			mlt_geometry_prev_key( key_frames, &item, position );
+			sprintf( temp, "%d", item.frame );
+			markup = mlt_properties_get( contents, temp );
+		}
 	
-	// See if any properties changed
-	property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
-	property_changed = property_changed || ( this->bgcolor == NULL || ( bg && strcmp( bg, this->bgcolor ) ) );
-	property_changed = property_changed || ( pad != this->pad );
-	property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
-	property_changed = property_changed || ( text && this->text && strcmp( text, this->text ) );
-	property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
-	property_changed = property_changed || ( weight != this->weight );
+		// See if any properties changed
+		property_changed = ( align != this->align );
+		property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
+		property_changed = property_changed || ( this->bgcolor == NULL || ( bg && strcmp( bg, this->bgcolor ) ) );
+		property_changed = property_changed || ( pad != this->pad );
+		property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
+		property_changed = property_changed || ( text && this->text && strcmp( text, this->text ) );
+		property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
+		property_changed = property_changed || ( weight != this->weight );
 
-	// Save the properties for next comparison
-	this->align = align;
-	this->pad = pad;
-	set_string( &this->fgcolor, fg, "0xffffffff" );
-	set_string( &this->bgcolor, bg, "0x00000000" );
-	set_string( &this->markup, markup, NULL );
-	set_string( &this->text, text, NULL );
-	set_string( &this->font, font, "Sans 48" );
-	this->weight = weight;
+		// Save the properties for next comparison
+		this->align = align;
+		this->pad = pad;
+		set_string( &this->fgcolor, fg, "0xffffffff" );
+		set_string( &this->bgcolor, bg, "0x00000000" );
+		set_string( &this->markup, markup, NULL );
+		set_string( &this->text, text, NULL );
+		set_string( &this->font, font, "Sans 48" );
+		this->weight = weight;
+	}
 
-	if ( property_changed )
+	if ( pixbuf == NULL && property_changed )
 	{
 		rgba_color fgcolor = parse_color( this->fgcolor );
 		rgba_color bgcolor = parse_color( this->bgcolor );
@@ -394,6 +398,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		{
 			// Register this pixbuf for destruction and reuse
 			mlt_properties_set_data( producer_props, "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
+			g_object_ref( pixbuf );
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
 
 			mlt_properties_set_int( producer_props, "real_width", gdk_pixbuf_get_width( pixbuf ) );
 			mlt_properties_set_int( producer_props, "real_height", gdk_pixbuf_get_height( pixbuf ) );
@@ -403,7 +409,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			this->height = gdk_pixbuf_get_height( pixbuf );
 		}
 	}
-	else if ( width > 0 && ( this->image == NULL || width != this->width || height != this->height ) )
+	else if ( pixbuf == NULL && ( width > 0 && ( this->image == NULL || width != this->width || height != this->height ) ) )
 	{
 		mlt_pool_release( this->image );
 		mlt_pool_release( this->alpha );

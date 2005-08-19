@@ -91,7 +91,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 static void refresh_image( mlt_frame frame, int width, int height )
 {
 	// Pixbuf 
-	GdkPixbuf *pixbuf = NULL;
+	GdkPixbuf *pixbuf = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", NULL );
 	GError *error = NULL;
 
 	// Obtain properties of frame
@@ -129,7 +129,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			this->alpha = NULL;
 		}
 	}
-	else if ( this->image == NULL || image_idx != this->image_idx )
+	else if ( pixbuf == NULL && ( this->image == NULL || image_idx != this->image_idx ) )
 	{
 		mlt_pool_release( this->image );
 		mlt_pool_release( this->alpha );
@@ -143,6 +143,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		{
 			// Register this pixbuf for destruction and reuse
 			mlt_properties_set_data( producer_props, "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
+			g_object_ref( pixbuf );
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
 
 			mlt_properties_set_int( producer_props, "real_width", gdk_pixbuf_get_width( pixbuf ) );
 			mlt_properties_set_int( producer_props, "real_height", gdk_pixbuf_get_height( pixbuf ) );
