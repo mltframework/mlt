@@ -81,5 +81,7 @@ extern char *mlt_property_get_string( mlt_property self );
 extern void *mlt_property_get_data( mlt_property self, int *length );
 extern void mlt_property_close( mlt_property self );
 
+extern void mlt_property_pass( mlt_property this, mlt_property that );
+
 #endif
 

@@ -49,6 +49,8 @@ extern int mlt_properties_ref_count( mlt_properties self );
 extern void mlt_properties_mirror( mlt_properties self, mlt_properties that );
 extern int mlt_properties_inherit( mlt_properties self, mlt_properties that );
 extern int mlt_properties_pass( mlt_properties self, mlt_properties that, const char *prefix );
+extern void mlt_properties_pass_property( mlt_properties this, mlt_properties that, const char *name );
+extern int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const char *list );
 extern int mlt_properties_set( mlt_properties self, const char *name, const char *value );
 extern int mlt_properties_set_or_default( mlt_properties self, const char *name, const char *value, const char *def );
 extern int mlt_properties_parse( mlt_properties self, const char *namevalue );

@@ -310,4 +310,31 @@ void mlt_property_close( mlt_property this )
 	free( this );
 }
 
+/** Pass the property 'that' to 'this'.
+* Who to blame: Zach <zachary.drew@gmail.com>
+*/
+void mlt_property_pass( mlt_property this, mlt_property that )
+{
+	mlt_property_clear( this );
 
+	this->types = that->types;
+
+	if ( this->types & mlt_prop_int64 )
+		this->prop_int64 = that->prop_int64;
+	else if ( this->types & mlt_prop_int )
+		this->prop_int = that->prop_int;
+	else if ( this->types & mlt_prop_double )
+		this->prop_double = that->prop_double;
+	else if ( this->types & mlt_prop_position )
+		this->prop_position = that->prop_position;
+	else if ( this->types & mlt_prop_string )
+	{
+		if ( that->prop_string != NULL )
+			this->prop_string = strdup( that->prop_string );
+	}
+	else if ( this->types & mlt_prop_data && this->serialiser != NULL )
+	{
+		this->types = mlt_prop_string;
+		this->prop_string = this->serialiser( this->data, this->length );	
+	}
+}

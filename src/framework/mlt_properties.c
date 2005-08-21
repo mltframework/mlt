@@ -215,7 +215,7 @@ int mlt_properties_ref_count( mlt_properties this )
 	return 0;
 }
 
-/** Allow the specification of a mirror.
+/** Mirror properties set on 'this' to 'that'.
 */
 
 void mlt_properties_mirror( mlt_properties this, mlt_properties that )
@@ -263,6 +263,7 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *p
 	}
 	return 0;
 }
+
 
 /** Locate a property by name
 */
@@ -334,6 +335,52 @@ static mlt_property mlt_properties_fetch( mlt_properties this, const char *name 
 	// Return the property
 	return property;
 }
+
+/** Pass property 'name' from 'that' to 'this' 
+* Who to blame: Zach <zachary.drew@gmail.com>
+*/
+
+void mlt_properties_pass_property( mlt_properties this, mlt_properties that, const char *name )
+{
+	// Make sure the source property isn't null.
+	mlt_property that_prop = mlt_properties_find( that, name );
+	if( that_prop == NULL )
+		return;
+
+	mlt_property_pass( mlt_properties_fetch( this, name ), that_prop );
+}
+
+/** Pass all properties from 'that' to 'this' as found in comma seperated 'list'.
+* Who to blame: Zach <zachary.drew@gmail.com>
+*/
+
+int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const char *list )
+{
+	char *props = strdup( list );
+	char *ptr = props;
+	char *delim = " ,\t\n";	// Any combination of spaces, commas, tabs, and newlines
+	int count, done = 0;
+
+	while( !done )
+	{
+		count = strcspn( ptr, delim );
+
+		if( ptr[count] == '\0' )
+			done = 1;
+		else
+			ptr[count] = '\0';	// Make it a real string
+
+		mlt_properties_pass_property( this, that, ptr );
+
+		ptr += count + 1;
+		ptr += strspn( ptr, delim );
+	}
+
+	free( props );
+
+	return 0;
+}
+
 
 /** Set the property.
 */
