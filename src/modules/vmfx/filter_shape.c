@@ -1,0 +1,191 @@
+/*
+ * filter_shape.c -- Arbitrary alpha channel shaping
+ * Copyright (C) 2005 Visual Media Fx Inc.
+ * Author: Charles Yates <charles.yates@pandora.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include "filter_shape.h"
+#include <string.h>
+#include <framework/mlt_factory.h>
+#include <framework/mlt_frame.h>
+#include <framework/mlt_producer.h>
+#include <framework/mlt_geometry.h>
+
+inline double smoothstep( const double e1, const double e2, const double a )
+{
+    if ( a < e1 ) return 0.0;
+    if ( a > e2 ) return 1.0;
+    double v = ( a - e1 ) / ( e2 - e1 );
+    return ( v * v * ( 3 - 2 * v ) );
+}
+
+/** Get the images and apply the luminance of the mask to the alpha of the frame.
+*/
+
+static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+{
+	// Fetch the data from the stack (mix, mask, filter)
+	double mix = mlt_deque_pop_back_double( MLT_FRAME_IMAGE_STACK( this ) );
+	mlt_frame mask = mlt_frame_pop_service( this );
+	mlt_filter filter = mlt_frame_pop_service( this );
+
+	// Obtain the constants
+	double softness = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "softness" );
+	int use_luminance = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "use_luminance" );
+	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" ) * 255;
+
+	// Render the frame
+	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 )
+	{
+		// Get the alpha mask of the source
+		uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+
+		// Obtain a scaled/distorted mask to match
+		uint8_t *mask_img = NULL;
+		mlt_image_format mask_fmt = mlt_image_yuv422;
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( mask ), "distort", 1 );
+		mlt_properties_pass_list( MLT_FRAME_PROPERTIES( mask ), MLT_FRAME_PROPERTIES( this ), "deinterlace,deinterlace_method,rescale.interp" );
+
+		if ( mlt_frame_get_image( mask, &mask_img, &mask_fmt, width, height, 0 ) == 0 )
+		{
+			int size = *width * *height;
+			uint8_t *p = alpha;
+			double a = 0;
+			double b = 0;
+			if ( !use_luminance )
+			{
+				uint8_t *q = mlt_frame_get_alpha_mask( mask );
+				while( size -- )
+				{
+					a = ( double )*q ++ / 255.0;
+            		b = 1.0 - smoothstep( a, a + softness, mix );
+					*p = ( uint8_t )( *p * b ) ^ invert;
+					p ++;
+				}
+			}
+			else if ( mix != 1.0 )
+			{
+				uint8_t *q = mask_img;
+				while( size -- )
+				{
+					a = ( ( double )*q - 16 ) / 235.0;
+            		b = smoothstep( a, a + softness, mix );
+					*p = ( uint8_t )( *p * b ) ^ invert;
+					p ++;
+					q += 2;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+/** Filter processing.
+*/
+
+static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+{
+	// Obtain the shape instance
+	char *resource = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "resource" );
+	mlt_producer producer = mlt_properties_get_data( MLT_FILTER_PROPERTIES( this ), "instance", NULL );
+
+	// Get the key framed values
+	mlt_geometry alpha = mlt_properties_get_data( MLT_FILTER_PROPERTIES( this ), "_alpha", NULL );
+	char *alpha_data = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "mix" );
+	double alpha_mix = 0.0;
+
+	// Calculate the position and length
+	int position = mlt_frame_get_position( frame ) - mlt_filter_get_in( this );
+	int in = mlt_filter_get_in( this );
+	int out = mlt_filter_get_out( this );
+	int length;
+
+	// Special case for attached filters - in/out come through on the frame
+	if ( out == 0 )
+	{
+		in = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "in" );
+		out = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "out" );
+	}
+
+	// Duration of the shape
+	length = out - in + 1;
+
+	// If we haven't created the instance or it's changed
+	if ( producer == NULL || strcmp( resource, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "resource" ) ) )
+	{
+		producer = mlt_factory_producer( NULL, resource );
+		if ( producer != NULL )
+			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
+		mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "instance", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+	}
+
+	// Construct the geometry item if needed, otherwise refresh it
+	if ( alpha == NULL )
+	{
+		alpha = mlt_geometry_init( );
+		mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "_alpha", alpha, 0, ( mlt_destructor )mlt_geometry_close, NULL );
+		mlt_geometry_parse( alpha, alpha_data, length, 100, 100 );
+	}
+	else
+	{
+		mlt_geometry_refresh( alpha, alpha_data, length, 100, 100 );
+	}
+
+	// We may still not have a producer in which case, we do nothing
+	if ( producer != NULL )
+	{
+		mlt_frame mask = NULL;
+		struct mlt_geometry_item_s item;
+		mlt_geometry_fetch( alpha, &item, position );
+		alpha_mix = item.x;
+		mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), MLT_FILTER_PROPERTIES( this ), "producer." );
+		mlt_producer_seek( producer, position );
+		if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &mask, 0 ) == 0 )
+		{
+			char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" );
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), name, mask, 0, ( mlt_destructor )mlt_frame_close, NULL );
+			mlt_frame_push_service( frame, this );
+			mlt_frame_push_service( frame, mask );
+			mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( frame ), alpha_mix / 100.0 );
+			mlt_frame_push_get_image( frame, filter_get_image );
+			if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "audio_match" ) )
+				mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), "meta.volume", alpha_mix / 100.0 );
+		}
+	}
+
+	return frame;
+}
+
+/** Constructor for the filter.
+*/
+
+mlt_filter filter_shape_init( char *arg )
+{
+	mlt_filter this = mlt_filter_new( );
+	if ( this != NULL )
+	{
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "resource", arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mix", "100" );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "audio_match", 1 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "invert", 0 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "softness", 0.1 );
+		this->process = filter_process;
+	}
+	return this;
+}
+

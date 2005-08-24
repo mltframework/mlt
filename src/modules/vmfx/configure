@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ "$help" != "1" ]
+then
+
+cat << EOF >> ../producers.dat
+pgm				libmltvmfx$LIBSUF
+EOF
+
+cat << EOF >> ../filters.dat
+shape			libmltvmfx$LIBSUF
+EOF
+
+cat << EOF >> ../transitions.dat
+EOF
+
+cat << EOF >> ../consumers.dat
+EOF
+
+fi
