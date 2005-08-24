@@ -1023,7 +1023,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_properties_set( b_props, "rescale.interp", rescale );
 
 		// Do the calculation
+		// NB: Locks needed here since the properties are being modified
+		mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
 		composite_calculate( this, &result, a_frame, position );
+		mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
@@ -1129,7 +1132,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				double field_position = position + field * delta;
 				
 				// Do the calculation if we need to
+				// NB: Locks needed here since the properties are being modified
+				mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
 				composite_calculate( this, &result, a_frame, field_position );
+				mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 
 				if ( mlt_properties_get_int( properties, "titles" ) )
 				{
