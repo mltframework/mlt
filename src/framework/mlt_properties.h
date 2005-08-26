@@ -60,6 +60,8 @@ extern char *mlt_properties_get_value( mlt_properties self, int index );
 extern void *mlt_properties_get_data_at( mlt_properties self, int index, int *size );
 extern int mlt_properties_get_int( mlt_properties self, const char *name );
 extern int mlt_properties_set_int( mlt_properties self, const char *name, int value );
+extern int64_t mlt_properties_get_int64( mlt_properties self, const char *name );
+extern int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t value );
 extern double mlt_properties_get_double( mlt_properties self, const char *name );
 extern int mlt_properties_set_double( mlt_properties self, const char *name, double value );
 extern mlt_position mlt_properties_get_position( mlt_properties self, const char *name );

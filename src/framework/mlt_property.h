@@ -70,7 +70,7 @@ extern mlt_property mlt_property_init( );
 extern int mlt_property_set_int( mlt_property self, int value );
 extern int mlt_property_set_double( mlt_property self, double value );
 extern int mlt_property_set_position( mlt_property self, mlt_position value );
-extern int mlt_property_set_uint64( mlt_property self, uint64_t value );
+extern int mlt_property_set_int64( mlt_property self, int64_t value );
 extern int mlt_property_set_string( mlt_property self, const char *value );
 extern int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser );
 extern int mlt_property_get_int( mlt_property self );

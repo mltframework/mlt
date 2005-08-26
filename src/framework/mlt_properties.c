@@ -593,6 +593,37 @@ int mlt_properties_set_int( mlt_properties this, const char *name, int value )
 /** Get a value associated to the name.
 */
 
+int64_t mlt_properties_get_int64( mlt_properties this, const char *name )
+{
+	mlt_property value = mlt_properties_find( this, name );
+	return value == NULL ? 0 : mlt_property_get_int64( value );
+}
+
+/** Set a value associated to the name.
+*/
+
+int mlt_properties_set_int64( mlt_properties this, const char *name, int64_t value )
+{
+	int error = 1;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( this, name );
+
+	// Set it if not NULL
+	if ( property != NULL )
+	{
+		error = mlt_property_set_int64( property, value );
+		mlt_properties_do_mirror( this, name );
+	}
+
+	mlt_events_fire( this, "property-changed", name, NULL );
+
+	return error;
+}
+
+/** Get a value associated to the name.
+*/
+
 double mlt_properties_get_double( mlt_properties this, const char *name )
 {
 	mlt_property value = mlt_properties_find( this, name );
