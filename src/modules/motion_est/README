@@ -52,6 +52,9 @@ To automatically track an object in the frame, try this:
 
 (Where X,Y is the origin of the rectangle indexed from upper left and WxH is the dimensions of the rectangle.)
 
+To obscure that same object in the frame, try this:
+
+	> inigo -filter autotrack_rectangle:X,Y:WxH obscure=1 <movie_file>
 
 NOTES (and deficiencies):
 

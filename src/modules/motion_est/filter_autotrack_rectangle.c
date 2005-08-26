@@ -155,6 +155,20 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		draw_rectangle_outline(*image, boundry.x, boundry.y, boundry.w, boundry.h, 100);
 	}        
 
+	if( mlt_properties_get_int( filter_properties, "obscure" ) == 1 )
+	{
+		mlt_filter obscure = mlt_properties_get_data( filter_properties, "_obscure", NULL );
+
+		mlt_properties_pass_list( MLT_FILTER_PROPERTIES(obscure), filter_properties, "in, out");
+
+		// Because filter_obscure needs to be rewritten to use mlt_geometry
+		char geom[100];
+		sprintf( geom, "%d,%d:%dx%d", (int)boundry.x, (int)boundry.y, (int)boundry.w, (int)boundry.h );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( obscure ), "start", geom );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( obscure ), "end", geom );
+	}
+		
+
 	return error;
 }
 
@@ -217,7 +231,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(this), "debug" ) == 1 )
 	{
 		mlt_filter vismv = mlt_properties_get_data( MLT_FILTER_PROPERTIES(this), "_vismv", NULL );
-		if( vismv == NULL ) {
+		if( vismv == NULL )
+		{
 			vismv = mlt_factory_filter( "vismv", NULL );
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_vismv", vismv, 0, (mlt_destructor)mlt_filter_close, NULL );
 		}
@@ -225,6 +240,17 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_filter_process( vismv, frame );
 	}
 
+	if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(this), "obscure" ) == 1 )
+	{
+		mlt_filter obscure = mlt_properties_get_data( MLT_FILTER_PROPERTIES(this), "_obscure", NULL );
+		if( obscure == NULL )
+		{
+			obscure = mlt_factory_filter( "obscure", NULL );
+			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_obscure", obscure, 0, (mlt_destructor)mlt_filter_close, NULL );
+		}
+
+		mlt_filter_process( obscure, frame );
+	}
 
 	return frame;
 }
@@ -258,11 +284,11 @@ mlt_filter filter_autotrack_rectangle_init( char *arg )
 
 		}
 
-		// ... and attach it to the frame
+		// ... and attach it to the filter
 		mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "geometry", geometry, 0, (mlt_destructor)mlt_geometry_close, (mlt_serialiser)mlt_geometry_serialise );
 
-		// create an instance of the motion_est filter
-		mlt_filter motion_est = mlt_factory_filter("motion_est", NULL);
+		// create an instance of the motion_est and obscure filter
+		mlt_filter motion_est = mlt_factory_filter( "motion_est", NULL );
 		if( motion_est != NULL )
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_motion_est", motion_est, 0, (mlt_destructor)mlt_filter_close, NULL );
 		else {
