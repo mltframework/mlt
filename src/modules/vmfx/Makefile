@@ -3,6 +3,7 @@ include ../../../config.mak
 TARGET = ../libmltvmfx$(LIBSUF)
 
 OBJS = factory.o \
+	   filter_chroma.o \
 	   filter_shape.o \
 	   producer_pgm.o
 

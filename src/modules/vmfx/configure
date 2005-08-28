@@ -8,6 +8,7 @@ pgm				libmltvmfx$LIBSUF
 EOF
 
 cat << EOF >> ../filters.dat
+chroma			libmltvmfx$LIBSUF
 shape			libmltvmfx$LIBSUF
 EOF
 

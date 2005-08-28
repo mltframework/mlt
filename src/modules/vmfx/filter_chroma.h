@@ -1,5 +1,5 @@
 /*
- * factory.c -- the factory method interfaces
+ * filter_chroma.h -- Maps a chroma key to the alpha channel
  * Copyright (C) 2005 Visual Media Fx Inc.
  * Author: Charles Yates <charles.yates@gmail.com>
  *
@@ -18,34 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+#ifndef _FILTER_CHROMA_H_
+#define _FILTER_CHROMA_H_
 
-#include "filter_chroma.h"
-#include "filter_shape.h"
-#include "producer_pgm.h"
+#include <framework/mlt_filter.h>
 
-void *mlt_create_producer( char *id, void *arg )
-{
-	if ( !strcmp( id, "pgm" ) )
-		return producer_pgm_init( arg );
-	return NULL;
-}
+extern mlt_filter filter_chroma_init( char *arg );
 
-void *mlt_create_filter( char *id, void *arg )
-{
-	if ( !strcmp( id, "chroma" ) )
-		return filter_chroma_init( arg );
-	if ( !strcmp( id, "shape" ) )
-		return filter_shape_init( arg );
-	return NULL;
-}
-
-void *mlt_create_transition( char *id, void *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( char *id, void *arg )
-{
-	return NULL;
-}
+#endif
