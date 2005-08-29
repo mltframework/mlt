@@ -30,7 +30,7 @@ else
 	echo > config.mak
 
 	export static_ffmpeg=
-	export shared_ffmpeg=`whereis ffmpeg | cut -f 2 -d' '`
+	export shared_ffmpeg=`which ffmpeg`
 	export extra_libs=
 	export cvs_ffmpeg=
 	export avformat_suffix=
@@ -72,8 +72,8 @@ else
 	then 
 		if [ -d "$static_ffmpeg" ]
 		then
-			echo "CFLAGS+=-I$static_ffmpeg/libavformat -I$static_ffmpeg/libavcodec" >> config.mak
-			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec" >> config.mak
+			echo "CFLAGS+=-I$static_ffmpeg/libavformat -I$static_ffmpeg/libavcodec -I$static_ffmpeg/libavutil" >> config.mak
+			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil" >> config.mak
 			[ $targetos = "Darwin" ] &&
 			 	echo "LDFLAGS+=-single_module" >> config.mak
 		else
@@ -82,7 +82,7 @@ else
 			echo 0
 		fi
 	else 
-		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/lib/libavformat.so" ]
+		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/lib/libavformat$LIBSUF" ]
 		then
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
 			echo "LDFLAGS+=-L$shared_ffmpeg/lib" >> config.mak

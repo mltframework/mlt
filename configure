@@ -60,7 +60,7 @@ function build_config
 		Darwin)
 		echo "CFLAGS+=-D__DARWIN__ `sdl-config --cflags`"
 		echo "SHFLAGS=-dynamiclib"
-		echo "LIBDL=`sdl-config --libs`"
+		echo "LDFLAGS+=`sdl-config --libs`"
 		;;
 		Linux)
 		echo "CFLAGS+=-pthread"

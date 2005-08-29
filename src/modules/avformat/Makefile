@@ -17,7 +17,7 @@ CFLAGS+=-I../..
 
 LDFLAGS+=-L../../framework
 
-LDFLAGS+=-lavformat$(AVFORMAT_SUFFIX) -lavcodec$(AVFORMAT_SUFFIX) $(EXTRA_LIBS) -lmlt
+LDFLAGS+=-lavformat$(AVFORMAT_SUFFIX) -lavcodec$(AVFORMAT_SUFFIX) -lavutil$(AVFORMAT_SUFFIX) $(EXTRA_LIBS) -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

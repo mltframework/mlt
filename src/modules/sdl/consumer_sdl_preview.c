@@ -160,6 +160,8 @@ static int consumer_start( mlt_consumer parent )
 		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 		SDL_EnableUNICODE( 1 );
 
+		mlt_consumer_start( this->still );
+
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
 
