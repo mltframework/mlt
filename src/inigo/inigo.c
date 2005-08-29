@@ -148,6 +148,33 @@ static mlt_consumer create_consumer( char *id, mlt_producer producer )
 	return consumer;
 }
 
+#ifdef __DARWIN__
+
+static void event_handling( mlt_producer producer, mlt_consumer consumer )
+{
+	SDL_Event event;
+
+	while ( SDL_PollEvent( &event ) )
+	{
+		switch( event.type )
+		{
+			case SDL_QUIT:
+				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( consumer ), "done", 1 );
+				break;
+
+			case SDL_KEYDOWN:
+				if ( event.key.keysym.unicode < 0x80 && event.key.keysym.unicode > 0 )
+				{
+					char keyboard[ 2 ] = { event.key.keysym.unicode, 0 };
+					transport_action( producer, keyboard );
+				}
+				break;
+		}
+	}
+}
+
+#endif
+
 static void transport( mlt_producer producer, mlt_consumer consumer )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -181,6 +208,10 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				char string[ 2 ] = { value, 0 };
 				transport_action( producer, string );
 			}
+
+#ifdef __DARWIN__
+			event_handling( producer, consumer );
+#endif
 
 			if ( !silent && mlt_properties_get_int( properties, "stats_off" ) == 0 )
 				fprintf( stderr, "Current Position: %10d\r", (int)mlt_producer_position( producer ) );
