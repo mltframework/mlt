@@ -195,11 +195,7 @@ int consumer_start( mlt_consumer parent )
 		else
 		{
 			if ( SDL_GetVideoSurface( ) != NULL )
-			{
 				this->sdl_screen = SDL_GetVideoSurface( );
-				consumer_get_dimensions( &this->window_width, &this->window_height );
-				mlt_properties_set_int( this->properties, "changed", 0 );
-			}
 		}
 
 		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
@@ -411,7 +407,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		{
 			SDL_Event event;
 	
+			sdl_lock_display( );
 			changed = consumer_get_dimensions( &this->window_width, &this->window_height );
+			sdl_unlock_display( );
 
 			while ( SDL_PollEvent( &event ) )
 			{
@@ -443,6 +441,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			}
 		}
 	
+		sdl_lock_display();
+
 		if ( width != this->width || height != this->height )
 		{
 			if ( this->sdl_overlay != NULL )
@@ -458,21 +458,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			this->sdl_overlay = NULL;
 
 			// open SDL window with video overlay, if possible
-			sdl_lock_display();
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
-			sdl_unlock_display();
 			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 				this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
-			//SDL_Flip( this->sdl_screen );
-			mlt_properties_set_int( properties, "changed", 0 );
-		}
-		else if ( mlt_properties_get_int( properties, "changed" ) )
-		{
-			sdl_lock_display();
-			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
-			SDL_SetClipRect( this->sdl_screen, &this->rect );
-			sdl_unlock_display();
-			mlt_properties_set_int( properties, "changed", 0 );
 		}
 
 		if ( this->running )
@@ -536,16 +524,12 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay == NULL )
 		{
 			SDL_SetClipRect( this->sdl_screen, &this->rect );
-			SDL_Flip( this->sdl_screen );
-			sdl_lock_display();
 			this->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, this->sdl_screen );
-			sdl_unlock_display();
 		}
 
 		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay != NULL )
 		{
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
-			sdl_lock_display();
 			if ( SDL_LockYUVOverlay( this->sdl_overlay ) >= 0 )
 			{
 				if ( image != NULL )
@@ -553,8 +537,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				SDL_UnlockYUVOverlay( this->sdl_overlay );
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}
-			sdl_unlock_display();
 		}
+
+		sdl_unlock_display();
 	}
 
 	return 0;
@@ -729,7 +714,6 @@ static void *consumer_thread( void *arg )
 		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
 
 	this->sdl_screen = NULL;
-	this->sdl_overlay = NULL;
 	this->audio_avail = 0;
 
 	return NULL;
@@ -746,7 +730,7 @@ static int consumer_get_dimensions( int *width, int *height )
 	SDL_VERSION( &wm.version );
 
 	// Lock the display
-	sdl_lock_display();
+	//sdl_lock_display();
 
 #ifndef __DARWIN__
 	// Get the wm structure
@@ -776,7 +760,7 @@ static int consumer_get_dimensions( int *width, int *height )
 #endif
 
 	// Unlock the display
-	sdl_unlock_display();
+	//sdl_unlock_display();
 
 	return changed;
 }

@@ -135,9 +135,14 @@ static int consumer_start( mlt_consumer parent )
 
 	if ( !this->running )
 	{
+		// properties
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
+		mlt_properties play = MLT_CONSUMER_PROPERTIES( this->play );
+		mlt_properties still = MLT_CONSUMER_PROPERTIES( this->still );
+
 		char *window_id = mlt_properties_get( properties, "window_id" );
 		char *audio_driver = mlt_properties_get( properties, "audio_driver" );
+		int progressive = mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" );
 
 		consumer_stop( parent );
 
@@ -160,7 +165,47 @@ static int consumer_start( mlt_consumer parent )
 		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 		SDL_EnableUNICODE( 1 );
 
-		//mlt_consumer_start( this->still );
+		// Pass properties down
+		mlt_properties_set_data( play, "transport_producer", mlt_properties_get_data( properties, "transport_producer", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( still, "transport_producer", mlt_properties_get_data( properties, "transport_producer", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( play, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( still, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
+		mlt_properties_set_int( play, "resize", mlt_properties_get_int( properties, "resize" ) );
+		mlt_properties_set_int( still, "resize", mlt_properties_get_int( properties, "resize" ) );
+		mlt_properties_set( play, "rescale", mlt_properties_get( properties, "rescale" ) );
+		mlt_properties_set( still, "rescale", mlt_properties_get( properties, "rescale" ) );
+		mlt_properties_set_int( play, "width", mlt_properties_get_int( properties, "width" ) );
+		mlt_properties_set_int( still, "width", mlt_properties_get_int( properties, "width" ) );
+		mlt_properties_set_int( play, "height", mlt_properties_get_int( properties, "height" ) );
+		mlt_properties_set_int( still, "height", mlt_properties_get_int( properties, "height" ) );
+		mlt_properties_set_double( play, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
+		mlt_properties_set_double( still, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
+		mlt_properties_set_double( play, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
+		mlt_properties_set_double( still, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
+
+		mlt_properties_set_int( play, "progressive", progressive );
+		mlt_properties_set_int( still, "progressive", progressive );
+		mlt_properties_set( play, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
+		mlt_properties_set( still, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
+
+		mlt_properties_pass( play, properties, "play." );
+		mlt_properties_pass( still, properties, "still." );
+
+		mlt_properties_set_data( play, "app_lock", mlt_properties_get_data( properties, "app_lock", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( still, "app_lock", mlt_properties_get_data( properties, "app_lock", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( play, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
+		mlt_properties_set_data( still, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
+
+		mlt_properties_set_int( play, "put_mode", 1 );
+		mlt_properties_set_int( still, "put_mode", 1 );
+
+		// Start the still producer just to initialise the gui
+		mlt_consumer_start( this->still );
+		this->active = this->still;
+
+		// Inform child consumers that we control the sdl
+		mlt_properties_set_int( play, "sdl_started", 1 );
+		mlt_properties_set_int( still, "sdl_started", 1 );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
@@ -214,55 +259,13 @@ static void *consumer_thread( void *arg )
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
 
+	// Get the properties
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+
 	// internal intialization
 	int first = 1;
 	mlt_frame frame = NULL;
 	int last_position = -1;
-
-	// properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
-	mlt_properties play = MLT_CONSUMER_PROPERTIES( this->play );
-	mlt_properties still = MLT_CONSUMER_PROPERTIES( this->still );
-
-	int progressive = mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" );
-
-	// Inform child consumers that we control the sdl
-	mlt_properties_set_int( play, "sdl_started", 1 );
-	mlt_properties_set_int( still, "sdl_started", 1 );
-
-	// Pass properties down
-	mlt_properties_set_data( play, "transport_producer", mlt_properties_get_data( properties, "transport_producer", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( still, "transport_producer", mlt_properties_get_data( properties, "transport_producer", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( play, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( still, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
-	mlt_properties_set_int( play, "resize", mlt_properties_get_int( properties, "resize" ) );
-	mlt_properties_set_int( still, "resize", mlt_properties_get_int( properties, "resize" ) );
-	mlt_properties_set( play, "rescale", mlt_properties_get( properties, "rescale" ) );
-	mlt_properties_set( still, "rescale", mlt_properties_get( properties, "rescale" ) );
-	mlt_properties_set_int( play, "width", mlt_properties_get_int( properties, "width" ) );
-	mlt_properties_set_int( still, "width", mlt_properties_get_int( properties, "width" ) );
-	mlt_properties_set_int( play, "height", mlt_properties_get_int( properties, "height" ) );
-	mlt_properties_set_int( still, "height", mlt_properties_get_int( properties, "height" ) );
-	mlt_properties_set_double( play, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
-	mlt_properties_set_double( still, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
-	mlt_properties_set_double( play, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
-	mlt_properties_set_double( still, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
-
-	mlt_properties_set_int( play, "progressive", progressive );
-	mlt_properties_set_int( still, "progressive", progressive );
-	mlt_properties_set( play, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
-	mlt_properties_set( still, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
-
-	mlt_properties_pass( play, MLT_CONSUMER_PROPERTIES( consumer ), "play." );
-	mlt_properties_pass( still, MLT_CONSUMER_PROPERTIES( consumer ), "still." );
-
-	mlt_properties_set_data( play, "app_lock", mlt_properties_get_data( properties, "app_lock", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( still, "app_lock", mlt_properties_get_data( properties, "app_lock", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( play, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
-	mlt_properties_set_data( still, "app_unlock", mlt_properties_get_data( properties, "app_unlock", NULL ), 0, NULL, NULL );
-
-	mlt_properties_set_int( play, "put_mode", 1 );
-	mlt_properties_set_int( still, "put_mode", 1 );
 
 	this->refresh_count = 0;
 

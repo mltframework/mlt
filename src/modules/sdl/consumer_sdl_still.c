@@ -117,9 +117,7 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		this->window_height = this->height;
 
 		// Set the sdl flags
-		//this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
-		// Experimental settings
-		this->sdl_flags = SDL_RESIZABLE | SDL_DOUBLEBUF;
+		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
 
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
@@ -188,16 +186,15 @@ static int consumer_start( mlt_consumer parent )
 		}
 		else
 		{
-			mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( parent ), "changed", 2 );
 			if ( SDL_GetVideoSurface( ) != NULL )
 			{
 				this->sdl_screen = SDL_GetVideoSurface( );
 				consumer_get_dimensions( &this->window_width, &this->window_height );
-				mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( parent ), "changed", 0 );
 			}
 		}
 
-		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+		if ( this->sdl_screen != NULL )
+			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
@@ -422,20 +419,17 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 	}
 
-	if ( this->sdl_screen == NULL || changed || mlt_properties_get_int( properties, "changed" ) == 2 )
+	if ( this->sdl_screen == NULL || changed )
 	{
 		// open SDL window 
 		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 		if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
-
 		changed = 1;
-		mlt_properties_set_int( properties, "changed", 0 );
 	}
 	else
 	{
 		changed = 1;
-		mlt_properties_set_int( properties, "changed", 0 );
 	}
 
 	if ( changed == 0 &&
