@@ -1,4 +1,5 @@
 include ../../../config.mak
+LDFLAGS=
 
 all:	luma create_lumas
 	@./create_lumas 

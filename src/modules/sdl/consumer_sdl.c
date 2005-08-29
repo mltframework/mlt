@@ -289,9 +289,6 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		// Just to be safe, wipe the stream first
 		memset( stream, 0, len );
 
-		// Copy what we have into the stream
-		memcpy( stream, this->audio_buffer, this->audio_avail );
-
 		// Mix the audio 
 		SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
@@ -343,7 +340,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
 		this->playing = 0;
 		request.freq = frequency;
-		request.format = AUDIO_S16;
+		request.format = AUDIO_S16SYS;
 		request.channels = channels;
 		request.samples = audio_buffer;
 		request.callback = sdl_fill_audio;
