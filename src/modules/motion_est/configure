@@ -3,18 +3,17 @@
 if [ "$help" != "1" ]
 then
 
+if [ "$motionest" = "false" ]
+then
+	touch ../disable-motion_est
+	echo "- motion estimation components disabled. Add --enable-motion-est to enable." 
+else
 cat << EOF >> ../filters.dat
 motion_est		libmltmotion_est.so
 vismv			libmltmotion_est.so
 crop_detect		libmltmotion_est.so
 autotrack_rectangle	libmltmotion_est.so
 EOF
-
-	if [ "$motionest" = "false" ]
-	then
-		touch ../disable-motion-est
-		echo "- motion estimation components disabled. Add --enable-motion-est to enable." 
-	fi
-		
+fi
 
 fi
