@@ -135,11 +135,30 @@ static int consumer_start( mlt_consumer parent )
 
 	if ( !this->running )
 	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
+		char *window_id = mlt_properties_get( properties, "window_id" );
+		char *audio_driver = mlt_properties_get( properties, "audio_driver" );
+
 		consumer_stop( parent );
 
 		this->running = 1;
 		this->joined = 0;
 		this->last_speed = 1;
+
+		if ( window_id != NULL )
+			setenv( "SDL_WINDOWID", window_id, 1 );
+
+		if ( audio_driver != NULL )
+			setenv( "SDL_AUDIODRIVER", audio_driver, 1 );
+
+		if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
+		{
+			fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
+			return -1;
+		}
+
+		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+		SDL_EnableUNICODE( 1 );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
@@ -172,6 +191,8 @@ static int consumer_stop( mlt_consumer parent )
 		this->joined = 1;
 
 		if ( app_locked && lock ) lock( );
+
+		SDL_Quit( );
 	}
 
 	return 0;
@@ -202,15 +223,6 @@ static void *consumer_thread( void *arg )
 	mlt_properties still = MLT_CONSUMER_PROPERTIES( this->still );
 
 	int progressive = mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" );
-
-	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
-	{
-		fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
-		return NULL;
-	}
-
-	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-	SDL_EnableUNICODE( 1 );
 
 	// Inform child consumers that we control the sdl
 	mlt_properties_set_int( play, "sdl_started", 1 );
@@ -371,8 +383,6 @@ static void *consumer_thread( void *arg )
 
 	if ( this->play ) mlt_consumer_stop( this->play );
 	if ( this->still ) mlt_consumer_stop( this->still );
-
-	//SDL_Quit( );
 
 	return NULL;
 }

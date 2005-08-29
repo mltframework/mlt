@@ -58,8 +58,9 @@ function build_config
 
 		case $targetos in
 		Darwin)
-		echo "CFLAGS+=-D__DARWIN__"
+		echo "CFLAGS+=-D__DARWIN__ `sdl-config --cflags`"
 		echo "SHFLAGS=-dynamiclib"
+		echo "LIBDL=`sdl-config --libs`"
 		;;
 		Linux)
 		echo "CFLAGS+=-pthread"

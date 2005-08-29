@@ -29,13 +29,6 @@
 #include <SDL/SDL_syswm.h>
 #include <sys/time.h>
 
-#ifdef __DARWIN__
-#	include "consumer_sdl_osx_hack.h"
-#	import <AppKit/NSApplication.h>
-#	import <Foundation/Foundation.h>
-#endif
-
-
 /** This classes definition.
 */
 
@@ -87,16 +80,6 @@ static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt
 
 mlt_consumer consumer_sdl_init( char *arg )
 {
-#ifdef __DARWIN__
-	// Initialize Cocoa
-	NSApplicationLoad();
-	[NSApplication sharedApplication];
-
-	// Spawn a fake thread so that cocoa knows to be multithreaded
-	DummyThread *dummy = [[DummyThread alloc] init];
-	[NSThread detachNewThreadSelector:@selector(startThread:) toTarget:dummy withObject:nil];
-#endif
-
 	// Create the consumer object
 	consumer_sdl this = calloc( sizeof( struct consumer_sdl_s ), 1 );
 
@@ -196,6 +179,32 @@ int consumer_start( mlt_consumer parent )
 		this->width = mlt_properties_get_int( this->properties, "width" );
 		this->height = mlt_properties_get_int( this->properties, "height" );
 
+		this->bpp = mlt_properties_get_int( this->properties, "bpp" );
+
+		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+		{
+			if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
+			{
+				fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
+				return -1;
+			}
+
+			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+			SDL_EnableUNICODE( 1 );
+		}
+		else
+		{
+			if ( SDL_GetVideoSurface( ) != NULL )
+			{
+				this->sdl_screen = SDL_GetVideoSurface( );
+				consumer_get_dimensions( &this->window_width, &this->window_height );
+				mlt_properties_set_int( this->properties, "changed", 0 );
+			}
+		}
+
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
+			SDL_InitSubSystem( SDL_INIT_AUDIO );
+
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
 
@@ -213,6 +222,19 @@ int consumer_stop( mlt_consumer parent )
 		this->joined = 1;
 		this->running = 0;
 		pthread_join( this->thread, NULL );
+
+		// internal cleanup
+		if ( this->sdl_overlay != NULL )
+			SDL_FreeYUVOverlay( this->sdl_overlay );
+		this->sdl_overlay = NULL;
+
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
+			SDL_QuitSubSystem( SDL_INIT_AUDIO );
+
+		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+			SDL_Quit( );
+
+		this->sdl_screen = NULL;
 	}
 
 	return 0;
@@ -541,10 +563,6 @@ static void *video_thread( void *arg )
 	// Identify the arg
 	consumer_sdl this = arg;
 
-#ifdef __DARWIN__
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-#endif
-
 	// Obtain time of thread start
 	struct timeval now;
 	int64_t start = 0;
@@ -628,10 +646,6 @@ static void *video_thread( void *arg )
 
 	mlt_consumer_stopped( &this->parent );
 
-#ifdef __DARWIN__
-	[pool release];
-#endif
-
 	return NULL;
 }
 
@@ -642,10 +656,6 @@ static void *consumer_thread( void *arg )
 {
 	// Identify the arg
 	consumer_sdl this = arg;
-
-#ifdef __DARWIN__
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-#endif
 
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
@@ -661,32 +671,6 @@ static void *consumer_thread( void *arg )
 	int duration = 0;
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
-
-	this->bpp = mlt_properties_get_int( this->properties, "bpp" );
-
-	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
-	{
-		if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
-		{
-			fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
-			return NULL;
-		}
-
-		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-		SDL_EnableUNICODE( 1 );
-	}
-	else
-	{
-		if ( SDL_GetVideoSurface( ) != NULL )
-		{
-			this->sdl_screen = SDL_GetVideoSurface( );
-			consumer_get_dimensions( &this->window_width, &this->window_height );
-			mlt_properties_set_int( this->properties, "changed", 0 );
-		}
-	}
-
-	if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "audio_off" ) )
-		SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 	// Loop until told not to
 	while( this->running )
@@ -739,26 +723,12 @@ static void *consumer_thread( void *arg )
 		pthread_join( thread, NULL );
 	}
 
-	// internal cleanup
-	if ( this->sdl_overlay != NULL )
-		SDL_FreeYUVOverlay( this->sdl_overlay );
-
-	if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "audio_off" ) )
-		SDL_QuitSubSystem( SDL_INIT_AUDIO );
-
-	//if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
-		//SDL_Quit( );
-
 	while( mlt_deque_count( this->queue ) )
 		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
 
 	this->sdl_screen = NULL;
 	this->sdl_overlay = NULL;
 	this->audio_avail = 0;
-
-#ifdef __DARWIN__
-	[pool release];
-#endif
 
 	return NULL;
 }
@@ -804,7 +774,7 @@ static int consumer_get_dimensions( int *width, int *height )
 #endif
 
 	// Unlock the display
-	sdl_lock_display();
+	sdl_unlock_display();
 
 	return changed;
 }

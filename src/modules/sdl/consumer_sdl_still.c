@@ -175,6 +175,28 @@ static int consumer_start( mlt_consumer parent )
 			mlt_properties_set_int( this->properties, "height", this->height );
 		}
 
+		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+		{
+			if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
+			{
+				fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
+				return -1;
+			}
+
+			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+			SDL_EnableUNICODE( 1 );
+		}
+		else
+		{
+			mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( parent ), "changed", 2 );
+			if ( SDL_GetVideoSurface( ) != NULL )
+			{
+				this->sdl_screen = SDL_GetVideoSurface( );
+				consumer_get_dimensions( &this->window_width, &this->window_height );
+				mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( parent ), "changed", 0 );
+			}
+		}
+
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
 
@@ -193,6 +215,11 @@ static int consumer_stop( mlt_consumer parent )
 
 		pthread_join( this->thread, NULL );
 		this->joined = 1;
+
+		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+			SDL_Quit( );
+
+		this->sdl_screen = NULL;
 	}
 
 	return 0;
@@ -510,28 +537,6 @@ static void *consumer_thread( void *arg )
 	// internal intialization
 	mlt_frame frame = NULL;
 
-	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
-	{
-		if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
-		{
-			fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
-			return NULL;
-		}
-
-		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-		SDL_EnableUNICODE( 1 );
-	}
-	else
-	{
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "changed", 2 );
-		if ( SDL_GetVideoSurface( ) != NULL )
-		{
-			this->sdl_screen = SDL_GetVideoSurface( );
-			consumer_get_dimensions( &this->window_width, &this->window_height );
-			mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "changed", 0 );
-		}
-	}
-
 	// Loop until told not to
 	while( this->running )
 	{
@@ -550,11 +555,6 @@ static void *consumer_thread( void *arg )
 			this->running = 0;
 		}
 	}
-
-	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "sdl_started" ) == 0 )
-		SDL_Quit( );
-
-	this->sdl_screen = NULL;
 
 	return NULL;
 }

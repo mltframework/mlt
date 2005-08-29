@@ -177,7 +177,10 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 			int value = silent ? -1 : term_read( );
 
 			if ( value != -1 )
-				transport_action( producer, ( char * )&value );
+			{
+				char string[ 2 ] = { value, 0 };
+				transport_action( producer, string );
+			}
 
 			if ( !silent && mlt_properties_get_int( properties, "stats_off" ) == 0 )
 				fprintf( stderr, "Current Position: %10d\r", (int)mlt_producer_position( producer ) );

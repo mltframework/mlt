@@ -42,6 +42,10 @@ extern "C"
 #include "mlt_parser.h"
 #include "mlt_geometry.h"
 
+#ifdef __DARWIN__
+#include <SDL.h>
+#endif
+
 #ifdef __cplusplus
 }
 #endif
