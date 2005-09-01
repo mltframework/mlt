@@ -53,17 +53,23 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
 	{
-		uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+		uint8_t alpha = 0;
 		uint8_t *p = *image;
 		int size = *width * *height / 2;
 		while ( size -- )
 		{
-			*alpha = alpha_value( *alpha, p, u, v, variance );
-			*alpha ++;
-			p += 2;
-			*alpha = alpha_value( *alpha, p, v, u, variance );
-			alpha ++;
-			p += 2;
+			alpha = alpha_value( 255, p, u, v, variance );
+			p ++;
+			if ( alpha ) 
+				*p ++ = 128;
+			else
+				p ++;
+			alpha = alpha_value( 255, p, v, u, variance );
+			p ++;
+			if ( alpha ) 
+				*p ++ = 128;
+			else
+				p ++;
 		}
 	}
 
@@ -83,12 +89,12 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_chroma_init( char *arg )
+mlt_filter filter_chroma_hold_init( char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "0x00ff00" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "0xc00000" : arg );
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "variance", 0.3 );
 		this->process = filter_process;
 	}

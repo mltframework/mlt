@@ -9,6 +9,7 @@ EOF
 
 cat << EOF >> ../filters.dat
 chroma			libmltvmfx$LIBSUF
+chroma_hold		libmltvmfx$LIBSUF
 shape			libmltvmfx$LIBSUF
 EOF
 

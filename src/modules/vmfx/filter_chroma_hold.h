@@ -1,5 +1,5 @@
 /*
- * filter_shape.h -- Arbitrary alpha channel shaping
+ * filter_chroma.h -- Maps a chroma key to the alpha channel
  * Copyright (C) 2005 Visual Media Fx Inc.
  * Author: Charles Yates <charles.yates@gmail.com>
  *
@@ -18,11 +18,11 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _FILTER_SHAPE_H_
-#define _FILTER_SHAPE_H_
+#ifndef _FILTER_CHROMA_HOLD_H_
+#define _FILTER_CHROMA_HOLD_H_
 
 #include <framework/mlt_filter.h>
 
-extern mlt_filter filter_shape_init( char *arg );
+extern mlt_filter filter_chroma_hold_init( char *arg );
 
 #endif
