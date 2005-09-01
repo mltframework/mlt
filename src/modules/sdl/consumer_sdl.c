@@ -194,14 +194,14 @@ int consumer_start( mlt_consumer parent )
 		}
 		else
 		{
-			if ( SDL_GetVideoSurface( ) != NULL )
-				this->sdl_screen = SDL_GetVideoSurface( );
+			this->sdl_screen = SDL_GetVideoSurface( );
 		}
 
 		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
 			SDL_InitSubSystem( SDL_INIT_AUDIO );
 
-		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+		if ( this->sdl_screen == NULL )
+			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}

@@ -193,7 +193,7 @@ static int consumer_start( mlt_consumer parent )
 			}
 		}
 
-		if ( this->sdl_screen != NULL )
+		if ( this->sdl_screen == NULL )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
