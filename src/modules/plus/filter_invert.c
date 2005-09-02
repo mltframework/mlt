@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 static inline int clamp( int v, int l, int u )
 {
@@ -37,6 +38,8 @@ static inline int clamp( int v, int l, int u )
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the image
+	mlt_filter filter = mlt_frame_pop_service( this );
+	int mask = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "alpha" );
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
 	// Only process if we have no error and a valid colour space
@@ -51,6 +54,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			*p ++ = clamp( 251 - *r ++, 16, 235 );
 			*p ++ = clamp( 256 - *r ++, 16, 240 );
 		}
+
+		if ( mask )
+		{
+			uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+			int size = *width * *height;
+			memset( alpha, mask, size );
+		}
 	}
 
 	return error;
@@ -62,6 +72,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	// Push the frame filter
+	mlt_frame_push_service( frame, this );
 	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }
