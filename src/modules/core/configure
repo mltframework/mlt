@@ -4,6 +4,7 @@ if [ "$help" != "1" ]
 then
 
 cat << EOF >> ../producers.dat
+color			libmltcore$LIBSUF
 colour			libmltcore$LIBSUF
 noise			libmltcore$LIBSUF
 ppm				libmltcore$LIBSUF

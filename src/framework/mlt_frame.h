@@ -108,4 +108,12 @@ extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t p
   u = u > 240 ? 240 : u;\
   v = v > 240 ? 240 : v
 
+#define YUV2RGB( y, u, v, r, g, b ) \
+  r = ((1192 * ( y - 16 ) + 1634 * ( v - 128 ) ) >> 10 ); \
+  g = ((1192 * ( y - 16 ) - 832 * ( v - 128 ) - 400 * ( u - 128 ) ) >> 10 ); \
+  b = ((1192 * ( y - 16 ) + 2066 * ( u - 128 ) ) >> 10 ); \
+  r = r < 0 ? 0 : r > 255 ? 255 : r; \
+  g = g < 0 ? 0 : g > 255 ? 255 : g; \
+  b = b < 0 ? 0 : b > 255 ? 255 : b;
+
 #endif

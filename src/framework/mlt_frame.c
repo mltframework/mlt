@@ -270,11 +270,14 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
 		mlt_position position = mlt_frame_get_position( this );
 	   	error = get_image( this, buffer, format, width, height, writable );
+		mlt_properties_set_int( properties, "width", *width );
+		mlt_properties_set_int( properties, "height", *height );
+		mlt_properties_set_int( properties, "format", *format );
 		mlt_frame_set_position( this, position );
 	}
 	else if ( mlt_properties_get_data( properties, "image", NULL ) != NULL )
 	{
-		*format = mlt_image_yuv422;
+		*format = mlt_properties_get_int( properties, "format" );
 		*buffer = mlt_properties_get_data( properties, "image", NULL );
 		*width = mlt_properties_get_int( properties, "width" );
 		*height = mlt_properties_get_int( properties, "height" );
@@ -293,6 +296,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
+			mlt_properties_set_int( properties, "format", *format );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
 		}
 		else
@@ -311,6 +315,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		*height = *height == 0 ? 576 : *height;
 		size = *width * *height;
 
+		mlt_properties_set_int( properties, "format", *format );
 		mlt_properties_set_int( properties, "width", *width );
 		mlt_properties_set_int( properties, "height", *height );
 		mlt_properties_set_int( properties, "aspect_ratio", 0 );
@@ -329,6 +334,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 					memset( *buffer, 255, size );
 				break;
 			case mlt_image_rgb24a:
+			case mlt_image_opengl:
 				size *= 4;
 				size += *width * 4;
 				*buffer = mlt_pool_alloc( size );

@@ -111,6 +111,11 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 			this->width = mlt_properties_get_int( this->properties, "width" );
 			this->height = mlt_properties_get_int( this->properties, "height" );
 		}
+		else
+		{
+			mlt_properties_set_int( this->properties, "width", this->width );
+			mlt_properties_set_int( this->properties, "height", this->height );
+		}
 
 		// Default window size
 		this->window_width = ( double )this->height * display_ratio;
@@ -150,6 +155,9 @@ static int consumer_start( mlt_consumer parent )
 
 	if ( !this->running )
 	{
+		int preview_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "preview_off" );
+		int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
+
 		// Attach a colour space converter
 		if ( !this->filtered )
 		{
@@ -167,13 +175,10 @@ static int consumer_start( mlt_consumer parent )
 		this->joined = 0;
 
 		// Allow the user to force resizing to window size
-		if ( mlt_properties_get_int( this->properties, "resize" ) )
-		{
-			mlt_properties_set_int( this->properties, "width", this->width );
-			mlt_properties_set_int( this->properties, "height", this->height );
-		}
+		this->width = mlt_properties_get_int( this->properties, "width" );
+		this->height = mlt_properties_get_int( this->properties, "height" );
 
-		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+		if ( sdl_started == 0 && preview_off == 0 )
 		{
 			if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
 			{
@@ -184,7 +189,7 @@ static int consumer_start( mlt_consumer parent )
 			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 			SDL_EnableUNICODE( 1 );
 		}
-		else
+		else if ( preview_off == 0 )
 		{
 			if ( SDL_GetVideoSurface( ) != NULL )
 			{
@@ -193,7 +198,7 @@ static int consumer_start( mlt_consumer parent )
 			}
 		}
 
-		if ( this->sdl_screen == NULL )
+		if ( this->sdl_screen == NULL && preview_off == 0 )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
@@ -209,13 +214,16 @@ static int consumer_stop( mlt_consumer parent )
 
 	if ( this->joined == 0 )
 	{
+		int preview_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "preview_off" );
+		int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
+
 		// Kill the thread and clean up
 		this->running = 0;
 
 		pthread_join( this->thread, NULL );
 		this->joined = 1;
 
-		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+		if ( sdl_started == 0 && preview_off == 0 )
 			SDL_Quit( );
 
 		this->sdl_screen = NULL;
@@ -437,8 +445,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		 this->last_producer == mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL ) )
 	{
 		sdl_unlock_display( );
-		if ( unlock != NULL )
-			unlock( );
+		if ( unlock != NULL ) unlock( );
 		return 0;
 	}
 
@@ -447,8 +454,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	this->last_producer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL );
 
 	// Get the image, width and height
-	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 	mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
+	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 	if ( image != NULL )
 	{
@@ -529,9 +536,22 @@ static void *consumer_thread( void *arg )
 
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// internal intialization
 	mlt_frame frame = NULL;
+	mlt_image_format vfmt = mlt_image_rgb24a;
+	int height = this->height;
+	int width = this->width;
+	uint8_t *image = NULL;
+
+	// Allow the hosting app to provide the preview
+	int preview_off = mlt_properties_get_int( properties, "preview_off" );
+	mlt_image_format preview_format = mlt_properties_get_int( properties, "preview_format" );
+
+	// Check if a specific colour space has been requested
+	if ( preview_off && preview_format != mlt_image_none )
+		vfmt = preview_format;
 
 	// Loop until told not to
 	while( this->running )
@@ -542,7 +562,16 @@ static void *consumer_thread( void *arg )
 		// Ensure that we have a frame
 		if ( this->running && frame != NULL )
 		{
-			consumer_play_video( this, frame );
+			if ( preview_off == 0 )
+			{
+				consumer_play_video( this, frame );
+			}
+			else
+			{
+				mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
+				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			}
 			mlt_frame_close( frame );
 		}
 		else

@@ -170,23 +170,16 @@ static int consumer_start( mlt_consumer parent )
 		mlt_properties_set_data( still, "transport_producer", mlt_properties_get_data( properties, "transport_producer", NULL ), 0, NULL, NULL );
 		mlt_properties_set_data( play, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
 		mlt_properties_set_data( still, "transport_callback", mlt_properties_get_data( properties, "transport_callback", NULL ), 0, NULL, NULL );
-		mlt_properties_set_int( play, "resize", mlt_properties_get_int( properties, "resize" ) );
-		mlt_properties_set_int( still, "resize", mlt_properties_get_int( properties, "resize" ) );
-		mlt_properties_set( play, "rescale", mlt_properties_get( properties, "rescale" ) );
-		mlt_properties_set( still, "rescale", mlt_properties_get( properties, "rescale" ) );
-		mlt_properties_set_int( play, "width", mlt_properties_get_int( properties, "width" ) );
-		mlt_properties_set_int( still, "width", mlt_properties_get_int( properties, "width" ) );
-		mlt_properties_set_int( play, "height", mlt_properties_get_int( properties, "height" ) );
-		mlt_properties_set_int( still, "height", mlt_properties_get_int( properties, "height" ) );
-		mlt_properties_set_double( play, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
-		mlt_properties_set_double( still, "aspect_ratio", mlt_properties_get_double( properties, "aspect_ratio" ) );
-		mlt_properties_set_double( play, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
-		mlt_properties_set_double( still, "display_ratio", mlt_properties_get_double( properties, "display_ratio" ) );
 
 		mlt_properties_set_int( play, "progressive", progressive );
 		mlt_properties_set_int( still, "progressive", progressive );
-		mlt_properties_set( play, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
-		mlt_properties_set( still, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
+
+		mlt_properties_pass_list( play, properties, "resize,rescale,width,height,aspect_ratio,display_ratio" );
+		mlt_properties_pass_list( still, properties, "resize,rescale,width,height,aspect_ratio,display_ratio" );
+		mlt_properties_pass_list( play, properties, "deinterlace_method" );
+		mlt_properties_pass_list( still, properties, "deinterlace_method" );
+		mlt_properties_pass_list( play, properties, "preview_off,preview_format" );
+		mlt_properties_pass_list( still, properties, "preview_off,preview_format" );
 
 		mlt_properties_pass( play, properties, "play." );
 		mlt_properties_pass( still, properties, "still." );
@@ -266,6 +259,9 @@ static void *consumer_thread( void *arg )
 	int first = 1;
 	mlt_frame frame = NULL;
 	int last_position = -1;
+
+	// Determine if the application is dealing with the preview
+	int preview_off = mlt_properties_get_int( properties, "preview_off" );
 
 	this->refresh_count = 0;
 
@@ -355,7 +351,7 @@ static void *consumer_thread( void *arg )
 			}
 
 			// Copy the rectangle info from the active consumer
-			if ( this->running )
+			if ( this->running && preview_off == 0 )
 			{
 				mlt_properties active = MLT_CONSUMER_PROPERTIES( this->active );
 				mlt_service_lock( MLT_CONSUMER_SERVICE( consumer ) );

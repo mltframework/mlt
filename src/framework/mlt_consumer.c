@@ -523,6 +523,8 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// See if video is turned off
 	int video_off = mlt_properties_get_int( properties, "video_off" );
+	int preview_off = mlt_properties_get_int( properties, "preview_off" );
+	int preview_format = mlt_properties_get_int( properties, "preview_format" );
 
 	// Get the audio settings
 	mlt_audio_format afmt = mlt_audio_pcm;
@@ -554,6 +556,9 @@ static void *consumer_read_ahead_thread( void *arg )
 	int64_t time_process = 0;
 	int skip_next = 0;
 	mlt_service lock_object = NULL;
+
+	if ( preview_off && preview_format != 0 )
+		this->format = preview_format;
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( this );

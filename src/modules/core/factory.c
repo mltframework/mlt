@@ -44,6 +44,8 @@
 
 void *mlt_create_producer( char *id, void *arg )
 {
+	if ( !strcmp( id, "color" ) )
+		return producer_colour_init( arg );
 	if ( !strcmp( id, "colour" ) )
 		return producer_colour_init( arg );
 	if ( !strcmp( id, "noise" ) )

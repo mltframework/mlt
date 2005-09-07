@@ -872,6 +872,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	uint8_t *image = mlt_properties_get_data( a_props, "image", NULL );
 	int width = mlt_properties_get_int( a_props, "width" );
 	int height = mlt_properties_get_int( a_props, "height" );
+	int format = mlt_properties_get_int( a_props, "format" );
 
 	// Pointers for copy operation
 	uint8_t *p;
@@ -922,6 +923,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	mlt_properties_set_data( b_props, "image", dest, w * h * 2, mlt_pool_release, NULL );
 	mlt_properties_set_int( b_props, "width", w );
 	mlt_properties_set_int( b_props, "height", h );
+	mlt_properties_set_int( b_props, "format", format );
 
 	if ( y < 0 )
 	{

@@ -89,6 +89,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_data( b_props, "image", dst, size, mlt_pool_release, NULL );
 			mlt_properties_set_int( b_props, "width", *width );
 			mlt_properties_set_int( b_props, "height", *height );
+			mlt_properties_set_int( b_props, "format", *format );
 		}
 	}
 

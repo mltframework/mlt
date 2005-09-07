@@ -46,6 +46,7 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 		case mlt_image_yuv420p:
 			value = PIX_FMT_YUV420P;
 			break;
+		case mlt_image_opengl:
 		case mlt_image_none:
 			fprintf( stderr, "Invalid format...\n" );
 			break;
@@ -125,7 +126,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
    
 	error = mlt_frame_get_image( this, image, format, width, height, 0 );
 
-	if ( error == 0 && *format != output_format && *image != NULL )
+	if ( error == 0 && *format != output_format && *image != NULL && output_format != mlt_image_opengl )
 	{
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
@@ -136,7 +137,86 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		*format = output_format;
 		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "format", output_format );
+
+		// Special case for alpha rgb - merge the alpha mask when it exists
+		if ( *format == mlt_image_rgb24a )
+		{
+			// Fetch the alpha
+			register uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+
+			if ( alpha != NULL )
+			{
+				register uint8_t *bits = *image;
+				register int len = *width * *height;
+				register int n = ( len + 7 ) / 8;
+
+				// TODO: Proper check for big endian systems
+				#ifndef __DARWIN__
+				bits += 3;
+				#endif
+
+				// Merge the alpha mask into the RGB image using Duff's Device
+				switch( len % 8 )
+				{
+					case 0:	do { *bits = *alpha++; bits += 4;
+					case 7:		 *bits = *alpha++; bits += 4;
+					case 6:		 *bits = *alpha++; bits += 4;
+					case 5:		 *bits = *alpha++; bits += 4;
+					case 4:		 *bits = *alpha++; bits += 4;
+					case 3:		 *bits = *alpha++; bits += 4;
+					case 2:		 *bits = *alpha++; bits += 4;
+					case 1:		 *bits = *alpha++; bits += 4;
+							}
+							while( --n );
+				}
+			}
+		}
 	}
+	else if ( error == 0 && *format != output_format && *image != NULL && output_format == mlt_image_opengl )
+	{
+		if ( *format == mlt_image_yuv422 )
+		{
+			int size = *width * *height * 4;
+			uint8_t *output = mlt_pool_alloc( size );
+			int h = *height;
+			int w = *width;
+			uint8_t *o = output + size;
+			int ostride = w * 4;
+			uint8_t *p = *image;
+			uint8_t *alpha = mlt_frame_get_alpha_mask( this ) + *width * *height;
+			int r, g, b;
+
+			while( h -- )
+			{
+				w = *width;
+				o -= ostride;
+				alpha -= *width;
+				while( w >= 2 )
+				{
+					YUV2RGB( *p, *( p + 1 ), *( p + 3 ), r, g, b );
+					*o ++ = r;
+					*o ++ = g;
+					*o ++ = b;
+					*o ++ = *alpha ++;
+					YUV2RGB( *( p + 2 ), *( p + 1 ), *( p + 3 ), r, g, b );
+					*o ++ = r;
+					*o ++ = g;
+					*o ++ = b;
+					*o ++ = *alpha ++;
+					w -= 2;
+					p += 4;
+				}
+				o -= ostride;
+				alpha -= *width;
+			}
+
+			mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
+			mlt_properties_set_int( properties, "format", output_format );
+			*image = output;
+			*format = output_format;
+		}
+	}
+
 	return error;
 }
 

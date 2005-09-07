@@ -21,6 +21,8 @@
 #include "consumer_sdl.h"
 #include <framework/mlt_frame.h>
 #include <framework/mlt_deque.h>
+#include <framework/mlt_factory.h>
+#include <framework/mlt_filter.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +63,7 @@ struct consumer_sdl_s
 	SDL_Rect rect;
 	uint8_t *buffer;
 	int bpp;
+	int filtered;
 };
 
 /** Forward references to static functions.
@@ -171,6 +174,12 @@ int consumer_start( mlt_consumer parent )
 
 	if ( !this->running )
 	{
+		int video_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "video_off" );
+		int preview_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "preview_off" );
+		int display_off = video_off | preview_off;
+		int audio_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" );
+		int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
+
 		consumer_stop( parent );
 
 		this->running = 1;
@@ -181,7 +190,17 @@ int consumer_start( mlt_consumer parent )
 
 		this->bpp = mlt_properties_get_int( this->properties, "bpp" );
 
-		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+		// Attach a colour space converter
+		if ( preview_off && !this->filtered )
+		{
+			mlt_filter filter = mlt_factory_filter( "avcolour_space", NULL );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "forced", mlt_image_yuv422 );
+			mlt_service_attach( MLT_CONSUMER_SERVICE( parent ), filter );
+			mlt_filter_close( filter );
+			this->filtered = 1;
+		}
+	
+		if ( sdl_started == 0 && display_off == 0 )
 		{
 			if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
 			{
@@ -192,15 +211,15 @@ int consumer_start( mlt_consumer parent )
 			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 			SDL_EnableUNICODE( 1 );
 		}
-		else
+		else if ( display_off == 0 )
 		{
 			this->sdl_screen = SDL_GetVideoSurface( );
 		}
 
-		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
+		if ( audio_off == 0 )
 			SDL_InitSubSystem( SDL_INIT_AUDIO );
 
-		if ( this->sdl_screen == NULL )
+		if ( this->sdl_screen == NULL && display_off == 0 )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
@@ -393,11 +412,17 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	uint8_t *image;
 	int changed = 0;
 
-	if ( this->running && mlt_properties_get_int( properties, "video_off" ) == 0 )
+	int video_off = mlt_properties_get_int( properties, "video_off" );
+	int preview_off = mlt_properties_get_int( properties, "preview_off" );
+	mlt_image_format preview_format = mlt_properties_get_int( properties, "preview_format" );
+	int display_off = video_off | preview_off;
+
+	if ( this->running && display_off == 0 )
 	{
 		// Get the image, width and height
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
+		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 		
 		// Handle events
 		if ( this->sdl_screen != NULL )
@@ -537,6 +562,14 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 
 		sdl_unlock_display();
+	}
+	else if ( this->running )
+	{
+		vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
+		if ( !video_off )
+			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
+		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 	}
 
 	return 0;

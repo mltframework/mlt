@@ -215,6 +215,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
+	mlt_properties_set_int( properties, "format", *format );
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
 	mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_properties_set_int( properties, "distort", mlt_properties_get_int( frame_properties, "distort" ) );

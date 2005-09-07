@@ -122,7 +122,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	{
 		if ( width != this->width || height != this->height )
 		{
-			pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
+			pixbuf = mlt_properties_get_data( producer_props, "_pixbuf", NULL );
 			mlt_pool_release( this->image );
 			mlt_pool_release( this->alpha );
 			this->image = NULL;
@@ -142,12 +142,14 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		if ( pixbuf != NULL )
 		{
 			// Register this pixbuf for destruction and reuse
-			mlt_properties_set_data( producer_props, "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
+			mlt_events_block( producer_props, NULL );
+			mlt_properties_set_data( producer_props, "_pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
 			g_object_ref( pixbuf );
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
 
-			mlt_properties_set_int( producer_props, "real_width", gdk_pixbuf_get_width( pixbuf ) );
-			mlt_properties_set_int( producer_props, "real_height", gdk_pixbuf_get_height( pixbuf ) );
+			mlt_properties_set_int( producer_props, "_real_width", gdk_pixbuf_get_width( pixbuf ) );
+			mlt_properties_set_int( producer_props, "_real_height", gdk_pixbuf_get_height( pixbuf ) );
+			mlt_events_unblock( producer_props, NULL );
 
 			// Store the width/height of the pixbuf temporarily
 			this->width = gdk_pixbuf_get_width( pixbuf );
@@ -206,8 +208,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Set width/height of frame
 	mlt_properties_set_int( properties, "width", this->width );
 	mlt_properties_set_int( properties, "height", this->height );
-	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "real_width" ) );
-	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
+	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
+	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
 
 	// pass the image data without destructor
 	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * 2, NULL, NULL );
