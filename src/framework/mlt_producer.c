@@ -253,7 +253,7 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 	{
 		position = 0;
 	}
-	else if ( use_points && !strcmp( eof, "pause" ) && position >= mlt_producer_get_playtime( this ) )
+	else if ( use_points && ( eof == NULL || !strcmp( eof, "pause" ) ) && position >= mlt_producer_get_playtime( this ) )
 	{
 		mlt_producer_set_speed( this, 0 );
 		position = mlt_producer_get_playtime( this ) - 1;

@@ -27,7 +27,7 @@
 #include <string.h>
 #include <math.h>
 
-typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int softness );
+typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int softness, int uneven );
 
 /** Geometry struct.
 */
@@ -370,12 +370,13 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 /** Composite a source line over a destination line
 */
 
-static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness )
+static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness, int uneven_x )
 {
 	register int j;
 	register int a;
 	register int mix;
-	
+	int uneven_w = width % 2;
+
 	for ( j = 0; j < width; j ++ )
 	{
 		a = *alpha_b ++;
@@ -383,19 +384,31 @@ static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t 
 		mix = ( mix * a ) >> 8;
 		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
-		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*alpha_a = mix | *alpha_a;
+		alpha_a ++;
+	}
+
+	if ( uneven_w )
+	{
+		a = *alpha_b ++;
+		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
+		mix = ( mix * a ) >> 8;
+		*dest = ( *src ++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
 	}
 }
 
-static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness )
+static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness, int uneven_x )
 {
 	register int j;
 	register int a;
 	register int mix;
-	
+	int uneven_w = width % 2;
+
 	for ( j = 0; j < width; j ++ )
 	{
 		a = *alpha_b ++ | *alpha_a;
@@ -403,19 +416,31 @@ static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8
 		mix = ( mix * a ) >> 8;
 		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
-		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
 	}
+
+	if ( uneven_w )
+	{
+		a = *alpha_b ++ | *alpha_a;
+		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
+		mix = ( mix * a ) >> 8;
+		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*alpha_a = mix | *alpha_a;
+		alpha_a ++;
+	}	
 }
 
-static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness )
+static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness, int uneven_x )
 {
 	register int j;
 	register int a;
 	register int mix;
-	
+	int uneven_w = width % 2;
+
 	for ( j = 0; j < width; j ++ )
 	{
 		a = *alpha_b ++ & *alpha_a;
@@ -423,19 +448,31 @@ static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint
 		mix = ( mix * a ) >> 8;
 		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
-		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		*dest = ( *( src ++ ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
 	}
+
+	if ( uneven_w )
+	{
+		a = *alpha_b ++ & *alpha_a;
+		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
+		mix = ( mix * a ) >> 8;
+		*dest = ( *src ++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*alpha_a = mix | *alpha_a;
+		alpha_a ++;
+	}	
 }
 
-static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness )
+static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness, int uneven_x )
 {
 	register int j;
 	register int a;
 	register int mix;
-	
+	int uneven_w = width % 2;
+
 	for ( j = 0; j < width; j ++ )
 	{
 		a = *alpha_b ++ ^ *alpha_a;
@@ -443,11 +480,22 @@ static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint
 		mix = ( mix * a ) >> 8;
 		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
-		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
 	}
+
+	if ( uneven_w )
+	{
+		a = *alpha_b ++ ^ *alpha_a;
+		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
+		mix = ( mix * a ) >> 8;
+		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		dest++;
+		*alpha_a = mix | *alpha_a;
+		alpha_a ++;
+	}	
 }
 
 /** Composite function.
@@ -467,7 +515,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	// Adjust to consumer scale
 	int x = rint( 0.5 + geometry.item.x * width_dest / geometry.nw );
 	int y = rint( 0.5 + geometry.item.y * height_dest / geometry.nh );
-	int x_uneven = x & 1;
+	int uneven_x = 2 * ( x % 2 );
 
 	// optimization points - no work to do
 	if ( width_src <= 0 || height_src <= 0 )
@@ -540,18 +588,13 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int alpha_b_stride = stride_src / bpp;
 	int alpha_a_stride = stride_dest / bpp;
 
-	// Make sure than x and w are even
-	if ( x_uneven )
-	{
-		p_src += 2;
-		width_src --;
-		alpha_a ++;
-	}
+	// Incorrect, but keeps noise away?
+	height_src --;
 
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i += step )
 	{
-		line_fn( p_dest, p_src, width_src, alpha_b, alpha_a, weight, p_luma, softness );
+		line_fn( p_dest, p_src, width_src, alpha_b, alpha_a, weight, p_luma, softness, uneven_x );
 
 		p_src += stride_src;
 		p_dest += stride_dest;
@@ -807,32 +850,43 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
 	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
 
-	// Now parse the geometries
-	if ( start == NULL )
-	{
-		// Parse the transitions properties
-		start = transition_parse_keys( this, normalised_width, normalised_height );
+	char *name = mlt_properties_get( properties, "_unique_id" );
+	char key[ 256 ];
 
-		// Assign to properties to ensure we get destroyed
-		mlt_properties_set_data( properties, "geometries", start, 0, ( mlt_destructor )mlt_geometry_close, NULL );
+	sprintf( key, "%s.in", name );
+	if ( mlt_properties_get( a_props, key ) )
+	{
+		sscanf( mlt_properties_get( a_props, key ), "%f,%f,%f,%f,%f,%d,%d", &result->item.x, &result->item.y, &result->item.w, &result->item.h, &result->item.mix, &result->nw, &result->nh );
 	}
 	else
 	{
-		int length = mlt_transition_get_out( this ) - mlt_transition_get_in( this ) + 1;
-		double cycle = mlt_properties_get_double( properties, "cycle" );
-		if ( cycle > 1 )
-			length = cycle;
-		else if ( cycle > 0 )
-			length *= cycle;
-		mlt_geometry_refresh( start, mlt_properties_get( properties, "geometry" ), length, normalised_width, normalised_height );
+		// Now parse the geometries
+		if ( start == NULL )
+		{
+			// Parse the transitions properties
+			start = transition_parse_keys( this, normalised_width, normalised_height );
+
+			// Assign to properties to ensure we get destroyed
+			mlt_properties_set_data( properties, "geometries", start, 0, ( mlt_destructor )mlt_geometry_close, NULL );
+		}
+		else
+		{
+			int length = mlt_transition_get_out( this ) - mlt_transition_get_in( this ) + 1;
+			double cycle = mlt_properties_get_double( properties, "cycle" );
+			if ( cycle > 1 )
+				length = cycle;
+			else if ( cycle > 0 )
+				length *= cycle;
+			mlt_geometry_refresh( start, mlt_properties_get( properties, "geometry" ), length, normalised_width, normalised_height );
+		}
+
+		// Do the calculation
+		geometry_calculate( this, result, position );
+
+		// Assign normalised info
+		result->nw = normalised_width;
+		result->nh = normalised_height;
 	}
-
-	// Do the calculation
-	geometry_calculate( this, result, position );
-
-	// Assign normalised info
-	result->nw = normalised_width;
-	result->nh = normalised_height;
 
 	// Now parse the alignment
 	result->halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
@@ -865,6 +919,10 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	// Get the position
 	int position = position_calculate( this, frame_position );
 
+	// Get the unique id of the transition
+	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
+	char key[ 256 ];
+
 	// Destination image
 	uint8_t *dest = NULL;
 
@@ -889,10 +947,8 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	// Will need to know region to copy
 	struct geometry_s result;
 
-	double delta = delta_calculate( this, a_frame, frame_position );
-
 	// Calculate the region now
-	composite_calculate( this, &result, a_frame, position + delta / 2 );
+	composite_calculate( this, &result, a_frame, position );
 
 	// Need to scale down to actual dimensions
 	x = rint( 0.5 + result.item.x * width / result.nw );
@@ -900,18 +956,17 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	w = rint( 0.5 + result.item.w * width / result.nw );
 	h = rint( 0.5 + result.item.h * height / result.nh );
 
-	// Make sure that x and w are even
-	if ( x & 1 )
+	if ( x % 2 )
 	{
 		x --;
-		w += 2;
-		if ( w & 1 )
-			w --;
-	}
-	else if ( w & 1 )
-	{
 		w ++;
 	}
+
+	// Store the key
+	sprintf( key, "%s.in=%d,%d,%d,%d,%f,%d,%d", name, x, y, w, h, result.item.mix, width, height );
+	mlt_properties_parse( a_props, key );
+	sprintf( key, "%s.out=%d,%d,%d,%d,%f,%d,%d", name, x, y, w, h, result.item.mix, width, height );
+	mlt_properties_parse( a_props, key );
 
 	ds = w * 2;
 	ss = width * 2;
@@ -1101,14 +1156,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha_mask( b_frame ) : alpha_b;
 
 			composite_line_fn line_fn = composite_line_yuv;
-
-			// Silly - this isn't a good solution - deprecating
-			if ( mlt_properties_get_int( properties, "or" ) )
-				line_fn = composite_line_yuv_or;
-			if ( mlt_properties_get_int( properties, "and" ) )
-				line_fn = composite_line_yuv_and;
-			if ( mlt_properties_get_int( properties, "xor" ) )
-				line_fn = composite_line_yuv_xor;
 
 			// Replacement and override
 			if ( operator != NULL )

@@ -473,9 +473,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		get_affine( &affine, this, ( float )position );
 
-		lower_x -= ( lower_x & 1 );
-		upper_x -= ( upper_x & 1 );
-
 		q = *image;
 
 		dz = MapZ( affine.matrix, 0, 0 );

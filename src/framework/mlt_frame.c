@@ -263,8 +263,6 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
 	int error = 0;
 
-	*width = *width >> 1 << 1;
-	
 	if ( get_image != NULL )
 	{
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
@@ -645,75 +643,27 @@ uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, 
 
 	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) && ( owidth > 6 && oheight > 6 ) )
 	{
-		iwidth = iwidth - ( iwidth % 2 );
-		owidth = owidth - ( owidth % 2 );
+		uint8_t *in_line = input;
+		uint8_t *out_line;
 
 		output = mlt_pool_alloc( owidth * oheight );
+		memset( output, 0, owidth * oheight );
 
-   		// Coordinates (0,0 is middle of output)
-   		int y;
-
-   		// Calculate ranges
-   		int out_x_range = owidth / 2;
-   		int out_y_range = oheight / 2;
-   		int in_x_range = iwidth / 2 < out_x_range ? iwidth / 2 : out_x_range;
-   		int in_y_range = iheight / 2 < out_y_range ? iheight / 2 : out_y_range;
-
-   		// Output pointers
-   		uint8_t *out_line = output;
-   		uint8_t *out_ptr = out_line;
-
-   		// Calculate a middle and possibly invalid pointer in the input
-   		uint8_t *in_middle = input + iwidth * ( iheight / 2 ) + ( iwidth / 2 );
-   		int in_line = - in_y_range * iwidth - in_x_range;
-
-		int elements;
-
-		// Fill whole section with black
-		y = out_y_range - ( iheight / 2 );
-		int blank_elements = owidth * y;
-		elements = blank_elements;
-		while ( elements -- )
-			*out_line ++ = 0;
-
-		int active_width = iwidth;
-		int inactive_width = out_x_range - in_x_range;
-		uint8_t *p = NULL;
-		uint8_t *end = NULL;
+		out_line = output + ( ( oheight - iheight ) / 2 ) * owidth;
+		out_line += 2 * ( int )( ( owidth - iwidth ) / 2 );
 
    		// Loop for the entirety of our output height.
 		while ( iheight -- )
    		{
-       		// Start at the beginning of the line
-       		out_ptr = out_line;
-
-			// Fill the outer part with black
-			elements = inactive_width;
-			while ( elements -- )
-				*out_ptr ++ = 0;
-
    			// We're in the input range for this row.
-			p = in_middle + in_line;
-			end = out_ptr + active_width;
-			while ( out_ptr != end )
-				*out_ptr ++ = *p ++;
+			memcpy( out_line, input, iwidth );
 
-			// Fill the outer part with black
-			elements = inactive_width;
-			while ( elements -- )
-				*out_ptr ++ = 0;
-	
   			// Move to next input line
    			in_line += iwidth;
 
        		// Move to next output line
        		out_line += owidth;
    		}
-
-		// Fill whole section with black
-		elements = blank_elements;
-		while ( elements -- )
-			*out_line ++ = 0;
 	}
 
 	return output;
@@ -725,11 +675,6 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	int istride = iwidth * 2;
 	int ostride = owidth * 2;
 
-	iwidth = iwidth - ( iwidth % 2 );
-	owidth = owidth - ( owidth % 2 );
-	//iheight = iheight - ( iheight % 2 );
-	//oheight = oheight - ( oheight % 2 );
-	
 	// Optimisation point
 	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || oheight <= 6 ) )
 	{
@@ -741,93 +686,33 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		return;
 	}
 
-   	// Coordinates (0,0 is middle of output)
-   	int y;
+	uint8_t *in_line = input;
+	uint8_t *out_line;
 
-   	// Calculate ranges
-   	int out_x_range = owidth / 2;
-   	int out_y_range = oheight / 2;
-   	int in_x_range = iwidth / 2 < out_x_range ? iwidth / 2 : out_x_range;
-   	int in_y_range = iheight / 2 < out_y_range ? iheight / 2 : out_y_range;
+	int size = owidth * oheight;
+	uint8_t *p = output;
 
-   	// Output pointers
-   	uint8_t *out_line = output;
-   	uint8_t *out_ptr = out_line;
-
-   	// Calculate a middle and possibly invalid pointer in the input
-   	uint8_t *in_middle = input + istride * ( iheight / 2 ) + iwidth;
-   	int in_line = - in_y_range * istride - in_x_range * 2;
-
-	int elements;
-
-	// Fill whole section with black
-	y = out_y_range - ( iheight / 2 );
-	int blank_elements = ostride * y / 2;
-	elements = blank_elements;
-	while ( elements -- )
+	while( size -- )
 	{
-		*out_line ++ = 16;
-		*out_line ++ = 128;
+		*p ++ = 16;
+		*p ++ = 128;
 	}
 
-	int active_width = 2 * iwidth;
-	int left_inactive_width = out_x_range - in_x_range;
-	int right_inactive_width = left_inactive_width;
-	uint8_t *p = NULL;
-	uint8_t *end = NULL;
-
-	if ( in_line % 4 )
-	{
-		active_width -= 2;
-		in_middle += 2;
-		right_inactive_width += 2;
-	}
-
+	out_line = output + ( ( oheight - iheight ) / 2 ) * ostride;
+	out_line += 4 * ( int )( ( owidth - iwidth ) / 4 );
+		
    	// Loop for the entirety of our output height.
 	while ( iheight -- )
    	{
-       	// Start at the beginning of the line
-       	out_ptr = out_line;
-
-		// Fill the outer part with black
-		elements = left_inactive_width;
-		while ( elements -- )
-		{
-			*out_ptr ++ = 16;
-			*out_ptr ++ = 128;
-		}
-
    		// We're in the input range for this row.
-		p = in_middle + in_line;
-		end = out_ptr + active_width;
-		while ( out_ptr != end )
-		{
-			*out_ptr ++ = *p ++;
-			*out_ptr ++ = *p ++;
-		}
+		memcpy( out_line, in_line, istride );
 
-		// Fill the outer part with black
-		elements = right_inactive_width;
-		while ( elements -- )
-		{
-			*out_ptr ++ = 16;
-			*out_ptr ++ = 128;
-		}
+		// Move to next input line
+		in_line += istride;
 
-  		// Move to next input line
-   		in_line += istride;
-
-       	// Move to next output line
-       	out_line += ostride;
+   		// Move to next output line
+   		out_line += ostride;
    	}
-
-	// Fill whole section with black
-	elements = blank_elements;
-	while ( elements -- )
-	{
-		*out_line ++ = 16;
-		*out_line ++ = 128;
-	}
 }
 
 /** A resizing function for yuv422 frames - this does not rescale, but simply

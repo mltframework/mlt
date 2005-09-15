@@ -62,6 +62,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint8_t *a = NULL;
 			uint8_t *b = NULL;
 			int i;
+			int uneven_w = ( *width % 2 ) * 2;
 			for ( i = 0; i < *height; i ++ )
 			{
 				p = ( uint8_t * )*image + i * *width * 2;
@@ -73,9 +74,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					while ( p < q )
 					{
 						*p ++ = *( q - 2 );
-						*p ++ = *( q - 3 );
+						*p ++ = *( q - 3 - uneven_w );
 						*p ++ = *( q - 4 );
-						*p ++ = *( q - 1 );
+						*p ++ = *( q - 1 - uneven_w );
 						q -= 4;
 						*a ++ = *b --;
 						*a ++ = *b --;
@@ -86,9 +87,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					while ( p < q )
 					{
 						*( q - 2 ) = *p ++;
-						*( q - 3 ) = *p ++;
+						*( q - 3 - uneven_w ) = *p ++;
 						*( q - 4 ) = *p ++;
-						*( q - 1 ) = *p ++;
+						*( q - 1 - uneven_w ) = *p ++;
 						q -= 4;
 						*b -- = *a ++;
 						*b -- = *a ++;
@@ -139,6 +140,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint8_t *b = NULL;
 			int i;
 			int j;
+			int uneven_w = ( *width % 2 ) * 2;
 			for ( i = 0; i < *height; i ++ )
 			{
 				p = ( uint8_t * )*image + i * *width * 2;
@@ -151,9 +153,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					while ( j -- )
 					{
 						*p ++ = *( q - 2 );
-						*p ++ = *( q - 3 );
+						*p ++ = *( q - 3 - uneven_w );
 						*p ++ = *( q - 4 );
-						*p ++ = *( q - 1 );
+						*p ++ = *( q - 1 - uneven_w );
 						q -= 4;
 						*a ++ = *b --;
 						*a ++ = *b --;
@@ -164,9 +166,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					while ( j -- )
 					{
 						*( q - 2 ) = *p ++;
-						*( q - 3 ) = *p ++;
+						*( q - 3 - uneven_w ) = *p ++;
 						*( q - 4 ) = *p ++;
-						*( q - 1 ) = *p ++;
+						*( q - 1 - uneven_w ) = *p ++;
 						q -= 4;
 						*b -- = *a ++;
 						*b -- = *a ++;
@@ -183,6 +185,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			int j;
 			uint8_t *a = NULL;
 			uint8_t *b = NULL;
+			int uneven_w = ( *width % 2 ) * 2;
 			for ( i = 0; i < *height; i ++ )
 			{
 				p = ( uint8_t * )*image + ( i + 1 ) * *width * 2;
@@ -195,9 +198,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					while ( j -- )
 					{
 						*q ++ = *( p - 2 );
-						*q ++ = *( p - 3 );
+						*q ++ = *( p - 3 - uneven_w );
 						*q ++ = *( p - 4 );
-						*q ++ = *( p - 1 );
+						*q ++ = *( p - 1 - uneven_w );
 						p -= 4;
 						*b ++ = *a --;
 						*b ++ = *a --;
@@ -208,9 +211,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					while ( j -- )
 					{
 						*( p - 2 ) = *q ++;
-						*( p - 3 ) = *q ++;
+						*( p - 3 - uneven_w ) = *q ++;
 						*( p - 4 ) = *q ++;
-						*( p - 1 ) = *q ++;
+						*( p - 1 - uneven_w ) = *q ++;
 						p -= 4;
 						*a -- = *b ++;
 						*a -- = *b ++;
@@ -227,6 +230,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint8_t *a = NULL;
 			uint8_t *b = NULL;
 			uint8_t c;
+			int uneven_w = ( *width % 2 ) * 2;
 			for ( i = 0; i < *height; i ++ )
 			{
 				p = ( uint8_t * )*image + i * *width * 2;
@@ -236,13 +240,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				while ( p < q )
 				{
 					t[ 0 ] = p[ 0 ];
-					t[ 1 ] = p[ 1 ];
+					t[ 1 ] = p[ 1 + uneven_w ];
 					t[ 2 ] = p[ 2 ];
-					t[ 3 ] = p[ 3 ];
+					t[ 3 ] = p[ 3 + uneven_w ];
 					*p ++ = *( q - 2 );
-					*p ++ = *( q - 3 );
+					*p ++ = *( q - 3 - uneven_w );
 					*p ++ = *( q - 4 );
-					*p ++ = *( q - 1 );
+					*p ++ = *( q - 1 - uneven_w );
 					*( -- q ) = t[ 3 ];
 					*( -- q ) = t[ 0 ];
 					*( -- q ) = t[ 1 ];

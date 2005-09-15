@@ -15,7 +15,7 @@ FFMPEG/avformat options:
 EOF
 
 else
-        targetos=$(uname -s)
+	targetos=$(uname -s)
 	case $targetos in
 	Darwin)
 		export LIBSUF=.dylib

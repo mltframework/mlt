@@ -86,15 +86,9 @@ extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t p
 
 /* this macro scales rgb into the yuv gamut, y is scaled by 219/255 and uv by 224/255 */
 #define RGB2YUV(r, g, b, y, u, v)\
-  y = ((257*r + 504*g + 98*b) >> 10) + 16;\
-  u = ((-148*r - 291*g + 439*b) >> 10) + 128;\
-  v = ((439*r - 368*g - 71*b) >> 10) + 128;\
-  y = y < 16 ? 16 : y;\
-  u = u < 16 ? 16 : u;\
-  v = v < 16 ? 16 : v;\
-  y = y > 235 ? 235 : y;\
-  u = u > 240 ? 240 : u;\
-  v = v > 240 ? 240 : v
+  y = ((263*r + 516*g + 100*b) >> 10) + 16;\
+  u = ((-152*r - 298*g + 450*b) >> 10) + 128;\
+  v = ((450*r - 377*g - 73*b) >> 10) + 128;
 
 /* this macro assumes the user has already scaled their rgb down into the broadcast limits */
 #define RGB2YUV_UNSCALED(r, g, b, y, u, v)\

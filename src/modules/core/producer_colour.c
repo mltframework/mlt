@@ -50,6 +50,7 @@ mlt_producer producer_colour_init( char *colour )
 		// Set the default properties
 		mlt_properties_set( properties, "resource", colour == NULL ? "0x000000ff" : colour );
 		mlt_properties_set( properties, "_resource", "" );
+		mlt_properties_set_double( properties, "aspect_ratio", 0 );
 		
 		return producer;
 	}
@@ -135,7 +136,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		// Color the image
 		uint8_t y, u, v;
-		int i = 0;
+		int i = *height;
+		int j = 0;
+		int uneven = *width % 2;
+		int count = ( *width - uneven ) / 2;
+		uint8_t *p = NULL;
 
 		// Allocate the image
 		size = *width * *height * 2;
@@ -149,12 +154,23 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		RGB2YUV( color.r, color.g, color.b, y, u, v );
 
-		while ( i < size )
+		p = image;
+
+		while ( i -- )
 		{
-			image[ i ++ ] = y;
-			image[ i ++ ] = u;
-			image[ i ++ ] = y;
-			image[ i ++ ] = v;
+			j = count;
+			while ( j -- )
+			{
+				*p ++ = y;
+				*p ++ = u;
+				*p ++ = y;
+				*p ++ = v;
+			}
+			if ( uneven )
+			{
+				*p ++ = y;
+				*p ++ = u;
+			}
 		}
 	}
 
@@ -212,7 +228,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", 0 );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
 
 		// colour is an alias for resource
 		if ( mlt_properties_get( producer_props, "colour" ) != NULL )
