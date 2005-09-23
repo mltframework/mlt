@@ -344,51 +344,7 @@ static double producer_time_of_frame( mlt_producer this, mlt_position position )
 
 static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format format, int width, int height )
 {
-	// EXPERIMENTAL IMAGE NORMALISATIONS
-	if ( pix_fmt == PIX_FMT_YUV420P && format == mlt_image_yuv422 )
-	{
-		register int i, j;
-		register int half = width >> 1;
-		register uint8_t *Y = ( ( AVPicture * )frame )->data[ 0 ];
-		register uint8_t *U = ( ( AVPicture * )frame )->data[ 1 ];
-		register uint8_t *V = ( ( AVPicture * )frame )->data[ 2 ];
-		register uint8_t *d = buffer;
-		register uint8_t *y, *u, *v;
-
-		i = height >> 1;
-		while ( i -- )
-		{
-			y = Y;
-			u = U;
-			v = V;
-			j = half;
-			while ( j -- )
-			{
-				*d ++ = *y ++;
-				*d ++ = *u ++;
-				*d ++ = *y ++;
-				*d ++ = *v ++;
-			}
-
-			Y += ( ( AVPicture * )frame )->linesize[ 0 ];
-			y = Y;
-			u = U;
-			v = V;
-			j = half;
-			while ( j -- )
-			{
-				*d ++ = *y ++;
-				*d ++ = *u ++;
-				*d ++ = *y ++;
-				*d ++ = *v ++;
-			}
-
-			Y += ( ( AVPicture * )frame )->linesize[ 0 ];
-			U += ( ( AVPicture * )frame )->linesize[ 1 ];
-			V += ( ( AVPicture * )frame )->linesize[ 2 ];
-		}
-	}
-	else if ( format == mlt_image_yuv420p )
+	if ( format == mlt_image_yuv420p )
 	{
 		AVPicture pict;
 		pict.data[0] = buffer;
@@ -589,7 +545,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						got_picture = 0;
 					}
-					mlt_properties_set_int( properties, "top_field_first", av_frame->top_field_first );
 				}
 			}
 
@@ -600,6 +555,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Now handle the picture if we have one
 		if ( got_picture )
 		{
+			mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
+			mlt_properties_set_int( frame_properties, "top_field_first", av_frame->top_field_first );
+
 			convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
 
 			mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );

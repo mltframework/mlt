@@ -57,57 +57,11 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 
 static inline void convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt, int width, int height )
 {
-	if ( in_fmt == PIX_FMT_YUV420P && out_fmt == PIX_FMT_YUV422 )
-	{
-		register int i, j;
-		register int half = width >> 1;
-		register uint8_t *Y = in;
-		register uint8_t *U = Y + width * height;
-		register uint8_t *V = U + width * height / 2;
-		register uint8_t *d = out;
-		register uint8_t *y, *u, *v;
-
-		i = height >> 1;
-		while ( i -- )
-		{
-			y = Y;
-			u = U;
-			v = V;
-			j = half;
-			while ( j -- )
-			{
-				*d ++ = *y ++;
-				*d ++ = *u ++;
-				*d ++ = *y ++;
-				*d ++ = *v ++;
-			}
-
-			Y += width;
-			y = Y;
-			u = U;
-			v = V;
-			j = half;
-			while ( j -- )
-			{
-				*d ++ = *y ++;
-				*d ++ = *u ++;
-				*d ++ = *y ++;
-				*d ++ = *v ++;
-			}
-
-			Y += width;
-			U += width / 2;
-			V += width / 2;
-		}
-	}
-	else 
-	{
-		AVPicture input;
-		AVPicture output;
-		avpicture_fill( &output, out, out_fmt, width, height );
-		avpicture_fill( &input, in, in_fmt, width, height );
-		img_convert( &output, out_fmt, &input, in_fmt, width, height );
-	}
+	AVPicture input;
+	AVPicture output;
+	avpicture_fill( &output, out, out_fmt, width, height );
+	avpicture_fill( &input, in, in_fmt, width, height );
+	img_convert( &output, out_fmt, &input, in_fmt, width, height );
 }
 
 /** Do it :-).
