@@ -92,7 +92,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	error = mlt_frame_get_image( this, image, format, width, height, writable );
 
 	// Check that we want progressive and we aren't already progressive
-	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL )
+	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL && !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) )
 	{
 		// Determine deinterlace method
 		char *method_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "method" );
