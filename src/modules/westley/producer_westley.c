@@ -473,6 +473,9 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		if ( producer == NULL )
 			producer = MLT_SERVICE( mlt_factory_producer( "fezzik", "+INVALID.txt" ) );
 
+		if ( producer == NULL )
+			producer = MLT_SERVICE( mlt_factory_producer( "fezzik", "colour:red" ) );
+
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
 
