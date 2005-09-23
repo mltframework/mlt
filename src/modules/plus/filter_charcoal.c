@@ -101,6 +101,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int sum1;
 		int sum2;
 		float sum;
+		int val;
 
 		// Loop for each row
 		for ( y = 0; y < *height; y ++ )
@@ -127,7 +128,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				*p ++ = !invert ? ( sum >= 16 && sum <= 235 ? 251 - sum : sum < 16 ? 235 : 16 ) :
 								  ( sum >= 16 && sum <= 235 ? sum : sum < 16 ? 16 : 235 );
 				q ++;
-				*p ++ = 128 + mix * ( *q ++ - 128 );
+				val = 128 + mix * ( *q ++ - 128 );
+				val = val < 16 ? 16 : val > 240 ? 240 : val;
+				*p ++ = val;
 			}
 		}
 
