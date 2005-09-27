@@ -418,6 +418,8 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 
 	if ( st != NULL ) 
 	{
+		char *pix_fmt = mlt_properties_get( properties, "pix_fmt" );
+		double ar = mlt_properties_get_double( properties, "display_ratio" );
 		AVCodecContext *c = st->codec;
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_VIDEO;
@@ -430,7 +432,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
 		c->gop_size = mlt_properties_get_int( properties, "gop_size" );
-		c->pix_fmt = PIX_FMT_YUV420P;
+		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
 
 		if ( mlt_properties_get_int( properties, "b_frames" ) )
 		{
@@ -440,8 +442,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		}
 
 	 	c->mb_decision = mlt_properties_get_int( properties, "mb_decision" );
-		c->sample_aspect_ratio.den = mlt_properties_get_double( properties, "aspect_ratio_den" );
-		c->sample_aspect_ratio.num = mlt_properties_get_double( properties, "aspect_ratio_num" );
+		c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
 		c->mb_cmp = mlt_properties_get_int( properties, "mb_cmp" );
 		c->ildct_cmp = mlt_properties_get_int( properties, "ildct_cmp" );
 		c->me_sub_cmp = mlt_properties_get_int( properties, "sub_cmp" );
@@ -891,17 +892,11 @@ static void *consumer_thread( void *arg )
 
 						mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
-						// This will cause some fx to go awry....
-						if ( mlt_properties_get_int( properties, "transcode" ) )
-						{
-							mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_width", img_height * 4.0 / 3.0 );
-							mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "normalised_height", img_height );
-						}
-
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
 
 						q = image;
 
+						// Convert the mlt frame to an AVPicture
 						for ( i = 0; i < height; i ++ )
 						{
 							p = input->data[ 0 ] + i * input->linesize[ 0 ];
@@ -913,7 +908,28 @@ static void *consumer_thread( void *arg )
 							}
 						}
 
+						// Do the colour space conversion
 						img_convert( ( AVPicture * )output, video_st->codec->pix_fmt, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
+
+						// Apply the alpha if applicable
+						if ( video_st->codec->pix_fmt == PIX_FMT_RGBA32 )
+						{
+							uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+
+							for ( i = 0; i < height; i ++ )
+							{
+								p = input->data[ 0 ] + i * input->linesize[ 0 ];
+								#ifndef __DARWIN__
+								p += 3;
+								#endif
+								j = width;
+								while( j -- )
+								{
+									*p = *alpha ++;
+									*p += 4;
+								}
+							}
+						}
 					}
  
  					if (oc->oformat->flags & AVFMT_RAWPICTURE) 
