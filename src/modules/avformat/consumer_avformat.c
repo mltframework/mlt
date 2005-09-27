@@ -915,18 +915,29 @@ static void *consumer_thread( void *arg )
 						if ( video_st->codec->pix_fmt == PIX_FMT_RGBA32 )
 						{
 							uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+							register int n;
 
 							for ( i = 0; i < height; i ++ )
 							{
-								p = input->data[ 0 ] + i * input->linesize[ 0 ];
+								n = ( width + 7 ) / 8;
+								p = output->data[ 0 ] + i * output->linesize[ 0 ];
+
 								#ifndef __DARWIN__
 								p += 3;
 								#endif
-								j = width;
-								while( j -- )
+
+								switch( width % 8 )
 								{
-									*p = *alpha ++;
-									*p += 4;
+									case 0:	do { *p = *alpha++; p += 4;
+									case 7:		 *p = *alpha++; p += 4;
+									case 6:		 *p = *alpha++; p += 4;
+									case 5:		 *p = *alpha++; p += 4;
+									case 4:		 *p = *alpha++; p += 4;
+									case 3:		 *p = *alpha++; p += 4;
+									case 2:		 *p = *alpha++; p += 4;
+									case 1:		 *p = *alpha++; p += 4;
+											}
+											while( --n );
 								}
 							}
 						}
