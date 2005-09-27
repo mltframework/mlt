@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <dirent.h>
 
-pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct producer_pixbuf_s *producer_pixbuf;
 
