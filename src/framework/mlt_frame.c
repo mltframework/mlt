@@ -429,10 +429,10 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 	if ( mlt_properties_get( properties, "meta.volume" ) )
 	{
 		double value = mlt_properties_get_double( properties, "meta.volume" );
+
 		if ( value == 0.0 )
 		{
 			memset( *buffer, 0, *samples * *channels * 2 );
-			mlt_properties_set_double( properties, "meta.volume", 1.0 );
 		}
 		else if ( value != 1.0 )
 		{
@@ -443,8 +443,9 @@ int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *for
 				*p = *p * value;
 				p ++;
 			}
-			mlt_properties_set_double( properties, "meta.volume", 1.0 );
 		}
+
+		mlt_properties_set( properties, "meta.volume", NULL );
 	}
 
 	return 0;
@@ -643,23 +644,27 @@ uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, 
 
 	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) && ( owidth > 6 && oheight > 6 ) )
 	{
-		uint8_t *in_line = input;
 		uint8_t *out_line;
+		int offset_x = ( owidth - iwidth ) / 2;
+		int offset_y = ( oheight - iheight ) / 2;
+		int iused = iwidth;
 
 		output = mlt_pool_alloc( owidth * oheight );
 		memset( output, 0, owidth * oheight );
 
-		out_line = output + ( ( oheight - iheight ) / 2 ) * owidth;
-		out_line += 2 * ( int )( ( owidth - iwidth ) / 2 );
+		offset_x -= offset_x % 2;
+
+		out_line = output + offset_y * owidth;
+		out_line += offset_x;
 
    		// Loop for the entirety of our output height.
 		while ( iheight -- )
    		{
    			// We're in the input range for this row.
-			memcpy( out_line, input, iwidth );
+			memcpy( out_line, input, iused );
 
   			// Move to next input line
-   			in_line += iwidth;
+   			input += iwidth;
 
        		// Move to next output line
        		out_line += owidth;
@@ -674,6 +679,12 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 	// Calculate strides
 	int istride = iwidth * 2;
 	int ostride = owidth * 2;
+	int offset_x = ( owidth - iwidth );
+	int offset_y = ( oheight - iheight ) / 2;
+	uint8_t *in_line = input;
+	uint8_t *out_line;
+	int size = owidth * oheight;
+	uint8_t *p = output;
 
 	// Optimisation point
 	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || oheight <= 6 ) )
@@ -686,26 +697,22 @@ void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input
 		return;
 	}
 
-	uint8_t *in_line = input;
-	uint8_t *out_line;
-
-	int size = owidth * oheight;
-	uint8_t *p = output;
-
 	while( size -- )
 	{
 		*p ++ = 16;
 		*p ++ = 128;
 	}
 
-	out_line = output + ( ( oheight - iheight ) / 2 ) * ostride;
-	out_line += 4 * ( int )( ( owidth - iwidth ) / 4 );
-		
+	offset_x -= offset_x % 4;
+
+	out_line = output + offset_y * ostride;
+	out_line += offset_x;
+
    	// Loop for the entirety of our output height.
 	while ( iheight -- )
    	{
    		// We're in the input range for this row.
-		memcpy( out_line, in_line, istride );
+		memcpy( out_line, in_line, iwidth * 2 );
 
 		// Move to next input line
 		in_line += istride;
@@ -749,7 +756,7 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 		alpha = mlt_resize_alpha( alpha, owidth, oheight, iwidth, iheight );
 		if ( alpha != NULL )
 		{
-			mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
+			mlt_properties_set_data( properties, "alpha", alpha, owidth * oheight, ( mlt_destructor )mlt_pool_release, NULL );
 			this->get_alpha_mask = NULL;
 		}
 

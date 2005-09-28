@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 /** Do it :-).
 */
@@ -75,19 +76,19 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		//fprintf( stderr, "normalised %dx%d output %dx%d %f %f\n", normalised_width, normalised_height, owidth, oheight, ( float )output_ar, ( float )mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight );
 
 		// Optimised for the input_ar > output_ar case (e.g. widescreen on standard)
-		int scaled_width = ( input_ar * normalised_width ) / output_ar + 0.5;
+		int scaled_width = rint( 0.5 + ( input_ar * normalised_width ) / output_ar );
 		int scaled_height = normalised_height;
 
 		// Now ensure that our images fit in the output frame
 		if ( scaled_width > normalised_width )
 		{
 			scaled_width = normalised_width;
-			scaled_height = ( output_ar * normalised_height ) / input_ar + 0.5;
+			scaled_height = rint( 0.5 + ( output_ar * normalised_height ) / input_ar );
 		}
 
 		// Now calculate the actual image size that we want
-		owidth = scaled_width * owidth / normalised_width;
-		oheight = scaled_height * oheight / normalised_height;
+		owidth = rint( 0.5 + scaled_width * owidth / normalised_width );
+		oheight = rint( 0.5 + scaled_height * oheight / normalised_height );
 
 		// Tell frame we have conformed the aspect to the consumer
 		mlt_frame_set_aspect_ratio( this, mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );

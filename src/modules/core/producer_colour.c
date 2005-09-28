@@ -198,6 +198,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Now update properties so we free the copy after
 		mlt_properties_set_data( properties, "image", copy, size, mlt_pool_release, NULL );
 		mlt_properties_set_data( properties, "alpha", alpha, size >> 1, mlt_pool_release, NULL );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
 	}
 
 	// Pass on the image

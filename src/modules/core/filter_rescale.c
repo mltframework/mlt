@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 typedef int ( *image_scaler )( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight );
 
@@ -110,60 +111,26 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 
 static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight )
 {
-	int size = 0;
-	uint8_t *input = mlt_properties_get_data( MLT_FRAME_PROPERTIES( this ), "alpha", &size );
-	
-	if ( input != NULL && ( ( size == iwidth * iheight ) || size == ( iwidth * ( iheight + 1 ) ) ) )
+	uint8_t *output = NULL;
+	uint8_t *input = mlt_frame_get_alpha_mask( this );
+
+	if ( input != NULL )
 	{
-		uint8_t *output = mlt_pool_alloc( owidth * oheight );
+		uint8_t *out_line;
+		int x, y;
+		int ox = ( iwidth << 10 ) / owidth;
+		int oy = ( iheight << 10 ) / oheight;
 
-		// Derived coordinates
-		int dy, dx;
+		output = mlt_pool_alloc( owidth * oheight );
+		out_line = output;
 
-    	// Calculate ranges
-    	int out_x_range = owidth / 2;
-    	int out_y_range = oheight / 2;
-    	int in_x_range = iwidth / 2;
-    	int in_y_range = iheight / 2;
+   		// Loop for the entirety of our output height.
+		for ( y = 0; y < oheight; y ++ )
+			for ( x = 0; x < owidth; x ++ )
+				*out_line ++ = *( input + ( ( 512 + ( y * oy * iwidth ) + x * ox ) >> 10 ) );
 
-    	// Output pointers
-    	register uint8_t *out_line = output;
-    	register uint8_t *out_ptr;
-
-    	// Calculate a middle pointer
-    	uint8_t *in_middle = input + iwidth * in_y_range + in_x_range;
-    	uint8_t *in_line;
-
-		// Generate the affine transform scaling values
-		register int scale_width = ( iwidth << 16 ) / owidth;
-		register int scale_height = ( iheight << 16 ) / oheight;
-		register int base = 0;
-
-		int outer = out_x_range * scale_width;
-		int bottom = out_y_range * scale_height;
-
-    	// Loop for the entirety of our output height.
-    	for ( dy = - bottom; dy < bottom; dy += scale_height )
-    	{
-        	// Start at the beginning of the line
-        	out_ptr = out_line;
-	
-        	// Pointer to the middle of the input line
-        	in_line = in_middle + ( dy >> 16 ) * iwidth;
-
-        	// Loop for the entirety of our output row.
-        	for ( dx = - outer; dx < outer; dx += scale_width )
-        	{
-				base = dx >> 15;
-				*out_ptr ++ = *( in_line + base );
-        	}
-
-        	// Move to next output line
-        	out_line += owidth;
-    	}
-
-		this->get_alpha_mask = NULL;
-		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output, 0, mlt_pool_release, NULL );
+		// Set it back on the frame
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output, owidth * oheight, mlt_pool_release, NULL );
 	}
 }
 
@@ -224,7 +191,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		else
 		{
 			// When no scaling is requested, revert the requested dimensions if possible
-			mlt_properties_set_int( properties, "rescale_width", ( iwidth / 2 ) * 2 );
+			mlt_properties_set_int( properties, "rescale_width", iwidth );
 			mlt_properties_set_int( properties, "rescale_height", iheight );
 		}
 	
@@ -285,6 +252,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 		else
 		{
+				// Scale the alpha
+				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			*width = iwidth;
 			*height = iheight;
 		}

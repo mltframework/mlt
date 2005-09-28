@@ -375,27 +375,15 @@ static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t 
 	register int j;
 	register int a;
 	register int mix;
-	int uneven_w = width % 2;
 
 	for ( j = 0; j < width; j ++ )
 	{
 		a = *alpha_b ++;
 		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
 		mix = ( mix * a ) >> 8;
-		*dest = ( *src++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
+		*dest = ( ( *src++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
 		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
-		dest++;
-		*alpha_a = mix | *alpha_a;
-		alpha_a ++;
-	}
-
-	if ( uneven_w )
-	{
-		a = *alpha_b ++;
-		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
-		mix = ( mix * a ) >> 8;
-		*dest = ( *src ++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
 		dest++;
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
@@ -407,7 +395,6 @@ static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8
 	register int j;
 	register int a;
 	register int mix;
-	int uneven_w = width % 2;
 
 	for ( j = 0; j < width; j ++ )
 	{
@@ -421,17 +408,6 @@ static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
 	}
-
-	if ( uneven_w )
-	{
-		a = *alpha_b ++ | *alpha_a;
-		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
-		mix = ( mix * a ) >> 8;
-		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
-		dest++;
-		*alpha_a = mix | *alpha_a;
-		alpha_a ++;
-	}	
 }
 
 static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness, int uneven_x )
@@ -439,7 +415,6 @@ static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint
 	register int j;
 	register int a;
 	register int mix;
-	int uneven_w = width % 2;
 
 	for ( j = 0; j < width; j ++ )
 	{
@@ -453,17 +428,6 @@ static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
 	}
-
-	if ( uneven_w )
-	{
-		a = *alpha_b ++ & *alpha_a;
-		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
-		mix = ( mix * a ) >> 8;
-		*dest = ( *src ++ * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
-		dest++;
-		*alpha_a = mix | *alpha_a;
-		alpha_a ++;
-	}	
 }
 
 static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a,  int weight, uint16_t *luma, int softness, int uneven_x )
@@ -471,7 +435,6 @@ static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint
 	register int j;
 	register int a;
 	register int mix;
-	int uneven_w = width % 2;
 
 	for ( j = 0; j < width; j ++ )
 	{
@@ -485,17 +448,6 @@ static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint
 		*alpha_a = mix | *alpha_a;
 		alpha_a ++;
 	}
-
-	if ( uneven_w )
-	{
-		a = *alpha_b ++ ^ *alpha_a;
-		mix = ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + softness, weight + softness );
-		mix = ( mix * a ) >> 8;
-		*dest = ( *( src ++ + uneven_x ) * mix + *dest * ( ( 1 << 16 ) - mix ) ) >> 16;
-		dest++;
-		*alpha_a = mix | *alpha_a;
-		alpha_a ++;
-	}	
 }
 
 /** Composite function.
@@ -587,9 +539,6 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	stride_dest *= step;
 	int alpha_b_stride = stride_src / bpp;
 	int alpha_a_stride = stride_dest / bpp;
-
-	// Incorrect, but keeps noise away?
-	height_src --;
 
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i += step )
@@ -776,19 +725,21 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
-		double output_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
-		int scaled_width = ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width;
+		double consumer_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
+		double background_ar = mlt_properties_get_double( b_props, "output_ratio" );
+		double output_ar = background_ar != 0.0 ? background_ar : consumer_ar;
+		int scaled_width = rint( 0.5 + ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
 
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
 		{
-			scaled_height = scaled_height * normalised_width / scaled_width;
+			scaled_height = rint( 0.5 + scaled_height * normalised_width / scaled_width );
 			scaled_width = normalised_width;
 		}
 		if ( scaled_height > normalised_height )
 		{
-			scaled_width = scaled_width * normalised_height / scaled_height;
+			scaled_width = rint( 0.5 + scaled_width * normalised_height / scaled_height );
 			scaled_height = normalised_height;
 		}
 
@@ -798,12 +749,12 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		{
 			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height < normalised_width )
 			{
-				scaled_width = scaled_width * normalised_height / scaled_height;
+				scaled_width = rint( 0.5 + scaled_width * normalised_height / scaled_height );
 				scaled_height = normalised_height;
 			}
 			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width < normalised_height )
 			{
-				scaled_height = scaled_height * normalised_width / scaled_width;
+				scaled_height = rint( 0.5 + scaled_height * normalised_width / scaled_width );
 				scaled_width = normalised_width;
 			}
 		}
@@ -819,15 +770,15 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	}
 
 	// We want to ensure that we bypass resize now...
-	mlt_properties_set_int( b_props, "distort", 1 );
+	mlt_properties_set_int( b_props, "distort", mlt_properties_get_int( properties, "distort" ) );
 
-	// Take into consideration alignment for optimisation
+	// Take into consideration alignment for optimisation (titles are a special case)
 	if ( !mlt_properties_get_int( properties, "titles" ) )
 		alignment_calculate( geometry );
 
 	// Adjust to consumer scale
-	*width = geometry->sw * *width / geometry->nw;
-	*height = geometry->sh * *height / geometry->nh;
+	*width = rint( 0.5 + geometry->sw * *width / geometry->nw );
+	*height = rint( 0.5 + geometry->sh * *height / geometry->nh );
 
 	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
 
@@ -893,16 +844,6 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 	result->valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
 
 	return start;
-}
-
-static inline void inline_memcpy( uint8_t *dest, uint8_t *src, int length )
-{
-	uint8_t *end = src + length;
-	while ( src < end )
-	{
-		*dest ++ = *src ++;
-		*dest ++ = *src ++;
-	}
 }
 
 mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_position frame_position )
@@ -1004,7 +945,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 
 		while ( h -- )
 		{
-			inline_memcpy( dest, p, w * 2 );
+			memcpy( dest, p, w * 2 );
 			dest += ds;
 			p += ss;
 		}
@@ -1188,9 +1129,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				if ( mlt_properties_get_int( properties, "titles" ) )
 				{
-					result.item.w = *width * ( result.item.w / result.nw );
+					result.item.w = rint( 0.5 + *width * ( result.item.w / result.nw ) );
 					result.nw = result.item.w;
-					result.item.h = *height * ( result.item.h / result.nh );
+					result.item.h = rint( 0.5 + *height * ( result.item.h / result.nh ) );
 					result.nh = *height;
 					result.sw = width_b;
 					result.sh = height_b;
@@ -1258,10 +1199,6 @@ mlt_transition transition_composite_init( char *arg )
 
 		// Inform apps and framework that this is a video only transition
 		mlt_properties_set_int( properties, "_transition_type", 1 );
-
-#ifdef USE_MMX
-		//mlt_properties_set_int( properties, "_MMX", composite_have_mmx() );
-#endif
 	}
 	return this;
 }
