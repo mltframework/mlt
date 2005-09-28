@@ -20,6 +20,7 @@ OBJS = MltConsumer.o \
 	   MltPlaylist.o \
 	   MltProducer.o \
 	   MltProperties.o \
+	   MltPushConsumer.o \
 	   MltResponse.o \
 	   MltService.o \
 	   MltTokeniser.o \

@@ -1,5 +1,5 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
+ * MltPushConsumer.h - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -18,29 +18,31 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_H_
-#define _MLTPP_H_
+#ifndef MLTPP_PUSH_CONSUMER_H
+#define MLTPP_PUSH_CONSUMER_H
 
 #include "MltConsumer.h"
-#include "MltDeque.h"
-#include "MltEvent.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltGeometry.h"
-#include "MltMiracle.h"
-#include "MltMultitrack.h"
-#include "MltParser.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProperties.h"
-#include "MltPushConsumer.h"
-#include "MltResponse.h"
-#include "MltService.h"
-#include "MltTokeniser.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+
+namespace Mlt
+{
+	class Frame;
+	class Service;
+	class PushPrivate;
+
+	class PushConsumer : public Consumer
+	{
+		private:
+			PushPrivate *m_private;
+		public:
+			PushConsumer( char *id , char *service = NULL );
+			virtual ~PushConsumer( );
+			void set_render( int width, int height, double aspect_ratio );
+			virtual int connect( Service &service );
+			int push( Frame *frame );
+			int push( Frame &frame );
+			int drain( );
+			Frame *construct( int );
+	};
+}
 
 #endif
