@@ -87,12 +87,43 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int size = avpicture_get_size( out_fmt, *width, *height );
 		uint8_t *output = mlt_pool_alloc( size );
 		convert_image( output, *image, out_fmt, in_fmt, *width, *height );
+
+		// Special case for alpha rgb input
+		if ( *format == mlt_image_rgb24a )
+		{
+			register uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+			register int len = *width * *height;
+			register uint8_t *bits = *image;
+			register int n = ( len + 7 ) / 8;
+
+			// TODO: Proper check for big endian systems
+			#ifndef __DARWIN__
+			bits += 3;
+			#endif
+
+			// Extract alpha mask from the image using Duff's Device
+			switch( len % 8 )
+			{
+				case 0:	do { *alpha ++ = *bits; bits += 4;
+				case 7:		 *alpha ++ = *bits; bits += 4;
+				case 6:		 *alpha ++ = *bits; bits += 4;
+				case 5:		 *alpha ++ = *bits; bits += 4;
+				case 4:		 *alpha ++ = *bits; bits += 4;
+				case 3:		 *alpha ++ = *bits; bits += 4;
+				case 2:		 *alpha ++ = *bits; bits += 4;
+				case 1:		 *alpha ++ = *bits; bits += 4;
+						}
+						while( --n );
+			}
+		}
+
+		// Update the output
 		*image = output;
 		*format = output_format;
 		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "format", output_format );
 
-		// Special case for alpha rgb - merge the alpha mask when it exists
+		// Special case for alpha rgb output
 		if ( *format == mlt_image_rgb24a )
 		{
 			// Fetch the alpha
