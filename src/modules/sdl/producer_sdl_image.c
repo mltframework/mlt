@@ -37,6 +37,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 {
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	SDL_Surface *surface = mlt_properties_get_data( properties, "surface", NULL );
+	SDL_Surface *converted = NULL;
 	uint8_t *alpha;
 
 	*width = surface->w;
@@ -44,6 +45,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 	*format = mlt_image_yuv422;
 	*image = mlt_pool_alloc( *width * *height * 2 );
 	alpha = mlt_pool_alloc( *width * *height );
+
+	if ( surface->format->BitsPerPixel != 32 && surface->format->BitsPerPixel != 24 )
+	{
+		SDL_PixelFormat fmt;
+		fmt.BitsPerPixel = 24;
+		fmt.BytesPerPixel = 3;
+		fmt.Rshift = 16;
+		fmt.Gshift = 8;
+		fmt.Bshift = 0;
+		fmt.Rmask = 0xff << 16;
+		fmt.Gmask = 0xff << 8;
+		fmt.Bmask = 0xff;
+		converted = SDL_ConvertSurface( surface, &fmt, 0 );
+	}
 
 	switch( surface->format->BitsPerPixel )
 	{
@@ -55,9 +70,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 			memset( alpha, 255, *width * *height );
 			break;
 		default:
+			mlt_convert_rgb24_to_yuv422( converted->pixels, *width, *height, converted->pitch, *image );
+			memset( alpha, 255, *width * *height );
 			break;
 	}
-	
+
+	if ( converted )
+		SDL_FreeSurface( converted );
+
 	// Update the frame
 	mlt_properties_set_data( properties, "image", *image, *width * *height * 2, mlt_pool_release, NULL );
 	mlt_properties_set_data( properties, "alpha", alpha, *width * *height, mlt_pool_release, NULL );
@@ -67,7 +87,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 	return 0;
 }
 
-static int filter_files( const struct dirent *de )
+static int filter_files( struct dirent *de )
 {
 	return de->d_name[ 0 ] != '.';
 }
