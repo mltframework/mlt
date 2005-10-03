@@ -21,12 +21,17 @@
 #include <string.h>
 
 #include "consumer_sdl.h"
+
+#ifdef WITH_SDL_IMAGE
 #include "producer_sdl_image.h"
+#endif
 
 void *mlt_create_producer( char *id, void *arg )
 {
+#ifdef WITH_SDL_IMAGE
 	if ( !strcmp( id, "sdl_image" ) )
 		return producer_sdl_image_init( arg );
+#endif
 	return NULL;
 }
 
