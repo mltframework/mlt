@@ -5,6 +5,10 @@
 
 #include <framework/mlt.h>
 
+#ifdef __DARWIN__
+#include <SDL.h>
+#endif
+
 #include "io.h"
 
 static void transport_action( mlt_producer producer, char *value )
