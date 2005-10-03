@@ -52,8 +52,8 @@ function build_config
 		[ "$cpu" != "" ] &&
 		echo "TARGETARCH=-march=$cpu" &&
 		echo "TARGETCPU=-mcpu=$cpu"
+		echo "OPTIMISATIONS=-O4 -pipe -fomit-frame-pointer"
 
-		echo "OPTIMISATIONS=-O4 -pipe -ffast-math -fomit-frame-pointer"
 		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
 
 		case $targetos in
@@ -63,6 +63,7 @@ function build_config
 		echo "LDFLAGS+=`sdl-config --libs`"
 		;;
 		Linux)
+		echo "OPTIMISATIONS+=-ffast-math"
 		echo "CFLAGS+=-pthread"
 		echo "SHFLAGS=-shared"
 		echo "LIBDL=-ldl"
