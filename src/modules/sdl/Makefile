@@ -1,5 +1,7 @@
 include ../../../config.mak
 
+include config.mak
+
 TARGET = ../libmltsdl$(LIBSUF)
 
 OBJS = factory.o \
@@ -18,6 +20,11 @@ LDFLAGS +=`sdl-config --libs`
 
 LDFLAGS +=-L../../framework -lmlt
 
+ifeq ($(WITH_SDL_IMAGE),1)
+OBJS += producer_sdl_image.o
+CFLAGS += -DWITH_SDL_IMAGE
+LDFLAGS += -lSDL_image
+endif
 
 SRCS := $(OBJS:.o=.c)
 
