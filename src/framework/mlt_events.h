@@ -23,8 +23,13 @@
 
 #include "mlt_types.h"
 
+#if GCC_VERSION >= 40000
+typedef void ( *mlt_transmitter )( void *, ... );
+typedef void ( *mlt_listener )( void *, ... );
+#else
 typedef void ( *mlt_transmitter )( );
 typedef void ( *mlt_listener )( );
+#endif
 
 extern void mlt_events_init( mlt_properties self );
 extern int mlt_events_register( mlt_properties self, char *id, mlt_transmitter transmitter );
