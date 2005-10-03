@@ -220,7 +220,7 @@ int Properties::save( const char *file )
 	return error;
 }
 
-#ifdef __DARWIN__
+#if defined( __DARWIN__ ) && GCC_VERSION < 40000
 
 Event *Properties::listen( char *id, void *object, void (*listener)( ... ) )
 {
