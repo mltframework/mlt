@@ -73,7 +73,11 @@ namespace Mlt
 			void debug( const char *title = "Object", FILE *output = stderr );
 			void load( const char *file );
 			int save( const char *file );
-			Event *listen( char *id, void *object, mlt_listener listener );
+			#ifdef __DARWIN__
+			Event *listen( char *id, void *object, void (*)(...) );
+			#else
+			Event *listen( char *id, void *object, mlt_listener );
+			#endif
 			Event *setup_wait_for( char *id );
 			void wait_for( Event *, bool destroy = true );
 	};

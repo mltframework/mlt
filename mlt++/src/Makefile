@@ -1,9 +1,7 @@
 include ../config.mak
-CXXFLAGS = -Wall -fPIC -DPIC -pthread `mlt-config --cflags`
-LDFLAGS = `mlt-config --libs` `mlt-config miracle --libs`
 INSTALL = install
 
-TARGET = libmlt++.so
+TARGET = libmlt++$(LIBSUF)
 
 OBJS = MltConsumer.o \
 	   MltDeque.o \
@@ -36,7 +34,7 @@ CC=g++
 all:		$(TARGET)
 
 $(TARGET):	$(OBJS)
-	$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS)
 
 clean:
 	$(RM) $(OBJS) $(TARGET)

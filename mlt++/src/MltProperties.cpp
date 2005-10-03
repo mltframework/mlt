@@ -220,11 +220,23 @@ int Properties::save( const char *file )
 	return error;
 }
 
+#ifdef __DARWIN__
+
+Event *Properties::listen( char *id, void *object, void (*listener)( ... ) )
+{
+	mlt_event event = mlt_events_listen( get_properties( ), object, id, ( mlt_listener )listener );
+	return new Event( event );
+}
+
+#else
+
 Event *Properties::listen( char *id, void *object, mlt_listener listener )
 {
 	mlt_event event = mlt_events_listen( get_properties( ), object, id, listener );
 	return new Event( event );
 }
+
+#endif
 
 Event *Properties::setup_wait_for( char *id )
 {

@@ -1,5 +1,7 @@
-CXXFLAGS=-Wall -g `mlt-config --cflags` -I ../src
-LDFLAGS=-L../src -lmlt++
+include ../config.mak
+
+CXXFLAGS+=-Wall -g `mlt-config --cflags` -I ../src
+LDFLAGS+=-L../src -lmlt++ -lmiracle -lvalerie `mlt-config --libs`
 CC=c++
 
 all:		play server
