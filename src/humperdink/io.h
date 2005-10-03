@@ -24,7 +24,7 @@
 extern char *chomp( char * );
 extern char *trim( char * );
 extern char *strip_quotes( char * );
-extern char *get_string( char *, int, char * );
+extern char *io_get_string( char *, int, char * );
 extern int *get_int( int *, int );
 extern void term_init( );
 extern int term_read( );

@@ -42,7 +42,7 @@ static valerie_parser create_parser( )
 
 	printf( "Server [localhost]: " );
 
-	if ( get_string( server, sizeof( server ), "localhost" ) != NULL )
+	if ( io_get_string( server, sizeof( server ), "localhost" ) != NULL )
 	{
 		printf( "Port        [5250]: " );
 

@@ -76,19 +76,6 @@ char *strip_quotes( char *input )
 	return input;
 }
 
-char *get_string( char *output, int maxlength, char *use )
-{
-	char *value = NULL;
-	strcpy( output, use );
-	if ( trim( chomp( fgets( output, maxlength, stdin ) ) ) != NULL )
-	{
-		if ( !strcmp( output, "" ) )
-			strcpy( output, use );
-		value = output;
-	}
-	return value;
-}
-
 int *get_int( int *output, int use )
 {
 	int *value = NULL;

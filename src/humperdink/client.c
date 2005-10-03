@@ -423,7 +423,7 @@ valerie_error_code dv_demo_execute( dv_demo demo )
 		terminated = 1;
 		printf( "Command> " );
 
-		if ( chomp( get_string( command, 10240, "" ) ) != NULL )
+		if ( chomp( io_get_string( command, 10240, "" ) ) != NULL )
 		{
 			if ( strcmp( command, "" ) )
 			{
