@@ -49,7 +49,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" ) * 255;
 
 	// Render the frame
-	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 )
+	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 && ( !use_luminance || ( int )mix != 1 ) )
 	{
 		// Get the alpha mask of the source
 		uint8_t *alpha = mlt_frame_get_alpha_mask( this );
@@ -77,9 +77,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 					p ++;
 				}
 			}
-			else if ( mix != 1.0 )
+			else if ( ( int )mix != 1 )
 			{
 				uint8_t *q = mask_img;
+				// Ensure softness tends to zero has mix tends to 1
+				softness *= ( 1.0 - mix );
 				while( size -- )
 				{
 					a = ( ( double )*q - 16 ) / 235.0;
@@ -102,6 +104,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	// Obtain the shape instance
 	char *resource = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "resource" );
+	char *last_resource = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_resource" );
 	mlt_producer producer = mlt_properties_get_data( MLT_FILTER_PROPERTIES( this ), "instance", NULL );
 
 	// Get the key framed values
@@ -126,8 +129,39 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	length = out - in + 1;
 
 	// If we haven't created the instance or it's changed
-	if ( producer == NULL || strcmp( resource, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "resource" ) ) )
+	if ( producer == NULL || strcmp( resource, last_resource ) )
 	{
+		char temp[ 512 ];
+		char *extension = strrchr( resource, '.' );
+
+		// Store the last resource now
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "_resource", resource );
+
+		// This is a hack - the idea is that we can indirectly reference the
+		// luma modules pgm or png images by a short cut like %luma01.pgm - we then replace
+		// the % with the full path to the image and use it if it exists, if not, check for
+		// the file ending in a .png, and failing that, default to a fade in
+		if ( strchr( resource, '%' ) )
+		{
+			FILE *test;
+			sprintf( temp, "%s/lumas/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+			test = fopen( temp, "r" );
+
+			if ( test == NULL )
+			{
+				strcat( temp, ".png" );
+				test = fopen( temp, "r" );
+			}
+
+			if ( test )
+				fclose( test ); 
+			else
+				strcpy( temp, "colour:0x00000080" );
+
+			resource = temp;
+			extension = strrchr( resource, '.' );
+		}
+
 		producer = mlt_factory_producer( NULL, resource );
 		if ( producer != NULL )
 			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
