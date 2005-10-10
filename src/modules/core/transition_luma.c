@@ -69,8 +69,10 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 	int width_src = width, height_src = height;
 	mlt_image_format format = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
-	uint8_t *p;
+	uint8_t *p, *q;
 	uint8_t *limit;
+	uint8_t *alpha_src;
+	uint8_t *alpha_dst;
 
 	int32_t weigh = weight * ( 1 << 16 );
 	int32_t weigh_complement = ( 1 - weight ) * ( 1 << 16 );
@@ -79,19 +81,23 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &this->parent, "distort" ) );
 	mlt_properties_set_int( &that->parent, "consumer_deinterlace", mlt_properties_get_int( &this->parent, "consumer_deinterlace" ) );
 	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 );
+	alpha_dst = mlt_frame_get_alpha_mask( this );
 	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
+	alpha_src = mlt_frame_get_alpha_mask( that );
 
 	// Pick the lesser of two evils ;-)
 	width_src = width_src > width ? width : width_src;
 	height_src = height_src > height ? height : height_src;
 	
 	p = p_dest;
+	q = alpha_dst;
 	limit = p_dest + height_src * width_src * 2;
 
 	while ( p < limit )
 	{
 		*p_dest++ = ( *p_src++ * weigh + *p++ * weigh_complement ) >> 16;
 		*p_dest++ = ( *p_src++ * weigh + *p++ * weigh_complement ) >> 16;
+		*alpha_dst++ = ( *alpha_src++ * weigh + *q++ * weigh_complement ) >> 16;
 	}
 
 	return ret;

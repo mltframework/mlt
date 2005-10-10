@@ -58,7 +58,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 	}
 
-	if ( b_frame == NULL )
+	if ( b_frame == NULL || mlt_properties_get_int( b_frame, "width" ) != *width || mlt_properties_get_int( b_frame, "height" ) != *height )
 	{
 		b_frame = mlt_frame_init( );
 		mlt_properties_set_data( properties, "frame", b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );

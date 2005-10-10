@@ -715,8 +715,9 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	// Get the properties objects
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	uint8_t resize_alpha = mlt_properties_get_int( b_props, "resize_alpha" );
 
-	if ( mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
+	if ( mlt_properties_get_int( properties, "aligned" ) && mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
 	{
 		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->item.w;
@@ -769,7 +770,12 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	}
 
 	// We want to ensure that we bypass resize now...
-	mlt_properties_set_int( b_props, "distort", mlt_properties_get_int( properties, "distort" ) );
+	if ( resize_alpha == 0 )
+		mlt_properties_set_int( b_props, "distort", mlt_properties_get_int( properties, "distort" ) );
+
+	// If we're not aligned, we want a non-transparent background
+	if ( mlt_properties_get_int( properties, "aligned" ) == 0 )
+		mlt_properties_set_int( b_props, "resize_alpha", 255 );
 
 	// Take into consideration alignment for optimisation (titles are a special case)
 	if ( !mlt_properties_get_int( properties, "titles" ) )
@@ -780,6 +786,9 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	*height = rint( 0.5 + geometry->sh * *height / geometry->nh );
 
 	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
+
+	// Set the frame back
+	mlt_properties_set_int( b_props, "resize_alpha", resize_alpha );
 
 	return ret && image != NULL;
 }
@@ -1195,6 +1204,9 @@ mlt_transition transition_composite_init( char *arg )
 		
 		// Default factory
 		mlt_properties_set( properties, "factory", "fezzik" );
+
+		// Use alignment (and hence alpha of b frame)
+		mlt_properties_set_int( properties, "aligned", 1 );
 
 		// Inform apps and framework that this is a video only transition
 		mlt_properties_set_int( properties, "_transition_type", 1 );

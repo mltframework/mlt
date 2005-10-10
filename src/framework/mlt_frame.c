@@ -638,7 +638,7 @@ int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int 
 	return ret;
 }
 
-uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, int iheight )
+uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, int iheight, uint8_t alpha_value )
 {
 	uint8_t *output = NULL;
 
@@ -650,7 +650,7 @@ uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, 
 		int iused = iwidth;
 
 		output = mlt_pool_alloc( owidth * oheight );
-		memset( output, 0, owidth * oheight );
+		memset( output, alpha_value, owidth * oheight );
 
 		offset_x -= offset_x % 2;
 
@@ -741,6 +741,8 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 	// If width and height are correct, don't do anything
 	if ( iwidth != owidth || iheight != oheight )
 	{
+		uint8_t alpha_value = mlt_properties_get_int( properties, "resize_alpha" );
+
 		// Create the output image
 		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 
@@ -753,7 +755,7 @@ uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
 		mlt_properties_set_int( properties, "height", oheight );
 
 		// We should resize the alpha too
-		alpha = mlt_resize_alpha( alpha, owidth, oheight, iwidth, iheight );
+		alpha = mlt_resize_alpha( alpha, owidth, oheight, iwidth, iheight, alpha_value );
 		if ( alpha != NULL )
 		{
 			mlt_properties_set_data( properties, "alpha", alpha, owidth * oheight, ( mlt_destructor )mlt_pool_release, NULL );
