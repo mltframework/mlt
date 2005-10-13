@@ -246,7 +246,12 @@ int consumer_stop( mlt_consumer parent )
 		this->sdl_overlay = NULL;
 
 		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
+		{
+			pthread_mutex_lock( &this->audio_mutex );
+			pthread_cond_broadcast( &this->audio_cond );
+			pthread_mutex_unlock( &this->audio_mutex );
 			SDL_QuitSubSystem( SDL_INIT_AUDIO );
+		}
 
 		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
 			SDL_Quit( );
