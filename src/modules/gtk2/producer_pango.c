@@ -633,11 +633,23 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 //	pango_layout_set_spacing( layout, space );
 	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
 	if ( markup != NULL && strcmp( markup, "" ) != 0 )
+	{
 		pango_layout_set_markup( layout, markup, strlen( markup ) );
+	}
 	else if ( text != NULL && strcmp( text, "" ) != 0 )
-		pango_layout_set_text( layout, text, strlen( text ) );
+	{
+		// Replace all ~'s with a line feed (silly convention, but handy)
+		char *copy = strdup( text );
+		while ( strchr( copy, '~' ) )
+			( *strchr( copy, '~' ) ) = '\n';
+		pango_layout_set_text( layout, copy, strlen( copy ) );
+		free( copy );
+	}
 	else
+	{
+		// Pango doesn't like empty strings
 		pango_layout_set_text( layout, "  ", 2 );
+	}
 	pango_layout_get_pixel_size( layout, &w, &h );
 
 	pixbuf = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE /* has alpha */, 8, w + 2 * pad, h + 2 * pad );
