@@ -269,11 +269,11 @@ static inline void display_1( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	for ( y = 0; y < rect.h; y ++ )
 	{
 		p = start;
-		row_index = ( scale_height * y ) >> 16;
+		row_index = ( 32768 + scale_height * y ) >> 16;
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
 			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 		}
 		start += scanlength;
@@ -298,11 +298,11 @@ static inline void display_2( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	for ( y = 0; y < rect.h; y ++ )
 	{
 		p = start;
-		row_index = ( scale_height * y ) >> 16;
+		row_index = ( 32768 + scale_height * y ) >> 16;
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
 			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 		}
 		start += scanlength;
@@ -328,11 +328,11 @@ static inline void display_3( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	for ( y = 0; y < rect.h; y ++ )
 	{
 		p = start;
-		row_index = ( scale_height * y ) >> 16;
+		row_index = ( 32768 + scale_height * y ) >> 16;
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
 			pixel = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 			*p ++ = (pixel & 0xFF0000) >> 16;
 			*p ++ = (pixel & 0x00FF00) >> 8;
@@ -360,11 +360,11 @@ static inline void display_4( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	for ( y = 0; y < rect.h; y ++ )
 	{
 		p = start;
-		row_index = ( scale_height * y ) >> 16;
+		row_index = ( 32768 + scale_height * y ) >> 16;
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
 			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 		}
 		start += scanlength;
