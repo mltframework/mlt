@@ -123,6 +123,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	{
 		in = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "in" );
 		out = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "out" );
+		position -= in;
 	}
 
 	// Duration of the shape
