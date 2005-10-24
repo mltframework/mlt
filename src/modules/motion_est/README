@@ -56,6 +56,10 @@ To obscure that same object in the frame, try this:
 
 	> inigo -filter autotrack_rectangle:X,Y:WxH obscure=1 <movie_file>
 
+There is now a slow motion producer that does interpolation based on the motion vectors:
+
+	> inigo slowmotion:<movie_file> _speed=0.1 method=1 debug=1
+
 NOTES (and deficiencies):
 
 1.  Ignore shot change detection when your using the autotrack_rectangle filter.
