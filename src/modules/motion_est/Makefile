@@ -7,7 +7,8 @@ OBJS = factory.o \
 	   filter_crop_detect.o \
 	   filter_autotrack_rectangle.o \
 	   arrow_code.o \
-	   filter_vismv.o
+	   filter_vismv.o \
+	   producer_slowmotion.o
 
 CFLAGS += -I../.. 
 

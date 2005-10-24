@@ -51,8 +51,6 @@
 #define ABS(a) ((a) >= 0 ? (a) : (-(a)))
 
 
-typedef struct motion_vector_s motion_vector;
-
 struct motion_est_context_s
 {
 	int initialized;				// true if filter has been initialized
@@ -1033,6 +1031,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_width", c->mb_w );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_height", c->mb_h );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.left_mb", c->left_mb );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.right_mb", c->right_mb );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.top_mb", c->top_mb );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.bottom_mb", c->bottom_mb );
 
 	#ifdef BENCHMARK
 	struct timeval finish; gettimeofday(&finish, NULL ); int difference = (finish.tv_sec - start.tv_sec) * 1000000 + (finish.tv_usec - start.tv_usec);

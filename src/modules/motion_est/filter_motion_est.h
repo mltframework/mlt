@@ -37,5 +37,6 @@ struct motion_vector_s
 	int quality;
 	uint8_t color;	//<! The color
 };
-
+	
+typedef struct motion_vector_s motion_vector;
 #endif

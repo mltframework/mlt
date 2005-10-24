@@ -22,6 +22,7 @@ extern mlt_filter filter_motion_est_init(char *);
 extern mlt_filter filter_vismv_init(char *);
 extern mlt_filter filter_crop_detect_init(char *);
 extern mlt_filter filter_autotrack_rectangle_init(char *);
+extern mlt_producer producer_slowmotion_init(char *);
 
 void *mlt_create_filter( char *id, void *arg )
 {
@@ -33,5 +34,12 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_crop_detect_init( arg );
 	if ( !strcmp( id, "autotrack_rectangle" ) )
 		return filter_autotrack_rectangle_init( arg );
+	return NULL;
+}
+
+void *mlt_create_producer( char *id, void *arg )
+{
+	if ( !strcmp( id, "slowmotion" ) )
+		return producer_slowmotion_init( arg );
 	return NULL;
 }
