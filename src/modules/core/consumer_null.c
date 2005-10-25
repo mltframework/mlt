@@ -80,6 +80,7 @@ static int consumer_start( mlt_consumer this )
 
 		// Set the running state
 		mlt_properties_set_int( properties, "running", 1 );
+		mlt_properties_set_int( properties, "joined", 0 );
 
 		// Create the thread
 		pthread_create( thread, NULL, consumer_thread, this );
@@ -96,13 +97,14 @@ static int consumer_stop( mlt_consumer this )
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check that we're running
-	if ( mlt_properties_get_int( properties, "running" ) )
+	if ( !mlt_properties_get_int( properties, "joined" ) )
 	{
 		// Get the thread
 		pthread_t *thread = mlt_properties_get_data( properties, "thread", NULL );
 
 		// Stop the thread
 		mlt_properties_set_int( properties, "running", 0 );
+		mlt_properties_set_int( properties, "joined", 1 );
 
 		// Wait for termination
 		pthread_join( *thread, NULL );
@@ -132,14 +134,22 @@ static void *consumer_thread( void *arg )
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
+	// Convenience functionality
+	int terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
+	int terminated = 0;
+
 	// Frame and size
 	mlt_frame frame = NULL;
 
 	// Loop while running
-	while( mlt_properties_get_int( properties, "running" ) )
+	while( !terminated && mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
 		frame = mlt_consumer_rt_frame( this );
+
+		// Check for termination
+		if ( terminate_on_pause && frame != NULL )
+			terminated = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0.0;
 
 		// Check that we have a frame to work with
 		if ( frame != NULL )
@@ -151,6 +161,7 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Indicate that the consumer is stopped
+	mlt_properties_set_int( properties, "running", 0 );
 	mlt_consumer_stopped( this );
 
 	return NULL;

@@ -683,6 +683,10 @@ static void *consumer_thread( void *arg )
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
 
+	// Convenience functionality
+	int terminate_on_pause = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "terminate_on_pause" );
+	int terminated = 0;
+
 	// Video thread
 	pthread_t thread;
 
@@ -696,10 +700,14 @@ static void *consumer_thread( void *arg )
 	struct timespec tm = { 0, 100000 };
 
 	// Loop until told not to
-	while( this->running )
+	while( !terminated && this->running )
 	{
 		// Get a frame from the attached producer
 		frame = mlt_consumer_rt_frame( consumer );
+
+		// Check for termination
+		if ( terminate_on_pause && frame != NULL )
+			terminated = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0.0;
 
 		// Ensure that we have a frame
 		if ( frame != NULL )
@@ -736,6 +744,8 @@ static void *consumer_thread( void *arg )
 			playtime += ( duration * 1000 );
 		}
 	}
+
+	this->running = 0;
 
 	// Kill the video thread
 	if ( init_video == 0 )

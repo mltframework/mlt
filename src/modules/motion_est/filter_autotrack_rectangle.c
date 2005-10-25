@@ -40,7 +40,9 @@ void caculate_motion( struct motion_vector_s *vectors,
 		      int macroblock_width,
 		      int macroblock_height,
 		      int mv_buffer_width,
-		      int method )
+		      int method,
+		      int width,
+		      int height )
 {
 
 
@@ -90,6 +92,18 @@ void caculate_motion( struct motion_vector_s *vectors,
 
 	boundry->x -= (double)average2_x / (double)n;
 	boundry->y -= (double)average2_y / (double)n;
+
+	if ( boundry->x < 0 )
+		boundry->x = 0;
+
+	if ( boundry->y < 0 )
+		boundry->y = 0;
+
+	if ( boundry->x + boundry->w > width )
+		boundry->x = width - boundry->w;
+
+	if ( boundry->y + boundry->h > height )
+		boundry->y = height - boundry->h;
 }
 
 // Image stack(able) method
@@ -136,7 +150,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		int macroblock_width = mlt_properties_get_int( frame_properties, "motion_est.macroblock_width" );
 		int mv_buffer_width = *width / macroblock_width;
 
-		caculate_motion( vectors, &boundry, macroblock_width, macroblock_height, mv_buffer_width, method );
+		caculate_motion( vectors, &boundry, macroblock_width, macroblock_height, mv_buffer_width, method, *width, *height );
 
 
 		// Make the geometry object a real boy
@@ -168,6 +182,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties_set( MLT_FILTER_PROPERTIES( obscure ), "end", geom );
 	}
 		
+	if( mlt_properties_get_int( filter_properties, "collect" ) == 1 )
+	{
+		printf( "%d,%d,%d,%d\n", (int)boundry.x, (int)boundry.y, (int)boundry.w, (int)boundry.h );
+		fflush( stdout );
+	}
 
 	return error;
 }
