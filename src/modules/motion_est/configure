@@ -8,6 +8,10 @@ then
 	touch ../disable-motion_est
 	echo "- motion estimation components disabled. Add --enable-motion-est to enable." 
 else
+cat << EOF >> ../producers.dat
+slowmotion		libmltmotion_est.so
+EOF
+
 cat << EOF >> ../filters.dat
 motion_est		libmltmotion_est.so
 vismv			libmltmotion_est.so
