@@ -3,7 +3,7 @@
  *	/author Zachary Drew, Copyright 2005
  *
  *	Currently only uses Gamma data for comparisonon (bug or feature?)
- *	Vector optimization coming soon. 
+ *	SSE optimized where available.
  *
  *	Vector orientation: The vector data that is generated for the current frame specifies
  *	the motion from the previous frame to the current frame. To know how a macroblock
@@ -34,7 +34,9 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#ifndef __DARWIN__
 #include "sad_sse.h"
+#endif
 
 #define NDEBUG
 #include <assert.h>
@@ -288,6 +290,8 @@ static inline void diamond_search(
 
 	// Keep track of best and former best candidates
 	motion_vector best, former;
+	former.dx = 0;
+	former.dy = 0;
 
 	// The direction of the refinement needs to be known
 	motion_vector current;
@@ -608,7 +612,9 @@ static void motion_search( uint8_t *from,			//<! Image data.
 	 } /* End column loop */
 	} /* End row loop */
 
+#ifndef __DARWIN__
 	asm volatile ( "emms" );
+#endif
 
 #ifdef COUNT_COMPARES
 	fprintf(stderr, "%d comparisons per block were made", compares/count);
@@ -650,6 +656,7 @@ void collect_post_statistics( struct motion_est_context_s *c ) {
 static void init_optimizations( struct motion_est_context_s *c )
 {
 	switch(c->mb_w){
+#ifndef __DARWIN__
 		case 4:  if(c->mb_h == 4)	c->compare_optimized = sad_sse_422_luma_4x4;
 			 else				c->compare_optimized = sad_sse_422_luma_4w;
 			 break;
@@ -664,6 +671,7 @@ static void init_optimizations( struct motion_est_context_s *c )
 			 break;
 		case 64: c->compare_optimized = sad_sse_422_luma_64w;
 			 break;
+#endif
 		default: c->compare_optimized = sad_reference;
 			 break;
 	}
