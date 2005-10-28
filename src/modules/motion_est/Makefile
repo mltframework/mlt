@@ -12,8 +12,6 @@ OBJS = factory.o \
 
 CFLAGS += -I../.. 
 
-LDFLAGS += -rdynamic
-
 LDFLAGS+=-L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
@@ -21,7 +19,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) -shared -o $@ $(OBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
