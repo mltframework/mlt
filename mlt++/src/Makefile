@@ -40,8 +40,8 @@ clean:
 	$(RM) $(OBJS) $(TARGET)
 
 install:
-	$(INSTALL) -m 755 $(TARGET) $(prefix)/lib
-	$(INSTALL) -d "$(prefix)/include/mlt++"
-	$(INSTALL) -m 644 $(HEADERS) "$(prefix)/include/mlt++"
+	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(prefix)/lib
+	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
+	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
 	/sbin/ldconfig || true
 

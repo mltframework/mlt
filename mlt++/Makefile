@@ -1,4 +1,4 @@
 all clean install:
-	$(MAKE) -C src $@ 
+	$(MAKE) DESTDIR=$(DESTDIR) -C src $@ 
 	$(MAKE) -C test $@ 
 
