@@ -331,6 +331,9 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->sample_rate = mlt_properties_get_int( properties, "frequency" );
 		c->channels = mlt_properties_get_int( properties, "channels" );
 
+    	if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
+        	c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+
 		// Allow the user to override the audio fourcc
 		if ( mlt_properties_get( properties, "afourcc" ) )
 		{
@@ -802,7 +805,7 @@ static void *consumer_thread( void *arg )
 			// Get audio and append to the fifo
 			if ( !terminated && audio_st )
 			{
-				samples = mlt_sample_calculator( fps, frequency, count );
+				samples = mlt_sample_calculator( fps, frequency, count ++ );
 				mlt_frame_get_audio( frame, &pcm, &aud_fmt, &frequency, &channels, &samples );
 
 				// Create the fifo if we don't have one
@@ -855,14 +858,15 @@ static void *consumer_thread( void *arg )
 
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
  					// Write the compressed frame in the media file
-					if ( c->coded_frame )
+					if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 						pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st->time_base );
 					pkt.flags |= PKT_FLAG_KEY;
 					pkt.stream_index= audio_st->index;
 					pkt.data= audio_outbuf;
 
- 					if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
- 						fprintf(stderr, "Error while writing audio frame\n");
+					if ( pkt.size )
+ 						if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
+ 							fprintf(stderr, "Error while writing audio frame\n");
 
 					audio_pts += c->frame_size;
 				}
@@ -966,12 +970,12 @@ static void *consumer_thread( void *arg )
 	 					out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
 
 	 					// If zero size, it means the image was buffered
-	 					if (out_size != 0) 
+	 					if (out_size > 0) 
 						{
 							AVPacket pkt;
 							av_init_packet( &pkt );
 
-							if ( c->coded_frame )
+							if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 								pkt.pts= av_rescale_q( c->coded_frame->pts, c->time_base, video_st->time_base );
 							if( c->coded_frame && c->coded_frame->key_frame )
 								pkt.flags |= PKT_FLAG_KEY;
@@ -983,6 +987,10 @@ static void *consumer_thread( void *arg )
 							ret = av_interleaved_write_frame(oc, &pkt);
 							video_pts += c->frame_size;
 	 					} 
+						else
+						{
+							fprintf( stderr, "Error with video encode\n" );
+						}
  					}
  					frame_count++;
 					mlt_frame_close( frame );

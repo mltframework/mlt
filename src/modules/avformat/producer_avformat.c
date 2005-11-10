@@ -287,6 +287,15 @@ static int producer_open( mlt_producer this, char *file )
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "audio_index", audio_index );
 			mlt_properties_set_int( properties, "video_index", video_index );
+
+			// Fetch the width, height and aspect ratio
+			if ( video_index != -1 )
+			{
+				AVCodecContext *codec_context = context->streams[ video_index ]->codec;
+				mlt_properties_set_int( properties, "width", codec_context->width );
+				mlt_properties_set_int( properties, "height", codec_context->height );
+				mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
+			}
 			
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
 			if ( av == 0 && !av_bypass && audio_index != -1 && video_index != -1 )
