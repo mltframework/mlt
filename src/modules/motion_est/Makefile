@@ -31,7 +31,7 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
+	install -m 755 $(TARGET) "$(DESTDIR)$(prefix)/share/mlt/modules"
 
 test: $(TARGET)
 	~/mlt-devel/mlt/src/inigo/inigo -filter motion_est -filter vismv -filter benchmark -consumer sdl rescale=none real_time=0 audio_off=1 silent=1 /media/cdrecorder/BBC.The.Private.Life.Of.Plants.Pt5.Living.Together.DivX505.AC3.www.MVGroup.org.uk.avi in=50000

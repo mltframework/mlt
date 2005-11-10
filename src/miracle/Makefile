@@ -42,11 +42,11 @@ clean:
 			rm -f $(OBJS) $(TARGET) libmiracle$(LIBSUF)
 
 install:	all
-	install -d "$(bindir)"
-	install -c -s -m 755 $(TARGET) "$(bindir)"
-	install -m 755 libmiracle$(LIBSUF) $(prefix)/lib/libmiracle$(LIBSUF)
-	mkdir -p "$(prefix)/include/mlt/miracle"
-	install -m 644 $(INCS) "$(prefix)/include/mlt/miracle"
+	install -d "$(DESTDIR)$(bindir)"
+	install -c -s -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
+	install -m 755 libmiracle$(LIBSUF) $(DESTDIR)$(prefix)/lib/libmiracle$(LIBSUF)
+	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/miracle"
+	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/miracle"
 
 ifneq ($(wildcard .depend),)
 include .depend

@@ -42,9 +42,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: 	all
-	install -m 755 $(TARGET) $(prefix)/lib/libvalerie$(LIBSUF)
-	mkdir -p "$(prefix)/include/mlt/valerie"
-	install -m 644 $(INCS) "$(prefix)/include/mlt/valerie"
+	install -m 755 $(TARGET) $(DESTDIR)$(prefix)/lib/libvalerie$(LIBSUF)
+	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/valerie"
+	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/valerie"
 
 ifneq ($(wildcard .depend),)
 include .depend

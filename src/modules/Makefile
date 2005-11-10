@@ -20,11 +20,11 @@ dist-clean:
 	done
 
 install:
-	install -m 644 producers.dat filters.dat transitions.dat consumers.dat "$(prefix)/share/mlt/modules"
+	install -m 644 producers.dat filters.dat transitions.dat consumers.dat "$(DESTDIR)$(prefix)/share/mlt/modules"
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir ] ; \
-		then $(MAKE) -C $$subdir $@ || exit 1; \
+		then $(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
 		fi \
 	done
 

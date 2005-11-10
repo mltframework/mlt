@@ -53,7 +53,7 @@ clean:
 		rm -f $(OBJS) $(ASM_OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(prefix)/share/mlt/modules"
+	install -m 755 $(TARGET) "$(DESTDIR)$(prefix)/share/mlt/modules"
 
 ifneq ($(wildcard .depend),)
 include .depend

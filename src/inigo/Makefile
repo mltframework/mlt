@@ -26,8 +26,8 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install:	all
-	install -d "$(bindir)"
-	install -c -s -m 755 $(TARGET) "$(bindir)"
+	install -d "$(DESTDIR)$(bindir)"
+	install -c -s -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
 
 ifneq ($(wildcard .depend),)
 include .depend

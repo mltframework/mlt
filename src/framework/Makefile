@@ -67,9 +67,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install:
-	install -m 755 $(TARGET) $(prefix)/lib/libmlt$(LIBSUF)
-	install -d "$(prefix)/include/mlt/framework"
-	install -m 644 $(INCS) "$(prefix)/include/mlt/framework"
+	install -m 755 $(TARGET) $(DESTDIR)$(prefix)/lib/libmlt$(LIBSUF)
+	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
+	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
 
 ifneq ($(wildcard .depend),)
 include .depend
