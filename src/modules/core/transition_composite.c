@@ -391,7 +391,7 @@ static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t 
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a = mix | *alpha_a;
+		*alpha_a = ( mix >> 8 ) | *alpha_a;
 		alpha_a ++;
 	}
 }
@@ -408,7 +408,7 @@ static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a ++ = mix;
+		*alpha_a ++ = mix >> 8;
 	}
 }
 
@@ -424,7 +424,7 @@ static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a ++ = mix;
+		*alpha_a ++ = mix >> 8;
 	}
 }
 
@@ -440,7 +440,7 @@ static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a ++ = mix;
+		*alpha_a ++ = mix >> 8;
 	}
 }
 
