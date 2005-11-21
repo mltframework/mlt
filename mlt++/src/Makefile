@@ -40,6 +40,7 @@ clean:
 	$(RM) $(OBJS) $(TARGET)
 
 install:
+	$(INSTALL) -d "$(DESTDIR)$(prefix)/lib"
 	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(prefix)/lib
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
