@@ -21,12 +21,12 @@ case $targetos in
 	Darwin)
 		echo LIBSUF=.dylib
         echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC `mlt-config --cflags`"
-        echo "LDFLAGS=-dynamiclib `mlt-config --libs` `mlt-config miracle --libs` `mlt-config valerie --libs` -single_module"
+        echo "LDFLAGS+=-dynamiclib `mlt-config --libs` `mlt-config miracle --libs` `mlt-config valerie --libs` -single_module"
 		;;
 	Linux)
 		echo LIBSUF=.so
         echo "CXXFLAGS+=-pthread -Wall -fPIC `mlt-config --cflags`"
-        echo "LDFLAGS=-shared `mlt-config --libs` `mlt-config miracle --libs`"
+        echo "LDFLAGS+=-shared `mlt-config --libs` `mlt-config miracle --libs`"
 		;;
 esac >> config.mak
 
