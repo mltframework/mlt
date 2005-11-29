@@ -27,6 +27,16 @@ else
 		;;
 	esac
 		
+	bits=$(uname -m)
+	case $bits in
+	x86_64)
+		export LIBDIR=lib64
+		;;
+	*)
+		export LIBDIR=lib
+		;;
+	esac
+
 	echo > config.mak
 
 	export static_ffmpeg=
@@ -82,10 +92,10 @@ else
 			echo 0
 		fi
 	else 
-		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/lib/libavformat$LIBSUF" ]
+		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/$LIBDIR/libavformat$LIBSUF" ]
 		then
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
-			echo "LDFLAGS+=-L$shared_ffmpeg/lib" >> config.mak
+			echo "LDFLAGS+=-L$shared_ffmpeg/$LIBDIR" >> config.mak
 		else
 			echo "avformat: No build environment found. "
 			echo "          Try configuring mlt with --avformat-cvs."
