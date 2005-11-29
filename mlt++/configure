@@ -11,11 +11,11 @@ prefix=`mlt-config --prefix`
 libdir=""
 
 # Allow override from command line
-for i in $*
+for i in "$@"
 do
 	case $i in
-		--prefix=* ) prefix="${1#--prefix=}" ;;
-		--libdir=* ) libdir="${1#--libdir=}" ;;
+		--prefix=* ) prefix="${i#--prefix=}" ;;
+		--libdir=* ) libdir="${i#--libdir=}" ;;
 	esac
 done
 
