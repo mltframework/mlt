@@ -47,9 +47,9 @@ clean:
 install: all
 		install -m 755 $(TARGET) "$(DESTDIR)$(prefix)/share/mlt/modules"
 		if [ $(LOCAL_FFMPEG) ] ; then \
-			install -m 755 ../../framework/libavcodec$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(prefix)/lib" ; \
-			install -m 755 ../../framework/libavformat$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(prefix)/lib" ; \
-			install -m 755 ../../framework/libavutil$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(prefix)/lib" ; \
+			install -m 755 ../../framework/libavcodec$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(libdir)" ; \
+			install -m 755 ../../framework/libavformat$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(libdir)" ; \
+			install -m 755 ../../framework/libavutil$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(libdir)" ; \
 		fi
 
 ifneq ($(wildcard .depend),)
