@@ -44,7 +44,7 @@ clean:
 install:	all
 	install -d "$(DESTDIR)$(bindir)"
 	install -c -s -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
-	install -m 755 libmiracle$(LIBSUF) $(DESTDIR)$(prefix)/lib/libmiracle$(LIBSUF)
+	install -m 755 libmiracle$(LIBSUF) $(DESTDIR)$(libdir)/libmiracle$(LIBSUF)
 	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/miracle"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/miracle"
 

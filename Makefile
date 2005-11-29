@@ -1,5 +1,3 @@
-include config.mak
-
 SUBDIRS = src/framework \
 		  src/inigo \
 		  src/valerie \
@@ -23,14 +21,16 @@ dist-clean:
 	done; \
 	rm config.mak;
 
+include config.mak
+
 install:
 	install -d "$(DESTDIR)$(prefix)/bin"
 	install -d "$(DESTDIR)$(prefix)/include"
-	install -d "$(DESTDIR)$(prefix)/lib"
-	install -d "$(DESTDIR)$(prefix)/lib/pkgconfig"
+	install -d "$(DESTDIR)$(libdir)"
+	install -d "$(DESTDIR)$(libdir)/pkgconfig"
 	install -d "$(DESTDIR)$(prefix)/share/mlt/modules"
 	install -c -m 755 mlt-config "$(DESTDIR)$(bindir)"
-	install -c -m 644 *.pc "$(DESTDIR)$(prefix)/lib/pkgconfig"
+	install -c -m 644 *.pc "$(DESTDIR)$(libdir)/pkgconfig"
 	install -m 644 packages.dat "$(DESTDIR)$(prefix)/share/mlt/"
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \

@@ -67,7 +67,8 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install:
-	install -m 755 $(TARGET) $(DESTDIR)$(prefix)/lib/libmlt$(LIBSUF)
+	install -d $(DESTDIR)$(libdir)
+	install -m 755 $(TARGET) $(DESTDIR)$(libdir)/libmlt$(LIBSUF)
 	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
 

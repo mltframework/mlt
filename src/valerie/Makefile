@@ -42,7 +42,7 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: 	all
-	install -m 755 $(TARGET) $(DESTDIR)$(prefix)/lib/libvalerie$(LIBSUF)
+	install -m 755 $(TARGET) $(DESTDIR)$(libdir)/libvalerie$(LIBSUF)
 	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/valerie"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/valerie"
 
