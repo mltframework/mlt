@@ -154,7 +154,6 @@ done
 
 # Determine the libdir if it's not specified in the args
 [ "$libdir" = "" ] && libdir=$prefix/lib
-echo $libdir
 
 # Double check mmx (may end up disabling mmx on non-linux platforms incorrectly)
 if [ "$mmx" = "true" ]
