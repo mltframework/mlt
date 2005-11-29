@@ -7,13 +7,26 @@ path=`which mlt-config 2>/dev/null`
 prefix=`mlt-config --prefix`
 [ "$prefix" = "" ] && echo "Can't locate MLT's prefix - please reconfigure MLT." && exit 1
 
+# Default the libdir
+libdir=""
+
 # Allow override from command line
-[ "$1" != "" ] && prefix="${1#--prefix=}"
+for i in $*
+do
+	case $i in
+		--prefix=* ) prefix="${1#--prefix=}" ;;
+		--libdir=* ) libdir="${1#--libdir=}" ;;
+	esac
+done
+
+# Determine the libdir if it's not specified in the args
+[ "$libdir" = "" ] && libdir=$prefix/lib
 
 # Sanity check
 [ ! -d "$prefix" ] && echo "Invalid prefix $prefix - aborting" && exit 1
 
 echo "prefix=$prefix" > config.mak
+echo "libdir=$libdir" >> config.mak
 
 targetos=$(uname -s)
 
@@ -21,12 +34,14 @@ case $targetos in
 	Darwin)
 		echo LIBSUF=.dylib
         echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC `mlt-config --cflags`"
-        echo "LDFLAGS+=-dynamiclib `mlt-config --libs` `mlt-config miracle --libs` `mlt-config valerie --libs` -single_module"
+		echo "LIBFLAGS=-dynamiclib"
+        echo "LDFLAGS+=`mlt-config --libs` `mlt-config miracle --libs` `mlt-config valerie --libs` -single_module"
 		;;
 	Linux)
 		echo LIBSUF=.so
         echo "CXXFLAGS+=-pthread -Wall -fPIC `mlt-config --cflags`"
-        echo "LDFLAGS+=-shared `mlt-config --libs` `mlt-config miracle --libs`"
+		echo "LIBFLAGS=-shared"
+        echo "LDFLAGS+=`mlt-config --libs` `mlt-config miracle --libs`"
 		;;
 esac >> config.mak
 

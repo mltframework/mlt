@@ -34,14 +34,14 @@ CC=g++
 all:		$(TARGET)
 
 $(TARGET):	$(OBJS)
-	$(CC) -o $@ $(OBJS) $(LDFLAGS)
+	$(CC) $(LIBFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 clean:
 	$(RM) $(OBJS) $(TARGET)
 
 install:
-	$(INSTALL) -d "$(DESTDIR)$(prefix)/lib"
-	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(prefix)/lib
+	$(INSTALL) -d "$(DESTDIR)$(libdir)"
+	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
 	/sbin/ldconfig || true
