@@ -46,7 +46,7 @@ scale_line_22_yuv_mmx.o: scale_line_22_yuv_mmx.S
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
 
-dist-clean:	clean
+distclean:	clean
 		rm -f .depend
 
 clean:	

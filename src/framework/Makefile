@@ -1,6 +1,7 @@
 include ../../config.mak
 
-TARGET = libmlt$(LIBSUF)
+NAME = libmlt$(LIBSUF)
+TARGET = $(NAME).$(version)
 
 OBJS = mlt_frame.o \
 	   mlt_geometry.o \
@@ -50,25 +51,27 @@ SRCS := $(OBJS:.o=.c)
 
 CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\""
 
-LDFLAGS += -lm $(LIBDL) -lpthread
+LDFLAGS += -Wl,-soname,libmlt.so.$(version) -lm $(LIBDL) -lpthread
 
 all:	$(TARGET)
 
 $(TARGET): $(OBJS)
 		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+		ln -sf $(TARGET) $(NAME)
 
 depend:	$(SRCS)
-		$(CC) -MM $(CFLAGS) $^ 1>.depend
+	$(CC) -MM $(CFLAGS) $^ 1>.depend
 
-dist-clean:	clean
+distclean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(OBJS) $(TARGET)
+		rm -f $(OBJS) $(TARGET) $(NAME)
 
 install:
 	install -d $(DESTDIR)$(libdir)
-	install -m 755 $(TARGET) $(DESTDIR)$(libdir)/libmlt$(LIBSUF)
+	install -m 755 $(TARGET) $(DESTDIR)$(libdir)
+	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME)
 	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
 

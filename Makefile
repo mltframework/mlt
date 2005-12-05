@@ -13,7 +13,7 @@ all clean:
 		$(MAKE) -C $$subdir $@ || exit 1; \
 	done
 
-dist-clean:
+distclean:
 	rm mlt-config packages.dat; \
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \

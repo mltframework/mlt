@@ -10,7 +10,7 @@ create_lumas:
 
 depend:
 
-dist-clean:
+distclean:
 	rm -rf PAL NTSC luma 
 
 clean:

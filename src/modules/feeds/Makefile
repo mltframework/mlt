@@ -4,7 +4,7 @@ all:
 
 depend:
 
-dist-clean:
+distclean:
 
 clean:
 

@@ -1,6 +1,8 @@
 include ../../config.mak
 
 TARGET = miracle
+LIBNAME = libmiracle$(LIBSUF)
+LIBTARGET = $(LIBNAME).$(version)
 
 APP_OBJS = miracle.o
 
@@ -26,25 +28,27 @@ SRCS := $(OBJS:.o=.c)
 
 all: 		$(TARGET)
 
-$(TARGET): 	$(APP_OBJS) libmiracle$(LIBSUF)
+$(TARGET): 	$(APP_OBJS) $(LIBTARGET)
 			$(CC) -o $@ $(APP_OBJS) -L. -lmiracle $(LDFLAGS)
 
-libmiracle$(LIBSUF):	$(LIB_OBJS)
-			$(CC) $(SHFLAGS) -o $@ $(LIB_OBJS) $(LDFLAGS)
+$(LIBTARGET):	$(LIB_OBJS)
+			$(CC) -Wl,-soname,$(LIBTARGET) $(SHFLAGS) -o $@ $(LIB_OBJS) $(LDFLAGS)
+			ln -sf $(LIBTARGET) $(LIBNAME)
 
 depend:		$(SRCS)
 			$(CC) -MM $(CFLAGS) $^ 1>.depend
 
-dist-clean:	clean
+distclean:	clean
 			rm -f .depend
 
 clean:	
-			rm -f $(OBJS) $(TARGET) libmiracle$(LIBSUF)
+			rm -f $(OBJS) $(TARGET) $(LIBNAME) $(LIBTARGET)
 
 install:	all
 	install -d "$(DESTDIR)$(bindir)"
 	install -c -s -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
-	install -m 755 libmiracle$(LIBSUF) $(DESTDIR)$(libdir)/libmiracle$(LIBSUF)
+	install -m 755 $(LIBTARGET) $(DESTDIR)$(libdir)
+	ln -sf $(LIBTARGET) $(DESTDIR)$(libdir)/$(LIBNAME)
 	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/miracle"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/miracle"
 

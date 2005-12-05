@@ -36,8 +36,8 @@ depend:	$(SRCS)
 		if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dep ; fi
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
 
-dist-clean:	clean
-		if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dist-clean ; fi
+distclean:	clean
+		if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg distclean ; fi
 		rm -f .depend
 
 clean:	

@@ -21,7 +21,7 @@ $(TARGET): $(OBJS)
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
 
-dist-clean:	clean
+distclean:	clean
 		rm -f .depend
 
 clean:	
