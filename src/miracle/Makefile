@@ -4,7 +4,7 @@ TARGET = miracle
 
 ifneq ($(targetos), Darwin)
 LIBNAME = libmiracle$(LIBSUF)
-LIBTARGET = $(NAME).$(version)
+LIBTARGET = $(LIBNAME).$(version)
 SHFLAGS += -Wl,-soname,$(LIBTARGET)
 else
 LIBNAME = libmiracle$(LIBSUF)

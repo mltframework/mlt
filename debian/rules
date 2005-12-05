@@ -31,7 +31,7 @@ version=20051130
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
-	./configure --prefix=/$(prefix) --libdir=/$(libdir) --disable-debug --enable-gpl --disable-sox --luma-compress --enable-motion-est --disable-jackrack
+	./configure --prefix=/$(prefix) --libdir=/$(libdir) --disable-debug --enable-gpl --disable-sox --luma-compress --enable-motion-est --disable-jackrack --avformat-cvs --avformat-suffix=.mlt
 
 build: build-stamp
 build-stamp:  config.status

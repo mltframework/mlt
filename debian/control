@@ -15,7 +15,7 @@ Description: Development library and headers for mlt
 Package: mlt
 Section: multimedia
 Architecture: any
-Depends: ${shlibs:Depends}, ffmpeg
+Depends: ${shlibs:Depends}
 Description: mlt tools and runtime library
  mlt is a free multimedia tool set and library.
 
