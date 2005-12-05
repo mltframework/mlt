@@ -1,8 +1,15 @@
 include ../config.mak
 INSTALL = install
 
+ifneq ($(targetos), Darwin)
 NAME = libmlt++$(LIBSUF)
 TARGET = $(NAME).$(version)
+LIBFLAGS += -Wl,-soname,$(TARGET)
+else
+NAME = libmlt++$(LIBSUF)
+TARGET = libmlt++.$(version)$(LIBSUF)
+LIBFLAGS += -install_name $(libdir)/$(TARGET)
+endif
 
 OBJS = MltConsumer.o \
 	   MltDeque.o \
@@ -28,7 +35,6 @@ OBJS = MltConsumer.o \
 
 SRCS = $(OBJS:.o=.cpp)
 HEADERS = Mlt.h $(OBJS:.o=.h)
-LDFLAGS += -Wl,-soname,$(TARGET)
 
 all:		$(TARGET)
 

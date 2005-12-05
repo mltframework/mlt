@@ -30,13 +30,14 @@ echo "prefix=$prefix" >> config.mak
 echo "libdir=$libdir" >> config.mak
 
 targetos=$(uname -s)
+echo "targetos=$targetos" >> config.mak
 
 case $targetos in 
 	Darwin)
 		echo LIBSUF=.dylib
         echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC `mlt-config --cflags`"
-		echo "LIBFLAGS=-dynamiclib"
-        echo "LDFLAGS+=`mlt-config --libs` `mlt-config miracle --libs` `mlt-config valerie --libs` -single_module"
+		echo "LIBFLAGS=-dynamiclib -single_module"
+        echo "LDFLAGS+=`mlt-config --libs` `mlt-config miracle --libs` `mlt-config valerie --libs`"
 		;;
 	Linux)
 		echo LIBSUF=.so
