@@ -25,7 +25,8 @@ done
 # Sanity check
 [ ! -d "$prefix" ] && echo "Invalid prefix $prefix - aborting" && exit 1
 
-echo "prefix=$prefix" > config.mak
+echo "version=`mlt-config --version`" > config.mak
+echo "prefix=$prefix" >> config.mak
 echo "libdir=$libdir" >> config.mak
 
 targetos=$(uname -s)

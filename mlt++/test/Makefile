@@ -18,4 +18,6 @@ clean:
 	$(RM) play play.o
 	$(RM) server server.o
 
+distclean: clean
+
 install:

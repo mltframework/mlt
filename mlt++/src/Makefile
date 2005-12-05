@@ -1,7 +1,8 @@
 include ../config.mak
 INSTALL = install
 
-TARGET = libmlt++$(LIBSUF)
+NAME = libmlt++$(LIBSUF)
+TARGET = $(NAME).$(version)
 
 OBJS = MltConsumer.o \
 	   MltDeque.o \
@@ -26,22 +27,24 @@ OBJS = MltConsumer.o \
 	   MltTransition.o
 
 SRCS = $(OBJS:.o=.cpp)
-
 HEADERS = Mlt.h $(OBJS:.o=.h)
-
-CC=g++
+LDFLAGS += -Wl,-soname,$(TARGET)
 
 all:		$(TARGET)
 
 $(TARGET):	$(OBJS)
-	$(CC) $(LIBFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+	$(CXX) $(LIBFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+	ln -sf $(TARGET) $(NAME)
 
 clean:
-	$(RM) $(OBJS) $(TARGET)
+	$(RM) $(OBJS) $(TARGET) $(NAME)
+
+distclean:	clean
 
 install:
 	$(INSTALL) -d "$(DESTDIR)$(libdir)"
 	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)
+	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME)
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
 	/sbin/ldconfig || true

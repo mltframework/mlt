@@ -1,4 +1,4 @@
-all clean dist-clean install:
+all clean distclean install:
 	$(MAKE) DESTDIR=$(DESTDIR) -C src $@ 
 	$(MAKE) -C test $@ 
 
