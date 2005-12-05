@@ -1,0 +1,21 @@
+Source: mlt
+Section: devel
+Priority: optional
+Maintainer: Charles Yates <charles@vmfx.com>
+Build-Depends: debhelper (>> 3.0.0)
+Standards-Version: 3.6.1
+
+Package: mlt-dev
+Section: devel
+Architecture: any
+Depends: mlt (= ${Source-Version})
+Description: Development library and headers for mlt
+ mlt is a free multimedia tool set and library.
+
+Package: mlt
+Section: multimedia
+Architecture: any
+Depends: ${shlibs:Depends}, ffmpeg
+Description: mlt tools and runtime library
+ mlt is a free multimedia tool set and library.
+
