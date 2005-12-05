@@ -45,7 +45,7 @@ else
 	export cvs_ffmpeg=
 	export avformat_suffix=
 
-	if [ "$shared_ffmpeg" != "" ]
+	if [ "$shared_ffmpeg" != "" -a -f "$shared_ffmpeg" ]
 	then
 		# Chop ffmpeg 
 		shared_ffmpeg=`dirname $shared_ffmpeg`
@@ -92,7 +92,7 @@ else
 			echo 0
 		fi
 	else 
-		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/$LIBDIR/libavformat$LIBSUF" ]
+		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -f "$shared_ffmpeg/$LIBDIR/libavformat$avformat_suffix$LIBSUF" ]
 		then
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
 			echo "LDFLAGS+=-L$shared_ffmpeg/$LIBDIR" >> config.mak

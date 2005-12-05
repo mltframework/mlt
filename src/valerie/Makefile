@@ -1,7 +1,14 @@
 include ../../config.mak
 
+ifneq ($(targetos), Darwin)
 NAME = libvalerie$(LIBSUF)
-TARGET = libvalerie$(LIBSUF).$(version)
+TARGET = $(NAME).$(version)
+SHFLAGS += -Wl,-soname,$(TARGET)
+else
+NAME = libvalerie$(LIBSUF)
+TARGET = libvalerie.$(version)$(LIBSUF)
+SHFLAGS += -install_name $(libdir)/$(TARGET)
+endif
 
 OBJS = valerie.o \
 	   valerie_notifier.o \
@@ -26,7 +33,7 @@ INCS = valerie.h \
 SRCS := $(OBJS:.o=.c)
 
 CFLAGS += -I.. $(RDYNAMIC)
-LDFLAGS += -Wl,-soname,$(TARGET) -L../framework -lmlt -lpthread
+LDFLAGS += -L../framework -lmlt -lpthread
 
 all: $(TARGET)
 

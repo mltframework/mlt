@@ -1,8 +1,16 @@
 include ../../config.mak
 
 TARGET = miracle
+
+ifneq ($(targetos), Darwin)
 LIBNAME = libmiracle$(LIBSUF)
-LIBTARGET = $(LIBNAME).$(version)
+LIBTARGET = $(NAME).$(version)
+SHFLAGS += -Wl,-soname,$(LIBTARGET)
+else
+LIBNAME = libmiracle$(LIBSUF)
+LIBTARGET = libmiracle.$(version)$(LIBSUF)
+SHFLAGS += -install_name $(libdir)/$(LIBTARGET)
+endif
 
 APP_OBJS = miracle.o
 
@@ -32,7 +40,7 @@ $(TARGET): 	$(APP_OBJS) $(LIBTARGET)
 			$(CC) -o $@ $(APP_OBJS) -L. -lmiracle $(LDFLAGS)
 
 $(LIBTARGET):	$(LIB_OBJS)
-			$(CC) -Wl,-soname,$(LIBTARGET) $(SHFLAGS) -o $@ $(LIB_OBJS) $(LDFLAGS)
+			$(CC) $(SHFLAGS) -o $@ $(LIB_OBJS) $(LDFLAGS)
 			ln -sf $(LIBTARGET) $(LIBNAME)
 
 depend:		$(SRCS)

@@ -3,6 +3,16 @@ include ../../config.mak
 NAME = libmlt$(LIBSUF)
 TARGET = $(NAME).$(version)
 
+ifneq ($(targetos), Darwin)
+NAME = libmlt$(LIBSUF)
+TARGET = $(NAME).$(version)
+SHFLAGS += -Wl,-soname,$(TARGET)
+else
+NAME = libmlt$(LIBSUF)
+TARGET = libmlt.$(version)$(LIBSUF)
+SHFLAGS += -install_name $(libdir)/$(TARGET)
+endif
+
 OBJS = mlt_frame.o \
 	   mlt_geometry.o \
 	   mlt_deque.o \
@@ -51,7 +61,7 @@ SRCS := $(OBJS:.o=.c)
 
 CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\""
 
-LDFLAGS += -Wl,-soname,libmlt.so.$(version) -lm $(LIBDL) -lpthread
+LDFLAGS += -lm $(LIBDL) -lpthread
 
 all:	$(TARGET)
 
