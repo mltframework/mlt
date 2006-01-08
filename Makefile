@@ -21,6 +21,8 @@ distclean:
 	done; \
 	rm config.mak;
 
+dist-clean: distclean
+
 include config.mak
 
 install:
