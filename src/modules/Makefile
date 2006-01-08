@@ -1,7 +1,5 @@
 include ../../config.mak
 
-include make.inc
-
 all clean depend:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
