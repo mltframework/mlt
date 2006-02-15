@@ -256,7 +256,7 @@ PAUSE {unit}
 
 REW {unit}
 	Rewind the unit.
-	If the unit it playing, then REW sets the playback speed to 2000
+	If the unit it playing, then REW sets the playback speed to -2000
 	(200%).
 	If the unit is stopped, then the frame position is reset to the first
 	frame. First frame depends upon the "points" unit configuration property
@@ -269,7 +269,7 @@ REW {unit}
 
 FF {unit}
 	Fast forward the unit.
-	If the unit it playing, then FF sets the playback speed to -2000 (200%
+	If the unit it playing, then FF sets the playback speed to 2000 (200%
 	in reverse).
 	If the unit is stopped, then the frame position is reset to the first
 	frame. First frame depends upon the "points" unit configuration property

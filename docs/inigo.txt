@@ -327,7 +327,7 @@ Transitions:
 
 Reversing a Transition:
 
-	When we visualise a track definition, we also see situtations
+	When we visualise a track definition, we also see situations
 	like:
 	
 	+-------+              +----------+
