@@ -94,9 +94,13 @@ response_codes miracle_add_unit( command_argument cmd_arg )
 		char *arg = cmd_arg->argument;
 		g_units[ i ] = miracle_unit_init( i, arg );
 		if ( g_units[ i ] != NULL )
+		{
 			miracle_unit_set_notifier( g_units[ i ], valerie_parser_get_notifier( cmd_arg->parser ), cmd_arg->root_dir );
-		return g_units[ i ] != NULL ? RESPONSE_SUCCESS : RESPONSE_ERROR;
+			valerie_response_printf( cmd_arg->response, 10, "U%1d\n\n", i );
+		}
+		return g_units[ i ] != NULL ? RESPONSE_SUCCESS_N : RESPONSE_ERROR;
 	}
+	valerie_response_printf( cmd_arg->response, 1024, "no more units can be created\n\n" );
 
 	return RESPONSE_ERROR;
 }
