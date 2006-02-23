@@ -21,6 +21,8 @@
 #ifndef _MLTPP_TRANSITION_H_
 #define _MLTPP_TRANSITION_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 #include "MltService.h"
 
@@ -28,7 +30,7 @@ namespace Mlt
 {
 	class Service;
 
-	class Transition : public Service
+	class MLTPP_DECLSPEC Transition : public Service
 	{
 		private:
 			mlt_transition instance;

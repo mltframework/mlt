@@ -21,6 +21,8 @@
 #ifndef _MLTPP_TRACTOR_H_
 #define _MLTPP_TRACTOR_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltProducer.h"
@@ -33,7 +35,7 @@ namespace Mlt
 	class Transition;
 	class Filter;
 
-	class Tractor : public Producer
+	class MLTPP_DECLSPEC Tractor : public Producer
 	{
 		private:
 			mlt_tractor instance;
@@ -44,7 +46,7 @@ namespace Mlt
 			Tractor( Tractor &tractor );
 			Tractor( char *id, char *arg = NULL );
 			virtual ~Tractor( );
-			mlt_tractor get_tractor( );
+			virtual mlt_tractor get_tractor( );
 			mlt_producer get_producer( );
 			Multitrack *multitrack( );
 			Field *field( );

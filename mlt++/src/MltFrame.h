@@ -21,6 +21,8 @@
 #ifndef _MLTPP_FRAME_H_
 #define _MLTPP_FRAME_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 #include "MltProperties.h"
 
@@ -29,7 +31,7 @@ namespace Mlt
 	class Properties;
 	class Producer;
 
-	class Frame : public Properties
+	class MLTPP_DECLSPEC Frame : public Properties
 	{
 		private:
 			mlt_frame instance;

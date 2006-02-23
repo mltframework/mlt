@@ -21,6 +21,8 @@
 #ifndef _MLTPP_PRODUCER_H_
 #define _MLTPP_PRODUCER_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltService.h"
@@ -30,7 +32,7 @@ namespace Mlt
 	class Service;
 	class Filter;
 
-	class Producer : public Service
+	class MLTPP_DECLSPEC Producer : public Service
 	{
 		private:
 			mlt_producer instance;

@@ -21,6 +21,8 @@
 #ifndef _MLTPP_MULTITRACK_H_
 #define _MLTPP_MULTITRACK_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltProducer.h"
@@ -30,7 +32,7 @@ namespace Mlt
 	class Service;
 	class Producer;
 
-	class Multitrack : public Producer
+	class MLTPP_DECLSPEC Multitrack : public Producer
 	{
 		private:
 			mlt_multitrack instance;

@@ -21,6 +21,8 @@
 #ifndef _MLTPP_FIELD_H_
 #define _MLTPP_FIELD_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltService.h"
@@ -31,7 +33,7 @@ namespace Mlt
 	class Filter;
 	class Transition;
 
-	class Field : public Service
+	class MLTPP_DECLSPEC Field : public Service
 	{
 		private:
 			mlt_field instance;

@@ -21,6 +21,8 @@
 #ifndef MLTPP_PUSH_CONSUMER_H
 #define MLTPP_PUSH_CONSUMER_H
 
+#include "config.h"
+
 #include "MltConsumer.h"
 
 namespace Mlt
@@ -29,7 +31,7 @@ namespace Mlt
 	class Service;
 	class PushPrivate;
 
-	class PushConsumer : public Consumer
+	class MLTPP_DECLSPEC PushConsumer : public Consumer
 	{
 		private:
 			PushPrivate *m_private;

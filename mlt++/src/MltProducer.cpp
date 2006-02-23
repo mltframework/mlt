@@ -167,12 +167,12 @@ Producer *Producer::cut( int in, int out )
 
 bool Producer::is_cut( )
 {
-	return mlt_producer_is_cut( get_producer( ) );
+	return mlt_producer_is_cut( get_producer( ) ) != 0;
 }
 
 bool Producer::is_blank( )
 {
-	return mlt_producer_is_blank( get_producer( ) );
+	return mlt_producer_is_blank( get_producer( ) ) != 0;
 }
 
 bool Producer::same_clip( Producer &that )

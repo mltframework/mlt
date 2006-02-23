@@ -21,6 +21,8 @@
 #ifndef _MLTPP_PARSER_H_
 #define _MLTPP_PARSER_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 #include "MltProperties.h"
 
@@ -35,16 +37,15 @@ namespace Mlt
 	class Filter;
 	class Transition;
 
-	class Parser : public Properties
+	class MLTPP_DECLSPEC Parser : public Properties
 	{
 		private:
 			mlt_parser parser;
-		protected:
-			virtual mlt_properties get_properties( );	
 		public:
 			Parser( );
 			~Parser( );
 			int start( Service &service );
+			virtual mlt_properties get_properties( );	
 			virtual int on_invalid( Service *object );
 			virtual int on_unknown( Service *object );
 			virtual int on_start_producer( Producer *object );

@@ -21,6 +21,8 @@
 #ifndef _MLTPP_FILTER_H_
 #define _MLTPP_FILTER_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltService.h"
@@ -29,7 +31,7 @@ namespace Mlt
 {
 	class Service;
 
-	class Filter : public Service
+	class MLTPP_DECLSPEC Filter : public Service
 	{
 		private:
 			mlt_filter instance;

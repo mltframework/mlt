@@ -21,6 +21,8 @@
 #ifndef _MLTPP_SERVICE_H_
 #define _MLTPP_SERVICE_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltProperties.h"
@@ -32,7 +34,7 @@ namespace Mlt
 	class Filter;
 	class Frame;
 
-	class Service : public Properties
+	class MLTPP_DECLSPEC Service : public Properties
 	{
 		private:
 			mlt_service instance;
@@ -44,7 +46,7 @@ namespace Mlt
 			virtual mlt_service get_service( );
 			void lock( );
 			void unlock( );
-			mlt_properties get_properties( );
+			virtual mlt_properties get_properties( );
 			int connect_producer( Service &producer, int index = 0 );
 			Service *consumer( );
 			Service *producer( );

@@ -206,6 +206,9 @@ void Properties::load( const char *file )
 
 int Properties::save( const char *file )
 {
+#ifdef WIN32
+	return mlt_properties_save( get_properties( ), file );
+#else
 	int error = 0;
 	FILE *f = fopen( file, "w" );
 	if ( f != NULL )
@@ -218,6 +221,7 @@ int Properties::save( const char *file )
 		error = 1;
 	}
 	return error;
+#endif
 }
 
 #if defined( __DARWIN__ ) && GCC_VERSION < 40000
@@ -241,6 +245,11 @@ Event *Properties::listen( char *id, void *object, mlt_listener listener )
 Event *Properties::setup_wait_for( char *id )
 {
 	return new Event( mlt_events_setup_wait_for( get_properties( ), id ) );
+}
+
+void Properties::delete_event( Event *event )
+{
+	delete event;
 }
 
 void Properties::wait_for( Event *event, bool destroy )

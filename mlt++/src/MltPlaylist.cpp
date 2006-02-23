@@ -167,6 +167,11 @@ ClipInfo *Playlist::clip_info( int index, ClipInfo *info )
 	return info;
 }
 
+void Playlist::delete_clip_info( ClipInfo *info )
+{
+	delete info;
+}
+
 int Playlist::insert( Producer &producer, int where, int in, int out )
 {
 	return mlt_playlist_insert( get_playlist( ), producer.get_producer( ), where, in, out );
@@ -241,12 +246,12 @@ bool Playlist::is_mix( int clip )
 
 bool Playlist::is_blank( int clip )
 {
-	return mlt_playlist_is_blank( get_playlist( ), clip );
+	return mlt_playlist_is_blank( get_playlist( ), clip ) != 0;
 }
 
 bool Playlist::is_blank_at( int position )
 {
-	return mlt_playlist_is_blank_at( get_playlist( ), position );
+	return mlt_playlist_is_blank_at( get_playlist( ), position ) != 0;
 }
 
 Producer *Playlist::replace_with_blank( int clip )

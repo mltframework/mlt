@@ -21,6 +21,8 @@
 #ifndef _MLTPP_PLAYLIST_H_
 #define _MLTPP_PLAYLIST_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltProducer.h"
@@ -32,7 +34,7 @@ namespace Mlt
 	class Playlist;
 	class Transition;
 
-	class ClipInfo
+	class MLTPP_DECLSPEC ClipInfo
 	{
 		public:
 			ClipInfo( );
@@ -52,7 +54,7 @@ namespace Mlt
 			int repeat;
 	};
 
-	class Playlist : public Producer
+	class MLTPP_DECLSPEC Playlist : public Producer
 	{
 		private:
 			mlt_playlist instance;
@@ -72,6 +74,7 @@ namespace Mlt
 			int current_clip( );
 			Producer *current( );
 			ClipInfo *clip_info( int index, ClipInfo *info = NULL );
+			static void delete_clip_info( ClipInfo *info );
 			int insert( Producer &producer, int where, int in = -1, int out = -1 );
 			int remove( int where );
 			int move( int from, int to );

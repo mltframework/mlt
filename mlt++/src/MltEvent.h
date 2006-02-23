@@ -21,11 +21,13 @@
 #ifndef _MLTPP_EVENT_H_
 #define _MLTPP_EVENT_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 namespace Mlt 
 {
-	class Event 
+	class MLTPP_DECLSPEC Event 
 	{
 		private:
 			mlt_event instance;

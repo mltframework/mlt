@@ -21,18 +21,20 @@
 #ifndef _MLTPP_GEOMETRY_H
 #define _MLTPP_GEOMETRY_H
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 namespace Mlt
 {
 	// Just for consistent naming purposes
-	class GeometryItem 
+	class MLTPP_DECLSPEC GeometryItem 
 	{
 		private:
 			struct mlt_geometry_item_s item;
 		public:
 			mlt_geometry_item get_item( ) { return &item; }
-			bool key( ) { return item.key; }
+			bool key( ) { return item.key != 0; }
 			int frame( ) { return item.frame; }
 			void frame( int value ) { item.frame = value; }
 			float x( ) { return item.x; }
@@ -47,7 +49,7 @@ namespace Mlt
 			void mix( float value ) { item.f[4] = 1; item.mix = value; }
 	};
 
-	class Geometry
+	class MLTPP_DECLSPEC Geometry
 	{
 		private:
 			mlt_geometry geometry;

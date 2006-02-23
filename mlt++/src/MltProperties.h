@@ -21,6 +21,8 @@
 #ifndef _MLTPP_PROPERTIES_H_
 #define _MLTPP_PROPERTIES_H_
 
+#include "config.h"
+
 #include <stdio.h>
 #include <framework/mlt.h>
 
@@ -31,12 +33,10 @@ namespace Mlt
 	/** Abstract Properties class.
 	 */
 
-	class Properties 
+	class MLTPP_DECLSPEC Properties 
 	{
 		private:
 			mlt_properties instance;
-		protected:
-			virtual mlt_properties get_properties( );
 		public:
 			Properties( );
 			Properties( bool dummy );
@@ -44,6 +44,7 @@ namespace Mlt
 			Properties( mlt_properties properties );
 			Properties( const char *file );
 			virtual ~Properties( );
+			virtual mlt_properties get_properties( );
 			int inc_ref( );
 			int dec_ref( );
 			int ref_count( );
@@ -78,6 +79,7 @@ namespace Mlt
 			#else
 			Event *listen( char *id, void *object, mlt_listener );
 			#endif
+			static void delete_event( Event * );
 			Event *setup_wait_for( char *id );
 			void wait_for( Event *, bool destroy = true );
 	};

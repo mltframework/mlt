@@ -21,11 +21,13 @@
 #ifndef _MLTPP_TOKENISER_H
 #define _MLTPP_TOKENISER_H
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 namespace Mlt
 {
-	class Tokeniser
+	class MLTPP_DECLSPEC Tokeniser
 	{
 		private:
 			mlt_tokeniser tokens;

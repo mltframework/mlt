@@ -21,6 +21,8 @@
 #ifndef _MLTPP_FILTERED_CONSUMER_H_
 #define _MLTPP_FILTERED_CONSUMER_H_
 
+#include "config.h"
+
 #include "MltConsumer.h"
 #include "MltFilter.h"
 #include "MltService.h"
@@ -31,7 +33,7 @@ namespace Mlt
 	class Service;
 	class Filter;
 
-	class FilteredConsumer : public Consumer
+	class MLTPP_DECLSPEC FilteredConsumer : public Consumer
 	{
 		private:
 			Service *first;

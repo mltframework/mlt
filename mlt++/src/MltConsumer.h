@@ -21,6 +21,8 @@
 #ifndef _MLTPP_CONSUMER_H_
 #define _MLTPP_CONSUMER_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 #include "MltService.h"
@@ -29,7 +31,7 @@ namespace Mlt
 {
 	class Service;
 
-	class Consumer : public Service
+	class MLTPP_DECLSPEC Consumer : public Service
 	{
 		private:
 			mlt_consumer instance;

@@ -52,8 +52,8 @@ mlt_properties Frame::get_properties( )
 uint8_t *Frame::get_image( mlt_image_format &format, int &w, int &h, int writable )
 {
 	uint8_t *image = NULL;
-	if ( mlt_properties_get_int( get_properties( ), "consumer_aspect_ratio" ) == 0 )
-		mlt_properties_set_int( get_properties( ), "consumer_aspect_ratio", 1 );
+	if ( get_double( "consumer_aspect_ratio" ) == 0.0 )
+		set( "consumer_aspect_ratio", 1.0 );
 	mlt_frame_get_image( get_frame( ), &image, &format, &w, &h, writable );
 	set( "format", format );
 	set( "writable", writable );
@@ -63,8 +63,8 @@ uint8_t *Frame::get_image( mlt_image_format &format, int &w, int &h, int writabl
 unsigned char *Frame::fetch_image( mlt_image_format f, int w, int h, int writable )
 {
 	uint8_t *image = NULL;
-	if ( mlt_properties_get_int( get_properties( ), "consumer_aspect_ratio" ) == 0 )
-		mlt_properties_set_int( get_properties( ), "consumer_aspect_ratio", 1 );
+	if ( get_double( "consumer_aspect_ratio" ) == 0.0 )
+		set( "consumer_aspect_ratio", 1.0 );
 	mlt_frame_get_image( get_frame( ), &image, &f, &w, &h, writable );
 	set( "format", f );
 	set( "writable", writable );

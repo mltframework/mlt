@@ -21,11 +21,13 @@
 #ifndef _MLTPP_DEQUE_H
 #define _MLTPP_DEQUE_H
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 namespace Mlt
 {
-	class Deque
+	class MLTPP_DECLSPEC Deque
 	{
 		private:
 			mlt_deque deque;

@@ -21,6 +21,8 @@
 #ifndef _MLTPP_FACTORY_H_
 #define _MLTPP_FACTORY_H_
 
+#include "config.h"
+
 #include <framework/mlt.h>
 
 namespace Mlt
@@ -31,7 +33,7 @@ namespace Mlt
 	class Transition;
 	class Consumer;
 
-	class Factory
+	class MLTPP_DECLSPEC Factory
 	{
 		public:
 			static int init( char *arg = NULL );
@@ -40,6 +42,10 @@ namespace Mlt
 			static Filter *filter( char *id, char *arg = NULL );
 			static Transition *transition( char *id, char *arg = NULL );
 			static Consumer *consumer( char *id, char *arg = NULL );
+#ifdef WIN32
+			static char *getenv( const char * );
+			static int setenv( const char *, const char * );
+#endif
 			static void close( );
 	};
 }
