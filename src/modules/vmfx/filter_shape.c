@@ -199,7 +199,10 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( frame ), alpha_mix / 100.0 );
 			mlt_frame_push_get_image( frame, filter_get_image );
 			if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "audio_match" ) )
+			{
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "meta.mixdown", 1 );
 				mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), "meta.volume", alpha_mix / 100.0 );
+			}
 		}
 	}
 
