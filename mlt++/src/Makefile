@@ -34,7 +34,7 @@ OBJS = MltConsumer.o \
 	   MltTransition.o
 
 SRCS = $(OBJS:.o=.cpp)
-HEADERS = Mlt.h $(OBJS:.o=.h)
+HEADERS = config.h Mlt.h $(OBJS:.o=.h)
 
 all:		$(TARGET)
 
