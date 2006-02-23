@@ -33,21 +33,31 @@ static int transition_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_fo
 	// Get the b frame from the stack
 	mlt_frame b_frame = mlt_frame_pop_audio( frame );
 
+	// Get the effect
+	mlt_transition effect = mlt_frame_pop_audio( frame );
+
 	// Get the properties of the b frame
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
-	double mix_start = 0.5, mix_end = 0.5;
-	if ( mlt_properties_get( b_props, "audio.previous_mix" ) != NULL )
-		mix_start = mlt_properties_get_double( b_props, "audio.previous_mix" );
-	if ( mlt_properties_get( b_props, "audio.mix" ) != NULL )
-		mix_end = mlt_properties_get_double( b_props, "audio.mix" );
-	if ( mlt_properties_get_int( b_props, "audio.reverse" ) )
+	if ( mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( effect ), "combine" ) == 0 )
 	{
-		mix_start = 1 - mix_start;
-		mix_end = 1 - mix_end;
-	}
+		double mix_start = 0.5, mix_end = 0.5;
+		if ( mlt_properties_get( b_props, "audio.previous_mix" ) != NULL )
+			mix_start = mlt_properties_get_double( b_props, "audio.previous_mix" );
+		if ( mlt_properties_get( b_props, "audio.mix" ) != NULL )
+			mix_end = mlt_properties_get_double( b_props, "audio.mix" );
+		if ( mlt_properties_get_int( b_props, "audio.reverse" ) )
+		{
+			mix_start = 1 - mix_start;
+			mix_end = 1 - mix_end;
+		}
 
-	mlt_frame_mix_audio( frame, b_frame, mix_start, mix_end, buffer, format, frequency, channels, samples );
+		mlt_frame_mix_audio( frame, b_frame, mix_start, mix_end, buffer, format, frequency, channels, samples );
+	}
+	else
+	{
+		mlt_frame_combine_audio( frame, b_frame, buffer, format, frequency, channels, samples );
+	}
 
 	return 0;
 }
@@ -130,6 +140,7 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	}
 
 	// Override the get_audio method
+	mlt_frame_push_audio( a_frame, this );
 	mlt_frame_push_audio( a_frame, b_frame );
 	mlt_frame_push_audio( a_frame, transition_get_audio );
 	
