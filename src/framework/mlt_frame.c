@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 /** Constructor for a frame.
 */
@@ -904,6 +905,15 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 	float weight = weight_start;
 	float weight_step = ( weight_end - weight_start ) / *samples;
 
+	if ( src == dest )
+	{
+		*samples = samples_src;
+		*channels = channels_src;
+		*buffer = src;
+		*frequency = frequency_src;
+		return ret;
+	}
+
 	// Mixdown
 	for ( i = 0; i < *samples; i++ )
 	{
@@ -916,6 +926,71 @@ int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, flo
 			dest[ i * channels_dest + j ] = s * weight + d * ( 1.0 - weight );
 		}
 		weight += weight_step;
+	}
+
+	return ret;
+}
+
+// Replacement for broken mlt_frame_audio_mix - this filter uses an inline low pass filter
+// to allow mixing without volume hacking
+int mlt_frame_combine_audio( mlt_frame this, mlt_frame that, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+{
+	int ret = 0;
+	int16_t *src, *dest;
+	int frequency_src = *frequency, frequency_dest = *frequency;
+	int channels_src = *channels, channels_dest = *channels;
+	int samples_src = *samples, samples_dest = *samples;
+	int i, j;
+	double vp[ 6 ];
+	double b_weight = 1.0;
+
+	if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "meta.mixdown" ) )
+		b_weight = 1.0 - mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "meta.volume" );
+
+	mlt_frame_get_audio( that, &src, format, &frequency_src, &channels_src, &samples_src );
+	mlt_frame_get_audio( this, &dest, format, &frequency_dest, &channels_dest, &samples_dest );
+
+	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "silent_audio" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "silent_audio", 0 );
+	if ( silent )
+		memset( dest, 0, samples_dest * channels_dest * sizeof( int16_t ) );
+
+	silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( that ), "silent_audio" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( that ), "silent_audio", 0 );
+	if ( silent )
+		memset( src, 0, samples_src * channels_src * sizeof( int16_t ) );
+
+	if ( src == dest )
+	{
+		*samples = samples_src;
+		*channels = channels_src;
+		*buffer = src;
+		*frequency = frequency_src;
+		return ret;
+	}
+
+	// determine number of samples to process
+	*samples = samples_src < samples_dest ? samples_src : samples_dest;
+	*channels = channels_src < channels_dest ? channels_src : channels_dest;
+	*buffer = dest;
+	*frequency = frequency_dest;
+
+	for ( j = 0; j < *channels; j++ )
+		vp[ j ] = ( double )dest[ j ];
+
+ 	double Fc = 0.5;
+ 	double B = exp(-2.0 * M_PI * Fc);
+	double A = 1.0 - B;
+	double v;
+	
+	for ( i = 0; i < *samples; i++ )
+	{
+		for ( j = 0; j < *channels; j++ )
+		{
+			v = ( double )( b_weight * dest[ i * channels_dest + j ] + src[ i * channels_src + j ] );
+			v = v < -32767 ? -32767 : v > 32768 ? 32768 : v;
+			vp[ j ] = dest[ i * channels_dest + j ] = ( int16_t )( v * A + vp[ j ] * B );
+		}
 	}
 
 	return ret;

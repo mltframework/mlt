@@ -81,6 +81,7 @@ extern uint8_t *mlt_frame_resize_yuv422( mlt_frame self, int owidth, int oheight
 extern uint8_t *mlt_frame_rescale_yuv422( mlt_frame self, int owidth, int oheight );
 extern void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight );
 extern int mlt_frame_mix_audio( mlt_frame self, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
+extern int mlt_frame_combine_audio( mlt_frame self, mlt_frame that, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
 
