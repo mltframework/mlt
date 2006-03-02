@@ -162,7 +162,16 @@ then
 fi
 
 # Show help if requested
-[ $help = 1 ] && show_help || build_config
+if [ $help = 1 ]
+then
+	show_help
+else
+	# Log the configuration history
+	date >> config.log
+	echo "$0 $@" >> config.log
+
+	build_config
+fi
 
 # Iterate through each of the components
 for i in framework modules inigo valerie miracle humperdink
