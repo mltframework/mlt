@@ -14,6 +14,7 @@ OBJS = factory.o \
 	   filter_greyscale.o \
 	   filter_luma.o \
 	   filter_mirror.o \
+	   filter_mono.o \
 	   filter_obscure.o \
 	   filter_region.o \
 	   filter_rescale.o \

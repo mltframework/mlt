@@ -891,6 +891,38 @@ Filters
 	        none
 
 
+	mono
+	
+	    Description
+	    
+	        Mix all channels of audio into a mono signal and output it as
+			N channels.
+
+	    Constructor Argument
+	    
+	        channels - the number of output channels (default 2)
+	        
+	    Initialisation Properties
+	    
+	        none
+	        
+	    Read Only Properties
+	    
+	        none
+	        
+	    Mutable Properties
+	    
+	        none
+
+	    Dependencies
+	    
+	        none
+	        
+	    Known Bugs
+	    
+	        none
+
+
 	obscure
 	
 	    Description

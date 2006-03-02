@@ -19,6 +19,7 @@ gamma			libmltcore$LIBSUF
 greyscale		libmltcore$LIBSUF
 luma			libmltcore$LIBSUF
 mirror			libmltcore$LIBSUF
+mono			libmltcore$LIBSUF
 obscure			libmltcore$LIBSUF
 region			libmltcore$LIBSUF
 rescale			libmltcore$LIBSUF

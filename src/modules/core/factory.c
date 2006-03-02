@@ -30,6 +30,7 @@
 #include "filter_greyscale.h"
 #include "filter_luma.h"
 #include "filter_mirror.h"
+#include "filter_mono.h"
 #include "filter_obscure.h"
 #include "filter_rescale.h"
 #include "filter_resize.h"
@@ -73,6 +74,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_luma_init( arg );
 	if ( !strcmp( id, "mirror" ) )
 		return filter_mirror_init( arg );
+	if ( !strcmp( id, "mono" ) )
+		return filter_mono_init( arg );
 	if ( !strcmp( id, "obscure" ) )
 		return filter_obscure_init( arg );
 	if ( !strcmp( id, "region" ) )
