@@ -10,9 +10,9 @@ LDFLAGS+=-L../../framework -lmlt -lstdc++
 CXXFLAGS+=$(CFLAGS) -Wno-deprecated
 
 ifdef HAVE_LIBQUICKTIME
-CFLAGS+=`lqt-config --cflags` 
-CXXFLAGS+=`lqt-config --cflags` 
-LDFLAGS+=`lqt-config --libs`
+CFLAGS+=`pkg-config --cflags libquicktime` 
+CXXFLAGS+=`pkg-config --cflags libquicktime` 
+LDFLAGS+=`pkg-config --libs libquicktime`
 endif
 
 ifdef HAVE_LIBDV
