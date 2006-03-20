@@ -23,6 +23,10 @@
 
 #include "config.h"
 
+#ifdef SWIG
+#define MLTPP_DECLSPEC
+#endif
+
 #include <framework/mlt.h>
 
 namespace Mlt
