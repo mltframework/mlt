@@ -27,6 +27,9 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <sys/types.h>
+#include <dirent.h>
+
 /* ---------------- // Private Implementation // ---------------- */
 
 /** Private implementation of the property list.
@@ -263,7 +266,6 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *p
 	}
 	return 0;
 }
-
 
 /** Locate a property by name
 */
@@ -753,6 +755,7 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 
 void mlt_properties_debug( mlt_properties this, const char *title, FILE *output )
 {
+	if ( output == NULL ) output = stderr;
 	fprintf( output, "%s: ", title );
 	if ( this != NULL )
 	{
@@ -767,6 +770,96 @@ void mlt_properties_debug( mlt_properties this, const char *title, FILE *output 
 		fprintf( output, " ]" );
 	}
 	fprintf( output, "\n" );
+}
+
+int mlt_properties_save( mlt_properties this, const char *filename )
+{
+	int error = 1;
+	FILE *f = fopen( filename, "w" );
+	if ( f != NULL )
+	{
+		mlt_properties_dump( this, f );
+		fclose( f );
+		error = 0;
+	}
+	return error;
+}
+
+/* This is a very basic cross platform fnmatch replacement - it will fail in
+** many cases, but for the basic *.XXX and YYY*.XXX, it will work ok.
+*/
+
+static int mlt_fnmatch( const char *wild, const char *file )
+{
+	int f = 0;
+	int w = 0;
+
+	while( f < strlen( file ) && w < strlen( wild ) )
+	{
+		if ( wild[ w ] == '*' )
+		{
+			w ++;
+			if ( w == strlen( wild ) )
+				f = strlen( file );
+			while ( f != strlen( file ) && tolower( file[ f ] ) != tolower( wild[ w ] ) )
+				f ++;
+		}
+		else if ( wild[ w ] == '?' || tolower( file[ f ] ) == tolower( wild[ w ] ) )
+		{
+			f ++;
+			w ++;
+		}
+		else if ( wild[ 0 ] == '*' )
+		{
+			w = 0;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
+	return strlen( file ) == f &&  strlen( wild ) == w;
+}
+
+static int mlt_compare( const void *this, const void *that )
+{
+	return strcmp( mlt_property_get_string( *( mlt_property * )this ), mlt_property_get_string( *( mlt_property * )that ) );
+}
+
+/* Obtains an optionally sorted list of the files found in a directory with a specific wild card.
+ * Entries in the list have a numeric name (running from 0 to count - 1). Only values change
+ * position if sort is enabled. Designed to be posix compatible (linux, os/x, mingw etc).
+ */
+
+int mlt_properties_dir_list( mlt_properties this, const char *dirname, const char *pattern, int sort )
+{
+	DIR *dir = opendir( dirname );
+
+	if ( dir )
+	{
+		char key[ 20 ];
+		struct dirent *de = readdir( dir );
+		char fullname[ 1024 ];
+		while( de != NULL )
+		{
+			sprintf( key, "%d", mlt_properties_count( this ) );
+			snprintf( fullname, 1024, "%s/%s", dirname, de->d_name );
+			if ( de->d_name[ 0 ] != '.' && mlt_fnmatch( pattern, de->d_name ) )
+				mlt_properties_set( this, key, fullname );
+			de = readdir( dir );
+		}
+
+		closedir( dir );
+	}
+
+	if ( sort && mlt_properties_count( this ) )
+	{
+		property_list *list = this->local;
+		qsort( list->value, mlt_properties_count( this ), sizeof( mlt_property ), mlt_compare );
+	}
+
+	return mlt_properties_count( this );
 }
 
 /** Close the list.

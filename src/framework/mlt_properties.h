@@ -72,6 +72,8 @@ extern int mlt_properties_rename( mlt_properties self, const char *source, const
 extern int mlt_properties_count( mlt_properties self );
 extern void mlt_properties_dump( mlt_properties self, FILE *output );
 extern void mlt_properties_debug( mlt_properties self, const char *title, FILE *output );
+extern int mlt_properties_save( mlt_properties, const char * );
+extern int mlt_properties_dir_list( mlt_properties, const char *, const char *, int );
 extern void mlt_properties_close( mlt_properties self );
 
 #endif
