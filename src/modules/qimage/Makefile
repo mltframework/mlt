@@ -1,12 +1,12 @@
 include ../../../config.mak
 include config.mak
 
-TARGET=../libmltqimage.so
+TARGET=../libmltqimage$(LIBSUF)
 
 OBJS=factory.o producer_qimage.o
 CPPOBJS=qimage_wrapper.o
 CFLAGS+=-I../../
-LDFLAGS+=-L../../framework $(QTLIBS) -lmlt -lstdc++
+LDFLAGS=-L../../framework $(QTLIBS) -lmlt -lstdc++
 CXXFLAGS+=$(CFLAGS) $(QTCXXFLAGS) -Wno-deprecated
 
 SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)
@@ -14,7 +14,7 @@ SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS) $(CPPOBJS)
-		$(CC) -shared -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $(QTCXXFLAGS) $^ 1>.depend

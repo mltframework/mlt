@@ -153,7 +153,10 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 		current_alpha = ( uint8_t * )mlt_pool_alloc( current_width * current_height );
 
 		// Convert the image
-		mlt_convert_bgr24a_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
+		if ( QImage::systemBitOrder( ) == QImage::BigEndian )
+			mlt_convert_argb_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
+		else
+			mlt_convert_bgr24a_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
 
 		assign_buffered_image( producer_props, current_image, current_alpha, current_width, current_height );
 	}
