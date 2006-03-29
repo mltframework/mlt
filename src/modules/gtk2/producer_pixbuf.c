@@ -410,6 +410,7 @@ static void producer_close( mlt_producer parent )
 {
 	producer_pixbuf this = parent->child;
 	mlt_pool_release( this->image );
+	mlt_pool_release( this->alpha );
 	parent->close = NULL;
 	mlt_producer_close( parent );
 	mlt_properties_close( this->filenames );
