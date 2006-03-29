@@ -1,0 +1,51 @@
+#!/bin/sh
+
+if [ "$help" = "1" ]
+then
+        cat << EOF
+QImage options:
+
+  --qimage-libdir         - Location of QT lib directory [/usr/lib/qt3]
+  --qimage-includedir     - Location of QT include directory [/usr/include/qt3]
+
+EOF
+else
+	targetos=$(uname -s)
+	case $targetos in
+    MINGW32*)
+        export LIBSUF=.dll
+        ;;
+	Darwin)
+		export LIBSUF=.dylib
+		;;
+	Linux)
+		export LIBSUF=.so
+		;;
+	*)
+		;;
+	esac
+
+	qimage_includedir=/usr/include/qt3
+	qimage_libdir=/usr/lib/qt3
+
+	[ "$QTDIR" != "" ] && qimage_libdir=$QTDIR
+
+	for i in "$@"
+	do
+		case $i in
+			--qimage-libdir=* )	qimage_libdir="${i#--qimage-libdir=}" ;;
+			--qimage-includedir=* )	qimage_includedir="${i#--qimage-includedir=}" ;;
+		esac
+	done
+
+	if [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
+	then
+		echo QTCXXFLAGS=-I$qimage_includedir > config.mak
+		echo QTLIBS=-lqt-mt >> config.mak
+		echo qimage		libmltqimage$LIBSUF >> ../producers.dat
+	else
+		echo "qimage: QT environment not found - disabling"
+		touch ../disable-qimage
+	fi
+
+fi
