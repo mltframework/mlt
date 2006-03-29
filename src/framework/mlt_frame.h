@@ -77,6 +77,7 @@ extern void mlt_frame_close( mlt_frame self );
 extern int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha );
 extern int mlt_convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv );
 extern int mlt_convert_bgr24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha );
+extern int mlt_convert_argb_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha );
 extern int mlt_convert_bgr24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv );
 extern int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int stride, uint8_t *yuv );
 extern uint8_t *mlt_frame_resize_yuv422( mlt_frame self, int owidth, int oheight );
