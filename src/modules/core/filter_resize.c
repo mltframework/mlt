@@ -110,7 +110,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		char *op = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "scale" );
 
 		// Correct field order if needed
-		if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 )
+		if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 || mlt_properties_get_int( properties, "meta.top_field_first" ) == 1 )
 		{
 			// Get the input image, width and height
 			int size;
