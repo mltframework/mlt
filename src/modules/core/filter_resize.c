@@ -27,6 +27,16 @@
 #include <stdlib.h>
 #include <math.h>
 
+/** Swapbytes inline.
+*/
+
+static inline void swap_bytes( uint8_t *upper, uint8_t *lower )
+{
+	uint8_t t = *lower;
+	*lower = *upper;
+	*upper = t;
+}
+
 /** Do it :-).
 */
 
@@ -115,22 +125,26 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			// Get the input image, width and height
 			int size;
 			uint8_t *image = mlt_properties_get_data( properties, "image", &size );
+			uint8_t *ptr = image + owidth * 2;
+			int h = oheight / 2;
+			int w = owidth;
 
-			// Keep the original image around to be destroyed on frame close
-			mlt_properties_rename( properties, "image", "original_image" );
-
-			// Duplicate the last line in the field to avoid artifact
-			memcpy( image + oheight * owidth * 2, image + oheight * owidth * 2 - owidth * 4, owidth * 2 );
-
-			// Offset the image pointer by one line
-			image += owidth * 2;
-			size -= owidth * 2;
-			
-			// Set the new image pointer with no destructor
-			mlt_properties_set_data( properties, "image", image, size, NULL, NULL );
+			// Swap the lines around
+			while( h -- )
+			{
+				w = owidth;
+				while( w -- )
+				{
+					swap_bytes( image ++, ptr ++ );
+					swap_bytes( image ++, ptr ++ );
+				}
+				image += owidth * 2;
+				ptr += owidth * 2;
+			}
 
 			// Set the normalised field order
 			mlt_properties_set_int( properties, "top_field_first", 0 );
+			mlt_properties_set_int( properties, "meta.top_field_first", 0 );
 		}
 
 		if ( !strcmp( op, "affine" ) )
