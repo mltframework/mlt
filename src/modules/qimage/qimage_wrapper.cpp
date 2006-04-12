@@ -153,7 +153,7 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 		current_alpha = ( uint8_t * )mlt_pool_alloc( current_width * current_height );
 
 		// Convert the image
-		if ( QImage::systemBitOrder( ) == QImage::BigEndian )
+		if ( QImage::systemByteOrder( ) == QImage::BigEndian )
 			mlt_convert_argb_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
 		else
 			mlt_convert_bgr24a_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
