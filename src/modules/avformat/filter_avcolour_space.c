@@ -28,6 +28,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static inline int is_big_endian( )
+{
+	union { int i; char c[ 4 ]; } big_endian_test;
+	big_endian_test.i = 1;
+
+	return big_endian_test.c[ 0 ] != 1;
+}
+
 static inline int convert_mlt_to_av_cs( mlt_image_format format )
 {
 	int value = 0;
@@ -96,10 +104,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			register uint8_t *bits = *image;
 			register int n = ( len + 7 ) / 8;
 
-			// TODO: Proper check for big endian systems
-			#ifndef __DARWIN__
-			bits += 3;
-			#endif
+			if( !is_big_endian( ) )
+				bits += 3;
 
 			// Extract alpha mask from the image using Duff's Device
 			switch( len % 8 )
@@ -134,11 +140,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				register uint8_t *bits = *image;
 				register int len = *width * *height;
 				register int n = ( len + 7 ) / 8;
-
-				// TODO: Proper check for big endian systems
-				#ifndef __DARWIN__
-				bits += 3;
-				#endif
+				
+				if( !is_big_endian( ) )
+					bits += 3;
 
 				// Merge the alpha mask into the RGB image using Duff's Device
 				switch( len % 8 )
