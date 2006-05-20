@@ -856,7 +856,7 @@ int QtHandler::Close()
 off_t QtHandler::GetFileSize()
 {
 	struct stat file_status;
-	fstat( fileno( fd->stream ), &file_status );
+	stat( filename.c_str(), &file_status );
 	return file_status.st_size;
 }
 
