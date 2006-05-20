@@ -28,7 +28,11 @@ else
 	qimage_includedir=/usr/include/qt3
 	qimage_libdir=/usr/lib/qt3
 
-	[ "$QTDIR" != "" ] && qimage_libdir=$QTDIR
+	if [ "$QTDIR" != "" ]
+	then
+		qimage_includedir="$QTDIR/include"
+		qimage_libdir="$QTDIR"
+	fi
 
 	for i in "$@"
 	do
