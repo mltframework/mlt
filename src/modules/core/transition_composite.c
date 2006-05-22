@@ -747,7 +747,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		// ????: Shouln't this be the default behaviour?
 		if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
 		{
-			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height < normalised_width )
+			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height <= normalised_width )
 			{
 				scaled_width = rint( 0.5 + scaled_width * normalised_height / scaled_height );
 				scaled_height = normalised_height;
