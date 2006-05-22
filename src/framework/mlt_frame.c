@@ -529,6 +529,41 @@ void mlt_frame_close( mlt_frame this )
 
 /***** convenience functions *****/
 
+int mlt_convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, unsigned int total )
+{
+	int ret = 0;
+	int yy, uu, vv, ug_plus_vg, ub, vr;
+      	int r,g,b;
+	total /= 2;
+	while (total--) 
+	{
+		yy = yuv[0] << 8;
+		uu = yuv[1] - 128;
+		vv = yuv[3] - 128;
+		ug_plus_vg = uu * 88 + vv * 183;
+		ub = uu * 454;
+		vr = vv * 359;
+		r = (yy + vr) >> 8;
+		g = (yy - ug_plus_vg) >> 8;
+		b = (yy + ub) >> 8;
+		rgba[0] = r < 0 ? 0 : (r > 255 ? 255 : (unsigned char)r);
+		rgba[1] = g < 0 ? 0 : (g > 255 ? 255 : (unsigned char)g);
+		rgba[2] = b < 0 ? 0 : (b > 255 ? 255 : (unsigned char)b);
+		rgba[3] = 255;
+		yy = yuv[2] << 8;
+		r = (yy + vr) >> 8;
+		g = (yy - ug_plus_vg) >> 8;
+		b = (yy + ub) >> 8;
+		rgba[4] = r < 0 ? 0 : (r > 255 ? 255 : (unsigned char)r);
+		rgba[5] = g < 0 ? 0 : (g > 255 ? 255 : (unsigned char)g);
+		rgba[6] = b < 0 ? 0 : (b > 255 ? 255 : (unsigned char)b);
+		rgba[7] = 255;
+		yuv += 4;
+		rgba += 8;
+	}
+	return ret;
+}
+
 int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha )
 {
 	int ret = 0;
