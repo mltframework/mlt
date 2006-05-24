@@ -92,24 +92,44 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// The fault is not in the design of mlt, but in the implementation of the qimage producer...
 	if ( *buffer != NULL )
 	{
-		// Clone the image and the alpha
-		uint8_t *image_copy = mlt_pool_alloc( image_size );
-		uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
+		if ( *format == mlt_image_yuv422 || *format == mlt_image_yuv420p )
+		{
+			// Clone the image and the alpha
+			uint8_t *image_copy = mlt_pool_alloc( image_size );
+			uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
 
-		memcpy( image_copy, *buffer, image_size );
+			memcpy( image_copy, *buffer, image_size );
 
-		// Copy or default the alpha
-		if ( alpha != NULL )
-			memcpy( alpha_copy, alpha, alpha_size );
-		else
-			memset( alpha_copy, 255, alpha_size );
+			// Copy or default the alpha
+			if ( alpha != NULL )
+				memcpy( alpha_copy, alpha, alpha_size );
+			else
+				memset( alpha_copy, 255, alpha_size );
 
-		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
+			// Now update properties so we free the copy after
+			mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+			mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
 
-		// We're going to pass the copy on
-		*buffer = image_copy;
+			// We're going to pass the copy on
+			*buffer = image_copy;
+		}
+		else if ( *format == mlt_image_rgb24a )
+		{
+			// Clone the image and the alpha
+			image_size = *width * ( *height + 1 ) * 4;
+			alpha_size = *width * ( *height + 1 );
+			uint8_t *image_copy = mlt_pool_alloc( image_size );
+			uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
+
+			mlt_convert_yuv422_to_rgb24a(*buffer, image_copy, (*width)*(*height));
+
+			// Now update properties so we free the copy after
+			mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+			mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
+
+			// We're going to pass the copy on
+			*buffer = image_copy;
+		}
 	}
 	else
 	{
