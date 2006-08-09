@@ -1,0 +1,3 @@
+2006-08-08 Dan Dennedy <dan@dennedy.org>
+	convert --avformat-cvs to svn and rename option as --avformat-svn (--avformat-cvs is an undocumented alias). 
+
