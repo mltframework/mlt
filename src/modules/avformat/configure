@@ -6,7 +6,7 @@ then
 	cat << EOF
 FFMPEG/avformat options:
 
-  --avformat-cvs          - Obtain ffmpeg from CVS
+  --avformat-svn          - Obtain ffmpeg from Subversion
   --avformat-shared=path  - Link against a shared installation of ffmpeg (default)
   --avformat-static=path  - Link against a static ffmpeg dev tree
   --avformat-ldextra=libs - Provide additional libs to link with
@@ -42,7 +42,7 @@ else
 	export static_ffmpeg=
 	export shared_ffmpeg=`which ffmpeg`
 	export extra_libs=
-	export cvs_ffmpeg=
+	export svn_ffmpeg=
 	export avformat_suffix=
 
 	if [ "$shared_ffmpeg" != "" -a -f "$shared_ffmpeg" ]
@@ -59,19 +59,19 @@ else
 			--avformat-static=* )	static_ffmpeg="${i#--avformat-static=}" ;;
 			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
 			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
-			--avformat-cvs )		cvs_ffmpeg=true ;;
+			--avformat-svn )		svn_ffmpeg=true ;;
+			--avformat-cvs )		svn_ffmpeg=true ;;
 			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
 		esac
 	done
 
-	if [ "$cvs_ffmpeg" != "" ]
+	if [ "$svn_ffmpeg" != "" ]
 	then
 		[ ! -d "ffmpeg" ] && ( 
 			echo
 			echo "Checking out ffmpeg/avformat - no password required"
 			echo
-			cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg login
-			cvs -z9 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/ffmpeg co ffmpeg
+			svn checkout svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
 		)
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure --enable-shared --build-suffix="$avformat_suffix" )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
@@ -98,7 +98,7 @@ else
 			echo "LDFLAGS+=-L$shared_ffmpeg/$LIBDIR" >> config.mak
 		else
 			echo "avformat: No build environment found. "
-			echo "          Try configuring mlt with --avformat-cvs."
+			echo "          Try configuring mlt with --avformat-svn."
 			touch ../disable-avformat
 			exit 0
 		fi
