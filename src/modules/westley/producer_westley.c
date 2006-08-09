@@ -433,6 +433,44 @@ static void on_start_producer( deserialise_context context, const xmlChar *name,
 		mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 }
 
+// Parse a SMIL clock value (as produced by Kino 0.9.1) and return position in frames
+static mlt_position parse_clock_value( char *value, double fps )
+{
+	// This implementation expects a fully specified clock value - no optional
+	// parts (e.g. 1:05)
+	char *pos, *copy = strdup( value );
+	int hh, mm, ss, ms;
+	mlt_position result = -1;
+
+	value = copy;
+	pos = strchr( value, ':' );
+	if ( !pos )
+		return result;
+	*pos = '\0';
+	hh = atoi( value );
+	value = pos + 1;
+
+	pos = strchr( value, ':' );
+	if ( !pos )
+		return result;
+	*pos = '\0';
+	mm = atoi( value );
+	value = pos + 1;
+	
+	pos = strchr( value, '.' );
+	if ( !pos )
+		return result;
+	*pos = '\0';
+	ss = atoi( value );
+	value = pos + 1;
+	
+	ms = atoi( value );
+	free( copy );
+	result = ( fps * ( ( (hh * 3600) + (mm * 60) + ss ) * 1000  + ms ) / 1000 + 0.5 );
+	
+	return result;
+}
+
 static void on_end_producer( deserialise_context context, const xmlChar *name )
 {
 	enum service_type type;
@@ -495,14 +533,29 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 			in = mlt_properties_get_position( properties, "in" );
 		// Let Kino-SMIL clipBegin be a synonym for in
 		if ( mlt_properties_get( properties, "clipBegin" ) != NULL )
-			in = mlt_properties_get_position( properties, "clipBegin" );
+		{
+			if ( strchr( mlt_properties_get( properties, "clipBegin" ), ':' ) )
+				// Parse clock value
+				in = parse_clock_value( mlt_properties_get( properties, "clipBegin" ),
+					mlt_properties_get_double( mlt_producer_properties( MLT_PRODUCER( producer ) ), "fps" ) );
+			else
+				// Parse frames value
+				in = mlt_properties_get_position( properties, "clipBegin" );
+		}
 		// Get out
 		if ( mlt_properties_get( properties, "out" ) != NULL )
 			out = mlt_properties_get_position( properties, "out" );
 		// Let Kino-SMIL clipEnd be a synonym for out
 		if ( mlt_properties_get( properties, "clipEnd" ) != NULL )
-			out = mlt_properties_get_position( properties, "clipEnd" );
-	
+		{
+			if ( strchr( mlt_properties_get( properties, "clipEnd" ), ':' ) )
+				// Parse clock value
+				out = parse_clock_value( mlt_properties_get( properties, "clipEnd" ),
+					mlt_properties_get_double( mlt_producer_properties( MLT_PRODUCER( producer ) ), "fps" ) );
+			else
+				// Parse frames value
+				out = mlt_properties_get_position( properties, "clipEnd" );
+		}
 		// Remove in and out
 		mlt_properties_set( properties, "in", NULL );
 		mlt_properties_set( properties, "out", NULL );
