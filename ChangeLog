@@ -1,3 +1,6 @@
 2006-08-08 Dan Dennedy <dan@dennedy.org>
+	enhance producer_westley to parse Kino 0.9.1 SMIL (clock) time values. 
+
+2006-08-08 Dan Dennedy <dan@dennedy.org>
 	convert --avformat-cvs to svn and rename option as --avformat-svn (--avformat-cvs is an undocumented alias). 
 
