@@ -30,9 +30,12 @@ static inline int in_range( uint8_t v, uint8_t c, int var )
 	return ( ( int )v >= c - var ) && ( ( int )v <= c + var );
 }
 
-static inline uint8_t alpha_value( uint8_t a, uint8_t *p, uint8_t u, uint8_t v, int var )
+static inline uint8_t alpha_value( uint8_t a, uint8_t *p, uint8_t u, uint8_t v, int var, int odd )
 {
-	return ( in_range( *( p + 1 ), u, var ) && in_range( *( p + 3 ), v, var ) ) ? 0 : a;
+	if ( odd == 0 )
+		return ( in_range( *( p + 1 ), u, var ) && in_range( *( p + 3 ), v, var ) ) ? 0 : a;
+	else
+		return ( in_range( ( *( p + 1 ) + *( p + 5 ) ) / 2, u, var ) && in_range( ( *( p + 3 ) + *( p + 7 ) ) / 2, v, var ) ) ? 0 : a;
 }
 
 /** Get the images and map the chroma to the alpha of the frame.
@@ -58,18 +61,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		int size = *width * *height / 2;
 		while ( size -- )
 		{
-			alpha = alpha_value( 255, p, u, v, variance );
-			p ++;
+			alpha = alpha_value( 255, p, u, v, variance, 0 );
 			if ( alpha ) 
-				*p ++ = 128;
-			else
-				p ++;
-			alpha = alpha_value( 255, p, v, u, variance );
-			p ++;
+				*( p + 1 )= 128;
+			alpha = alpha_value( 255, p, u, v, variance, 1 );
 			if ( alpha ) 
-				*p ++ = 128;
-			else
-				p ++;
+				*( p + 3 ) = 128;
+			p += 4;
 		}
 	}
 
@@ -95,7 +93,7 @@ mlt_filter filter_chroma_hold_init( char *arg )
 	if ( this != NULL )
 	{
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "0xc00000" : arg );
-		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "variance", 0.3 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "variance", 0.15 );
 		this->process = filter_process;
 	}
 	return this;
