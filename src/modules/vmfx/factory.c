@@ -22,6 +22,7 @@
 
 #include "filter_chroma.h"
 #include "filter_chroma_hold.h"
+#include "filter_mono.h"
 #include "filter_shape.h"
 #include "producer_pgm.h"
 
@@ -38,6 +39,8 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_chroma_init( arg );
 	if ( !strcmp( id, "chroma_hold" ) )
 		return filter_chroma_hold_init( arg );
+	if ( !strcmp( id, "mono" ) )
+		return filter_mono_init( arg );
 	if ( !strcmp( id, "shape" ) )
 		return filter_shape_init( arg );
 	return NULL;
