@@ -47,9 +47,11 @@ static void clear_buffered_image( mlt_properties producer_props, uint8_t **curre
 
 static void assign_buffered_image( mlt_properties producer_props, uint8_t *current_image, uint8_t *current_alpha, int width, int height )
 {
+	int use_cache = mlt_properties_get_int( producer_props, "cache" );
+	mlt_destructor destructor = use_cache ? NULL : mlt_pool_release;
 	mlt_events_block( producer_props, NULL );
-	mlt_properties_set_data( producer_props, "_qimage_image", current_image, 0, mlt_pool_release, NULL );
-	mlt_properties_set_data( producer_props, "_qimage_alpha", current_alpha, 0, mlt_pool_release, NULL );
+	mlt_properties_set_data( producer_props, "_qimage_image", current_image, 0, destructor, NULL );
+	mlt_properties_set_data( producer_props, "_qimage_alpha", current_alpha, 0, destructor, NULL );
 	mlt_properties_set_int( producer_props, "_qimage_width", width );
 	mlt_properties_set_int( producer_props, "_qimage_height", height );
 	mlt_events_unblock( producer_props, NULL );
@@ -72,6 +74,11 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
+	// Obtain the cache flag and structure
+	int use_cache = mlt_properties_get_int( producer_props, "cache" );
+	mlt_properties cache = ( mlt_properties )mlt_properties_get_data( producer_props, "_cache", NULL );
+	int update_cache = 0;
+
 	// Retrieve current info if available
 	uint8_t *current_image = ( uint8_t * )mlt_properties_get_data( producer_props, "_qimage_image", NULL );
 	uint8_t *current_alpha = ( uint8_t * )mlt_properties_get_data( producer_props, "_qimage_alpha", NULL );
@@ -86,6 +93,39 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 
 	// Image index
 	int image_idx = ( int )floor( ( double )position / ttl ) % self->count;
+
+	// Key for the cache
+	char image_key[ 10 ];
+	sprintf( image_key, "%d", image_idx );
+
+	// Check if the frame is already loaded
+	if ( use_cache )
+	{
+		if ( cache == NULL )
+		{
+			cache = mlt_properties_new( );
+			mlt_properties_set_data( producer_props, "_cache", cache, 0, ( mlt_destructor )mlt_properties_close, NULL );
+		}
+
+		mlt_frame cached = ( mlt_frame )mlt_properties_get_data( cache, image_key, NULL );
+
+		if ( cached )
+		{
+			self->image_idx = image_idx;
+			mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
+			current_width = mlt_properties_get_int( cached_props, "width" );
+			current_height = mlt_properties_get_int( cached_props, "height" );
+			mlt_properties_set_int( producer_props, "_real_width", mlt_properties_get_int( cached_props, "real_width" ) );
+			mlt_properties_set_int( producer_props, "_real_height", mlt_properties_get_int( cached_props, "real_height" ) );
+			current_image = ( uint8_t * )mlt_properties_get_data( cached_props, "image", NULL );
+			current_alpha = ( uint8_t * )mlt_properties_get_data( cached_props, "alpha", NULL );
+
+			if ( width != 0 && ( width != current_width || height != current_height ) )
+				current_image = NULL;
+
+			assign_buffered_image( producer_props, current_image, current_alpha, current_width, current_height );
+		}
+	}
 
     // optimization for subsequent iterations on single picture
 	if ( width != 0 && current_image != NULL && image_idx == self->image_idx )
@@ -159,6 +199,9 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 			mlt_convert_bgr24a_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
 
 		assign_buffered_image( producer_props, current_image, current_alpha, current_width, current_height );
+
+		// Ensure we update the cache when we need to
+		update_cache = use_cache;
 	}
 
 	// Set width/height of frame
@@ -170,6 +213,19 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 	// pass the image data without destructor
 	mlt_properties_set_data( properties, "image", current_image, current_width * ( current_height + 1 ) * 2, NULL, NULL );
 	mlt_properties_set_data( properties, "alpha", current_alpha, current_width * current_height, NULL, NULL );
+
+	if ( update_cache )
+	{
+		mlt_frame cached = mlt_frame_init( );
+		mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
+		mlt_properties_set_int( cached_props, "width", current_width );
+		mlt_properties_set_int( cached_props, "height", current_height );
+		mlt_properties_set_int( cached_props, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
+		mlt_properties_set_int( cached_props, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
+		mlt_properties_set_data( cached_props, "image", current_image, current_width * ( current_height + 1 ) * 2, mlt_pool_release, NULL );
+		mlt_properties_set_data( cached_props, "alpha", current_alpha, current_width * current_height, mlt_pool_release, NULL );
+		mlt_properties_set_data( cache, image_key, cached, 0, ( mlt_destructor )mlt_frame_close, NULL );
+	}
 }
 
 }
