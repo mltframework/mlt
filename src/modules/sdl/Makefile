@@ -12,6 +12,8 @@ OBJS = factory.o \
 ifeq ($(targetos),Darwin)
 	CFLAGS +=-ObjC
 	LDFLAGS +=-lobjc -framework Foundation
+else
+	LDFLAGS +=-lX11
 endif
 
 CFLAGS +=-I../.. `sdl-config --cflags`

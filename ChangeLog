@@ -1,3 +1,7 @@
+2006-09-25 Dan Dennedy <dan@dennedy.org>
+	- src/modules/sdl/Makefile: fix compilation on some systems using
+	  modular x.org.
+
 2006-08-08 Dan Dennedy <dan@dennedy.org>
 	enhance producer_westley to parse Kino 0.9.1 SMIL (clock) time values. 
 
