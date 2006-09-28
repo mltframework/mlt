@@ -1,3 +1,11 @@
+2006-09-28 Zachary Drew <zachary.drew@gmail.com>
+	applied audio frequency and audio channels initialization patch from Jean-Baptiste
+
+2006-09-27 Zachary Drew <zachary.drew@gmail.com>
+	applied amd64 patch from gentoo folks to fix compilation of motion_est
+	on amd64 (thanks for the heads-up Jean-Michel)
+
+
 2006-09-25 Dan Dennedy <dan@dennedy.org>
 	- src/modules/sdl/Makefile: fix compilation on some systems using
 	  modular x.org.
