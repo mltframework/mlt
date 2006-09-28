@@ -478,6 +478,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_double( properties, "aspect_ratio", 
 				dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
 	
+
+		mlt_properties_set_int( properties, "frequency", dv_decoder->audio->frequency );
+		mlt_properties_set_int( properties, "channels", dv_decoder->audio->num_channels );
+
 		// Hmm - register audio callback
 		mlt_frame_push_audio( *frame, producer_get_audio );
 	

@@ -957,6 +957,8 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 		{
 			mlt_frame_push_audio( frame, producer_get_audio );
 			mlt_properties_set_data( frame_properties, "avformat_producer", this, 0, NULL, NULL );
+			mlt_properties_set_int( frame_properties, "frequency", codec_context->sample_rate );
+			mlt_properties_set_int( frame_properties, "channels", codec_context->channels );
 		}
 	}
 }
