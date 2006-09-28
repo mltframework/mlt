@@ -160,7 +160,7 @@ inline static int constrain(	int *x, int *y, int *w,	int *h,
 /** /brief Reference Sum of Absolute Differences comparison function
 *
 */
-inline static int sad_reference( uint8_t *block1, uint8_t *block2, const int xstride, const int ystride, const int w, const int h )
+static int sad_reference( uint8_t *block1, uint8_t *block2, const int xstride, const int ystride, const int w, const int h )
 {
 	int i, j, score = 0;
 	for ( j = 0; j < h; j++ ){

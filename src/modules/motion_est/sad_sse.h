@@ -41,7 +41,7 @@ inline static int sad_sse_4x4( uint8_t *block1, uint8_t *block2, int xstride, in
 	SAD_SSE_INIT
 	#define ROW	SAD_SSE_SUM_8(0) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -55,7 +55,7 @@ inline static int sad_sse_8x8( uint8_t *block1, uint8_t *block2, int xstride, in
 	SAD_SSE_INIT
 	#define ROW	SAD_SSE_SUM_8(0) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -70,7 +70,7 @@ inline static int sad_sse_16x16( uint8_t *block1, uint8_t *block2, int xstride, 
 	#define ROW	SAD_SSE_SUM_8(0) SAD_SSE_SUM_8(8) SAD_SSE_NEXTROW
 	asm volatile (	ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -89,7 +89,7 @@ inline static int sad_sse_32x32( uint8_t *block1, uint8_t *block2, int xstride, 
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -219,8 +219,8 @@ inline static int sad_sse_64w( uint8_t *block1, uint8_t *block2, int xstride, in
 static __attribute__((used)) __attribute__((aligned(8))) uint64_t sad_sse_422_mask_chroma = 0x00ff00ff00ff00ffULL;
 
 #define SAD_SSE_422_LUMA_INIT \
-	asm volatile (  "movq sad_sse_422_mask_chroma,%%mm7\n\t"\
-			"pxor %%mm6,%%mm6\n\t" ::  );\
+	asm volatile (  "movq %0,%%mm7\n\t"\
+			"pxor %%mm6,%%mm6\n\t" :: "m" (sad_sse_422_mask_chroma) );\
 
 // Sum two 4x1 pixel blocks
 #define SAD_SSE_422_LUMA_SUM_4(OFFSET) \
@@ -231,13 +231,13 @@ static __attribute__((used)) __attribute__((aligned(8))) uint64_t sad_sse_422_ma
 			"psadbw %%mm1,%%mm0			\n\t"\
 			"paddw %%mm0,%%mm6			\n\t"\
 
-inline static int sad_sse_422_luma_4x4( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_4x4( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 	SAD_SSE_422_LUMA_INIT
 	#define ROW	SAD_SSE_422_LUMA_SUM_4(0) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -245,13 +245,13 @@ inline static int sad_sse_422_luma_4x4( uint8_t *block1, uint8_t *block2, int xs
 
 }
 
-inline static int sad_sse_422_luma_8x8( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_8x8( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 	SAD_SSE_422_LUMA_INIT
 	#define ROW	SAD_SSE_422_LUMA_SUM_4(0) SAD_SSE_422_LUMA_SUM_4(8) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -259,14 +259,14 @@ inline static int sad_sse_422_luma_8x8( uint8_t *block1, uint8_t *block2, int xs
 
 }
 
-inline static int sad_sse_422_luma_16x16( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_16x16( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 	SAD_SSE_422_LUMA_INIT
 	#define ROW	SAD_SSE_422_LUMA_SUM_4(0) SAD_SSE_422_LUMA_SUM_4(8) SAD_SSE_422_LUMA_SUM_4(16) SAD_SSE_422_LUMA_SUM_4(24) SAD_SSE_NEXTROW
 	asm volatile (	ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -274,7 +274,7 @@ inline static int sad_sse_422_luma_16x16( uint8_t *block1, uint8_t *block2, int 
 
 }
 
-inline static int sad_sse_422_luma_32x32( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_32x32( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 	SAD_SSE_422_LUMA_INIT
@@ -286,7 +286,7 @@ inline static int sad_sse_422_luma_32x32( uint8_t *block1, uint8_t *block2, int 
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" (ystride));
+			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -294,7 +294,7 @@ inline static int sad_sse_422_luma_32x32( uint8_t *block1, uint8_t *block2, int 
 
 }
 
-inline static int sad_sse_422_luma_4w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_4w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 
@@ -315,7 +315,7 @@ inline static int sad_sse_422_luma_4w( uint8_t *block1, uint8_t *block2, int xst
 
 }
 
-inline static int sad_sse_422_luma_8w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_8w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 
@@ -338,7 +338,7 @@ inline static int sad_sse_422_luma_8w( uint8_t *block1, uint8_t *block2, int xst
 
 }
 
-inline static int sad_sse_422_luma_16w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_16w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 
@@ -363,7 +363,7 @@ inline static int sad_sse_422_luma_16w( uint8_t *block1, uint8_t *block2, int xs
 
 }
 
-inline static int sad_sse_422_luma_32w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_32w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 
@@ -392,7 +392,7 @@ inline static int sad_sse_422_luma_32w( uint8_t *block1, uint8_t *block2, int xs
 
 }
 
-inline static int sad_sse_422_luma_64w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
+static int sad_sse_422_luma_64w( uint8_t *block1, uint8_t *block2, int xstride, int ystride, int w, int h )
 {
 	int result; 
 
