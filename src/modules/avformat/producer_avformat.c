@@ -242,8 +242,7 @@ static int producer_open( mlt_producer this, char *file )
 	}
 
 	// Now attempt to open the file
-	error = av_open_input_file( &context, file, format, 0, params );
-	error = error < 0;
+	error = av_open_input_file( &context, file, format, 0, params ) < 0;
 	
 	// Cleanup AVFormatParameters
 	free( standard );
@@ -511,13 +510,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		if ( !strcmp( codec_context->codec->name, "mjpeg" ) )
 			must_decode = 0;
 
-		memset( &pkt, 0, sizeof( pkt ) );
+		av_init_packet( &pkt );
 
 		// Construct an AVFrame for YUV422 conversion
 		if ( av_frame == NULL )
 		{
-			av_frame = calloc( 1, sizeof( AVFrame ) );
-			mlt_properties_set_data( properties, "av_frame", av_frame, 0, free, NULL );
+			av_frame = avcodec_alloc_frame( );
+			mlt_properties_set_data( properties, "av_frame", av_frame, 0, av_free, NULL );
 		}
 
 		while( ret >= 0 && !got_picture )
@@ -557,30 +556,30 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				}
 			}
 
+			// Now handle the picture if we have one
+			if ( got_picture )
+			{
+				mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
+				mlt_properties_set_int( frame_properties, "top_field_first", av_frame->top_field_first );
+
+				convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
+
+				mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
+
+				if ( current_time == 0 && source_fps != 0 )
+				{
+					double fps = mlt_properties_get_double( properties, "fps" );
+					current_time = ceil( source_fps * ( double )position / fps ) * ( 1 / source_fps );
+					mlt_properties_set_double( properties, "_current_time", current_time );
+				}
+				else
+				{
+					mlt_properties_set_double( properties, "_current_time", current_time );
+				}
+			}
+
 			// We're finished with this packet regardless
 			av_free_packet( &pkt );
-		}
-
-		// Now handle the picture if we have one
-		if ( got_picture )
-		{
-			mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
-			mlt_properties_set_int( frame_properties, "top_field_first", av_frame->top_field_first );
-
-			convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
-
-			mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
-
-			if ( current_time == 0 && source_fps != 0 )
-			{
-				double fps = mlt_properties_get_double( properties, "fps" );
-				current_time = ceil( source_fps * ( double )position / fps ) * ( 1 / source_fps );
-				mlt_properties_set_double( properties, "_current_time", current_time );
-			}
-			else
-			{
-				mlt_properties_set_double( properties, "_current_time", current_time );
-			}
 		}
 	}
 	
@@ -805,7 +804,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		int got_audio = 0;
 		int16_t *temp = mlt_pool_alloc( sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE );
 
-		memset( &pkt, 0, sizeof( pkt ) );
+		av_init_packet( &pkt );
 
 		while( ret >= 0 && !got_audio )
 		{
