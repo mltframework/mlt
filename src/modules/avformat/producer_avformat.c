@@ -467,7 +467,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Seek if necessary
 	if ( position != expected )
 	{
-		if ( position + 1 == expected )
+		if ( av_frame != NULL && position + 1 == expected )
 		{
 			// We're paused - use last image
 			paused = 1;
@@ -490,9 +490,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		}
 	}
 	
-	// Duplicate the last image if necessary
-	if ( av_frame != NULL && ( paused || mlt_properties_get_double( properties, "_current_time" ) >= real_timecode ) &&
-		 av_bypass == 0 )
+	// Duplicate the last image if necessary (see comment on rawvideo below)
+	if ( av_frame != NULL && ( paused || mlt_properties_get_double( properties, "_current_time" ) >= real_timecode ) && av_bypass == 0 )
 	{
 		// Duplicate it
 		convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
@@ -507,7 +506,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		int must_decode = 1;
 
 		// Temporary hack to improve intra frame only
-		if ( !strcmp( codec_context->codec->name, "mjpeg" ) )
+		if ( !strcmp( codec_context->codec->name, "mjpeg" ) || !strcmp( codec_context->codec->name, "rawvideo" ) )
 			must_decode = 0;
 
 		av_init_packet( &pkt );
@@ -582,10 +581,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			av_free_packet( &pkt );
 		}
 	}
-	
+
+	// Very untidy - for rawvideo, the packet contains the frame, hence the free packet
+	// above will break the pause behaviour - so we wipe the frame now
+	if ( !strcmp( codec_context->codec->name, "rawvideo" ) )
+		mlt_properties_set_data( properties, "av_frame", NULL, 0, NULL, NULL );
+
 	// Set the field order property for this frame
-	mlt_properties_set_int( frame_properties, "top_field_first", 
-		mlt_properties_get_int( properties, "top_field_first" ) );
+	mlt_properties_set_int( frame_properties, "top_field_first", mlt_properties_get_int( properties, "top_field_first" ) );
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
 	mlt_properties_set_position( properties, "_video_expected", position + 1 );
