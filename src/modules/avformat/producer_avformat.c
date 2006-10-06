@@ -91,6 +91,9 @@ static void find_default_streams( AVFormatContext *context, int *audio_index, in
 		// Get the codec context
    		AVCodecContext *codec_context = context->streams[ i ]->codec;
 
+		if ( avcodec_find_decoder( codec_context->codec_id ) == NULL )
+			continue;
+
 		// Determine the type and obtain the first index of each type
    		switch( codec_context->codec_type ) 
 		{
@@ -286,6 +289,7 @@ static int producer_open( mlt_producer this, char *file )
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "audio_index", audio_index );
 			mlt_properties_set_int( properties, "video_index", video_index );
+			mlt_properties_set_int( properties, "_last_position", -1 );
 
 			// Fetch the width, height and aspect ratio
 			if ( video_index != -1 )
@@ -301,6 +305,7 @@ static int producer_open( mlt_producer this, char *file )
 			{
 				// We'll use the open one as our video_context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
+				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
 
 				// And open again for our audio context
 				av_open_input_file( &context, file, NULL, 0, NULL );
@@ -313,6 +318,7 @@ static int producer_open( mlt_producer this, char *file )
 			{
 				// We only have a video context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
+				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
 			}
 			else if ( audio_index != -1 )
 			{
@@ -425,10 +431,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int ignore = 0;
 
 	// Current time calcs
-	double current_time = mlt_properties_get_double( properties, "_current_time" );
+	int current_position = mlt_properties_get_double( properties, "_current_position" );
 
 	// We may want to use the source fps if available
 	double source_fps = mlt_properties_get_double( properties, "source_fps" );
+	double fps = mlt_properties_get_double( properties, "fps" );
+
+	// This is the physical frame position in the source
+	int req_position = ( int )( position / fps * source_fps );
 
 	// Get the seekable status
 	int seekable = mlt_properties_get_int( properties, "seekable" );
@@ -438,6 +448,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Hopefully provide better support for streams...
 	int av_bypass = mlt_properties_get_int( properties, "av_bypass" );
+
+	// Determines if we have to decode all frames in a sequence
+	int must_decode = 1;
 
 	// Set the result arguments that we know here (only *buffer is now required)
 	*width = codec_context->width;
@@ -464,6 +477,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Construct the output image
 	*buffer = mlt_pool_alloc( size );
 
+	// Temporary hack to improve intra frame only
+	must_decode = strcmp( codec_context->codec->name, "mjpeg" ) &&
+				  strcmp( codec_context->codec->name, "rawvideo" ) &&
+				  strcmp( codec_context->codec->name, "dvvideo" );
+
 	// Seek if necessary
 	if ( position != expected )
 	{
@@ -475,23 +493,32 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else if ( !seekable && position > expected && ( position - expected ) < 250 )
 		{
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
-			ignore = position - expected;
+			ignore = ( int )( ( position - expected ) / fps * source_fps );
 		}
 		else if ( seekable && ( position < expected || position - expected >= 12 ) )
 		{
-			// Set to the real timecode
-			av_seek_frame( context, -1, mlt_properties_get_double( properties, "_start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD );
+			// Calculate the timestamp for the requested frame
+			int64_t timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE );
+			if ( ( uint64_t )context->start_time != AV_NOPTS_VALUE )
+				timestamp += context->start_time;
+			if ( must_decode )
+				timestamp -= AV_TIME_BASE;
+			if ( timestamp < 0 )
+				timestamp = 0;
+
+			// Set to the timestamp
+			av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD );
 	
 			// Remove the cached info relating to the previous position
-			mlt_properties_set_double( properties, "_current_time", real_timecode );
-
+			mlt_properties_set_int( properties, "_current_position", -1 );
+			mlt_properties_set_int( properties, "_last_position", -1 );
 			mlt_properties_set_data( properties, "av_frame", NULL, 0, NULL, NULL );
 			av_frame = NULL;
 		}
 	}
-	
+
 	// Duplicate the last image if necessary (see comment on rawvideo below)
-	if ( av_frame != NULL && ( paused || mlt_properties_get_double( properties, "_current_time" ) >= real_timecode ) && av_bypass == 0 )
+	if ( av_frame != NULL && ( paused || mlt_properties_get_int( properties, "_current_position" ) >= req_position ) && av_bypass == 0 )
 	{
 		// Duplicate it
 		convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
@@ -503,11 +530,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		int ret = 0;
 		int got_picture = 0;
-		int must_decode = 1;
-
-		// Temporary hack to improve intra frame only
-		if ( !strcmp( codec_context->codec->name, "mjpeg" ) || !strcmp( codec_context->codec->name, "rawvideo" ) )
-			must_decode = 0;
+		int int_position = 0;
 
 		av_init_packet( &pkt );
 
@@ -527,24 +550,28 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
 				// Determine time code of the packet
-				if ( pkt.dts != AV_NOPTS_VALUE )
-					current_time = av_q2d( stream->time_base ) * pkt.dts;
-				else
-					current_time = real_timecode;
+				int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps );
+				if ( context->start_time != AV_NOPTS_VALUE )
+					int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE );
+
+				int last_position = mlt_properties_get_int( properties, "_last_position" );
+				if ( int_position == last_position )
+					int_position = last_position + 1;
+				mlt_properties_set_int( properties, "_last_position", int_position );
 
 				// Decode the image
-				if ( must_decode || current_time >= real_timecode )
+				if ( must_decode || int_position >= req_position )
 					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
 
 				if ( got_picture )
 				{
 					// Handle ignore
-					if ( ( int )( current_time * 100 ) < ( int )( real_timecode * 100 ) - 7 )
+					if ( int_position < req_position )
 					{
 						ignore = 0;
 						got_picture = 0;
 					}
-					else if ( current_time >= real_timecode )
+					else if ( int_position >= req_position )
 					{
 						ignore = 0;
 					}
@@ -560,21 +587,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
 				mlt_properties_set_int( frame_properties, "top_field_first", av_frame->top_field_first );
-
 				convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
-
 				mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
-
-				if ( current_time == 0 && source_fps != 0 )
-				{
-					double fps = mlt_properties_get_double( properties, "fps" );
-					current_time = ceil( source_fps * ( double )position / fps ) * ( 1 / source_fps );
-					mlt_properties_set_double( properties, "_current_time", current_time );
-				}
-				else
-				{
-					mlt_properties_set_double( properties, "_current_time", current_time );
-				}
+				mlt_properties_set_double( properties, "_current_position", int_position );
 			}
 
 			// We're finished with this packet regardless
@@ -674,6 +689,8 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			// We'll use fps if it's available
 			if ( source_fps > 0 && source_fps < 30 )
 				mlt_properties_set_double( properties, "source_fps", source_fps );
+			else
+				mlt_properties_set_double( properties, "source_fps", mlt_properties_get_double( properties, "fps" ) );
 			mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
 			
 			// Set the width and height
