@@ -256,8 +256,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			struct geometry_s start;
 			struct geometry_s end;
 
-			// Calculate the position
-			float position = position_calculate( this, frame );
+			// Retrieve the position
+			float position = mlt_properties_get_double(frame_properties, "filter_position");
 
 			// Now parse the geometries
 			geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
@@ -282,6 +282,10 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	// Push this on to the service stack
 	mlt_frame_push_service( frame, this );
 	
+	// Calculate the position for the filter effect
+	float position = position_calculate( this, frame );
+	mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), "filter_position", position );
+
 	// Push the get image call
 	mlt_frame_push_get_image( frame, filter_get_image );
 
