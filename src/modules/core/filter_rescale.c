@@ -62,21 +62,21 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 				uint8_t *alpha = mlt_pool_alloc( iwidth * ( iheight + 1 ) );
 
 				// Convert the image and extract alpha
-				mlt_convert_rgb24a_to_yuv422( *image, iwidth, iheight, iwidth * 2, output, alpha );
+				mlt_convert_rgb24a_to_yuv422( *image, iwidth, iheight, iwidth * 4, output, alpha );
 
 				mlt_properties_set_data( properties, "alpha", alpha, iwidth * ( iheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
 			}
 			else
 			{
 				// No alpha to extract
-				mlt_convert_rgb24_to_yuv422( *image, iwidth, iheight, iwidth * 2, output );
+				mlt_convert_rgb24_to_yuv422( *image, iwidth, iheight, iwidth * 3, output );
 			}
 
+			mlt_properties_set_data( properties, "image", output, iwidth * ( iheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
+
 			// Scale the frame
-			mlt_frame_rescale_yuv422( this, owidth, oheight );
-		
-			// Return the output
-			*image = mlt_properties_get_data( properties, "image", NULL );
+			output = mlt_frame_rescale_yuv422( this, owidth, oheight );
+
 		}
 		else
 		{
