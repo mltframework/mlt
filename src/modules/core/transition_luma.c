@@ -369,6 +369,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Get the properties of the b frame
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
+	// This compositer is yuv422 only
+	*format = mlt_image_yuv422;
+
 	// The cached luma map information
 	int luma_width = mlt_properties_get_int( properties, "width" );
 	int luma_height = mlt_properties_get_int( properties, "height" );
@@ -512,6 +515,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if ( mlt_properties_get( properties, "fixed" ) )
 		mix = mlt_properties_get_double( properties, "fixed" );
 
+
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 		// Composite the frames using a luma map
 		luma_composite( !invert ? a_frame : b_frame, !invert ? b_frame : a_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
@@ -519,6 +523,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	else
 		// Dissolve the frames using the time offset for mix value
 		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
+
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
