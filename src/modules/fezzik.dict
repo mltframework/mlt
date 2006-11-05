@@ -1,6 +1,7 @@
 http://*=avformat
 <?xml*=westley-xml
 *.westley=westley
+*.kdenlive=westley
 *.inigo=inigo_file
 *.asf=avformat
 *.avi=mcdv,libdv,avformat
