@@ -115,27 +115,38 @@ static int framebuffer_get_frame( mlt_producer this, mlt_frame_ptr frame, int in
 
 		// get properties		
 		int strobe = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES (this), "strobe");
-		double prod_speed = mlt_properties_get_double( properties, "_speed");
-		double prod_end_speed = mlt_properties_get_double( properties, "end_speed");
-
-		// calculate actual speed and position
-		double actual_speed = prod_speed + ((double)mlt_producer_position( this ) / (double)mlt_producer_get_length(this)) * (prod_end_speed - prod_speed);
-		double actual_position = actual_speed * (double)mlt_producer_position( this );
-		if (mlt_properties_get_int( properties, "reverse")) actual_position = mlt_producer_get_length(this) - actual_position;
+		double freeze = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES (this), "freeze");
+		int freeze_after = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES (this), "freeze_after");
+		int freeze_before = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES (this), "freeze_before");
 
 		mlt_position need_first;
 
+		if (!freeze || freeze_after || freeze_before) {
+			double prod_speed = mlt_properties_get_double( properties, "_speed");
+			double prod_end_speed = mlt_properties_get_double( properties, "end_speed");
 
-		if (strobe == 1)
-		{ 
-			need_first = floor( actual_position );
+			// calculate actual speed and position
+			double actual_speed = prod_speed + ((double)mlt_producer_position( this ) / (double)mlt_producer_get_length(this)) * (prod_end_speed - prod_speed);
+			double actual_position = actual_speed * (double)mlt_producer_position( this );
+			if (mlt_properties_get_int( properties, "reverse")) actual_position = mlt_producer_get_length(this) - actual_position;
+
+			if (strobe < 2)
+			{ 
+				need_first = floor( actual_position );
+			}
+			else 
+			{
+				// Strobe effect wanted, calculate frame position
+				need_first = floor( actual_position );
+				need_first -= need_first%strobe;
+			}
+			if (freeze)
+			{
+				if (freeze_after && need_first > freeze) need_first = freeze;
+				else if (freeze_before && need_first < freeze) need_first = freeze;
+			}
 		}
-		else 
-		{
-			// Strobe effect wanted, calculate frame position
-			need_first = floor( actual_position );
-			need_first -= need_first%strobe;
-		}
+		else need_first = freeze;
 
 		if( need_first != first_position )
 		{
@@ -193,6 +204,10 @@ mlt_producer producer_framebuffer_init( char *arg )
 	 x is the number of frames that will be ignored.
 
 	* You can play the movie backwards by adding reverse=1
+
+	* You can freeze the clip at a determined position by adding freeze=frame_pos
+	  add freeze_after=1 to freeze only paste position or freeze_before to freeze before it
+
 	**/
 
 	double speed;
