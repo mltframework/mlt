@@ -4,6 +4,7 @@ TARGET = ../libmltcore$(LIBSUF)
 
 OBJS = factory.o \
 	   producer_colour.o \
+	   producer_framebuffer.o \
 	   producer_noise.o \
 	   producer_ppm.o \
 	   filter_brightness.o \

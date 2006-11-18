@@ -6,6 +6,7 @@ then
 cat << EOF >> ../producers.dat
 color			libmltcore$LIBSUF
 colour			libmltcore$LIBSUF
+framebuffer		libmltcore$LIBSUF
 noise			libmltcore$LIBSUF
 ppm				libmltcore$LIBSUF
 EOF
