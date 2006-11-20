@@ -187,7 +187,7 @@ static int framebuffer_get_frame( mlt_producer this, mlt_frame_ptr frame, int in
 mlt_producer producer_framebuffer_init( char *arg )
 {
 	mlt_producer this = mlt_producer_new( );
-	fprintf( stderr, " + + ++ USING FRAMEBUFF %s\n", arg);
+
 	// Wrap fezzik
 	mlt_producer real_producer;
 	
