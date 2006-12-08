@@ -25,15 +25,15 @@
 
 struct mlt_geometry_item_s
 {
-	// Will be 1 when this is a key frame 
+	/* Will be 1 when this is a key frame */
 	int key;
-	// The actual frame this corresponds to 
+	/* The actual frame this corresponds to */
 	int frame;
-	// Distort
+	/* Distort */
 	int distort;
-	// x,y are upper left
+	/* x,y are upper left */
 	float x, y, w, h, mix;
-	// Indicates which values are fixed
+	/* Indicates which values are fixed */
 	int f[ 5 ];
 };
 
@@ -42,31 +42,31 @@ struct mlt_geometry_s
 	void *local;
 };
 
-// Create a new geometry structure
+/* Create a new geometry structure */
 extern mlt_geometry mlt_geometry_init( );
-// Parse the geometry specification for a given length and normalised width/height (-1 for default)
+/* Parse the geometry specification for a given length and normalised width/height (-1 for default) */
 extern int mlt_geometry_parse( mlt_geometry self, char *data, int length, int nw, int nh );
-// Conditionally refresh the geometry if it's modified
+/* Conditionally refresh the geometry if it's modified */
 extern int mlt_geometry_refresh( mlt_geometry self, char *data, int length, int nw, int nh );
-// Get and set the length
+/* Get and set the length */
 extern int mlt_geometry_get_length( mlt_geometry self );
 extern void mlt_geometry_set_length( mlt_geometry self, int length );
-// Parse an item - doesn't affect the geometry itself but uses current information for evaluation 
-// (item->frame should be specified if not included in the data itself)
+/* Parse an item - doesn't affect the geometry itself but uses current information for evaluation */
+/* (item->frame should be specified if not included in the data itself) */
 extern int mlt_geometry_parse_item( mlt_geometry self, mlt_geometry_item item, char *data );
-// Fetch a geometry item for an absolute position
+/* Fetch a geometry item for an absolute position */
 extern int mlt_geometry_fetch( mlt_geometry self, mlt_geometry_item item, float position );
-// Specify a geometry item at an absolute position
+/* Specify a geometry item at an absolute position */
 extern int mlt_geometry_insert( mlt_geometry self, mlt_geometry_item item );
-// Remove the key at the specified position
+/* Remove the key at the specified position */
 extern int mlt_geometry_remove( mlt_geometry self, int position );
-// Get the key at the position or the next following
+/* Get the key at the position or the next following */
 extern int mlt_geometry_next_key( mlt_geometry self, mlt_geometry_item item, int position );
 extern int mlt_geometry_prev_key( mlt_geometry self, mlt_geometry_item item, int position );
-// Serialise the current geometry
+/* Serialise the current geometry */
 extern char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out );
 extern char *mlt_geometry_serialise( mlt_geometry self );
-// Close the geometry
+/* Close the geometry */
 extern void mlt_geometry_close( mlt_geometry self );
 
 #endif

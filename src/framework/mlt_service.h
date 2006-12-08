@@ -28,15 +28,15 @@
 
 struct mlt_service_s
 {
-	// We're extending properties here
+	/* We're extending properties here */
 	struct mlt_properties_s parent;
 
-	// Protected virtual
+	/* Protected virtual */
 	int ( *get_frame )( mlt_service self, mlt_frame_ptr frame, int index );
 	mlt_destructor close;
 	void *close_object;
 
-	// Private data
+	/* Private data */
 	void *local;
 	void *child;
 };
@@ -62,7 +62,7 @@ extern mlt_filter mlt_service_filter( mlt_service self, int index );
 
 extern void mlt_service_close( mlt_service self );
 
-// I'm not sure about self one - leaving it out of docs for now (only used in consumer_westley)
+/* I'm not sure about self one - leaving it out of docs for now (only used in consumer_westley) */
 extern mlt_service mlt_service_get_producer( mlt_service self );
 
 #endif

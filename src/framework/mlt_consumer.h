@@ -29,16 +29,16 @@
 
 struct mlt_consumer_s
 {
-	// We're implementing service here
+	/* We're implementing service here */
 	struct mlt_service_s parent;
 
-	// public virtual
+	/* public virtual */
 	int ( *start )( mlt_consumer );
 	int ( *stop )( mlt_consumer );
 	int ( *is_stopped )( mlt_consumer );
 	void ( *close )( mlt_consumer );
 
-	// Private data
+	/* Private data */
 	void *local;
 	void *child;
 

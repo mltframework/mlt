@@ -36,7 +36,7 @@ typedef struct mlt_track_s *mlt_track;
 
 struct mlt_multitrack_s
 {
-	// We're extending producer here
+	/* We're extending producer here */
 	struct mlt_producer_s parent;
 	mlt_track *list;
 	int size;

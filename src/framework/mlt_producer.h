@@ -29,15 +29,15 @@
 
 struct mlt_producer_s
 {
-	// We're implementing service here
+	/* We're implementing service here */
 	struct mlt_service_s parent;
 
-	// Public virtual methods
+	/* Public virtual methods */
 	int ( *get_frame )( mlt_producer, mlt_frame_ptr, int );
 	mlt_destructor close;
 	void *close_object;
 
-	// Private data
+	/* Private data */
 	void *local;
 	void *child;
 };

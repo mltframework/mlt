@@ -28,16 +28,16 @@
 
 struct mlt_filter_s
 {
-	// We're implementing service here
+	/* We're implementing service here */
 	struct mlt_service_s parent;
 
-	// public virtual
+	/* public virtual */
 	void ( *close )( mlt_filter );
 
-	// protected filter method
+	/* protected filter method */
 	mlt_frame ( *process )( mlt_filter, mlt_frame );
 
-	// Protected
+	/* Protected */
 	void *child;
 };
 

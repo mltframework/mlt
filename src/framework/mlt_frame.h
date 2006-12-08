@@ -29,13 +29,13 @@ typedef int ( *mlt_get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_form
 
 struct mlt_frame_s
 {
-	// We're extending properties here
+	/* We're extending properties here */
 	struct mlt_properties_s parent;
 
-	// Virtual methods
+	/* Virtual methods */
 	uint8_t * ( *get_alpha_mask )( mlt_frame self );
 	
-	// Private properties
+	/* Private properties */
 	mlt_deque stack_image;
 	mlt_deque stack_audio;
 	mlt_deque stack_service;

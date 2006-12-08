@@ -28,22 +28,22 @@
 
 struct mlt_transition_s
 {
-	// We're implementing service here
+	/* We're implementing service here */
 	struct mlt_service_s parent;
 
-	// public virtual
+	/* public virtual */
 	void ( *close )( mlt_transition );
 
-	// protected transition method
+	/* protected transition method */
 	mlt_frame ( *process )( mlt_transition, mlt_frame, mlt_frame );
 
-	// Protected
+	/* Protected */
 	void *child;
 	
-	// track and in/out points
+	/* track and in/out points */
 	mlt_service producer;
 	
-	// Private
+	/* Private */
 	mlt_frame *frames;
 	int held;
 };
