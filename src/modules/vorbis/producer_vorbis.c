@@ -129,6 +129,11 @@ static int producer_open( mlt_producer this, char *file )
 				// Set out and length of file
 				mlt_properties_set_position( properties, "out", ( length * fps ) - 1 );
 				mlt_properties_set_position( properties, "length", ( length * fps ) );
+
+				// Get the vorbis info
+				vorbis_info *vi = ov_info( ov, -1 );
+				mlt_properties_set_int( properties, "frequency", (int) vi->rate );
+				mlt_properties_set_int( properties, "channels", vi->channels );
 			}
 		}
 		else
@@ -310,11 +315,15 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
 	// Set the position of this producer
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "vorbis_position", mlt_producer_frame( this ) );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( *frame );
+	mlt_properties_set_position( frame_properties, "vorbis_position", mlt_producer_frame( this ) );
 
 	// Set up the audio
 	mlt_frame_push_audio( *frame, this );
 	mlt_frame_push_audio( *frame, producer_get_audio );
+
+	// Pass audio properties to the frame
+	mlt_properties_pass_list( frame_properties, MLT_PRODUCER_PROPERTIES( this ), "frequency, channels" );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( this );
