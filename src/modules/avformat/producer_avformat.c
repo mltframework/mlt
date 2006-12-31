@@ -299,6 +299,22 @@ static int producer_open( mlt_producer this, char *file )
 				mlt_properties_set_int( properties, "height", codec_context->height );
 				mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
 			}
+
+			// Read Metadata
+			if (context->title != NULL) 
+				mlt_properties_set(properties, "meta.attr.title.markup", context->title );
+			if (context->author != NULL) 
+				mlt_properties_set(properties, "meta.attr.author.markup", context->author );
+			if (context->copyright != NULL) 
+				mlt_properties_set(properties, "meta.attr.copyright.markup", context->copyright );
+			if (context->comment != NULL) 
+				mlt_properties_set(properties, "meta.attr.comment.markup", context->comment );
+			if (context->album != NULL) 
+				mlt_properties_set(properties, "meta.attr.album.markup", context->album );
+			if (context->year != 0) 
+				mlt_properties_set_int(properties, "meta.attr.year.markup", context->year );
+			if (context->track != 0) 
+				mlt_properties_set_int(properties, "meta.attr.track.markup", context->track );
 			
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
 			if ( av == 0 && !av_bypass && audio_index != -1 && video_index != -1 )

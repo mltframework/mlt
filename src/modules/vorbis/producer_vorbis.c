@@ -36,6 +36,35 @@
 static int producer_open( mlt_producer this, char *file );
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
 
+/** Structure for metadata reading 
+*/
+
+typedef struct _sw_metadata sw_metadata;
+
+struct _sw_metadata {
+	char * name;
+	char * content;
+};
+
+static sw_metadata *vorbis_metadata_from_str (char * str)
+{
+	sw_metadata * meta = NULL;
+	int i;
+
+	for (i = 0; str[i]; i++) {
+		str[i] = tolower(str[i]);
+		if (str[i] == '=') {
+			str[i] = '\0';
+			meta = malloc (sizeof (sw_metadata));
+			meta->name = malloc( strlen(str) + 18 );
+			sprintf(meta->name, "meta.attr.%s.markup", str);
+			meta->content = strdup (&str[i+1]);
+			break;
+		}
+	}
+ 	return meta;
+}
+
 /** Constructor for libvorbis.
 */
 
@@ -117,6 +146,16 @@ static int producer_open( mlt_producer this, char *file )
 
 			// Assign the ov structure
 			mlt_properties_set_data( properties, "ogg_vorbis_file", ov, 0, producer_file_close, NULL );
+
+			// Read metadata
+			sw_metadata * metadata = NULL;
+			char **ptr = ov_comment(ov, -1)->user_comments;
+			while(*ptr) {
+				metadata = vorbis_metadata_from_str (*ptr);
+				if (metadata != NULL)
+					mlt_properties_set(properties, metadata->name, metadata->content);
+				++ptr;
+			}
 
 			if ( ov_seekable( ov ) )
 			{
