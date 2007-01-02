@@ -161,7 +161,7 @@ mlt_consumer consumer_avformat_init( char *arg )
 		mlt_properties_set_int( properties, "gop_size", 12 );
 		mlt_properties_set_int( properties, "b_frames", 0 );
 		mlt_properties_set_int( properties, "mb_decision", FF_MB_DECISION_SIMPLE );
-		mlt_properties_set_double( properties, "qscale", 0 );
+		mlt_properties_set_double( properties, "qscale", 1 );
 		mlt_properties_set_int( properties, "me_method", ME_EPZS );
 		mlt_properties_set_int( properties, "mb_cmp", FF_CMP_SAD );
 		mlt_properties_set_int( properties, "ildct_cmp", FF_CMP_VSAD );
