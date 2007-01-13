@@ -174,7 +174,7 @@ static int consumer_start( mlt_consumer parent )
 		mlt_properties_set_int( play, "progressive", progressive );
 		mlt_properties_set_int( still, "progressive", progressive );
 
-		mlt_properties_pass_list( play, properties, "resize,rescale,width,height,aspect_ratio,display_ratio" );
+		mlt_properties_pass_list( play, properties, "resize,rescale,width,height,aspect_ratio,display_ratio,volume" );
 		mlt_properties_pass_list( still, properties, "resize,rescale,width,height,aspect_ratio,display_ratio" );
 		mlt_properties_pass_list( play, properties, "deinterlace_method" );
 		mlt_properties_pass_list( still, properties, "deinterlace_method" );
