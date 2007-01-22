@@ -736,6 +736,32 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Update the output context
+
+	// Write metadata
+	char *tmp = NULL;
+	int metavalue;
+
+	tmp = mlt_properties_get( properties, "meta.attr.title.markup");
+	if (tmp != NULL) snprintf( oc->title, sizeof(oc->title), "%s", tmp );
+
+	tmp = mlt_properties_get( properties, "meta.attr.comment.markup");
+	if (tmp != NULL) snprintf( oc->comment, sizeof(oc->comment), "%s", tmp );
+
+	tmp = mlt_properties_get( properties, "meta.attr.author.markup");
+	if (tmp != NULL) snprintf( oc->author, sizeof(oc->author), "%s", tmp );
+
+	tmp = mlt_properties_get( properties, "meta.attr.copyright.markup");
+	if (tmp != NULL) snprintf( oc->copyright, sizeof(oc->copyright), "%s", tmp );
+
+	tmp = mlt_properties_get( properties, "meta.attr.album.markup");
+	if (tmp != NULL) snprintf( oc->album, sizeof(oc->album), "%s", tmp );
+
+	metavalue = mlt_properties_get_int( properties, "meta.attr.year.markup");
+	if (metavalue != 0) oc->year = metavalue;
+
+	metavalue = mlt_properties_get_int( properties, "meta.attr.track.markup");
+	if (metavalue != 0) oc->track = metavalue;
+
 	oc->oformat = fmt;
 	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
 
