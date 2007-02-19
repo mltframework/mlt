@@ -26,7 +26,7 @@
 #include <math.h>
 
 
-void PreCompute(uint8_t *yuv, int32_t *rgb, unsigned int width, unsigned int height)
+static void PreCompute(uint8_t *yuv, int32_t *rgb, unsigned int width, unsigned int height)
 {
 	register int x, y, z;
 	register int uneven = width % 2;
@@ -94,7 +94,7 @@ void PreCompute(uint8_t *yuv, int32_t *rgb, unsigned int width, unsigned int hei
 	}
 }
 
-int32_t GetRGB(int32_t *rgb, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
+static int32_t GetRGB(int32_t *rgb, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
 {
 	int xtheo = x * 2 + offsetx;
 	int ytheo = y + offsety;
@@ -103,7 +103,7 @@ int32_t GetRGB(int32_t *rgb, unsigned int w, unsigned int h, unsigned int x, int
 	return rgb[3*(xtheo+ytheo*w)+z];
 }
 
-int32_t GetRGB2(int32_t *rgb, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
+static int32_t GetRGB2(int32_t *rgb, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
 {
 	int xtheo = x * 2 + 1 + offsetx;
 	int ytheo = y + offsety;
@@ -112,7 +112,7 @@ int32_t GetRGB2(int32_t *rgb, unsigned int w, unsigned int h, unsigned int x, in
 	return rgb[3*(xtheo+ytheo*w)+z];
 }
 
-void DoBoxBlur(uint8_t *yuv, int32_t *rgb, unsigned int width, unsigned int height, unsigned int boxw, unsigned int boxh)
+static void DoBoxBlur(uint8_t *yuv, int32_t *rgb, unsigned int width, unsigned int height, unsigned int boxw, unsigned int boxh)
 {
 	register int x, y;
 	int32_t r, g, b;

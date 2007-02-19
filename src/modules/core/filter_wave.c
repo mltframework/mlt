@@ -26,7 +26,7 @@
 #include <math.h>
 
 // this is a utility function used by DoWave below
-uint8_t getPoint(uint8_t *src, int w, int h, int x, int y, int z)
+static uint8_t getPoint(uint8_t *src, int w, int h, int x, int y, int z)
 {
 	if (x<0) x+=-((-x)%w)+w; else if (x>=w) x=x%w;
 	if (y<0) y+=-((-y)%h)+h; else if (y>=h) y=y%h;
@@ -34,7 +34,7 @@ uint8_t getPoint(uint8_t *src, int w, int h, int x, int y, int z)
 }
 
 // the main meat of the algorithm lies here
-void DoWave(uint8_t *src, int src_w, int src_h, uint8_t *dst, mlt_position position, int speed, int factor, int deformX, int deformY)
+static void DoWave(uint8_t *src, int src_w, int src_h, uint8_t *dst, mlt_position position, int speed, int factor, int deformX, int deformY)
 {
 	register int x, y;
 	int decalY, decalX, z;

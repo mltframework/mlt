@@ -1,7 +1,6 @@
 /*
- * filter_luma.h -- luma filter
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * filter_wave.h -- wave filter
+ * Author: Leny Grisel <leny.grisel@laposte.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +17,8 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _FILTER_BLUR_H_
-#define _FILTER_BLUR_H_
+#ifndef _FILTER_WAVE_H_
+#define _FILTER_WAVE_H_
 
 #include <framework/mlt_filter.h>
 
