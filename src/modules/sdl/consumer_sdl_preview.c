@@ -142,7 +142,9 @@ static int consumer_start( mlt_consumer parent )
 
 		char *window_id = mlt_properties_get( properties, "window_id" );
 		char *audio_driver = mlt_properties_get( properties, "audio_driver" );
+		char *video_driver = mlt_properties_get( properties, "video_driver" );
 		char *audio_device = mlt_properties_get( properties, "audio_device" );
+		char *output_display = mlt_properties_get( properties, "output_display" );
 		int progressive = mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" );
 
 		consumer_stop( parent );
@@ -151,8 +153,14 @@ static int consumer_start( mlt_consumer parent )
 		this->joined = 0;
 		this->last_speed = 1;
 
+		if ( output_display != NULL )
+			setenv( "DISPLAY", output_display, 1 );
+
 		if ( window_id != NULL )
 			setenv( "SDL_WINDOWID", window_id, 1 );
+
+		if ( video_driver != NULL )
+			setenv( "SDL_VIDEODRIVER", video_driver, 1 );
 
 		if ( audio_driver != NULL )
 			setenv( "SDL_AUDIODRIVER", audio_driver, 1 );
