@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function show_help
+show_help()
 {
 	cat << EOF
 Non-autotool config script for MLT.
@@ -34,7 +34,7 @@ EOF
 	echo
 }
 
-function build_config
+build_config()
 {
 	(
 		echo "version=$version"
@@ -90,7 +90,7 @@ function build_config
 	echo -n > packages.dat
 }
 
-function build_pkgconfig
+build_pkgconfig()
 {
 	for i in framework valerie miracle
 	do
