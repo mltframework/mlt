@@ -19,6 +19,11 @@ LDFLAGS+=-L../../framework
 
 LDFLAGS+=-lavformat$(AVFORMAT_SUFFIX) -lavcodec$(AVFORMAT_SUFFIX) -lavutil$(AVFORMAT_SUFFIX) $(EXTRA_LIBS) -lmlt
 
+ifdef MMX_FLAGS
+	CFLAGS+=-DSWSCALE
+	LDFLAGS+=-lswscale$(AVFORMAT_SUFFIX)
+endif
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

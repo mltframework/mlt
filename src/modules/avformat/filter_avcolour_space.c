@@ -24,6 +24,9 @@
 
 // ffmpeg Header files
 #include <avformat.h>
+#ifdef SWSCALE
+#include <swscale.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,9 +70,17 @@ static inline void convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in
 {
 	AVPicture input;
 	AVPicture output;
-	avpicture_fill( &output, out, out_fmt, width, height );
 	avpicture_fill( &input, in, in_fmt, width, height );
+	avpicture_fill( &output, out, out_fmt, width, height );
+#ifdef SWSCALE
+	struct SwsContext *context = sws_getContext( width, height, in_fmt,
+		width, height, out_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+	sws_scale( context, input.data, input.linesize, 0, height,
+		output.data, output.linesize);
+	sws_freeContext( context );
+#else
 	img_convert( &output, out_fmt, &input, in_fmt, width, height );
+#endif
 }
 
 /** Do it :-).

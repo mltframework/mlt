@@ -11,6 +11,7 @@ FFMPEG/avformat options:
   --avformat-static=path  - Link against a static ffmpeg dev tree
   --avformat-ldextra=libs - Provide additional libs to link with
   --avformat-suffix=suff  - Specify a custom suffix for an ffmpeg shared build
+  --avformat-swscale      - Use ffmpeg libswcale instead of img_convert
 
 EOF
 
@@ -44,6 +45,7 @@ else
 	export extra_libs=
 	export svn_ffmpeg=
 	export avformat_suffix=
+	export swscale=false
 
 	if [ "$shared_ffmpeg" != "" -a -f "$shared_ffmpeg" ]
 	then
@@ -62,6 +64,7 @@ else
 			--avformat-svn )		svn_ffmpeg=true ;;
 			--avformat-cvs )		svn_ffmpeg=true ;;
 			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
+			--avformat-swscale )	swscale=true ;;
 		esac
 	done
 
@@ -86,6 +89,7 @@ else
 			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil" >> config.mak
 			[ $targetos = "Darwin" ] &&
 			 	echo "LDFLAGS+=-single_module" >> config.mak
+			[ "$swscale" != "" ] && echo "SWSCALE=1" >> config.mak
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat
@@ -96,6 +100,7 @@ else
 		then
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
 			echo "LDFLAGS+=-L$shared_ffmpeg/$LIBDIR" >> config.mak
+			[ "$swscale" != "" ] && echo "SWSCALE=1" >> config.mak
 		else
 			echo "avformat: No build environment found. "
 			echo "          Try configuring mlt with --avformat-svn."

@@ -35,6 +35,9 @@
 
 // avformat header files
 #include <avformat.h>
+#ifdef SWSCALE
+#include <swscale.h>
+#endif
 
 //
 // This structure should be extended and made globally available in mlt
@@ -939,7 +942,15 @@ static void *consumer_thread( void *arg )
 						}
 
 						// Do the colour space conversion
+#ifdef SWSCALE
+						struct SwsContext *context = sws_getContext( width, height, PIX_FMT_YUV422,
+							width, height, video_st->codec->pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+						sws_scale( context, input->data, input->linesize, 0, height,
+							output->data, output->linesize);
+						sws_freeContext( context );
+#else
 						img_convert( ( AVPicture * )output, video_st->codec->pix_fmt, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
+#endif
 
 						// Apply the alpha if applicable
 						if ( video_st->codec->pix_fmt == PIX_FMT_RGBA32 )
