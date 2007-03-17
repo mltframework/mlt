@@ -1,0 +1,18 @@
+Open Source Development Policies and Procedures for MLT
+by Dan Dennedy
+
+Policies
+--------
+
+Any contribution to the "core" module assign copyright to Ushodaya Enterprises
+Limited because they need license control over that module.
+
+Comments in the framework and valerie header files must be C-style, not C++.
+
+Procedures
+----------
+
+Update services.txt when you add or update a service.
+
+Until we convert to Subversion, which can provide a nice, comprehensive log
+please update ChangeLog with every commit.

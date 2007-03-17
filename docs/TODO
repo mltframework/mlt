@@ -1,17 +1,1 @@
-* DONE    - optimisations
-* DONE    - memory pooling
-* DONE    - all memory leak detection
-* DONE    - global property handling (more later)
-* DONE    - documentation (framework, implementations)
-* DONE    - finalisation of westley (entry, in/out points)
-* DONE    - installation procedure
-*         - dependency checks
-* DONE    - field order considerations and normalisation
-* DONE    - sdl rework (minor)
-*         - speex?
-* DONE    - text/overlay/obsucure placement (units)
-* DONE    - i18n (use of iconv api in producer_pango)
-* DONE    - shaped fx for obscurer (and alpha in general?)
-* DONE    - aspect constraints for scaling
-* DONE    - field-based compositing for animation
-* DONE    - frame hold
+Review and documentation update. The review will yield a TODO with more tasks.
