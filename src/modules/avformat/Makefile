@@ -19,7 +19,7 @@ LDFLAGS+=-L../../framework
 
 LDFLAGS+=-lavformat$(AVFORMAT_SUFFIX) -lavcodec$(AVFORMAT_SUFFIX) -lavutil$(AVFORMAT_SUFFIX) $(EXTRA_LIBS) -lmlt
 
-ifdef MMX_FLAGS
+ifdef SWSCALE
 	CFLAGS+=-DSWSCALE
 	LDFLAGS+=-lswscale$(AVFORMAT_SUFFIX)
 endif

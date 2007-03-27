@@ -1,5 +1,9 @@
 $Id$
 
+2007-03-27 Dan Dennedy <dan@dennedy.org>
+	Fix ffmpeg swscale code enabled with mmx flags and fix --enable-swscale
+	in conjunction with --avformat-static.
+
 2007-03-16 Dan Dennedy <dan@dennedy.org>
 	Added docs/policies.txt.
 

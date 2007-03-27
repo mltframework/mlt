@@ -89,7 +89,12 @@ else
 			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil" >> config.mak
 			[ $targetos = "Darwin" ] &&
 			 	echo "LDFLAGS+=-single_module" >> config.mak
-			[ "$swscale" != "" ] && echo "SWSCALE=1" >> config.mak
+			if [ "$swscale" != "" ]
+			then
+				echo "CFLAGS+=-I$static_ffmpeg/libswscale" >> config.mak
+				echo "LDFLAGS+=-L$static_ffmpeg/libswscale" >> config.mak
+				echo "SWSCALE=1" >> config.mak
+			fi
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat
