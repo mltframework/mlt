@@ -1,5 +1,8 @@
 $Id$
 
+2007-03-30 Jean-Baptiste Mardelle <jb@kdenlive.org>
+	Fix boxblur and wave filters license.
+
 2007-03-29 Dan Dennedy <dan@dennedy.org>
 	Cleanup license declarations and remove dv1394d references.
 	Change registration of vmfx/mono to threshold to disambiguate with 
@@ -11,6 +14,12 @@ $Id$
 
 2007-03-16 Dan Dennedy <dan@dennedy.org>
 	Added docs/policies.txt.
+
+2007-02-19 Jean-Baptiste Mardelle <jb@kdenlive.org>
+	Blur and wave filters: fix typos and make functions static (patch from Stephane Fillod)
+
+2007-02-18 Jean-Baptiste Mardelle <jb@kdenlive.org>
+	Add blur and wave filters from Leny Grisel
 
 2007-02-07 Dan Dennedy <dan@dennedy.org>
 	Added ffmpeg libswscale support to avformat module (requires configure

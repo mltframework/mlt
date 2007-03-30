@@ -1,5 +1,6 @@
 /*
  * filter_boxblur.h -- box blur filter
+ * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Leny Grisel <leny.grisel@laposte.net>
  *
  * This program is free software; you can redistribute it and/or modify
