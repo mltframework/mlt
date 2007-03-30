@@ -2,6 +2,8 @@ $Id$
 
 2007-03-29 Dan Dennedy <dan@dennedy.org>
 	Cleanup license declarations and remove dv1394d references.
+	Change registration of vmfx/mono to threshold to disambiguate with 
+	core/mono.
 
 2007-03-27 Dan Dennedy <dan@dennedy.org>
 	Fix ffmpeg swscale code enabled with mmx flags and fix --enable-swscale

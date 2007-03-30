@@ -39,7 +39,7 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_chroma_init( arg );
 	if ( !strcmp( id, "chroma_hold" ) )
 		return filter_chroma_hold_init( arg );
-	if ( !strcmp( id, "mono" ) )
+	if ( !strcmp( id, "threshold" ) )
 		return filter_mono_init( arg );
 	if ( !strcmp( id, "shape" ) )
 		return filter_shape_init( arg );
