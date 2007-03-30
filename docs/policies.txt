@@ -9,6 +9,10 @@ Limited because they need license control over that module.
 
 Comments in the framework and valerie header files must be C-style, not C++.
 
+The framework and valerie client libraries are covered under LGPL. Miracle,
+inigo, albino, and humperdink applications are covered under GPL. Modules
+should strive to be LGPL to make them available through the framework as LGPL.
+
 Procedures
 ----------
 

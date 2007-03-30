@@ -1,5 +1,5 @@
 /*
- * client.c -- dv1394d client demo
+ * client.c -- Valerie client demo
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *

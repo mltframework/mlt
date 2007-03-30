@@ -1,16 +1,15 @@
 Service Documentation
 
-Copyright (C) 2004-2005 Ushodaya Enterprises Limited
 Authors: Charles Yates <charles.yates@pandora.be>
          Dan Dennedy <dan@dennedy.org>
-Last Revision: 2005-04-22
+Last Revision: $Date$
 
 
 SERVICES
 --------
 
-	Services marked as "(Proprietary)" are not distributed with the GPL version
-	of mlt.
+	Services marked as "(Proprietary)" are not distributed with the LGPL
+	version of mlt.
 
 Producers
 ---------

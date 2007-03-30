@@ -1,5 +1,5 @@
 /*
- * remote.c -- Remote dv1394d client demo
+ * remote.c -- Remote Valerie client demo
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-/* dv1394d header files */
 #include <valerie/valerie_remote.h>
 
 /* Application header files */

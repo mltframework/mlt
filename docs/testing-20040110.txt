@@ -1,5 +1,4 @@
-On 1/10/2004, Dan Dennedy ran the dv1394d/docs/testing.txt against
-mlt albino and miracle.
+On 1/10/2004, Dan Dennedy ran the testing.txt against mlt albino and miracle.
 
 
 NOTE: Discrepancies cited here may have impact on related functionality.

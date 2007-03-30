@@ -1,5 +1,5 @@
 /*
- * miracle_server.c -- DV Server
+ * miracle_server.c
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *

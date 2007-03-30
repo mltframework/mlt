@@ -1,6 +1,6 @@
 /*
  * qimage_wrapper.h -- a QT/QImage based producer for MLT
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2006 Visual Media
  * Author: Charles Yates <charles.yates@gmail.com>
  *
  * NB: This module is designed to be functionally equivalent to the 

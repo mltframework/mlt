@@ -1,5 +1,5 @@
 /*
- * miracle.c -- A DV over IEEE 1394 TCP Server
+ * miracle.c -- MLT Video TCP Server
  *
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Authors:

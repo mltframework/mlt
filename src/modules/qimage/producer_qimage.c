@@ -1,8 +1,7 @@
 /*
  * producer_image.c -- a QT/QImage based producer for MLT
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
- *         Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2006 Visual Media
+ * Author: Charles Yates <charles.yates@gmail.com>
  *
  * NB: This module is designed to be functionally equivalent to the 
  * gtk2 image loading module so it can be used as replacement.

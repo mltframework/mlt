@@ -1,5 +1,5 @@
 /*
- * miracle_unit.c -- DV Transmission Unit Implementation
+ * miracle_unit.c -- Transmission Unit Implementation
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *

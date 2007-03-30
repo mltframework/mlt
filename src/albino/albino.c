@@ -1,5 +1,5 @@
 /*
- * albino.c -- Local dv1394d Test Util
+ * albino.c -- Local Valerie/Miracle Test Utility
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *

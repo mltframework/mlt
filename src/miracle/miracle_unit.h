@@ -1,5 +1,5 @@
 /*
- * dvunit.h -- DV Transmission Unit Header
+ * dvunit.h -- Transmission Unit Header
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
