@@ -45,21 +45,19 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	// Frame properties objects
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
-
+	
 	// image stride
-	int size, xstride, ystride;
+	int size;
 	switch( *format ){
 		case mlt_image_yuv422:
 			size = *width * *height * 2;
-			xstride = 2;
-			ystride = 2 * *width;
 			break;
 		default:
 			fprintf(stderr, "Unsupported image format\n");
 			return -1;
 	}
 
-	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", 0 );
+	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", NULL );
 	if( output == NULL )
 	{
 		output = mlt_pool_alloc( size );
@@ -71,8 +69,8 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
 
 	// which frames are buffered?
-
 	int error = 0;
+	mlt_properties_set_double( first_frame_properties, "consumer_aspect_ratio", mlt_properties_get_double(frame_properties, "consumer_aspect_ratio"));
 
 	if( first_image == NULL )
 	{
@@ -83,7 +81,6 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 			return error;
 		}
 	}
-
 	// Start with a base image
 	memcpy( output, first_image, size );
 
@@ -175,7 +172,6 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
-
 	}
 
 	return 0;
