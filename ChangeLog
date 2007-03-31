@@ -1,5 +1,8 @@
 $Id$
 
+2007-03-30 Dan Dennedy <dan@dennedy.org>
+	Add support for sox 13.0.0.
+
 2007-03-30 Jean-Baptiste Mardelle <jb@kdenlive.org>
 	Fix boxblur and wave filters license.
 

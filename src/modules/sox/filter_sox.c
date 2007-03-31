@@ -225,12 +225,18 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 			int j;
 			char *normalise = mlt_properties_get( filter_properties, "normalise" );
 			double normalised_gain = 1.0;
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(13,0,0))
+			st_sample_t dummy_clipped_count = 0;
+#endif
 			
 			// Convert to sox encoding
 			while( p != end )
 			{
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(13,0,0))
+				*p = ST_SIGNED_WORD_TO_SAMPLE( *q, dummy_clipped_count );
+#else
 				*p = ST_SIGNED_WORD_TO_SAMPLE( *q );
-				
+#endif
 				// Compute rms amplitude while we are accessing each sample
 				rms += ( double )*p * ( double )*p;
 				
@@ -320,7 +326,11 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 			end = p + *samples;
 			while ( p != end )
 			{
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(13,0,0))
+				*q = ST_SAMPLE_TO_SIGNED_WORD( *p ++, dummy_clipped_count );
+#else
 				*q = ST_SAMPLE_TO_SIGNED_WORD( *p ++ );
+#endif
 				q += *channels;
 			}
 		}
