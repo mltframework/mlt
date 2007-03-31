@@ -27,7 +27,12 @@
 #include <sys/time.h>
 #include <assert.h>
 
-// Image stack(able) method
+// Forward references.
+static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
+
+/** Image stack(able) method
+*/
+
 static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 
@@ -36,7 +41,6 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	mlt_frame first_frame = mlt_frame_pop_service( this );
 
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
-
 
 	// Frame properties objects
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
@@ -95,7 +99,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	return 0;
 }
 
-static int framebuffer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
+static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
 	// Construct a new frame
 	*frame = mlt_frame_init( );
@@ -110,25 +114,19 @@ static int framebuffer_get_frame( mlt_producer this, mlt_frame_ptr frame, int in
 		// Get the real producer
 		mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
 
-		// Our "in" needs to be the same, keep it so
-		mlt_properties_pass_list( MLT_PRODUCER_PROPERTIES( real_producer ), properties, "in" );
-
 		// get properties		
-		int strobe = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES (this), "strobe");
-		double freeze = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES (this), "freeze");
-		int freeze_after = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES (this), "freeze_after");
-		int freeze_before = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES (this), "freeze_before");
+		int strobe = mlt_properties_get_int( properties, "strobe");
+		int freeze = mlt_properties_get_int( properties, "freeze");
+		int freeze_after = mlt_properties_get_int( properties, "freeze_after");
+		int freeze_before = mlt_properties_get_int( properties, "freeze_before");
 
 		mlt_position need_first;
 
 		if (!freeze || freeze_after || freeze_before) {
 			double prod_speed = mlt_properties_get_double( properties, "_speed");
-			double prod_end_speed = mlt_properties_get_double( properties, "end_speed");
+			double actual_position = prod_speed * (double) mlt_producer_position( this );
 
-			// calculate actual speed and position
-			double actual_speed = prod_speed + ((double)mlt_producer_position( this ) / (double)mlt_producer_get_length(this)) * (prod_end_speed - prod_speed);
-			double actual_position = actual_speed * (double)mlt_producer_position( this );
-			if (mlt_properties_get_int( properties, "reverse")) actual_position = mlt_producer_get_length(this) - actual_position;
+			if (mlt_properties_get_int( properties, "reverse")) actual_position = mlt_producer_get_playtime(this) - actual_position;
 
 			if (strobe < 2)
 			{ 
@@ -186,7 +184,10 @@ static int framebuffer_get_frame( mlt_producer this, mlt_frame_ptr frame, int in
 
 mlt_producer producer_framebuffer_init( char *arg )
 {
-	mlt_producer this = mlt_producer_new( );
+
+	mlt_producer this = NULL;
+	this = calloc( 1, sizeof( struct mlt_producer_s ) );
+        mlt_producer_init( this, NULL );
 
 	// Wrap fezzik
 	mlt_producer real_producer;
@@ -197,9 +198,6 @@ mlt_producer producer_framebuffer_init( char *arg )
 	* Speed must be appended to the filename with ':'. To play your video at 50%:
 	 inigo framebuffer:my_video.mpg:0.5
 
-	* You can have a variabl speed by specifying a start and an end speed:
-	inigo framebuffer:my_video.mpg:0.5:1.0
-	
 	* Stroboscope effect can be obtained by adding a stobe=x parameter, where
 	 x is the number of frames that will be ignored.
 
@@ -211,30 +209,23 @@ mlt_producer producer_framebuffer_init( char *arg )
 	**/
 
 	double speed;
-	double end_speed;
+
 	int count;
 	char *props = strdup( arg );
 	char *ptr = props;
 	count = strcspn( ptr, ":" );
 	ptr[count] = '\0';
-	real_producer = mlt_factory_producer( "fezzik", ptr );
+
+	real_producer = mlt_factory_producer( "fezzik", props );	
 
 	ptr += count + 1;
 	ptr += strspn( ptr, ":" );
 	count = strcspn( ptr, ":" );
 	ptr[count] = '\0';
 	speed = atof(ptr);
-
-	ptr += count + 1;
-	ptr += strspn( ptr, ":" );
-	count = strcspn( ptr, ":" );
-	ptr[count] = '\0';
-	end_speed = atof(ptr);
 	free( props );
-
-	// If no end speed specified, use constant speed
+	
 	if (speed == 0.0) speed = 1.0;
-	if (end_speed == 0.0) end_speed = speed;
 
 
 	if ( this != NULL && real_producer != NULL)
@@ -250,26 +241,20 @@ mlt_producer producer_framebuffer_init( char *arg )
 
 		// Grap some stuff from the real_producer
 		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ),
-				"in, out, length, resource" );
+				"length,resource,width,height" );
 
-		if (speed != 1.0 || end_speed !=1.0)
+		if ( speed != 1.0 )
 		{
-			// Speed is not 1.0, so adjust the clip length
-			mlt_position real_out = mlt_properties_get_position(properties, "out");
-			mlt_properties_set_position( properties, "out", real_out * 2 / (speed + end_speed)); 
-			mlt_properties_set_position( properties, "length", real_out * 2 / (speed + end_speed) + 1);
-			mlt_properties_set_double( properties, "_speed", speed);
-			mlt_properties_set_double( properties, "end_speed", end_speed);
+			double real_length = (double)  mlt_producer_get_length( real_producer );
+			mlt_properties_set_position( properties, "length", real_length * 2 / speed );
 		}
-		else mlt_properties_set_double( properties, "end_speed", 1.0);
 
 		// Since we control the seeking, prevent it from seeking on its own
 		mlt_producer_set_speed( real_producer, 0 );
 		mlt_producer_set_speed( this, speed );
 
 		// Override the get_frame method
-		this->get_frame = framebuffer_get_frame;
-
+		this->get_frame = producer_get_frame;
 	}
 	else
 	{
