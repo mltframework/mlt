@@ -1,9 +1,12 @@
 /* GdkPixbuf library - Scaling and compositing functions
  *
- * Copyright (C) 1999 The Free Software Foundation
- *
+ * Original:
+ * Copyright (C) 2000 Red Hat, Inc
  * Author: Owen Taylor <otaylor@redhat.com>
- * Modified for YUV422 by Dan Dennedy <dan@dennedy.org>
+ *
+ * Modification for MLT:
+ * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

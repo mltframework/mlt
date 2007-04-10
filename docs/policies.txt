@@ -13,6 +13,11 @@ The framework and valerie client libraries are covered under LGPL. Miracle,
 inigo, albino, and humperdink applications are covered under GPL. Modules
 should strive to be LGPL to make them available through the framework as LGPL.
 
+Coding Style:
+There are not a lot of rules, but we prefer brackets on their own line,
+indents using tabs, liberal usage of spaces in statements and expressions, and
+no hard line length. The code in src/framework serves as a good example.
+
 Procedures
 ----------
 
@@ -20,3 +25,17 @@ Update services.txt when you add or update a service.
 
 Until we convert to Subversion, which can provide a nice, comprehensive log
 please update ChangeLog with every commit.
+
+Setting Copyright on Appropriated Code:
+You do not want to be accused of copying someone's code and changing copyright
+or license without permission. The license is straightforward: you must retain
+the original author's license unless you receive explicit permission. There are
+a few ways to approach the copyright declaration depending upon the
+intermingling and changes. If you heavily comingle original and new code or
+lightly modifiy the original code, you can retain the original's copyright
+including the years, and then add your copyright for the current year. If you
+can separate the MLT integration from the core subroutines, then you can put
+the core subroutines into a separate file with the original copyright and just
+copyright the MLT integration code as your own. However, if you have heavily
+modified the original code beyond nearly all recognition, you can copyright it
+as your own and attribute the original author as inspiration.

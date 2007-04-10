@@ -21,10 +21,8 @@
 #include <string.h>
 
 #include "producer_colour.h"
-#include "producer_framebuffer.h"
 #include "producer_noise.h"
 #include "producer_ppm.h"
-#include "filter_boxblur.h"
 #include "filter_brightness.h"
 #include "filter_channelcopy.h"
 #include "filter_data.h"
@@ -39,7 +37,6 @@
 #include "filter_region.h"
 #include "filter_transition.h"
 #include "filter_watermark.h"
-#include "filter_wave.h"
 #include "transition_composite.h"
 #include "transition_luma.h"
 #include "transition_mix.h"
@@ -52,8 +49,6 @@ void *mlt_create_producer( char *id, void *arg )
 		return producer_colour_init( arg );
 	if ( !strcmp( id, "colour" ) )
 		return producer_colour_init( arg );
-	if ( !strcmp( id, "framebuffer" ) )
-		return producer_framebuffer_init( arg );
 	if ( !strcmp( id, "noise" ) )
 		return producer_noise_init( arg );
 	if ( !strcmp( id, "ppm" ) )
@@ -63,8 +58,6 @@ void *mlt_create_producer( char *id, void *arg )
 
 void *mlt_create_filter( char *id, void *arg )
 {
-	if ( !strcmp( id, "boxblur" ) )
-		return filter_boxblur_init( arg );
 	if ( !strcmp( id, "brightness" ) )
 		return filter_brightness_init( arg );
 	if ( !strcmp( id, "channelcopy" ) )
@@ -95,8 +88,6 @@ void *mlt_create_filter( char *id, void *arg )
 		return filter_transition_init( arg );
 	if ( !strcmp( id, "watermark" ) )
 		return filter_watermark_init( arg );
-	if ( !strcmp( id, "wave" ) )
-		return filter_wave_init( arg );
 	return NULL;
 }
 

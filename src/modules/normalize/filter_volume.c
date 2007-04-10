@@ -31,7 +31,7 @@
 #define MAX_CHANNELS 6
 #define EPSILON 0.00001
 
-/* The normalise functions come from the normalize utility:
+/* The following normalise functions come from the normalize utility:
    Copyright (C) 1999--2002 Chris Vaill */
 
 #define samp_width 16

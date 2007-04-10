@@ -26,53 +26,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* Linear Blend filter - C version contributed by Rogerio Brito.
-   This algorithm has the same interface as the other functions.
-
-   The destination "screen" (pdst) is constructed from the source
-   screen (psrc[0]) line by line.
-
-   The i-th line of the destination screen is the average of 3 lines
-   from the source screen: the (i-1)-th, i-th and (i+1)-th lines, with
-   the i-th line having weight 2 in the computation.
-
-   Remarks:
-   * each line on pdst doesn't depend on previous lines;
-   * due to the way the algorithm is defined, the first & last lines of the
-     screen aren't deinterlaced.
-
-*/
-#if 0
-static void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc, int width, int height )
-{
-	register int x, y;
-	register uint8_t *l0, *l1, *l2, *l3;
-
-	l0 = pdst;			// target line
-	l1 = psrc;			// 1st source line
-	l2 = l1 + width;	// 2nd source line = line that follows l1
-	l3 = l2 + width;	// 3rd source line = line that follows l2
-
-	// Copy the first line
-	memcpy(l0, l1, width);
-	l0 += width;
-
-	for (y = 1; y < height-1; ++y) 
-	{
-		// computes avg of: l1 + 2*l2 + l3
-		for (x = 0; x < width; ++x)
-			l0[x] = (l1[x] + (l2[x]<<1) + l3[x]) >> 2;
-
-		// updates the line pointers
-		l1 = l2; l2 = l3; l3 += width;
-		l0 += width;
-	}
-
-	// Copy the last line
-	memcpy(l0, l1, width);
-}
-#endif
-
 /** Do it :-).
 */
 

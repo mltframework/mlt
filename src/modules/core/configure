@@ -6,13 +6,11 @@ then
 cat << EOF >> ../producers.dat
 color			libmltcore$LIBSUF
 colour			libmltcore$LIBSUF
-framebuffer		libmltcore$LIBSUF
 noise			libmltcore$LIBSUF
 ppm				libmltcore$LIBSUF
 EOF
 
 cat << EOF >> ../filters.dat
-boxblur			libmltcore$LIBSUF
 brightness		libmltcore$LIBSUF
 channelcopy		libmltcore$LIBSUF
 data_feed		libmltcore$LIBSUF
@@ -28,7 +26,6 @@ rescale			libmltcore$LIBSUF
 resize			libmltcore$LIBSUF
 transition		libmltcore$LIBSUF
 watermark		libmltcore$LIBSUF
-wave			libmltcore$LIBSUF
 EOF
 
 cat << EOF >> ../transitions.dat

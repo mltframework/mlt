@@ -1,20 +1,21 @@
 /*
  * producer_framebuffer.c -- create subspeed frames
+ * Copyright (C) 2007 Jean-Baptiste Mardelle <jb@ader.ch>
  * Author: Jean-Baptiste Mardelle, based on the code of motion_est by Zachary Drew
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "producer_framebuffer.h"
@@ -45,19 +46,21 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	// Frame properties objects
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
-	
+
 	// image stride
-	int size;
+	int size, xstride, ystride;
 	switch( *format ){
 		case mlt_image_yuv422:
 			size = *width * *height * 2;
+			xstride = 2;
+			ystride = 2 * *width;
 			break;
 		default:
 			fprintf(stderr, "Unsupported image format\n");
 			return -1;
 	}
 
-	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", NULL );
+	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", 0 );
 	if( output == NULL )
 	{
 		output = mlt_pool_alloc( size );
@@ -69,8 +72,8 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
 
 	// which frames are buffered?
+
 	int error = 0;
-	mlt_properties_set_double( first_frame_properties, "consumer_aspect_ratio", mlt_properties_get_double(frame_properties, "consumer_aspect_ratio"));
 
 	if( first_image == NULL )
 	{
@@ -81,6 +84,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 			return error;
 		}
 	}
+
 	// Start with a base image
 	memcpy( output, first_image, size );
 
@@ -172,6 +176,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
+
 	}
 
 	return 0;

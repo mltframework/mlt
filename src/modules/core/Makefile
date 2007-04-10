@@ -4,10 +4,8 @@ TARGET = ../libmltcore$(LIBSUF)
 
 OBJS = factory.o \
 	   producer_colour.o \
-	   producer_framebuffer.o \
 	   producer_noise.o \
 	   producer_ppm.o \
-	   filter_boxblur.o \
 	   filter_brightness.o \
 	   filter_channelcopy.o \
 	   filter_data_feed.o \
@@ -23,7 +21,6 @@ OBJS = factory.o \
 	   filter_resize.o \
 	   filter_transition.o \
 	   filter_watermark.o \
-	   filter_wave.o \
 	   transition_composite.o \
 	   transition_luma.o \
 	   transition_mix.o \

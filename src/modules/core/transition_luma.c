@@ -3,6 +3,9 @@
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
+ * Adapted from Kino Plugin Timfx, which is
+ * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
