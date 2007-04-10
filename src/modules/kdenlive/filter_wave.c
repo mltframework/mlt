@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 // this is a utility function used by DoWave below
 static uint8_t getPoint(uint8_t *src, int w, int h, int x, int y, int z)
