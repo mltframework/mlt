@@ -45,7 +45,7 @@ else
 	export extra_libs=
 	export svn_ffmpeg=
 	export avformat_suffix=
-	export swscale=false
+	export swscale=
 
 	if [ "$shared_ffmpeg" != "" -a -f "$shared_ffmpeg" ]
 	then
