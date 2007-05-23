@@ -208,12 +208,6 @@ mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( parent_props, "aspect_ratio" ) );
 	mlt_producer_set_in_and_out( result, in, out );
 
-	// Mini fezzik :-/
-	mlt_filter filter = mlt_factory_filter( "data_feed", "attr_check" );
-	mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_fezzik", 1 );
-	mlt_producer_attach( result, filter );
-	mlt_filter_close( filter );
-
 	return result;
 }
 

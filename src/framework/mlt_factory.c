@@ -244,13 +244,10 @@ mlt_consumer mlt_factory_consumer( const char *service, void *input )
 
 	if ( obj != NULL )
 	{
-		mlt_filter filter = mlt_factory_filter( "data_show", NULL );
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( obj );
 		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
 		mlt_properties_set( properties, "mlt_type", "consumer" );
 		mlt_properties_set( properties, "mlt_service", service );
-		mlt_service_attach( MLT_CONSUMER_SERVICE( obj ), filter );
-		mlt_filter_close( filter );
 	}
 	return obj;
 }
