@@ -252,8 +252,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 		else
 		{
-				// Scale the alpha
-				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			*width = iwidth;
 			*height = iheight;
 		}
