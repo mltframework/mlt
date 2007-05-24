@@ -86,21 +86,23 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 /** Retrieve medatata value 
 */
 
-const char* metadata_value(mlt_properties properties, char* name)
+char* metadata_value(mlt_properties properties, char* name)
 {
-	if (name == NULL) return "-";
+	if (name == NULL) return NULL;
 	char *meta = malloc( strlen(name) + 18 );
 	sprintf( meta, "meta.attr.%s.markup", name);
-	return mlt_properties_get( properties, meta);
+	char *result = mlt_properties_get( properties, meta);
+	free(meta);
+	return result;
 }
 
 /** Convert frames to Timecode 
 */
 
-const char* frame_to_timecode( int frames , int fps)
+char* frame_to_timecode( int frames , int fps)
 {
+	if (fps == 0) return strdup("-");
 	char *res = malloc(12);
-	if (fps == 0) return "-";
 	int seconds = frames / (int) fps;
 	frames = frames % ((int) fps);
 	int minutes = seconds / 60;
@@ -172,33 +174,49 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 				else
 				{
 					char *value = mlt_properties_get( feed, name + len );
-					if ( value != NULL ) {
+					if ( value != NULL )
+					{
 						// check for metadata keywords in metadata markup if user requested so
 						if ( mlt_properties_get_int( filter_properties, "dynamic" ) == 1  && !strcmp( name + strlen( name ) - 6, "markup") )
 						{
 							// Find keywords which should be surrounded by '#', like: #title#
-							char* keywords = strtok ( value, "\\#" );
-							char result[] = "";
+							char* keywords = strtok( value, "#" );
+							char result[512] = ""; // XXX: how much is enough?
 							int ct = 0;
-							int fromStart = 0;
-							if ( value[0] == '\\' ) fromStart = 1;
+							int fromStart = ( value[0] == '#' ) ? 1 : 0;
 							
-							while (keywords != NULL) {
-								if (ct % 2 == fromStart) 
-									strcat( result, keywords);
-								else if (!strcmp(keywords, "timecode")) {
-									// special case: replace #tc# with current frame timecode
+							while ( keywords != NULL )
+							{
+								if ( ct % 2 == fromStart )
+								{
+									// backslash in front of # suppresses substitution
+									if ( keywords[ strlen( keywords ) -1 ] == '\\' )
+									{
+										// keep characters except backslash
+										strncat( result, keywords, strlen( keywords ) -1 );
+										strcat( result, "#" );
+										ct++;
+									}
+									else
+									{
+										strcat( result, keywords );
+									}
+								}
+								else if ( !strcmp( keywords, "timecode" ) )
+								{
+									// special case: replace #timecode# with current frame timecode
 									int pos = mlt_properties_get_int( feed, "position" );
-									const char *tc = frame_to_timecode(pos, mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "fps" ));
-									strcat( result, tc);
+									char *tc = frame_to_timecode( pos, mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "fps" ) );
+									strcat( result, tc );
+									free( tc );
 								}
-								else {
+								else
+								{
 									// replace keyword with metadata value
-									const char * metavalue = metadata_value(MLT_FRAME_PROPERTIES( frame ), keywords);
-									if (metavalue == NULL) metavalue = "-";
-									strcat( result, metavalue);
+									char *metavalue = metadata_value( MLT_FRAME_PROPERTIES( frame ), keywords );
+									strcat( result, metavalue ? metavalue : "-" );
 								}
-								keywords = strtok ( NULL, "\\#" );
+								keywords = strtok( NULL, "#" );
 								ct++;
 							}
 							mlt_properties_set( properties, key, (char*) result );
