@@ -199,7 +199,7 @@ Attached Filters:
 
 Mixes:
 
-	The -mix switch provides the simplest means to introducer transitions between
+	The -mix switch provides the simplest means to introduce transitions between
 	adjacent clips.
 
 	For example:
@@ -208,7 +208,7 @@ Mixes:
 
 	would provide both an audio and video transition between clip1 and clip2.
 
-	This functionality supercedes the enforced use of the -track and -transtition
+	This functionality supercedes the enforced use of the -track and -transition
 	switches from earlier versions of inigo and makes life a lot easier :-).
 
 	These can be used in combination, so you can for example do a fade from black

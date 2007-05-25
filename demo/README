@@ -90,7 +90,7 @@ Audio Stuff
 
 	A music bed sound track can be mixed with a video. The sound track of the
 	video clip has a "floating" amplitude normalisation filter applied.
-	Typically, audio nornmalisation applies a constant gain factor across the
+	Typically, audio normalisation applies a constant gain factor across the
 	entire duration of an audio segment from a single source where the 
 	gain factor is automatically determined by anaylsing the maximum "power"
 	or peak levels. However, in news production, a popular requirement is to

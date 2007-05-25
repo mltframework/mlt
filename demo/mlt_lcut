@@ -1,12 +1,12 @@
 inigo \
+clip1.dv out=100 \
+-track \
 -blank 49 \
 clip2.dv in=100 \
--track \
-clip1.dv in=0 out=100 \
 -transition \
-luma in=50 out=55 a_track=0 b_track=1 reverse=1 \
+luma in=50 out=55 a_track=0 b_track=1 \
 -transition \
-mix:1 in=50 out=98 a_track=0 b_track=1 \
+mix:1 in=50 out=98 a_track=1 b_track=0 \
 -transition \
-mix start=1 end=0 in=99 out=100 a_track=0 b_track=1 \
+mix start=1 end=0 in=99 out=100 a_track=1 b_track=0 \
 $*

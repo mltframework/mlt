@@ -1,10 +1,10 @@
 inigo \
-clip1.dv out=99 \
--track \
 -blank 49 \
 clip2.dv in=100 \
+-track \
+clip1.dv out=99 \
 -transition \
-mix start=0 end=1 in=49 out=50 a_track=0 b_track=1 \
+mix start=0 end=1 in=49 out=50 a_track=1 b_track=0 \
 -transition \
-mix:1 in=51 out=99 a_track=0 b_track=1 \
+mix:1 in=51 out=99 a_track=1 b_track=0 \
 $*
