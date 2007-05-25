@@ -70,6 +70,9 @@ mlt_consumer consumer_libdv_init( char *arg )
 		mlt_properties_set_data( properties, "audio", consumer_encode_audio, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "output", consumer_output, 0, NULL, NULL );
 
+		// Terminate at end of the stream by default
+		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
+
 		// Set up start/stop/terminated callbacks
 		this->start = consumer_start;
 		this->stop = consumer_stop;
