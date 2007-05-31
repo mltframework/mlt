@@ -47,6 +47,9 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
 
+	*width = mlt_properties_get_int( frame_properties, "width" );
+	*height = mlt_properties_get_int( frame_properties, "height" );
+
 	// image stride
 	int size, xstride, ystride;
 	switch( *format ){
@@ -247,7 +250,7 @@ mlt_producer producer_framebuffer_init( char *arg )
 		if ( speed != 1.0 )
 		{
 			double real_length = (double)  mlt_producer_get_length( real_producer );
-			mlt_properties_set_position( properties, "length", real_length * 2 / speed );
+			mlt_properties_set_position( properties, "length", real_length / speed );
 		}
 
 		// Since we control the seeking, prevent it from seeking on its own
