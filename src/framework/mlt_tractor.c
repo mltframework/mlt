@@ -205,7 +205,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_frame frame = mlt_frame_pop_service( this );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
-	mlt_properties_set_int( frame_properties, "rescale_alpha", mlt_properties_get_int( properties, "resize_alpha" ) );
+	mlt_properties_set_int( frame_properties, "resize_alpha", mlt_properties_get_int( properties, "resize_alpha" ) );
 	mlt_properties_set_int( frame_properties, "distort", mlt_properties_get_int( properties, "distort" ) );
 	mlt_properties_set_double( frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "consumer_deinterlace" ) );
