@@ -106,11 +106,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 		*image = output;
 	}
 
-	return 0;
-}
-
-static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight )
-{
+	// Scale the alpha
 	uint8_t *output = NULL;
 	uint8_t *input = mlt_frame_get_alpha_mask( this );
 
@@ -132,6 +128,8 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
 		// Set it back on the frame
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output, owidth * oheight, mlt_pool_release, NULL );
 	}
+
+	return 0;
 }
 
 /** Do it :-).
@@ -215,9 +213,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				scaler_method( this, image, *format, mlt_image_yuv422, iwidth, iheight, owidth, oheight );
 				*width = owidth;
 				*height = oheight;
-
-				// Scale the alpha
-				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else if ( *format == mlt_image_rgb24 && wanted_format == mlt_image_rgb24 )
 			{
@@ -227,9 +222,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				// Return the output
 				*width = owidth;
 				*height = oheight;
-
-				// Scale the alpha
-				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else if ( *format == mlt_image_rgb24 || *format == mlt_image_rgb24a )
 			{
@@ -240,9 +232,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				*format = mlt_image_yuv422;
 				*width = owidth;
 				*height = oheight;
-
-				// Scale the alpha
-				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else
 			{
