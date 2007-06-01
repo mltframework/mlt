@@ -275,18 +275,20 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			mlt_frame b_frame_ptr = this->frames[ !reverse_order ? b_frame : a_frame ];
 			int a_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide" );
 			int b_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide" );
-
-			// Process the transition
-			*frame = mlt_transition_process( this, a_frame_ptr, b_frame_ptr );
-
-			// We need to ensure that the tractor doesn't consider this frame for output
-			if ( *frame == a_frame_ptr )
-				b_hide |= type;
-			else
-				a_hide |= type;
-
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide", a_hide );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide", b_hide );
+			if ( !( a_hide & type ) && !( b_hide & type ) )
+			{
+				// Process the transition
+				*frame = mlt_transition_process( this, a_frame_ptr, b_frame_ptr );
+	
+				// We need to ensure that the tractor doesn't consider this frame for output
+				if ( *frame == a_frame_ptr )
+					b_hide |= type;
+				else
+					a_hide |= type;
+	
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide", a_hide );
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide", b_hide );
+			}
 		}
 	}
 	
