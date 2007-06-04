@@ -29,6 +29,8 @@
 
 typedef int ( *image_scaler )( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight );
 
+static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight );
+
 static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Get the properties
@@ -45,6 +47,12 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 		
 		// Return the output
 		*image = mlt_properties_get_data( properties, "image", NULL );
+
+		// Scale the alpha channel only if exists and not correct size
+		int alpha_size = 0;
+		mlt_properties_get_data( properties, "alpha", &alpha_size );
+		if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
+			scale_alpha( this, iwidth, iheight, owidth, oheight );
 	}
 	else if ( iformat == mlt_image_rgb24 || iformat == mlt_image_rgb24a )
 	{
@@ -65,6 +73,8 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 				mlt_convert_rgb24a_to_yuv422( *image, iwidth, iheight, iwidth * 4, output, alpha );
 
 				mlt_properties_set_data( properties, "alpha", alpha, iwidth * ( iheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
+
+				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else
 			{
@@ -90,6 +100,8 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 				mlt_convert_rgb24a_to_yuv422( *image, owidth, oheight, owidth * 4, output, alpha );
 
 				mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
+
+				scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 			else
 			{
@@ -106,6 +118,11 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 		*image = output;
 	}
 
+	return 0;
+}
+
+static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight )
+{
 	// Scale the alpha
 	uint8_t *output = NULL;
 	uint8_t *input = mlt_frame_get_alpha_mask( this );
@@ -128,8 +145,6 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 		// Set it back on the frame
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output, owidth * oheight, mlt_pool_release, NULL );
 	}
-
-	return 0;
 }
 
 /** Do it :-).
