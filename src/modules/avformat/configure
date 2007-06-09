@@ -70,17 +70,28 @@ else
 
 	if [ "$svn_ffmpeg" != "" ]
 	then
-		[ ! -d "ffmpeg" ] && ( 
+		if [ "$gpl" = "true" ]
+		then
+			enable_gpl="--enable-gpl"
+			if [ "$swscale" != "" ]
+			then
+					enable_swscale="--enable-swscaler"
+					echo "SWSCALE=1" >> config.mak
+			fi
+		elif [ "$swscale" != "" ]
+		then
+			echo
+			echo "ERROR        ERROR        ERROR        ERROR        ERROR        ERROR"
+			echo "--enable-gpl is required to use --avformat-swscale with --avformat-svn!"
+			echo
+			exit
+		fi
+		if [ ! -d "ffmpeg" ]
+		then
 			echo
 			echo "Checking out ffmpeg/avformat - no password required"
 			echo
 			svn checkout svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
-		)
-		enable_gpl=`[ "$gpl" = "true" ] && echo "--enable-gpl"`
-		if [ "$swscale" != "" ]
-		then
-				enable_swscale="--enable-swscaler"
-				echo "SWSCALE=1" >> config.mak
 		fi
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
