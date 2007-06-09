@@ -30,10 +30,7 @@ all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
 		if [ $(LOCAL_FFMPEG) ] ; then \
-			$(MAKE) -C ffmpeg all ; \
-			cp -f ffmpeg/libavcodec/libavcodec$(AVFORMAT_SUFFIX)$(LIBSUF) ../../framework/libavcodec$(AVFORMAT_SUFFIX)$(LIBSUF) ; \
-			cp -f ffmpeg/libavformat/libavformat$(AVFORMAT_SUFFIX)$(LIBSUF) ../../framework/libavformat$(AVFORMAT_SUFFIX)$(LIBSUF) ; \
-			cp -f ffmpeg/libavutil/libavutil$(AVFORMAT_SUFFIX)$(LIBSUF) ../../framework/libavutil$(AVFORMAT_SUFFIX)$(LIBSUF) ; \
+			$(MAKE) -C ffmpeg lib ; \
 		fi
 		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
@@ -47,15 +44,10 @@ distclean:	clean
 
 clean:	
 		#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg clean ; fi
-		rm -f ../../framework/libavcodec$(AVFORMAT_SUFFIX)$(LIBSUF) ../../framework/libavformat$(AVFORMAT_SUFFIX)$(LIBSUF) ../../framework/libavutil$(AVFORMAT_SUFFIX)$(LIBSUF) $(OBJS) $(TARGET) 
+		rm -f $(OBJS) $(TARGET)
 
 install: all
 		install -m 755 $(TARGET) "$(DESTDIR)$(prefix)/share/mlt/modules"
-		if [ $(LOCAL_FFMPEG) ] ; then \
-			install -m 755 ../../framework/libavcodec$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(libdir)" ; \
-			install -m 755 ../../framework/libavformat$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(libdir)" ; \
-			install -m 755 ../../framework/libavutil$(AVFORMAT_SUFFIX)$(LIBSUF) "$(DESTDIR)$(libdir)" ; \
-		fi
 
 ifneq ($(wildcard .depend),)
 include .depend
