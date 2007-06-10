@@ -652,7 +652,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				mlt_properties_set_int( frame_properties, "top_field_first", av_frame->top_field_first );
 				convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
 				mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
-				mlt_properties_set_double( properties, "_current_position", int_position );
+				mlt_properties_set_int( properties, "_current_position", int_position );
 			}
 
 			// We're finished with this packet regardless
