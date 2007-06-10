@@ -211,6 +211,8 @@ mlt_consumer consumer_avformat_init( char *arg )
 		mlt_properties_set_int( properties, "coder", 0 );
 		mlt_properties_set_int( properties, "context", 0 );
 		mlt_properties_set_int( properties, "predictor", 0 );
+		mlt_properties_set_int( properties, "ildct", 0 );
+		mlt_properties_set_int( properties, "ilme", 0 );
 
 		// Ensure termination at end of the stream
 		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
@@ -517,6 +519,14 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->context_model= mlt_properties_get_int( properties, "context" );
 		c->prediction_method= mlt_properties_get_int( properties, "predictor" );
 		c->me_method = mlt_properties_get_int( properties, "me_method" );
+		if ( mlt_properties_get_int( properties, "progressive" ) == 0 &&
+		     mlt_properties_get_int( properties, "deinterlace" ) == 0 )
+		{
+			if ( mlt_properties_get_int( properties, "ildct" ) )
+				c->flags |= CODEC_FLAG_INTERLACED_DCT;
+			if ( mlt_properties_get_int( properties, "ilme" ) )
+				c->flags |= CODEC_FLAG_INTERLACED_ME;
+		}
  	}
 	else
 	{
@@ -1002,6 +1012,10 @@ static void *consumer_thread( void *arg )
 					{
 						// Set the quality
 						output->quality = video_st->quality;
+
+						// Set frame interlace hints
+						output->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
+						output->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 
 	 					// Encode the image
 	 					out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
