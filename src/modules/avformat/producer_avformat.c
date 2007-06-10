@@ -909,7 +909,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 			while ( ptr != NULL && ret >= 0 && pkt.stream_index == index && len > 0 )
 			{
 				// Decode the audio
-#ifdef FF_INPUT_BUFFER_PADDING_SIZE
+#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
 				uint8_t *inbuf = mlt_pool_alloc( len + FF_INPUT_BUFFER_PADDING_SIZE );
 				memcpy( inbuf, ptr, len );
 				inbuf[ len ] = 0;
