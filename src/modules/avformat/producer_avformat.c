@@ -572,7 +572,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Duplicate the last image if necessary (see comment on rawvideo below)
-	if ( av_frame != NULL && ( paused || mlt_properties_get_int( properties, "_current_position" ) >= req_position ) && av_bypass == 0 )
+	int current_position = mlt_properties_get_int( properties, "_current_position" );
+	int got_picture = mlt_properties_get_int( properties, "_got_picture" );
+	if ( av_frame != NULL && got_picture && ( paused || current_position >= req_position ) && av_bypass == 0 )
 	{
 		// Duplicate it
 		convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
@@ -583,8 +585,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	else
 	{
 		int ret = 0;
-		int got_picture = 0;
 		int int_position = 0;
+		got_picture = 0;
 
 		av_init_packet( &pkt );
 
@@ -653,6 +655,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
 				mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
 				mlt_properties_set_int( properties, "_current_position", int_position );
+				mlt_properties_set_int( properties, "_got_picture", 1 );
 			}
 
 			// We're finished with this packet regardless
