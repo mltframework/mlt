@@ -491,7 +491,7 @@ Entities and Parameterisation:
 	
 	If you are embedding another XML document into a property value not using
 	a CNODE section, then any DOCTYPE section must be relocated before any of
-	the xml elements to be well-formed. See demo/dvg.westley for an example.
+	the xml elements to be well-formed. See demo/svg.westley for an example.
 	
 	Entities can be used to parameterise westley! Using the above example, the
 	entity declared serves as the default value for &msg;. The entity content
