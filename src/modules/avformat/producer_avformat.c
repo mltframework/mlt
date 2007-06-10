@@ -285,7 +285,12 @@ static int producer_open( mlt_producer this, char *file )
 			
 			// Check if we're seekable (something funny about mpeg here :-/)
 			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 ) )
+			{
 				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "_start_time" ), AVSEEK_FLAG_BACKWARD ) >= 0 );
+				mlt_properties_set_data( properties, "dummy_context", context, 0, producer_file_close, NULL );
+				av_open_input_file( &context, file, NULL, 0, NULL );
+				av_find_stream_info( context );
+			}
 			else
 				av_bypass = 1;
 
@@ -324,7 +329,6 @@ static int producer_open( mlt_producer this, char *file )
 			{
 				// We'll use the open one as our video_context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
-				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
 
 				// And open again for our audio context
 				av_open_input_file( &context, file, NULL, 0, NULL );
@@ -337,7 +341,6 @@ static int producer_open( mlt_producer this, char *file )
 			{
 				// We only have a video context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
-				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
 			}
 			else if ( audio_index != -1 )
 			{
@@ -466,9 +469,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain the expected frame numer
 	mlt_position expected = mlt_properties_get_position( properties, "_video_expected" );
 
-	// Calculate the real time code
-	double real_timecode = producer_time_of_frame( this, position );
-
 	// Get the video stream
 	AVStream *stream = context->streams[ index ];
 
@@ -486,9 +486,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Special case ffwd handling
 	int ignore = 0;
-
-	// Current time calcs
-	int current_position = mlt_properties_get_double( properties, "_current_position" );
 
 	// We may want to use the source fps if available
 	double source_fps = mlt_properties_get_double( properties, "source_fps" );
@@ -618,8 +615,17 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 				// Decode the image
 				if ( must_decode || int_position >= req_position )
+				{
+#ifdef FF_INPUT_BUFFER_PADDING_SIZE
+					uint8_t *inbuf = mlt_pool_alloc( pkt.size + FF_INPUT_BUFFER_PADDING_SIZE );
+					memcpy( inbuf, pkt.data, pkt.size );
+					inbuf[ pkt.size ] = 0;
+					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, inbuf, pkt.size );
+					mlt_pool_release( inbuf );
+#else
 					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
-
+#endif
+				}
 				if ( got_picture )
 				{
 					// Handle ignore
@@ -897,13 +903,21 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
     		int len = pkt.size;
     		uint8_t *ptr = pkt.data;
-			int data_size;
+			int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
 
 			// We only deal with audio from the selected audio_index
 			while ( ptr != NULL && ret >= 0 && pkt.stream_index == index && len > 0 )
 			{
 				// Decode the audio
+#ifdef FF_INPUT_BUFFER_PADDING_SIZE
+				uint8_t *inbuf = mlt_pool_alloc( len + FF_INPUT_BUFFER_PADDING_SIZE );
+				memcpy( inbuf, ptr, len );
+				inbuf[ len ] = 0;
+				ret = avcodec_decode_audio2( codec_context, temp, &data_size, inbuf, len );
+				mlt_pool_release( inbuf );
+#else
 				ret = avcodec_decode_audio( codec_context, temp, &data_size, ptr, len );
+#endif
 
 				if ( ret < 0 )
 				{
