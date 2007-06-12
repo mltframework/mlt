@@ -1,4 +1,10 @@
+include config.mak
+
 all clean distclean install uninstall:
 	$(MAKE) DESTDIR=$(DESTDIR) -C src $@ 
 	$(MAKE) -C test $@ 
 
+dist:
+	[ -d "mlt++-$(version)" ] && rm -rf "mlt++-$(version)" || echo -n
+	svn export . "mlt++-$(version)"
+	tar -cvzf "mlt++-$(version).tar.gz" "mlt++-$(version)"
