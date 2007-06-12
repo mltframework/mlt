@@ -27,3 +27,6 @@ install:
 		fi \
 	done
 
+uninstall:
+	rm -rf "$(DESTDIR)$(prefix)/share/mlt/modules"
+

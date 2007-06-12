@@ -85,6 +85,11 @@ install:
 	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
 
+uninstall:
+	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
+	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
+
 ifneq ($(wildcard .depend),)
 include .depend
 endif

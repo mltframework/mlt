@@ -30,6 +30,9 @@ install:	all
 	install -d "$(DESTDIR)$(bindir)"
 	install -c -s -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
 
+uninstall:
+	rm -f "$(DESTDIR)$(bindir)/$(TARGET)"
+
 ifneq ($(wildcard .depend),)
 include .depend
 endif

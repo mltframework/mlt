@@ -60,6 +60,12 @@ install:	all
 	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/miracle"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/miracle"
 
+uninstall:
+	rm -f "$(DESTDIR)$(bindir)/$(TARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(LIBTARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(LIBNAME)"
+	rm -rf "$(DESTDIR)$(prefix)/include/mlt/miracle"
+
 ifneq ($(wildcard .depend),)
 include .depend
 endif

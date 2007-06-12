@@ -41,3 +41,13 @@ install:
 	if test -z "$(DESTDIR)"; then \
 	  /sbin/ldconfig || true; \
 	fi
+
+uninstall:
+	rm -f "$(DESTDIR)$(bindir)"/mlt-config
+	rm -f "$(DESTDIR)$(libdir)/pkgconfig/mlt-*.pc"
+	list='$(SUBDIRS)'; \
+	for subdir in $$list; do \
+		$(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
+	done
+	rm -rf "$(DESTDIR)$(prefix)/include/mlt"
+	rm -rf "$(DESTDIR)$(prefix)/share/mlt"

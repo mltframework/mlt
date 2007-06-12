@@ -56,6 +56,11 @@ install: 	all
 	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/valerie"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/valerie"
 
+uninstall:
+	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
+	rm -rf "$(DESTDIR)$(prefix)/include/mlt/valerie"
+
 ifneq ($(wildcard .depend),)
 include .depend
 endif
