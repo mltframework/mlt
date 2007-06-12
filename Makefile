@@ -51,3 +51,8 @@ uninstall:
 	done
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt"
 	rm -rf "$(DESTDIR)$(prefix)/share/mlt"
+
+dist:
+	[ -d "mlt-$(version)" ] && rm -rf "mlt-$(version)" || echo
+	svn export . "mlt-$(version)"
+	tar -cvzf "mlt-$(version).tar.gz" "mlt-$(version)"
