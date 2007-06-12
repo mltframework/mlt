@@ -21,3 +21,5 @@ clean:
 distclean: clean
 
 install:
+
+uninstall:

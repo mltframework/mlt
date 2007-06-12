@@ -1,4 +1,4 @@
-all clean distclean install:
+all clean distclean install uninstall:
 	$(MAKE) DESTDIR=$(DESTDIR) -C src $@ 
 	$(MAKE) -C test $@ 
 

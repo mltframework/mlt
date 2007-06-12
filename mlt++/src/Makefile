@@ -55,3 +55,7 @@ install:
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
 	/sbin/ldconfig || true
 
+uninstall:
+	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
+	rm -rf "$(DESTDIR)$(prefix)/include/mlt++"
