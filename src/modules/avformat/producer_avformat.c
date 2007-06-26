@@ -617,17 +617,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 				// Decode the image
 				if ( must_decode || int_position >= req_position )
-				{
-#ifdef FF_INPUT_BUFFER_PADDING_SIZE
-					uint8_t *inbuf = mlt_pool_alloc( pkt.size + FF_INPUT_BUFFER_PADDING_SIZE );
-					memcpy( inbuf, pkt.data, pkt.size );
-					inbuf[ pkt.size ] = 0;
-					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, inbuf, pkt.size );
-					mlt_pool_release( inbuf );
-#else
 					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
-#endif
-				}
+
 				if ( got_picture )
 				{
 					// Handle ignore
@@ -888,7 +879,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	{
 		int ret = 0;
 		int got_audio = 0;
-		int16_t *temp = mlt_pool_alloc( sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE );
+		int16_t *temp = av_malloc( sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE );
 
 		av_init_packet( &pkt );
 
@@ -904,24 +895,20 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 			// Read a packet
 			ret = av_read_frame( context, &pkt );
 
-    		int len = pkt.size;
-    		uint8_t *ptr = pkt.data;
-			int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
+			int len = pkt.size;
+			uint8_t *ptr = pkt.data;
 
 			// We only deal with audio from the selected audio_index
 			while ( ptr != NULL && ret >= 0 && pkt.stream_index == index && len > 0 )
 			{
+				int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
+
 				// Decode the audio
 #if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
-				uint8_t *inbuf = mlt_pool_alloc( len + FF_INPUT_BUFFER_PADDING_SIZE );
-				memcpy( inbuf, ptr, len );
-				inbuf[ len ] = 0;
-				ret = avcodec_decode_audio2( codec_context, temp, &data_size, inbuf, len );
-				mlt_pool_release( inbuf );
+				ret = avcodec_decode_audio2( codec_context, temp, &data_size, ptr, len );
 #else
 				ret = avcodec_decode_audio( codec_context, temp, &data_size, ptr, len );
 #endif
-
 				if ( ret < 0 )
 				{
 					ret = 0;
@@ -981,7 +968,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		mlt_properties_set_int( properties, "_audio_used", audio_used );
 
 		// Release the temporary audio
-		mlt_pool_release( temp );
+		av_free( temp );
 	}
 	else
 	{
