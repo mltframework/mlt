@@ -497,6 +497,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->rc_max_rate = mlt_properties_get_int( properties, "video_rc_max_rate" );
 		c->rc_min_rate = mlt_properties_get_int( properties, "video_rc_min_rate" );
 		c->rc_buffer_size = mlt_properties_get_int( properties, "video_rc_buffer_size" );
+		c->rc_initial_buffer_occupancy = c->rc_buffer_size*3/4;
 		c->rc_buffer_aggressivity= mlt_properties_get_double( properties, "video_rc_buffer_aggressivity" );
 		c->rc_initial_cplx= mlt_properties_get_double( properties, "video_rc_initial_cplx" );
 		c->i_quant_factor = mlt_properties_get_double( properties, "video_i_qfactor" );
