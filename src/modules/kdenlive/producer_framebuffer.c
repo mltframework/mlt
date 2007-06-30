@@ -166,7 +166,6 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
 		}
 
-
 		// Make sure things are in their place
 		mlt_properties_set_data( properties, "first_frame", first_frame, 0, NULL, NULL );
 
@@ -177,9 +176,11 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_frame_push_service( *frame, this );
 		mlt_frame_push_service( *frame, framebuffer_get_image );
 
+		double ratio = (double) mlt_properties_get_int(properties, "width" ) / (double) mlt_properties_get_int( properties, "height" ) / ( (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "width" ) / (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "height" ) );
+
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
-
+		mlt_properties_set_double( MLT_FRAME_PROPERTIES(*frame), "aspect_ratio", mlt_properties_get_double(MLT_PRODUCER_PROPERTIES( real_producer), "aspect_ratio" ) * ratio);
 	}
 
 	return 0;
@@ -220,7 +221,7 @@ mlt_producer producer_framebuffer_init( char *arg )
 	count = strcspn( ptr, ":" );
 	ptr[count] = '\0';
 
-	real_producer = mlt_factory_producer( "fezzik", props );	
+	real_producer = mlt_factory_producer( "fezzik", props );
 
 	ptr += count + 1;
 	ptr += strspn( ptr, ":" );
@@ -243,9 +244,9 @@ mlt_producer producer_framebuffer_init( char *arg )
 		// Store the producer and fitler
 		mlt_properties_set_data( properties, "producer", real_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
-		// Grap some stuff from the real_producer
-		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ),
-				"length,resource,width,height" );
+		// Grab some stuff from the real_producer
+		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "length,resource,width,height" );
+
 
 		if ( speed != 1.0 )
 		{
