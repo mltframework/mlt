@@ -165,7 +165,9 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 			// Get the frame
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
 
-			double ratio = (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "width" ) / (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "height" ) / ( (double) mlt_properties_get_int(MLT_FRAME_PROPERTIES( *frame ), "width" ) / (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( *frame ), "height" ));
+			double ratio = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( real_producer ), "aspect_ratio" ) * (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "width" ) / (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "height" ) / ( (double) mlt_properties_get_int(MLT_FRAME_PROPERTIES( *frame ), "width" ) / (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( *frame ), "height" ));
+
+			mlt_properties_set_double( properties, "ratio_fix", ratio );
 		}
 
 		// Make sure things are in their place
