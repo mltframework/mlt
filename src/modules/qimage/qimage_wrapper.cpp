@@ -23,16 +23,33 @@
 
 #include "qimage_wrapper.h"
 #include <qimage.h>
+
+
+#include "config.h"
+
+#ifdef USE_KDE
+#include <kinstance.h>
+#include <kimageio.h>
+#endif
+
 #include <cmath>
 
 extern "C" {
 
 #include <framework/mlt_pool.h>
 
+#ifdef USE_KDE
+static KInstance *instance = 0L;
+#endif
+
 static void qimage_delete( void *data )
 {
 	QImage *image = ( QImage * )data;
 	delete image;
+#ifdef USE_KDE
+	if (instance) delete instance;
+	instance = 0L;
+#endif
 }
 
 static void clear_buffered_image( mlt_properties producer_props, uint8_t **current_image, uint8_t **current_alpha )
@@ -55,6 +72,16 @@ static void assign_buffered_image( mlt_properties producer_props, uint8_t *curre
 	mlt_properties_set_int( producer_props, "_qimage_width", width );
 	mlt_properties_set_int( producer_props, "_qimage_height", height );
 	mlt_events_unblock( producer_props, NULL );
+}
+
+void init_qimage()
+{
+#ifdef USE_KDE
+	if (!instance) {
+	    instance = new KInstance("qimage_prod");
+	    KImageIO::registerFormats();
+	}
+#endif
 }
 
 void refresh_qimage( mlt_frame frame, int width, int height )

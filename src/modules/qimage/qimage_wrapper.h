@@ -41,6 +41,7 @@ struct producer_qimage_s
 typedef struct producer_qimage_s *producer_qimage;
 
 extern void refresh_qimage( mlt_frame, int width, int height );
+extern void init_qimage();
 
 #ifdef __cplusplus
 }

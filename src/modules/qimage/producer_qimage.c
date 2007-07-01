@@ -46,6 +46,7 @@ mlt_producer producer_qimage_init( char *filename )
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
 	
 		// Callback registration
+		init_qimage();
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
 

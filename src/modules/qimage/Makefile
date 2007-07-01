@@ -9,6 +9,10 @@ CFLAGS+=-I../../
 LDFLAGS=-L../../framework $(QTLIBS) -lmlt -lstdc++
 CXXFLAGS+=$(CFLAGS) $(QTCXXFLAGS) -Wno-deprecated
 
+ifdef USE_KDE
+LDFLAGS+= -lkio
+endif
+
 SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)
 
 all: 	$(TARGET)
