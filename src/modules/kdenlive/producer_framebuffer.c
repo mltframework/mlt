@@ -50,20 +50,23 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	*width = mlt_properties_get_int( frame_properties, "width" );
 	*height = mlt_properties_get_int( frame_properties, "height" );
 
-	// image stride
-	int size, xstride, ystride;
-	switch( *format ){
-		case mlt_image_yuv422:
-			size = *width * *height * 2;
-			xstride = 2;
-			ystride = 2 * *width;
+	int size;
+	switch ( *format )
+	{
+		case mlt_image_yuv420p:
+			size = *width * 3 * ( *height + 1 ) / 2;
+			break;
+		case mlt_image_rgb24:
+			size = *width * ( *height + 1 ) * 3;
 			break;
 		default:
-			fprintf(stderr, "Unsupported image format\n");
-			return -1;
+			*format = mlt_image_yuv422;
+			size = *width * ( *height + 1 ) * 2;
+			break;
 	}
 
-	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", 0 );
+	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", NULL );
+
 	if( output == NULL )
 	{
 		output = mlt_pool_alloc( size );
