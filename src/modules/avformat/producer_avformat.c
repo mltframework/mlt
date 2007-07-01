@@ -272,9 +272,9 @@ static int producer_open( mlt_producer this, char *file )
 			if ( context->duration != AV_NOPTS_VALUE ) 
 			{
 				// This isn't going to be accurate for all formats
-				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps );
-				mlt_properties_set_position( properties, "out", frames - 2 );
-				mlt_properties_set_position( properties, "length", frames - 1 );
+				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps + 0.5 );
+				mlt_properties_set_position( properties, "out", frames - 1 );
+				mlt_properties_set_position( properties, "length", frames - 0 );
 			}
 
 			// Find default audio and video streams
@@ -492,7 +492,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	double fps = mlt_properties_get_double( properties, "fps" );
 
 	// This is the physical frame position in the source
-	int req_position = ( int )( position / fps * source_fps );
+	int req_position = ( int )( position / fps * source_fps + 0.5 );
 
 	// Get the seekable status
 	int seekable = mlt_properties_get_int( properties, "seekable" );
@@ -552,7 +552,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else if ( seekable && ( position < expected || position - expected >= 12 ) )
 		{
 			// Calculate the timestamp for the requested frame
-			int64_t timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE );
+			int64_t timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE + 0.5 );
 			if ( ( uint64_t )context->start_time != AV_NOPTS_VALUE )
 				timestamp += context->start_time;
 			if ( must_decode )
@@ -606,10 +606,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
 				// Determine time code of the packet
-				int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps );
+				int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
 				if ( context->start_time != AV_NOPTS_VALUE )
-					int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE );
-
+					int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
 				int last_position = mlt_properties_get_int( properties, "_last_position" );
 				if ( int_position == last_position )
 					int_position = last_position + 1;
