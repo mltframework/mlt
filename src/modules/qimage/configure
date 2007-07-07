@@ -2,13 +2,16 @@
 
 if [ "$help" = "1" ]
 then
-        cat << EOF
+	cat << EOF
 QImage options:
 
   --qimage-libdir         - Location of QT lib directory [/usr/lib/qt3]
   --qimage-includedir     - Location of QT include directory [/usr/include/qt3]
+  --kde-libdir            - Location of KDE lib directory [/usr/lib]
+  --kde-includedir        - Location of KDE include directory [/usr/include/kde]
 
 EOF
+
 else
 	targetos=$(uname -s)
 	case $targetos in
@@ -29,6 +32,7 @@ else
 	qimage_libdir=/usr/lib/qt3
 
 	kde_includedir=/usr/include/kde
+	kde_libdir=/usr/lib
 
 	if [ "$QTDIR" != "" ]
 	then
@@ -39,6 +43,7 @@ else
 	if [ "$KDEDIR" != "" ]
 	then
 		kde_includedir="$KDEDIR/include"
+		kde_libdir="$KDEDIR"
 	fi
 
 	for i in "$@"
@@ -46,6 +51,8 @@ else
 		case $i in
 			--qimage-libdir=* )	qimage_libdir="${i#--qimage-libdir=}" ;;
 			--qimage-includedir=* )	qimage_includedir="${i#--qimage-includedir=}" ;;
+			--kde-libdir=* )	kde_libdir="${i#--kde-libdir=}" ;;
+			--kde-includedir=* )	kde_includedir="${i#--kde-includedir=}" ;;
 		esac
 	done
 
@@ -58,11 +65,12 @@ else
 			echo "#define USE_KDE" >> config.h
 			echo "USE_KDE=1" >> config.mak
 			echo QTCXXFLAGS=-I$qimage_includedir -I$kde_includedir >> config.mak
+			echo QTLIBS=-L$qimage_libdir/lib -L$kde_libdir/lib -lqt-mt >> config.mak
 		else 
 			echo "qimage: KDE environment not found - disabling extra image formats"
 			echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
+			echo QTLIBS=-L$qimage_libdir/lib -lqt-mt >> config.mak
 		fi
-		echo QTLIBS=-L$qimage_libdir/lib -lqt-mt >> config.mak
 		echo qimage		libmltqimage$LIBSUF >> ../producers.dat
 	else
 		echo "qimage: QT environment not found - disabling"
