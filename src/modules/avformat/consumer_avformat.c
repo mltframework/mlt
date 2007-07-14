@@ -1071,6 +1071,70 @@ static void *consumer_thread( void *arg )
 		}
 	}
 
+#ifdef FLUSH
+	if ( ! real_time_output )
+	{
+		// Flush audio fifo
+		if ( audio_st && audio_st->codec->frame_size > 1 ) for (;;)
+		{
+			AVCodecContext *c = audio_st->codec;
+			AVPacket pkt;
+			av_init_packet( &pkt );
+			pkt.size = 0;
+
+			if ( /*( c->capabilities & CODEC_CAP_SMALL_LAST_FRAME ) &&*/
+				( channels * audio_input_frame_size < sample_fifo_used( fifo ) ) )
+			{
+				sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
+				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
+			}
+			if ( pkt.size <= 0 )
+				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, NULL );
+			if ( pkt.size <= 0 )
+				break;
+
+			// Write the compressed frame in the media file
+			if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
+				pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st->time_base );
+			pkt.flags |= PKT_FLAG_KEY;
+			pkt.stream_index = audio_st->index;
+			pkt.data = audio_outbuf;
+			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
+			{
+				fprintf(stderr, "Error while writing flushed audio frame\n");
+				break;
+			}
+		}
+
+		// Flush video
+		if ( video_st && !( oc->oformat->flags & AVFMT_RAWPICTURE ) ) for (;;)
+		{
+			AVCodecContext *c = video_st->codec;
+			AVPacket pkt;
+			av_init_packet( &pkt );
+
+			// Encode the image
+			pkt.size = avcodec_encode_video( c, video_outbuf, video_outbuf_size, NULL );
+			if ( pkt.size <= 0 )
+				break;
+
+			if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
+				pkt.pts= av_rescale_q( c->coded_frame->pts, c->time_base, video_st->time_base );
+			if( c->coded_frame && c->coded_frame->key_frame )
+				pkt.flags |= PKT_FLAG_KEY;
+			pkt.stream_index = video_st->index;
+			pkt.data = video_outbuf;
+
+			// write the compressed frame in the media file
+			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
+			{
+				fprintf(stderr, "Error while writing flushed video frame\n");
+				break;
+			}
+		}
+	}
+#endif
+
 	// close each codec 
 	if (video_st)
 		close_video(oc, video_st);
