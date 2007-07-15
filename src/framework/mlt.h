@@ -41,6 +41,7 @@ extern "C"
 #include "mlt_tokeniser.h"
 #include "mlt_parser.h"
 #include "mlt_geometry.h"
+#include "mlt_profile.h"
 
 #ifdef __cplusplus
 }

@@ -102,9 +102,6 @@ mlt_consumer consumer_sdl_init( char *arg )
 		mlt_service service = MLT_CONSUMER_SERVICE( parent );
 		this->properties = MLT_SERVICE_PROPERTIES( service );
 
-		// Default display aspect ratio
-		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
-		
 		// Set the default volume
 		mlt_properties_set_double( this->properties, "volume", 1.0 );
 
@@ -135,10 +132,6 @@ mlt_consumer consumer_sdl_init( char *arg )
 			this->width = mlt_properties_get_int( this->properties, "width" );
 			this->height = mlt_properties_get_int( this->properties, "height" );
 		}
-
-		// Default window size
-		this->window_width = ( double )this->height * display_ratio;
-		this->window_height = this->height;
 
 		// Set the sdl flags
 		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
@@ -218,6 +211,11 @@ int consumer_start( mlt_consumer parent )
 
 		if ( audio_off == 0 )
 			SDL_InitSubSystem( SDL_INIT_AUDIO );
+
+		// Default window size
+		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
+		this->window_width = ( double )this->height * display_ratio;
+		this->window_height = this->height;
 
 		if ( this->sdl_screen == NULL && display_off == 0 )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );

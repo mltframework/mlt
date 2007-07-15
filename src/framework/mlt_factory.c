@@ -111,7 +111,36 @@ int mlt_factory_init( const char *prefix )
 		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "fezzik" );
 		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
+		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
+
+		// Load the most appropriate profile
+		// MLT_PROFILE preferred
+		if ( getenv( "MLT_PROFILE" ) )
+		{
+			if ( !mlt_profile_select( mlt_environment( "MLT_PROFILE" ) ) )
+				mlt_profile_load_file( mlt_environment( "MLT_PROFILE" ) );
+		}
+		// MLT_NORMALISATION backwards compatibility
+		else if ( strcmp( mlt_environment( "MLT_NORMALISATION" ), "PAL" ) )
+			mlt_profile_select( "dv_ntsc" );
+		else
+			mlt_profile_select( "dv_pal" );
+
+		// destroy an invalid profile so it can be constructed from hard defauls
+		if ( mlt_profile_get()->width == 0 )
+			mlt_profile_close();
+
+		// Set MLT_NORMALISATION to appease legacy modules
+		if ( !getenv( "MLT_NORMALISATION" ) )
+		{
+			const char *profile = mlt_profile_get()->name;
+			if ( strstr( profile, "_ntsc" ) || strstr( profile, "_atsc" ) )
+				setenv( "MLT_NORMALISATION", "NTSC", 1 );
+			else if ( strstr( profile, "_pal" ) )
+				setenv( "MLT_NORMALISATION", "PAL", 1 );
+		}
 	}
+
 
 	return 0;
 }
@@ -279,6 +308,6 @@ void mlt_factory_close( )
 		free( mlt_prefix );
 		mlt_prefix = NULL;
 		mlt_pool_close( );
+		mlt_profile_close();
 	}
 }
-

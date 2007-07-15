@@ -21,6 +21,7 @@
 #include "mlt_geometry.h"
 #include "mlt_tokeniser.h"
 #include "mlt_factory.h"
+#include "mlt_profile.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,12 +55,8 @@ mlt_geometry mlt_geometry_init( )
 		if ( this->local != NULL )
 		{
 			geometry self = this->local;
-			char *normalisation = mlt_environment( "MLT_NORMALISATION" );
-			self->nw = 720;
-			if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )
-				self->nh = 576;
-			else
-				self->nh = 480;
+			self->nw = mlt_profile_get()->width;
+			self->nh = mlt_profile_get()->height;
 		}
 		else
 		{

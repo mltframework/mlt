@@ -94,6 +94,7 @@ typedef struct mlt_parser_s *mlt_parser;
 typedef struct mlt_deque_s *mlt_deque;
 typedef struct mlt_geometry_s *mlt_geometry;
 typedef struct mlt_geometry_item_s *mlt_geometry_item;
+typedef struct mlt_profile_s *mlt_profile;
 
 typedef void ( *mlt_destructor )( void * );
 typedef char *( *mlt_serialiser )( void *, int length );

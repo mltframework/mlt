@@ -4,7 +4,8 @@ SUBDIRS = src/framework \
 		  src/miracle \
 		  src/humperdink \
 		  src/albino \
-		  src/modules
+		  src/modules \
+		  profiles
 
 all clean:
 	list='$(SUBDIRS)'; \
@@ -55,4 +56,5 @@ uninstall:
 dist:
 	[ -d "mlt-$(version)" ] && rm -rf "mlt-$(version)" || echo
 	svn export . "mlt-$(version)"
+	svn log > "mlt-$(version)/ChangeLog"
 	tar -cvzf "mlt-$(version).tar.gz" "mlt-$(version)"

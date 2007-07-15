@@ -22,6 +22,8 @@
 #include "mlt_frame.h"
 #include "mlt_producer.h"
 #include "mlt_factory.h"
+#include "mlt_profile.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,9 +39,6 @@ mlt_frame mlt_frame_init( )
 
 	if ( this != NULL )
 	{
-		// Get the normalisation
-		char *normalisation = mlt_environment( "MLT_NORMALISATION" );
-
 		// Initialise the properties
 		mlt_properties properties = &this->parent;
 		mlt_properties_init( properties, this );
@@ -47,24 +46,11 @@ mlt_frame mlt_frame_init( )
 		// Set default properties on the frame
 		mlt_properties_set_position( properties, "_position", 0.0 );
 		mlt_properties_set_data( properties, "image", NULL, 0, NULL, NULL );
-
-		if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )
-		{
-			mlt_properties_set_int( properties, "width", 720 );
-			mlt_properties_set_int( properties, "height", 576 );
-			mlt_properties_set_int( properties, "normalised_width", 720 );
-			mlt_properties_set_int( properties, "normalised_height", 576 );
-			mlt_properties_set_double( properties, "aspect_ratio", 59.0/54.0 );
-		}
-		else
-		{
-			mlt_properties_set_int( properties, "width", 720 );
-			mlt_properties_set_int( properties, "height", 480 );
-			mlt_properties_set_int( properties, "normalised_width", 720 );
-			mlt_properties_set_int( properties, "normalised_height", 480 );
-			mlt_properties_set_double( properties, "aspect_ratio", 10.0/11.0 );
-		}
-
+		mlt_properties_set_int( properties, "width", mlt_profile_get()->width );
+		mlt_properties_set_int( properties, "height", mlt_profile_get()->height );
+		mlt_properties_set_int( properties, "normalised_width", mlt_profile_get()->width );
+		mlt_properties_set_int( properties, "normalised_height", mlt_profile_get()->height );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL ) );
 		mlt_properties_set_data( properties, "audio", NULL, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
 

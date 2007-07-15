@@ -1,5 +1,7 @@
 $Id$
 
+USING svn log NOW
+
 2007-04-09 Dan Dennedy <dan@dennedy.org>
 	Cleanup copyrights and attributions, and move Jean-Baptiste's services
 	to a new kdenlive module.

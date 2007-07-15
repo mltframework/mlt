@@ -23,6 +23,8 @@
 #include "mlt_factory.h"
 #include "mlt_frame.h"
 #include "mlt_parser.h"
+#include "mlt_profile.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -66,9 +68,6 @@ int mlt_producer_init( mlt_producer this, void *child )
 		// Initialise the service
 		if ( mlt_service_init( &this->parent, this ) == 0 )
 		{
-			// Get the normalisation preference
-			char *normalisation = mlt_environment( "MLT_NORMALISATION" );
-
 			// The parent is the service
 			mlt_service parent = &this->parent;
 	
@@ -86,20 +85,10 @@ int mlt_producer_init( mlt_producer this, void *child )
 			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
 			mlt_properties_set_position( properties, "_position", 0.0 );
 			mlt_properties_set_double( properties, "_frame", 0 );
-			if ( normalisation == NULL || strcmp( normalisation, "NTSC" ) )
-			{
-				mlt_properties_set_double( properties, "fps", 25.0 );
-				mlt_properties_set_int( properties, "frame_rate_num", 25 );
-				mlt_properties_set_int( properties, "frame_rate_den", 1 );
-				mlt_properties_set_double( properties, "aspect_ratio", 59.0 / 54.0 );
-			}
-			else
-			{
-				mlt_properties_set_double( properties, "fps", 30000.0 / 1001.0 );
-				mlt_properties_set_int( properties, "frame_rate_num", 30000 );
-				mlt_properties_set_int( properties, "frame_rate_den", 1001 );
-				mlt_properties_set_double( properties, "aspect_ratio", 10.0 / 11.0 );
-			}
+			mlt_properties_set_double( properties, "fps", mlt_profile_fps( NULL ) );
+			mlt_properties_set_int( properties, "frame_rate_num", mlt_profile_get()->frame_rate_num );
+			mlt_properties_set_int( properties, "frame_rate_den", mlt_profile_get()->frame_rate_den );
+			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL ) );
 			mlt_properties_set_double( properties, "_speed", 1.0 );
 			mlt_properties_set_position( properties, "in", 0 );
 			mlt_properties_set_position( properties, "out", 14999 );
