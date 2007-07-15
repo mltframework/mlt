@@ -24,14 +24,22 @@ ifdef SWSCALE
 	LDFLAGS+=-lswscale$(AVFORMAT_SUFFIX)
 endif
 
+ifdef LOCAL_FFMPEG
+	LOCAL_FFMPEG_OBJS = ffmpeg/libavformat/libavformat$(AVFORMAT_SUFFIX) \
+	                    ffmpeg/libavcodec/libavcodec$(AVFORMAT_SUFFIX) \
+	                    ffmpeg/libavutil/libavutil$(AVFORMAT_SUFFIX)
+endif
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)
 
-$(TARGET): $(OBJS)
+$(LOCAL_FFMPEG_OBJS):
 		if [ $(LOCAL_FFMPEG) ] ; then \
 			$(MAKE) -C ffmpeg lib ; \
 		fi
+
+$(TARGET): $(OBJS) $(LOCAL_FFMPEG_OBJS)
 		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)

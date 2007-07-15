@@ -7,6 +7,7 @@ then
 FFMPEG/avformat options:
 
   --avformat-svn          - Obtain ffmpeg from Subversion
+  --avformat-svn-extra    - Add extra configure options for --avformat-svn
   --avformat-shared=path  - Link against a shared installation of ffmpeg (default)
   --avformat-static=path  - Link against a static ffmpeg dev tree
   --avformat-ldextra=libs - Provide additional libs to link with
@@ -44,6 +45,7 @@ else
 	export shared_ffmpeg=`which ffmpeg`
 	export extra_libs=
 	export svn_ffmpeg=
+	export svn_ffmpeg_extra=
 	export avformat_suffix=
 	export swscale=
 
@@ -62,9 +64,11 @@ else
 			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
 			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
 			--avformat-svn )		svn_ffmpeg=true ;;
+			--avformat-svn-extra=* ) svn_ffmpeg_extra="${i#--avformat-svn-extra=}" ;;
 			--avformat-cvs )		svn_ffmpeg=true ;;
 			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
 			--avformat-swscale )	swscale=true ;;
+			--avformat-swscaler )	swscale=true ;;
 		esac
 	done
 
@@ -93,7 +97,7 @@ else
 			echo
 			svn checkout svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
 		fi
-		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale )
+		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale $svn_ffmpeg_extra )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
 		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil -I`pwd`/ffmpeg/libswscale" >> config.mak
 		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil -L`pwd`/ffmpeg/libswscale" >> config.mak
