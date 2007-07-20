@@ -1,4 +1,4 @@
-name=HDV 1080i PAL
+description=HDV 1080i PAL
 frame_rate_num=25
 frame_rate_den=1
 width=1440

@@ -1,4 +1,4 @@
-name=DV NTSC
+description=DV NTSC
 frame_rate_num=30000
 frame_rate_den=1001
 width=720

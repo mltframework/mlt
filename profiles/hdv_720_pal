@@ -1,4 +1,4 @@
-name=HDV 720p PAL
+description=HDV 720p PAL
 frame_rate_num=25
 frame_rate_den=1
 width=1280

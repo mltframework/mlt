@@ -1,4 +1,4 @@
-name=SVCD PAL
+description=SVCD PAL
 frame_rate_num=25
 frame_rate_den=1
 width=480

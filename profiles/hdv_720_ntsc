@@ -1,4 +1,4 @@
-name=HDV 720p NTSC
+description=HDV 720p NTSC
 frame_rate_num=30000
 frame_rate_den=1001
 width=1280

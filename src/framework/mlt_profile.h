@@ -25,7 +25,7 @@
 
 struct mlt_profile_s
 {
-	char* name;
+	char* description;
 	int frame_rate_num;
 	int frame_rate_den;
 	int width;

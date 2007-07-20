@@ -41,7 +41,8 @@ mlt_profile mlt_profile_get( )
 		profile = calloc( 1, sizeof( struct mlt_profile_s ) );
 		if ( profile )
 		{
-			profile->name = strdup( "DV PAL" );
+			mlt_environment_set( "MLT_PROFILE", "dv_pal" );
+			profile->description = strdup( "PAL 4:3 DV or DVD" );
 			profile->frame_rate_num = 25;
 			profile->frame_rate_den = 1;
 			profile->width = 720;
@@ -82,18 +83,38 @@ mlt_profile mlt_profile_load_file( const char *file )
 	if ( properties && mlt_properties_get_int( properties, "width" ) )
 	{
 		mlt_profile_load_properties( properties );
-		if ( !profile->name )
-		{
-			char *filename = strdup( file );
-			profile->name = strdup( basename( filename ) );
-			free( filename );
-		}
+		mlt_properties_close( properties );
+
+		// Set MLT_PROFILE to basename
+		char *filename = strdup( file );
+		mlt_environment_set( "MLT_PROFILE", basename( filename ) );
+		free( filename );
 	}
 	else
 	{
+		// Cleanup
 		mlt_properties_close( properties );
 		mlt_profile_close();
+		// Failover
+		mlt_profile_get();
 	}
+
+	// Set MLT_NORMALISATION to appease legacy modules
+	char *profile_name = mlt_environment( "MLT_PROFILE" );
+	if ( strstr( profile_name, "_ntsc" ) ||
+	     strstr( profile_name, "_atsc" ) ||
+	     strstr( profile_name, "_60i" ) ||
+	     strstr( profile_name, "_30p" ) )
+	{
+		mlt_environment_set( "MLT_NORMALISATION", "NTSC" );
+	}
+	else if ( strstr( profile_name, "_pal" ) ||
+	          strstr( profile_name, "_50i" ) ||
+	          strstr( profile_name, "_25p" ) )
+	{
+		mlt_environment_set( "MLT_NORMALISATION", "PAL" );
+	}
+
 	return profile;
 }
 
@@ -107,7 +128,9 @@ mlt_profile mlt_profile_load_properties( mlt_properties properties )
 	if ( profile )
 	{
 		if ( mlt_properties_get( properties, "name" ) )
-			profile->name = mlt_properties_get( properties, "name" );
+			mlt_environment_set( "MLT_PROFILE", mlt_properties_get( properties, "name" ) );
+		if ( mlt_properties_get( properties, "description" ) )
+			profile->description = strdup( mlt_properties_get( properties, "description" ) );
 		profile->frame_rate_num = mlt_properties_get_int( properties, "frame_rate_num" );
 		profile->frame_rate_den = mlt_properties_get_int( properties, "frame_rate_den" );
 		profile->width = mlt_properties_get_int( properties, "width" );
@@ -138,10 +161,7 @@ mlt_profile mlt_profile_load_string( const char *string )
 			if ( p ) p++;
 		}
 	}
-	mlt_profile_load_properties( properties );
-	if ( profile && !profile->name )
-		profile->name = strdup( "untitled" );
-	return profile;
+	return mlt_profile_load_properties( properties );
 }
 
 /** Get the framerate as float
@@ -184,9 +204,9 @@ void mlt_profile_close( )
 {
 	if ( profile )
 	{
-		if ( profile->name )
-			free( profile->name );
-		profile->name = NULL;
+		if ( profile->description )
+			free( profile->description );
+		profile->description = NULL;
 		free( profile );
 		profile = NULL;
 	}

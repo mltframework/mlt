@@ -125,20 +125,6 @@ int mlt_factory_init( const char *prefix )
 			mlt_profile_select( "dv_ntsc" );
 		else
 			mlt_profile_select( "dv_pal" );
-
-		// destroy an invalid profile so it can be constructed from hard defauls
-		if ( mlt_profile_get()->width == 0 )
-			mlt_profile_close();
-
-		// Set MLT_NORMALISATION to appease legacy modules
-		if ( !getenv( "MLT_NORMALISATION" ) )
-		{
-			const char *profile = mlt_profile_get()->name;
-			if ( strstr( profile, "_ntsc" ) || strstr( profile, "_atsc" ) )
-				setenv( "MLT_NORMALISATION", "NTSC", 1 );
-			else if ( strstr( profile, "_pal" ) )
-				setenv( "MLT_NORMALISATION", "PAL", 1 );
-		}
 	}
 
 
@@ -167,6 +153,14 @@ const char *mlt_factory_prefix( )
 char *mlt_environment( const char *name )
 {
 	return mlt_properties_get( global_properties, name );
+}
+
+/** Set a value in the environment.
+*/
+
+int mlt_environment_set( const char *name, const char *value )
+{
+	return mlt_properties_set( global_properties, name, value );
 }
 
 /** Fetch a producer from the repository.
