@@ -116,8 +116,7 @@ static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this,
 		mlt_profile_select( mlt_properties_get( properties, "profile" ) );
 
 		// Stop listening to this
-		mlt_event_close( g_event_listener );
-		g_event_listener = NULL;
+		mlt_event_block( g_event_listener );
 
 		// Apply to properties
 		apply_profile_properties( mlt_profile_get(), properties );

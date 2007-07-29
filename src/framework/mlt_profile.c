@@ -64,7 +64,7 @@ mlt_profile mlt_profile_get( )
 mlt_profile mlt_profile_select( const char *name )
 {
 	const char *prefix = PREFIX;
-	char *filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 1 );
+	char *filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 2 );
 	strcpy( filename, prefix );
 	if ( filename[ strlen( filename ) - 1 ] != '/' )
 		filename[ strlen( filename ) ] = '/';
