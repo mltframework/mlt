@@ -94,13 +94,15 @@ build_pkgconfig()
 {
 	for i in framework valerie miracle
 	do
-		echo "prefix=$prefix" >mlt-$i.pc
-		echo "exec_prefix=$prefix" >>mlt-$i.pc
-		echo "libdir=$libdir" >>mlt-$i.pc
-		echo "includedir=$prefix/include" >>mlt-$i.pc
-		echo "version=$version" >>mlt-$i.pc
-		echo "cflags=`grep ^$i packages.dat | cut -f 2`" >>mlt-$i.pc
-		echo "libs=`grep ^$i packages.dat | cut -f 3`" >>mlt-$i.pc
+		echo prefix="$prefix" > mlt-$i.pc
+		(
+			echo exec_prefix=$prefix
+			echo libdir=$libdir
+			echo includedir=$prefix/include
+			echo version=$version
+			echo cflags=`grep ^$i packages.dat | cut -f 2`
+			echo libs=`grep ^$i packages.dat | cut -f 3`
+		) >> mlt-$i.pc
 		cat mlt-$i.pc.in >>mlt-$i.pc
 	done
 }

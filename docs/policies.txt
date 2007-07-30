@@ -39,3 +39,10 @@ the core subroutines into a separate file with the original copyright and just
 copyright the MLT integration code as your own. However, if you have heavily
 modified the original code beyond nearly all recognition, you can copyright it
 as your own and attribute the original author as inspiration.
+
+Bug Reporting:
+First preference is to use the SourceForge tracker:
+http://sourceforge.net/tracker/?group_id=96039&atid=613414
+Second preference is in the mailing list:
+mlt-devel@lists.sourceforge.net
+
