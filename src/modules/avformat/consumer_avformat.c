@@ -192,10 +192,10 @@ mlt_consumer consumer_avformat_init( char *arg )
 		mlt_properties_set_int( properties, "video_rc_buffer_size", 0 );
 		mlt_properties_set_double( properties, "video_rc_buffer_aggressivity", 1.0 );
 		mlt_properties_set_double( properties, "video_rc_initial_cplx", 0 );
-		mlt_properties_set_double( properties, "video_i_qfactor", 1.25 );
+		mlt_properties_set_double( properties, "video_i_qfactor", -0.8 );
 		mlt_properties_set_double( properties, "video_b_qfactor", 1.25 );
-		mlt_properties_set_double( properties, "video_i_qoffset", -0.8 );
-		mlt_properties_set_double( properties, "video_b_qoffset", 0 );
+		mlt_properties_set_double( properties, "video_i_qoffset", 0 );
+		mlt_properties_set_double( properties, "video_b_qoffset", 1.25 );
 		mlt_properties_set_int( properties, "video_intra_quant_bias", FF_DEFAULT_QUANT_BIAS );
 		mlt_properties_set_int( properties, "video_inter_quant_bias", FF_DEFAULT_QUANT_BIAS );
 		mlt_properties_set_int( properties, "dct_algo", 0 );
