@@ -87,9 +87,6 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 		mlt_service service = MLT_CONSUMER_SERVICE( parent );
 		this->properties = MLT_SERVICE_PROPERTIES( service );
 
-		// Get the default display ratio
-		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
-
 		// We have stuff to clean up, so override the close method
 		parent->close = consumer_close;
 
@@ -116,10 +113,6 @@ mlt_consumer consumer_sdl_still_init( char *arg )
 			mlt_properties_set_int( this->properties, "width", this->width );
 			mlt_properties_set_int( this->properties, "height", this->height );
 		}
-
-		// Default window size
-		this->window_width = ( double )this->height * display_ratio;
-		this->window_height = this->height;
 
 		// Set the sdl flags
 		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
@@ -177,6 +170,11 @@ static int consumer_start( mlt_consumer parent )
 		// Allow the user to force resizing to window size
 		this->width = mlt_properties_get_int( this->properties, "width" );
 		this->height = mlt_properties_get_int( this->properties, "height" );
+
+		// Default window size
+		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
+		this->window_width = ( double )this->height * display_ratio;
+		this->window_height = this->height;
 
 		if ( sdl_started == 0 && preview_off == 0 )
 		{
