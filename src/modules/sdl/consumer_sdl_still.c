@@ -192,7 +192,6 @@ static int consumer_start( mlt_consumer parent )
 			if ( SDL_GetVideoSurface( ) != NULL )
 			{
 				this->sdl_screen = SDL_GetVideoSurface( );
-				consumer_get_dimensions( &this->window_width, &this->window_height );
 			}
 		}
 
