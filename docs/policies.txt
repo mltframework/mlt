@@ -4,27 +4,32 @@ by Dan Dennedy
 Policies
 --------
 
-Any contribution to the "core" module assign copyright to Ushodaya Enterprises
-Limited because they need license control over that module.
-
-Comments in the framework and valerie header files must be C-style, not C++.
+Any contribution to the "core" module must assign copyright to Ushodaya
+Enterprises Limited because they need license control over that module.
 
 The framework and valerie client libraries are covered under LGPL. Miracle,
 inigo, albino, and humperdink applications are covered under GPL. Modules
 should strive to be LGPL to make them available through the framework as LGPL.
+
+Comments in the framework and valerie header files must be C-style, not C++.
 
 Coding Style:
 There are not a lot of rules, but we prefer brackets on their own line,
 indents using tabs, liberal usage of spaces in statements and expressions, and
 no hard line length. The code in src/framework serves as a good example.
 
+Commit messages must be prefaced with the name of the changed files. This makes
+the Subversion log more useful as a ChangeLog. For example,
+    docs/policies.txt: added policy about commit message
+
+Increment the version number in ./configure on the first commit after a release
+as well as just prior to a new release. This way we can track if someone is
+using an unreleased version from the source code repository.
+
 Procedures
 ----------
 
 Update services.txt when you add or update a service.
-
-Until we convert to Subversion, which can provide a nice, comprehensive log
-please update ChangeLog with every commit.
 
 Setting Copyright on Appropriated Code:
 You do not want to be accused of copying someone's code and changing copyright
@@ -45,4 +50,3 @@ First preference is to use the SourceForge tracker:
 http://sourceforge.net/tracker/?group_id=96039&atid=613414
 Second preference is in the mailing list:
 mlt-devel@lists.sourceforge.net
-

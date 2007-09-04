@@ -34,6 +34,8 @@
 #include <strings.h>
 #include <ctype.h>
 #include <ladspa.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "plugin_mgr.h"
 #include "plugin_desc.h"
@@ -170,6 +172,8 @@ plugin_mgr_get_dir_plugins (plugin_mgr_t * plugin_mgr, const char * dir)
   
   while ( (dir_entry = readdir (dir_stream)) )
     {
+      struct stat info;
+
       if (strcmp (dir_entry->d_name, ".") == 0 ||
           strcmp (dir_entry->d_name, "..") == 0)
         continue;
@@ -185,7 +189,11 @@ plugin_mgr_get_dir_plugins (plugin_mgr_t * plugin_mgr, const char * dir)
           strcpy (file_name + dirlen + 1, dir_entry->d_name);
         }
     
-      plugin_mgr_get_object_file_plugins (plugin_mgr, file_name);
+      stat (file_name, &info);
+      if (S_ISDIR (info.st_mode))
+        plugin_mgr_get_dir_plugins (plugin_mgr, file_name);
+      else
+        plugin_mgr_get_object_file_plugins (plugin_mgr, file_name);
       
       g_free (file_name);
     }
