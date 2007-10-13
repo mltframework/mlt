@@ -116,10 +116,7 @@ int mlt_factory_init( const char *prefix )
 		// Load the most appropriate profile
 		// MLT_PROFILE preferred
 		if ( getenv( "MLT_PROFILE" ) )
-		{
-			if ( !mlt_profile_select( mlt_environment( "MLT_PROFILE" ) ) )
-				mlt_profile_load_file( mlt_environment( "MLT_PROFILE" ) );
-		}
+			mlt_profile_select( mlt_environment( "MLT_PROFILE" ) );
 		// MLT_NORMALISATION backwards compatibility
 		else if ( strcmp( mlt_environment( "MLT_NORMALISATION" ), "PAL" ) )
 			mlt_profile_select( "dv_ntsc" );

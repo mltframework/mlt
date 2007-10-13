@@ -65,11 +65,16 @@ mlt_profile mlt_profile_select( const char *name )
 {
 	char *filename = NULL;
 	const char *prefix = getenv( "MLT_PROFILES_PATH" );
+	mlt_properties properties = mlt_properties_load( name );
 	
-	// Allow environment to override default behavior
-	if ( prefix == NULL )
+	// Try to load from file specification
+	if ( properties && mlt_properties_get_int( properties, "width" ) )
 	{
-		// default behavior is to use $prefix/share/mlt/profiles
+		filename = calloc( 1, strlen( name ) + 1 );
+	}
+	// Load from $prefix/share/mlt/profiles
+	else if ( prefix == NULL )
+	{
 		prefix = PREFIX;
 		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 2 );
 		strcpy( filename, prefix );
@@ -77,16 +82,24 @@ mlt_profile mlt_profile_select( const char *name )
 			filename[ strlen( filename ) ] = '/';
 		strcat( filename, PROFILES_DIR );
 	}
+	// Use environment variable instead
 	else
 	{
-		// just use environment variable
 		filename = calloc( 1, strlen( prefix ) + strlen( name ) + 2 );
 		strcpy( filename, prefix );
 		if ( filename[ strlen( filename ) - 1 ] != '/' )
 			filename[ strlen( filename ) ] = '/';
 	}
+	
+	// Finish loading
 	strcat( filename, name );
-	return mlt_profile_load_file( filename );
+	mlt_profile_load_file( filename );
+
+	// Cleanup
+	mlt_properties_close( properties );
+	free( filename );
+
+	return profile;
 }
 
 /** Load a profile from specific file
