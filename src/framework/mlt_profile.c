@@ -63,12 +63,28 @@ mlt_profile mlt_profile_get( )
 
 mlt_profile mlt_profile_select( const char *name )
 {
-	const char *prefix = PREFIX;
-	char *filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 2 );
-	strcpy( filename, prefix );
-	if ( filename[ strlen( filename ) - 1 ] != '/' )
-		filename[ strlen( filename ) ] = '/';
-	strcat( filename, PROFILES_DIR );
+	char *filename = NULL;
+	const char *prefix = getenv( "MLT_PROFILES_PATH" );
+	
+	// Allow environment to override default behavior
+	if ( prefix == NULL )
+	{
+		// default behavior is to use $prefix/share/mlt/profiles
+		prefix = PREFIX;
+		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 2 );
+		strcpy( filename, prefix );
+		if ( filename[ strlen( filename ) - 1 ] != '/' )
+			filename[ strlen( filename ) ] = '/';
+		strcat( filename, PROFILES_DIR );
+	}
+	else
+	{
+		// just use environment variable
+		filename = calloc( 1, strlen( prefix ) + strlen( name ) + 2 );
+		strcpy( filename, prefix );
+		if ( filename[ strlen( filename ) - 1 ] != '/' )
+			filename[ strlen( filename ) ] = '/';
+	}
 	strcat( filename, name );
 	return mlt_profile_load_file( filename );
 }
