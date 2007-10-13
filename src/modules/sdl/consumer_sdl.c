@@ -178,8 +178,10 @@ int consumer_start( mlt_consumer parent )
 		this->running = 1;
 		this->joined = 0;
 
-		this->width = mlt_properties_get_int( this->properties, "width" );
-		this->height = mlt_properties_get_int( this->properties, "height" );
+		if ( mlt_properties_get_int( this->properties, "width" ) > 0 )
+			this->width = mlt_properties_get_int( this->properties, "width" );
+		if ( mlt_properties_get_int( this->properties, "height" ) > 0 )
+			this->height = mlt_properties_get_int( this->properties, "height" );
 
 		this->bpp = mlt_properties_get_int( this->properties, "bpp" );
 
