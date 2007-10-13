@@ -23,10 +23,12 @@ typedef uint32_t RGB32;
 /* utils.c */
 void HSItoRGB(double H, double S, double I, int *r, int *g, int *b);
 
+#ifndef __DARWIN__
 extern unsigned int fastrand_val;
+#define inline_fastrand() (fastrand_val=fastrand_val*1103515245+12345)
+#endif
 unsigned int fastrand(void);
 void fastsrand(unsigned int);
-#define inline_fastrand() (fastrand_val=fastrand_val*1103515245+12345)
 
 /* image.c */
 int image_set_threshold_y(int threshold);

@@ -42,6 +42,9 @@ void HSItoRGB(double H, double S, double I, int *r, int *g, int *b)
  *          generates 1,2,3,0,1,2,3,0...
  *          You should use high-order bits.
  */
+#ifdef __DARWIN__
+static
+#endif
 unsigned int fastrand_val;
 
 unsigned int fastrand(void)
