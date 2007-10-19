@@ -60,7 +60,7 @@ void av_free( void *ptr )
 void avformat_destroy( void *ignore )
 {
 	// Clean up
-	av_free_static( );
+	// av_free_static( ); -XXX this is deprecated
 
 	// Destroy the mutex
 	pthread_mutex_destroy( &avformat_mutex );

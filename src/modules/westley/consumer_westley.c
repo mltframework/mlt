@@ -29,6 +29,9 @@
 
 #define ID_SIZE 128
 
+#define _x (xmlChar*)
+#define _s (char*)
+
 // This maintains counters for adding ids to elements
 struct serialise_context_s
 {
@@ -192,8 +195,8 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			char *value = mlt_properties_get_value( properties, i );
 			if ( strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
 				value += strlen( context->root ) + 1;
-			p = xmlNewTextChild( node, NULL, "property", value );
-			xmlNewProp( p, "name", name );
+			p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
+			xmlNewProp( p, _x("name"), _x(name) );
 		}
 	}
 }
@@ -214,8 +217,8 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 			{
 				if ( strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
 					value += strlen( context->root ) + 1;
-				p = xmlNewTextChild( node, NULL, "property", value );
-				xmlNewProp( p, "name", name );
+				p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
+				xmlNewProp( p, _x("name"), _x(name) );
 			}
 		}
 	}
@@ -239,17 +242,17 @@ static inline void serialise_service_filters( serialise_context context, mlt_ser
 			{
 				int in = mlt_properties_get_position( properties, "in" );
 				int out = mlt_properties_get_position( properties, "out" );
-				p = xmlNewChild( node, NULL, "filter", NULL );
-				xmlNewProp( p, "id", id );
+				p = xmlNewChild( node, NULL, _x("filter"), NULL );
+				xmlNewProp( p, _x("id"), _x(id) );
 				if ( mlt_properties_get( properties, "title" ) )
-					xmlNewProp( p, "title", mlt_properties_get( properties, "title" ) );
+					xmlNewProp( p, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 				if ( in != 0 || out != 0 )
 				{
 					char temp[ 20 ];
 					sprintf( temp, "%d", in );
-					xmlNewProp( p, "in", temp );
+					xmlNewProp( p, _x("in"), _x(temp) );
 					sprintf( temp, "%d", out );
-					xmlNewProp( p, "out", temp );
+					xmlNewProp( p, _x("out"), _x(temp) );
 				}
 				serialise_properties( context, properties, p );
 				serialise_service_filters( context, MLT_FILTER_SERVICE( filter ), p );
@@ -271,14 +274,14 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 		if ( id == NULL )
 			return;
 
-		child = xmlNewChild( node, NULL, "producer", NULL );
+		child = xmlNewChild( node, NULL, _x("producer"), NULL );
 
 		// Set the id
-		xmlNewProp( child, "id", id );
+		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
-			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
-		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
-		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
+			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
+		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
+		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
 
@@ -289,9 +292,9 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 	{
 		char *id = westley_get_id( context, parent, westley_existing );
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-		xmlNewProp( node, "parent", id );
-		xmlNewProp( node, "in", mlt_properties_get( properties, "in" ) );
-		xmlNewProp( node, "out", mlt_properties_get( properties, "out" ) );
+		xmlNewProp( node, _x("parent"), _x(id) );
+		xmlNewProp( node, _x("in"), _x(mlt_properties_get( properties, "in" )) );
+		xmlNewProp( node, _x("out"), _x(mlt_properties_get( properties, "out" )) );
 	}
 }
 
@@ -320,7 +323,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 		// Serialise the tracks
 		for ( i = 0; i < mlt_multitrack_count( MLT_MULTITRACK( service ) ); i++ )
 		{
-			xmlNode *track = xmlNewChild( node, NULL, "track", NULL );
+			xmlNode *track = xmlNewChild( node, NULL, _x("track"), NULL );
 			int hide = 0;
 			mlt_producer producer = mlt_multitrack_track( MLT_MULTITRACK( service ), i );
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -328,11 +331,11 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 			mlt_service parent = MLT_SERVICE( mlt_producer_cut_parent( producer ) );
 
 			char *id = westley_get_id( context, MLT_SERVICE( parent ), westley_existing );
-			xmlNewProp( track, "producer", id );
+			xmlNewProp( track, _x("producer"), _x(id) );
 			if ( mlt_producer_is_cut( producer ) )
 			{
-				xmlNewProp( track, "in", mlt_properties_get( properties, "in" ) );
-				xmlNewProp( track, "out", mlt_properties_get( properties, "out" ) );
+				xmlNewProp( track, _x("in"), _x(mlt_properties_get( properties, "in" )) );
+				xmlNewProp( track, _x("out"), _x(mlt_properties_get( properties, "out" )) );
 				serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, context->store );
 				serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, "meta." );
 				serialise_service_filters( context, MLT_PRODUCER_SERVICE( producer ), track );
@@ -340,7 +343,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 			
 			hide = mlt_properties_get_int( context->hide_map, id );
 			if ( hide )
-				xmlNewProp( track, "hide", hide == 1 ? "video" : ( hide == 2 ? "audio" : "both" ) );
+				xmlNewProp( track, _x("hide"), _x( hide == 1 ? "video" : ( hide == 2 ? "audio" : "both" ) ) );
 		}
 		serialise_service_filters( context, service, node );
 	}
@@ -378,12 +381,12 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 			}
 		}
 		
-		child = xmlNewChild( node, NULL, "playlist", NULL );
+		child = xmlNewChild( node, NULL, _x("playlist"), NULL );
 
 		// Set the id
-		xmlNewProp( child, "id", id );
+		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
-			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
+			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 
 		// Store application specific properties
 		serialise_store_properties( context, properties, child, context->store );
@@ -403,24 +406,24 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 				{
 					char length[ 20 ];
 					length[ 19 ] = '\0';
-					xmlNode *entry = xmlNewChild( child, NULL, "blank", NULL );
+					xmlNode *entry = xmlNewChild( child, NULL, _x("blank"), NULL );
 					snprintf( length, 19, "%d", (int)info.frame_count );
-					xmlNewProp( entry, "length", length );
+					xmlNewProp( entry, _x("length"), _x(length) );
 				}
 				else
 				{
 					char temp[ 20 ];
-					xmlNode *entry = xmlNewChild( child, NULL, "entry", NULL );
+					xmlNode *entry = xmlNewChild( child, NULL, _x("entry"), NULL );
 					id = westley_get_id( context, MLT_SERVICE( producer ), westley_existing );
-					xmlNewProp( entry, "producer", id );
+					xmlNewProp( entry, _x("producer"), _x(id) );
 					sprintf( temp, "%d", (int)info.frame_in );
-					xmlNewProp( entry, "in", temp );
+					xmlNewProp( entry, _x("in"), _x(temp) );
 					sprintf( temp, "%d", (int)info.frame_out );
-					xmlNewProp( entry, "out", temp );
+					xmlNewProp( entry, _x("out"), _x(temp) );
 					if ( info.repeat > 1 )
 					{
 						sprintf( temp, "%d", info.repeat );
-						xmlNewProp( entry, "repeat", temp );
+						xmlNewProp( entry, _x("repeat"), _x(temp) );
 					}
 					if ( mlt_producer_is_cut( info.cut ) )
 					{
@@ -434,10 +437,10 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 
 		serialise_service_filters( context, service, child );
 	}
-	else if ( strcmp( (const char*) node->name, "tractor" ) != 0 )
+	else if ( xmlStrcmp( node->name, _x("tractor") ) != 0 )
 	{
 		char *id = westley_get_id( context, service, westley_existing );
-		xmlNewProp( node, "producer", id );
+		xmlNewProp( node, _x("producer"), _x(id) );
 	}
 }
 
@@ -458,16 +461,16 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 		if ( id == NULL )
 			return;
 
-		child = xmlNewChild( node, NULL, "tractor", NULL );
+		child = xmlNewChild( node, NULL, _x("tractor"), NULL );
 
 		// Set the id
-		xmlNewProp( child, "id", id );
+		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
-			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
+			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 		if ( mlt_properties_get( properties, "global_feed" ) )
-			xmlNewProp( child, "global_feed", mlt_properties_get( properties, "global_feed" ) );
-		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
-		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
+			xmlNewProp( child, _x("global_feed"), _x(mlt_properties_get( properties, "global_feed" )) );
+		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
+		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
 
 		// Store application specific properties
 		serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, context->store );
@@ -494,14 +497,14 @@ static void serialise_filter( serialise_context context, mlt_service service, xm
 		if ( id == NULL )
 			return;
 
-		child = xmlNewChild( node, NULL, "filter", NULL );
+		child = xmlNewChild( node, NULL, _x("filter"), NULL );
 
 		// Set the id
-		xmlNewProp( child, "id", id );
+		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
-			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
-		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
-		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
+			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
+		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
+		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
 
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
@@ -523,14 +526,14 @@ static void serialise_transition( serialise_context context, mlt_service service
 		if ( id == NULL )
 			return;
 
-		child = xmlNewChild( node, NULL, "transition", NULL );
+		child = xmlNewChild( node, NULL, _x("transition"), NULL );
 	
 		// Set the id
-		xmlNewProp( child, "id", id );
+		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
-			xmlNewProp( child, "title", mlt_properties_get( properties, "title" ) );
-		xmlNewProp( child, "in", mlt_properties_get( properties, "in" ) );
-		xmlNewProp( child, "out", mlt_properties_get( properties, "out" ) );
+			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
+		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
+		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
 
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
@@ -624,8 +627,8 @@ static void serialise_service( serialise_context context, mlt_service service, x
 xmlDocPtr westley_make_doc( mlt_consumer consumer, mlt_service service )
 {
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-	xmlDocPtr doc = xmlNewDoc( "1.0" );
-	xmlNodePtr root = xmlNewNode( NULL, "westley" );
+	xmlDocPtr doc = xmlNewDoc( _x("1.0") );
+	xmlNodePtr root = xmlNewNode( NULL, _x("westley") );
 	struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
 	
 	xmlDocSetRootElement( doc, root );
@@ -633,7 +636,7 @@ xmlDocPtr westley_make_doc( mlt_consumer consumer, mlt_service service )
 	// If we have root, then deal with it now
 	if ( mlt_properties_get( properties, "root" ) != NULL )
 	{
-		xmlNewProp( root, "root", mlt_properties_get( properties, "root" ) );
+		xmlNewProp( root, _x("root"), _x(mlt_properties_get( properties, "root" )) );
 		context->root = strdup( mlt_properties_get( properties, "root" ) );
 	}
 	else
@@ -646,7 +649,7 @@ xmlDocPtr westley_make_doc( mlt_consumer consumer, mlt_service service )
 
 	// Assign a title property
 	if ( mlt_properties_get( properties, "title" ) != NULL )
-		xmlNewProp( root, "title", mlt_properties_get( properties, "title" ) );
+		xmlNewProp( root, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 	mlt_properties_set_int( properties, "global_feed", 1 );
 
 	// Construct the context maps
@@ -717,7 +720,7 @@ static int consumer_start( mlt_consumer this )
 			xmlChar *buffer = NULL;
 			int length = 0;
 			xmlDocDumpMemoryEnc( doc, &buffer, &length, "utf-8" );
-			mlt_properties_set( properties, resource, buffer );
+			mlt_properties_set( properties, resource, _s(buffer) );
 			xmlFree( buffer );
 		}
 		else

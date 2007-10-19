@@ -63,7 +63,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		while ( size -- )
 		{
 			*alpha = alpha_value( *alpha, p, u, v, variance, 0 );
-			*alpha ++;
+			alpha ++;
 			*alpha = alpha_value( *alpha, p, u, v, variance, 1 );
 			alpha ++;
 			p += 4;

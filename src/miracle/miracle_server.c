@@ -148,7 +148,7 @@ static void *miracle_server_run( void *arg )
 	pthread_t cmd_parse_info;
 	connection_t *tmp = NULL;
 	pthread_attr_t thread_attributes;
-	int socksize;
+	socklen_t socksize;
 
 	socksize = sizeof( struct sockaddr );
 

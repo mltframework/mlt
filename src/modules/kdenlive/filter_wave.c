@@ -75,7 +75,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
         	int deformY = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "deformY" );
         	if (factor != 0) {
 			int image_size = *width * (*height + 1) * 2;
-            		int8_t *dest = mlt_pool_alloc (image_size);
+            		uint8_t *dest = mlt_pool_alloc (image_size);
             		DoWave(*image, *width, (*height + 1), dest, position, speed, factor, deformX, deformY);
             		memcpy(*image, dest, image_size);
             		mlt_pool_release(dest);

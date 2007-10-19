@@ -31,6 +31,7 @@
 // System header files
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 // Forward references.
 static int producer_open( mlt_producer this, char *file );

@@ -593,7 +593,7 @@ void miracle_unit_change_position( miracle_unit unit, int clip, int32_t position
 	else if ( clip >= mlt_playlist_count( playlist ) )
 	{
 		clip = mlt_playlist_count( playlist ) - 1;
-		position = LONG_MAX;
+		position = INT_MAX;
 	}
 
 	if ( mlt_playlist_get_clip_info( playlist, &info, clip ) == 0 )

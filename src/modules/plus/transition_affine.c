@@ -510,7 +510,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 					if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
 					{
-						*pmask ++;
+						pmask ++;
 						dx -= dx & 1;
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) );
 						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );

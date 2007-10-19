@@ -36,6 +36,9 @@
 #define STACK_SIZE 1000
 #define BRANCH_SIG_LEN 4000
 
+#define _x (xmlChar*)
+#define _s (char*)
+
 #undef DEBUG
 #ifdef DEBUG
 extern xmlDocPtr westley_make_doc( mlt_service service );
@@ -387,7 +390,7 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 		mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 
 		// Out will be overwritten later as we append, so we need to save it
-		if ( strcmp( atts[ 0 ], "out" ) == 0 )
+		if ( xmlStrcmp( atts[ 0 ], _x("out") ) == 0 )
 			mlt_properties_set( properties, "_westley.out", ( char* )atts[ 1 ] );
 	}
 
@@ -628,9 +631,9 @@ static void on_start_blank( deserialise_context context, const xmlChar *name, co
 		// Look for the length attribute
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		{
-			if ( strcmp( atts[0], "length" ) == 0 )
+			if ( xmlStrcmp( atts[0], _x("length") ) == 0 )
 			{
-				length = atoll( atts[1] );
+				length = atoll( _s(atts[1]) );
 				break;
 			}
 		}
@@ -657,7 +660,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 		mlt_properties_set( temp, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 		
 		// Look for the producer attribute
-		if ( strcmp( atts[ 0 ], "producer" ) == 0 )
+		if ( xmlStrcmp( atts[ 0 ], _x("producer") ) == 0 )
 		{
 			mlt_producer producer = mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL );
 			if ( producer !=  NULL )
@@ -669,7 +672,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 	if ( mlt_properties_get_data( temp, "producer", NULL ) != NULL )
 	{
 		mlt_playlist_clip_info info;
-		enum service_type parent_type;
+		enum service_type parent_type = invalid_type;
 		mlt_service parent = context_pop_service( context, &parent_type );
 		mlt_producer producer = mlt_properties_get_data( temp, "producer", NULL );
 
@@ -715,7 +718,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 static void on_end_entry( deserialise_context context, const xmlChar *name )
 {
 	// Get the entry from the stack
-	enum service_type entry_type;
+	enum service_type entry_type = invalid_type;
 	mlt_service entry = context_pop_service( context, &entry_type );
 
 	if ( entry == NULL && entry_type != mlt_entry_type )
@@ -740,7 +743,7 @@ static void on_start_track( deserialise_context context, const xmlChar *name, co
 		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
 		
 		// Look for the producer attribute
-		if ( strcmp( atts[ 0 ], "producer" ) == 0 )
+		if ( xmlStrcmp( atts[ 0 ], _x("producer") ) == 0 )
 		{
 			mlt_producer producer = mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL );
 			if ( producer !=  NULL )
@@ -758,7 +761,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 	if ( track != NULL && track_type == mlt_entry_type )
 	{
 		mlt_properties track_props = MLT_SERVICE_PROPERTIES( track );
-		enum service_type parent_type;
+		enum service_type parent_type = invalid_type;
 		mlt_service parent = context_pop_service( context, &parent_type );
 		mlt_multitrack multitrack = NULL;
 
@@ -836,7 +839,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 	mlt_service service = context_pop_service( context, &type );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
-	enum service_type parent_type;
+	enum service_type parent_type = invalid_type;
 	mlt_service parent = context_pop_service( context, &parent_type );
 
 	if ( service != NULL && type == mlt_dummy_filter_type )
@@ -911,7 +914,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 	mlt_service service = context_pop_service( context, &type );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
-	enum service_type parent_type;
+	enum service_type parent_type = invalid_type;
 	mlt_service parent = context_pop_service( context, &parent_type );
 
 	if ( service != NULL && type == mlt_dummy_transition_type )
@@ -981,10 +984,10 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 		// Set the properties
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		{
-			if ( strcmp( atts[ 0 ], "name" ) == 0 )
-				context->property = strdup( atts[ 1 ] );
-			else if ( strcmp( atts[ 0 ], "value" ) == 0 )
-				value = (char*) atts[ 1 ];
+			if ( xmlStrcmp( atts[ 0 ], _x("name") ) == 0 )
+				context->property = strdup( _s(atts[ 1 ]) );
+			else if ( xmlStrcmp( atts[ 0 ], _x("value") ) == 0 )
+				value = _s(atts[ 1 ]);
 		}
 
 		if ( context->property != NULL )
@@ -1020,7 +1023,7 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 		
 			// Serialise the tree to get value
 			xmlDocDumpMemory( context->value_doc, &value, &size );
-			mlt_properties_set( properties, context->property, value );
+			mlt_properties_set( properties, context->property, _s(value) );
 			xmlFree( value );
 			xmlFreeDoc( context->value_doc );
 			context->value_doc = NULL;
@@ -1055,7 +1058,7 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		if ( context->value_doc == NULL )
 		{
 			// Start a new tree
-			context->value_doc = xmlNewDoc( "1.0" );
+			context->value_doc = xmlNewDoc( _x("1.0") );
 			xmlDocSetRootElement( context->value_doc, node );
 		}
 		else
@@ -1069,27 +1072,27 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
 			xmlSetProp( node, atts[ 0 ], atts[ 1 ] );
 	}
-	else if ( strcmp( name, "tractor" ) == 0 )
+	else if ( xmlStrcmp( name, _x("tractor") ) == 0 )
 		on_start_tractor( context, name, atts );
-	else if ( strcmp( name, "multitrack" ) == 0 )
+	else if ( xmlStrcmp( name, _x("multitrack") ) == 0 )
 		on_start_multitrack( context, name, atts );
-	else if ( strcmp( name, "playlist" ) == 0 || strcmp( name, "seq" ) == 0 || strcmp( name, "smil" ) == 0 )
+	else if ( xmlStrcmp( name, _x("playlist") ) == 0 || xmlStrcmp( name, _x("seq") ) == 0 || xmlStrcmp( name, _x("smil") ) == 0 )
 		on_start_playlist( context, name, atts );
-	else if ( strcmp( name, "producer" ) == 0 || strcmp( name, "video" ) == 0 )
+	else if ( xmlStrcmp( name, _x("producer") ) == 0 || xmlStrcmp( name, _x("video") ) == 0 )
 		on_start_producer( context, name, atts );
-	else if ( strcmp( name, "blank" ) == 0 )
+	else if ( xmlStrcmp( name, _x("blank") ) == 0 )
 		on_start_blank( context, name, atts );
-	else if ( strcmp( name, "entry" ) == 0 )
+	else if ( xmlStrcmp( name, _x("entry") ) == 0 )
 		on_start_entry( context, name, atts );
-	else if ( strcmp( name, "track" ) == 0 )
+	else if ( xmlStrcmp( name, _x("track") ) == 0 )
 		on_start_track( context, name, atts );
-	else if ( strcmp( name, "filter" ) == 0 )
+	else if ( xmlStrcmp( name, _x("filter") ) == 0 )
 		on_start_filter( context, name, atts );
-	else if ( strcmp( name, "transition" ) == 0 )
+	else if ( xmlStrcmp( name, _x("transition") ) == 0 )
 		on_start_transition( context, name, atts );
-	else if ( strcmp( name, "property" ) == 0 )
+	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_start_property( context, name, atts );
-	else if ( strcmp( name, "westley" ) == 0 )
+	else if ( xmlStrcmp( name, _x("westley") ) == 0 )
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
 			mlt_properties_set( context->producer_map, ( char * )atts[ 0 ], ( char * )atts[ 1 ] );
 }
@@ -1100,25 +1103,25 @@ static void on_end_element( void *ctx, const xmlChar *name )
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 	
 //printf("on_end_element: %s\n", name );
-	if ( context->is_value == 1 && strcmp( name, "property" ) != 0 )
+	if ( context->is_value == 1 && xmlStrcmp( name, _x("property") ) != 0 )
 		context_pop_node( context );
-	else if ( strcmp( name, "multitrack" ) == 0 )
+	else if ( xmlStrcmp( name, _x("multitrack") ) == 0 )
 		on_end_multitrack( context, name );
-	else if ( strcmp( name, "playlist" ) == 0 || strcmp( name, "seq" ) == 0 || strcmp( name, "smil" ) == 0 )
+	else if ( xmlStrcmp( name, _x("playlist") ) == 0 || xmlStrcmp( name, _x("seq") ) == 0 || xmlStrcmp( name, _x("smil") ) == 0 )
 		on_end_playlist( context, name );
-	else if ( strcmp( name, "track" ) == 0 )
+	else if ( xmlStrcmp( name, _x("track") ) == 0 )
 		on_end_track( context, name );
-	else if ( strcmp( name, "entry" ) == 0 )
+	else if ( xmlStrcmp( name, _x("entry") ) == 0 )
 		on_end_entry( context, name );
-	else if ( strcmp( name, "tractor" ) == 0 )
+	else if ( xmlStrcmp( name, _x("tractor") ) == 0 )
 		on_end_tractor( context, name );
-	else if ( strcmp( name, "property" ) == 0 )
+	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_end_property( context, name );
-	else if ( strcmp( name, "producer" ) == 0 || strcmp( name, "video" ) == 0 )
+	else if ( xmlStrcmp( name, _x("producer") ) == 0 || xmlStrcmp( name, _x("video") ) == 0 )
 		on_end_producer( context, name );
-	else if ( strcmp( name, "filter" ) == 0 )
+	else if ( xmlStrcmp( name, _x("filter") ) == 0 )
 		on_end_filter( context, name );
-	else if ( strcmp( name, "transition" ) == 0 )
+	else if ( xmlStrcmp( name, _x("transition") ) == 0 )
 		on_end_transition( context, name );
 
 	context->branch[ context->depth ] = 0;
@@ -1179,7 +1182,7 @@ static void params_to_entities( deserialise_context context )
 		{
 			xmlChar *name = ( xmlChar* )mlt_properties_get_name( context->params, i );
 			xmlAddDocEntity( context->entity_doc, name, XML_INTERNAL_GENERAL_ENTITY,
-				context->publicId, context->systemId, ( xmlChar* )mlt_properties_get( context->params, name ) );
+				context->publicId, context->systemId, ( xmlChar* )mlt_properties_get( context->params, _s(name) ) );
 		}
 
 		// Flag completion
@@ -1224,9 +1227,9 @@ static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	// Setup for entity declarations if not ready
 	if ( xmlGetIntSubset( context->entity_doc ) == NULL )
 	{
-		xmlCreateIntSubset( context->entity_doc, "westley", "", "" );
-		context->publicId = "";
-		context->systemId = "";
+		xmlCreateIntSubset( context->entity_doc, _x("westley"), _x(""), _x("") );
+		context->publicId = _x("");
+		context->systemId = _x("");
 	}
 
 	// Add our parameters if not already
@@ -1394,7 +1397,7 @@ mlt_producer producer_westley_init( int info, char *data )
 	xmlInitParser(); 
 	xmlSubstituteEntitiesDefault( 1 );
 	// This is used to facilitate entity substitution in the SAX parser
-	context->entity_doc = xmlNewDoc( "1.0" );
+	context->entity_doc = xmlNewDoc( _x("1.0") );
 	if ( info == 0 )
 		xmlcontext = xmlCreateFileParserCtxt( filename );
 	else

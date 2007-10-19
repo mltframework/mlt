@@ -715,7 +715,7 @@ yuv422_scale ( guchar *dest_buf,
                double scale_y,
                PixopsInterpType interp_type )
 {
-	PixopsFilter filter;
+	PixopsFilter filter = { { 0, 0, 0}, { 0, 0, 0 }, 0 };
 	PixopsLineFunc line_func;
 
 #ifdef USE_MMX

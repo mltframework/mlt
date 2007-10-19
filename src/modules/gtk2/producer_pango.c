@@ -28,6 +28,7 @@
 #include <freetype/freetype.h>
 #include <iconv.h>
 #include <pthread.h>
+#include <ctype.h>
 
 static pthread_mutex_t pango_mutex = PTHREAD_MUTEX_INITIALIZER;
 

@@ -39,6 +39,8 @@
 #ifndef _
 #define _(x) x
 #endif
+#define _x (xmlChar*)
+#define _s (char*)
 
 jack_rack_t *
 jack_rack_new (const char * client_name, unsigned long channels)
@@ -165,10 +167,10 @@ saved_rack_parse_plugin (jack_rack_t * jack_rack, saved_rack_t * saved_rack, sav
 
   for (node = plugin->children; node; node = node->next)
     {
-      if (strcmp (node->name, "id") == 0)
+      if (xmlStrcmp (node->name, _x("id")) == 0)
         {
           content = xmlNodeGetContent (node);
-          num = strtoul (content, NULL, 10);
+          num = strtoul (_s(content), NULL, 10);
           xmlFree (content);
 
           desc = plugin_mgr_get_any_desc (jack_rack->plugin_mgr, num);
@@ -180,62 +182,62 @@ saved_rack_parse_plugin (jack_rack_t * jack_rack, saved_rack_t * saved_rack, sav
           
           settings = settings_new (desc, saved_rack->channels, saved_rack->sample_rate);
         }
-      else if (strcmp (node->name, "enabled") == 0)
+      else if (xmlStrcmp (node->name, _x("enabled")) == 0)
         {
           content = xmlNodeGetContent (node);
-          settings_set_enabled (settings, strcmp (content, "true") == 0 ? TRUE : FALSE);
+          settings_set_enabled (settings, xmlStrcmp (content, _x("true")) == 0 ? TRUE : FALSE);
           xmlFree (content);
         }
-      else if (strcmp (node->name, "wet_dry_enabled") == 0)
+      else if (xmlStrcmp (node->name, _x("wet_dry_enabled")) == 0)
         {
           content = xmlNodeGetContent (node);
-          settings_set_wet_dry_enabled (settings, strcmp (content, "true") == 0 ? TRUE : FALSE);
+          settings_set_wet_dry_enabled (settings, xmlStrcmp (content, _x("true")) == 0 ? TRUE : FALSE);
           xmlFree (content);
         }
-      else if (strcmp (node->name, "wet_dry_locked") == 0)
+      else if (xmlStrcmp (node->name, _x("wet_dry_locked")) == 0)
         {
           content = xmlNodeGetContent (node);
-          settings_set_wet_dry_locked (settings, strcmp (content, "true") == 0 ? TRUE : FALSE);
+          settings_set_wet_dry_locked (settings, xmlStrcmp (content, _x("true")) == 0 ? TRUE : FALSE);
           xmlFree (content);
         }
-      else if (strcmp (node->name, "wet_dry_values") == 0)
+      else if (xmlStrcmp (node->name, _x("wet_dry_values")) == 0)
         {
           unsigned long channel = 0;
           
           for (sub_node = node->children; sub_node; sub_node = sub_node->next)
             {
-              if (strcmp (sub_node->name, "value") == 0)
+              if (xmlStrcmp (sub_node->name, _x("value")) == 0)
                 {
                   content = xmlNodeGetContent (sub_node);
-                  settings_set_wet_dry_value (settings, channel, strtod (content, NULL));
+                  settings_set_wet_dry_value (settings, channel, strtod (_s(content), NULL));
                   xmlFree (content);
                   
                   channel++;
                 }
             }
         }
-      else if (strcmp (node->name, "lockall") == 0)
+      else if (xmlStrcmp (node->name, _x("lockall")) == 0)
         {
           content = xmlNodeGetContent (node);
-          settings_set_lock_all (settings, strcmp (content, "true") == 0 ? TRUE : FALSE);
+          settings_set_lock_all (settings, xmlStrcmp (content, _x("true")) == 0 ? TRUE : FALSE);
           xmlFree (content);
         }
-      else if (strcmp (node->name, "controlrow") == 0)
+      else if (xmlStrcmp (node->name, _x("controlrow")) == 0)
         {
           gint copy = 0;
 
           for (sub_node = node->children; sub_node; sub_node = sub_node->next)
             {
-              if (strcmp (sub_node->name, "lock") == 0)
+              if (xmlStrcmp (sub_node->name, _x("lock")) == 0)
                 {
                   content = xmlNodeGetContent (sub_node);
-                  settings_set_lock (settings, control, strcmp (content, "true") == 0 ? TRUE : FALSE);
+                  settings_set_lock (settings, control, xmlStrcmp (content, _x("true")) == 0 ? TRUE : FALSE);
                   xmlFree (content);
                 }
-              else if (strcmp (sub_node->name, "value") == 0)
+              else if (xmlStrcmp (sub_node->name, _x("value")) == 0)
                 {
                   content = xmlNodeGetContent (sub_node);
-                  settings_set_control_value (settings, copy, control, strtod (content, NULL));
+                  settings_set_control_value (settings, copy, control, strtod (_s(content), NULL));
                   xmlFree (content);
                   copy++;
                 }
@@ -258,19 +260,19 @@ saved_rack_parse_jackrack (jack_rack_t * jack_rack, saved_rack_t * saved_rack, c
 
   for (node = jackrack->children; node; node = node->next)
     {
-      if (strcmp (node->name, "channels") == 0)
+      if (xmlStrcmp (node->name, _x("channels")) == 0)
         {
           content = xmlNodeGetContent (node);
-          saved_rack->channels = strtoul (content, NULL, 10);
+          saved_rack->channels = strtoul (_s(content), NULL, 10);
           xmlFree (content);
         }
-      else if (strcmp (node->name, "samplerate") == 0)
+      else if (xmlStrcmp (node->name, _x("samplerate")) == 0)
         {
           content = xmlNodeGetContent (node);
-          saved_rack->sample_rate = strtoul (content, NULL, 10);
+          saved_rack->sample_rate = strtoul (_s(content), NULL, 10);
           xmlFree (content);
         }
-      else if (strcmp (node->name, "plugin") == 0)
+      else if (xmlStrcmp (node->name, _x("plugin")) == 0)
         {
           saved_plugin = g_malloc0 (sizeof (saved_plugin_t));
           saved_rack->plugins = g_slist_append (saved_rack->plugins, saved_plugin);
@@ -293,7 +295,7 @@ saved_rack_new (jack_rack_t * jack_rack, const char * filename, xmlDocPtr doc)
   
   for (node = doc->children; node; node = node->next)
     {
-      if (strcmp (node->name, "jackrack") == 0)
+      if (xmlStrcmp (node->name, _x("jackrack")) == 0)
         saved_rack_parse_jackrack (jack_rack, saved_rack, filename, node);
     }
   
@@ -327,7 +329,7 @@ jack_rack_open_file (jack_rack_t * jack_rack, const char * filename)
       return 1;
     }
   
-  if (strcmp ( ((xmlDtdPtr)doc->children)->name, "jackrack") != 0)
+  if (xmlStrcmp ( ((xmlDtdPtr)doc->children)->name, _x("jackrack")) != 0)
     {
       fprintf (stderr, _("The file '%s' is not a JACK Rack settings file\n"), filename);
       return 1;
