@@ -39,6 +39,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_transition luma = mlt_properties_get_data( properties, "luma", NULL );
 	mlt_frame b_frame = mlt_properties_get_data( properties, "frame", NULL );
+	mlt_properties b_frame_props = b_frame ? MLT_FRAME_PROPERTIES( b_frame ) : NULL;
 	int out = mlt_properties_get_int( properties, "period" );
 	
 	if ( out == 0 )
@@ -58,7 +59,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 	}
 
-	if ( b_frame == NULL || mlt_properties_get_int( b_frame, "width" ) != *width || mlt_properties_get_int( b_frame, "height" ) != *height )
+	if ( b_frame == NULL || mlt_properties_get_int( b_frame_props, "width" ) != *width || mlt_properties_get_int( b_frame_props, "height" ) != *height )
 	{
 		b_frame = mlt_frame_init( );
 		mlt_properties_set_data( properties, "frame", b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
