@@ -290,6 +290,8 @@ static inline void diamond_search(
 
 	// Keep track of best and former best candidates
 	motion_vector best, former;
+	best.dx = 0;
+	best.dy = 0;
 	former.dx = 0;
 	former.dy = 0;
 

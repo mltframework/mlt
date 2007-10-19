@@ -86,7 +86,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int macroblock_width = mlt_properties_get_int( properties, "motion_est.macroblock_width" );
 
 	// Get the motion vectors
-	struct motion_vectors_s *current_vectors = mlt_properties_get_data( properties, "motion_est.vectors", NULL );
+	struct motion_vector_s *current_vectors = mlt_properties_get_data( properties, "motion_est.vectors", NULL );
 
 	init_arrows( format, *width, *height );
 
