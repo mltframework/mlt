@@ -121,7 +121,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
-			mlt_properties_set( properties, "top_field_first", mlt_properties_get_int( properties, "meta.top_field_first" ) );
+			mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( properties, "meta.top_field_first" ) );
 
 		// Correct field order if needed
 		if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 )
