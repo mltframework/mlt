@@ -4,7 +4,36 @@ if [ "$help" != "1" ]
 then
 
 	which libst-config > /dev/null 2>&1
-	disable_sox=$?
+	if [ $? -eq 0 ]
+	then
+		disable_sox=0
+		echo "CFLAGS += $(libst-config --cflags) -I../../" > config.mak
+		echo "LDFLAGS += -lst $(libst-config --libs)" >> config.mak
+	else
+		sox --version 2> /dev/null | grep 'v14.' > /dev/null
+		disable_sox=$?
+		if [ $disable_sox -eq 0 ]
+		then
+			LIBDIR=lib
+			#bits=$(uname -m)
+			#case $bits in
+			#x86_64)
+			#	export LIBDIR=lib64
+			#	;;
+			#*)
+			#	export LIBDIR=lib
+			#	;;
+			#esac
+
+			sox=$(which sox)
+			# chop sox
+			soxdir=$(dirname $sox)
+			# chop bin
+			soxdir=$(dirname $soxdir)
+			echo "CFLAGS += -DSOX14 -I$soxdir/include" > config.mak
+			echo "LDFLAGS += -L$soxdir/$LIBDIR -lsox -lsfx -lsamplerate" >> config.mak
+		fi
+	fi
 
 	if [ "$disable_sox" = "0" ]
 	then

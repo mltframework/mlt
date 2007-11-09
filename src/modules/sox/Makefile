@@ -1,12 +1,13 @@
 include ../../../config.mak
+include config.mak
 
 TARGET = ../libmltsox$(LIBSUF)
 
 OBJS = factory.o \
 	   filter_sox.o 
 
-CFLAGS += `libst-config --cflags` -I../../ 
-LDFLAGS += -lst `libst-config --libs`
+CFLAGS += -I../../
+
 LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)

@@ -28,7 +28,21 @@
 #include <string.h>
 #include <math.h>
 
-#include <st.h>
+#ifdef SOX14
+#	include <sox.h>
+#	define ST_EOF SOX_EOF
+#	define ST_SUCCESS SOX_SUCCESS
+#	define st_sample_t sox_sample_t
+#	define eff_t sox_effect_t*
+#	define st_size_t sox_size_t
+#	define ST_LIB_VERSION_CODE SOX_LIB_VERSION_CODE
+#	define ST_LIB_VERSION SOX_LIB_VERSION
+#	define ST_SIGNED_WORD_TO_SAMPLE(d,clips) SOX_SIGNED_16BIT_TO_SAMPLE(d,clips)
+#	define ST_SSIZE_MIN SOX_SSIZE_MIN
+#	define ST_SAMPLE_TO_SIGNED_WORD(d,clips) SOX_SAMPLE_TO_SIGNED_16BIT(d,clips)
+#else
+#	include <st.h>
+#endif
 
 #define BUFFER_LEN 8192
 #define AMPLITUDE_NORM 0.2511886431509580 /* -12dBFS */
@@ -61,21 +75,37 @@ static inline double mean( double *buf, int count )
 static int create_effect( mlt_filter this, char *value, int count, int channel, int frequency )
 {
 	mlt_tokeniser tokeniser = mlt_tokeniser_init();
+#ifdef SOX14
+	eff_t eff = mlt_pool_alloc( sizeof( sox_effect_t ) );
+#else
 	eff_t eff = mlt_pool_alloc( sizeof( struct st_effect ) );
+#endif
 	char id[ 256 ];
 	int error = 1;
 
 	// Tokenise the effect specification
 	mlt_tokeniser_parse_new( tokeniser, value, " " );
+	if ( tokeniser->count < 1 )
+		return error;
 
 	// Locate the effect
+#ifdef SOX14
+	//fprintf(stderr, "%s: effect %s count %d\n", __FUNCTION__, tokeniser->tokens[0], tokeniser->count );
+	sox_create_effect( eff, sox_find_effect( tokeniser->tokens[0] ) );
+	int opt_count = tokeniser->count - 1;
+#else
 	int opt_count = st_geteffect_opt( eff, tokeniser->count, tokeniser->tokens );
+#endif
 	
 	// If valid effect
 	if ( opt_count != ST_EOF )
 	{
 		// Supply the effect parameters
+#ifdef SOX14
+		if ( ( * eff->handler.getopts )( eff, opt_count, &tokeniser->tokens[ tokeniser->count > 1 ? 1 : 0  ] ) == ST_SUCCESS )
+#else
 		if ( ( * eff->h->getopts )( eff, opt_count, &tokeniser->tokens[ tokeniser->count - opt_count ] ) == ST_SUCCESS )
+#endif
 		{
 			// Set the sox signal parameters
 			eff->ininfo.rate = frequency;
@@ -84,7 +114,11 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 			eff->outinfo.channels = 1;
 			
 			// Start the effect
+#ifdef SOX14
+			if ( ( * eff->handler.start )( eff ) == ST_SUCCESS )
+#else
 			if ( ( * eff->h->start )( eff ) == ST_SUCCESS )
+#endif
 			{
 				// Construct id
 				sprintf( id, "_effect_%d_%d", count, channel );
@@ -123,7 +157,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	st_sample_t *output_buffer = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
 	int channels_avail = *channels;
 	int i; // channel
-	int count = mlt_properties_get_int( filter_properties, "effect_count" );
+	int count = mlt_properties_get_int( filter_properties, "_effect_count" );
 
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
@@ -211,7 +245,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 			}
 			
 			// Save the number of filters
-			mlt_properties_set_int( filter_properties, "effect_count", count );
+			mlt_properties_set_int( filter_properties, "_effect_count", count );
 			
 		}
 		if ( *samples > 0 && count > 0 )
@@ -295,7 +329,11 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 					float saved_gain = 1.0;
 					
 					// XXX: hack to apply the normalised gain level to the vol effect
+#ifdef SOX14
+					if ( normalise && strcmp( e->handler.name, "vol" ) == 0 )
+#else
 					if ( normalise && strcmp( e->name, "vol" ) == 0 )
+#endif
 					{
 						float *f = ( float * )( e->priv );
 						saved_gain = *f;
@@ -303,7 +341,11 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 					}
 					
 					// Apply the effect
+#ifdef SOX14
+					if ( ( * e->handler.flow )( e, input_buffer, output_buffer, &isamp, &osamp ) == ST_SUCCESS )
+#else
 					if ( ( * e->h->flow )( e, input_buffer, output_buffer, &isamp, &osamp ) == ST_SUCCESS )
+#endif
 					{
 						// Swap input and output buffer pointers for subsequent effects
 						p = input_buffer;
@@ -312,7 +354,11 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 					}
 					
 					// XXX: hack to restore the original vol gain to prevent accumulation
+#ifdef SOX14
+					if ( normalise && strcmp( e->handler.name, "vol" ) == 0 )
+#else
 					if ( normalise && strcmp( e->name, "vol" ) == 0 )
+#endif
 					{
 						float *f = ( float * )( e->priv );
 						*f = saved_gain;
