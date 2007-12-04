@@ -435,7 +435,6 @@ mlt_producer producer_inigo_init( char **argv )
 	mlt_properties_set_data( props, "group", group, 0, ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties_set_position( props, "length", mlt_producer_get_out( MLT_MULTITRACK_PRODUCER( multitrack ) ) + 1 );
 	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( MLT_MULTITRACK_PRODUCER( multitrack ) ) );
-	mlt_properties_set_double( props, "fps", mlt_producer_get_fps( MLT_MULTITRACK_PRODUCER( multitrack ) ) );
 	if ( title != NULL )
 		mlt_properties_set( props, "title", strchr( title, '/' ) ? strrchr( title, '/' ) + 1 : title );
 

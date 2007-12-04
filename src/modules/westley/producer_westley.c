@@ -540,7 +540,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 			if ( strchr( mlt_properties_get( properties, "clipBegin" ), ':' ) )
 				// Parse clock value
 				in = parse_clock_value( mlt_properties_get( properties, "clipBegin" ),
-					mlt_properties_get_double( mlt_producer_properties( MLT_PRODUCER( producer ) ), "fps" ) );
+					mlt_producer_get_fps( MLT_PRODUCER(  producer ) ) );
 			else
 				// Parse frames value
 				in = mlt_properties_get_position( properties, "clipBegin" );
@@ -554,7 +554,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 			if ( strchr( mlt_properties_get( properties, "clipEnd" ), ':' ) )
 				// Parse clock value
 				out = parse_clock_value( mlt_properties_get( properties, "clipEnd" ),
-					mlt_properties_get_double( mlt_producer_properties( MLT_PRODUCER( producer ) ), "fps" ) );
+					mlt_producer_get_fps( MLT_PRODUCER( producer ) ) );
 			else
 				// Parse frames value
 				out = mlt_properties_get_position( properties, "clipEnd" );

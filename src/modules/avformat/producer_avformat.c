@@ -165,7 +165,7 @@ static int producer_open( mlt_producer this, char *file )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// We will treat everything with the producer fps
-	double fps = mlt_properties_get_double( properties, "fps" );
+	double fps = mlt_producer_get_fps( this );
 
 	// Lock the mutex now
 	avformat_lock( );
@@ -203,11 +203,13 @@ static int producer_open( mlt_producer this, char *file )
 			params->width = 640;
 			params->height = 480;
 			params->time_base= (AVRational){1,25};
-			params->device = file;
+			// params->device = file;
 			params->channels = 2;
 			params->sample_rate = 48000;
 		}
 		
+		// XXX: this does not work anymore since avdevice
+		// TODO: make producer_avddevice?
 		// Parse out params
 		mrl = strchr( file, '?' );
 		while ( mrl )
@@ -368,14 +370,7 @@ static int producer_open( mlt_producer this, char *file )
 
 static double producer_time_of_frame( mlt_producer this, mlt_position position )
 {
-	// Get the properties
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
-
-	// Obtain the fps
-	double fps = mlt_properties_get_double( properties, "fps" );
-
-	// Do the calc
-	return ( double )position / fps;
+	return ( double )position / mlt_producer_get_fps( this );
 }
 
 static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format format, int width, int height )
@@ -489,7 +484,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// We may want to use the source fps if available
 	double source_fps = mlt_properties_get_double( properties, "source_fps" );
-	double fps = mlt_properties_get_double( properties, "fps" );
+	double fps = mlt_producer_get_fps( this );
 
 	// This is the physical frame position in the source
 	int req_position = ( int )( position / fps * source_fps + 0.5 );
@@ -735,7 +730,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			}
 			else
 			{
-				int is_pal = mlt_properties_get_double( properties, "fps" ) == 25.0;
+				int is_pal = mlt_producer_get_fps( this ) == 25.0;
 				aspect_ratio = is_pal ? 59.0/54.0 : 10.0/11.0;
 			}
 
@@ -743,10 +738,10 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			source_fps = ( double )codec_context->time_base.den / ( codec_context->time_base.num == 0 ? 1 : codec_context->time_base.num );
 
 			// We'll use fps if it's available
-			if ( source_fps > 0 && source_fps < 30 )
+			if ( source_fps > 0 )
 				mlt_properties_set_double( properties, "source_fps", source_fps );
 			else
-				mlt_properties_set_double( properties, "source_fps", mlt_properties_get_double( properties, "fps" ) );
+				mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( this ) );
 			mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
 			
 			// Set the width and height

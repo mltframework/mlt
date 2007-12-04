@@ -163,7 +163,7 @@ mlt_producer producer_libdv_init( char *filename )
 				destroy = 1;
 			else
 				mlt_properties_pass( properties, MLT_PRODUCER_PROPERTIES( this->alternative ), "" );
-			this->is_pal = mlt_properties_get_int( properties, "fps" ) == 25;
+			this->is_pal = ( ( int ) mlt_producer_get_fps( producer ) ) == 25;
 		}
 		else
 		{
@@ -241,7 +241,7 @@ static int producer_collect_info( producer_libdv this )
 
 			// Calculate default in/out points
 			double fps = this->is_pal ? 25 : 30000.0 / 1001.0;
-			if ( mlt_properties_get_double( properties, "fps" ) == fps )
+			if ( mlt_producer_get_fps( &this->parent ) == fps )
 			{
 				if ( this->frames_in_file > 0 )
 				{

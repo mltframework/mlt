@@ -91,6 +91,7 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 
 static void apply_profile_properties( mlt_profile profile, mlt_properties properties )
 {
+	mlt_event_block( g_event_listener );
 	mlt_properties_set_double( properties, "fps", mlt_profile_fps( profile ) );
 	mlt_properties_set_int( properties, "frame_rate_num", profile->frame_rate_num );
 	mlt_properties_set_int( properties, "frame_rate_den", profile->frame_rate_den );
@@ -103,6 +104,7 @@ static void apply_profile_properties( mlt_profile profile, mlt_properties proper
 	mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile )  );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
+	mlt_event_unblock( g_event_listener );
 }
 
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name )
@@ -115,11 +117,59 @@ static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this,
 		// Locate the profile
 		mlt_profile_select( mlt_properties_get( properties, "profile" ) );
 
-		// Stop listening to this
-		mlt_event_block( g_event_listener );
-
 		// Apply to properties
 		apply_profile_properties( mlt_profile_get(), properties );
+	}
+	else if ( !strcmp( name, "frame_rate_num" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->frame_rate_num = mlt_properties_get_int( properties, "frame_rate_num" );
+		mlt_properties_set_double( properties, "fps", mlt_profile_fps( NULL ) );
+	}
+	else if ( !strcmp( name, "frame_rate_den" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->frame_rate_den = mlt_properties_get_int( properties, "frame_rate_den" );
+		mlt_properties_set_double( properties, "fps", mlt_profile_fps( NULL ) );
+	}
+	else if ( !strcmp( name, "width" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->width = mlt_properties_get_int( properties, "width" );
+	}
+	else if ( !strcmp( name, "height" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->height = mlt_properties_get_int( properties, "height" );
+	}
+	else if ( !strcmp( name, "progressive" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->progressive = mlt_properties_get_int( properties, "progressive" );
+	}
+	else if ( !strcmp( name, "sample_aspect_num" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->sample_aspect_num = mlt_properties_get_int( properties, "sample_aspect_num" );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL )  );
+	}
+	else if ( !strcmp( name, "sample_aspect_den" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->sample_aspect_den = mlt_properties_get_int( properties, "sample_aspect_den" );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL )  );
+	}
+	else if ( !strcmp( name, "display_aspect_num" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->display_aspect_num = mlt_properties_get_int( properties, "display_aspect_num" );
+		mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( NULL )  );
+	}
+	else if ( !strcmp( name, "display_aspect_den" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile_get()->display_aspect_den = mlt_properties_get_int( properties, "display_aspect_den" );
+		mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( NULL )  );
 	}
 }
 
@@ -180,6 +230,9 @@ int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 
 int mlt_consumer_start( mlt_consumer this )
 {
+	// Stop listening to the property-changed event
+	mlt_event_block( g_event_listener );
+
 	// Get the properies
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
@@ -658,6 +711,7 @@ void mlt_consumer_stopped( mlt_consumer this )
 {
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "running", 0 );
 	mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-stopped", NULL );
+	mlt_event_unblock( g_event_listener );
 }
 
 /** Stop the consumer.

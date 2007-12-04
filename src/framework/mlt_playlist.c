@@ -127,9 +127,6 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 {
 	// Obtain the properties
 	mlt_properties properties = MLT_PLAYLIST_PROPERTIES( this );
-
-	// Get the fps of the first producer
-	double fps = mlt_properties_get_double( properties, "first_fps" );
 	int i = 0;
 	mlt_position frame_count = 0;
 
@@ -138,21 +135,6 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 		// Get the producer
 		mlt_producer producer = this->list[ i ]->producer;
 		int current_length = mlt_producer_get_out( producer ) - mlt_producer_get_in( producer ) + 1;
-
-		// If fps is 0
-		if ( fps == 0 )
-		{
-			// Inherit it from the producer
-			fps = mlt_producer_get_fps( producer );
-		}
-		else if ( fps != mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( producer ), "fps" ) )
-		{
-			// Generate a warning for now - the following attempt to fix may fail
-			fprintf( stderr, "Warning: fps mismatch on playlist producer %d\n", this->count );
-
-			// It should be safe to impose fps on an image producer, but not necessarily safe for video
-			mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( producer ), "fps", fps );
-		}
 
 		// Check if the length of the producer has changed
 		if ( this->list[ i ]->frame_in != mlt_producer_get_in( producer ) ||
@@ -184,8 +166,6 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 	}
 
 	// Refresh all properties
-	mlt_properties_set_double( properties, "first_fps", fps );
-	mlt_properties_set_double( properties, "fps", fps == 0 ? 25 : fps );
 	mlt_events_block( properties, properties );
 	mlt_properties_set_position( properties, "length", frame_count );
 	mlt_events_unblock( properties, properties );
@@ -561,7 +541,6 @@ int mlt_playlist_clear( mlt_playlist this )
 		mlt_producer_close( this->list[ i ]->producer );
 	}
 	this->count = 0;
-	mlt_properties_set_double( MLT_PLAYLIST_PROPERTIES( this ), "first_fps", 0 );
 	return mlt_playlist_virtual_refresh( this );
 }
 

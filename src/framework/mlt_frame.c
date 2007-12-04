@@ -445,7 +445,7 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	mlt_audio_format format = mlt_audio_pcm;
 	int frequency = 32000; // lower frequency available?
 	int channels = 2;
-	double fps = mlt_properties_get_double( properties, "fps" );
+	double fps = mlt_profile_fps( NULL );
 	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
 	
 	// Get the pcm data

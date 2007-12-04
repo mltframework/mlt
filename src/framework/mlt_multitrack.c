@@ -102,9 +102,6 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	// We need to ensure that the multitrack reports the longest track as its length
 	mlt_position length = 0;
 
-	// We need to ensure that fps are the same on all services
-	double fps = 0;
-	
 	// Obtain stats on all connected services
 	for ( i = 0; i < this->count; i ++ )
 	{
@@ -122,21 +119,6 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 			// Determine the longest length
 			//if ( !mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "hide" ) )
 				length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
-			
-			// Handle fps
-			if ( fps == 0 )
-			{
-				// This is the first producer, so it controls the fps
-				fps = mlt_producer_get_fps( producer );
-			}
-			else if ( fps != mlt_producer_get_fps( producer ) )
-			{
-				// Generate a warning for now - the following attempt to fix may fail
-				fprintf( stderr, "Warning: fps mismatch on track %d\n", i );
-
-				// It should be safe to impose fps on an image producer, but not necessarily safe for video
-				mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( producer ), "fps", fps );
-			}
 		}
 	}
 
@@ -145,7 +127,6 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 	mlt_properties_set_position( properties, "length", length );
 	mlt_events_unblock( properties, properties );
 	mlt_properties_set_position( properties, "out", length - 1 );
-	mlt_properties_set_double( properties, "fps", fps );
 }
 
 /** Listener for producers on the playlist.

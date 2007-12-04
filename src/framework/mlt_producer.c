@@ -85,9 +85,6 @@ int mlt_producer_init( mlt_producer this, void *child )
 			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
 			mlt_properties_set_position( properties, "_position", 0.0 );
 			mlt_properties_set_double( properties, "_frame", 0 );
-			mlt_properties_set_double( properties, "fps", mlt_profile_fps( NULL ) );
-			mlt_properties_set_int( properties, "frame_rate_num", mlt_profile_get()->frame_rate_num );
-			mlt_properties_set_int( properties, "frame_rate_den", mlt_profile_get()->frame_rate_den );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL ) );
 			mlt_properties_set_double( properties, "_speed", 1.0 );
 			mlt_properties_set_position( properties, "in", 0 );
@@ -292,7 +289,7 @@ double mlt_producer_get_speed( mlt_producer this )
 
 double mlt_producer_get_fps( mlt_producer this )
 {
-	return mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( this ), "fps" );
+	return mlt_profile_fps( NULL );
 }
 
 /** Set the in and out points.
@@ -440,7 +437,6 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		// Copy the fps and speed of the producer onto the frame
 		properties = MLT_FRAME_PROPERTIES( *frame );
 		mlt_properties_set_double( properties, "_speed", speed );
-		mlt_properties_set_double( properties, "fps", mlt_producer_get_fps( this ) );
 		mlt_properties_set_int( properties, "test_audio", mlt_frame_is_test_audio( *frame ) );
 		mlt_properties_set_int( properties, "test_image", mlt_frame_is_test_card( *frame ) );
 		if ( mlt_properties_get_data( properties, "_producer", NULL ) == NULL )

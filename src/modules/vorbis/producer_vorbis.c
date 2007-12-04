@@ -164,7 +164,7 @@ static int producer_open( mlt_producer this, char *file )
     			double length = ov_time_total( ov, -1 );
 
 				// We will treat everything with the producer fps
-				double fps = mlt_properties_get_double( properties, "fps" );
+				double fps = mlt_producer_get_fps( this );
 
 				// Set out and length of file
 				mlt_properties_set_position( properties, "out", ( length * fps ) - 1 );
@@ -194,14 +194,7 @@ static int producer_open( mlt_producer this, char *file )
 
 static double producer_time_of_frame( mlt_producer this, mlt_position position )
 {
-	// Get the properties
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
-
-	// Obtain the fps
-	double fps = mlt_properties_get_double( properties, "fps" );
-
-	// Do the calc
-	return ( double )position / fps;
+	return ( double )position / mlt_producer_get_fps( this );
 }
 
 /** Get the audio from a frame.
@@ -228,7 +221,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	mlt_position expected = mlt_properties_get_position( properties, "audio_expected" );
 
 	// Get the fps for this producer
-	double fps = mlt_properties_get_double( properties, "fps" );
+	double fps = mlt_producer_get_fps( this );
 
 	// Get the vorbis info
 	vorbis_info *vi = ov_info( ov, -1 );
