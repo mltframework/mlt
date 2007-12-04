@@ -1150,7 +1150,7 @@ static void *consumer_thread( void *arg )
 
 	// Close the output file
 	if (!(fmt->flags & AVFMT_NOFILE))
-		url_fclose(&oc->pb);
+		url_fclose(oc->pb);
 
 	// Clean up input and output frames
 	if ( output )
