@@ -87,7 +87,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 	return 0;
 }
 
-static int filter_files( struct dirent *de )
+static int filter_files( const struct dirent *de )
 {
 	return de->d_name[ 0 ] != '.';
 }
