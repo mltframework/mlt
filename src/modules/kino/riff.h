@@ -86,7 +86,7 @@ using std::vector;
 #ifdef __cplusplus
 extern "C"
 {
-	FOURCC make_fourcc( char * s );
+	FOURCC make_fourcc( const char * s );
 }
 #endif
 
