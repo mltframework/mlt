@@ -129,7 +129,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties_debug( frame_properties, "error after mlt_frame_get_image() in autotrack_rectangle", stderr );
 
 	// Get the geometry object
-	mlt_geometry geometry = mlt_properties_get_data(filter_properties, "geometry", NULL);
+	mlt_geometry geometry = mlt_properties_get_data(filter_properties, "filter_geometry", NULL);
 
 	// Get the current geometry item
 	struct mlt_geometry_item_s boundry;
@@ -204,9 +204,25 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 
 	// Get the frame position
 	mlt_position position = mlt_frame_get_position( frame );
-
+	
 	// Get the geometry object
-	mlt_geometry geometry = mlt_properties_get_data(filter_properties, "geometry", NULL);
+	mlt_geometry geometry = mlt_properties_get_data(filter_properties, "filter_geometry", NULL);
+	if (geometry == NULL) {
+		mlt_geometry geom = mlt_geometry_init();
+		char *arg = mlt_properties_get(filter_properties, "geometry");
+
+		// Initialize with the supplied geometry
+		struct mlt_geometry_item_s item;
+		mlt_geometry_parse_item( geom, &item, arg  );
+
+		item.frame = 0;
+		item.key = 1;
+		item.mix = 100;
+
+		mlt_geometry_insert( geom, &item );
+		mlt_properties_set_data( filter_properties, "filter_geometry", geom, 0, (mlt_destructor)mlt_geometry_close, (mlt_serialiser)mlt_geometry_serialise );
+		geometry = mlt_properties_get_data(filter_properties, "filter_geometry", NULL);
+	}
 
 	// Get the current geometry item
 	mlt_geometry_item geometry_item = mlt_pool_alloc( sizeof( struct mlt_geometry_item_s ) );
@@ -285,26 +301,11 @@ mlt_filter filter_autotrack_rectangle_init( char *arg )
 	{
 		this->process = filter_process;
 
-
-		mlt_geometry geometry = mlt_geometry_init();
-
-		// Initialize with the supplied geometry
-		if( arg != NULL ) {
-
-			struct mlt_geometry_item_s item;
-
-			mlt_geometry_parse_item( geometry, &item, arg  );
-
-			item.frame = 0;
-			item.key = 1;
-			item.mix = 100;
-
-			mlt_geometry_insert( geometry, &item );
-
-		}
-
-		// ... and attach it to the filter
-		mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "geometry", geometry, 0, (mlt_destructor)mlt_geometry_close, (mlt_serialiser)mlt_geometry_serialise );
+		// Initialize with the supplied geometry if ther is one
+		if( arg != NULL ) 
+			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", arg );
+		else
+			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", "100,100:100x100" );
 
 		// create an instance of the motion_est and obscure filter
 		mlt_filter motion_est = mlt_factory_filter( "motion_est", NULL );
