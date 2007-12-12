@@ -1150,7 +1150,11 @@ static void *consumer_thread( void *arg )
 
 	// Close the output file
 	if (!(fmt->flags & AVFMT_NOFILE))
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(0<<8)+0)
 		url_fclose(oc->pb);
+#else
+		url_fclose(&oc->pb);
+#endif
 
 	// Clean up input and output frames
 	if ( output )
