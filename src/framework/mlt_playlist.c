@@ -1271,7 +1271,7 @@ int mlt_playlist_insert_at( mlt_playlist this, mlt_position position, mlt_produc
 		if ( clip < this->count && mlt_playlist_is_blank( this, clip ) )
 		{
 			// Split and move to new clip if need be
-			if ( position != info.start && mlt_playlist_split( this, clip, position - info.start ) == 0 )
+			if ( position != info.start && mlt_playlist_split( this, clip, position - info.start - 1 ) == 0 )
 				mlt_playlist_get_clip_info( this, &info, ++ clip );
 
 			// Split again if need be
@@ -1301,8 +1301,12 @@ int mlt_playlist_insert_at( mlt_playlist this, mlt_position position, mlt_produc
 		}
 		else 
 		{
-			if ( mode == 1 )
-				mlt_playlist_blank( this, position - mlt_properties_get_int( properties, "length" ) );
+			if ( mode == 1 ) {
+				if ( position == info.start ) 
+					mlt_playlist_remove( this, clip );
+				else
+					mlt_playlist_blank( this, position - mlt_properties_get_int( properties, "length" ) - 1 );
+			}
 			mlt_playlist_append( this, producer );
 			ret = this->count - 1;
 		}
