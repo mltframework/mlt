@@ -704,7 +704,7 @@ Filters
 		Details
 		
 			If you are using a consumer that uses ALSA, then you should start
-			jacks with the dummy driver: jackd -d dummy.
+			jackd with the dummy driver: jackd -d dummy.
 			I also recommend using a period size of 2048: -p 2048.
 			
 			jackd -ddummy -r48000 -p2048
