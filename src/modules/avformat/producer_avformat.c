@@ -630,6 +630,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						got_picture = 0;
 					}
 				}
+				av_free_packet( &pkt );
+			}
+			else if ( ret >= 0 )
+			{
+				av_free_packet( &pkt );
 			}
 
 			// Now handle the picture if we have one
@@ -642,9 +647,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				mlt_properties_set_int( properties, "_current_position", int_position );
 				mlt_properties_set_int( properties, "_got_picture", 1 );
 			}
-
-			// We're finished with this packet regardless
-			av_free_packet( &pkt );
 		}
 	}
 
