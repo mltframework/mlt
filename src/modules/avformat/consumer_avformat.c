@@ -623,7 +623,7 @@ static void *consumer_thread( void *arg )
 	struct timeval ante;
 
 	// Get the frame rate
-	int fps = mlt_properties_get_double( properties, "fps" );
+	double fps = mlt_properties_get_double( properties, "fps" );
 
 	// Get width and height
 	int width = mlt_properties_get_int( properties, "width" );
