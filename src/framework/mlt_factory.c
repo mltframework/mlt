@@ -147,7 +147,10 @@ char *mlt_environment( const char *name )
 
 int mlt_environment_set( const char *name, const char *value )
 {
-	return mlt_properties_set( global_properties, name, value );
+	if ( global_properties )
+		return mlt_properties_set( global_properties, name, value );
+	else
+		return -1;
 }
 
 static void set_common_properties( mlt_properties properties, mlt_profile profile, const char *type, const char *service )

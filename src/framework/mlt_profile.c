@@ -89,9 +89,9 @@ mlt_profile mlt_profile_init( const char *name )
 	{
 		// MLT_PROFILE is preferred environment variable
 		if ( getenv( "MLT_PROFILE" ) )
-			profile = mlt_profile_select( mlt_environment( "MLT_PROFILE" ) );
+			profile = mlt_profile_select( getenv( "MLT_PROFILE" ) );
 		// MLT_NORMALISATION backwards compatibility
-		else if ( strcmp( mlt_environment( "MLT_NORMALISATION" ), "PAL" ) )
+		else if ( getenv( "MLT_NORMALISATION" ) && strcmp( getenv( "MLT_NORMALISATION" ), "PAL" ) )
 			profile = mlt_profile_select( "dv_ntsc" );
 		else
 			profile = mlt_profile_select( "dv_pal" );
@@ -144,20 +144,22 @@ mlt_profile mlt_profile_load_file( const char *file )
 	}
 
 	// Set MLT_NORMALISATION to appease legacy modules
-	char *profile_name = mlt_environment( "MLT_PROFILE" );
-	if ( strstr( profile_name, "_ntsc" ) ||
-	     strstr( profile_name, "_60" ) ||
-	     strstr( profile_name, "_30" ) )
+	char *profile_name = getenv( "MLT_PROFILE" );
+	if ( profile_name )
 	{
-		mlt_environment_set( "MLT_NORMALISATION", "NTSC" );
+		if ( strstr( profile_name, "_ntsc" ) ||
+			strstr( profile_name, "_60" ) ||
+			strstr( profile_name, "_30" ) )
+		{
+			mlt_environment_set( "MLT_NORMALISATION", "NTSC" );
+		}
+		else if ( strstr( profile_name, "_pal" ) ||
+				strstr( profile_name, "_50" ) ||
+				strstr( profile_name, "_25" ) )
+		{
+			mlt_environment_set( "MLT_NORMALISATION", "PAL" );
+		}
 	}
-	else if ( strstr( profile_name, "_pal" ) ||
-	          strstr( profile_name, "_50" ) ||
-	          strstr( profile_name, "_25" ) )
-	{
-		mlt_environment_set( "MLT_NORMALISATION", "PAL" );
-	}
-
 	return profile;
 }
 
