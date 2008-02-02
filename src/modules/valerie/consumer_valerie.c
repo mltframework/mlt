@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "consumer_valerie.h"
 #include <valerie/valerie.h>
 #include <valerie/valerie_remote.h>
 #include <framework/mlt.h>
@@ -34,13 +33,13 @@ static int consumer_start( mlt_consumer this );
 /** This is what will be called by the factory
 */
 
-mlt_consumer consumer_valerie_init( char *arg )
+mlt_consumer consumer_valerie_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
 	mlt_consumer this = calloc( sizeof( struct mlt_consumer_s ), 1 );
 
 	// If no malloc'd and consumer init ok
-	if ( this != NULL && mlt_consumer_init( this, NULL ) == 0 )
+	if ( this != NULL && mlt_consumer_init( this, NULL, profile ) == 0 )
 	{
 		if ( arg != NULL && strchr( arg, ':' ) )
 		{

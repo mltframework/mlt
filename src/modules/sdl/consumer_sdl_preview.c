@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "consumer_sdl.h"
+#include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_producer.h>
@@ -60,10 +60,10 @@ static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer this, mlt_fra
 static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer this, SDL_Event *event );
 static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer this, char *name );
 
-mlt_consumer consumer_sdl_preview_init( char *arg )
+mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	consumer_sdl this = calloc( sizeof( struct consumer_sdl_s ), 1 );
-	if ( this != NULL && mlt_consumer_init( &this->parent, this ) == 0 )
+	if ( this != NULL && mlt_consumer_init( &this->parent, this, profile ) == 0 )
 	{
 		// Get the parent consumer object
 		mlt_consumer parent = &this->parent;
@@ -83,8 +83,8 @@ mlt_consumer consumer_sdl_preview_init( char *arg )
 		}
 
 		// Create child consumers
-		this->play = mlt_factory_consumer( "sdl", arg );
-		this->still = mlt_factory_consumer( "sdl_still", arg );
+		this->play = mlt_factory_consumer( profile, "sdl", arg );
+		this->still = mlt_factory_consumer( profile, "sdl_still", arg );
 		mlt_properties_set( MLT_CONSUMER_PROPERTIES( parent ), "real_time", "0" );
 		mlt_properties_set( MLT_CONSUMER_PROPERTIES( parent ), "rescale", "nearest" );
 		parent->close = consumer_close;

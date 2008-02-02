@@ -55,8 +55,8 @@ mlt_geometry mlt_geometry_init( )
 		if ( this->local != NULL )
 		{
 			geometry self = this->local;
-			self->nw = mlt_profile_get()->width;
-			self->nh = mlt_profile_get()->height;
+			self->nw = 720;
+			self->nh = 576;
 		}
 		else
 		{

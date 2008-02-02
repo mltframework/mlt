@@ -1413,8 +1413,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Check that we have a producer
 	if ( producer == NULL )
 	{
-		*frame = mlt_frame_init( );
-		return 0;
+		*frame = NULL;
+		return -1;
 	}
 
 	// Get this mlt_playlist
@@ -1429,7 +1429,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Check that we have a producer
 	if ( real == NULL )
 	{
-		*frame = mlt_frame_init( );
+		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 		return 0;
 	}
 
@@ -1441,7 +1441,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	else
 	{
 		mlt_producer parent = mlt_producer_cut_parent( ( mlt_producer )real );
-		*frame = mlt_frame_init( );
+		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( parent ) );
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "fx_cut", 1 );
 		mlt_frame_push_service( *frame, NULL );
 		mlt_frame_push_audio( *frame, NULL );

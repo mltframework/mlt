@@ -17,28 +17,29 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <framework/mlt.h>
 #include <string.h>
 
-#include "filter_burn.h"
+extern mlt_filter filter_burn_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "BurningTV" ) )
-		return filter_burn_init( arg );
+		return filter_burn_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }

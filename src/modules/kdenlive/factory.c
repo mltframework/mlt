@@ -18,33 +18,34 @@
  */
 
 #include <string.h>
+#include <framework/mlt.h>
 
-#include "producer_framebuffer.h"
-#include "filter_boxblur.h"
-#include "filter_wave.h"
+extern mlt_filter filter_boxblur_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "framebuffer" ) )
-		return producer_framebuffer_init( arg );
+		return producer_framebuffer_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "boxblur" ) )
-		return filter_boxblur_init( arg );
+		return filter_boxblur_init( profile, type, id, arg );
 	if ( !strcmp( id, "wave" ) )
-		return filter_wave_init( arg );
+		return filter_wave_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }

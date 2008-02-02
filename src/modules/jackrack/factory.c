@@ -19,30 +19,31 @@
  */
 
 #include <string.h>
+#include <framework/mlt.h>
 
-#include "filter_jackrack.h"
-#include "filter_ladspa.h"
+extern mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "jackrack" ) )
-		return filter_jackrack_init( arg );
+		return filter_jackrack_init( profile, type, id, arg );
 	else if ( !strcmp( id, "ladspa" ) )
-		return filter_ladspa_init( arg );
+		return filter_ladspa_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }

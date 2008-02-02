@@ -18,15 +18,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "consumer_gtk2.h"
-
 #include <stdlib.h>
 #include <framework/mlt_consumer.h>
 #include <framework/mlt_factory.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
+#include <gtk/gtk.h>
 
-mlt_consumer consumer_gtk2_preview_init( GtkWidget *widget )
+mlt_consumer consumer_gtk2_preview_init( mlt_profile profile, GtkWidget *widget )
 {
 	// Create an sdl preview consumer
 	mlt_consumer consumer = NULL;
@@ -41,7 +40,7 @@ mlt_consumer consumer_gtk2_preview_init( GtkWidget *widget )
 	}
 
 	// Create an sdl preview consumer
-	consumer = mlt_factory_consumer( "sdl_preview", NULL );
+	consumer = mlt_factory_consumer( profile, "sdl_preview", NULL );
 
 	// Now assign the lock/unlock callbacks
 	if ( consumer != NULL )

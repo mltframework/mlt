@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_fezzik.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +29,7 @@
 static mlt_properties dictionary = NULL;
 static mlt_properties normalisers = NULL;
 
-static mlt_producer create_from( char *file, char *services )
+static mlt_producer create_from( mlt_profile profile, char *file, char *services )
 {
 	mlt_producer producer = NULL;
 	char *temp = strdup( services );
@@ -41,7 +39,7 @@ static mlt_producer create_from( char *file, char *services )
 		char *p = strchr( service, ',' );
 		if ( p != NULL )
 			*p ++ = '\0';
-		producer = mlt_factory_producer( service, file );
+		producer = mlt_factory_producer( profile, service, file );
 		service = p;
 	}
 	while ( producer == NULL && service != NULL );
@@ -49,7 +47,7 @@ static mlt_producer create_from( char *file, char *services )
 	return producer;
 }
 
-static mlt_producer create_producer( char *file )
+static mlt_producer create_producer( mlt_profile profile, char *file )
 {
 	mlt_producer result = NULL;
 
@@ -60,7 +58,7 @@ static mlt_producer create_producer( char *file )
 		char *service = temp;
 		char *resource = strchr( temp, ':' );
 		*resource ++ = '\0';
-		result = mlt_factory_producer( service, resource );
+		result = mlt_factory_producer( profile, service, resource );
 		free( temp );
 	}
 
@@ -92,7 +90,7 @@ static mlt_producer create_producer( char *file )
 		{
 			char *name = mlt_properties_get_name( dictionary, i );
 			if ( fnmatch( name, lookup, 0 ) == 0 )
-				result = create_from( file, mlt_properties_get_value( dictionary, i ) );
+				result = create_from( profile, file, mlt_properties_get_value( dictionary, i ) );
 		}
 
 		free( lookup );
@@ -100,18 +98,18 @@ static mlt_producer create_producer( char *file )
 
 	// Finally, try just loading as service
 	if ( result == NULL )
-		result = mlt_factory_producer( file, NULL );
+		result = mlt_factory_producer( profile, file, NULL );
 
 	return result;
 }
 
-static void create_filter( mlt_producer producer, char *effect, int *created )
+static void create_filter( mlt_profile profile, mlt_producer producer, char *effect, int *created )
 {
 	char *id = strdup( effect );
 	char *arg = strchr( id, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( id, arg );
+	mlt_filter filter = mlt_factory_filter( profile, id, arg );
 	if ( filter != NULL )
 	{
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_fezzik", 1 );
@@ -122,7 +120,7 @@ static void create_filter( mlt_producer producer, char *effect, int *created )
 	free( id );
 }
 
-static void attach_normalisers( mlt_producer producer )
+static void attach_normalisers( mlt_profile profile, mlt_producer producer )
 {
 	// Loop variable
 	int i;
@@ -147,28 +145,28 @@ static void attach_normalisers( mlt_producer producer )
 		char *value = mlt_properties_get_value( normalisers, i );
 		mlt_tokeniser_parse_new( tokeniser, value, "," );
 		for ( j = 0; !created && j < mlt_tokeniser_count( tokeniser ); j ++ )
-			create_filter( producer, mlt_tokeniser_get_string( tokeniser, j ), &created );
+			create_filter( profile, producer, mlt_tokeniser_get_string( tokeniser, j ), &created );
 	}
 
 	// Close the tokeniser
 	mlt_tokeniser_close( tokeniser );
 }
 
-mlt_producer producer_fezzik_init( char *arg )
+mlt_producer producer_fezzik_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the producer 
 	mlt_producer producer = NULL;
 	mlt_properties properties = NULL;
 
 	if ( arg != NULL )
-		producer = create_producer( arg );
+		producer = create_producer( profile, arg );
 
 	if ( producer != NULL )
 		properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Attach filters if we have a producer and it isn't already westley'd :-)
 	if ( producer != NULL && mlt_properties_get( properties, "westley" ) == NULL && mlt_properties_get( properties, "_westley" ) == NULL )
-		attach_normalisers( producer );
+		attach_normalisers( profile, producer );
 
 	// Now make sure we don't lose our identity
 	if ( properties != NULL )

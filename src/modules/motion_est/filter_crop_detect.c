@@ -221,7 +221,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 /** Constructor for the filter.
 */
-mlt_filter filter_crop_detect_init( char *arg )
+mlt_filter filter_crop_detect_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

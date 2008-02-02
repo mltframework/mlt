@@ -22,6 +22,7 @@
 #define _MLT_REPOSITORY_H_
 
 #include "mlt_types.h"
+#include "mlt_profile.h"
 
 /** Repository structure forward reference.
 */
@@ -32,7 +33,7 @@ typedef struct mlt_repository_s *mlt_repository;
 */
 
 extern mlt_repository mlt_repository_init( mlt_properties object_list, const char *prefix, const char *file, const char *symbol );
-extern void *mlt_repository_fetch( mlt_repository self, const char *service, void *input );
+extern void *mlt_repository_fetch( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, void *input );
 extern void mlt_repository_close( mlt_repository self );
 
 #endif

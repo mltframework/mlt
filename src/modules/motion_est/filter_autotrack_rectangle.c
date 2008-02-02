@@ -268,7 +268,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_filter vismv = mlt_properties_get_data( MLT_FILTER_PROPERTIES(this), "_vismv", NULL );
 		if( vismv == NULL )
 		{
-			vismv = mlt_factory_filter( "vismv", NULL );
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+			vismv = mlt_factory_filter( profile, "vismv", NULL );
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_vismv", vismv, 0, (mlt_destructor)mlt_filter_close, NULL );
 		}
 
@@ -280,7 +281,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_filter obscure = mlt_properties_get_data( MLT_FILTER_PROPERTIES(this), "_obscure", NULL );
 		if( obscure == NULL )
 		{
-			obscure = mlt_factory_filter( "obscure", NULL );
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+			obscure = mlt_factory_filter( profile, "obscure", NULL );
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_obscure", obscure, 0, (mlt_destructor)mlt_filter_close, NULL );
 		}
 
@@ -294,7 +296,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 */
 
 
-mlt_filter filter_autotrack_rectangle_init( char *arg )
+mlt_filter filter_autotrack_rectangle_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
@@ -308,7 +310,7 @@ mlt_filter filter_autotrack_rectangle_init( char *arg )
 			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", "100,100:100x100" );
 
 		// create an instance of the motion_est and obscure filter
-		mlt_filter motion_est = mlt_factory_filter( "motion_est", NULL );
+		mlt_filter motion_est = mlt_factory_filter( profile, "motion_est", NULL );
 		if( motion_est != NULL )
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_motion_est", motion_est, 0, (mlt_destructor)mlt_filter_close, NULL );
 		else {

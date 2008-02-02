@@ -20,19 +20,20 @@
 
 #include "config.h"
 #include <string.h>
+#include <framework/mlt.h>
+#include <gdk/gdk.h>
 
 #ifdef USE_PIXBUF
-#include <gdk-pixbuf/gdk-pixbuf.h>
-#include "producer_pixbuf.h"
-#include "filter_rescale.h"
+extern mlt_producer producer_pixbuf_init( char *filename );
+extern mlt_filter filter_rescale_init( mlt_profile profile, char *arg );
 #endif
 
 #ifdef USE_GTK2
-#include "consumer_gtk2.h"
+extern mlt_consumer consumer_gtk2_preview_init( mlt_profile profile, void *widget );
 #endif
 
 #ifdef USE_PANGO
-#include "producer_pango.h"
+extern mlt_producer producer_pango_init( const char *filename );
 #endif
 
 static void initialise( )
@@ -45,7 +46,7 @@ static void initialise( )
 	}
 }
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	initialise( );
 
@@ -62,30 +63,30 @@ void *mlt_create_producer( char *id, void *arg )
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	initialise( );
 
 #ifdef USE_PIXBUF
 	if ( !strcmp( id, "gtkrescale" ) )
-		return filter_rescale_init( arg );
+		return filter_rescale_init( profile, arg );
 #endif
 
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	initialise( );
 
 #ifdef USE_GTK2
 	if ( !strcmp( id, "gtk2_preview" ) )
-		return consumer_gtk2_preview_init( arg );
+		return consumer_gtk2_preview_init( profile, arg );
 #endif
 
 	return NULL;

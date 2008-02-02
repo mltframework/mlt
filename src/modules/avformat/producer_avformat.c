@@ -18,10 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Local header files
-#include "producer_avformat.h"
-
 // MLT Header files
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 
 // ffmpeg Header files
@@ -40,13 +38,13 @@ void avformat_lock( );
 void avformat_unlock( );
 
 // Forward references.
-static int producer_open( mlt_producer this, char *file );
+static int producer_open( mlt_producer this, mlt_profile profile, char *file );
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
 
 /** Constructor for libavformat.
 */
 
-mlt_producer producer_avformat_init( char *file )
+mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 {
 	mlt_producer this = NULL;
 
@@ -69,7 +67,7 @@ mlt_producer producer_avformat_init( char *file )
 			this->get_frame = producer_get_frame;
 
 			// Open the file
-			if ( producer_open( this, file ) != 0 )
+			if ( producer_open( this, profile, file ) != 0 )
 			{
 				// Clean up
 				mlt_producer_close( this );
@@ -153,7 +151,7 @@ static void producer_codec_close( void *codec )
 /** Open the file.
 */
 
-static int producer_open( mlt_producer this, char *file )
+static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 {
 	// Return an error code (0 == no error)
 	int error = 0;
@@ -165,7 +163,7 @@ static int producer_open( mlt_producer this, char *file )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// We will treat everything with the producer fps
-	double fps = mlt_producer_get_fps( this );
+	double fps = mlt_profile_fps( profile );
 
 	// Lock the mutex now
 	avformat_lock( );
@@ -1045,7 +1043,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
 	// Create an empty frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( this ) );

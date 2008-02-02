@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2007 Jean-Baptiste Mardelle
+ * Copyright (c) 2007 Marco Gittler <g.marco@freenet.de>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,37 +18,38 @@
  */
 
 #include <string.h>
+#include <framework/mlt.h>
 
-#include "filter_oldfilm.h"
-#include "filter_grain.h"
-#include "filter_dust.h"
-#include "filter_lines.h"
+extern mlt_filter filter_dust_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_grain_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_lines_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_oldfilm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "oldfilm" ) )
-                return filter_oldfilm_init( arg );
-        if ( !strcmp( id, "dust" ) )
-                return filter_dust_init( arg );
-        if ( !strcmp( id, "lines" ) )
-                return filter_lines_init( arg );
-        if ( !strcmp( id, "grain" ) )
-                return filter_grain_init( arg );
+		return filter_oldfilm_init( profile, type, id, arg );
+	if ( !strcmp( id, "dust" ) )
+		return filter_dust_init( profile, type, id, arg );
+	if ( !strcmp( id, "lines" ) )
+		return filter_lines_init( profile, type, id, arg );
+	if ( !strcmp( id, "grain" ) )
+		return filter_grain_init( profile, type, id, arg );
 
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }

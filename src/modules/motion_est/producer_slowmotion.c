@@ -251,7 +251,8 @@ static int slowmotion_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 			mlt_filter watermark = mlt_properties_get_data( producer_properties, "watermark", NULL );
 
 			if( watermark == NULL ) {
-				watermark = mlt_factory_filter( "watermark", NULL );
+				mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
+				watermark = mlt_factory_filter( profile, "watermark", NULL );
 				mlt_properties_set_data( producer_properties, "watermark", watermark, 0, (mlt_destructor)mlt_filter_close, NULL );
 				mlt_producer_attach( producer, watermark );
 			}
@@ -282,7 +283,7 @@ static int slowmotion_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 static int slowmotion_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
 	// Construct a new frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
 
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES(this);
 
@@ -362,15 +363,15 @@ static int slowmotion_get_frame( mlt_producer this, mlt_frame_ptr frame, int ind
 	return 0;
 }
 
-mlt_producer producer_slowmotion_init( char *arg )
+mlt_producer producer_slowmotion_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_producer this = mlt_producer_new( );
 
 	// Wrap fezzik
-	mlt_producer real_producer = mlt_factory_producer( "fezzik", arg );
+	mlt_producer real_producer = mlt_factory_producer( profile, "fezzik", arg );
 
 	// We need to apply the motion estimation filter manually
-	mlt_filter filter = mlt_factory_filter( "motion_est", NULL );
+	mlt_filter filter = mlt_factory_filter( profile, "motion_est", NULL );
 
 	if ( this != NULL && real_producer != NULL && filter != NULL)
 	{

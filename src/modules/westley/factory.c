@@ -19,33 +19,34 @@
  */
 
 #include <string.h>
+#include <framework/mlt.h>
 
-#include "consumer_westley.h"
-#include "producer_westley.h"
+extern mlt_consumer consumer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "westley" ) )
-		return producer_westley_init( 0, arg );
+		return producer_westley_init( profile, type, id, arg );
 	if ( !strcmp( id, "westley-xml" ) )
-		return producer_westley_init( 1, arg );
+		return producer_westley_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "westley" ) )
-		return consumer_westley_init( arg );
+		return consumer_westley_init( profile, type, id, arg );
 	return NULL;
 }
 

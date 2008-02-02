@@ -18,11 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Local header files
-#include "consumer_libdv.h"
-#include "producer_libdv.h"
-
 // mlt Header files
+#include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
 
 // System header files
@@ -33,6 +30,9 @@
 
 // libdv header files
 #include <libdv/dv.h>
+
+#define FRAME_SIZE_525_60 	10 * 150 * 80
+#define FRAME_SIZE_625_50 	12 * 150 * 80
 
 // Forward references.
 static int consumer_start( mlt_consumer this );
@@ -47,13 +47,13 @@ static void consumer_close( mlt_consumer this );
 /** Initialise the dv consumer.
 */
 
-mlt_consumer consumer_libdv_init( char *arg )
+mlt_consumer consumer_libdv_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Allocate the consumer
 	mlt_consumer this = calloc( 1, sizeof( struct mlt_consumer_s ) );
 
 	// If memory allocated and initialises without error
-	if ( this != NULL && mlt_consumer_init( this, NULL ) == 0 )
+	if ( this != NULL && mlt_consumer_init( this, NULL, profile ) == 0 )
 	{
 		// Get properties from the consumer
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );

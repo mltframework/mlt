@@ -21,12 +21,13 @@
 #include <string.h>
 #include <pthread.h>
 
-#include <framework/mlt_factory.h>
-#include "producer_avformat.h"
-#include "consumer_avformat.h"
-#include "filter_avcolour_space.h"
-#include "filter_avdeinterlace.h"
-#include "filter_avresample.h"
+#include <framework/mlt.h>
+
+extern mlt_consumer consumer_avformat_init( mlt_profile profile, char *file );
+extern mlt_filter filter_avcolour_space_init( void *arg );
+extern mlt_filter filter_avdeinterlace_init( void *arg );
+extern mlt_filter filter_avresample_init( char *arg );
+extern mlt_producer producer_avformat_init( mlt_profile profile, char *file );
 
 // ffmpeg Header files
 #include <avformat.h>
@@ -91,15 +92,15 @@ static void avformat_init( )
 	}
 }
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	avformat_init( );
 	if ( !strcmp( id, "avformat" ) )
-		return producer_avformat_init( arg );
+		return producer_avformat_init( profile, arg );
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	avformat_init( );
 	if ( !strcmp( id, "avcolour_space" ) )
@@ -113,16 +114,16 @@ void *mlt_create_filter( char *id, void *arg )
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	avformat_init( );
 	if ( !strcmp( id, "avformat" ) )
-		return consumer_avformat_init( arg );
+		return consumer_avformat_init( profile, arg );
 	return NULL;
 }
 

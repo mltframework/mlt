@@ -20,7 +20,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "filter_data.h"
 #include <framework/mlt.h>
 
 /** This filter should be used in conjuction with the data_show filter.
@@ -155,7 +154,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_data_feed_init( char *arg )
+mlt_filter filter_data_feed_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the filter
 	mlt_filter this = mlt_filter_new( );

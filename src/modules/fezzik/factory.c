@@ -18,31 +18,32 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <framework/mlt.h>
 #include <string.h>
 
-#include "producer_fezzik.h"
-#include "producer_hold.h"
+extern mlt_producer producer_fezzik_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "fezzik" ) )
-		return producer_fezzik_init( arg );
+		return producer_fezzik_init( profile, type, id, arg );
 	if ( !strcmp( id, "hold" ) )
-		return producer_hold_init( arg );
+		return producer_hold_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }

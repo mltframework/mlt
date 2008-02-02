@@ -21,7 +21,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "transition_luma.h"
 #include <framework/mlt.h>
 
 #include <stdio.h>
@@ -431,7 +430,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			char *factory = mlt_properties_get( properties, "factory" );
 
 			// Create the producer
-			mlt_producer producer = mlt_factory_producer( factory, resource );
+			mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
+			mlt_producer producer = mlt_factory_producer( profile, factory, resource );
 
 			// If we have one
 			if ( producer != NULL )
@@ -563,7 +563,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 /** Constructor for the filter.
 */
 
-mlt_transition transition_luma_init( char *lumafile )
+mlt_transition transition_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *lumafile )
 {
 	mlt_transition transition = mlt_transition_new( );
 	if ( transition != NULL )

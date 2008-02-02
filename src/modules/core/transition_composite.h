@@ -23,7 +23,7 @@
 
 #include <framework/mlt_transition.h>
 
-extern mlt_transition transition_composite_init( char *arg );
+extern mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 // Courtesy functionality - allows regionalised filtering
 extern mlt_frame composite_copy_region( mlt_transition, mlt_frame, mlt_position );

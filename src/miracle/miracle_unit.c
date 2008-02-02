@@ -62,7 +62,7 @@ miracle_unit miracle_unit_init( int index, char *constructor )
 	if ( arg != NULL )
 		*arg ++ = '\0';
 
-	consumer = mlt_factory_consumer( id, arg );
+	consumer = mlt_factory_consumer( NULL, id, arg );
 
 	if ( consumer != NULL )
 	{
@@ -146,7 +146,15 @@ void miracle_unit_set_notifier( miracle_unit this, valerie_notifier notifier, ch
 
 static mlt_producer locate_producer( miracle_unit unit, char *file )
 {
-	return mlt_factory_producer( "fezzik", file );
+	// Try to get the profile from the consumer
+	mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
+	mlt_profile profile = NULL;
+
+	if ( consumer != NULL )
+	{
+		profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
+	}
+	return mlt_factory_producer( profile, "fezzik", file );
 }
 
 /** Update the generation count.

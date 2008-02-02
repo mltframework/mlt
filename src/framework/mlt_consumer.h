@@ -22,6 +22,7 @@
 #define _MLT_CONSUMER_H_
 
 #include "mlt_service.h"
+#include "mlt_events.h"
 #include <pthread.h>
 
 /** The interface definition for all consumers.
@@ -53,6 +54,7 @@ struct mlt_consumer_s
 	pthread_cond_t put_cond;
 	mlt_frame put;
 	int put_active;
+	mlt_event event_listener;
 };
 
 /** Public final methods
@@ -61,8 +63,8 @@ struct mlt_consumer_s
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )
 #define MLT_CONSUMER_PROPERTIES( consumer )	MLT_SERVICE_PROPERTIES( MLT_CONSUMER_SERVICE( consumer ) )
 
-extern int mlt_consumer_init( mlt_consumer self, void *child );
-extern mlt_consumer mlt_consumer_new( );
+extern int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile );
+extern mlt_consumer mlt_consumer_new( mlt_profile profile );
 extern mlt_service mlt_consumer_service( mlt_consumer self );
 extern mlt_properties mlt_consumer_properties( mlt_consumer self );
 extern int mlt_consumer_connect( mlt_consumer self, mlt_service producer );
@@ -75,6 +77,5 @@ extern int mlt_consumer_stop( mlt_consumer self );
 extern int mlt_consumer_is_stopped( mlt_consumer self );
 extern void mlt_consumer_stopped( mlt_consumer self );
 extern void mlt_consumer_close( mlt_consumer );
-extern int mlt_consumer_profile( mlt_properties properties, char *profile );
 
 #endif

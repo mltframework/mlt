@@ -23,6 +23,7 @@
 
 #include "mlt_properties.h"
 #include "mlt_deque.h"
+#include "mlt_service.h"
 
 typedef int ( *mlt_get_image )( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 typedef int ( *mlt_get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
@@ -46,7 +47,7 @@ struct mlt_frame_s
 #define MLT_FRAME_IMAGE_STACK( frame )		( ( frame )->stack_image )
 #define MLT_FRAME_AUDIO_STACK( frame )		( ( frame )->stack_audio )
 
-extern mlt_frame mlt_frame_init( );
+extern mlt_frame mlt_frame_init( mlt_service service );
 extern mlt_properties mlt_frame_properties( mlt_frame self );
 extern int mlt_frame_is_test_card( mlt_frame self );
 extern int mlt_frame_is_test_audio( mlt_frame self );

@@ -17,8 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_oldfilm.h"
-
+#include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 
 #include <stdio.h>
@@ -81,7 +80,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	return frame;
 }
 
-mlt_filter filter_oldfilm_init( char *arg )
+mlt_filter filter_oldfilm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

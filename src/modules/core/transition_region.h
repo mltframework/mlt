@@ -23,6 +23,6 @@
 
 #include <framework/mlt_transition.h>
 
-extern mlt_transition transition_region_init( void *arg );
+extern mlt_transition transition_region_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 #endif

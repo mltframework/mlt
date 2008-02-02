@@ -156,18 +156,16 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_properties_set_int( properties, "stats_off", 0 );
 }
 
-static mlt_consumer create_consumer( char *id, mlt_producer producer )
+static mlt_consumer create_consumer( mlt_profile profile, char *id )
 {
 	char *arg = id != NULL ? strchr( id, ':' ) : NULL;
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_consumer consumer = mlt_factory_consumer( id, arg );
+	mlt_consumer consumer = mlt_factory_consumer( profile, id, arg );
 	if ( consumer != NULL )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		mlt_properties_set_data( properties, "transport_callback", transport_action, 0, NULL, NULL );
-		mlt_properties_set_data( properties, "transport_producer", producer, 0, NULL, NULL );
-		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( producer ), "transport_consumer", consumer, 0, NULL, NULL );
 	}
 	return consumer;
 }
@@ -203,11 +201,14 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	int silent = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "silent" );
+	int progress = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "progress" );
 	struct timespec tm = { 0, 40000 };
+	int total_length = mlt_producer_get_length( producer );
+	int last_position = 0;
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 	{
-		if ( !silent )
+		if ( !silent && !progress )
 		{
 			term_init( );
 
@@ -225,7 +226,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 
 		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 		{
-			int value = silent ? -1 : term_read( );
+			int value = ( silent || progress )? -1 : term_read( );
 
 			if ( value != -1 )
 			{
@@ -238,7 +239,22 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 #endif
 
 			if ( !silent && mlt_properties_get_int( properties, "stats_off" ) == 0 )
-				fprintf( stderr, "Current Position: %10d\r", (int)mlt_producer_position( producer ) );
+			{
+				if ( progress )
+				{
+					int current_position = mlt_producer_position( producer );
+					if ( current_position > last_position )
+					{
+						fprintf( stderr, "Current Frame: %10d, percentage: %10d\r",
+							current_position, 100 * current_position / total_length );
+						last_position = current_position;
+					}
+				}
+				else
+				{
+					fprintf( stderr, "Current Position: %10d\r", (int)mlt_producer_position( producer ) );
+				}
+			}
 
 			if ( silent )
 				nanosleep( &tm, NULL );
@@ -257,6 +273,7 @@ int main( int argc, char **argv )
 	FILE *store = NULL;
 	char *name = NULL;
 	struct sched_param scp;
+	mlt_profile profile = NULL;
 
 	// Use realtime scheduling if possible
 	memset( &scp, '\0', sizeof( scp ) );
@@ -268,41 +285,73 @@ int main( int argc, char **argv )
 	// Construct the factory
 	mlt_factory_init( NULL );
 
-	// Check for serialisation switch first
 	for ( i = 1; i < argc; i ++ )
 	{
+		// Check for serialisation switch
 		if ( !strcmp( argv[ i ], "-serialise" ) )
 		{
 			name = argv[ ++ i ];
-			if ( strstr( name, ".inigo" ) )
+			if ( name != NULL && strstr( name, ".inigo" ) )
 				store = fopen( name, "w" );
+			else
+			{
+				if ( name == NULL || name[0] == '-' )
+					store = stdout;
+				name = NULL;
+			}
+		}
+		// Look for the profile option
+		else if ( !strcmp( argv[ i ], "-profile" ) )
+		{
+			const char *pname = argv[ ++ i ];
+			if ( pname && pname[0] != '-' )
+				profile = mlt_profile_init( pname );
 		}
 	}
 
+	// Create profile if not set explicitly
+	if ( profile == NULL )
+		profile = mlt_profile_init( NULL );
+
+	// Look for the consumer option
+	for ( i = 1; i < argc; i ++ )
+	{
+		if ( !strcmp( argv[ i ], "-consumer" ) )
+		{
+			consumer = create_consumer( profile, argv[ ++ i ] );
+			if ( consumer )
+			{
+				mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
+					mlt_properties_parse( properties, argv[ ++ i ] );
+			}
+		}
+	}
+
+	// If we have no consumer, default to sdl
+	if ( store == NULL && consumer == NULL )
+		consumer = create_consumer( profile, NULL );
+
 	// Get inigo producer
 	if ( argc > 1 )
-		inigo = mlt_factory_producer( "inigo", &argv[ 1 ] );
+		inigo = mlt_factory_producer( profile, "inigo", &argv[ 1 ] );
+
+	// Set transport properties on consumer and produder
+	if ( consumer != NULL && inigo != NULL )
+	{
+		mlt_properties_set_data( MLT_CONSUMER_PROPERTIES( consumer ), "transport_producer", inigo, 0, NULL, NULL );
+		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( inigo ), "transport_consumer", consumer, 0, NULL, NULL );
+	}
 
 	if ( argc > 1 && inigo != NULL && mlt_producer_get_length( inigo ) > 0 )
 	{
-		// Get inigo's properties
-		mlt_properties inigo_props = MLT_PRODUCER_PROPERTIES( inigo );
-
-		// Get the last group
-		mlt_properties group = mlt_properties_get_data( inigo_props, "group", 0 );
-
 		// Parse the arguments
 		for ( i = 1; i < argc; i ++ )
 		{
-			if ( !strcmp( argv[ i ], "-consumer" ) )
+			if ( !strcmp( argv[ i ], "-serialise" ) )
 			{
-				consumer = create_consumer( argv[ ++ i ], inigo );
-				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
-					mlt_properties_parse( group, argv[ ++ i ] );
-			}
-			else if ( !strcmp( argv[ i ], "-serialise" ) )
-			{
-				i ++;
+				if ( store != stdout )
+					i ++;
 			}
 			else
 			{
@@ -322,12 +371,14 @@ int main( int argc, char **argv )
 			}
 		}
 
-		// If we have no consumer, default to sdl
-		if ( store == NULL && consumer == NULL )
-			consumer = create_consumer( NULL, inigo );
-
 		if ( consumer != NULL && store == NULL )
 		{
+			// Get inigo's properties
+			mlt_properties inigo_props = MLT_PRODUCER_PROPERTIES( inigo );
+	
+			// Get the last group
+			mlt_properties group = mlt_properties_get_data( inigo_props, "group", 0 );
+	
 			// Apply group settings
 			mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 			mlt_properties_inherit( properties, group );
@@ -344,7 +395,7 @@ int main( int argc, char **argv )
 			// Stop the consumer
 			mlt_consumer_stop( consumer );
 		}
-		else if ( store != NULL )
+		else if ( store != NULL && store != stdout && name != NULL )
 		{
 			fprintf( stderr, "Project saved as %s.\n", name );
 			fclose( store );
@@ -352,18 +403,20 @@ int main( int argc, char **argv )
 	}
 	else
 	{
-		fprintf( stderr, "Usage: inigo [ -group [ name=value ]* ]\n"
-						 "             [ -consumer id[:arg] [ name=value ]* ]\n"
-						 "             [ -filter filter[:arg] [ name=value ] * ]\n"
-						 "             [ -attach filter[:arg] [ name=value ] * ]\n"
+		fprintf( stderr, "Usage: inigo [ -profile name ]\n"
+						 "             [ -serialise [ filename.inigo ] ]\n"
+						 "             [ -group [ name=value ]* ]\n"
+						 "             [ -consumer id[:arg] [ name=value ]* [ silent=1 ] [ progress=1 ] ]\n"
+						 "             [ -filter filter[:arg] [ name=value ]* ]\n"
+						 "             [ -attach filter[:arg] [ name=value ]* ]\n"
 						 "             [ -mix length [ -mixer transition ]* ]\n"
-						 "             [ -transition id[:arg] [ name=value ] * ]\n"
+						 "             [ -transition id[:arg] [ name=value ]* ]\n"
 						 "             [ -blank frames ]\n"
 						 "             [ -track ]\n"
 						 "             [ -split relative-frame ]\n"
 						 "             [ -join clips ]\n"
 						 "             [ -repeat times ]\n"
-						 "             [ producer [ name=value ] * ]+\n" );
+						 "             [ producer [ name=value ]* ]+\n" );
 	}
 
 	// Close the consumer
@@ -375,6 +428,7 @@ int main( int argc, char **argv )
 		mlt_producer_close( inigo );
 
 	// Close the factory
+	mlt_profile_close( profile );
 	mlt_factory_close( );
 
 	return 0;

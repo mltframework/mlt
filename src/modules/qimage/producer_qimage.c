@@ -21,7 +21,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "producer_qimage.h"
+#include <framework/mlt_producer.h>
 #include "qimage_wrapper.h"
 
 #include <stdio.h>
@@ -35,7 +35,7 @@
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
-mlt_producer producer_qimage_init( char *filename )
+mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
 	producer_qimage this = calloc( sizeof( struct producer_qimage_s ), 1 );
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
@@ -241,7 +241,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 
 	// Generate a frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	if ( *frame != NULL && this->count > 0 )
 	{

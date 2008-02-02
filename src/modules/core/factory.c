@@ -18,95 +18,97 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <framework/mlt.h>
 #include <string.h>
 
-#include "producer_colour.h"
-#include "producer_noise.h"
-#include "producer_ppm.h"
-#include "filter_brightness.h"
-#include "filter_channelcopy.h"
-#include "filter_data.h"
-#include "filter_gamma.h"
-#include "filter_greyscale.h"
-#include "filter_luma.h"
-#include "filter_mirror.h"
-#include "filter_mono.h"
-#include "filter_obscure.h"
-#include "filter_rescale.h"
-#include "filter_resize.h"
-#include "filter_region.h"
-#include "filter_transition.h"
-#include "filter_watermark.h"
+extern mlt_consumer consumer_null_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_brightness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_channelcopy_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_data_feed_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_data_show_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_gamma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_greyscale_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_mirror_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_obscure_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_region_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_rescale_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_resize_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_transition_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_watermark_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_colour_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #include "transition_composite.h"
-#include "transition_luma.h"
-#include "transition_mix.h"
+extern mlt_transition transition_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #include "transition_region.h"
-#include "consumer_null.h"
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	if ( !strcmp( id, "color" ) )
-		return producer_colour_init( arg );
+		return producer_colour_init( profile, type, id, arg );
 	if ( !strcmp( id, "colour" ) )
-		return producer_colour_init( arg );
+		return producer_colour_init( profile, type, id, arg );
 	if ( !strcmp( id, "noise" ) )
-		return producer_noise_init( arg );
+		return producer_noise_init( profile, type, id, arg );
 	if ( !strcmp( id, "ppm" ) )
-		return producer_ppm_init( arg );
+		return producer_ppm_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	if ( !strcmp( id, "brightness" ) )
-		return filter_brightness_init( arg );
+		return filter_brightness_init( profile, type, id, arg );
 	if ( !strcmp( id, "channelcopy" ) )
-		return filter_channelcopy_init( arg );
+		return filter_channelcopy_init( profile, type, id, arg );
 	if ( !strcmp( id, "data_feed" ) )
-		return filter_data_feed_init( arg );
+		return filter_data_feed_init( profile, type, id, arg );
 	if ( !strcmp( id, "data_show" ) )
-		return filter_data_show_init( arg );
+		return filter_data_show_init( profile, type, id, arg );
 	if ( !strcmp( id, "gamma" ) )
-		return filter_gamma_init( arg );
+		return filter_gamma_init( profile, type, id, arg );
 	if ( !strcmp( id, "greyscale" ) )
-		return filter_greyscale_init( arg );
+		return filter_greyscale_init( profile, type, id, arg );
 	if ( !strcmp( id, "luma" ) )
-		return filter_luma_init( arg );
+		return filter_luma_init( profile, type, id, arg );
 	if ( !strcmp( id, "mirror" ) )
-		return filter_mirror_init( arg );
+		return filter_mirror_init( profile, type, id, arg );
 	if ( !strcmp( id, "mono" ) )
-		return filter_mono_init( arg );
+		return filter_mono_init( profile, type, id, arg );
 	if ( !strcmp( id, "obscure" ) )
-		return filter_obscure_init( arg );
+		return filter_obscure_init( profile, type, id, arg );
 	if ( !strcmp( id, "region" ) )
-		return filter_region_init( arg );
+		return filter_region_init( profile, type, id, arg );
 	if ( !strcmp( id, "rescale" ) )
-		return filter_rescale_init( arg );
+		return filter_rescale_init( profile, type, id, arg );
 	if ( !strcmp( id, "resize" ) )
-		return filter_resize_init( arg );
-	else if ( !strcmp( id, "transition" ) )
-		return filter_transition_init( arg );
+		return filter_resize_init( profile, type, id, arg );
+	if ( !strcmp( id, "transition" ) )
+		return filter_transition_init( profile, type, id, arg );
 	if ( !strcmp( id, "watermark" ) )
-		return filter_watermark_init( arg );
+		return filter_watermark_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	if ( !strcmp( id, "composite" ) )
-		return transition_composite_init( arg );
+		return transition_composite_init( profile, type, id, arg );
 	if ( !strcmp( id, "luma" ) )
-		return transition_luma_init( arg );
+		return transition_luma_init( profile, type, id, arg );
 	if ( !strcmp( id, "mix" ) )
-		return transition_mix_init( arg );
+		return transition_mix_init( profile, type, id, arg );
 	if ( !strcmp( id, "region" ) )
-		return transition_region_init( arg );
+		return transition_region_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	if ( !strcmp( id, "null" ) )
-		return consumer_null_init( arg );
+		return consumer_null_init( profile, type, id, arg );
 	return NULL;
 }

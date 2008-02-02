@@ -22,16 +22,17 @@
 #define _MLT_FACTORY_H
 
 #include "mlt_types.h"
+#include "mlt_profile.h"
 
 extern int mlt_factory_init( const char *prefix );
 extern const char *mlt_factory_prefix( );
 extern char *mlt_environment( const char *name );
 extern int mlt_environment_set( const char *name, const char *value );
 extern mlt_properties mlt_factory_event_object( );
-extern mlt_producer mlt_factory_producer( const char *name, void *input );
-extern mlt_filter mlt_factory_filter( const char *name, void *input );
-extern mlt_transition mlt_factory_transition( const char *name, void *input );
-extern mlt_consumer mlt_factory_consumer( const char *name, void *input );
+extern mlt_producer mlt_factory_producer( mlt_profile profile, const char *name, void *input );
+extern mlt_filter mlt_factory_filter( mlt_profile profile, const char *name, void *input );
+extern mlt_transition mlt_factory_transition( mlt_profile profile, const char *name, void *input );
+extern mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *name, void *input );
 extern void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor );
 extern void mlt_factory_close( );
 

@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_transition.h"
+#include <framework/mlt_filter.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_transition.h>
@@ -59,7 +59,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	if ( transition == NULL )
 	{
 		char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "transition" );
-		transition = mlt_factory_transition( name, NULL );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		transition = mlt_factory_transition( profile, name, NULL );
 		mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "instance", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
 	}
 
@@ -101,7 +102,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_transition_init( char *arg )
+mlt_filter filter_transition_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

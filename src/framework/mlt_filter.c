@@ -182,7 +182,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 		}
 		else
 		{
-			*frame = mlt_frame_init( );
+			*frame = mlt_frame_init( service );
 			return 0;
 		}
 	}

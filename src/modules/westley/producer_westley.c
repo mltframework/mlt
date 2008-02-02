@@ -21,7 +21,6 @@
 // TODO: destroy unreferenced producers (they are currently destroyed
 //       when the returned producer is closed).
 
-#include "producer_westley.h"
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,6 +81,7 @@ struct deserialise_context_s
 	const xmlChar *publicId;
 	const xmlChar *systemId;
 	mlt_properties params;
+	mlt_profile profile;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -504,18 +504,18 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 				strcat( temp, ":" );
 				strncat( temp, resource, 1023 - strlen( temp ) );
 			}
-			producer = MLT_SERVICE( mlt_factory_producer( "fezzik", temp ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", temp ) );
 		}
 
 		// Just in case the plugin requested doesn't exist...
 		if ( producer == NULL && resource != NULL )
-			producer = MLT_SERVICE( mlt_factory_producer( "fezzik", resource ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", resource ) );
 	
 		if ( producer == NULL )
-			producer = MLT_SERVICE( mlt_factory_producer( "fezzik", "+INVALID.txt" ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", "+INVALID.txt" ) );
 
 		if ( producer == NULL )
-			producer = MLT_SERVICE( mlt_factory_producer( "fezzik", "colour:red" ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", "colour:red" ) );
 
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
@@ -844,7 +844,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 
 	if ( service != NULL && type == mlt_dummy_filter_type )
 	{
-		mlt_service filter = MLT_SERVICE( mlt_factory_filter( mlt_properties_get( properties, "mlt_service" ), NULL ) );
+		mlt_service filter = MLT_SERVICE( mlt_factory_filter( context->profile, mlt_properties_get( properties, "mlt_service" ), NULL ) );
 		mlt_properties filter_props = MLT_SERVICE_PROPERTIES( filter );
 
 		track_service( context->destructors, filter, (mlt_destructor) mlt_filter_close );
@@ -919,7 +919,8 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 
 	if ( service != NULL && type == mlt_dummy_transition_type )
 	{
-		mlt_service effect = MLT_SERVICE( mlt_factory_transition(mlt_properties_get(properties,"mlt_service"), NULL ) );
+		char *id = mlt_properties_get( properties, "mlt_service" );
+		mlt_service effect = MLT_SERVICE( mlt_factory_transition( context->profile, id, NULL ) );
 		mlt_properties effect_props = MLT_SERVICE_PROPERTIES( effect );
 
 		track_service( context->destructors, effect, (mlt_destructor) mlt_transition_close );
@@ -1332,7 +1333,7 @@ static int file_exists( char *file )
 	return exists;
 }
 
-mlt_producer producer_westley_init( int info, char *data )
+mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
 {
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
@@ -1341,6 +1342,7 @@ mlt_producer producer_westley_init( int info, char *data )
 	struct _xmlParserCtxt *xmlcontext;
 	int well_formed = 0;
 	char *filename = NULL;
+	int info = strcmp( id, "westley-xml" ) ? 0 : 1;
 
 	if ( data == NULL || !strcmp( data, "" ) || ( info == 0 && !file_exists( data ) ) )
 		return NULL;
@@ -1352,6 +1354,7 @@ mlt_producer producer_westley_init( int info, char *data )
 	context->producer_map = mlt_properties_new();
 	context->destructors = mlt_properties_new();
 	context->params = mlt_properties_new();
+	context->profile = profile;
 
 	// Decode URL and parse parameters
 	mlt_properties_set( context->producer_map, "root", "" );

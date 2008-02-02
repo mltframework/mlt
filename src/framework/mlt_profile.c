@@ -28,44 +28,15 @@
 
 #define PROFILES_DIR "/share/mlt/profiles/"
 
-static mlt_profile profile = NULL;
-
-/** Get the current profile
-* Builds one for PAL DV if non-existing
-*/
-
-mlt_profile mlt_profile_get( )
-{
-	if ( !profile )
-	{
-		profile = calloc( 1, sizeof( struct mlt_profile_s ) );
-		if ( profile )
-		{
-			mlt_environment_set( "MLT_PROFILE", "dv_pal" );
-			profile->description = strdup( "PAL 4:3 DV or DVD" );
-			profile->frame_rate_num = 25;
-			profile->frame_rate_den = 1;
-			profile->width = 720;
-			profile->height = 576;
-			profile->progressive = 0;
-			profile->sample_aspect_num = 59;
-			profile->sample_aspect_den = 54;
-			profile->display_aspect_num = 4;
-			profile->display_aspect_den = 3;
-		}
-	}
-	return profile;
-}
-
-
 /** Load a profile from the system folder
 */
 
-mlt_profile mlt_profile_select( const char *name )
+static mlt_profile mlt_profile_select( const char *name )
 {
 	char *filename = NULL;
 	const char *prefix = getenv( "MLT_PROFILES_PATH" );
 	mlt_properties properties = mlt_properties_load( name );
+	mlt_profile profile = NULL;
 	
 	// Try to load from file specification
 	if ( properties && mlt_properties_get_int( properties, "width" ) )
@@ -93,7 +64,7 @@ mlt_profile mlt_profile_select( const char *name )
 	
 	// Finish loading
 	strcat( filename, name );
-	mlt_profile_load_file( filename );
+	profile = mlt_profile_load_file( filename );
 
 	// Cleanup
 	mlt_properties_close( properties );
@@ -102,30 +73,74 @@ mlt_profile mlt_profile_select( const char *name )
 	return profile;
 }
 
+/** Construct a profile.
+*/
+
+mlt_profile mlt_profile_init( const char *name )
+{
+	mlt_profile profile = NULL;
+
+	// Explicit profile by name gets priority over environment variables
+	if ( name )
+		profile = mlt_profile_select( name );
+
+	// Try to load by environment variable
+	if ( profile == NULL )
+	{
+		// MLT_PROFILE is preferred environment variable
+		if ( getenv( "MLT_PROFILE" ) )
+			profile = mlt_profile_select( mlt_environment( "MLT_PROFILE" ) );
+		// MLT_NORMALISATION backwards compatibility
+		else if ( strcmp( mlt_environment( "MLT_NORMALISATION" ), "PAL" ) )
+			profile = mlt_profile_select( "dv_ntsc" );
+		else
+			profile = mlt_profile_select( "dv_pal" );
+
+		// If still not loaded (no profile files), default to PAL
+		if ( profile == NULL )
+		{
+			profile = calloc( 1, sizeof( struct mlt_profile_s ) );
+			if ( profile )
+			{
+				mlt_environment_set( "MLT_PROFILE", "dv_pal" );
+				profile->description = strdup( "PAL 4:3 DV or DVD" );
+				profile->frame_rate_num = 25;
+				profile->frame_rate_den = 1;
+				profile->width = 720;
+				profile->height = 576;
+				profile->progressive = 0;
+				profile->sample_aspect_num = 59;
+				profile->sample_aspect_den = 54;
+				profile->display_aspect_num = 4;
+				profile->display_aspect_den = 3;
+			}
+		}
+	}
+	return profile;
+}
+
 /** Load a profile from specific file
 */
 
 mlt_profile mlt_profile_load_file( const char *file )
 {
+	mlt_profile profile = NULL;
+
 	// Load the profile as properties
 	mlt_properties properties = mlt_properties_load( file );
-	if ( properties && mlt_properties_get_int( properties, "width" ) )
+	if ( properties )
 	{
-		mlt_profile_load_properties( properties );
-		mlt_properties_close( properties );
+		// Simple check if the profile is valid
+		if ( mlt_properties_get_int( properties, "width" ) )
+		{
+			profile = mlt_profile_load_properties( properties );
 
-		// Set MLT_PROFILE to basename
-		char *filename = strdup( file );
-		mlt_environment_set( "MLT_PROFILE", basename( filename ) );
-		free( filename );
-	}
-	else
-	{
-		// Cleanup
+			// Set MLT_PROFILE to basename
+			char *filename = strdup( file );
+			mlt_environment_set( "MLT_PROFILE", basename( filename ) );
+			free( filename );
+		}
 		mlt_properties_close( properties );
-		mlt_profile_close();
-		// Failover
-		mlt_profile_get();
 	}
 
 	// Set MLT_NORMALISATION to appease legacy modules
@@ -151,8 +166,7 @@ mlt_profile mlt_profile_load_file( const char *file )
 
 mlt_profile mlt_profile_load_properties( mlt_properties properties )
 {
-	mlt_profile_close();
-	profile = calloc( 1, sizeof( struct mlt_profile_s ) );
+	mlt_profile profile = calloc( 1, sizeof( struct mlt_profile_s ) );
 	if ( profile )
 	{
 		if ( mlt_properties_get( properties, "name" ) )
@@ -200,7 +214,7 @@ double mlt_profile_fps( mlt_profile aprofile )
 	if ( aprofile )
 		return ( double ) aprofile->frame_rate_num / aprofile->frame_rate_den;
 	else
-		return ( double ) mlt_profile_get()->frame_rate_num / mlt_profile_get()->frame_rate_den;
+		return 0;
 }
 
 /** Get the sample aspect ratio as float
@@ -211,7 +225,7 @@ double mlt_profile_sar( mlt_profile aprofile )
 	if ( aprofile )
 		return ( double ) aprofile->sample_aspect_num / aprofile->sample_aspect_den;
 	else
-		return ( double ) mlt_profile_get()->sample_aspect_num / mlt_profile_get()->sample_aspect_den;
+		return 0;
 }
 
 /** Get the display aspect ratio as float
@@ -222,13 +236,13 @@ double mlt_profile_dar( mlt_profile aprofile )
 	if ( aprofile )
 		return ( double ) aprofile->display_aspect_num / aprofile->display_aspect_den;
 	else
-		return ( double ) mlt_profile_get()->display_aspect_num / mlt_profile_get()->display_aspect_den;
+		return 0;
 }
 
 /** Free up the global profile resources
 */
 
-void mlt_profile_close( )
+void mlt_profile_close( mlt_profile profile )
 {
 	if ( profile )
 	{

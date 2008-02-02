@@ -243,7 +243,7 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 
 	if ( update_cache )
 	{
-		mlt_frame cached = mlt_frame_init( );
+		mlt_frame cached = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 		mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
 		mlt_properties_set_int( cached_props, "width", current_width );
 		mlt_properties_set_int( cached_props, "height", current_height );

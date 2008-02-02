@@ -19,39 +19,40 @@
  */
 
 #include <string.h>
+#include <framework/mlt.h>
 
-#include "filter_chroma.h"
-#include "filter_chroma_hold.h"
-#include "filter_mono.h"
-#include "filter_shape.h"
-#include "producer_pgm.h"
+extern mlt_filter filter_chroma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_chroma_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_shape_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "pgm" ) )
-		return producer_pgm_init( arg );
+		return producer_pgm_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "chroma" ) )
-		return filter_chroma_init( arg );
+		return filter_chroma_init( profile, type, id, arg );
 	if ( !strcmp( id, "chroma_hold" ) )
-		return filter_chroma_hold_init( arg );
+		return filter_chroma_hold_init( profile, type, id, arg );
 	if ( !strcmp( id, "threshold" ) )
-		return filter_mono_init( arg );
+		return filter_mono_init( profile, type, id, arg );
 	if ( !strcmp( id, "shape" ) )
-		return filter_shape_init( arg );
+		return filter_shape_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }

@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "consumer_westley.h"
 #include <framework/mlt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -146,13 +145,13 @@ static char *westley_get_id( serialise_context context, mlt_service service, wes
 	via the argument, but keep it simple.
 */
 
-mlt_consumer consumer_westley_init( char *arg )
+mlt_consumer consumer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
 	mlt_consumer this = calloc( sizeof( struct mlt_consumer_s ), 1 );
 
 	// If no malloc'd and consumer init ok
-	if ( this != NULL && mlt_consumer_init( this, NULL ) == 0 )
+	if ( this != NULL && mlt_consumer_init( this, NULL, profile ) == 0 )
 	{
 		// Allow thread to be started/stopped
 		this->start = consumer_start;

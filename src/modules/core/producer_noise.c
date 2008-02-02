@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_noise.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_pool.h>
 
@@ -47,7 +47,7 @@ static void producer_close( mlt_producer this );
 /** Initialise.
 */
 
-mlt_producer producer_noise_init( void *arg )
+mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new producer object
 	mlt_producer this = mlt_producer_new( );
@@ -138,7 +138,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
 	// Generate a frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
 
 	// Check that we created a frame and initialise it
 	if ( *frame != NULL )

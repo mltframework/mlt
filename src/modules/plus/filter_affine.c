@@ -18,8 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_affine.h"
-
+#include <framework/mlt_filter.h>
 #include <framework/mlt.h>
 
 #include <stdio.h>
@@ -50,13 +49,15 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		if ( producer == NULL )
 		{
 			char *background = mlt_properties_get( properties, "background" );
-			producer = mlt_factory_producer( "fezzik", background );
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+			producer = mlt_factory_producer( profile, "fezzik", background );
 			mlt_properties_set_data( properties, "producer", producer, 0, (mlt_destructor)mlt_producer_close, NULL );
 		}
 
 		if ( transition == NULL )
 		{
-			transition = mlt_factory_transition( "affine", NULL );
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+			transition = mlt_factory_transition( profile, "affine", NULL );
 			mlt_properties_set_data( properties, "transition", transition, 0, (mlt_destructor)mlt_transition_close, NULL );
 		}
 
@@ -118,7 +119,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_affine_init( char *arg )
+mlt_filter filter_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

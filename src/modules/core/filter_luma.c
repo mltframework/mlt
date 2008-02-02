@@ -18,8 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_luma.h"
-
+#include <framework/mlt_filter.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
@@ -48,7 +47,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( luma == NULL )
 	{
 		char *resource = mlt_properties_get( properties, "resource" );
-		luma = mlt_factory_transition( "luma", resource );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+		luma = mlt_factory_transition( profile, "luma", resource );
 		if ( luma != NULL )
 		{
 			mlt_properties luma_properties = MLT_TRANSITION_PROPERTIES( luma );
@@ -61,7 +61,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( b_frame == NULL || mlt_properties_get_int( b_frame_props, "width" ) != *width || mlt_properties_get_int( b_frame_props, "height" ) != *height )
 	{
-		b_frame = mlt_frame_init( );
+		b_frame = mlt_frame_init( MLT_FILTER_SERVICE( filter ) );
 		mlt_properties_set_data( properties, "frame", b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
 
@@ -114,7 +114,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_luma_init( void *arg )
+mlt_filter filter_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "consumer_sdl.h"
+#include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
@@ -72,13 +72,13 @@ static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt
 	via the argument, but keep it simple.
 */
 
-mlt_consumer consumer_sdl_still_init( char *arg )
+mlt_consumer consumer_sdl_still_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
 	consumer_sdl this = calloc( sizeof( struct consumer_sdl_s ), 1 );
 
 	// If no malloc'd and consumer init ok
-	if ( this != NULL && mlt_consumer_init( &this->parent, this ) == 0 )
+	if ( this != NULL && mlt_consumer_init( &this->parent, this, profile ) == 0 )
 	{
 		// Get the parent consumer object
 		mlt_consumer parent = &this->parent;
@@ -154,7 +154,8 @@ static int consumer_start( mlt_consumer parent )
 		// Attach a colour space converter
 		if ( !this->filtered )
 		{
-			mlt_filter filter = mlt_factory_filter( "avcolour_space", NULL );
+			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( parent ) );
+			mlt_filter filter = mlt_factory_filter( profile, "avcolour_space", NULL );
 			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "forced", mlt_image_yuv422 );
 			mlt_service_attach( MLT_CONSUMER_SERVICE( parent ), filter );
 			mlt_filter_close( filter );

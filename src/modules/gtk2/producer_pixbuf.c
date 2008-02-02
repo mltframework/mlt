@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_pixbuf.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
@@ -254,7 +254,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 	if ( update_cache )
 	{
-		mlt_frame cached = mlt_frame_init( );
+		mlt_frame cached = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 		mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
 		mlt_properties_set_int( cached_props, "width", this->width );
 		mlt_properties_set_int( cached_props, "height", this->height );
@@ -448,7 +448,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 
 	// Generate a frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	if ( *frame != NULL && this->count > 0 )
 	{

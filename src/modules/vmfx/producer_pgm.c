@@ -18,7 +18,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "producer_pgm.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +27,7 @@ static int read_pgm( char *name, uint8_t **image, int *width, int *height, int *
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
-mlt_producer producer_pgm_init( void *resource )
+mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, const char *id, char *resource )
 {
 	mlt_producer this = NULL;
 	uint8_t *image = NULL;
@@ -177,7 +177,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Construct a test frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Get the frames properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );

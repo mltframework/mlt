@@ -20,30 +20,34 @@
 
 #include <string.h>
 
-#include "producer_libdv.h"
-#include "consumer_libdv.h"
+#include <framework/mlt_consumer.h>
+#include <framework/mlt_producer.h>
 
-void *mlt_create_producer( char *id, void *arg )
+extern mlt_consumer consumer_libdv_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_libdv_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
+
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "libdv" ) )
-		return producer_libdv_init( arg );
+		return producer_libdv_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "libdv" ) )
-		return consumer_libdv_init( arg );
+		return consumer_libdv_init( profile, type, id, arg );
 	return NULL;
 }
 

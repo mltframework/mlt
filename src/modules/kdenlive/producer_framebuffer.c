@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_framebuffer.h"
 #include <framework/mlt.h>
 
 #include <stdio.h>
@@ -109,8 +108,8 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
 	// Construct a new frame
-	*frame = mlt_frame_init( );
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES(this);
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	if( frame != NULL )
 	{
@@ -193,12 +192,12 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 }
 
 
-mlt_producer producer_framebuffer_init( char *arg )
+mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 
 	mlt_producer this = NULL;
 	this = calloc( 1, sizeof( struct mlt_producer_s ) );
-        mlt_producer_init( this, NULL );
+	mlt_producer_init( this, NULL );
 
 	// Wrap fezzik
 	mlt_producer real_producer;
@@ -227,7 +226,7 @@ mlt_producer producer_framebuffer_init( char *arg )
 	count = strcspn( ptr, ":" );
 	ptr[count] = '\0';
 
-	real_producer = mlt_factory_producer( "fezzik", props );
+	real_producer = mlt_factory_producer( profile, "fezzik", props );
 
 	ptr += count + 1;
 	ptr += strspn( ptr, ":" );

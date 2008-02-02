@@ -37,13 +37,12 @@ struct mlt_profile_s
 	int display_aspect_den;
 };
 
-extern mlt_profile mlt_profile_get( );
-extern mlt_profile mlt_profile_select( const char *name );
+extern mlt_profile mlt_profile_init( const char *name );
 extern mlt_profile mlt_profile_load_file( const char *file );
 extern mlt_profile mlt_profile_load_properties( mlt_properties properties );
 extern mlt_profile mlt_profile_load_string( const char *string );
 extern double mlt_profile_fps( mlt_profile profile );
 extern double mlt_profile_sar( mlt_profile profile );
 extern double mlt_profile_dar( mlt_profile profile );
-extern void mlt_profile_close( );
+extern void mlt_profile_close( mlt_profile profile );
 #endif

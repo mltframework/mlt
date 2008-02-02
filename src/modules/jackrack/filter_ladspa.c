@@ -18,8 +18,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "filter_ladspa.h"
-
+#include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 
 #include <stdio.h>
@@ -175,7 +174,7 @@ static void filter_close( mlt_filter this )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_ladspa_init( char *arg )
+mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

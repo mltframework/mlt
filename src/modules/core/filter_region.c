@@ -18,9 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_region.h"
 #include "transition_region.h"
 
+#include <framework/mlt_filter.h>
 #include <framework/mlt.h>
 
 #include <stdio.h>
@@ -42,7 +42,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	if ( transition == NULL )
 	{
 		// Create the transition
-		transition = mlt_factory_transition( "region", NULL );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		transition = mlt_factory_transition( profile, "region", NULL );
 
 		// Register with the filter
 		mlt_properties_set_data( properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
@@ -61,7 +62,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_region_init( void *arg )
+mlt_filter filter_region_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new filter
 	mlt_filter this = mlt_filter_new( );

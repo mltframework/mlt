@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "transition_affine.h"
+#include <framework/mlt_transition.h>
 #include <framework/mlt.h>
 
 #include <stdio.h>
@@ -592,7 +592,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 /** Constructor for the filter.
 */
 
-mlt_transition transition_affine_init( char *arg )
+mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_transition transition = mlt_transition_new( );
 	if ( transition != NULL )

@@ -33,14 +33,12 @@
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name );
-static void apply_profile_properties( mlt_profile profile, mlt_properties properties );
-
-static mlt_event g_event_listener = NULL;
+static void apply_profile_properties( mlt_consumer this, mlt_profile profile, mlt_properties properties );
 
 /** Public final methods
 */
 
-int mlt_consumer_init( mlt_consumer this, void *child )
+int mlt_consumer_init( mlt_consumer this, void *child, mlt_profile profile )
 {
 	int error = 0;
 	memset( this, 0, sizeof( struct mlt_consumer_s ) );
@@ -51,8 +49,16 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 		// Get the properties from the service
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
 	
-		// Apply the profile to properties for legacy integration
-		apply_profile_properties( mlt_profile_get(), properties );
+		// Apply profile to properties
+		if ( profile == NULL )
+		{
+			// Normally the application creates the profile and controls its lifetime
+			// This is the fallback exception handling
+			profile = mlt_profile_init( NULL );
+			mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+			mlt_properties_set_data( properties, "_profile", profile, 0, (mlt_destructor)mlt_profile_close, NULL );
+		}
+		apply_profile_properties( this, profile, properties );
 
 		// Default rescaler for all consumers
 		mlt_properties_set( properties, "rescale", "bilinear" );
@@ -79,7 +85,7 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 
 		// Register a property-changed listener to handle the profile property -
 		// subsequent properties can override the profile
-		g_event_listener = mlt_events_listen( properties, this, "property-changed", ( mlt_listener )mlt_consumer_property_changed );
+		this->event_listener = mlt_events_listen( properties, this, "property-changed", ( mlt_listener )mlt_consumer_property_changed );
 
 		// Create the push mutex and condition
 		pthread_mutex_init( &this->put_mutex, NULL );
@@ -89,9 +95,9 @@ int mlt_consumer_init( mlt_consumer this, void *child )
 	return error;
 }
 
-static void apply_profile_properties( mlt_profile profile, mlt_properties properties )
+static void apply_profile_properties( mlt_consumer this, mlt_profile profile, mlt_properties properties )
 {
-	mlt_event_block( g_event_listener );
+	mlt_event_block( this->event_listener );
 	mlt_properties_set_double( properties, "fps", mlt_profile_fps( profile ) );
 	mlt_properties_set_int( properties, "frame_rate_num", profile->frame_rate_num );
 	mlt_properties_set_int( properties, "frame_rate_den", profile->frame_rate_den );
@@ -104,7 +110,7 @@ static void apply_profile_properties( mlt_profile profile, mlt_properties proper
 	mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile )  );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
-	mlt_event_unblock( g_event_listener );
+	mlt_event_unblock( this->event_listener );
 }
 
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name )
@@ -114,62 +120,107 @@ static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this,
 		// Get the properies
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
-		// Locate the profile
-		mlt_profile_select( mlt_properties_get( properties, "profile" ) );
+		// Get the current profile
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
 
-		// Apply to properties
-		apply_profile_properties( mlt_profile_get(), properties );
-	}
+		// Load the new profile
+		mlt_profile new_profile = mlt_profile_init( mlt_properties_get( properties, name ) );
+
+		if ( new_profile )
+		{
+			// Copy the profile
+			if ( profile != NULL )
+			{
+				free( profile->description );
+				memcpy( profile, new_profile, sizeof( struct mlt_profile_s ) );
+				profile->description = strdup( new_profile->description );
+				mlt_profile_close( new_profile );
+			}
+			else
+			{
+				profile = new_profile;
+			}
+
+			// Apply to properties
+			apply_profile_properties( this, profile, properties );
+		}
+ 	}
 	else if ( !strcmp( name, "frame_rate_num" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->frame_rate_num = mlt_properties_get_int( properties, "frame_rate_num" );
-		mlt_properties_set_double( properties, "fps", mlt_profile_fps( NULL ) );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+		{
+			profile->frame_rate_num = mlt_properties_get_int( properties, "frame_rate_num" );
+			mlt_properties_set_double( properties, "fps", mlt_profile_fps( profile ) );
+		}
 	}
 	else if ( !strcmp( name, "frame_rate_den" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->frame_rate_den = mlt_properties_get_int( properties, "frame_rate_den" );
-		mlt_properties_set_double( properties, "fps", mlt_profile_fps( NULL ) );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+		{
+			profile->frame_rate_den = mlt_properties_get_int( properties, "frame_rate_den" );
+			mlt_properties_set_double( properties, "fps", mlt_profile_fps( profile ) );
+		}
 	}
 	else if ( !strcmp( name, "width" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->width = mlt_properties_get_int( properties, "width" );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+			profile->width = mlt_properties_get_int( properties, "width" );
 	}
 	else if ( !strcmp( name, "height" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->height = mlt_properties_get_int( properties, "height" );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+			profile->height = mlt_properties_get_int( properties, "height" );
 	}
 	else if ( !strcmp( name, "progressive" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->progressive = mlt_properties_get_int( properties, "progressive" );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+			profile->progressive = mlt_properties_get_int( properties, "progressive" );
 	}
 	else if ( !strcmp( name, "sample_aspect_num" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->sample_aspect_num = mlt_properties_get_int( properties, "sample_aspect_num" );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL )  );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		profile->sample_aspect_num = mlt_properties_get_int( properties, "sample_aspect_num" );
+		if ( profile )
+			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile )  );
 	}
 	else if ( !strcmp( name, "sample_aspect_den" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->sample_aspect_den = mlt_properties_get_int( properties, "sample_aspect_den" );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL )  );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		profile->sample_aspect_den = mlt_properties_get_int( properties, "sample_aspect_den" );
+		if ( profile )
+			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile )  );
 	}
 	else if ( !strcmp( name, "display_aspect_num" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->display_aspect_num = mlt_properties_get_int( properties, "display_aspect_num" );
-		mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( NULL )  );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+		{
+			profile->display_aspect_num = mlt_properties_get_int( properties, "display_aspect_num" );
+			mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile )  );
+		}
 	}
 	else if ( !strcmp( name, "display_aspect_den" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-		mlt_profile_get()->display_aspect_den = mlt_properties_get_int( properties, "display_aspect_den" );
-		mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( NULL )  );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+		{
+			profile->display_aspect_den = mlt_properties_get_int( properties, "display_aspect_den" );
+			mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile )  );
+		}
 	}
 }
 
@@ -188,14 +239,14 @@ static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties own
 /** Create a new consumer.
 */
 
-mlt_consumer mlt_consumer_new( )
+mlt_consumer mlt_consumer_new( mlt_profile profile )
 {
 	// Create the memory for the structure
 	mlt_consumer this = malloc( sizeof( struct mlt_consumer_s ) );
 
 	// Initialise it
 	if ( this != NULL )
-		mlt_consumer_init( this, NULL );
+		mlt_consumer_init( this, NULL, profile );
 
 	// Return it
 	return this;
@@ -231,7 +282,7 @@ int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 int mlt_consumer_start( mlt_consumer this )
 {
 	// Stop listening to the property-changed event
-	mlt_event_block( g_event_listener );
+	mlt_event_block( this->event_listener );
 
 	// Get the properies
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
@@ -250,7 +301,8 @@ int mlt_consumer_start( mlt_consumer this )
 		if ( mlt_properties_get_data( properties, "test_card_producer", NULL ) == NULL )
 		{
 			// Create a test card producer
-			mlt_producer producer = mlt_factory_producer( NULL, test_card );
+			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+			mlt_producer producer = mlt_factory_producer( profile, NULL, test_card );
 
 			// Do we have a producer
 			if ( producer != NULL )
@@ -363,7 +415,7 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	}
 	else
 	{
-		frame = mlt_frame_init( );
+		frame = mlt_frame_init( service );
 	}
 
 	if ( frame != NULL )
@@ -398,20 +450,6 @@ static inline long time_difference( struct timeval *time1 )
 	time2.tv_usec = time1->tv_usec;
 	gettimeofday( time1, NULL );
 	return time1->tv_sec * 1000000 + time1->tv_usec - time2.tv_sec * 1000000 - time2.tv_usec;
-}
-
-int mlt_consumer_profile( mlt_properties properties, char *profile )
-{
-	mlt_profile p = mlt_profile_select( profile );
-	if ( p )
-	{
-		apply_profile_properties( p, properties );
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
 }
 
 static void *consumer_read_ahead_thread( void *arg )
@@ -711,7 +749,7 @@ void mlt_consumer_stopped( mlt_consumer this )
 {
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "running", 0 );
 	mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-stopped", NULL );
-	mlt_event_unblock( g_event_listener );
+	mlt_event_unblock( this->event_listener );
 }
 
 /** Stop the consumer.

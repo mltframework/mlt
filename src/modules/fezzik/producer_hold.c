@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_hold.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,13 +34,13 @@ static void producer_close( mlt_producer this );
 	and get_image requested.
 */
 
-mlt_producer producer_hold_init( char *arg )
+mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Construct a new holding producer
 	mlt_producer this = mlt_producer_new( );
 
 	// Construct the requested producer via fezzik
-	mlt_producer producer = mlt_factory_producer( "fezzik", arg );
+	mlt_producer producer = mlt_factory_producer( profile, "fezzik", arg );
 
 	// Initialise the frame holding capabilities
 	if ( this != NULL && producer != NULL )
@@ -143,7 +141,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
 	// Construct a new frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
 
 	// If we have a frame, then stack the producer itself and the get_image method
 	if ( *frame != NULL )

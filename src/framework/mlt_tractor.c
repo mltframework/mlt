@@ -311,7 +311,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			mlt_producer_set_speed( target, mlt_producer_get_speed( parent ) );
 
 			// We will create one frame and attach everything to it
-			*frame = mlt_frame_init( );
+			*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( parent ) );
 
 			// Get the properties of the frame
 			frame_properties = MLT_FRAME_PROPERTIES( *frame );
@@ -454,7 +454,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 	else
 	{
 		// Generate a test card
-		*frame = mlt_frame_init( );
+		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( parent ) );
 		return 0;
 	}
 }

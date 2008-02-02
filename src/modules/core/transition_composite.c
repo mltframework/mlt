@@ -581,7 +581,7 @@ scale_luma ( uint16_t *dest_buf, int dest_width, int dest_height, const uint16_t
 	}
 }
 
-static uint16_t* get_luma( mlt_properties properties, int width, int height )
+static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int width, int height )
 {
 	// The cached luma map information
 	int luma_width = mlt_properties_get_int( properties, "_luma.width" );
@@ -647,7 +647,8 @@ static uint16_t* get_luma( mlt_properties properties, int width, int height )
 				char *factory = mlt_properties_get( properties, "factory" );
 	
 				// Create the producer
-				mlt_producer producer = mlt_factory_producer( factory, resource );
+				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+				mlt_producer producer = mlt_factory_producer( profile, factory, resource );
 	
 				// If we have one
 				if ( producer != NULL )
@@ -857,7 +858,7 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_position frame_position )
 {
 	// Create a frame to return
-	mlt_frame b_frame = mlt_frame_init( );
+	mlt_frame b_frame = mlt_frame_init( MLT_TRANSITION_SERVICE( this ) );
 
 	// Get the properties of the a frame
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
@@ -1099,7 +1100,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			int field;
 			
 			int32_t luma_softness = mlt_properties_get_double( properties, "softness" ) * ( 1 << 16 );
-			uint16_t *luma_bitmap = get_luma( properties, width_b, height_b );
+			uint16_t *luma_bitmap = get_luma( this, properties, width_b, height_b );
 			char *operator = mlt_properties_get( properties, "operator" );
 
 			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha_mask( b_frame ) : alpha_b;
@@ -1190,7 +1191,7 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 /** Constructor for the filter.
 */
 
-mlt_transition transition_composite_init( char *arg )
+mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_transition this = calloc( sizeof( struct mlt_transition_s ), 1 );
 	if ( this != NULL && mlt_transition_init( this, NULL ) == 0 )

@@ -304,7 +304,7 @@ static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 		if ( producer != NULL )
 			return mlt_service_get_frame( producer, frame, index );
 	}
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( this );
 	return 0;
 }
 
@@ -389,7 +389,7 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 
 	// Make sure we return a frame
 	if ( *frame == NULL )
-		*frame = mlt_frame_init( );
+		*frame = mlt_frame_init( this );
 
 	// Unlock the service
 	mlt_service_unlock( this );
@@ -487,6 +487,14 @@ mlt_filter mlt_service_filter( mlt_service this, int index )
 			filter = base->filters[ index ];
 	}
 	return filter;
+}
+
+/** Retrieve the profile.
+*/
+
+mlt_profile mlt_service_profile( mlt_service this )
+{
+	return mlt_properties_get_data( MLT_SERVICE_PROPERTIES( this ), "_profile", NULL );
 }
 
 /** Close the service.

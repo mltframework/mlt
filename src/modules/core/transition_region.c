@@ -46,7 +46,8 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 		*arg ++ = '\0';
 
 	// Create the filter
-	filter = mlt_factory_filter( type, arg );
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+	filter = mlt_factory_filter( profile, type, arg );
 
 	// If we have a filter, then initialise and store it
 	if ( filter != NULL )
@@ -167,7 +168,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	if ( composite == NULL )
 	{
 		// Create composite via the factory
-		composite = mlt_factory_transition( "composite", NULL );
+		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+		composite = mlt_factory_transition( profile, "composite", NULL );
 
 		// If we have one
 		if ( composite != NULL )
@@ -344,8 +346,9 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 					mlt_properties_set( properties, "producer.resource", "<svg width='100' height='100'><circle cx='50' cy='50' r='50' fill='black'/></svg>" );
 				}
 
-				// Create the producer 
-				producer = mlt_factory_producer( factory, resource );
+				// Create the producer
+				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+				producer = mlt_factory_producer( profile, factory, resource );
 
 				// If we have one
 				if ( producer != NULL )
@@ -422,7 +425,7 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 /** Constructor for the transition.
 */
 
-mlt_transition transition_region_init( void *arg )
+mlt_transition transition_region_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new transition
 	mlt_transition this = mlt_transition_new( );

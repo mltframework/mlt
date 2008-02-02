@@ -279,17 +279,23 @@ int miracle_push( command_argument cmd_arg, mlt_service service )
 
 int miracle_receive( command_argument cmd_arg, char *doc )
 {
-	mlt_producer producer = mlt_factory_producer( "westley-xml", doc );
 	miracle_unit unit = miracle_get_unit(cmd_arg->unit);
-	if ( unit != NULL && producer != NULL )
+	if ( unit != NULL )
 	{
-		if ( miracle_unit_append_service( unit, MLT_PRODUCER_SERVICE( producer ) ) == valerie_ok )
+		// Get the consumer's profile
+		mlt_consumer consumer = mlt_properties_get_data( unit->properties, "consumer", NULL );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
+		mlt_producer producer = mlt_factory_producer( profile, "westley-xml", doc );
+		if ( producer != NULL )
 		{
+			if ( miracle_unit_append_service( unit, MLT_PRODUCER_SERVICE( producer ) ) == valerie_ok )
+			{
+				mlt_producer_close( producer );
+				return RESPONSE_SUCCESS;
+			}
 			mlt_producer_close( producer );
-			return RESPONSE_SUCCESS;
 		}
 	}
-	mlt_producer_close( producer );
 	return RESPONSE_BAD_FILE;
 }
 

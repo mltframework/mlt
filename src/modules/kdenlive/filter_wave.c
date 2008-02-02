@@ -1,6 +1,7 @@
 /*
  * wave.c -- wave filter
- * Author: Leny Grisel <leny.grisel@laposte.net>
+ * Copyright (C) ?-2007 Leny Grisel <leny.grisel@laposte.net>
+ * Copyright (C) 2007 Jean-Baptiste Mardelle <jb@ader.ch>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,8 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_wave.h"
-
+#include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 
 #include <stdio.h>
@@ -121,7 +121,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_wave_init( char *arg )
+mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

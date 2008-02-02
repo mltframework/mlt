@@ -18,7 +18,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "filter_shape.h"
+#include <framework/mlt.h>
 #include <string.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
@@ -163,7 +163,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			extension = strrchr( resource, '.' );
 		}
 
-		producer = mlt_factory_producer( NULL, resource );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		producer = mlt_factory_producer( profile, NULL, resource );
 		if ( producer != NULL )
 			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
 		mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "instance", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
@@ -212,7 +213,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_shape_init( char *arg )
+mlt_filter filter_shape_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

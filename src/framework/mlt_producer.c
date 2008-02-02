@@ -289,7 +289,8 @@ double mlt_producer_get_speed( mlt_producer this )
 
 double mlt_producer_get_fps( mlt_producer this )
 {
-	return mlt_profile_fps( NULL );
+	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( this ) );
+	return mlt_profile_fps( profile );
 }
 
 /** Set the in and out points.
@@ -416,7 +417,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		if ( this->get_frame == NULL || ( !strcmp( eof, "continue" ) && mlt_producer_position( this ) > mlt_producer_get_out( this ) ) )
 		{
 			// Generate a test frame
-			*frame = mlt_frame_init( );
+			*frame = mlt_frame_init( service );
 
 			// Set the position
 			result = mlt_frame_set_position( *frame, mlt_producer_position( this ) );
@@ -496,7 +497,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	}
 	else
 	{
-		*frame = mlt_frame_init( );
+		*frame = mlt_frame_init( service );
 		result = 0;
 	}
 
@@ -553,14 +554,15 @@ static mlt_producer mlt_producer_clone( mlt_producer this )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 	char *resource = mlt_properties_get( properties, "resource" );
 	char *service = mlt_properties_get( properties, "mlt_service" );
+	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( this ) );
 
 	mlt_events_block( mlt_factory_event_object( ), mlt_factory_event_object( ) );
 
 	if ( service != NULL )
-		clone = mlt_factory_producer( service, resource );
+		clone = mlt_factory_producer( profile, service, resource );
 
 	if ( clone == NULL && resource != NULL )
-		clone = mlt_factory_producer( "fezzik", resource );
+		clone = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), resource );
 
 	if ( clone != NULL )
 		mlt_properties_inherit( MLT_PRODUCER_PROPERTIES( clone ), properties );

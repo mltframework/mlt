@@ -19,39 +19,40 @@
  */
 
 #include <string.h>
+#include <framework/mlt.h>
 
-#include "filter_affine.h"
-#include "filter_charcoal.h"
-#include "filter_invert.h"
-#include "filter_sepia.h"
-#include "transition_affine.h"
+extern mlt_filter filter_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_charcoal_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_invert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_sepia_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "affine" ) )
-		return filter_affine_init( arg );
+		return filter_affine_init( profile, type, id, arg );
 	if ( !strcmp( id, "charcoal" ) )
-		return filter_charcoal_init( arg );
+		return filter_charcoal_init( profile, type, id, arg );
 	if ( !strcmp( id, "invert" ) )
-		return filter_invert_init( arg );
+		return filter_invert_init( profile, type, id, arg );
 	if ( !strcmp( id, "sepia" ) )
-		return filter_sepia_init( arg );
+		return filter_sepia_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "affine" ) )
-		return transition_affine_init( arg );
+		return transition_affine_init( profile, type, id, arg );
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }

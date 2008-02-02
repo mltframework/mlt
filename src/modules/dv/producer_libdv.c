@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_libdv.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
@@ -31,6 +31,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#define FRAME_SIZE_525_60 	10 * 150 * 80
+#define FRAME_SIZE_625_50 	12 * 150 * 80
 
 /** To conserve resources, we maintain a stack of dv decoders.
 */
@@ -131,7 +134,7 @@ static void producer_close( mlt_producer parent );
 
 static int producer_collect_info( producer_libdv this );
 
-mlt_producer producer_libdv_init( char *filename )
+mlt_producer producer_libdv_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
 	producer_libdv this = calloc( sizeof( struct producer_libdv_s ), 1 );
 
@@ -156,7 +159,8 @@ mlt_producer producer_libdv_init( char *filename )
 			 strncasecmp( strrchr( filename, '.' ), ".mov", 4 ) == 0 ) )
 		{
 			// Load via an alternative mechanism
-			this->alternative = mlt_factory_producer( "kino", filename );
+			mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
+			this->alternative = mlt_factory_producer( profile, "kino", filename );
 
 			// If it's unavailable, then clean up
 			if ( this->alternative == NULL )
@@ -427,7 +431,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		data = mlt_pool_alloc( FRAME_SIZE_625_50 );
 
 		// Create an empty frame
-		*frame = mlt_frame_init( );
+		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 		// Seek and fetch
 		if ( this->fd != 0 && 

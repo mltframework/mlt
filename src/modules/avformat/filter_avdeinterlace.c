@@ -18,8 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_avdeinterlace.h"
-
+#include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 
 #include <string.h>

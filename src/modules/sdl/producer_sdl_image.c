@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_sdl_image.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_pool.h>
 
@@ -174,7 +174,7 @@ static SDL_Surface *load_image( mlt_producer producer )
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Generate a frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	if ( *frame != NULL )
 	{
@@ -217,7 +217,7 @@ static void producer_close( mlt_producer producer )
 	free( producer );
 }
 
-mlt_producer producer_sdl_image_init( char *file )
+mlt_producer producer_sdl_image_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
 {
 	mlt_producer producer = calloc( 1, sizeof( struct mlt_producer_s ) );
 	if ( producer != NULL && mlt_producer_init( producer, NULL ) == 0 )

@@ -18,8 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_watermark.h"
-
+#include <framework/mlt_filter.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
@@ -59,7 +58,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( composite == NULL )
 	{
 		// Create composite via the factory
-		composite = mlt_factory_transition( "composite", NULL );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		composite = mlt_factory_transition( profile, "composite", NULL );
 
 		// Register the composite for reuse/destruction
 		if ( composite != NULL )
@@ -89,7 +89,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		char *factory = mlt_properties_get( properties, "factory" );
 
 		// Create the producer
-		producer = mlt_factory_producer( factory, resource );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		producer = mlt_factory_producer( profile, factory, resource );
 
 		// If we have one
 		if ( producer != NULL )
@@ -245,7 +246,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_watermark_init( void *arg )
+mlt_filter filter_watermark_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

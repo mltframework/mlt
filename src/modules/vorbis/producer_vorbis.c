@@ -18,10 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Local header files
-#include "producer_vorbis.h"
-
 // MLT Header files
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 
 // vorbis Header files
@@ -69,7 +67,7 @@ static sw_metadata *vorbis_metadata_from_str (char * str)
 /** Constructor for libvorbis.
 */
 
-mlt_producer producer_vorbis_init( char *file )
+mlt_producer producer_vorbis_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
 {
 	mlt_producer this = NULL;
 
@@ -342,7 +340,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
 	// Create an empty frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( this ) );

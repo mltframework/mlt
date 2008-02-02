@@ -19,40 +19,43 @@
  */
 
 #include <string.h>
+#include <framework/mlt.h>
 
-#include "consumer_sdl.h"
+extern mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_sdl_still_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 #ifdef WITH_SDL_IMAGE
-#include "producer_sdl_image.h"
+extern mlt_producer producer_sdl_image_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #endif
 
-void *mlt_create_producer( char *id, void *arg )
+void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 #ifdef WITH_SDL_IMAGE
 	if ( !strcmp( id, "sdl_image" ) )
-		return producer_sdl_image_init( arg );
+		return producer_sdl_image_init( profile, type, id, arg );
 #endif
 	return NULL;
 }
 
-void *mlt_create_filter( char *id, void *arg )
+void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_transition( char *id, void *arg )
+void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	return NULL;
 }
 
-void *mlt_create_consumer( char *id, void *arg )
+void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !strcmp( id, "sdl" ) )
-		return consumer_sdl_init( arg );
+		return consumer_sdl_init( profile, type, id, arg );
 	if ( !strcmp( id, "sdl_still" ) )
-		return consumer_sdl_still_init( arg );
+		return consumer_sdl_still_init( profile, type, id, arg );
 	if ( !strcmp( id, "sdl_preview" ) )
-		return consumer_sdl_preview_init( arg );
+		return consumer_sdl_preview_init( profile, type, id, arg );
 	return NULL;
 }
 

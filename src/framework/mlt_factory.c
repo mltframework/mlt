@@ -112,16 +112,6 @@ int mlt_factory_init( const char *prefix )
 		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
-
-		// Load the most appropriate profile
-		// MLT_PROFILE preferred
-		if ( getenv( "MLT_PROFILE" ) )
-			mlt_profile_select( mlt_environment( "MLT_PROFILE" ) );
-		// MLT_NORMALISATION backwards compatibility
-		else if ( strcmp( mlt_environment( "MLT_NORMALISATION" ), "PAL" ) )
-			mlt_profile_select( "dv_ntsc" );
-		else
-			mlt_profile_select( "dv_pal" );
 	}
 
 
@@ -160,10 +150,20 @@ int mlt_environment_set( const char *name, const char *value )
 	return mlt_properties_set( global_properties, name, value );
 }
 
+static void set_common_properties( mlt_properties properties, mlt_profile profile, const char *type, const char *service )
+{
+	mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
+	mlt_properties_set( properties, "mlt_type", type );
+	if ( mlt_properties_get_int( properties, "_mlt_service_hidden" ) == 0 )
+		mlt_properties_set( properties, "mlt_service", service );
+	if ( profile != NULL )
+		mlt_properties_set_data( properties, "_profile", profile, 0, NULL, NULL );
+}
+
 /** Fetch a producer from the repository.
 */
 
-mlt_producer mlt_factory_producer( const char *service, void *input )
+mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, void *input )
 {
 	mlt_producer obj = NULL;
 
@@ -177,15 +177,12 @@ mlt_producer mlt_factory_producer( const char *service, void *input )
 	// Try to instantiate via the specified service
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_fetch( producers, service, input );
+		obj = mlt_repository_fetch( producers, profile, producer_type, service, input );
 		mlt_events_fire( event_object, "producer-create-done", service, input, obj, NULL );
 		if ( obj != NULL )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( obj );
-			mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
-			mlt_properties_set( properties, "mlt_type", "producer" );
-			if ( mlt_properties_get_int( properties, "_mlt_service_hidden" ) == 0 )
-				mlt_properties_set( properties, "mlt_service", service );
+			set_common_properties( properties, profile, "producer", service );
 		}
 	}
 	return obj;
@@ -194,7 +191,7 @@ mlt_producer mlt_factory_producer( const char *service, void *input )
 /** Fetch a filter from the repository.
 */
 
-mlt_filter mlt_factory_filter( const char *service, void *input )
+mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, void *input )
 {
 	mlt_filter obj = NULL;
 
@@ -203,16 +200,14 @@ mlt_filter mlt_factory_filter( const char *service, void *input )
 
 	if ( obj == NULL )
 	{
-   		obj = mlt_repository_fetch( filters, service, input );
+   		obj = mlt_repository_fetch( filters, profile, filter_type, service, input );
 		mlt_events_fire( event_object, "filter-create-done", service, input, obj, NULL );
 	}
 
 	if ( obj != NULL )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( obj );
-		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
-		mlt_properties_set( properties, "mlt_type", "filter" );
-		mlt_properties_set( properties, "mlt_service", service );
+		set_common_properties( properties, profile, "filter", service );
 	}
 	return obj;
 }
@@ -220,7 +215,7 @@ mlt_filter mlt_factory_filter( const char *service, void *input )
 /** Fetch a transition from the repository.
 */
 
-mlt_transition mlt_factory_transition( const char *service, void *input )
+mlt_transition mlt_factory_transition( mlt_profile profile, const char *service, void *input )
 {
 	mlt_transition obj = NULL;
 
@@ -229,16 +224,14 @@ mlt_transition mlt_factory_transition( const char *service, void *input )
 
 	if ( obj == NULL )
 	{
-   		obj = mlt_repository_fetch( transitions, service, input );
+   		obj = mlt_repository_fetch( transitions, profile, filter_type, service, input );
 		mlt_events_fire( event_object, "transition-create-done", service, input, obj, NULL );
 	}
 
 	if ( obj != NULL )
 	{
 		mlt_properties properties = MLT_TRANSITION_PROPERTIES( obj );
-		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
-		mlt_properties_set( properties, "mlt_type", "transition" );
-		mlt_properties_set( properties, "mlt_service", service );
+		set_common_properties( properties, profile, "transition", service );
 	}
 	return obj;
 }
@@ -246,7 +239,7 @@ mlt_transition mlt_factory_transition( const char *service, void *input )
 /** Fetch a consumer from the repository
 */
 
-mlt_consumer mlt_factory_consumer( const char *service, void *input )
+mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, void *input )
 {
 	mlt_consumer obj = NULL;
 
@@ -258,16 +251,14 @@ mlt_consumer mlt_factory_consumer( const char *service, void *input )
 
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_fetch( consumers, service, input );
+		obj = mlt_repository_fetch( consumers, profile, consumer_type, service, input );
 		mlt_events_fire( event_object, "consumer-create-done", service, input, obj, NULL );
 	}
 
 	if ( obj != NULL )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( obj );
-		mlt_properties_set_int( properties, "_unique_id", ++ unique_id );
-		mlt_properties_set( properties, "mlt_type", "consumer" );
-		mlt_properties_set( properties, "mlt_service", service );
+		set_common_properties( properties, profile, "consumer", service );
 	}
 	return obj;
 }
@@ -299,6 +290,5 @@ void mlt_factory_close( )
 		free( mlt_prefix );
 		mlt_prefix = NULL;
 		mlt_pool_close( );
-		mlt_profile_close();
 	}
 }

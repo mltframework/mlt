@@ -18,9 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_rescale.h"
 #include "pixops.h"
 
+#include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_factory.h>
 
@@ -135,10 +135,10 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 /** Constructor for the filter.
 */
 
-mlt_filter filter_rescale_init( char *arg )
+mlt_filter filter_rescale_init( mlt_profile profile, char *arg )
 {
 	// Create a new scaler
-	mlt_filter this = mlt_factory_filter( "rescale", arg );
+	mlt_filter this = mlt_factory_filter( profile, "rescale", arg );
 
 	// If successful, then initialise it
 	if ( this != NULL )

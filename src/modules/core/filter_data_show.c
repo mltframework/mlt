@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "filter_data.h"
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,7 +71,7 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 			char *value = mlt_properties_get_value( profile_properties, i );
 	
 			if ( result == NULL && !strcmp( name, type ) && result == NULL )
-				result = mlt_factory_filter( value, NULL );
+				result = mlt_factory_filter( mlt_service_profile( MLT_FILTER_SERVICE( filter ) ), value, NULL );
 			else if ( result != NULL && !strncmp( name, type, type_len ) && name[ type_len ] == '.' )
 				mlt_properties_set( MLT_FILTER_PROPERTIES( result ), name + type_len + 1, value );
 			else if ( result != NULL )
@@ -321,7 +320,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_data_show_init( char *arg )
+mlt_filter filter_data_show_init( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	// Create the filter
 	mlt_filter this = mlt_filter_new( );

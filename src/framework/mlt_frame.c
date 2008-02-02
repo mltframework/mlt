@@ -32,13 +32,15 @@
 /** Constructor for a frame.
 */
 
-mlt_frame mlt_frame_init( )
+mlt_frame mlt_frame_init( mlt_service service )
 {
 	// Allocate a frame
 	mlt_frame this = calloc( sizeof( struct mlt_frame_s ), 1 );
 
 	if ( this != NULL )
 	{
+		mlt_profile profile = mlt_service_profile( service );
+
 		// Initialise the properties
 		mlt_properties properties = &this->parent;
 		mlt_properties_init( properties, this );
@@ -46,10 +48,10 @@ mlt_frame mlt_frame_init( )
 		// Set default properties on the frame
 		mlt_properties_set_position( properties, "_position", 0.0 );
 		mlt_properties_set_data( properties, "image", NULL, 0, NULL, NULL );
-		mlt_properties_set_int( properties, "width", mlt_profile_get()->width );
-		mlt_properties_set_int( properties, "height", mlt_profile_get()->height );
-		mlt_properties_set_int( properties, "normalised_width", mlt_profile_get()->width );
-		mlt_properties_set_int( properties, "normalised_height", mlt_profile_get()->height );
+		mlt_properties_set_int( properties, "width", profile? profile->width : 720 );
+		mlt_properties_set_int( properties, "height", profile? profile->height : 576 );
+		mlt_properties_set_int( properties, "normalised_width", profile? profile->width : 720 );
+		mlt_properties_set_int( properties, "normalised_height", profile? profile->height : 576 );
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL ) );
 		mlt_properties_set_data( properties, "audio", NULL, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );

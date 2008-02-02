@@ -19,7 +19,7 @@
  */
 
 #include <stdlib.h>
-#include "producer_kino.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
@@ -41,7 +41,7 @@ struct producer_kino_s
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
-mlt_producer producer_kino_init( char *filename )
+mlt_producer producer_kino_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
 	kino_wrapper wrapper = kino_wrapper_init( );
 
@@ -91,7 +91,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	uint64_t position = mlt_producer_frame( producer );
 	
 	// Create an empty frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Seek and fetch
 	if ( kino_wrapper_get_frame( this->wrapper, data, position ) )

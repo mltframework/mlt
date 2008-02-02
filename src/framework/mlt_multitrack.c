@@ -386,7 +386,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 	else
 	{
 		// Generate a test frame
-		*frame = mlt_frame_init( );
+		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( parent ) );
 
 		// Update position on the frame we're creating
 		mlt_frame_set_position( *frame, mlt_producer_position( parent ) );

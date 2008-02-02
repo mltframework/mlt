@@ -18,15 +18,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_inigo.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <framework/mlt.h>
 
-mlt_producer producer_inigo_file_init( char *file )
+mlt_producer producer_inigo_init( mlt_profile profile, char **argv );
+
+mlt_producer producer_inigo_file_init( mlt_profile profile, char *file )
 {
 	FILE *input = fopen( file, "r" );
 	char **args = calloc( sizeof( char * ), 1000 );
@@ -43,7 +43,7 @@ mlt_producer producer_inigo_file_init( char *file )
 		}
 	}
 
-	mlt_producer result = producer_inigo_init( args );
+	mlt_producer result = producer_inigo_init( profile, args );
 
 	if ( result != NULL )
 	{
@@ -67,9 +67,9 @@ static void track_service( mlt_field field, void *service, mlt_destructor destru
 	mlt_properties_set_int( properties, "registered", ++ registered );
 }
 
-static mlt_producer create_producer( mlt_field field, char *file )
+static mlt_producer create_producer( mlt_profile profile, mlt_field field, char *file )
 {
-	mlt_producer result = mlt_factory_producer( "fezzik", file );
+	mlt_producer result = mlt_factory_producer( profile, "fezzik", file );
 
 	if ( result != NULL )
 		track_service( field, result, ( mlt_destructor )mlt_producer_close );
@@ -77,26 +77,26 @@ static mlt_producer create_producer( mlt_field field, char *file )
 	return result;
 }
 
-static mlt_filter create_attach( mlt_field field, char *id, int track )
+static mlt_filter create_attach( mlt_profile profile, mlt_field field, char *id, int track )
 {
 	char *temp = strdup( id );
 	char *arg = strchr( temp, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( temp, arg );
+	mlt_filter filter = mlt_factory_filter( profile, temp, arg );
 	if ( filter != NULL )
 		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
 	free( temp );
 	return filter;
 }
 
-static mlt_filter create_filter( mlt_field field, char *id, int track )
+static mlt_filter create_filter( mlt_profile profile, mlt_field field, char *id, int track )
 {
 	char *temp = strdup( id );
 	char *arg = strchr( temp, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( temp, arg );
+	mlt_filter filter = mlt_factory_filter( profile, temp, arg );
 	if ( filter != NULL )
 	{
 		mlt_field_plant_filter( field, filter, track );
@@ -106,12 +106,12 @@ static mlt_filter create_filter( mlt_field field, char *id, int track )
 	return filter;
 }
 
-static mlt_transition create_transition( mlt_field field, char *id, int track )
+static mlt_transition create_transition( mlt_profile profile, mlt_field field, char *id, int track )
 {
 	char *arg = strchr( id, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_transition transition = mlt_factory_transition( id, arg );
+	mlt_transition transition = mlt_factory_transition( profile, id, arg );
 	if ( transition != NULL )
 	{
 		mlt_field_plant_transition( field, transition, track, track + 1 );
@@ -120,7 +120,7 @@ static mlt_transition create_transition( mlt_field field, char *id, int track )
 	return transition;
 }
 
-mlt_producer producer_inigo_init( char **argv )
+mlt_producer producer_inigo_init( mlt_profile profile, char **argv )
 {
 	int i;
 	int track = 0;
@@ -162,7 +162,7 @@ mlt_producer producer_inigo_init( char **argv )
 			int type = !strcmp( argv[ i ], "-attach" ) ? 0 : 
 					   !strcmp( argv[ i ], "-attach-cut" ) ? 1 : 
 					   !strcmp( argv[ i ], "-attach-track" ) ? 2 : 3;
-			mlt_filter filter = create_attach( field, argv[ ++ i ], track );
+			mlt_filter filter = create_attach( profile, field, argv[ ++ i ], track );
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 			{
 				mlt_playlist_clip_info info;
@@ -315,7 +315,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_transition transition = NULL;
 				if ( arg != NULL )
 					*arg ++ = '\0';
-				transition = mlt_factory_transition( id, arg );
+				transition = mlt_factory_transition( profile, id, arg );
 				if ( transition != NULL )
 				{
 					properties = MLT_TRANSITION_PROPERTIES( transition );
@@ -334,7 +334,7 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else if ( !strcmp( argv[ i ], "-filter" ) )
 		{
-			mlt_filter filter = create_filter( field, argv[ ++ i ], track );
+			mlt_filter filter = create_filter( profile, field, argv[ ++ i ], track );
 			if ( filter != NULL )
 			{
 				properties = MLT_FILTER_PROPERTIES( filter );
@@ -343,7 +343,7 @@ mlt_producer producer_inigo_init( char **argv )
 		}
 		else if ( !strcmp( argv[ i ], "-transition" ) )
 		{
-			mlt_transition transition = create_transition( field, argv[ ++ i ], track - 1 );
+			mlt_transition transition = create_transition( profile, field, argv[ ++ i ], track - 1 );
 			if ( transition != NULL )
 			{
 				properties = MLT_TRANSITION_PROPERTIES( transition );
@@ -396,7 +396,7 @@ mlt_producer producer_inigo_init( char **argv )
 				mlt_playlist_append( playlist, producer );
 			if ( title == NULL && strstr( argv[ i ], "<?xml" ) != argv[ i ] )
 				title = argv[ i ];
-			producer = create_producer( field, argv[ i ] );
+			producer = create_producer( profile, field, argv[ i ] );
 			if ( producer != NULL )
 			{
 				properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -408,6 +408,8 @@ mlt_producer producer_inigo_init( char **argv )
 			if ( !strcmp( argv[ i ], "-serialise" ) )
 				i += 2;
 			else if ( !strcmp( argv[ i ], "-consumer" ) )
+				i += 2;
+			else if ( !strcmp( argv[ i ], "-profile" ) )
 				i += 2;
 
 			while ( argv[ i ] != NULL && strchr( argv[ i ], '=' ) )

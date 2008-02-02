@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_pango.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_geometry.h>
 #include <stdlib.h>
@@ -29,6 +29,15 @@
 #include <iconv.h>
 #include <pthread.h>
 #include <ctype.h>
+
+typedef struct producer_pango_s *producer_pango;
+
+typedef enum
+{
+	pango_align_left = 0,
+	pango_align_center,
+	pango_align_right
+} pango_align;
 
 static pthread_mutex_t pango_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -544,7 +553,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	producer_pango this = producer->child;
 
 	// Generate a frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );

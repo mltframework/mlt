@@ -22,7 +22,7 @@
 
 #include <framework/mlt_filter.h>
 
-extern mlt_filter filter_motion_est_init( char *arg );
+extern mlt_filter filter_motion_est_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 #define MAX_MSAD 0xffff
 

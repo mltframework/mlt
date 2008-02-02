@@ -63,7 +63,7 @@ static mlt_properties construct_service( mlt_properties object, const char *id )
 	return output;
 }
 
-static void *construct_instance( mlt_properties service_properties, const char *symbol, void *input )
+static void *construct_instance( mlt_properties service_properties, mlt_profile profile, mlt_service_type type, const char *symbol, void *input )
 {
 	// Extract the service
 	char *service = mlt_properties_get( service_properties, "id" );
@@ -75,7 +75,7 @@ static void *construct_instance( mlt_properties service_properties, const char *
 	void *object = mlt_properties_get_data( object_properties, "dlopen", NULL );
 
 	// Get the dlsym'd symbol
-	void *( *symbol_ptr )( const char *, void * ) = mlt_properties_get_data( object_properties, symbol, NULL );
+	void *( *symbol_ptr )( mlt_profile, mlt_service_type, const char *, void * ) = mlt_properties_get_data( object_properties, symbol, NULL );
 
 	// Check that we have object and open if we don't
 	if ( object == NULL )
@@ -119,7 +119,7 @@ static void *construct_instance( mlt_properties service_properties, const char *
 	}
 
 	// Construct the service
-	return symbol_ptr != NULL ? symbol_ptr( service, input ) : NULL;
+	return symbol_ptr != NULL ? symbol_ptr( profile, type, service, input ) : NULL;
 }
 
 mlt_repository mlt_repository_init( mlt_properties object_list, const char *prefix, const char *data, const char *symbol )
@@ -182,7 +182,7 @@ mlt_repository mlt_repository_init( mlt_properties object_list, const char *pref
 	return this;
 }
 
-void *mlt_repository_fetch( mlt_repository this, const char *service, void *input )
+void *mlt_repository_fetch( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
 {
 	// Get the service properties
 	mlt_properties service_properties = mlt_properties_get_data( &this->parent, service, NULL );
@@ -194,7 +194,7 @@ void *mlt_repository_fetch( mlt_repository this, const char *service, void *inpu
 		char *symbol = mlt_properties_get( &this->parent, "_symbol" );
 
 		// Now get an instance of the service
-		return construct_instance( service_properties, symbol, input );
+		return construct_instance( service_properties, profile, type, symbol, input );
 	}
 
 	return NULL;

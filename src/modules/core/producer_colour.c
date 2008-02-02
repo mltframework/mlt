@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "producer_colour.h"
+#include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_pool.h>
 
@@ -35,7 +35,7 @@ typedef struct
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
-mlt_producer producer_colour_init( char *colour )
+mlt_producer producer_colour_init( mlt_profile profile, mlt_service_type type, const char *id, char *colour )
 {
 	mlt_producer producer = calloc( 1, sizeof( struct mlt_producer_s ) );
 	if ( producer != NULL && mlt_producer_init( producer, NULL ) == 0 )
@@ -211,7 +211,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Generate a frame
-	*frame = mlt_frame_init( );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	if ( *frame != NULL )
 	{

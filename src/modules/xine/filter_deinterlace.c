@@ -18,7 +18,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "filter_deinterlace.h"
+#include <framework/mlt_filter.h>
 #include "deinterlace.h"
 
 #include <framework/mlt_frame.h>
@@ -93,7 +93,7 @@ static mlt_frame deinterlace_process( mlt_filter this, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_deinterlace_init( void *arg )
+mlt_filter filter_deinterlace_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )

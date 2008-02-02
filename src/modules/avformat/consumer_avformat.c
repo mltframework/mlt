@@ -18,10 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Local header files
-#include "consumer_avformat.h"
-
 // mlt Header files
+#include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
 
 // System header files
@@ -136,10 +134,10 @@ static void consumer_close( mlt_consumer this );
 /** Initialise the dv consumer.
 */
 
-mlt_consumer consumer_avformat_init( char *arg )
+mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 {
 	// Allocate the consumer
-	mlt_consumer this = mlt_consumer_new( );
+	mlt_consumer this = mlt_consumer_new( profile );
 
 	// If memory allocated and initialises without error
 	if ( this != NULL )
