@@ -30,6 +30,7 @@
 namespace Mlt
 {
 	class Service;
+	class Profile;
 
 	class MLTPP_DECLSPEC Consumer : public Service
 	{
@@ -37,7 +38,8 @@ namespace Mlt
 			mlt_consumer instance;
 		public:
 			Consumer( );
-			Consumer( char *id , char *service = NULL );
+			Consumer( Profile& profile );
+			Consumer( Profile& profile, char *id , char *service = NULL );
 			Consumer( Service &consumer );
 			Consumer( Consumer &consumer );
 			Consumer( mlt_consumer consumer );

@@ -30,13 +30,14 @@
 namespace Mlt
 {
 	class Service;
+	class Profile;
 
 	class MLTPP_DECLSPEC Filter : public Service
 	{
 		private:
 			mlt_filter instance;
 		public:
-			Filter( char *id, char *service = NULL );
+			Filter( Profile& profile, char *id, char *service = NULL );
 			Filter( Service &filter );
 			Filter( Filter &filter );
 			Filter( mlt_filter filter );

@@ -25,6 +25,7 @@ OBJS = MltConsumer.o \
 	   MltParser.o \
 	   MltPlaylist.o \
 	   MltProducer.o \
+	   MltProfile.o \
 	   MltProperties.o \
 	   MltPushConsumer.o \
 	   MltResponse.o \

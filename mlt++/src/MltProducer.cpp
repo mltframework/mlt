@@ -20,6 +20,7 @@
 
 #include "MltProducer.h"
 #include "MltFilter.h"
+#include "MltProfile.h"
 using namespace Mlt;
 
 Producer::Producer( ) :
@@ -28,14 +29,14 @@ Producer::Producer( ) :
 {
 }
 
-Producer::Producer( char *id, char *service ) :
+Producer::Producer( Profile& profile, char *id, char *service ) :
 	instance( NULL ),
 	parent_( NULL )
 {
 	if ( id != NULL && service != NULL )
-		instance = mlt_factory_producer( id, service );
+		instance = mlt_factory_producer( profile.get_profile(), id, service );
 	else
-		instance = mlt_factory_producer( "fezzik", id != NULL ? id : service );
+		instance = mlt_factory_producer( profile.get_profile(), "fezzik", id != NULL ? id : service );
 }
 
 Producer::Producer( Service &producer ) :

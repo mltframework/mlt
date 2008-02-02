@@ -1,7 +1,6 @@
 /**
- * MltFactory.h - MLT Wrapper
- * Copyright (C) 2004-2005 Charles Yates
- * Author: Charles Yates <charles.yates@pandora.be>
+ * MltProfile.h - MLT Wrapper
+ * Copyright (C) 2008 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -18,8 +17,8 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_FACTORY_H_
-#define _MLTPP_FACTORY_H_
+#ifndef _MLTPP_PROFILE_H_
+#define _MLTPP_PROFILE_H_
 
 #include "config.h"
 
@@ -32,26 +31,32 @@
 namespace Mlt
 {
 	class Properties;
-	class Producer;
-	class Filter;
-	class Transition;
-	class Consumer;
-	class Profile;
 
-	class MLTPP_DECLSPEC Factory
+	class MLTPP_DECLSPEC Profile
 	{
+		private:
+			mlt_profile instance;
 		public:
-			static int init( char *arg = NULL );
-			static Properties *event_object( );
-			static Producer *producer( Profile& profile, char *id, char *arg = NULL );
-			static Filter *filter( Profile& profile, char *id, char *arg = NULL );
-			static Transition *transition( Profile& profile, char *id, char *arg = NULL );
-			static Consumer *consumer( Profile& profile, char *id, char *arg = NULL );
-#ifdef WIN32
-			static char *getenv( const char * );
-			static int setenv( const char *, const char * );
-#endif
-			static void close( );
+			Profile( );
+			Profile( const char* name );
+			Profile( Properties& properties );
+			Profile( mlt_profile profile );
+			~Profile();
+
+			mlt_profile get_profile( ) const;
+			char* description() const;
+			int frame_rate_num() const;
+			int frame_rate_den() const;
+			double fps() const;
+			int width() const;
+			int height() const;
+			bool progressive() const;
+			int sample_aspect_num() const;
+			int sample_aspect_den() const;
+			double sar() const;
+			int display_aspect_num() const;
+			int display_aspect_den() const;
+			double dar() const;
 	};
 }
 

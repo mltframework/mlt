@@ -30,13 +30,14 @@ namespace Mlt
 	class Frame;
 	class Service;
 	class PushPrivate;
+	class Profile;
 
 	class MLTPP_DECLSPEC PushConsumer : public Consumer
 	{
 		private:
 			PushPrivate *m_private;
 		public:
-			PushConsumer( char *id , char *service = NULL );
+			PushConsumer( Profile& profile, char *id , char *service = NULL );
 			virtual ~PushConsumer( );
 			void set_render( int width, int height, double aspect_ratio );
 			virtual int connect( Service &service );

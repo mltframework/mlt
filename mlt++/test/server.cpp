@@ -10,6 +10,7 @@ class Custom : public Miracle
 {
 	private:
 		Event *event;
+		Profile profile;
 
 	public:
 		Custom( char *name = "Custom", int port = 5290, char *config = NULL ) :
@@ -29,7 +30,7 @@ class Custom : public Miracle
 		Response *received( char *command, char *document )
 		{
 			cerr << document << endl;
-			Producer producer( "westley-xml", document );
+			Producer producer( profile, "westley-xml", document );
 			return push( command, &producer );
 		}
 

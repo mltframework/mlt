@@ -39,8 +39,8 @@ static void filter_destructor( void *arg )
 	delete filter;
 }
 
-PushConsumer::PushConsumer( char *id , char *service ) :
-	Consumer( id, service ),
+PushConsumer::PushConsumer( Profile& profile, char *id , char *service ) :
+	Consumer( profile, id, service ),
 	m_private( new PushPrivate( ) )
 {
 	if ( is_valid( ) )
@@ -53,20 +53,20 @@ PushConsumer::PushConsumer( char *id , char *service ) :
 
 		// We might need resize and rescale filters so we'll create them now
 		// NB: Try to use the best rescaler available here
-		Filter *resize = new Filter( "resize" );
-		Filter *rescale = new Filter( "mcrescale" );
+		Filter *resize = new Filter( profile, "resize" );
+		Filter *rescale = new Filter( profile, "mcrescale" );
 		if ( !rescale->is_valid( ) )
 		{
 			delete rescale;
-			rescale = new Filter( "gtkrescale" );
+			rescale = new Filter( profile, "gtkrescale" );
 		}
 		if ( !rescale->is_valid( ) )
 		{
 			delete rescale;
-			rescale = new Filter( "rescale" );
+			rescale = new Filter( profile, "rescale" );
 		}
 
-		Filter *convert = new Filter( "avcolour_space" );
+		Filter *convert = new Filter( profile, "avcolour_space" );
 
 		set( "filter_convert", convert, 0, filter_destructor );
 		set( "filter_resize", resize, 0, filter_destructor );
@@ -136,7 +136,7 @@ int PushConsumer::drain( )
 // Convenience function - generates a frame with an image of a given size
 Frame *PushConsumer::construct( int size )
 {
-	mlt_frame f = mlt_frame_init( );
+	mlt_frame f = mlt_frame_init( get_service() );
 	Frame *frame = new Frame( f );
 	uint8_t *buffer = ( uint8_t * )mlt_pool_alloc( size );
 	frame->set( "image", buffer, size, mlt_pool_release );

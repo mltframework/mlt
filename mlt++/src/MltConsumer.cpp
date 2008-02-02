@@ -22,20 +22,27 @@
 #include <string.h>
 #include "MltConsumer.h"
 #include "MltEvent.h"
+#include "MltProfile.h"
 using namespace Mlt;
 
 Consumer::Consumer( ) :
 	instance( NULL )
 {
-	instance = mlt_factory_consumer( NULL, NULL );
+	instance = mlt_factory_consumer( NULL, NULL, NULL );
 }
 
-Consumer::Consumer( char *id, char *arg ) :
+Consumer::Consumer( Profile& profile ) :
+	instance( NULL )
+{
+	instance = mlt_factory_consumer( profile.get_profile(), NULL, NULL );
+}
+
+Consumer::Consumer( Profile& profile, char *id, char *arg ) :
 	instance( NULL )
 {
 	if ( id == NULL || arg != NULL )
 	{
-		instance = mlt_factory_consumer( id, arg );
+		instance = mlt_factory_consumer( profile.get_profile(), id, arg );
 	}
 	else
 	{
@@ -44,12 +51,12 @@ Consumer::Consumer( char *id, char *arg ) :
 			char *temp = strdup( id );
 			char *arg = strchr( temp, ':' ) + 1;
 			*( arg - 1 ) = '\0';
-			instance = mlt_factory_consumer( temp, arg );
+			instance = mlt_factory_consumer( profile.get_profile(), temp, arg );
 			free( temp );
 		}
 		else
 		{
-			instance = mlt_factory_consumer( id, NULL );
+			instance = mlt_factory_consumer( profile.get_profile(), id, NULL );
 		}
 	}
 }

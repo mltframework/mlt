@@ -53,10 +53,10 @@ Tractor::Tractor( Tractor &tractor ) :
 	inc_ref( );
 }
 
-Tractor::Tractor( char *id, char *resource ) :
+Tractor::Tractor( Profile& profile, char *id, char *resource ) :
 	instance( NULL )
 {
-	Producer producer( id, resource );
+	Producer producer( profile, id, resource );
 	if ( producer.is_valid( ) && producer.type( ) == tractor_type )
 	{
 		instance = ( mlt_tractor )producer.get_producer( );

@@ -21,8 +21,8 @@
 #include "MltFilteredProducer.h"
 using namespace Mlt;
 
-FilteredProducer::FilteredProducer( char *id, char *arg ) :
-	Producer( id, arg )
+FilteredProducer::FilteredProducer( Profile& profile, char *id, char *arg ) :
+	Producer( profile, id, arg )
 {
 	// Create a reference to the last service
 	last = new Service( *this );

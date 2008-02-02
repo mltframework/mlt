@@ -34,6 +34,7 @@ namespace Mlt
 	class Multitrack;
 	class Transition;
 	class Filter;
+	class Profile;
 
 	class MLTPP_DECLSPEC Tractor : public Producer
 	{
@@ -44,7 +45,7 @@ namespace Mlt
 			Tractor( Service &tractor );
 			Tractor( mlt_tractor tractor );
 			Tractor( Tractor &tractor );
-			Tractor( char *id, char *arg = NULL );
+			Tractor( Profile& profile, char *id, char *arg = NULL );
 			virtual ~Tractor( );
 			virtual mlt_tractor get_tractor( );
 			mlt_producer get_producer( );

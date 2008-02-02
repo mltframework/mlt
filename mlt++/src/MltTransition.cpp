@@ -21,14 +21,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "MltTransition.h"
+#include "MltProfile.h"
 using namespace Mlt;
 
-Transition::Transition( char *id, char *arg ) :
+Transition::Transition( Profile& profile, char *id, char *arg ) :
 	instance( NULL )
 {
 	if ( arg != NULL )
 	{
-		instance = mlt_factory_transition( id, arg );
+		instance = mlt_factory_transition( profile.get_profile(), id, arg );
 	}
 	else
 	{
@@ -37,12 +38,12 @@ Transition::Transition( char *id, char *arg ) :
 			char *temp = strdup( id );
 			char *arg = strchr( temp, ':' ) + 1;
 			*( arg - 1 ) = '\0';
-			instance = mlt_factory_transition( temp, arg );
+			instance = mlt_factory_transition( profile.get_profile(), temp, arg );
 			free( temp );
 		}
 		else
 		{
-			instance = mlt_factory_transition( id, NULL );
+			instance = mlt_factory_transition( profile.get_profile(), id, NULL );
 		}
 	}
 }

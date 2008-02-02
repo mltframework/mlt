@@ -30,10 +30,10 @@
  */
 
 namespace Mlt {
-%newobject Factory::producer( char *, char * );
-%newobject Factory::filter( char *, char * );
-%newobject Factory::transition( char *, char * );
-%newobject Factory::consumer( char *, char * );
+%newobject Factory::producer( Profile &, char *, char * );
+%newobject Factory::filter( Profile &, char *, char * );
+%newobject Factory::transition( Profile &, char *, char * );
+%newobject Factory::consumer( Profile &, char *, char * );
 %newobject Properties::listen( char *, void *, mlt_listener );
 %newobject Service::producer( );
 %newobject Service::consumer( );
@@ -66,6 +66,7 @@ namespace Mlt {
 %include <MltGeometry.h>
 %include <MltService.h>
 %include <MltProducer.h>
+%include <MltProfile.h>
 %include <MltPlaylist.h>
 %include <MltConsumer.h>
 %include <MltFilter.h>

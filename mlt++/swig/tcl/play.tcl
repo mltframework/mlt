@@ -1,10 +1,11 @@
-#!/bin/env tclsh
+#!/usr/bin/env tclsh
 
 load mltpp.so
 mltpp.Factory.init
+set profile [Profile]
 set arg1 [lindex $argv 0]
-set p [factory_producer fezzik $arg1]
-set c [factory_consumer sdl ""]
+set p [factory_producer $profile fezzik $arg1]
+set c [factory_consumer $profile sdl ""]
 set r [mlt_consumer_properties $c]
 mlt_properties_set $r "rescale" "none"
 consumer_connect $c $p

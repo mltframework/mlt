@@ -31,6 +31,7 @@ namespace Mlt
 {
 	class Service;
 	class Filter;
+	class Profile;
 
 	class MLTPP_DECLSPEC Producer : public Service
 	{
@@ -39,7 +40,7 @@ namespace Mlt
 			Producer *parent_;
 		public:
 			Producer( );
-			Producer( char *id, char *service = NULL );
+			Producer( Profile& profile, char *id, char *service = NULL );
 			Producer( Service &producer );
 			Producer( mlt_producer producer );
 			Producer( Producer &producer );

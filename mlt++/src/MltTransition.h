@@ -29,13 +29,14 @@
 namespace Mlt
 {
 	class Service;
+	class Profile;
 
 	class MLTPP_DECLSPEC Transition : public Service
 	{
 		private:
 			mlt_transition instance;
 		public:
-			Transition( char *id, char *arg = NULL );
+			Transition( Profile& profile, char *id, char *arg = NULL );
 			Transition( Service &transition );
 			Transition( Transition &transition );
 			Transition( mlt_transition transition );

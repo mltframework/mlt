@@ -32,13 +32,14 @@ namespace Mlt
 	class Producer;
 	class Service;
 	class Filter;
+	class Profile;
 
 	class MLTPP_DECLSPEC FilteredProducer : public Producer
 	{
 		private:
 			Service *last;
 		public:
-			FilteredProducer( char *id, char *arg = NULL );
+			FilteredProducer( Profile* profile, char *id, char *arg = NULL );
 			virtual ~FilteredProducer( );
 			int attach( Filter &filter );
 			int detach( Filter &filter );

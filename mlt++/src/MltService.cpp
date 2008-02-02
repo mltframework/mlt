@@ -21,6 +21,7 @@
 #include <string.h>
 #include "MltService.h"
 #include "MltFilter.h"
+#include "MltProfile.h"
 using namespace Mlt;
 
 Service::Service( ) :
@@ -81,6 +82,11 @@ Service *Service::producer( )
 Service *Service::consumer( )
 {
 	return new Service( mlt_service_consumer( get_service( ) ) );
+}
+
+Profile *Service::profile( )
+{
+	return new Profile( mlt_service_profile( get_service() ) );
 }
 
 Frame *Service::get_frame( int index )

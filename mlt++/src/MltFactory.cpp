@@ -1,6 +1,7 @@
 /**
  * MltFactory.cpp - MLT Wrapper
  * Copyright (C) 2004-2005 Charles Yates
+ * Copyright (C) 2008 Dan Dennedy <dan@dennedy.org>
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,24 +36,24 @@ Properties *Factory::event_object( )
 	return new Properties( mlt_factory_event_object( ) );
 }
 
-Producer *Factory::producer( char *id, char *arg )
+Producer *Factory::producer( Profile& profile, char *id, char *arg )
 {
-	return new Producer( id, arg );
+	return new Producer( profile, id, arg );
 }
 
-Filter *Factory::filter( char *id, char *arg )
+Filter *Factory::filter( Profile& profile, char *id, char *arg )
 {
-	return new Filter( id, arg );
+	return new Filter( profile, id, arg );
 }
 
-Transition *Factory::transition( char *id, char *arg )
+Transition *Factory::transition( Profile& profile, char *id, char *arg )
 {
-	return new Transition( id, arg );
+	return new Transition( profile, id, arg );
 }
 
-Consumer *Factory::consumer( char *id, char *arg )
+Consumer *Factory::consumer( Profile& profile, char *id, char *arg )
 {
-	return new Consumer( id, arg );
+	return new Consumer( profile, id, arg );
 }
 
 #ifdef WIN32

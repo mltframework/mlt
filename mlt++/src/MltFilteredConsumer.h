@@ -32,13 +32,14 @@ namespace Mlt
 	class Consumer;
 	class Service;
 	class Filter;
+	class Profile;
 
 	class MLTPP_DECLSPEC FilteredConsumer : public Consumer
 	{
 		private:
 			Service *first;
 		public:
-			FilteredConsumer( char *id, char *arg = NULL );
+			FilteredConsumer( Profile& profile, char *id, char *arg = NULL );
 			FilteredConsumer( Consumer &consumer );
 			virtual ~FilteredConsumer( );
 			int connect( Service &service );

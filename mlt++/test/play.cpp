@@ -5,8 +5,9 @@ using namespace Mlt;
 int main( int argc, char **argv )
 {
 	Factory::init( NULL );
-	Producer producer( argv[ 1 ] );
-	Consumer consumer;
+	Profile profile;
+	Producer producer( profile, argv[ 1 ] );
+	Consumer consumer( profile );
 	consumer.set( "rescale", "none" );
 	consumer.connect( producer );
 	consumer.run( );

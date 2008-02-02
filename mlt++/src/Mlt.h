@@ -37,6 +37,7 @@
 #include "MltParser.h"
 #include "MltPlaylist.h"
 #include "MltProducer.h"
+#include "MltProfile.h"
 #include "MltProperties.h"
 #include "MltPushConsumer.h"
 #ifndef WIN32

@@ -1,4 +1,4 @@
-#!/bin/env perl
+#!/usr/bin/env perl
 
 # Import required modules
 use mltpp;
@@ -6,8 +6,11 @@ use mltpp;
 # Not sure why the mltpp::Factory.init method fails...
 mltpp::mlt_factory_init( undef );
 
+# Establish the MLT profile
+$profile = new mltpp::Profile( undef );
+
 # Create the producer
-$p = new mltpp::Producer( $ARGV[0] );
+$p = new mltpp::Producer( $profile, $ARGV[0] );
 
 if ( $p->is_valid( ) )
 {
@@ -15,7 +18,7 @@ if ( $p->is_valid( ) )
 	$p->set( "eof", "loop" );
 
 	# Create the consumer
-	$c = new mltpp::FilteredConsumer( "sdl" );
+	$c = new mltpp::FilteredConsumer( $profile, "sdl" );
 
 	# Turn of the default rescaling
 	$c->set( "rescale", "none" );

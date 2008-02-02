@@ -33,6 +33,7 @@ namespace Mlt
 	class Properties;
 	class Filter;
 	class Frame;
+	class Profile;
 
 	class MLTPP_DECLSPEC Service : public Properties
 	{
@@ -50,6 +51,7 @@ namespace Mlt
 			int connect_producer( Service &producer, int index = 0 );
 			Service *consumer( );
 			Service *producer( );
+			Profile *profile( );
 			Frame *get_frame( int index = 0 );
 			mlt_service_type type( );
 			int attach( Filter &filter );
