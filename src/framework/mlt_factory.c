@@ -139,7 +139,10 @@ const char *mlt_factory_prefix( )
 
 char *mlt_environment( const char *name )
 {
-	return mlt_properties_get( global_properties, name );
+	if ( global_properties )
+		return mlt_properties_get( global_properties, name );
+	else
+		return NULL;
 }
 
 /** Set a value in the environment.

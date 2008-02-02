@@ -144,7 +144,7 @@ mlt_profile mlt_profile_load_file( const char *file )
 	}
 
 	// Set MLT_NORMALISATION to appease legacy modules
-	char *profile_name = getenv( "MLT_PROFILE" );
+	char *profile_name = mlt_environment( "MLT_PROFILE" );
 	if ( profile_name )
 	{
 		if ( strstr( profile_name, "_ntsc" ) ||
