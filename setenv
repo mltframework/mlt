@@ -2,6 +2,7 @@
 # Environment variable settings to allow execution without install
 
 export MLT_REPOSITORY=`pwd`/src/modules
+export MLT_DATA=`pwd`/src/modules
 export MLT_PROFILES_PATH=`pwd`/profiles
 
 export LD_LIBRARY_PATH=\

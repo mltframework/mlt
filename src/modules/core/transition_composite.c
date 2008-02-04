@@ -604,7 +604,7 @@ static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int w
 	{
 		// TODO: Clean up quick and dirty compressed/existence check
 		FILE *test;
-		sprintf( temp, "%s/lumas/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+		sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
 		test = fopen( temp, "r" );
 		if ( test == NULL )
 			strcat( temp, ".png" );

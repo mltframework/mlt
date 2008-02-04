@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
 #include "mlt_consumer.h"
 #include "mlt_factory.h"
 #include "mlt_producer.h"

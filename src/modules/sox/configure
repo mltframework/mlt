@@ -31,7 +31,7 @@ then
 			# chop bin
 			soxdir=$(dirname $soxdir)
 			echo "CFLAGS += -DSOX14 -I$soxdir/include" > config.mak
-			echo "LDFLAGS += -L$soxdir/$LIBDIR -lsox" >> config.mak
+			echo "LDFLAGS += -L$soxdir/$LIBDIR -lsox -lsfx" >> config.mak
 		fi
 	fi
 

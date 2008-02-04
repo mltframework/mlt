@@ -32,7 +32,7 @@ else
 	bits=$(uname -m)
 	case $bits in
 	x86_64)
-		export LIBDIR=lib64
+		[ -d /usr/lib/lib64 ] && export LIBDIR=lib64 || export LIBDIR=lib
 		;;
 	*)
 		export LIBDIR=lib

@@ -73,7 +73,7 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 		if ( dictionary == NULL )
 		{
 			char temp[ 1024 ];
-			sprintf( temp, "%s/fezzik.dict", mlt_factory_prefix( ) );
+			sprintf( temp, "%s/fezzik.dict", mlt_environment( "MLT_DATA" ) );
 			dictionary = mlt_properties_load( temp );
 			mlt_factory_register_for_clean_up( dictionary, ( mlt_destructor )mlt_properties_close );
 		}
@@ -132,7 +132,7 @@ static void attach_normalisers( mlt_profile profile, mlt_producer producer )
 	if ( normalisers == NULL )
 	{
 		char temp[ 1024 ];
-		sprintf( temp, "%s/fezzik.ini", mlt_factory_prefix( ) );
+		sprintf( temp, "%s/fezzik.ini", mlt_environment( "MLT_DATA" ) );
 		normalisers = mlt_properties_load( temp );
 		mlt_factory_register_for_clean_up( normalisers, ( mlt_destructor )mlt_properties_close );
 	}

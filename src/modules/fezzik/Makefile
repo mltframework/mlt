@@ -27,9 +27,9 @@ clean:
 		rm -f $(OBJS) $(TARGET) 
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(prefix)/share/mlt/modules"
-	install -m 644 ../fezzik.dict "$(DESTDIR)$(prefix)/share/mlt/modules"
-	install -m 644 ../fezzik.ini "$(DESTDIR)$(prefix)/share/mlt/modules"
+	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -m 644 ../fezzik.dict "$(DESTDIR)$(prefix)/share/mlt"
+	install -m 644 ../fezzik.ini "$(DESTDIR)$(prefix)/share/mlt"
 
 ifneq ($(wildcard .depend),)
 include .depend

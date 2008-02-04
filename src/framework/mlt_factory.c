@@ -18,13 +18,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
 #include "mlt.h"
 #include "mlt_repository.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define PREFIX_LIB LIBDIR "/mlt"
+#define PREFIX_DATA PREFIX "/share/mlt"
 
 /** Singleton repositories
 */
@@ -68,7 +70,7 @@ int mlt_factory_init( const char *prefix )
 
 		// If no directory is specified, default to install directory
 		if ( prefix == NULL )
-			prefix = PREFIX_DATA;
+			prefix = PREFIX_LIB;
 
 		// Store the prefix for later retrieval
 		mlt_prefix = strdup( prefix );
@@ -112,6 +114,7 @@ int mlt_factory_init( const char *prefix )
 		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
+		mlt_properties_set_or_default( global_properties, "MLT_DATA", getenv( "MLT_DATA" ), PREFIX_DATA );
 	}
 
 

@@ -50,9 +50,9 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 
 		// If none is specified, pick up the default for this normalisation
 		if ( profile == NULL )
-			sprintf( temp, "%s/feeds/%s/data_fx.properties", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ) );
+			sprintf( temp, "%s/feeds/%s/data_fx.properties", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ) );
 		else if ( strchr( profile, '%' ) )
-			sprintf( temp, "%s/feeds/%s/%s", mlt_factory_prefix( ), mlt_environment( "MLT_NORMALISATION" ), strchr( profile, '%' ) + 1 );
+			sprintf( temp, "%s/feeds/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( profile, '%' ) + 1 );
 		else
 			strcpy( temp, profile );
 

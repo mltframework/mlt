@@ -61,7 +61,7 @@ INCS = mlt_consumer.h \
 
 SRCS := $(OBJS:.o=.c)
 
-CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\""
+CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\"" -DLIBDIR="\"$(libdir)\""
 
 LDFLAGS += -lm $(LIBDL) -lpthread
 

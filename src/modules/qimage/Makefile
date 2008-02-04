@@ -30,7 +30,7 @@ clean:
 		rm -f $(OBJS) $(TARGET) $(CPPOBJS)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(prefix)/share/mlt/modules"
+	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
 
 ifneq ($(wildcard .depend),)
 include .depend
