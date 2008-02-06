@@ -24,28 +24,9 @@ extern mlt_filter filter_boxblur_init( mlt_profile profile, mlt_service_type typ
 extern mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "framebuffer" ) )
-		return producer_framebuffer_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "boxblur" ) )
-		return filter_boxblur_init( profile, type, id, arg );
-	if ( !strcmp( id, "wave" ) )
-		return filter_wave_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
+	MLT_REGISTER( filter_type, "boxblur", filter_boxblur_init );
+	MLT_REGISTER( filter_type, "wave", filter_wave_init );
+	MLT_REGISTER( producer_type, "framebuffer", producer_framebuffer_init );
 }

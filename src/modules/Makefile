@@ -19,7 +19,6 @@ distclean:
 	done
 
 install:
-	install -m 644 producers.dat filters.dat transitions.dat consumers.dat "$(DESTDIR)$(libdir)/mlt"
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir ] ; \

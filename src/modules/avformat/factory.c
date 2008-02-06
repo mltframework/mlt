@@ -92,17 +92,16 @@ static void avformat_init( )
 	}
 }
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
+static void *create_service( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	avformat_init( );
 	if ( !strcmp( id, "avformat" ) )
-		return producer_avformat_init( profile, arg );
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
-{
-	avformat_init( );
+	{
+		if ( type == producer_type )
+			return producer_avformat_init( profile, arg );
+		else if ( type == consumer_type )
+			return consumer_avformat_init( profile, arg );		
+	}
 	if ( !strcmp( id, "avcolour_space" ) )
 		return filter_avcolour_space_init( arg );
 #ifdef USE_MMX
@@ -114,16 +113,12 @@ void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char 
 	return NULL;
 }
 
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
+MLT_REPOSITORY
 {
-	return NULL;
+	MLT_REGISTER( consumer_type, "avformat", create_service );
+	MLT_REGISTER( producer_type, "avformat", create_service );
+	MLT_REGISTER( filter_type, "avcolour_space", create_service );
+	MLT_REGISTER( filter_type, "avcolor_space", create_service );
+	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
+	MLT_REGISTER( filter_type, "avresample", create_service );
 }
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
-{
-	avformat_init( );
-	if ( !strcmp( id, "avformat" ) )
-		return consumer_avformat_init( profile, arg );
-	return NULL;
-}
-

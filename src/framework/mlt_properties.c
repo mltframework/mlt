@@ -844,7 +844,9 @@ int mlt_properties_dir_list( mlt_properties this, const char *dirname, const cha
 		{
 			sprintf( key, "%d", mlt_properties_count( this ) );
 			snprintf( fullname, 1024, "%s/%s", dirname, de->d_name );
-			if ( de->d_name[ 0 ] != '.' && mlt_fnmatch( pattern, de->d_name ) )
+			if ( pattern == NULL )
+				mlt_properties_set( this, key, fullname );
+			else if ( de->d_name[ 0 ] != '.' && mlt_fnmatch( pattern, de->d_name ) )
 				mlt_properties_set( this, key, fullname );
 			de = readdir( dir );
 		}

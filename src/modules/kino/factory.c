@@ -23,25 +23,7 @@
 
 extern mlt_producer producer_kino_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "kino" ) )
-		return producer_kino_init( profile, type, id, arg );
-	return NULL;
+	MLT_REGISTER( producer_type, "kino", producer_kino_init );
 }
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-

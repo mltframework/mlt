@@ -23,22 +23,11 @@ extern mlt_filter filter_crop_detect_init( mlt_profile profile, mlt_service_type
 extern mlt_filter filter_autotrack_rectangle_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_slowmotion_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "motion_est" ) )
-		return filter_motion_est_init( profile, type, id, arg );
-	if ( !strcmp( id, "vismv" ) )
-		return filter_vismv_init( profile, type, id, arg );
-	if ( !strcmp( id, "crop_detect" ) )
-		return filter_crop_detect_init( profile, type, id, arg );
-	if ( !strcmp( id, "autotrack_rectangle" ) )
-		return filter_autotrack_rectangle_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "slowmotion" ) )
-		return producer_slowmotion_init( profile, type, id, arg );
-	return NULL;
+	MLT_REGISTER( filter_type, "motion_est", filter_motion_est_init );
+	MLT_REGISTER( filter_type, "vismv", filter_vismv_init );
+	MLT_REGISTER( filter_type, "crop_detect", filter_crop_detect_init );
+	MLT_REGISTER( filter_type, "autotrack_rectangle", filter_autotrack_rectangle_init );
+	MLT_REGISTER( producer_type, "slowmotion", producer_slowmotion_init );
 }

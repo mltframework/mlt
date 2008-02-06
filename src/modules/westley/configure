@@ -6,14 +6,11 @@ then
 	which xml2-config > /dev/null 2>&1
 	disable_xml2=$?
 
-	if [ "$disable_xml2" = "0" ]
+	if [ "$disable_xml2" != "0" ]
 	then
-		echo "westley			libmltwestley$LIBSUF" >> ../producers.dat
-		echo "westley-xml		libmltwestley$LIBSUF" >> ../producers.dat
-		echo "westley			libmltwestley$LIBSUF" >> ../consumers.dat
-	else
 		echo "- xml2 not found: disabling westley modules"
 		touch ../disable-westley
 	fi
+	exit 0
 fi
 

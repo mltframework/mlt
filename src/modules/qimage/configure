@@ -71,7 +71,6 @@ else
 			echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
 			echo QTLIBS=-L$qimage_libdir/lib -lqt-mt >> config.mak
 		fi
-		echo qimage		libmltqimage$LIBSUF >> ../producers.dat
 	else
 		echo "qimage: QT environment not found - disabling"
 		touch ../disable-qimage

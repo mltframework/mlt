@@ -10,18 +10,14 @@ then
 	then
 		echo > config.mak
 		image=`sdl-config --prefix`/include/SDL/SDL_image.h
-		echo "sdl				libmltsdl$LIBSUF" >> ../consumers.dat
-		echo "sdl_preview		libmltsdl$LIBSUF" >> ../consumers.dat
-		echo "sdl_still			libmltsdl$LIBSUF" >> ../consumers.dat
 		if [ -f "$image" ]
 		then
-			echo "sdl_image			libmltsdl$LIBSUF" >> ../producers.dat
 			echo "WITH_SDL_IMAGE=1" >> config.mak
 		fi
 	else
 		echo "- sdl development libs not found: disabling"
 		touch ../disable-sdl
 	fi
-
+	exit 0
 fi
 

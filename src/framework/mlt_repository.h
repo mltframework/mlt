@@ -29,10 +29,17 @@
 
 typedef struct mlt_repository_s *mlt_repository;
 
+/** This macro can be used to register services if the function is declared as 
+*   void mlt_register( mlt_repository )
+*/
+#define MLT_REPOSITORY void mlt_register( mlt_repository repository )
+#define MLT_REGISTER( type, service, symbol  ) ( mlt_repository_register( repository, (type), (service), (symbol) ) )
+
 /** Public functions.
 */
 
-extern mlt_repository mlt_repository_init( mlt_properties object_list, const char *prefix, const char *file, const char *symbol );
+extern mlt_repository mlt_repository_init( const char *prefix );
+extern void mlt_repository_register( mlt_repository self, mlt_service_type service_type, const char *service, void *symbol );
 extern void *mlt_repository_fetch( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, void *input );
 extern void mlt_repository_close( mlt_repository self );
 

@@ -29,33 +29,12 @@ extern mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_
 extern mlt_producer producer_sdl_image_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #endif
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
+	MLT_REGISTER( consumer_type, "sdl", consumer_sdl_init );
+	MLT_REGISTER( consumer_type, "sdl_preview", consumer_sdl_preview_init );
+	MLT_REGISTER( consumer_type, "sdl_still", consumer_sdl_still_init );
 #ifdef WITH_SDL_IMAGE
-	if ( !strcmp( id, "sdl_image" ) )
-		return producer_sdl_image_init( profile, type, id, arg );
+	MLT_REGISTER( producer_type, "sdl_image", producer_sdl_image_init );
 #endif
-	return NULL;
 }
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "sdl" ) )
-		return consumer_sdl_init( profile, type, id, arg );
-	if ( !strcmp( id, "sdl_still" ) )
-		return consumer_sdl_still_init( profile, type, id, arg );
-	if ( !strcmp( id, "sdl_preview" ) )
-		return consumer_sdl_preview_init( profile, type, id, arg );
-	return NULL;
-}
-

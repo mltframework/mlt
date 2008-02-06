@@ -24,27 +24,8 @@
 extern mlt_producer producer_fezzik_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "fezzik" ) )
-		return producer_fezzik_init( profile, type, id, arg );
-	if ( !strcmp( id, "hold" ) )
-		return producer_hold_init( profile, type, id, arg );
-	return NULL;
+	MLT_REGISTER( producer_type, "fezzik", producer_fezzik_init );
+	MLT_REGISTER( producer_type, "hold", producer_hold_init );
 }
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-

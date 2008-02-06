@@ -15,15 +15,15 @@ then
 		if [ $disable_sox -eq 0 ]
 		then
 			LIBDIR=lib
-			#bits=$(uname -m)
-			#case $bits in
-			#x86_64)
-			#	export LIBDIR=lib64
-			#	;;
-			#*)
-			#	export LIBDIR=lib
-			#	;;
-			#esac
+			bits=$(uname -m)
+			case $bits in
+			x86_64)
+				[ -d /usr/lib/lib64 ] && export LIBDIR=lib64 || export LIBDIR=lib
+				;;
+			*)
+				export LIBDIR=lib
+				;;
+			esac
 
 			sox=$(which sox)
 			# chop sox
@@ -35,12 +35,11 @@ then
 		fi
 	fi
 
-	if [ "$disable_sox" = "0" ]
+	if [ "$disable_sox" != "0" ]
 	then
-		echo "sox		libmltsox$LIBSUF" >> ../filters.dat
-	else
 		echo "- sox not found: disabling"
 		touch ../disable-sox
 	fi
 
+	exit 0
 fi

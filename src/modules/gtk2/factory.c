@@ -46,7 +46,7 @@ static void initialise( )
 	}
 }
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+void *create_service( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	initialise( );
 
@@ -60,29 +60,10 @@ void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const cha
 		return producer_pango_init( arg );
 #endif
 
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	initialise( );
-
 #ifdef USE_PIXBUF
 	if ( !strcmp( id, "gtkrescale" ) )
 		return filter_rescale_init( profile, arg );
 #endif
-
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
-{
-	initialise( );
 
 #ifdef USE_GTK2
 	if ( !strcmp( id, "gtk2_preview" ) )
@@ -92,3 +73,10 @@ void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const cha
 	return NULL;
 }
 
+MLT_REPOSITORY
+{
+	MLT_REGISTER( consumer_type, "gtk2_preview", create_service );
+	MLT_REGISTER( filter_type, "gtkrescale", create_service );
+	MLT_REGISTER( producer_type, "pango", create_service );
+	MLT_REGISTER( producer_type, "pixbuf", create_service );
+}

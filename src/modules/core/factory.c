@@ -45,70 +45,31 @@ extern mlt_transition transition_luma_init( mlt_profile profile, mlt_service_typ
 extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #include "transition_region.h"
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "color" ) )
-		return producer_colour_init( profile, type, id, arg );
-	if ( !strcmp( id, "colour" ) )
-		return producer_colour_init( profile, type, id, arg );
-	if ( !strcmp( id, "noise" ) )
-		return producer_noise_init( profile, type, id, arg );
-	if ( !strcmp( id, "ppm" ) )
-		return producer_ppm_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
-{
-	if ( !strcmp( id, "brightness" ) )
-		return filter_brightness_init( profile, type, id, arg );
-	if ( !strcmp( id, "channelcopy" ) )
-		return filter_channelcopy_init( profile, type, id, arg );
-	if ( !strcmp( id, "data_feed" ) )
-		return filter_data_feed_init( profile, type, id, arg );
-	if ( !strcmp( id, "data_show" ) )
-		return filter_data_show_init( profile, type, id, arg );
-	if ( !strcmp( id, "gamma" ) )
-		return filter_gamma_init( profile, type, id, arg );
-	if ( !strcmp( id, "greyscale" ) )
-		return filter_greyscale_init( profile, type, id, arg );
-	if ( !strcmp( id, "luma" ) )
-		return filter_luma_init( profile, type, id, arg );
-	if ( !strcmp( id, "mirror" ) )
-		return filter_mirror_init( profile, type, id, arg );
-	if ( !strcmp( id, "mono" ) )
-		return filter_mono_init( profile, type, id, arg );
-	if ( !strcmp( id, "obscure" ) )
-		return filter_obscure_init( profile, type, id, arg );
-	if ( !strcmp( id, "region" ) )
-		return filter_region_init( profile, type, id, arg );
-	if ( !strcmp( id, "rescale" ) )
-		return filter_rescale_init( profile, type, id, arg );
-	if ( !strcmp( id, "resize" ) )
-		return filter_resize_init( profile, type, id, arg );
-	if ( !strcmp( id, "transition" ) )
-		return filter_transition_init( profile, type, id, arg );
-	if ( !strcmp( id, "watermark" ) )
-		return filter_watermark_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
-{
-	if ( !strcmp( id, "composite" ) )
-		return transition_composite_init( profile, type, id, arg );
-	if ( !strcmp( id, "luma" ) )
-		return transition_luma_init( profile, type, id, arg );
-	if ( !strcmp( id, "mix" ) )
-		return transition_mix_init( profile, type, id, arg );
-	if ( !strcmp( id, "region" ) )
-		return transition_region_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
-{
-	if ( !strcmp( id, "null" ) )
-		return consumer_null_init( profile, type, id, arg );
-	return NULL;
+	MLT_REGISTER( consumer_type, "null", consumer_null_init );
+	MLT_REGISTER( filter_type, "brightness", filter_brightness_init );
+	MLT_REGISTER( filter_type, "channelcopy", filter_channelcopy_init );
+	MLT_REGISTER( filter_type, "data_feed", filter_data_feed_init );
+	MLT_REGISTER( filter_type, "data_show", filter_data_show_init );
+	MLT_REGISTER( filter_type, "gamma", filter_gamma_init );
+	MLT_REGISTER( filter_type, "greyscale", filter_greyscale_init );
+	MLT_REGISTER( filter_type, "grayscale", filter_greyscale_init );
+	MLT_REGISTER( filter_type, "luma", filter_luma_init );
+	MLT_REGISTER( filter_type, "mirror", filter_mirror_init );
+	MLT_REGISTER( filter_type, "mono", filter_mono_init );
+	MLT_REGISTER( filter_type, "obscure", filter_obscure_init );
+	MLT_REGISTER( filter_type, "region", filter_region_init );
+	MLT_REGISTER( filter_type, "rescale", filter_rescale_init );
+	MLT_REGISTER( filter_type, "resize", filter_resize_init );
+	MLT_REGISTER( filter_type, "transition", filter_transition_init );
+	MLT_REGISTER( filter_type, "watermark", filter_watermark_init );
+	MLT_REGISTER( producer_type, "color", producer_colour_init );
+	MLT_REGISTER( producer_type, "colour", producer_colour_init );
+	MLT_REGISTER( producer_type, "noise", producer_noise_init );
+	MLT_REGISTER( producer_type, "ppm", producer_ppm_init );
+	MLT_REGISTER( transition_type, "composite", transition_composite_init );
+	MLT_REGISTER( transition_type, "luma", transition_luma_init );
+	MLT_REGISTER( transition_type, "mix", transition_mix_init );
+	MLT_REGISTER( transition_type, "region", transition_region_init );
 }

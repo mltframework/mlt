@@ -23,24 +23,7 @@
 
 extern mlt_filter filter_volume_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "volume" ) )
-		return filter_volume_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
+	MLT_REGISTER( filter_type, "volume", filter_volume_init );
 }

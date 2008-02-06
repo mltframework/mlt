@@ -27,32 +27,11 @@ extern mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, 
 extern mlt_filter filter_shape_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "pgm" ) )
-		return producer_pgm_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "chroma" ) )
-		return filter_chroma_init( profile, type, id, arg );
-	if ( !strcmp( id, "chroma_hold" ) )
-		return filter_chroma_hold_init( profile, type, id, arg );
-	if ( !strcmp( id, "threshold" ) )
-		return filter_mono_init( profile, type, id, arg );
-	if ( !strcmp( id, "shape" ) )
-		return filter_shape_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
+	MLT_REGISTER( filter_type, "chroma", filter_chroma_init );
+	MLT_REGISTER( filter_type, "chroma_hold", filter_chroma_hold_init );
+	MLT_REGISTER( filter_type, "threshold", filter_mono_init );
+	MLT_REGISTER( filter_type, "shape", filter_shape_init );
+	MLT_REGISTER( producer_type, "pgm", producer_pgm_init );
 }

@@ -17,8 +17,7 @@ then
 	[ "$libdv_disabled" = "0" ] && echo "HAVE_LIBDV=1" >> config.mak
 
 	[ "$lqt_disabled" != "0" ] && echo "- libquicktime not found: only enabling dv avi support"
-	[ "$libdv_disabled" != 0 -a "$lqt_disabled" = "0" ] && echo "- libdv not found: mov dv may not have audio"
-
-	echo "kino			libmltkino$LIBSUF" >> ../producers.dat
+	[ "$libdv_disabled" != "0" -a "$lqt_disabled" = "0" ] && echo "- libdv not found: mov dv may not have audio"
+	
+	exit 0
 fi
-

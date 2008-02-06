@@ -25,31 +25,10 @@ extern mlt_filter filter_grain_init( mlt_profile profile, mlt_service_type type,
 extern mlt_filter filter_lines_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_oldfilm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "oldfilm" ) )
-		return filter_oldfilm_init( profile, type, id, arg );
-	if ( !strcmp( id, "dust" ) )
-		return filter_dust_init( profile, type, id, arg );
-	if ( !strcmp( id, "lines" ) )
-		return filter_lines_init( profile, type, id, arg );
-	if ( !strcmp( id, "grain" ) )
-		return filter_grain_init( profile, type, id, arg );
-
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
+	MLT_REGISTER( filter_type, "oldfilm", filter_oldfilm_init );
+	MLT_REGISTER( filter_type, "dust", filter_dust_init );
+	MLT_REGISTER( filter_type, "lines", filter_lines_init );
+	MLT_REGISTER( filter_type, "grain", filter_grain_init );
 }

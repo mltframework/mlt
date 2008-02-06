@@ -1,8 +1,0 @@
-#!/bin/sh
-
-if [ "$help" != "1" ]
-then
-	echo "boxblur		libmltkdenlive$LIBSUF" >> ../filters.dat
-	echo "wave		libmltkdenlive$LIBSUF" >> ../filters.dat
-	echo "framebuffer	libmltkdenlive$LIBSUF" >> ../producers.dat
-fi

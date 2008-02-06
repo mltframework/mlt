@@ -24,29 +24,9 @@
 extern mlt_consumer consumer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "westley" ) )
-		return producer_westley_init( profile, type, id, arg );
-	if ( !strcmp( id, "westley-xml" ) )
-		return producer_westley_init( profile, type, id, arg );
-	return NULL;
+	MLT_REGISTER( consumer_type, "westley", consumer_westley_init );
+	MLT_REGISTER( producer_type, "westley", producer_westley_init );
+	MLT_REGISTER( producer_type, "westley-xml", producer_westley_init );
 }
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "westley" ) )
-		return consumer_westley_init( profile, type, id, arg );
-	return NULL;
-}
-

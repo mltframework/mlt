@@ -141,19 +141,5 @@ else
 	echo "EXTRA_LIBS=$extra_libs" >> config.mak
 	echo "AVFORMAT_SUFFIX=$avformat_suffix" >> config.mak
 
-cat << EOF >> ../producers.dat
-avformat		libmltavformat$LIBSUF
-EOF
-
-cat << EOF >> ../filters.dat
-avdeinterlace	libmltavformat$LIBSUF
-avresample		libmltavformat$LIBSUF
-avcolour_space	libmltavformat$LIBSUF
-EOF
-
-cat << EOF >> ../consumers.dat
-avformat		libmltavformat$LIBSUF
-EOF
-
 fi
 

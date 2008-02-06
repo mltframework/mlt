@@ -27,32 +27,11 @@ extern mlt_filter filter_invert_init( mlt_profile profile, mlt_service_type type
 extern mlt_filter filter_sepia_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	return NULL;
-}
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "affine" ) )
-		return filter_affine_init( profile, type, id, arg );
-	if ( !strcmp( id, "charcoal" ) )
-		return filter_charcoal_init( profile, type, id, arg );
-	if ( !strcmp( id, "invert" ) )
-		return filter_invert_init( profile, type, id, arg );
-	if ( !strcmp( id, "sepia" ) )
-		return filter_sepia_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "affine" ) )
-		return transition_affine_init( profile, type, id, arg );
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
+	MLT_REGISTER( filter_type, "affine", filter_affine_init );
+	MLT_REGISTER( filter_type, "charcoal", filter_charcoal_init );
+	MLT_REGISTER( filter_type, "invert", filter_invert_init );
+	MLT_REGISTER( filter_type, "sepia", filter_sepia_init );
+	MLT_REGISTER( transition_type, "affine", transition_affine_init );
 }

@@ -21,30 +21,11 @@
 #include <string.h>
 #include <framework/mlt.h>
 
-extern mlt_producer producer_inigo_file_init( mlt_profile profile, char *file );
-extern mlt_producer producer_inigo_init( mlt_profile profile, char **argv );
+extern mlt_producer producer_inigo_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
+MLT_REPOSITORY
 {
-	if ( !strcmp( id, "inigo_file" ) )
-		return producer_inigo_file_init( profile, arg );
-	if ( !strcmp( id, "inigo" ) )
-		return producer_inigo_init( profile, arg );
-	return NULL;
+	MLT_REGISTER( producer_type, "inigo", producer_inigo_init );
+	MLT_REGISTER( producer_type, "inigo_file", producer_inigo_file_init );
 }
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-

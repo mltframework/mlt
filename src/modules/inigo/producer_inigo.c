@@ -24,9 +24,9 @@
 
 #include <framework/mlt.h>
 
-mlt_producer producer_inigo_init( mlt_profile profile, char **argv );
+mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 
-mlt_producer producer_inigo_file_init( mlt_profile profile, char *file )
+mlt_producer producer_inigo_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
 {
 	FILE *input = fopen( file, "r" );
 	char **args = calloc( sizeof( char * ), 1000 );
@@ -43,7 +43,7 @@ mlt_producer producer_inigo_file_init( mlt_profile profile, char *file )
 		}
 	}
 
-	mlt_producer result = producer_inigo_init( profile, args );
+	mlt_producer result = producer_inigo_init( profile, type, id, args );
 
 	if ( result != NULL )
 	{
@@ -120,7 +120,7 @@ static mlt_transition create_transition( mlt_profile profile, mlt_field field, c
 	return transition;
 }
 
-mlt_producer producer_inigo_init( mlt_profile profile, char **argv )
+mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv )
 {
 	int i;
 	int track = 0;

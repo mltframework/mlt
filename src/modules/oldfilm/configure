@@ -1,9 +1,0 @@
-#!/bin/sh
-
-if [ "$help" != "1" ]
-then
-	echo "grain		libmltoldfilm$LIBSUF" >> ../filters.dat
-	echo "oldfilm		libmltoldfilm$LIBSUF" >> ../filters.dat
-	echo "lines		libmltoldfilm$LIBSUF" >> ../filters.dat
-	echo "dust		libmltoldfilm$LIBSUF" >> ../filters.dat
-fi

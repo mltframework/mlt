@@ -23,25 +23,7 @@
 
 extern mlt_consumer consumer_valerie_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
-void *mlt_create_producer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+MLT_REPOSITORY
 {
-	return NULL;
+	MLT_REGISTER( consumer_type, "valerie", consumer_valerie_init );
 }
-
-void *mlt_create_filter( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_transition( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
-void *mlt_create_consumer( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	if ( !strcmp( id, "valerie" ) )
-		return consumer_valerie_init( profile, type, id, arg );
-	return NULL;
-}
-

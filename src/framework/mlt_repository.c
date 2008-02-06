@@ -28,182 +28,119 @@
 
 struct mlt_repository_s
 {
-	struct mlt_properties_s parent;
+	struct mlt_properties_s parent; // a list of object files
+	mlt_properties consumers; // lists of entry points
+	mlt_properties filters;
+	mlt_properties producers;
+	mlt_properties transitions;
 };
 
-static char *construct_full_file( char *output, const char *prefix, const char *file )
+mlt_repository mlt_repository_init( const char *prefix )
 {
-	strcpy( output, prefix );
-	if ( prefix[ strlen( prefix ) - 1 ] != '/' )
-		strcat( output, "/" );
-	strcat( output, file );
-	return output;
-}
-
-static char *chomp( char *input )
-{
-	if ( input[ strlen( input ) - 1 ] == '\n' )
-		input[ strlen( input ) - 1 ] = '\0';
-	return input;
-}
-
-static mlt_properties construct_object( const char *prefix, const char *id )
-{
-	mlt_properties output = mlt_properties_new( );
-	mlt_properties_set( output, "prefix", prefix );
-	mlt_properties_set( output, "id", id );
-	return output;
-}
-
-static mlt_properties construct_service( mlt_properties object, const char *id )
-{
-	mlt_properties output = mlt_properties_new( );
-	mlt_properties_set_data( output, "object", object, 0, NULL, NULL );
-	mlt_properties_set( output, "id", id );
-	return output;
-}
-
-static void *construct_instance( mlt_properties service_properties, mlt_profile profile, mlt_service_type type, const char *symbol, void *input )
-{
-	// Extract the service
-	char *service = mlt_properties_get( service_properties, "id" );
-
-	// Get the object properties
-	void *object_properties = mlt_properties_get_data( service_properties, "object", NULL );
-
-	// Get the dlopen'd object
-	void *object = mlt_properties_get_data( object_properties, "dlopen", NULL );
-
-	// Get the dlsym'd symbol
-	void *( *symbol_ptr )( mlt_profile, mlt_service_type, const char *, void * ) = mlt_properties_get_data( object_properties, symbol, NULL );
-
-	// Check that we have object and open if we don't
-	if ( object == NULL )
-	{
-		char full_file[ 512 ];
-
-		// Get the prefix and id of the shared object
-		char *prefix = mlt_properties_get( object_properties, "prefix" );
-		char *file = mlt_properties_get( object_properties, "id" );
-		int flags = RTLD_NOW;
-
-		// Very temporary hack to allow the quicktime plugins to work
-		// TODO: extend repository to allow this to be used on a case by case basis
-		if ( !strcmp( service, "kino" ) )
-			flags |= RTLD_GLOBAL;
-
-		// Construct the full file
-		construct_full_file( full_file, prefix, file );
-
-		// Open the shared object
-		object = dlopen( full_file, flags );
-		if ( object != NULL )
-		{
-			// Set it on the properties
-			mlt_properties_set_data( object_properties, "dlopen", object, 0, ( mlt_destructor )dlclose, NULL );
-		}
-		else
-		{
-			fprintf( stderr, "Failed to load plugin: %s\n", dlerror() );
-		}
-	}
-
-	// Now check if we have this symbol pointer
-	if ( object != NULL && symbol_ptr == NULL )
-	{
-		// Construct it now
-		symbol_ptr = dlsym( object, symbol );
-
-		// Set it on the properties
-		mlt_properties_set_data( object_properties, "dlsym", symbol_ptr, 0, NULL, NULL );
-	}
-
-	// Construct the service
-	return symbol_ptr != NULL ? symbol_ptr( profile, type, service, input ) : NULL;
-}
-
-mlt_repository mlt_repository_init( mlt_properties object_list, const char *prefix, const char *data, const char *symbol )
-{
-	char full_file[ 512 ];
-	FILE *file;
-
 	// Construct the repository
 	mlt_repository this = calloc( sizeof( struct mlt_repository_s ), 1 );
 	mlt_properties_init( &this->parent, this );
-
-	// Add the symbol to THIS repository properties.
-	mlt_properties_set( &this->parent, "_symbol", symbol );
-
-	// Construct full file
-	construct_full_file( full_file, prefix, data );
-	strcat( full_file, ".dat" );
-
-	// Open the file
-	file = fopen( full_file, "r" );
-
-	// Parse the contents
-	if ( file != NULL )
+	this->consumers = mlt_properties_new();
+	this->filters = mlt_properties_new();
+	this->producers = mlt_properties_new();
+	this->transitions = mlt_properties_new();
+	
+	// Get the directory list
+	mlt_properties dir = mlt_properties_new();
+	int count = mlt_properties_dir_list( dir, prefix, NULL, 0 );
+	int i;
+	
+	// Iterate over files
+	for ( i = 0; i < count; i++ )
 	{
-		char full[ 512 ];
-		char service[ 256 ];
-		char object[ 256 ];
+		int flags = RTLD_NOW;
+		const char *object_name = mlt_properties_get_value( dir, i);
 
-		while( fgets( full, 512, file ) )
+		// Very temporary hack to allow the quicktime plugins to work
+		// TODO: extend repository to allow this to be used on a case by case basis
+		if ( strstr( object_name, "libmltkino" ) )
+			flags |= RTLD_GLOBAL;
+
+		// Open the shared object
+		void *object = dlopen( object_name, flags );		
+		if ( object != NULL )
 		{
-			chomp( full );
-
-			if ( full[ 0 ] != '#' && full[ 0 ] != '\0' && sscanf( full, "%s %s", service, object ) == 2 )
+			// Get the registration function
+			int ( *symbol_ptr )( mlt_repository ) = dlsym( object, "mlt_register" );
+			
+			// Call the registration function
+			if ( symbol_ptr != NULL )
 			{
-				// Get the object properties first
-				mlt_properties object_properties = mlt_properties_get_data( object_list, object, NULL );
-
-				// If their are no properties, create them now
-				if ( object_properties == NULL )
-				{
-					// Construct the object
-					object_properties = construct_object( prefix, object );
-
-					// Add it to the object list
-					mlt_properties_set_data( object_list, object, object_properties, 0, ( mlt_destructor )mlt_properties_close, NULL );
-				}
-
-				// Now construct a property for the service
-				mlt_properties service_properties = construct_service( object_properties, service );
-
-				// Add it to the repository
-				mlt_properties_set_data( &this->parent, service, service_properties, 0, ( mlt_destructor )mlt_properties_close, NULL );
+				symbol_ptr( this );
+				
+				// Register the object file for closure
+				mlt_properties_set_data( &this->parent, object_name, object, 0, ( mlt_destructor )dlclose, NULL );
+			}
+			else
+			{
+				dlclose( object );
 			}
 		}
-
-		// Close the file
-		fclose( file );
 	}
-
+	
 	return this;
+}
+
+void mlt_repository_register( mlt_repository this, mlt_service_type service_type, const char *service, void *symbol )
+{
+	// Add the entry point to the corresponding service list
+	switch ( service_type )
+	{
+		case consumer_type:
+			mlt_properties_set_data( this->consumers, service, symbol, 0, NULL, NULL );
+			break;
+		case filter_type:
+			mlt_properties_set_data( this->filters, service, symbol, 0, NULL, NULL );
+			break;
+		case producer_type:
+			mlt_properties_set_data( this->producers, service, symbol, 0, NULL, NULL );
+			break;
+		case transition_type:
+			mlt_properties_set_data( this->transitions, service, symbol, 0, NULL, NULL );
+			break;
+		default:
+			break;
+	}
 }
 
 void *mlt_repository_fetch( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
 {
-	// Get the service properties
-	mlt_properties service_properties = mlt_properties_get_data( &this->parent, service, NULL );
+	void *( *symbol_ptr )( mlt_profile, mlt_service_type, const char *, void * ) = NULL;
 
-	// If the service exists
-	if ( service_properties != NULL )
+	// Get the entry point from the corresponding service list
+	switch ( type )
 	{
-		// Get the symbol that is used to generate this service
-		char *symbol = mlt_properties_get( &this->parent, "_symbol" );
-
-		// Now get an instance of the service
-		return construct_instance( service_properties, profile, type, symbol, input );
+		case consumer_type:
+			symbol_ptr = mlt_properties_get_data( this->consumers, service, NULL );
+			break;
+		case filter_type:
+			symbol_ptr = mlt_properties_get_data( this->filters, service, NULL );
+			break;
+		case producer_type:
+			symbol_ptr = mlt_properties_get_data( this->producers, service, NULL );
+			break;
+		case transition_type:
+			symbol_ptr = mlt_properties_get_data( this->transitions, service, NULL );
+			break;
+		default:
+			break;
 	}
-
-	return NULL;
+	
+	// Construct the service
+	return ( symbol_ptr != NULL ) ? symbol_ptr( profile, type, service, input ) : NULL;
 }
 
 void mlt_repository_close( mlt_repository this )
 {
+	mlt_properties_close( this->consumers );
+	mlt_properties_close( this->filters );
+	mlt_properties_close( this->producers );
+	mlt_properties_close( this->transitions );
 	mlt_properties_close( &this->parent );
 	free( this );
 }
-
-
