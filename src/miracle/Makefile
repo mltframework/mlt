@@ -5,11 +5,13 @@ TARGET = miracle
 ifneq ($(targetos), Darwin)
 LIBNAME = libmiracle$(LIBSUF)
 LIBTARGET = $(LIBNAME).$(version)
-SHFLAGS += -Wl,-soname,$(LIBTARGET)
+LIBSONAME = $(LIBNAME).$(soversion)
+SHFLAGS += -Wl,-soname,$(LIBSONAME)
 else
 LIBNAME = libmiracle$(LIBSUF)
 LIBTARGET = libmiracle.$(version)$(LIBSUF)
-SHFLAGS += -install_name $(libdir)/$(LIBTARGET)
+LIBSONAME = libmiracle.$(soversion)$(LIBSUF)
+SHFLAGS += -install_name $(libdir)/$(LIBSONAME) -current_version $(version) -compatibility_version $(soversion)
 endif
 
 APP_OBJS = miracle.o
@@ -42,6 +44,7 @@ $(TARGET): 	$(APP_OBJS) $(LIBTARGET)
 $(LIBTARGET):	$(LIB_OBJS)
 			$(CC) $(SHFLAGS) -o $@ $(LIB_OBJS) $(LDFLAGS)
 			ln -sf $(LIBTARGET) $(LIBNAME)
+			ln -sf $(LIBTARGET) $(LIBSONAME)
 
 depend:		$(SRCS)
 			$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -56,6 +59,7 @@ install:	all
 	install -d "$(DESTDIR)$(bindir)"
 	install -c -s -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
 	install -m 755 $(LIBTARGET) $(DESTDIR)$(libdir)
+	ln -sf $(LIBTARGET) $(DESTDIR)$(libdir)/$(LIBSONAME)
 	ln -sf $(LIBTARGET) $(DESTDIR)$(libdir)/$(LIBNAME)
 	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/miracle"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/miracle"
@@ -63,6 +67,7 @@ install:	all
 uninstall:
 	rm -f "$(DESTDIR)$(bindir)/$(TARGET)"
 	rm -f "$(DESTDIR)$(libdir)/$(LIBTARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(LIBSONAME)"
 	rm -f "$(DESTDIR)$(libdir)/$(LIBNAME)"
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/miracle"
 

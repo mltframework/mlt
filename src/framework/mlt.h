@@ -21,6 +21,9 @@
 #ifndef _MLT_H_
 #define _MLT_H_
 
+#define LIBMLT_VERSION_INT ((0<<16)+(2<<8)+5)
+#define LIBMLT_VERSION     0.2.5
+
 #ifdef __cplusplus
 extern "C"
 {

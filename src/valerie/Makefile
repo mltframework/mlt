@@ -3,11 +3,13 @@ include ../../config.mak
 ifneq ($(targetos), Darwin)
 NAME = libvalerie$(LIBSUF)
 TARGET = $(NAME).$(version)
-SHFLAGS += -Wl,-soname,$(TARGET)
+SONAME = $(NAME).$(soversion)
+SHFLAGS += -Wl,-soname,$(SONAME)
 else
 NAME = libvalerie$(LIBSUF)
 TARGET = libvalerie.$(version)$(LIBSUF)
-SHFLAGS += -install_name $(libdir)/$(TARGET)
+SONAME = libmlt.$(soversion)$(LIBSUF)
+SHFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
 endif
 
 OBJS = valerie.o \
@@ -40,6 +42,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 		ln -sf $(TARGET) $(NAME)
+		ln -sf $(TARGET) $(SONAME)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -52,12 +55,14 @@ clean:
 
 install: 	all
 	install -m 755 $(TARGET) $(DESTDIR)$(libdir)
+	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME)
 	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME)
 	mkdir -p "$(DESTDIR)$(prefix)/include/mlt/valerie"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/valerie"
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(SONAME)"
 	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/valerie"
 

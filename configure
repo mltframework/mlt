@@ -1,5 +1,8 @@
 #!/bin/bash
 
+export version=0.2.5
+export soversion=0
+
 show_help()
 {
 	cat << EOF
@@ -38,6 +41,7 @@ build_config()
 {
 	(
 		echo "version=$version"
+		echo "soversion=$soversion"
 		echo "prefix=$prefix"
 		echo "libdir=$libdir"
 		echo "bindir=$prefix/bin"
@@ -115,7 +119,6 @@ export build_dir=`dirname $0`
 export prefix=/usr/local
 export libdir=""
 export help=0
-export version=0.2.5
 export debug=true
 export mmx=true
 export gpl=false

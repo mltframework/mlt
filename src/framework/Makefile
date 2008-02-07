@@ -6,11 +6,13 @@ TARGET = $(NAME).$(version)
 ifneq ($(targetos), Darwin)
 NAME = libmlt$(LIBSUF)
 TARGET = $(NAME).$(version)
-SHFLAGS += -Wl,-soname,$(TARGET)
+SONAME = $(NAME).$(soversion)
+SHFLAGS += -Wl,-soname,$(SONAME)
 else
 NAME = libmlt$(LIBSUF)
 TARGET = libmlt.$(version)$(LIBSUF)
-SHFLAGS += -install_name $(libdir)/$(TARGET)
+SONAME = libmlt.$(soversion)$(LIBSUF)
+SHFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
 endif
 
 OBJS = mlt_frame.o \
@@ -70,6 +72,7 @@ all:	$(TARGET)
 $(TARGET): $(OBJS)
 		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 		ln -sf $(TARGET) $(NAME)
+		ln -sf $(TARGET) $(SONAME)
 
 depend:	$(SRCS)
 	$(CC) -MM $(CFLAGS) $^ 1>.depend
@@ -83,12 +86,14 @@ clean:
 install:
 	install -d $(DESTDIR)$(libdir)
 	install -m 755 $(TARGET) $(DESTDIR)$(libdir)
+	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME)
 	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME)
 	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
+	rm -f "$(DESTDIR)$(libdir)/$(SONAME)"
 	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
 
