@@ -7,13 +7,13 @@ require 'mltpp'
 Mltpp::Factory::init
 
 # Establish the mlt profile
-profile = Mltpp::Profile.new
+profile = Mltpp::Profile.new( "quarter_pal" )
 
 # Get and check the argument
 file = ARGV.shift
 name = ARGV.shift
 size = ARGV.shift
-size = "192x144" if size.nil?
+size = "176x144" if size.nil?
 raise "Usage: thumbs.rb file name [ size ]" if file.nil? || name.nil?
 
 # Create the producer
@@ -27,7 +27,7 @@ playlist = Mltpp::Playlist.new( )
 out = producer.get_int( "out" );
 
 # Calculate position of frames
-[ 0, 0.25, 0.5, 0.75, 1 ].each { |x| playlist.append( producer, x*out, x*out ) }
+[ 0, 0.25, 0.5, 0.75, 1 ].each { |x| playlist.append( producer, Integer(x*out), Integer(x*out) ) }
 
 # Create the thumb nail generator
 generator = Mltpp::Consumer.new( profile, "avformat", "#{name}%d.jpg" )
