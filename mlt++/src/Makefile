@@ -4,11 +4,13 @@ INSTALL = install
 ifneq ($(targetos), Darwin)
 NAME = libmlt++$(LIBSUF)
 TARGET = $(NAME).$(version)
-LIBFLAGS += -Wl,-soname,$(TARGET)
+SONAME = $(NAME).$(soversion)
+LIBFLAGS += -Wl,-soname,$(SONAME)
 else
 NAME = libmlt++$(LIBSUF)
 TARGET = libmlt++.$(version)$(LIBSUF)
-LIBFLAGS += -install_name $(libdir)/$(TARGET)
+SONAME = libmlt++.$(soversion)$(LIBSUF)
+LIBFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
 endif
 
 OBJS = MltConsumer.o \
@@ -43,6 +45,7 @@ all:		$(TARGET)
 $(TARGET):	$(OBJS)
 	$(CXX) $(LIBFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 	ln -sf $(TARGET) $(NAME)
+	ln -sf $(TARGET) $(SONAME)
 
 clean:
 	$(RM) $(OBJS) $(TARGET) $(NAME)
@@ -53,6 +56,7 @@ install:
 	$(INSTALL) -d "$(DESTDIR)$(libdir)"
 	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)
 	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME)
+	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME)
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
 	/sbin/ldconfig || true
@@ -60,4 +64,5 @@ install:
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
 	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
+	rm -f "$(DESTDIR)$(libdir)/$(SONAME)"
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt++"
