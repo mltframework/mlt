@@ -40,6 +40,7 @@
 #include "MltProfile.h"
 #include "MltProperties.h"
 #include "MltPushConsumer.h"
+#include "MltRepository.h"
 #ifndef WIN32
 #include "MltResponse.h"
 #endif

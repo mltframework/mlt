@@ -1,8 +1,6 @@
 /**
- * MltFactory.h - MLT Wrapper
- * Copyright (C) 2004-2005 Charles Yates
+ * MltRepository.h - MLT Wrapper
  * Copyright (C) 2008 Dan Dennedy <dan@dennedy.org>
- * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -19,8 +17,8 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MLTPP_FACTORY_H_
-#define _MLTPP_FACTORY_H_
+#ifndef _MLTPP_REPOSITORY_H_
+#define _MLTPP_REPOSITORY_H_
 
 #include "config.h"
 
@@ -32,28 +30,20 @@
 
 namespace Mlt
 {
-	class Properties;
-	class Producer;
-	class Filter;
-	class Transition;
-	class Consumer;
 	class Profile;
-	class Repository;
 
-	class MLTPP_DECLSPEC Factory
+	class MLTPP_DECLSPEC Repository
 	{
+		private:
+			mlt_repository instance;
+			Repository( ) { }
 		public:
-			static Repository *init( const char *directory = NULL );
-			static Properties *event_object( );
-			static Producer *producer( Profile& profile, char *id, char *arg = NULL );
-			static Filter *filter( Profile& profile, char *id, char *arg = NULL );
-			static Transition *transition( Profile& profile, char *id, char *arg = NULL );
-			static Consumer *consumer( Profile& profile, char *id, char *arg = NULL );
-#ifdef WIN32
-			static char *getenv( const char * );
-			static int setenv( const char *, const char * );
-#endif
-			static void close( );
+			Repository( const char* directory );
+			Repository( mlt_repository repository );
+			~Repository();
+
+			void register_service( mlt_service_type service_type, const char *service, void *symbol );
+			void *create( Profile& profile, mlt_service_type type, const char *service, void *arg );
 	};
 }
 

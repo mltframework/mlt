@@ -28,6 +28,7 @@ OBJS = MltConsumer.o \
 	   MltProfile.o \
 	   MltProperties.o \
 	   MltPushConsumer.o \
+	   MltRepository.o \
 	   MltResponse.o \
 	   MltService.o \
 	   MltTokeniser.o \

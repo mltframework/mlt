@@ -24,11 +24,12 @@
 #include "MltFilter.h"
 #include "MltTransition.h"
 #include "MltConsumer.h"
+#include "MltRepository.h"
 using namespace Mlt;
 
-int Factory::init( char *arg )
+Repository *Factory::init( const char *directory )
 {
-	return mlt_factory_init( arg );
+	return new Repository( mlt_factory_init( directory ) );
 }
 
 Properties *Factory::event_object( )

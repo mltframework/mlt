@@ -30,6 +30,7 @@
  */
 
 namespace Mlt {
+%newobject Factory::init( const char * );
 %newobject Factory::producer( Profile &, char *, char * );
 %newobject Factory::filter( Profile &, char *, char * );
 %newobject Factory::transition( Profile &, char *, char * );
@@ -60,6 +61,7 @@ namespace Mlt {
 %include <framework/mlt_types.h>
 %include <framework/mlt_factory.h>
 %include <MltFactory.h>
+%include <MltRepository.h>
 %include <MltEvent.h>
 %include <MltProperties.h>
 %include <MltFrame.h>
