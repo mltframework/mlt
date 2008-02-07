@@ -25,8 +25,8 @@
 #include "mlt_profile.h"
 #include "mlt_repository.h"
 
-extern mlt_repository mlt_factory_init( const char *prefix );
-extern const char *mlt_factory_prefix( );
+extern mlt_repository mlt_factory_init( const char *directory );
+extern const char *mlt_factory_directory( );
 extern char *mlt_environment( const char *name );
 extern int mlt_environment_set( const char *name, const char *value );
 extern mlt_properties mlt_factory_event_object( );

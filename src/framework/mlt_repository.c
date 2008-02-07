@@ -35,8 +35,12 @@ struct mlt_repository_s
 	mlt_properties transitions;
 };
 
-mlt_repository mlt_repository_init( const char *prefix )
+mlt_repository mlt_repository_init( const char *directory )
 {
+	// Safety check
+	if ( directory == NULL || strcmp( directory, "" ) == 0 )
+		return NULL;
+		
 	// Construct the repository
 	mlt_repository this = calloc( sizeof( struct mlt_repository_s ), 1 );
 	mlt_properties_init( &this->parent, this );
@@ -44,10 +48,10 @@ mlt_repository mlt_repository_init( const char *prefix )
 	this->filters = mlt_properties_new();
 	this->producers = mlt_properties_new();
 	this->transitions = mlt_properties_new();
-	
+
 	// Get the directory list
 	mlt_properties dir = mlt_properties_new();
-	int count = mlt_properties_dir_list( dir, prefix, NULL, 0 );
+	int count = mlt_properties_dir_list( dir, directory, NULL, 0 );
 	int i;
 	
 	// Iterate over files
@@ -108,7 +112,7 @@ void mlt_repository_register( mlt_repository this, mlt_service_type service_type
 	}
 }
 
-void *mlt_repository_fetch( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
+void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
 {
 	void *( *symbol_ptr )( mlt_profile, mlt_service_type, const char *, void * ) = NULL;
 

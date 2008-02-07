@@ -31,7 +31,7 @@
 /** Singleton repositories
 */
 
-static char *mlt_prefix = NULL;
+static char *mlt_directory = NULL;
 static mlt_properties global_properties = NULL;
 static mlt_repository repository = NULL;
 static mlt_properties event_object = NULL;
@@ -55,21 +55,21 @@ static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner
 /** Construct the factories.
 */
 
-mlt_repository mlt_factory_init( const char *prefix )
+mlt_repository mlt_factory_init( const char *directory )
 {
 	// Only initialise once
-	if ( mlt_prefix == NULL )
+	if ( mlt_directory == NULL )
 	{
 		// Allow user over rides
-		if ( prefix == NULL || !strcmp( prefix, "" ) )
-			prefix = getenv( "MLT_REPOSITORY" );
+		if ( directory == NULL || !strcmp( directory, "" ) )
+			directory = getenv( "MLT_REPOSITORY" );
 
 		// If no directory is specified, default to install directory
-		if ( prefix == NULL )
-			prefix = PREFIX_LIB;
+		if ( directory == NULL )
+			directory = PREFIX_LIB;
 
 		// Store the prefix for later retrieval
-		mlt_prefix = strdup( prefix );
+		mlt_directory = strdup( directory );
 
 		// Initialise the pool
 		mlt_pool_init( );
@@ -90,7 +90,7 @@ mlt_repository mlt_factory_init( const char *prefix )
 		global_properties = mlt_properties_new( );
 
 		// Create the repository of services
-		repository = mlt_repository_init( prefix );
+		repository = mlt_repository_init( directory );
 
 		// Force a clean up when app closes
 		atexit( mlt_factory_close );
@@ -119,12 +119,12 @@ mlt_properties mlt_factory_event_object( )
 	return event_object;
 }
 
-/** Fetch the prefix used in this instance.
+/** Fetch the module directory used in this instance.
 */
 
-const char *mlt_factory_prefix( )
+const char *mlt_factory_directory( )
 {
-	return mlt_prefix;
+	return mlt_directory;
 }
 
 /** Get a value from the environment.
@@ -176,7 +176,7 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, voi
 	// Try to instantiate via the specified service
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_fetch( repository, profile, producer_type, service, input );
+		obj = mlt_repository_create( repository, profile, producer_type, service, input );
 		mlt_events_fire( event_object, "producer-create-done", service, input, obj, NULL );
 		if ( obj != NULL )
 		{
@@ -199,7 +199,7 @@ mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, void *i
 
 	if ( obj == NULL )
 	{
-   		obj = mlt_repository_fetch( repository, profile, filter_type, service, input );
+   		obj = mlt_repository_create( repository, profile, filter_type, service, input );
 		mlt_events_fire( event_object, "filter-create-done", service, input, obj, NULL );
 	}
 
@@ -223,7 +223,7 @@ mlt_transition mlt_factory_transition( mlt_profile profile, const char *service,
 
 	if ( obj == NULL )
 	{
-   		obj = mlt_repository_fetch( repository, profile, transition_type, service, input );
+   		obj = mlt_repository_create( repository, profile, transition_type, service, input );
 		mlt_events_fire( event_object, "transition-create-done", service, input, obj, NULL );
 	}
 
@@ -250,7 +250,7 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, voi
 
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_fetch( repository, profile, consumer_type, service, input );
+		obj = mlt_repository_create( repository, profile, consumer_type, service, input );
 		mlt_events_fire( event_object, "consumer-create-done", service, input, obj, NULL );
 	}
 
@@ -277,13 +277,13 @@ void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor )
 
 void mlt_factory_close( )
 {
-	if ( mlt_prefix != NULL )
+	if ( mlt_directory != NULL )
 	{
 		mlt_properties_close( event_object );
 		mlt_properties_close( global_properties );
 		mlt_repository_close( repository );
-		free( mlt_prefix );
-		mlt_prefix = NULL;
+		free( mlt_directory );
+		mlt_directory = NULL;
 		mlt_pool_close( );
 	}
 }
