@@ -22,6 +22,8 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
+#include <framework/mlt_profile.h>
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,7 +134,7 @@ struct producer_libdv_s
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
-static int producer_collect_info( producer_libdv this );
+static int producer_collect_info( producer_libdv this, mlt_profile profile );
 
 mlt_producer producer_libdv_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
@@ -175,7 +177,7 @@ mlt_producer producer_libdv_init( mlt_profile profile, mlt_service_type type, co
 			this->fd = open( filename, O_RDONLY );
 
 			// Collect info
-			if ( this->fd == -1 || !producer_collect_info( this ) )
+			if ( this->fd == -1 || !producer_collect_info( this, profile ) )
 				destroy = 1;
 		}
 
@@ -199,7 +201,6 @@ static int read_frame( int fd, uint8_t* frame_buf, int *isPAL )
 	if ( result )
 	{
 		*isPAL = ( frame_buf[3] & 0x80 );
-
 		if ( *isPAL )
 		{
 			int diff = FRAME_SIZE_625_50 - FRAME_SIZE_525_60;
@@ -210,7 +211,7 @@ static int read_frame( int fd, uint8_t* frame_buf, int *isPAL )
 	return result;
 }
 
-static int producer_collect_info( producer_libdv this )
+static int producer_collect_info( producer_libdv this, mlt_profile profile )
 {
 	int valid = 0;
 
@@ -244,8 +245,8 @@ static int producer_collect_info( producer_libdv this )
 			this->frames_in_file = this->file_size / this->frame_size;
 
 			// Calculate default in/out points
-			double fps = this->is_pal ? 25 : 30000.0 / 1001.0;
-			if ( mlt_producer_get_fps( &this->parent ) == fps )
+			int fps = 1000 * ( this->is_pal ? 25 : ( 30000.0 / 1001.0 ) );
+			if ( ( int )( mlt_profile_fps( profile ) * 1000 ) == fps )
 			{
 				if ( this->frames_in_file > 0 )
 				{
