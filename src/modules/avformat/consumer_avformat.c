@@ -326,6 +326,10 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 	if ( st != NULL ) 
 	{
 		AVCodecContext *c = st->codec;
+ 		int thread_count = mlt_properties_get_int( properties, "threads" );		
+		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
+			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
+
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_AUDIO;
 
@@ -346,6 +350,11 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
     		if( !tail || *tail )
         		tag = arg[ 0 ] + ( arg[ 1 ] << 8 ) + ( arg[ 2 ] << 16 ) + ( arg[ 3 ] << 24 );
 			c->codec_tag = tag;
+		}
+		if ( thread_count > 1 )
+		{
+			avcodec_thread_init( c, thread_count );
+			c->thread_count = thread_count;
 		}
 	}
 	else
@@ -427,6 +436,10 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		char *pix_fmt = mlt_properties_get( properties, "pix_fmt" );
 		double ar = mlt_properties_get_double( properties, "display_ratio" );
 		AVCodecContext *c = st->codec;
+ 		int thread_count = mlt_properties_get_int( properties, "threads" );		
+		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
+			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
+
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_VIDEO;
 
@@ -526,7 +539,12 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			if ( mlt_properties_get_int( properties, "ilme" ) )
 				c->flags |= CODEC_FLAG_INTERLACED_ME;
 		}
- 	}
+		if ( thread_count > 1 )
+		{
+			avcodec_thread_init( c, thread_count );
+			c->thread_count = thread_count;
+		}
+	}
 	else
 	{
 		fprintf( stderr, "Could not allocate a stream for video\n" );
