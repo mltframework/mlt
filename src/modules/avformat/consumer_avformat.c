@@ -2,6 +2,7 @@
  * consumer_avformat.c -- an encoder based on avformat
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Much code borrowed from ffmpeg.c: Copyright (c) 2000-2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,6 +37,7 @@
 #ifdef SWSCALE
 #include <swscale.h>
 #endif
+#include <opt.h>
 
 //
 // This structure should be extended and made globally available in mlt
@@ -155,65 +157,22 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		// sample and frame queue
 		mlt_properties_set_data( properties, "frame_queue", mlt_deque_init( ), 0, ( mlt_destructor )mlt_deque_close, NULL );
 
-		// Set avformat defaults (all lifted from ffmpeg.c)
-		mlt_properties_set_int( properties, "audio_bit_rate", 128000 );
-		mlt_properties_set_int( properties, "video_bit_rate", 200 * 1000 );
-		mlt_properties_set_int( properties, "video_bit_rate_tolerance", 4000 * 1000 );
-		mlt_properties_set_int( properties, "gop_size", 12 );
-		mlt_properties_set_int( properties, "b_frames", 0 );
-		mlt_properties_set_int( properties, "mb_decision", FF_MB_DECISION_SIMPLE );
-		mlt_properties_set_double( properties, "qscale", 0 );
-		mlt_properties_set_int( properties, "me_method", ME_EPZS );
-		mlt_properties_set_int( properties, "mb_cmp", FF_CMP_SAD );
-		mlt_properties_set_int( properties, "ildct_cmp", FF_CMP_VSAD );
-		mlt_properties_set_int( properties, "sub_cmp", FF_CMP_SAD );
-		mlt_properties_set_int( properties, "cmp", FF_CMP_SAD );
-		mlt_properties_set_int( properties, "pre_cmp", FF_CMP_SAD );
-		mlt_properties_set_int( properties, "pre_me", 0 );
-		mlt_properties_set_double( properties, "lumi_mask", 0 );
-		mlt_properties_set_double( properties, "dark_mask", 0 );
-		mlt_properties_set_double( properties, "scplx_mask", 0 );
-		mlt_properties_set_double( properties, "tcplx_mask", 0 );
-		mlt_properties_set_double( properties, "p_mask", 0 );
-		mlt_properties_set_int( properties, "qns", 0 );
-		mlt_properties_set_int( properties, "video_qmin", 2 );
-		mlt_properties_set_int( properties, "video_qmax", 31 );
-		mlt_properties_set_int( properties, "video_lmin", 2*FF_QP2LAMBDA );
-		mlt_properties_set_int( properties, "video_lmax", 31*FF_QP2LAMBDA );
-		mlt_properties_set_int( properties, "video_mb_qmin", 2 );
-		mlt_properties_set_int( properties, "video_mb_qmax", 31 );
-		mlt_properties_set_int( properties, "video_qdiff", 3 );
-		mlt_properties_set_double( properties, "video_qblur", 0.5 );
-		mlt_properties_set_double( properties, "video_qcomp", 0.5 );
-		mlt_properties_set_int( properties, "video_rc_max_rate", 0 );
-		mlt_properties_set_int( properties, "video_rc_min_rate", 0 );
-		mlt_properties_set_int( properties, "video_rc_buffer_size", 0 );
-		mlt_properties_set_double( properties, "video_rc_buffer_aggressivity", 1.0 );
-		mlt_properties_set_double( properties, "video_rc_initial_cplx", 0 );
-		mlt_properties_set_double( properties, "video_i_qfactor", -0.8 );
-		mlt_properties_set_double( properties, "video_b_qfactor", 1.25 );
-		mlt_properties_set_double( properties, "video_i_qoffset", 0 );
-		mlt_properties_set_double( properties, "video_b_qoffset", 1.25 );
-		mlt_properties_set_int( properties, "video_intra_quant_bias", FF_DEFAULT_QUANT_BIAS );
-		mlt_properties_set_int( properties, "video_inter_quant_bias", FF_DEFAULT_QUANT_BIAS );
-		mlt_properties_set_int( properties, "dct_algo", 0 );
-		mlt_properties_set_int( properties, "idct_algo", 0 );
-		mlt_properties_set_int( properties, "me_threshold", 0 );
-		mlt_properties_set_int( properties, "mb_threshold", 0 );
-		mlt_properties_set_int( properties, "intra_dc_precision", 0 );
-		mlt_properties_set_int( properties, "strict", 0 );
-		mlt_properties_set_int( properties, "error_rate", 0 );
-		mlt_properties_set_int( properties, "noise_reduction", 0 );
-		mlt_properties_set_int( properties, "sc_threshold", 0 );
-		mlt_properties_set_int( properties, "me_range", 0 );
-		mlt_properties_set_int( properties, "coder", 0 );
-		mlt_properties_set_int( properties, "context", 0 );
-		mlt_properties_set_int( properties, "predictor", 0 );
-		mlt_properties_set_int( properties, "ildct", 0 );
-		mlt_properties_set_int( properties, "ilme", 0 );
+		// Audio options not fully handled by AVOptions
+#define QSCALE_NONE (-99999)
+		mlt_properties_set_int( properties, "aq", QSCALE_NONE );
+		
+		// Video options not fully handled by AVOptions
+		mlt_properties_set_int( properties, "dc", 8 );
+		
+		// Muxer options not fully handled by AVOptions
+		mlt_properties_set_double( properties, "muxdelay", 0.7 );
+		mlt_properties_set_double( properties, "muxpreload", 0.5 );
 
 		// Ensure termination at end of the stream
 		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
+		
+		// Default to separate processing threads for producer and consumer with no frame dropping!
+		mlt_properties_set_int( properties, "real_time", -1 );
 
 		// Set up start/stop/terminated callbacks
 		this->start = consumer_start;
@@ -244,7 +203,7 @@ static int consumer_start( mlt_consumer this )
 		int height = mlt_properties_get_int( properties, "height" );
 
 		// Obtain the size property
-		char *size = mlt_properties_get( properties, "size" );
+		char *size = mlt_properties_get( properties, "s" );
 
 		// Interpret it
 		if ( size != NULL )
@@ -257,13 +216,19 @@ static int consumer_start( mlt_consumer this )
 			}
 			else
 			{
-				fprintf( stderr, "consumer_avformat: Invalid size property %s - ignoring.\n", size );
+				fprintf( stderr, "%s: Invalid size property %s - ignoring.\n", __FILE__, size );
 			}
 		}
 		
 		// Now ensure we honour the multiple of two requested by libavformat
 		mlt_properties_set_int( properties, "width", ( width / 2 ) * 2 );
 		mlt_properties_set_int( properties, "height", ( height / 2 ) * 2 );
+		
+		// Apply AVOptions that are synonyms for standard mlt_consumer options
+		if ( mlt_properties_get( properties, "ac" ) )
+			mlt_properties_set_int( properties, "channels", mlt_properties_get_int( properties, "ac" ) );
+		if ( mlt_properties_get( properties, "ar" ) )
+			mlt_properties_set_int( properties, "frequency", mlt_properties_get_int( properties, "ar" ) );
 
 		// Assign the thread to properties
 		mlt_properties_set_data( properties, "thread", thread, sizeof( pthread_t ), free, NULL );
@@ -311,6 +276,22 @@ static int consumer_is_stopped( mlt_consumer this )
 	return !mlt_properties_get_int( properties, "running" );
 }
 
+/** Process properties as AVOptions and apply to AV context obj
+*/
+
+static void apply_properties( void *obj, mlt_properties properties, int flags )
+{
+	int i;
+	int count = mlt_properties_count( properties ); 
+	for ( i = 0; i < count; i++ )
+	{
+		const char *opt_name = mlt_properties_get_name( properties, i );
+		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
+		if ( opt != NULL )
+			av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
+	}
+}
+
 /** Add an audio output stream
 */
 
@@ -326,40 +307,54 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 	if ( st != NULL ) 
 	{
 		AVCodecContext *c = st->codec;
- 		int thread_count = mlt_properties_get_int( properties, "threads" );		
-		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
-			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
+
+		// Establish defaults from AVOptions
+		avcodec_get_context_defaults2( c, CODEC_TYPE_AUDIO );
 
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_AUDIO;
 
-		// Put sample parameters
-		c->bit_rate = mlt_properties_get_int( properties, "audio_bit_rate" );
+		// Setup multi-threading
+		int thread_count = mlt_properties_get_int( properties, "threads" );
+		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
+			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
+		if ( thread_count > 1 )
+			avcodec_thread_init( c, thread_count );		
+	
+		if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
+			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		
+		// Allow the user to override the audio fourcc
+		if ( mlt_properties_get( properties, "atag" ) )
+		{
+			char *tail = NULL;
+			char *arg = mlt_properties_get( properties, "atag" );
+			int tag = strtol( arg, &tail, 0);
+			if( !tail || *tail )
+				tag = arg[ 0 ] + ( arg[ 1 ] << 8 ) + ( arg[ 2 ] << 16 ) + ( arg[ 3 ] << 24 );
+			c->codec_tag = tag;
+		}
+
+		// Process properties as AVOptions
+		apply_properties( c, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
+
+		int audio_qscale = mlt_properties_get_int( properties, "aq" );
+        if ( audio_qscale > QSCALE_NONE )
+		{
+			c->flags |= CODEC_FLAG_QSCALE;
+			c->global_quality = st->quality = FF_QP2LAMBDA * audio_qscale;
+		}
+
+		// Set parameters controlled by MLT
 		c->sample_rate = mlt_properties_get_int( properties, "frequency" );
 		c->channels = mlt_properties_get_int( properties, "channels" );
 
-    	if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
-        	c->flags |= CODEC_FLAG_GLOBAL_HEADER;
-
-		// Allow the user to override the audio fourcc
-		if ( mlt_properties_get( properties, "afourcc" ) )
-		{
-			char *tail = NULL;
-			char *arg = mlt_properties_get( properties, "afourcc" );
-    		int tag = strtol( arg, &tail, 0);
-    		if( !tail || *tail )
-        		tag = arg[ 0 ] + ( arg[ 1 ] << 8 ) + ( arg[ 2 ] << 16 ) + ( arg[ 3 ] << 24 );
-			c->codec_tag = tag;
-		}
-		if ( thread_count > 1 )
-		{
-			avcodec_thread_init( c, thread_count );
-			c->thread_count = thread_count;
-		}
+		if ( mlt_properties_get( properties, "alang" ) != NULL )
+			strncpy( st->language, mlt_properties_get( properties, "alang" ), sizeof( st->language ) );
 	}
 	else
 	{
-		fprintf( stderr, "Could not allocate a stream for audio\n" );
+		fprintf( stderr, "%s: Could not allocate a stream for audio\n", __FILE__ );
 	}
 
 	return st;
@@ -377,7 +372,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	AVCodec *codec = avcodec_find_encoder( c->codec_id );
 
 	// Continue if codec found and we can open it
-	if ( codec != NULL && avcodec_open(c, codec) >= 0 )
+	if ( codec != NULL && avcodec_open( c, codec ) >= 0 )
 	{
 		// ugly hack for PCM codecs (will be removed ASAP with new PCM
 		// support to compute the input frame size in samples
@@ -409,7 +404,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	}
 	else
 	{
-		fprintf( stderr, "Unable to encode audio - disabling audio output.\n" );
+		fprintf( stderr, "%s: Unable to encode audio - disabling audio output.\n", __FILE__ );
 	}
 
 	return audio_input_frame_size;
@@ -436,53 +431,30 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		char *pix_fmt = mlt_properties_get( properties, "pix_fmt" );
 		double ar = mlt_properties_get_double( properties, "display_ratio" );
 		AVCodecContext *c = st->codec;
- 		int thread_count = mlt_properties_get_int( properties, "threads" );		
-		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
-			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
+
+		// Establish defaults from AVOptions
+		avcodec_get_context_defaults2( c, CODEC_TYPE_VIDEO );
 
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_VIDEO;
+		
+		// Setup multi-threading
+		int thread_count = mlt_properties_get_int( properties, "threads" );
+		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
+			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
+		if ( thread_count > 1 )
+			avcodec_thread_init( c, thread_count );		
+	
+		// Process properties as AVOptions
+		apply_properties( c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 
-		// put sample parameters
-		c->bit_rate = mlt_properties_get_int( properties, "video_bit_rate" );
-		c->bit_rate_tolerance = mlt_properties_get_int( properties, "video_bit_rate_tolerance" );
+		// Set options controlled by MLT
 		c->width = mlt_properties_get_int( properties, "width" );
 		c->height = mlt_properties_get_int( properties, "height" );
+		c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
 		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
-		c->gop_size = mlt_properties_get_int( properties, "gop_size" );
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
-
-		if ( mlt_properties_get_int( properties, "b_frames" ) )
-		{
-	 		c->max_b_frames = mlt_properties_get_int( properties, "b_frames" );
-			c->b_frame_strategy = 0;
-			c->b_quant_factor = 2.0;
-		}
-
-	 	c->mb_decision = mlt_properties_get_int( properties, "mb_decision" );
-		c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
-		c->mb_cmp = mlt_properties_get_int( properties, "mb_cmp" );
-		c->ildct_cmp = mlt_properties_get_int( properties, "ildct_cmp" );
-		c->me_sub_cmp = mlt_properties_get_int( properties, "sub_cmp" );
-		c->me_cmp = mlt_properties_get_int( properties, "cmp" );
-		c->me_pre_cmp = mlt_properties_get_int( properties, "pre_cmp" );
-		c->pre_me = mlt_properties_get_int( properties, "pre_me" );
-		c->lumi_masking = mlt_properties_get_double( properties, "lumi_mask" );
-		c->dark_masking = mlt_properties_get_double( properties, "dark_mask" );
-		c->spatial_cplx_masking = mlt_properties_get_double( properties, "scplx_mask" );
-		c->temporal_cplx_masking = mlt_properties_get_double( properties, "tcplx_mask" );
-		c->p_masking = mlt_properties_get_double( properties, "p_mask" );
-		c->quantizer_noise_shaping= mlt_properties_get_int( properties, "qns" );
-		c->qmin = mlt_properties_get_int( properties, "video_qmin" );
-		c->qmax = mlt_properties_get_int( properties, "video_qmax" );
-		c->lmin = mlt_properties_get_int( properties, "video_lmin" );
-		c->lmax = mlt_properties_get_int( properties, "video_lmax" );
-		c->mb_qmin = mlt_properties_get_int( properties, "video_mb_qmin" );
-		c->mb_qmax = mlt_properties_get_int( properties, "video_mb_qmax" );
-		c->max_qdiff = mlt_properties_get_int( properties, "video_qdiff" );
-		c->qblur = mlt_properties_get_double( properties, "video_qblur" );
-		c->qcompress = mlt_properties_get_double( properties, "video_qcomp" );
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
 		{
@@ -491,13 +463,13 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		}
 
 		// Allow the user to override the video fourcc
-		if ( mlt_properties_get( properties, "vfourcc" ) )
+		if ( mlt_properties_get( properties, "vtag" ) )
 		{
 			char *tail = NULL;
-			const char *arg = mlt_properties_get( properties, "vfourcc" );
-    		int tag = strtol( arg, &tail, 0);
-    		if( !tail || *tail )
-        		tag = arg[ 0 ] + ( arg[ 1 ] << 8 ) + ( arg[ 2 ] << 16 ) + ( arg[ 3 ] << 24 );
+			const char *arg = mlt_properties_get( properties, "vtag" );
+			int tag = strtol( arg, &tail, 0);
+			if( !tail || *tail )
+				tag = arg[ 0 ] + ( arg[ 1 ] << 8 ) + ( arg[ 2 ] << 16 ) + ( arg[ 3 ] << 24 );
 			c->codec_tag = tag;
 		}
 
@@ -505,32 +477,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		if ( oc->oformat->flags & AVFMT_GLOBALHEADER ) 
 			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
-		c->rc_max_rate = mlt_properties_get_int( properties, "video_rc_max_rate" );
-		c->rc_min_rate = mlt_properties_get_int( properties, "video_rc_min_rate" );
-		c->rc_buffer_size = mlt_properties_get_int( properties, "video_rc_buffer_size" );
-		c->rc_initial_buffer_occupancy = c->rc_buffer_size*3/4;
-		c->rc_buffer_aggressivity= mlt_properties_get_double( properties, "video_rc_buffer_aggressivity" );
-		c->rc_initial_cplx= mlt_properties_get_double( properties, "video_rc_initial_cplx" );
-		c->i_quant_factor = mlt_properties_get_double( properties, "video_i_qfactor" );
-		c->b_quant_factor = mlt_properties_get_double( properties, "video_b_qfactor" );
-		c->i_quant_offset = mlt_properties_get_double( properties, "video_i_qoffset" );
-		c->b_quant_offset = mlt_properties_get_double( properties, "video_b_qoffset" );
-		c->intra_quant_bias = mlt_properties_get_int( properties, "video_intra_quant_bias" );
-		c->inter_quant_bias = mlt_properties_get_int( properties, "video_inter_quant_bias" );
-		c->dct_algo = mlt_properties_get_int( properties, "dct_algo" );
-		c->idct_algo = mlt_properties_get_int( properties, "idct_algo" );
-		c->me_threshold= mlt_properties_get_int( properties, "me_threshold" );
-		c->mb_threshold= mlt_properties_get_int( properties, "mb_threshold" );
-		c->intra_dc_precision= mlt_properties_get_int( properties, "intra_dc_precision" );
-		c->strict_std_compliance = mlt_properties_get_int( properties, "strict" );
-		c->error_rate = mlt_properties_get_int( properties, "error_rate" );
-		c->noise_reduction= mlt_properties_get_int( properties, "noise_reduction" );
-		c->scenechange_threshold= mlt_properties_get_int( properties, "sc_threshold" );
-		c->me_range = mlt_properties_get_int( properties, "me_range" );
-		c->coder_type= mlt_properties_get_int( properties, "coder" );
-		c->context_model= mlt_properties_get_int( properties, "context" );
-		c->prediction_method= mlt_properties_get_int( properties, "predictor" );
-		c->me_method = mlt_properties_get_int( properties, "me_method" );
+		// Translate these standard mlt consumer properties to ffmpeg
 		if ( mlt_properties_get_int( properties, "progressive" ) == 0 &&
 		     mlt_properties_get_int( properties, "deinterlace" ) == 0 )
 		{
@@ -539,15 +486,92 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			if ( mlt_properties_get_int( properties, "ilme" ) )
 				c->flags |= CODEC_FLAG_INTERLACED_ME;
 		}
-		if ( thread_count > 1 )
+		
+		// parse the ratecontrol override string
+		int i;
+		char *rc_override = mlt_properties_get( properties, "rc_override" );
+		for ( i = 0; rc_override; i++ )
 		{
-			avcodec_thread_init( c, thread_count );
-			c->thread_count = thread_count;
+			int start, end, q;
+			int e = sscanf( rc_override, "%d,%d,%d", &start, &end, &q );
+			if ( e != 3 )
+				fprintf( stderr, "%s: Error parsing rc_override\n", __FILE__ );
+			c->rc_override = av_realloc( c->rc_override, sizeof( RcOverride ) * ( i + 1 ) );
+			c->rc_override[i].start_frame = start;
+			c->rc_override[i].end_frame = end;
+			if ( q > 0 )
+			{
+				c->rc_override[i].qscale = q;
+				c->rc_override[i].quality_factor = 1.0;
+			}
+			else
+			{
+				c->rc_override[i].qscale = 0;
+				c->rc_override[i].quality_factor = -q / 100.0;
+			}
+			rc_override = strchr( rc_override, '/' );
+			if ( rc_override )
+				rc_override++;
+		}
+		c->rc_override_count = i;
+ 		if ( !c->rc_initial_buffer_occupancy )
+ 			c->rc_initial_buffer_occupancy = c->rc_buffer_size * 3/4;
+		c->intra_dc_precision = mlt_properties_get_int( properties, "dc" ) - 8;
+
+		// Setup dual-pass
+		i = mlt_properties_get_int( properties, "pass" );
+		if ( i == 1 )
+			c->flags |= CODEC_FLAG_PASS1;
+		else if ( i == 2 )
+			c->flags |= CODEC_FLAG_PASS2;
+		if ( c->flags & ( CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2 ) )
+		{
+			char logfilename[1024];
+			FILE *f;
+			int size;
+			char *logbuffer;
+
+			snprintf( logfilename, sizeof(logfilename), "%s_2pass.log",
+				mlt_properties_get( properties, "passlogfile" ) ? mlt_properties_get( properties, "passlogfile" ) : mlt_properties_get( properties, "target" ) );
+			if ( c->flags & CODEC_FLAG_PASS1 )
+			{
+				f = fopen( logfilename, "w" );
+				if ( !f )
+					perror( logfilename );
+				else
+					mlt_properties_set_data( properties, "_logfile", f, 0, ( mlt_destructor )fclose, NULL );
+			}
+			else
+			{
+				/* read the log file */
+				f = fopen( logfilename, "r" );
+				if ( !f )
+				{
+					perror(logfilename);
+				}
+				else
+				{
+					fseek( f, 0, SEEK_END );
+					size = ftell( f );
+					fseek( f, 0, SEEK_SET );
+					logbuffer = av_malloc( size + 1 );
+					if ( !logbuffer )
+						fprintf( stderr, "%s: Could not allocate log buffer\n", __FILE__ );
+					else
+					{
+						size = fread( logbuffer, 1, size, f );
+						fclose( f );
+						logbuffer[size] = '\0';
+						c->stats_in = logbuffer;
+						mlt_properties_set_data( properties, "_logbuffer", logbuffer, 0, ( mlt_destructor )av_free, NULL );
+					}
+				}
+			}
 		}
 	}
 	else
 	{
-		fprintf( stderr, "Could not allocate a stream for video\n" );
+		fprintf( stderr, "%s: Could not allocate a stream for video\n", __FILE__ );
 	}
  
 	return st;
@@ -559,10 +583,10 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 	AVFrame *picture = avcodec_alloc_frame();
 
 	// Determine size of the 
- 	int size = avpicture_get_size(pix_fmt, width, height);
+	int size = avpicture_get_size(pix_fmt, width, height);
 
 	// Allocate the picture buf
- 	uint8_t *picture_buf = av_malloc(size);
+	uint8_t *picture_buf = av_malloc(size);
 
 	// If we have both, then fill the image
 	if ( picture != NULL && picture_buf != NULL )
@@ -655,8 +679,8 @@ static void *consumer_thread( void *arg )
 	int samples = 0;
 
 	// AVFormat audio buffer and frame size
- 	int audio_outbuf_size = 10000;
- 	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
+	int audio_outbuf_size = 10000;
+	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
 	int audio_input_frame_size = 0;
 
 	// AVFormat video buffer and frame count
@@ -705,10 +729,10 @@ static void *consumer_thread( void *arg )
 	// Determine the format
 	AVOutputFormat *fmt = NULL;
 	char *filename = mlt_properties_get( properties, "target" );
-	char *format = mlt_properties_get( properties, "format" );
+	char *format = mlt_properties_get( properties, "f" );
 	char *vcodec = mlt_properties_get( properties, "vcodec" );
 	char *acodec = mlt_properties_get( properties, "acodec" );
-
+	
 	// Used to store and override codec ids
 	int audio_codec_id;
 	int video_codec_id;
@@ -746,7 +770,7 @@ static void *consumer_thread( void *arg )
 		if ( p != NULL )
 			audio_codec_id = p->id;
 		else
-			fprintf( stderr, "consumer_avcodec: audio codec %s unrecognised - ignoring\n", acodec );
+			fprintf( stderr, "%s: audio codec %s unrecognised - ignoring\n", __FILE__, acodec );
 	}
 
 	// Check for video codec overides
@@ -762,10 +786,8 @@ static void *consumer_thread( void *arg )
 		if ( p != NULL )
 			video_codec_id = p->id;
 		else
-			fprintf( stderr, "consumer_avcodec: video codec %s unrecognised - ignoring\n", vcodec );
+			fprintf( stderr, "%s: video codec %s unrecognised - ignoring\n", __FILE__, vcodec );
 	}
-
-	// Update the output context
 
 	// Write metadata
 	char *tmp = NULL;
@@ -804,6 +826,12 @@ static void *consumer_thread( void *arg )
 	// Set the parameters (even though we have none...)
 	if ( av_set_parameters(oc, NULL) >= 0 ) 
 	{
+		oc->preload = ( int )( mlt_properties_get_double( properties, "muxpreload" ) * AV_TIME_BASE );
+		oc->max_delay= ( int )( mlt_properties_get_double( properties, "muxdelay" ) * AV_TIME_BASE );
+
+		// Process properties as AVOptions
+		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM );
+
 		if ( video_st && !open_video( oc, video_st ) )
 			video_st = NULL;
 		if ( audio_st )
@@ -812,9 +840,9 @@ static void *consumer_thread( void *arg )
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
 		{
-			if (url_fopen(&oc->pb, filename, URL_WRONLY) < 0) 
+			if ( url_fopen( &oc->pb, filename, URL_WRONLY ) < 0 ) 
 			{
-				fprintf(stderr, "Could not open '%s'\n", filename);
+				fprintf( stderr, "%s: Could not open '%s'\n", __FILE__, filename );
 				mlt_properties_set_int( properties, "running", 0 );
 			}
 		}
@@ -825,7 +853,7 @@ static void *consumer_thread( void *arg )
 	}
 	else
 	{
-		fprintf(stderr, "Invalid output format parameters\n");
+		fprintf( stderr, "%s: Invalid output format parameters\n", __FILE__ );
 		mlt_properties_set_int( properties, "running", 0 );
 	}
 
@@ -899,8 +927,8 @@ static void *consumer_thread( void *arg )
 			else
 				video_pts = 0.0;
 
- 			// Write interleaved audio and video frames
- 			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
+			// Write interleaved audio and video frames
+			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
 			{
 				if ( channels * audio_input_frame_size < sample_fifo_used( fifo ) )
 				{
@@ -913,7 +941,7 @@ static void *consumer_thread( void *arg )
 					sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
 
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
- 					// Write the compressed frame in the media file
+					// Write the compressed frame in the media file
 					if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 						pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st->time_base );
 					pkt.flags |= PKT_FLAG_KEY;
@@ -921,8 +949,8 @@ static void *consumer_thread( void *arg )
 					pkt.data= audio_outbuf;
 
 					if ( pkt.size )
- 						if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
- 							fprintf(stderr, "Error while writing audio frame\n");
+						if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
+							fprintf( stderr, "%s: Error while writing audio frame\n", __FILE__ );
 
 					audio_pts += c->frame_size;
 				}
@@ -931,18 +959,18 @@ static void *consumer_thread( void *arg )
 					break;
 				}
 			}
- 			else if ( video_st )
+			else if ( video_st )
 			{
 				if ( mlt_deque_count( queue ) )
 				{
- 					int out_size, ret;
- 					AVCodecContext *c;
+					int out_size, ret;
+					AVCodecContext *c;
 
 					frame = mlt_deque_pop_front( queue );
 					frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 					c = video_st->codec;
- 					
+					
 					if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 					{
 						int i = 0;
@@ -1010,13 +1038,13 @@ static void *consumer_thread( void *arg )
 							}
 						}
 					}
- 
- 					if (oc->oformat->flags & AVFMT_RAWPICTURE) 
+
+					if (oc->oformat->flags & AVFMT_RAWPICTURE) 
 					{
 	 					// raw video case. The API will change slightly in the near future for that
 						AVPacket pkt;
 						av_init_packet(&pkt);
-        
+
 						pkt.flags |= PKT_FLAG_KEY;
 						pkt.stream_index= video_st->index;
 						pkt.data= (uint8_t *)output;
@@ -1024,7 +1052,7 @@ static void *consumer_thread( void *arg )
 
 						ret = av_write_frame(oc, &pkt);
 						video_pts += c->frame_size;
- 					} 
+					} 
 					else 
 					{
 						// Set the quality
@@ -1051,13 +1079,17 @@ static void *consumer_thread( void *arg )
 							pkt.data= video_outbuf;
 							pkt.size= out_size;
 
-             				// write the compressed frame in the media file
+							// write the compressed frame in the media file
 							ret = av_interleaved_write_frame(oc, &pkt);
 							video_pts += c->frame_size;
+							
+							// Dual pass logging
+							if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out)
+								fprintf( mlt_properties_get_data( properties, "_logfile", NULL ), "%s", c->stats_out );
 	 					} 
 						else
 						{
-							fprintf( stderr, "Error with video encode\n" );
+							fprintf( stderr, "%s: error with video encode\n", __FILE__ );
 						}
  					}
  					frame_count++;
@@ -1070,7 +1102,7 @@ static void *consumer_thread( void *arg )
 			}
 		}
 
-		if ( real_time_output && frames % 12 == 0 )
+		if ( real_time_output == 1 && frames % 12 == 0 )
 		{
 			long passed = time_difference( &ante );
 			if ( fifo != NULL )
@@ -1117,7 +1149,7 @@ static void *consumer_thread( void *arg )
 			pkt.data = audio_outbuf;
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				fprintf(stderr, "Error while writing flushed audio frame\n");
+				fprintf( stderr, "%s: Error while writing flushed audio frame\n", __FILE__ );
 				break;
 			}
 		}
@@ -1144,7 +1176,7 @@ static void *consumer_thread( void *arg )
 			// write the compressed frame in the media file
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				fprintf(stderr, "Error while writing flushed video frame\n");
+				fprintf( stderr, "%s: Error while writing flushed video frame\n". __FILE__ );
 				break;
 			}
 		}
