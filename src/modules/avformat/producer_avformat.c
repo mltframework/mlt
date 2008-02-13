@@ -2,6 +2,7 @@
  * producer_avformat.c -- avformat producer
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Much code borrowed from ffmpeg.c: Copyright (c) 2000-2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -90,13 +91,13 @@ static void find_default_streams( AVFormatContext *context, int *audio_index, in
 	for( i = 0; i < context->nb_streams; i++ ) 
 	{
 		// Get the codec context
-   		AVCodecContext *codec_context = context->streams[ i ]->codec;
+		AVCodecContext *codec_context = context->streams[ i ]->codec;
 
 		if ( avcodec_find_decoder( codec_context->codec_id ) == NULL )
 			continue;
 
 		// Determine the type and obtain the first index of each type
-   		switch( codec_context->codec_type ) 
+		switch( codec_context->codec_type ) 
 		{
 			case CODEC_TYPE_VIDEO:
 				if ( *video_index < 0 )
@@ -105,9 +106,9 @@ static void find_default_streams( AVFormatContext *context, int *audio_index, in
 			case CODEC_TYPE_AUDIO:
 				if ( *audio_index < 0 )
 					*audio_index = i;
-		   		break;
+				break;
 			default:
-		   		break;
+				break;
 		}
 	}
 }
@@ -280,8 +281,8 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 			// Find default audio and video streams
 			find_default_streams( context, &audio_index, &video_index );
 
-            if ( context->start_time != AV_NOPTS_VALUE )
-                mlt_properties_set_double( properties, "_start_time", context->start_time );
+			if ( context->start_time != AV_NOPTS_VALUE )
+				mlt_properties_set_double( properties, "_start_time", context->start_time );
 			
 			// Check if we're seekable (something funny about mpeg here :-/)
 			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 ) )
@@ -1028,7 +1029,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 				avcodec_thread_init( codec_context, thread_count );
 				codec_context->thread_count = thread_count;
 			}
-			
+
 			// Find the codec
 			codec = avcodec_find_decoder( codec_context->codec_id );
 
