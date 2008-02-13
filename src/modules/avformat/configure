@@ -42,20 +42,12 @@ else
 	echo > config.mak
 
 	export static_ffmpeg=
-	export shared_ffmpeg=`which ffmpeg`
+	export shared_ffmpeg=$(pkg-config --variable=prefix libavformat)
 	export extra_libs=
 	export svn_ffmpeg=
 	export svn_ffmpeg_extra=
 	export avformat_suffix=
 	export swscale=
-
-	if [ "$shared_ffmpeg" != "" -a -f "$shared_ffmpeg" ]
-	then
-		# Chop ffmpeg 
-		shared_ffmpeg=`dirname $shared_ffmpeg`
-		# Chop bin 
-		shared_ffmpeg=`dirname $shared_ffmpeg`
-	fi
 
 	for i in "$@"
 	do
@@ -124,18 +116,16 @@ else
 			touch ../disable-avformat
 			echo 0
 		fi
-	else 
-		if [ -d "$shared_ffmpeg/include/ffmpeg" -a -e "$shared_ffmpeg/$LIBDIR/libavformat$avformat_suffix$LIBSUF" ]
-		then
-			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg " >> config.mak
-			echo "LDFLAGS+=-L$shared_ffmpeg/$LIBDIR" >> config.mak
-			[ "$swscale" != "" ] && echo "SWSCALE=1" >> config.mak
-		else
-			echo "avformat: No build environment found. "
-			echo "          Try configuring mlt with --avformat-svn."
-			touch ../disable-avformat
-			exit 0
-		fi
+	elif [ "$shared_ffmpeg" != "" ]
+	then
+		echo "CFLAGS+=$(pkg-config --cflags libavformat)" >> config.mak
+		echo "LDFLAGS+=$(pkg-config --libs libavformat)" >> config.mak
+		[ "$swscale" != "" ] && echo "SWSCALE=1" >> config.mak
+	else
+		echo "avformat: No build environment found. "
+		echo "          Try configuring mlt with --avformat-svn."
+		touch ../disable-avformat
+		exit 0
 	fi
 
 	echo "EXTRA_LIBS=$extra_libs" >> config.mak
