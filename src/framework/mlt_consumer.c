@@ -580,7 +580,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 
 		// Get the image
-		if ( !skip_next )
+		if ( !skip_next || this->real_time == -1 )
 		{
 			// Get the image, mark as rendered and time it
 			if ( !video_off )
