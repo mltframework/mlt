@@ -53,6 +53,11 @@ namespace Mlt {
 %newobject Miracle::execute( char * );
 %newobject Miracle::push( char *, Service & );
 %newobject Miracle::unit( int );
+%newobject Repository::consumers( );
+%newobject Repository::filters( );
+%newobject Repository::producers( );
+%newobject Repository::transitions( );
+%newobject Repository::metadata( mlt_service_type, const char * );
 }
 
 /** Classes to wrap.

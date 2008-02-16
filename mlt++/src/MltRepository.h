@@ -31,6 +31,7 @@
 namespace Mlt
 {
 	class Profile;
+	class Properties;
 
 	class MLTPP_DECLSPEC Repository
 	{
@@ -44,6 +45,12 @@ namespace Mlt
 
 			void register_service( mlt_service_type service_type, const char *service, void *symbol );
 			void *create( Profile& profile, mlt_service_type type, const char *service, void *arg );
+			Properties *consumers( ) const;
+			Properties *filters( ) const;
+			Properties *producers( ) const;
+			Properties *transitions( ) const;
+			void register_metadata( mlt_service_type type, const char *service, Properties& metadata );
+			Properties *metadata( mlt_service_type type, const char *service ) const;
 	};
 }
 

@@ -19,6 +19,7 @@
 
 #include "MltRepository.h"
 #include "MltProfile.h"
+#include "MltProperties.h"
 using namespace Mlt;
 
 Repository::Repository( const char* directory ) :
@@ -47,4 +48,34 @@ void Repository::register_service( mlt_service_type service_type, const char *se
 void *Repository::create( Profile& profile, mlt_service_type type, const char *service, void *arg )
 {
 	return mlt_repository_create( instance, profile.get_profile(), type, service, arg );
+}
+
+Properties *Repository::consumers( ) const
+{
+	return new Properties( mlt_repository_consumers( instance ) );
+}
+
+Properties *Repository::filters( ) const
+{
+	return new Properties( mlt_repository_filters( instance ) );
+}
+
+Properties *Repository::producers( ) const
+{
+	return new Properties( mlt_repository_producers( instance ) );
+}
+
+Properties *Repository::transitions( ) const
+{
+	return new Properties( mlt_repository_transitions( instance ) );
+}
+
+void Repository::register_metadata( mlt_service_type type, const char *service, Properties& metadata )
+{
+	mlt_repository_register_metadata( instance, type, service, metadata.get_properties() );
+}
+
+Properties *Repository::metadata( mlt_service_type type, const char *service ) const
+{
+	return new Properties( mlt_repository_metadata( instance, type, service ) );
 }
