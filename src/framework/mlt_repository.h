@@ -34,14 +34,21 @@ typedef struct mlt_repository_s *mlt_repository;
 */
 #define MLT_REPOSITORY void mlt_register( mlt_repository repository )
 #define MLT_REGISTER( type, service, symbol  ) ( mlt_repository_register( repository, (type), (service), (symbol) ) )
+#define MLT_REGISTER_METADATA( type, service, properties  ) ( mlt_repository_register_metadata( repository, (type), (service), (properties) ) )
 
 /** Public functions.
 */
 
 extern mlt_repository mlt_repository_init( const char *directory );
 extern void mlt_repository_register( mlt_repository self, mlt_service_type service_type, const char *service, void *symbol );
-extern void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, void *arg );
+extern void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, void *arg ); 
 extern void mlt_repository_close( mlt_repository self );
+extern mlt_properties mlt_repository_consumers( mlt_repository self );
+extern mlt_properties mlt_repository_filters( mlt_repository self );
+extern mlt_properties mlt_repository_producers( mlt_repository self );
+extern mlt_properties mlt_repository_transitions( mlt_repository self );
+extern void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_properties metadata );
+extern mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type type, const char *service );
 
 #endif
 

@@ -35,6 +35,9 @@ struct mlt_repository_s
 	mlt_properties transitions;
 };
 
+/** Construct a new repository
+*/
+
 mlt_repository mlt_repository_init( const char *directory )
 {
 	// Safety check
@@ -90,54 +93,83 @@ mlt_repository mlt_repository_init( const char *directory )
 	return this;
 }
 
+static mlt_properties new_service( void *symbol )
+{
+	mlt_properties properties = mlt_properties_new();
+	mlt_properties_set_data( properties, "symbol", symbol, 0, NULL, NULL );
+	return properties;
+}
+
+/** Register a service with the repository
+    Typically, this is invoked by a module within its mlt_register().
+*/
+
 void mlt_repository_register( mlt_repository this, mlt_service_type service_type, const char *service, void *symbol )
 {
 	// Add the entry point to the corresponding service list
 	switch ( service_type )
 	{
 		case consumer_type:
-			mlt_properties_set_data( this->consumers, service, symbol, 0, NULL, NULL );
+			mlt_properties_set_data( this->consumers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		case filter_type:
-			mlt_properties_set_data( this->filters, service, symbol, 0, NULL, NULL );
+			mlt_properties_set_data( this->filters, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		case producer_type:
-			mlt_properties_set_data( this->producers, service, symbol, 0, NULL, NULL );
+			mlt_properties_set_data( this->producers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		case transition_type:
-			mlt_properties_set_data( this->transitions, service, symbol, 0, NULL, NULL );
+			mlt_properties_set_data( this->transitions, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		default:
 			break;
 	}
 }
 
-void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
+static mlt_properties get_service_properties( mlt_repository this, mlt_service_type type, const char *service )
 {
-	void *( *symbol_ptr )( mlt_profile, mlt_service_type, const char *, void * ) = NULL;
+	mlt_properties service_properties = NULL;
 
 	// Get the entry point from the corresponding service list
 	switch ( type )
 	{
 		case consumer_type:
-			symbol_ptr = mlt_properties_get_data( this->consumers, service, NULL );
+			service_properties = mlt_properties_get_data( this->consumers, service, NULL );
 			break;
 		case filter_type:
-			symbol_ptr = mlt_properties_get_data( this->filters, service, NULL );
+			service_properties = mlt_properties_get_data( this->filters, service, NULL );
 			break;
 		case producer_type:
-			symbol_ptr = mlt_properties_get_data( this->producers, service, NULL );
+			service_properties = mlt_properties_get_data( this->producers, service, NULL );
 			break;
 		case transition_type:
-			symbol_ptr = mlt_properties_get_data( this->transitions, service, NULL );
+			service_properties = mlt_properties_get_data( this->transitions, service, NULL );
 			break;
 		default:
 			break;
 	}
-	
-	// Construct the service
-	return ( symbol_ptr != NULL ) ? symbol_ptr( profile, type, service, input ) : NULL;
+	return service_properties;
 }
+
+/** Construct a new instance of a service
+*/
+
+void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
+{
+	mlt_properties properties = get_service_properties( this, type, service );
+	if ( properties != NULL )
+	{
+		void *( *symbol_ptr )( mlt_profile, mlt_service_type, const char *, void * ) =
+			mlt_properties_get_data( properties, "symbol", NULL );
+	
+		// Construct the service
+		return ( symbol_ptr != NULL ) ? symbol_ptr( profile, type, service, input ) : NULL;
+	}
+	return NULL;
+}
+
+/** Destroy a repository
+*/
 
 void mlt_repository_close( mlt_repository this )
 {
@@ -147,4 +179,54 @@ void mlt_repository_close( mlt_repository this )
 	mlt_properties_close( this->transitions );
 	mlt_properties_close( &this->parent );
 	free( this );
+}
+
+/** Get the list of registered consumers
+*/
+
+mlt_properties mlt_repository_consumers( mlt_repository self )
+{
+	return self->consumers;
+}
+
+/** Get the list of registered filters
+*/
+
+mlt_properties mlt_repository_filters( mlt_repository self )
+{
+	return self->filters;
+}
+
+/** Get the list of registered producers
+*/
+
+mlt_properties mlt_repository_producers( mlt_repository self )
+{
+	return self->producers;
+}
+
+/** Get the list of registered transitions
+*/
+
+mlt_properties mlt_repository_transitions( mlt_repository self )
+{
+	return self->transitions;
+}
+
+/** Register the metadata for a service
+    IMPORTANT: mlt_repository will take responsibility for deallocating the metadata properties that you supply!
+*/
+void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_properties metadata )
+{
+	mlt_properties service_properties = get_service_properties( self, type, service );
+	mlt_properties_set_data( service_properties, "metadata", metadata, 0, ( mlt_destructor )mlt_properties_close, NULL );
+}
+
+/** Get the metadata about a service
+*/
+
+mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type type, const char *service )
+{
+	mlt_properties properties = get_service_properties( self, type, service );
+	return mlt_properties_get_data( properties, "metadata", NULL );
 }
