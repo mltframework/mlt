@@ -15,7 +15,7 @@ then
 	swig -c++ -I../../src `mlt-config --cflags` -python mltpp.i || exit $?
 
 	# Compile the wrapper
-	g++ -D_GNU_SOURCE -c -rdynamic -pthread `mlt-config --cflags` -I$PYTHON_INCLUDE mltpp_wrap.cxx || exit $?
+	g++ -fPIC -D_GNU_SOURCE -c -rdynamic -pthread `mlt-config --cflags` -I$PYTHON_INCLUDE mltpp_wrap.cxx || exit $?
 
 	# Create the module
 	ld -shared mltpp_wrap.o -L../../src -lmlt++ -o _mltpp.so || exit $?
