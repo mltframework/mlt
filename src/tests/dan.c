@@ -1,111 +1,27 @@
 
 #include <framework/mlt.h>
-#include "../modules/dv/producer_libdv.h"
-#include "../modules/dv/consumer_libdv.h"
-//#include "../modules/sdl/consumer_sdl.h"
-
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+
 
 int main( int argc, char **argv )
 {
-	char temp[ 132 ];
-	char *file1 = NULL;
-	char *file2 = NULL;
-
-//	mlt_factory_init( "../modules" );
-	mlt_pool_init( );
-
-	if ( argc >= 2 )
-		file1 = argv[ 1 ];
-	if ( argc >= 3 )
-		file2 = argv[ 2 ];
-
-	// Start the consumer...
-	//int vstd = mlt_video_standard_ntsc;
-	//mlt_consumer consumer = mlt_factory_consumer( "bluefish", &vstd );
-	//mlt_consumer consumer = mlt_factory_consumer( "sdl", NULL );
-	mlt_consumer consumer = consumer_libdv_init( NULL );
-
-	// Create the producer(s)
-	//mlt_producer dv1 = mlt_factory_producer( "libdv", file1 );
-	mlt_producer dv1 = producer_libdv_init( file1 );
-	//mlt_producer_set_in_and_out( dv1, 0, 5 );
-
-	mlt_producer dv2;// = mlt_factory_producer( "libdv", file2 );
-	//mlt_producer_set_in_and_out( dv2, 10.0, 30.0 );
-
-#if 1
-	// Connect the consumer to the producer
-	mlt_consumer_connect( consumer, mlt_producer_service( dv1 ) );
-
-	// Do stuff until we're told otherwise...
-	mlt_consumer_start( consumer );
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
-	mlt_consumer_stop( consumer );
-	mlt_consumer_close( consumer );
-	mlt_pool_close( );
-	return 0;
-#endif
-
-	//mlt_producer dv1 = producer_pixbuf_init( file1 );
-	//mlt_producer dv2 = producer_libdv_init( file2 );
-	//mlt_producer dv2 = mlt_factory_producer( "pixbuf", file2 );
-#if 0
-	mlt_producer title = mlt_factory_producer( "pango", NULL ); //"<span font_desc=\"Sans Bold 36\">Mutton <span font_desc=\"Luxi Serif Bold Oblique 36\">Lettuce</span> Tomato</span>" );
-	mlt_properties_set_int( mlt_producer_properties( title ), "video_standard", mlt_video_standard_ntsc );
-	mlt_properties_set( mlt_producer_properties( title ), "font", "Sans Bold 36" );
-	mlt_properties_set( mlt_producer_properties( title ), "text", "Mutton Lettuce\nTomato" );
-	mlt_properties_set_int( mlt_producer_properties( title ), "bgcolor", 0x0000007f );
-	mlt_properties_set_int( mlt_producer_properties( title ), "pad", 8 );
-	mlt_properties_set_int( mlt_producer_properties( title ), "align", 1 );
-	mlt_properties_set_int( mlt_producer_properties( title ), "x", 20 );
-	mlt_properties_set_int( mlt_producer_properties( title ), "y", 40 );
-#endif
-
-	mlt_playlist playlist1 = mlt_playlist_init();
-	mlt_playlist_append( playlist1, dv1 );
-	mlt_playlist_blank( playlist1, 1.0 );
-
-	mlt_playlist playlist2 = mlt_playlist_init();
-	mlt_playlist_blank( playlist2, 3.0 );
-	mlt_playlist_append( playlist2, dv2 );
+	mlt_properties p = mlt_properties_parse_yaml( argv[1] );
+	mlt_properties q = mlt_properties_new();
+	mlt_properties_set_data( q, "metadata", p, 0, ( mlt_destructor )mlt_properties_close, ( mlt_serialiser )mlt_properties_serialise_yaml ); 
+	printf( "%s", mlt_properties_get( q, "metadata" ) );
+	mlt_properties_close( q );
 	
-	// Register producers(s) with a multitrack object
-	mlt_multitrack multitrack = mlt_multitrack_init( );
-	mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist1 ), 0 );
-	mlt_multitrack_connect( multitrack, mlt_playlist_producer( playlist2 ), 1 );
-
-	// Create a filter and associate it to track 0
-	//mlt_filter filter = mlt_factory_filter( "deinterlace", NULL );
-	//mlt_filter_connect( filter, mlt_multitrack_service( multitrack ), 0 );
-	//mlt_filter_set_in_and_out( filter, 0, 1000 );
-
-	// Define a transition
-	mlt_transition transition = mlt_factory_transition( "luma", NULL );
-	mlt_transition_connect( transition, mlt_multitrack_service( multitrack ), 0, 1 );
-	mlt_transition_set_in_and_out( transition, 3.0, 5.0 );
-	//mlt_properties_set( mlt_transition_properties( transition ), "filename", "clock.pgm" );
-	mlt_properties_set_double( mlt_transition_properties( transition ), "softness", 0.1 );
-
-	// Buy a tractor and connect it to the filter
-	mlt_tractor tractor = mlt_tractor_init( );
-	mlt_tractor_connect( tractor, mlt_transition_service( transition ) );
-
-	// Connect the tractor to the consumer
-	mlt_consumer_connect( consumer, mlt_tractor_service( tractor ) );
-
-	// Do stuff until we're told otherwise...
-	fprintf( stderr, "Press return to continue\n" );
-	fgets( temp, 132, stdin );
-
-	// Close everything...
-	mlt_consumer_close( consumer );
-	mlt_tractor_close( tractor );
-	mlt_transition_close( transition );
-	mlt_multitrack_close( multitrack );
-	mlt_producer_close( dv1 );
-	mlt_producer_close( dv2 );
-
+	mlt_repository repo = mlt_factory_init( NULL );
+	mlt_properties metadata = mlt_repository_metadata( repo, producer_type, "avformat" );
+	if ( metadata )
+	{
+		char *s = mlt_properties_serialise_yaml( metadata );
+		printf( "%s", s );
+		free( s );
+	}
+	mlt_factory_close();
 	return 0;
 }
