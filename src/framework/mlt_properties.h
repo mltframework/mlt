@@ -2,6 +2,7 @@
  * mlt_properties.h -- base properties class
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Contributor: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -75,5 +76,8 @@ extern void mlt_properties_debug( mlt_properties self, const char *title, FILE *
 extern int mlt_properties_save( mlt_properties, const char * );
 extern int mlt_properties_dir_list( mlt_properties, const char *, const char *, int );
 extern void mlt_properties_close( mlt_properties self );
+extern int mlt_properties_is_sequence( mlt_properties self );
+extern mlt_properties mlt_properties_parse_yaml( const char *file );
+extern char *mlt_properties_serialise_yaml( mlt_properties self );
 
 #endif

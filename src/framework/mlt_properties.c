@@ -2,6 +2,7 @@
  * mlt_properties.c -- base properties class
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Contributor: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,11 +21,13 @@
 
 #include "mlt_properties.h"
 #include "mlt_property.h"
+#include "mlt_deque.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -100,7 +103,7 @@ mlt_properties mlt_properties_new( )
 	return this;
 }
 
-/** Load properties from a file.
+/** Load properties from a .properties file (DEPRECATED).
 */
 
 mlt_properties mlt_properties_load( const char *filename )
@@ -911,3 +914,491 @@ void mlt_properties_close( mlt_properties this )
 	}
 }
 
+/** Determine if the properties list is really just a sequence or ordered list.
+    Returns 0 if false or 1 if true.
+*/
+int mlt_properties_is_sequence( mlt_properties properties )
+{
+	int i;
+	int n = mlt_properties_count( properties );
+	for ( i = 0; i < n; i++ )
+		if ( ! isdigit( mlt_properties_get_name( properties, i )[0] ) )
+			return 0;
+	return 1;
+}
+
+/** YAML Tiny Parser
+ * YAML is a nifty text format popular in the Ruby world as a cleaner,
+ * less verbose alternative to XML. See this Wikipedia topic for an overview:
+ * http://en.wikipedia.org/wiki/YAML
+ * The YAML specification is at:
+ * http://yaml.org/
+ * YAML::Tiny is a Perl module that specifies a subset of YAML that we are
+ * using here (for the same reasons):
+ * http://search.cpan.org/~adamk/YAML-Tiny-1.25/lib/YAML/Tiny.pm
+ */
+
+struct yaml_parser_context
+{
+	mlt_deque stack;
+	unsigned int level;
+	unsigned int index;
+	char block;
+	char *block_name;
+	unsigned int block_indent;
+	
+};
+typedef struct yaml_parser_context *yaml_parser;
+
+static unsigned int ltrim( char **s )
+{
+	unsigned int i = 0;
+	char *c = *s;
+	int n = strlen( c );
+	for ( i = 0; i < n && *c == ' '; i++, c++ );
+	*s = c;
+	return i;
+}
+
+static unsigned int rtrim( char *s )
+{
+	int n = strlen( s );
+	int i;
+	for ( i = n; i > 0 && s[i - 1] == ' '; --i )
+		s[i - 1] = 0;
+	return n - i;
+}
+
+static int parse_yaml( yaml_parser context, const char *namevalue )
+{
+	char *name_ = strdup( namevalue );
+	char *name = name_;
+	char *value = NULL;
+	int error = 0;
+	char *ptr = strchr( name, ':' );
+	unsigned int indent = ltrim( &name );
+	mlt_properties properties = mlt_deque_peek_front( context->stack );
+	
+	// Ascending one more levels in the tree
+	if ( indent < context->level )
+	{
+		unsigned int i;
+		unsigned int n = ( context->level - indent ) / 2;
+		for ( i = 0; i < n; i++ )
+			mlt_deque_pop_front( context->stack );
+		properties = mlt_deque_peek_front( context->stack );
+		context->level = indent;
+	}
+	
+	// Descending a level in the tree
+	else if ( indent > context->level && context->block == 0 )
+	{
+		context->level = indent;
+	}
+	
+	// If there is a colon that is not part of a block
+	if ( ptr && ( indent == context->level ) )
+	{
+		// Reset block processing
+		if ( context->block_name )
+		{
+			free( context->block_name );
+			context->block_name = NULL;
+			context->block = 0;
+		}
+		
+		// Terminate the name and setup the value pointer
+		*( ptr ++ ) = 0;
+		
+		// Trim comment
+		char *comment = strchr( ptr, '#' );
+		if ( comment )
+		{
+			*comment = 0;
+		}
+		
+		// Trim leading and trailing spaces from bare value 
+		ltrim( &ptr );
+		rtrim( ptr );
+		
+		// No value means a child
+		if ( strcmp( ptr, "" ) == 0 )
+		{
+			mlt_properties child = mlt_properties_new();
+			mlt_properties_set_data( properties, name, child, 0, 
+				( mlt_destructor )mlt_properties_close, NULL );
+			mlt_deque_push_front( context->stack, child );
+			context->index = 0;
+			free( name_ );
+			return error;
+		}
+		
+		// A dash indicates a sequence item
+		if ( name[0] == '-' )
+		{
+			mlt_properties child = mlt_properties_new();
+			char key[20];
+			
+			snprintf( key, sizeof(key), "%d", context->index++ );
+			mlt_properties_set_data( properties, key, child, 0, 
+				( mlt_destructor )mlt_properties_close, NULL );
+			mlt_deque_push_front( context->stack, child );
+
+			name ++;
+			context->level += ltrim( &name ) + 1;
+			properties = child;
+		}
+		
+		// Value is quoted
+		if ( *ptr == '\"' )
+		{
+			ptr ++;
+			value = strdup( ptr );
+			if ( value && value[ strlen( value ) - 1 ] == '\"' )
+				value[ strlen( value ) - 1 ] = 0;
+		}
+		
+		// Value is folded or unfolded block
+		else if ( *ptr == '|' || *ptr == '>' )
+		{
+			context->block = *ptr;
+			context->block_name = strdup( name );
+			context->block_indent = 0;
+			value = strdup( "" );
+		}
+		
+		// Bare value
+		else
+		{
+			value = strdup( ptr );
+		}
+	}
+	
+	// A list of scalars
+	else if ( name[0] == '-' )
+	{
+		// Reset block processing
+		if ( context->block_name )
+		{
+			free( context->block_name );
+			context->block_name = NULL;
+			context->block = 0;
+		}
+		
+		char key[20];
+		
+		snprintf( key, sizeof(key), "%d", context->index++ );
+		ptr = name + 1;
+		
+		// Trim comment
+		char *comment = strchr( ptr, '#' );
+		if ( comment )
+			*comment = 0;
+		
+		// Trim leading and trailing spaces from bare value 
+		ltrim( &ptr );
+		rtrim( ptr );
+		
+		// Value is quoted
+		if ( *ptr == '\"' )
+		{
+			ptr ++;
+			value = strdup( ptr );
+			if ( value && value[ strlen( value ) - 1 ] == '\"' )
+				value[ strlen( value ) - 1 ] = 0;
+		}
+		
+		// Value is folded or unfolded block
+		else if ( *ptr == '|' || *ptr == '>' )
+		{
+			context->block = *ptr;
+			context->block_name = strdup( key );
+			context->block_indent = 0;
+			value = strdup( "" );
+		}
+		
+		// Bare value
+		else
+		{
+			value = strdup( ptr );
+		}
+		
+		free( name_ );
+		name = name_ = strdup( key );
+	}
+
+	// Non-folded block
+	else if ( context->block == '|' )
+	{
+		if ( context->block_indent == 0 )
+			context->block_indent = indent;
+		if ( indent > context->block_indent )
+			name = &name_[ context->block_indent ];
+		rtrim( name );
+		char *old_value = mlt_properties_get( properties, context->block_name );
+		value = calloc( 1, strlen( old_value ) + strlen( name ) + 2 );
+		strcpy( value, old_value );
+		if ( strcmp( old_value, "" ) )
+			strcat( value, "\n" );
+		strcat( value, name );
+		name = context->block_name;
+	}
+	
+	// Folded block
+	else if ( context->block == '>' )
+	{
+		ltrim( &name );
+		rtrim( name );
+		char *old_value = mlt_properties_get( properties, context->block_name );
+		
+		// Blank line (prepended with spaces) is new line
+		if ( strcmp( name, "" ) == 0 )
+		{
+			value = calloc( 1, strlen( old_value ) + 2 );
+			strcat( value, old_value );
+			strcat( value, "\n" );
+		}
+		// Concatenate with space
+		else
+		{
+			value = calloc( 1, strlen( old_value ) + strlen( name ) + 2 );
+			strcat( value, old_value );
+			if ( strcmp( old_value, "" ) && old_value[ strlen( old_value ) - 1 ] != '\n' )
+				strcat( value, " " );
+			strcat( value, name );
+		}
+		name = context->block_name;
+	}
+	
+	else
+	{
+		value = strdup( "" );
+	}
+
+	error = mlt_properties_set( properties, name, value );
+
+	free( name_ );
+	free( value );
+
+	return error;
+}
+
+mlt_properties mlt_properties_parse_yaml( const char *filename )
+{
+	// Construct a standalone properties object
+	mlt_properties this = mlt_properties_new( );
+
+	if ( this )
+	{
+		// Open the file
+		FILE *file = fopen( filename, "r" );
+
+		// Load contents of file
+		if ( file )
+		{
+			// Temp string
+			char temp[ 1024 ];
+			char *ptemp = &temp[ 0 ];
+			
+			// Parser context
+			yaml_parser context = calloc( 1, sizeof( struct yaml_parser_context ) );
+			context->stack = mlt_deque_init();
+			mlt_deque_push_front( context->stack, this );
+
+			// Read each string from the file
+			while( fgets( temp, 1024, file ) )
+			{
+				// Check for end-of-stream
+				if ( strncmp( ptemp, "...", 3 ) == 0 )
+					break;
+					
+				// Chomp the string
+				temp[ strlen( temp ) - 1 ] = '\0';
+
+				// Skip blank lines, comment lines, and document separator
+				if ( strcmp( ptemp, "" ) && ptemp[ 0 ] != '#' && strncmp( ptemp, "---", 3 ) 
+				     && strncmp( ptemp, "%YAML", 5 ) && strncmp( ptemp, "% YAML", 6 ) )
+					parse_yaml( context, temp );
+			}
+
+			// Close the file
+			fclose( file );
+			mlt_deque_close( context->stack );
+			if ( context->block_name )
+				free( context->block_name );
+			free( context );
+		}
+	}
+
+	// Return the pointer
+	return this;
+}
+
+/** YAML Tiny Serialiser
+*/
+
+/* strbuf is a self-growing string buffer */
+
+#define STRBUF_GROWTH (1024)
+
+struct strbuf_s
+{
+	size_t size;
+	char *string;
+};
+
+typedef struct strbuf_s *strbuf;
+
+static strbuf strbuf_new( )
+{
+	strbuf buffer = calloc( 1, sizeof( struct strbuf_s ) );
+	buffer->size = STRBUF_GROWTH;
+	buffer->string = calloc( 1, buffer->size );
+	return buffer;
+}
+
+static void strbuf_close( strbuf buffer )
+{
+	// We do not free buffer->string; strbuf user must save that pointer
+	// and free it.
+	if ( buffer )
+		free( buffer );
+}
+
+static char *strbuf_printf( strbuf buffer, const char *format, ... )
+{
+	while ( buffer->string )
+	{
+		va_list ap;
+		va_start( ap, format );
+		size_t len = strlen( buffer->string );
+		size_t remain = buffer->size - len - 1;
+		int need = vsnprintf( buffer->string + len, remain, format, ap );
+		va_end( ap );
+		if ( need > -1 && need < remain )
+			break;
+		buffer->string[ len ] = 0;
+		buffer->size += need + STRBUF_GROWTH;
+		buffer->string = realloc( buffer->string, buffer->size );
+	}
+	return buffer->string;
+}
+
+static inline void indent_yaml( strbuf output, int indent )
+{
+	int j;
+	for ( j = 0; j < indent; j++ )
+		strbuf_printf( output, " " );
+}
+
+static void output_yaml_block_literal( strbuf output, const char *value, int indent )
+{
+	char *v = strdup( value );
+	char *sol = v;
+	char *eol = strchr( sol, '\n' );
+	
+	while ( eol )
+	{
+		indent_yaml( output, indent );
+		*eol = '\0';
+		strbuf_printf( output, "%s\n", sol );
+		sol = eol + 1;
+		eol = strchr( sol, '\n' );
+	}	
+	indent_yaml( output, indent );
+	strbuf_printf( output, "%s\n", sol );
+}
+
+static void serialise_yaml( mlt_properties this, strbuf output, int indent, int is_parent_sequence )
+{
+	property_list *list = this->local;
+	int i = 0;
+	
+	for ( i = 0; i < list->count; i ++ )
+	{
+		// This implementation assumes that all data elements are property lists.
+		// Unfortunately, we do not have run time type identification.
+		mlt_properties child = mlt_property_get_data( list->value[ i ], NULL );
+		
+		if ( mlt_properties_is_sequence( this ) )
+		{
+			// Ignore hidden/non-serialisable items
+			if ( list->name[ i ][ 0 ] != '_' )
+			{
+				// Indicate a sequence item
+				indent_yaml( output, indent );
+				strbuf_printf( output, "- " );
+				
+				// If the value can be represented as a string
+				const char *value = mlt_properties_get( this, list->name[ i ] );
+				if ( value && strcmp( value, "" ) )
+				{
+					// Determine if this is an unfolded block literal
+					if ( strchr( value, '\n' ) )
+					{
+						strbuf_printf( output, "|\n" );
+						output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( "|" ) );
+					}
+					else
+					{
+						strbuf_printf( output, "%s\n", value );
+					}
+				}
+			}
+			// Recurse on child
+			if ( child )
+				serialise_yaml( child, output, indent + 2, 1 );
+		}
+		else 
+		{
+			// Assume this is a normal map-oriented properties list
+			const char *value = mlt_properties_get( this, list->name[ i ] );
+			
+			// Ignore hidden/non-serialisable items
+			// If the value can be represented as a string
+			if ( list->name[ i ][ 0 ] != '_' && value && strcmp( value, "" ) )
+			{
+				if ( is_parent_sequence == 0 )
+					indent_yaml( output, indent );
+				else
+					is_parent_sequence = 0;
+				
+				// Determine if this is an unfolded block literal
+				if ( strchr( value, '\n' ) )
+				{
+					strbuf_printf( output, "%s: |\n", list->name[ i ] );
+					output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( ": " ) );
+				}
+				else
+				{
+					strbuf_printf( output, "%s: %s\n", list->name[ i ], value );
+				}
+			}
+			
+			// Output a child as a map item
+			if ( child )
+			{
+				indent_yaml( output, indent );
+				strbuf_printf( output, "%s:\n", list->name[ i ] );
+
+				// Recurse on child
+				serialise_yaml( child, output, indent + 2, 0 );
+			}
+		}
+	}
+}
+
+/** Serialise the properties as a string of YAML Tiny.
+    The caller must free the returned string.
+*/
+
+char *mlt_properties_serialise_yaml( mlt_properties this )
+{
+	strbuf b = strbuf_new();
+	strbuf_printf( b, "---\n" );
+	serialise_yaml( this, b, 0, 0 );
+	strbuf_printf( b, "...\n" );
+	char *ret = b->string;
+	strbuf_close( b );
+	return ret;
+}
