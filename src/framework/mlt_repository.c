@@ -2,6 +2,7 @@
  * repository.c -- provides a map between service and shared objects
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Contributor: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -73,7 +74,7 @@ mlt_repository mlt_repository_init( const char *directory )
 		if ( object != NULL )
 		{
 			// Get the registration function
-			int ( *symbol_ptr )( mlt_repository ) = dlsym( object, "mlt_register" );
+			mlt_repository_callback symbol_ptr = dlsym( object, "mlt_register" );
 			
 			// Call the registration function
 			if ( symbol_ptr != NULL )
@@ -90,7 +91,7 @@ mlt_repository mlt_repository_init( const char *directory )
 		}
 		else if ( strstr( object_name, "libmlt" ) )
 		{
-			fprintf( stderr, "%s:%s: failed to dlopen %s\n", __FILE__, __FUNCTION__, object_name );
+			fprintf( stderr, "%s, %s: failed to dlopen %s\n", __FILE__, __FUNCTION__, object_name );
 		}
 	}
 	
@@ -108,7 +109,7 @@ static mlt_properties new_service( void *symbol )
     Typically, this is invoked by a module within its mlt_register().
 */
 
-void mlt_repository_register( mlt_repository this, mlt_service_type service_type, const char *service, void *symbol )
+void mlt_repository_register( mlt_repository this, mlt_service_type service_type, const char *service, mlt_register_callback symbol )
 {
 	// Add the entry point to the corresponding service list
 	switch ( service_type )
@@ -163,8 +164,7 @@ void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_servi
 	mlt_properties properties = get_service_properties( this, type, service );
 	if ( properties != NULL )
 	{
-		void *( *symbol_ptr )( mlt_profile, mlt_service_type, const char *, void * ) =
-			mlt_properties_get_data( properties, "symbol", NULL );
+		mlt_register_callback symbol_ptr = mlt_properties_get_data( properties, "symbol", NULL );
 	
 		// Construct the service
 		return ( symbol_ptr != NULL ) ? symbol_ptr( profile, type, service, input ) : NULL;
@@ -220,17 +220,47 @@ mlt_properties mlt_repository_transitions( mlt_repository self )
 /** Register the metadata for a service
     IMPORTANT: mlt_repository will take responsibility for deallocating the metadata properties that you supply!
 */
-void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_properties metadata )
+void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_metadata_callback callback, void *callback_data )
 {
 	mlt_properties service_properties = get_service_properties( self, type, service );
-	mlt_properties_set_data( service_properties, "metadata", metadata, 0, ( mlt_destructor )mlt_properties_close, NULL );
+	mlt_properties_set_data( service_properties, "metadata_cb", callback, 0, NULL, NULL );
+	mlt_properties_set_data( service_properties, "metadata_cb_data", callback_data, 0, NULL, NULL );
 }
 
 /** Get the metadata about a service
+    Returns NULL if service or its metadata are unavailable.
 */
 
 mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type type, const char *service )
 {
+	mlt_properties metadata = NULL;
 	mlt_properties properties = get_service_properties( self, type, service );
-	return mlt_properties_get_data( properties, "metadata", NULL );
+	
+	// If this is a valid service
+	if ( properties )
+	{
+		// Lookup cached metadata
+		metadata = mlt_properties_get_data( properties, "metadata", NULL );
+		if ( ! metadata )
+		{
+			// Not cached, so get the registered metadata callback function
+			mlt_metadata_callback callback = mlt_properties_get_data( properties, "metadata_cb", NULL );
+
+			// If a metadata callback function is registered
+			if ( callback )
+			{
+				// Fetch the callback data arg
+				void *data = mlt_properties_get_data( properties, "metadata_cb_data", NULL );
+			
+				// Fetch the metadata through the callback
+				metadata = callback( type, service, data );
+				
+				// Cache the metadata
+				if ( metadata )
+					// Include dellocation and serialisation
+					mlt_properties_set_data( properties, "metadata", metadata, 0, ( mlt_destructor )mlt_properties_close, ( mlt_serialiser )mlt_properties_serialise_yaml );
+			}
+		}
+	}
+	return metadata;
 }
