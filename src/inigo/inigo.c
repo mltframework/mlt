@@ -265,6 +265,56 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	}
 }
 
+static void query_metadata( mlt_repository repo, mlt_service_type type, char *typestr, char *id )
+{
+	mlt_properties metadata = mlt_repository_metadata( repo, type, id );
+	if ( metadata )
+	{
+		char *s = mlt_properties_serialise_yaml( metadata );
+		fprintf( stderr, "%s", s );
+		free( s );
+	}
+	else
+	{
+		fprintf( stderr, "# No metadata for %s \"%s\"\n", typestr, id );
+	}
+}
+
+static void query_services( mlt_repository repo, mlt_service_type type )
+{
+	mlt_properties services = NULL;
+	char *typestr = NULL;
+	switch ( type )
+	{
+		case consumer_type:
+			services = mlt_repository_consumers( repo );
+			typestr = "consumers";
+			break;
+		case filter_type:
+			services = mlt_repository_filters( repo );
+			typestr = "filters";
+			break;
+		case producer_type:
+			services = mlt_repository_producers( repo );
+			typestr = "producers";
+			break;
+		case transition_type:
+			services = mlt_repository_transitions( repo );
+			typestr = "transitions";
+			break;
+		default:
+			return;
+	}
+	fprintf( stderr, "---\n%s:\n", typestr );
+	if ( services )
+	{
+		int j;
+		for ( j = 0; j < mlt_properties_count( services ); j++ )
+			fprintf( stderr, "  - %s\n", mlt_properties_get_name( services, j ) );
+	}
+	fprintf( stderr, "...\n" );
+}
+
 int main( int argc, char **argv )
 {
 	int i;
@@ -283,7 +333,7 @@ int main( int argc, char **argv )
 #endif
 
 	// Construct the factory
-	mlt_factory_init( NULL );
+	mlt_repository repo = mlt_factory_init( NULL );
 
 	for ( i = 1; i < argc; i ++ )
 	{
@@ -306,6 +356,45 @@ int main( int argc, char **argv )
 			const char *pname = argv[ ++ i ];
 			if ( pname && pname[0] != '-' )
 				profile = mlt_profile_init( pname );
+		}
+		// Look for the query option
+		else if ( !strcmp( argv[ i ], "-query" ) )
+		{
+			const char *pname = argv[ ++ i ];
+			if ( pname && pname[0] != '-' )
+			{
+				if ( !strcmp( pname, "consumers" ) || !strcmp( pname, "consumer" ) )
+					query_services( repo, consumer_type );
+				else if ( !strcmp( pname, "filters" ) || !strcmp( pname, "filter" ) )
+					query_services( repo, filter_type );
+				else if ( !strcmp( pname, "producers" ) || !strcmp( pname, "producer" ) )
+					query_services( repo, producer_type );
+				else if ( !strcmp( pname, "transitions" ) || !strcmp( pname, "transition" ) )
+					query_services( repo, transition_type );
+				
+				else if ( !strncmp( pname, "consumer=", 9 ) )
+					query_metadata( repo, consumer_type, "consumer", strchr( pname, '=' ) + 1 );
+				else if ( !strncmp( pname, "filter=", 9 ) )
+					query_metadata( repo, filter_type, "filter", strchr( pname, '=' ) + 1 );
+				else if ( !strncmp( pname, "producer=", 9 ) )
+					query_metadata( repo, producer_type, "producer", strchr( pname, '=' ) + 1 );
+				else if ( !strncmp( pname, "transition=", 9 ) )
+					query_metadata( repo, transition_type, "transition", strchr( pname, '=' ) + 1 );
+				else
+					goto query_all;
+			}
+			else
+			{
+query_all:
+				query_services( repo, consumer_type );
+				query_services( repo, filter_type );
+				query_services( repo, producer_type );
+				query_services( repo, transition_type );
+				fprintf( stderr, "# You can query the metadata for a specific service using:\n"
+					"# -query <type>=<identifer>\n"
+					"# where <type> is one of: consumer, filter, producer, or transition.\n" );
+			}
+			goto exit_factory;
 		}
 	}
 
@@ -404,6 +493,8 @@ int main( int argc, char **argv )
 	else
 	{
 		fprintf( stderr, "Usage: inigo [ -profile name ]\n"
+						 "             [ -query [ consumers | filters | producers | transitions |\n"
+						 "                      type=identifer ] ]\n"
 						 "             [ -serialise [ filename.inigo ] ]\n"
 						 "             [ -group [ name=value ]* ]\n"
 						 "             [ -consumer id[:arg] [ name=value ]* [ silent=1 ] [ progress=1 ] ]\n"
@@ -429,6 +520,9 @@ int main( int argc, char **argv )
 
 	// Close the factory
 	mlt_profile_close( profile );
+
+exit_factory:
+		
 	mlt_factory_close( );
 
 	return 0;
