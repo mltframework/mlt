@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <pthread.h>
+#include <limits.h>
 
 #include <framework/mlt.h>
 
@@ -113,6 +114,31 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 	return NULL;
 }
 
+static mlt_properties avformat_metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	char *service_type = NULL;
+	switch ( type )
+	{
+		case consumer_type:
+			service_type = "consumer";
+			break;
+		case filter_type:
+			service_type = "filter";
+			break;
+		case producer_type:
+			service_type = "producer";
+			break;
+		case transition_type:
+			service_type = "transition";
+			break;
+		default:
+			return NULL;
+	}
+	snprintf( file, PATH_MAX, "%s/avformat/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, id );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "avformat", create_service );
@@ -121,4 +147,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "avcolor_space", create_service );
 	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
 	MLT_REGISTER( filter_type, "avresample", create_service );
+	
+	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
 }

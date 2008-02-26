@@ -36,27 +36,33 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(LOCAL_FFMPEG_OBJS):
-		if [ $(LOCAL_FFMPEG) ] ; then \
-			$(MAKE) -C ffmpeg lib ; \
-		fi
+	if [ $(LOCAL_FFMPEG) ] ; then \
+		$(MAKE) -C ffmpeg lib ; \
+	fi
 
 $(TARGET): $(OBJS) $(LOCAL_FFMPEG_OBJS)
-		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+	$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
-		if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dep ; fi
-		$(CC) -MM $(CFLAGS) $^ 1>.depend
+	if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dep ; fi
+	$(CC) -MM $(CFLAGS) $^ 1>.depend
 
 distclean:	clean
-		if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg distclean ; fi
-		rm -f .depend
+	if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg distclean ; fi
+	rm -f .depend
 
 clean:	
-		#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg clean ; fi
-		rm -f $(OBJS) $(TARGET)
+	#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg clean ; fi
+	rm -f $(OBJS) $(TARGET)
 
 install: all
-		install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -d "$(DESTDIR)$(prefix)/share/mlt/avformat"
+	install -m 644 producer_avformat.yml "$(DESTDIR)$(prefix)/share/mlt/avformat"
+
+uninstall:
+	rm "$(DESTDIR)$(libdir)/mlt/libmltavformat$(LIBSUF)"
+	rm -rf "$(DESTDIR)$(prefix)/share/mlt/avformat" 
 
 ifneq ($(wildcard .depend),)
 include .depend
