@@ -91,7 +91,7 @@ else
 		fi
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale $svn_ffmpeg_extra )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
-		echo "CFLAGS+=-I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil -I`pwd`/ffmpeg/libavdevice -I`pwd`/ffmpeg/libswscale" >> config.mak
+		echo "CFLAGS+=-I`pwd`/ffmpeg -I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil -I`pwd`/ffmpeg/libavdevice -I`pwd`/ffmpeg/libswscale" >> config.mak
 		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil -L`pwd`/ffmpeg/libavdevice -L`pwd`/ffmpeg/libswscale" >> config.mak
 		[ $targetos = "Darwin" ] &&
 			echo "LDFLAGS+=-single_module" >> config.mak
