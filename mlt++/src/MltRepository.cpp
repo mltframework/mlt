@@ -40,7 +40,7 @@ Repository::~Repository( )
 	instance = NULL;
 }
 
-void Repository::register_service( mlt_service_type service_type, const char *service, void *symbol )
+void Repository::register_service( mlt_service_type service_type, const char *service, mlt_register_callback symbol )
 {
 	mlt_repository_register( instance, service_type, service, symbol );
 }
@@ -70,9 +70,9 @@ Properties *Repository::transitions( ) const
 	return new Properties( mlt_repository_transitions( instance ) );
 }
 
-void Repository::register_metadata( mlt_service_type type, const char *service, Properties& metadata )
+void Repository::register_metadata( mlt_service_type type, const char *service, mlt_metadata_callback callback, void *callback_data )
 {
-	mlt_repository_register_metadata( instance, type, service, metadata.get_properties() );
+	mlt_repository_register_metadata( instance, type, service, callback, callback_data );
 }
 
 Properties *Repository::metadata( mlt_service_type type, const char *service ) const
