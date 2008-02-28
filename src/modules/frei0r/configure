@@ -3,8 +3,8 @@
 if [ "$help" != "1" ]
 then
 
-	echo -e "#include <frei0r.h>\n void main(){}\n"| gcc - -E -o /dev/null  >/dev/null 2>&1
-	
+	echo -e "#include <frei0r.h>\n int main(){ f0r_plugin_info_t test; test.name;return 0;}\n"| gcc -c -o test1 -x c -  >/dev/null 2>&1
+
 	if [ "$?" = "1" ]
 	then
 		touch ../disable-frei0r
