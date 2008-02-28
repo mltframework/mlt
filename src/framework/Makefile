@@ -90,12 +90,15 @@ install:
 	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME)
 	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
+	install -d "$(DESTDIR)$(prefix)/share/mlt"
+	install -m 644 metaschema.yaml "$(DESTDIR)$(prefix)/share/mlt/"
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
 	rm -f "$(DESTDIR)$(libdir)/$(SONAME)"
 	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
+	rm "$(DESTDIR)$(prefix)/share/mlt/metaschema.yaml"
 
 ifneq ($(wildcard .depend),)
 include .depend
