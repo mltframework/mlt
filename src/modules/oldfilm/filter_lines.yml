@@ -1,0 +1,118 @@
+schema_version: 0.1
+type: filter # consumer, filter, producer, or transition
+identifier: lines
+title: Scratchlines
+version: 0.2.5
+copyright: Copyright (C) 2008 Marco Gittler
+license: GPL
+language: en
+url: none
+creator: Marco Gittler
+contributor:
+  - Marco Gittler
+tags:
+  - Video # this may produce video
+description: Scratchlines over the Picture
+icon:
+  filename: oldfilm/lines.svg # relative to $MLT_DATA/modules/
+  content-type: image/svg
+  content-encoding: base64
+  content: |
+    PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjwh
+    LS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgo8
+    c3ZnCiAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgeG1s
+    bnM6Y2M9Imh0dHA6Ly93ZWIucmVzb3VyY2Uub3JnL2NjLyIKICAgeG1sbnM6cmRmPSJodHRwOi8v
+    d3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIgogICB4bWxuczpzdmc9Imh0dHA6
+    Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9z
+    dmciCiAgIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RU
+    RC9zb2RpcG9kaS0wLmR0ZCIKICAgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUu
+    b3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiCiAgIHdpZHRoPSIxMzguMTQyODUiCiAgIGhlaWdodD0i
+    Mjc1LjI4NTcxIgogICBpZD0ic3ZnMjI1MSIKICAgc29kaXBvZGk6dmVyc2lvbj0iMC4zMiIKICAg
+    aW5rc2NhcGU6dmVyc2lvbj0iMC40NS4xIgogICB2ZXJzaW9uPSIxLjAiCiAgIHNvZGlwb2RpOmRv
+    Y2Jhc2U9Ii9ob21lL21hcmNvL21sdC1zdm4vbWx0L3NyYy9tb2R1bGVzL29sZGZpbG0iCiAgIHNv
+    ZGlwb2RpOmRvY25hbWU9Imxpbi5zdmciCiAgIGlua3NjYXBlOm91dHB1dF9leHRlbnNpb249Im9y
+    Zy5pbmtzY2FwZS5vdXRwdXQuc3ZnLmlua3NjYXBlIj4KICA8ZGVmcwogICAgIGlkPSJkZWZzMjI1
+    MyIgLz4KICA8c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgaWQ9ImJhc2UiCiAgICAgcGFnZWNvbG9y
+    PSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRlcm9wYWNpdHk9
+    IjEuMCIKICAgICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICAgIGlua3NjYXBlOnBhZ2Vz
+    aGFkb3c9IjIiCiAgICAgaW5rc2NhcGU6em9vbT0iMC4zNSIKICAgICBpbmtzY2FwZTpjeD0iMzUw
+    IgogICAgIGlua3NjYXBlOmN5PSI2Mi44NTcxNDMiCiAgICAgaW5rc2NhcGU6ZG9jdW1lbnQtdW5p
+    dHM9InB4IgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9ImxheWVyMSIKICAgICBpbmtzY2Fw
+    ZTp3aW5kb3ctd2lkdGg9Ijc5NyIKICAgICBpbmtzY2FwZTp3aW5kb3ctaGVpZ2h0PSI1ODYiCiAg
+    ICAgaW5rc2NhcGU6d2luZG93LXg9IjAiCiAgICAgaW5rc2NhcGU6d2luZG93LXk9IjAiIC8+CiAg
+    PG1ldGFkYXRhCiAgICAgaWQ9Im1ldGFkYXRhMjI1NiI+CiAgICA8cmRmOlJERj4KICAgICAgPGNj
+    OldvcmsKICAgICAgICAgcmRmOmFib3V0PSIiPgogICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2Uvc3Zn
+    K3htbDwvZGM6Zm9ybWF0PgogICAgICAgIDxkYzp0eXBlCiAgICAgICAgICAgcmRmOnJlc291cmNl
+    PSJodHRwOi8vcHVybC5vcmcvZGMvZGNtaXR5cGUvU3RpbGxJbWFnZSIgLz4KICAgICAgPC9jYzpX
+    b3JrPgogICAgPC9yZGY6UkRGPgogIDwvbWV0YWRhdGE+CiAgPGcKICAgICBpbmtzY2FwZTpsYWJl
+    bD0iRWJlbmUgMSIKICAgICBpbmtzY2FwZTpncm91cG1vZGU9ImxheWVyIgogICAgIGlkPSJsYXll
+    cjEiCiAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTEyOC4wNzE0MywtMjE3LjU3NjQ3KSI+CiAg
+    ICA8cGF0aAogICAgICAgc3R5bGU9ImZpbGw6bm9uZTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6
+    IzAwMDAwMDtzdHJva2Utd2lkdGg6MXB4O3N0cm9rZS1saW5lY2FwOmJ1dHQ7c3Ryb2tlLWxpbmVq
+    b2luOm1pdGVyO3N0cm9rZS1vcGFjaXR5OjEiCiAgICAgICBkPSJNIDE4MCwyMjMuNzkwNzUgTCAx
+    ODAsNDkyLjM2MjE4IgogICAgICAgaWQ9InBhdGgyMjYxIiAvPgogICAgPHBhdGgKICAgICAgIHN0
+    eWxlPSJmaWxsOm5vbmU7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdp
+    ZHRoOjFweDtzdHJva2UtbGluZWNhcDpidXR0O3N0cm9rZS1saW5lam9pbjptaXRlcjtzdHJva2Ut
+    b3BhY2l0eToxIgogICAgICAgZD0iTSAyNjUuNzE0MjksMjE4LjA3NjQ3IEwgMjY1LjcxNDI5LDM4
+    OS41MDUwNCIKICAgICAgIGlkPSJwYXRoMjI2MyIgLz4KICAgIDxwYXRoCiAgICAgICBzdHlsZT0i
+    ZmlsbDpub25lO2ZpbGwtcnVsZTpldmVub2RkO3N0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDox
+    cHg7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGluZWpvaW46bWl0ZXI7c3Ryb2tlLW9wYWNp
+    dHk6MSIKICAgICAgIGQ9Ik0gMTI4LjU3MTQzLDMwOS41MDUwNCBMIDEyOC41NzE0Myw0NDAuOTMz
+    NjEiCiAgICAgICBpZD0icGF0aDIyNjUiIC8+CiAgPC9nPgo8L3N2Zz4K
+
+notes: Implementation or additional usage notes go here.
+bugs: # this can be just for documentation, or the tool may disclose it to help user avoid pitfalls
+  - need to do some speed improvement.
+
+parameters:
+  - identifier: width
+    title: Width of line
+    type: integer
+    description: Linewidth in picture
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 100
+    default: 2
+    mutable: no
+    widget: spinner
+    unit: pixel
+
+  - identifier: num
+    title: Max number of lines
+    type: integer
+    description: Maximal number of lines in picture
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 100
+    default: 5
+    mutable: no
+    widget: spinner
+    unit: lines
+
+  - identifier: darker
+    title: Max darker
+    type: integer
+    description: Make image up to n values darker behind line
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 100
+    default: 40
+    mutable: no
+    widget: spinner
+
+  - identifier: lighter
+    title: Max lighter
+    type: integer
+    description: Make image up to n values lighter behind line
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 100
+    default: 40
+    mutable: no
+    widget: spinner
+
+

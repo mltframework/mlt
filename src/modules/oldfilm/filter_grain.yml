@@ -1,0 +1,132 @@
+schema_version: 0.1
+type: filter # consumer, filter, producer, or transition
+identifier: grain
+title: Grain
+version: 0.2.5
+copyright: Copyright (C) 2008 Marco Gittler
+license: GPL
+language: en
+url: none
+creator: Marco Gittler
+contributor:
+  - Marco Gittler
+tags:
+  - Video # this may produce video
+description: Grain over the Image 
+icon:
+  filename: oldfilm/grain.svg # relative to $MLT_DATA/modules/
+  content-type: image/svg
+  content-encoding: base64
+  content: |
+    PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjwh
+    LS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgo8
+    c3ZnCiAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgeG1s
+    bnM6Y2M9Imh0dHA6Ly93ZWIucmVzb3VyY2Uub3JnL2NjLyIKICAgeG1sbnM6cmRmPSJodHRwOi8v
+    d3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIgogICB4bWxuczpzdmc9Imh0dHA6
+    Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9z
+    dmciCiAgIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RU
+    RC9zb2RpcG9kaS0wLmR0ZCIKICAgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUu
+    b3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiCiAgIHdpZHRoPSI2OC41ODY1NDgiCiAgIGhlaWdodD0i
+    NTcuMTQyODY4IgogICBpZD0ic3ZnMjI2NyIKICAgc29kaXBvZGk6dmVyc2lvbj0iMC4zMiIKICAg
+    aW5rc2NhcGU6dmVyc2lvbj0iMC40NS4xIgogICBzb2RpcG9kaTpkb2NiYXNlPSIvaG9tZS9tYXJj
+    by9tbHQtc3ZuL21sdC9zcmMvbW9kdWxlcy9vbGRmaWxtIgogICBzb2RpcG9kaTpkb2NuYW1lPSJn
+    cmFpLnN2ZyIKICAgdmVyc2lvbj0iMS4wIgogICBpbmtzY2FwZTpvdXRwdXRfZXh0ZW5zaW9uPSJv
+    cmcuaW5rc2NhcGUub3V0cHV0LnN2Zy5pbmtzY2FwZSI+CiAgPHNvZGlwb2RpOm5hbWVkdmlldwog
+    ICAgIGlkPSJiYXNlIgogICAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgICBib3JkZXJjb2xvcj0i
+    IzY2NjY2NiIKICAgICBib3JkZXJvcGFjaXR5PSIxLjAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNp
+    dHk9IjAuMCIKICAgICBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIgogICAgIGlua3NjYXBlOnpvb209
+    IjAuODI2ODc1MDEiCiAgICAgaW5rc2NhcGU6Y3g9IjU0Ny4zNDkyMiIKICAgICBpbmtzY2FwZTpj
+    eT0iLTUxLjE0OTk3NiIKICAgICBpbmtzY2FwZTpkb2N1bWVudC11bml0cz0icHgiCiAgICAgaW5r
+    c2NhcGU6Y3VycmVudC1sYXllcj0ibGF5ZXIxIgogICAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0i
+    MTE5NSIKICAgICBpbmtzY2FwZTp3aW5kb3ctaGVpZ2h0PSI3NDIiCiAgICAgaW5rc2NhcGU6d2lu
+    ZG93LXg9IjMxNSIKICAgICBpbmtzY2FwZTp3aW5kb3cteT0iMTQ0IiAvPgogIDxkZWZzCiAgICAg
+    aWQ9ImRlZnMyMjY5IiAvPgogIDxtZXRhZGF0YQogICAgIGlkPSJtZXRhZGF0YTIyNzIiPgogICAg
+    PHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8
+    ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAg
+    ICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1h
+    Z2UiIC8+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxn
+    CiAgICAgaW5rc2NhcGU6bGFiZWw9IkViZW5lIDEiCiAgICAgaWQ9ImxheWVyMSIKICAgICBpbmtz
+    Y2FwZTpncm91cG1vZGU9ImxheWVyIgogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC00OS4zNzI2
+    MzUsLTE0NC4yMTQwMikiPgogICAgPHJlY3QKICAgICAgIHN0eWxlPSJvcGFjaXR5OjAuNjgwODUx
+    MDY7ZmlsbDojMDAwMDAwO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpub256ZXJvO3N0cm9rZTpu
+    b25lO3N0cm9rZS13aWR0aDoyLjU5OTk5OTk7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGlu
+    ZWpvaW46bWl0ZXI7c3Ryb2tlLW1pdGVybGltaXQ6Mi40MDAwMDAxO3N0cm9rZS1kYXNoYXJyYXk6
+    bm9uZTtzdHJva2Utb3BhY2l0eToxIgogICAgICAgaWQ9InJlY3QzMzA4IgogICAgICAgd2lkdGg9
+    IjIyLjg1NzE0MyIKICAgICAgIGhlaWdodD0iMjguNTcxNDI4IgogICAgICAgeD0iNDkuMzcyNjM1
+    IgogICAgICAgeT0iMTQ0LjIxNDAyIiAvPgogICAgPHJlY3QKICAgICAgIHk9IjE0NC4yMTQwNCIK
+    ICAgICAgIHg9IjcyLjE5OTU0NyIKICAgICAgIGhlaWdodD0iMjguNTcxNDI4IgogICAgICAgd2lk
+    dGg9IjIyLjg1NzE0MyIKICAgICAgIGlkPSJyZWN0MzMxMCIKICAgICAgIHN0eWxlPSJvcGFjaXR5
+    OjAuNjgwODUxMDY7ZmlsbDojMDAwMDAwO2ZpbGwtb3BhY2l0eTowLjYzMzgwMjgzO2ZpbGwtcnVs
+    ZTpub256ZXJvO3N0cm9rZTpub25lO3N0cm9rZS13aWR0aDoyLjU5OTk5OTk7c3Ryb2tlLWxpbmVj
+    YXA6YnV0dDtzdHJva2UtbGluZWpvaW46bWl0ZXI7c3Ryb2tlLW1pdGVybGltaXQ6Mi40MDAwMDAx
+    O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxIiAvPgogICAgPHJlY3QKICAg
+    ICAgIHN0eWxlPSJvcGFjaXR5OjAuNjgwODUxMDY7ZmlsbDojMDAwMDAwO2ZpbGwtb3BhY2l0eTow
+    LjEwNTYzMzc4O2ZpbGwtcnVsZTpub256ZXJvO3N0cm9rZTpub25lO3N0cm9rZS13aWR0aDoyLjU5
+    OTk5OTk7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGluZWpvaW46bWl0ZXI7c3Ryb2tlLW1p
+    dGVybGltaXQ6Mi40MDAwMDAxO3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eTox
+    IgogICAgICAgaWQ9InJlY3QzMzEyIgogICAgICAgd2lkdGg9IjIyLjg1NzE0MyIKICAgICAgIGhl
+    aWdodD0iMjguNTcxNDI4IgogICAgICAgeD0iOTUuMDI2NDUxIgogICAgICAgeT0iMTQ0LjIxNDA0
+    IiAvPgogICAgPHJlY3QKICAgICAgIHk9IjE3Mi43ODU0NiIKICAgICAgIHg9Ijk1LjEwMjA0MyIK
+    ICAgICAgIGhlaWdodD0iMjguNTcxNDI4IgogICAgICAgd2lkdGg9IjIyLjg1NzE0MyIKICAgICAg
+    IGlkPSJyZWN0MzMxNCIKICAgICAgIHN0eWxlPSJvcGFjaXR5OjAuOTQ2ODA4NTI7ZmlsbDojMDAw
+    MDAwO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpub256ZXJvO3N0cm9rZTpub25lO3N0cm9rZS13
+    aWR0aDoyLjU5OTk5OTk7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGluZWpvaW46bWl0ZXI7
+    c3Ryb2tlLW1pdGVybGltaXQ6Mi40MDAwMDAxO3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Ut
+    b3BhY2l0eToxIiAvPgogICAgPHJlY3QKICAgICAgIHN0eWxlPSJvcGFjaXR5OjAuNjgwODUxMDY7
+    ZmlsbDojMDAwMDAwO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpub256ZXJvO3N0cm9rZTpub25l
+    O3N0cm9rZS13aWR0aDoyLjU5OTk5OTk7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGluZWpv
+    aW46bWl0ZXI7c3Ryb2tlLW1pdGVybGltaXQ6Mi40MDAwMDAxO3N0cm9rZS1kYXNoYXJyYXk6bm9u
+    ZTtzdHJva2Utb3BhY2l0eToxIgogICAgICAgaWQ9InJlY3QzMzE2IgogICAgICAgd2lkdGg9IjIy
+    Ljg1NzE0MyIKICAgICAgIGhlaWdodD0iMjguNTcxNDI4IgogICAgICAgeD0iNzIuMjc1MTM5Igog
+    ICAgICAgeT0iMTcyLjc4NTQ2IiAvPgogICAgPHJlY3QKICAgICAgIHk9IjE3Mi43ODU0NiIKICAg
+    ICAgIHg9IjQ5LjQ0ODIzMSIKICAgICAgIGhlaWdodD0iMjguNTcxNDI4IgogICAgICAgd2lkdGg9
+    IjIyLjg1NzE0MyIKICAgICAgIGlkPSJyZWN0MzMxOCIKICAgICAgIHN0eWxlPSJvcGFjaXR5OjAu
+    NDE0ODkzNjY7ZmlsbDojMDAwMDAwO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpub256ZXJvO3N0
+    cm9rZTpub25lO3N0cm9rZS13aWR0aDoyLjU5OTk5OTk7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJv
+    a2UtbGluZWpvaW46bWl0ZXI7c3Ryb2tlLW1pdGVybGltaXQ6Mi40MDAwMDAxO3N0cm9rZS1kYXNo
+    YXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxIiAvPgogIDwvZz4KICA8ZwogICAgIGlkPSJnMjI5
+    MyIKICAgICBpbmtzY2FwZTpncm91cG1vZGU9ImxheWVyIgogICAgIGlua3NjYXBlOmxhYmVsPSJm
+    aWxsIHRleHQiCiAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTQ5LjM3MjYzNSwtMTQ0LjIxNDAy
+    KSIgLz4KPC9zdmc+Cg==
+
+notes: Implementation or additional usage notes go here.
+bugs: # this can be just for documentation, or the tool may disclose it to help user avoid pitfalls
+  - need to do some speed improvement.
+
+parameters:
+  - identifier: noise
+    title: Noise
+    type: integer
+    description: Maximal value of noise
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 200
+    default: 40
+    mutable: no
+    widget: spinner
+    unit: %
+
+  - identifier: contrast
+    title: Contrast
+    type: integer
+    description: Adjust contrast for the image
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 400
+    default: 160
+    mutable: no
+    widget: spinner
+
+  - identifier: brightness
+    title: Brightness
+    type: integer
+    description: Adjust brightness for the image
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 400
+    default: 70
+    mutable: no
+    widget: spinner

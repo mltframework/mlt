@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 
@@ -36,42 +35,75 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int h = *height;
 		int w = *width;
 
-		int width = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "width" );
+		int width_line = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "width" );
 		int num = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "num" );
+		double maxdarker= (double)mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "darker" ) ;
+		double maxlighter=(double)mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "lighter" ) ;
 		//int frame = mlt_properties_get_int( this, "_position" );
-		char buf[1024];
+		char buf[256];
+		char typebuf[256];
+		
+		mlt_position in = mlt_filter_get_in( filter );
+		mlt_position out = mlt_filter_get_out( filter );
+		mlt_position time = mlt_frame_get_position( this );
+		double position = ( double )( time - in ) / ( double )( out - in + 1 );
+		srand(position*10000);
+		if (!width_line)
+			return 0;
 		
 		while (num--){
-			sprintf(buf,"line%d",num);
+			int type=(rand()%3)+1;
+			int x1=(double)w*rand()/RAND_MAX;
+			int dx=rand()%width_line;
+			int x=0,y=0;
+			int ystart=rand()%h;
+			int yend=rand()%h;
 			
-			int type=rand()%2;
-			int x1=rand()%w;;
-			int dx=rand()%width;
-			/*int xx=mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(mlt_frame_get_original_producer( this ),buf);
-			if (xx==0){
-				mlt_properties_set_int(this,buf,x1);
-				//x1=100;
+			sprintf(buf,"line%d",num);
+			sprintf(typebuf,"typeline%d",num);
+			maxlighter+=rand()%30-15;
+			maxdarker+=rand()%30-15;
+			
+			if (mlt_properties_get_int(MLT_FILTER_PROPERTIES( filter ),buf)==0){
+				mlt_properties_set_int(MLT_FILTER_PROPERTIES( filter ),buf,x1);
 			}
-			x1=mlt_properties_get_int(this,buf)+5;
-			*/
-			int x=0,y=0,pix=0;
-			for (x=-dx;x<dx;x++)
-				for(y=0;y<h;y++)
+			
+			if (mlt_properties_get_int(MLT_FILTER_PROPERTIES( filter ),typebuf)==0 ){
+				mlt_properties_set_int(MLT_FILTER_PROPERTIES( filter ),typebuf,type);
+			}
+
+			
+			x1=mlt_properties_get_int(MLT_FILTER_PROPERTIES( filter ),buf);
+			type=mlt_properties_get_int(MLT_FILTER_PROPERTIES( filter ),typebuf);
+			if (position!=mlt_properties_get_double(MLT_FILTER_PROPERTIES( filter ),"last_oldfilm_line_pos")){
+				x1+=(rand()%11-5);
+			}
+		
+			if (yend<ystart){
+				yend=h;
+			}
+			
+			for (x = -dx ; x < dx && dx != 0 ; x++ )
+				for(y=ystart;y<yend;y++)
 					if (x+x1<w && x+x1>0){
 						uint8_t* pixel=(*image+(y)*w*2+(x+x1)*2);
+						double diff=1.0-fabs(x)/dx;
 						switch(type){
-							case 0:
-								pix=(*pixel)*abs(x)/dx;
-								*pixel=pix;
+							case 1: //blackline
+								*pixel-=((double)*pixel*diff*maxdarker/100.0);
 								break;
-							case 1:
-								pix=(*pixel)+((255-*pixel)*abs(x)/dx);
-								*pixel=pix;
+							case 2: //whiteline
+								*pixel+=((255.0-(double)*pixel)*diff*maxlighter/100.0);
 								break;
+							case 3: //greenline
+								*(pixel+1)-=((*(pixel+1))*diff*maxlighter/100.0);
+							break;
 						}
 							
 				}
+			mlt_properties_set_int(MLT_FILTER_PROPERTIES( filter ),buf,x1);
 		}
+		mlt_properties_set_double(MLT_FILTER_PROPERTIES( filter ),"last_oldfilm_line_pos",position);
 	}
 
 	return error;
@@ -93,6 +125,8 @@ mlt_filter filter_lines_init( mlt_profile profile, mlt_service_type type, const 
 		this->process = filter_process;
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "width", "2" );
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "num", "5" );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "darker" , 40 ) ;
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "lighter" , 40 ) ;
 	}
 	return this;
 }

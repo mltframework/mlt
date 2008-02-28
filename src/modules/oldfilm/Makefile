@@ -6,7 +6,9 @@ OBJS = factory.o \
 	   filter_oldfilm.o \
 	   filter_dust.o \
 	   filter_lines.o \
-	   filter_grain.o 
+	   filter_grain.o \
+	   filter_tcolor.o \
+	   filter_vignette.o
 
 CFLAGS += -I../..
 
@@ -32,6 +34,10 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -d $(DESTDIR)$(prefix)/share/mlt/oldfilm
+	install -m 644 *.svg "$(DESTDIR)$(prefix)/share/mlt/oldfilm"
+	install -m 644 *.yml "$(DESTDIR)$(prefix)/share/mlt/oldfilm"
+
 
 ifneq ($(wildcard .depend),)
 include .depend

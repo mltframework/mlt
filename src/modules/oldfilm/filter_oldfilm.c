@@ -38,12 +38,31 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		int x=0;
 		int y=0;
-		// Get u and v values
+		
+		mlt_position in = mlt_filter_get_in( filter );
+		mlt_position out = mlt_filter_get_out( filter );
+		mlt_position time = mlt_frame_get_position( this );
+		double position = ( double )( time - in ) / ( double )( out - in + 1 );
+		srand(position*10000);
+		
 		int delta = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "delta" );
 		int every = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "every" );
-		int diffpic=rand()%delta*2-delta;
+		
+		int bdu = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "brightnessdelta_up" );
+		int bdd = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "brightnessdelta_down" );
+		int bevery = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "brightnessdelta_every" );
+			
+		int diffpic=0;
+		if (delta)
+			diffpic=rand()%delta*2-delta;
+		
+		int brightdelta=0;
+		if ((bdu+bdd)!=0)
+			 brightdelta=rand()%(bdu+bdd)-bdd;
 		if (rand()%100>every)
 			diffpic=0;
+		if (rand()%100>bevery)
+			brightdelta=0;
 		int yend,ydiff;
 		if (diffpic<=0){
 			y=h;
@@ -54,16 +73,40 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			yend=h;
 			ydiff=1;
 		}
+
 		while(y!=yend){
+			//int newy=y+diffpic;
 			for (x=0;x<w;x++){
 					uint8_t* pic=(*image+y*w*2+x*2);
-					if (y+diffpic>0 && y+diffpic<h){
-						*pic=*(pic+diffpic*w*2);
+					int newy=y+diffpic;
+					if (newy>0 && newy<h ){
+						uint8_t oldval=*(pic+diffpic*w*2);
+						/* frame around
+						int randx=(x<=frameborder)?x:(x+frameborder>w)?w-x:-1;
+						int randy=((newy)<=frameborder)?(newy):((newy)+frameborder>h)?h-(y+diffpic):-1;
+						if (randx>=0 ){
+							oldval=oldval*pow(((double)randx/(double)frameborder),1.5);
+						}
+						if (randy>=0 ){
+							oldval=oldval*pow(((double)randy/(double)frameborder),1.5);
+						}
+						if (randx>=0 && randy>=0){
+							//oldval=oldval*(randx*randy)/500.0;
+						}
+						*/
+						if ( ((int) oldval + brightdelta ) >255)
+							*pic=255;
+						else if ( ( (int) oldval+brightdelta )  <0){
+							*pic=0;
+						}else
+							*pic=oldval+brightdelta;
 						*(pic+1)=*(pic+diffpic*w*2+1);
+
 					}else{
 						*pic=0;
-						*(pic+1)=127;	
+						//*(pic-1)=127;	
 					}
+					
 			}
 			y+=ydiff;
 		}
@@ -86,8 +129,11 @@ mlt_filter filter_oldfilm_init( mlt_profile profile, mlt_service_type type, cons
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "delta", "20" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "every", "80" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "delta", "14" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "every", "20" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "brightnessdelta_up" , "20" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "brightnessdelta_down" , "30" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "brightnessdelta_every" , "70" );
 	}
 	return this;
 }
