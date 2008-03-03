@@ -52,6 +52,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Retrieve the aspect ratio
 	double aspect_ratio = mlt_deque_pop_back_double( MLT_FRAME_IMAGE_STACK( this ) );
 
+	// Correct Width/height if necessary
+	if ( *width == 0 || *height == 0 )
+	{
+		*width = mlt_properties_get_int( properties, "normalised_width" );
+		*height = mlt_properties_get_int( properties, "normalised_height" );
+	}
+
 	// Assign requested width/height from our subordinate
 	int owidth = *width;
 	int oheight = *height;
