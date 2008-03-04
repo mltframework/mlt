@@ -374,11 +374,11 @@ int main( int argc, char **argv )
 				
 				else if ( !strncmp( pname, "consumer=", 9 ) )
 					query_metadata( repo, consumer_type, "consumer", strchr( pname, '=' ) + 1 );
-				else if ( !strncmp( pname, "filter=", 9 ) )
+				else if ( !strncmp( pname, "filter=", 7 ) )
 					query_metadata( repo, filter_type, "filter", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "producer=", 9 ) )
 					query_metadata( repo, producer_type, "producer", strchr( pname, '=' ) + 1 );
-				else if ( !strncmp( pname, "transition=", 9 ) )
+				else if ( !strncmp( pname, "transition=", 11 ) )
 					query_metadata( repo, transition_type, "transition", strchr( pname, '=' ) + 1 );
 				else
 					goto query_all;
