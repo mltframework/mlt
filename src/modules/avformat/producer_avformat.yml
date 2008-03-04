@@ -1,4 +1,4 @@
-schema_version: 0.2
+schema_version: 0.1
 type: producer # consumer, filter, producer, or transition
 identifier: avformat
 title: FFmpeg Reader
