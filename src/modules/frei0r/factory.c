@@ -34,62 +34,54 @@ extern void filter_close( mlt_filter this );
 extern void transition_close( mlt_transition this );
 extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame );
 
-static mlt_properties subtag ( mlt_properties prop , char *name ,  mlt_serialiser serialise_yaml ){
-	mlt_properties ret = mlt_properties_get_data( prop , name , NULL );
-	
-	if (!ret){
-		ret = mlt_properties_new ( );
-		mlt_properties_set_data ( prop , name , ret , 0 , ( mlt_destructor )mlt_properties_close , serialise_yaml );
-	}
-	return ret;
-}
-
-void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info_t* info , mlt_service_type type , char* name ) {
-	
-	int j=0;
+static mlt_properties fill_param_info ( mlt_service_type type, const char *service_name, char *name )
+{
+	void* handle=dlopen(name,RTLD_LAZY);
+	if (!handle) return NULL;
+	void (*plginfo)(f0r_plugin_info_t*)=dlsym(handle,"f0r_get_plugin_info");
 	void (*param_info)(f0r_param_info_t*,int param_index)=dlsym(handle,"f0r_get_param_info");
-	mlt_properties metadata_properties=NULL;
+	if (!plginfo || !param_info) {
+		dlclose(handle);
+		return NULL;
+	}
+	mlt_properties metadata = mlt_properties_new();
+	f0r_plugin_info_t info;
+	char string[48];
+	int j=0;
+
+	plginfo(&info);
+	snprintf ( string, sizeof(string) , "%d.%d" , info.major_version , info.minor_version );
+	mlt_properties_set ( metadata, "title" , info.name );
+	mlt_properties_set ( metadata, "version", string );
+	mlt_properties_set ( metadata, "identifier" , service_name );
+	mlt_properties_set ( metadata, "description" , info.explanation );
+	mlt_properties_set ( metadata, "creator" , info.author );
 	switch (type){
 		case filter_type:
-			metadata_properties=mlt_repository_filters(repository);
+			mlt_properties_set ( metadata, "type" , "filter" );
 			break;
 		case transition_type:
-			metadata_properties=mlt_repository_transitions(repository);
+			mlt_properties_set ( metadata, "type" , "transition" );
 			break;
 		default:
-			metadata_properties=NULL;
+			break;
 	}
 	
-	if (!metadata_properties){
-		return;
-	}
-	
-	mlt_properties this_item_properties = mlt_properties_get_data( metadata_properties , name , NULL );
-	mlt_properties metadata = subtag( this_item_properties , "metadata" , ( mlt_serialiser )mlt_properties_serialise_yaml );
-	
-	char descstr[2048];
-	snprintf ( descstr, 2048 , "%s (Version: %d.%d)" , info->explanation , info->major_version , info->minor_version );
-	mlt_properties_set ( metadata, "title" , info->name );
-	mlt_properties_set ( metadata, "identifier" , name );
-	mlt_properties_set ( metadata, "description" , descstr );
-	mlt_properties_set ( metadata, "creator" , info->author );
-	
-	mlt_properties parameter = subtag ( metadata , "parameters" , NULL );
-	mlt_properties tags = subtag ( metadata , "tags" , NULL );
+	mlt_properties parameter = mlt_properties_new ( );
+	mlt_properties_set_data ( metadata , "parameters" , parameter , 0 , ( mlt_destructor )mlt_properties_close, NULL );
+	mlt_properties tags = mlt_properties_new ( );
+	mlt_properties_set_data ( metadata , "tags" , tags , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties_set ( tags , "0" , "Video" );
 	
-	char numstr[512];
-	
-	for (j=0;j<info->num_params;j++){
-		snprintf ( numstr , 512 , "%d" , j );
-		mlt_properties pnum = subtag ( parameter , numstr , NULL );
-		
+	for (j=0;j<info.num_params;j++){
+		snprintf ( string , sizeof(string), "%d" , j );
+		mlt_properties pnum = mlt_properties_new ( );
+		mlt_properties_set_data ( parameter , string , pnum , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 		f0r_param_info_t paraminfo;
 		param_info(&paraminfo,j);
 		mlt_properties_set ( pnum , "identifier" , paraminfo.name );
 		mlt_properties_set ( pnum , "title" , paraminfo.name );
 		mlt_properties_set ( pnum , "description" , paraminfo.explanation);
-		
 		if ( paraminfo.type == F0R_PARAM_DOUBLE ){
 			mlt_properties_set ( pnum , "type" , "integer" );
 			mlt_properties_set ( pnum , "minimum" , "0" );
@@ -108,9 +100,13 @@ void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info
 			mlt_properties_set ( pnum , "readonly" , "no" );
 		}
 	}
+	dlclose(handle);
+	free(name);
+
+	return metadata;
 }
 
-void * load_lib(  mlt_profile profile, mlt_service_type type , void* handle){
+static void * load_lib(  mlt_profile profile, mlt_service_type type , void* handle){
 	
 	int i=0;
 	void (*f0r_get_plugin_info)(f0r_plugin_info_t*),
@@ -191,7 +187,7 @@ void * load_lib(  mlt_profile profile, mlt_service_type type , void* handle){
 	return NULL;
 }
 
-void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, const char *id, void *arg){
+static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, const char *id, void *arg){
 
 	mlt_tokeniser tokeniser = mlt_tokeniser_init ( );
 	int dircount=mlt_tokeniser_parse_new (
@@ -264,11 +260,11 @@ MLT_REPOSITORY
 					
 					if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_FILTER){
 						MLT_REGISTER( filter_type, pluginname, create_frei0r_item );
-						fill_param_info ( repository , handle, &info , filter_type , pluginname );
+						MLT_REGISTER_METADATA( filter_type, pluginname, fill_param_info, strdup(name) );
 					}
 					else if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_MIXER2 ){
 						MLT_REGISTER( transition_type, pluginname, create_frei0r_item );
-						fill_param_info ( repository , handle, &info , transition_type , pluginname );
+						MLT_REGISTER_METADATA( transition_type, pluginname, fill_param_info, strdup(name) );
 					}
 				}
 				dlclose(handle);
