@@ -55,7 +55,7 @@ void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info
 	mlt_properties metadata = mlt_properties_get_data( this_item_properties , "metadata" , NULL );
 	if (!metadata){
 		metadata = mlt_properties_new( );
-		mlt_properties_set_data( this_item_properties , "metadata" , metadata , 0 , NULL, NULL );
+		mlt_properties_set_data( this_item_properties , "metadata" , metadata , 0 , ( mlt_destructor )mlt_properties_close, ( mlt_serialiser )mlt_properties_serialise_yaml );
 	}
 	char descstr[2048];
 	snprintf ( descstr, 2048 , "%s (Version: %d.%d)" , info->explanation , info->major_version , info->minor_version );
@@ -68,7 +68,7 @@ void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info
 	
 	if (!parameter){
 		parameter = mlt_properties_new ( );
-		mlt_properties_set_data ( metadata , "parameters" , parameter , 0 , NULL, NULL );
+		mlt_properties_set_data ( metadata , "parameters" , parameter , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 	}
 	
 	char numstr[512];
@@ -78,7 +78,7 @@ void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info
 		mlt_properties pnum = mlt_properties_get_data( metadata , numstr , NULL );
 		if (!pnum){
 			pnum = mlt_properties_new ( );
-			mlt_properties_set_data ( parameter , numstr , pnum , 0 , NULL, NULL );
+			mlt_properties_set_data ( parameter , numstr , pnum , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 		}
 		
 		f0r_param_info_t paraminfo;
@@ -200,7 +200,7 @@ void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, const ch
 	while (dircount--){
 		char soname[1024]="";
 		
-		char *save_firstptr;
+		char *save_firstptr = NULL;
 		char *firstname=strtok_r(strdup(id),".",&save_firstptr);
 		
 		firstname=strtok_r(NULL,".",&save_firstptr);
@@ -246,7 +246,7 @@ MLT_REPOSITORY
 			strcat(fname,dirname);
 			strcat(fname,shortname);
 			
-			char *save_firstptr;
+			char *save_firstptr = NULL;
 			char pluginname[1024]="frei0r.";
 			char* firstname = strtok_r ( shortname , "." , &save_firstptr );
 			strcat(pluginname,firstname);
