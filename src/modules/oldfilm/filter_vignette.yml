@@ -8,8 +8,6 @@ license: GPL
 language: en
 url: none
 creator: Marco Gittler
-contributor:
-  - Marco Gittler
 tags:
   - Video # this may produce video
 description: |
@@ -18,73 +16,13 @@ description: |
 icon:
 filename: oldfilm/vignette.svg # relative to $MLT_DATA/modules/
   content-type: image/svg
-  content-encoding: base64 # could also be hex or none if inline SVG
-  content: |
-    PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjwh
-    LS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgo8
-    c3ZnCiAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgeG1s
-    bnM6Y2M9Imh0dHA6Ly93ZWIucmVzb3VyY2Uub3JnL2NjLyIKICAgeG1sbnM6cmRmPSJodHRwOi8v
-    d3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIgogICB4bWxuczpzdmc9Imh0dHA6
-    Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9z
-    dmciCiAgIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIgogICB4bWxu
-    czpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGkt
-    MC5kdGQiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3Bh
-    Y2VzL2lua3NjYXBlIgogICB3aWR0aD0iMjUxLjQyODU3IgogICBoZWlnaHQ9IjE4OC41NzE0MyIK
-    ICAgaWQ9InN2ZzIxODIiCiAgIHNvZGlwb2RpOnZlcnNpb249IjAuMzIiCiAgIGlua3NjYXBlOnZl
-    cnNpb249IjAuNDUuMSIKICAgdmVyc2lvbj0iMS4wIgogICBzb2RpcG9kaTpkb2NiYXNlPSIvaG9t
-    ZS9tYXJjby9tbHQtc3ZuL21sdC9zcmMvbW9kdWxlcy9vbGRmaWxtIgogICBzb2RpcG9kaTpkb2Nu
-    YW1lPSJ2aWcuc3ZnIgogICBpbmtzY2FwZTpvdXRwdXRfZXh0ZW5zaW9uPSJvcmcuaW5rc2NhcGUu
-    b3V0cHV0LnN2Zy5pbmtzY2FwZSI+CiAgPGRlZnMKICAgICBpZD0iZGVmczIxODQiPgogICAgPGxp
-    bmVhckdyYWRpZW50CiAgICAgICBpZD0ibGluZWFyR3JhZGllbnQzMTY1Ij4KICAgICAgPHN0b3AK
-    ICAgICAgICAgc3R5bGU9InN0b3AtY29sb3I6I2ZmZmZmZjtzdG9wLW9wYWNpdHk6MTsiCiAgICAg
-    ICAgIG9mZnNldD0iMCIKICAgICAgICAgaWQ9InN0b3AzMTY3IiAvPgogICAgICA8c3RvcAogICAg
-    ICAgICBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eTowLjk4NjY2NjY4OyIK
-    ICAgICAgICAgb2Zmc2V0PSIxIgogICAgICAgICBpZD0ic3RvcDMxNjkiIC8+CiAgICA8L2xpbmVh
-    ckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50CiAgICAgICBpbmtzY2FwZTpjb2xsZWN0PSJh
-    bHdheXMiCiAgICAgICB4bGluazpocmVmPSIjbGluZWFyR3JhZGllbnQzMTY1IgogICAgICAgaWQ9
-    InJhZGlhbEdyYWRpZW50MzE3MSIKICAgICAgIGN4PSIyMjguNTcxNDMiCiAgICAgICBjeT0iMzAw
-    LjkzMzYyIgogICAgICAgZng9IjIyOC41NzE0MyIKICAgICAgIGZ5PSIzMDAuOTMzNjIiCiAgICAg
-    ICByPSI3Ny4xNDI4NiIKICAgICAgIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMSwwLDAsMC45
-    MjU5MjU5LDAsMjIuMjkxMzgzKSIKICAgICAgIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNl
-    IiAvPgogIDwvZGVmcz4KICA8c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgaWQ9ImJhc2UiCiAgICAg
-    cGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRl
-    cm9wYWNpdHk9IjEuMCIKICAgICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICAgIGlua3Nj
-    YXBlOnBhZ2VzaGFkb3c9IjIiCiAgICAgaW5rc2NhcGU6em9vbT0iMC4zNSIKICAgICBpbmtzY2Fw
-    ZTpjeD0iMzUwIgogICAgIGlua3NjYXBlOmN5PSItMTc2LjA0ODg4IgogICAgIGlua3NjYXBlOmRv
-    Y3VtZW50LXVuaXRzPSJweCIKICAgICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJsYXllcjEiCiAg
-    ICAgaW5rc2NhcGU6d2luZG93LXdpZHRoPSI3OTciCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdo
-    dD0iNTg2IgogICAgIGlua3NjYXBlOndpbmRvdy14PSIwIgogICAgIGlua3NjYXBlOndpbmRvdy15
-    PSIwIiAvPgogIDxtZXRhZGF0YQogICAgIGlkPSJtZXRhZGF0YTIxODciPgogICAgPHJkZjpSREY+
-    CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0
-    PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJk
-    ZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAg
-    ICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxnCiAgICAgaW5r
-    c2NhcGU6bGFiZWw9IkViZW5lIDEiCiAgICAgaW5rc2NhcGU6Z3JvdXBtb2RlPSJsYXllciIKICAg
-    ICBpZD0ibGF5ZXIxIgogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMDUuNzE0MjksLTE5NS4y
-    MTkzMykiPgogICAgPHJlY3QKICAgICAgIHN0eWxlPSJvcGFjaXR5OjAuOTUwMzU0NjY7ZmlsbDoj
-    MDAwMDAwO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpub256ZXJvO3N0cm9rZTpub25lO3N0cm9r
-    ZS13aWR0aDoyLjU5OTk5OTk7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGluZWpvaW46bWl0
-    ZXI7c3Ryb2tlLW1pdGVybGltaXQ6Mi40MDAwMDAxO3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJv
-    a2Utb3BhY2l0eToxIgogICAgICAgaWQ9InJlY3QyMTkwIgogICAgICAgd2lkdGg9IjI1MS40Mjg1
-    NyIKICAgICAgIGhlaWdodD0iMTg4LjU3MTQzIgogICAgICAgeD0iMTA1LjcxNDI5IgogICAgICAg
-    eT0iMTk1LjIxOTMzIiAvPgogICAgPHBhdGgKICAgICAgIHNvZGlwb2RpOnR5cGU9ImFyYyIKICAg
-    ICAgIHN0eWxlPSJvcGFjaXR5OjE7ZmlsbDp1cmwoI3JhZGlhbEdyYWRpZW50MzE3MSk7ZmlsbC1v
-    cGFjaXR5OjE7ZmlsbC1ydWxlOm5vbnplcm87c3Ryb2tlOm5vbmU7c3Ryb2tlLXdpZHRoOjIuNTk5
-    OTk5OTtzdHJva2UtbGluZWNhcDpidXR0O3N0cm9rZS1saW5lam9pbjptaXRlcjtzdHJva2UtbWl0
-    ZXJsaW1pdDoyLjQwMDAwMDE7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjEi
-    CiAgICAgICBpZD0icGF0aDIxOTIiCiAgICAgICBzb2RpcG9kaTpjeD0iMjI4LjU3MTQzIgogICAg
-    ICAgc29kaXBvZGk6Y3k9IjMwMC45MzM2MiIKICAgICAgIHNvZGlwb2RpOnJ4PSI3Ny4xNDI4NiIK
-    ICAgICAgIHNvZGlwb2RpOnJ5PSI3MS40Mjg1NzQiCiAgICAgICBkPSJNIDMwNS43MTQyOSAzMDAu
-    OTMzNjIgQSA3Ny4xNDI4NiA3MS40Mjg1NzQgMCAxIDEgIDE1MS40Mjg1NywzMDAuOTMzNjIgQSA3
-    Ny4xNDI4NiA3MS40Mjg1NzQgMCAxIDEgIDMwNS43MTQyOSAzMDAuOTMzNjIgeiIKICAgICAgIHRy
-    YW5zZm9ybT0idHJhbnNsYXRlKDAsLTExLjQyODU3MSkiIC8+CiAgPC9nPgo8L3N2Zz4K
 
 notes: Implementation or additional usage notes go here.
 bugs: # this can be just for documentation, or the tool may disclose it to help user avoid pitfalls
   - need to do some speed improvement.
 
 parameters:
-  - identifier: start # 'argument' is a reserved name for a value supplied to the factory
+  - identifier: Smooth;Radius;X;Y;Max Opacity # 'argument' is a reserved name for a value supplied to the factory
     title: Start value  # the title can be used as a label for the widget
     type: string
     description: Start position, "smooth":"radius","X"x"Y","maxopac"
@@ -92,11 +30,6 @@ parameters:
     required: yes
     mutable: no
     format: %d:%d,%dx%d,%d
-
-  - identifier: end
-    title: End values
-    type: string
-    description: End values for keyframe sequences
-    readonly: no
-    mutable: no
-    format: %d:%d,%dx%d,%d
+    minimum: 0;0;0;0;0
+    maximum: 100;100;100;100;100
+    default: 80;50;50;50;0
