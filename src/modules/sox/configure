@@ -7,8 +7,17 @@ then
 	if [ $? -eq 0 ]
 	then
 		disable_sox=0
+
+		# determine if we need libsndfile
+		ldd $(which sox) | grep libsndfile > /dev/null
+		[ $? -eq 0 ] && libsndfile="-lsndfile"
+
+		# determine if we need libsamplerate
+		ldd $(which sox) | grep libsamplerate > /dev/null
+		[ $? -eq 0 ] && libsamplerate="-lsamplerate"
+
 		echo "CFLAGS += $(libst-config --cflags) -I../../" > config.mak
-		echo "LDFLAGS += -lst $(libst-config --libs)" >> config.mak
+		echo "LDFLAGS += -lst $(libst-config --libs) $libsndfile $libsamplerate" >> config.mak
 	else
 		sox --version 2> /dev/null | grep 'v14.' > /dev/null
 		disable_sox=$?
@@ -30,8 +39,13 @@ then
 			soxdir=$(dirname $sox)
 			# chop bin
 			soxdir=$(dirname $soxdir)
+
+			# determine if we need libsamplerate
+			ldd "$sox" | grep libsamplerate > /dev/null
+			[ $? -eq 0 ] && libsamplerate="-lsamplerate"
+
 			echo "CFLAGS += -DSOX14 -I$soxdir/include" > config.mak
-			echo "LDFLAGS += -L$soxdir/$LIBDIR -lsox -lsfx" >> config.mak
+			echo "LDFLAGS += -L$soxdir/$LIBDIR -lsox -lsfx $libsamplerate" >> config.mak
 		fi
 	fi
 

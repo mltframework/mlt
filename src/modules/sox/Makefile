@@ -9,8 +9,6 @@ OBJS = factory.o \
 CFLAGS += -I../../
 
 LDFLAGS += -L../../framework -lmlt
-# NOTE: Ubuntu may require -lsamplerate -lsndfile as well 
-# since they are not in libst-config --libs
 
 SRCS := $(OBJS:.o=.c)
 
