@@ -34,6 +34,16 @@ extern void filter_close( mlt_filter this );
 extern void transition_close( mlt_transition this );
 extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame );
 
+static mlt_properties subtag ( mlt_properties prop , char *name ,  mlt_serialiser serialise_yaml ){
+	mlt_properties ret = mlt_properties_get_data( prop , name , NULL );
+	
+	if (!ret){
+		ret = mlt_properties_new ( );
+		mlt_properties_set_data ( prop , name , ret , 0 , ( mlt_destructor )mlt_properties_close , serialise_yaml );
+	}
+	return ret;
+}
+
 void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info_t* info , mlt_service_type type , char* name ) {
 	
 	int j=0;
@@ -42,6 +52,9 @@ void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info
 	switch (type){
 		case filter_type:
 			metadata_properties=mlt_repository_filters(repository);
+			break;
+		case transition_type:
+			metadata_properties=mlt_repository_transitions(repository);
 			break;
 		default:
 			metadata_properties=NULL;
@@ -52,11 +65,8 @@ void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info
 	}
 	
 	mlt_properties this_item_properties = mlt_properties_get_data( metadata_properties , name , NULL );
-	mlt_properties metadata = mlt_properties_get_data( this_item_properties , "metadata" , NULL );
-	if (!metadata){
-		metadata = mlt_properties_new( );
-		mlt_properties_set_data( this_item_properties , "metadata" , metadata , 0 , ( mlt_destructor )mlt_properties_close, ( mlt_serialiser )mlt_properties_serialise_yaml );
-	}
+	mlt_properties metadata = subtag( this_item_properties , "metadata" , ( mlt_serialiser )mlt_properties_serialise_yaml );
+	
 	char descstr[2048];
 	snprintf ( descstr, 2048 , "%s (Version: %d.%d)" , info->explanation , info->major_version , info->minor_version );
 	mlt_properties_set ( metadata, "title" , info->name );
@@ -64,22 +74,15 @@ void fill_param_info ( mlt_repository repository , void* handle, f0r_plugin_info
 	mlt_properties_set ( metadata, "description" , descstr );
 	mlt_properties_set ( metadata, "creator" , info->author );
 	
-	mlt_properties parameter = mlt_properties_get_data( metadata , "parameters" , NULL );
-	
-	if (!parameter){
-		parameter = mlt_properties_new ( );
-		mlt_properties_set_data ( metadata , "parameters" , parameter , 0 , ( mlt_destructor )mlt_properties_close, NULL );
-	}
+	mlt_properties parameter = subtag ( metadata , "parameters" , NULL );
+	mlt_properties tags = subtag ( metadata , "tags" , NULL );
+	mlt_properties_set ( tags , "0" , "Video" );
 	
 	char numstr[512];
 	
 	for (j=0;j<info->num_params;j++){
 		snprintf ( numstr , 512 , "%d" , j );
-		mlt_properties pnum = mlt_properties_get_data( metadata , numstr , NULL );
-		if (!pnum){
-			pnum = mlt_properties_new ( );
-			mlt_properties_set_data ( parameter , numstr , pnum , 0 , ( mlt_destructor )mlt_properties_close, NULL );
-		}
+		mlt_properties pnum = subtag ( parameter , numstr , NULL );
 		
 		f0r_param_info_t paraminfo;
 		param_info(&paraminfo,j);
