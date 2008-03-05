@@ -8,7 +8,7 @@ SHFLAGS += -Wl,-soname,$(SONAME)
 else
 NAME = libvalerie$(LIBSUF)
 TARGET = libvalerie.$(version)$(LIBSUF)
-SONAME = libmlt.$(soversion)$(LIBSUF)
+SONAME = libvalerie.$(soversion)$(LIBSUF)
 SHFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
 endif
 
