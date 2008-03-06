@@ -292,10 +292,11 @@ mlt_properties mlt_repository_languages( mlt_repository self )
 	if ( languages )
 		return languages;
 		
-	char *locale = strdup( getenv_locale() );
 	languages = mlt_properties_new();
+	char *locale = getenv_locale();
 	if ( locale )
 	{
+		locale = strdup( locale );
 		mlt_tokeniser tokeniser = mlt_tokeniser_init();
 		int count = mlt_tokeniser_parse_new( tokeniser, locale, ":" );
 		if ( count )
@@ -317,13 +318,13 @@ mlt_properties mlt_repository_languages( mlt_repository self )
 		{
 			mlt_properties_set( languages, "0", "en" );
 		}
+		free( locale );
 		mlt_tokeniser_close( tokeniser );
 	}
 	else
 	{
 		mlt_properties_set( languages, "0", "en" );
 	}
-	free( locale );
 	mlt_properties_set_data( &self->parent, "languages", languages, 0, ( mlt_destructor )mlt_properties_close, NULL );
 	return languages;
 }
