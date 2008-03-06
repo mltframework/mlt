@@ -266,7 +266,7 @@ mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type ty
 	return metadata;
 }
 
-static char *getenv_locale()
+static const char *getenv_locale()
 {
 	char *s = getenv( "LANGUAGE" );
 	if ( s && s[0] )
@@ -292,7 +292,7 @@ mlt_properties mlt_repository_languages( mlt_repository self )
 	if ( languages )
 		return languages;
 		
-	const char *locale = getenv_locale();
+	char *locale = strdup( getenv_locale() );
 	languages = mlt_properties_new();
 	if ( locale )
 	{
@@ -323,6 +323,7 @@ mlt_properties mlt_repository_languages( mlt_repository self )
 	{
 		mlt_properties_set( languages, "0", "en" );
 	}
+	free( locale );
 	mlt_properties_set_data( &self->parent, "languages", languages, 0, ( mlt_destructor )mlt_properties_close, NULL );
 	return languages;
 }
