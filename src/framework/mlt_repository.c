@@ -21,6 +21,7 @@
 
 #include "mlt_repository.h"
 #include "mlt_properties.h"
+#include "mlt_tokeniser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -263,4 +264,65 @@ mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type ty
 		}
 	}
 	return metadata;
+}
+
+static char *getenv_locale()
+{
+	char *s = getenv( "LANGUAGE" );
+	if ( s && s[0] )
+		return s;
+	s = getenv( "LC_ALL" );
+	if ( s && s[0] )
+		return s;
+	s = getenv( "LC_MESSAGES" );
+	if ( s && s[0] )
+		return s;
+	s = getenv( "LANG" );
+	if ( s && s[0] )
+		return s;
+	return NULL;
+}
+
+/** Return a list of user-preferred language codes taken from environment variables.
+*/ 
+
+mlt_properties mlt_repository_languages( mlt_repository self )
+{
+	mlt_properties languages = mlt_properties_get_data( &self->parent, "languages", NULL );
+	if ( languages )
+		return languages;
+		
+	const char *locale = getenv_locale();
+	languages = mlt_properties_new();
+	if ( locale )
+	{
+		mlt_tokeniser tokeniser = mlt_tokeniser_init();
+		int count = mlt_tokeniser_parse_new( tokeniser, locale, ":" );
+		if ( count )
+		{
+			int i;
+			for ( i = 0; i < count; i++ )
+			{
+				char *locale = mlt_tokeniser_get_string( tokeniser, i );
+				if ( strcmp( locale, "C" ) == 0 || strcmp( locale, "POSIX" ) == 0 )
+					locale = "en";
+				else if ( strlen( locale ) > 2 )
+					locale[2] = 0;
+				char string[21];
+				snprintf( string, sizeof(string), "%d", i );
+				mlt_properties_set( languages, string, locale );
+			}
+		}
+		else
+		{
+			mlt_properties_set( languages, "0", "en" );
+		}
+		mlt_tokeniser_close( tokeniser );
+	}
+	else
+	{
+		mlt_properties_set( languages, "0", "en" );
+	}
+	mlt_properties_set_data( &self->parent, "languages", languages, 0, ( mlt_destructor )mlt_properties_close, NULL );
+	return languages;
 }
