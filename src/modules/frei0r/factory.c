@@ -51,6 +51,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 
 	plginfo(&info);
 	snprintf ( string, sizeof(string) , "%d.%d" , info.major_version , info.minor_version );
+	mlt_properties_set ( metadata, "schema_version" , "0.1" );
 	mlt_properties_set ( metadata, "title" , info.name );
 	mlt_properties_set ( metadata, "version", string );
 	mlt_properties_set ( metadata, "identifier" , service_name );
