@@ -266,7 +266,7 @@ mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type ty
 	return metadata;
 }
 
-static const char *getenv_locale()
+static char *getenv_locale()
 {
 	char *s = getenv( "LANGUAGE" );
 	if ( s && s[0] )
