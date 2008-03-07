@@ -113,7 +113,7 @@ using std::endl;
     could not get it working on the gcc compiler so I had to use this
     workaround. We can now use id = make_fourcc("ABCD") instead. */
 
-FOURCC make_fourcc( char *s )
+FOURCC make_fourcc( const char *s )
 {
 	if ( s[ 0 ] == 0 )
 		return 0;
