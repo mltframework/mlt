@@ -96,6 +96,7 @@ else
 		[ $targetos = "Darwin" ] &&
 			echo "LDFLAGS+=-single_module" >> config.mak
 		echo "LOCAL_FFMPEG=1" >> config.mak
+		echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 		extra_libs="$extra_libs -lz"
 	elif [ "$static_ffmpeg" != "" ]
 	then 
@@ -111,6 +112,8 @@ else
 				echo "LDFLAGS+=-L$static_ffmpeg/libswscale" >> config.mak
 				echo "SWSCALE=1" >> config.mak
 			fi
+			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
+			extra_libs="$extra_libs -lz"
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat
