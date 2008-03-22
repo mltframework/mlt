@@ -44,11 +44,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
 		mlt_properties_set_double( b_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-	
-	
-	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
-	*height = mlt_properties_get_int( !invert ? a_props : b_props, "height" );
 
+	if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( b_props, "rescale.interp" ), "none" ) )
+                mlt_properties_set( b_props, "rescale.interp", "nearest" );
+	
 	uint8_t *images[]={NULL,NULL,NULL};
 
 	mlt_frame_get_image( a_frame, &images[0], format, width, height, 1 );
@@ -63,10 +62,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	float pos=( float )( position - in ) / ( float )( out - in + 1 );
 	
-	process_frei0r_item( transition_type , pos , properties, a_frame, images, format, width,height, writable );
-	if (images[2]){
-		*image=images[2];
-	}
+	process_frei0r_item( transition_type , pos , properties, !invert ? a_frame : b_frame , images , format, width,height, writable );
+	
+	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
+        *height = mlt_properties_get_int( !invert ? a_props : b_props, "height" );
+	*image = mlt_properties_get_data( !invert ? a_props : b_props , "image", NULL );
 	return 0;
 }
 
