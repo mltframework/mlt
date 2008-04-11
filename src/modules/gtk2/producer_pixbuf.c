@@ -417,7 +417,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 				if ( stat( full, &buf ) == 0 )
 				{
 					sprintf( key, "%d", keyvalue ++ );
-					mlt_properties_set( this->filenames, "0", full );
+					mlt_properties_set( this->filenames, key, full );
 					gap = 0;
 				}
 				else
