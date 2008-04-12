@@ -10,7 +10,7 @@ do
 	mkdir -p $i
 	rm -f $i/*.pgm $i/*.png
 
-	[ "$i" == "PAL" ] && h=576 || h=480
+	[ "$i" = "PAL" ] && h=576 || h=480
 	./luma -h $h -bpp $bpp > $i/luma01.pgm
 	./luma -h $h -bpp $bpp -bands $h > $i/luma02.pgm
 	./luma -h $h -bpp $bpp -hmirror 1 > $i/luma03.pgm
