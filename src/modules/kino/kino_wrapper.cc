@@ -19,7 +19,10 @@
  */
 
 #include "config.h"
-#include <strings.h>
+
+#include <string.h>
+#include <stdlib.h>
+
 #include "kino_wrapper.h"
 #include "filehandler.h"
 

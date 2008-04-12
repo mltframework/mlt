@@ -15,159 +15,6 @@
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, write to the Free Software Foundation,
 * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*
-* Tag: $Name$
-*
-* Change log:
-* 
-* $Log$
-* Revision 1.3  2005/07/25 07:21:39  lilo_booter
-* + fixes for opendml dv avi
-*
-* Revision 1.2  2005/06/21 20:59:39  lilo_booter
-* src/framework/mlt_consumer.c src/framework/mlt_consumer.h
-* + Added a general profile handling for size, aspect ratio and display ratio
-*
-* src/framework/mlt_producer.c
-* + Correction to aspect ratio properties
-*
-* src/inigo/inigo.c
-* + Minimalist support for sdl_preview (still not very good)
-*
-* src/modules/avformat/consumer_avformat.c
-* + Takes consumer profile into account
-*
-* src/modules/core/filter_resize.c
-* + Corrections for synthesised producers and aspect ratio (inherits from consumer)
-*
-* src/modules/core/producer_colour.c
-* src/modules/core/producer_noise.c
-* src/modules/gtk2/producer_pango.c
-* + Ensures that resize picks up consumer aspect ratio
-*
-* src/modules/dv/consumer_libdv.c
-* + Honour wide screen output
-*
-* src/modules/gtk2/producer_pixbuf.c
-* + Correction for 1:1 aspect ratio
-*
-* src/modules/kino/Makefile
-* src/modules/kino/avi.cc
-* src/modules/kino/avi.h
-* src/modules/kino/configure
-* src/modules/kino/filehandler.cc
-* + Attempt to allow mov dv files to provide audio
-*
-* src/modules/sdl/consumer_sdl.c
-* src/modules/sdl/consumer_sdl_preview.c
-* src/modules/sdl/consumer_sdl_still.c
-* + Takes consumer profile into account
-*
-* Revision 1.1  2005/04/15 14:28:26  lilo_booter
-* Initial version
-*
-* Revision 1.28  2005/04/01 23:43:10  ddennedy
-* apply endian fixes from Daniel Kobras
-*
-* Revision 1.27  2004/10/11 01:37:11  ddennedy
-* mutex safety locks in RIFF and AVI classes, type 2 AVI optimization, mencoder export script
-*
-* Revision 1.26  2004/01/05 03:43:11  ddennedy
-* metadata editing, deinterlace options, bugfixes and cleanups
-*
-* Revision 1.25  2003/11/25 23:00:52  ddennedy
-* cleanup and a few bugfixes
-*
-* Revision 1.24  2003/11/12 13:01:56  ddennedy
-* disable JUNK chunks in MOVI list, FileHandler max file size zero = infinity
-*
-* Revision 1.23  2003/11/10 01:02:51  ddennedy
-* bugfix: return error on AVI directory entries with size <0
-*
-* Revision 1.22  2003/10/28 18:52:32  ddennedy
-* fix prefs dialog crash, improve WAV import
-*
-* Revision 1.21  2003/10/21 16:34:32  ddennedy
-* GNOME2 port phase 1: initial checkin
-*
-* Revision 1.19.2.9  2003/08/26 20:39:00  ddennedy
-* relocate mutex unlock and add assert includes
-*
-* Revision 1.19.2.8  2003/07/24 14:13:57  ddennedy
-* support for distinct audio stream in type2 AVI and Quicktime; support for more DV FOURCCs
-*
-* Revision 1.19.2.7  2003/06/10 23:53:35  ddennedy
-* Daniel Kobras' WriteFrame error handling and automatic OpenDML, bugfixes in scene list updates, export AV/C Record
-*
-* Revision 1.19.2.6  2003/03/05 15:02:12  ddennedy
-* yet anther AV/C bugfix, yet another AVI improvement
-*
-* Revision 1.19.2.5  2003/02/20 21:59:55  ddennedy
-* bugfixes to capture and AVI
-*
-* Revision 1.19.2.4  2003/01/13 05:15:31  ddennedy
-* added More Info panel and supporting methods
-*
-* Revision 1.19.2.3  2002/12/31 22:40:49  ddennedy
-* bugfix recent versions Quicktime4Linux build options, extend dvsd fourcc check on AVI to the BITMAPINFOHEADER for compatibility with mencoder
-*
-* Revision 1.19.2.2  2002/11/25 04:48:30  ddennedy
-* bugfix to report errors when loading files
-*
-* Revision 1.19.2.1  2002/11/24 23:36:55  ddennedy
-* bugfix in AVI writing
-*
-* Revision 1.19  2002/10/08 12:08:01  ddennedy
-* more sane frame count, greater potential compatibility
-*
-* Revision 1.18  2002/10/08 08:33:02  ddennedy
-* fix number of frames for small dv2
-*
-* Revision 1.17  2002/10/08 07:46:41  ddennedy
-* AVI bugfixes, compatibility, optimization, warn bad file in capture and export dv file, allow no mplex
-*
-* Revision 1.15  2002/06/10 10:39:51  ddennedy
-* minor fixes for large files
-*
-* Revision 1.14  2002/05/17 08:04:24  ddennedy
-* revert const-ness of Frame references in Frame, FileHandler, and AVI classes
-*
-* Revision 1.13  2002/05/15 04:39:35  ddennedy
-* bugfixes to dv2 AVI write, audio export, Xv init
-*
-* Revision 1.12  2002/04/29 05:09:21  ddennedy
-* raw dv file support, Frame::ExtractAudio uses libdv, audioScrub prefs
-*
-* Revision 1.11  2002/04/15 19:12:32  schirmacher
-* removed debugging code causing performance losses and crashes with dv2 files
-*
-* Revision 1.10  2002/04/09 06:53:42  ddennedy
-* cleanup, new libdv 0.9.5, large AVI, dnd storyboard
-*
-* Revision 1.8  2002/03/25 21:34:25  arne
-* Support for large (64 bit) files mostly completed
-*
-* Revision 1.7  2002/03/10 21:28:29  arne
-* release 1.1b1, 64 bit support for type 1 avis
-*
-* Revision 1.6  2002/03/10 13:29:41  arne
-* more changes for 64 bit access
-*
-* Revision 1.5  2002/03/09 17:59:28  arne
-* moved index routines to AVIFile
-*
-* Revision 1.4  2002/03/09 10:26:26  arne
-* improved constructors and assignment operator
-*
-* Revision 1.3  2002/03/09 08:55:57  arne
-* moved a few variables to AVIFile
-*
-* Revision 1.2  2002/03/04 19:22:43  arne
-* updated to latest Kino avi code
-*
-* Revision 1.1.1.1  2002/03/03 19:08:08  arne
-* import of version 1.01
-*
 */
 
 #include "config.h"
@@ -191,6 +38,7 @@ using std::endl;
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+#include <string.h>
 
 // local includes
 
@@ -1284,7 +1132,7 @@ void AVI1File::Init( int format, int sampleFrequency, int indexType )
 	   several RIFF chunks of less than 1 GByte size. Old software
 	   however would only deal with the first RIFF chunk.
 
-	   Note that the first entry (FILE) isn´t actually part
+	   Note that the first entry (FILE) isnï¿½t actually part
 	   of the AVI file. I use this (pseudo-) directory entry to
 	   keep track of the RIFF chunks and their positions in the
 	   AVI file.
