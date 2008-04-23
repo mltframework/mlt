@@ -1037,7 +1037,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Since we are the consumer of the b_frame, we must pass along these
 		// consumer properties from the a_frame
-		mlt_properties_set_double( b_props, "consumer_deinterlace", mlt_properties_get_double( a_props, "consumer_deinterlace" ) );
+		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) || mlt_properties_get_int( properties, "deinterlace" ) );
 		mlt_properties_set( b_props, "consumer_deinterlace_method", mlt_properties_get( a_props, "consumer_deinterlace_method" ) );
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
