@@ -32,6 +32,7 @@ namespace Mlt
 	class Service;
 	class Filter;
 	class Profile;
+	class Frame;
 
 	class MLTPP_DECLSPEC Producer : public Service
 	{
@@ -67,6 +68,7 @@ namespace Mlt
 			bool same_clip( Producer &that );
 			bool runs_into( Producer &that );
 			void optimise( );
+			Frame* get_frame( int index = 0 );
 	};
 }
 

@@ -190,3 +190,12 @@ void Producer::optimise( )
 {
 	mlt_producer_optimise( get_producer( ) );
 }
+
+Frame* Producer::get_frame( int index )
+{
+	mlt_frame f = NULL;
+	int result = get_producer()->get_frame( get_producer(), &f, index );
+	if ( f )
+		return new Frame( f );
+	return NULL;
+}
