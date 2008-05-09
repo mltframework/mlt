@@ -37,7 +37,7 @@ all: 	$(TARGET)
 
 $(LOCAL_FFMPEG_OBJS):
 	if [ $(LOCAL_FFMPEG) ] ; then \
-		$(MAKE) -C ffmpeg lib ; \
+		$(MAKE) -C ffmpeg ffmpeg ; \
 	fi
 
 $(TARGET): $(OBJS) $(LOCAL_FFMPEG_OBJS)

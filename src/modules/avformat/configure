@@ -71,7 +71,7 @@ else
 			enable_gpl="--enable-gpl"
 			if [ "$swscale" != "" ]
 			then
-					enable_swscale="--enable-swscaler"
+					enable_swscale="--enable-swscale"
 					echo "SWSCALE=1" >> config.mak
 			fi
 		elif [ "$swscale" != "" ]
