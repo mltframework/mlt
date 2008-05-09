@@ -205,7 +205,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 								{
 									// special case: replace #timecode# with current frame timecode
 									int pos = mlt_properties_get_int( feed, "position" );
-									char *tc = frame_to_timecode( pos, mlt_profile_fps( NULL ) );
+									char *tc = frame_to_timecode( pos, mlt_profile_fps( mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) ) );
 									strcat( result, tc );
 									free( tc );
 								}
