@@ -136,22 +136,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			int size;
 			uint8_t *image = mlt_properties_get_data( properties, "image", &size );
 			uint8_t *ptr = image + owidth * 2;
-			int h = oheight / 2;
-			int w = owidth;
-
-			// Swap the lines around
-			while( h -- )
-			{
-				w = owidth;
-				while( w -- )
-				{
-					swap_bytes( image ++, ptr ++ );
-					swap_bytes( image ++, ptr ++ );
-				}
-				image += owidth * 2;
-				ptr += owidth * 2;
-			}
-
+			memmove( ptr, image, size - owidth * 2 );
+			
 			// Set the normalised field order
 			mlt_properties_set_int( properties, "top_field_first", 0 );
 			mlt_properties_set_int( properties, "meta.top_field_first", 0 );
