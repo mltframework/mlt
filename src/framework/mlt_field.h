@@ -32,6 +32,7 @@ extern mlt_properties mlt_field_properties( mlt_field self );
 extern int mlt_field_plant_filter( mlt_field self, mlt_filter that, int track );
 extern int mlt_field_plant_transition( mlt_field self, mlt_transition that, int a_track, int b_track );
 extern void mlt_field_close( mlt_field self );
+extern void mlt_field_disconnect_service( mlt_field self, mlt_service service );
 
 #endif
 

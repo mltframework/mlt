@@ -191,3 +191,26 @@ void mlt_field_close( mlt_field this )
 	}
 }
 
+void mlt_field_disconnect_service( mlt_field self, mlt_service service )
+{
+	mlt_service p = mlt_service_producer( service );
+	mlt_service c = mlt_service_consumer( service);
+	int i;
+	switch ( mlt_service_identify(c) )
+	{
+		case filter_type:
+			i = mlt_filter_get_track( MLT_FILTER(c) );
+			mlt_service_connect_producer( c, p, i );
+			break;
+		case transition_type:
+			i = mlt_transition_get_a_track ( MLT_TRANSITION(c) );
+			mlt_service_connect_producer( c, p, i );
+			break;
+		case tractor_type:
+			self->producer = p;
+			mlt_tractor_connect( MLT_TRACTOR(c), p );
+		default:
+			break;
+	}
+	mlt_events_fire( mlt_field_properties( self ), "service-changed", NULL );
+}
