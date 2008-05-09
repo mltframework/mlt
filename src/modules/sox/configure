@@ -62,8 +62,12 @@ then
 				$LDD "$sox" | grep libsamplerate > /dev/null
 				[ $? -eq 0 ] && libsamplerate="-lsamplerate"
 
+				# determine if we need libsfx
+				$LDD $(which sox) | grep libsfx	 > /dev/null
+				[ $? -eq 0 ] && libsfx="-lsfx"
+
 				echo "CFLAGS += -DSOX14 -I$soxdir/include" > config.mak
-				echo "LDFLAGS += -L$soxdir/$LIBDIR -lsox -lsfx $libsamplerate" >> config.mak
+				echo "LDFLAGS += -L$soxdir/$LIBDIR -lsox $libsfx $libsamplerate" >> config.mak
 			fi
 		fi
 	fi
