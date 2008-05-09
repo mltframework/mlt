@@ -3,9 +3,15 @@
 if [ "$help" != "1" ]
 then
 
-	# Horrible hack
-	grep mmx /proc/cpuinfo > /dev/null 2>&1
-	disable_xine=$?
+	bits=$(uname -m)
+	case $bits in
+	ppc)
+		disable_xine="1"
+		;;
+	*)
+		disable_xine="0"
+		;;
+	esac
 
 	if [ "$disable_xine" != "0" ]
 	then
