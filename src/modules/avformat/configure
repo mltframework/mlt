@@ -121,9 +121,16 @@ else
 		fi
 	elif [ "$shared_ffmpeg" != "" ]
 	then
-		echo "CFLAGS+=$(pkg-config --cflags libavformat)" >> config.mak
+		echo "PREFIX=$shared_ffmpeg" >> config.mak
+		echo "CFLAGS+=$(pkg-config --cflags libavformat) $TMP_CFLAGS" >> config.mak
 		echo "LDFLAGS+=$(pkg-config --libs libavformat)" >> config.mak
-		[ "$swscale" != "" ] && echo "SWSCALE=1" >> config.mak
+		[ -d "$shared_ffmpeg/include/libavformat" ] &&
+			echo "CFLAGS+=-I$shared_ffmpeg/include/libavformat -I$shared_ffmpeg/include/libavcodec" >> config.mak
+		if [ "$swscale" != "" ]
+		then
+			echo "CFLAGS+=-I$shared_ffmpeg/include/libswscale" >> config.mak
+			echo "SWSCALE=1" >> config.mak
+		fi
 	else
 		echo "avformat: No build environment found. "
 		echo "          Try configuring mlt with --avformat-svn."
@@ -135,4 +142,3 @@ else
 	echo "AVFORMAT_SUFFIX=$avformat_suffix" >> config.mak
 
 fi
-
