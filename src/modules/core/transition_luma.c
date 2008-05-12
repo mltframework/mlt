@@ -378,6 +378,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int luma_width = mlt_properties_get_int( properties, "width" );
 	int luma_height = mlt_properties_get_int( properties, "height" );
 	uint16_t *luma_bitmap = mlt_properties_get_data( properties, "bitmap", NULL );
+	char *current_resource = mlt_properties_get( properties, "_resource" );
 	
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "resource" );
@@ -389,7 +390,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		luma_height = mlt_properties_get_int( a_props, "height" );
 	}
 		
-	if ( luma_bitmap == NULL && resource != NULL )
+	if ( resource != current_resource )
 	{
 		char temp[ 512 ];
 		char *extension = strrchr( resource, '.' );
@@ -421,8 +422,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Set the transition properties
 				mlt_properties_set_int( properties, "width", luma_width );
 				mlt_properties_set_int( properties, "height", luma_height );
+				mlt_properties_set( properties, "_resource", resource );
 				mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
 			}
+		}
+		else if (!*resource) 
+		{
+		    luma_bitmap = NULL;
+		    mlt_properties_set( properties, "_resource", NULL );
+		    mlt_properties_set_data( properties, "bitmap", luma_bitmap, 0, mlt_pool_release, NULL );
 		}
 		else
 		{
@@ -468,6 +476,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					// Set the transition properties
 					mlt_properties_set_int( properties, "width", luma_width );
 					mlt_properties_set_int( properties, "height", luma_height );
+					mlt_properties_set( properties, "_resource", resource);
 					mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
 
 					// Cleanup the luma frame
