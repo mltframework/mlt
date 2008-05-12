@@ -429,7 +429,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 	if ( st != NULL ) 
 	{
 		char *pix_fmt = mlt_properties_get( properties, "pix_fmt" );
-		double ar = mlt_properties_get_double( properties, "aspect_ratio" );
+		double ar = mlt_properties_get_double( properties, "display_ratio" );
 		AVCodecContext *c = st->codec;
 
 		// Establish defaults from AVOptions
