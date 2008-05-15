@@ -429,7 +429,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 	if ( st != NULL ) 
 	{
 		char *pix_fmt = mlt_properties_get( properties, "pix_fmt" );
-		double ar = mlt_properties_get_double( properties, "display_ratio" );
+		double ar = mlt_properties_get_double( properties, "aspect_ratio" );
 		AVCodecContext *c = st->codec;
 
 		// Establish defaults from AVOptions
@@ -451,10 +451,43 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		// Set options controlled by MLT
 		c->width = mlt_properties_get_int( properties, "width" );
 		c->height = mlt_properties_get_int( properties, "height" );
-		c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
 		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
+
+		if ( codec_id == CODEC_ID_DVVIDEO )
+		{
+			// Compensate for FFmpeg's notion of DV aspect ratios, which are
+			// based upon a width of 704. Since we do not have a normaliser
+			// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
+			// we just coerce the values to facilitate a passive behaviour through
+			// the rescale normaliser when using equivalent producers and consumers.
+			// = display_aspect / (width * height)
+			if ( ar == 8.0/9.0 )  // 4:3 NTSC
+			{
+				c->sample_aspect_ratio.num = 10;
+				c->sample_aspect_ratio.den = 11;
+			}
+			else if ( ar == 16.0/15.0 ) // 4:3 PAL
+			{
+				c->sample_aspect_ratio.num = 159;
+				c->sample_aspect_ratio.den = 54;
+			}
+			else if ( ar == 32.0/27.0 ) // 16:9 NTSC
+			{
+				c->sample_aspect_ratio.num = 40;
+				c->sample_aspect_ratio.den = 33;
+			}
+			else // 16:9 PAL
+			{
+				c->sample_aspect_ratio.num = 118;
+				c->sample_aspect_ratio.den = 81;
+			}
+		}
+		else
+		{
+			c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
+		}
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
 		{

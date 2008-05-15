@@ -640,7 +640,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( got_picture )
 			{
 				mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
-				mlt_properties_set_int( frame_properties, "top_field_first", av_frame->top_field_first );
 				mlt_properties_set_int( properties, "top_field_first", av_frame->top_field_first );
 				convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
 				mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
@@ -729,6 +728,28 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
 			double aspect_ratio;
 
+			if ( strcmp( codec_context->codec->name, "dvvideo" ) == 0 )
+			{
+				// Override FFmpeg's notion of DV aspect ratios, which are
+				// based upon a width of 704. Since we do not have a normaliser
+				// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
+				// we just coerce the values to facilitate a passive behaviour through
+				// the rescale normaliser when using equivalent producers and consumers.
+				// = display_aspect / (width * height)
+				if ( codec_context->sample_aspect_ratio.num == 10 &&
+					codec_context->sample_aspect_ratio.den == 11 )
+					force_aspect_ratio = 8.0/9.0; // 4:3 NTSC
+				else if ( codec_context->sample_aspect_ratio.num == 59 &&
+					codec_context->sample_aspect_ratio.den == 54 )
+					force_aspect_ratio = 16.0/15.0; // 4:3 PAL
+				else if ( codec_context->sample_aspect_ratio.num == 40 &&
+					codec_context->sample_aspect_ratio.den == 33 )
+					force_aspect_ratio = 32.0/27.0; // 16:9 NTSC
+				else if ( codec_context->sample_aspect_ratio.num == 118 &&
+					codec_context->sample_aspect_ratio.den == 81 )
+					force_aspect_ratio = 64.0/45.0; // 16:9 PAL
+			}
+
 			// XXX: We won't know the real aspect ratio until an image is decoded
 			// but we do need it now (to satisfy filter_resize) - take a guess based
 			// on pal/ntsc
@@ -742,8 +763,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			}
 			else
 			{
-				int is_pal = mlt_producer_get_fps( this ) == 25.0;
-				aspect_ratio = is_pal ? 59.0/54.0 : 10.0/11.0;
+				aspect_ratio = 1.0;
 			}
 
 			// Determine the fps
