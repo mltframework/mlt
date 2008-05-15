@@ -124,11 +124,16 @@ else
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
 		echo "CFLAGS+=$(pkg-config --cflags libavformat) $TMP_CFLAGS" >> config.mak
 		echo "LDFLAGS+=$(pkg-config --libs libavformat)" >> config.mak
+		[ -d "$shared_ffmpeg/include/ffmpeg/libavformat" ] &&
+			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libavformat -I$shared_ffmpeg/include/ffmpeg/libavcodec" >> config.mak
 		[ -d "$shared_ffmpeg/include/libavformat" ] &&
 			echo "CFLAGS+=-I$shared_ffmpeg/include/libavformat -I$shared_ffmpeg/include/libavcodec" >> config.mak
 		if [ "$swscale" != "" ]
 		then
-			echo "CFLAGS+=-I$shared_ffmpeg/include/libswscale" >> config.mak
+			[ -d "$shared_ffmpeg/include/ffmpeg/libswscale" ] &&
+				echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libswscale" >> config.mak
+			[ -d "$shared_ffmpeg/include/libswscale" ] &&
+				echo "CFLAGS+=-I$shared_ffmpeg/include/libswscale" >> config.mak
 			echo "SWSCALE=1" >> config.mak
 		fi
 	else
