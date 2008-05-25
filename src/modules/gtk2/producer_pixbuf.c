@@ -108,6 +108,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 	// Get the original position of this frame
 	mlt_position position = mlt_properties_get_position( properties, "pixbuf_position" );
+	position += mlt_producer_get_in( producer );
 
 	// Image index
 	int image_idx = ( int )floor( ( double )position / ttl ) % this->count;
