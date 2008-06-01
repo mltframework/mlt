@@ -109,8 +109,8 @@ mlt_profile mlt_profile_init( const char *name )
 				profile->width = 720;
 				profile->height = 576;
 				profile->progressive = 0;
-				profile->sample_aspect_num = 59;
-				profile->sample_aspect_den = 54;
+				profile->sample_aspect_num = 16;
+				profile->sample_aspect_den = 15;
 				profile->display_aspect_num = 4;
 				profile->display_aspect_den = 3;
 			}
