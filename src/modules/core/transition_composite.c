@@ -459,8 +459,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int stride_dest = width_dest * bpp;
 	
 	// Adjust to consumer scale
-	int x = rint( 0.5 + geometry.item.x * width_dest / geometry.nw );
-	int y = rint( 0.5 + geometry.item.y * height_dest / geometry.nh );
+	int x = rint( geometry.item.x * width_dest / geometry.nw );
+	int y = rint( geometry.item.y * height_dest / geometry.nh );
 	int uneven_x = ( x % 2 );
 
 	// optimization points - no work to do
@@ -729,18 +729,21 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		double consumer_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
 		double background_ar = mlt_properties_get_double( b_props, "output_ratio" );
 		double output_ar = background_ar != 0.0 ? background_ar : consumer_ar;
-		int scaled_width = rint( 0.5 + ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
+		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
+// fprintf(stderr, "%s: scaled %dx%d norm %dx%d real %dx%d output_ar %f => %f\n", __FILE__,
+// scaled_width, scaled_height, normalised_width, normalised_height, real_width, real_height,
+// background_ar, output_ar);
 
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
 		{
-			scaled_height = rint( 0.5 + scaled_height * normalised_width / scaled_width );
+			scaled_height = rint( scaled_height * normalised_width / scaled_width );
 			scaled_width = normalised_width;
 		}
 		if ( scaled_height > normalised_height )
 		{
-			scaled_width = rint( 0.5 + scaled_width * normalised_height / scaled_height );
+			scaled_width = rint( scaled_width * normalised_height / scaled_height );
 			scaled_height = normalised_height;
 		}
 
@@ -750,12 +753,12 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		{
 			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height <= normalised_width )
 			{
-				scaled_width = rint( 0.5 + scaled_width * normalised_height / scaled_height );
+				scaled_width = rint( scaled_width * normalised_height / scaled_height );
 				scaled_height = normalised_height;
 			}
 			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width < normalised_height )
 			{
-				scaled_height = rint( 0.5 + scaled_height * normalised_width / scaled_width );
+				scaled_height = rint( scaled_height * normalised_width / scaled_width );
 				scaled_width = normalised_width;
 			}
 		}
@@ -783,8 +786,10 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		alignment_calculate( geometry );
 
 	// Adjust to consumer scale
-	*width = rint( 0.5 + geometry->sw * *width / geometry->nw );
-	*height = rint( 0.5 + geometry->sh * *height / geometry->nh );
+	*width = rint( geometry->sw * *width / geometry->nw );
+	*height = rint( geometry->sh * *height / geometry->nh );
+// fprintf(stderr, "%s: scaled %dx%d norm %dx%d resize %dx%d\n", __FILE__,
+// geometry->sw, geometry->sh, geometry->nw, geometry->nh, *width, *height);
 
 	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
 
@@ -901,10 +906,10 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	composite_calculate( this, &result, a_frame, position );
 
 	// Need to scale down to actual dimensions
-	x = rint( 0.5 + result.item.x * width / result.nw );
-	y = rint( 0.5 + result.item.y * height / result.nh );
-	w = rint( 0.5 + result.item.w * width / result.nw );
-	h = rint( 0.5 + result.item.h * height / result.nh );
+	x = rint( result.item.x * width / result.nw );
+	y = rint( result.item.y * height / result.nh );
+	w = rint( result.item.w * width / result.nw );
+	h = rint( result.item.h * height / result.nh );
 
 	if ( x % 2 )
 	{
@@ -1138,9 +1143,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				if ( mlt_properties_get_int( properties, "titles" ) )
 				{
-					result.item.w = rint( 0.5 + *width * ( result.item.w / result.nw ) );
+					result.item.w = rint( *width * ( result.item.w / result.nw ) );
 					result.nw = result.item.w;
-					result.item.h = rint( 0.5 + *height * ( result.item.h / result.nh ) );
+					result.item.h = rint( *height * ( result.item.h / result.nh ) );
 					result.nh = *height;
 					result.sw = width_b;
 					result.sh = height_b;
