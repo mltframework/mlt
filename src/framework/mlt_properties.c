@@ -413,8 +413,8 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 	}
 	else if ( value[ 0 ] == '@' )
 	{
-		int total = 0;
-		int current = 0;
+		double total = 0;
+		double current = 0;
 		char id[ 255 ];
 		char op = '+';
 
@@ -433,7 +433,7 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 			if ( isdigit( id[ 0 ] ) )
 				current = atof( id );
 			else
-				current = mlt_properties_get_int( this, id );
+				current = mlt_properties_get_double( this, id );
 
 			// Apply the operation
 			switch( op )
@@ -448,7 +448,7 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 					total *= current;
 					break;
 				case '/':
-					total /= current;
+					total = total / current;
 					break;
 			}
 
@@ -456,7 +456,7 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 			op = *value != '\0' ? *value ++ : ' ';
 		}
 
-		error = mlt_property_set_int( property, total );
+		error = mlt_property_set_double( property, total );
 		mlt_properties_do_mirror( this, name );
 	}
 
