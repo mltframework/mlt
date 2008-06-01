@@ -442,8 +442,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		else if ( strcmp( interps, "hyper" ) == 0 )
 			interp = GDK_INTERP_HYPER;
 
-//		fprintf( stderr, "SCALING PANGO from %dx%d to %dx%d was %dx%d\n", gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), width, height, this->width, this->height );
-			
+// fprintf(stderr,"%s: scaling from %dx%d to %dx%d\n", __FILE__, this->width, this->height, width, height);
+
 		// Note - the original pixbuf is already safe and ready for destruction
 		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
 
@@ -638,7 +638,7 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	pango_layout_set_width( layout, -1 ); // set wrapping constraints
 	pango_font_description_set_weight( desc, ( PangoWeight ) weight  );
 	if ( size != 0 )
-		pango_font_description_set_size( desc, PANGO_SCALE * size );
+		pango_font_description_set_absolute_size( desc, PANGO_SCALE * size );
 	pango_layout_set_font_description( layout, desc );
 //	pango_layout_set_spacing( layout, space );
 	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
@@ -661,6 +661,19 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 		pango_layout_set_text( layout, "  ", 2 );
 	}
 	pango_layout_get_pixel_size( layout, &w, &h );
+
+	// Interpret size property as an absolute pixel height and compensate for
+	// freetype's "interpretation" of our absolute size request. This gives
+	// precise control over compositing and better quality by reducing scaling
+	// artifacts with composite geometries that constrain the dimensions.
+	// If you do not want this, then put the size in the font property or in
+	// the pango markup.
+	if ( size != 0 )
+	{
+		pango_font_description_set_absolute_size( desc, PANGO_SCALE * size * size/h );
+		pango_layout_set_font_description( layout, desc );
+		pango_layout_get_pixel_size( layout, &w, &h );
+	}
 
 	pixbuf = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE /* has alpha */, 8, w + 2 * pad, h + 2 * pad );
 	pango_draw_background( pixbuf, bg );
