@@ -1041,16 +1041,6 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 		// Initialise the codec if necessary
 		if ( codec == NULL )
 		{
-			// Initialise multi-threading 
-			int thread_count = mlt_properties_get_int( properties, "threads" );
-			if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
-				thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
-			if ( thread_count > 1 )
-			{
-				avcodec_thread_init( codec_context, thread_count );
-				codec_context->thread_count = thread_count;
-			}
-
 			// Find the codec
 			codec = avcodec_find_decoder( codec_context->codec_id );
 
