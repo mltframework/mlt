@@ -333,6 +333,36 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressiv
 	// Get the properties
 	mlt_properties properties = MLT_PLAYLIST_PROPERTIES( this );
 
+	// Automatically close previous producers if requested
+	if ( i > 1 // keep immediate previous in case app wants to get info about what just finished
+		&& position < 2 // tolerate off-by-one error on going to next clip
+		&& mlt_properties_get_int( properties, "autoclose" ) )
+	{
+		int j;
+		// They might have jumped ahead!
+		for ( j = 0; j < i - 1; j++ )
+		{
+			mlt_service_lock( MLT_PRODUCER_SERVICE( this->list[ j ]->producer ) );
+			mlt_producer p = this->list[ j ]->producer;
+			if ( p )
+			{
+				mlt_properties p_properties = MLT_PRODUCER_PROPERTIES( p );
+				// Prevent closing previously autoclosed to maintain integrity of references
+				if ( ! mlt_properties_get_int( p_properties, "_autoclosed" ) )
+				{
+					mlt_properties_set_int( p_properties, "_autoclosed", 1 );
+					mlt_service_unlock( MLT_PRODUCER_SERVICE( p ) );
+					mlt_producer_close( p );
+					this->list[ j ]->producer = NULL;
+				}
+				else
+				{
+					mlt_service_unlock( MLT_PRODUCER_SERVICE( p ) );
+				}
+			}
+		}
+	}
+
 	// Get the eof handling
 	char *eof = mlt_properties_get( properties, "eof" );
 
