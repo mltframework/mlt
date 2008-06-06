@@ -840,6 +840,50 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	return ret && image != NULL;
 }
 
+static void crop_calculate( mlt_transition this, mlt_properties properties, struct geometry_s *result, double position )
+{
+	// Initialize panning info
+	result->x_src = 0;
+	result->y_src = 0;
+	if ( mlt_properties_get( properties, "crop" ) )
+	{
+		mlt_geometry crop = mlt_properties_get_data( properties, "crop_geometry", NULL );
+		if ( !crop )
+		{
+			crop = mlt_geometry_init();
+			mlt_position in = mlt_transition_get_in( this );
+			mlt_position out = mlt_transition_get_out( this );
+			int length = out - in + 1;
+			double cycle = mlt_properties_get_double( properties, "cycle" );
+
+			// Allow a geometry repeat cycle
+			if ( cycle >= 1 )
+				length = cycle;
+			else if ( cycle > 0 )
+				length *= cycle;
+			mlt_geometry_parse( crop, mlt_properties_get( properties, "crop" ), length, result->sw, result->sh );
+			mlt_properties_set_data( properties, "crop_geometry", crop, 0, (mlt_destructor)mlt_geometry_close, NULL );
+		}
+
+		// Repeat processing
+		int length = mlt_geometry_get_length( crop );
+		int mirror_off = mlt_properties_get_int( properties, "mirror_off" );
+		int repeat_off = mlt_properties_get_int( properties, "repeat_off" );
+		if ( !repeat_off && position >= length && length != 0 )
+		{
+			int section = position / length;
+			position -= section * length;
+			if ( !mirror_off && section % 2 == 1 )
+				position = length - position;
+		}
+
+		// Compute the pan
+		struct mlt_geometry_item_s crop_item;
+		mlt_geometry_fetch( crop, &crop_item, position );
+		result->x_src = crop_item.x;
+		result->y_src = crop_item.y;
+	}
+}
 
 static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s *result, mlt_frame a_frame, double position )
 {
@@ -898,25 +942,7 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 	result->halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
 	result->valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
 
-	result->x_src = 0;
-	result->y_src = 0;
-	if ( mlt_properties_get( properties, "crop" ) )
-	{
-		mlt_geometry crop = mlt_properties_get_data( properties, "crop_geometry", NULL );
-		if ( !crop )
-		{
-			crop = mlt_geometry_init();
-			mlt_position in = mlt_transition_get_in( this );
-			mlt_position out = mlt_transition_get_out( this );
-			int length = out - in + 1;
-			mlt_geometry_parse( crop, mlt_properties_get( properties, "crop" ), length, result->sw, result->sh );
-			mlt_properties_set_data( properties, "crop_geometry", crop, 0, (mlt_destructor)mlt_geometry_close, NULL );
-		}
-		struct mlt_geometry_item_s crop_item;
-		mlt_geometry_fetch( crop, &crop_item, position );
-		result->x_src = crop_item.x;
-		result->y_src = crop_item.y;
-	}
+	crop_calculate( this, properties, result, position );
 
 	return start;
 }
