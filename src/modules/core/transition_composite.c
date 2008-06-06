@@ -41,6 +41,8 @@ struct geometry_s
 	int sh; // scaled height, not including consumer scale based upon h/nh
 	int halign; // horizontal alignment: 0=left, 1=center, 2=right
 	int valign; // vertical alignment: 0=top, 1=middle, 2=bottom
+	int x_src;
+	int y_src;
 };
 
 /** Parse the alignment properties into the geometry.
@@ -451,11 +453,12 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 {
 	int ret = 0;
 	int i;
-	int x_src = 0, y_src = 0;
+	int x_src = -geometry.x_src, y_src = -geometry.y_src;
+	int uneven_x_src = ( x_src % 2 );
 	int32_t weight = ( ( 1 << 16 ) - 1 ) * ( geometry.item.mix / 100 );
 	int step = ( field > -1 ) ? 2 : 1;
 	int bpp = 2;
-	int stride_src = width_src * bpp;
+	int stride_src = geometry.sw * bpp;
 	int stride_dest = width_dest * bpp;
 	
 	// Adjust to consumer scale
@@ -464,11 +467,29 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int uneven_x = ( x % 2 );
 
 	// optimization points - no work to do
-	if ( width_src <= 0 || height_src <= 0 )
+	if ( width_src <= 0 || height_src <= 0 || y_src >= height_src || x_src >= width_src )
 		return ret;
 
 	if ( ( x < 0 && -x >= width_src ) || ( y < 0 && -y >= height_src ) )
 		return ret;
+
+	// cropping affects the source width
+	if ( x_src > 0 )
+	{
+		width_src -= x_src;
+		// and it implies cropping
+		if ( width_src > geometry.item.w )
+			width_src = geometry.item.w;
+	}
+
+	// cropping affects the source height
+	if ( y_src > 0 )
+	{
+		height_src -= y_src;
+		// and it implies cropping
+		if ( height_src > geometry.item.h )
+			height_src = geometry.item.h;
+	}
 
 	// crop overlay off the left edge of frame
 	if ( x < 0 )
@@ -477,7 +498,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 		width_src -= x_src;
 		x = 0;
 	}
-	
+
 	// crop overlay beyond right edge of frame
 	if ( x + width_src > width_dest )
 		width_src = width_dest - x;
@@ -534,10 +555,13 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int alpha_b_stride = stride_src / bpp;
 	int alpha_a_stride = stride_dest / bpp;
 
-	p_src += uneven_x * 2;
+	// Snap to even columns to prevent "chroma swap"
+	p_src += uneven_x_src * 2;
+	width_src -= 2 * uneven_x_src;
+	alpha_b += uneven_x_src;
+	p_dest += uneven_x * 2;
 	width_src -= 2 * uneven_x;
-	alpha_b += uneven_x;
-	uneven_x = 0;
+	alpha_a += uneven_x;
 
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i += step )
@@ -718,7 +742,23 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 	uint8_t resize_alpha = mlt_properties_get_int( b_props, "resize_alpha" );
 
-	if ( mlt_properties_get_int( properties, "aligned" ) && mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
+	// Do not scale if we are cropping - the compositing rectangle can crop the b image
+	// TODO: Use the animatable w and h of the crop geometry to scale independently of crop rectangle
+	if ( mlt_properties_get( properties, "crop" ) )
+	{
+		int real_width = get_value( b_props, "real_width", "width" );
+		int real_height = get_value( b_props, "real_height", "height" );
+		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
+		double consumer_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
+		double background_ar = mlt_properties_get_double( b_props, "output_ratio" );
+		double output_ar = background_ar != 0.0 ? background_ar : consumer_ar;
+		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
+		int scaled_height = real_height;
+		geometry->sw = scaled_width;
+		geometry->sh = scaled_height;
+	}
+	// Normalise aspect ratios and scale preserving aspect ratio
+	else if ( mlt_properties_get_int( properties, "aligned" ) && mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
 	{
 		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->item.w;
@@ -782,7 +822,8 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		mlt_properties_set_int( b_props, "resize_alpha", 255 );
 
 	// Take into consideration alignment for optimisation (titles are a special case)
-	if ( !mlt_properties_get_int( properties, "titles" ) )
+	if ( !mlt_properties_get_int( properties, "titles" ) &&
+		 mlt_properties_get( properties, "crop" ) == NULL )
 		alignment_calculate( geometry );
 
 	// Adjust to consumer scale
@@ -856,6 +897,26 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 	// Now parse the alignment
 	result->halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
 	result->valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
+
+	result->x_src = 0;
+	result->y_src = 0;
+	if ( mlt_properties_get( properties, "crop" ) )
+	{
+		mlt_geometry crop = mlt_properties_get_data( properties, "crop_geometry", NULL );
+		if ( !crop )
+		{
+			crop = mlt_geometry_init();
+			mlt_position in = mlt_transition_get_in( this );
+			mlt_position out = mlt_transition_get_out( this );
+			int length = out - in + 1;
+			mlt_geometry_parse( crop, mlt_properties_get( properties, "crop" ), length, result->sw, result->sh );
+			mlt_properties_set_data( properties, "crop_geometry", crop, 0, (mlt_destructor)mlt_geometry_close, NULL );
+		}
+		struct mlt_geometry_item_s crop_item;
+		mlt_geometry_fetch( crop, &crop_item, position );
+		result->x_src = crop_item.x;
+		result->y_src = crop_item.y;
+	}
 
 	return start;
 }
@@ -1151,8 +1212,19 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					result.sh = height_b;
 				}
 
-				// Align
-				alignment_calculate( &result );
+				// Enforce cropping
+				if ( mlt_properties_get( properties, "crop" ) )
+				{
+					if ( result.x_src == 0 )
+						width_b = width_b > result.item.w ? result.item.w : width_b;
+					if ( result.y_src == 0 )
+						height_b = height_b > result.item.h ? result.item.h : height_b;
+				}
+				else
+				{
+					// Otherwise, align
+					alignment_calculate( &result );
+				}
 
 				// Composite the b_frame on the a_frame
 				composite_yuv( dest, *width, *height, src, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
