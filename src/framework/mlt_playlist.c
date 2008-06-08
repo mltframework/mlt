@@ -346,20 +346,11 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressiv
 			mlt_producer p = this->list[ j ]->producer;
 			if ( p )
 			{
-				mlt_properties p_properties = MLT_PRODUCER_PROPERTIES( p );
-				// Prevent closing previously autoclosed to maintain integrity of references
-				if ( ! mlt_properties_get_int( p_properties, "_autoclosed" ) )
-				{
-					mlt_properties_set_int( p_properties, "_autoclosed", 1 );
-					mlt_service_unlock( MLT_PRODUCER_SERVICE( p ) );
-					mlt_producer_close( p );
-					this->list[ j ]->producer = NULL;
-				}
-				else
-				{
-					mlt_service_unlock( MLT_PRODUCER_SERVICE( p ) );
-				}
+				this->list[ j ]->producer = NULL;
+				mlt_service_unlock( MLT_PRODUCER_SERVICE( p ) );
+				mlt_producer_close( p );
 			}
+			// If p is null, the lock will not have been "taken"
 		}
 	}
 
