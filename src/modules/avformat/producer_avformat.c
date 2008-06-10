@@ -74,6 +74,11 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 				mlt_producer_close( this );
 				this = NULL;
 			}
+
+			// Close the file to release resources for large playlists - reopen later as needed
+			mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
+			mlt_properties_set_data( properties, "audio_context", NULL, 0, NULL, NULL );
+			mlt_properties_set_data( properties, "video_context", NULL, 0, NULL, NULL );
 		}
 	}
 
@@ -673,6 +678,16 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 
 	// Fetch the video_context
 	AVFormatContext *context = mlt_properties_get_data( properties, "video_context", NULL );
+	if ( !context )
+	{
+		// Reopen the file
+		mlt_events_block( properties, this );
+		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(this) ),
+			mlt_properties_get( properties, "resource" ) );
+		context = mlt_properties_get_data( properties, "video_context", NULL );
+		mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
+		mlt_events_unblock( properties, this );
+	}
 
 	// Get the video_index
 	int index = mlt_properties_get_int( properties, "video_index" );
