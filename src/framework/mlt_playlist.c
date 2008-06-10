@@ -132,28 +132,31 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 	{
 		// Get the producer
 		mlt_producer producer = this->list[ i ]->producer;
-		int current_length = mlt_producer_get_out( producer ) - mlt_producer_get_in( producer ) + 1;
-
-		// Check if the length of the producer has changed
-		if ( this->list[ i ]->frame_in != mlt_producer_get_in( producer ) ||
-			 this->list[ i ]->frame_out != mlt_producer_get_out( producer ) )
+		if ( producer )
 		{
-			// This clip should be removed...
-			if ( current_length < 1 )
+			int current_length = mlt_producer_get_out( producer ) - mlt_producer_get_in( producer ) + 1;
+	
+			// Check if the length of the producer has changed
+			if ( this->list[ i ]->frame_in != mlt_producer_get_in( producer ) ||
+				this->list[ i ]->frame_out != mlt_producer_get_out( producer ) )
 			{
-				this->list[ i ]->frame_in = 0;
-				this->list[ i ]->frame_out = -1;
-				this->list[ i ]->frame_count = 0;
+				// This clip should be removed...
+				if ( current_length < 1 )
+				{
+					this->list[ i ]->frame_in = 0;
+					this->list[ i ]->frame_out = -1;
+					this->list[ i ]->frame_count = 0;
+				}
+				else 
+				{
+					this->list[ i ]->frame_in = mlt_producer_get_in( producer );
+					this->list[ i ]->frame_out = mlt_producer_get_out( producer );
+					this->list[ i ]->frame_count = current_length;
+				}
+	
+				// Update the producer_length
+				this->list[ i ]->producer_length = current_length;
 			}
-			else 
-			{
-				this->list[ i ]->frame_in = mlt_producer_get_in( producer );
-				this->list[ i ]->frame_out = mlt_producer_get_out( producer );
-				this->list[ i ]->frame_count = current_length;
-			}
-
-			// Update the producer_length
-			this->list[ i ]->producer_length = current_length;
 		}
 
 		// Calculate the frame_count
