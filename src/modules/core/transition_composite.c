@@ -555,13 +555,13 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int alpha_b_stride = stride_src / bpp;
 	int alpha_a_stride = stride_dest / bpp;
 
-	// Snap to even columns to prevent "chroma swap"
-	p_src += uneven_x_src * 2;
-	width_src -= 2 * uneven_x_src;
-	alpha_b += uneven_x_src;
-	p_dest += uneven_x * 2;
-	width_src -= 2 * uneven_x;
-	alpha_a += uneven_x;
+	// Align chroma of source and destination
+	if ( uneven_x != uneven_x_src )
+	{
+		p_src += 2;
+		width_src -= 2;
+		alpha_b += 1;
+	}
 
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i += step )
@@ -880,8 +880,8 @@ static void crop_calculate( mlt_transition this, mlt_properties properties, stru
 		// Compute the pan
 		struct mlt_geometry_item_s crop_item;
 		mlt_geometry_fetch( crop, &crop_item, position );
-		result->x_src = crop_item.x;
-		result->y_src = crop_item.y;
+		result->x_src = rint( crop_item.x );
+		result->y_src = rint( crop_item.y );
 	}
 }
 
