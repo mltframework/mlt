@@ -723,6 +723,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			codec = avcodec_find_decoder( codec_context->codec_id );
 
 			// If we don't have a codec and we can't initialise it, we can't do much more...
+			avformat_lock( );
 			if ( codec != NULL && avcodec_open( codec_context, codec ) >= 0 )
 			{
 				// Now store the codec with its destructor
@@ -733,6 +734,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 				// Remember that we can't use this later
 				mlt_properties_set_int( properties, "video_index", -1 );
 			}
+			avformat_unlock( );
 		}
 
 		// No codec, no show...
@@ -1060,6 +1062,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 			codec = avcodec_find_decoder( codec_context->codec_id );
 
 			// If we don't have a codec and we can't initialise it, we can't do much more...
+			avformat_lock( );
 			if ( codec != NULL && avcodec_open( codec_context, codec ) >= 0 )
 			{
 				// Now store the codec with its destructor
@@ -1071,6 +1074,7 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 				// Remember that we can't use this later
 				mlt_properties_set_int( properties, "audio_index", -1 );
 			}
+			avformat_unlock( );
 		}
 
 		// No codec, no show...
