@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#undef DEINTERLACE_ON_NOT_NORMAL_SPEED
+
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name );
@@ -322,6 +324,11 @@ int mlt_consumer_start( mlt_consumer this )
 		mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 	}
 
+	// Set the frame duration in microseconds for the frame-dropping heuristic
+	int frame_duration = 1000000 / mlt_properties_get_int( properties, "frame_rate_num" ) *
+			mlt_properties_get_int( properties, "frame_rate_den" );
+	mlt_properties_set_int( properties, "frame_duration", frame_duration );
+	
 	// Check and run an ante command
 	if ( mlt_properties_get( properties, "ante" ) )
 		system( mlt_properties_get( properties, "ante" ) );
@@ -570,7 +577,9 @@ static void *consumer_read_ahead_thread( void *arg )
 		// All non normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
 		{
+#ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
+#endif
 			skipped = 0;
 			time_frame = 0;
 			time_process = 0;
@@ -618,8 +627,12 @@ static void *consumer_read_ahead_thread( void *arg )
 		time_process += time_difference( &ante );
 
 		// Determine if the next frame should be skipped
-		if ( mlt_deque_count( this->queue ) <= 5 && ( ( time_wait + time_frame + time_process ) / count ) > 40000 )
-			skip_next = 1;
+		if ( mlt_deque_count( this->queue ) <= 5 )
+		{
+			int frame_duration = mlt_properties_get_int( properties, "frame_duration" );
+			if ( ( ( time_wait + time_frame + time_process ) / count ) > frame_duration )
+				skip_next = 1;
+		}
 
 		// Unlock if there's a lock object
 		if ( lock_object ) mlt_service_unlock( lock_object );
