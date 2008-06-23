@@ -95,6 +95,8 @@ mlt_repository mlt_repository_init( const char *directory )
 			fprintf( stderr, "%s, %s: failed to dlopen %s\n", __FILE__, __FUNCTION__, object_name );
 		}
 	}
+
+	mlt_properties_close( dir );
 	
 	return this;
 }
