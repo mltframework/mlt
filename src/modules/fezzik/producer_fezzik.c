@@ -165,7 +165,9 @@ mlt_producer producer_fezzik_init( mlt_profile profile, mlt_service_type type, c
 		properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Attach filters if we have a producer and it isn't already westley'd :-)
-	if ( producer != NULL && mlt_properties_get( properties, "westley" ) == NULL && mlt_properties_get( properties, "_westley" ) == NULL )
+	if ( producer != NULL && mlt_properties_get( properties, "westley" ) == NULL && \
+		mlt_properties_get( properties, "_westley" ) == NULL && \
+		mlt_properties_get( properties, "fezzik_normalised" ) == NULL )
 		attach_normalisers( profile, producer );
 
 	// Now make sure we don't lose our identity
