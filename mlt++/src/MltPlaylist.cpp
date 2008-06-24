@@ -160,7 +160,8 @@ Producer *Playlist::current( )
 ClipInfo *Playlist::clip_info( int index, ClipInfo *info )
 {
 	mlt_playlist_clip_info clip_info;
-	mlt_playlist_get_clip_info( get_playlist( ), &clip_info, index );
+	if ( mlt_playlist_get_clip_info( get_playlist( ), &clip_info, index ) )
+		return NULL;
 	if ( info == NULL )
 		return new ClipInfo( &clip_info );
 	info->update( &clip_info );
