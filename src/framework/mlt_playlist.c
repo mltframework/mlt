@@ -521,7 +521,7 @@ mlt_position mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index 
 
 int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index )
 {
-	int error = index < 0 || index >= this->count;
+	int error = index < 0 || index >= this->count || this->list[ index ]->producer == NULL;
 	memset( info, 0, sizeof( mlt_playlist_clip_info ) );
 	if ( !error )
 	{
