@@ -205,6 +205,7 @@ void mlt_field_disconnect_service( mlt_field self, mlt_service service )
 		case transition_type:
 			i = mlt_transition_get_a_track ( MLT_TRANSITION(c) );
 			mlt_service_connect_producer( c, p, i );
+			MLT_TRANSITION(c)->producer = p;
 			break;
 		case tractor_type:
 			self->producer = p;
