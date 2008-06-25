@@ -652,6 +652,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				mlt_properties_set_int( properties, "_got_picture", 1 );
 			}
 		}
+		if ( !got_picture )
+			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 
 	// Very untidy - for rawvideo, the packet contains the frame, hence the free packet
