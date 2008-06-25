@@ -123,13 +123,11 @@ mlt_service_type mlt_service_identify( mlt_service this )
 		char *resource = mlt_properties_get( properties, "resource" );
 		if ( mlt_type == NULL )
 			type = unknown_type;
-		else if ( resource == NULL || !strcmp( resource, "<producer>" ) )
-			type = producer_type;
-		else if ( !strcmp( resource, "<playlist>" ) )
+		else if (resource != NULL && !strcmp( resource, "<playlist>" ) )
 			type = playlist_type;
-		else if ( !strcmp( resource, "<tractor>" ) )
+		else if (resource != NULL && !strcmp( resource, "<tractor>" ) )
 			type = tractor_type;
-		else if ( !strcmp( resource, "<multitrack>" ) )
+		else if (resource != NULL && !strcmp( resource, "<multitrack>" ) )
 			type = multitrack_type;
 		else if ( !strcmp( mlt_type, "producer" ) )
 			type = producer_type;
