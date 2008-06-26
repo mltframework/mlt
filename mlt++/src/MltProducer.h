@@ -68,7 +68,6 @@ namespace Mlt
 			bool same_clip( Producer &that );
 			bool runs_into( Producer &that );
 			void optimise( );
-			Frame* get_frame( int index = 0 );
 	};
 }
 
