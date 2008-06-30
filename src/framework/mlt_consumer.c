@@ -659,7 +659,24 @@ static void consumer_read_ahead_start( mlt_consumer this )
 	pthread_cond_init( &this->cond, NULL );
 
 	// Create the read ahead 
-	pthread_create( &this->ahead_thread, NULL, consumer_read_ahead_thread, this );
+	if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES( this ), "priority" ) )
+	{
+		struct sched_param priority;
+		priority.sched_priority = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this ), "priority" );
+		pthread_attr_t thread_attributes;
+		pthread_attr_init( &thread_attributes );
+		pthread_attr_setschedpolicy( &thread_attributes, SCHED_OTHER );
+		pthread_attr_setschedparam( &thread_attributes, &priority );
+		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_EXPLICIT_SCHED );
+		pthread_attr_setscope( &thread_attributes, PTHREAD_SCOPE_SYSTEM );
+		if ( pthread_create( &this->ahead_thread, &thread_attributes, consumer_read_ahead_thread, this ) < 0 )
+			pthread_create( &this->ahead_thread, NULL, consumer_read_ahead_thread, this );
+		pthread_attr_destroy( &thread_attributes );
+	}
+	else
+	{
+		pthread_create( &this->ahead_thread, NULL, consumer_read_ahead_thread, this );
+	}
 }
 
 static void consumer_read_ahead_stop( mlt_consumer this )
