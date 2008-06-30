@@ -28,7 +28,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
-
+#include <pthread.h>
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -46,6 +46,7 @@ typedef struct
 	int size;
 	mlt_properties mirror;
 	int ref_count;
+	pthread_mutex_t mutex;
 }
 property_list;
 
@@ -82,6 +83,7 @@ int mlt_properties_init( mlt_properties this, void *child )
 
 		// Increment the ref count
 		( ( property_list * )this->local )->ref_count = 1;
+		pthread_mutex_init( &( ( property_list * )this->local )->mutex, NULL );;
 	}
 
 	// Check that initialisation was successful
@@ -186,12 +188,15 @@ static inline void mlt_properties_do_mirror( mlt_properties this, const char *na
 
 int mlt_properties_inc_ref( mlt_properties this )
 {
+	int result = 0;
 	if ( this != NULL )
 	{
 		property_list *list = this->local;
-		return ++ list->ref_count;
+		pthread_mutex_lock( &list->mutex );
+		result = ++ list->ref_count;
+		pthread_mutex_unlock( &list->mutex );
 	}
-	return 0;
+	return result;
 }
 
 /** Maintain ref count to allow multiple uses of an mlt object.
@@ -199,12 +204,15 @@ int mlt_properties_inc_ref( mlt_properties this )
 
 int mlt_properties_dec_ref( mlt_properties this )
 {
+	int result = 0;
 	if ( this != NULL )
 	{
 		property_list *list = this->local;
-		return -- list->ref_count;
+		pthread_mutex_lock( &list->mutex );
+		result = -- list->ref_count;
+		pthread_mutex_unlock( &list->mutex );
 	}
-	return 0;
+	return result;
 }
 
 /** Return the ref count of this object.
@@ -903,6 +911,7 @@ void mlt_properties_close( mlt_properties this )
 			}
 	
 			// Clear up the list
+			pthread_mutex_destroy( &list->mutex );
 			free( list->name );
 			free( list->value );
 			free( list );

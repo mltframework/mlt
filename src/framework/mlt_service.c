@@ -188,11 +188,7 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 
 		// Increment the reference count on this producer
 		if ( producer != NULL )
-		{
-			mlt_service_lock( producer );
 			mlt_properties_inc_ref( MLT_SERVICE_PROPERTIES( producer ) );
-			mlt_service_unlock( producer );
-		}
 
 		// Now we disconnect the producer service from its consumer
 		mlt_service_disconnect( producer );
@@ -499,10 +495,8 @@ mlt_profile mlt_service_profile( mlt_service this )
 
 void mlt_service_close( mlt_service this )
 {
-	mlt_service_lock( this );
 	if ( this != NULL && mlt_properties_dec_ref( MLT_SERVICE_PROPERTIES( this ) ) <= 0 )
 	{
-		mlt_service_unlock( this );
 		if ( this->close != NULL )
 		{
 			this->close( this->close_object );
