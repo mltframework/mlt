@@ -41,9 +41,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		float smooth_s=80,radius_s=50,x_s=50,y_s=50,opac_s=0;
 		float smooth_e=80,radius_e=50,x_e=50,y_e=50,opac_e=0;
 		
-		sscanf(mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "start"  ), "%f:%f,%fx%f,%f",&smooth_s,&radius_s,&x_s,&y_s,&opac_s);
+		sscanf(mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "start"  ), "%f:%f:%fx%f:%f",&smooth_s,&radius_s,&x_s,&y_s,&opac_s);
 		if (mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "end"  ) ){
-			sscanf(mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "end"  ), "%f:%f,%fx%f,%f",&smooth_e,&radius_e,&x_e,&y_e,&opac_e);
+			sscanf(mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "end"  ), "%f:%f:%fx%f:%f",&smooth_e,&radius_e,&x_e,&y_e,&opac_e);
 		}else{
 			smooth_e=smooth_s;
 			radius_e=radius_s;
@@ -124,7 +124,7 @@ mlt_filter filter_vignette_init( mlt_profile profile, mlt_service_type type, con
 		*/
 		
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "start", "80:50:50x50:0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "start", "80:50,50x50,0" );
 		//mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "end", "" );
 
 	}

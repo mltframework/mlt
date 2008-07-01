@@ -29,7 +29,7 @@ parameters:
     readonly: no
     required: yes
     mutable: no
-    format: %d:%d,%dx%d,%d
+    format: %d:%d:%dx%d:%d
     minimum: 0;0;0;0;0
     maximum: 100;100;100;100;100
     default: 80;50;50;50;0
