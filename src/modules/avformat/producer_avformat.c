@@ -680,19 +680,21 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 
 	// Fetch the video_context
 	AVFormatContext *context = mlt_properties_get_data( properties, "video_context", NULL );
-	if ( !context )
+
+	// Get the video_index
+	int index = mlt_properties_get_int( properties, "video_index" );
+
+	// Reopen the file if necessary
+	if ( !context && index != -1 )
 	{
-		// Reopen the file
 		mlt_events_block( properties, this );
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(this) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = mlt_properties_get_data( properties, "video_context", NULL );
+		index = mlt_properties_get_int( properties, "video_index" );
 		mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
 		mlt_events_unblock( properties, this );
 	}
-
-	// Get the video_index
-	int index = mlt_properties_get_int( properties, "video_index" );
 
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -1041,6 +1043,18 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 
 	// Get the audio_index
 	int index = mlt_properties_get_int( properties, "audio_index" );
+
+	// Reopen the file if necessary
+	if ( !context && index != -1 )
+	{
+		mlt_events_block( properties, this );
+		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(this) ),
+			mlt_properties_get( properties, "resource" ) );
+		context = mlt_properties_get_data( properties, "audio_context", NULL );
+		index = mlt_properties_get_int( properties, "audio_index" );
+		mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
+		mlt_events_unblock( properties, this );
+	}
 
 	// Deal with audio context
 	if ( context != NULL && index != -1 )
