@@ -32,7 +32,7 @@
 #include <ctype.h>
 
 // Forward references.
-static int producer_open( mlt_producer this, char *file );
+static int producer_open( mlt_producer this, mlt_profile profile, char *file );
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
 
 /** Structure for metadata reading 
@@ -90,7 +90,7 @@ mlt_producer producer_vorbis_init( mlt_profile profile, mlt_service_type type, c
 			this->get_frame = producer_get_frame;
 
 			// Open the file
-			if ( producer_open( this, file ) != 0 )
+			if ( producer_open( this, profile, file ) != 0 )
 			{
 				// Clean up
 				mlt_producer_close( this );
@@ -120,7 +120,7 @@ static void producer_file_close( void *file )
 /** Open the file.
 */
 
-static int producer_open( mlt_producer this, char *file )
+static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 {
 	// FILE pointer for file
 	FILE *input = fopen( file, "r" );
@@ -162,7 +162,7 @@ static int producer_open( mlt_producer this, char *file )
     			double length = ov_time_total( ov, -1 );
 
 				// We will treat everything with the producer fps
-				double fps = mlt_producer_get_fps( this );
+				double fps = mlt_profile_fps( profile );
 
 				// Set out and length of file
 				mlt_properties_set_position( properties, "out", ( length * fps ) - 1 );
