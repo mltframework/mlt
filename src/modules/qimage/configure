@@ -5,8 +5,9 @@ then
 	cat << EOF
 QImage options:
 
-  --qimage-libdir         - Location of QT lib directory [/usr/lib/qt3]
-  --qimage-includedir     - Location of QT include directory [/usr/include/qt3]
+  --force-qt3		  - Force compile against Qt3 if Qt4 is present on the system
+  --qimage-libdir         - Location of QT lib directory [/usr/lib/qt4 or /usr/lib/qt3]
+  --qimage-includedir     - Location of QT include directory [/usr/include/qt4 or /usr/include/qt3]
   --kde-libdir            - Location of KDE lib directory [/usr/lib]
   --kde-includedir        - Location of KDE include directory [/usr/include/kde]
 
@@ -28,11 +29,21 @@ else
 		;;
 	esac
 
-	qimage_includedir=/usr/include/qt3
-	qimage_libdir=/usr/lib/qt3
+	qimage_includedir=/usr/include/qt4
+	qimage_libdir=/usr/lib/qt4
 
-	kde_includedir=/usr/include/kde
-	kde_libdir=/usr/lib
+	if [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
+	then
+		qimage_includedir=/usr/include/qt3
+		qimage_libdir=/usr/lib/qt3
+		kde_includedir=/usr/include/kde
+		kde_libdir=/usr/lib
+		if [ "$KDEDIR" != "" ]
+		then
+			kde_includedir="$KDEDIR/include"
+			kde_libdir="$KDEDIR"
+		fi
+	fi
 
 	if [ "$QTDIR" != "" ]
 	then
@@ -40,11 +51,8 @@ else
 		qimage_libdir="$QTDIR"
 	fi
 
-	if [ "$KDEDIR" != "" ]
-	then
-		kde_includedir="$KDEDIR/include"
-		kde_libdir="$KDEDIR"
-	fi
+	export force_qt3=
+	export qt4_found=
 
 	for i in "$@"
 	do
@@ -53,23 +61,48 @@ else
 			--qimage-includedir=* )	qimage_includedir="${i#--qimage-includedir=}" ;;
 			--kde-libdir=* )	kde_libdir="${i#--kde-libdir=}" ;;
 			--kde-includedir=* )	kde_includedir="${i#--kde-includedir=}" ;;
+			--force-qt3 )		force_qt3="true" ;;
 		esac
 	done
 
 	if [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
 	then
+
+		# test if we have a Qt3 or Qt4
+		if test -f $QTDIR/lib/libQtCore.so && [ "$force_qt3" = "" ]
+		then
+			echo "Qt version 4.x detected, will compile Qt4 qimage producer"
+			qt4_found=true
+		else
+			echo "Qt version 3.x detected, will compile Qt3 qimage producer"
+		fi
+
+		echo "Include directory: " $qimage_includedir
+
 		echo > config.h
 		echo > config.mak
-		if [ -d "$kde_includedir" ]
-		then 
-			echo "#define USE_KDE" >> config.h
-			echo "USE_KDE=1" >> config.mak
-			echo QTCXXFLAGS=-I$qimage_includedir -I$kde_includedir >> config.mak
-			echo QTLIBS=-L$qimage_libdir/lib -L$kde_libdir/lib -lqt-mt >> config.mak
-		else 
-			echo "qimage: KDE environment not found - disabling extra image formats"
+		if [ "$qt4_found" != "" ] && [ "$force_qt3" = "" ]
+		then
+			echo "#define USE_QT4" >> config.h
+			echo "USE_QT4=1" >> config.mak
 			echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-			echo QTLIBS=-L$qimage_libdir/lib -lqt-mt >> config.mak
+			echo QTLIBS=-L$qimage_libdir/lib -lQtGui >> config.mak
+		else 
+		    if [ -d "$kde_includedir" ]
+		    then 
+			    echo "#define USE_KDE" >> config.h
+			    echo "USE_KDE=1" >> config.mak
+			    echo "#define USE_QT3" >> config.h
+			    echo "USE_QT3=1" >> config.mak
+			    echo QTCXXFLAGS=-I$qimage_includedir -I$kde_includedir >> config.mak
+			    echo QTLIBS=-L$qimage_libdir/lib -L$kde_libdir/lib -lqt-mt >> config.mak
+		    else 
+			    echo "qimage: KDE environment not found - disabling extra image formats"
+			    echo "#define USE_QT3" >> config.h
+			    echo "USE_QT3=1" >> config.mak
+			    echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
+			    echo QTLIBS=-L$qimage_libdir/lib -lqt-mt >> config.mak
+		    fi
 		fi
 	else
 		echo "qimage: QT environment not found - disabling"

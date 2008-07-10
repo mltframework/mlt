@@ -46,7 +46,9 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
 	
 		// Callback registration
+#ifdef USE_KDE
 		init_qimage();
+#endif
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
 
@@ -210,7 +212,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 				if ( stat( full, &buf ) == 0 )
 				{
 					sprintf( key, "%d", keyvalue ++ );
-					mlt_properties_set( this->filenames, "0", full );
+					mlt_properties_set( this->filenames, key, full );
 					gap = 0;
 				}
 				else

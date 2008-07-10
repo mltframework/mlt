@@ -22,15 +22,23 @@
  */
 
 #include "qimage_wrapper.h"
+
+#ifdef USE_QT3
 #include <qimage.h>
-
-
-#include "config.h"
 
 #ifdef USE_KDE
 #include <kinstance.h>
 #include <kimageio.h>
 #endif
+
+#endif
+
+
+#ifdef USE_QT4
+#include <QtGui/QImage>
+#include <QtCore/QSysInfo>
+#endif
+
 
 #include <cmath>
 
@@ -74,15 +82,15 @@ static void assign_buffered_image( mlt_properties producer_props, uint8_t *curre
 	mlt_events_unblock( producer_props, NULL );
 }
 
+#ifdef USE_KDE
 void init_qimage()
 {
-#ifdef USE_KDE
 	if (!instance) {
 	    instance = new KInstance("qimage_prod");
 	    KImageIO::registerFormats();
 	}
-#endif
 }
+#endif
 
 void refresh_qimage( mlt_frame frame, int width, int height )
 {
@@ -117,6 +125,7 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 
 	// Get the original position of this frame
 	mlt_position position = mlt_properties_get_position( properties, "qimage_position" );
+	position += mlt_producer_get_in( producer );
 
 	// Image index
 	int image_idx = ( int )floor( ( double )position / ttl ) % self->count;
@@ -205,9 +214,17 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 		else if ( strcmp( interps, "hyper" ) == 0 )
 			interp = 1;
 
+#ifdef USE_QT4
+		// Note - the original qimage is already safe and ready for destruction
+		QImage scaled = interp == 0 ? qimage->scaled( QSize( width, height)) : qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		QImage temp = scaled.convertToFormat(QImage::Format_ARGB32);
+#endif
+
+#ifdef USE_QT3
 		// Note - the original qimage is already safe and ready for destruction
 		QImage scaled = interp == 0 ? qimage->scale( width, height, QImage::ScaleFree ) : qimage->smoothScale( width, height, QImage::ScaleFree );
 		QImage temp = scaled.convertDepth( 32 );
+#endif
 
 		// Store width and height
 		current_width = width;
@@ -219,12 +236,20 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 		// Allocate the alpha mask
 		current_alpha = ( uint8_t * )mlt_pool_alloc( current_width * current_height );
 
+#ifdef USE_QT4
+		if ( QSysInfo::ByteOrder == QSysInfo::BigEndian )
+			mlt_convert_argb_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
+		else
+			mlt_convert_bgr24a_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
+#endif
+
+#ifdef USE_QT3
 		// Convert the image
 		if ( QImage::systemByteOrder( ) == QImage::BigEndian )
 			mlt_convert_argb_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
 		else
 			mlt_convert_bgr24a_to_yuv422( temp.bits( ), current_width, current_height, temp.bytesPerLine( ), current_image, current_alpha );
-
+#endif
 		assign_buffered_image( producer_props, current_image, current_alpha, current_width, current_height );
 
 		// Ensure we update the cache when we need to
