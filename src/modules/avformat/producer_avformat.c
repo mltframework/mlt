@@ -74,11 +74,13 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 				mlt_producer_close( this );
 				this = NULL;
 			}
-
-			// Close the file to release resources for large playlists - reopen later as needed
-			mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
-			mlt_properties_set_data( properties, "audio_context", NULL, 0, NULL, NULL );
-			mlt_properties_set_data( properties, "video_context", NULL, 0, NULL, NULL );
+			else
+			{
+				// Close the file to release resources for large playlists - reopen later as needed
+				mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
+				mlt_properties_set_data( properties, "audio_context", NULL, 0, NULL, NULL );
+				mlt_properties_set_data( properties, "video_context", NULL, 0, NULL, NULL );
+			}
 		}
 	}
 
