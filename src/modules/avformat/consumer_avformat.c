@@ -429,7 +429,6 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 	if ( st != NULL ) 
 	{
 		char *pix_fmt = mlt_properties_get( properties, "pix_fmt" );
-		double ar = mlt_properties_get_double( properties, "aspect_ratio" );
 		AVCodecContext *c = st->codec;
 
 		// Establish defaults from AVOptions
@@ -463,6 +462,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			// we just coerce the values to facilitate a passive behaviour through
 			// the rescale normaliser when using equivalent producers and consumers.
 			// = display_aspect / (width * height)
+			double ar = mlt_properties_get_double( properties, "aspect_ratio" );
 			if ( ar == 8.0/9.0 )  // 4:3 NTSC
 			{
 				c->sample_aspect_ratio.num = 10;
@@ -484,9 +484,15 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 				c->sample_aspect_ratio.den = 81;
 			}
 		}
+		else if ( mlt_properties_get( properties, "aspect" ) )
+		{
+			double ar = mlt_properties_get_double( properties, "aspect" );
+			c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
+		}
 		else
 		{
-			c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
+			c->sample_aspect_ratio.num = mlt_properties_get_int( properties, "sample_aspect_num" );
+			c->sample_aspect_ratio.den = mlt_properties_get_int( properties, "sample_aspect_den" );
 		}
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
