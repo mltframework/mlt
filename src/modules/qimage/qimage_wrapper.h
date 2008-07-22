@@ -38,6 +38,10 @@ struct producer_qimage_s
 	mlt_properties filenames;
 	int count;
 	int image_idx;
+	uint8_t *current_image;
+	uint8_t *current_alpha;
+	int current_width;
+	int current_height;	
 };
 
 typedef struct producer_qimage_s *producer_qimage;

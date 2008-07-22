@@ -283,6 +283,8 @@ static void producer_close( mlt_producer parent )
 {
 	producer_qimage this = parent->child;
 	parent->close = NULL;
+	mlt_pool_release( this->current_image );
+	mlt_pool_release( this->current_alpha );
 	mlt_producer_close( parent );
 	mlt_properties_close( this->filenames );
 	free( this );
