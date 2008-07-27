@@ -82,6 +82,11 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 
 	if( first_image == NULL )
 	{
+		mlt_properties props = MLT_FRAME_PROPERTIES( this );
+		mlt_properties test_properties = MLT_FRAME_PROPERTIES( first_frame );
+		mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( props, "consumer_aspect_ratio" ) );
+		mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( props, "rescale.interp" ) );
+
 		error = mlt_frame_get_image( first_frame, &first_image, format, width, height, writable );
 
 		if( error != 0 ) {
@@ -166,10 +171,6 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 			// Get the frame
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
-
-			double ratio = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( real_producer ), "aspect_ratio" ) * (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "width" ) / (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( first_frame ), "height" ) / ( (double) mlt_properties_get_int(MLT_FRAME_PROPERTIES( *frame ), "width" ) / (double) mlt_properties_get_int( MLT_FRAME_PROPERTIES( *frame ), "height" ));
-
-			mlt_properties_set_double( properties, "ratio_fix", ratio );
 		}
 
 		// Make sure things are in their place
@@ -185,7 +186,6 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
-		mlt_properties_set_double( MLT_FRAME_PROPERTIES(*frame), "aspect_ratio", mlt_properties_get_double( properties, "ratio_fix" ));
 	}
 
 	return 0;
