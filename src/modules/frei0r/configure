@@ -3,7 +3,7 @@
 if [ "$help" != "1" ]
 then
 
-	echo -e "#include <frei0r.h>\n int main(){ f0r_plugin_info_t test; test.name;return 0;}\n"| gcc $CFLAGS -c -o test1 -x c -  >/dev/null 2>&1
+	echo "#include <frei0r.h> int main(){ f0r_plugin_info_t test; test.name;return 0;}"| gcc $CFLAGS -c -x c -  >/dev/null 2>&1
 
 	if [ "$?" = "1" ]
 	then
