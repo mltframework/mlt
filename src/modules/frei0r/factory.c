@@ -84,9 +84,9 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 		mlt_properties_set ( pnum , "title" , paraminfo.name );
 		mlt_properties_set ( pnum , "description" , paraminfo.explanation);
 		if ( paraminfo.type == F0R_PARAM_DOUBLE ){
-			mlt_properties_set ( pnum , "type" , "integer" );
-			mlt_properties_set ( pnum , "minimum" , "0" );
-			mlt_properties_set ( pnum , "maximum" , "1000" );
+			mlt_properties_set ( pnum , "type" , "float" );
+			mlt_properties_set ( pnum , "minimum" , "-2" );
+			mlt_properties_set ( pnum , "maximum" , "2" );
 			mlt_properties_set ( pnum , "readonly" , "no" );
 			mlt_properties_set ( pnum , "widget" , "spinner" );
 		}else
