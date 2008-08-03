@@ -593,7 +593,10 @@ int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, mlt_positi
 int mlt_playlist_blank( mlt_playlist this, mlt_position length )
 {
 	// Append to the virtual list
-	return mlt_playlist_virtual_append( this, &this->blank, 0, length );
+	if (length >= 0) 
+		return mlt_playlist_virtual_append( this, &this->blank, 0, length );
+	else 
+		return 1;
 }
 
 /** Insert a producer into the playlist.
