@@ -223,18 +223,17 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	int count;
 	char *props = strdup( arg );
 	char *ptr = props;
-	count = strcspn( ptr, ":" );
+	count = strcspn( ptr, "?" );
 	ptr[count] = '\0';
-
 	real_producer = mlt_factory_producer( profile, "fezzik", props );
 
 	ptr += count + 1;
-	ptr += strspn( ptr, ":" );
-	count = strcspn( ptr, ":" );
+	ptr += strspn( ptr, "?" );
+	count = strcspn( ptr, "?" );
 	ptr[count] = '\0';
 	speed = atof(ptr);
 	free( props );
-	
+
 	if (speed == 0.0) speed = 1.0;
 
 
@@ -245,12 +244,13 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 
 		// Fezzik normalised it for us already
 		mlt_properties_set_int( properties, "fezzik_normalised", 1);
+		mlt_properties_set( properties, "resource", arg);
 
 		// Store the producer and fitler
 		mlt_properties_set_data( properties, "producer", real_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 		// Grab some stuff from the real_producer
-		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "length,resource,width,height" );
+		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "length, width,height" );
 
 
 		if ( speed != 1.0 )
