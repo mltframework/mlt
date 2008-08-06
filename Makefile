@@ -56,6 +56,6 @@ uninstall:
 
 dist:
 	[ -d "mlt-$(version)" ] && rm -rf "mlt-$(version)" || echo
-	svn export . "mlt-$(version)"
+	svn export http://mlt.svn.sourceforge.net/svnroot/mlt/trunk/mlt "mlt-$(version)"
 	svn log > "mlt-$(version)/ChangeLog"
 	tar -cvzf "mlt-$(version).tar.gz" "mlt-$(version)"
