@@ -11,15 +11,18 @@ public class Play {
 		// Start the mlt system
 		Factory.init( null );
 
+		// Set the output profile
+		Profile profile = new Profile( "" );
+
 		// Create the producer
-		Producer p = new Producer( args[0], null );
+		Producer p = new Producer( profile, args[0], null );
 
 		if ( p.is_valid() ) {
 	  
 			p.set ("eof", "loop");
 	  
 			// Create the consumer
-			Consumer c = new Consumer("sdl", null);
+			Consumer c = new Consumer( profile, "sdl", null);
 
 			// Turn off the default rescaling
 			c.set("rescale", "none");

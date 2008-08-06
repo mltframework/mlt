@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
 path=`which java 2> /dev/null`
 
@@ -15,13 +15,13 @@ then
 
 	# Invoke swig
 	mkdir -p src_swig/net/sourceforge/mltpp
-	swig -c++ -I/usr/local/include/mlt++ `mlt-config --cflags` -java -outdir src_swig/net/sourceforge/mltpp -package net.sourceforge.mltpp mltpp.i || exit $?
+	swig -c++ -I../../src `mlt-config --cflags` -java -outdir src_swig/net/sourceforge/mltpp -package net.sourceforge.mltpp mltpp.i || exit $?
 
 	# Compile the wrapper
-	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I/usr/local/include/mlt++ `mlt-config --cflags` mltpp_wrap.cxx $JAVA_INCLUDE || exit $?
+	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I../../src `mlt-config --cflags` mltpp_wrap.cxx $JAVA_INCLUDE || exit $?
 	
 	# Create the module
-	ld -shared mltpp_wrap.o -lmlt++ -o libmltpp_java.so || exit $?
+	ld -shared mltpp_wrap.o -L../../src -lmlt++ -o libmltpp_java.so || exit $?
 
 	# Compile the test
 	javac `find src_swig -name '*.java'` || exit $?
