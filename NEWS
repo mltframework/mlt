@@ -1,0 +1,83 @@
+MLT Release Notes
+-----------------
+
+Version 0.3.0
+
+framework:
+* fix bugs with introduction of mlt_profile in v0.2.4
+* added versioning to libs
+* remove module registry and add dynamic module loading:
+  added mlt_repository_register, mlt_repository_consumers,
+  mlt_repository_filters, mlt_repository_producers, mlt_repository_transitions
+* new module metadata system based on YAML Tiny:
+  added mlt_repository_register_metadata, mlt_repository_metadata,
+  mlt_repository_languages, mlt_properties_is_sequence,
+  mlt_properties_parse_yaml, mlt_properties_serialise_yaml, and
+  added metaschema.yaml Kwalify schema file
+* mlt_consumer: added threaded, non-lossy processing when real_time=-1
+* added autoclose property to mlt_playlist for sequential processing
+  of very large playlists (prevents resource exhaustion)
+* mlt_factory_init now returns the global mlt_repository
+* change mlt_repository_fetch to mlt_repository_create
+* change mlt_factory_prefix to mlt_factory_directory
+* added mlt_field_disconnect_service
+
+modules:
+* move all modules from $datadir to $libdir
+* new oldfilm module by Marco Gittler
+* new frei0r module by Marco Gittler
+* new dgraft module by Dan Dennedy for inverse telecine (not ready yet)
+* avformat: added support for multi-threaded encoding and decoding
+* consumer_avformat: added support for AVOption to support all ffmpeg options
+  using ffmpeg-style property names
+* consumer_avformat: added support for dual pass encoding
+* qimage: added support for Qt4
+* sox: added support for sox v14.0.0
+* transition_composite: added animatable geometry-type "pan" property to crop
+  and pan instead of automatic down-scale
+
+inigo:
+* added -query option to lookup module metadata
+* added -profile option and support for progress=1 for kdenlive
+
+
+Version 0.2.4
+
+* framework: new extensible profiles system to replace MLT_NORMALISATION
+* module avformat: interlaced coding support for ffmpeg/libavcodec
+* module avformat: build improvements for --avformat-svn
+* new effectv module with BurningTV video filter
+* module qimage: added support for psd, xcf and exr images
+* numerous bugfixes
+
+
+Version 0.2.3
+
+* Addition of kdenlive module
+* Support for ffmpeg from subversion
+* Support for ffmpeg libswscale
+* Copyright and license cleanup
+
+
+Version 0.2.2
+
+* Prepared specifically for the kdenlive 0.3 release.
+* Contains some patches to support rgb24a output for the gdk-pixbuf and qimage
+  producers as well as some minor bugfixes.
+
+
+Version 0.2.1
+
+* Many improvements since initial releases due to development of Shotcut and
+  Jahshaka editing interfaces.
+
+
+Version 0.1.1
+
+* Minor modifications and bug fixes from the previous release. Better
+  ffmpeg/avformat integration and more reliable playback.
+
+
+Version 0.1.0
+
+* First official release
