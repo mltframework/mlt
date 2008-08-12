@@ -221,7 +221,17 @@ int consumer_start( mlt_consumer parent )
 		this->window_height = this->height;
 
 		if ( this->sdl_screen == NULL && display_off == 0 )
+		{
+			if ( mlt_properties_get_int( this->properties, "fullscreen" ) )
+			{
+				const SDL_VideoInfo *vi = SDL_GetVideoInfo();
+				this->window_width = vi->current_w;
+				this->window_height = vi->current_h;
+				this->sdl_flags |= SDL_FULLSCREEN;
+				SDL_ShowCursor( SDL_DISABLE );
+			}
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+		}
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
