@@ -37,7 +37,11 @@
 #	define ST_LIB_VERSION_CODE SOX_LIB_VERSION_CODE
 #	define ST_LIB_VERSION SOX_LIB_VERSION
 #	define ST_SIGNED_WORD_TO_SAMPLE(d,clips) SOX_SIGNED_16BIT_TO_SAMPLE(d,clips)
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
+#	define ST_SSIZE_MIN SOX_SAMPLE_MIN
+#else
 #	define ST_SSIZE_MIN SOX_SSIZE_MIN
+#endif
 #	define ST_SAMPLE_TO_SIGNED_WORD(d,clips) SOX_SAMPLE_TO_SIGNED_16BIT(d,clips)
 #else
 #	include <st.h>
@@ -90,7 +94,11 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 	// Locate the effect
 #ifdef SOX14
 	//fprintf(stderr, "%s: effect %s count %d\n", __FUNCTION__, tokeniser->tokens[0], tokeniser->count );
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
+	eff = sox_create_effect( sox_find_effect( tokeniser->tokens[0] ) );
+#else
 	sox_create_effect( eff, sox_find_effect( tokeniser->tokens[0] ) );
+#endif
 	int opt_count = tokeniser->count - 1;
 #else
 	int opt_count = st_geteffect_opt( eff, tokeniser->count, tokeniser->tokens );
@@ -107,10 +115,17 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 #endif
 		{
 			// Set the sox signal parameters
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
+			eff->in_signal.rate = frequency;
+			eff->out_signal.rate = frequency;
+			eff->in_signal.channels = 1;
+			eff->out_signal.channels = 1;
+#else
 			eff->ininfo.rate = frequency;
 			eff->outinfo.rate = frequency;
 			eff->ininfo.channels = 1;
 			eff->outinfo.channels = 1;
+#endif
 			
 			// Start the effect
 #ifdef SOX14
@@ -213,8 +228,13 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		eff_t e = mlt_properties_get_data( filter_properties, id, NULL );
 		
 		// Validate the existing effect state
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
+		if ( e != NULL && ( e->in_signal.rate != *frequency || 
+							e->out_signal.rate != *frequency ) )
+#else
 		if ( e != NULL && ( e->ininfo.rate != *frequency || 
 							e->outinfo.rate != *frequency ) )
+#endif
 			e = NULL;
 		
 		// (Re)Create the effect state

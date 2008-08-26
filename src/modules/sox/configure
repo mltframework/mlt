@@ -34,8 +34,10 @@ then
 		pkg-config sox
 		if [ $? -eq 0 ]
 		then
-			echo "CFLAGS += $(pkg-config --cflags sox)" > config.mak
-			echo "LDFLAGS += $(pkg-config --libs sox)" > config.mak
+			disable_sox=0
+			echo "CFLAGS += $(pkg-config --cflags sox) -I$(pkg-config --variable=prefix sox)" > config.mak
+			echo "LDFLAGS += $(pkg-config --libs sox)" >> config.mak
+			[ "$(pkg-config --modversion sox)" > "13" ] && echo "CFLAGS += -DSOX14" >> config.mak
 		else
 			sox --version 2> /dev/null | grep 'v14.' > /dev/null
 			disable_sox=$?
