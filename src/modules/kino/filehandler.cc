@@ -42,6 +42,7 @@ using std::setfill;
 #include <time.h>
 #include <sys/time.h>
 #include <string.h>
+#include <stdlib.h>
 
 // libdv header files
 #ifdef HAVE_LIBDV
