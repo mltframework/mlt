@@ -799,13 +799,7 @@ static void *consumer_thread( void *arg )
 	// Check for audio codec overides
 	if ( acodec != NULL )
 	{
-		AVCodec *p = first_avcodec;
-		while( p != NULL ) 
-		{
-			if ( !strcmp( p->name, acodec ) && p->type == CODEC_TYPE_AUDIO )
-				break;
-			p = p->next;
-		}
+		AVCodec *p = avcodec_find_encoder_by_name( acodec );
 		if ( p != NULL )
 			audio_codec_id = p->id;
 		else
@@ -815,13 +809,7 @@ static void *consumer_thread( void *arg )
 	// Check for video codec overides
 	if ( vcodec != NULL )
 	{
-		AVCodec *p = first_avcodec;
-		while( p != NULL ) 
-		{
-			if ( !strcmp( p->name, vcodec ) && p->type == CODEC_TYPE_VIDEO )
-				break;
-			p = p->next;
-		}
+		AVCodec *p = avcodec_find_encoder_by_name( vcodec );
 		if ( p != NULL )
 			video_codec_id = p->id;
 		else
