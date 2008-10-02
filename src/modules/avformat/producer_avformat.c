@@ -292,7 +292,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 				mlt_properties_set_double( properties, "_start_time", context->start_time );
 			
 			// Check if we're seekable (something funny about mpeg here :-/)
-			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 ) )
+			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 )  && strncmp( file, "udp:", 4 )  && strncmp( file, "tcp:", 4 ) && strncmp( file, "rtsp:", 5 )  && strncmp( file, "rtp:", 4 ) )
 			{
 				mlt_properties_set_int( properties, "seekable", av_seek_frame( context, -1, mlt_properties_get_double( properties, "_start_time" ), AVSEEK_FLAG_BACKWARD ) >= 0 );
 				mlt_properties_set_data( properties, "dummy_context", context, 0, producer_file_close, NULL );
@@ -333,7 +333,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 				mlt_properties_set_int(properties, "meta.attr.track.markup", context->track );
 			
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
-			if ( av == 0 && !av_bypass && audio_index != -1 && video_index != -1 )
+			if ( av == 0 && audio_index != -1 && video_index != -1 )
 			{
 				// We'll use the open one as our video_context
 				mlt_properties_set_data( properties, "video_context", context, 0, producer_file_close, NULL );
