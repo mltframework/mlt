@@ -467,32 +467,43 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			{
 				c->sample_aspect_ratio.num = 10;
 				c->sample_aspect_ratio.den = 11;
+				st->sample_aspect_ratio.num = 10;
+				st->sample_aspect_ratio.den = 11;
 			}
 			else if ( ar == 16.0/15.0 ) // 4:3 PAL
 			{
 				c->sample_aspect_ratio.num = 159;
 				c->sample_aspect_ratio.den = 54;
+				st->sample_aspect_ratio.num = 159;
+				st->sample_aspect_ratio.den = 54;
 			}
 			else if ( ar == 32.0/27.0 ) // 16:9 NTSC
 			{
 				c->sample_aspect_ratio.num = 40;
 				c->sample_aspect_ratio.den = 33;
+				st->sample_aspect_ratio.num = 40;
+				st->sample_aspect_ratio.den = 33;
 			}
 			else // 16:9 PAL
 			{
 				c->sample_aspect_ratio.num = 118;
 				c->sample_aspect_ratio.den = 81;
+				st->sample_aspect_ratio.num = 118;
+				st->sample_aspect_ratio.den = 81;
 			}
 		}
 		else if ( mlt_properties_get( properties, "aspect" ) )
 		{
 			double ar = mlt_properties_get_double( properties, "aspect" );
 			c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
+			st->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
 		}
 		else
 		{
 			c->sample_aspect_ratio.num = mlt_properties_get_int( properties, "sample_aspect_num" );
 			c->sample_aspect_ratio.den = mlt_properties_get_int( properties, "sample_aspect_den" );
+			st->sample_aspect_ratio.num = mlt_properties_get_int( properties, "sample_aspect_num" );
+			st->sample_aspect_ratio.den = mlt_properties_get_int( properties, "sample_aspect_den" );
 		}
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
