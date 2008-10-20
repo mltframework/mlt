@@ -1,10 +1,10 @@
 #!/bin/sh
 
-path=`which mlt-config 2>/dev/null`
+pkg-config mlt-framework 2>/dev/null
 [ $? != 0 ] && echo "MLT not installed - aborting" && exit 1 
 
 # Determine default prefix
-prefix=`mlt-config --prefix`
+prefix=`pkg-config --variable=prefix mlt-framework`
 [ "$prefix" = "" ] && echo "Can't locate MLT's prefix - please reconfigure MLT." && exit 1
 
 # Default the libdir
@@ -25,7 +25,7 @@ done
 # Sanity check
 [ ! -d "$prefix" ] && echo "Invalid prefix $prefix - aborting" && exit 1
 
-echo "version=`mlt-config --version`" > config.mak
+echo "version=`pkg-config --modversion mlt-framework`" > config.mak
 echo "soversion=1" >> config.mak
 echo "prefix=$prefix" >> config.mak
 echo "libdir=$libdir" >> config.mak
@@ -36,15 +36,15 @@ echo "targetos=$targetos" >> config.mak
 case $targetos in 
 	Darwin)
 		echo LIBSUF=.dylib
-        echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC `mlt-config --cflags`"
+        echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC `pkg-config --cflags mlt-framework`"
 		echo "LIBFLAGS=-dynamiclib -single_module"
-        echo "LDFLAGS+=`mlt-config --libs` `mlt-config miracle --libs` `mlt-config valerie --libs`"
+        echo "LDFLAGS+=`pkg-config --libs mlt-framework` `pkg-config mlt-miracle --libs` `pkg-config mlt-valerie --libs`"
 		;;
 	Linux)
 		echo LIBSUF=.so
-        echo "CXXFLAGS+=-pthread -Wall -fPIC `mlt-config --cflags`"
+        echo "CXXFLAGS+=-pthread -Wall -fPIC `pkg-config --cflags mlt-framework`"
 		echo "LIBFLAGS=-shared"
-        echo "LDFLAGS+=`mlt-config --libs` `mlt-config miracle --libs`"
+        echo "LDFLAGS+=`pkg-config --libs mlt-framework` `pkg-config mlt-miracle --libs`"
 		;;
 esac >> config.mak
 
