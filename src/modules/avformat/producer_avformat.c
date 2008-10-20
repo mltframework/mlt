@@ -989,9 +989,12 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				}
 
 				// If we're behind, ignore this packet
-				float current_pts = av_q2d( stream->time_base ) * pkt.pts;
-				if ( seekable && ( !ignore && current_pts <= ( real_timecode - 0.02 ) ) )
-					ignore = 1;
+				if ( pkt.pts >= 0 )
+				{
+					float current_pts = av_q2d( stream->time_base ) * pkt.pts;
+					if ( seekable && ( !ignore && current_pts <= ( real_timecode - 0.02 ) ) )
+						ignore = 1;
+				}
 			}
 
 			// We're finished with this packet regardless
