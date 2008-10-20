@@ -5,10 +5,7 @@ then
 
 	bits=$(uname -m)
 	case $bits in
-	ppc)
-		disable_xine="1"
-		;;
-	ppc64)
+	ppc|ppc64)
 		disable_xine="1"
 		;;
 	*)
