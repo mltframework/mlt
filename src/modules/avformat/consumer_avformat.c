@@ -221,8 +221,34 @@ static int consumer_start( mlt_consumer this )
 		}
 		
 		// Now ensure we honour the multiple of two requested by libavformat
-		mlt_properties_set_int( properties, "width", ( width / 2 ) * 2 );
-		mlt_properties_set_int( properties, "height", ( height / 2 ) * 2 );
+		width = ( width / 2 ) * 2;
+		height = ( height / 2 ) * 2;
+		mlt_properties_set_int( properties, "width", width );
+		mlt_properties_set_int( properties, "height", height );
+
+		// We need to set these on the profile as well because the s property is
+		// an alias to mlt properties that correspond to profile settings.
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+		{
+			profile->width = width;
+			profile->height = height;
+		}
+
+		// Handle the ffmpeg command line "-r" property for frame rate
+		if ( mlt_properties_get( properties, "r" ) )
+		{
+			double frame_rate = mlt_properties_get_double( properties, "r" );
+			AVRational rational = av_d2q( frame_rate, 255 );
+			mlt_properties_set_int( properties, "frame_rate_num", rational.num );
+			mlt_properties_set_int( properties, "frame_rate_den", rational.den );
+			if ( profile )
+			{
+				profile->frame_rate_num = rational.num;
+				profile->frame_rate_den = rational.den;
+				mlt_properties_set_double( properties, "fps", mlt_profile_fps( profile ) );
+			}
+		}
 		
 		// Apply AVOptions that are synonyms for standard mlt_consumer options
 		if ( mlt_properties_get( properties, "ac" ) )
@@ -288,7 +314,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		const char *opt_name = mlt_properties_get_name( properties, i );
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
 		if ( opt != NULL )
-#if LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)			
+#if LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
 			av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
 #else
 			av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
@@ -471,54 +497,77 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			{
 				c->sample_aspect_ratio.num = 10;
 				c->sample_aspect_ratio.den = 11;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)			
-				st->sample_aspect_ratio.num = 10;
-				st->sample_aspect_ratio.den = 11;
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+				st->sample_aspect_ratio = c->sample_aspect_ratio;
 #endif
 			}
 			else if ( ar == 16.0/15.0 ) // 4:3 PAL
 			{
 				c->sample_aspect_ratio.num = 159;
 				c->sample_aspect_ratio.den = 54;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)			
-				st->sample_aspect_ratio.num = 159;
-				st->sample_aspect_ratio.den = 54;
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+				st->sample_aspect_ratio = c->sample_aspect_ratio;
 #endif
 			}
 			else if ( ar == 32.0/27.0 ) // 16:9 NTSC
 			{
 				c->sample_aspect_ratio.num = 40;
 				c->sample_aspect_ratio.den = 33;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)			
-				st->sample_aspect_ratio.num = 40;
-				st->sample_aspect_ratio.den = 33;
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+				st->sample_aspect_ratio = c->sample_aspect_ratio;
 #endif
 			}
 			else // 16:9 PAL
 			{
 				c->sample_aspect_ratio.num = 118;
 				c->sample_aspect_ratio.den = 81;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)			
-				st->sample_aspect_ratio.num = 118;
-				st->sample_aspect_ratio.den = 81;
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+				st->sample_aspect_ratio = c->sample_aspect_ratio;
 #endif
 			}
 		}
 		else if ( mlt_properties_get( properties, "aspect" ) )
 		{
+			// "-aspect" on ffmpeg command line is display aspect ratio
 			double ar = mlt_properties_get_double( properties, "aspect" );
-			c->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)			
-			st->sample_aspect_ratio = av_d2q( ar * c->height / c->width , 255);
+			AVRational rational = av_d2q( ar, 255 );
+
+			// Update the profile and properties as well since this is an alias 
+			// for mlt properties that correspond to profile settings
+			mlt_properties_set_int( properties, "display_aspect_num", rational.num );
+			mlt_properties_set_int( properties, "display_aspect_den", rational.den );
+			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+			if ( profile )
+			{
+				profile->display_aspect_num = rational.num;
+				profile->display_aspect_den = rational.den;
+				mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile ) );
+			}
+
+			// Now compute the sample aspect ratio
+			rational = av_d2q( ar * c->height / c->width, 255 );
+			c->sample_aspect_ratio = rational;
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+			st->sample_aspect_ratio = c->sample_aspect_ratio;
 #endif
+			// Update the profile and properties as well since this is an alias 
+			// for mlt properties that correspond to profile settings
+			mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
+			mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+			if ( profile )
+			{
+				profile->sample_aspect_num = rational.num;
+				profile->sample_aspect_den = rational.den;
+				mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
+			}
+
 		}
 		else
 		{
 			c->sample_aspect_ratio.num = mlt_properties_get_int( properties, "sample_aspect_num" );
 			c->sample_aspect_ratio.den = mlt_properties_get_int( properties, "sample_aspect_den" );
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)			
-			st->sample_aspect_ratio.num = mlt_properties_get_int( properties, "sample_aspect_num" );
-			st->sample_aspect_ratio.den = mlt_properties_get_int( properties, "sample_aspect_den" );
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+			st->sample_aspect_ratio = c->sample_aspect_ratio;
 #endif
 		}
 
