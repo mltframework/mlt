@@ -27,6 +27,8 @@
 #include <string.h>
 #include <math.h>
 
+// TODO: does not support multiple effects with SoX v14.1.0+
+
 #ifdef SOX14
 #	include <sox.h>
 #	define ST_EOF SOX_EOF
@@ -73,16 +75,18 @@ static inline double mean( double *buf, int count )
 	return mean;
 }
 
+static void delete_effect( eff_t effp )
+{
+	free( effp->priv );
+	free( (void*)effp->in_encoding );
+	free( effp );
+}
+
 /** Create an effect state instance for a channels
 */
 static int create_effect( mlt_filter this, char *value, int count, int channel, int frequency )
 {
 	mlt_tokeniser tokeniser = mlt_tokeniser_init();
-#ifdef SOX14
-	eff_t eff = mlt_pool_alloc( sizeof( sox_effect_t ) );
-#else
-	eff_t eff = mlt_pool_alloc( sizeof( struct st_effect ) );
-#endif
 	char id[ 256 ];
 	int error = 1;
 
@@ -92,15 +96,23 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 		return error;
 
 	// Locate the effect
+	mlt_destructor effect_destructor = mlt_pool_release;
 #ifdef SOX14
 	//fprintf(stderr, "%s: effect %s count %d\n", __FUNCTION__, tokeniser->tokens[0], tokeniser->count );
 #if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
-	eff = sox_create_effect( sox_find_effect( tokeniser->tokens[0] ) );
+	eff_t eff = sox_create_effect( sox_find_effect( tokeniser->tokens[0] ) );
+	effect_destructor = ( mlt_destructor ) delete_effect;
+	sox_encodinginfo_t *enc = calloc( 1, sizeof( sox_encodinginfo_t ) );
+	enc->encoding = SOX_ENCODING_SIGN2;
+	enc->bits_per_sample = 16;
+	eff->in_encoding = eff->out_encoding = enc;
 #else
+	eff_t eff = mlt_pool_alloc( sizeof( sox_effect_t ) );
 	sox_create_effect( eff, sox_find_effect( tokeniser->tokens[0] ) );
 #endif
 	int opt_count = tokeniser->count - 1;
 #else
+	eff_t eff = mlt_pool_alloc( sizeof( struct st_effect ) );
 	int opt_count = st_geteffect_opt( eff, tokeniser->count, tokeniser->tokens );
 #endif
 	
@@ -120,6 +132,10 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 			eff->out_signal.rate = frequency;
 			eff->in_signal.channels = 1;
 			eff->out_signal.channels = 1;
+			eff->in_signal.precision = 16;
+			eff->out_signal.precision = 16;
+			eff->in_signal.length = 0;
+			eff->out_signal.length = 0;
 #else
 			eff->ininfo.rate = frequency;
 			eff->outinfo.rate = frequency;
@@ -138,14 +154,14 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 				sprintf( id, "_effect_%d_%d", count, channel );
 
 				// Save the effect state
-				mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), id, eff, 0, mlt_pool_release, NULL );
+				mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), id, eff, 0, effect_destructor, NULL );
 				error = 0;
 			}
 		}
 	}
 	// Some error occurred so delete the temp effect state
 	if ( error == 1 )
-		mlt_pool_release( eff );
+		effect_destructor( eff );
 	
 	mlt_tokeniser_close( tokeniser );
 	
