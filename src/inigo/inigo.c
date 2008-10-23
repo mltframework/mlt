@@ -1,6 +1,6 @@
 /*
  * inigo.c -- MLT command line utility
- * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
+ * Copyright (C) 2002-2008 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -396,6 +396,15 @@ query_all:
 			}
 			goto exit_factory;
 		}
+		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
+		{
+			fprintf( stderr, "MLT inigo " VERSION "\n"
+				"Copyright (C) 2002-2008 Ushodaya Enterprises Limited\n"
+				"This is free software; see the source for copying conditions.  There is NO\n"
+				"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
+			);
+			goto exit_factory;
+		}
 	}
 
 	// Create profile if not set explicitly
@@ -495,6 +504,7 @@ query_all:
 		fprintf( stderr, "Usage: inigo [ -profile name ]\n"
 						 "             [ -query [ consumers | filters | producers | transitions |\n"
 						 "                      type=identifer ] ]\n"
+						 "             [ -version ]\n"
 						 "             [ -serialise [ filename.inigo ] ]\n"
 						 "             [ -group [ name=value ]* ]\n"
 						 "             [ -consumer id[:arg] [ name=value ]* [ silent=1 ] [ progress=1 ] ]\n"

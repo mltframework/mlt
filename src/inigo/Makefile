@@ -5,7 +5,7 @@ TARGET = inigo
 OBJS = inigo.o \
 	   io.o
 
-CFLAGS += -I.. $(RDYNAMIC)
+CFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\"
 
 LDFLAGS += -L../framework -lmlt 
 
