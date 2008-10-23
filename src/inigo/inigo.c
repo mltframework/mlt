@@ -37,7 +37,7 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
 	mlt_consumer consumer = mlt_properties_get_data( properties, "transport_consumer", NULL );
 
-	mlt_properties_set_int( properties, "stats_off", 0 );
+	mlt_properties_set_int( properties, "stats_off", 1 );
 
 	if ( strlen( value ) == 1 )
 	{
@@ -324,6 +324,8 @@ int main( int argc, char **argv )
 	char *name = NULL;
 	struct sched_param scp;
 	mlt_profile profile = NULL;
+	int is_progress = 0;
+	int is_silent = 0;
 
 	// Use realtime scheduling if possible
 	memset( &scp, '\0', sizeof( scp ) );
@@ -356,6 +358,10 @@ int main( int argc, char **argv )
 			const char *pname = argv[ ++ i ];
 			if ( pname && pname[0] != '-' )
 				profile = mlt_profile_init( pname );
+		}
+		else if ( !strcmp( argv[ i ], "-progress" ) )
+		{
+			is_progress = 1;
 		}
 		// Look for the query option
 		else if ( !strcmp( argv[ i ], "-query" ) )
@@ -396,10 +402,15 @@ query_all:
 			}
 			goto exit_factory;
 		}
+		else if ( !strcmp( argv[ i ], "-silent" ) )
+		{
+			is_silent = 1;
+		}
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
 			fprintf( stderr, "MLT inigo " VERSION "\n"
 				"Copyright (C) 2002-2008 Ushodaya Enterprises Limited\n"
+				"<http://www.mltframework.org/>\n"
 				"This is free software; see the source for copying conditions.  There is NO\n"
 				"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 			);
@@ -439,6 +450,10 @@ query_all:
 	{
 		mlt_properties_set_data( MLT_CONSUMER_PROPERTIES( consumer ), "transport_producer", inigo, 0, NULL, NULL );
 		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( inigo ), "transport_consumer", consumer, 0, NULL, NULL );
+		if ( is_progress )
+			mlt_properties_set_int(  MLT_CONSUMER_PROPERTIES( consumer ), "progress", is_progress );
+		if ( is_silent )
+			mlt_properties_set_int(  MLT_CONSUMER_PROPERTIES( consumer ), "silent", is_silent );
 	}
 
 	if ( argc > 1 && inigo != NULL && mlt_producer_get_length( inigo ) > 0 )
@@ -501,23 +516,41 @@ query_all:
 	}
 	else
 	{
-		fprintf( stderr, "Usage: inigo [ -profile name ]\n"
-						 "             [ -query [ consumers | filters | producers | transitions |\n"
-						 "                      type=identifer ] ]\n"
-						 "             [ -version ]\n"
-						 "             [ -serialise [ filename.inigo ] ]\n"
-						 "             [ -group [ name=value ]* ]\n"
-						 "             [ -consumer id[:arg] [ name=value ]* [ silent=1 ] [ progress=1 ] ]\n"
-						 "             [ -filter filter[:arg] [ name=value ]* ]\n"
-						 "             [ -attach filter[:arg] [ name=value ]* ]\n"
-						 "             [ -mix length [ -mixer transition ]* ]\n"
-						 "             [ -transition id[:arg] [ name=value ]* ]\n"
-						 "             [ -blank frames ]\n"
-						 "             [ -track ]\n"
-						 "             [ -split relative-frame ]\n"
-						 "             [ -join clips ]\n"
-						 "             [ -repeat times ]\n"
-						 "             [ producer [ name=value ]* ]+\n" );
+		fprintf( stderr,
+"Usage: inigo [options] [producer [name=value]* ]+\n"
+"Options:\n"
+"  -attach filter[:arg] [name=value]*        Attach a filter to the output\n"
+"  -attach-cut filter[:arg] [name=value]*    Attach a filter to a cut\n"
+"  -attach-track filter[:arg] [name=value]*  Attach a filter to a track\n"
+"  -attach-clip filter[:arg] [name=value]*   Attach a filter to a producer\n"
+"  -audio-track | -hide-video                Add an audio-only track\n"
+"  -blank frames                             Add blank silence to a track\n"
+"  -consumer id[:arg] [name=value]*          Set the consumer (sink)\n"
+"  -filter filter[:arg] [name=value]*        Add a filter to the current track\n"
+"  -group [name=value]*                      Apply properties repeatedly\n"
+"  -help                                     Show this message\n"
+"  -join clips                               Join multiple clips into one cut\n"
+"  -mix length                               Add a mix between the last two cuts\n"
+"  -mixer transition                         Add a transition to the mix\n"
+"  -null-track | -hide-track                 Add a hidden track\n"
+"  -profile name                             Set the processing settings\n"
+"  -progress                                 Display progress along with the position\n"
+"  -remove                                   Remove the most recent cut\n"
+"  -repeat times                             Repeat the last cut\n"
+"  -query                                    List all of the registered services\n"
+"  -query \"consumers\" | \"consumer\"=id        List consumers or show info about one\n"
+"  -query \"filters\" | \"filter\"=id            List filters or show info about one\n"
+"  -query \"producers\" | \"producer\"=id        List producers or show info about one\n"
+"  -query \"transitions\" | \"transition\"=id    List transitions or show info about one\n"
+"  -serialise [filename]                     Display or write the reformatted command line\n"
+"  -silent                                   Do not display position or transport help\n"
+"  -split relative-frame                     Split the last cut into two cuts\n"
+"  -swap                                     Rearrange the last two cuts\n"
+"  -track                                    Add a track\n"
+"  -transition id[:arg] [name=value]*        Add a transition\n"
+"  -version                                  Show the version and copyright message\n"
+"  -video-track | -hide-audio                Add a video-only track\n"
+"For more help: <http://www.mltframework.org/>\n" );
 	}
 
 	// Close the consumer
