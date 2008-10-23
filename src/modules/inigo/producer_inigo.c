@@ -405,17 +405,13 @@ mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, co
 		}
 		else
 		{
-			if ( !strcmp( argv[ i ], "-serialise" ) )
-				i += 2;
-			else if ( !strcmp( argv[ i ], "-consumer" ) )
-				i += 2;
-			else if ( !strcmp( argv[ i ], "-profile" ) )
+			if ( !strcmp( argv[ i ], "-serialise" ) ||
+			     !strcmp( argv[ i ], "-consumer" ) ||
+			     !strcmp( argv[ i ], "-profile" ) )
 				i += 2;
 
 			while ( argv[ i ] != NULL && strchr( argv[ i ], '=' ) )
 				i ++;
-
-			i --;
 		}
 	}
 
