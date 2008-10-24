@@ -224,11 +224,11 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	
 	if ( ptr )
 	{
-		speed = atof( ++ptr );
+		speed = atof( ptr + 1 );
 		if ( speed != 0.0 )
 			// If speed was valid, then strip it and the delimiter.
 			// Otherwise, an invalid speed probably means this '?' was not a delimiter.
-			*(--ptr) = '\0';
+			*ptr = '\0';
 	}
 		
 	real_producer = mlt_factory_producer( profile, "fezzik", props );
