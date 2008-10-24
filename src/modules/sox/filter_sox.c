@@ -75,12 +75,14 @@ static inline double mean( double *buf, int count )
 	return mean;
 }
 
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
 static void delete_effect( eff_t effp )
 {
 	free( effp->priv );
 	free( (void*)effp->in_encoding );
 	free( effp );
 }
+#endif
 
 /** Create an effect state instance for a channels
 */
