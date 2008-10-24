@@ -205,8 +205,8 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	// Check if a speed was specified.
 	/** 
 
-	* Speed must be appended to the filename with ':'. To play your video at 50%:
-	 inigo framebuffer:my_video.mpg:0.5
+	* Speed must be appended to the filename with '?'. To play your video at 50%:
+	 inigo framebuffer:my_video.mpg?0.5
 
 	* Stroboscope effect can be obtained by adding a stobe=x parameter, where
 	 x is the number of frames that will be ignored.
@@ -218,20 +218,20 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 
 	**/
 
-	double speed;
-
-	int count;
+	double speed = 0.0;
 	char *props = strdup( arg );
-	char *ptr = props;
-	count = strcspn( ptr, "?" );
-	ptr[count] = '\0';
+	char *ptr = strrchr( props, '?' );
+	
+	if ( ptr )
+	{
+		speed = atof( ++ptr );
+		if ( speed != 0.0 )
+			// If speed was valid, then strip it and the delimiter.
+			// Otherwise, an invalid speed probably means this '?' was not a delimiter.
+			*(--ptr) = '\0';
+	}
+		
 	real_producer = mlt_factory_producer( profile, "fezzik", props );
-
-	ptr += count + 1;
-	ptr += strspn( ptr, "?" );
-	count = strcspn( ptr, "?" );
-	ptr[count] = '\0';
-	speed = atof(ptr);
 	free( props );
 
 	if (speed == 0.0) speed = 1.0;
