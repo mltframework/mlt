@@ -405,13 +405,22 @@ mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, co
 		}
 		else
 		{
+			int backtrack = 0;
 			if ( !strcmp( argv[ i ], "-serialise" ) ||
 			     !strcmp( argv[ i ], "-consumer" ) ||
 			     !strcmp( argv[ i ], "-profile" ) )
+			{
 				i += 2;
+				backtrack = 1;
+			}
 
 			while ( argv[ i ] != NULL && strchr( argv[ i ], '=' ) )
+			{
 				i ++;
+				backtrack = 1;
+			}
+			if ( backtrack )
+				i --;
 		}
 	}
 
