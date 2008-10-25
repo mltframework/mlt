@@ -36,15 +36,15 @@ echo "targetos=$targetos" >> config.mak
 case $targetos in 
 	Darwin)
 		echo LIBSUF=.dylib
-        echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC `pkg-config --cflags mlt-framework`"
+		echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC `pkg-config --cflags mlt-framework`"
 		echo "LIBFLAGS=-dynamiclib -single_module"
-        echo "LDFLAGS+=`pkg-config --libs mlt-framework` `pkg-config mlt-miracle --libs` `pkg-config mlt-valerie --libs`"
+		echo "LDFLAGS+=`pkg-config --libs mlt-framework` `pkg-config mlt-miracle --libs` `pkg-config mlt-valerie --libs`"
 		;;
-	Linux)
+	Linux|FreeBSD)
 		echo LIBSUF=.so
-        echo "CXXFLAGS+=-pthread -Wall -fPIC `pkg-config --cflags mlt-framework`"
+		echo "CXXFLAGS+=-pthread -Wall -fPIC `pkg-config --cflags mlt-framework`"
 		echo "LIBFLAGS=-shared"
-        echo "LDFLAGS+=`pkg-config --libs mlt-framework` `pkg-config mlt-miracle --libs`"
+		echo "LDFLAGS+=`pkg-config --libs mlt-framework` `pkg-config mlt-miracle --libs`"
 		;;
 esac >> config.mak
 
