@@ -8,7 +8,7 @@ then
 	Darwin)
 		LDD="otool -L"
 		;;
-	Linux)
+	Linux|FreeBSD)
 		LDD="ldd"
 		;;
 	*)
@@ -37,7 +37,7 @@ then
 			disable_sox=0
 			echo "CFLAGS += $(pkg-config --cflags sox) -I$(pkg-config --variable=prefix sox)" > config.mak
 			echo "LDFLAGS += $(pkg-config --libs sox)" >> config.mak
-			[ "$(pkg-config --modversion sox)" > "13" ] && echo "CFLAGS += -DSOX14" >> config.mak
+			[ $(pkg-config --modversion sox | cut -d. -f1) -gt 13 ] && echo "CFLAGS += -DSOX14" >> config.mak
 		else
 			sox --version 2> /dev/null | grep 'v14.' > /dev/null
 			disable_sox=$?

@@ -30,14 +30,28 @@
 /* Needed for BYTE_ORDER and BIG/LITTLE_ENDIAN macros. */
 #ifndef _BSD_SOURCE
 # define _BSD_SOURCE
+#ifndef __FreeBSD__
 # include <endian.h>
+#else
+# include <sys/endian.h>
+#endif /* __FreeBSD__ */
 # undef  _BSD_SOURCE
 #else
+#ifndef __FreeBSD__
 # include <endian.h>
+#else
+# include <sys/endian.h>
+#endif /* __FreeBSD__ */
 #endif
 
 #include <sys/types.h>
+#ifndef __FreeBSD__
 #include <byteswap.h>
+#else
+#define bswap_16(x) bswap16(x)
+#define bswap_32(x) bswap32(x)
+#define bswap_64(x) bswap64(x)
+#endif /* __FreeBSD__ */
 
 static inline int8_t bswap(const int8_t& x)
 {

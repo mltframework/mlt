@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 export version=0.3.1
 export soversion=1
@@ -74,6 +74,12 @@ build_config()
 		echo "LIBDL=-ldl"
 		echo "RDYNAMIC=-rdynamic"
 		;;
+		FreeBSD)
+		echo "OPTIMISATIONS+=-ffast-math"
+		echo "CFLAGS+=-pthread"
+		echo "SHFLAGS=-shared"
+		echo "RDYNAMIC=-rdynamic"
+		;;
 		*)
 		;;
 		esac
@@ -131,7 +137,7 @@ case $targetos in
 	LIBSUF=".dylib"
 	mmx=false
 	;;
-	Linux)
+	Linux|FreeBSD)
 	LIBSUF=".so"
 	;;
 	*)
@@ -157,10 +163,20 @@ done
 # Determine the libdir if it's not specified in the args
 [ "$libdir" = "" ] && libdir=$prefix/lib
 
-# Double check mmx (may end up disabling mmx on non-linux platforms incorrectly)
+# Double check mmx (Linux and FreeBSD supported, may end up disabling mmx on other platforms incorrectly)
 if [ "$mmx" = "true" ]
 then
-	grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
+	case $targetos in
+		Linux)
+		grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
+		;;
+		FreeBSD)
+		[ "$(make -V MACHINE_CPU:Mmmx)" ] || mmx=false
+		;;
+		*)
+		grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
+		;;
+	esac
 fi
 
 # Show help if requested
