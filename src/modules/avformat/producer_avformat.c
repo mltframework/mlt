@@ -719,6 +719,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		// Fetch the width, height and aspect ratio
 		AVCodecContext *codec_context = context->streams[ index ]->codec;
 		mlt_properties_set_int( properties, "_video_index", index );
+		mlt_properties_set_data( properties, "video_codec", NULL, 0, NULL, NULL );
 		mlt_properties_set_int( properties, "width", codec_context->width );
 		mlt_properties_set_int( properties, "height", codec_context->height );
 		mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
@@ -1096,6 +1097,12 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 	{
 		index = -1;
 		mlt_properties_set_int( properties, "audio_index", index );
+	}
+
+	// Update the audio properties if the index changed
+	if ( index > -1 && index != mlt_properties_get_int( properties, "_audio_index" ) ) {
+		mlt_properties_set_int( properties, "_audio_index", index );
+		mlt_properties_set_data( properties, "audio_codec", NULL, 0, NULL, NULL );
 	}
 
 	// Deal with audio context
