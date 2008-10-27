@@ -705,10 +705,24 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	if ( context && index >= (int) context->nb_streams )
 	{
 		for ( index = context->nb_streams - 1; index >= 0 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_VIDEO; --index );
+		mlt_properties_set_int( properties, "video_index", index );
 	}
 	if ( context && index > -1 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_VIDEO )
+	{
 		index = -1;
-	mlt_properties_set_int( properties, "video_index", index );
+		mlt_properties_set_int( properties, "video_index", index );
+	}
+
+	// Update the video properties if the index changed
+	if ( index > -1 && index != mlt_properties_get_int( properties, "_video_index" ) )
+	{
+		// Fetch the width, height and aspect ratio
+		AVCodecContext *codec_context = context->streams[ index ]->codec;
+		mlt_properties_set_int( properties, "_video_index", index );
+		mlt_properties_set_int( properties, "width", codec_context->width );
+		mlt_properties_set_int( properties, "height", codec_context->height );
+		mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
+	}
 
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -1076,10 +1090,13 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 	if ( context && index >= (int) context->nb_streams )
 	{
 		for ( index = context->nb_streams - 1; index >= 0 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO; --index );
+		mlt_properties_set_int( properties, "audio_index", index );
 	}
 	if ( context && index > -1 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO )
+	{
 		index = -1;
-	mlt_properties_set_int( properties, "audio_index", index );
+		mlt_properties_set_int( properties, "audio_index", index );
+	}
 
 	// Deal with audio context
 	if ( context != NULL && index > -1 )
