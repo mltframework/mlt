@@ -38,15 +38,15 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 )
 	{
 		uint8_t *p = *image;
-		uint8_t A = invert? 16 : 235;
-		uint8_t B = invert? 235 : 16;
+		uint8_t A = invert? 235 : 16;
+		uint8_t B = invert? 16 : 235;
 		int size = *width * *height;
 
 		if ( !use_alpha )
 		{
 			while( size -- )
 			{
-				if ( *p >= midpoint )
+				if ( *p < midpoint )
 					*p ++ = A;
 				else
 					*p ++ = B;
@@ -59,9 +59,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			while( size -- )
 			{
 				if ( *alpha ++ < midpoint )
-					*p ++ = B;
-				else
 					*p ++ = A;
+				else
+					*p ++ = B;
 				*p ++ = 128;
 			}
 		}
