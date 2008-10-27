@@ -32,11 +32,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 	int use_alpha = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( this ) );
 	int midpoint = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( this ) );
+	int invert = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( this ) );
 
 	// Render the frame
 	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 )
 	{
 		uint8_t *p = *image;
+		uint8_t A = invert? 16 : 235;
+		uint8_t B = invert? 235 : 16;
 		int size = *width * *height;
 
 		if ( !use_alpha )
@@ -44,9 +47,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			while( size -- )
 			{
 				if ( *p >= midpoint )
-					*p ++ = 16;
+					*p ++ = A;
 				else
-					*p ++ = 235;
+					*p ++ = B;
 				*p ++ = 128;
 			}
 		}
@@ -56,9 +59,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			while( size -- )
 			{
 				if ( *alpha ++ < midpoint )
-					*p ++ = 16;
+					*p ++ = B;
 				else
-					*p ++ = 235;
+					*p ++ = A;
 				*p ++ = 128;
 			}
 		}
@@ -74,6 +77,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	int midpoint = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "midpoint" );
 	int use_alpha = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "use_alpha" );
+	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "invert" );
+	mlt_deque_push_back_int( MLT_FRAME_IMAGE_STACK( frame ), invert );
 	mlt_deque_push_back_int( MLT_FRAME_IMAGE_STACK( frame ), midpoint );
 	mlt_deque_push_back_int( MLT_FRAME_IMAGE_STACK( frame ), use_alpha );
 	mlt_frame_push_get_image( frame, filter_get_image );
@@ -90,6 +95,7 @@ mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const c
 	{
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "midpoint", 128 );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "use_alpha", 0 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "invert", 0 );
 		this->process = filter_process;
 	}
 	return this;
