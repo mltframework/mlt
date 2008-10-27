@@ -80,6 +80,10 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 				mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
 				mlt_properties_set_data( properties, "audio_context", NULL, 0, NULL, NULL );
 				mlt_properties_set_data( properties, "video_context", NULL, 0, NULL, NULL );
+
+				// Default the user-selectable indices from the auto-detected indices
+				mlt_properties_set_int( properties, "audio_index",  mlt_properties_get_int( properties, "_audio_index" ) );
+				mlt_properties_set_int( properties, "video_index",  mlt_properties_get_int( properties, "_video_index" ) );
 			}
 		}
 	}
@@ -303,8 +307,8 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 				av_bypass = 1;
 
 			// Store selected audio and video indexes on properties
-			mlt_properties_set_int( properties, "audio_index", audio_index );
-			mlt_properties_set_int( properties, "video_index", video_index );
+			mlt_properties_set_int( properties, "_audio_index", audio_index );
+			mlt_properties_set_int( properties, "_video_index", video_index );
 			mlt_properties_set_int( properties, "_last_position", -1 );
 
 			// Fetch the width, height and aspect ratio
@@ -687,21 +691,29 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	int index = mlt_properties_get_int( properties, "video_index" );
 
 	// Reopen the file if necessary
-	if ( !context && index != -1 )
+	if ( !context && index > -1 )
 	{
 		mlt_events_block( properties, this );
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(this) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = mlt_properties_get_data( properties, "video_context", NULL );
-		index = mlt_properties_get_int( properties, "video_index" );
 		mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
 		mlt_events_unblock( properties, this );
 	}
 
+	// Exception handling for video_index
+	if ( context && index >= (int) context->nb_streams )
+	{
+		for ( index = context->nb_streams - 1; index >= 0 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_VIDEO; --index );
+	}
+	if ( context && index > -1 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_VIDEO )
+		index = -1;
+	mlt_properties_set_int( properties, "video_index", index );
+
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-	if ( context != NULL && index != -1 )
+	if ( context != NULL && index > -1 )
 	{
 		// Get the video stream
 		AVStream *stream = context->streams[ index ];
@@ -1050,19 +1062,27 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 	int index = mlt_properties_get_int( properties, "audio_index" );
 
 	// Reopen the file if necessary
-	if ( !context && index != -1 )
+	if ( !context && index > -1 )
 	{
 		mlt_events_block( properties, this );
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(this) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = mlt_properties_get_data( properties, "audio_context", NULL );
-		index = mlt_properties_get_int( properties, "audio_index" );
 		mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
 		mlt_events_unblock( properties, this );
 	}
 
+	// Exception handling for audio_index
+	if ( context && index >= (int) context->nb_streams )
+	{
+		for ( index = context->nb_streams - 1; index >= 0 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO; --index );
+	}
+	if ( context && index > -1 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO )
+		index = -1;
+	mlt_properties_set_int( properties, "audio_index", index );
+
 	// Deal with audio context
-	if ( context != NULL && index != -1 )
+	if ( context != NULL && index > -1 )
 	{
 		// Get the frame properties
 		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
