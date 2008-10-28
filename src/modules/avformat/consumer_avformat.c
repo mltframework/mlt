@@ -482,6 +482,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->height = mlt_properties_get_int( properties, "height" );
 		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
+		st->time_base = c->time_base;
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
 
 		if ( codec_id == CODEC_ID_DVVIDEO )
@@ -497,33 +498,21 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			{
 				c->sample_aspect_ratio.num = 10;
 				c->sample_aspect_ratio.den = 11;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-				st->sample_aspect_ratio = c->sample_aspect_ratio;
-#endif
 			}
 			else if ( ar == 16.0/15.0 ) // 4:3 PAL
 			{
 				c->sample_aspect_ratio.num = 159;
 				c->sample_aspect_ratio.den = 54;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-				st->sample_aspect_ratio = c->sample_aspect_ratio;
-#endif
 			}
 			else if ( ar == 32.0/27.0 ) // 16:9 NTSC
 			{
 				c->sample_aspect_ratio.num = 40;
 				c->sample_aspect_ratio.den = 33;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-				st->sample_aspect_ratio = c->sample_aspect_ratio;
-#endif
 			}
 			else // 16:9 PAL
 			{
 				c->sample_aspect_ratio.num = 118;
 				c->sample_aspect_ratio.den = 81;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-				st->sample_aspect_ratio = c->sample_aspect_ratio;
-#endif
 			}
 		}
 		else if ( mlt_properties_get( properties, "aspect" ) )
@@ -547,9 +536,6 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			// Now compute the sample aspect ratio
 			rational = av_d2q( ar * c->height / c->width, 255 );
 			c->sample_aspect_ratio = rational;
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-			st->sample_aspect_ratio = c->sample_aspect_ratio;
-#endif
 			// Update the profile and properties as well since this is an alias 
 			// for mlt properties that correspond to profile settings
 			mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
@@ -566,10 +552,10 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		{
 			c->sample_aspect_ratio.num = mlt_properties_get_int( properties, "sample_aspect_num" );
 			c->sample_aspect_ratio.den = mlt_properties_get_int( properties, "sample_aspect_den" );
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-			st->sample_aspect_ratio = c->sample_aspect_ratio;
-#endif
 		}
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+		st->sample_aspect_ratio = c->sample_aspect_ratio;
+#endif
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
 		{
