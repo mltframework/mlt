@@ -327,13 +327,6 @@ int main( int argc, char **argv )
 	int is_progress = 0;
 	int is_silent = 0;
 
-	// Use realtime scheduling if possible
-	memset( &scp, '\0', sizeof( scp ) );
-	scp.sched_priority = sched_get_priority_max( SCHED_FIFO ) - 1;
-#ifndef __DARWIN__
-	sched_setscheduler( 0, SCHED_FIFO, &scp );
-#endif
-
 	// Construct the factory
 	mlt_repository repo = mlt_factory_init( NULL );
 
