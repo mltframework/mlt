@@ -24,7 +24,7 @@ bugs: # this can be just for documentation, or the tool may disclose it to help 
 parameters:
   - identifier: Smooth;Radius;X;Y;Max Opacity # 'argument' is a reserved name for a value supplied to the factory
     title: Start value  # the title can be used as a label for the widget
-    type: string
+    type: geometry
     description: Start position, "smooth":"radius","X"x"Y","maxopac"
     readonly: no
     required: yes
@@ -32,4 +32,4 @@ parameters:
     format: %d:%d:%dx%d:%d
     minimum: 0;0;0;0;0
     maximum: 100;100;100;100;100
-    default: 80;50;50;50;0
+    default: 80;50;50%;50%;0

@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_geometry.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,33 +36,25 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	
 	mlt_filter filter = mlt_frame_pop_service( this );
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
-	
+
 	if ( error == 0 && *image && *format == mlt_image_yuv422 )
 	{
-		float smooth_s=80,radius_s=50,x_s=50,y_s=50,opac_s=0;
-		float smooth_e=80,radius_e=50,x_e=50,y_e=50,opac_e=0;
-		
-		sscanf(mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "start"  ), "%f:%f:%fx%f:%f",&smooth_s,&radius_s,&x_s,&y_s,&opac_s);
-		if (mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "end"  ) ){
-			sscanf(mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "end"  ), "%f:%f:%fx%f:%f",&smooth_e,&radius_e,&x_e,&y_e,&opac_e);
-		}else{
-			smooth_e=smooth_s;
-			radius_e=radius_s;
-			x_e=x_s;
-			y_e=y_s;
-			opac_e=opac_s;
-		}
 		mlt_position in = mlt_filter_get_in( filter );
-		mlt_position out = mlt_filter_get_out( filter );
+		//mlt_position out = mlt_filter_get_out( filter );
 		mlt_position time = mlt_frame_get_position( this );
-		float position = ( double )( time -in ) / ( double )( out - in + 1 ) /100.0;
 		
-		float smooth = 2.0*POSITION_VALUE (position, smooth_s, smooth_e) ;
-		float radius = POSITION_VALUE (position, radius_s, radius_e)/100.0* *width;
-		
-		double cx = POSITION_VALUE (position, x_s, x_e ) * *width/100;
-		double cy = POSITION_VALUE (position, y_s, y_e ) * *height/100; 
-		double opac= POSITION_VALUE(position, opac_s, opac_e) ;
+		mlt_geometry geom=mlt_geometry_init();
+		struct mlt_geometry_item_s item;
+		float smooth, radius, cx, cy, opac;
+		char *val=mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "geometry" );
+		mlt_geometry_parse(geom,val,-1,-1,-1);
+		mlt_geometry_fetch(geom,&item,time-in);
+		smooth=item.x;
+		radius=item.y;
+		cx=item.w;
+		cy=item.h;
+		opac=item.mix;
+		mlt_geometry_close(geom);
 		
 		int video_width = *width;
 		int video_height = *height;
