@@ -58,16 +58,30 @@
 		for (i=0;i<info.num_params;i++){
 			f0r_param_info_t pinfo;
 			f0r_get_param_info(&pinfo,i);
-				//set param if found
-			if (pinfo.type==F0R_PARAM_DOUBLE || pinfo.type==F0R_PARAM_BOOL){
-				double t=0.0;
-				f0r_get_param_value(inst,&t,i);
-	
-				if (mlt_properties_get( prop , pinfo.name ) !=NULL ){
-					t=mlt_properties_get_double( prop , pinfo.name );
-					f0r_set_param_value(inst,&t,i);
+			mlt_geometry geom=mlt_geometry_init();
+			struct mlt_geometry_item_s item;
+			//set param if found
+			
+			double t=0.0;
+			f0r_get_param_value(inst,&t,i);
+			char *val;
+			if (mlt_properties_get( prop , pinfo.name ) !=NULL ){
+				switch (pinfo.type) {
+					case F0R_PARAM_DOUBLE:
+					case F0R_PARAM_BOOL:
+						val=mlt_properties_get(prop, pinfo.name );
+						mlt_geometry_parse(geom,val,-1,-1,-1);
+						mlt_geometry_fetch(geom,&item,position);
+						t=item.x;
+						f0r_set_param_value(inst,&t,i);
+						break;
+					//case F0R_PARAM_COLOR:
+					//	t=mlt_properties_get_double( prop , pinfo.name );	
+					
 				}
-			}	
+			}
+			
+			mlt_geometry_close(geom);
 		}
 	}
 	
