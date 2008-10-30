@@ -41,7 +41,7 @@ install:
 		$(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
 	done; \
 	if test -z "$(DESTDIR)"; then \
-	  /sbin/ldconfig || true; \
+	  /sbin/ldconfig 2> /dev/null || true; \
 	fi
 
 uninstall:
