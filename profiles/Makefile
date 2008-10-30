@@ -11,7 +11,7 @@ clean:
 install:	all uninstall
 	install -d "$(DESTDIR)$(prefix)/share/mlt/profiles"
 	install -m 644 * "$(DESTDIR)$(prefix)/share/mlt/profiles"
-	rm -f "$(DESTDIR)$(prefix)/share/mlt/profiles/*~"
+	rm -f "$(DESTDIR)$(prefix)/share/mlt/profiles/"*~
 	rm -f "$(DESTDIR)$(prefix)/share/mlt/profiles/Makefile"
 
 uninstall:
