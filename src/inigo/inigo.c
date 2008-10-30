@@ -322,7 +322,6 @@ int main( int argc, char **argv )
 	mlt_producer inigo = NULL;
 	FILE *store = NULL;
 	char *name = NULL;
-	struct sched_param scp;
 	mlt_profile profile = NULL;
 	int is_progress = 0;
 	int is_silent = 0;

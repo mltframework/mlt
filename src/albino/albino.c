@@ -59,8 +59,6 @@ int main( int argc, char **argv  )
 	}
 	else
 	{
-		struct sched_param scp;
-	
 		printf( "Miracle Standalone Instance\n" );
 		parser = miracle_parser_init_local( );
 		response = valerie_parser_connect( parser );
