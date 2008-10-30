@@ -23,6 +23,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <dlfcn.h>
@@ -36,6 +37,28 @@ extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 
 static mlt_properties fill_param_info ( mlt_service_type type, const char *service_name, char *name )
 {
+	char file[ PATH_MAX ];
+	char servicetype[ 1024 ]="";
+	struct stat stat_buff;
+	
+	switch ( type ) {
+		case filter_type:
+			strcpy ( servicetype , "filter" );
+			break;
+		case transition_type:
+			strcpy ( servicetype , "transition" ) ;
+			break;
+		default:
+			strcpy ( servicetype , "" );
+	};
+	
+	snprintf( file, PATH_MAX, "%s/frei0r/%s_%s.yml", mlt_environment( "MLT_DATA" ), servicetype, service_name );
+	stat(file,&stat_buff);
+
+	if (S_ISREG(stat_buff.st_mode)){
+		return mlt_properties_parse_yaml( file );
+	}
+		
 	void* handle=dlopen(name,RTLD_LAZY);
 	if (!handle) return NULL;
 	void (*plginfo)(f0r_plugin_info_t*)=dlsym(handle,"f0r_get_plugin_info");
