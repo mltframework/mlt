@@ -21,12 +21,14 @@
 #include <framework/mlt.h>
 
 extern mlt_filter filter_boxblur_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_freeze_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "boxblur", filter_boxblur_init );
+	MLT_REGISTER( filter_type, "freeze", filter_freeze_init );
 	MLT_REGISTER( filter_type, "wave", filter_wave_init );
 	MLT_REGISTER( producer_type, "framebuffer", producer_framebuffer_init );
 }

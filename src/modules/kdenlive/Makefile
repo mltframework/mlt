@@ -4,6 +4,7 @@ TARGET = ../libmltkdenlive$(LIBSUF)
 
 OBJS = factory.o \
 	   filter_boxblur.o \
+	   filter_freeze.o \
 	   filter_wave.o \
 	   producer_framebuffer.o
 
