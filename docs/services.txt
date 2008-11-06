@@ -47,24 +47,18 @@ Producers
 	    Read Only Properties
 
 	        string resource - file location
-	        double fps - this is fixed at 25 for PAL currently
 	        double source_fps - the framerate of the resource
 	        double aspect_ratio - sample aspect ratio of the resource
 	                            - this is determined on every frame read
 
 	    Dependencies
 
-	        ffmpeg must be configured as --enable-shared and installed prior
-	        to compilation of mlt.
+	        ffmpeg
 
 	    Known Bugs
 
 	        Audio sync discrepancy with some content.
 	        Not all libavformat supported formats are seekable.
-	        Ogg Vorbis is currently broken.
-	        MPEG seeking is inaccurate - doesn't seek to i-frames so you may
-	        get junk for a few frames.
-	        RAW DV seeking not supported.
 	        Fails to play beyond first frame of video of sources with PTS not
 	        starting at 0 (video4linux).
 
