@@ -59,7 +59,7 @@ install:
 	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME)
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
-	/sbin/ldconfig || true
+	/sbin/ldconfig 2> /dev/null || true
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
