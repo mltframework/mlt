@@ -104,14 +104,17 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 			mlt_properties_set_double( b_props, "audio.mix", mix );
 	
 			// Initialise transition previous mix value to prevent an inadvertant jump from 0
-			if ( mlt_properties_get( properties, "previous_mix" ) == NULL )
-				mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
+			mlt_position last_position = mlt_properties_get_position( properties, "_last_position" );
+			mlt_position current_position = mlt_frame_get_position( b_frame );
+			if ( mlt_properties_get( properties, "_previous_mix" ) == NULL
+			     || current_position != last_position + 1 )
+				mlt_properties_set_double( properties, "_previous_mix", mix );
 				
 			// Tell b frame what the previous mix level was
-			mlt_properties_set_double( b_props, "audio.previous_mix", mlt_properties_get_double( properties, "previous_mix" ) );
+			mlt_properties_set_double( b_props, "audio.previous_mix", mlt_properties_get_double( properties, "_previous_mix" ) );
 
 			// Save the current mix level for the next iteration
-			mlt_properties_set_double( properties, "previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
+			mlt_properties_set_double( properties, "_previous_mix", mlt_properties_get_double( b_props, "audio.mix" ) );
 		
 			mlt_properties_set_double( b_props, "audio.reverse", mlt_properties_get_double( properties, "reverse" ) );
 		}
