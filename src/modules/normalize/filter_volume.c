@@ -228,18 +228,22 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		gain = max_gain;
 
 	// Initialise filter's previous gain value to prevent an inadvertant jump from 0
-	if ( mlt_properties_get( filter_props, "previous_gain" ) == NULL )
-		mlt_properties_set_double( filter_props, "previous_gain", gain );
+	mlt_position last_position = mlt_properties_get_position( filter_props, "_last_position" );
+	mlt_position current_position = mlt_frame_get_position( frame );
+	if ( mlt_properties_get( filter_props, "_previous_gain" ) == NULL
+	     || current_position != last_position + 1 )
+		mlt_properties_set_double( filter_props, "_previous_gain", gain );
 
 	// Start the gain out at the previous
-	double previous_gain = mlt_properties_get_double( filter_props, "previous_gain" );
+	double previous_gain = mlt_properties_get_double( filter_props, "_previous_gain" );
 
 	// Determine ramp increment
 	double gain_step = ( gain - previous_gain ) / *samples;
 //	fprintf( stderr, "filter_volume: previous gain %f current gain %f step %f\n", previous_gain, gain, gain_step );
 
 	// Save the current gain for the next iteration
-	mlt_properties_set_double( filter_props, "previous_gain", gain );
+	mlt_properties_set_double( filter_props, "_previous_gain", gain );
+	mlt_properties_set_position( filter_props, "_last_position", current_position );
 
 	// Ramp from the previous gain to the current
 	gain = previous_gain;
@@ -307,7 +311,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 					
 				// If there is an end adjust gain to the range
 				if ( mlt_properties_get( filter_props, "end" ) != NULL )
-				{       
+				{
 					// Determine the time position of this frame in the transition duration
 					mlt_position in = mlt_filter_get_in( this );
 					mlt_position out = mlt_filter_get_out( this );
