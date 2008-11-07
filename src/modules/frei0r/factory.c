@@ -28,6 +28,7 @@
 #include <dirent.h>
 #include <dlfcn.h>
 #include <stdlib.h>
+#include <limits.h>
 
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_frame filter_process( mlt_filter this, mlt_frame frame );
