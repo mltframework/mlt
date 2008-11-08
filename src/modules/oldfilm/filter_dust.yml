@@ -10,7 +10,7 @@ url: none
 creator: Marco Gittler
 tags:
   - Video # this may produce video
-description: Oversaturate the Color in Video, like in old Technicolor movies
+description: Add dust and specks to the Video, as in old movies
 icon:
   filename: oldfilm/fdust.svg # relative to $MLT_DATA/modules/
   content-type: image/svg
