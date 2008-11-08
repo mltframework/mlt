@@ -194,7 +194,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-
+	if ( !arg ) return NULL;
 	mlt_producer this = NULL;
 	this = calloc( 1, sizeof( struct mlt_producer_s ) );
 	mlt_producer_init( this, NULL );
@@ -235,7 +235,6 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	free( props );
 
 	if (speed == 0.0) speed = 1.0;
-
 
 	if ( this != NULL && real_producer != NULL)
 	{
