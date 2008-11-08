@@ -167,11 +167,11 @@ static double get_aspect_ratio( AVStream *stream, AVCodecContext *codec_context 
 	if ( codec_context->codec_id == CODEC_ID_DVVIDEO )
 	{
 		AVRational ar =
-// #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-// 			stream->sample_aspect_ratio;
-// #else
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+			stream->sample_aspect_ratio;
+#else
 			codec_context->sample_aspect_ratio;
-// #endif
+#endif
 		// Override FFmpeg's notion of DV aspect ratios, which are
 		// based upon a width of 704. Since we do not have a normaliser
 		// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
