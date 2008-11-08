@@ -160,6 +160,50 @@ static void producer_codec_close( void *codec )
 	}
 }
 
+static double get_aspect_ratio( AVStream *stream, AVCodecContext *codec_context )
+{
+	double aspect_ratio = 1.0;
+
+	if ( codec_context->codec_id == CODEC_ID_DVVIDEO )
+	{
+		AVRational ar =
+// #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+// 			stream->sample_aspect_ratio;
+// #else
+			codec_context->sample_aspect_ratio;
+// #endif
+		// Override FFmpeg's notion of DV aspect ratios, which are
+		// based upon a width of 704. Since we do not have a normaliser
+		// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
+		// we just coerce the values to facilitate a passive behaviour through
+		// the rescale normaliser when using equivalent producers and consumers.
+		// = display_aspect / (width * height)
+		if ( ar.num == 10 && ar.den == 11 )
+			aspect_ratio = 8.0/9.0; // 4:3 NTSC
+		else if ( ar.num == 59 && ar.den == 54 )
+			aspect_ratio = 16.0/15.0; // 4:3 PAL
+		else if ( ar.num == 40 && ar.den == 33 )
+			aspect_ratio = 32.0/27.0; // 16:9 NTSC
+		else if ( ar.num == 118 && ar.den == 81 )
+			aspect_ratio = 64.0/45.0; // 16:9 PAL
+	}
+	else
+	{
+		AVRational codec_sar = codec_context->sample_aspect_ratio;
+		AVRational stream_sar =
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
+			stream->sample_aspect_ratio;
+#else
+			{ 0, 1 };
+#endif
+		if ( codec_sar.num > 0 )
+			aspect_ratio = av_q2d( codec_sar );
+		else if ( stream_sar.num > 0 )
+			aspect_ratio = av_q2d( stream_sar );
+	}
+	return aspect_ratio;
+}
+
 /** Open the file.
 */
 
@@ -317,7 +361,8 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 				AVCodecContext *codec_context = context->streams[ video_index ]->codec;
 				mlt_properties_set_int( properties, "width", codec_context->width );
 				mlt_properties_set_int( properties, "height", codec_context->height );
-				mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
+				mlt_properties_set_double( properties, "aspect_ratio",
+					get_aspect_ratio( context->streams[ video_index ], codec_context ) );
 			}
 
 			// Read Metadata
@@ -704,31 +749,21 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 	// Exception handling for video_index
 	if ( context && index >= (int) context->nb_streams )
 	{
+		// Get the last video stream
 		for ( index = context->nb_streams - 1; index >= 0 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_VIDEO; --index );
 		mlt_properties_set_int( properties, "video_index", index );
 	}
 	if ( context && index > -1 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_VIDEO )
 	{
+		// Invalidate the video stream
 		index = -1;
 		mlt_properties_set_int( properties, "video_index", index );
-	}
-
-	// Update the video properties if the index changed
-	if ( index > -1 && index != mlt_properties_get_int( properties, "_video_index" ) )
-	{
-		// Fetch the width, height and aspect ratio
-		AVCodecContext *codec_context = context->streams[ index ]->codec;
-		mlt_properties_set_int( properties, "_video_index", index );
-		mlt_properties_set_data( properties, "video_codec", NULL, 0, NULL, NULL );
-		mlt_properties_set_int( properties, "width", codec_context->width );
-		mlt_properties_set_int( properties, "height", codec_context->height );
-		mlt_properties_set_double( properties, "aspect_ratio", av_q2d( codec_context->sample_aspect_ratio ) );
 	}
 
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-	if ( context != NULL && index > -1 )
+	if ( context && index > -1 )
 	{
 		// Get the video stream
 		AVStream *stream = context->streams[ index ];
@@ -739,6 +774,19 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		// Get the codec
 		AVCodec *codec = mlt_properties_get_data( properties, "video_codec", NULL );
 
+		// Update the video properties if the index changed
+		if ( index != mlt_properties_get_int( properties, "_video_index" ) )
+		{
+			// Reset the video properties if the index changed
+			mlt_properties_set_int( properties, "_video_index", index );
+			mlt_properties_set_data( properties, "video_codec", NULL, 0, NULL, NULL );
+			mlt_properties_set_int( properties, "width", codec_context->width );
+			mlt_properties_set_int( properties, "height", codec_context->height );
+			mlt_properties_set_double( properties, "aspect_ratio",
+				get_aspect_ratio( context->streams[ index ], codec_context ) );
+			codec = NULL;
+		}
+	
 		// Initialise the codec if necessary
 		if ( codec == NULL )
 		{
@@ -774,47 +822,9 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		if ( codec != NULL )
 		{
 			double source_fps = 0;
-			int norm_aspect_ratio = mlt_properties_get_int( properties, "norm_aspect_ratio" );
 			double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
-			double aspect_ratio;
-
-			if ( strcmp( codec_context->codec->name, "dvvideo" ) == 0 )
-			{
-				// Override FFmpeg's notion of DV aspect ratios, which are
-				// based upon a width of 704. Since we do not have a normaliser
-				// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
-				// we just coerce the values to facilitate a passive behaviour through
-				// the rescale normaliser when using equivalent producers and consumers.
-				// = display_aspect / (width * height)
-				if ( codec_context->sample_aspect_ratio.num == 10 &&
-					codec_context->sample_aspect_ratio.den == 11 )
-					force_aspect_ratio = 8.0/9.0; // 4:3 NTSC
-				else if ( codec_context->sample_aspect_ratio.num == 59 &&
-					codec_context->sample_aspect_ratio.den == 54 )
-					force_aspect_ratio = 16.0/15.0; // 4:3 PAL
-				else if ( codec_context->sample_aspect_ratio.num == 40 &&
-					codec_context->sample_aspect_ratio.den == 33 )
-					force_aspect_ratio = 32.0/27.0; // 16:9 NTSC
-				else if ( codec_context->sample_aspect_ratio.num == 118 &&
-					codec_context->sample_aspect_ratio.den == 81 )
-					force_aspect_ratio = 64.0/45.0; // 16:9 PAL
-			}
-
-			// XXX: We won't know the real aspect ratio until an image is decoded
-			// but we do need it now (to satisfy filter_resize) - take a guess based
-			// on pal/ntsc
-			if ( force_aspect_ratio > 0.0 )
-			{
-				aspect_ratio = force_aspect_ratio;
-			}
-			else if ( !norm_aspect_ratio && codec_context->sample_aspect_ratio.num > 0 )
-			{
-				aspect_ratio = av_q2d( codec_context->sample_aspect_ratio );
-			}
-			else
-			{
-				aspect_ratio = 1.0;
-			}
+			double aspect_ratio = ( force_aspect_ratio > 0.0 ) ?
+				force_aspect_ratio : get_aspect_ratio( stream, codec_context );
 
 			// Determine the fps
 			source_fps = ( double )codec_context->time_base.den / ( codec_context->time_base.num == 0 ? 1 : codec_context->time_base.num );
