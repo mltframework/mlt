@@ -37,7 +37,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the image
-	int error = mlt_frame_get_image( this, image, format, width, height, 0 );
+	int error = 0; //mlt_frame_get_image( this, image, format, width, height, 0 );
 
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 && *format == mlt_image_yuv422 )
