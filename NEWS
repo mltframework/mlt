@@ -1,6 +1,30 @@
 MLT Release Notes
 -----------------
 
+Version 0.3.2
+
+In addition to bug fixes detailed in the ChangeLog, here is a list of
+enhancements.
+
+framework:
+* deprecated mlt-config; use pkg-config instead
+* added more HD profiles
+
+modules:
+* sdl: added fullscreen property
+* sox: sox v14.1.0 compatibility
+* gtk: added force_reload property to producer_pixbuf
+* frei0r: added support for YAML Tiny metadata
+* frei0r: added keyframe support on double and boolean parameters
+* oldfilm: added keyframe support for filter_vignette
+* kdenlive: added filter_freeze
+
+inigo:
+* added -version, -silent, and -progress options
+* improved output of usage information
+* removed realtime process scheduling
+
+
 Version 0.3.0
 
 framework:
