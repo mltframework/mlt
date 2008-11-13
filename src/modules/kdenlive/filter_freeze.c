@@ -27,10 +27,6 @@
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the image
-
-
-	mlt_position currentpos = mlt_frame_get_position( this ); 
-
 	mlt_filter filter = mlt_frame_pop_service( this );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
@@ -38,6 +34,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int freeze_before = mlt_properties_get_int( properties, "freeze_before" );
 	int freeze_after = mlt_properties_get_int( properties, "freeze_after" );
 	mlt_position pos = mlt_properties_get_position( properties, "frame" );
+	mlt_position currentpos = mlt_properties_get_position( properties, "_seek_frame" );
 
 	int do_freeze = 0;
 	if (freeze_before == 0 && freeze_after == 0) {
@@ -86,6 +83,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, this );
+
+	// Determine the time position of this frame
+	mlt_properties_set_position( MLT_FILTER_PROPERTIES( this ), "_seek_frame", mlt_frame_get_position( frame ) -  mlt_filter_get_in( this ) );
 
 	// Push the frame filter
 	mlt_frame_push_get_image( frame, filter_get_image );
