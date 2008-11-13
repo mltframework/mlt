@@ -117,7 +117,7 @@ mlt_filter filter_vignette_init( mlt_profile profile, mlt_service_type type, con
 		*/
 		
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "start", "80:50,50x50,0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", "80:50%:50%:50%:0" );
 		//mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "end", "" );
 
 	}
