@@ -551,6 +551,45 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 #endif
 }
 
+/** Allocate the image buffer and set it on the frame.
+*/
+
+static int allocate_buffer( mlt_properties frame_properties, AVCodecContext *codec_context, uint8_t **buffer, mlt_image_format *format, int *width, int *height )
+{
+	int size = 0;
+
+	if ( codec_context->width == 0 || codec_context->height == 0 )
+		return size;
+
+	*width = codec_context->width;
+	*height = codec_context->height;
+	mlt_properties_set_int( frame_properties, "width", *width );
+	mlt_properties_set_int( frame_properties, "height", *height );
+
+	switch ( *format )
+	{
+		case mlt_image_yuv420p:
+			size = *width * 3 * ( *height + 1 ) / 2;
+			break;
+		case mlt_image_rgb24:
+			size = *width * ( *height + 1 ) * 3;
+			break;
+		default:
+			*format = mlt_image_yuv422;
+			size = *width * ( *height + 1 ) * 2;
+			break;
+	}
+
+	// Construct the output image
+	*buffer = mlt_pool_alloc( size );
+	if ( *buffer )
+		mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
+	else
+		size = 0;
+
+	return size;
+}
+
 /** Get an image from a frame.
 */
 
@@ -605,39 +644,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get the seekable status
 	int seekable = mlt_properties_get_int( properties, "seekable" );
 
-	// Generate the size in bytes
-	int size = 0; 
-
 	// Hopefully provide better support for streams...
 	int av_bypass = mlt_properties_get_int( properties, "av_bypass" );
 
 	// Determines if we have to decode all frames in a sequence
 	int must_decode = 1;
-
-	// Set the result arguments that we know here (only *buffer is now required)
-	*width = codec_context->width;
-	*height = codec_context->height;
-
-	switch ( *format )
-	{
-		case mlt_image_yuv420p:
-			size = *width * 3 * ( *height + 1 ) / 2;
-			break;
-		case mlt_image_rgb24:
-			size = *width * ( *height + 1 ) * 3;
-			break;
-		default:
-			*format = mlt_image_yuv422;
-			size = *width * ( *height + 1 ) * 2;
-			break;
-	}
-
-	// Set this on the frame properties
-	mlt_properties_set_int( frame_properties, "width", *width );
-	mlt_properties_set_int( frame_properties, "height", *height );
-
-	// Construct the output image
-	*buffer = mlt_pool_alloc( size );
 
 	// Temporary hack to improve intra frame only
 	must_decode = strcmp( codec_context->codec->name, "mjpeg" ) &&
@@ -685,10 +696,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( av_frame != NULL && got_picture && ( paused || current_position >= req_position ) && av_bypass == 0 )
 	{
 		// Duplicate it
-		convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
-
-		// Set this on the frame properties
-		mlt_properties_set_data( frame_properties, "image", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+		if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
+			convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
+		else
+			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 	else
 	{
@@ -753,12 +764,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Now handle the picture if we have one
 			if ( got_picture )
 			{
-				mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
-				mlt_properties_set_int( properties, "top_field_first", av_frame->top_field_first );
-				convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
-				mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
-				mlt_properties_set_int( properties, "_current_position", int_position );
-				mlt_properties_set_int( properties, "_got_picture", 1 );
+				if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
+				{
+					convert_image( av_frame, *buffer, codec_context->pix_fmt, *format, *width, *height );
+					mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
+					mlt_properties_set_int( properties, "top_field_first", av_frame->top_field_first );
+					mlt_properties_set_int( properties, "_current_position", int_position );
+					mlt_properties_set_int( properties, "_got_picture", 1 );
+				}
+				else
+				{
+					got_picture = 0;
+				}
 			}
 		}
 		if ( !got_picture )
@@ -873,12 +890,13 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			{
 				// Remember that we can't use this later
 				mlt_properties_set_int( properties, "video_index", -1 );
+				index = -1;
 			}
 			avformat_unlock( );
 		}
 
 		// No codec, no show...
-		if ( codec != NULL )
+		if ( codec && index > -1 )
 		{
 			double source_fps = 0;
 			double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
@@ -1169,7 +1187,8 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 	}
 
 	// Update the audio properties if the index changed
-	if ( index > -1 && index != mlt_properties_get_int( properties, "_audio_index" ) ) {
+	if ( index > -1 && index != mlt_properties_get_int( properties, "_audio_index" ) )
+	{
 		mlt_properties_set_int( properties, "_audio_index", index );
 		mlt_properties_set_data( properties, "audio_codec", NULL, 0, NULL, NULL );
 	}
@@ -1207,12 +1226,13 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 			{
 				// Remember that we can't use this later
 				mlt_properties_set_int( properties, "audio_index", -1 );
+				index = -1;
 			}
 			avformat_unlock( );
 		}
 
 		// No codec, no show...
-		if ( codec != NULL )
+		if ( codec && index > -1 )
 		{
 			mlt_frame_push_audio( frame, producer_get_audio );
 			mlt_properties_set_data( frame_properties, "avformat_producer", this, 0, NULL, NULL );
