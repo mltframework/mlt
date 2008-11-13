@@ -51,7 +51,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if (do_freeze == 1) {
 		freeze_frame = mlt_properties_get_data( properties, "freeze_frame", NULL );
 
-		if( freeze_frame == NULL)
+		if( freeze_frame == NULL || mlt_properties_get_position( properties, "_frame" ) != pos )
 		{
 			// freeze_frame has not been fetched yet, so fetch it and cache it.
 			mlt_producer producer = mlt_frame_get_original_producer(this);
@@ -68,6 +68,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_int( freeze_properties, "progressive", mlt_properties_get_int( props, "progressive" ) );
 
 			mlt_properties_set_data( properties, "freeze_frame", freeze_frame, 0, NULL, NULL );
+			mlt_properties_set_position( properties, "_frame", pos );
 		}
 		int error = mlt_frame_get_image( freeze_frame, image, format, width, height, 1 );
 		return error;
