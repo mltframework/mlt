@@ -35,16 +35,20 @@
 #	define ST_SUCCESS SOX_SUCCESS
 #	define st_sample_t sox_sample_t
 #	define eff_t sox_effect_t*
-#	define st_size_t sox_size_t
 #	define ST_LIB_VERSION_CODE SOX_LIB_VERSION_CODE
 #	define ST_LIB_VERSION SOX_LIB_VERSION
+#	if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,2,0))
+#		define st_size_t size_t
+#	else
+#		define st_size_t sox_size_t
+#	endif
 #	define ST_SIGNED_WORD_TO_SAMPLE(d,clips) SOX_SIGNED_16BIT_TO_SAMPLE(d,clips)
-#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
-#	define ST_SSIZE_MIN SOX_SAMPLE_MIN
-#else
-#	define ST_SSIZE_MIN SOX_SSIZE_MIN
-#endif
-#	define ST_SAMPLE_TO_SIGNED_WORD(d,clips) SOX_SAMPLE_TO_SIGNED_16BIT(d,clips)
+#	if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
+#		define ST_SSIZE_MIN SOX_SAMPLE_MIN
+#	else
+#		define ST_SSIZE_MIN SOX_SSIZE_MIN
+#	endif
+#		define ST_SAMPLE_TO_SIGNED_WORD(d,clips) SOX_SAMPLE_TO_SIGNED_16BIT(d,clips)
 #else
 #	include <st.h>
 #endif
