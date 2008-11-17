@@ -24,6 +24,10 @@
 #include <string.h>
 #include <sched.h>
 
+#ifdef __DARWIN__
+#include <SDL.h>
+#endif
+
 /* Application header files */
 #include <miracle/miracle_local.h>
 #include <valerie/valerie_remote.h>
