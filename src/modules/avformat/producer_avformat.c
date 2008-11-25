@@ -999,7 +999,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	int paused = 0;
 
 	// Check for resample and create if necessary
-	if ( resample == NULL && ( *frequency != codec_context->sample_rate || codec_context->channels <= 2 ) )
+	if ( resample == NULL && codec_context->channels <= 2 )
 	{
 		// Create the resampler
 		resample = audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate );
@@ -1038,10 +1038,10 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	if ( decode_buffer == NULL )
 	{
 		// Allocate the audio buffer
-		decode_buffer = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+		decode_buffer = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
 
 		// And store it on properties for reuse
-		mlt_properties_set_data( properties, "decode_buffer", decode_buffer, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "decode_buffer", decode_buffer, 0, ( mlt_destructor )av_free, NULL );
 	}
 
 #if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
