@@ -1044,6 +1044,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		mlt_properties_set_data( properties, "decode_buffer", decode_buffer, 0, ( mlt_destructor )mlt_pool_release, NULL );
 	}
 
+#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
 	// Check for format converter buffer and create if necessary
 	if ( resample && convert && convert_buffer == NULL )
 	{
@@ -1053,6 +1054,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		// And store it on properties for reuse
 		mlt_properties_set_data( properties, "convert_buffer", convert_buffer, 0, ( mlt_destructor )mlt_pool_release, NULL );
 	}
+#endif
 
 	// Seek if necessary
 	if ( position != expected )
