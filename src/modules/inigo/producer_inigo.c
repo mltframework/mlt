@@ -402,6 +402,10 @@ mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, co
 				properties = MLT_PRODUCER_PROPERTIES( producer );
 				mlt_properties_inherit( properties, group );
 			}
+			else
+			{
+				fprintf( stderr, "Failed to load \"%s\"\n", argv[ i ] );
+			}
 		}
 		else
 		{
