@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <math.h>
+#include <unistd.h>
 
 // avformat header files
 #include <avformat.h>
@@ -625,7 +626,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			c->flags |= CODEC_FLAG_PASS1;
 		else if ( i == 2 )
 			c->flags |= CODEC_FLAG_PASS2;
-		if ( c->flags & ( CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2 ) )
+		if ( codec_id != CODEC_ID_H264 && ( c->flags & ( CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2 ) ) )
 		{
 			char logfilename[1024];
 			FILE *f;
@@ -652,6 +653,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 				}
 				else
 				{
+					mlt_properties_set( properties, "_logfilename", logfilename );
 					fseek( f, 0, SEEK_END );
 					size = ftell( f );
 					fseek( f, 0, SEEK_SET );
@@ -1309,6 +1311,28 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_int( properties, "running", 0 );
 
 	mlt_consumer_stopped( this );
+
+	if ( mlt_properties_get_int( properties, "pass" ) == 2 )
+	{
+		// Remove the dual pass log file
+		if ( mlt_properties_get( properties, "_logfilename" ) )
+			remove( mlt_properties_get( properties, "_logfilename" ) );
+
+		// Remove the x264 dual pass logs
+		char *cwd = getcwd( NULL, 0 );
+		char *file = "x264_2pass.log";
+		char *full = malloc( strlen( cwd ) + strlen( file ) + 2 );
+		sprintf( full, "%s/%s", cwd, file );
+		remove( full );
+		free( full );
+		file = "x264_2pass.log.temp";
+		full = malloc( strlen( cwd ) + strlen( file ) + 2 );
+		sprintf( full, "%s/%s", cwd, file );
+		remove( full );
+		free( full );
+		free( cwd );
+		remove( "x264_2pass.log.temp" );
+	}
 
 	return NULL;
 }
