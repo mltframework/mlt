@@ -51,6 +51,8 @@ struct producer_pixbuf_s
 	uint8_t *alpha;
 };
 
+static void load_filenames( producer_pixbuf this, mlt_properties producer_properties );
+static void refresh_image( mlt_frame frame, int width, int height );
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
@@ -73,11 +75,112 @@ mlt_producer producer_pixbuf_init( char *filename )
 		mlt_properties_set_int( properties, "ttl", 25 );
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
-		
+
+		// Validate the resource
+		if ( filename )
+			load_filenames( this, properties );
+		if ( this->count )
+		{
+			mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
+			if ( frame )
+			{
+				mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+				mlt_properties_set_data( properties, "producer_pixbuf", this, 0, NULL, NULL );
+				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
+				mlt_properties_set_position( properties, "pixbuf_position", mlt_producer_position( producer ) );
+				refresh_image( frame, 0, 0 );
+				mlt_frame_close( frame );
+			}
+		}
+		if ( this->width == 0 )
+		{
+			producer_close( producer );
+			producer = NULL;
+		}
 		return producer;
 	}
 	free( this );
 	return NULL;
+}
+
+static void load_filenames( producer_pixbuf this, mlt_properties producer_properties )
+{
+	char *filename = mlt_properties_get( producer_properties, "resource" );
+	this->filenames = mlt_properties_new( );
+
+	// Read xml string
+	if ( strstr( filename, "<svg" ) )
+	{
+		// Generate a temporary file for the svg
+		char fullname[ 1024 ] = "/tmp/mlt.XXXXXX";
+		int fd = mkstemp( fullname );
+
+		if ( fd > -1 )
+		{
+			// Write the svg into the temp file
+			ssize_t remaining_bytes;
+			char *xml = filename;
+			
+			// Strip leading crap
+			while ( xml[0] != '<' )
+				xml++;
+			
+			remaining_bytes = strlen( xml );
+			while ( remaining_bytes > 0 )
+				remaining_bytes -= write( fd, xml + strlen( xml ) - remaining_bytes, remaining_bytes );
+			close( fd );
+
+			mlt_properties_set( this->filenames, "0", fullname );
+
+			// Teehe - when the producer closes, delete the temp file and the space allo
+			mlt_properties_set_data( producer_properties, "__temporary_file__", fullname, 0, ( mlt_destructor )unlink, NULL );
+		}
+	}
+	// Obtain filenames
+	else if ( strchr( filename, '%' ) != NULL )
+	{
+		// handle picture sequences
+		int i = mlt_properties_get_int( producer_properties, "begin" );
+		int gap = 0;
+		char full[1024];
+		int keyvalue = 0;
+		char key[ 50 ];
+
+		while ( gap < 100 )
+		{
+			struct stat buf;
+			snprintf( full, 1023, filename, i ++ );
+			if ( stat( full, &buf ) == 0 )
+			{
+				sprintf( key, "%d", keyvalue ++ );
+				mlt_properties_set( this->filenames, key, full );
+				gap = 0;
+			}
+			else
+			{
+				gap ++;
+			}
+		}
+	}
+	else if ( strstr( filename, "/.all." ) != NULL )
+	{
+		char wildcard[ 1024 ];
+		char *dir_name = strdup( filename );
+		char *extension = strrchr( dir_name, '.' );
+
+		*( strstr( dir_name, "/.all." ) + 1 ) = '\0';
+		sprintf( wildcard, "*%s", extension );
+
+		mlt_properties_dir_list( this->filenames, dir_name, wildcard, 1 );
+
+		free( dir_name );
+	}
+	else
+	{
+		mlt_properties_set( this->filenames, "0", filename );
+	}
+
+	this->count = mlt_properties_count( this->filenames );
 }
 
 static void refresh_image( mlt_frame frame, int width, int height )
@@ -377,84 +480,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	if ( this->filenames == NULL && mlt_properties_get( producer_properties, "resource" ) != NULL )
-	{
-		char *filename = mlt_properties_get( producer_properties, "resource" );
-		this->filenames = mlt_properties_new( );
-
-		// Read xml string
-		if ( strstr( filename, "<svg" ) )
-		{
-			// Generate a temporary file for the svg
-			char fullname[ 1024 ] = "/tmp/mlt.XXXXXX";
-			int fd = mkstemp( fullname );
-
-			if ( fd > -1 )
-			{
-				// Write the svg into the temp file
-				ssize_t remaining_bytes;
-				char *xml = filename;
-				
-				// Strip leading crap
-				while ( xml[0] != '<' )
-					xml++;
-				
-				remaining_bytes = strlen( xml );
-				while ( remaining_bytes > 0 )
-					remaining_bytes -= write( fd, xml + strlen( xml ) - remaining_bytes, remaining_bytes );
-				close( fd );
-
-				mlt_properties_set( this->filenames, "0", fullname );
-
-				// Teehe - when the producer closes, delete the temp file and the space allo
-				mlt_properties_set_data( producer_properties, "__temporary_file__", fullname, 0, ( mlt_destructor )unlink, NULL );
-			}
-		}
-		// Obtain filenames
-		else if ( strchr( filename, '%' ) != NULL )
-		{
-			// handle picture sequences
-			int i = mlt_properties_get_int( producer_properties, "begin" );
-			int gap = 0;
-			char full[1024];
-			int keyvalue = 0;
-			char key[ 50 ];
-
-			while ( gap < 100 )
-			{
-				struct stat buf;
-				snprintf( full, 1023, filename, i ++ );
-				if ( stat( full, &buf ) == 0 )
-				{
-					sprintf( key, "%d", keyvalue ++ );
-					mlt_properties_set( this->filenames, key, full );
-					gap = 0;
-				}
-				else
-				{
-					gap ++;
-				}
-			}
-		}
-		else if ( strstr( filename, "/.all." ) != NULL )
-		{
-			char wildcard[ 1024 ];
-			char *dir_name = strdup( filename );
-			char *extension = strrchr( dir_name, '.' );
-
-			*( strstr( dir_name, "/.all." ) + 1 ) = '\0';
-			sprintf( wildcard, "*%s", extension );
-
-			mlt_properties_dir_list( this->filenames, dir_name, wildcard, 1 );
-
-			free( dir_name );
-		}
-		else
-		{
-			mlt_properties_set( this->filenames, "0", filename );
-		}
-
-		this->count = mlt_properties_count( this->filenames );
-	}
+		load_filenames( this, producer_properties );
 
 	// Generate a frame
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );

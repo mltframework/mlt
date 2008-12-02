@@ -236,6 +236,17 @@ mlt_producer producer_sdl_image_init( mlt_profile profile, mlt_service_type type
 		mlt_properties_set_int( properties, "ttl", 25 );
 		mlt_properties_set_int( properties, "progressive", 1 );
 		
+		// Validate the resource
+		SDL_Surface *surface = NULL;
+		if ( file && ( surface = load_image( producer ) ) )
+		{
+			SDL_FreeSurface( surface );
+		}
+		else
+		{
+			producer_close( producer );
+			producer = NULL;
+		}
 		return producer;
 	}
 	free( producer );
