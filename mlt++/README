@@ -15,8 +15,8 @@ USAGE
 
 	Use the following definitions in a Makefile to compile and link with mlt++:
 
-		CXXFLAGS=`mlt-config -Wall`
-		LDFLAGS=-lmlt++
+		CXXFLAGS=`pkg-config --cflags mlt-framework` -Wall
+		LDFLAGS=-lmlt++ `pkg-config --libs mlt-framework`
 
 	Include files for the classes can either be explicitly included, ie:
 
