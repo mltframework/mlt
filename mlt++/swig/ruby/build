@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 require 'mkmf'
 system( "ln -sf ../mltpp.i mltpp.i" )
-system( "swig -c++ -ruby -I../../src `mlt-config --cflags` mltpp.i" )
-$CFLAGS += " -I../../src `mlt-config --cflags`"
+system( "swig -c++ -ruby -I../../src `pkg-config mlt-framework --cflags` mltpp.i" )
+$CFLAGS += " -I../../src `pkg-config mlt-framework --cflags`"
 $LDFLAGS += " -L../../src -lmlt++"
 create_makefile('mltpp')
 system( 'make' )
