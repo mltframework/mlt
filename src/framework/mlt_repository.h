@@ -1,8 +1,10 @@
-/*
- * repository.h -- provides a map between service and shared objects
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
- * Contributor: Dan Dennedy <dan@dennedy.org>
+/**
+ * \file mlt_repository.h
+ * \brief provides a map between service and shared objects
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
+ *         Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,7 +56,7 @@ typedef mlt_properties ( *mlt_metadata_callback )( mlt_service_type, const char 
 
 extern mlt_repository mlt_repository_init( const char *directory );
 extern void mlt_repository_register( mlt_repository self, mlt_service_type service_type, const char *service, mlt_register_callback );
-extern void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, void *arg ); 
+extern void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, void *arg );
 extern void mlt_repository_close( mlt_repository self );
 extern mlt_properties mlt_repository_consumers( mlt_repository self );
 extern mlt_properties mlt_repository_filters( mlt_repository self );

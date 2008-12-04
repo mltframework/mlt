@@ -1,7 +1,9 @@
-/*
- * mlt_field.c -- A field for planting multiple transitions and filters
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_field.c
+ * \brief a field for planting multiple transitions and filters
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,8 +30,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** Private structures.
-*/
+/** \brief Field class
+ *
+ */
 
 struct mlt_field_s
 {
@@ -44,7 +47,7 @@ struct mlt_field_s
 };
 
 /** Constructor.
-	
+
   	We construct a multitrack and a tractor here.
 */
 

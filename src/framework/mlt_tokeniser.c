@@ -1,7 +1,9 @@
-/*
- * mlt_tokeniser.c -- String tokeniser
- * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_tokeniser.c
+ * \brief string tokeniser
+ *
+ * Copyright (C) 2002-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -126,7 +128,7 @@ int mlt_tokeniser_parse_new( mlt_tokeniser tokeniser, char *string, char *delimi
 		count = 0 - ( count - 1 );
 		mlt_tokeniser_append( tokeniser, token );
 	}
-		
+
 	free( token );
 	return count;
 }

@@ -1,7 +1,9 @@
-/*
- * mlt_tokeniser.h -- String tokeniser
+/**
+ * \file mlt_tokeniser.h
+ * \brief string tokeniser
+ *
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,8 +23,9 @@
 #ifndef _MLT_TOKENISER_H_
 #define _MLT_TOKENISER_H_
 
-/** Structure for tokeniser.
-*/
+/** \brief Tokeniser class
+ *
+ */
 
 typedef struct
 {
@@ -33,7 +36,7 @@ typedef struct
 }
 *mlt_tokeniser, mlt_tokeniser_t;
 
-/** Remote parser API.
+/* Remote parser API.
 */
 
 extern mlt_tokeniser mlt_tokeniser_init( );

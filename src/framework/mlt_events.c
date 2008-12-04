@@ -1,7 +1,9 @@
-/*
- * mlt_events.h -- event handling 
- * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_events.c
+ * \brief event handling
+ *
+ * Copyright (C) 2004-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,15 +28,18 @@
 #include "mlt_properties.h"
 #include "mlt_events.h"
 
-/** Memory leak checks.
-*/
+/** Memory leak checks. */
 
-//#define _MLT_EVENT_CHECKS_
+#undef _MLT_EVENT_CHECKS_
 
 #ifdef _MLT_EVENT_CHECKS_
 static int events_created = 0;
 static int events_destroyed = 0;
 #endif
+
+/** \brief Events class
+ *
+ */
 
 struct mlt_events_struct
 {
@@ -43,6 +48,10 @@ struct mlt_events_struct
 };
 
 typedef struct mlt_events_struct *mlt_events;
+
+/** \brief Event class
+ *
+ */
 
 struct mlt_event_struct
 {
@@ -100,7 +109,7 @@ void mlt_event_close( mlt_event this )
 	}
 }
 
-/** Forward declaration to private functions.
+/* Forward declaration to private functions.
 */
 
 static mlt_events mlt_events_fetch( mlt_properties );
@@ -318,6 +327,8 @@ void mlt_events_disconnect( mlt_properties this, void *service )
 		}
 	}
 }
+
+/** \brief private to mlt_events_struct, used by mlt_events_wait_for() */
 
 typedef struct
 {

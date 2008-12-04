@@ -1,7 +1,9 @@
-/*
- * mlt_consumer.c -- abstraction for all consumer services
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_consumer.c
+ * \brief abstraction for all consumer services
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,9 +38,6 @@ static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name );
 static void apply_profile_properties( mlt_consumer this, mlt_profile profile, mlt_properties properties );
 
-/** Public final methods
-*/
-
 int mlt_consumer_init( mlt_consumer this, void *child, mlt_profile profile )
 {
 	int error = 0;
@@ -49,7 +48,7 @@ int mlt_consumer_init( mlt_consumer this, void *child, mlt_profile profile )
 	{
 		// Get the properties from the service
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( &this->parent );
-	
+
 		// Apply profile to properties
 		if ( profile == NULL )
 		{
@@ -328,7 +327,7 @@ int mlt_consumer_start( mlt_consumer this )
 	int frame_duration = 1000000 / mlt_properties_get_int( properties, "frame_rate_num" ) *
 			mlt_properties_get_int( properties, "frame_rate_den" );
 	mlt_properties_set_int( properties, "frame_duration", frame_duration );
-	
+
 	// Check and run an ante command
 	if ( mlt_properties_get( properties, "ante" ) )
 		system( mlt_properties_get( properties, "ante" ) );
@@ -658,7 +657,7 @@ static void consumer_read_ahead_start( mlt_consumer this )
 	// Create the condition
 	pthread_cond_init( &this->cond, NULL );
 
-	// Create the read ahead 
+	// Create the read ahead
 	if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES( this ), "priority" ) )
 	{
 		struct sched_param priority;
@@ -749,7 +748,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 			if ( buffer > 1 )
 				size = prefill > 0 && prefill < buffer ? prefill : buffer;
 		}
-	
+
 		// Get frame from queue
 		pthread_mutex_lock( &this->mutex );
 		while( this->ahead && mlt_deque_count( this->queue ) < size )

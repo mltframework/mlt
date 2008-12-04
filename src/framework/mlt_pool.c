@@ -1,7 +1,9 @@
-/*
- * mlt_pool.c -- memory pooling functionality
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_pool.c
+ * \brief memory pooling functionality
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,8 +37,8 @@
 
 static mlt_properties pools = NULL;
 
-/** Private pooling structure.
-*/
+/** \brief Pool (memory) class
+ */
 
 typedef struct mlt_pool_s
 {
@@ -46,6 +48,9 @@ typedef struct mlt_pool_s
 	int count;
 }
 *mlt_pool;
+
+/** \brief private to mlt_pool_s, for tracking items to release
+ */
 
 typedef struct mlt_release_s
 {

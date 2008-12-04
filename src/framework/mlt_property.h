@@ -1,7 +1,9 @@
-/*
- * mlt_property.h -- property class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_property.h
+ * \brief Property class declaration
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,49 +25,6 @@
 
 #include "mlt_types.h"
 
-/** Bit pattern for properties.
-*/
-
-typedef enum
-{
-	mlt_prop_none = 0,
-	mlt_prop_int = 1,
-	mlt_prop_string = 2,
-	mlt_prop_position = 4,
-	mlt_prop_double = 8,
-	mlt_prop_data = 16,
-	mlt_prop_int64 = 32
-}
-mlt_property_type;
-
-/** Property structure.
-*/
-
-typedef struct mlt_property_s
-{
-	// Stores a bit pattern of types available for this property
-	mlt_property_type types;
-
-	// Atomic type handling
-	int prop_int;
-	mlt_position prop_position;
-	double prop_double;
-	int64_t prop_int64;
-
-	// String handling
-	char *prop_string;
-
-	// Generic type handling
-	void *data;
-	int length;
-	mlt_destructor destructor;
-	mlt_serialiser serialiser;
-}
-*mlt_property;
-
-/** API
-*/
-
 extern mlt_property mlt_property_init( );
 extern int mlt_property_set_int( mlt_property self, int value );
 extern int mlt_property_set_double( mlt_property self, double value );
@@ -84,4 +43,3 @@ extern void mlt_property_close( mlt_property self );
 extern void mlt_property_pass( mlt_property this, mlt_property that );
 
 #endif
-

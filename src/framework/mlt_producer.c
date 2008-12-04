@@ -1,7 +1,9 @@
-/*
- * mlt_producer.c -- abstraction for all producer services
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_producer.c
+ * \brief abstraction for all producer services
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,22 +31,27 @@
 #include <stdlib.h>
 #include <math.h>
 
-/** Forward references.
-*/
+/* Forward references. */
 
 static int producer_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 static void mlt_producer_property_changed( mlt_service owner, mlt_producer this, char *name );
 static void mlt_producer_service_changed( mlt_service owner, mlt_producer this );
 
+/* for debugging */
 //#define _MLT_PRODUCER_CHECKS_ 1
-
 #ifdef _MLT_PRODUCER_CHECKS_
 static int producers_created = 0;
 static int producers_destroyed = 0;
 #endif
 
-/** Constructor
-*/
+/** Initialize a producer service.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this the producer structure to initialize
+ * \param child a pointer to the child object for the subclass
+ * \return true if there was an error
+ * \todo Document the special properties and events.
+ */
 
 int mlt_producer_init( mlt_producer this, void *child )
 {
@@ -60,7 +67,7 @@ int mlt_producer_init( mlt_producer this, void *child )
 
 		// Initialise the producer
 		memset( this, 0, sizeof( struct mlt_producer_s ) );
-	
+
 		// Associate with the child
 		this->child = child;
 
@@ -69,7 +76,7 @@ int mlt_producer_init( mlt_producer this, void *child )
 		{
 			// The parent is the service
 			mlt_service parent = &this->parent;
-	
+
 			// Define the parent close
 			parent->close = ( mlt_destructor )mlt_producer_close;
 			parent->close_object = this;
@@ -79,7 +86,7 @@ int mlt_producer_init( mlt_producer this, void *child )
 
 			// Get the properties of the parent
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( parent );
-	
+
 			// Set the default properties
 			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
 			mlt_properties_set_position( properties, "_position", 0.0 );
@@ -105,7 +112,14 @@ int mlt_producer_init( mlt_producer this, void *child )
 }
 
 /** Listener for property changes.
-*/
+ *
+ * If the in, out, or length properties changed, fire a "producer-changed" event.
+ *
+ * \private \memberof mlt_producer_s
+ * \param owner a service (ignored)
+ * \param this the producer
+ * \param name the property that changed
+ */
 
 static void mlt_producer_property_changed( mlt_service owner, mlt_producer this, char *name )
 {
@@ -114,15 +128,24 @@ static void mlt_producer_property_changed( mlt_service owner, mlt_producer this,
 }
 
 /** Listener for service changes.
-*/
+ *
+ * Fires the "producer-changed" event.
+ *
+ * \private \memberof mlt_producer_s
+ * \param owner a service (ignored)
+ * \param this the producer
+ */
 
 static void mlt_producer_service_changed( mlt_service owner, mlt_producer this )
 {
 	mlt_events_fire( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( this ) ), "producer-changed", NULL );
 }
 
-/** Create a new producer.
-*/
+/** Create and initialize a new producer.
+ *
+ * \public \memberof mlt_producer_s
+ * \return the new producer
+ */
 
 mlt_producer mlt_producer_new( )
 {
@@ -132,7 +155,12 @@ mlt_producer mlt_producer_new( )
 }
 
 /** Determine if producer is a cut.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return true if \p this is a "cut" producer
+ * \see mlt_producer_cut
+ */
 
 int mlt_producer_is_cut( mlt_producer this )
 {
@@ -140,7 +168,12 @@ int mlt_producer_is_cut( mlt_producer this )
 }
 
 /** Determine if producer is a mix.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return true if this is a "mix" producer
+ * \todo Define a mix producer.
+ */
 
 int mlt_producer_is_mix( mlt_producer this )
 {
@@ -149,8 +182,14 @@ int mlt_producer_is_mix( mlt_producer this )
 	return tractor != NULL;
 }
 
-/** Determine if the producer is a blank [from a playlist].
-*/
+/** Determine if the producer is a blank.
+ *
+ * Blank producers should only appear as an item in a playlist.
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return true if this is a "blank" producer
+ * \see mlt_playlist_insert_blank
+ */
 
 int mlt_producer_is_blank( mlt_producer this )
 {
@@ -158,7 +197,11 @@ int mlt_producer_is_blank( mlt_producer this )
 }
 
 /** Obtain the parent producer.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return either the parent producer if this is a "cut" producer or \p this otherwise.
+ */
 
 mlt_producer mlt_producer_cut_parent( mlt_producer this )
 {
@@ -169,8 +212,17 @@ mlt_producer mlt_producer_cut_parent( mlt_producer this )
 		return this;
 }
 
-/** Create a cut of this producer
-*/
+/** Create a cut of this producer.
+ *
+ * A "cut" is a portion of another (parent) producer.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \param in the beginning
+ * \param out the end
+ * \return the new producer
+ * \todo Expand on the value of a cut.
+ */
 
 mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 {
@@ -197,7 +249,12 @@ mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 }
 
 /** Get the parent service object.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the service parent class
+ * \see MLT_PRODUCER_SERVICE
+ */
 
 mlt_service mlt_producer_service( mlt_producer this )
 {
@@ -205,7 +262,11 @@ mlt_service mlt_producer_service( mlt_producer this )
 }
 
 /** Get the producer properties.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the producer's property list
+ */
 
 mlt_properties mlt_producer_properties( mlt_producer this )
 {
@@ -213,7 +274,13 @@ mlt_properties mlt_producer_properties( mlt_producer this )
 }
 
 /** Seek to a specified position.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \param position set the "play head" position of the producer
+ * \return false
+ * \todo Document how the properties affect behavior.
+ */
 
 int mlt_producer_seek( mlt_producer this, mlt_position position )
 {
@@ -252,7 +319,11 @@ int mlt_producer_seek( mlt_producer this, mlt_position position )
 }
 
 /** Get the current position (relative to in point).
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the position of the "play head" relative to its beginning
+ */
 
 mlt_position mlt_producer_position( mlt_producer this )
 {
@@ -260,7 +331,11 @@ mlt_position mlt_producer_position( mlt_producer this )
 }
 
 /** Get the current position (relative to start of producer).
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the position of the "play head" regardless of the in point
+ */
 
 mlt_position mlt_producer_frame( mlt_producer this )
 {
@@ -268,7 +343,12 @@ mlt_position mlt_producer_frame( mlt_producer this )
 }
 
 /** Set the playing speed.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \param speed the new speed as a relative factor (1.0 = normal)
+ * \return
+ */
 
 int mlt_producer_set_speed( mlt_producer this, double speed )
 {
@@ -276,7 +356,11 @@ int mlt_producer_set_speed( mlt_producer this, double speed )
 }
 
 /** Get the playing speed.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the speed as a relative factor (1.0 = normal)
+ */
 
 double mlt_producer_get_speed( mlt_producer this )
 {
@@ -284,7 +368,13 @@ double mlt_producer_get_speed( mlt_producer this )
 }
 
 /** Get the frames per second.
-*/
+ *
+ * This is determined by the producer's profile.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the video refresh rate
+ */
 
 double mlt_producer_get_fps( mlt_producer this )
 {
@@ -293,7 +383,19 @@ double mlt_producer_get_fps( mlt_producer this )
 }
 
 /** Set the in and out points.
-*/
+ *
+ * The in point is where play out should start relative to the natural start
+ * of the underlying file. The out point is where play out should end, also
+ * relative to the start of the underlying file. If the underlying resource is
+ * a live stream, then the in point is an offset relative to first usable
+ * sample.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \param in the relative starting time
+ * \param out the relative ending time
+ * \return false
+ */
 
 int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_position out )
 {
@@ -330,8 +432,12 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_positio
 }
 
 /** Physically reduce the producer (typically a cut) to a 0 length.
-  	Essentially, all 0 length cuts should be immediately removed by containers.
-*/
+ *  Essentially, all 0 length cuts should be immediately removed by containers.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return false
+ */
 
 int mlt_producer_clear( mlt_producer this )
 {
@@ -347,7 +453,11 @@ int mlt_producer_clear( mlt_producer this )
 }
 
 /** Get the in point.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the in point
+ */
 
 mlt_position mlt_producer_get_in( mlt_producer this )
 {
@@ -355,7 +465,11 @@ mlt_position mlt_producer_get_in( mlt_producer this )
 }
 
 /** Get the out point.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the out point
+ */
 
 mlt_position mlt_producer_get_out( mlt_producer this )
 {
@@ -363,7 +477,11 @@ mlt_position mlt_producer_get_out( mlt_producer this )
 }
 
 /** Get the total play time.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the playable (based on in and out points) duration
+ */
 
 mlt_position mlt_producer_get_playtime( mlt_producer this )
 {
@@ -371,7 +489,13 @@ mlt_position mlt_producer_get_playtime( mlt_producer this )
 }
 
 /** Get the total length of the producer.
-*/
+ *
+ * The value returned by a live streaming producer is unknown.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return the duration of the producer regardless of in and out points
+ */
 
 mlt_position mlt_producer_get_length( mlt_producer this )
 {
@@ -379,7 +503,13 @@ mlt_position mlt_producer_get_length( mlt_producer this )
 }
 
 /** Prepare for next frame.
-*/
+ *
+ * Advance the play out position. If the speed is less than zero, it will
+ * move the play out position in the reverse direction.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ */
 
 void mlt_producer_prepare_next( mlt_producer this )
 {
@@ -388,7 +518,20 @@ void mlt_producer_prepare_next( mlt_producer this )
 }
 
 /** Get a frame.
-*/
+ *
+ * This is the implementation of the \p get_frame virtual function.
+ * It requests a new frame object from the actual producer for the current
+ * play out position. The producer and its filters can add information and
+ * operations to the frame object in their get_frame handlers.
+ *
+ * \private \memberof mlt_producer_s
+ * \param service a service
+ * \param[out] frame a frame by reference
+ * \param index as determined by the actual producer
+ * \return true if there was an error
+ * \todo Learn more about the details and document how certain properties affect
+ * its behavior.
+ */
 
 static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
 {
@@ -521,7 +664,12 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 }
 
 /** Attach a filter.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \param filter the filter to attach
+ * \return true if there was an error
+ */
 
 int mlt_producer_attach( mlt_producer this, mlt_filter filter )
 {
@@ -529,7 +677,12 @@ int mlt_producer_attach( mlt_producer this, mlt_filter filter )
 }
 
 /** Detach a filter.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a service
+ * \param filter the filter to detach
+ * \return true if there was an error
+ */
 
 int mlt_producer_detach( mlt_producer this, mlt_filter filter )
 {
@@ -537,7 +690,12 @@ int mlt_producer_detach( mlt_producer this, mlt_filter filter )
 }
 
 /** Retrieve a filter.
-*/
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a service
+ * \param index which filter to retrieve
+ * \return the filter or null if there was an error
+ */
 
 mlt_filter mlt_producer_filter( mlt_producer this, int index )
 {
@@ -545,7 +703,12 @@ mlt_filter mlt_producer_filter( mlt_producer this, int index )
 }
 
 /** Clone this producer.
-*/
+ *
+ * \private \memberof mlt_producer_s
+ * \param this a producer
+ * \return a new producer that is a copy of \p this
+ * \see mlt_producer_set_clones
+ */
 
 static mlt_producer mlt_producer_clone( mlt_producer this )
 {
@@ -572,7 +735,12 @@ static mlt_producer mlt_producer_clone( mlt_producer this )
 }
 
 /** Create clones.
-*/
+ *
+ * \private \memberof mlt_producer_s
+ * \param this a producer
+ * \param clones the number of copies to make
+ * \see mlt_producer_optimise
+ */
 
 static void mlt_producer_set_clones( mlt_producer this, int clones )
 {
@@ -618,10 +786,9 @@ static void mlt_producer_set_clones( mlt_producer this, int clones )
 	mlt_properties_set_int( properties, "_clones", clones );
 }
 
-/** Optimise for overlapping cuts from the same clip.
-*/
+/** \brief private to mlt_producer_s, used by mlt_producer_optimise() */
 
-typedef struct 
+typedef struct
 {
 	int multitrack;
 	int track;
@@ -630,6 +797,8 @@ typedef struct
 	int offset;
 }
 track_info;
+
+/** \brief private to mlt_producer_s, used by mlt_producer_optimise() */
 
 typedef struct
 {
@@ -738,6 +907,14 @@ static int on_end_multitrack( mlt_parser this, mlt_multitrack object )
 	return 0;
 }
 
+/** Optimise for overlapping cuts from the same clip.
+ *
+ * \todo learn more about this
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ * \return true if there was an error
+ */
+
 int mlt_producer_optimise( mlt_producer this )
 {
 	int error = 1;
@@ -809,7 +986,15 @@ int mlt_producer_optimise( mlt_producer this )
 }
 
 /** Close the producer.
-*/
+ *
+ * Destroys the producer and deallocates its resources managed by its
+ * properties list. This will call the close virtual function. Therefore, a
+ * subclass that defines its own close function should set its virtual close
+ * function to NULL prior to calling this to avoid circular calls.
+ *
+ * \public \memberof mlt_producer_s
+ * \param this a producer
+ */
 
 void mlt_producer_close( mlt_producer this )
 {

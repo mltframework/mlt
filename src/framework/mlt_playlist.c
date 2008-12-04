@@ -1,7 +1,9 @@
-/*
- * mlt_playlist.c -- playlist service class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_playlist.c
+ * \brief playlist service class
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** Virtual playlist entry.
+/** \brief virtual playlist entry
 */
 
 struct playlist_entry_s
@@ -90,7 +92,7 @@ mlt_playlist mlt_playlist_init( )
 		this->size = 10;
 		this->list = malloc( this->size * sizeof( playlist_entry * ) );
 	}
-	
+
 	return this;
 }
 
@@ -135,7 +137,7 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 		if ( producer )
 		{
 			int current_length = mlt_producer_get_out( producer ) - mlt_producer_get_in( producer ) + 1;
-	
+
 			// Check if the length of the producer has changed
 			if ( this->list[ i ]->frame_in != mlt_producer_get_in( producer ) ||
 				this->list[ i ]->frame_out != mlt_producer_get_out( producer ) )
@@ -147,13 +149,13 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 					this->list[ i ]->frame_out = -1;
 					this->list[ i ]->frame_count = 0;
 				}
-				else 
+				else
 				{
 					this->list[ i ]->frame_in = mlt_producer_get_in( producer );
 					this->list[ i ]->frame_out = mlt_producer_get_out( producer );
 					this->list[ i ]->frame_count = current_length;
 				}
-	
+
 				// Update the producer_length
 				this->list[ i ]->producer_length = current_length;
 			}
@@ -593,9 +595,9 @@ int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, mlt_positi
 int mlt_playlist_blank( mlt_playlist this, mlt_position length )
 {
 	// Append to the virtual list
-	if (length >= 0) 
+	if (length >= 0)
 		return mlt_playlist_virtual_append( this, &this->blank, 0, length );
-	else 
+	else
 		return 1;
 }
 
@@ -635,11 +637,11 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 		// Loop variable
 		int i = 0;
 
-		// Get the clip info 
+		// Get the clip info
 		mlt_playlist_get_clip_info( this, &where_info, where );
 
 		// Make sure the clip to be removed is valid and correct if necessary
-		if ( where < 0 ) 
+		if ( where < 0 )
 			where = 0;
 		if ( where >= this->count )
 			where = this->count - 1;
@@ -662,7 +664,7 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 				mlt_properties mix = mlt_properties_get_data( properties, "mix_out", NULL );
 				mlt_properties_set_data( mix, "mix_in", NULL, 0, NULL, NULL );
 			}
-	
+
 			if ( mlt_properties_ref_count( MLT_PRODUCER_PROPERTIES( entry->producer ) ) == 1 )
 				mlt_producer_clear( entry->producer );
 		}
@@ -697,16 +699,16 @@ int mlt_playlist_move( mlt_playlist this, int src, int dest )
 	int i;
 
 	/* We need to ensure that the requested indexes are valid and correct it as necessary */
-	if ( src < 0 ) 
+	if ( src < 0 )
 		src = 0;
 	if ( src >= this->count )
 		src = this->count - 1;
 
-	if ( dest < 0 ) 
+	if ( dest < 0 )
 		dest = 0;
 	if ( dest >= this->count )
 		dest = this->count - 1;
-	
+
 	if ( src != dest && this->count > 1 )
 	{
 		int current = mlt_playlist_current_clip( this );
@@ -1072,7 +1074,7 @@ int mlt_playlist_clip_is_mix( mlt_playlist this, int clip )
 
 static int mlt_playlist_unmix( mlt_playlist this, int clip )
 {
-	int error = ( clip < 0 || clip >= this->count ); 
+	int error = ( clip < 0 || clip >= this->count );
 
 	// Ensure that the clip request is actually a mix
 	if ( error == 0 )
@@ -1124,7 +1126,7 @@ static int mlt_playlist_unmix( mlt_playlist this, int clip )
 
 static int mlt_playlist_resize_mix( mlt_playlist this, int clip, int in, int out )
 {
-	int error = ( clip < 0 || clip >= this->count ); 
+	int error = ( clip < 0 || clip >= this->count );
 
 	// Ensure that the clip request is actually a mix
 	if ( error == 0 )
@@ -1324,10 +1326,10 @@ int mlt_playlist_insert_at( mlt_playlist this, mlt_position position, mlt_produc
 			mlt_playlist_insert( this, producer, clip, -1, -1 );
 			ret = clip;
 		}
-		else 
+		else
 		{
 			if ( mode == 1 ) {
-				if ( position == info.start ) 
+				if ( position == info.start )
 					mlt_playlist_remove( this, clip );
 				else
 					mlt_playlist_blank( this, position - mlt_properties_get_int( properties, "length" ) - 1 );
@@ -1411,7 +1413,7 @@ int mlt_playlist_remove_region( mlt_playlist this, mlt_position position, int le
 			length -= mlt_playlist_clip_length( this, index );
 			mlt_playlist_remove( this, index );
 		}
-	
+
 		mlt_playlist_consolidate_blanks( this, 0 );
 		mlt_events_unblock( properties, this );
 		mlt_playlist_virtual_refresh( this );

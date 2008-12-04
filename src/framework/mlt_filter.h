@@ -23,8 +23,10 @@
 
 #include "mlt_service.h"
 
-/** The interface definition for all filters.
-*/
+/** \brief Filter abstract service class
+ *
+ * \extends mlt_service_s
+ */
 
 struct mlt_filter_s
 {

@@ -1,8 +1,10 @@
-/*
- * mlt_properties.h -- base properties class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
- * Contributor: Dan Dennedy <dan@dennedy.org>
+/**
+ * \file mlt_properties.h
+ * \brief Properties class declaration
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,20 +28,21 @@
 #include "mlt_events.h"
 #include <stdio.h>
 
-/** The properties base class defines the basic property propagation and
-	handling.
-*/
+/** \brief Properties class
+ *
+ * Properties is a combination list/dictionary of name/::mlt_property pairs.
+ * It is also a base class for many of the other MLT classes.
+ */
 
 struct mlt_properties_s
 {
-	void *child;
-	void *local;
-	mlt_destructor close;
-	void *close_object;
-};
+	void *child; /**< \private the object of a subclass */
+	void *local; /**< \private instance object */
 
-/** Public interface.
-*/
+	/** the destructor virtual function */
+	mlt_destructor close;
+	void *close_object;  /**< the object supplied to the close virtual function */
+};
 
 extern int mlt_properties_init( mlt_properties, void *child );
 extern mlt_properties mlt_properties_new( );

@@ -1,7 +1,9 @@
-/*
- * mlt_playlist.h -- playlist service class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_playlist.h
+ * \brief playlist service class
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,8 +25,8 @@
 
 #include "mlt_producer.h"
 
-/** Structure for returning clip information.
-*/
+/** \brief structure for returning clip information
+ */
 
 typedef struct
 {
@@ -47,6 +49,11 @@ mlt_playlist_clip_info;
 
 typedef struct playlist_entry_s playlist_entry;
 
+/** \brief Playlist class
+ *
+ * \extends mlt_producer_s
+ */
+
 struct mlt_playlist_s
 {
 	struct mlt_producer_s parent;
@@ -56,9 +63,6 @@ struct mlt_playlist_s
 	int count;
 	playlist_entry **list;
 };
-
-/** Public final methods
-*/
 
 #define MLT_PLAYLIST_PRODUCER( playlist )	( &( playlist )->parent )
 #define MLT_PLAYLIST_SERVICE( playlist )	MLT_PRODUCER_SERVICE( MLT_PLAYLIST_PRODUCER( playlist ) )

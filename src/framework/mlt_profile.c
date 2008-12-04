@@ -1,7 +1,9 @@
-/*
- * mlt_profile.c -- video output definition
- * Copyright (C) 2007 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
+/**
+ * \file mlt_profile.c
+ * \brief video output definition
+ *
+ * Copyright (C) 2007-2008 Ushodaya Enterprises Limited
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +39,7 @@ static mlt_profile mlt_profile_select( const char *name )
 	const char *prefix = getenv( "MLT_PROFILES_PATH" );
 	mlt_properties properties = mlt_properties_load( name );
 	mlt_profile profile = NULL;
-	
+
 	// Try to load from file specification
 	if ( properties && mlt_properties_get_int( properties, "width" ) )
 	{
@@ -61,7 +63,7 @@ static mlt_profile mlt_profile_select( const char *name )
 		if ( filename[ strlen( filename ) - 1 ] != '/' )
 			filename[ strlen( filename ) ] = '/';
 	}
-	
+
 	// Finish loading
 	strcat( filename, name );
 	profile = mlt_profile_load_file( filename );

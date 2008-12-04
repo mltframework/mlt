@@ -1,8 +1,10 @@
-/*
- * mlt_properties.c -- base properties class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
- * Contributor: Dan Dennedy <dan@dennedy.org>
+/**
+ * \file mlt_properties.c
+ * \brief Properties class definition
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,10 +34,8 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-/* ---------------- // Private Implementation // ---------------- */
 
-/** Private implementation of the property list.
-*/
+/** \brief private implementation of the property list */
 
 typedef struct
 {
@@ -50,18 +50,22 @@ typedef struct
 }
 property_list;
 
-/** Memory leak checks.
-*/
+/* Memory leak checks */
 
 //#define _MLT_PROPERTY_CHECKS_ 2
-
 #ifdef _MLT_PROPERTY_CHECKS_
 static int properties_created = 0;
 static int properties_destroyed = 0;
 #endif
 
-/** Basic implementation.
-*/
+/** Initialize a properties object that was already allocated.
+ *
+ * This does allocate its ::property_list, and it adds a reference count.
+ * \public \memberof mlt_properties_s
+ * \param this the properties structure to initialize
+ * \param child an opaque pointer to a subclass object
+ * \return true if failed
+ */
 
 int mlt_properties_init( mlt_properties this, void *child )
 {
@@ -90,8 +94,13 @@ int mlt_properties_init( mlt_properties this, void *child )
 	return this != NULL && this->local == NULL;
 }
 
-/** Constructor for stand alone object.
-*/
+/** Create a properties object.
+ *
+ * This allocates the properties structure and calls mlt_properties_init() on it.
+ * Free the properties object with mlt_properties_close().
+ * \public \memberof mlt_properties_s
+ * \return a new properties object
+ */
 
 mlt_properties mlt_properties_new( )
 {
@@ -105,8 +114,14 @@ mlt_properties mlt_properties_new( )
 	return this;
 }
 
-/** Load properties from a .properties file (DEPRECATED).
-*/
+/** Create a properties object by reading a .properties text file.
+ *
+ * Free the properties object with mlt_properties_close().
+ * \deprecated Please start using mlt_properties_parse_yaml().
+ * \public \memberof mlt_properties_s
+ * \param filename a string contain the absolute file name
+ * \return a new properties object
+ */
 
 mlt_properties mlt_properties_load( const char *filename )
 {
@@ -158,6 +173,13 @@ mlt_properties mlt_properties_load( const char *filename )
 	return this;
 }
 
+/** Generate a hash key.
+ *
+ * \private \memberof mlt_properties_s
+ * \param name a string
+ * \return an integer
+ */
+
 static inline int generate_hash( const char *name )
 {
 	int hash = 0;
@@ -167,15 +189,20 @@ static inline int generate_hash( const char *name )
 	return hash;
 }
 
-/** Special case - when a container (such as fezzik) is protecting another 
-	producer, we need to ensure that properties are passed through to the
-	real producer.
-*/
+/** Copy a serializable property to properties list that is mirroring this one.
+ *
+ * Special case - when a container (such as fezzik) is protecting another
+ * producer, we need to ensure that properties are passed through to the
+ * real producer.
+ * \private \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the name of the property to copy
+ */
 
 static inline void mlt_properties_do_mirror( mlt_properties this, const char *name )
 {
 	property_list *list = this->local;
-	if ( list->mirror != NULL ) 
+	if ( list->mirror != NULL )
 	{
 		char *value = mlt_properties_get( this, name );
 		if ( value != NULL )
@@ -183,8 +210,12 @@ static inline void mlt_properties_do_mirror( mlt_properties this, const char *na
 	}
 }
 
-/** Maintain ref count to allow multiple uses of an mlt object.
-*/
+/** Increment the reference count.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \return the new reference count
+ */
 
 int mlt_properties_inc_ref( mlt_properties this )
 {
@@ -199,8 +230,12 @@ int mlt_properties_inc_ref( mlt_properties this )
 	return result;
 }
 
-/** Maintain ref count to allow multiple uses of an mlt object.
-*/
+/** Decrement the reference count.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \return the new reference count
+ */
 
 int mlt_properties_dec_ref( mlt_properties this )
 {
@@ -215,8 +250,12 @@ int mlt_properties_dec_ref( mlt_properties this )
 	return result;
 }
 
-/** Return the ref count of this object.
-*/
+/** Get the reference count.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \return the current reference count
+ */
 
 int mlt_properties_ref_count( mlt_properties this )
 {
@@ -228,8 +267,14 @@ int mlt_properties_ref_count( mlt_properties this )
 	return 0;
 }
 
-/** Mirror properties set on 'this' to 'that'.
-*/
+/** Set a properties list to be a mirror copy of another.
+ *
+ * Note that this does not copy all existing properties. Rather, you must
+ * call this before setting the properties that you wish to copy.
+ * \public \memberof mlt_properties_s
+ * \param that the properties which will receive copies of the properties as they are set.
+ * \param this the properties to mirror
+ */
 
 void mlt_properties_mirror( mlt_properties this, mlt_properties that )
 {
@@ -237,8 +282,13 @@ void mlt_properties_mirror( mlt_properties this, mlt_properties that )
 	list->mirror = that;
 }
 
-/** Inherit all serialisable properties from that into this.
-*/
+/** Copy all serializable properties to another properties list.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this The properties to copy from
+ * \param that The properties to copy to
+ * \return false
+ */
 
 int mlt_properties_inherit( mlt_properties this, mlt_properties that )
 {
@@ -256,8 +306,14 @@ int mlt_properties_inherit( mlt_properties this, mlt_properties that )
 	return 0;
 }
 
-/** Pass all properties from 'that' that match the prefix to 'this' (excluding the prefix).
-*/
+/** Pass all serializable properties that match a prefix to another properties object
+ *
+ * \public \memberof mlt_properties_s
+ * \param this the properties to copy from
+ * \param that The properties to copy to
+ * \param prefix the property names to match (required)
+ * \return false
+ */
 
 int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *prefix )
 {
@@ -277,8 +333,13 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *p
 	return 0;
 }
 
-/** Locate a property by name
-*/
+/** Locate a property by name.
+ *
+ * \private \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to lookup by name
+ * \return the property or NULL for failure
+ */
 
 static inline mlt_property mlt_properties_find( mlt_properties this, const char *name )
 {
@@ -291,11 +352,11 @@ static inline mlt_property mlt_properties_find( mlt_properties this, const char 
 	{
 		// Check if we're hashed
 		if ( list->count > 0 &&
-		 	name[ 0 ] == list->name[ i ][ 0 ] && 
+		 	name[ 0 ] == list->name[ i ][ 0 ] &&
 		 	!strcmp( list->name[ i ], name ) )
 			value = list->value[ i ];
 
-		// Locate the item 
+		// Locate the item
 		for ( i = list->count - 1; value == NULL && i >= 0; i -- )
 			if ( name[ 0 ] == list->name[ i ][ 0 ] && !strcmp( list->name[ i ], name ) )
 				value = list->value[ i ];
@@ -305,7 +366,12 @@ static inline mlt_property mlt_properties_find( mlt_properties this, const char 
 }
 
 /** Add a new property.
-*/
+ *
+ * \private \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the name of the new property
+ * \return the new property
+ */
 
 static mlt_property mlt_properties_add( mlt_properties this, const char *name )
 {
@@ -332,8 +398,13 @@ static mlt_property mlt_properties_add( mlt_properties this, const char *name )
 	return list->value[ list->count ++ ];
 }
 
-/** Fetch a property by name - this includes add if not found.
-*/
+/** Fetch a property by name and add one if not found.
+ *
+ * \private \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to lookup or add
+ * \return the property
+ */
 
 static mlt_property mlt_properties_fetch( mlt_properties this, const char *name )
 {
@@ -348,9 +419,14 @@ static mlt_property mlt_properties_fetch( mlt_properties this, const char *name 
 	return property;
 }
 
-/** Pass property 'name' from 'that' to 'this' 
-* Who to blame: Zach <zachary.drew@gmail.com>
-*/
+/** Copy a property to another properties list.
+ *
+ * \public \memberof mlt_properties_s
+ * \author Zach <zachary.drew@gmail.com>
+ * \param this the properties to copy from
+ * \param that the properties to copy to
+ * \param name the name of the property to copy
+ */
 
 void mlt_properties_pass_property( mlt_properties this, mlt_properties that, const char *name )
 {
@@ -362,9 +438,17 @@ void mlt_properties_pass_property( mlt_properties this, mlt_properties that, con
 	mlt_property_pass( mlt_properties_fetch( this, name ), that_prop );
 }
 
-/** Pass all properties from 'that' to 'this' as found in comma seperated 'list'.
-* Who to blame: Zach <zachary.drew@gmail.com>
-*/
+/** Copy all properties specified in a comma-separated list to another properties list.
+ *
+ * White space is also a delimiter.
+ * \public \memberof mlt_properties_s
+ * \author Zach <zachary.drew@gmail.com>
+ * \param this the properties to copy from
+ * \param that the properties to copy to
+ * \param list a delimited list of property names
+ * \return false
+ */
+
 
 int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const char *list )
 {
@@ -394,8 +478,15 @@ int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const ch
 }
 
 
-/** Set the property.
-*/
+/** Set a property to a string.
+ *
+ * This makes a copy of the string value you supply.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to set
+ * \param value the property's new value
+ * \return true if error
+ */
 
 int mlt_properties_set( mlt_properties this, const char *name, const char *value )
 {
@@ -473,8 +564,16 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 	return error;
 }
 
-/** Set or default the property.
-*/
+/** Set or default a property to a string.
+ *
+ * This makes a copy of the string value you supply.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to set
+ * \param value the string value to set or NULL to use the default
+ * \param def the default string if value is NULL
+ * \return true if error
+ */
 
 int mlt_properties_set_or_default( mlt_properties this, const char *name, const char *value, const char *def )
 {
@@ -482,7 +581,14 @@ int mlt_properties_set_or_default( mlt_properties this, const char *name, const 
 }
 
 /** Get a string value by name.
-*/
+ *
+ * Do not free the returned string. It's lifetime is controlled by the property
+ * and this properties object.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to get
+ * \return the property's string value or NULL if it does not exist
+ */
 
 char *mlt_properties_get( mlt_properties this, const char *name )
 {
@@ -490,8 +596,14 @@ char *mlt_properties_get( mlt_properties this, const char *name )
 	return value == NULL ? NULL : mlt_property_get_string( value );
 }
 
-/** Get a name by index.
-*/
+/** Get a property name by index.
+ *
+ * Do not free the returned string.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param index the numeric index of the property
+ * \return the name of the property or NULL if index is out of range
+ */
 
 char *mlt_properties_get_name( mlt_properties this, int index )
 {
@@ -501,8 +613,14 @@ char *mlt_properties_get_name( mlt_properties this, int index )
 	return NULL;
 }
 
-/** Get a string value by index.
-*/
+/** Get a property's string value by index.
+ *
+ * Do not free the returned string.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param index the numeric index of the property
+ * \return the property value as a string or NULL if the index is out of range
+ */
 
 char *mlt_properties_get_value( mlt_properties this, int index )
 {
@@ -513,7 +631,14 @@ char *mlt_properties_get_value( mlt_properties this, int index )
 }
 
 /** Get a data value by index.
-*/
+ *
+ * Do not free the returned pointer if you supplied a destructor function when you
+ * set this property.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param index the numeric index of the property
+ * \param size the size of the binary data in bytes or NULL if the index is out of range
+ */
 
 void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
 {
@@ -524,7 +649,11 @@ void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
 }
 
 /** Return the number of items in the list.
-*/
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \return the number of property objects
+ */
 
 int mlt_properties_count( mlt_properties this )
 {
@@ -532,8 +661,13 @@ int mlt_properties_count( mlt_properties this )
 	return list->count;
 }
 
-/** Set a value by parsing a name=value string
-*/
+/** Set a value by parsing a name=value string.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param namevalue a string containing name and value delimited by '='
+ * \return true if there was an error
+ */
 
 int mlt_properties_parse( mlt_properties this, const char *namevalue )
 {
@@ -571,8 +705,13 @@ int mlt_properties_parse( mlt_properties this, const char *namevalue )
 	return error;
 }
 
-/** Get a value associated to the name.
-*/
+/** Get an integer associated to the name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to get
+ * \return The integer value, 0 if not found (which may also be a legitimate value)
+ */
 
 int mlt_properties_get_int( mlt_properties this, const char *name )
 {
@@ -580,8 +719,14 @@ int mlt_properties_get_int( mlt_properties this, const char *name )
 	return value == NULL ? 0 : mlt_property_get_int( value );
 }
 
-/** Set a value associated to the name.
-*/
+/** Set a property to an integer value.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to set
+ * \param value the integer
+ * \return true if error
+ */
 
 int mlt_properties_set_int( mlt_properties this, const char *name, int value )
 {
@@ -602,8 +747,13 @@ int mlt_properties_set_int( mlt_properties this, const char *name, int value )
 	return error;
 }
 
-/** Get a value associated to the name.
-*/
+/** Get a 64-bit integer associated to the name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to get
+ * \return the integer value, 0 if not found (which may also be a legitimate value)
+ */
 
 int64_t mlt_properties_get_int64( mlt_properties this, const char *name )
 {
@@ -611,8 +761,14 @@ int64_t mlt_properties_get_int64( mlt_properties this, const char *name )
 	return value == NULL ? 0 : mlt_property_get_int64( value );
 }
 
-/** Set a value associated to the name.
-*/
+/** Set a property to a 64-bit integer value.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to set
+ * \param value the integer
+ * \return true if error
+ */
 
 int mlt_properties_set_int64( mlt_properties this, const char *name, int64_t value )
 {
@@ -633,8 +789,13 @@ int mlt_properties_set_int64( mlt_properties this, const char *name, int64_t val
 	return error;
 }
 
-/** Get a value associated to the name.
-*/
+/** Get a floating point value associated to the name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to get
+ * \return the floating point, 0 if not found (which may also be a legitimate value)
+ */
 
 double mlt_properties_get_double( mlt_properties this, const char *name )
 {
@@ -642,8 +803,14 @@ double mlt_properties_get_double( mlt_properties this, const char *name )
 	return value == NULL ? 0 : mlt_property_get_double( value );
 }
 
-/** Set a value associated to the name.
-*/
+/** Set a property to a floating point value.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to set
+ * \param value the floating point value
+ * \return true if error
+ */
 
 int mlt_properties_set_double( mlt_properties this, const char *name, double value )
 {
@@ -664,8 +831,13 @@ int mlt_properties_set_double( mlt_properties this, const char *name, double val
 	return error;
 }
 
-/** Get a value associated to the name.
-*/
+/** Get a position value associated to the name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to get
+ * \return the position, 0 if not found (which may also be a legitimate value)
+ */
 
 mlt_position mlt_properties_get_position( mlt_properties this, const char *name )
 {
@@ -673,8 +845,14 @@ mlt_position mlt_properties_get_position( mlt_properties this, const char *name 
 	return value == NULL ? 0 : mlt_property_get_position( value );
 }
 
-/** Set a value associated to the name.
-*/
+/** Set a property to a position value.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to get
+ * \param value the position
+ * \return true if error
+ */
 
 int mlt_properties_set_position( mlt_properties this, const char *name, mlt_position value )
 {
@@ -695,8 +873,15 @@ int mlt_properties_set_position( mlt_properties this, const char *name, mlt_posi
 	return error;
 }
 
-/** Get a value associated to the name.
-*/
+/** Get a binary data value associated to the name.
+ *
+ * Do not free the returned pointer if you supplied a destructor function
+ * when you set this property.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to get
+ * \param length The size of the binary data in bytes, if available (often it is not, you should know)
+ */
 
 void *mlt_properties_get_data( mlt_properties this, const char *name, int *length )
 {
@@ -704,8 +889,17 @@ void *mlt_properties_get_data( mlt_properties this, const char *name, int *lengt
 	return value == NULL ? NULL : mlt_property_get_data( value, length );
 }
 
-/** Set a value associated to the name.
-*/
+/** Store binary data as a property.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param name the property to set
+ * \param value an opaque pointer to binary data
+ * \param length the size of the binary data in bytes (optional)
+ * \param destroy a function to dellacate the binary data when the property is closed (optional)
+ * \param serialise a function that can serialize the binary data as text (optional)
+ * \return true if error
+ */
 
 int mlt_properties_set_data( mlt_properties this, const char *name, void *value, int length, mlt_destructor destroy, mlt_serialiser serialise )
 {
@@ -724,7 +918,13 @@ int mlt_properties_set_data( mlt_properties this, const char *name, void *value,
 }
 
 /** Rename a property.
-*/
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param source the property to rename
+ * \param dest the new name
+ * \return true if the name is already in use
+ */
 
 int mlt_properties_rename( mlt_properties this, const char *source, const char *dest )
 {
@@ -735,7 +935,7 @@ int mlt_properties_rename( mlt_properties this, const char *source, const char *
 		property_list *list = this->local;
 		int i = 0;
 
-		// Locate the item 
+		// Locate the item
 		for ( i = 0; i < list->count; i ++ )
 		{
 			if ( !strcmp( list->name[ i ], source ) )
@@ -751,8 +951,12 @@ int mlt_properties_rename( mlt_properties this, const char *source, const char *
 	return value != NULL;
 }
 
-/** Dump the properties.
-*/
+/** Dump the properties to a file handle.
+ *
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param output a file handle
+ */
 
 void mlt_properties_dump( mlt_properties this, FILE *output )
 {
@@ -763,6 +967,14 @@ void mlt_properties_dump( mlt_properties this, FILE *output )
 			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
 }
 
+/** Output the properties to a file handle.
+ *
+ * This version includes reference counts and does not put each property on a new line.
+ * \public \memberof mlt_properties_s
+ * \param this a properties pointer
+ * \param title a string to preface the output
+ * \param output a file handle
+ */
 void mlt_properties_debug( mlt_properties this, const char *title, FILE *output )
 {
 	if ( output == NULL ) output = stderr;
@@ -782,6 +994,15 @@ void mlt_properties_debug( mlt_properties this, const char *title, FILE *output 
 	fprintf( output, "\n" );
 }
 
+/** Save the properties to a file by name.
+ *
+ * This uses the dump format - one line per property.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param filename the name of a file to create or overwrite
+ * \return true if there was an error
+ */
+
 int mlt_properties_save( mlt_properties this, const char *filename )
 {
 	int error = 1;
@@ -796,8 +1017,16 @@ int mlt_properties_save( mlt_properties this, const char *filename )
 }
 
 /* This is a very basic cross platform fnmatch replacement - it will fail in
-** many cases, but for the basic *.XXX and YYY*.XXX, it will work ok.
-*/
+ * many cases, but for the basic *.XXX and YYY*.XXX, it will work ok.
+ */
+
+/** Test whether a filename or pathname matches a shell-style pattern.
+ *
+ * \private \memberof mlt_properties_s
+ * \param wild a string containing a wildcard pattern
+ * \param file the name of a file to test against
+ * \return true if the file name matches the wildcard pattern
+ */
 
 static int mlt_fnmatch( const char *wild, const char *file )
 {
@@ -832,14 +1061,30 @@ static int mlt_fnmatch( const char *wild, const char *file )
 	return strlen( file ) == f &&  strlen( wild ) == w;
 }
 
+/** Compare the string or serialized value of two properties.
+ *
+ * \private \memberof mlt_properties_s
+ * \param this a property
+ * \param that a property
+ * \return < 0 if 'this' less than 'that', 0 if equal, or > 0 if 'this' is greater than 'that'
+ */
+
 static int mlt_compare( const void *this, const void *that )
 {
 	return strcmp( mlt_property_get_string( *( mlt_property * )this ), mlt_property_get_string( *( mlt_property * )that ) );
 }
 
-/* Obtains an optionally sorted list of the files found in a directory with a specific wild card.
+/** Get the contents of a directory.
+ *
+ * Obtains an optionally sorted list of the files found in a directory with a specific wild card.
  * Entries in the list have a numeric name (running from 0 to count - 1). Only values change
  * position if sort is enabled. Designed to be posix compatible (linux, os/x, mingw etc).
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \param dirname the name of the directory
+ * \param pattern a wildcard pattern to filter the directory listing
+ * \param sort Do you want to sort the directory listing?
+ * \return the number of items in the directory listing
  */
 
 int mlt_properties_dir_list( mlt_properties this, const char *dirname, const char *pattern, int sort )
@@ -874,8 +1119,12 @@ int mlt_properties_dir_list( mlt_properties this, const char *dirname, const cha
 	return mlt_properties_count( this );
 }
 
-/** Close the list.
-*/
+/** Close a properties object.
+ *
+ * Deallocates the properties object and everything it contains.
+ * \public \memberof mlt_properties_s
+ * \param this a properties object
+ */
 
 void mlt_properties_close( mlt_properties this )
 {
@@ -909,13 +1158,13 @@ void mlt_properties_close( mlt_properties this )
 				free( list->name[ index ] );
 				mlt_property_close( list->value[ index ] );
 			}
-	
+
 			// Clear up the list
 			pthread_mutex_destroy( &list->mutex );
 			free( list->name );
 			free( list->value );
 			free( list );
-	
+
 			// Free this now if this has no child
 			if ( this->child == NULL )
 				free( this );
@@ -924,8 +1173,12 @@ void mlt_properties_close( mlt_properties this )
 }
 
 /** Determine if the properties list is really just a sequence or ordered list.
-    Returns 0 if false or 1 if true.
-*/
+ *
+ * \public \memberof mlt_properties_s
+ * \param properties a properties list
+ * \return true if all of the property names are numeric (a sequence)
+ */
+
 int mlt_properties_is_sequence( mlt_properties properties )
 {
 	int i;
@@ -936,7 +1189,8 @@ int mlt_properties_is_sequence( mlt_properties properties )
 	return 1;
 }
 
-/** YAML Tiny Parser
+/** \brief YAML Tiny Parser context structure
+ *
  * YAML is a nifty text format popular in the Ruby world as a cleaner,
  * less verbose alternative to XML. See this Wikipedia topic for an overview:
  * http://en.wikipedia.org/wiki/YAML
@@ -945,6 +1199,7 @@ int mlt_properties_is_sequence( mlt_properties properties )
  * YAML::Tiny is a Perl module that specifies a subset of YAML that we are
  * using here (for the same reasons):
  * http://search.cpan.org/~adamk/YAML-Tiny-1.25/lib/YAML/Tiny.pm
+ * \private
  */
 
 struct yaml_parser_context
@@ -955,9 +1210,15 @@ struct yaml_parser_context
 	char block;
 	char *block_name;
 	unsigned int block_indent;
-	
+
 };
 typedef struct yaml_parser_context *yaml_parser;
+
+/** Remove spaces from the left side of a string.
+ *
+ * \param s the string to trim
+ * \return the number of characters removed
+ */
 
 static unsigned int ltrim( char **s )
 {
@@ -969,6 +1230,12 @@ static unsigned int ltrim( char **s )
 	return i;
 }
 
+/** Remove spaces from the right side of a string.
+ *
+ * \param s the string to trim
+ * \return the number of characters removed
+ */
+
 static unsigned int rtrim( char *s )
 {
 	int n = strlen( s );
@@ -977,6 +1244,15 @@ static unsigned int rtrim( char *s )
 		s[i - 1] = 0;
 	return n - i;
 }
+
+/** Parse a line of YAML Tiny.
+ *
+ * Adds a property if needed.
+ * \private \memberof yaml_parser_context
+ * \param context a YAML Tiny Parser context
+ * \param namevalue a line of YAML Tiny
+ * \return true if there was an error
+ */
 
 static int parse_yaml( yaml_parser context, const char *namevalue )
 {
@@ -987,7 +1263,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 	char *ptr = strchr( name, ':' );
 	unsigned int indent = ltrim( &name );
 	mlt_properties properties = mlt_deque_peek_front( context->stack );
-	
+
 	// Ascending one more levels in the tree
 	if ( indent < context->level )
 	{
@@ -998,13 +1274,13 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		properties = mlt_deque_peek_front( context->stack );
 		context->level = indent;
 	}
-	
+
 	// Descending a level in the tree
 	else if ( indent > context->level && context->block == 0 )
 	{
 		context->level = indent;
 	}
-	
+
 	// If there is a colon that is not part of a block
 	if ( ptr && ( indent == context->level ) )
 	{
@@ -1015,41 +1291,41 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			context->block_name = NULL;
 			context->block = 0;
 		}
-		
+
 		// Terminate the name and setup the value pointer
 		*( ptr ++ ) = 0;
-		
+
 		// Trim comment
 		char *comment = strchr( ptr, '#' );
 		if ( comment )
 		{
 			*comment = 0;
 		}
-		
-		// Trim leading and trailing spaces from bare value 
+
+		// Trim leading and trailing spaces from bare value
 		ltrim( &ptr );
 		rtrim( ptr );
-		
+
 		// No value means a child
 		if ( strcmp( ptr, "" ) == 0 )
 		{
 			mlt_properties child = mlt_properties_new();
-			mlt_properties_set_data( properties, name, child, 0, 
+			mlt_properties_set_data( properties, name, child, 0,
 				( mlt_destructor )mlt_properties_close, NULL );
 			mlt_deque_push_front( context->stack, child );
 			context->index = 0;
 			free( name_ );
 			return error;
 		}
-		
+
 		// A dash indicates a sequence item
 		if ( name[0] == '-' )
 		{
 			mlt_properties child = mlt_properties_new();
 			char key[20];
-			
+
 			snprintf( key, sizeof(key), "%d", context->index++ );
-			mlt_properties_set_data( properties, key, child, 0, 
+			mlt_properties_set_data( properties, key, child, 0,
 				( mlt_destructor )mlt_properties_close, NULL );
 			mlt_deque_push_front( context->stack, child );
 
@@ -1057,7 +1333,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			context->level += ltrim( &name ) + 1;
 			properties = child;
 		}
-		
+
 		// Value is quoted
 		if ( *ptr == '\"' )
 		{
@@ -1066,7 +1342,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			if ( value && value[ strlen( value ) - 1 ] == '\"' )
 				value[ strlen( value ) - 1 ] = 0;
 		}
-		
+
 		// Value is folded or unfolded block
 		else if ( *ptr == '|' || *ptr == '>' )
 		{
@@ -1075,14 +1351,14 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			context->block_indent = 0;
 			value = strdup( "" );
 		}
-		
+
 		// Bare value
 		else
 		{
 			value = strdup( ptr );
 		}
 	}
-	
+
 	// A list of scalars
 	else if ( name[0] == '-' )
 	{
@@ -1093,21 +1369,21 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			context->block_name = NULL;
 			context->block = 0;
 		}
-		
+
 		char key[20];
-		
+
 		snprintf( key, sizeof(key), "%d", context->index++ );
 		ptr = name + 1;
-		
+
 		// Trim comment
 		char *comment = strchr( ptr, '#' );
 		if ( comment )
 			*comment = 0;
-		
-		// Trim leading and trailing spaces from bare value 
+
+		// Trim leading and trailing spaces from bare value
 		ltrim( &ptr );
 		rtrim( ptr );
-		
+
 		// Value is quoted
 		if ( *ptr == '\"' )
 		{
@@ -1116,7 +1392,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			if ( value && value[ strlen( value ) - 1 ] == '\"' )
 				value[ strlen( value ) - 1 ] = 0;
 		}
-		
+
 		// Value is folded or unfolded block
 		else if ( *ptr == '|' || *ptr == '>' )
 		{
@@ -1125,13 +1401,13 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			context->block_indent = 0;
 			value = strdup( "" );
 		}
-		
+
 		// Bare value
 		else
 		{
 			value = strdup( ptr );
 		}
-		
+
 		free( name_ );
 		name = name_ = strdup( key );
 	}
@@ -1152,14 +1428,14 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		strcat( value, name );
 		name = context->block_name;
 	}
-	
+
 	// Folded block
 	else if ( context->block == '>' )
 	{
 		ltrim( &name );
 		rtrim( name );
 		char *old_value = mlt_properties_get( properties, context->block_name );
-		
+
 		// Blank line (prepended with spaces) is new line
 		if ( strcmp( name, "" ) == 0 )
 		{
@@ -1178,7 +1454,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		}
 		name = context->block_name;
 	}
-	
+
 	else
 	{
 		value = strdup( "" );
@@ -1191,6 +1467,13 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 
 	return error;
 }
+
+/** Parse a YAML Tiny file by name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param filename the name of a text file containing YAML Tiny
+ * \return a new properties list
+ */
 
 mlt_properties mlt_properties_parse_yaml( const char *filename )
 {
@@ -1208,7 +1491,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 			// Temp string
 			char temp[ 1024 ];
 			char *ptemp = &temp[ 0 ];
-			
+
 			// Parser context
 			yaml_parser context = calloc( 1, sizeof( struct yaml_parser_context ) );
 			context->stack = mlt_deque_init();
@@ -1220,12 +1503,12 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 				// Check for end-of-stream
 				if ( strncmp( ptemp, "...", 3 ) == 0 )
 					break;
-					
+
 				// Chomp the string
 				temp[ strlen( temp ) - 1 ] = '\0';
 
 				// Skip blank lines, comment lines, and document separator
-				if ( strcmp( ptemp, "" ) && ptemp[ 0 ] != '#' && strncmp( ptemp, "---", 3 ) 
+				if ( strcmp( ptemp, "" ) && ptemp[ 0 ] != '#' && strncmp( ptemp, "---", 3 )
 				     && strncmp( ptemp, "%YAML", 5 ) && strncmp( ptemp, "% YAML", 6 ) )
 					parse_yaml( context, temp );
 			}
@@ -1243,12 +1526,16 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 	return this;
 }
 
-/** YAML Tiny Serialiser
-*/
+/*
+ * YAML Tiny Serializer
+ */
 
-/* strbuf is a self-growing string buffer */
-
+/** How many bytes to grow at a time */
 #define STRBUF_GROWTH (1024)
+
+/** \brief Self-growing buffer for building strings
+ * \private
+ */
 
 struct strbuf_s
 {
@@ -1258,6 +1545,12 @@ struct strbuf_s
 
 typedef struct strbuf_s *strbuf;
 
+/** Create a new string buffer
+ *
+ * \private \memberof strbuf_s
+ * \return a new string buffer
+ */
+
 static strbuf strbuf_new( )
 {
 	strbuf buffer = calloc( 1, sizeof( struct strbuf_s ) );
@@ -1266,6 +1559,12 @@ static strbuf strbuf_new( )
 	return buffer;
 }
 
+/** Destroy a string buffer
+ *
+ * \private \memberof strbuf_s
+ * \param buffer the string buffer to close
+ */
+
 static void strbuf_close( strbuf buffer )
 {
 	// We do not free buffer->string; strbuf user must save that pointer
@@ -1273,6 +1572,16 @@ static void strbuf_close( strbuf buffer )
 	if ( buffer )
 		free( buffer );
 }
+
+/** Format a string into a string buffer
+ *
+ * A variable number of arguments follows the format string - one for each
+ * format specifier.
+ * \private \memberof strbuf_s
+ * \param buffer the string buffer to write into
+ * \param format a string that contains text and formatting instructions
+ * \return the formatted string
+ */
 
 static char *strbuf_printf( strbuf buffer, const char *format, ... )
 {
@@ -1293,6 +1602,13 @@ static char *strbuf_printf( strbuf buffer, const char *format, ... )
 	return buffer->string;
 }
 
+/** Indent a line of YAML Tiny.
+ *
+ * \private \memberof strbuf_s
+ * \param output a string buffer
+ * \param indent the number of spaces to indent
+ */
+
 static inline void indent_yaml( strbuf output, int indent )
 {
 	int j;
@@ -1300,12 +1616,20 @@ static inline void indent_yaml( strbuf output, int indent )
 		strbuf_printf( output, " " );
 }
 
+/** Convert a line string into a YAML block literal.
+ *
+ * \private \memberof strbuf_s
+ * \param output a string buffer
+ * \param value the string to format as a block literal
+ * \param indent the number of spaces to indent
+ */
+
 static void output_yaml_block_literal( strbuf output, const char *value, int indent )
 {
 	char *v = strdup( value );
 	char *sol = v;
 	char *eol = strchr( sol, '\n' );
-	
+
 	while ( eol )
 	{
 		indent_yaml( output, indent );
@@ -1313,22 +1637,31 @@ static void output_yaml_block_literal( strbuf output, const char *value, int ind
 		strbuf_printf( output, "%s\n", sol );
 		sol = eol + 1;
 		eol = strchr( sol, '\n' );
-	}	
+	}
 	indent_yaml( output, indent );
 	strbuf_printf( output, "%s\n", sol );
 }
+
+/** Recursively serialize a properties list into a string buffer as YAML Tiny.
+ *
+ * \private \memberof mlt_properties_s
+ * \param this a properties list
+ * \param output a string buffer to hold the serialized YAML Tiny
+ * \param indent the number of spaces to indent (for recursion, initialize to 0)
+ * \param is_parent_sequence Is 'this' properties list really just a sequence (for recursion, initialize to 0)?
+ */
 
 static void serialise_yaml( mlt_properties this, strbuf output, int indent, int is_parent_sequence )
 {
 	property_list *list = this->local;
 	int i = 0;
-	
+
 	for ( i = 0; i < list->count; i ++ )
 	{
 		// This implementation assumes that all data elements are property lists.
 		// Unfortunately, we do not have run time type identification.
 		mlt_properties child = mlt_property_get_data( list->value[ i ], NULL );
-		
+
 		if ( mlt_properties_is_sequence( this ) )
 		{
 			// Ignore hidden/non-serialisable items
@@ -1337,7 +1670,7 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 				// Indicate a sequence item
 				indent_yaml( output, indent );
 				strbuf_printf( output, "- " );
-				
+
 				// If the value can be represented as a string
 				const char *value = mlt_properties_get( this, list->name[ i ] );
 				if ( value && strcmp( value, "" ) )
@@ -1358,11 +1691,11 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 			if ( child )
 				serialise_yaml( child, output, indent + 2, 1 );
 		}
-		else 
+		else
 		{
 			// Assume this is a normal map-oriented properties list
 			const char *value = mlt_properties_get( this, list->name[ i ] );
-			
+
 			// Ignore hidden/non-serialisable items
 			// If the value can be represented as a string
 			if ( list->name[ i ][ 0 ] != '_' && value && strcmp( value, "" ) )
@@ -1371,7 +1704,7 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 					indent_yaml( output, indent );
 				else
 					is_parent_sequence = 0;
-				
+
 				// Determine if this is an unfolded block literal
 				if ( strchr( value, '\n' ) )
 				{
@@ -1383,7 +1716,7 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 					strbuf_printf( output, "%s: %s\n", list->name[ i ], value );
 				}
 			}
-			
+
 			// Output a child as a map item
 			if ( child )
 			{
@@ -1397,9 +1730,15 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 	}
 }
 
-/** Serialise the properties as a string of YAML Tiny.
-    The caller must free the returned string.
-*/
+/** Serialize a properties list as a string of YAML Tiny.
+ *
+ * The caller MUST free the returned string!
+ * This operates on properties containing properties as a hierarchical data
+ * structure.
+ * \public \memberof mlt_properties_s
+ * \param this a properties list
+ * \return a string containing YAML Tiny that represents the properties list
+ */
 
 char *mlt_properties_serialise_yaml( mlt_properties this )
 {

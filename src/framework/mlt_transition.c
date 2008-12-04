@@ -1,7 +1,9 @@
-/*
- * mlt_transition.c -- abstraction for all transition services
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_transition.c
+ * \brief abstraction for all transition services
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -156,7 +158,7 @@ mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_fr
 
 /** Get a frame from this transition.
 
-	The logic is complex here. A transition is typically applied to frames on the a and 
+	The logic is complex here. A transition is typically applied to frames on the a and
 	b tracks specified in the connect method above and only if both contain valid info
 	for the transition type (this is either audio or image).
 
@@ -171,15 +173,15 @@ mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_fr
 	         +----------+-------------+
 
 	During the overlap of c1 and c2, there is nothing for the A transition to do, so this
-	results in a no operation, but B is triggered. During the overlap of c2 and c3, again, 
-	the A transition is inactive and because the B transition is pointing at track 0, 
-	it too would be inactive. This isn't an ideal situation - it's better if the B 
+	results in a no operation, but B is triggered. During the overlap of c2 and c3, again,
+	the A transition is inactive and because the B transition is pointing at track 0,
+	it too would be inactive. This isn't an ideal situation - it's better if the B
 	transition simply treats the frames from c3 as though they're the a track.
 
-	For this to work, we cache all frames coming from all tracks between the a and b 
-	tracks.  Before we process, we determine that the b frame contains someting of the 
+	For this to work, we cache all frames coming from all tracks between the a and b
+	tracks.  Before we process, we determine that the b frame contains someting of the
 	right type and then we determine which frame to use as the a frame (selecting a
-	matching frame from a_track to b_track - 1). If both frames contain data of the 
+	matching frame from a_track to b_track - 1). If both frames contain data of the
 	correct type, we process the transition.
 
 	This method is invoked for each track and we return the cached frames as needed.
@@ -277,19 +279,19 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			{
 				// Process the transition
 				*frame = mlt_transition_process( this, a_frame_ptr, b_frame_ptr );
-	
+
 				// We need to ensure that the tractor doesn't consider this frame for output
 				if ( *frame == a_frame_ptr )
 					b_hide |= type;
 				else
 					a_hide |= type;
-	
+
 				mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide", a_hide );
 				mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide", b_hide );
 			}
 		}
 	}
-	
+
 	// Obtain the frame from the cache or the producer we're attached to
 	if ( index >= a_track && index <= b_track )
 		*frame = this->frames[ index ];

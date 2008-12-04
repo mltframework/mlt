@@ -1,7 +1,9 @@
-/*
- * mlt_producer.h -- abstraction for all producer services
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_producer.h
+ * \brief abstraction for all producer services
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,26 +26,62 @@
 #include "mlt_service.h"
 #include "mlt_filter.h"
 
-/** The interface definition for all producers.
-*/
+/** \brief Producer abstract service class
+ *
+ * A producer is a service that generates audio, video, and metadata.
+ * Some day it may also generate text (subtitles). This is not to say
+ * a producer "synthesizes," rather that is an origin of data within the
+ * service network - that could be through synthesis or reading a stream.
+ *
+ * \extends mlt_service
+ * \event \em producer-changed
+ * \properties \em mlt_type the name of the service subclass, e.g. mlt_producer
+ * \properties \em mlt_service the name of a producer subclass
+ * \properties \em _position the current position of the play head, relative to the in point
+ * \properties \em _frame the current position of the play head, relative to the beginning of the resource
+ * \properties \em _speed the current speed factor, where 1.0 is normal
+ * \properties \em aspect_ratio sample aspect ratio
+ * \properties \em length the duration of the cut in frames
+ * \properties \em eof the end-of-file behavior, one of: pause, continue, loop
+ * \properties \em resource the file name, stream address, or the class name in angle brackets
+ * \properties \em _cut set if this producer is a "cut" producer
+ * \properties \em mlt_mix stores the data for a "mix" producer
+ * \properties \em _cut_parent holds a reference to the cut's parent producer
+ * \properties \em ignore_points Set this to temporarily disable the in and out points.
+ * \properties \em use_clone holds a reference to a clone's producer, as created by mlt_producer_optimise
+ * \properties \em _clone is the index of the clone in the list of clones stored on the clone's producer
+ * \properties \em _clones is the number of clones of the producer, as created by mlt_producer_optimise
+ * \properties \em _clone.{N} holds a reference to the N'th clone of the producer, as created by mlt_producer_optimise
+ * \properties \em meta.* holds metadata - there is a loose taxonomy to be defined
+ * \properties \em set.* holds properties to set on a frame produced
+ * \todo define the media metadata taxonomy
+ */
 
 struct mlt_producer_s
 {
-	/* We're implementing service here */
+	/** A producer is a service. */
 	struct mlt_service_s parent;
 
-	/* Public virtual methods */
+	/** Get a frame of data (virtual function).
+	 *
+	 * \param mlt_producer a producer
+	 * \param mlt_frame_ptr a frame pointer by reference
+	 * \param int an index
+	 * \return true if there was an error
+	 */
 	int ( *get_frame )( mlt_producer, mlt_frame_ptr, int );
-	mlt_destructor close;
-	void *close_object;
 
-	/* Private data */
-	void *local;
-	void *child;
+	/** the destructor virtual function */
+	mlt_destructor close;
+	void *close_object; /**< the object supplied to the close virtual function */
+
+	void *local; /**< \private instance object */
+	void *child; /**< \private the object of a subclass */
 };
 
-/** Public final methods
-*/
+/*
+ *  Public final methods
+ */
 
 #define MLT_PRODUCER_SERVICE( producer )	( &( producer )->parent )
 #define MLT_PRODUCER_PROPERTIES( producer )	MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) )

@@ -1,7 +1,9 @@
-/*
- * mlt_events.h -- event handling 
- * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_events.h
+ * \brief event handling
+ *
+ * Copyright (C) 2004-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,7 +29,15 @@
 typedef void ( *mlt_transmitter )( void *, ... );
 typedef void ( *mlt_listener )( void *, ... );
 #else
+/** callback function to send an event message
+ *
+ */
 typedef void ( *mlt_transmitter )( );
+/** event handler when receiving an event message
+ * \param the properties object on which the event was registered
+ * \param an opaque pointer to a service or really an object
+ * \param variable args supplied by the transmitter
+ */
 typedef void ( *mlt_listener )( );
 #endif
 

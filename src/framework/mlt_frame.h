@@ -1,7 +1,9 @@
-/*
- * mlt_frame.h -- interface for all frame classes
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_frame.h
+ * \brief interface for all frame classes
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,8 +27,26 @@
 #include "mlt_deque.h"
 #include "mlt_service.h"
 
+/** callback function to get video data
+ *
+ */
+
 typedef int ( *mlt_get_image )( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
+
+/** callback function to get audio data
+ *
+ */
+
 typedef int ( *mlt_get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
+
+/** \brief Frame class
+ *
+ * \properties \em test_image set if the frame holds a "test card" image
+ * \properties \em test_audio set if the frame holds "test card" audio
+ * \properties \em _producer holds a reference to the frame's end producer
+ * \properties \em _speed
+ * \properties \em meta.* holds metadata
+ */
 
 struct mlt_frame_s
 {
@@ -35,7 +55,7 @@ struct mlt_frame_s
 
 	/* Virtual methods */
 	uint8_t * ( *get_alpha_mask )( mlt_frame self );
-	
+
 	/* Private properties */
 	mlt_deque stack_image;
 	mlt_deque stack_audio;
@@ -90,13 +110,13 @@ extern int mlt_frame_combine_audio( mlt_frame self, mlt_frame that, int16_t **bu
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
 
-/* this macro scales rgb into the yuv gamut, y is scaled by 219/255 and uv by 224/255 */
+/** This macro scales rgb into the yuv gamut - y is scaled by 219/255 and uv by 224/255. */
 #define RGB2YUV(r, g, b, y, u, v)\
   y = ((263*r + 516*g + 100*b) >> 10) + 16;\
   u = ((-152*r - 298*g + 450*b) >> 10) + 128;\
   v = ((450*r - 377*g - 73*b) >> 10) + 128;
 
-/* this macro assumes the user has already scaled their rgb down into the broadcast limits */
+/** This macro assumes the user has already scaled their rgb down into the broadcast limits. **/
 #define RGB2YUV_UNSCALED(r, g, b, y, u, v)\
   y = (299*r + 587*g + 114*b) >> 10;\
   u = ((-169*r - 331*g + 500*b) >> 10) + 128;\
@@ -108,6 +128,7 @@ extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t p
   u = u > 240 ? 240 : u;\
   v = v > 240 ? 240 : v
 
+/** This macro converts a YUV value to the RGB color space. */
 #define YUV2RGB( y, u, v, r, g, b ) \
   r = ((1192 * ( y - 16 ) + 1634 * ( v - 128 ) ) >> 10 ); \
   g = ((1192 * ( y - 16 ) - 832 * ( v - 128 ) - 400 * ( u - 128 ) ) >> 10 ); \

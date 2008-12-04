@@ -1,7 +1,9 @@
-/*
- * mlt_property.c -- property class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_property.c
+ * \brief Property class definition
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,8 +26,52 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** Construct and uninitialised property.
+
+/** Bit pattern used internally to indicated representations available.
 */
+
+typedef enum
+{
+	mlt_prop_none = 0,    //!< not set
+	mlt_prop_int = 1,     //!< set as an integer
+	mlt_prop_string = 2,  //!< set as string or already converted to string
+	mlt_prop_position = 4,//!< set as a position
+	mlt_prop_double = 8,  //!< set as a floating point
+	mlt_prop_data = 16,   //!< set as opaque binary
+	mlt_prop_int64 = 32   //!< set as a 64-bit integer
+}
+mlt_property_type;
+
+/** \brief Property class
+ *
+ * A property is like a variant or dynamic type. They are used for many things
+ * in MLT, but in particular they are the parameter mechanism for the plugins.
+ */
+
+struct mlt_property_s
+{
+	/// Stores a bit pattern of types available for this property
+	mlt_property_type types;
+
+	/// Atomic type handling
+	int prop_int;
+	mlt_position prop_position;
+	double prop_double;
+	int64_t prop_int64;
+
+	/// String handling
+	char *prop_string;
+
+	/// Generic type handling
+	void *data;
+	int length;
+	mlt_destructor destructor;
+	mlt_serialiser serialiser;
+};
+
+/** Construct a property and initialize it
+ * \public \memberof mlt_property_s
+ */
 
 mlt_property mlt_property_init( )
 {
@@ -46,8 +92,12 @@ mlt_property mlt_property_init( )
 	return this;
 }
 
-/** Clear a property.
-*/
+/** Clear (0/null) a property.
+ *
+ * Frees up any associated resources in the process.
+ * \private \memberof mlt_property_s
+ * \param this a property
+ */
 
 static inline void mlt_property_clear( mlt_property this )
 {
@@ -72,8 +122,13 @@ static inline void mlt_property_clear( mlt_property this )
 	this->serialiser = NULL;
 }
 
-/** Set an int on this property.
-*/
+/** Set the property to an integer value.
+ *
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \param value an integer
+ * \return false
+ */
 
 int mlt_property_set_int( mlt_property this, int value )
 {
@@ -83,8 +138,13 @@ int mlt_property_set_int( mlt_property this, int value )
 	return 0;
 }
 
-/** Set a double on this property.
-*/
+/** Set the property to a floating point value.
+ *
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \param value a double precision floating point value
+ * \return false
+ */
 
 int mlt_property_set_double( mlt_property this, double value )
 {
@@ -94,8 +154,14 @@ int mlt_property_set_double( mlt_property this, double value )
 	return 0;
 }
 
-/** Set a position on this property.
-*/
+/** Set the property to a position value.
+ *
+ * Position is a relative time value in frame units.
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \param value a position value
+ * \return false
+ */
 
 int mlt_property_set_position( mlt_property this, mlt_position value )
 {
@@ -105,8 +171,15 @@ int mlt_property_set_position( mlt_property this, mlt_position value )
 	return 0;
 }
 
-/** Set a string on this property.
-*/
+/** Set the property to a string value.
+ *
+ * This makes a copy of the string you supply so you do not need to track
+ * a new reference to it.
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \param value the string to copy to the property
+ * \return true if it failed
+ */
 
 int mlt_property_set_string( mlt_property this, const char *value )
 {
@@ -124,8 +197,13 @@ int mlt_property_set_string( mlt_property this, const char *value )
 	return this->prop_string == NULL;
 }
 
-/** Set an int64 on this property.
-*/
+/** Set the property to a 64-bit integer value.
+ *
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \param value a 64-bit integer
+ * \return false
+ */
 
 int mlt_property_set_int64( mlt_property this, int64_t value )
 {
@@ -135,8 +213,20 @@ int mlt_property_set_int64( mlt_property this, int64_t value )
 	return 0;
 }
 
-/** Set a data on this property.
-*/
+/** Set a property to an opaque binary value.
+ *
+ * This does not make a copy of the data. You can use a Properties object
+ * with its reference tracking and the destructor function to control
+ * the lifetime of the data. Otherwise, pass NULL for the destructor
+ * function and control the lifetime yourself.
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \param value an opaque pointer
+ * \param length the number of bytes pointed to by value (optional)
+ * \param destructor a function to use to destroy this binary data (optional, assuming you manage the resource)
+ * \param serialiser a function to use to convert this binary data to a string (optional)
+ * \return false
+ */
 
 int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser )
 {
@@ -151,18 +241,30 @@ int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destr
 	return 0;
 }
 
+/** Convert a base 10 or base 16 string to an integer.
+ *
+ * The string must begin with '0x' to be interpreted as hexadecimal.
+ * Otherwise, it is interpreted as base 10.
+ * \private \memberof mlt_property_s
+ * \param value a string to convert
+ * \return the resultant integer
+ */
 static inline int mlt_property_atoi( const char *value )
 {
 	if ( value == NULL )
 		return 0;
 	else if ( value[0] == '0' && value[1] == 'x' )
 		return strtol( value + 2, NULL, 16 );
-	else 
+	else
 		return strtol( value, NULL, 10 );
 }
 
-/** Get an int from this property.
-*/
+/** Get the property as an integer.
+ *
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \return an integer value
+ */
 
 int mlt_property_get_int( mlt_property this )
 {
@@ -179,8 +281,12 @@ int mlt_property_get_int( mlt_property this )
 	return 0;
 }
 
-/** Get a double from this property.
-*/
+/** Get the property as a floating point.
+ *
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \return a floating point value
+ */
 
 double mlt_property_get_double( mlt_property this )
 {
@@ -197,8 +303,13 @@ double mlt_property_get_double( mlt_property this )
 	return 0;
 }
 
-/** Get a position from this property.
-*/
+/** Get the property as a position.
+ *
+ * A position is an offset time in terms of frame units.
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \return the position in frames
+ */
 
 mlt_position mlt_property_get_position( mlt_property this )
 {
@@ -215,18 +326,30 @@ mlt_position mlt_property_get_position( mlt_property this )
 	return 0;
 }
 
+/** Convert a string to a 64-bit integer.
+ *
+ * If the string begins with '0x' it is interpreted as a hexadecimal value.
+ * \private \memberof mlt_property_s
+ * \param value a string
+ * \return a 64-bit integer
+ */
+
 static inline int64_t mlt_property_atoll( const char *value )
 {
 	if ( value == NULL )
 		return 0;
 	else if ( value[0] == '0' && value[1] == 'x' )
 		return strtoll( value + 2, NULL, 16 );
-	else 
+	else
 		return strtoll( value, NULL, 10 );
 }
 
-/** Get an int64 from this property.
-*/
+/** Get the property as a signed integer.
+ *
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \return a 64-bit integer
+ */
 
 int64_t mlt_property_get_int64( mlt_property this )
 {
@@ -243,8 +366,16 @@ int64_t mlt_property_get_int64( mlt_property this )
 	return 0;
 }
 
-/** Get a string from this property.
-*/
+/** Get the property as a string.
+ *
+ * The caller is not responsible for deallocating the returned string!
+ * The string is deallocated when the Property is closed.
+ * This tries its hardest to convert the property to string including using
+ * a serialization function for binary data, if supplied.
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \return a string representation of the property or NULL if failed
+ */
 
 char *mlt_property_get_string( mlt_property this )
 {
@@ -286,8 +417,19 @@ char *mlt_property_get_string( mlt_property this )
 	return this->prop_string;
 }
 
-/** Get a data and associated length.
-*/
+/** Get the binary data from a property.
+ *
+ * This only works if you previously put binary data into the property.
+ * This does not return a copy of the data; it returns a pointer to it.
+ * If you supplied a destructor function when setting the binary data,
+ * the destructor is used when the Property is closed to free the memory.
+ * Therefore, only free the returned pointer if you did not supply a
+ * destructor function.
+ * \public \memberof mlt_property_s
+ * \param this a property
+ * \param[out] length the size of the binary object in bytes
+ * \return an opaque data pointer or NULL if not available
+ */
 
 void *mlt_property_get_data( mlt_property this, int *length )
 {
@@ -299,8 +441,11 @@ void *mlt_property_get_data( mlt_property this, int *length )
 	return this->data;
 }
 
-/** Close this property.
-*/
+/** Destroy a property and free all related resources.
+ *
+ * \public \memberof mlt_property_s
+ * \param this a property
+ */
 
 void mlt_property_close( mlt_property this )
 {
@@ -308,9 +453,15 @@ void mlt_property_close( mlt_property this )
 	free( this );
 }
 
-/** Pass the property 'that' to 'this'.
-* Who to blame: Zach <zachary.drew@gmail.com>
-*/
+/** Copy a property.
+ *
+ * A Property holding binary data only copies the data if a serialiser
+ * function was supplied when you set the Property.
+ * \public \memberof mlt_property_s
+ * \author Zach <zachary.drew@gmail.com>
+ * \param this a property
+ * \param that another property
+ */
 void mlt_property_pass( mlt_property this, mlt_property that )
 {
 	mlt_property_clear( this );
@@ -333,6 +484,6 @@ void mlt_property_pass( mlt_property this, mlt_property that )
 	else if ( this->types & mlt_prop_data && this->serialiser != NULL )
 	{
 		this->types = mlt_prop_string;
-		this->prop_string = this->serialiser( this->data, this->length );	
+		this->prop_string = this->serialiser( this->data, this->length );
 	}
 }

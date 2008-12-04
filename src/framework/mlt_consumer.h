@@ -1,7 +1,9 @@
-/*
- * mlt_consumer.h -- abstraction for all consumer services
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_consumer.h
+ * \brief abstraction for all consumer services
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,8 +27,10 @@
 #include "mlt_events.h"
 #include <pthread.h>
 
-/** The interface definition for all consumers.
-*/
+/** \brief Consumer abstract service class
+ *
+ * \extends mlt_service_s
+ */
 
 struct mlt_consumer_s
 {
@@ -56,9 +60,6 @@ struct mlt_consumer_s
 	int put_active;
 	mlt_event event_listener;
 };
-
-/** Public final methods
-*/
 
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )
 #define MLT_CONSUMER_PROPERTIES( consumer )	MLT_SERVICE_PROPERTIES( MLT_CONSUMER_SERVICE( consumer ) )

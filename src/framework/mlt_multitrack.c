@@ -1,7 +1,9 @@
-/*
- * mlt_multitrack.c -- multitrack service class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_multitrack.c
+ * \brief multitrack service class
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,7 +61,7 @@ mlt_multitrack mlt_multitrack_init( )
 			this = NULL;
 		}
 	}
-	
+
 	return this;
 }
 
@@ -113,7 +115,7 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 			// If we have more than 1 track, we must be in continue mode
 			if ( this->count > 1 )
 				mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "continue" );
-			
+
 			// Determine the longest length
 			//if ( !mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "hide" ) )
 				length = mlt_producer_get_playtime( producer ) > length ? mlt_producer_get_playtime( producer ) : length;
@@ -170,15 +172,15 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 
 		// Assign the track in our list here
 		this->list[ track ]->producer = producer;
-		this->list[ track ]->event = mlt_events_listen( MLT_PRODUCER_PROPERTIES( producer ), this, 
+		this->list[ track ]->event = mlt_events_listen( MLT_PRODUCER_PROPERTIES( producer ), this,
 									 "producer-changed", ( mlt_listener )mlt_multitrack_listener );
 		mlt_properties_inc_ref( MLT_PRODUCER_PROPERTIES( producer ) );
 		mlt_event_inc_ref( this->list[ track ]->event );
-		
+
 		// Increment the track count if need be
 		if ( track >= this->count )
 			this->count = track + 1;
-			
+
 		// Refresh our stats
 		mlt_multitrack_refresh( this );
 	}
@@ -191,7 +193,7 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 
 int mlt_multitrack_count( mlt_multitrack this )
 {
-	return this->count;	
+	return this->count;
 }
 
 /** Get an individual track as a producer.
@@ -200,7 +202,7 @@ int mlt_multitrack_count( mlt_multitrack this )
 mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 {
 	mlt_producer producer = NULL;
-	
+
 	if ( this->list != NULL && track < this->count )
 		producer = this->list[ track ]->producer;
 
@@ -225,9 +227,9 @@ static int add_unique( mlt_position *array, int size, mlt_position position )
 
 /** Determine the clip point.
 
-  	Special case here: a 'producer' has no concept of multiple clips - only the 
-	playlist and multitrack producers have clip functionality. Further to that a 
-	multitrack determines clip information from any connected tracks that happen 
+  	Special case here: a 'producer' has no concept of multiple clips - only the
+	playlist and multitrack producers have clip functionality. Further to that a
+	multitrack determines clip information from any connected tracks that happen
 	to be playlists.
 
 	Additionally, it must locate clips in the correct order, for example, consider
@@ -295,7 +297,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 
 		case mlt_whence_relative_current:
 			position = mlt_producer_position( MLT_MULTITRACK_PRODUCER( this ) );
-			for ( i = 0; i < count - 2; i ++ ) 
+			for ( i = 0; i < count - 2; i ++ )
 				if ( position >= map[ i ] && position < map[ i + 1 ] )
 					break;
 			index += i;
@@ -330,10 +332,10 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 	Producer2 - multitrack - { filters/transitions } - tractor - consumer
 	Producer3 /
 
-	The get_frame of a tractor pulls frames from it's connected service on all tracks and 
-	will terminate as soon as it receives a test card with a last_track property. The 
+	The get_frame of a tractor pulls frames from it's connected service on all tracks and
+	will terminate as soon as it receives a test card with a last_track property. The
 	important case here is that the mulitrack does not move to the next frame until all
-	tracks have been pulled. 
+	tracks have been pulled.
 
 	Reasoning: In order to seek on a network such as above, the multitrack needs to ensure
 	that all producers are positioned on the same frame. It uses the 'last track' logic

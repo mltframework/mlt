@@ -1,7 +1,9 @@
-/*
- * mlt_tractor.c -- tractor service class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_tractor.c
+ * \brief tractor service class
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -283,7 +285,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		// Determine whether this tractor feeds to the consumer or stops here
 		int global_feed = mlt_properties_get_int( properties, "global_feed" );
 
-		// If we don't have one, we're in trouble... 
+		// If we don't have one, we're in trouble...
 		if ( multitrack != NULL )
 		{
 			// Used to garbage collect all frames
@@ -390,14 +392,14 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 						first_video = temp;
 
 					// Ensure that all frames know the aspect ratio of the background
-					mlt_properties_set_double( temp_properties, "output_ratio", 
+					mlt_properties_set_double( temp_properties, "output_ratio",
 											   mlt_properties_get_double( MLT_FRAME_PROPERTIES( first_video ), "aspect_ratio" ) );
 
 					mlt_properties_set_int( MLT_FRAME_PROPERTIES( temp ), "image_count", ++ image_count );
 					image_count = 1;
 				}
 			}
-	
+
 			// Now stack callbacks
 			if ( audio != NULL )
 			{

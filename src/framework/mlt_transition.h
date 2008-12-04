@@ -1,7 +1,9 @@
-/*
- * mlt_transition.h -- abstraction for all transition services
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_transition.h
+ * \brief abstraction for all transition services
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,8 +25,10 @@
 
 #include "mlt_service.h"
 
-/** The interface definition for all transitions.
-*/
+/** \brief Transition abstract service class
+ *
+ * \extends mlt_service_s
+ */
 
 struct mlt_transition_s
 {
@@ -39,10 +43,10 @@ struct mlt_transition_s
 
 	/* Protected */
 	void *child;
-	
+
 	/* track and in/out points */
 	mlt_service producer;
-	
+
 	/* Private */
 	mlt_frame *frames;
 	int held;

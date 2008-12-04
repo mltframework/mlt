@@ -1,8 +1,10 @@
-/*
- * repository.c -- provides a map between service and shared objects
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
- * Contributor: Dan Dennedy <dan@dennedy.org>
+/**
+ * \file mlt_repository.c
+ * \brief provides a map between service and shared objects
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
+ *         Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,6 +30,11 @@
 #include <dlfcn.h>
 #include <string.h>
 
+/** \brief Repository class
+ *
+ * \extends mlt_properties_s
+ */
+
 struct mlt_repository_s
 {
 	struct mlt_properties_s parent; // a list of object files
@@ -45,7 +52,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	// Safety check
 	if ( directory == NULL || strcmp( directory, "" ) == 0 )
 		return NULL;
-		
+
 	// Construct the repository
 	mlt_repository this = calloc( sizeof( struct mlt_repository_s ), 1 );
 	mlt_properties_init( &this->parent, this );
@@ -58,7 +65,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	mlt_properties dir = mlt_properties_new();
 	int count = mlt_properties_dir_list( dir, directory, NULL, 0 );
 	int i;
-	
+
 	// Iterate over files
 	for ( i = 0; i < count; i++ )
 	{
@@ -71,17 +78,17 @@ mlt_repository mlt_repository_init( const char *directory )
 			flags |= RTLD_GLOBAL;
 
 		// Open the shared object
-		void *object = dlopen( object_name, flags );		
+		void *object = dlopen( object_name, flags );
 		if ( object != NULL )
 		{
 			// Get the registration function
 			mlt_repository_callback symbol_ptr = dlsym( object, "mlt_register" );
-			
+
 			// Call the registration function
 			if ( symbol_ptr != NULL )
 			{
 				symbol_ptr( this );
-				
+
 				// Register the object file for closure
 				mlt_properties_set_data( &this->parent, object_name, object, 0, ( mlt_destructor )dlclose, NULL );
 			}
@@ -97,7 +104,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	}
 
 	mlt_properties_close( dir );
-	
+
 	return this;
 }
 
@@ -168,7 +175,7 @@ void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_servi
 	if ( properties != NULL )
 	{
 		mlt_register_callback symbol_ptr = mlt_properties_get_data( properties, "symbol", NULL );
-	
+
 		// Construct the service
 		return ( symbol_ptr != NULL ) ? symbol_ptr( profile, type, service, input ) : NULL;
 	}
@@ -238,7 +245,7 @@ mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type ty
 {
 	mlt_properties metadata = NULL;
 	mlt_properties properties = get_service_properties( self, type, service );
-	
+
 	// If this is a valid service
 	if ( properties )
 	{
@@ -254,10 +261,10 @@ mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type ty
 			{
 				// Fetch the callback data arg
 				void *data = mlt_properties_get_data( properties, "metadata_cb_data", NULL );
-			
+
 				// Fetch the metadata through the callback
 				metadata = callback( type, service, data );
-				
+
 				// Cache the metadata
 				if ( metadata )
 					// Include dellocation and serialisation
@@ -286,14 +293,14 @@ static char *getenv_locale()
 }
 
 /** Return a list of user-preferred language codes taken from environment variables.
-*/ 
+*/
 
 mlt_properties mlt_repository_languages( mlt_repository self )
 {
 	mlt_properties languages = mlt_properties_get_data( &self->parent, "languages", NULL );
 	if ( languages )
 		return languages;
-		
+
 	languages = mlt_properties_new();
 	char *locale = getenv_locale();
 	if ( locale )

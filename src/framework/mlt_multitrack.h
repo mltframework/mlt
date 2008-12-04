@@ -1,7 +1,9 @@
-/*
- * mlt_multitrack.h -- multitrack service class
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_multitrack.h
+ * \brief multitrack service class
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,8 +25,8 @@
 
 #include "mlt_producer.h"
 
-/** Private definition.
-*/
+/** \brief Track class
+ */
 
 struct mlt_track_s
 {
@@ -34,6 +36,11 @@ struct mlt_track_s
 
 typedef struct mlt_track_s *mlt_track;
 
+/** \brief Multitrack class
+ *
+ * \extends mlt_producer_s
+ */
+
 struct mlt_multitrack_s
 {
 	/* We're extending producer here */
@@ -42,9 +49,6 @@ struct mlt_multitrack_s
 	int size;
 	int count;
 };
-
-/** Public final methods
-*/
 
 #define MLT_MULTITRACK_PRODUCER( multitrack )	( &( multitrack )->parent )
 #define MLT_MULTITRACK_SERVICE( multitrack )	MLT_PRODUCER_SERVICE( MLT_MULTITRACK_PRODUCER( multitrack ) )

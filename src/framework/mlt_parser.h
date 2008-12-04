@@ -1,7 +1,9 @@
-/*
- * mlt_parser.h -- service parsing functionality
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_parser.h
+ * \brief service parsing functionality
+ *
+ * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +24,11 @@
 #define _MLT_PARSER_H_
 
 #include "mlt_types.h"
+
+/** \brief Parser class
+ *
+ * \extends mlt_properties_s
+ */
 
 struct mlt_parser_s
 {
