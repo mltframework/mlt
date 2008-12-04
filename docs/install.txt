@@ -38,10 +38,10 @@ Directories
 	        + xine          - Xine-derived sources (**)
 	    + albino            - A simple console (protocol level) example (**)
 	    + inigo             - A media playing test application (**)
-	    + humperdink        - A terminal-based example client
+	    + humperdink        - A terminal-based example client (**)
 	    + miracle           - The server implementation (**)
 	    + tests             - Reserved for regression and unit tests
-	    + valerie           - Client API to access the server (**)
+	    + valerie           - Client API to access the server
 
 	Additional subdirectories may be nested below those shown and should be
 	documented in their parent.
