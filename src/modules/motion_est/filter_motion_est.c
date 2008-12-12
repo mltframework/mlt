@@ -34,7 +34,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#ifndef __DARWIN__
+#ifndef USE_SSE
 #include "sad_sse.h"
 #endif
 
@@ -48,7 +48,7 @@
 
 #define DIAMOND_SEARCH 0x0
 #define FULL_SEARCH 0x1
-#define SHIFT 8 
+#define SHIFT 8
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 #define ABS(a) ((a) >= 0 ? (a) : (-(a)))
 
@@ -68,7 +68,7 @@ struct motion_est_context_s
 	int mb_w, mb_h;
 	int xstride, ystride;
 	uint8_t *cache_image;			// Copy of current frame
-	uint8_t *former_image;			// Copy of former frame	
+	uint8_t *former_image;			// Copy of former frame
 	int search_method;
 	int skip_prediction;
 	int shot_change;
@@ -112,7 +112,7 @@ struct motion_est_context_s
 };
 
 // This is used to constrains pixel operations between two blocks to be within the image boundry
-inline static int constrain(	int *x, int *y, int *w,	int *h,			
+inline static int constrain(	int *x, int *y, int *w,	int *h,
 				const int dx, const int dy,
 				const int left, const int right,
 				const int top, const int bottom)
@@ -141,7 +141,7 @@ inline static int constrain(	int *x, int *y, int *w,	int *h,
 	else if( *y + *h > bottom || y2 + *h > bottom )
 		h_remains = bottom - ((*y > y2) ?  *y : y2);
 
-	if( w_remains == *w && h_remains == *h ) return penalty; 
+	if( w_remains == *w && h_remains == *h ) return penalty;
 	if( w_remains <= 0 || h_remains <= 0) return 0;	// Block is clipped out of existance
 	penalty = (*w * *h * penalty)
 		/ ( w_remains * h_remains);		// Recipricol of the fraction of the block that remains
@@ -192,7 +192,7 @@ inline static int block_compare( uint8_t *block1,
 
 	int score;
 
-	// Default comparison may be overridden by the slower, more capable reference comparison 
+	// Default comparison may be overridden by the slower, more capable reference comparison
 	int (*cmp)(uint8_t *, uint8_t *, int, int, int, int) = c->compare_optimized;
 
 	// vector displacement limited has been exceeded
@@ -208,14 +208,14 @@ inline static int block_compare( uint8_t *block1,
 	// Some gotchas
 	if( penalty == 0 )			// Clipped out of existance: Return worst score
 		return MAX_MSAD;
-	else if( penalty != 1<<SHIFT )		// Nonstandard macroblock dimensions: Disable SIMD optimizizations. 
+	else if( penalty != 1<<SHIFT )		// Nonstandard macroblock dimensions: Disable SIMD optimizizations.
 		cmp = c->compare_reference;
 
 	// Calculate the memory locations of the macroblocks
-	block1 += x	 * c->xstride + y 	* c->ystride; 
-	block2 += (x+dx) * c->xstride + (y+dy)  * c->ystride; 
+	block1 += x	 * c->xstride + y 	* c->ystride;
+	block2 += (x+dx) * c->xstride + (y+dy)  * c->ystride;
 
-	#ifdef DEBUG_ASM	
+	#ifdef DEBUG_ASM
 	if( penalty == 1<<SHIFT ){
 		score = c->compare_reference( block1, block2, c->xstride, c->ystride, mb_w, mb_h );
 		int score2 = c->compare_optimized( block1, block2, c->xstride, c->ystride, mb_w, mb_h );
@@ -302,7 +302,7 @@ static inline void diamond_search(
 
 	// Loop through the search pattern
 	while( 1 ) {
-	
+
 		current.dx = result->dx;
 		current.dy = result->dy;
 
@@ -329,11 +329,11 @@ static inline void diamond_search(
 				candidates[1].dy = result->dy + former.dy;
 				i = 2;
 			}
-	
+
 			former.dx = best.dx; former.dy = best.dy; 	// Keep track of new former best
 		}
-	
-		check_candidates ( ref, candidate_base, x, y, candidates, i, 1, result, c ); 
+
+		check_candidates ( ref, candidate_base, x, y, candidates, i, 1, result, c );
 
 		// Which candidate was the best?
 		best.dx = result->dx - current.dx;
@@ -350,9 +350,9 @@ static inline void diamond_search(
 	}
 }
 
-/* /brief Full (brute) search 
+/* /brief Full (brute) search
 * Operates on a single macroblock
-*/	
+*/
 __attribute__((used))
 static void full_search(
 			uint8_t *ref,				//<! Image data from previous frame
@@ -430,8 +430,8 @@ static void median_denoise( motion_vector *v, struct motion_est_context_s *c )
 			{
 				xvalues[n  ] = CURRENT(i+1,j)->dx; // Right
 				yvalues[n++] = CURRENT(i+1,j)->dy;
-				
-				
+
+
 				if( j > c->top_mb ) {
 					xvalues[n  ] = CURRENT(i+1,j-1)->dx; // Upper Right
 					yvalues[n++] = CURRENT(i+1,j-1)->dy;
@@ -518,7 +518,7 @@ static void motion_search( uint8_t *from,			//<! Image data.
 
 	// For every macroblock, perform motion vector estimation
 	for( i = c->left_mb; i <= c->right_mb; i++ ){
-	 for( j = c->top_mb; j <= c->bottom_mb; j++ ){  
+	 for( j = c->top_mb; j <= c->bottom_mb; j++ ){
 
 		here = CURRENT(i,j);
 		here->valid = 1;
@@ -538,19 +538,19 @@ static void motion_search( uint8_t *from,			//<! Image data.
 				candidates[n  ].dx = FORMER(i,j-1)->dx;
 				candidates[n++].dy = FORMER(i,j-1)->dy;
 			}
-	
+
 			// Left of colocated
 			if( i > c->prev_left_mb ){// && COL_LEFT->valid ){
 				candidates[n  ].dx = FORMER(i-1,j)->dx;
 				candidates[n++].dy = FORMER(i-1,j)->dy;
 			}
-	
+
 			// Right of colocated
 			if( i < c->prev_right_mb ){// && COL_RIGHT->valid ){
 				candidates[n  ].dx = FORMER(i+1,j)->dx;
 				candidates[n++].dy = FORMER(i+1,j)->dy;
 			}
-	
+
 			// Bottom of colocated
 			if( j < c->prev_bottom_mb ){// && COL_BOTTOM->valid ){
 				candidates[n  ].dx = FORMER(i,j+1)->dx;
@@ -573,7 +573,7 @@ static void motion_search( uint8_t *from,			//<! Image data.
 			// Top-Right, macroblocks not in the right row
 			if ( i < c->right_mb ){// && TOP_RIGHT->valid ) {
 				candidates[n  ].dx = CURRENT(i+1,j-1)->dx;
-				candidates[n++].dy = CURRENT(i+1,j-1)->dy;	
+				candidates[n++].dy = CURRENT(i+1,j-1)->dy;
 			}
 		}
 
@@ -586,7 +586,7 @@ static void motion_search( uint8_t *from,			//<! Image data.
 		/* Median predictor vector (median of left, top, and top right adjacent vectors) */
 		if ( i > c->left_mb && j > c->top_mb && i < c->right_mb
 			 )//&& LEFT->valid && TOP->valid && TOP_RIGHT->valid )
-		{ 
+		{
 			candidates[n  ].dx = median_predictor( CURRENT(i-1,j)->dx, CURRENT(i,j-1)->dx, CURRENT(i+1,j-1)->dx);
 			candidates[n++].dy = median_predictor( CURRENT(i-1,j)->dy, CURRENT(i,j-1)->dy, CURRENT(i+1,j-1)->dy);
 		}
@@ -597,13 +597,13 @@ static void motion_search( uint8_t *from,			//<! Image data.
 
 		int x = i * c->mb_w;
 		int y = j * c->mb_h;
-		check_candidates ( to, from, x, y, candidates, n, 0, here, c ); 
+		check_candidates ( to, from, x, y, candidates, n, 0, here, c );
 
 
 #ifndef FULLSEARCH
-		diamond_search( to, from, x, y, here, c); 
+		diamond_search( to, from, x, y, here, c);
 #else
-		full_search( to, from, x, y, here, c); 
+		full_search( to, from, x, y, here, c);
 #endif
 
 		assert( x + c->mb_w + here->dx > 0 );	// All macroblocks must have area > 0
@@ -614,7 +614,7 @@ static void motion_search( uint8_t *from,			//<! Image data.
 	 } /* End column loop */
 	} /* End row loop */
 
-#ifndef __DARWIN__
+#ifndef USE_SSE
 	asm volatile ( "emms" );
 #endif
 
@@ -634,7 +634,7 @@ void collect_post_statistics( struct motion_est_context_s *c ) {
 	int i, j, count = 0;
 
 	for ( i = c->left_mb; i <= c->right_mb; i++ ){
-	 for ( j = c->top_mb; j <= c->bottom_mb; j++ ){  
+	 for ( j = c->top_mb; j <= c->bottom_mb; j++ ){
 
 		count++;
 		c->comparison_average += CURRENT(i,j)->msad;
@@ -658,7 +658,7 @@ void collect_post_statistics( struct motion_est_context_s *c ) {
 static void init_optimizations( struct motion_est_context_s *c )
 {
 	switch(c->mb_w){
-#ifndef __DARWIN__
+#ifndef USE_SSE
 		case 4:  if(c->mb_h == 4)	c->compare_optimized = sad_sse_422_luma_4x4;
 			 else				c->compare_optimized = sad_sse_422_luma_4w;
 			 break;
@@ -689,7 +689,7 @@ inline static void set_red(uint8_t *image, struct motion_est_context_s *c)
 		image[n+2] = 79;
 		image[n+3] = 237;
 	}
-		
+
 }
 
 static void show_residual( uint8_t *result,  struct motion_est_context_s *c )
@@ -702,7 +702,7 @@ static void show_residual( uint8_t *result,  struct motion_est_context_s *c )
 
 //	set_red(result,c);
 
-	for( j = c->top_mb; j <= c->bottom_mb; j++ ){  
+	for( j = c->top_mb; j <= c->bottom_mb; j++ ){
 	 for( i = c->left_mb; i <= c->right_mb; i++ ){
 
 		dx = CURRENT(i,j)->dx;
@@ -712,7 +712,7 @@ static void show_residual( uint8_t *result,  struct motion_est_context_s *c )
 		x = i * w;
 		y = j * h;
 
-		// Denoise function caused some blocks to be completely clipped, ignore them	
+		// Denoise function caused some blocks to be completely clipped, ignore them
 		if (constrain( &x, &y, &w, &h, dx, dy, 0, c->width, 0, c->height) == 0 )
 			continue;
 
@@ -744,7 +744,7 @@ static void show_reconstruction( uint8_t *result, struct motion_est_context_s *c
 	int tx,ty;
 
 	for( i = c->left_mb; i <= c->right_mb; i++ ){
-	 for( j = c->top_mb; j <= c->bottom_mb; j++ ){  
+	 for( j = c->top_mb; j <= c->bottom_mb; j++ ){
 
 		dx = CURRENT(i,j)->dx;
 		dy = CURRENT(i,j)->dy;
@@ -753,7 +753,7 @@ static void show_reconstruction( uint8_t *result, struct motion_est_context_s *c
 		x = i * w;
 		y = j * h;
 
-		// Denoise function caused some blocks to be completely clipped, ignore them	
+		// Denoise function caused some blocks to be completely clipped, ignore them
 		if (constrain( &x, &y, &w, &h, dx, dy, 0, c->width, 0, c->height) == 0 )
 			continue;
 
@@ -857,9 +857,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		c->mv_size =  c->mv_buffer_width * c->mv_buffer_height * sizeof(struct motion_vector_s);
 
 		// Allocate the motion vector buffers
-		c->former_vectors = mlt_pool_alloc( c->mv_size ); 
-		c->current_vectors = mlt_pool_alloc( c->mv_size ); 
-		c->denoise_vectors = mlt_pool_alloc( c->mv_size ); 
+		c->former_vectors = mlt_pool_alloc( c->mv_size );
+		c->current_vectors = mlt_pool_alloc( c->mv_size );
+		c->denoise_vectors = mlt_pool_alloc( c->mv_size );
 
 		// Register motion buffers for destruction
 		mlt_properties_set_data( properties, "current_motion_vectors", (void *)c->current_vectors, 0, mlt_pool_release, NULL );
@@ -874,7 +874,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			case mlt_image_yuv422:
 				c->xstride = 2;
 				c->ystride = c->xstride * *width;
-				break; 
+				break;
 			default:
 				// I don't know
 				fprintf(stderr, "\"I am unfamiliar with your new fangled pixel format!\" -filter_motion_est\n");
@@ -920,7 +920,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		c->bounds.h = *height;
 	}
 
-	// If video is advancing, run motion vector algorithm and etc...	
+	// If video is advancing, run motion vector algorithm and etc...
 	if( c->former_frame_position + 1 == c->current_frame_position )
 	{
 
