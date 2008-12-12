@@ -67,6 +67,7 @@ build_config()
 
 		case $targetos in
 		Darwin)
+		sysctl -a hw | grep "x86_64: 1" > /dev/null && echo "CFLAGS+=-DARCH_X86_64"
 		echo "CFLAGS+=-D__DARWIN__ `sdl-config --cflags`"
 		echo "SHFLAGS=-dynamiclib"
 		echo "LDFLAGS+=`sdl-config --libs`"
@@ -174,7 +175,7 @@ if [ "$mmx" = "true" ]
 then
 	case $targetos in
 		Darwin)
-		sysctl -a hw | grep mmx: > /dev/null | mmx=false
+		sysctl -a hw | grep "mmx: 1" > /dev/null || mmx=false
 		;;
 		Linux)
 		grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
@@ -193,7 +194,7 @@ if [ "$sse" = "true" ]
 then
 	case $targetos in
 		Darwin)
-		sysctl -a hw | grep sse: > /dev/null | sse=false
+		sysctl -a hw | grep "sse: 1" > /dev/null || sse=false
 		;;
 		Linux)
 		grep sse /proc/cpuinfo > /dev/null 2>&1 || sse=false
