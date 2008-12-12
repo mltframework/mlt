@@ -47,7 +47,7 @@
 static void deinterlace_bob_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
     int width, int height )
 {
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#ifdef USE_MMX
   int Line;
   uint64_t *YVal1;
   uint64_t *YVal2;
@@ -191,7 +191,7 @@ static void deinterlace_bob_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
 static int deinterlace_weave_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
     int width, int height )
 {
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#ifdef USE_MMX
 
   int Line;
   uint64_t *YVal1;
@@ -390,7 +390,7 @@ static int deinterlace_weave_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
 static int deinterlace_greedy_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
     int width, int height )
 {
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#ifdef USE_MMX
   int Line;
   int	LoopCtr;
   uint64_t *L1;					// ptr to Line1, of 3
@@ -553,7 +553,7 @@ static int deinterlace_greedy_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
 static void deinterlace_onefield_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
     int width, int height )
 {
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#ifdef USE_MMX
   int Line;
   uint64_t *YVal1;
   uint64_t *YVal3;
@@ -634,7 +634,7 @@ static void deinterlace_onefield_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
 static void deinterlace_linearblend_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
     int width, int height )
 {
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#ifdef USE_MMX
   int Line;
   uint64_t *YVal1;
   uint64_t *YVal2;
@@ -754,7 +754,7 @@ static void deinterlace_linearblend_yuv( uint8_t *pdst, uint8_t *psrc[],
 
 static int check_for_mmx(void)
 {
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#ifdef USE_MMX
 static int config_flags = -1;
 
   if ( config_flags == -1 )
@@ -821,7 +821,7 @@ void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc[],
         deinterlace_linearblend_yuv(pdst,psrc,width,height);
       break;
     default:
-      lprintf("unknow method %d.\n",method);
+      lprintf("unknown method %d.\n",method);
       break;
   }
 }
@@ -847,7 +847,7 @@ int deinterlace_yuv_supported ( int method )
 }
 
 char *deinterlace_methods[] = {
-  "none", 
+  "none",
   "bob",
   "weave",
   "greedy",

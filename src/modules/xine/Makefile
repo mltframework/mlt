@@ -4,8 +4,11 @@ TARGET = ../libmltxine$(LIBSUF)
 
 OBJS = factory.o \
 	   deinterlace.o \
-	   cpu_accel.o \
 	   filter_deinterlace.o
+
+ifdef MMX_FLAGS
+OBJS += cpu_accel.o
+endif
 
 CFLAGS += -I../../ -DARCH_X86
 
