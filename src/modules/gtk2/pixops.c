@@ -61,7 +61,7 @@ typedef void ( *PixopsPixelFunc ) ( guchar *dest, guint y1, guint cr, guint y2, 
 
 
 /* mmx function declarations */
-#if defined(USE_MMX) && !defined(DARWIN)
+#if defined(USE_MMX) && !defined(ARCH_X86_64)
 guchar *pixops_scale_line_22_yuv_mmx ( guint32 weights[ 16 ][ 8 ], guchar *p, guchar *q1, guchar *q2, int x_step, guchar *p_stop, int x_init, int destx );
 int pixops_have_mmx ( void );
 #endif
@@ -159,7 +159,7 @@ scale_line ( int *weights, int n_x, int n_y,
 	return dest;
 }
 
-#if defined(USE_MMX) && !defined(DARWIN)
+#if defined(USE_MMX) && !defined(ARCH_X86_64)
 static inline guchar *
 scale_line_22_yuv_mmx_stub ( int *weights, int n_x, int n_y,
                             guchar *dest, int dest_x, guchar *dest_end,
@@ -718,7 +718,7 @@ yuv422_scale ( guchar *dest_buf,
 	PixopsFilter filter = { { 0, 0, 0}, { 0, 0, 0 }, 0 };
 	PixopsLineFunc line_func;
 
-#if defined(USE_MMX) && !defined(DARWIN)
+#if defined(USE_MMX) && !defined(ARCH_X86_64)
 	gboolean found_mmx = pixops_have_mmx();
 #endif
 
@@ -743,7 +743,7 @@ yuv422_scale ( guchar *dest_buf,
 
 	if ( filter.x.n == 2 && filter.y.n == 2 )
 	{
-#if defined(USE_MMX) && !defined(DARWIN)
+#if defined(USE_MMX) && !defined(ARCH_X86_64)
 		if ( found_mmx )
 		{
 			//fprintf( stderr, "rescale: using mmx\n" );
