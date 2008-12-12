@@ -19,6 +19,7 @@ General build options:
   --enable-gpl            - Enable GPL components
   --disable-debug         - Compile without debug support (default: on)
   --disable-mmx           - Compile without MMX support (default: on)
+  --disable-sse           - Compile without SSE support (default: on)
   --cpu='cpu'             - Compile for a specific CPU/architectre (default: none)
 
 Module disables options:
@@ -49,6 +50,9 @@ build_config()
 		[ "$mmx" = "true" ] && 
 		echo "MMX_FLAGS=-DUSE_MMX"
 
+		[ "$sse" = "true" ] && 
+		echo "SSE_FLAGS=-DUSE_SSE"
+
 		[ "$debug" = "true" ] && 
 		echo "DEBUG_FLAGS=-g"
 
@@ -59,7 +63,7 @@ build_config()
 		echo "TARGETCPU=-mcpu=$cpu"
 		echo "OPTIMISATIONS=-O3 -pipe -fomit-frame-pointer"
 
-		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
+		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(SSE_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
 
 		case $targetos in
 		Darwin)
@@ -126,8 +130,10 @@ export libdir=""
 export help=0
 export debug=true
 export mmx=true
+export sse=true
 export gpl=false
 export cpu=
+export targetos=
 
 # Determine OS
 targetos=$(uname -s)
@@ -135,7 +141,6 @@ targetos=$(uname -s)
 case $targetos in
 	Darwin)
 	LIBSUF=".dylib"
-	mmx=false
 	;;
 	Linux|FreeBSD)
 	LIBSUF=".so"
@@ -155,6 +160,7 @@ do
 		--libdir=* )		libdir="${i#--libdir=}" ;;
 		--disable-debug )	debug=false ;;
 		--disable-mmx )		mmx=false ;;
+		--disable-sse )		sse=false ;;
 		--enable-gpl )		gpl=true ;;
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 	esac
@@ -167,6 +173,9 @@ done
 if [ "$mmx" = "true" ]
 then
 	case $targetos in
+		Darwin)
+		sysctl -a hw | grep mmx: > /dev/null | mmx=false
+		;;
 		Linux)
 		grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
 		;;
@@ -175,6 +184,25 @@ then
 		;;
 		*)
 		grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
+		;;
+	esac
+fi
+
+# Double check SSE (Linux and FreeBSD supported, may end up disabling SSE on other platforms incorrectly)
+if [ "$sse" = "true" ]
+then
+	case $targetos in
+		Darwin)
+		sysctl -a hw | grep sse: > /dev/null | sse=false
+		;;
+		Linux)
+		grep sse /proc/cpuinfo > /dev/null 2>&1 || sse=false
+		;;
+		FreeBSD)
+		[ "$(make -V MACHINE_CPU:Msse)" ] || sse=false
+		;;
+		*)
+		grep sse /proc/cpuinfo > /dev/null 2>&1 || sse=false
 		;;
 	esac
 fi
