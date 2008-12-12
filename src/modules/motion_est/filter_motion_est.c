@@ -34,7 +34,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#ifndef USE_SSE
+#ifdef USE_SSE
 #include "sad_sse.h"
 #endif
 
@@ -614,7 +614,7 @@ static void motion_search( uint8_t *from,			//<! Image data.
 	 } /* End column loop */
 	} /* End row loop */
 
-#ifndef USE_SSE
+#ifdef USE_SSE
 	asm volatile ( "emms" );
 #endif
 
@@ -658,7 +658,7 @@ void collect_post_statistics( struct motion_est_context_s *c ) {
 static void init_optimizations( struct motion_est_context_s *c )
 {
 	switch(c->mb_w){
-#ifndef USE_SSE
+#ifdef USE_SSE
 		case 4:  if(c->mb_h == 4)	c->compare_optimized = sad_sse_422_luma_4x4;
 			 else				c->compare_optimized = sad_sse_422_luma_4w;
 			 break;
