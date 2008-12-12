@@ -67,12 +67,13 @@ build_config()
 
 		case $targetos in
 		Darwin)
-		sysctl -a hw | grep "x86_64: 1" > /dev/null && echo "CFLAGS+=-DARCH_X86_64"
+		sysctl -a hw | grep "x86_64: 1" > /dev/null && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		echo "CFLAGS+=-D__DARWIN__ `sdl-config --cflags`"
 		echo "SHFLAGS=-dynamiclib"
 		echo "LDFLAGS+=`sdl-config --libs`"
 		;;
 		Linux)
+		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		echo "OPTIMISATIONS+=-ffast-math"
 		echo "CFLAGS+=-pthread"
 		echo "SHFLAGS=-shared"
@@ -80,6 +81,7 @@ build_config()
 		echo "RDYNAMIC=-rdynamic"
 		;;
 		FreeBSD)
+		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		echo "OPTIMISATIONS+=-ffast-math"
 		echo "CFLAGS+=-pthread"
 		echo "SHFLAGS=-shared"
