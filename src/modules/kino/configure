@@ -2,6 +2,14 @@
 
 if [ "$help" != "1" ]
 then
+
+	if [ "$targetos" = "Darwin" ]
+	then
+		echo "- does not build on Darwin: disabling"
+		touch ../disable-kino
+		exit 0
+	fi
+
 	# Entirely optional...
 	lqt-config --prefix > /dev/null 2>&1
 	lqt_disabled=$?
