@@ -14,7 +14,7 @@ then
 
 	if [ "$disable_gtk2" != "0" -a "$disable_pixbuf" != 0 -a "$disable_pango" != "0" ]
 	then
-		echo No GTK2 components found - disabling
+		echo "- GTK2 components not found: disabling"
 		touch ../disable-gtk2
 		exit 0
 	fi

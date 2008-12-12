@@ -23,7 +23,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
- 
+
 #include <math.h>
 #include <glib.h>
 #include <stdio.h>
@@ -61,7 +61,7 @@ typedef void ( *PixopsPixelFunc ) ( guchar *dest, guint y1, guint cr, guint y2, 
 
 
 /* mmx function declarations */
-#ifdef USE_MMX
+#if defined(USE_MMX) && !defined(DARWIN)
 guchar *pixops_scale_line_22_yuv_mmx ( guint32 weights[ 16 ][ 8 ], guchar *p, guchar *q1, guchar *q2, int x_step, guchar *p_stop, int x_init, int destx );
 int pixops_have_mmx ( void );
 #endif
@@ -105,7 +105,7 @@ pixops_scale_nearest ( guchar *dest_buf,
 		const guchar *src = src_buf + ( ( ( i + render_y0 ) * y_step + ( y_step >> 1 ) ) >> SCALE_SHIFT ) * src_rowstride;
 		guchar *dest = dest_buf + i * dest_rowstride;
 		x = render_x0 * x_step + ( x_step >> 1 );
-		
+
 		for ( j = 0; j < ( render_x1 - render_x0 ); j++ )
 		{
 			x_scaled = x >> SCALE_SHIFT;
@@ -134,7 +134,7 @@ scale_line ( int *weights, int n_x, int n_y,
 		x_scaled = x >> SCALE_SHIFT;
 		y_index = x_scaled << 1;
 		uv_index = ( ( x_scaled >> 1 ) << 2 ) + ( ( dest_x & 1 ) << 1 ) + 1;
-		
+
 		for ( i = 0; i < n_y; i++ )
 		{
 			int *line_weights = pixel_weights + n_x * i;
@@ -159,7 +159,7 @@ scale_line ( int *weights, int n_x, int n_y,
 	return dest;
 }
 
-#ifdef USE_MMX
+#if defined(USE_MMX) && !defined(DARWIN)
 static inline guchar *
 scale_line_22_yuv_mmx_stub ( int *weights, int n_x, int n_y,
                             guchar *dest, int dest_x, guchar *dest_end,
@@ -202,7 +202,7 @@ scale_line_22_yuv ( int *weights, int n_x, int n_y,
 	while ( dest < dest_end )
 	{
 		int *pixel_weights = weights + ( ( x >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) * 4;
-		
+
 		x_scaled = x >> SCALE_SHIFT;
 
 		w1 = pixel_weights[ 0 ];
@@ -222,14 +222,14 @@ scale_line_22_yuv ( int *weights, int n_x, int n_y,
 		/* process U/V */
 		x_aligned = ( ( x_scaled >> 1 ) << 2 );
 		uv_index = ( ( dest_x & 1 ) << 1 ) + 1;
-		
+
 		q0 = src0 + x_aligned;
 		q1 = src1 + x_aligned;
 		p  = w1 * q0[ uv_index ];
 		p += w3 * q1[ uv_index ];
 		p += w2 * q0[ uv_index ];
 		p += w4 * q1[ uv_index ];
-		
+
 		x += x_step;
 		dest_x ++;
 
@@ -718,7 +718,7 @@ yuv422_scale ( guchar *dest_buf,
 	PixopsFilter filter = { { 0, 0, 0}, { 0, 0, 0 }, 0 };
 	PixopsLineFunc line_func;
 
-#ifdef USE_MMX
+#if defined(USE_MMX) && !defined(DARWIN)
 	gboolean found_mmx = pixops_have_mmx();
 #endif
 
@@ -743,7 +743,7 @@ yuv422_scale ( guchar *dest_buf,
 
 	if ( filter.x.n == 2 && filter.y.n == 2 )
 	{
-#ifdef USE_MMX
+#if defined(USE_MMX) && !defined(DARWIN)
 		if ( found_mmx )
 		{
 			//fprintf( stderr, "rescale: using mmx\n" );

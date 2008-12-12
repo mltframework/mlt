@@ -18,7 +18,11 @@ LDFLAGS += `pkg-config gdk-pixbuf-2.0 --libs`
 endif
 
 ifdef MMX_FLAGS
+ifneq ($(targetos),Darwin)
 ASM_OBJS = have_mmx.o scale_line_22_yuv_mmx.o
+else
+CFLAGS += -DDARWIN 
+endif
 endif
 
 ifdef USE_PANGO
