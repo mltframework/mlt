@@ -714,10 +714,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		// Construct an AVFrame for YUV422 conversion
 		if ( av_frame == NULL )
-		{
 			av_frame = avcodec_alloc_frame( );
-			mlt_properties_set_data( properties, "av_frame", av_frame, 0, av_free, NULL );
-		}
 
 		while( ret >= 0 && !got_picture )
 		{
@@ -774,6 +771,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					mlt_properties_set_int( properties, "top_field_first", av_frame->top_field_first );
 					mlt_properties_set_int( properties, "_current_position", int_position );
 					mlt_properties_set_int( properties, "_got_picture", 1 );
+					mlt_properties_set_data( properties, "av_frame", av_frame, 0, av_free, NULL );
 				}
 				else
 				{
