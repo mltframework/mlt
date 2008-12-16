@@ -30,7 +30,7 @@
 #include <string.h>
 #include <ctype.h>
 
-/** Forward references to static methods.
+/* Forward references to static methods.
 */
 
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int track );

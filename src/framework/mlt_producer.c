@@ -266,6 +266,7 @@ mlt_service mlt_producer_service( mlt_producer this )
  * \public \memberof mlt_producer_s
  * \param this a producer
  * \return the producer's property list
+ * \see MLT_PRODUCER_PROPERTIES
  */
 
 mlt_properties mlt_producer_properties( mlt_producer this )
@@ -488,7 +489,7 @@ mlt_position mlt_producer_get_playtime( mlt_producer this )
 	return mlt_producer_get_out( this ) - mlt_producer_get_in( this ) + 1;
 }
 
-/** Get the total length of the producer.
+/** Get the total, unedited length of the producer.
  *
  * The value returned by a live streaming producer is unknown.
  *

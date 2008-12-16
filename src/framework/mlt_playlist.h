@@ -30,28 +30,39 @@
 
 typedef struct
 {
-	int clip;
-	mlt_producer producer;
-	mlt_producer cut;
-	mlt_position start;
-	char *resource;
-	mlt_position frame_in;
-	mlt_position frame_out;
-	mlt_position frame_count;
-	mlt_position length;
-	float fps;
-	int repeat;
+	int clip;                 /**< the index of the clip within the playlist */
+	mlt_producer producer;    /**< the clip's producer (or parent producer of a cut) */
+	mlt_producer cut;         /**< the clips' cut producer */
+	mlt_position start;       /**< the time this begins relative to the beginning of the playlist */
+	char *resource;           /**< the file name or address of the clip */
+	mlt_position frame_in;    /**< the clip's in point */
+	mlt_position frame_out;   /**< the clip's out point */
+	mlt_position frame_count; /**< the duration of the clip */
+	mlt_position length;      /**< the unedited duration of the clip */
+	float fps;                /**< the frame rate of the clip */
+	int repeat;               /**< the number of times the clip is repeated */
 }
 mlt_playlist_clip_info;
 
-/** Private definition.
+/** Playlist Entry
 */
 
 typedef struct playlist_entry_s playlist_entry;
 
 /** \brief Playlist class
  *
+ * A playlist is a sequential container of producers and blank spaces. The class provides all
+ * sorts of playlist assembly and manipulation routines. A playlist is also a producer within
+ * the framework.
+ *
  * \extends mlt_producer_s
+ * \properties \em eof This is the behavior for when the end of the playlist is reached, one of: pause (default) or loop.
+ * \properties \em autoclose Set this true if you are doing sequential processing and want to
+ * automatically close producers as they are finished being used to free resources.
+ * \properties \em meta.fx_cut Set true on a producer to indicate that it is a "fx_cut,"
+ * which is a way to add filters as a playlist entry - useful only in a multitrack. See FxCut on the wiki.
+ * \properties \em mix_in
+ * \properties \em mix_out
  */
 
 struct mlt_playlist_s

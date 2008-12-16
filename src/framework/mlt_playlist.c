@@ -46,15 +46,20 @@ struct playlist_entry_s
 	int preservation_hack;
 };
 
-/** Forward declarations
+/* Forward declarations
 */
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static int mlt_playlist_unmix( mlt_playlist this, int clip );
 static int mlt_playlist_resize_mix( mlt_playlist this, int clip, int in, int out );
 
-/** Constructor.
-*/
+/** Construct a playlist.
+ *
+ * Sets the resource property to "<playlist>".
+ * Set the mlt_type to property to "mlt_producer".
+ * \public \memberof mlt_playlist_s
+ * \return a new playlist
+ */
 
 mlt_playlist mlt_playlist_init( )
 {
@@ -97,7 +102,12 @@ mlt_playlist mlt_playlist_init( )
 }
 
 /** Get the producer associated to this playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return the producer interface
+ * \see MLT_PLAYLIST_PRODUCER
+ */
 
 mlt_producer mlt_playlist_producer( mlt_playlist this )
 {
@@ -105,15 +115,25 @@ mlt_producer mlt_playlist_producer( mlt_playlist this )
 }
 
 /** Get the service associated to this playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return the service interface
+ * \see MLT_PLAYLIST_SERVICE
+ */
 
 mlt_service mlt_playlist_service( mlt_playlist this )
 {
 	return MLT_PRODUCER_SERVICE( &this->parent );
 }
 
-/** Get the propertues associated to this playlist.
-*/
+/** Get the properties associated to this playlist.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return the playlist's properties list
+ * \see MLT_PLAYLIST_PROPERTIES
+ */
 
 mlt_properties mlt_playlist_properties( mlt_playlist this )
 {
@@ -121,7 +141,11 @@ mlt_properties mlt_playlist_properties( mlt_playlist this )
 }
 
 /** Refresh the playlist after a clip has been changed.
-*/
+ *
+ * \private \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return false
+ */
 
 static int mlt_playlist_virtual_refresh( mlt_playlist this )
 {
@@ -178,7 +202,12 @@ static int mlt_playlist_virtual_refresh( mlt_playlist this )
 }
 
 /** Listener for producers on the playlist.
-*/
+ *
+ * Refreshes the playlist whenever an entry receives producer-changed.
+ * \private \memberof mlt_playlist_s
+ * \param producer a producer
+ * \param this a playlist
+ */
 
 static void mlt_playlist_listener( mlt_producer producer, mlt_playlist this )
 {
@@ -186,7 +215,14 @@ static void mlt_playlist_listener( mlt_producer producer, mlt_playlist this )
 }
 
 /** Append to the virtual playlist.
-*/
+ *
+ * \private \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param source a producer
+ * \param in the producer's starting time
+ * \param out the producer's ending time
+ * \return true if there was an error
+ */
 
 static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, mlt_position in, mlt_position out )
 {
@@ -288,6 +324,16 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 	return mlt_playlist_virtual_refresh( this );
 }
 
+/** Locate a producer by index.
+ *
+ * \private \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param[in, out] position the time at which to locate the producer, returns the time relative to the producer's starting point
+ * \param[out] clip the index of the playlist entry
+ * \param[out] total the duration of the playlist up to and including this producer
+ * \return a producer or NULL if not found
+ */
+
 static mlt_producer mlt_playlist_locate( mlt_playlist this, mlt_position *position, int *clip, int *total )
 {
 	// Default producer to NULL
@@ -318,7 +364,17 @@ static mlt_producer mlt_playlist_locate( mlt_playlist this, mlt_position *positi
 }
 
 /** Seek in the virtual playlist.
-*/
+ *
+ * This gets the producer at the current position and seeks on the producer
+ * while doing repeat and end-of-file handling. This is also responsible for
+ * closing producers previous to the preceding playlist if the autoclose
+ * property is set.
+ * \private \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param[out] progressive true if the producer should be displayed progressively
+ * \return the service interface of the producer at the play head
+ * \see producer_get_frame
+ */
 
 static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressive )
 {
@@ -398,7 +454,12 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist this, int *progressiv
 }
 
 /** Invoked when a producer indicates that it has prematurely reached its end.
-*/
+ *
+ * \private \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return a producer
+ * \see producer_get_frame
+ */
 
 static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 {
@@ -441,7 +502,11 @@ static mlt_producer mlt_playlist_virtual_set_out( mlt_playlist this )
 }
 
 /** Obtain the current clips index.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return the index of the playlist entry at the current position
+ */
 
 int mlt_playlist_current_clip( mlt_playlist this )
 {
@@ -469,7 +534,11 @@ int mlt_playlist_current_clip( mlt_playlist this )
 }
 
 /** Obtain the current clips producer.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return the producer at the current position
+ */
 
 mlt_producer mlt_playlist_current( mlt_playlist this )
 {
@@ -481,7 +550,14 @@ mlt_producer mlt_playlist_current( mlt_playlist this )
 }
 
 /** Get the position which corresponds to the start of the next clip.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param whence the location from which to make the index relative:
+ * start of playlist, end of playlist, or current position
+ * \param index the playlist entry index relative to whence
+ * \return the time at which the referenced clip starts
+ */
 
 mlt_position mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index )
 {
@@ -519,7 +595,13 @@ mlt_position mlt_playlist_clip( mlt_playlist this, mlt_whence whence, int index 
 }
 
 /** Get all the info about the clip specified.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param info a clip info struct
+ * \param index a playlist entry index
+ * \return true if there was an error
+ */
 
 int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info, int index )
 {
@@ -546,7 +628,11 @@ int mlt_playlist_get_clip_info( mlt_playlist this, mlt_playlist_clip_info *info,
 }
 
 /** Get number of clips in the playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return the number of playlist entries
+ */
 
 int mlt_playlist_count( mlt_playlist this )
 {
@@ -554,7 +640,11 @@ int mlt_playlist_count( mlt_playlist this )
 }
 
 /** Clear the playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \return true if there was an error
+ */
 
 int mlt_playlist_clear( mlt_playlist this )
 {
@@ -569,7 +659,12 @@ int mlt_playlist_clear( mlt_playlist this )
 }
 
 /** Append a producer to the playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param producer the producer to append
+ * \return true if there was an error
+ */
 
 int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 {
@@ -578,7 +673,14 @@ int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 }
 
 /** Append a producer to the playlist with in/out points.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param producer the producer to append
+ * \param in the starting point on the producer
+ * \param out the ending point on the producer
+ * \return true if there was an error
+ */
 
 int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, mlt_position in, mlt_position out )
 {
@@ -590,7 +692,12 @@ int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, mlt_positi
 }
 
 /** Append a blank to the playlist of a given length.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param length the ending time of the blank entry, not its duration
+ * \return true if there was an error
+ */
 
 int mlt_playlist_blank( mlt_playlist this, mlt_position length )
 {
@@ -602,7 +709,15 @@ int mlt_playlist_blank( mlt_playlist this, mlt_position length )
 }
 
 /** Insert a producer into the playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param producer the producer to insert
+ * \param where the producer's playlist entry index
+ * \param in the starting point on the producer
+ * \param out the ending point on the producer
+ * \return true if there was an error
+ */
 
 int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, mlt_position in, mlt_position out )
 {
@@ -618,7 +733,12 @@ int mlt_playlist_insert( mlt_playlist this, mlt_producer producer, int where, ml
 }
 
 /** Remove an entry in the playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param where the playlist entry index
+ * \return true if there was an error
+ */
 
 int mlt_playlist_remove( mlt_playlist this, int where )
 {
@@ -692,7 +812,13 @@ int mlt_playlist_remove( mlt_playlist this, int where )
 }
 
 /** Move an entry in the playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param src an entry index
+ * \param dest an entry index
+ * \return false
+ */
 
 int mlt_playlist_move( mlt_playlist this, int src, int dest )
 {
@@ -750,7 +876,13 @@ int mlt_playlist_move( mlt_playlist this, int src, int dest )
 }
 
 /** Repeat the specified clip n times.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip a playlist entry index
+ * \param repeat the number of times to repeat the clip
+ * \return true if there was an error
+ */
 
 int mlt_playlist_repeat_clip( mlt_playlist this, int clip, int repeat )
 {
@@ -765,7 +897,14 @@ int mlt_playlist_repeat_clip( mlt_playlist this, int clip, int repeat )
 }
 
 /** Resize the specified clip.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \param in the new starting time on the clip's producer
+ * \param out the new ending time on the clip's producer
+ * \return true if there was an error
+ */
 
 int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_position out )
 {
@@ -810,7 +949,14 @@ int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_
 }
 
 /** Split a clip on the playlist at the given position.
-*/
+ *
+ * This splits after the specified frame.
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \param position the time at which to split relative to the beginning of the clip or its end if negative
+ * \return true if there was an error
+ */
 
 int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 {
@@ -856,7 +1002,13 @@ int mlt_playlist_split( mlt_playlist this, int clip, mlt_position position )
 }
 
 /** Split the playlist at the absolute position.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param position the time at which to split relative to the beginning of the clip
+ * \param left true to split before the frame starting at position
+ * \return true if there was an error
+ */
 
 int mlt_playlist_split_at( mlt_playlist this, mlt_position position, int left )
 {
@@ -887,7 +1039,14 @@ int mlt_playlist_split_at( mlt_playlist this, mlt_position position, int left )
 }
 
 /** Join 1 or more consecutive clips.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the starting playlist entry index
+ * \param count the number of entries to merge
+ * \param merge ignored
+ * \return true if there was an error
+ */
 
 int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 {
@@ -915,7 +1074,14 @@ int mlt_playlist_join( mlt_playlist this, int clip, int count, int merge )
 }
 
 /** Mix consecutive clips for a specified length and apply transition if specified.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \param length the number of frames over which to create the mix
+ * \param transition the transition to use for the mix
+ * \return true if there was an error
+ */
 
 int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition transition )
 {
@@ -1011,7 +1177,13 @@ int mlt_playlist_mix( mlt_playlist this, int clip, int length, mlt_transition tr
 }
 
 /** Add a transition to an existing mix.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \param transition a transition
+ * \return true if there was an error
+ */
 
 int mlt_playlist_mix_add( mlt_playlist this, int clip, mlt_transition transition )
 {
@@ -1029,7 +1201,12 @@ int mlt_playlist_mix_add( mlt_playlist this, int clip, mlt_transition transition
 }
 
 /** Return the clip at the clip index.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of a playlist entry
+ * \return a producer or NULL if there was an error
+ */
 
 mlt_producer mlt_playlist_get_clip( mlt_playlist this, int clip )
 {
@@ -1039,7 +1216,12 @@ mlt_producer mlt_playlist_get_clip( mlt_playlist this, int clip )
 }
 
 /** Return the clip at the specified position.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param position a time relative to the beginning of the playlist
+ * \return a producer or NULL if not found
+ */
 
 mlt_producer mlt_playlist_get_clip_at( mlt_playlist this, mlt_position position )
 {
@@ -1048,7 +1230,12 @@ mlt_producer mlt_playlist_get_clip_at( mlt_playlist this, mlt_position position 
 }
 
 /** Return the clip index of the specified position.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param position a time relative to the beginning of the playlist
+ * \return the index of the playlist entry
+ */
 
 int mlt_playlist_get_clip_index_at( mlt_playlist this, mlt_position position )
 {
@@ -1058,7 +1245,12 @@ int mlt_playlist_get_clip_index_at( mlt_playlist this, mlt_position position )
 }
 
 /** Determine if the clip is a mix.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \return true if the producer is a mix
+ */
 
 int mlt_playlist_clip_is_mix( mlt_playlist this, int clip )
 {
@@ -1069,8 +1261,13 @@ int mlt_playlist_clip_is_mix( mlt_playlist this, int clip )
 }
 
 /** Remove a mixed clip - ensure that the cuts included in the mix find their way
-	back correctly on to the playlist.
-*/
+ * back correctly on to the playlist.
+ *
+ * \private \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \return true if there was an error
+ */
 
 static int mlt_playlist_unmix( mlt_playlist this, int clip )
 {
@@ -1124,6 +1321,16 @@ static int mlt_playlist_unmix( mlt_playlist this, int clip )
 	return error;
 }
 
+/** Resize a mix clip.
+ *
+ * \private \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \param in the new starting point
+ * \param out the new ending point
+ * \return true if there was an error
+ */
+
 static int mlt_playlist_resize_mix( mlt_playlist this, int clip, int in, int out )
 {
 	int error = ( clip < 0 || clip >= this->count );
@@ -1168,8 +1375,12 @@ static int mlt_playlist_resize_mix( mlt_playlist this, int clip, int in, int out
 	return error;
 }
 
-/** Consolodate adjacent blank producers.
-*/
+/** Consolidate adjacent blank producers.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param keep_length set false to remove the last entry if it is blank
+ */
 
 void mlt_playlist_consolidate_blanks( mlt_playlist this, int keep_length )
 {
@@ -1204,7 +1415,12 @@ void mlt_playlist_consolidate_blanks( mlt_playlist this, int keep_length )
 }
 
 /** Determine if the specified clip index is a blank.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \return true if there was an error
+ */
 
 int mlt_playlist_is_blank( mlt_playlist this, int clip )
 {
@@ -1212,7 +1428,12 @@ int mlt_playlist_is_blank( mlt_playlist this, int clip )
 }
 
 /** Determine if the specified position is a blank.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param position a time relative to the start or end (negative) of the playlist
+ * \return true if there was an error
+ */
 
 int mlt_playlist_is_blank_at( mlt_playlist this, mlt_position position )
 {
@@ -1220,7 +1441,12 @@ int mlt_playlist_is_blank_at( mlt_playlist this, mlt_position position )
 }
 
 /** Replace the specified clip with a blank and return the clip.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \return a producer or NULL if there was an error
+ */
 
 mlt_producer mlt_playlist_replace_with_blank( mlt_playlist this, int clip )
 {
@@ -1244,6 +1470,14 @@ mlt_producer mlt_playlist_replace_with_blank( mlt_playlist this, int clip )
 	return producer;
 }
 
+/** Insert blank space.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the new blank section
+ * \param length the ending time of the new blank section (duration - 1)
+ */
+
 void mlt_playlist_insert_blank( mlt_playlist this, int clip, int length )
 {
 	if ( this != NULL && length >= 0 )
@@ -1257,6 +1491,14 @@ void mlt_playlist_insert_blank( mlt_playlist this, int clip, int length )
 	}
 }
 
+/** Resize a blank entry.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param position the time at which the blank entry exists relative to the start or end (negative) of the playlist.
+ * \param length the additional amount of blank frames to add
+ * \param find true to fist locate the blank after the clip at position
+ */
 void mlt_playlist_pad_blanks( mlt_playlist this, mlt_position position, int length, int find )
 {
 	if ( this != NULL && length != 0 )
@@ -1283,6 +1525,16 @@ void mlt_playlist_pad_blanks( mlt_playlist this, mlt_position position, int leng
 		mlt_playlist_virtual_refresh( this );
 	}
 }
+
+/** Insert a clip at a specific time.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param position the time at which to insert
+ * \param producer the producer to insert
+ * \param mode true if you want to overwrite any blank section
+ * \return true if there was an error
+ */
 
 int mlt_playlist_insert_at( mlt_playlist this, mlt_position position, mlt_producer producer, int mode )
 {
@@ -1347,6 +1599,14 @@ int mlt_playlist_insert_at( mlt_playlist this, mlt_position position, mlt_produc
 	return ret;
 }
 
+/** Get the time at which the clip starts relative to the playlist.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \return the starting time
+ */
+
 int mlt_playlist_clip_start( mlt_playlist this, int clip )
 {
 	mlt_playlist_clip_info info;
@@ -1355,6 +1615,14 @@ int mlt_playlist_clip_start( mlt_playlist this, int clip )
 	return clip < 0 ? 0 : mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( this ) );
 }
 
+/** Get the playable duration of the clip.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \return the duration of the playlist entry
+ */
+
 int mlt_playlist_clip_length( mlt_playlist this, int clip )
 {
 	mlt_playlist_clip_info info;
@@ -1362,6 +1630,15 @@ int mlt_playlist_clip_length( mlt_playlist this, int clip )
 		return info.frame_count;
 	return 0;
 }
+
+/** Get the duration of a blank space.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param clip the index of the playlist entry
+ * \param bounded the maximum number of blank entries or 0 for all
+ * \return the duration of a blank section
+ */
 
 int mlt_playlist_blanks_from( mlt_playlist this, int clip, int bounded )
 {
@@ -1385,6 +1662,15 @@ int mlt_playlist_blanks_from( mlt_playlist this, int clip, int bounded )
 	}
 	return count;
 }
+
+/** Remove a portion of the playlist by time.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ * \param position the starting time
+ * \param length the duration of time to remove
+ * \return the new entry index at the position
+ */
 
 int mlt_playlist_remove_region( mlt_playlist this, mlt_position position, int length )
 {
@@ -1424,6 +1710,17 @@ int mlt_playlist_remove_region( mlt_playlist this, mlt_position position, int le
 	return index;
 }
 
+/** Not implemented
+ *
+ * \deprecated not implemented
+ * \public \memberof mlt_playlist_s
+ * \param this
+ * \param position
+ * \param length
+ * \param new_position
+ * \return
+ */
+
 int mlt_playlist_move_region( mlt_playlist this, mlt_position position, int length, int new_position )
 {
 	if ( this != NULL )
@@ -1433,7 +1730,14 @@ int mlt_playlist_move_region( mlt_playlist this, mlt_position position, int leng
 }
 
 /** Get the current frame.
-*/
+ *
+ * The implementation of the get_frame virtual function.
+ * \private \memberof mlt_playlist_s
+ * \param producer a producer
+ * \param frame a frame by reference
+ * \param index the time at which to get the frame
+ * \return false
+ */
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
@@ -1509,7 +1813,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 }
 
 /** Close the playlist.
-*/
+ *
+ * \public \memberof mlt_playlist_s
+ * \param this a playlist
+ */
 
 void mlt_playlist_close( mlt_playlist this )
 {

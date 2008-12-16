@@ -28,7 +28,7 @@
 #include "mlt_properties.h"
 #include "mlt_events.h"
 
-/** Memory leak checks. */
+/* Memory leak checks. */
 
 #undef _MLT_EVENT_CHECKS_
 
@@ -39,6 +39,10 @@ static int events_destroyed = 0;
 
 /** \brief Events class
  *
+ * Events provide messages and notifications between services and the application.
+ * A service can register an event and fire/send it upon certain conditions or times.
+ * Likewise, a service or an application can listen/receive specific events on specific
+ * services.
  */
 
 struct mlt_events_struct
@@ -63,7 +67,10 @@ struct mlt_event_struct
 };
 
 /** Increment the reference count on this event.
-*/
+ *
+ * \public \memberof mlt_event_struct
+ * \param this an event
+ */
 
 void mlt_event_inc_ref( mlt_event this )
 {
@@ -72,7 +79,10 @@ void mlt_event_inc_ref( mlt_event this )
 }
 
 /** Increment the block count on this event.
-*/
+ *
+ * \public \memberof mlt_event_struct
+ * \param this an event
+ */
 
 void mlt_event_block( mlt_event this )
 {
@@ -81,7 +91,10 @@ void mlt_event_block( mlt_event this )
 }
 
 /** Decrement the block count on this event.
-*/
+ *
+ * \public \memberof mlt_event_struct
+ * \param this an event
+ */
 
 void mlt_event_unblock( mlt_event this )
 {
@@ -90,7 +103,10 @@ void mlt_event_unblock( mlt_event this )
 }
 
 /** Close this event.
-*/
+ *
+ * \public \memberof mlt_event_struct
+ * \param this an event
+ */
 
 void mlt_event_close( mlt_event this )
 {
@@ -117,7 +133,10 @@ static void mlt_events_store( mlt_properties, mlt_events );
 static void mlt_events_close( mlt_events );
 
 /** Initialise the events structure.
-*/
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ */
 
 void mlt_events_init( mlt_properties this )
 {
@@ -131,7 +150,13 @@ void mlt_events_init( mlt_properties this )
 }
 
 /** Register an event and transmitter.
-*/
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param id the name of an event
+ * \param transmitter the callback function to send an event message
+ * \return true if there was an error
+ */
 
 int mlt_events_register( mlt_properties this, char *id, mlt_transmitter transmitter )
 {
@@ -150,7 +175,13 @@ int mlt_events_register( mlt_properties this, char *id, mlt_transmitter transmit
 }
 
 /** Fire an event.
-*/
+ *
+ * This takes a variable number of arguments to supply to the listener.
+
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param id the name of an event
+ */
 
 void mlt_events_fire( mlt_properties this, char *id, ... )
 {
@@ -191,7 +222,14 @@ void mlt_events_fire( mlt_properties this, char *id, ... )
 }
 
 /** Register a listener.
-*/
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param service an opaque pointer
+ * \param id the name of the event to listen for
+ * \param listener the callback to receive an event message
+ * \return
+ */
 
 mlt_event mlt_events_listen( mlt_properties this, void *service, char *id, mlt_listener listener )
 {
@@ -247,7 +285,11 @@ mlt_event mlt_events_listen( mlt_properties this, void *service, char *id, mlt_l
 }
 
 /** Block all events for a given service.
-*/
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param service an opaque pointer
+ */
 
 void mlt_events_block( mlt_properties this, void *service )
 {
@@ -274,7 +316,11 @@ void mlt_events_block( mlt_properties this, void *service )
 }
 
 /** Unblock all events for a given service.
-*/
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param service an opaque pointer
+ */
 
 void mlt_events_unblock( mlt_properties this, void *service )
 {
@@ -301,7 +347,11 @@ void mlt_events_unblock( mlt_properties this, void *service )
 }
 
 /** Disconnect all events for a given service.
-*/
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param service an opaque pointer
+ */
 
 void mlt_events_disconnect( mlt_properties this, void *service )
 {
@@ -338,6 +388,13 @@ typedef struct
 }
 condition_pair;
 
+/** The event listener callback for the wait functions.
+ *
+ * \private \memberof mlt_events_struct
+ * \param this a properties list
+ * \param pair a condition pair
+ */
+
 static void mlt_events_listen_for( mlt_properties this, condition_pair *pair )
 {
 	pthread_mutex_lock( &pair->mutex );
@@ -347,6 +404,14 @@ static void mlt_events_listen_for( mlt_properties this, condition_pair *pair )
 		pthread_mutex_unlock( &pair->mutex );
 	}
 }
+
+/** Prepare to wait for an event.
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param id the name of the event to wait for
+ * \return an event
+ */
 
 mlt_event mlt_events_setup_wait_for( mlt_properties this, char *id )
 {
@@ -358,6 +423,13 @@ mlt_event mlt_events_setup_wait_for( mlt_properties this, char *id )
 	return mlt_events_listen( this, pair, id, ( mlt_listener )mlt_events_listen_for );
 }
 
+/** Wait for an event.
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param event an event
+ */
+
 void mlt_events_wait_for( mlt_properties this, mlt_event event )
 {
 	if ( event != NULL )
@@ -366,6 +438,13 @@ void mlt_events_wait_for( mlt_properties this, mlt_event event )
 		pthread_cond_wait( &pair->cond, &pair->mutex );
 	}
 }
+
+/** Cleanup after waiting for an event.
+ *
+ * \public \memberof mlt_events_struct
+ * \param this a properties list
+ * \param event an event
+ */
 
 void mlt_events_close_wait_for( mlt_properties this, mlt_event event )
 {
@@ -381,7 +460,11 @@ void mlt_events_close_wait_for( mlt_properties this, mlt_event event )
 }
 
 /** Fetch the events object.
-*/
+ *
+ * \private \memberof mlt_events_struct
+ * \param this a properties list
+ * \return an events object
+ */
 
 static mlt_events mlt_events_fetch( mlt_properties this )
 {
@@ -392,7 +475,11 @@ static mlt_events mlt_events_fetch( mlt_properties this )
 }
 
 /** Store the events object.
-*/
+ *
+ * \private \memberof mlt_events_struct
+ * \param this a properties list
+ * \param events an events object
+ */
 
 static void mlt_events_store( mlt_properties this, mlt_events events )
 {
@@ -401,7 +488,10 @@ static void mlt_events_store( mlt_properties this, mlt_events events )
 }
 
 /** Close the events object.
-*/
+ *
+ * \private \memberof mlt_events_struct
+ * \param events an events object
+ */
 
 static void mlt_events_close( mlt_events events )
 {
@@ -411,4 +501,3 @@ static void mlt_events_close( mlt_events events )
 		free( events );
 	}
 }
-

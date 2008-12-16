@@ -36,20 +36,21 @@
 
 struct mlt_field_s
 {
-	// This is the producer we're connected to
+	/// This is the producer we're connected to
 	mlt_service producer;
 
-	// Multitrack
+	/// Multitrack
 	mlt_multitrack multitrack;
 
-	// Tractor
+	/// Tractor
 	mlt_tractor tractor;
 };
 
-/** Constructor.
-
-  	We construct a multitrack and a tractor here.
-*/
+/** Construct a field, mulitrack, and tractor.
+ *
+ * \public \memberof mlt_field_s
+ * \return a new field
+ */
 
 mlt_field mlt_field_init( )
 {
@@ -75,6 +76,14 @@ mlt_field mlt_field_init( )
 	// Return this
 	return this;
 }
+
+/** Construct a field and initialize with supplied multitrack and tractor.
+ *
+ * \public \memberof mlt_field_s
+ * \param multitrack a multitrack
+ * \param tractor a tractor
+ * \return a new field
+ */
 
 mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
 {
@@ -102,15 +111,23 @@ mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
 }
 
 /** Get the service associated to this field.
-*/
+ *
+ * \public \memberof mlt_field_s
+ * \param this a field
+ * \return the tractor as a service
+ */
 
 mlt_service mlt_field_service( mlt_field this )
 {
 	return MLT_TRACTOR_SERVICE( this->tractor );
 }
 
-/** Get the multi track.
-*/
+/** Get the multitrack.
+ *
+ * \public \memberof mlt_field_s
+ * \param this a field
+ * \return the multitrack
+ */
 
 mlt_multitrack mlt_field_multitrack( mlt_field this )
 {
@@ -118,7 +135,11 @@ mlt_multitrack mlt_field_multitrack( mlt_field this )
 }
 
 /** Get the tractor.
-*/
+ *
+ * \public \memberof mlt_field_s
+ * \param this a field
+ * \return the tractor
+ */
 
 mlt_tractor mlt_field_tractor( mlt_field this )
 {
@@ -126,7 +147,11 @@ mlt_tractor mlt_field_tractor( mlt_field this )
 }
 
 /** Get the properties associated to this field.
-*/
+ *
+ * \public \memberof mlt_field_s
+ * \param this a field
+ * \return a properties list
+ */
 
 mlt_properties mlt_field_properties( mlt_field this )
 {
@@ -134,7 +159,13 @@ mlt_properties mlt_field_properties( mlt_field this )
 }
 
 /** Plant a filter.
-*/
+ *
+ * \public \memberof mlt_field_s
+ * \param this a field
+ * \param that a filter
+ * \param track the track index
+ * \return true if there was an error
+ */
 
 int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track )
 {
@@ -158,7 +189,14 @@ int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track )
 }
 
 /** Plant a transition.
-*/
+ *
+ * \public \memberof mlt_field_s
+ * \param this a field
+ * \param that a transition
+ * \param a_track input A's track index
+ * \param b_track input B's track index
+ * \return true if there was an error
+ */
 
 int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track, int b_track )
 {
@@ -182,7 +220,10 @@ int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track
 }
 
 /** Close the field.
-*/
+ *
+ * \public \memberof mlt_field_s
+ * \param this a field
+ */
 
 void mlt_field_close( mlt_field this )
 {
@@ -193,6 +234,13 @@ void mlt_field_close( mlt_field this )
 		free( this );
 	}
 }
+
+/** Remove a filter or transition from the field.
+ *
+ * \public \memberof mlt_field_s
+ * \param self a field
+ * \param service the filter or transition to remove
+ */
 
 void mlt_field_disconnect_service( mlt_field self, mlt_service service )
 {
