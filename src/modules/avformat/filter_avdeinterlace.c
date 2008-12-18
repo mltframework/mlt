@@ -29,6 +29,9 @@
 
 #ifdef USE_MMX
 #include "mmx.h"
+#else
+#define MAX_NEG_CROP 1024
+extern uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP];
 #endif
 
 #ifdef USE_MMX
@@ -86,7 +89,7 @@ static inline void deinterlace_line(uint8_t *dst,
 			     int size)
 {
 #ifndef USE_MMX
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int sum;
 
     for(;size > 0;size--) {
@@ -129,7 +132,7 @@ static inline void deinterlace_line_inplace(uint8_t *lum_m4, uint8_t *lum_m3, ui
                              int size)
 {
 #ifndef USE_MMX
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int sum;
 
     for(;size > 0;size--) {

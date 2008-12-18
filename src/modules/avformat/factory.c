@@ -105,10 +105,8 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 	}
 	if ( !strcmp( id, "avcolour_space" ) )
 		return filter_avcolour_space_init( arg );
-#ifdef USE_MMX
 	if ( !strcmp( id, "avdeinterlace" ) )
 		return filter_avdeinterlace_init( arg );
-#endif
 	if ( !strcmp( id, "avresample" ) )
 		return filter_avresample_init( arg );
 	return NULL;

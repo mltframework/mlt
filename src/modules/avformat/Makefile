@@ -7,11 +7,8 @@ OBJS = factory.o \
 	   producer_avformat.o \
 	   consumer_avformat.o \
 	   filter_avcolour_space.o \
-	   filter_avresample.o
-
-ifdef MMX_FLAGS
-	OBJS += filter_avdeinterlace.o
-endif
+	   filter_avresample.o \
+	   filter_avdeinterlace.o
 
 CFLAGS+=-I../..
 
