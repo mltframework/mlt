@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
+# or a specific revision based upon whether the last digit of our version
+# is even or odd. An odd MLT version number always represents unreleased.
+svn_rev="15791"
+micro_version=$(echo $version | cut -d . -f 3)
+odd_version=$(($micro_version % 2))
+[ "$odd_version" -eq "1" ] && svn_rev="HEAD"
 
 if [ "$help" = "1" ]
 then
@@ -13,6 +20,8 @@ FFMPEG/avformat options:
   --avformat-ldextra=libs - Provide additional libs to link with
   --avformat-suffix=suff  - Specify a custom suffix for an ffmpeg shared build
   --avformat-swscale      - Use ffmpeg libswcale instead of img_convert
+
+  NOTE: The recommended version of FFmpeg is SVN-r$svn_rev.
 
 EOF
 
@@ -85,9 +94,9 @@ else
 		if [ ! -d "ffmpeg" ]
 		then
 			echo
-			echo "Checking out ffmpeg/avformat - no password required"
+			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
 			echo
-			svn checkout svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
+			svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
 		fi
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale $svn_ffmpeg_extra )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
