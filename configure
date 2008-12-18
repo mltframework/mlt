@@ -162,7 +162,7 @@ do
 		--prefix=* )		prefix="${i#--prefix=}" ;;
 		--libdir=* )		libdir="${i#--libdir=}" ;;
 		--disable-debug )	debug=false ;;
-		--disable-mmx )		mmx=false ;;
+		--disable-mmx )		mmx=false; sse=false ;;
 		--disable-sse )		sse=false ;;
 		--enable-gpl )		gpl=true ;;
 		--cpu=* )			cpu="${i#--cpu=}" ;;
