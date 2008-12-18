@@ -25,6 +25,7 @@
 
 // ffmpeg Header files
 #include <avformat.h>
+#include <opt.h>
 #ifdef SWSCALE
 #  include <swscale.h>
 #endif
@@ -797,6 +798,26 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	return 0;
 }
 
+/** Process properties as AVOptions and apply to AV context obj
+*/
+
+static void apply_properties( void *obj, mlt_properties properties, int flags )
+{
+	int i;
+	int count = mlt_properties_count( properties ); 
+	for ( i = 0; i < count; i++ )
+	{
+		const char *opt_name = mlt_properties_get_name( properties, i );
+		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
+		if ( opt != NULL )
+#if LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
+			av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
+#else
+			av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
+#endif
+	}
+}
+
 /** Set up video handling.
 */
 
@@ -820,6 +841,9 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 		context = mlt_properties_get_data( properties, "video_context", NULL );
 		mlt_properties_set_data( properties, "dummy_context", NULL, 0, NULL, NULL );
 		mlt_events_unblock( properties, this );
+
+		// Process properties as AVOptions
+		apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );
 	}
 
 	// Exception handling for video_index
@@ -894,6 +918,9 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 				index = -1;
 			}
 			avformat_unlock( );
+
+			// Process properties as AVOptions
+			apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 		}
 
 		// No codec, no show...
@@ -1293,6 +1320,9 @@ static void producer_set_up_audio( mlt_producer this, mlt_frame frame )
 				index = -1;
 			}
 			avformat_unlock( );
+
+			// Process properties as AVOptions
+			apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 		}
 
 		// No codec, no show...
