@@ -4,11 +4,15 @@ include config.mak
 TARGET = ../libmltavformat$(LIBSUF)
 
 OBJS = factory.o \
-	   producer_avformat.o \
-	   consumer_avformat.o \
 	   filter_avcolour_space.o \
 	   filter_avresample.o \
 	   filter_avdeinterlace.o
+
+ifdef CODECS
+OBJS += producer_avformat.o \
+	    consumer_avformat.o
+CFLAGS += -DCODECS
+endif
 
 CFLAGS+=-I../..
 

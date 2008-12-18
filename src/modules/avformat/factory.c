@@ -96,13 +96,15 @@ static void avformat_init( )
 static void *create_service( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
 {
 	avformat_init( );
+#ifdef CODECS
 	if ( !strcmp( id, "avformat" ) )
 	{
 		if ( type == producer_type )
 			return producer_avformat_init( profile, arg );
 		else if ( type == consumer_type )
-			return consumer_avformat_init( profile, arg );		
+			return consumer_avformat_init( profile, arg );
 	}
+#endif
 	if ( !strcmp( id, "avcolour_space" ) )
 		return filter_avcolour_space_init( arg );
 	if ( !strcmp( id, "avdeinterlace" ) )
@@ -139,12 +141,13 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 
 MLT_REPOSITORY
 {
+#ifdef CODECS
 	MLT_REGISTER( consumer_type, "avformat", create_service );
 	MLT_REGISTER( producer_type, "avformat", create_service );
+	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
+#endif
 	MLT_REGISTER( filter_type, "avcolour_space", create_service );
 	MLT_REGISTER( filter_type, "avcolor_space", create_service );
 	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
 	MLT_REGISTER( filter_type, "avresample", create_service );
-	
-	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
 }
