@@ -190,9 +190,12 @@ int consumer_start( mlt_consumer parent )
 		{
 			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( parent ) );
 			mlt_filter filter = mlt_factory_filter( profile, "avcolour_space", NULL );
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "forced", mlt_image_yuv422 );
-			mlt_service_attach( MLT_CONSUMER_SERVICE( parent ), filter );
-			mlt_filter_close( filter );
+			if ( filter )
+			{
+				mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "forced", mlt_image_yuv422 );
+				mlt_service_attach( MLT_CONSUMER_SERVICE( parent ), filter );
+				mlt_filter_close( filter );
+			}
 			this->filtered = 1;
 		}
 	
