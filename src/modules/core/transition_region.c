@@ -338,13 +338,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 
 				// Special case circle resource
 				if ( strcmp( resource, "circle" ) == 0 )
-				{
-					// Special case to ensure that fezzik produces a pixbuf with a NULL constructor
-					resource = "pixbuf";
-
-					// Specify the svg circle
-					mlt_properties_set( properties, "producer.resource", "<svg width='100' height='100'><circle cx='50' cy='50' r='50' fill='black'/></svg>" );
-				}
+					resource = "pixbuf:<svg width='100' height='100'><circle cx='50' cy='50' r='50' fill='black'/></svg>";
 
 				// Create the producer
 				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
