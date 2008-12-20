@@ -30,6 +30,7 @@ struct context_s {
 	mlt_producer producer;
 	mlt_consumer consumer;
 	mlt_profile profile;
+	int is_close_profile;
 };
 typedef struct context_s *context; 
 
@@ -85,17 +86,33 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		cx = mlt_pool_alloc( sizeof( struct context_s ) );
 		mlt_properties_set_data( properties, "context", cx, 0, mlt_pool_release, NULL );
 		cx->this = this;
-		cx->profile = mlt_profile_init( mlt_properties_get( properties, "profile" ) );
+		char *profile_name = mlt_properties_get( properties, "profile" );
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( this ) );
+
+		if ( profile_name )
+		{
+			cx->profile = mlt_profile_init( profile_name );
+			cx->is_close_profile = 1;
+		}
+		else
+		{
+			cx->profile = profile;
+			cx->is_close_profile = 0;
+		}
 
 		// For now, we must conform the nested network's frame rate to the parent network's
 		// framerate.
-		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( this ) );
 		cx->profile->frame_rate_num = profile->frame_rate_num;
 		cx->profile->frame_rate_den = profile->frame_rate_den;
 
 		// We will encapsulate a consumer
 		cx->consumer = mlt_consumer_new( cx->profile );
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( cx->consumer ), "real_time", 0 );
+		// Do not use _pass_list on real_time so that it defaults to 0 in the absence of
+		// an explicit real_time property.
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( cx->consumer ), "real_time",
+			mlt_properties_get_int( properties, "real_time" ) );
+		mlt_properties_pass_list( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties,
+			"buffer, prefill" );
 	
 		// Encapsulate a real producer for the resource
 		cx->producer = mlt_factory_producer( cx->profile, mlt_environment( "MLT_PRODUCER" ),
@@ -164,7 +181,8 @@ static void producer_close( mlt_producer this )
 		mlt_consumer_stop( cx->consumer );
 		mlt_consumer_close( cx->consumer );
 		mlt_producer_close( cx->producer );
-		free( cx->profile );
+		if ( cx->is_close_profile )
+			mlt_profile_close( cx->profile );
 	}
 	
 	this->close = NULL;
