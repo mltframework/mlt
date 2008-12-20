@@ -285,8 +285,8 @@ void mlt_properties_mirror( mlt_properties this, mlt_properties that )
 /** Copy all serializable properties to another properties list.
  *
  * \public \memberof mlt_properties_s
- * \param this The properties to copy from
- * \param that The properties to copy to
+ * \param this The properties to copy to
+ * \param that The properties to copy from
  * \return false
  */
 
@@ -309,8 +309,8 @@ int mlt_properties_inherit( mlt_properties this, mlt_properties that )
 /** Pass all serializable properties that match a prefix to another properties object
  *
  * \public \memberof mlt_properties_s
- * \param this the properties to copy from
- * \param that The properties to copy to
+ * \param this the properties to copy to
+ * \param that The properties to copy from
  * \param prefix the property names to match (required)
  * \return false
  */
@@ -423,8 +423,8 @@ static mlt_property mlt_properties_fetch( mlt_properties this, const char *name 
  *
  * \public \memberof mlt_properties_s
  * \author Zach <zachary.drew@gmail.com>
- * \param this the properties to copy from
- * \param that the properties to copy to
+ * \param this the properties to copy to
+ * \param that the properties to copy from
  * \param name the name of the property to copy
  */
 
@@ -443,8 +443,8 @@ void mlt_properties_pass_property( mlt_properties this, mlt_properties that, con
  * White space is also a delimiter.
  * \public \memberof mlt_properties_s
  * \author Zach <zachary.drew@gmail.com>
- * \param this the properties to copy from
- * \param that the properties to copy to
+ * \param this the properties to copy to
+ * \param that the properties to copy from
  * \param list a delimited list of property names
  * \return false
  */
