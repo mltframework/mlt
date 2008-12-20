@@ -123,7 +123,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		double actual_position = mlt_producer_get_speed( this ) * (double)mlt_producer_position( this );
 		mlt_position need_first = floor( actual_position );
 		mlt_producer_seek( cx->producer, need_first );
-
+		
 		// Get the nested frame
 		mlt_frame nested_frame = mlt_consumer_rt_frame( cx->consumer );
 
@@ -188,8 +188,10 @@ mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type,
 		// Get the properties of this producer
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 		mlt_properties_set( properties, "resource", arg );
+		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "out, length" );
 
-		mlt_producer_close( real_producer );	
+		// Done with the producer - will re-open later when we have the profile property
+		mlt_producer_close( real_producer );
 	}
 	else
 	{
