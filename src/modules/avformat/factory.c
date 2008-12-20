@@ -28,6 +28,7 @@ extern mlt_consumer consumer_avformat_init( mlt_profile profile, char *file );
 extern mlt_filter filter_avcolour_space_init( void *arg );
 extern mlt_filter filter_avdeinterlace_init( void *arg );
 extern mlt_filter filter_avresample_init( char *arg );
+extern mlt_filter filter_swscale_init( mlt_profile profile, char *arg );
 extern mlt_producer producer_avformat_init( mlt_profile profile, char *file );
 
 // ffmpeg Header files
@@ -111,6 +112,8 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 		return filter_avdeinterlace_init( arg );
 	if ( !strcmp( id, "avresample" ) )
 		return filter_avresample_init( arg );
+	if ( !strcmp( id, "swscale" ) )
+		return filter_swscale_init( profile, arg );
 	return NULL;
 }
 
@@ -150,4 +153,5 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "avcolor_space", create_service );
 	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
 	MLT_REGISTER( filter_type, "avresample", create_service );
+	MLT_REGISTER( filter_type, "swscale", create_service );
 }

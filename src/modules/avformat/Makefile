@@ -8,6 +8,10 @@ OBJS = factory.o \
 	   filter_avresample.o \
 	   filter_avdeinterlace.o
 
+ifdef SWSCALE
+OBJS += filter_swscale.o
+endif
+
 ifdef CODECS
 OBJS += producer_avformat.o \
 	    consumer_avformat.o
