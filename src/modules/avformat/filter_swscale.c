@@ -96,29 +96,71 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 	else if ( strcmp( interps, "spline" ) == 0 )
 		interp = SWS_SPLINE;
 
+	AVPicture input;
+	AVPicture output;
+	uint8_t *outbuf = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
+
 	// Convert the pixel formats
 	iformat = convert_mlt_to_av_cs( iformat );
 	oformat = convert_mlt_to_av_cs( oformat );
 
+	avpicture_fill( &input, *image, iformat, iwidth, iheight );
+	avpicture_fill( &output, outbuf, oformat, owidth, oheight );
+
+	// Extract the alpha channel
+	if ( iformat == PIX_FMT_RGBA32 && oformat == PIX_FMT_YUV422 )
+	{
+		// Allocate the alpha mask
+		uint8_t *alpha = mlt_pool_alloc( iwidth * ( iheight + 1 ) );
+		if ( alpha )
+		{
+			// Convert the image and extract alpha
+			mlt_convert_rgb24a_to_yuv422( *image, iwidth, iheight, iwidth * 4, outbuf, alpha );
+			mlt_properties_set_data( properties, "alpha", alpha, iwidth * ( iheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
+			iformat = PIX_FMT_YUV422;
+			avpicture_fill( &input, outbuf, iformat, iwidth, iheight );
+			avpicture_fill( &output, *image, oformat, owidth, oheight );
+		}
+	}
+
 	// Create the context and output image
 	struct SwsContext *context = sws_getContext( iwidth, iheight, iformat, owidth, oheight, oformat, interp, NULL, NULL, NULL);
-	AVPicture input;
-	avpicture_fill( &input, *image, iformat, iwidth, iheight );
-	AVPicture output;
-	uint8_t *outbuf = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
-	avpicture_fill( &output, outbuf, oformat, owidth, oheight );
 
 	// Perform the scaling
 	sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
 	sws_freeContext( context );
 
 	// Now update the frame
-	mlt_properties_set_data( properties, "image", outbuf, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
+	mlt_properties_set_data( properties, "image", output.data[0], owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
 	mlt_properties_set_int( properties, "width", owidth );
 	mlt_properties_set_int( properties, "height", oheight );
 
 	// Return the output
-	*image = outbuf;
+	*image = output.data[0];
+
+	// Scale the alpha channel only if exists and not correct size
+	int alpha_size = 0;
+	mlt_properties_get_data( properties, "alpha", &alpha_size );
+	if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
+	{
+		// Create the context and output image
+		uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+		if ( alpha )
+		{
+			iformat = oformat = PIX_FMT_GRAY8;
+			struct SwsContext *context = sws_getContext( iwidth, iheight, iformat, owidth, oheight, oformat, interp, NULL, NULL, NULL);
+			avpicture_fill( &input, alpha, iformat, iwidth, iheight );
+			outbuf = mlt_pool_alloc( owidth * oheight );
+			avpicture_fill( &output, outbuf, oformat, owidth, oheight );
+
+			// Perform the scaling
+			sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
+			sws_freeContext( context );
+
+			// Set it back on the frame
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
+		}
+	}
 
 	return 0;
 }
