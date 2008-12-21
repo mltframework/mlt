@@ -98,34 +98,73 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 /** Find the default streams.
 */
 
-static void find_default_streams( AVFormatContext *context, int *audio_index, int *video_index )
+static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatContext *context, int *audio_index, int *video_index )
 {
 	int i;
+	char key[200];
+
+	mlt_properties_set_int( meta_media, "meta.media.nb_streams", context->nb_streams );
 
 	// Allow for multiple audio and video streams in the file and select first of each (if available)
 	for( i = 0; i < context->nb_streams; i++ ) 
 	{
 		// Get the codec context
-		AVCodecContext *codec_context = context->streams[ i ]->codec;
+		AVStream *stream = context->streams[ i ];
+		if ( ! stream ) continue;
+		AVCodecContext *codec_context = stream->codec;
+		if ( ! codec_context ) continue;
+		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+		if ( ! codec ) continue;
 
-		if ( avcodec_find_decoder( codec_context->codec_id ) == NULL )
-			continue;
+		snprintf( key, sizeof(key), "meta.media.%d.stream.type", i );
 
 		// Determine the type and obtain the first index of each type
-		switch( codec_context->codec_type ) 
+		switch( codec_context->codec_type )
 		{
 			case CODEC_TYPE_VIDEO:
 				if ( *video_index < 0 )
 					*video_index = i;
+				mlt_properties_set( meta_media, key, "video" );
+				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
+				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->r_frame_rate ) );
+				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
+				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->sample_aspect_ratio ) );
+				snprintf( key, sizeof(key), "meta.media.%d.codec.pix_fmt", i );
+				mlt_properties_set( meta_media, key, avcodec_get_pix_fmt_name( codec_context->pix_fmt ) );
+				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
+				mlt_properties_set_double( meta_media, key, av_q2d( codec_context->sample_aspect_ratio ) );
 				break;
 			case CODEC_TYPE_AUDIO:
 				if ( *audio_index < 0 )
 					*audio_index = i;
+				mlt_properties_set( meta_media, key, "audio" );
+				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
+				mlt_properties_set( meta_media, key, avcodec_get_sample_fmt_name( codec_context->sample_fmt ) );
+				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_rate", i );
+				mlt_properties_set_int( meta_media, key, codec_context->sample_rate );
+				snprintf( key, sizeof(key), "meta.media.%d.codec.channels", i );
+				mlt_properties_set_int( meta_media, key, codec_context->channels );
 				break;
 			default:
 				break;
 		}
+// 		snprintf( key, sizeof(key), "meta.media.%d.stream.time_base", i );
+// 		mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->time_base ) );
+		snprintf( key, sizeof(key), "meta.media.%d.codec.name", i );
+		mlt_properties_set( meta_media, key, codec->name );
+		snprintf( key, sizeof(key), "meta.media.%d.codec.long_name", i );
+		mlt_properties_set( meta_media, key, codec->long_name );
+		snprintf( key, sizeof(key), "meta.media.%d.codec.bit_rate", i );
+		mlt_properties_set_int( meta_media, key, codec_context->bit_rate );
+// 		snprintf( key, sizeof(key), "meta.media.%d.codec.time_base", i );
+// 		mlt_properties_set_double( meta_media, key, av_q2d( codec_context->time_base ) );
+		snprintf( key, sizeof(key), "meta.media.%d.codec.profile", i );
+		mlt_properties_set_int( meta_media, key, codec_context->profile );
+		snprintf( key, sizeof(key), "meta.media.%d.codec.level", i );
+		mlt_properties_set_int( meta_media, key, codec_context->level );
 	}
+
+	return meta_media;
 }
 
 /** Producer file destructor.
@@ -376,7 +415,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 			}
 
 			// Find default audio and video streams
-			find_default_streams( context, &audio_index, &video_index );
+			find_default_streams( properties, context, &audio_index, &video_index );
 
 			if ( context->start_time != AV_NOPTS_VALUE )
 				mlt_properties_set_double( properties, "_start_time", context->start_time );
