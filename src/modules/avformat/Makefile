@@ -73,9 +73,9 @@ install: all
 	install -m 644 producer_avformat.yml "$(DESTDIR)$(prefix)/share/mlt/avformat"
 
 uninstall:
-	rm "$(DESTDIR)$(libdir)/mlt/libmltavformat$(LIBSUF)"
-	rm "$(DESTDIR)$(libdir)/mlt/libmltffmpeg$(LIBSUF)"
-	rm -rf "$(DESTDIR)$(prefix)/share/mlt/avformat" 
+	rm "$(DESTDIR)$(libdir)/mlt/libmltavformat$(LIBSUF)" 2> /dev/null || true
+	rm "$(DESTDIR)$(libdir)/mlt/libmltffmpeg$(LIBSUF)" 2> /dev/null || true
+	rm -rf "$(DESTDIR)$(prefix)/share/mlt/avformat"
 
 ifneq ($(wildcard .depend),)
 include .depend
