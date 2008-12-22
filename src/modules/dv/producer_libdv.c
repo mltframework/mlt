@@ -264,6 +264,16 @@ static int producer_collect_info( producer_libdv this, mlt_profile profile )
 			dv_parse_header( dv_decoder, dv_data );
 			mlt_properties_set_double( properties, "aspect_ratio", 
 				dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
+			mlt_properties_set_double( properties, "source_fps", this->is_pal ? 25 : ( 30000.0 / 1001.0 ) );
+			mlt_properties_set_int( properties, "meta.media.nb_streams", 2 );
+			mlt_properties_set_int( properties, "video_index", 0 );
+			mlt_properties_set( properties, "meta.media.0.stream.type", "video" );
+			mlt_properties_set( properties, "meta.media.0.codec.name", "dvvideo" );
+			mlt_properties_set( properties, "meta.media.0.codec.long_name", "DV (Digital Video)" );
+			mlt_properties_set_int( properties, "audio_index", 1 );
+			mlt_properties_set( properties, "meta.media.1.stream.type", "audio" );
+			mlt_properties_set( properties, "meta.media.1.codec.name", "pcm_s16le" );
+			mlt_properties_set( properties, "meta.media.1.codec.long_name", "signed 16-bit little-endian PCM" );
 
 			// Return the decoder
 			dv_decoder_return( dv_decoder );
@@ -487,14 +497,18 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "frequency", dv_decoder->audio->frequency );
 		mlt_properties_set_int( properties, "channels", dv_decoder->audio->num_channels );
 
-		// Hmm - register audio callback
-		mlt_frame_push_audio( *frame, producer_get_audio );
+		// Register audio callback
+		if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "audio_index" ) > 0 )
+			mlt_frame_push_audio( *frame, producer_get_audio );
 	
-		// Push the quality string
-		mlt_frame_push_service( *frame, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "quality" ) );
-	
-		// Push the get_image method on to the stack
-		mlt_frame_push_get_image( *frame, producer_get_image );
+		if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "video_index" ) > -1 )
+		{
+			// Push the quality string
+			mlt_frame_push_service( *frame, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "quality" ) );
+
+			// Push the get_image method on to the stack
+			mlt_frame_push_get_image( *frame, producer_get_image );
+		}
 	
 		// Return the decoder
 		dv_decoder_return( dv_decoder );
