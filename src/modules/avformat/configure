@@ -21,6 +21,7 @@ FFMPEG/avformat options:
   --avformat-suffix=suff  - Specify a custom suffix for an ffmpeg shared build
   --avformat-swscale      - Use ffmpeg libswcale instead of img_convert
   --avformat-no-codecs    - Disable the producer and consumer to avoid the FFmpeg codecs
+  --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
 
   NOTE: The recommended version of FFmpeg is SVN-r$svn_rev.
 
@@ -59,6 +60,7 @@ else
 	export avformat_suffix=
 	export swscale=
 	export codecs=true
+	export filters=true
 
 	for i in "$@"
 	do
@@ -73,6 +75,7 @@ else
 			--avformat-swscale )	swscale=true ;;
 			--avformat-swscaler )	swscale=true ;;
 			--avformat-no-codecs )	codecs=false ;;
+			--avformat-no-filters )	filters=false ;;
 		esac
 	done
 
@@ -158,6 +161,7 @@ else
 	echo "EXTRA_LIBS=$extra_libs" >> config.mak
 	echo "AVFORMAT_SUFFIX=$avformat_suffix" >> config.mak
 	[ "$codecs" = "true" ] && echo "CODECS=1" >> config.mak
+	[ "$filters" = "true" ] && echo "FILTERS=1" >> config.mak
 	exit 0
 
 fi

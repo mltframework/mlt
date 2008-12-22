@@ -106,14 +106,18 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 			return consumer_avformat_init( profile, arg );
 	}
 #endif
+#ifdef FILTERS
 	if ( !strcmp( id, "avcolour_space" ) )
 		return filter_avcolour_space_init( arg );
 	if ( !strcmp( id, "avdeinterlace" ) )
 		return filter_avdeinterlace_init( arg );
 	if ( !strcmp( id, "avresample" ) )
 		return filter_avresample_init( arg );
+#ifdef SWSCALE
 	if ( !strcmp( id, "swscale" ) )
 		return filter_swscale_init( profile, arg );
+#endif
+#endif
 	return NULL;
 }
 
@@ -149,9 +153,13 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "avformat", create_service );
 	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
 #endif
+#ifdef FILTERS
 	MLT_REGISTER( filter_type, "avcolour_space", create_service );
 	MLT_REGISTER( filter_type, "avcolor_space", create_service );
 	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
 	MLT_REGISTER( filter_type, "avresample", create_service );
+#ifdef SWSCALE
 	MLT_REGISTER( filter_type, "swscale", create_service );
+#endif
+#endif
 }

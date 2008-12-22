@@ -1,15 +1,22 @@
 include ../../../config.mak
 include config.mak
 
+ifndef CODECS
+TARGET = ../libmltffmpeg$(LIBSUF)
+else
 TARGET = ../libmltavformat$(LIBSUF)
+endif
 
-OBJS = factory.o \
-	   filter_avcolour_space.o \
-	   filter_avresample.o \
-	   filter_avdeinterlace.o
+OBJS = factory.o
 
+ifdef FILTERS
+OBJS += filter_avcolour_space.o \
+	    filter_avresample.o \
+	    filter_avdeinterlace.o
 ifdef SWSCALE
 OBJS += filter_swscale.o
+endif
+CFLAGS += -DFILTERS
 endif
 
 ifdef CODECS
@@ -58,7 +65,7 @@ distclean:	clean
 
 clean:	
 	#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg clean ; fi
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) ../libmltffmpeg$(LIBSUF) ../libmltavformat$(LIBSUF)
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
@@ -67,6 +74,7 @@ install: all
 
 uninstall:
 	rm "$(DESTDIR)$(libdir)/mlt/libmltavformat$(LIBSUF)"
+	rm "$(DESTDIR)$(libdir)/mlt/libmltffmpeg$(LIBSUF)"
 	rm -rf "$(DESTDIR)$(prefix)/share/mlt/avformat" 
 
 ifneq ($(wildcard .depend),)
