@@ -172,6 +172,13 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 				vorbis_info *vi = ov_info( ov, -1 );
 				mlt_properties_set_int( properties, "frequency", (int) vi->rate );
 				mlt_properties_set_int( properties, "channels", vi->channels );
+
+				// Set some media metadata
+				mlt_properties_set_int( properties, "meta.media.nb_streams", 1 );
+				mlt_properties_set_int( properties, "audio_index", 0 );
+				mlt_properties_set( properties, "meta.media.0.stream.type", "audio" );
+				mlt_properties_set( properties, "meta.media.0.codec.name", "vorbis" );
+				mlt_properties_set( properties, "meta.media.0.codec.long_name", "Vorbis" );
 			}
 		}
 		else
