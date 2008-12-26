@@ -207,7 +207,7 @@ static int add_producer( deserialise_context context, mlt_service service, mlt_p
 	int result = 0;
 
 	// Get the parent producer
-	enum service_type type;
+	enum service_type type = mlt_invalid_type;
 	mlt_service container = context_pop_service( context, &type );
 	int contained = 0;
 
