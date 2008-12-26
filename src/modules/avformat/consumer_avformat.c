@@ -315,7 +315,9 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		const char *opt_name = mlt_properties_get_name( properties, i );
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
 		if ( opt != NULL )
-#if LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
+#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
+			av_set_string3( obj, opt_name, mlt_properties_get( properties, opt_name), 0, NULL );
+#elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
 			av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
 #else
 			av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
