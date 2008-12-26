@@ -502,7 +502,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			}
 			else if ( ar == 16.0/15.0 ) // 4:3 PAL
 			{
-				c->sample_aspect_ratio.num = 159;
+				c->sample_aspect_ratio.num = 59;
 				c->sample_aspect_ratio.den = 54;
 			}
 			else if ( ar == 32.0/27.0 ) // 16:9 NTSC
@@ -513,7 +513,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			else // 16:9 PAL
 			{
 				c->sample_aspect_ratio.num = 118;
-				c->sample_aspect_ratio.den = 81;
+				c->sample_aspect_ratio.den = 82;
 			}
 		}
 		else if ( mlt_properties_get( properties, "aspect" ) )
