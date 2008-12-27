@@ -146,6 +146,9 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 );
 	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 );
 
+	if ( *width == 0 || *height == 0 )
+		return;
+
 	// Pick the lesser of two evils ;-)
 	width_src = width_src > width_dest ? width_dest : width_src;
 	height_src = height_src > height_dest ? height_dest : height_src;
@@ -527,7 +530,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if ( mlt_properties_get( properties, "fixed" ) )
 		mix = mlt_properties_get_double( properties, "fixed" );
 
-
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 		// Composite the frames using a luma map
 		luma_composite( !invert ? a_frame : b_frame, !invert ? b_frame : a_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
@@ -535,7 +537,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	else
 		// Dissolve the frames using the time offset for mix value
 		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
-
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
