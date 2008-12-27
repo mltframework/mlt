@@ -29,4 +29,4 @@ elif [ -f "$prefix/share/mlt/packages.dat" ]
 then grep "^$package" $prefix/share/mlt/packages.dat | cut -f $field
 else echo mlt-config cannot find package $package.
 fi
-echo "mlt-config is deprecated. Please use pkg-config instead."
+echo >&2 "mlt-config is deprecated. Please use pkg-config instead."
