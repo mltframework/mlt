@@ -44,6 +44,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( out == 0 )
 		out = 24;
 
+	if ( b_frame == NULL || mlt_properties_get_int( b_frame_props, "width" ) != *width || mlt_properties_get_int( b_frame_props, "height" ) != *height )
+	{
+		b_frame = mlt_frame_init( MLT_FILTER_SERVICE( filter ) );
+		mlt_properties_set_data( properties, "frame", b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+	}
+
 	if ( luma == NULL )
 	{
 		char *resource = mlt_properties_get( properties, "resource" );
@@ -57,12 +63,27 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_int( luma_properties, "reverse", 1 );
 			mlt_properties_set_data( properties, "luma", luma, 0, ( mlt_destructor )mlt_transition_close, NULL );
 		}
-	}
 
-	if ( b_frame == NULL || mlt_properties_get_int( b_frame_props, "width" ) != *width || mlt_properties_get_int( b_frame_props, "height" ) != *height )
-	{
-		b_frame = mlt_frame_init( MLT_FILTER_SERVICE( filter ) );
-		mlt_properties_set_data( properties, "frame", b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+		// Prime the filter with the first image to prevent a transition from the white
+		// of a test card.
+		error = mlt_frame_get_image( this, image, format, width, height, 1 );
+		if ( error == 0 )
+		{
+			mlt_properties a_props = MLT_FRAME_PROPERTIES( this );
+			int size = 0;
+			uint8_t *src = mlt_properties_get_data( a_props, "image", &size );
+			uint8_t *dst = mlt_pool_alloc( size );
+	
+			if ( dst != NULL )
+			{
+				mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
+				memcpy( dst, src, size );
+				mlt_properties_set_data( b_props, "image", dst, size, mlt_pool_release, NULL );
+				mlt_properties_set_int( b_props, "width", *width );
+				mlt_properties_set_int( b_props, "height", *height );
+				mlt_properties_set_int( b_props, "format", *format );
+			}
+		}
 	}
 
 	if ( luma != NULL && 
