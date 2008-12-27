@@ -3,7 +3,7 @@
 which swig > /dev/null 2>&1
 [ $? != 0 ] && echo "Please install swig" && exit 1
 
-which mlt-config > /dev/null 2>&1
+pkg-config mlt-framework --cflags > /dev/null 2>&1
 [ $? != 0 ] && echo "Please install mlt" && exit 1
 
 if [ "$1" = "all" ]
