@@ -6,7 +6,7 @@ import time
 import sys
 
 # Start the mlt system
-mltpp.Factory.init( )
+mltpp.Factory().init( )
 
 # Establish a profile
 profile = mltpp.Profile( )

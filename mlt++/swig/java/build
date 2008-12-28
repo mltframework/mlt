@@ -21,7 +21,7 @@ then
 	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I../../src `pkg-config mlt-framework --cflags` mltpp_wrap.cxx $JAVA_INCLUDE || exit $?
 	
 	# Create the module
-	ld -shared mltpp_wrap.o -L../../src -lmlt++ -o libmltpp_java.so || exit $?
+	gcc -shared mltpp_wrap.o -L../../src -lmlt++ -o libmltpp_java.so || exit $?
 
 	# Compile the test
 	javac `find src_swig -name '*.java'` || exit $?

@@ -13,7 +13,7 @@ then
 	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I../../src `pkg-config mlt-framework --cflags` mltpp_wrap.cxx || exit 1
 
 	# Create the module
-	ld -shared mltpp_wrap.o -L../../src -lmlt++ -o mltpp.so || exit 1
+	gcc -shared mltpp_wrap.o -L../../src -lmlt++ -o mltpp.so || exit 1
 else
 	echo "Unable to locate tclsh."
 	exit 1
