@@ -206,7 +206,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_int( properties, "rescale_width", iwidth );
 			mlt_properties_set_int( properties, "rescale_height", iheight );
 		}
-	
+
+		// Deinterlace if height is changing to prevent fields mixing on interpolation
+		// One exception: non-interpolated, integral scaling
+		if ( iheight != oheight && ( strcmp( interps, "nearest" ) || ( iheight % oheight != 0 ) ) )
+			mlt_properties_set_int( properties, "consumer_deinterlace", 1 );
+
 		// Get the image as requested
 		mlt_frame_get_image( this, image, format, &iwidth, &iheight, writable );
 

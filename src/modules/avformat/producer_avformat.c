@@ -985,6 +985,8 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			// Set the width and height
 			mlt_properties_set_int( frame_properties, "width", codec_context->width );
 			mlt_properties_set_int( frame_properties, "height", codec_context->height );
+			mlt_properties_set_int( frame_properties, "real_width", codec_context->width );
+			mlt_properties_set_int( frame_properties, "real_height", codec_context->height );
 			mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
 
 			mlt_frame_push_get_image( frame, producer_get_image );
