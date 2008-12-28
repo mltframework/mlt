@@ -3,7 +3,7 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-svn_rev="15791"
+svn_rev="16313"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
 [ "$odd_version" -eq "1" ] && svn_rev="HEAD"
