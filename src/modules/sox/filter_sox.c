@@ -106,7 +106,9 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 #ifdef SOX14
 	//fprintf(stderr, "%s: effect %s count %d\n", __FUNCTION__, tokeniser->tokens[0], tokeniser->count );
 #if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,1,0))
-	eff_t eff = sox_create_effect( sox_find_effect( tokeniser->tokens[0] ) );
+	sox_effect_handler_t const *eff_handle = sox_find_effect( tokeniser->tokens[0] );
+	if (eff_handle == NULL ) return error;
+	eff_t eff = sox_create_effect( eff_handle );
 	effect_destructor = ( mlt_destructor ) delete_effect;
 	sox_encodinginfo_t *enc = calloc( 1, sizeof( sox_encodinginfo_t ) );
 	enc->encoding = SOX_ENCODING_SIGN2;
