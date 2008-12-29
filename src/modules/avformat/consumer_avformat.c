@@ -488,37 +488,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		st->time_base = c->time_base;
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
 
-		if ( codec_id == CODEC_ID_DVVIDEO )
-		{
-			// Compensate for FFmpeg's notion of DV aspect ratios, which are
-			// based upon a width of 704. Since we do not have a normaliser
-			// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
-			// we just coerce the values to facilitate a passive behaviour through
-			// the rescale normaliser when using equivalent producers and consumers.
-			// = display_aspect / (width * height)
-			double ar = mlt_properties_get_double( properties, "aspect_ratio" );
-			if ( ar == 8.0/9.0 )  // 4:3 NTSC
-			{
-				c->sample_aspect_ratio.num = 10;
-				c->sample_aspect_ratio.den = 11;
-			}
-			else if ( ar == 16.0/15.0 ) // 4:3 PAL
-			{
-				c->sample_aspect_ratio.num = 59;
-				c->sample_aspect_ratio.den = 54;
-			}
-			else if ( ar == 32.0/27.0 ) // 16:9 NTSC
-			{
-				c->sample_aspect_ratio.num = 40;
-				c->sample_aspect_ratio.den = 33;
-			}
-			else // 16:9 PAL
-			{
-				c->sample_aspect_ratio.num = 118;
-				c->sample_aspect_ratio.den = 82;
-			}
-		}
-		else if ( mlt_properties_get( properties, "aspect" ) )
+		if ( mlt_properties_get( properties, "aspect" ) )
 		{
 			// "-aspect" on ffmpeg command line is display aspect ratio
 			double ar = mlt_properties_get_double( properties, "aspect" );
@@ -549,7 +519,6 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 				profile->sample_aspect_den = rational.den;
 				mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
 			}
-
 		}
 		else
 		{
