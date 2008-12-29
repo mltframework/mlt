@@ -1,6 +1,31 @@
 MLT Release Notes
 -----------------
 
+Version 0.3.4
+
+The recommended version of FFmpeg for use with this release is SVN r16313.
+
+This almost entirely a bugfix release. See the ChangeLog (SVN log) for details.
+There are a few notes:
+
+framework:
+* improved doxygen documentation comments (work in progress)
+  published docs are at http://mltframework.org/doxygen/
+
+avformat module:
+* added support for AVOption parsing to producer
+* added filter_swscale as alternative rescaler
+* added recommended FFmpeg revision to configure option --help
+* use recommended FFmpeg revision with --avformat-svn on release versions
+* added configure option --avformat-no-codecs
+* added configure option --avformat-no-filters
+
+misc:
+* new profile atsc_1080i_50
+* added --disable-sse option to configure script
+* improved build for OS X and x86-64 and improved handling of mmx/sse
+
+
 Version 0.3.2
 
 In addition to bug fixes detailed in the ChangeLog, here is a list of
