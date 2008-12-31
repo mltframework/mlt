@@ -106,7 +106,7 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 	mlt_properties_set_int( meta_media, "meta.media.nb_streams", context->nb_streams );
 
 	// Allow for multiple audio and video streams in the file and select first of each (if available)
-	for( i = 0; i < context->nb_streams; i++ ) 
+	for( i = 0; i < context->nb_streams; i++ )
 	{
 		// Get the codec context
 		AVStream *stream = context->streams[ i ];
@@ -127,8 +127,10 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 				mlt_properties_set( meta_media, key, "video" );
 				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->r_frame_rate ) );
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
 				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->sample_aspect_ratio ) );
+#endif
 				snprintf( key, sizeof(key), "meta.media.%d.codec.pix_fmt", i );
 				mlt_properties_set( meta_media, key, avcodec_get_pix_fmt_name( codec_context->pix_fmt ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
@@ -138,8 +140,10 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 				if ( *audio_index < 0 )
 					*audio_index = i;
 				mlt_properties_set( meta_media, key, "audio" );
+#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
 				mlt_properties_set( meta_media, key, avcodec_get_sample_fmt_name( codec_context->sample_fmt ) );
+#endif
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_rate", i );
 				mlt_properties_set_int( meta_media, key, codec_context->sample_rate );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.channels", i );
@@ -304,7 +308,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 
 	// Lock the mutex now
 	avformat_lock( );
-	
+
 	// If "MRL", then create AVInputFormat
 	AVInputFormat *format = NULL;
 	AVFormatParameters *params = NULL;
@@ -313,7 +317,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 
 	// AV option (0 = both, 1 = video, 2 = audio)
 	int av = 0;
-	
+
 	// Setting lowest log level
 	av_log_set_level( -1 );
 
@@ -322,18 +326,18 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 	{
 		// 'file' becomes format abbreviation
 		mrl[0] = 0;
-	
+
 		// Lookup the format
 		format = av_find_input_format( file );
-		
+
 		// Eat the format designator
 		file = ++mrl;
-		
+
 		if ( format )
 		{
 			// Allocate params
 			params = calloc( sizeof( AVFormatParameters ), 1 );
-			
+
 			// These are required by video4linux (defaults)
 			params->width = 640;
 			params->height = 480;
@@ -342,7 +346,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 			params->channels = 2;
 			params->sample_rate = 48000;
 		}
-		
+
 		// XXX: this does not work anymore since avdevice
 		// TODO: make producer_avddevice?
 		// Parse out params
@@ -386,7 +390,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 
 	// Now attempt to open the file
 	error = av_open_input_file( &context, file, format, 0, params ) < 0;
-	
+
 	// Cleanup AVFormatParameters
 	free( standard );
 	free( params );
@@ -406,7 +410,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 			int av_bypass = 0;
 
 			// Now set properties where we can (use default unknowns if required)
-			if ( context->duration != AV_NOPTS_VALUE ) 
+			if ( context->duration != AV_NOPTS_VALUE )
 			{
 				// This isn't going to be accurate for all formats
 				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps + 0.5 );
@@ -419,7 +423,7 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 
 			if ( context->start_time != AV_NOPTS_VALUE )
 				mlt_properties_set_double( properties, "_start_time", context->start_time );
-			
+
 			// Check if we're seekable (something funny about mpeg here :-/)
 			if ( strcmp( file, "pipe:" ) && strncmp( file, "http://", 6 )  && strncmp( file, "udp:", 4 )  && strncmp( file, "tcp:", 4 ) && strncmp( file, "rtsp:", 5 )  && strncmp( file, "rtp:", 4 ) )
 			{
@@ -467,21 +471,21 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 			}
 
 			// Read Metadata
-			if (context->title != NULL) 
+			if (context->title != NULL)
 				mlt_properties_set(properties, "meta.attr.title.markup", context->title );
-			if (context->author != NULL) 
+			if (context->author != NULL)
 				mlt_properties_set(properties, "meta.attr.author.markup", context->author );
-			if (context->copyright != NULL) 
+			if (context->copyright != NULL)
 				mlt_properties_set(properties, "meta.attr.copyright.markup", context->copyright );
-			if (context->comment != NULL) 
+			if (context->comment != NULL)
 				mlt_properties_set(properties, "meta.attr.comment.markup", context->comment );
-			if (context->album != NULL) 
+			if (context->album != NULL)
 				mlt_properties_set(properties, "meta.attr.album.markup", context->album );
-			if (context->year != 0) 
+			if (context->year != 0)
 				mlt_properties_set_int(properties, "meta.attr.year.markup", context->year );
-			if (context->track != 0) 
+			if (context->track != 0)
 				mlt_properties_set_int(properties, "meta.attr.track.markup", context->track );
-			
+
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
 			if ( av == 0 && audio_index != -1 && video_index != -1 )
 			{
@@ -644,7 +648,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain the frame number of this frame
 	mlt_position position = mlt_properties_get_position( frame_properties, "avformat_position" );
 
-	// Get the producer 
+	// Get the producer
 	mlt_producer this = mlt_properties_get_data( frame_properties, "avformat_producer", NULL );
 
 	// Get the producer properties
@@ -724,7 +728,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 			// Set to the timestamp
 			av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD );
-	
+
 			// Remove the cached info relating to the previous position
 			mlt_properties_set_int( properties, "_current_position", -1 );
 			mlt_properties_set_int( properties, "_last_position", -1 );
@@ -843,7 +847,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static void apply_properties( void *obj, mlt_properties properties, int flags )
 {
 	int i;
-	int count = mlt_properties_count( properties ); 
+	int count = mlt_properties_count( properties );
 	for ( i = 0; i < count; i++ )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
@@ -928,11 +932,11 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 				get_aspect_ratio( context->streams[ index ], codec_context, NULL ) );
 			codec = NULL;
 		}
-	
+
 		// Initialise the codec if necessary
 		if ( codec == NULL )
 		{
-			// Initialise multi-threading 
+			// Initialise multi-threading
 			int thread_count = mlt_properties_get_int( properties, "threads" );
 			if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 				thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
@@ -941,7 +945,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 				avcodec_thread_init( codec_context, thread_count );
 				codec_context->thread_count = thread_count;
 			}
-			
+
 			// Find the codec
 			codec = avcodec_find_decoder( codec_context->codec_id );
 
@@ -981,7 +985,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			else
 				mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( this ) );
 			mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
-			
+
 			// Set the width and height
 			mlt_properties_set_int( frame_properties, "width", codec_context->width );
 			mlt_properties_set_int( frame_properties, "height", codec_context->height );
@@ -1014,7 +1018,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Obtain the frame number of this frame
 	mlt_position position = mlt_properties_get_position( frame_properties, "avformat_position" );
 
-	// Get the producer 
+	// Get the producer
 	mlt_producer this = mlt_properties_get_data( frame_properties, "avformat_producer", NULL );
 
 	// Get the producer properties
@@ -1063,7 +1067,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Number of frames to ignore (for ffwd)
 	int ignore = 0;
 
-	// Flag for paused (silence) 
+	// Flag for paused (silence)
 	int paused = 0;
 
 	// Check for resample and create if necessary
@@ -1266,7 +1270,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		{
 			memset( *buffer, 0, *samples * *channels * sizeof( int16_t ) );
 		}
-		
+
 		// Store the number of audio samples still available
 		mlt_properties_set_int( properties, "_audio_used", audio_used );
 	}
