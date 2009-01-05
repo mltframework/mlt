@@ -42,7 +42,8 @@
  * \event \em property-changed
  * \properties \em mlt_type identifies the subclass
  * \properties \em resource is either the stream identifier or grandchild-class
- * \properties \em in where to start playing
+ * \properties \em in when to start, what is started is service-specific
+ * \properties \em out when to stop
  * \properties \em _filter_private Set this on a service to ensure that attached filters are handled privately.
  * See modules/core/filter_region.c and modules/core/filter_watermark.c for examples.
  * \properties \em disable Set this on a filter to disable it while keeping it in the object model.

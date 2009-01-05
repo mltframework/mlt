@@ -25,26 +25,26 @@
 
 /** \brief Filter abstract service class
  *
+ * A filter is a service that may modify the output of a single producer.
+ *
  * \extends mlt_service_s
+ * \properties \em track the index of the track of a multitrack on which the filter is applied
  */
 
 struct mlt_filter_s
 {
-	/* We're implementing service here */
+	/** We're implementing service here */
 	struct mlt_service_s parent;
 
-	/* public virtual */
+	/** public virtual */
 	void ( *close )( mlt_filter );
 
-	/* protected filter method */
+	/** protected filter method */
 	mlt_frame ( *process )( mlt_filter, mlt_frame );
 
-	/* Protected */
+	/** Protected */
 	void *child;
 };
-
-/** Public final methods
-*/
 
 #define MLT_FILTER_SERVICE( filter )		( &( filter )->parent )
 #define MLT_FILTER_PROPERTIES( filter )		MLT_SERVICE_PROPERTIES( MLT_FILTER_SERVICE( filter ) )

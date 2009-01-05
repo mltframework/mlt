@@ -101,7 +101,9 @@ int mlt_service_init( mlt_service this, void *child )
 	return error;
 }
 
-/** The listener for property changes.
+/** The transmitter for property changes.
+ *
+ * Invokes the listener.
  *
  * \private \memberof mlt_service_s
  * \param listener a function pointer that will be invoked
@@ -394,7 +396,6 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 	mlt_service_base *base = this->local;
 	mlt_position position = mlt_frame_get_position( frame );
 	mlt_position this_in = mlt_properties_get_position( service_properties, "in" );
-	/** \properties \em out where to stop  playing */
 	mlt_position this_out = mlt_properties_get_position( service_properties, "out" );
 
 	if ( index == 0 || mlt_properties_get_int( service_properties, "_filter_private" ) == 0 )

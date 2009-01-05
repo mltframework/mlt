@@ -27,33 +27,37 @@
 
 /** \brief Transition abstract service class
  *
+ * A transition may modify the output of a producer based on the output of a second producer.
+ *
  * \extends mlt_service_s
+ * \properties \em a_track the track index (0-based) of a multitrack of the first producer
+ * \properties \em b_track the track index (0-based) of a multitrack of the second producer
+ * \properties \em accepts_blanks a flag to indicate if the transition should accept blank frames
+ * \properties \em always_active a flag to indicate that the in and out points do not apply
+ * \properties \em _transition_type 1 for video, 2 for audio
  */
 
 struct mlt_transition_s
 {
-	/* We're implementing service here */
+	/** We're implementing service here */
 	struct mlt_service_s parent;
 
-	/* public virtual */
+	/** public virtual */
 	void ( *close )( mlt_transition );
 
-	/* protected transition method */
+	/** protected transition method */
 	mlt_frame ( *process )( mlt_transition, mlt_frame, mlt_frame );
 
-	/* Protected */
+	/** Protected */
 	void *child;
 
-	/* track and in/out points */
+	/** track and in/out points */
 	mlt_service producer;
 
-	/* Private */
+	/** Private */
 	mlt_frame *frames;
 	int held;
 };
-
-/** Public final methods
-*/
 
 #define MLT_TRANSITION_SERVICE( transition )		( &( transition )->parent )
 #define MLT_TRANSITION_PROPERTIES( transition )		MLT_SERVICE_PROPERTIES( MLT_TRANSITION_SERVICE( transition ) )

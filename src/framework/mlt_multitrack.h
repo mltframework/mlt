@@ -38,6 +38,8 @@ typedef struct mlt_track_s *mlt_track;
 
 /** \brief Multitrack class
  *
+ * A multitrack is a parallel container of producers that acts a single producer.
+ *
  * \extends mlt_producer_s
  */
 

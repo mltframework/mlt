@@ -27,12 +27,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/** Forward reference.
-*/
+/* Forward reference. */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 
-/** Constructor.
+/** Construct and initialize a new multitrack.
 */
 
 mlt_multitrack mlt_multitrack_init( )

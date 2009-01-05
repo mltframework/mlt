@@ -31,12 +31,25 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+/** Define this if you want an automatic deinterlace (if necessary) when the
+ * consumer's producer is not running at normal speed.
+ */
 #undef DEINTERLACE_ON_NOT_NORMAL_SPEED
 
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name );
 static void apply_profile_properties( mlt_consumer this, mlt_profile profile, mlt_properties properties );
+
+/** Initialize a consumer service.
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this the consumer to initialize
+ * \param child a pointer to the object for the subclass
+ * \param profile the \p mlt_profile_s to use (optional but recommended,
+ * uses the environment variable MLT if this is NULL)
+ * \return true if there was an error
+ */
 
 int mlt_consumer_init( mlt_consumer this, void *child, mlt_profile profile )
 {
@@ -95,6 +108,14 @@ int mlt_consumer_init( mlt_consumer this, void *child, mlt_profile profile )
 	return error;
 }
 
+/** Convert the profile into properties on the consumer.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param this a consumer
+ * \param profile a profile
+ * \param properties a properties list (typically, the consumer's)
+ */
+
 static void apply_profile_properties( mlt_consumer this, mlt_profile profile, mlt_properties properties )
 {
 	mlt_event_block( this->event_listener );
@@ -112,6 +133,14 @@ static void apply_profile_properties( mlt_consumer this, mlt_profile profile, ml
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
 	mlt_event_unblock( this->event_listener );
 }
+
+/** The property-changed event listener
+ *
+ * \private \memberof mlt_consumer_s
+ * \param owner the service a service (ignored)
+ * \param this the consumer
+ * \param name the name of the property that changed
+ */
 
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name )
 {
@@ -224,11 +253,33 @@ static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this,
 	}
 }
 
+/** The transmitter for the consumer-frame-show event
+ *
+ * Invokes the listener.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param listener a function pointer that will be invoked
+ * \param owner  a properties list that will be passed to \p listener
+ * \param this  a service that will be passed to \p listener
+ * \param args an array of pointers - the first entry is passed as a string to \p listener
+ */
+
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
 {
 	if ( listener != NULL )
 		listener( owner, this, ( mlt_frame )args[ 0 ] );
 }
+
+/** The transmitter for the consumer-frame-render event
+ *
+ * Invokes the listener.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param listener a function pointer that will be invoked
+ * \param owner  a properties list that will be passed to \p listener
+ * \param this  a service that will be passed to \p listener
+ * \param args an array of pointers - the first entry is passed as a string to \p listener
+ */
 
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
 {
@@ -237,7 +288,11 @@ static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties own
 }
 
 /** Create a new consumer.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param profile a profile (optional, but recommended)
+ * \return a new consumer
+ */
 
 mlt_consumer mlt_consumer_new( mlt_profile profile )
 {
@@ -253,7 +308,12 @@ mlt_consumer mlt_consumer_new( mlt_profile profile )
 }
 
 /** Get the parent service object.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \return the parent service class
+ * \see MLT_CONSUMER_SERVICE
+ */
 
 mlt_service mlt_consumer_service( mlt_consumer this )
 {
@@ -261,7 +321,12 @@ mlt_service mlt_consumer_service( mlt_consumer this )
 }
 
 /** Get the consumer properties.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \return the consumer's properties list
+ * \see MLT_CONSUMER_PROPERTIES
+ */
 
 mlt_properties mlt_consumer_properties( mlt_consumer this )
 {
@@ -269,7 +334,15 @@ mlt_properties mlt_consumer_properties( mlt_consumer this )
 }
 
 /** Connect the consumer to the producer.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \param producer a producer
+ * \return > 0 warning, == 0 success, < 0 serious error,
+ *         1 = this service does not accept input,
+ *         2 = the producer is invalid,
+ *         3 = the producer is already registered with this consumer
+ */
 
 int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 {
@@ -277,7 +350,11 @@ int mlt_consumer_connect( mlt_consumer this, mlt_service producer )
 }
 
 /** Start the consumer.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \return true if there was an error
+ */
 
 int mlt_consumer_start( mlt_consumer this )
 {
@@ -342,9 +419,15 @@ int mlt_consumer_start( mlt_consumer this )
 	return 0;
 }
 
-/** An alternative method to feed frames into the consumer - only valid if
-	the consumer itself is not connected.
-*/
+/** An alternative method to feed frames into the consumer.
+ *
+ * Only valid if the consumer itself is not connected.
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \param frame a frame
+ * \return true (ignore this for now)
+ */
 
 int mlt_consumer_put_frame( mlt_consumer this, mlt_frame frame )
 {
@@ -381,7 +464,11 @@ int mlt_consumer_put_frame( mlt_consumer this, mlt_frame frame )
 }
 
 /** Protected method for consumer to get frames from connected service
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \return a frame
+ */
 
 mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 {
@@ -448,6 +535,13 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer this )
 	return frame;
 }
 
+/** Compute the time difference between now and a time value.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param time1 a time value to be compared against now
+ * \return the difference in microseconds
+ */
+
 static inline long time_difference( struct timeval *time1 )
 {
 	struct timeval time2;
@@ -456,6 +550,13 @@ static inline long time_difference( struct timeval *time1 )
 	gettimeofday( time1, NULL );
 	return time1->tv_sec * 1000000 + time1->tv_usec - time2.tv_sec * 1000000 - time2.tv_usec;
 }
+
+/** The thread procedure for asynchronously pulling frames through the service
+ * network connected to a consumer.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param arg a consumer
+ */
 
 static void *consumer_read_ahead_thread( void *arg )
 {
@@ -643,6 +744,12 @@ static void *consumer_read_ahead_thread( void *arg )
 	return NULL;
 }
 
+/** Start the read/render thread.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param this a consumer
+ */
+
 static void consumer_read_ahead_start( mlt_consumer this )
 {
 	// We're running now
@@ -677,6 +784,12 @@ static void consumer_read_ahead_start( mlt_consumer this )
 		pthread_create( &this->ahead_thread, NULL, consumer_read_ahead_thread, this );
 	}
 }
+
+/** Stop the read/render thread.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param this a consumer
+ */
 
 static void consumer_read_ahead_stop( mlt_consumer this )
 {
@@ -714,6 +827,12 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 	}
 }
 
+/** Flush the read/render thread's buffer.
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ */
+
 void mlt_consumer_purge( mlt_consumer this )
 {
 	if ( this->ahead )
@@ -725,6 +844,17 @@ void mlt_consumer_purge( mlt_consumer this )
 		pthread_mutex_unlock( &this->mutex );
 	}
 }
+
+/** Get the next frame from the producer connected to a consumer.
+ *
+ * Typically, one uses this instead of \p mlt_consumer_get_frame to make
+ * the asynchronous/real-time behavior configurable at runtime.
+ * You should close the frame returned from this when you are done with it.
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \return a frame
+ */
 
 mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 {
@@ -771,7 +901,10 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 }
 
 /** Callback for the implementation to indicate a stopped condition.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ */
 
 void mlt_consumer_stopped( mlt_consumer this )
 {
@@ -781,7 +914,11 @@ void mlt_consumer_stopped( mlt_consumer this )
 }
 
 /** Stop the consumer.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \return true if there was an error
+ */
 
 int mlt_consumer_stop( mlt_consumer this )
 {
@@ -819,7 +956,11 @@ int mlt_consumer_stop( mlt_consumer this )
 }
 
 /** Determine if the consumer is stopped.
-*/
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ * \return true if the consumer is stopped
+ */
 
 int mlt_consumer_is_stopped( mlt_consumer this )
 {
@@ -830,8 +971,11 @@ int mlt_consumer_is_stopped( mlt_consumer this )
 	return 0;
 }
 
-/** Close the consumer.
-*/
+/** Close and destroy the consumer.
+ *
+ * \public \memberof mlt_consumer_s
+ * \param this a consumer
+ */
 
 void mlt_consumer_close( mlt_consumer this )
 {

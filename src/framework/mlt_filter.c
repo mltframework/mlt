@@ -27,8 +27,13 @@
 
 static int filter_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 
-/** Constructor method.
-*/
+/** Initialize a new filter.
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \param child the object of a subclass
+ * \return true if there was an error
+ */
 
 int mlt_filter_init( mlt_filter this, void *child )
 {
@@ -56,8 +61,11 @@ int mlt_filter_init( mlt_filter this, void *child )
 	return 1;
 }
 
-/** Create a new filter.
-*/
+/** Create a new filter and initialize it.
+ *
+ * \public \memberof mlt_filter_s
+ * \return a new filter
+ */
 
 mlt_filter mlt_filter_new( )
 {
@@ -67,16 +75,26 @@ mlt_filter mlt_filter_new( )
 	return this;
 }
 
-/** Get the service associated to this filter
-*/
+/** Get the service class interface.
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \return the service parent class
+ * \see MLT_FILTER_SERVICE
+ */
 
 mlt_service mlt_filter_service( mlt_filter this )
 {
 	return this != NULL ? &this->parent : NULL;
 }
 
-/** Get the properties associated to this filter.
-*/
+/** Get the filter properties.
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \return the properties list for the filter
+ * \see MLT_FILTER_PROPERTIES
+ */
 
 mlt_properties mlt_filter_properties( mlt_filter this )
 {
@@ -84,13 +102,18 @@ mlt_properties mlt_filter_properties( mlt_filter this )
 }
 
 /** Connect this filter to a producers track. Note that a filter only operates
-	on a single track, and by default it operates on the entirety of that track.
-*/
+ * on a single track, and by default it operates on the entirety of that track.
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \param producer the producer to which to connect this filter
+ * \param index which of potentially multiple producers to this service (0 based)
+ */
 
 int mlt_filter_connect( mlt_filter this, mlt_service producer, int index )
 {
 	int ret = mlt_service_connect_producer( &this->parent, producer, index );
-	
+
 	// If the connection was successful, grab the producer, track and reset in/out
 	if ( ret == 0 )
 	{
@@ -99,12 +122,18 @@ int mlt_filter_connect( mlt_filter this, mlt_service producer, int index )
 		mlt_properties_set_position( properties, "out", 0 );
 		mlt_properties_set_int( properties, "track", index );
 	}
-	
+
 	return ret;
 }
 
-/** Tune the in/out points.
-*/
+/** Set the starting and ending time.
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \param in the time relative to the producer at which start applying the filter
+ * \param out the time relative to the producer at which to stop applying the filter
+ */
+
 
 void mlt_filter_set_in_and_out( mlt_filter this, mlt_position in, mlt_position out )
 {
@@ -114,7 +143,12 @@ void mlt_filter_set_in_and_out( mlt_filter this, mlt_position in, mlt_position o
 }
 
 /** Return the track that this filter is operating on.
-*/
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \return true on error
+ */
+
 
 int mlt_filter_get_track( mlt_filter this )
 {
@@ -123,7 +157,12 @@ int mlt_filter_get_track( mlt_filter this )
 }
 
 /** Get the in point.
-*/
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \return the start time for the filter relative to the producer
+ */
+
 
 mlt_position mlt_filter_get_in( mlt_filter this )
 {
@@ -132,7 +171,12 @@ mlt_position mlt_filter_get_in( mlt_filter this )
 }
 
 /** Get the out point.
-*/
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \return the ending time for the filter relative to the producer
+ */
+
 
 mlt_position mlt_filter_get_out( mlt_filter this )
 {
@@ -141,7 +185,13 @@ mlt_position mlt_filter_get_out( mlt_filter this )
 }
 
 /** Process the frame.
-*/
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ * \param frame a frame
+ * \return a frame
+ */
+
 
 mlt_frame mlt_filter_process( mlt_filter this, mlt_frame frame )
 {
@@ -153,7 +203,14 @@ mlt_frame mlt_filter_process( mlt_filter this, mlt_frame frame )
 }
 
 /** Get a frame from this filter.
-*/
+ *
+ * \private \memberof mlt_filter_s
+ * \param service a service
+ * \param[out] frame a frame by reference
+ * \param index as determined by the producer
+ * \return true on error
+ */
+
 
 static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
 {
@@ -163,7 +220,7 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 	int track = mlt_filter_get_track( this );
 	int in = mlt_filter_get_in( this );
 	int out = mlt_filter_get_out( this );
-	
+
 	// Get the producer this is connected to
 	mlt_service producer = mlt_service_producer( &this->parent );
 
@@ -190,8 +247,12 @@ static int filter_get_frame( mlt_service service, mlt_frame_ptr frame, int index
 	}
 }
 
-/** Close the filter.
-*/
+/** Close and destroy the filter.
+ *
+ * \public \memberof mlt_filter_s
+ * \param this a filter
+ */
+
 
 void mlt_filter_close( mlt_filter this )
 {

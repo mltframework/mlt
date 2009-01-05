@@ -50,7 +50,6 @@ static int producers_destroyed = 0;
  * \param this the producer structure to initialize
  * \param child a pointer to the child object for the subclass
  * \return true if there was an error
- * \todo Document the special properties and events.
  */
 
 int mlt_producer_init( mlt_producer this, void *child )

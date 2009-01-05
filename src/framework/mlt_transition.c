@@ -27,13 +27,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** Forward references.
-*/
+/* Forward references */
 
 static int transition_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 
-/** Constructor.
-*/
+/** Initialize a new transition.
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \param child the object of a subclass
+ * \return true on error
+ */
 
 int mlt_transition_init( mlt_transition this, void *child )
 {
@@ -58,8 +62,11 @@ int mlt_transition_init( mlt_transition this, void *child )
 	return 1;
 }
 
-/** Create a new transition.
-*/
+/** Create and initialize a new transition.
+ *
+ * \public \memberof mlt_transition_s
+ * \return a new transition
+ */
 
 mlt_transition mlt_transition_new( )
 {
@@ -69,8 +76,13 @@ mlt_transition mlt_transition_new( )
 	return this;
 }
 
-/** Get the service associated to the transition.
-*/
+/** Get the service class interface.
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \return the service class
+ * \see MLT_TRANSITION_SERVICE
+ */
 
 mlt_service mlt_transition_service( mlt_transition this )
 {
@@ -78,7 +90,12 @@ mlt_service mlt_transition_service( mlt_transition this )
 }
 
 /** Get the properties interface.
-*/
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \return the transition's properties
+ * \see MLT_TRANSITION_PROPERTIES
+ */
 
 mlt_properties mlt_transition_properties( mlt_transition this )
 {
@@ -86,7 +103,14 @@ mlt_properties mlt_transition_properties( mlt_transition this )
 }
 
 /** Connect this transition with a producers a and b tracks.
-*/
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \param producer a producer
+ * \param a_track the track index of the first input
+ * \param b_track the track index of the second index
+ * \return true on error
+ */
 
 int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_track, int b_track )
 {
@@ -101,8 +125,13 @@ int mlt_transition_connect( mlt_transition this, mlt_service producer, int a_tra
 	return ret;
 }
 
-/** Set the in and out points.
-*/
+/** Set the starting and ending time for when the transition is active.
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \param in the starting time
+ * \param out the ending time
+ */
 
 void mlt_transition_set_in_and_out( mlt_transition this, mlt_position in, mlt_position out )
 {
@@ -112,7 +141,11 @@ void mlt_transition_set_in_and_out( mlt_transition this, mlt_position in, mlt_po
 }
 
 /** Get the index of the a track.
-*/
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \return the 0-based index of the track of the first producer
+ */
 
 int mlt_transition_get_a_track( mlt_transition this )
 {
@@ -120,7 +153,11 @@ int mlt_transition_get_a_track( mlt_transition this )
 }
 
 /** Get the index of the b track.
-*/
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \return the 0-based index of the track of the second producer
+ */
 
 int mlt_transition_get_b_track( mlt_transition this )
 {
@@ -128,7 +165,11 @@ int mlt_transition_get_b_track( mlt_transition this )
 }
 
 /** Get the in point.
-*/
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \return the starting time
+ */
 
 mlt_position mlt_transition_get_in( mlt_transition this )
 {
@@ -136,7 +177,11 @@ mlt_position mlt_transition_get_in( mlt_transition this )
 }
 
 /** Get the out point.
-*/
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \return the ending time
+ */
 
 mlt_position mlt_transition_get_out( mlt_transition this )
 {
@@ -144,9 +189,15 @@ mlt_position mlt_transition_get_out( mlt_transition this )
 }
 
 /** Process the frame.
-
-  	If we have no process method (unlikely), we simply return the a_frame unmolested.
-*/
+ *
+ * If we have no process method (unlikely), we simply return the a_frame unmolested.
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ * \param a_frame a frame from the first producer
+ * \param b_frame a frame from the second producer
+ * \return a frame
+ */
 
 mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
 {
@@ -163,7 +214,7 @@ mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_fr
 	for the transition type (this is either audio or image).
 
 	However, the fixed a_track may not always contain data of the correct type, eg:
-
+<pre>
 	+---------+                               +-------+
 	|c1       |                               |c5     | <-- A(0,1) <-- B(0,2) <-- get frame
 	+---------+                     +---------+-+-----+        |          |
@@ -171,7 +222,7 @@ mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_fr
 	         +----------+-----------+-+---------+                         |
 	         |c2        |c3           |                 <-----------------+
 	         +----------+-------------+
-
+</pre>
 	During the overlap of c1 and c2, there is nothing for the A transition to do, so this
 	results in a no operation, but B is triggered. During the overlap of c2 and c3, again,
 	the A transition is inactive and because the B transition is pointing at track 0,
@@ -186,7 +237,13 @@ mlt_frame mlt_transition_process( mlt_transition this, mlt_frame a_frame, mlt_fr
 
 	This method is invoked for each track and we return the cached frames as needed.
 	We clear the cache only when the requested frame is flagged as a 'last_track' frame.
-*/
+
+ * \private \memberof mlt_transition_s
+ * \param service a service
+ * \param[out] frame a frame by reference
+ * \param index 0-based track index
+ * \return true on error
+ */
 
 static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
 {
@@ -304,8 +361,11 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	return error;
 }
 
-/** Close the transition.
-*/
+/** Close and destroy the transition.
+ *
+ * \public \memberof mlt_transition_s
+ * \param this a transition
+ */
 
 void mlt_transition_close( mlt_transition this )
 {
