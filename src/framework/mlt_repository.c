@@ -99,7 +99,7 @@ mlt_repository mlt_repository_init( const char *directory )
 		}
 		else if ( strstr( object_name, "libmlt" ) )
 		{
-			fprintf( stderr, "%s, %s: failed to dlopen %s\n", __FILE__, __FUNCTION__, object_name );
+			fprintf( stderr, "%s, %s: failed to dlopen %s\n  (%s)\n", __FILE__, __FUNCTION__, object_name, dlerror() );
 		}
 	}
 
