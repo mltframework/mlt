@@ -51,6 +51,41 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 {
+	int error = 0;
+
+	// Report information about available demuxers and codecs as YAML Tiny
+	if ( file && strstr( file, "f-list" ) )
+	{
+		fprintf( stderr, "---\nformats:\n" );
+		AVInputFormat *format = NULL;
+		while ( ( format = av_iformat_next( format ) ) )
+			fprintf( stderr, "  - %s\n", format->name );
+		fprintf( stderr, "...\n" );
+		error = 1;
+	}
+	if ( file && strstr( file, "acodec-list" ) )
+	{
+		fprintf( stderr, "---\naudio_codecs:\n" );
+		AVCodec *codec = NULL;
+		while ( ( codec = av_codec_next( codec ) ) )
+			if ( codec->decode && codec->type == CODEC_TYPE_AUDIO )
+				fprintf( stderr, "  - %s\n", codec->name );
+		fprintf( stderr, "...\n" );
+		error = 1;
+	}
+	if ( file && strstr( file, "vcodec-list" ) )
+	{
+		fprintf( stderr, "---\nvideo_codecs:\n" );
+		AVCodec *codec = NULL;
+		while ( ( codec = av_codec_next( codec ) ) )
+			if ( codec->decode && codec->type == CODEC_TYPE_VIDEO )
+				fprintf( stderr, "  - %s\n", codec->name );
+		fprintf( stderr, "...\n" );
+		error = 1;
+	}
+	if ( error )
+		return NULL;
+
 	mlt_producer this = NULL;
 
 	// Check that we have a non-NULL argument
