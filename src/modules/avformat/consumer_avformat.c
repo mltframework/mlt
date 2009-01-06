@@ -192,9 +192,44 @@ static int consumer_start( mlt_consumer this )
 {
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	int error = 0;
+
+	// Report information about available muxers and codecs as YAML Tiny
+	char *s = mlt_properties_get( properties, "f" );
+	if ( s && strcmp( s, "list" ) == 0 )
+	{
+		fprintf( stderr, "---\nformats:\n" );
+		AVOutputFormat *format = NULL;
+		while ( ( format = av_oformat_next( format ) ) )
+			fprintf( stderr, "  - %s\n", format->name );
+		fprintf( stderr, "...\n" );
+		error = 1;
+	}
+	s = mlt_properties_get( properties, "acodec" );
+	if ( s && strcmp( s, "list" ) == 0 )
+	{
+		fprintf( stderr, "---\naudio_codecs:\n" );
+		AVCodec *codec = NULL;
+		while ( ( codec = av_codec_next( codec ) ) )
+			if ( codec->encode && codec->type == CODEC_TYPE_AUDIO )
+				fprintf( stderr, "  - %s\n", codec->name );
+		fprintf( stderr, "...\n" );
+		error = 1;
+	}
+	s = mlt_properties_get( properties, "vcodec" );
+	if ( s && strcmp( s, "list" ) == 0 )
+	{
+		fprintf( stderr, "---\nvideo_codecs:\n" );
+		AVCodec *codec = NULL;
+		while ( ( codec = av_codec_next( codec ) ) )
+			if ( codec->encode && codec->type == CODEC_TYPE_VIDEO )
+				fprintf( stderr, "  - %s\n", codec->name );
+		fprintf( stderr, "...\n" );
+		error = 1;
+	}
 
 	// Check that we're not already running
-	if ( !mlt_properties_get_int( properties, "running" ) )
+	if ( !error && !mlt_properties_get_int( properties, "running" ) )
 	{
 		// Allocate a thread
 		pthread_t *thread = calloc( 1, sizeof( pthread_t ) );
@@ -266,7 +301,7 @@ static int consumer_start( mlt_consumer this )
 		// Create the thread
 		pthread_create( thread, NULL, consumer_thread, this );
 	}
-	return 0;
+	return error;
 }
 
 /** Stop the consumer.
