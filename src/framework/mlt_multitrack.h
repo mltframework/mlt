@@ -41,11 +41,12 @@ typedef struct mlt_track_s *mlt_track;
  * A multitrack is a parallel container of producers that acts a single producer.
  *
  * \extends mlt_producer_s
+ * \properties \em log_id not currently used, but sets it to "mulitrack"
  */
 
 struct mlt_multitrack_s
 {
-	/* We're extending producer here */
+	/** We're extending producer here */
 	struct mlt_producer_s parent;
 	mlt_track *list;
 	int size;

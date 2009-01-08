@@ -27,7 +27,16 @@
 
 /** \brief Tractor class
  *
+ * The tractor is a convenience class that works with the field class
+ * to manage a multitrack, track filters, and transitions.
+ *
  * \extends mlt_producer_s
+ * \properties \em multitrack holds a reference to the mulitrack object that a tractor manages
+ * \properties \em field holds a reference to the field object that a tractor manages
+ * \properties \em producer holds a reference to an encapsulated producer
+ * \properties \em global_feed a flag to indicate whether this tractor feeds to the consumer or stops here
+ * \properties \em global_queue is something for the data_feed functionality in the core module
+ * \properties \em data_queue is something for the data_feed functionality in the core module
  */
 
 struct mlt_tractor_s

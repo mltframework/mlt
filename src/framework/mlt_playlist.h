@@ -56,7 +56,6 @@ typedef struct playlist_entry_s playlist_entry;
  * the framework.
  *
  * \extends mlt_producer_s
- * \properties \em eof This is the behavior for when the end of the playlist is reached, one of: pause (default) or loop.
  * \properties \em autoclose Set this true if you are doing sequential processing and want to
  * automatically close producers as they are finished being used to free resources.
  * \properties \em meta.fx_cut Set true on a producer to indicate that it is a "fx_cut,"

@@ -33,11 +33,17 @@
 /* Forward references to static methods.
 */
 
-static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int track );
+static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track );
 static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor this );
 
-/** Constructor for the tractor.
-*/
+/** Construct a tractor without a field or multitrack.
+ *
+ * Sets the resource property to "<tractor>", the mlt_type to "mlt_producer",
+ * and mlt_service to "tractor".
+ *
+ * \public \memberof mlt_tractor_s
+ * \return the new tractor
+ */
 
 mlt_tractor mlt_tractor_init( )
 {
@@ -68,6 +74,15 @@ mlt_tractor mlt_tractor_init( )
 	}
 	return this;
 }
+
+/** Construct a tractor as well as a field and multitrack.
+ *
+ * Sets the resource property to "<tractor>", the mlt_type to "mlt_producer",
+ * and mlt_service to "tractor".
+ *
+ * \public \memberof mlt_tractor_s
+ * \return the new tractor
+ */
 
 mlt_tractor mlt_tractor_new( )
 {
@@ -106,7 +121,12 @@ mlt_tractor mlt_tractor_new( )
 }
 
 /** Get the service object associated to the tractor.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \return the parent service object
+ * \see MLT_TRACTOR_SERVICE
+ */
 
 mlt_service mlt_tractor_service( mlt_tractor this )
 {
@@ -114,7 +134,12 @@ mlt_service mlt_tractor_service( mlt_tractor this )
 }
 
 /** Get the producer object associated to the tractor.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \return the parent producer object
+ * \see MLT_TRACTOR_PRODUCER
+ */
 
 mlt_producer mlt_tractor_producer( mlt_tractor this )
 {
@@ -122,7 +147,12 @@ mlt_producer mlt_tractor_producer( mlt_tractor this )
 }
 
 /** Get the properties object associated to the tractor.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \return the tractor's property list
+ * \see MLT_TRACTOR_PROPERTIES
+ */
 
 mlt_properties mlt_tractor_properties( mlt_tractor this )
 {
@@ -130,7 +160,11 @@ mlt_properties mlt_tractor_properties( mlt_tractor this )
 }
 
 /** Get the field this tractor is harvesting.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \return a field or NULL if there is no field for this tractor
+ */
 
 mlt_field mlt_tractor_field( mlt_tractor this )
 {
@@ -138,7 +172,11 @@ mlt_field mlt_tractor_field( mlt_tractor this )
 }
 
 /** Get the multitrack this tractor is pulling.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \return a multitrack or NULL if there is none
+ */
 
 mlt_multitrack mlt_tractor_multitrack( mlt_tractor this )
 {
@@ -146,7 +184,10 @@ mlt_multitrack mlt_tractor_multitrack( mlt_tractor this )
 }
 
 /** Ensure the tractors in/out points match the multitrack.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ */
 
 void mlt_tractor_refresh( mlt_tractor this )
 {
@@ -169,7 +210,12 @@ static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor this )
 }
 
 /** Connect the tractor.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \param producer a producer
+ * \return true on error
+ */
 
 int mlt_tractor_connect( mlt_tractor this, mlt_service producer )
 {
@@ -183,7 +229,13 @@ int mlt_tractor_connect( mlt_tractor this, mlt_service producer )
 }
 
 /** Set the producer for a specific track.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \param producer a producer
+ * \param index the 0-based track index
+ * \return true on error
+ */
 
 int mlt_tractor_set_track( mlt_tractor this, mlt_producer producer, int index )
 {
@@ -191,7 +243,12 @@ int mlt_tractor_set_track( mlt_tractor this, mlt_producer producer, int index )
 }
 
 /** Get the producer for a specific track.
-*/
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ * \param index the 0-based track index
+ * \return the producer for track \p index
+ */
 
 mlt_producer mlt_tractor_get_track( mlt_tractor this, int index )
 {
@@ -253,9 +310,13 @@ static void destroy_data_queue( void *arg )
 }
 
 /** Get the next frame.
-
-	TODO: This function needs to be redesigned...
-*/
+ *
+ * \private \memberof mlt_tractor_s
+ * \param parent the producer interface to the tractor
+ * \param[out] frame a frame by reference
+ * \param track the 0-based track index
+ * \return true on error
+ */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track )
 {
@@ -459,8 +520,11 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 	}
 }
 
-/** Close the tractor.
-*/
+/** Close the tractor and free its resources.
+ *
+ * \public \memberof mlt_tractor_s
+ * \param this a tractor
+ */
 
 void mlt_tractor_close( mlt_tractor this )
 {

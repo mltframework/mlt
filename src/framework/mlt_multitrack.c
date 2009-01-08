@@ -29,10 +29,15 @@
 
 /* Forward reference. */
 
-static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
+static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 
 /** Construct and initialize a new multitrack.
-*/
+ *
+ * Sets the resource property to "<multitrack>".
+ *
+ * \public \memberof mlt_multitrack_s
+ * \return a new multitrack
+ */
 
 mlt_multitrack mlt_multitrack_init( )
 {
@@ -65,7 +70,12 @@ mlt_multitrack mlt_multitrack_init( )
 }
 
 /** Get the producer associated to this multitrack.
-*/
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ * \return the producer object
+ * \see MLT_MULTITRACK_PRODUCER
+ */
 
 mlt_producer mlt_multitrack_producer( mlt_multitrack this )
 {
@@ -73,7 +83,12 @@ mlt_producer mlt_multitrack_producer( mlt_multitrack this )
 }
 
 /** Get the service associated this multitrack.
-*/
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ * \return the service object
+ * \see MLT_MULTITRACK_SERVICE
+ */
 
 mlt_service mlt_multitrack_service( mlt_multitrack this )
 {
@@ -81,15 +96,23 @@ mlt_service mlt_multitrack_service( mlt_multitrack this )
 }
 
 /** Get the properties associated this multitrack.
-*/
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ * \return the multitrack's property list
+ * \see MLT_MULTITRACK_PROPERTIES
+ */
 
 mlt_properties mlt_multitrack_properties( mlt_multitrack this )
 {
 	return MLT_MULTITRACK_PROPERTIES( this );
 }
 
-/** Initialise position related information.
-*/
+/** Initialize position related information.
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ */
 
 void mlt_multitrack_refresh( mlt_multitrack this )
 {
@@ -129,7 +152,11 @@ void mlt_multitrack_refresh( mlt_multitrack this )
 }
 
 /** Listener for producers on the playlist.
-*/
+ *
+ * \private \memberof mlt_multitrack_s
+ * \param producer a producer
+ * \param this a multitrack
+ */
 
 static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack this )
 {
@@ -137,10 +164,16 @@ static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack this 
 }
 
 /** Connect a producer to a given track.
-
-  	Note that any producer can be connected here, but see special case treatment
-	of playlist in clip point determination below.
-*/
+ *
+ * Note that any producer can be connected here, but see special case treatment
+ * of playlist in clip point determination below.
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ * \param producer the producer to connect to the multitrack producer
+ * \param track the 0-based index of the track on which to connect the multitrack
+ * \return true on error
+ */
 
 int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int track )
 {
@@ -188,7 +221,11 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 }
 
 /** Get the number of tracks.
-*/
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ * \return the number of tracks
+ */
 
 int mlt_multitrack_count( mlt_multitrack this )
 {
@@ -196,7 +233,12 @@ int mlt_multitrack_count( mlt_multitrack this )
 }
 
 /** Get an individual track as a producer.
-*/
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ * \param track the 0-based index of the producer to get
+ * \return the producer or NULL if not valid
+ */
 
 mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 {
@@ -208,10 +250,27 @@ mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 	return producer;
 }
 
+/** Position comparison function for sorting.
+ *
+ * \private \memberof mlt_multitrack_s
+ * \param p1 a position
+ * \param p2 another position
+ * \return <0 if \p p1 is less than \p p2, 0 if equal, >0 if greater
+ */
+
 static int position_compare( const void *p1, const void *p2 )
 {
 	return *( mlt_position * )p1 - *( mlt_position * )p2;
 }
+
+/** Add a position to a set.
+ *
+ * \private \memberof mlt_multitrack_s
+ * \param array an array of positions (the set)
+ * \param size the current number of positions in the array (not the capacity of the array)
+ * \param position the position to add
+ * \return the new size of the array
+ */
 
 static int add_unique( mlt_position *array, int size, mlt_position position )
 {
@@ -225,24 +284,32 @@ static int add_unique( mlt_position *array, int size, mlt_position position )
 }
 
 /** Determine the clip point.
-
-  	Special case here: a 'producer' has no concept of multiple clips - only the
-	playlist and multitrack producers have clip functionality. Further to that a
-	multitrack determines clip information from any connected tracks that happen
-	to be playlists.
-
-	Additionally, it must locate clips in the correct order, for example, consider
-	the following track arrangement:
-
-	playlist1 |0.0     |b0.0      |0.1          |0.1         |0.2           |
-	playlist2 |b1.0  |1.0           |b1.1     |1.1             |
-
-	Note - b clips represent blanks. They are also reported as clip positions.
-
-	When extracting clip positions from these playlists, we should get a sequence of:
-
-	0.0, 1.0, b0.0, 0.1, b1.1, 1.1, 0.1, 0.2, [out of playlist2], [out of playlist1]
-*/
+ *
+ * <pre>
+ * Special case here: a 'producer' has no concept of multiple clips - only the
+ * playlist and multitrack producers have clip functionality. Further to that a
+ * multitrack determines clip information from any connected tracks that happen
+ * to be playlists.
+ *
+ * Additionally, it must locate clips in the correct order, for example, consider
+ * the following track arrangement:
+ *
+ * playlist1 |0.0     |b0.0      |0.1          |0.1         |0.2           |
+ * playlist2 |b1.0  |1.0           |b1.1     |1.1             |
+ *
+ * Note - b clips represent blanks. They are also reported as clip positions.
+ *
+ * When extracting clip positions from these playlists, we should get a sequence of:
+ *
+ * 0.0, 1.0, b0.0, 0.1, b1.1, 1.1, 0.1, 0.2, [out of playlist2], [out of playlist1]
+ * </pre>
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ * \param whence from where to extract
+ * \param index the 0-based index of which clip to extract
+ * \return the position of clip \p index relative to \p whence
+ */
 
 mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
 {
@@ -323,29 +390,37 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 }
 
 /** Get frame method.
-
-  	Special case here: The multitrack must be used in a conjunction with a downstream
-	tractor-type service, ie:
-
-	Producer1 \
-	Producer2 - multitrack - { filters/transitions } - tractor - consumer
-	Producer3 /
-
-	The get_frame of a tractor pulls frames from it's connected service on all tracks and
-	will terminate as soon as it receives a test card with a last_track property. The
-	important case here is that the mulitrack does not move to the next frame until all
-	tracks have been pulled.
-
-	Reasoning: In order to seek on a network such as above, the multitrack needs to ensure
-	that all producers are positioned on the same frame. It uses the 'last track' logic
-	to determine when to move to the next frame.
-
-	Flaw: if a transition is configured to read from a b-track which happens to trigger
-	the last frame logic (ie: it's configured incorrectly), then things are going to go
-	out of sync.
-
-	See playlist logic too.
-*/
+ *
+ * <pre>
+ * Special case here: The multitrack must be used in a conjunction with a downstream
+ * tractor-type service, ie:
+ *
+ * Producer1 \
+ * Producer2 - multitrack - { filters/transitions } - tractor - consumer
+ * Producer3 /
+ *
+ * The get_frame of a tractor pulls frames from it's connected service on all tracks and
+ * will terminate as soon as it receives a test card with a last_track property. The
+ * important case here is that the mulitrack does not move to the next frame until all
+ * tracks have been pulled.
+ *
+ * Reasoning: In order to seek on a network such as above, the multitrack needs to ensure
+ * that all producers are positioned on the same frame. It uses the 'last track' logic
+ * to determine when to move to the next frame.
+ *
+ * Flaw: if a transition is configured to read from a b-track which happens to trigger
+ * the last frame logic (ie: it's configured incorrectly), then things are going to go
+ * out of sync.
+ *
+ * See playlist logic too.
+ * </pre>
+ *
+ * \private \memberof mlt_multitrack_s
+ * \param parent the producer interface to a mulitrack
+ * \param[out] frame a frame by reference
+ * \param index the 0-based track index
+ * \return true if there was an error
+ */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index )
 {
@@ -404,8 +479,11 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 	return 0;
 }
 
-/** Close this instance.
-*/
+/** Close this instance and free its resources.
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param this a multitrack
+ */
 
 void mlt_multitrack_close( mlt_multitrack this )
 {

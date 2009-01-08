@@ -44,7 +44,8 @@ typedef int ( *mlt_get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_form
  * \properties \em test_image set if the frame holds a "test card" image
  * \properties \em test_audio set if the frame holds "test card" audio
  * \properties \em _producer holds a reference to the frame's end producer
- * \properties \em _speed
+ * \properties \em _speed the current speed of the producer that generated the frame
+ * \properties \em _position the position of the frame
  * \properties \em meta.* holds metadata
  * \properties \em hide set to 1 to hide the video, 2 to mute the audio
  * \properties \em last_track a flag to indicate an end-of-tracks frame

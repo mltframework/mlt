@@ -41,6 +41,8 @@
  * \event \em service-changed
  * \event \em property-changed
  * \properties \em mlt_type identifies the subclass
+ * \properties \em _mlt_service_hidden a flag that indicates whether to hide the mlt_service
+ * \properties \em mlt_service is the name of the implementation of the service
  * \properties \em resource is either the stream identifier or grandchild-class
  * \properties \em in when to start, what is started is service-specific
  * \properties \em out when to stop
@@ -48,6 +50,7 @@
  * See modules/core/filter_region.c and modules/core/filter_watermark.c for examples.
  * \properties \em disable Set this on a filter to disable it while keeping it in the object model.
  * \properties \em _profile stores the mlt_profile for a service
+ * \properties \em _unique_id is a unique identifier
  */
 
 struct mlt_service_s
