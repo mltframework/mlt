@@ -118,7 +118,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		cx->producer = mlt_factory_producer( cx->profile, mlt_environment( "MLT_PRODUCER" ),
 			mlt_properties_get( properties, "resource" ) );
 		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( cx->producer ),
-			"in, out, length, resource" );
+			"out, length" );
 
 		// Since we control the seeking, prevent it from seeking on its own
 		mlt_producer_set_speed( cx->producer, 0 );
@@ -133,7 +133,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 	if ( frame )
 	{
 		// Our "in" needs to be the same, keep it so
-		mlt_properties_pass_list( MLT_PRODUCER_PROPERTIES( cx->producer ), properties, "in" );
+		mlt_properties_pass_list( MLT_PRODUCER_PROPERTIES( cx->producer ), properties, "in, out" );
 
 		// Seek the producer to the correct place
 		// Calculate our positions
