@@ -26,6 +26,11 @@ Increment the version number in ./configure on the first commit after a release
 as well as just prior to a new release. This way we can track if someone is
 using an unreleased version from the source code repository.
 
+Do not write messages to stdout. stdout is reserved for writing streams that
+can be redirected: e.g. raw DV in consumer_libdv. I recommended to use the
+mlt_log API. For something quick and dirty, use stderr.
+
+
 Procedures
 ----------
 
