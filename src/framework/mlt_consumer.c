@@ -25,6 +25,7 @@
 #include "mlt_producer.h"
 #include "mlt_frame.h"
 #include "mlt_profile.h"
+#include "mlt_log.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -924,22 +925,21 @@ int mlt_consumer_stop( mlt_consumer this )
 {
 	// Get the properies
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
-	char *debug = mlt_properties_get( MLT_CONSUMER_PROPERTIES( this ), "debug" );
 
 	// Just in case...
-	if ( debug ) fprintf( stderr, "%s: stopping put waiting\n", debug );
+	mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_DEBUG, "stopping put waiting\n" );
 	pthread_mutex_lock( &this->put_mutex );
 	this->put_active = 0;
 	pthread_cond_broadcast( &this->put_cond );
 	pthread_mutex_unlock( &this->put_mutex );
 
 	// Stop the consumer
-	if ( debug ) fprintf( stderr, "%s: stopping consumer\n", debug );
+	mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_DEBUG, "stopping consumer\n" );
 	if ( this->stop != NULL )
 		this->stop( this );
 
 	// Check if the user has requested real time or not and stop if necessary
-	if ( debug ) fprintf( stderr, "%s: stopping read_ahead\n", debug );
+	mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_DEBUG, "stopping read_ahead\n" );
 	if ( mlt_properties_get_int( properties, "real_time" ) )
 		consumer_read_ahead_stop( this );
 
@@ -950,7 +950,7 @@ int mlt_consumer_stop( mlt_consumer this )
 	if ( mlt_properties_get( properties, "post" ) )
 		system( mlt_properties_get( properties, "post" ) );
 
-	if ( debug ) fprintf( stderr, "%s: stopped\n", debug );
+	mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_DEBUG, "stopped\n" );
 
 	return 0;
 }

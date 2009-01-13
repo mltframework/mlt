@@ -117,8 +117,7 @@ void mlt_event_close( mlt_event this )
 		if ( this->ref_count <= 0 )
 		{
 #ifdef _MLT_EVENT_CHECKS_
-			events_destroyed ++;
-			fprintf( stderr, "Events created %d, destroyed %d\n", events_created, events_destroyed );
+			mlt_log( NULL, MLT_LOG_DEBUG, "Events created %d, destroyed %d\n", events_created, ++events_destroyed );
 #endif
 			free( this );
 		}

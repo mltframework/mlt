@@ -25,6 +25,7 @@
 #include "mlt_frame.h"
 #include "mlt_parser.h"
 #include "mlt_profile.h"
+#include "mlt_log.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -610,7 +611,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 			char key[ 25 ];
 			sprintf( key, "_clone.%d", clone_index - 1 );
 			clone = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( this ) ), key, NULL );
-			if ( clone == NULL ) fprintf( stderr, "requested clone doesn't exist %d\n", clone_index );
+			if ( clone == NULL ) mlt_log( service, MLT_LOG_ERROR, "requested clone doesn't exist %d\n", clone_index );
 			clone = clone == NULL ? this : clone;
 		}
 		else
@@ -1016,11 +1017,8 @@ void mlt_producer_close( mlt_producer this )
 #endif
 
 #ifdef _MLT_PRODUCER_CHECKS_
-			// Increment destroyed count
-			producers_destroyed ++;
-
 			// Show current stats - these should match when the app is closed
-			fprintf( stderr, "Producers created %d, destroyed %d\n", producers_created, producers_destroyed );
+			mlt_log( MLT_PRODUCER_SERVICE( this ), MLT_LOG_DEBUG, "Producers created %d, destroyed %d\n", producers_created, ++producers_destroyed );
 #endif
 
 			mlt_service_close( &this->parent );

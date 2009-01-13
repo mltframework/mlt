@@ -24,6 +24,7 @@
 #include "mlt_frame.h"
 #include "mlt_multitrack.h"
 #include "mlt_field.h"
+#include "mlt_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -502,7 +503,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		}
 		else
 		{
-			fprintf( stderr, "tractor without a multitrack!!\n" );
+			mlt_log( MLT_PRODUCER_SERVICE( parent ), MLT_LOG_ERROR, "tractor without a multitrack!!\n" );
 			mlt_service_get_frame( this->producer, frame, track );
 		}
 

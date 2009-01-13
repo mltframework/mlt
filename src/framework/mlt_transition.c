@@ -22,6 +22,7 @@
 
 #include "mlt_transition.h"
 #include "mlt_frame.h"
+#include "mlt_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -311,7 +312,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 				break;
 
 			default:
-				fprintf( stderr, "invalid transition type\n" );
+				mlt_log( service, MLT_LOG_ERROR, "invalid transition type\n" );
 				break;
 		}
 

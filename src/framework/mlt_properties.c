@@ -24,6 +24,7 @@
 #include "mlt_properties.h"
 #include "mlt_property.h"
 #include "mlt_deque.h"
+#include "mlt_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -498,7 +499,7 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 	// Set it if not NULL
 	if ( property == NULL )
 	{
-		fprintf( stderr, "Whoops - %s not found (should never occur)\n", name );
+		mlt_log( NULL, MLT_LOG_FATAL, "Whoops - %s not found (should never occur)\n", name );
 	}
 	else if ( value == NULL )
 	{
@@ -1149,7 +1150,7 @@ void mlt_properties_close( mlt_properties this )
 			properties_destroyed ++;
 
 			// Show current stats - these should match when the app is closed
-			fprintf( stderr, "Created %d, destroyed %d\n", properties_created, properties_destroyed );
+			mlt_log( NULL, MLT_LOG_DEBUG, "Created %d, destroyed %d\n", properties_created, properties_destroyed );
 #endif
 
 			// Clean up names and values

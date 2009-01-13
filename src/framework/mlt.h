@@ -46,6 +46,7 @@ extern "C"
 #include "mlt_geometry.h"
 #include "mlt_profile.h"
 #include "mlt_repository.h"
+#include "mlt_log.h"
 
 #ifdef __cplusplus
 }

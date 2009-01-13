@@ -35,7 +35,8 @@ OBJS = mlt_frame.o \
 	   mlt_repository.o \
 	   mlt_pool.o \
 	   mlt_tokeniser.o \
-	   mlt_profile.o
+	   mlt_profile.o \
+	   mlt_log.o
 
 INCS = mlt_consumer.h \
 	   mlt_factory.h \
@@ -59,7 +60,8 @@ INCS = mlt_consumer.h \
 	   mlt_service.h  \
 	   mlt_transition.h \
 	   mlt_tokeniser.h \
-	   mlt_profile.h
+	   mlt_profile.h \
+	   mlt_log.h
 
 SRCS := $(OBJS:.o=.c)
 

@@ -24,6 +24,7 @@
 #include "mlt_repository.h"
 #include "mlt_properties.h"
 #include "mlt_tokeniser.h"
+#include "mlt_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,7 +100,7 @@ mlt_repository mlt_repository_init( const char *directory )
 		}
 		else if ( strstr( object_name, "libmlt" ) )
 		{
-			fprintf( stderr, "%s, %s: failed to dlopen %s\n  (%s)\n", __FILE__, __FUNCTION__, object_name, dlerror() );
+			mlt_log( NULL, MLT_LOG_WARNING, "%s: failed to dlopen %s\n  (%s)\n", __FUNCTION__, object_name, dlerror() );
 		}
 	}
 
