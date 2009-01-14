@@ -398,6 +398,10 @@ query_all:
 		{
 			is_silent = 1;
 		}
+		else if ( !strcmp( argv[ i ], "-verbose" ) )
+		{
+			mlt_log_set_level( MLT_LOG_VERBOSE );
+		}
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
 			fprintf( stderr, "MLT inigo " VERSION "\n"
@@ -407,6 +411,10 @@ query_all:
 				"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 			);
 			goto exit_factory;
+		}
+		else if ( !strcmp( argv[ i ], "-debug" ) )
+		{
+			mlt_log_set_level( MLT_LOG_DEBUG );
 		}
 	}
 
@@ -518,6 +526,7 @@ query_all:
 "  -audio-track | -hide-video               Add an audio-only track\n"
 "  -blank frames                            Add blank silence to a track\n"
 "  -consumer id[:arg] [name=value]*         Set the consumer (sink)\n"
+"  -debug                                   Set the logging level to debug\n"
 "  -filter filter[:arg] [name=value]*       Add a filter to the current track\n"
 "  -group [name=value]*                     Apply properties repeatedly\n"
 "  -help                                    Show this message\n"
@@ -540,6 +549,7 @@ query_all:
 "  -swap                                    Rearrange the last two cuts\n"
 "  -track                                   Add a track\n"
 "  -transition id[:arg] [name=value]*       Add a transition\n"
+"  -verbose                                 Set the logging level to verbose\n"
 "  -version                                 Show the version and copyright message\n"
 "  -video-track | -hide-audio               Add a video-only track\n"
 "For more help: <http://www.mltframework.org/>\n" );
