@@ -867,7 +867,9 @@ static void *consumer_thread( void *arg )
 	video_codec_id = fmt->video_codec;
 
 	// Check for audio codec overides
-	if ( acodec != NULL )
+	if ( ( acodec && strcmp( "acodec", "none" ) == 0 ) || mlt_properties_get_int( properties, "an" ) )
+		audio_codec_id = CODEC_ID_NONE;
+	else if ( acodec )
 	{
 		AVCodec *p = avcodec_find_encoder_by_name( acodec );
 		if ( p != NULL )
@@ -877,7 +879,9 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Check for video codec overides
-	if ( vcodec != NULL )
+	if ( ( vcodec && strcmp( "vcodec", "none" ) == 0 ) || mlt_properties_get_int( properties, "vn" ) )
+		video_codec_id = CODEC_ID_NONE;
+	else if ( vcodec )
 	{
 		AVCodec *p = avcodec_find_encoder_by_name( vcodec );
 		if ( p != NULL )
@@ -915,9 +919,9 @@ static void *consumer_thread( void *arg )
 	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
 
 	// Add audio and video streams 
-	if ( fmt->video_codec != CODEC_ID_NONE )
+	if ( video_codec_id != CODEC_ID_NONE )
 		video_st = add_video_stream( this, oc, video_codec_id );
-	if ( fmt->audio_codec != CODEC_ID_NONE )
+	if ( audio_codec_id != CODEC_ID_NONE )
 		audio_st = add_audio_stream( this, oc, audio_codec_id );
 
 	// Set the parameters (even though we have none...)
