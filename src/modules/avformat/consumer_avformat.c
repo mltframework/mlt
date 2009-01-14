@@ -520,7 +520,8 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->height = mlt_properties_get_int( properties, "height" );
 		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
-		st->time_base = c->time_base;
+		if ( st->time_base.den == 0 )
+			st->time_base = c->time_base;
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
 
 		if ( mlt_properties_get( properties, "aspect" ) )
