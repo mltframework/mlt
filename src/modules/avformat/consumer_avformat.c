@@ -174,6 +174,7 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		
 		// Default to separate processing threads for producer and consumer with no frame dropping!
 		mlt_properties_set_int( properties, "real_time", -1 );
+		mlt_properties_set_int( properties, "prefill", 1 );
 
 		// Set up start/stop/terminated callbacks
 		this->start = consumer_start;
