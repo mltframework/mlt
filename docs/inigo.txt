@@ -1,8 +1,8 @@
 Inigo Documentation
 
-Copyright (C) 2004 Ushodaya Enterprised Limited
+Copyright (C) 2004-2009 Ushodaya Enterprised Limited
 Author: Charles Yates <charles.yates@pandora.be>
-Last Revision: 2004-03-20
+Last Revision: 2009-01-21
 
 
 INIGO
@@ -20,18 +20,41 @@ Preamble:
 
 Usage:
 
-	inigo [ -group [ name=value ]* ]
-	      [ -consumer id[:arg] [ name=value ]* ]
-	      [ -filter filter[:arg] [ name=value ] * ]
-	      [ -attach filter[:arg] [ name=value ] * ]
-	      [ -mix length [ -mixer transition ]* ]
-	      [ -transition id[:arg] [ name=value ] * ]
-	      [ -blank frames ]
-	      [ -track ]
-	      [ -split relative-frame ]
-	      [ -join clips ]
-	      [ -repeat times ]
-	      [ producer [ name=value ] * ]+
+    inigo [options] [producer [name=value]* ]+
+    Options:
+      -attach filter[:arg] [name=value]*       Attach a filter to the output
+      -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut
+      -attach-track filter[:arg] [name=value]* Attach a filter to a track
+      -attach-clip filter[:arg] [name=value]*  Attach a filter to a producer
+      -audio-track | -hide-video               Add an audio-only track
+      -blank frames                            Add blank silence to a track
+      -consumer id[:arg] [name=value]*         Set the consumer (sink)
+      -debug                                   Set the logging level to debug
+      -filter filter[:arg] [name=value]*       Add a filter to the current track
+      -group [name=value]*                     Apply properties repeatedly
+      -help                                    Show this message
+      -join clips                              Join multiple clips into one cut
+      -mix length                              Add a mix between the last two cuts
+      -mixer transition                        Add a transition to the mix
+      -null-track | -hide-track                Add a hidden track
+      -profile name                            Set the processing settings
+      -progress                                Display progress along with the position
+      -remove                                  Remove the most recent cut
+      -repeat times                            Repeat the last cut
+      -query                                   List all of the registered services
+      -query "consumers" | "consumer"=id       List consumers or show info about one
+      -query "filters" | "filter"=id           List filters or show info about one
+      -query "producers" | "producer"=id       List producers or show info about one
+      -query "transitions" | "transition"=id   List transitions or show info about one
+      -serialise [filename]                    Write the commands to a text file
+      -silent                                  Do not display position/transport help
+      -split relative-frame                    Split the last cut into two cuts
+      -swap                                    Rearrange the last two cuts
+      -track                                   Add a track
+      -transition id[:arg] [name=value]*       Add a transition
+      -verbose                                 Set the logging level to verbose
+      -version                                 Show the version and copyright message
+      -video-track | -hide-audio               Add a video-only track
 
 
 General rules:
