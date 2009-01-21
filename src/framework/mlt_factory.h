@@ -1,7 +1,9 @@
-/*
- * mlt_factory.h -- the factory method interfaces
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_factory.h
+ * \brief the factory method interfaces
+ *
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +26,17 @@
 #include "mlt_types.h"
 #include "mlt_profile.h"
 #include "mlt_repository.h"
+
+/**
+ * \event \em producer-create-request fired when mlt_factory_producer is called
+ * \event \em producer-create-done fired when a producer registers itself
+ * \event \em filter-create-request fired when mlt_factory_filter is called
+ * \event \em filter-create-done fired when a filter registers itself
+ * \event \em transition-create-request fired when mlt_factory_transition is called
+ * \event \em transition-create-done fired when a transition registers itself
+ * \event \em consumer-create-request fired when mlt_factory_consumer is called
+ * \event \em consumer-create-done fired when a consumer registers itself
+ */
 
 extern mlt_repository mlt_factory_init( const char *directory );
 extern const char *mlt_factory_directory( );

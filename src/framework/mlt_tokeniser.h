@@ -1,8 +1,9 @@
 /**
  * \file mlt_tokeniser.h
  * \brief string tokeniser
+ * \see mlt_tokeniser_s
  *
- * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
+ * Copyright (C) 2002-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or

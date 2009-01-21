@@ -1,8 +1,9 @@
 /**
  * \file mlt_playlist.c
  * \brief playlist service class
+ * \see mlt_playlist_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -31,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** \brief virtual playlist entry
+/** \brief Virtual playlist entry used by mlt_playlist_s
 */
 
 struct playlist_entry_s

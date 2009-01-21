@@ -1,8 +1,9 @@
 /**
  * \file mlt_pool.c
  * \brief memory pooling functionality
+ * \see mlt_pool_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -32,8 +33,7 @@
 #include <malloc.h>
 #endif
 
-/** Singleton repositories
-*/
+/** global singleton for tracking pools */
 
 static mlt_properties pools = NULL;
 
@@ -42,10 +42,10 @@ static mlt_properties pools = NULL;
 
 typedef struct mlt_pool_s
 {
-	pthread_mutex_t lock;
-	mlt_deque stack;
-	int size;
-	int count;
+	pthread_mutex_t lock; ///< lock to prevent race conditions
+	mlt_deque stack;      ///< a stack of addresses to memory blocks
+	int size;             ///< the size of the memory block as a power of 2
+	int count;            ///< the number of blocks in the pool
 }
 *mlt_pool;
 
@@ -60,7 +60,11 @@ typedef struct mlt_release_s
 *mlt_release;
 
 /** Create a pool.
-*/
+ *
+ * \private \memberof mlt_pool_s
+ * \param size the size of the memory blocks to hold as some power of two
+ * \return a new pool object
+ */
 
 static mlt_pool pool_init( int size )
 {
@@ -85,7 +89,11 @@ static mlt_pool pool_init( int size )
 }
 
 /** Get an item from the pool.
-*/
+ *
+ * \private \memberof mlt_pool_s
+ * \param this a pool
+ * \return an opaque pointer
+ */
 
 static void *pool_fetch( mlt_pool this )
 {
@@ -142,7 +150,10 @@ static void *pool_fetch( mlt_pool this )
 }
 
 /** Return an item to the pool.
-*/
+ *
+ * \private \memberof mlt_pool_s
+ * \param ptr an opaque pointer
+ */
 
 static void pool_return( void *ptr )
 {
@@ -180,7 +191,10 @@ static void pool_return( void *ptr )
 }
 
 /** Destroy a pool.
-*/
+ *
+ * \private \memberof mlt_pool_s
+ * \param this a pool
+ */
 
 static void pool_close( mlt_pool this )
 {
@@ -207,8 +221,10 @@ static void pool_close( mlt_pool this )
 	}
 }
 
-/** Initialise the pool.
-*/
+/** Initialise the global pool.
+ *
+ * \public \memberof mlt_pool_s
+ */
 
 void mlt_pool_init( )
 {
@@ -236,7 +252,10 @@ void mlt_pool_init( )
 }
 
 /** Allocate size bytes from the pool.
-*/
+ *
+ * \public \memberof mlt_pool_s
+ * \param size the number of bytes
+ */
 
 void *mlt_pool_alloc( int size )
 {
@@ -259,7 +278,11 @@ void *mlt_pool_alloc( int size )
 }
 
 /** Allocate size bytes from the pool.
-*/
+ *
+ * \public \memberof mlt_pool_s
+ * \param ptr an opaque pointer - can be in the pool or a new block to allocate
+ * \param size the number of bytes
+ */
 
 void *mlt_pool_realloc( void *ptr, int size )
 {
@@ -300,7 +323,10 @@ void *mlt_pool_realloc( void *ptr, int size )
 }
 
 /** Purge unused items in the pool.
-*/
+ *
+ * A form of garbage collection.
+ * \public \memberof mlt_pool_s
+ */
 
 void mlt_pool_purge( )
 {
@@ -328,7 +354,10 @@ void mlt_pool_purge( )
 }
 
 /** Release the allocated memory.
-*/
+ *
+ * \public \memberof mlt_pool_s
+ * \param release an opaque pointer of a block in the pool
+ */
 
 void mlt_pool_release( void *release )
 {
@@ -337,7 +366,9 @@ void mlt_pool_release( void *release )
 }
 
 /** Close the pool.
-*/
+ *
+ * \public \memberof mlt_pool_s
+ */
 
 void mlt_pool_close( )
 {

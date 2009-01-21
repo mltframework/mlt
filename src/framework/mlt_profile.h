@@ -1,8 +1,9 @@
 /**
  * \file mlt_profile.h
  * \brief video output definition
+ * \see mlt_profile_s
  *
- * Copyright (C) 2007-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2007-2009 Ushodaya Enterprises Limited
  * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -31,16 +32,16 @@
 
 struct mlt_profile_s
 {
-	char* description;
-	int frame_rate_num;
-	int frame_rate_den;
-	int width;
-	int height;
-	int progressive;
-	int sample_aspect_num;
-	int sample_aspect_den;
-	int display_aspect_num;
-	int display_aspect_den;
+	char* description;      /**< a brief description suitable as a label in UI menu */
+	int frame_rate_num;     /**< the numerator of the video frame rate */
+	int frame_rate_den;     /**< the denominator of the video frame rate */
+	int width;              /**< the horizontal resolution of the video */
+	int height;             /**< the vertical resolution of the video */
+	int progressive;        /**< a flag to indicate if the video is progressive scan, interlace if not set */
+	int sample_aspect_num;  /**< the numerator of the pixel aspect ratio */
+	int sample_aspect_den;  /**< the denominator of the pixel aspect ratio */
+	int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
+	int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
 };
 
 extern mlt_profile mlt_profile_init( const char *name );

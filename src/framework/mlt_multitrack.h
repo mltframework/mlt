@@ -1,8 +1,9 @@
 /**
  * \file mlt_multitrack.h
  * \brief multitrack service class
+ * \see mlt_multitrack_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -25,7 +26,7 @@
 
 #include "mlt_producer.h"
 
-/** \brief Track class
+/** \brief Track class used by mlt_multitrack_s
  */
 
 struct mlt_track_s

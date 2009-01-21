@@ -1,8 +1,9 @@
 /**
  * \file mlt_parser.c
  * \brief service parsing functionality
+ * \see mlt_parser_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or

@@ -2,7 +2,7 @@
  * \file mlt_types.h
  * \brief Provides forward definitions of all public types
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -106,6 +106,7 @@ typedef struct mlt_deque_s *mlt_deque;                  /**< pointer to Deque ob
 typedef struct mlt_geometry_s *mlt_geometry;            /**< pointer to Geometry object */
 typedef struct mlt_geometry_item_s *mlt_geometry_item;  /**< pointer to Geometry Item object */
 typedef struct mlt_profile_s *mlt_profile;              /**< pointer to Profile object */
+typedef struct mlt_repository_s *mlt_repository;        /**< pointer to Repository object */
 
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */

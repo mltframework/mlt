@@ -1,10 +1,11 @@
 /**
  * \file mlt_repository.h
  * \brief provides a map between service and shared objects
+ * \see mlt_repository_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
- *         Dan Dennedy <dan@dennedy.org>
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,32 +28,32 @@
 #include "mlt_types.h"
 #include "mlt_profile.h"
 
-/** Repository structure forward reference.
-*/
-
-typedef struct mlt_repository_s *mlt_repository;
-
 /** This callback is the main entry point into a module, which must be exported
-    with the symbol "mlt_register".
-    Inside the callback, the module registers the additional callbacks below.
-*/
+ *  with the symbol "mlt_register".
+ *
+ *  Inside the callback, the module registers the additional callbacks below.
+ */
 
 typedef void ( *mlt_repository_callback )( mlt_repository );
 
-/** These are callback functions that modules implement to construct services
-    and metadata.
-*/
+/** The callback function that modules implement to construct a service.
+ */
+
 typedef void *( *mlt_register_callback )( mlt_profile, mlt_service_type, const char * /* service name */, void * /* arg */ );
+
+/** The callback function that modules implement to supply metadata as a properties list.
+ */
+
 typedef mlt_properties ( *mlt_metadata_callback )( mlt_service_type, const char * /* service name */, void * /* callback_data */ );
 
-/** These convenience macros can be used to register services in a more declarative manner.
-*/
+/** A convenience macro to create an entry point for service registration. */
 #define MLT_REPOSITORY void mlt_register( mlt_repository repository )
-#define MLT_REGISTER( type, service, symbol  ) ( mlt_repository_register( repository, (type), (service), ( mlt_register_callback )(symbol) ) )
-#define MLT_REGISTER_METADATA( type, service, callback, data ) ( mlt_repository_register_metadata( repository, (type), (service), ( mlt_metadata_callback )(callback), (data) ) )
 
-/** Public functions.
-*/
+/** A convenience macro to a register service in a more declarative manner. */
+#define MLT_REGISTER( type, service, symbol  ) ( mlt_repository_register( repository, (type), (service), ( mlt_register_callback )(symbol) ) )
+
+/** A convenience macro to a register metadata in a more declarative manner. */
+#define MLT_REGISTER_METADATA( type, service, callback, data ) ( mlt_repository_register_metadata( repository, (type), (service), ( mlt_metadata_callback )(callback), (data) ) )
 
 extern mlt_repository mlt_repository_init( const char *directory );
 extern void mlt_repository_register( mlt_repository self, mlt_service_type service_type, const char *service, mlt_register_callback );

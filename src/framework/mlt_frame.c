@@ -1,7 +1,10 @@
-/*
- * mlt_frame.c -- interface for all frame classes
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_frame.c
+ * \brief interface for all frame classes
+ * \see mlt_frame_s
+ *
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -216,12 +219,12 @@ mlt_deque mlt_frame_service_stack( mlt_frame this )
 	of a composite where the b frame completely obscures the a frame).
 
 	The image must be writable and the destructor for the image itself must be taken
-	care of on another frame and that frame cannot have a replace applied to it... 
+	care of on another frame and that frame cannot have a replace applied to it...
 	Further it assumes that no alpha mask is in use.
 
-	For these reasons, it can only be used in a specific situation - when you have 
+	For these reasons, it can only be used in a specific situation - when you have
 	multiple tracks each with their own transition and these transitions are applied
-	in a strictly reversed order (ie: highest numbered [lowest track] is processed 
+	in a strictly reversed order (ie: highest numbered [lowest track] is processed
 	first).
 
 	More reliable approach - the cases should be detected during the process phase
@@ -233,7 +236,7 @@ void mlt_frame_replace_image( mlt_frame this, uint8_t *image, mlt_image_format f
 	// Remove all items from the stack
 	while( mlt_deque_pop_back( this->stack_image ) ) ;
 
-	// Update the information 
+	// Update the information
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "image", image, 0, NULL, NULL );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "width", width );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "height", height );
@@ -448,22 +451,22 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	int channels = 2;
 	double fps = mlt_profile_fps( NULL );
 	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
-	
+
 	// Get the pcm data
 	mlt_frame_get_audio( this, &pcm, &format, &frequency, &channels, &samples );
-	
+
 	// Make an 8-bit buffer large enough to hold rendering
 	int size = w * h;
 	unsigned char *bitmap = ( unsigned char* )mlt_pool_alloc( size );
 	if ( bitmap != NULL )
 		memset( bitmap, 0, size );
 	mlt_properties_set_data( properties, "waveform", bitmap, size, ( mlt_destructor )mlt_pool_release, NULL );
-	
+
 	// Render vertical lines
 	int16_t *ubound = pcm + samples * channels;
 	int skip = samples / w - 1;
 	int i, j, k;
-	
+
 	// Iterate sample stream and along x coordinate
 	for ( i = 0; i < w && pcm < ubound; i++ )
 	{
@@ -472,7 +475,7 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 		{
 			// Determine sample's magnitude from 2s complement;
 			int pcm_magnitude = *pcm < 0 ? ~(*pcm) + 1 : *pcm;
-			// The height of a line is the ratio of the magnitude multiplied by 
+			// The height of a line is the ratio of the magnitude multiplied by
 			// half the vertical resolution
 			int height = ( int )( ( double )( pcm_magnitude ) / 32768 * h / 2 );
 			// Determine the starting y coordinate - left channel above center,
@@ -480,11 +483,11 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 			int displacement = ( h / 2 ) - ( 1 - j ) * height;
 			// Position buffer pointer using y coordinate, stride, and x coordinate
 			unsigned char *p = &bitmap[ i + displacement * w ];
-			
+
 			// Draw vertical line
 			for ( k = 0; k < height; k++ )
 				p[ w * k ] = 0xFF;
-			
+
 			pcm++;
 		}
 		pcm += skip * channels;
@@ -522,7 +525,7 @@ int mlt_convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, unsigned int tota
 	int yy, uu, vv;
       	int r,g,b;
 	total /= 2;
-	while (total--) 
+	while (total--)
 	{
 		yy = yuv[0];
 		uu = yuv[1];
@@ -1064,7 +1067,7 @@ uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
     	{
         	// Start at the beginning of the line
         	out_ptr = out_line;
-	
+
         	// Pointer to the middle of the input line
         	in_line = in_middle + ( dy >> 16 ) * istride;
 
@@ -1220,7 +1223,7 @@ int mlt_frame_combine_audio( mlt_frame this, mlt_frame that, int16_t **buffer, m
  	double B = exp(-2.0 * M_PI * Fc);
 	double A = 1.0 - B;
 	double v;
-	
+
 	for ( i = 0; i < *samples; i++ )
 	{
 		for ( j = 0; j < *channels; j++ )

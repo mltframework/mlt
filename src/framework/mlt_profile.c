@@ -1,8 +1,9 @@
 /**
  * \file mlt_profile.c
  * \brief video output definition
+ * \see mlt_profile_s
  *
- * Copyright (C) 2007-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2007-2009 Ushodaya Enterprises Limited
  * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -28,10 +29,19 @@
 #include <string.h>
 #include <libgen.h>
 
+
+/** the default subdirectory of the prefix for holding profiles */
 #define PROFILES_DIR "/share/mlt/profiles/"
 
-/** Load a profile from the system folder
-*/
+/** Load a profile from the system folder.
+ *
+ * The environment variable MLT_PROFILES_PATH overrides the default \p PROFILES_DIR.
+ *
+ * \private \memberof mlt_profile_s
+ * \param name the name of a profile settings file located in the standard location or
+ * the full path name to a profile settings file
+ * \return a profile or NULL on error
+ */
 
 static mlt_profile mlt_profile_select( const char *name )
 {
@@ -76,7 +86,14 @@ static mlt_profile mlt_profile_select( const char *name )
 }
 
 /** Construct a profile.
-*/
+ *
+ * This will never return NULL as it uses the dv_pal settings as hard-coded fallback default.
+ *
+ * \public \memberof mlt_profile_s
+ * @param name the name of a profile settings file located in the standard location or
+ * the full path name to a profile settings file
+ * @return a profile
+ */
 
 mlt_profile mlt_profile_init( const char *name )
 {
@@ -121,8 +138,12 @@ mlt_profile mlt_profile_init( const char *name )
 	return profile;
 }
 
-/** Load a profile from specific file
-*/
+/** Load a profile from specific file.
+ *
+ * \public \memberof mlt_profile_s
+ * @param file the full path name to a properties file
+ * @return a profile or NULL on error
+ */
 
 mlt_profile mlt_profile_load_file( const char *file )
 {
@@ -165,8 +186,12 @@ mlt_profile mlt_profile_load_file( const char *file )
 	return profile;
 }
 
-/** Load a profile from a properties object
-*/
+/** Load a profile from a properties object.
+ *
+ * \public \memberof mlt_profile_s
+ * @param properties a properties list
+ * @return a profile or NULL if out of memory
+ */
 
 mlt_profile mlt_profile_load_properties( mlt_properties properties )
 {
@@ -190,8 +215,12 @@ mlt_profile mlt_profile_load_properties( mlt_properties properties )
 	return profile;
 }
 
-/** Load an anonymous profile from string
-*/
+/** Load an anonymous profile from string.
+ *
+ * \public \memberof mlt_profile_s
+ * @param string a newline-delimited list of properties as name=value pairs
+ * @return a profile or NULL if out of memory
+ */
 
 mlt_profile mlt_profile_load_string( const char *string )
 {
@@ -210,8 +239,12 @@ mlt_profile mlt_profile_load_string( const char *string )
 	return mlt_profile_load_properties( properties );
 }
 
-/** Get the framerate as float
-*/
+/** Get the video frame rate as a floating point value.
+ *
+ * \public \memberof mlt_profile_s
+ * @param aprofile a profile
+ * @return the frame rate
+ */
 
 double mlt_profile_fps( mlt_profile aprofile )
 {
@@ -221,8 +254,12 @@ double mlt_profile_fps( mlt_profile aprofile )
 		return 0;
 }
 
-/** Get the sample aspect ratio as float
-*/
+/** Get the sample aspect ratio as a floating point value.
+ *
+ * \public \memberof mlt_profile_s
+ * @param aprofile a profile
+ * @return the pixel aspect ratio
+ */
 
 double mlt_profile_sar( mlt_profile aprofile )
 {
@@ -232,8 +269,12 @@ double mlt_profile_sar( mlt_profile aprofile )
 		return 0;
 }
 
-/** Get the display aspect ratio as float
-*/
+/** Get the display aspect ratio as floating point value.
+ *
+ * \public \memberof mlt_profile_s
+ * @param aprofile a profile
+ * @return the image aspect ratio
+ */
 
 double mlt_profile_dar( mlt_profile aprofile )
 {
@@ -243,8 +284,11 @@ double mlt_profile_dar( mlt_profile aprofile )
 		return 0;
 }
 
-/** Free up the global profile resources
-*/
+/** Free up the global profile resources.
+ *
+ * \public \memberof mlt_profile_s
+ * @param profile a profile
+ */
 
 void mlt_profile_close( mlt_profile profile )
 {

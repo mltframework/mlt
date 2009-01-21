@@ -1,7 +1,10 @@
-/*
- * mlt_filter.h -- abstraction for all filter services
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_filter.h
+ * \brief abstraction for all filter services
+ * \see mlt_filter_s
+ *
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

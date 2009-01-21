@@ -1,8 +1,9 @@
 /**
  * \file mlt_events.h
  * \brief event handling
+ * \see mlt_events_struct
  *
- * Copyright (C) 2004-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2004-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or

@@ -1,7 +1,9 @@
-/*
- * mlt.h -- header file for lazy client and implementation code :-)
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt.h
+ * \brief header file for lazy client and implementation code :-)
+ *
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,8 +23,8 @@
 #ifndef _MLT_H_
 #define _MLT_H_
 
-#define LIBMLT_VERSION_INT ((0<<16)+(2<<8)+5)
-#define LIBMLT_VERSION     0.2.5
+#define LIBMLT_VERSION_INT ((0<<16)+(3<<8)+5)
+#define LIBMLT_VERSION     0.3.5
 
 #ifdef __cplusplus
 extern "C"

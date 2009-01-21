@@ -1,7 +1,9 @@
-/*
- * mlt_factory.c -- the factory method interfaces
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+/**
+ * \file mlt_factory.c
+ * \brief the factory method interfaces
+ *
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,20 +27,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+/** the default subdirectory of the libdir for holding modules (plugins) */
 #define PREFIX_LIB LIBDIR "/mlt"
+/** the default subdirectory of the install prefix for holding module (plugin) data */
 #define PREFIX_DATA PREFIX "/share/mlt"
 
-/** Singleton repositories
-*/
 
+/** holds the full path to the modules directory - initialized and retained for the entire session */
 static char *mlt_directory = NULL;
+/** a global properties list for holding environment config data and things needing session-oriented cleanup */
 static mlt_properties global_properties = NULL;
+/** the global repository singleton */
 static mlt_repository repository = NULL;
+/** the events object for the factory events */
 static mlt_properties event_object = NULL;
+/** for tracking the unique_id set on each constructed service */
 static int unique_id = 0;
 
-/** Event transmitters.
-*/
+/* Event transmitters. */
+
+/** the -create-request event transmitter
+ *
+ * \param listener
+ * \param owner
+ * \param this
+ * \param args
+ */
 
 static void mlt_factory_create_request( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
 {
@@ -46,14 +60,38 @@ static void mlt_factory_create_request( mlt_listener listener, mlt_properties ow
 		listener( owner, this, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service * )args[ 2 ] );
 }
 
+/** the -create-done event transmitter
+ *
+ * \param listener
+ * \param owner
+ * \param this
+ * \param args
+ */
+
 static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
 {
 	if ( listener != NULL )
 		listener( owner, this, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service )args[ 2 ] );
 }
 
-/** Construct the factories.
-*/
+/** Construct the repository and factories.
+ *
+ * The environment variable MLT_PRODUCER is the name of a default producer often used by other services, defaults to "fezzil".
+ *
+ * The environment variable MLT_CONSUMER is the name of a default consumer, defaults to "sdl".
+ *
+ * The environment variable MLT_TEST_CARD is the name of a producer or file to be played when nothing is available (all tracks blank).
+ *
+ * The environment variable MLT_DATA overrides the default full path to the MLT and module supplemental data files, defaults to \p PREFIX_DATA.
+ *
+ * The environment variable MLT_PROFILE defaults to "dv_pal."
+ *
+ * The environment variable MLT_REPOSITORY overrides the default location of the plugin modules, defaults to \p PREFIX_LIB.
+ *
+ * \param directory an optional full path to a directory containing the modules that overrides the default and
+ * the MLT_REPOSITORY environment variable
+ * \return the repository
+ */
 
 mlt_repository mlt_factory_init( const char *directory )
 {
@@ -112,7 +150,9 @@ mlt_repository mlt_factory_init( const char *directory )
 }
 
 /** Fetch the events object.
-*/
+ *
+ * \return the global factory event object
+ */
 
 mlt_properties mlt_factory_event_object( )
 {
@@ -120,7 +160,9 @@ mlt_properties mlt_factory_event_object( )
 }
 
 /** Fetch the module directory used in this instance.
-*/
+ *
+ * \return the full path to the module directory that this session is using
+ */
 
 const char *mlt_factory_directory( )
 {
@@ -128,7 +170,10 @@ const char *mlt_factory_directory( )
 }
 
 /** Get a value from the environment.
-*/
+ *
+ * \param name the name of a MLT (runtime configuration) environment variable
+ * \return the value of the variable
+ */
 
 char *mlt_environment( const char *name )
 {
@@ -139,7 +184,11 @@ char *mlt_environment( const char *name )
 }
 
 /** Set a value in the environment.
-*/
+ *
+ * \param name the name of a MLT environment variable
+ * \param value the value of the variable
+ * \return true on error
+ */
 
 int mlt_environment_set( const char *name, const char *value )
 {
@@ -148,6 +197,16 @@ int mlt_environment_set( const char *name, const char *value )
 	else
 		return -1;
 }
+
+/** Set some properties common to all services.
+ *
+ * This sets _unique_id, \p mlt_type, \p mlt_service (unless _mlt_service_hidden), and _profile.
+ *
+ * \param properties a service's properties list
+ * \param profile the \p mlt_profile supplied to the factory function
+ * \param type the MLT service class
+ * \param service the name of the service
+ */
 
 static void set_common_properties( mlt_properties properties, mlt_profile profile, const char *type, const char *service )
 {
@@ -160,7 +219,12 @@ static void set_common_properties( mlt_properties properties, mlt_profile profil
 }
 
 /** Fetch a producer from the repository.
-*/
+ *
+ * \param profile the \p mlt_profile to use
+ * \param service the name of the producer (optional, defaults to MLT_PRODUCER)
+ * \param input an optional argument to the producer constructor, typically a string
+ * \return a new producer
+ */
 
 mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, void *input )
 {
@@ -188,7 +252,12 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, voi
 }
 
 /** Fetch a filter from the repository.
-*/
+ *
+ * \param profile the \p mlt_profile to use
+ * \param service the name of the filter
+ * \param input an optional argument to the filter constructor, typically a string
+ * \return a new filter
+ */
 
 mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, void *input )
 {
@@ -212,7 +281,12 @@ mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, void *i
 }
 
 /** Fetch a transition from the repository.
-*/
+ *
+ * \param profile the \p mlt_profile to use
+ * \param service the name of the transition
+ * \param input an optional argument to the transition constructor, typically a string
+ * \return a new transition
+ */
 
 mlt_transition mlt_factory_transition( mlt_profile profile, const char *service, void *input )
 {
@@ -235,8 +309,13 @@ mlt_transition mlt_factory_transition( mlt_profile profile, const char *service,
 	return obj;
 }
 
-/** Fetch a consumer from the repository
-*/
+/** Fetch a consumer from the repository.
+ *
+ * \param profile the \p mlt_profile to use
+ * \param service the name of the consumer (optional, defaults to MLT_CONSUMER)
+ * \param input an optional argument to the consumer constructor, typically a string
+ * \return a new consumer
+ */
 
 mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, void *input )
 {
@@ -263,7 +342,10 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, voi
 }
 
 /** Register an object for clean up.
-*/
+ *
+ * \param ptr an opaque pointer to anything allocated on the heap
+ * \param destructor the function pointer of the deallocation subroutine (e.g., free or \p mlt_pool_release)
+ */
 
 void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor )
 {
@@ -273,7 +355,9 @@ void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor )
 }
 
 /** Close the factory.
-*/
+ *
+ * Cleanup all resources for the session.
+ */
 
 void mlt_factory_close( )
 {

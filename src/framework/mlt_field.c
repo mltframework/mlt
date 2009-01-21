@@ -1,8 +1,9 @@
 /**
  * \file mlt_field.c
  * \brief a field for planting multiple transitions and filters
+ * \see mlt_field_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -32,6 +33,7 @@
 
 /** \brief Field class
  *
+ * The field is a convenience class that works with the tractor and multitrack classes to manage track filters and transitions.
  */
 
 struct mlt_field_s

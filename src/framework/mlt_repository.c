@@ -1,10 +1,11 @@
 /**
  * \file mlt_repository.c
  * \brief provides a map between service and shared objects
+ * \see mlt_repository_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
- *         Dan Dennedy <dan@dennedy.org>
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,20 +34,27 @@
 
 /** \brief Repository class
  *
+ * The Repository is a collection of plugin modules and their services and service metadata.
+ *
  * \extends mlt_properties_s
+ * \properties \p language a cached list of user locales
  */
 
 struct mlt_repository_s
 {
-	struct mlt_properties_s parent; // a list of object files
-	mlt_properties consumers; // lists of entry points
-	mlt_properties filters;
-	mlt_properties producers;
-	mlt_properties transitions;
+	struct mlt_properties_s parent; /// a list of object files
+	mlt_properties consumers;       /// a list of entry points for consumers
+	mlt_properties filters;         /// a list of entry points for filters
+	mlt_properties producers;       /// a list of entry points for producers
+	mlt_properties transitions;     /// a list of entry points for transitions
 };
 
-/** Construct a new repository
-*/
+/** Construct a new repository.
+ *
+ * \public \memberof mlt_repository_s
+ * \param directory the full path of a directory from which to read modules
+ * \return a new repository or NULL if failed
+ */
 
 mlt_repository mlt_repository_init( const char *directory )
 {
@@ -109,6 +117,13 @@ mlt_repository mlt_repository_init( const char *directory )
 	return this;
 }
 
+/** Create a properties list for a service holding a function pointer to its constructor function.
+ *
+ * \private \memberof mlt_repository_s
+ * \param symbol a pointer to a function that can create the service.
+ * \return a properties list
+ */
+
 static mlt_properties new_service( void *symbol )
 {
 	mlt_properties properties = mlt_properties_new();
@@ -116,9 +131,16 @@ static mlt_properties new_service( void *symbol )
 	return properties;
 }
 
-/** Register a service with the repository
-    Typically, this is invoked by a module within its mlt_register().
-*/
+/** Register a service with the repository.
+ *
+ * Typically, this is invoked by a module within its mlt_register().
+ *
+ * \public \memberof mlt_repository_s
+ * \param this a repository
+ * \param service_type a service class
+ * \param service the name of a service
+ * \param symbol a pointer to a function to create the service
+ */
 
 void mlt_repository_register( mlt_repository this, mlt_service_type service_type, const char *service, mlt_register_callback symbol )
 {
@@ -141,6 +163,15 @@ void mlt_repository_register( mlt_repository this, mlt_service_type service_type
 			break;
 	}
 }
+
+/** Get the repository properties for particular service class.
+ *
+ * \private \memberof mlt_repository_s
+ * \param this a repository
+ * \param type a service class
+ * \param service the name of a service
+ * \return a properties list or NULL if error
+ */
 
 static mlt_properties get_service_properties( mlt_repository this, mlt_service_type type, const char *service )
 {
@@ -167,8 +198,15 @@ static mlt_properties get_service_properties( mlt_repository this, mlt_service_t
 	return service_properties;
 }
 
-/** Construct a new instance of a service
-*/
+/** Construct a new instance of a service.
+ *
+ * \public \memberof mlt_repository_s
+ * \param this a repository
+ * \param profile a \p mlt_profile to give the service
+ * \param type a service class
+ * \param service the name of the service
+ * \param input an optional argument to the service constructor
+ */
 
 void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
 {
@@ -183,8 +221,11 @@ void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_servi
 	return NULL;
 }
 
-/** Destroy a repository
-*/
+/** Destroy a repository and free its resources.
+ *
+ * \public \memberof mlt_repository_s
+ * \param this a repository
+ */
 
 void mlt_repository_close( mlt_repository this )
 {
@@ -196,41 +237,67 @@ void mlt_repository_close( mlt_repository this )
 	free( this );
 }
 
-/** Get the list of registered consumers
-*/
+/** Get the list of registered consumers.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \return a properties list containing all of the consumers
+ */
 
 mlt_properties mlt_repository_consumers( mlt_repository self )
 {
 	return self->consumers;
 }
 
-/** Get the list of registered filters
-*/
+/** Get the list of registered filters.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \return a properties list of all of the filters
+ */
 
 mlt_properties mlt_repository_filters( mlt_repository self )
 {
 	return self->filters;
 }
 
-/** Get the list of registered producers
-*/
+/** Get the list of registered producers.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \return a properties list of all of the producers
+ */
 
 mlt_properties mlt_repository_producers( mlt_repository self )
 {
 	return self->producers;
 }
 
-/** Get the list of registered transitions
-*/
+/** Get the list of registered transitions.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \return a properties list of all of the transitions
+ */
 
 mlt_properties mlt_repository_transitions( mlt_repository self )
 {
 	return self->transitions;
 }
 
-/** Register the metadata for a service
-    IMPORTANT: mlt_repository will take responsibility for deallocating the metadata properties that you supply!
-*/
+/** Register the metadata for a service.
+ *
+ * IMPORTANT: mlt_repository will take responsibility for deallocating the metadata properties
+ * that you supply!
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \param type a service class
+ * \param service the name of a service
+ * \param callback the pointer to a function that can supply metadata
+ * \param callback_data an opaque user data pointer to be supplied on the callback
+ */
+
 void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_metadata_callback callback, void *callback_data )
 {
 	mlt_properties service_properties = get_service_properties( self, type, service );
@@ -238,9 +305,16 @@ void mlt_repository_register_metadata( mlt_repository self, mlt_service_type typ
 	mlt_properties_set_data( service_properties, "metadata_cb_data", callback_data, 0, NULL, NULL );
 }
 
-/** Get the metadata about a service
-    Returns NULL if service or its metadata are unavailable.
-*/
+/** Get the metadata about a service.
+ *
+ * Returns NULL if service or its metadata are unavailable.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \param type a service class
+ * \param service the name of a service
+ * \return the service metadata as a structured properties list
+ */
 
 mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type type, const char *service )
 {
@@ -276,6 +350,12 @@ mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type ty
 	return metadata;
 }
 
+/** Try to determine the locale from some commonly used environment variables.
+ *
+ * \private \memberof mlt_repository_s
+ * \return a string containing the locale id or NULL if unknown
+ */
+
 static char *getenv_locale()
 {
 	char *s = getenv( "LANGUAGE" );
@@ -294,7 +374,15 @@ static char *getenv_locale()
 }
 
 /** Return a list of user-preferred language codes taken from environment variables.
-*/
+ *
+ * A module should use this to locate a localized YAML Tiny file from which to build
+ * its metadata strucutured properties.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \return a properties list that is a list (not a map) of locales, defaults to "en" if not
+ * overridden by environment variables, in order: LANGUAGE, LC_ALL, LC_MESSAGES, LANG
+ */
 
 mlt_properties mlt_repository_languages( mlt_repository self )
 {

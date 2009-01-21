@@ -1,8 +1,9 @@
 /**
  * \file mlt_properties.c
  * \brief Properties class definition
+ * \see mlt_properties_s
  *
- * Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  * \author Dan Dennedy <dan@dennedy.org>
  *
@@ -1534,7 +1535,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 /** How many bytes to grow at a time */
 #define STRBUF_GROWTH (1024)
 
-/** \brief Self-growing buffer for building strings
+/** \brief Private to mlt_properties_s, a self-growing buffer for building strings
  * \private
  */
 
