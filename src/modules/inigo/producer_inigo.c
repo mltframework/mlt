@@ -142,6 +142,7 @@ mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, co
 	mlt_properties_set_int( field_properties, "registered", 0 );
 
 	// Parse the arguments
+	if ( argv )
 	for ( i = 0; argv[ i ] != NULL; i ++ )
 	{
 		if ( !strcmp( argv[ i ], "-group" ) )
