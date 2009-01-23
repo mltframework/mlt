@@ -252,7 +252,8 @@ int consumer_stop( mlt_consumer parent )
 		// Kill the thread and clean up
 		this->joined = 1;
 		this->running = 0;
-		pthread_join( this->thread, NULL );
+		if ( this->thread )
+			pthread_join( this->thread, NULL );
 
 		// internal cleanup
 		if ( this->sdl_overlay != NULL )
