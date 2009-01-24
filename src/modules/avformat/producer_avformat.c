@@ -191,8 +191,10 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 // 		mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->time_base ) );
 		snprintf( key, sizeof(key), "meta.media.%d.codec.name", i );
 		mlt_properties_set( meta_media, key, codec->name );
+#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(55<<8)+0))
 		snprintf( key, sizeof(key), "meta.media.%d.codec.long_name", i );
 		mlt_properties_set( meta_media, key, codec->long_name );
+#endif
 		snprintf( key, sizeof(key), "meta.media.%d.codec.bit_rate", i );
 		mlt_properties_set_int( meta_media, key, codec_context->bit_rate );
 // 		snprintf( key, sizeof(key), "meta.media.%d.codec.time_base", i );
