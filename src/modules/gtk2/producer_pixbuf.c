@@ -263,25 +263,10 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		if ( width != this->width || height != this->height )
 		{
 			pixbuf = mlt_properties_get_data( producer_props, "_pixbuf", NULL );
-			if ( !use_cache )
-			{
-				mlt_pool_release( this->image );
-				mlt_pool_release( this->alpha );
-			}
-			this->image = NULL;
-			this->alpha = NULL;
 		}
 	}
 	else if ( pixbuf == NULL && ( this->image == NULL || image_idx != this->image_idx ) )
 	{
-		if ( !use_cache )
-		{
-			mlt_pool_release( this->image );
-			mlt_pool_release( this->alpha );
-		}
-		this->image = NULL;
-		this->alpha = NULL;
-
 		this->image_idx = image_idx;
 		pixbuf = gdk_pixbuf_new_from_file( mlt_properties_get_value( this->filenames, image_idx ), &error );
 
@@ -324,12 +309,16 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		this->height = height;
 		
 		// Allocate/define image
+		if ( !use_cache && this->image )
+			mlt_pool_release( this->image );
 		this->image = mlt_pool_alloc( width * ( height + 1 ) * 2 );
 
 		// Extract YUV422 and alpha
 		if ( gdk_pixbuf_get_has_alpha( pixbuf ) )
 		{
 			// Allocate the alpha mask
+			if ( !use_cache && this->alpha )
+				mlt_pool_release( this->alpha );
 			this->alpha = mlt_pool_alloc( this->width * this->height );
 
 			// Convert the image
