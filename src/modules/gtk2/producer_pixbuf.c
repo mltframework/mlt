@@ -201,18 +201,20 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Check if user wants us to reload the image
-	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) 
-	{
-		pixbuf = NULL;
-		this->image = NULL;
-		mlt_properties_set_int( producer_props, "force_reload", 0 );
-	}
-
 	// Obtain the cache flag and structure
 	int use_cache = mlt_properties_get_int( producer_props, "cache" );
 	mlt_properties cache = mlt_properties_get_data( producer_props, "_cache", NULL );
 	int update_cache = 0;
+
+	// Check if user wants us to reload the image
+	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) 
+	{
+		pixbuf = NULL;
+		if ( !use_cache && this->image )
+			mlt_pool_release( this->image );
+		this->image = NULL;
+		mlt_properties_set_int( producer_props, "force_reload", 0 );
+	}
 
 	// Get the time to live for each frame
 	double ttl = mlt_properties_get_int( producer_props, "ttl" );
@@ -487,9 +489,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Ensure that we have a way to obtain the position in the get_image
 		mlt_properties_set_position( properties, "pixbuf_position", mlt_producer_position( producer ) );
-
-		// Refresh the image
-		refresh_image( *frame, 0, 0 );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
