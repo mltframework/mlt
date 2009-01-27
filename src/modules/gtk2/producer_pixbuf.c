@@ -490,6 +490,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Ensure that we have a way to obtain the position in the get_image
 		mlt_properties_set_position( properties, "pixbuf_position", mlt_producer_position( producer ) );
 
+		// Refresh the image
+		refresh_image( *frame, 0, 0 );
+
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_properties, "aspect_ratio" ) );
