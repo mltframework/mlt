@@ -23,6 +23,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <fnmatch.h>
+#include <assert.h>
 
 #include <framework/mlt.h>
 
@@ -105,6 +106,13 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 
 static void create_filter( mlt_profile profile, mlt_producer producer, char *effect, int *created )
 {
+	// The swscale filter can not handle images with a width > 2048 and the
+	// sdl_image producer does not scale on its own
+	if ( strncmp( effect, "swscale", 7 ) == 0 &&
+	     mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "_real_width" ) > 2048 &&
+	     strcmp( mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "mlt_service" ), "sdl_image" ) == 0 )
+		return;
+
 	char *id = strdup( effect );
 	char *arg = strchr( id, ':' );
 	if ( arg != NULL )
