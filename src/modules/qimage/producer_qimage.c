@@ -67,12 +67,13 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 			mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 			if ( frame )
 			{
-				mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-				mlt_properties_set_data( properties, "producer_qimage", this, 0, NULL, NULL );
+				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+				mlt_properties_set_data( frame_properties, "producer_qimage", this, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
-				mlt_properties_set_position( properties, "qimage_position", mlt_producer_position( producer ) );
+				mlt_properties_set_position( frame_properties, "qimage_position", mlt_producer_position( producer ) );
 				refresh_qimage( frame, 0, 0 );
 				mlt_frame_close( frame );
+				mlt_properties_set_data( properties, "_qimage", NULL, 0, NULL, NULL );
 			}
 		}
 		if ( this->current_width == 0 )

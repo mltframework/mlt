@@ -155,7 +155,7 @@ static SDL_Surface *load_image( mlt_producer producer )
 		image_idx = ( int )floor( ( double )position / ttl ) % mlt_properties_count( filenames );
 		this_resource = mlt_properties_get_value( filenames, image_idx );
 
-		if ( last_resource == NULL || strcmp( last_resource, this_resource ) )
+		if ( surface == NULL || last_resource == NULL || strcmp( last_resource, this_resource ) )
 		{
 			surface = IMG_Load( this_resource );
 			if ( surface != NULL )
@@ -163,6 +163,8 @@ static SDL_Surface *load_image( mlt_producer producer )
 				surface->refcount ++;
 				mlt_properties_set_data( properties, "_surface", surface, 0, ( mlt_destructor )SDL_FreeSurface, 0 );
 				mlt_properties_set( properties, "_last_resource", this_resource );
+				mlt_properties_set_int( properties, "_real_width", surface->w );
+				mlt_properties_set_int( properties, "_real_height", surface->h );
 			}
 		}
 		else if ( surface != NULL )
@@ -244,6 +246,7 @@ mlt_producer producer_sdl_image_init( mlt_profile profile, mlt_service_type type
 		if ( file && ( surface = load_image( producer ) ) )
 		{
 			SDL_FreeSurface( surface );
+			mlt_properties_set_data( properties, "_surface", NULL, 0, NULL, NULL );
 		}
 		else
 		{

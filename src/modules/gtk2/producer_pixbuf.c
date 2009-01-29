@@ -84,12 +84,13 @@ mlt_producer producer_pixbuf_init( char *filename )
 			mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 			if ( frame )
 			{
-				mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-				mlt_properties_set_data( properties, "producer_pixbuf", this, 0, NULL, NULL );
+				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+				mlt_properties_set_data( frame_properties, "producer_pixbuf", this, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
-				mlt_properties_set_position( properties, "pixbuf_position", mlt_producer_position( producer ) );
+				mlt_properties_set_position( frame_properties, "pixbuf_position", mlt_producer_position( producer ) );
 				refresh_image( frame, 0, 0 );
 				mlt_frame_close( frame );
+				mlt_properties_set_data( properties, "_pixbuf", NULL, 0, NULL, NULL );
 			}
 		}
 		if ( this->width == 0 )
