@@ -126,7 +126,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 
 	// Create the context and output image
 	struct SwsContext *context = sws_getContext( iwidth, iheight, iformat, owidth, oheight, oformat, interp, NULL, NULL, NULL);
-	assert(swscale);
+	assert(context);
 
 	// Perform the scaling
 	sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
