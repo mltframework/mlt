@@ -1,6 +1,25 @@
 MLT Release Notes
 -----------------
 
+Version 0.3.6
+
+The recommended version of FFmpeg for use with this release is SVN r16849.
+
+This almost entirely a bugfix release to coincide with the Kdenlive 0.7.2
+release. See the ChangeLog (SVN log) for details.
+
+framework:
+* added mlt_log logging API
+* improved doxygen documentation comments
+
+avformat module:
+* consumer: report list of muxers when f=list and codecs when acodec=list or
+  vcodec=list
+* consumer: added support for an=1 or acodec=none and vn=1 or vcodec=none
+* producer: list available demuxers and decoders when constructor arg is like
+  f-list[[,]acodec-list][[,]vcodec-list]
+
+
 Version 0.3.4
 
 The recommended version of FFmpeg for use with this release is SVN r16313.
