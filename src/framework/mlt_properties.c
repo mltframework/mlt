@@ -639,7 +639,7 @@ char *mlt_properties_get_value( mlt_properties this, int index )
  * \public \memberof mlt_properties_s
  * \param this a properties list
  * \param index the numeric index of the property
- * \param size the size of the binary data in bytes or NULL if the index is out of range
+ * \param[out] size the size of the binary data in bytes or NULL if the index is out of range
  */
 
 void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
@@ -882,7 +882,7 @@ int mlt_properties_set_position( mlt_properties this, const char *name, mlt_posi
  * \public \memberof mlt_properties_s
  * \param this a properties list
  * \param name the property to get
- * \param length The size of the binary data in bytes, if available (often it is not, you should know)
+ * \param[out] length The size of the binary data in bytes, if available (often it is not, you should know)
  */
 
 void *mlt_properties_get_data( mlt_properties this, const char *name, int *length )
