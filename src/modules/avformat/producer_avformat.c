@@ -22,6 +22,7 @@
 // MLT Header files
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 // ffmpeg Header files
 #include <avformat.h>

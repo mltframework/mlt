@@ -21,6 +21,7 @@
 // MLT Header files
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 // vorbis Header files
 #include <vorbis/codec.h>

@@ -22,6 +22,7 @@
 // mlt Header files
 #include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 // System header files
 #include <stdio.h>
