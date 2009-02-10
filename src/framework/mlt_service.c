@@ -24,10 +24,15 @@
 #include "mlt_service.h"
 #include "mlt_filter.h"
 #include "mlt_frame.h"
+#include "mlt_cache.h"
+#include "mlt_factory.h"
+#include "mlt_log.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+
 
 /*  IMPORTANT NOTES
 
@@ -61,6 +66,7 @@ static void mlt_service_disconnect( mlt_service this );
 static void mlt_service_connect( mlt_service this, mlt_service that );
 static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 static void mlt_service_property_changed( mlt_listener, mlt_properties owner, mlt_service this, void **args );
+static void purge_cache( mlt_service self );
 
 /** Initialize a service.
  *
@@ -629,6 +635,7 @@ void mlt_service_close( mlt_service this )
 			free( base->in );
 			pthread_mutex_destroy( &base->mutex );
 			free( base );
+			purge_cache( this );
 			mlt_properties_close( &this->parent );
 		}
 	}
@@ -636,4 +643,96 @@ void mlt_service_close( mlt_service this )
 	{
 		mlt_service_unlock( this );
 	}
+}
+
+/** Release a service's cache items.
+ *
+ * \private \memberof mlt_service_s
+ * \param self a service
+ */
+
+static void purge_cache( mlt_service self )
+{
+	mlt_properties caches = mlt_properties_get_data( mlt_global_properties(), "caches", NULL );
+
+	if ( caches )
+	{
+		int i = mlt_properties_count( caches );
+		while ( i-- )
+		{
+			mlt_cache_purge( mlt_properties_get_data_at( caches, i, NULL ), self );
+			mlt_properties_set_data( mlt_global_properties(), mlt_properties_get_name( caches, i ), NULL, 0, NULL, NULL );
+		}
+	}
+}
+
+/** Lookup the cache object for a service.
+ *
+ * \private \memberof mlt_service_s
+ * \param self a service
+ * \param name a name for the object
+ * \return a cache
+ */
+
+static mlt_cache get_cache( mlt_service self, const char *name )
+{
+	mlt_cache result = NULL;
+	mlt_properties caches = mlt_properties_get_data( mlt_global_properties(), "caches", NULL );
+
+	if ( !caches )
+	{
+		caches = mlt_properties_new();
+		mlt_properties_set_data( mlt_global_properties(), "caches", caches, 0, ( mlt_destructor )mlt_properties_close, NULL );
+	}
+	if ( caches )
+	{
+		result = mlt_properties_get_data( caches, name, NULL );
+		if ( !result )
+		{
+			result = mlt_cache_init();
+			mlt_properties_set_data( caches, name, result, 0, ( mlt_destructor )mlt_cache_close, NULL );
+		}
+	}
+	
+	return result;
+}
+
+/** Put an object into a service's cache.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param name a name for the object that is unique to the service class, but not to the instance
+ * \param data an opaque pointer to the object to put into the cache
+ * \param size the number of bytes pointed to by data
+ * \param destructor a function that releases the data
+ */
+
+void mlt_service_cache_put( mlt_service self, const char *name, void* data, int size, mlt_destructor destructor )
+{
+	mlt_log( self, MLT_LOG_DEBUG, "%s: name %s object %p data %p\n", __FUNCTION__, name, self, data );
+	mlt_cache cache = get_cache( self, name );
+
+	if ( cache )
+		mlt_cache_put( cache, self, data, size, destructor );
+}
+
+/** Get an object from a service's cache.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param name a name for the object that is unique to the service class, but not to the instance
+ * \return a cache item or NULL if an object is not found
+ * \see mlt_cache_item_data
+ */
+
+mlt_cache_item mlt_service_cache_get( mlt_service self, const char *name )
+{
+	mlt_log( self, MLT_LOG_DEBUG, "%s: name %s object %p\n", __FUNCTION__, name, self );
+	mlt_cache_item result = NULL;
+	mlt_cache cache = get_cache( self, name );
+
+	if ( cache )
+		result = mlt_cache_get( cache, self );
+
+	return result;
 }

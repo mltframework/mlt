@@ -25,7 +25,7 @@
 #define _MLT_SERVICE_H_
 
 #include "mlt_properties.h"
-#include "mlt_profile.h"
+#include "mlt_types.h"
 
 /** \brief Service abstract base class
  *
@@ -93,6 +93,8 @@ extern void mlt_service_apply_filters( mlt_service self, mlt_frame frame, int in
 extern mlt_filter mlt_service_filter( mlt_service self, int index );
 extern mlt_profile mlt_service_profile( mlt_service self );
 extern void mlt_service_close( mlt_service self );
+extern void mlt_service_cache_put( mlt_service self, const char *name, void* data, int size, mlt_destructor destructor );
+extern mlt_cache_item mlt_service_cache_get( mlt_service self, const char *name );
 
 #endif
 

@@ -107,6 +107,8 @@ typedef struct mlt_geometry_s *mlt_geometry;            /**< pointer to Geometry
 typedef struct mlt_geometry_item_s *mlt_geometry_item;  /**< pointer to Geometry Item object */
 typedef struct mlt_profile_s *mlt_profile;              /**< pointer to Profile object */
 typedef struct mlt_repository_s *mlt_repository;        /**< pointer to Repository object */
+typedef struct mlt_cache_s *mlt_cache;                  /**< pointer to Cache object */
+typedef struct mlt_cache_item_s *mlt_cache_item;        /**< pointer to CacheItem object */
 
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */

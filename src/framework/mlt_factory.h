@@ -49,5 +49,6 @@ extern mlt_transition mlt_factory_transition( mlt_profile profile, const char *n
 extern mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *name, void *input );
 extern void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destructor );
 extern void mlt_factory_close( );
+extern mlt_properties mlt_global_properties( );
 
 #endif

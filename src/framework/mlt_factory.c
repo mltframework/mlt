@@ -371,3 +371,8 @@ void mlt_factory_close( )
 		mlt_pool_close( );
 	}
 }
+
+mlt_properties mlt_global_properties( )
+{
+	return global_properties;
+}
