@@ -27,6 +27,7 @@
 #include <framework/mlt.h>
 
 #include "config.h"
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,12 +42,15 @@ struct producer_qimage_s
 	uint8_t *current_image;
 	uint8_t *current_alpha;
 	int current_width;
-	int current_height;	
+	int current_height;
+	mlt_cache_item image_cache;
+	mlt_cache_item alpha_cache;
+	pthread_mutex_t mutex;
 };
 
 typedef struct producer_qimage_s *producer_qimage;
 
-extern void refresh_qimage( mlt_frame, int width, int height );
+extern void refresh_qimage( producer_qimage, mlt_frame, int width, int height );
 #ifdef USE_KDE
 extern void init_qimage();
 #endif

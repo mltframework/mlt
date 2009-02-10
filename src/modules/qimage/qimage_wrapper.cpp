@@ -47,6 +47,7 @@
 extern "C" {
 
 #include <framework/mlt_pool.h>
+#include <framework/mlt_cache.h>
 
 #ifdef USE_KDE
 static KInstance *instance = 0L;
@@ -63,7 +64,7 @@ static void qimage_delete( void *data )
 #endif
 }
 
-QMutex mutex;
+static QMutex g_mutex;
 
 #ifdef USE_KDE
 void init_qimage()
@@ -75,22 +76,29 @@ void init_qimage()
 }
 #endif
 
-void refresh_qimage( mlt_frame frame, int width, int height )
+void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int height )
 {
-	// Obtain a previous assigned qimage (if it exists) 
-	QImage *qimage = static_cast <QImage *>(mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "qimage", NULL ));
-
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
-	// Obtain the producer for this frame
-	producer_qimage self = ( producer_qimage )mlt_properties_get_data( properties, "producer_qimage", NULL );
 
 	// Obtain the producer 
 	mlt_producer producer = &self->parent;
 
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+
+	// restore QImage
+	pthread_mutex_lock( &self->mutex );
+	mlt_cache_item qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+	QImage *qimage = static_cast<QImage*>( mlt_cache_item_data( qimage_cache, NULL ) );
+
+	// restore scaled image
+	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
+	self->current_image = static_cast<uint8_t*>( mlt_cache_item_data( self->image_cache, NULL ) );
+
+	// restore alpha channel
+	self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+	self->current_alpha = static_cast<uint8_t*>( mlt_cache_item_data( self->alpha_cache, NULL ) );
 
 	// Check if user wants us to reload the image
 	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) 
@@ -119,7 +127,7 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 	char image_key[ 10 ];
 	sprintf( image_key, "%d", image_idx );
 
-	mutex.lock();
+	g_mutex.lock();
 
 	// Check if the frame is already loaded
 	if ( use_cache )
@@ -149,45 +157,28 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 	}
 
     // optimization for subsequent iterations on single picture
-	if ( width != 0 && self->current_image != NULL && image_idx == self->image_idx )
-	{
-		if ( width != self->current_width || height != self->current_height )
-		{
-			qimage = static_cast<QImage *>(mlt_properties_get_data( producer_props, "_qimage", NULL ));
-			if ( !use_cache )
-			{
-				mlt_pool_release( self->current_image );
-				mlt_pool_release( self->current_alpha );
-			}
-			self->current_image = NULL;
-			self->current_alpha = NULL;
-		}
-	}
-	else if ( qimage == NULL && ( self->current_image == NULL || image_idx != self->image_idx ) )
-	{
-		if ( !use_cache )
-		{
-			mlt_pool_release( self->current_image );
-			mlt_pool_release( self->current_alpha );
-		}
+	if ( width != 0 && ( image_idx != self->image_idx || width != self->current_width || height != self->current_height ) )
 		self->current_image = NULL;
-		self->current_alpha = NULL;
-
+	if ( image_idx != self->image_idx )
+		qimage = NULL;
+	if ( qimage == NULL && ( width == 0 || self->current_image == NULL ) )
+	{
+		self->current_image = NULL;
 		self->image_idx = image_idx;
 		qimage = new QImage( mlt_properties_get_value( self->filenames, image_idx ) );
 
 		if ( !qimage->isNull( ) )
 		{
-			QImage *frame_copy = new QImage( *qimage );
-
-			// Store the width/height of the pixbuf 
+			// Store the width/height of the qimage
 			self->current_width = qimage->width( );
 			self->current_height = qimage->height( );
 
 			// Register qimage for destruction and reuse
+			mlt_cache_item_close( qimage_cache );
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
+			qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+
 			mlt_events_block( producer_props, NULL );
-			mlt_properties_set_data( producer_props, "_qimage", qimage, 0, ( mlt_destructor )qimage_delete, NULL );
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "qimage", frame_copy, 0, ( mlt_destructor )qimage_delete, NULL );
 			mlt_properties_set_int( producer_props, "_real_width", self->current_width );
 			mlt_properties_set_int( producer_props, "_real_height", self->current_height );
 			mlt_events_unblock( producer_props, NULL );
@@ -235,14 +226,22 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 		
 		// Allocate/define image
 		self->current_image = ( uint8_t * )mlt_pool_alloc( width * ( height + 1 ) * 2 );
-
+		if ( !use_cache )
+			mlt_cache_item_close( self->image_cache );
+		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, width * ( height + 1 ) * 2, mlt_pool_release );
+		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 
 		if (!hasAlpha) {
 			mlt_convert_rgb24_to_yuv422( temp.bits(), self->current_width, self->current_height, temp.bytesPerLine(), self->current_image ); 
 		}
 		else {
 			// Allocate the alpha mask
-			self->current_alpha = ( uint8_t * )mlt_pool_alloc( self->current_width * self->current_height );
+			self->current_alpha = ( uint8_t * )mlt_pool_alloc( width * height );
+			if ( !use_cache )
+				mlt_cache_item_close( self->alpha_cache );
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, width * height, mlt_pool_release );
+			self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+
 #ifdef USE_QT4
 			if ( QSysInfo::ByteOrder == QSysInfo::BigEndian )
 				mlt_convert_argb_to_yuv422( temp.bits( ), self->current_width, self->current_height, temp.bytesPerLine(), self->current_image, self->current_alpha );
@@ -263,15 +262,20 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 		update_cache = use_cache;
 	}
 
+	// release references no longer needed
+	mlt_cache_item_close( qimage_cache );
+	if ( width == 0 )
+	{
+		pthread_mutex_unlock( &self->mutex );
+		mlt_cache_item_close( self->image_cache );
+		mlt_cache_item_close( self->alpha_cache );
+	}
+
 	// Set width/height of frame
 	mlt_properties_set_int( properties, "width", self->current_width );
 	mlt_properties_set_int( properties, "height", self->current_height );
 	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
 	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
-
-	// pass the image data without destructor
-	mlt_properties_set_data( properties, "image", self->current_image, self->current_width * ( self->current_height + 1 ) * 2, NULL, NULL );
-	mlt_properties_set_data( properties, "alpha", self->current_alpha, self->current_width * self->current_height, NULL, NULL );
 
 	if ( update_cache )
 	{
@@ -285,7 +289,7 @@ void refresh_qimage( mlt_frame frame, int width, int height )
 		mlt_properties_set_data( cached_props, "alpha", self->current_alpha, self->current_width * self->current_height, mlt_pool_release, NULL );
 		mlt_properties_set_data( cache, image_key, cached, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
-	mutex.unlock();
-    }
+	g_mutex.unlock();
 }
 
+} // extern "C"

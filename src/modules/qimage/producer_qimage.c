@@ -22,6 +22,7 @@
  */
 
 #include <framework/mlt_producer.h>
+#include <framework/mlt_cache.h>
 #include "qimage_wrapper.h"
 
 #include <stdio.h>
@@ -68,12 +69,12 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 			if ( frame )
 			{
 				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+				pthread_mutex_init( &this->mutex, NULL );
 				mlt_properties_set_data( frame_properties, "producer_qimage", this, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 				mlt_properties_set_position( frame_properties, "qimage_position", mlt_producer_position( producer ) );
-				refresh_qimage( frame, 0, 0 );
+				refresh_qimage( this, frame, 0, 0 );
 				mlt_frame_close( frame );
-				mlt_properties_set_data( properties, "_qimage", NULL, 0, NULL, NULL );
 			}
 		}
 		if ( this->current_width == 0 )
@@ -172,22 +173,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
-	// We need to know the size of the image to clone it
-	int image_size = 0;
-	int alpha_size = 0;
-
-	// Alpha channel
-	uint8_t *alpha = NULL;
+	// Obtain the producer for this frame
+	producer_qimage this = mlt_properties_get_data( properties, "producer_qimage", NULL );
 
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
 	// Refresh the image
-	refresh_qimage( frame, *width, *height );
+	refresh_qimage( this, frame, *width, *height );
 
-	// Get the image
-	*buffer = mlt_properties_get_data( properties, "image", &image_size );
-	alpha = mlt_properties_get_data( properties, "alpha", &alpha_size );
+	// We need to know the size of the image to clone it
+	int image_size = this->current_width * ( this->current_height + 1 ) * 2;
+	int alpha_size = this->current_width * this->current_height;
 
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
@@ -195,7 +192,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of the qimage producer...
-	if ( *buffer != NULL )
+	if ( this->current_image != NULL )
 	{
 		if ( *format == mlt_image_yuv422 || *format == mlt_image_yuv420p )
 		{
@@ -203,11 +200,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			uint8_t *image_copy = mlt_pool_alloc( image_size );
 			uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
 
-			memcpy( image_copy, *buffer, image_size );
+			memcpy( image_copy, this->current_image, image_size );
 
 			// Copy or default the alpha
-			if ( alpha != NULL )
-				memcpy( alpha_copy, alpha, alpha_size );
+			if ( this->current_alpha )
+				memcpy( alpha_copy, this->current_alpha, alpha_size );
 			else
 				memset( alpha_copy, 255, alpha_size );
 
@@ -226,7 +223,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			uint8_t *image_copy = mlt_pool_alloc( image_size );
 			uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
 
-			mlt_convert_yuv422_to_rgb24a(*buffer, image_copy, (*width)*(*height));
+			mlt_convert_yuv422_to_rgb24a(this->current_image, image_copy, (*width)*(*height));
 
 			// Now update properties so we free the copy after
 			mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
@@ -244,6 +241,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*width = 50;
 		*height = 50;
 	}
+
+	// Release references and locks
+	pthread_mutex_unlock( &this->mutex );
+	mlt_cache_item_close( this->image_cache );
+	mlt_cache_item_close( this->alpha_cache );
 
 	return 0;
 }
@@ -286,7 +288,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_position( properties, "qimage_position", mlt_producer_position( producer ) );
 
 		// Refresh the image
-		refresh_qimage( *frame, 0, 0 );
+		refresh_qimage( this, *frame, 0, 0 );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
@@ -308,9 +310,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_qimage this = parent->child;
+	pthread_mutex_destroy( &this->mutex );
 	parent->close = NULL;
-	mlt_pool_release( this->current_image );
-	mlt_pool_release( this->current_alpha );
 	mlt_producer_close( parent );
 	mlt_properties_close( this->filenames );
 	free( this );
