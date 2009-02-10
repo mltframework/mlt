@@ -428,7 +428,7 @@ char *mlt_property_get_string( mlt_property this )
  * destructor function.
  * \public \memberof mlt_property_s
  * \param this a property
- * \param[out] length the size of the binary object in bytes
+ * \param[out] length the size of the binary object in bytes (optional)
  * \return an opaque data pointer or NULL if not available
  */
 
