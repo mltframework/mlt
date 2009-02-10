@@ -276,11 +276,11 @@ static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
 	else {
       if (src == dst) {
           deinterlace_bottom_field_inplace(dst->data[0], dst->linesize[0],
-                               width, height);
+                               width<<1, height);
       } else {
           deinterlace_bottom_field(dst->data[0],dst->linesize[0],
                                       src->data[0], src->linesize[0],
-                                      width, height);
+                                      width<<1, height);
       }
 	}
 
