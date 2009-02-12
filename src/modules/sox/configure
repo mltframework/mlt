@@ -15,29 +15,29 @@ then
 		;;
 	esac
 
-	which libst-config > /dev/null 2>&1
+	pkg-config sox
 	if [ $? -eq 0 ]
 	then
 		disable_sox=0
-
-		# determine if we need libsndfile
-		$LDD $(which sox) | grep libsndfile > /dev/null
-		[ $? -eq 0 ] && libsndfile="-lsndfile"
-
-		# determine if we need libsamplerate
-		$LDD $(which sox) | grep libsamplerate > /dev/null
-		[ $? -eq 0 ] && libsamplerate="-lsamplerate"
-
-		echo "CFLAGS += $(libst-config --cflags) -I../../" > config.mak
-		echo "LDFLAGS += -lst $(libst-config --libs) $libsndfile $libsamplerate" >> config.mak
+		echo "CFLAGS += $(pkg-config --cflags sox) -I$(pkg-config --variable=prefix sox)" > config.mak
+		echo "LDFLAGS += $(pkg-config --libs sox)" >> config.mak
+		[ $(pkg-config --modversion sox | cut -d. -f1) -gt 13 ] && echo "CFLAGS += -DSOX14" >> config.mak
 	else
-		pkg-config sox
+		which libst-config > /dev/null 2>&1
 		if [ $? -eq 0 ]
 		then
 			disable_sox=0
-			echo "CFLAGS += $(pkg-config --cflags sox) -I$(pkg-config --variable=prefix sox)" > config.mak
-			echo "LDFLAGS += $(pkg-config --libs sox)" >> config.mak
-			[ $(pkg-config --modversion sox | cut -d. -f1) -gt 13 ] && echo "CFLAGS += -DSOX14" >> config.mak
+
+			# determine if we need libsndfile
+			$LDD $(which sox) | grep libsndfile > /dev/null
+			[ $? -eq 0 ] && libsndfile="-lsndfile"
+
+			# determine if we need libsamplerate
+			$LDD $(which sox) | grep libsamplerate > /dev/null
+			[ $? -eq 0 ] && libsamplerate="-lsamplerate"
+
+			echo "CFLAGS += $(libst-config --cflags) -I../../" > config.mak
+			echo "LDFLAGS += -lst $(libst-config --libs) $libsndfile $libsamplerate" >> config.mak
 		else
 			sox --version 2> /dev/null | grep 'v14.' > /dev/null
 			disable_sox=$?
