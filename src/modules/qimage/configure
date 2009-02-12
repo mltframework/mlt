@@ -65,7 +65,17 @@ else
 		esac
 	done
 
-	if [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
+	pkg-config --exists 'QtGui >= 4'
+	if [ $? -eq 0 ] && [ "$force_qt3" = "" ]
+	then
+		echo "Qt version 4.x detected, will compile Qt4 qimage producer"
+		qt4_found=true
+		echo "#define USE_QT4" > config.h
+		echo "USE_QT4=1" > config.mak
+		echo QTCXXFLAGS=$(pkg-config --cflags QtGui) >> config.mak
+		echo QTLIBS=$(pkg-config --libs QtGui) >> config.mak
+		
+	elif [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
 	then
 
 		# test if we have a Qt3 or Qt4
