@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define CLAMP( x, min, max ) (x) < (min) ? (min) : (x) > (max) ? (max) : (x)
+
 /** Do it :-).
 */
 
@@ -42,15 +44,15 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Only process if level is something other than 1
 		if ( level != 1.0 )
 		{
+			int i = *width * *height + 1;
 			uint8_t *p = *image;
-			uint8_t *q = *image + *width * *height * 2;
-			int32_t x = 0;
 			int32_t m = level * ( 1 << 16 );
+			int32_t n = 128 * ( ( 1 << 16 ) - m );
 
-			while ( p != q )
+			while ( --i )
 			{
-				x = ( *p * m ) >> 16;
-				*p = x < 16 ? 16 : x > 235 ? 235 : x;
+				p[0] = CLAMP( (p[0] * m) >> 16, 16, 235 );
+				p[1] = CLAMP( (p[1] * m + n) >> 16, 16, 240 );
 				p += 2;
 			}
 		}
@@ -66,7 +68,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	// Get the starting brightness level
 	double level = fabs( mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "start" ) );
-	
+
 	// If there is an end adjust gain to the range
 	if ( mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "end" ) != NULL )
 	{
