@@ -122,7 +122,7 @@ static inline float composite_calculate_key( mlt_transition this, char *name, ch
 	return result.x;
 }
 
-typedef struct 
+typedef struct
 {
 	float matrix[3][3];
 }
@@ -330,8 +330,8 @@ static inline void get_affine( affine_t *affine, mlt_transition this, float posi
 		affine_rotate_x( affine->matrix, fix_rotate_x + rotate_x * position );
 		affine_rotate_y( affine->matrix, fix_rotate_y + rotate_y * position );
 		affine_rotate_z( affine->matrix, fix_rotate_z + rotate_z * position );
-		affine_shear( affine->matrix, 
-					  fix_shear_x + shear_x * position, 
+		affine_shear( affine->matrix,
+					  fix_shear_x + shear_x * position,
 					  fix_shear_y + shear_y * position,
 					  fix_shear_z + shear_z * position );
 		affine_offset( affine->matrix, ox, oy );
@@ -453,7 +453,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		int cx = result.x + ( b_width >> 1 );
 		int cy = result.y + ( b_height >> 1 );
-	
+		cx -= cx % 2;
+
 		int lower_x = 0 - cx;
 		int upper_x = *width - cx;
 		int lower_y = 0 - cy;
