@@ -61,7 +61,7 @@ build_config()
 
 		[ "$arch" != "" ] && echo "TARGETARCH=-march=$arch"
 		[ "$cpu" != "" ] && echo "TARGETCPU=-mcpu=$cpu"
-		echo "OPTIMISATIONS=-O3 -pipe -fomit-frame-pointer"
+		echo "OPTIMISATIONS=-O2 -pipe -fomit-frame-pointer"
 
 		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(SSE_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
 
