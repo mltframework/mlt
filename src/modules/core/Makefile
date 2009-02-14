@@ -9,6 +9,7 @@ OBJS = factory.o \
 	   producer_ppm.o \
 	   filter_brightness.o \
 	   filter_channelcopy.o \
+	   filter_crop.o \
 	   filter_data_feed.o \
 	   filter_data_show.o \
 	   filter_gamma.o \
