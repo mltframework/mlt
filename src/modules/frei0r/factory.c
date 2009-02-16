@@ -43,7 +43,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	char file[ PATH_MAX ];
 	char servicetype[ 1024 ]="";
 	struct stat stat_buff;
-	
+
 	switch ( type ) {
 		case filter_type:
 			strcpy ( servicetype , "filter" );
@@ -54,14 +54,14 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 		default:
 			strcpy ( servicetype , "" );
 	};
-	
+
 	snprintf( file, PATH_MAX, "%s/frei0r/%s_%s.yml", mlt_environment( "MLT_DATA" ), servicetype, service_name );
 	stat(file,&stat_buff);
 
 	if (S_ISREG(stat_buff.st_mode)){
 		return mlt_properties_parse_yaml( file );
 	}
-		
+
 	void* handle=dlopen(name,RTLD_LAZY);
 	if (!handle) return NULL;
 	void (*plginfo)(f0r_plugin_info_t*)=dlsym(handle,"f0r_get_plugin_info");
@@ -93,13 +93,13 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 		default:
 			break;
 	}
-	
+
 	mlt_properties parameter = mlt_properties_new ( );
 	mlt_properties_set_data ( metadata , "parameters" , parameter , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties tags = mlt_properties_new ( );
 	mlt_properties_set_data ( metadata , "tags" , tags , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties_set ( tags , "0" , "Video" );
-	
+
 	for (j=0;j<info.num_params;j++){
 		snprintf ( string , sizeof(string), "%d" , j );
 		mlt_properties pnum = mlt_properties_new ( );
@@ -122,6 +122,10 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 			mlt_properties_set ( pnum , "maximum" , "1" );
 			mlt_properties_set ( pnum , "readonly" , "no" );
 		}else
+		if ( paraminfo.type == F0R_PARAM_COLOR ){
+			mlt_properties_set ( pnum , "type" , "color" );
+			mlt_properties_set ( pnum , "readonly" , "no" );
+		}else
 		if ( paraminfo.type == F0R_PARAM_STRING ){
 			mlt_properties_set ( pnum , "type" , "string" );
 			mlt_properties_set ( pnum , "readonly" , "no" );
@@ -134,7 +138,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 }
 
 static void * load_lib(  mlt_profile profile, mlt_service_type type , void* handle){
-	
+
 	int i=0;
 	void (*f0r_get_plugin_info)(f0r_plugin_info_t*),
 		*f0r_construct , *f0r_update , *f0r_destruct,
@@ -144,41 +148,41 @@ static void * load_lib(  mlt_profile profile, mlt_service_type type , void* hand
 		(*f0r_get_param_value)(f0r_instance_t instance, f0r_param_t param, int param_index),
 		(*f0r_update2) (f0r_instance_t instance, double time,	const uint32_t* inframe1,
 		  const uint32_t* inframe2,const uint32_t* inframe3, uint32_t* outframe);
-				
-	if ( ( f0r_construct = dlsym(handle, "f0r_construct") ) && 
-				(f0r_update = dlsym(handle,"f0r_update") ) && 
-				(f0r_destruct = dlsym(handle,"f0r_destruct") ) && 
-				(f0r_get_plugin_info = dlsym(handle,"f0r_get_plugin_info") ) && 
-				(f0r_get_param_info = dlsym(handle,"f0r_get_param_info") ) && 
+
+	if ( ( f0r_construct = dlsym(handle, "f0r_construct") ) &&
+				(f0r_update = dlsym(handle,"f0r_update") ) &&
+				(f0r_destruct = dlsym(handle,"f0r_destruct") ) &&
+				(f0r_get_plugin_info = dlsym(handle,"f0r_get_plugin_info") ) &&
+				(f0r_get_param_info = dlsym(handle,"f0r_get_param_info") ) &&
 				(f0r_set_param_value= dlsym(handle,"f0r_set_param_value" ) ) &&
 				(f0r_get_param_value= dlsym(handle,"f0r_get_param_value" ) ) &&
 				(f0r_init= dlsym(handle,"f0r_init" ) ) &&
-				(f0r_deinit= dlsym(handle,"f0r_deinit" ) ) 
+				(f0r_deinit= dlsym(handle,"f0r_deinit" ) )
 		){
-	
+
 		f0r_update2=dlsym(handle,"f0r_update2");
-		
+
 		f0r_plugin_info_t info;
 		f0r_get_plugin_info(&info);
-		
-		void* ret=NULL;	
+
+		void* ret=NULL;
 		mlt_properties properties=NULL;
-		
+
 		if (type == filter_type && info.plugin_type == F0R_PLUGIN_TYPE_FILTER ){
 			mlt_filter this = mlt_filter_new( );
 			if ( this != NULL )
 			{
 				this->process = filter_process;
-				this->close = filter_close;			
+				this->close = filter_close;
 				f0r_init();
 				properties=MLT_FILTER_PROPERTIES ( this );
-							
+
 				for (i=0;i<info.num_params;i++){
 					f0r_param_info_t pinfo;
 					f0r_get_param_info(&pinfo,i);
-					
+
 				}
-				
+
 				ret=this;
 			}
 		}else if (type == transition_type && info.plugin_type == F0R_PLUGIN_TYPE_MIXER2){
@@ -204,8 +208,8 @@ static void * load_lib(  mlt_profile profile, mlt_service_type type , void* hand
 		mlt_properties_set_data(properties, "f0r_get_param_info", f0r_get_param_info , sizeof(void*),NULL,NULL);
 		mlt_properties_set_data(properties, "f0r_set_param_value", f0r_set_param_value , sizeof(void*),NULL,NULL);
 		mlt_properties_set_data(properties, "f0r_get_param_value", f0r_get_param_value , sizeof(void*),NULL,NULL);
-		
-		
+
+
 		return ret;
 	}else{
 		printf("some was wrong\n");
@@ -225,17 +229,17 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 	void* ret=NULL;
 	while (dircount--){
 		char soname[1024]="";
-		
+
 		char *save_firstptr = NULL;
 		char *firstname=strtok_r(strdup(id),".",&save_firstptr);
-		
+
 		firstname=strtok_r(NULL,".",&save_firstptr);
 		sprintf(soname,"%s/%s.so", mlt_tokeniser_get_string( tokeniser , dircount ) , firstname );
 
 		if (firstname){
-			
+
 			void* handle=dlopen(soname,RTLD_LAZY);
-			
+
 			if (handle ){
 				ret=load_lib ( profile , type , handle );
 			}else{
@@ -257,34 +261,34 @@ MLT_REPOSITORY
    	getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH,
 		":"
 	);
-	
+
 	while (dircount--){
-		
+
 		mlt_properties direntries = mlt_properties_new();
 		char* dirname = mlt_tokeniser_get_string ( tokeniser , dircount ) ;
 		mlt_properties_dir_list(direntries, dirname ,"*.so",1);
-	
+
 		for (i=0;i<mlt_properties_count(direntries);i++){
-			char* name=mlt_properties_get_value(direntries,i);	
+			char* name=mlt_properties_get_value(direntries,i);
 			char* shortname=name+strlen(dirname)+1;
 			char fname[1024]="";
-			
+
 			strcat(fname,dirname);
 			strcat(fname,shortname);
-			
+
 			char *save_firstptr = NULL;
 			char pluginname[1024]="frei0r.";
 			char* firstname = strtok_r ( shortname , "." , &save_firstptr );
 			strcat(pluginname,firstname);
-	
+
 			void* handle=dlopen(strcat(name,".so"),RTLD_LAZY);
 			if (handle){
 				void (*plginfo)(f0r_plugin_info_t*)=dlsym(handle,"f0r_get_plugin_info");
-				
+
 				if (plginfo){
 					f0r_plugin_info_t info;
 					plginfo(&info);
-					
+
 					if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_FILTER){
 						MLT_REGISTER( filter_type, pluginname, create_frei0r_item );
 						MLT_REGISTER_METADATA( filter_type, pluginname, fill_param_info, strdup(name) );
