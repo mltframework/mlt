@@ -7,7 +7,7 @@ OBJS = inigo.o \
 
 CFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\"
 
-LDFLAGS += -L../framework -lmlt 
+LDFLAGS += -L../framework -lmlt -lpthread
 
 SRCS := $(OBJS:.o=.c)
 

@@ -32,7 +32,7 @@ OBJS = $(APP_OBJS) $(LIB_OBJS)
 
 CFLAGS += -I.. $(RDYNAMIC)
 
-LDFLAGS += -L../valerie -lvalerie -L../framework -lmlt 
+LDFLAGS += -L../valerie -lvalerie -L../framework -lmlt -lpthread
 
 SRCS := $(OBJS:.o=.c)
 
