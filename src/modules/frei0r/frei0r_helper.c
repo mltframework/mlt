@@ -21,22 +21,17 @@
 #include <string.h>
 #include <stdlib.h>
 
-
-static void parse_color( char *color, f0r_param_color_t *fcolor )
+static void parse_color( int color, f0r_param_color_t *fcolor )
 {
-	unsigned int temp = strtoul( color, &color, 0 );
-	if ( strlen( color ) > 6 )
-		temp >>= 8;
-	fcolor->r = ( temp >> 16 ) & 0xff;
+	fcolor->r = ( color >> 24 ) & 0xff;
 	fcolor->r /= 255;
-	fcolor->g = ( temp >>  8 ) & 0xff;
+	fcolor->g = ( color >> 16 ) & 0xff;
 	fcolor->g /= 255;
-	fcolor->b = ( temp >>  0 ) & 0xff;
+	fcolor->b = ( color >>  8 ) & 0xff;
 	fcolor->b /= 255;
 }
 
-
- int process_frei0r_item( mlt_service_type type,  double position , mlt_properties prop , mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable ){
+int process_frei0r_item( mlt_service_type type,  double position , mlt_properties prop , mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable ){
 
 	int i=0;
 	f0r_instance_t ( *f0r_construct ) ( unsigned int , unsigned int ) =  mlt_properties_get_data(  prop , "f0r_construct" ,NULL);
@@ -94,11 +89,10 @@ static void parse_color( char *color, f0r_param_color_t *fcolor )
 					case F0R_PARAM_COLOR:
 					{
 						f0r_param_color_t color;
-						parse_color(mlt_properties_get(prop , pinfo.name), &color);
+						parse_color(mlt_properties_get_int(prop , pinfo.name), &color);
 						f0r_set_param_value(inst, &color, i);
 						break;
 					}
-
 				}
 			}
 
