@@ -91,7 +91,7 @@ mlt_filter filter_chroma_hold_init( mlt_profile profile, mlt_service_type type, 
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "0xc00000" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "0xc0000000" : arg );
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "variance", 0.15 );
 		this->process = filter_process;
 	}
