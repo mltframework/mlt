@@ -264,7 +264,7 @@ static inline int mlt_property_atoi( const char *value )
 	if ( value == NULL )
 		return 0;
 	// Parse a hex color value as #RRGGBB or #AARRGGBB.
-	else if ( value[0] == '#' )
+	if ( value[0] == '#' )
 	{
 		unsigned int rgb = strtoul( value + 1, NULL, 16 );
 		unsigned int alpha = ( strlen( value ) > 7 ) ? ( rgb >> 24 ) : 0xff;
@@ -274,7 +274,7 @@ static inline int mlt_property_atoi( const char *value )
 	// interpreted as octal.
 	else if ( value[0] == '0' && value[1] == 'x' )
 	{
-		return strtol( value + 2, NULL, 16 );
+		return strtoul( value + 2, NULL, 16 );
 	}
 	else
 	{
