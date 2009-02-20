@@ -35,6 +35,8 @@
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_frame filter_process( mlt_filter this, mlt_frame frame );
 extern void filter_close( mlt_filter this );
+extern int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
+extern void producer_close( mlt_producer this );
 extern void transition_close( mlt_transition this );
 extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame );
 
@@ -45,6 +47,9 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	struct stat stat_buff;
 
 	switch ( type ) {
+		case producer_type:
+			strcpy ( servicetype , "producer" );
+			break;
 		case filter_type:
 			strcpy ( servicetype , "filter" );
 			break;
@@ -84,6 +89,9 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	mlt_properties_set ( metadata, "description" , info.explanation );
 	mlt_properties_set ( metadata, "creator" , info.author );
 	switch (type){
+		case producer_type:
+			mlt_properties_set ( metadata, "type" , "producer" );
+			break;
 		case filter_type:
 			mlt_properties_set ( metadata, "type" , "filter" );
 			break;
@@ -168,7 +176,24 @@ static void * load_lib(  mlt_profile profile, mlt_service_type type , void* hand
 		void* ret=NULL;
 		mlt_properties properties=NULL;
 
-		if (type == filter_type && info.plugin_type == F0R_PLUGIN_TYPE_FILTER ){
+		if (type == producer_type && info.plugin_type == F0R_PLUGIN_TYPE_SOURCE ){
+			mlt_producer this = mlt_producer_new( );
+			if ( this != NULL )
+			{
+				this->get_frame = producer_get_frame;
+				this->close = producer_close;
+				f0r_init();
+				properties=MLT_PRODUCER_PROPERTIES ( this );
+
+				for (i=0;i<info.num_params;i++){
+					f0r_param_info_t pinfo;
+					f0r_get_param_info(&pinfo,i);
+
+				}
+
+				ret=this;
+			}
+		} else if (type == filter_type && info.plugin_type == F0R_PLUGIN_TYPE_FILTER ){
 			mlt_filter this = mlt_filter_new( );
 			if ( this != NULL )
 			{
@@ -288,8 +313,11 @@ MLT_REPOSITORY
 				if (plginfo){
 					f0r_plugin_info_t info;
 					plginfo(&info);
-
-					if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_FILTER){
+					if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_SOURCE){
+						MLT_REGISTER( producer_type, pluginname, create_frei0r_item );
+						MLT_REGISTER_METADATA( producer_type, pluginname, fill_param_info, strdup(name) );
+					}
+					else if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_FILTER){
 						MLT_REGISTER( filter_type, pluginname, create_frei0r_item );
 						MLT_REGISTER_METADATA( filter_type, pluginname, fill_param_info, strdup(name) );
 					}

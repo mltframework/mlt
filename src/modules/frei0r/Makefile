@@ -3,6 +3,7 @@ include ../../../config.mak
 TARGET = ../libmltfrei0r$(LIBSUF)
 
 OBJS = factory.o \
+	   producer_frei0r.o \
 	   filter_frei0r.o \
 	   transition_frei0r.o \
 	   frei0r_helper.o

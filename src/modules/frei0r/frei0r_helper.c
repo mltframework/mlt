@@ -107,15 +107,21 @@ static void parse_color( char *color, f0r_param_color_t *fcolor )
 	}
 
 	int video_area = *width * *height;
-	uint32_t *img_a = mlt_pool_alloc( video_area * sizeof(uint32_t) );
+	uint32_t *img_a;
+
+	if ( type != producer_type )
+	    img_a = mlt_pool_alloc( video_area * sizeof(uint32_t) );
 	uint32_t *img_b = mlt_pool_alloc( video_area * sizeof(uint32_t) );
 
-	if (type==filter_type){
+	if (type==producer_type) {
+		f0r_update ( inst , position , NULL , img_b );
+		mlt_convert_rgb24a_to_yuv422((uint8_t *)img_b , *width, *height, *width * sizeof(uint32_t),*image, NULL);
+	} else if (type==filter_type) {
 		mlt_convert_yuv422_to_rgb24a(*image, (uint8_t *)img_a, video_area);
 		f0r_update ( inst , position , img_a , img_b );
 		mlt_convert_rgb24a_to_yuv422((uint8_t *)img_b , *width, *height, *width * sizeof(uint32_t),
 												*image, NULL );
-	}else if (type==transition_type && f0r_update2 ){
+	} else if (type==transition_type && f0r_update2 ){
 		uint32_t *result = mlt_pool_alloc( video_area * sizeof(uint32_t) );
 
 		mlt_convert_yuv422_to_rgb24a ( image[0] , (uint8_t *)img_a , video_area );
@@ -128,7 +134,7 @@ static void parse_color( char *color, f0r_param_color_t *fcolor )
 
 		mlt_pool_release(result);
  	}
-	mlt_pool_release(img_a);
+	if ( type != producer_type ) mlt_pool_release(img_a);
 	mlt_pool_release(img_b);
 
 	return 0;
