@@ -44,12 +44,11 @@ static inline uint8_t alpha_value( uint8_t a, uint8_t *p, uint8_t u, uint8_t v, 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter this = mlt_frame_pop_service( frame );
-	char *key = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "key" );
 	int variance = 200 * mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "variance" );
-	int32_t key_val = strtol( key, &key, 0 );
-	uint8_t b = key_val & 0xff;
-	uint8_t g = ( key_val >> 8 ) & 0xff;
-	uint8_t r = ( key_val >> 16 ) & 0xff;
+	int32_t key_val = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "key" );
+	uint8_t r = ( key_val >> 24 ) & 0xff;
+	uint8_t g = ( key_val >> 16 ) & 0xff;
+	uint8_t b = ( key_val >>  8 ) & 0xff;
 	uint8_t y, u, v;
 
 	RGB2YUV( r, g, b, y, u, v );
