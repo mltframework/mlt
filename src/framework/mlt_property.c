@@ -246,6 +246,15 @@ int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destr
  *
  * The string must begin with '0x' to be interpreted as hexadecimal.
  * Otherwise, it is interpreted as base 10.
+ * If the string begins with '#' it is interpreted as a hexadecimal color value
+ * in the form RRGGBB or AARRGGBB. Color values that begin with '0x' are
+ * always in the form RRGGBBAA where the alpha components are not optional.
+ * Applications and services should expect the binary color value in bytes to
+ * be in the following order: RGBA. This means they will have to cast the int
+ * to an unsigned int. This is especially important when they need to shift
+ * right to obtain RGB without alpha in order to make it do a logical instead
+ * of arithmetic shift.
+ *
  * \private \memberof mlt_property_s
  * \param value a string to convert
  * \return the resultant integer
@@ -254,10 +263,23 @@ static inline int mlt_property_atoi( const char *value )
 {
 	if ( value == NULL )
 		return 0;
+	// Parse a hex color value as #RRGGBB or #AARRGGBB.
+	else if ( value[0] == '#' )
+	{
+		unsigned int rgb = strtoul( value + 1, NULL, 16 );
+		unsigned int alpha = ( strlen( value ) > 7 ) ? ( rgb >> 24 ) : 0xff;
+		return ( rgb << 8 ) | alpha;
+	}
+	// Do hex and decimal explicitly to avoid decimal value with leading zeros
+	// interpreted as octal.
 	else if ( value[0] == '0' && value[1] == 'x' )
+	{
 		return strtol( value + 2, NULL, 16 );
+	}
 	else
+	{
 		return strtol( value, NULL, 10 );
+	}
 }
 
 /** Get the property as an integer.
