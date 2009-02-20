@@ -58,23 +58,14 @@ mlt_producer producer_colour_init( mlt_profile profile, mlt_service_type type, c
 	return NULL;
 }
 
-rgba_color parse_color( char *color )
+rgba_color parse_color( char *color, unsigned int color_int )
 {
 	rgba_color result = { 0xff, 0xff, 0xff, 0xff };
 
 	if ( strchr( color, '/' ) )
 		color = strrchr( color, '/' ) + 1;
 
-	if ( !strncmp( color, "0x", 2 ) )
-	{
-		unsigned int temp = 0;
-		sscanf( color + 2, "%x", &temp );
-		result.r = ( temp >> 24 ) & 0xff;
-		result.g = ( temp >> 16 ) & 0xff;
-		result.b = ( temp >> 8 ) & 0xff;
-		result.a = ( temp ) & 0xff;
-	}
-	else if ( !strcmp( color, "red" ) )
+	if ( !strcmp( color, "red" ) )
 	{
 		result.r = 0xff;
 		result.g = 0x00;
@@ -94,12 +85,10 @@ rgba_color parse_color( char *color )
 	}
 	else if ( strcmp( color, "white" ) )
 	{
-		unsigned int temp = 0;
-		sscanf( color, "%d", &temp );
-		result.r = ( temp >> 24 ) & 0xff;
-		result.g = ( temp >> 16 ) & 0xff;
-		result.b = ( temp >> 8 ) & 0xff;
-		result.a = ( temp ) & 0xff;
+		result.r = ( color_int >> 24 ) & 0xff;
+		result.g = ( color_int >> 16 ) & 0xff;
+		result.b = ( color_int >> 8 ) & 0xff;
+		result.a = ( color_int ) & 0xff;
 	}
 
 	return result;
@@ -129,7 +118,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int current_height = mlt_properties_get_int( producer_props, "_height" );
 
 	// Parse the colour
-	rgba_color color = parse_color( now );
+	rgba_color color = parse_color( now, mlt_properties_get_int( producer_props, "resource" ) );
 
 	// See if we need to regenerate
 	if ( strcmp( now, then ) || *width != current_width || *height != current_height )
