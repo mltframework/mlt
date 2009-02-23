@@ -503,6 +503,10 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
 			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 				this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
+
+			uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
+			SDL_FillRect( this->sdl_screen, NULL, color >> 8 );
+			SDL_Flip( this->sdl_screen );
 		}
 
 		if ( this->running )

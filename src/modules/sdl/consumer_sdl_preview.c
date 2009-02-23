@@ -190,8 +190,8 @@ static int consumer_start( mlt_consumer parent )
 		mlt_properties_pass_list( still, properties, "resize,rescale,width,height,aspect_ratio,display_ratio" );
 		mlt_properties_pass_list( play, properties, "deinterlace_method" );
 		mlt_properties_pass_list( still, properties, "deinterlace_method" );
-		mlt_properties_pass_list( play, properties, "preview_off,preview_format" );
-		mlt_properties_pass_list( still, properties, "preview_off,preview_format" );
+		mlt_properties_pass_list( play, properties, "preview_off,preview_format,window_background" );
+		mlt_properties_pass_list( still, properties, "preview_off,preview_format,window_background" );
 
 		mlt_properties_pass( play, properties, "play." );
 		mlt_properties_pass( still, properties, "still." );

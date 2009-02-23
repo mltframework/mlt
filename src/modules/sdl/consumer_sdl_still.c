@@ -431,6 +431,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 		if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+		uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
+		SDL_FillRect( this->sdl_screen, NULL, color >> 8 );
 		changed = 1;
 	}
 	else
@@ -492,8 +494,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	
 	if ( !mlt_consumer_is_stopped( &this->parent ) && SDL_GetVideoSurface( ) != NULL && this->sdl_screen != NULL && this->sdl_screen->pixels != NULL )
 	{
-		memset( this->sdl_screen->pixels, 0, this->window_width * this->window_height * this->sdl_screen->format->BytesPerPixel );
-
 		switch( this->sdl_screen->format->BytesPerPixel )
 		{
 			case 1:
