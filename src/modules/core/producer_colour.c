@@ -62,9 +62,6 @@ rgba_color parse_color( char *color, unsigned int color_int )
 {
 	rgba_color result = { 0xff, 0xff, 0xff, 0xff };
 
-	if ( strchr( color, '/' ) )
-		color = strrchr( color, '/' ) + 1;
-
 	if ( !strcmp( color, "red" ) )
 	{
 		result.r = 0xff;
@@ -118,6 +115,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int current_height = mlt_properties_get_int( producer_props, "_height" );
 
 	// Parse the colour
+	char *resource = mlt_properties_get( producer_props, "resource" );
+	if ( resource && strchr( resource, '/' ) )
+		mlt_properties_set( producer_props, "resource", strrchr( resource, '/' ) + 1 );
 	rgba_color color = parse_color( now, mlt_properties_get_int( producer_props, "resource" ) );
 
 	// See if we need to regenerate
