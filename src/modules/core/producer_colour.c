@@ -115,9 +115,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int current_height = mlt_properties_get_int( producer_props, "_height" );
 
 	// Parse the colour
-	char *resource = mlt_properties_get( producer_props, "resource" );
-	if ( resource && strchr( resource, '/' ) )
-		mlt_properties_set( producer_props, "resource", strrchr( resource, '/' ) + 1 );
+	if ( now && strchr( now, '/' ) )
+	{
+		now = strrchr( now, '/' ) + 1;
+		mlt_properties_set( producer_props, "resource", now );
+	}
 	rgba_color color = parse_color( now, mlt_properties_get_int( producer_props, "resource" ) );
 
 	// See if we need to regenerate
