@@ -518,7 +518,7 @@ void RIFFFile::ParseChunk( int parent )
 	read( fd, &type, sizeof( type ) );
 	if ( type == make_fourcc( "LIST" ) )
 	{
-		typesize = -sizeof( type );
+		typesize = (int) -sizeof( type );
 		fail_if( lseek( fd, typesize, SEEK_CUR ) == ( off_t ) - 1 );
 		ParseList( parent );
 	}
