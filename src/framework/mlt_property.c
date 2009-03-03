@@ -427,7 +427,7 @@ char *mlt_property_get_string( mlt_property this )
 		{
 			this->types |= mlt_prop_string;
 			this->prop_string = malloc( 32 );
-			sprintf( this->prop_string, "%lld", this->prop_int64 );
+                        sprintf( this->prop_string, "%lld", (long long int)this->prop_int64 );
 		}
 		else if ( this->types & mlt_prop_data && this->serialiser != NULL )
 		{
