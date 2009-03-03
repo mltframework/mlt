@@ -181,7 +181,7 @@ static void * load_lib(  mlt_profile profile, mlt_service_type type , void* hand
 			if ( this != NULL )
 			{
 				this->get_frame = producer_get_frame;
-				this->close = producer_close;
+				this->close = ( mlt_destructor )producer_close;
 				f0r_init();
 				properties=MLT_PRODUCER_PROPERTIES ( this );
 

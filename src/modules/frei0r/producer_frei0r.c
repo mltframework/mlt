@@ -20,6 +20,8 @@
 #include <framework/mlt.h>
 
 #include "frei0r_helper.h"
+
+#include <stdlib.h>
 #include <string.h>
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
