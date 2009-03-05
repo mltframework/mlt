@@ -226,7 +226,7 @@ static void set_common_properties( mlt_properties properties, mlt_profile profil
  * \return a new producer
  */
 
-mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, void *input )
+mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, const void *input )
 {
 	mlt_producer obj = NULL;
 
@@ -259,7 +259,7 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, voi
  * \return a new filter
  */
 
-mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, void *input )
+mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, const void *input )
 {
 	mlt_filter obj = NULL;
 
@@ -288,7 +288,7 @@ mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, void *i
  * \return a new transition
  */
 
-mlt_transition mlt_factory_transition( mlt_profile profile, const char *service, void *input )
+mlt_transition mlt_factory_transition( mlt_profile profile, const char *service, const void *input )
 {
 	mlt_transition obj = NULL;
 
@@ -317,7 +317,7 @@ mlt_transition mlt_factory_transition( mlt_profile profile, const char *service,
  * \return a new consumer
  */
 
-mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, void *input )
+mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, const void *input )
 {
 	mlt_consumer obj = NULL;
 

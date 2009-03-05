@@ -183,7 +183,7 @@ int mlt_events_register( mlt_properties this, char *id, mlt_transmitter transmit
  * \param id the name of an event
  */
 
-void mlt_events_fire( mlt_properties this, char *id, ... )
+void mlt_events_fire( mlt_properties this, const char *id, ... )
 {
 	mlt_events events = mlt_events_fetch( this );
 	if ( events != NULL )
@@ -231,7 +231,7 @@ void mlt_events_fire( mlt_properties this, char *id, ... )
  * \return
  */
 
-mlt_event mlt_events_listen( mlt_properties this, void *service, char *id, mlt_listener listener )
+mlt_event mlt_events_listen( mlt_properties this, void *service, const char *id, mlt_listener listener )
 {
 	mlt_event event = NULL;
 	mlt_events events = mlt_events_fetch( this );
@@ -413,7 +413,7 @@ static void mlt_events_listen_for( mlt_properties this, condition_pair *pair )
  * \return an event
  */
 
-mlt_event mlt_events_setup_wait_for( mlt_properties this, char *id )
+mlt_event mlt_events_setup_wait_for( mlt_properties this, const char *id )
 {
 	condition_pair *pair = malloc( sizeof( condition_pair ) );
 	pair->done = 0;

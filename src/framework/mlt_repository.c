@@ -208,7 +208,7 @@ static mlt_properties get_service_properties( mlt_repository this, mlt_service_t
  * \param input an optional argument to the service constructor
  */
 
-void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, void *input )
+void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, const void *input )
 {
 	mlt_properties properties = get_service_properties( this, type, service );
 	if ( properties != NULL )

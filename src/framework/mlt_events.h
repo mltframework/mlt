@@ -44,13 +44,13 @@ typedef void ( *mlt_listener )( );
 
 extern void mlt_events_init( mlt_properties self );
 extern int mlt_events_register( mlt_properties self, char *id, mlt_transmitter transmitter );
-extern void mlt_events_fire( mlt_properties self, char *id, ... );
-extern mlt_event mlt_events_listen( mlt_properties self, void *service, char *id, mlt_listener listener );
+extern void mlt_events_fire( mlt_properties self, const char *id, ... );
+extern mlt_event mlt_events_listen( mlt_properties self, void *service, const char *id, mlt_listener listener );
 extern void mlt_events_block( mlt_properties self, void *service );
 extern void mlt_events_unblock( mlt_properties self, void *service );
 extern void mlt_events_disconnect( mlt_properties self, void *service );
 
-extern mlt_event mlt_events_setup_wait_for( mlt_properties self, char *id );
+extern mlt_event mlt_events_setup_wait_for( mlt_properties self, const char *id );
 extern void mlt_events_wait_for( mlt_properties self, mlt_event event );
 extern void mlt_events_close_wait_for( mlt_properties self, mlt_event event );
 
