@@ -254,9 +254,10 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 
 		if ( speed != 1.0 )
 		{
-			double real_length = (double)  mlt_producer_get_length( real_producer );
-			mlt_properties_set_position( properties, "length", real_length / speed );
+			double real_length = ( (double)  mlt_producer_get_length( real_producer ) ) / speed;
+			mlt_properties_set_position( properties, "length", real_length );
 		}
+		mlt_properties_set_position( properties, "out", mlt_producer_get_length( this ) - 1 );
 
 		// Since we control the seeking, prevent it from seeking on its own
 		mlt_producer_set_speed( real_producer, 0 );
