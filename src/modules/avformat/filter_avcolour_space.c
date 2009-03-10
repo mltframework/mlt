@@ -27,6 +27,11 @@
 #include <swscale.h>
 #endif
 
+#if LIBAVUTIL_VERSION_INT < (50<<16)
+#define PIX_FMT_RGB32 PIX_FMT_RGBA32
+#define PIX_FMT_YUYV422 PIX_FMT_YUV422
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -48,10 +53,10 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 			value = PIX_FMT_RGB24;
 			break;
 		case mlt_image_rgb24a:
-			value = PIX_FMT_RGBA32;
+			value = PIX_FMT_RGB32;
 			break;
 		case mlt_image_yuv422:
-			value = PIX_FMT_YUV422;
+			value = PIX_FMT_YUYV422;
 			break;
 		case mlt_image_yuv420p:
 			value = PIX_FMT_YUV420P;

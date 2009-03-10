@@ -41,6 +41,11 @@
 #endif
 #include <opt.h>
 
+#if LIBAVUTIL_VERSION_INT < (50<<16)
+#define PIX_FMT_RGB32 PIX_FMT_RGBA32
+#define PIX_FMT_YUYV422 PIX_FMT_YUV422
+#endif
+
 //
 // This structure should be extended and made globally available in mlt
 //
@@ -810,7 +815,7 @@ static void *consumer_thread( void *arg )
 
 	// Need two av pictures for converting
 	AVFrame *output = NULL;
-	AVFrame *input = alloc_picture( PIX_FMT_YUV422, width, height );
+	AVFrame *input = alloc_picture( PIX_FMT_YUYV422, width, height );
 
 	// For receiving images from an mlt_frame
 	uint8_t *image;
@@ -1102,17 +1107,17 @@ static void *consumer_thread( void *arg )
 
 						// Do the colour space conversion
 #ifdef SWSCALE
-						struct SwsContext *context = sws_getContext( width, height, PIX_FMT_YUV422,
+						struct SwsContext *context = sws_getContext( width, height, PIX_FMT_YUYV422,
 							width, height, video_st->codec->pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 						sws_scale( context, input->data, input->linesize, 0, height,
 							output->data, output->linesize);
 						sws_freeContext( context );
 #else
-						img_convert( ( AVPicture * )output, video_st->codec->pix_fmt, ( AVPicture * )input, PIX_FMT_YUV422, width, height );
+						img_convert( ( AVPicture * )output, video_st->codec->pix_fmt, ( AVPicture * )input, PIX_FMT_YUYV422, width, height );
 #endif
 
 						// Apply the alpha if applicable
-						if ( video_st->codec->pix_fmt == PIX_FMT_RGBA32 )
+						if ( video_st->codec->pix_fmt == PIX_FMT_RGB32 )
 						{
 							uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 							register int n;

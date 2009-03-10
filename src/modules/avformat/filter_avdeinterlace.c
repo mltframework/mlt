@@ -81,6 +81,10 @@ extern uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP];
                     movd_r2m(mm1,dst[0]);
 #endif
 
+#if LIBAVUTIL_VERSION_INT < (50<<16)
+#define PIX_FMT_YUYV422 PIX_FMT_YUV422
+#endif
+
 /* filter parameters: [-1 4 2 4 -1] // 8 */
 static inline void deinterlace_line(uint8_t *dst, 
 			     const uint8_t *lum_m4, const uint8_t *lum_m3, 
@@ -237,14 +241,14 @@ static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
 
     if (pix_fmt != PIX_FMT_YUV420P &&
         pix_fmt != PIX_FMT_YUV422P &&
-        pix_fmt != PIX_FMT_YUV422 &&
+        pix_fmt != PIX_FMT_YUYV422 &&
         pix_fmt != PIX_FMT_YUV444P &&
 	pix_fmt != PIX_FMT_YUV411P)
         return -1;
     if ((width & 3) != 0 || (height & 3) != 0)
         return -1;
 
-	if ( pix_fmt != PIX_FMT_YUV422 )
+	if ( pix_fmt != PIX_FMT_YUYV422 )
 	{
       for(i=0;i<3;i++) {
           if (i == 1) {
@@ -314,8 +318,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Fill the picture
 		if ( *format == mlt_image_yuv422 )
 		{
-			avpicture_fill( output, *image, PIX_FMT_YUV422, *width, *height );
-			mlt_avpicture_deinterlace( output, output, PIX_FMT_YUV422, *width, *height );
+			avpicture_fill( output, *image, PIX_FMT_YUYV422, *width, *height );
+			mlt_avpicture_deinterlace( output, output, PIX_FMT_YUYV422, *width, *height );
 		}
 
 		// Free the picture

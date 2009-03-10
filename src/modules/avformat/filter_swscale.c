@@ -33,6 +33,11 @@
 #include <string.h>
 #include <assert.h>
 
+#if LIBAVUTIL_VERSION_INT < (50<<16)
+#define PIX_FMT_RGB32 PIX_FMT_RGBA32
+#define PIX_FMT_YUYV422 PIX_FMT_YUV422
+#endif
+
 static inline int is_big_endian( )
 {
 	union { int i; char c[ 4 ]; } big_endian_test;
@@ -51,10 +56,10 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 			value = PIX_FMT_RGB24;
 			break;
 		case mlt_image_rgb24a:
-			value = PIX_FMT_RGBA32;
+			value = PIX_FMT_RGB32;
 			break;
 		case mlt_image_yuv422:
-			value = PIX_FMT_YUV422;
+			value = PIX_FMT_YUYV422;
 			break;
 		case mlt_image_yuv420p:
 			value = PIX_FMT_YUV420P;
@@ -109,7 +114,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 	avpicture_fill( &output, outbuf, oformat, owidth, oheight );
 
 	// Extract the alpha channel
-	if ( iformat == PIX_FMT_RGBA32 && oformat == PIX_FMT_YUV422 )
+	if ( iformat == PIX_FMT_RGB32 && oformat == PIX_FMT_YUYV422 )
 	{
 		// Allocate the alpha mask
 		uint8_t *alpha = mlt_pool_alloc( iwidth * ( iheight + 1 ) );
@@ -118,7 +123,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 			// Convert the image and extract alpha
 			mlt_convert_rgb24a_to_yuv422( *image, iwidth, iheight, iwidth * 4, outbuf, alpha );
 			mlt_properties_set_data( properties, "alpha", alpha, iwidth * ( iheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
-			iformat = PIX_FMT_YUV422;
+			iformat = PIX_FMT_YUYV422;
 			avpicture_fill( &input, outbuf, iformat, iwidth, iheight );
 			avpicture_fill( &output, *image, oformat, owidth, oheight );
 		}
