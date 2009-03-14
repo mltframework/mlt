@@ -624,7 +624,7 @@ static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int w
 		luma_height = height;
 	}
 
-	if ( resource != NULL && strchr( resource, '%' ) )
+	if ( resource && resource[0] && strchr( resource, '%' ) )
 	{
 		// TODO: Clean up quick and dirty compressed/existence check
 		FILE *test;
@@ -637,7 +637,19 @@ static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int w
 		resource = temp;
 	}
 
-	if ( resource != NULL && ( luma_bitmap == NULL || luma_width != width || luma_height != height ) )
+	if ( resource && resource[0] )
+	{
+		char *old_luma = mlt_properties_get( properties, "_luma" );
+		int old_invert = mlt_properties_get_int( properties, "_luma_invert" );
+
+		if ( invert != old_invert || ( old_luma && old_luma[0] && strcmp( resource, old_luma ) ) )
+		{
+			mlt_properties_set_data( properties, "_luma.orig_bitmap", NULL, 0, NULL, NULL );
+			luma_bitmap = NULL;
+		}
+	}
+
+	if ( resource && resource[0] && ( luma_bitmap == NULL || luma_width != width || luma_height != height ) )
 	{
 		uint16_t *orig_bitmap = mlt_properties_get_data( properties, "_luma.orig_bitmap", NULL );
 		luma_width = mlt_properties_get_int( properties, "_luma.orig_width" );
@@ -725,6 +737,8 @@ static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int w
 		mlt_properties_set_int( properties, "_luma.width", width );
 		mlt_properties_set_int( properties, "_luma.height", height );
 		mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, width * height * 2, mlt_pool_release, NULL );
+		mlt_properties_set( properties, "_luma", resource );
+		mlt_properties_set_int( properties, "_luma_invert", invert );
 	}
 	return luma_bitmap;
 }
