@@ -648,6 +648,15 @@ static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int w
 			luma_bitmap = NULL;
 		}
 	}
+	else {
+		char *old_luma = mlt_properties_get( properties, "_luma" );
+		if ( old_luma && old_luma[0] )
+		{
+			mlt_properties_set_data( properties, "_luma.orig_bitmap", NULL, 0, NULL, NULL );
+			luma_bitmap = NULL;
+			mlt_properties_set( properties, "_luma", NULL);
+		}
+	}
 
 	if ( resource && resource[0] && ( luma_bitmap == NULL || luma_width != width || luma_height != height ) )
 	{
