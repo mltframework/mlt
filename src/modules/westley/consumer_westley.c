@@ -28,8 +28,8 @@
 
 #define ID_SIZE 128
 
-#define _x (xmlChar*)
-#define _s (char*)
+#define _x (const xmlChar*)
+#define _s (const char*)
 
 // This maintains counters for adding ids to elements
 struct serialise_context_s

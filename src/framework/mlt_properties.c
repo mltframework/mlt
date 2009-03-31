@@ -1073,7 +1073,7 @@ static int mlt_fnmatch( const char *wild, const char *file )
 
 static int mlt_compare( const void *this, const void *that )
 {
-	return strcmp( mlt_property_get_string( *( mlt_property * )this ), mlt_property_get_string( *( mlt_property * )that ) );
+	return strcmp( mlt_property_get_string( *( const mlt_property * )this ), mlt_property_get_string( *( const mlt_property * )that ) );
 }
 
 /** Get the contents of a directory.
