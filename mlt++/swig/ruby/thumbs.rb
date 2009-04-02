@@ -33,7 +33,7 @@ out = producer.get_int( "out" );
 generator = Mltpp::Consumer.new( profile, "avformat", "#{name}%d.jpg" )
 generator.set( "real_time", "0" )
 generator.set( "progressive", "1" )
-generator.set( "size", size )
+generator.set( "s", size )
 
 # Connect the consumer
 generator.connect( playlist );
