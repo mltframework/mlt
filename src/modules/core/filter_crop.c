@@ -83,6 +83,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		if ( top % 2 )
 			mlt_properties_set_int( properties, "top_field_first", !mlt_properties_get_int( properties, "top_field_first" ) );
 
+		left  -= left % 2;
+		owidth = *width - left - right;
+
 		// Create the output image
 		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 		if ( output )
