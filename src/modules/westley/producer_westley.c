@@ -173,7 +173,7 @@ static void track_service( mlt_properties properties, void *service, mlt_destruc
 static inline void qualify_property( deserialise_context context, mlt_properties properties, char *name )
 {
 	char *resource = mlt_properties_get( properties, name );
-	if ( resource != NULL )
+	if ( resource != NULL && resource[0] )
 	{
 		// Qualify file name properties	
 		char *root = mlt_properties_get( context->producer_map, "root" );
