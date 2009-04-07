@@ -978,7 +978,7 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 	enum service_type type;
 	mlt_service service = context_pop_service( context, &type );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-	char *value = NULL;
+	const char *value = NULL;
 
 	if ( service != NULL )
 	{

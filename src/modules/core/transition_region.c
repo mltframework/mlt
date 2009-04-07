@@ -272,7 +272,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	if ( composite != NULL )
 	{
 		// Get the resource of this filter (could be a shape [rectangle/circle] or an alpha provider of choice
-		char *resource =  mlt_properties_get( properties, "resource" );
+		const char *resource =  mlt_properties_get( properties, "resource" );
 
 		// Get the old resource in case it's changed
 		char *old_resource =  mlt_properties_get( properties, "_old_resource" );

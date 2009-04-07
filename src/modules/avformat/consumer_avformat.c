@@ -845,7 +845,7 @@ static void *consumer_thread( void *arg )
 
 	// Determine the format
 	AVOutputFormat *fmt = NULL;
-	char *filename = mlt_properties_get( properties, "target" );
+	const char *filename = mlt_properties_get( properties, "target" );
 	char *format = mlt_properties_get( properties, "f" );
 	char *vcodec = mlt_properties_get( properties, "vcodec" );
 	char *acodec = mlt_properties_get( properties, "acodec" );
