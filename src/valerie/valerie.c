@@ -117,7 +117,7 @@ static valerie_error_code valerie_get_error_code( valerie this, valerie_response
 /** Execute a command.
 */
 
-valerie_error_code valerie_execute( valerie this, size_t size, char *format, ... )
+valerie_error_code valerie_execute( valerie this, size_t size, const char *format, ... )
 {
 	valerie_error_code error = valerie_server_unavailable;
 	char *command = malloc( size );
@@ -534,7 +534,7 @@ valerie_error_code valerie_unit_clear_in_out( valerie this, int unit )
 /** Set a unit configuration property.
 */
 
-valerie_error_code valerie_unit_set( valerie this, int unit, char *name, char *value )
+valerie_error_code valerie_unit_set( valerie this, int unit, const char *name, const char *value )
 {
 	return valerie_execute( this, 1024, "USET U%d %s=%s", unit, name, value );
 }

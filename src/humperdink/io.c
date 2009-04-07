@@ -72,7 +72,7 @@ char *strip_quotes( char *input )
 	return input;
 }
 
-char *io_get_string( char *output, int maxlength, char *use )
+char *io_get_string( char *output, int maxlength, const char *use )
 {
 	char *value = NULL;
 	strcpy( output, use );

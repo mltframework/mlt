@@ -137,7 +137,7 @@ void valerie_response_set_error( valerie_response response, int error_code, cons
 /** Write formatted text to the response. 
 */
 
-int valerie_response_printf( valerie_response response, size_t size, char *format, ... )
+int valerie_response_printf( valerie_response response, size_t size, const char *format, ... )
 {
 	int length = 0;
 	char *text = malloc( size );

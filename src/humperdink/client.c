@@ -47,10 +47,10 @@ typedef valerie_error_code (*demo_function)( dv_demo );
 
 typedef struct
 {
-	char *description;
+	const char *description;
 	struct menu_item
 	{
-		char *option;
+		const char *option;
 		demo_function function;
 	}
 	array[ 50 ];
@@ -613,7 +613,7 @@ valerie_error_code dv_demo_load( dv_demo demo )
 
 				if ( refresh )
 				{
-					char *action = "Load & Play";
+					const char *action = "Load & Play";
 					if ( demo->queues[ demo->selected_unit ].mode )
 						action = "Queue";
 					printf( "%s from %s\n\n", action, demo->current_directory );

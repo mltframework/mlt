@@ -34,7 +34,7 @@ enum log_output {
 };
 
 void miracle_log_init( enum log_output method, int threshold );
-void miracle_log( int priority, char *format, ... );
+void miracle_log( int priority, const char *format, ... );
 
 #ifdef __cplusplus
 }

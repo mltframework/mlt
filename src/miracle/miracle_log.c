@@ -36,7 +36,7 @@ void miracle_log_init( enum log_output method, int new_threshold )
 
 }
 
-void miracle_log( int priority, char *format, ... )
+void miracle_log( int priority, const char *format, ... )
 {
 	va_list list;
 	va_start( list, format );
