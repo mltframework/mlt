@@ -39,8 +39,8 @@
 #ifndef _
 #define _(x) x
 #endif
-#define _x (xmlChar*)
-#define _s (char*)
+#define _x (const xmlChar*)
+#define _s (const char*)
 
 jack_rack_t *
 jack_rack_new (const char * client_name, unsigned long channels)

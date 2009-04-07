@@ -261,7 +261,7 @@ mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
 
 static int position_compare( const void *p1, const void *p2 )
 {
-	return *( mlt_position * )p1 - *( mlt_position * )p2;
+	return *( const mlt_position * )p1 - *( const mlt_position * )p2;
 }
 
 /** Add a position to a set.
