@@ -170,7 +170,7 @@ static void track_service( mlt_properties properties, void *service, mlt_destruc
 
 
 // Prepend the property value with the document root
-static inline void qualify_property( deserialise_context context, mlt_properties properties, char *name )
+static inline void qualify_property( deserialise_context context, mlt_properties properties, const char *name )
 {
 	char *resource = mlt_properties_get( properties, name );
 	if ( resource != NULL )

@@ -158,7 +158,7 @@ void mlt_events_init( mlt_properties this )
  * \return true if there was an error
  */
 
-int mlt_events_register( mlt_properties this, char *id, mlt_transmitter transmitter )
+int mlt_events_register( mlt_properties this, const char *id, mlt_transmitter transmitter )
 {
 	int error = 1;
 	mlt_events events = mlt_events_fetch( this );

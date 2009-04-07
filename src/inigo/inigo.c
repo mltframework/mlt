@@ -265,7 +265,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	}
 }
 
-static void query_metadata( mlt_repository repo, mlt_service_type type, char *typestr, char *id )
+static void query_metadata( mlt_repository repo, mlt_service_type type, const char *typestr, char *id )
 {
 	mlt_properties metadata = mlt_repository_metadata( repo, type, id );
 	if ( metadata )
@@ -283,7 +283,7 @@ static void query_metadata( mlt_repository repo, mlt_service_type type, char *ty
 static void query_services( mlt_repository repo, mlt_service_type type )
 {
 	mlt_properties services = NULL;
-	char *typestr = NULL;
+	const char *typestr = NULL;
 	switch ( type )
 	{
 		case consumer_type:
