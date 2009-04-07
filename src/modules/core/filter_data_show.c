@@ -144,7 +144,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 	{
 		int i = 0;
 		mlt_properties properties = MLT_FILTER_PROPERTIES( requested );
-		static char *prefix = "properties.";
+		static const char *prefix = "properties.";
 		int len = strlen( prefix );
 
 		// Determine if this is an absolute or relative feed

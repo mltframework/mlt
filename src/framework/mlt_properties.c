@@ -456,7 +456,7 @@ int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const ch
 {
 	char *props = strdup( list );
 	char *ptr = props;
-	char *delim = " ,\t\n";	// Any combination of spaces, commas, tabs, and newlines
+	const char *delim = " ,\t\n";	// Any combination of spaces, commas, tabs, and newlines
 	int count, done = 0;
 
 	while( !done )

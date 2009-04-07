@@ -931,7 +931,7 @@ valerie_error_code dv_demo_transport( dv_demo demo )
 
 valerie_error_code dv_demo_run_menu( dv_demo demo, dv_demo_menu menu )
 {
-	char *items = "123456789abcdefghijklmnopqrstuvwxyz";
+	const char *items = "123456789abcdefghijklmnopqrstuvwxyz";
 	int refresh_menu = 1;
 	int terminated = 0;
 	int item_count = 0;

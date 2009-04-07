@@ -80,9 +80,9 @@ int valerie_response_get_error_code( valerie_response response )
 /** Get the error description associated to the response.
 */
 
-char *valerie_response_get_error_string( valerie_response response )
+const char *valerie_response_get_error_string( valerie_response response )
 {
-	char *error_string = "No message specified";
+	const char *error_string = "No message specified";
 	if ( response->count > 0 )
 	{
 		char *ptr = strchr( response->array[ 0 ], ' ' ) ;

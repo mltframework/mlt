@@ -873,7 +873,7 @@ bool QtHandler::Open( const char *s )
 {
 	Init();
 
-	fd = quicktime_open( ( char * ) s, 1, 0 );
+	fd = quicktime_open( s, 1, 0 );
 	if ( fd == NULL )
 	{
 		fprintf( stderr, "Error opening: %s\n", s );

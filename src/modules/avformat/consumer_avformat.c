@@ -1338,7 +1338,7 @@ static void *consumer_thread( void *arg )
 
 		// Remove the x264 dual pass logs
 		char *cwd = getcwd( NULL, 0 );
-		char *file = "x264_2pass.log";
+		const char *file = "x264_2pass.log";
 		char *full = malloc( strlen( cwd ) + strlen( file ) + 2 );
 		sprintf( full, "%s/%s", cwd, file );
 		remove( full );

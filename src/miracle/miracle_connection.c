@@ -133,7 +133,7 @@ static int connection_send( int fd, valerie_response response )
 	}
 	else
 	{
-		char *message = "500 Empty Response\r\n\r\n";
+		const char *message = "500 Empty Response\r\n\r\n";
 		write( fd, message, strlen( message ) );
 	}
 
