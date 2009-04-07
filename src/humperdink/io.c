@@ -186,7 +186,7 @@ char get_keypress( )
 	return value;
 }
 
-void wait_for_any_key( char *message )
+void wait_for_any_key( const char *message )
 {
 	if ( message == NULL )
 		printf( "Press any key to continue: " );

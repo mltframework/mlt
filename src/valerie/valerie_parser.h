@@ -64,7 +64,7 @@ extern valerie_response valerie_parser_connect( valerie_parser );
 extern valerie_response valerie_parser_push( valerie_parser, char *, mlt_service );
 extern valerie_response valerie_parser_received( valerie_parser, char *, char * );
 extern valerie_response valerie_parser_execute( valerie_parser, char * );
-extern valerie_response valerie_parser_executef( valerie_parser, char *, ... );
+extern valerie_response valerie_parser_executef( valerie_parser, const char *, ... );
 extern valerie_response valerie_parser_run( valerie_parser, char * );
 extern valerie_notifier valerie_parser_get_notifier( valerie_parser );
 extern void valerie_parser_close( valerie_parser );

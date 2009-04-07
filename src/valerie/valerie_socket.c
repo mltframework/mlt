@@ -125,7 +125,7 @@ int valerie_socket_read_data( valerie_socket socket, char *data, int length )
 /** Write an arbitrarily formatted block of data to the server.
 */
 
-int valerie_socket_write_data( valerie_socket socket, char *data, int length )
+int valerie_socket_write_data( valerie_socket socket, const char *data, int length )
 {
 	int used = 0;
 	

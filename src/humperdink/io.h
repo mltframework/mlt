@@ -30,7 +30,7 @@ extern void term_init( );
 extern int term_read( );
 extern void term_exit( );
 extern char get_keypress( );
-extern void wait_for_any_key( char * );
+extern void wait_for_any_key( const char * );
 extern void beep( );
 
 #endif

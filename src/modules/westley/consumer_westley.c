@@ -200,7 +200,7 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 	}
 }
 
-static void serialise_store_properties( serialise_context context, mlt_properties properties, xmlNode *node, char *store )
+static void serialise_store_properties( serialise_context context, mlt_properties properties, xmlNode *node, const char *store )
 {
 	int i;
 	xmlNode *p;

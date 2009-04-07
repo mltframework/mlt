@@ -63,7 +63,7 @@ valerie_response valerie_parser_push( valerie_parser parser, char *command, mlt_
 /** Execute a formatted command via the parser.
 */
 
-valerie_response valerie_parser_executef( valerie_parser parser, char *format, ... )
+valerie_response valerie_parser_executef( valerie_parser parser, const char *format, ... )
 {
 	char *command = malloc( 10240 );
 	valerie_response response = NULL;

@@ -201,7 +201,7 @@ static inline double delta_calculate( mlt_transition this, mlt_frame frame, mlt_
 	return length * ( y - x ) / 2.0;
 }
 
-static int get_value( mlt_properties properties, char *preferred, char *fallback )
+static int get_value( mlt_properties properties, const char *preferred, const char *fallback )
 {
 	int value = mlt_properties_get_int( properties, preferred );
 	if ( value == 0 )

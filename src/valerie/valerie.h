@@ -153,7 +153,7 @@ typedef struct
 *valerie_dir_entry, valerie_dir_entry_t;
 
 /* Directory reading. */
-extern valerie_dir valerie_dir_init( valerie, char * );
+extern valerie_dir valerie_dir_init( valerie, const char * );
 extern valerie_error_code valerie_dir_get_error_code( valerie_dir );
 extern valerie_error_code valerie_dir_get( valerie_dir, int, valerie_dir_entry );
 extern int valerie_dir_count( valerie_dir );

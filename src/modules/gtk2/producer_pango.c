@@ -218,7 +218,7 @@ mlt_producer producer_pango_init( const char *filename )
 	return NULL;
 }
 
-static void set_string( char **string, char *value, char *fallback )
+static void set_string( char **string, const char *value, const char *fallback )
 {
 	if ( value != NULL )
 	{
@@ -282,7 +282,7 @@ rgba_color parse_color( char *color )
 
 /** Convert a string property to UTF-8
 */
-static int iconv_utf8( mlt_properties properties, char *prop_name, const char* encoding )
+static int iconv_utf8( mlt_properties properties, const char *prop_name, const char* encoding )
 {
 	char *text = mlt_properties_get( properties, prop_name );
 	int result = -1;

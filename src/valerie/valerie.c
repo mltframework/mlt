@@ -587,7 +587,7 @@ valerie_notifier valerie_get_notifier( valerie this )
 /** List the contents of the specified directory.
 */
 
-valerie_dir valerie_dir_init( valerie this, char *directory )
+valerie_dir valerie_dir_init( valerie this, const char *directory )
 {
 	valerie_dir dir = malloc( sizeof( valerie_dir_t ) );
 	if ( dir != NULL )
