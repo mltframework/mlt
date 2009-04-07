@@ -148,7 +148,7 @@ valerie_error_code valerie_execute( valerie this, size_t size, const char *forma
 /** Execute a command.
 */
 
-valerie_error_code valerie_receive( valerie this, char *doc, size_t size, char *format, ... )
+valerie_error_code valerie_receive( valerie this, char *doc, size_t size, const char *format, ... )
 {
 	valerie_error_code error = valerie_server_unavailable;
 	char *command = malloc( size );
@@ -179,7 +179,7 @@ valerie_error_code valerie_receive( valerie this, char *doc, size_t size, char *
 /** Execute a command.
 */
 
-valerie_error_code valerie_push( valerie this, mlt_service service, size_t size, char *format, ... )
+valerie_error_code valerie_push( valerie this, mlt_service service, size_t size, const char *format, ... )
 {
 	valerie_error_code error = valerie_server_unavailable;
 	char *command = malloc( size );

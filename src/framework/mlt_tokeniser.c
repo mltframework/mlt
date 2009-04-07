@@ -77,7 +77,7 @@ static int mlt_tokeniser_append( mlt_tokeniser tokeniser, char *token )
 /** Parse a string by splitting on the delimiter provided.
 */
 
-int mlt_tokeniser_parse_new( mlt_tokeniser tokeniser, char *string, char *delimiter )
+int mlt_tokeniser_parse_new( mlt_tokeniser tokeniser, char *string, const char *delimiter )
 {
 	int count = 0;
 	int length = strlen( string );

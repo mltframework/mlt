@@ -252,7 +252,7 @@ extern const char *valerie_error_description( valerie_error_code );
 
 /* Courtesy functions. */
 extern valerie_error_code valerie_execute( valerie, size_t, const char *, ... );
-extern valerie_error_code valerie_push( valerie, mlt_service, size_t, char *, ... );
+extern valerie_error_code valerie_push( valerie, mlt_service, size_t, const char *, ... );
 
 /* Close function. */
 extern void valerie_close( valerie );
