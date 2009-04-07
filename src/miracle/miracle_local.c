@@ -105,7 +105,7 @@ valerie_parser miracle_parser_init_local( )
 typedef struct 
 {
 	int code;
-	char *message;
+	const char *message;
 } 
 responses_t;
 
@@ -146,7 +146,7 @@ arguments_types;
 typedef struct 
 {
 /* The command string corresponding to this operation (e.g. "play") */
-	char *command;
+	const char *command;
 /* The function associated with it */
 	response_codes (*operation) ( command_argument );
 /* a boolean to indicate if this is a unit or global command
@@ -155,7 +155,7 @@ typedef struct
 /* What type is the argument (RTTI :-) ATYPE_whatever */
 	int type;
 /* online help information */
-	char *help;
+	const char *help;
 } 
 command_t;
 
@@ -217,7 +217,7 @@ static char helpstr [] =
 /** Lookup the response message for a status code.
 */
 
-inline char *get_response_msg( int code )
+inline const char *get_response_msg( int code )
 {
 	int i = 0;
 	for ( i = 0; responses[ i ].message != NULL && code != responses[ i ].code; i ++ ) ;

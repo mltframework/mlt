@@ -911,9 +911,9 @@ valerie_response valerie_get_last_response( valerie this )
 /** Obtain a printable message associated to the error code provided.
 */
 
-char *valerie_error_description( valerie_error_code error )
+const char *valerie_error_description( valerie_error_code error )
 {
-	char *msg = "Unrecognised error";
+	const char *msg = "Unrecognised error";
 	switch( error )
 	{
 		case valerie_ok:

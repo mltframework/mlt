@@ -248,7 +248,7 @@ extern void valerie_units_close( valerie_units );
 
 /* Miscellaenous functions */
 extern valerie_response valerie_get_last_response( valerie );
-extern char *valerie_error_description( valerie_error_code );
+extern const char *valerie_error_description( valerie_error_code );
 
 /* Courtesy functions. */
 extern valerie_error_code valerie_execute( valerie, size_t, const char *, ... );

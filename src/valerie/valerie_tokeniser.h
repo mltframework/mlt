@@ -42,7 +42,7 @@ typedef struct
 */
 
 extern valerie_tokeniser valerie_tokeniser_init( );
-extern int valerie_tokeniser_parse_new( valerie_tokeniser, char *, char * );
+extern int valerie_tokeniser_parse_new( valerie_tokeniser, char *, const char * );
 extern char *valerie_tokeniser_get_input( valerie_tokeniser );
 extern int valerie_tokeniser_count( valerie_tokeniser );
 extern char *valerie_tokeniser_get_string( valerie_tokeniser, int );
