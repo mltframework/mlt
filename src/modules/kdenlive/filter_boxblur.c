@@ -26,7 +26,7 @@
 #include <math.h>
 
 
-static void PreCompute(uint8_t *yuv, int32_t *rgb, unsigned int width, unsigned int height)
+static void PreCompute(uint8_t *yuv, int32_t *rgb, int width, int height)
 {
 	register int x, y, z;
 	register int uneven = width % 2;
