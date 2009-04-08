@@ -409,7 +409,8 @@ int mlt_consumer_start( mlt_consumer this )
 
 	// Check and run an ante command
 	if ( mlt_properties_get( properties, "ante" ) )
-		system( mlt_properties_get( properties, "ante" ) );
+		if ( system( mlt_properties_get( properties, "ante" ) ) == -1 )
+			mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_ERROR, "system(%s) failed!\n", mlt_properties_get( properties, "ante" ) );
 
 	// Set the real_time preference
 	this->real_time = mlt_properties_get_int( properties, "real_time" );
@@ -949,7 +950,8 @@ int mlt_consumer_stop( mlt_consumer this )
 
 	// Check and run a post command
 	if ( mlt_properties_get( properties, "post" ) )
-		system( mlt_properties_get( properties, "post" ) );
+		if (system( mlt_properties_get( properties, "post" ) ) == -1 )
+			mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_ERROR, "system(%s) failed!\n", mlt_properties_get( properties, "post" ) );
 
 	mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_DEBUG, "stopped\n" );
 

@@ -515,7 +515,7 @@ void RIFFFile::ParseChunk( int parent )
 
 	/* Check whether it is a LIST. If so, let ParseList deal with it */
 
-	read( fd, &type, sizeof( type ) );
+	fail_if( read( fd, &type, sizeof( type ) ) != sizeof( type ));
 	if ( type == make_fourcc( "LIST" ) )
 	{
 		typesize = (int) -sizeof( type );
