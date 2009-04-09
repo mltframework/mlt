@@ -634,8 +634,8 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 	else
 	{
 		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_YUV422, width, height );
-		img_convert( &output, PIX_FMT_YUV422, (AVPicture *)frame, pix_fmt, width, height );
+		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
+		img_convert( &output, PIX_FMT_YUYV422, (AVPicture *)frame, pix_fmt, width, height );
 	}
 #endif
 }
