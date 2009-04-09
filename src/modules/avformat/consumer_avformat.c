@@ -597,9 +597,9 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		if ( mlt_properties_get_int( properties, "progressive" ) == 0 &&
 		     mlt_properties_get_int( properties, "deinterlace" ) == 0 )
 		{
-			if ( mlt_properties_get_int( properties, "ildct" ) )
+			if ( ! mlt_properties_get( properties, "ildct" ) || mlt_properties_get_int( properties, "ildct" ) )
 				c->flags |= CODEC_FLAG_INTERLACED_DCT;
-			if ( mlt_properties_get_int( properties, "ilme" ) )
+			if ( ! mlt_properties_get( properties, "ilme" ) || mlt_properties_get_int( properties, "ilme" ) )
 				c->flags |= CODEC_FLAG_INTERLACED_ME;
 		}
 		
