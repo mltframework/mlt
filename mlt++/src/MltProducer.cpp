@@ -29,7 +29,7 @@ Producer::Producer( ) :
 {
 }
 
-Producer::Producer( Profile& profile, char *id, char *service ) :
+Producer::Producer( Profile& profile, const char *id, const char *service ) :
 	instance( NULL ),
 	parent_( NULL )
 {

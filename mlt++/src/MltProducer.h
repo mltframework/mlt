@@ -41,7 +41,7 @@ namespace Mlt
 			Producer *parent_;
 		public:
 			Producer( );
-			Producer( Profile& profile, char *id, char *service = NULL );
+			Producer( Profile& profile, const char *id, const char *service = NULL );
 			Producer( Service &producer );
 			Producer( mlt_producer producer );
 			Producer( Producer &producer );
