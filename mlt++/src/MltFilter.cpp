@@ -59,6 +59,7 @@ Filter::Filter( Service &filter ) :
 }
 
 Filter::Filter( Filter &filter ) :
+	Mlt::Service( filter ),
 	instance( filter.get_filter( ) )
 {
 	inc_ref( );

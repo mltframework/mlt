@@ -59,6 +59,7 @@ Transition::Transition( Service &transition ) :
 }
 
 Transition::Transition( Transition &transition ) :
+	Mlt::Service( transition ),
 	instance( transition.get_transition( ) )
 {
 	inc_ref( );

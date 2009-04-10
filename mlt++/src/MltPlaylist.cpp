@@ -96,6 +96,7 @@ Playlist::Playlist( Service &producer ) :
 }
 
 Playlist::Playlist( Playlist &playlist ) :
+	Mlt::Producer( playlist ),
 	instance( playlist.get_playlist( ) )
 {
 	inc_ref( );

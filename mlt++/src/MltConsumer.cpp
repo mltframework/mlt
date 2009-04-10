@@ -72,6 +72,7 @@ Consumer::Consumer( Service &consumer ) :
 }
 
 Consumer::Consumer( Consumer &consumer ) :
+	Mlt::Service( consumer ),
 	instance( consumer.get_consumer( ) )
 {
 	inc_ref( );

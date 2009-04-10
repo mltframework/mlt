@@ -39,6 +39,7 @@ Multitrack::Multitrack( Service &multitrack ) :
 }
 
 Multitrack::Multitrack( Multitrack &multitrack ) :
+	Mlt::Producer( multitrack ),
 	instance( multitrack.get_multitrack( ) )
 {
 	inc_ref( );

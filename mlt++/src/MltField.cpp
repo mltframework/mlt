@@ -30,6 +30,7 @@ Field::Field( mlt_field field ) :
 }
 
 Field::Field( Field &field ) :
+	Mlt::Service( field ),
 	instance( field.get_field( ) )
 {
 	inc_ref( );

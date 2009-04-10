@@ -48,6 +48,7 @@ Tractor::Tractor( mlt_tractor tractor ) :
 }
 
 Tractor::Tractor( Tractor &tractor ) :
+	Mlt::Producer( tractor ),
 	instance( tractor.get_tractor( ) )
 {
 	inc_ref( );

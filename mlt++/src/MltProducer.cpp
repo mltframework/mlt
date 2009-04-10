@@ -60,6 +60,7 @@ Producer::Producer( mlt_producer producer ) :
 }
 
 Producer::Producer( Producer &producer ) :
+	Mlt::Service( producer ),
 	instance( producer.get_producer( ) ),
 	parent_( NULL )
 {
