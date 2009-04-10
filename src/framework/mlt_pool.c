@@ -137,7 +137,7 @@ static void *pool_fetch( mlt_pool this )
 				release->references = 1;
 
 				// Determine the ptr
-				ptr = ( void * )release + sizeof( struct mlt_release_s );
+				ptr = ( char * )release + sizeof( struct mlt_release_s );
 			}
 		}
 
@@ -161,7 +161,7 @@ static void pool_return( void *ptr )
 	if ( ptr != NULL )
 	{
 		// Get the release pointer
-		mlt_release that = ptr - sizeof( struct mlt_release_s );
+		mlt_release that = ( void * )(( char * )ptr - sizeof( struct mlt_release_s ));
 
 		// Get the pool
 		mlt_pool this = that->pool;
@@ -186,7 +186,7 @@ static void pool_return( void *ptr )
 	if ( ptr != NULL )
 	{
 		// Free the release itself
-		free( ptr - sizeof( struct mlt_release_s ) );
+		free( ( char * )ptr - sizeof( struct mlt_release_s ) );
 	}
 }
 
@@ -207,7 +207,7 @@ static void pool_close( mlt_pool this )
 		while ( ( release = mlt_deque_pop_back( this->stack ) ) != NULL )
 		{
 			// We'll free this item now
-			free( release - sizeof( struct mlt_release_s ) );
+			free( ( char * )release - sizeof( struct mlt_release_s ) );
 		}
 
 		// We can now close the stack
@@ -293,7 +293,7 @@ void *mlt_pool_realloc( void *ptr, int size )
 	if ( ptr != NULL )
 	{
 		// Get the release pointer
-		mlt_release that = ptr - sizeof( struct mlt_release_s );
+		mlt_release that = ( void * )(( char * )ptr - sizeof( struct mlt_release_s ));
 
 		// If the current pool this ptr belongs to is big enough
 		if ( size > that->pool->size - sizeof( struct mlt_release_s ) )
@@ -346,7 +346,7 @@ void mlt_pool_purge( )
 
 		// We'll free all unused items now
 		while ( ( release = mlt_deque_pop_back( this->stack ) ) != NULL )
-			free( release - sizeof( struct mlt_release_s ) );
+			free( ( char * )release - sizeof( struct mlt_release_s ) );
 
 		// Unlock the pool
 		pthread_mutex_unlock( &this->lock );

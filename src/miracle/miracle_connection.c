@@ -129,12 +129,14 @@ static int connection_send( int fd, valerie_response response )
 		}
 
 		if ( ( code == 201 || code == 500 ) && strcmp( valerie_response_get_line( response, items - 1 ), "" ) )
-			write( fd, "\r\n", 2 );
+			if ( write( fd, "\r\n", 2 ) != 2 )
+				miracle_log( LOG_ERR, "write(\"\\r\\n\") failed!" );
 	}
 	else
 	{
 		const char *message = "500 Empty Response\r\n\r\n";
-		write( fd, message, strlen( message ) );
+		if ( write( fd, message, strlen( message ) ) != strlen( message ))
+			miracle_log( LOG_ERR, "write(%s) failed!", message );
 	}
 
 	return error;
