@@ -80,7 +80,7 @@ namespace Mlt
 			Event *listen( char *id, void *object, mlt_listener );
 			#endif
 			static void delete_event( Event * );
-			Event *setup_wait_for( char *id );
+			Event *setup_wait_for( const char *id );
 			void wait_for( Event *, bool destroy = true );
 	};
 }

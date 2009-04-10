@@ -24,7 +24,7 @@
 #include "MltProfile.h"
 using namespace Mlt;
 
-Filter::Filter( Profile& profile, char *id, char *arg ) :
+Filter::Filter( Profile& profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( arg != NULL )

@@ -242,7 +242,7 @@ Event *Properties::listen( char *id, void *object, mlt_listener listener )
 
 #endif
 
-Event *Properties::setup_wait_for( char *id )
+Event *Properties::setup_wait_for( const char *id )
 {
 	return new Event( mlt_events_setup_wait_for( get_properties( ), id ) );
 }
