@@ -67,6 +67,6 @@ int Response::count( )
 
 int Response::write( const char *data )
 {
-	return valerie_response_write( get_response( ), ( char * )data, strlen( data ) );
+	return valerie_response_write( get_response( ), data, strlen( data ) );
 }
 
