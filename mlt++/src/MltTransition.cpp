@@ -24,7 +24,7 @@
 #include "MltProfile.h"
 using namespace Mlt;
 
-Transition::Transition( Profile& profile, char *id, char *arg ) :
+Transition::Transition( Profile& profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( arg != NULL )
