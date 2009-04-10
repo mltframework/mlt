@@ -85,7 +85,7 @@ void PushConsumer::set_render( int width, int height, double aspect_ratio )
 	set( "render_aspect_ratio", aspect_ratio );
 }
 
-int PushConsumer::connect( Service &service )
+int PushConsumer::connect( Service &/*service*/ )
 {
 	return -1;
 }

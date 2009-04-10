@@ -28,7 +28,7 @@ Properties::Properties( ) :
 	instance = mlt_properties_new( );
 }
 
-Properties::Properties( bool dummy ) :
+Properties::Properties( bool /*dummy*/ ) :
 	instance( NULL )
 {
 }
