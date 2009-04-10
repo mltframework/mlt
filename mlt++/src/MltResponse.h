@@ -31,7 +31,7 @@ namespace Mlt
 			valerie_response _response;
 		public:
 			Response( valerie_response response );
-			Response( int error, char *message );
+			Response( int error, const char *message );
 			~Response( );
 			valerie_response get_response( );
 			int error_code( );

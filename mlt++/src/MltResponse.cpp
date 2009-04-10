@@ -27,7 +27,7 @@ Response::Response( valerie_response response ) :
 {
 }
 
-Response::Response( int error, char *message ) :
+Response::Response( int error, const char *message ) :
 	_response( NULL )
 {
 	_response = valerie_response_init( );
