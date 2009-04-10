@@ -36,7 +36,7 @@ class Custom : public Miracle
 		}
 
 		// Push handling - clear the playlist, append, seek to beginning and play
-		Response *push( char *command, Service *service )
+		Response *push( char*, Service *service )
 		{
 			Playlist playlist( ( mlt_playlist )( unit( 0 )->get_data( "playlist" ) ) );
 			Producer producer( *service );
@@ -94,7 +94,7 @@ class Custom : public Miracle
 		}
 
 		// Callback for frame render notification
-		static void frame_render( mlt_consumer consumer, Custom *self, mlt_frame frame_ptr )
+		static void frame_render( mlt_consumer, Custom *self, mlt_frame frame_ptr )
 		{
 			Frame frame( frame_ptr );
 			self->frame_render_event( frame );
@@ -122,7 +122,7 @@ class Custom : public Miracle
 		}
 };
 	
-int main( int argc, char **argv )
+int main( int, char** )
 {
 	Custom server( "Server" );
 	server.start( );

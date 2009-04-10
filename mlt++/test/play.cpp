@@ -2,7 +2,7 @@
 #include <Mlt.h>
 using namespace Mlt;
 
-int main( int argc, char **argv )
+int main( int, char **argv )
 {
 	Factory::init( NULL );
 	Profile profile;
