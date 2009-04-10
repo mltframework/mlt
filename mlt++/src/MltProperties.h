@@ -75,9 +75,9 @@ namespace Mlt
 			void load( const char *file );
 			int save( const char *file );
 			#if defined( __DARWIN__ ) && GCC_VERSION < 40000
-			Event *listen( char *id, void *object, void (*)( ... ) );
+			Event *listen( const char *id, void *object, void (*)( ... ) );
 			#else
-			Event *listen( char *id, void *object, mlt_listener );
+			Event *listen( const char *id, void *object, mlt_listener );
 			#endif
 			static void delete_event( Event * );
 			Event *setup_wait_for( const char *id );

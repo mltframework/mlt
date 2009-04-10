@@ -226,7 +226,7 @@ int Properties::save( const char *file )
 
 #if defined( __DARWIN__ ) && GCC_VERSION < 40000
 
-Event *Properties::listen( char *id, void *object, void (*listener)( ... ) )
+Event *Properties::listen( const char *id, void *object, void (*listener)( ... ) )
 {
 	mlt_event event = mlt_events_listen( get_properties( ), object, id, ( mlt_listener )listener );
 	return new Event( event );
@@ -234,7 +234,7 @@ Event *Properties::listen( char *id, void *object, void (*listener)( ... ) )
 
 #else
 
-Event *Properties::listen( char *id, void *object, mlt_listener listener )
+Event *Properties::listen( const char *id, void *object, mlt_listener listener )
 {
 	mlt_event event = mlt_events_listen( get_properties( ), object, id, listener );
 	return new Event( event );
