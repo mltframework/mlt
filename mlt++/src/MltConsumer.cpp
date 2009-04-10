@@ -37,7 +37,7 @@ Consumer::Consumer( Profile& profile ) :
 	instance = mlt_factory_consumer( profile.get_profile(), NULL, NULL );
 }
 
-Consumer::Consumer( Profile& profile, char *id, char *arg ) :
+Consumer::Consumer( Profile& profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( id == NULL || arg != NULL )

@@ -39,7 +39,7 @@ namespace Mlt
 		public:
 			Consumer( );
 			Consumer( Profile& profile );
-			Consumer( Profile& profile, char *id , char *service = NULL );
+			Consumer( Profile& profile, const char *id , const char *service = NULL );
 			Consumer( Service &consumer );
 			Consumer( Consumer &consumer );
 			Consumer( mlt_consumer consumer );
