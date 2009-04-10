@@ -845,7 +845,7 @@ static void *consumer_thread( void *arg )
 
 	// Determine the format
 	AVOutputFormat *fmt = NULL;
-	char *filename = mlt_properties_get( properties, "target" );
+	const char *filename = mlt_properties_get( properties, "target" );
 	char *format = mlt_properties_get( properties, "f" );
 	char *vcodec = mlt_properties_get( properties, "vcodec" );
 	char *acodec = mlt_properties_get( properties, "acodec" );
@@ -1338,7 +1338,7 @@ static void *consumer_thread( void *arg )
 
 		// Remove the x264 dual pass logs
 		char *cwd = getcwd( NULL, 0 );
-		char *file = "x264_2pass.log";
+		const char *file = "x264_2pass.log";
 		char *full = malloc( strlen( cwd ) + strlen( file ) + 2 );
 		sprintf( full, "%s/%s", cwd, file );
 		remove( full );

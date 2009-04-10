@@ -92,7 +92,7 @@ const char *miracle_server_id( miracle_server server )
 	return server != NULL && server->id != NULL ? server->id : "miracle";
 }
 
-void miracle_server_set_config( miracle_server server, char *config )
+void miracle_server_set_config( miracle_server server, const char *config )
 {
 	if ( server != NULL )
 	{

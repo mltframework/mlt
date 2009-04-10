@@ -28,8 +28,8 @@
 
 #define ID_SIZE 128
 
-#define _x (xmlChar*)
-#define _s (char*)
+#define _x (const xmlChar*)
+#define _s (const char*)
 
 // This maintains counters for adding ids to elements
 struct serialise_context_s
@@ -200,7 +200,7 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 	}
 }
 
-static void serialise_store_properties( serialise_context context, mlt_properties properties, xmlNode *node, char *store )
+static void serialise_store_properties( serialise_context context, mlt_properties properties, xmlNode *node, const char *store )
 {
 	int i;
 	xmlNode *p;

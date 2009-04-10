@@ -124,7 +124,7 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 static mlt_properties avformat_metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
-	char *service_type = NULL;
+	const char *service_type = NULL;
 	switch ( type )
 	{
 		case consumer_type:

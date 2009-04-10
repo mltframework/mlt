@@ -84,7 +84,7 @@ void valerie_status_parse( valerie_status status, char *text )
 
 char *valerie_status_serialise( valerie_status status, char *text, int length )
 {
-	char *status_string = NULL;
+	const char *status_string = NULL;
 
 	switch( status->status )
 	{

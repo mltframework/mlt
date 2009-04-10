@@ -51,12 +51,12 @@ void image_bgsubtract_y(unsigned char *diff, const RGB32 *background, const RGB3
 	int i;
 	int R, G, B;
 	const RGB32 *p;
-	short *q;
+	const short *q;
 	unsigned char *r;
 	int v;
 
 	p = src;
-	q = (short *)background;
+	q = (const short *)background;
 	r = diff;
 	for(i=0; i<video_area; i++) {
 		/* FIXME: endianess */
@@ -256,12 +256,13 @@ void image_y_under(unsigned char *diff, const RGB32 *src, int video_area, int y_
 void image_edge(unsigned char *diff2, const RGB32 *src, int width, int height, int y_threshold)
 {
 	int x, y;
-	unsigned char *p, *q;
+	const unsigned char *p;
+	unsigned char *q;
 	int r, g, b;
 	int ar, ag, ab;
 	int w;
 
-	p = (unsigned char *)src;
+	p = (const unsigned char *)src;
 	q = diff2;
 	w = width * sizeof(RGB32);
 

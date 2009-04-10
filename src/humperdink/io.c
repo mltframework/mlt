@@ -72,7 +72,7 @@ char *strip_quotes( char *input )
 	return input;
 }
 
-char *io_get_string( char *output, int maxlength, char *use )
+char *io_get_string( char *output, int maxlength, const char *use )
 {
 	char *value = NULL;
 	strcpy( output, use );
@@ -186,7 +186,7 @@ char get_keypress( )
 	return value;
 }
 
-void wait_for_any_key( char *message )
+void wait_for_any_key( const char *message )
 {
 	if ( message == NULL )
 		printf( "Press any key to continue: " );

@@ -46,12 +46,12 @@ typedef struct
 extern valerie_response valerie_response_init( );
 extern valerie_response valerie_response_clone( valerie_response );
 extern int valerie_response_get_error_code( valerie_response );
-extern char *valerie_response_get_error_string( valerie_response );
+extern const char *valerie_response_get_error_string( valerie_response );
 extern char *valerie_response_get_line( valerie_response, int );
 extern int valerie_response_count( valerie_response );
-extern void valerie_response_set_error( valerie_response, int, char * );
-extern int valerie_response_printf( valerie_response, size_t, char *, ... );
-extern int valerie_response_write( valerie_response, char *, int );
+extern void valerie_response_set_error( valerie_response, int, const char * );
+extern int valerie_response_printf( valerie_response, size_t, const char *, ... );
+extern int valerie_response_write( valerie_response, const char *, int );
 extern void valerie_response_close( valerie_response );
 
 #ifdef __cplusplus

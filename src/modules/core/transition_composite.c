@@ -201,7 +201,7 @@ static inline double delta_calculate( mlt_transition this, mlt_frame frame, mlt_
 	return length * ( y - x ) / 2.0;
 }
 
-static int get_value( mlt_properties properties, char *preferred, char *fallback )
+static int get_value( mlt_properties properties, const char *preferred, const char *fallback )
 {
 	int value = mlt_properties_get_int( properties, preferred );
 	if ( value == 0 )
@@ -1138,7 +1138,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		uint8_t *alpha_b = NULL;
 
 		// Composites always need scaling... defaulting to lowest
-		char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+		const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
 		if ( rescale == NULL || !strcmp( rescale, "none" ) )
 			rescale = "nearest";
 		mlt_properties_set( a_props, "rescale.interp", rescale );

@@ -30,7 +30,7 @@
 /** Calculate real geometry.
 */
 
-static void geometry_calculate( mlt_transition this, char *store, struct mlt_geometry_item_s *output, float position )
+static void geometry_calculate( mlt_transition this, const char *store, struct mlt_geometry_item_s *output, float position )
 {
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
@@ -52,7 +52,7 @@ static void geometry_calculate( mlt_transition this, char *store, struct mlt_geo
 }
 
 
-static mlt_geometry transition_parse_keys( mlt_transition this, char *name, char *store, int normalised_width, int normalised_height )
+static mlt_geometry transition_parse_keys( mlt_transition this, const char *name, const char *store, int normalised_width, int normalised_height )
 {
 	// Get the properties of the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
@@ -108,7 +108,7 @@ static mlt_geometry composite_calculate( mlt_transition this, struct mlt_geometr
 	return start;
 }
 
-static inline float composite_calculate_key( mlt_transition this, char *name, char *store, int norm, float position )
+static inline float composite_calculate_key( mlt_transition this, const char *name, const char *store, int norm, float position )
 {
 	// Struct for the result
 	struct mlt_geometry_item_s result;

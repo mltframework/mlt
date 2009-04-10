@@ -181,7 +181,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				char temp[ 132 ];
 				int count = 0;
 				uint8_t *alpha = NULL;
-				char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+				const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
 				if ( rescale == NULL || !strcmp( rescale, "none" ) )
 					rescale = "hyper";
 				mlt_transition_process( composite, b_frame, frame );

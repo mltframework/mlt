@@ -846,7 +846,7 @@ int deinterlace_yuv_supported ( int method )
   return 0;
 }
 
-char *deinterlace_methods[] = {
+const char *deinterlace_methods[] = {
   "none",
   "bob",
   "weave",

@@ -392,7 +392,7 @@ static void full_search(
 
 int ncompare (const void * a, const void * b)
 {
-	return ( *(int*)a - *(int*)b );
+	return ( *(const int*)a - *(const int*)b );
 }
 
 // motion vector denoising

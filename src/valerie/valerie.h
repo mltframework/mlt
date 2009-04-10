@@ -122,7 +122,7 @@ extern valerie_error_code valerie_unit_set_out( valerie, int, int32_t );
 extern valerie_error_code valerie_unit_clear_in( valerie, int );
 extern valerie_error_code valerie_unit_clear_out( valerie, int );
 extern valerie_error_code valerie_unit_clear_in_out( valerie, int );
-extern valerie_error_code valerie_unit_set( valerie, int, char *, char * );
+extern valerie_error_code valerie_unit_set( valerie, int, const char *, const char * );
 extern valerie_error_code valerie_unit_get( valerie, int, char * );
 extern valerie_error_code valerie_unit_status( valerie, int, valerie_status );
 extern valerie_error_code valerie_unit_transfer( valerie, int, int );
@@ -153,7 +153,7 @@ typedef struct
 *valerie_dir_entry, valerie_dir_entry_t;
 
 /* Directory reading. */
-extern valerie_dir valerie_dir_init( valerie, char * );
+extern valerie_dir valerie_dir_init( valerie, const char * );
 extern valerie_error_code valerie_dir_get_error_code( valerie_dir );
 extern valerie_error_code valerie_dir_get( valerie_dir, int, valerie_dir_entry );
 extern int valerie_dir_count( valerie_dir );
@@ -248,11 +248,11 @@ extern void valerie_units_close( valerie_units );
 
 /* Miscellaenous functions */
 extern valerie_response valerie_get_last_response( valerie );
-extern char *valerie_error_description( valerie_error_code );
+extern const char *valerie_error_description( valerie_error_code );
 
 /* Courtesy functions. */
-extern valerie_error_code valerie_execute( valerie, size_t, char *, ... );
-extern valerie_error_code valerie_push( valerie, mlt_service, size_t, char *, ... );
+extern valerie_error_code valerie_execute( valerie, size_t, const char *, ... );
+extern valerie_error_code valerie_push( valerie, mlt_service, size_t, const char *, ... );
 
 /* Close function. */
 extern void valerie_close( valerie );

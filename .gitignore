@@ -1,0 +1,6 @@
+*.o
+*.so
+*.so.*
+config.mak
+config.h
+.depend

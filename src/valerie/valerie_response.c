@@ -80,9 +80,9 @@ int valerie_response_get_error_code( valerie_response response )
 /** Get the error description associated to the response.
 */
 
-char *valerie_response_get_error_string( valerie_response response )
+const char *valerie_response_get_error_string( valerie_response response )
 {
-	char *error_string = "No message specified";
+	const char *error_string = "No message specified";
 	if ( response->count > 0 )
 	{
 		char *ptr = strchr( response->array[ 0 ], ' ' ) ;
@@ -119,7 +119,7 @@ int valerie_response_count( valerie_response response )
 /** Set the error and description associated to the response.
 */
 
-void valerie_response_set_error( valerie_response response, int error_code, char *error_string )
+void valerie_response_set_error( valerie_response response, int error_code, const char *error_string )
 {
 	if ( response->count == 0 )
 	{
@@ -137,7 +137,7 @@ void valerie_response_set_error( valerie_response response, int error_code, char
 /** Write formatted text to the response. 
 */
 
-int valerie_response_printf( valerie_response response, size_t size, char *format, ... )
+int valerie_response_printf( valerie_response response, size_t size, const char *format, ... )
 {
 	int length = 0;
 	char *text = malloc( size );
@@ -157,15 +157,15 @@ int valerie_response_printf( valerie_response response, size_t size, char *forma
 /** Write text to the reponse.
 */
 
-int valerie_response_write( valerie_response response, char *text, int size )
+int valerie_response_write( valerie_response response, const char *text, int size )
 {
 	int ret = 0;
-	char *ptr = text;
+	const char *ptr = text;
 
 	while ( size > 0 )
 	{
 		int index = response->count - 1;
-		char *lf = strchr( ptr, '\n' );
+		const char *lf = strchr( ptr, '\n' );
 		int length_of_string = 0;
 
 		/* Make sure we have space in the dynamic array. */

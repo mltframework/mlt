@@ -35,8 +35,8 @@
 #define STACK_SIZE 1000
 #define BRANCH_SIG_LEN 4000
 
-#define _x (xmlChar*)
-#define _s (char*)
+#define _x (const xmlChar*)
+#define _s (const char*)
 
 #undef DEBUG
 #ifdef DEBUG
@@ -170,7 +170,7 @@ static void track_service( mlt_properties properties, void *service, mlt_destruc
 
 
 // Prepend the property value with the document root
-static inline void qualify_property( deserialise_context context, mlt_properties properties, char *name )
+static inline void qualify_property( deserialise_context context, mlt_properties properties, const char *name )
 {
 	char *resource = mlt_properties_get( properties, name );
 	if ( resource != NULL && resource[0] )
@@ -297,7 +297,7 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 	track_service( context->destructors, service, (mlt_destructor) mlt_tractor_close );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
+		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 
 	mlt_properties_set_int( MLT_TRACTOR_PROPERTIES( tractor ), "global_feed", 1 );
 
@@ -353,7 +353,7 @@ static void on_start_multitrack( deserialise_context context, const xmlChar *nam
 		mlt_service service = MLT_SERVICE( mlt_tractor_multitrack( MLT_TRACTOR( parent ) ) );
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
-			mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
+			mlt_properties_set( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 
 		if ( mlt_properties_get( properties, "id" ) != NULL )
 			mlt_properties_set_data( context->producer_map, mlt_properties_get( properties,"id" ), service, 0, NULL, NULL );
@@ -387,11 +387,11 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
+		mlt_properties_set( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 
 		// Out will be overwritten later as we append, so we need to save it
 		if ( xmlStrcmp( atts[ 0 ], _x("out") ) == 0 )
-			mlt_properties_set( properties, "_westley.out", ( char* )atts[ 1 ] );
+			mlt_properties_set( properties, "_westley.out", ( const char* )atts[ 1 ] );
 	}
 
 	if ( mlt_properties_get( properties, "id" ) != NULL )
@@ -433,7 +433,7 @@ static void on_start_producer( deserialise_context context, const xmlChar *name,
 	context_push_service( context, service, mlt_dummy_producer_type );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
+		mlt_properties_set( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 }
 
 // Parse a SMIL clock value (as produced by Kino 0.9.1) and return position in frames
@@ -657,12 +657,12 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( temp, (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
+		mlt_properties_set( temp, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 		
 		// Look for the producer attribute
 		if ( xmlStrcmp( atts[ 0 ], _x("producer") ) == 0 )
 		{
-			mlt_producer producer = mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL );
+			mlt_producer producer = mlt_properties_get_data( context->producer_map, (const char*) atts[1], NULL );
 			if ( producer !=  NULL )
 				mlt_properties_set_data( temp, "producer", producer, 0, NULL, NULL );
 		}
@@ -740,12 +740,12 @@ static void on_start_track( deserialise_context context, const xmlChar *name, co
 	
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (char*) atts[0], atts[1] == NULL ? "" : (char*) atts[1] );
+		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 		
 		// Look for the producer attribute
 		if ( xmlStrcmp( atts[ 0 ], _x("producer") ) == 0 )
 		{
-			mlt_producer producer = mlt_properties_get_data( context->producer_map, (char*) atts[1], NULL );
+			mlt_producer producer = mlt_properties_get_data( context->producer_map, (const char*) atts[1], NULL );
 			if ( producer !=  NULL )
 				mlt_properties_set_data( MLT_SERVICE_PROPERTIES( service ), "producer", producer, 0, NULL, NULL );
 		}
@@ -830,7 +830,7 @@ static void on_start_filter( deserialise_context context, const xmlChar *name, c
 
 	// Set the properties
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
+		mlt_properties_set( properties, (const char*) atts[0], (const char*) atts[1] );
 }
 
 static void on_end_filter( deserialise_context context, const xmlChar *name )
@@ -905,7 +905,7 @@ static void on_start_transition( deserialise_context context, const xmlChar *nam
 
 	// Set the properties
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (char*) atts[0], (char*) atts[1] );
+		mlt_properties_set( properties, (const char*) atts[0], (const char*) atts[1] );
 }
 
 static void on_end_transition( deserialise_context context, const xmlChar *name )
@@ -978,7 +978,7 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 	enum service_type type;
 	mlt_service service = context_pop_service( context, &type );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-	char *value = NULL;
+	const char *value = NULL;
 
 	if ( service != NULL )
 	{
@@ -1001,7 +1001,7 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 	}
 	else
 	{
-		fprintf( stderr, "Property without a service '%s'?\n", ( char * )name );
+		fprintf( stderr, "Property without a service '%s'?\n", ( const char * )name );
 	}
 }
 
@@ -1038,7 +1038,7 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 	}
 	else
 	{
-		fprintf( stderr, "Property without a service '%s'??\n", (char *)name );
+		fprintf( stderr, "Property without a service '%s'??\n", (const char *)name );
 	}
 }
 
@@ -1095,7 +1095,7 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_property( context, name, atts );
 	else if ( xmlStrcmp( name, _x("westley") ) == 0 )
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
-			mlt_properties_set( context->producer_map, ( char * )atts[ 0 ], ( char * )atts[ 1 ] );
+			mlt_properties_set( context->producer_map, ( const char * )atts[ 0 ], ( const char * )atts[ 1 ] );
 }
 
 static void on_end_element( void *ctx, const xmlChar *name )

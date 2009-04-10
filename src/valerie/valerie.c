@@ -117,7 +117,7 @@ static valerie_error_code valerie_get_error_code( valerie this, valerie_response
 /** Execute a command.
 */
 
-valerie_error_code valerie_execute( valerie this, size_t size, char *format, ... )
+valerie_error_code valerie_execute( valerie this, size_t size, const char *format, ... )
 {
 	valerie_error_code error = valerie_server_unavailable;
 	char *command = malloc( size );
@@ -148,7 +148,7 @@ valerie_error_code valerie_execute( valerie this, size_t size, char *format, ...
 /** Execute a command.
 */
 
-valerie_error_code valerie_receive( valerie this, char *doc, size_t size, char *format, ... )
+valerie_error_code valerie_receive( valerie this, char *doc, size_t size, const char *format, ... )
 {
 	valerie_error_code error = valerie_server_unavailable;
 	char *command = malloc( size );
@@ -179,7 +179,7 @@ valerie_error_code valerie_receive( valerie this, char *doc, size_t size, char *
 /** Execute a command.
 */
 
-valerie_error_code valerie_push( valerie this, mlt_service service, size_t size, char *format, ... )
+valerie_error_code valerie_push( valerie this, mlt_service service, size_t size, const char *format, ... )
 {
 	valerie_error_code error = valerie_server_unavailable;
 	char *command = malloc( size );
@@ -534,7 +534,7 @@ valerie_error_code valerie_unit_clear_in_out( valerie this, int unit )
 /** Set a unit configuration property.
 */
 
-valerie_error_code valerie_unit_set( valerie this, int unit, char *name, char *value )
+valerie_error_code valerie_unit_set( valerie this, int unit, const char *name, const char *value )
 {
 	return valerie_execute( this, 1024, "USET U%d %s=%s", unit, name, value );
 }
@@ -587,7 +587,7 @@ valerie_notifier valerie_get_notifier( valerie this )
 /** List the contents of the specified directory.
 */
 
-valerie_dir valerie_dir_init( valerie this, char *directory )
+valerie_dir valerie_dir_init( valerie this, const char *directory )
 {
 	valerie_dir dir = malloc( sizeof( valerie_dir_t ) );
 	if ( dir != NULL )
@@ -911,9 +911,9 @@ valerie_response valerie_get_last_response( valerie this )
 /** Obtain a printable message associated to the error code provided.
 */
 
-char *valerie_error_description( valerie_error_code error )
+const char *valerie_error_description( valerie_error_code error )
 {
-	char *msg = "Unrecognised error";
+	const char *msg = "Unrecognised error";
 	switch( error )
 	{
 		case valerie_ok:

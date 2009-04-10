@@ -46,7 +46,7 @@ extern valerie_socket valerie_socket_init( char *, int );
 extern int valerie_socket_connect( valerie_socket );
 extern valerie_socket valerie_socket_init_fd( int );
 extern int valerie_socket_read_data( valerie_socket, char *, int );
-extern int valerie_socket_write_data( valerie_socket, char *, int );
+extern int valerie_socket_write_data( valerie_socket, const char *, int );
 extern void valerie_socket_close( valerie_socket );
 
 #ifdef __cplusplus
