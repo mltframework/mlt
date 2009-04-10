@@ -35,7 +35,7 @@ namespace Mlt
 			~Response( );
 			valerie_response get_response( );
 			int error_code( );
-			char *error_string( );
+			const char *error_string( );
 			char *get( int );
 			int count( );
 			int write( const char *data );

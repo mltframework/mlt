@@ -50,7 +50,7 @@ int Response::error_code( )
 	return valerie_response_get_error_code( get_response( ) );
 }
 
-char *Response::error_string( )
+const char *Response::error_string( )
 {
 	return valerie_response_get_error_string( get_response( ) );
 }
