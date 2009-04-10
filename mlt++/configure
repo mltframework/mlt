@@ -33,6 +33,8 @@ echo "libdir=$libdir" >> config.mak
 targetos=$(uname -s)
 echo "targetos=$targetos" >> config.mak
 
+WARNINGS="-W -Wwrite-strings -Wcast-qual -Wpointer-arith -Wcast-align -Wredundant-decls"
+
 case $targetos in 
 	Darwin)
 		echo LIBSUF=.dylib
@@ -42,7 +44,7 @@ case $targetos in
 		;;
 	Linux|FreeBSD)
 		echo LIBSUF=.so
-		echo "CXXFLAGS+=-pthread -Wall -fPIC `pkg-config --cflags mlt-framework`"
+		echo "CXXFLAGS+=-pthread -Wall $WARNINGS -fPIC `pkg-config --cflags mlt-framework`"
 		echo "LIBFLAGS=-shared"
 		echo "LDFLAGS+=`pkg-config --libs mlt-framework` `pkg-config mlt-miracle --libs`"
 		;;
