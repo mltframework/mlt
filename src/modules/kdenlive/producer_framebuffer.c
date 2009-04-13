@@ -251,6 +251,11 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 		// Grab some stuff from the real_producer
 		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "length, width,height" );
 
+		if ( speed < 0 )
+		{
+			speed = -speed;
+			mlt_properties_set_int( properties, "reverse", 1 );
+		}
 
 		if ( speed != 1.0 )
 		{
