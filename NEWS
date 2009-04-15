@@ -1,6 +1,28 @@
 MLT Release Notes
 -----------------
 
+Version 0.3.8
+
+The recommended version of FFmpeg for use with this release is SVN r17923.
+
+This almost entirely a bugfix release to coincide with the Kdenlive 0.7.3
+release. See the ChangeLog (SVN log) for details.
+
+framework:
+* added mlt_cache API
+* improved doxygen documentation comments
+* added some 15 fps profiles
+* improved color property handling (support web-style '#' color value)
+* add const qualifier to many string parameters
+
+modules:
+* core: improved brightness filter
+* core: added image crop filter
+* frei0r: added support for producer/source plugins
+* frei0r: added support for color parameters
+* sdl: added window_background color property
+
+
 Version 0.3.6
 
 The recommended version of FFmpeg for use with this release is SVN r16849.
