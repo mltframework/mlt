@@ -3,7 +3,7 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-svn_rev="17923"
+svn_rev="17887"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
 [ "$odd_version" -eq "1" ] && svn_rev="HEAD"
@@ -86,7 +86,7 @@ else
 			enable_gpl="--enable-gpl"
 			if [ "$swscale" != "" ]
 			then
-					enable_swscale="--enable-swscale"
+					[ "$svn_rev" -eq "17887" ] && enable_swscale="--enable-swscale"
 					echo "SWSCALE=1" >> config.mak
 			fi
 		elif [ "$swscale" != "" ]
@@ -102,7 +102,11 @@ else
 			echo
 			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
 			echo
-			svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
+			if [ "$svn_rev" -eq "17887" ]; then
+				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/branches/0.5 ffmpeg
+			else
+				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
+			fi
 		fi
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale $svn_ffmpeg_extra )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
