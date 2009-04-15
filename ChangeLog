@@ -1,4 +1,12 @@
+2009-04-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/configure: Fix build for --avformat-svn to use FFmpeg
+  v0.5 and HEAD build to not use --enable-swscale.
+
 2009-04-15  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * ChangeLog, Makefile: Update ChangeLog and remove svn log from the make
+  install target. 
 
   * NEWS, configure, src/framework/mlt.h, src/modules/avformat/configure: bump
   to version 0.3.8  
