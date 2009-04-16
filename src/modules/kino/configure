@@ -11,7 +11,7 @@ then
 	fi
 
 	# Entirely optional...
-	lqt-config --prefix > /dev/null 2>&1
+	pkg-config libquicktime 2> /dev/null
 	lqt_disabled=$?
 
 	pkg-config libdv 2> /dev/null
