@@ -211,7 +211,7 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
   
   ladspa_path = g_strdup (getenv ("LADSPA_PATH"));
   if (!ladspa_path)
-    ladspa_path = g_strdup ("/usr/local/lib/ladspa:/usr/lib/ladspa");
+    ladspa_path = g_strdup ("/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
   
   dir = strtok (ladspa_path, ":");
   do
