@@ -6,10 +6,10 @@ OBJS = factory.o \
 	   filter_resample.o 
 
 CFLAGS += -I../..
+CFLAGS += `pkg-config --cflags samplerate`
 
-LDFLAGS += -lsamplerate
-
-LDFLAGS+=-L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt
+LDFLAGS += `pkg-config --libs samplerate`
 
 SRCS := $(OBJS:.o=.c)
 

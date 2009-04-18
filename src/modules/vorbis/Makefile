@@ -6,10 +6,12 @@ OBJS = factory.o \
 	   producer_vorbis.o
 
 CFLAGS += -I../..
+CFLAGS += `pkg-config --cflags vorbis`
+CFLAGS += `pkg-config --cflags vorbisfile`
 
-LDFLAGS += -lvorbisfile -lvorbis
-
-LDFLAGS+=-L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt
+LDFLAGS += `pkg-config --libs vorbis`
+LDFLAGS += `pkg-config --libs vorbisfile`
 
 SRCS := $(OBJS:.o=.c)
 
