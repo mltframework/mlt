@@ -1185,8 +1185,14 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		}
 		else if ( position < expected || position - expected >= 12 )
 		{
+			int64_t timestamp = ( int64_t )( real_timecode * AV_TIME_BASE + 0.5 );
+			if ( context->start_time != AV_NOPTS_VALUE )
+				timestamp += context->start_time;
+			if ( timestamp < 0 )
+				timestamp = 0;
+
 			// Set to the real timecode
-			if ( av_seek_frame( context, -1, mlt_properties_get_double( properties, "_start_time" ) + real_timecode * 1000000.0, AVSEEK_FLAG_BACKWARD ) != 0 )
+			if ( av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD ) != 0 )
 				paused = 1;
 
 			// Clear the usage in the audio buffer
@@ -1288,8 +1294,14 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				// If we're behind, ignore this packet
 				if ( pkt.pts >= 0 )
 				{
-					float current_pts = av_q2d( stream->time_base ) * pkt.pts;
-					if ( seekable && ( !ignore && current_pts <= ( real_timecode - 0.02 ) ) )
+					double current_pts = av_q2d( stream->time_base ) * pkt.pts;
+					double source_fps = mlt_properties_get_double( properties, "source_fps" );
+					int req_position = ( int )( real_timecode * source_fps + 0.5 );
+					int int_position = ( int )( current_pts * source_fps + 0.5 );
+
+					if ( context->start_time != AV_NOPTS_VALUE )
+						int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
+					if ( seekable && !ignore && int_position < req_position )
 						ignore = 1;
 				}
 			}
