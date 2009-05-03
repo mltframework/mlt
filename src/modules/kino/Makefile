@@ -1,18 +1,21 @@
 include ../../../config.mak
 include config.mak
 
-TARGET=../libmltkino.so
+TARGET = ../libmltkino.so
 
-OBJS=factory.o producer_kino.o
-CPPOBJS=kino_wrapper.o avi.o error.o filehandler.o riff.o
-CFLAGS+=-I../../
-LDFLAGS+=-L../../framework -lmlt -lstdc++
-CXXFLAGS+=$(CFLAGS) -Wno-deprecated
+OBJS = factory.o producer_kino.o
+CPPOBJS = kino_wrapper.o avi.o error.o filehandler.o riff.o
+
+CFLAGS += -I../../
+CXXFLAGS += $(CFLAGS) -Wno-deprecated
+
+LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -lstdc++
 
 ifdef HAVE_LIBQUICKTIME
-CFLAGS+=`pkg-config --cflags libquicktime` 
-CXXFLAGS+=`pkg-config --cflags libquicktime` 
-LDFLAGS+=`pkg-config --libs libquicktime`
+CFLAGS += `pkg-config --cflags libquicktime` 
+CXXFLAGS += `pkg-config --cflags libquicktime` 
+LDFLAGS += `pkg-config --libs libquicktime`
 endif
 
 ifdef HAVE_LIBDV

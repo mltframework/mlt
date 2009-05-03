@@ -7,7 +7,7 @@ OBJS = factory.o \
 
 CFLAGS += -I../..
 
-LDFLAGS+=-L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

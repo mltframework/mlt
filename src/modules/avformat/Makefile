@@ -36,15 +36,15 @@ CFLAGS += -DCODECS
 endif
 
 ifdef SWSCALE
-	CFLAGS+=-DSWSCALE
-	LDFLAGS+=-lswscale$(AVFORMAT_SUFFIX)
+CFLAGS += -DSWSCALE
+LDFLAGS += -lswscale$(AVFORMAT_SUFFIX)
 endif
 
 ifdef LOCAL_FFMPEG
-	LOCAL_FFMPEG_OBJS = ffmpeg/libavformat/libavformat$(AVFORMAT_SUFFIX) \
-	                    ffmpeg/libavcodec/libavcodec$(AVFORMAT_SUFFIX) \
-	                    ffmpeg/libavutil/libavutil$(AVFORMAT_SUFFIX) \
-	                    ffmpeg/libavutil/libavdevice$(AVFORMAT_SUFFIX)
+LOCAL_FFMPEG_OBJS = ffmpeg/libavformat/libavformat$(AVFORMAT_SUFFIX) \
+                    ffmpeg/libavcodec/libavcodec$(AVFORMAT_SUFFIX) \
+                    ffmpeg/libavutil/libavutil$(AVFORMAT_SUFFIX) \
+                    ffmpeg/libavutil/libavdevice$(AVFORMAT_SUFFIX)
 endif
 
 SRCS := $(OBJS:.o=.c)

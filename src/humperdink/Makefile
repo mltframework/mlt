@@ -3,12 +3,13 @@ include ../../config.mak
 TARGET = humperdink
 
 OBJS = client.o \
-       io.o \
+	   io.o \
 	   remote.o
 
 CFLAGS += -I.. $(RDYNAMIC)
 
-LDFLAGS += -L../valerie -L../framework -lvalerie -lmlt -lpthread
+LDFLAGS += -L../valerie -lvalerie
+LDFLAGS += -L../framework -lmlt -lpthread
 
 SRCS := $(OBJS:.o=.c)
 

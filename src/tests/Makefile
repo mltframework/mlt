@@ -4,7 +4,8 @@ TARGET = dan charlie pango pixbuf dissolve luma
 
 CFLAGS += -I.. $(RDYNAMIC)
 
-LDFLAGS += -L../framework -L../modules -lmlt
+LDFLAGS += -L../modules
+LDFLAGS += -L../framework -lmlt
 
 all: $(TARGET)
 

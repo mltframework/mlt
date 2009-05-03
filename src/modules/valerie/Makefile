@@ -5,9 +5,10 @@ TARGET = ../libmltvalerie$(LIBSUF)
 OBJS = factory.o \
 	   consumer_valerie.o
 
-CFLAGS += -I../../ 
+CFLAGS += -I../.. 
 
-LDFLAGS+=-L../../valerie -lvalerie -L../../framework -lmlt
+LDFLAGS += -L../../valerie -lvalerie
+LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

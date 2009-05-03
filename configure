@@ -174,7 +174,7 @@ done
 # Determine the libdir if it's not specified in the args
 [ "$libdir" = "" ] && libdir=$prefix/lib
 
-# Double check mmx (Linux and FreeBSD supported, may end up disabling mmx on other platforms incorrectly)
+# Double check MMX (Darwin, Linux and FreeBSD supported, may end up disabling MMX on other platforms incorrectly)
 if [ "$mmx" = "true" ]
 then
 	case $targetos in
@@ -193,7 +193,7 @@ then
 	esac
 fi
 
-# Double check SSE (Linux and FreeBSD supported, may end up disabling SSE on other platforms incorrectly)
+# Double check SSE (Darwin, Linux and FreeBSD supported, may end up disabling SSE on other platforms incorrectly)
 if [ "$sse" = "true" ]
 then
 	case $targetos in

@@ -35,6 +35,7 @@ INCS = valerie.h \
 SRCS := $(OBJS:.o=.c)
 
 CFLAGS += -I.. $(RDYNAMIC)
+
 LDFLAGS += -L../framework -lmlt -lpthread
 
 all: $(TARGET)

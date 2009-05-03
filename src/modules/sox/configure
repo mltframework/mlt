@@ -36,7 +36,7 @@ then
 			$LDD $(which sox) | grep libsamplerate > /dev/null
 			[ $? -eq 0 ] && libsamplerate="-lsamplerate"
 
-			echo "CFLAGS += $(libst-config --cflags) -I../../" > config.mak
+			echo "CFLAGS += $(libst-config --cflags) -I../.." > config.mak
 			echo "LDFLAGS += -lst $(libst-config --libs) $libsndfile $libsamplerate" >> config.mak
 		else
 			sox --version 2> /dev/null | grep 'v14.' > /dev/null
