@@ -5,6 +5,9 @@ TARGET = ../libmltgtk2$(LIBSUF)
 
 OBJS = factory.o
 
+CFLAGS += -I../..
+LDFLAGS += -L../../framework -lmlt
+
 ifdef USE_GTK2
 OBJS += consumer_gtk2.o
 CFLAGS += `pkg-config gtk+-2.0 --cflags`
@@ -28,9 +31,6 @@ OBJS += producer_pango.o
 CFLAGS += `pkg-config pangoft2 --cflags`
 LDFLAGS += `pkg-config pangoft2 --libs`
 endif
-
-CFLAGS += -I../..
-LDFLAGS+=-L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

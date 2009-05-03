@@ -6,11 +6,11 @@ OBJS = factory.o \
 	   producer_libdv.o \
 	   consumer_libdv.o
 
-CFLAGS += `pkg-config --cflags libdv` -I../..
+CFLAGS += -I../..
+CFLAGS += `pkg-config --cflags libdv`
 
+LDFLAGS += -L../../framework -lmlt
 LDFLAGS += `pkg-config --libs libdv`
-
-LDFLAGS+=-L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

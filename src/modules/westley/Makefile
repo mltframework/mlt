@@ -6,11 +6,11 @@ OBJS = factory.o \
 	   consumer_westley.o \
 	   producer_westley.o
 
-CFLAGS += -I../../ `xml2-config --cflags`
+CFLAGS += -I../..
+CFLAGS += `xml2-config --cflags`
 
+LDFLAGS += -L../../framework -lmlt
 LDFLAGS += `xml2-config --libs`
-
-LDFLAGS+=-L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

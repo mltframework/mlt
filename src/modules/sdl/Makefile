@@ -10,17 +10,17 @@ OBJS = factory.o \
 	   consumer_sdl_still.o 
 
 ifeq ($(targetos),Darwin)
-	CFLAGS +=-ObjC
-	LDFLAGS +=-lobjc -framework Foundation
+CFLAGS += -ObjC
+LDFLAGS += -lobjc -framework Foundation
 else
-	LDFLAGS +=-lX11
+LDFLAGS += -lX11
 endif
 
-CFLAGS +=-I../.. `sdl-config --cflags`
+CFLAGS += -I../..
+CFLAGS += `sdl-config --cflags`
 
-LDFLAGS +=`sdl-config --libs`
-
-LDFLAGS +=-L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt
+LDFLAGS += `sdl-config --libs`
 
 ifeq ($(WITH_SDL_IMAGE),1)
 OBJS += producer_sdl_image.o

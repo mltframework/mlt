@@ -1,5 +1,15 @@
 include ../../../config.mak
+
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include config.mak
+
+LDFLAGS += -lavformat$(AVFORMAT_SUFFIX)
+LDFLAGS += -lavcodec$(AVFORMAT_SUFFIX)
+LDFLAGS += -lavutil$(AVFORMAT_SUFFIX)
+LDFLAGS += -lavdevice$(AVFORMAT_SUFFIX) $(EXTRA_LIBS)
 
 ifndef CODECS
 TARGET = ../libmltffmpeg$(LIBSUF)
@@ -24,12 +34,6 @@ OBJS += producer_avformat.o \
 	    consumer_avformat.o
 CFLAGS += -DCODECS
 endif
-
-CFLAGS+=-I../..
-
-LDFLAGS+=-L../../framework
-
-LDFLAGS+=-lavformat$(AVFORMAT_SUFFIX) -lavcodec$(AVFORMAT_SUFFIX) -lavutil$(AVFORMAT_SUFFIX) -lavdevice$(AVFORMAT_SUFFIX) $(EXTRA_LIBS) -lmlt
 
 ifdef SWSCALE
 	CFLAGS+=-DSWSCALE

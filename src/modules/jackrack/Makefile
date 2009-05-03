@@ -13,15 +13,15 @@ OBJS = factory.o \
 	   filter_jackrack.o \
 	   filter_ladspa.o
 
-CFLAGS += -I../.. `pkg-config --cflags jack`
+CFLAGS += -I../..
+CFLAGS += `pkg-config --cflags jack`
 CFLAGS += `xml2-config --cflags`
 CFLAGS += `pkg-config glib-2.0 --cflags` 
 
+LDFLAGS += -L../../framework -lmlt
 LDFLAGS += `pkg-config --libs jack`
 LDFLAGS += `xml2-config --libs`
 LDFLAGS += `pkg-config glib-2.0 --libs`
-
-LDFLAGS+=-L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 
