@@ -16,13 +16,13 @@ EOF
 else
 	targetos=$(uname -s)
 	case $targetos in
-    MINGW32*)
-        export LIBSUF=.dll
-        ;;
+	MINGW32*)
+		export LIBSUF=.dll
+		;;
 	Darwin)
 		export LIBSUF=.dylib
 		;;
-	Linux)
+	Linux|FreeBSD)
 		export LIBSUF=.so
 		;;
 	*)
