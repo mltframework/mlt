@@ -740,9 +740,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int must_decode = 1;
 
 	// Temporary hack to improve intra frame only
-	must_decode = strcmp( codec_context->codec->name, "mjpeg" ) &&
-				  strcmp( codec_context->codec->name, "rawvideo" ) &&
-				  strcmp( codec_context->codec->name, "dvvideo" );
+	must_decode = strcmp( codec_context->codec->name, "dnxhd" ) &&
+				  strcmp( codec_context->codec->name, "dvvideo" ) &&
+				  strcmp( codec_context->codec->name, "huffyuv" ) &&
+				  strcmp( codec_context->codec->name, "mjpeg" ) &&
+				  strcmp( codec_context->codec->name, "rawvideo" );
 
 	// Seek if necessary
 	if ( position != expected )
