@@ -46,7 +46,7 @@ install:
 
 uninstall:
 	rm -f "$(DESTDIR)$(bindir)"/mlt-config
-	rm -f "$(DESTDIR)$(libdir)/pkgconfig/mlt-*.pc"
+	rm -f "$(DESTDIR)$(libdir)"/pkgconfig/mlt-*.pc
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		$(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
