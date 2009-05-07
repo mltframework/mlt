@@ -84,25 +84,15 @@ else
 		if [ "$gpl" = "true" ]
 		then
 			enable_gpl="--enable-gpl"
-			if [ "$swscale" != "" ]
-			then
-					[ "$svn_rev" -eq "17887" ] && enable_swscale="--enable-swscale"
-					echo "SWSCALE=1" >> config.mak
-			fi
-		elif [ "$swscale" != "" ]
-		then
-			echo
-			echo "ERROR        ERROR        ERROR        ERROR        ERROR        ERROR"
-			echo "--enable-gpl is required to use --avformat-swscale with --avformat-svn!"
-			echo
-			exit
+			[ "$swscale" != "" ] && [ "$svn_rev" = "17887" ] &&
+				enable_swscale="--enable-swscale"
 		fi
 		if [ ! -d "ffmpeg" ]
 		then
 			echo
 			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
 			echo
-			if [ "$svn_rev" -eq "17887" ]; then
+			if [ "$svn_rev" = "17887" ]; then
 				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/branches/0.5 ffmpeg
 			else
 				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
@@ -110,8 +100,14 @@ else
 		fi
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale $svn_ffmpeg_extra )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
-		echo "CFLAGS+=-I`pwd`/ffmpeg -I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil -I`pwd`/ffmpeg/libavdevice -I`pwd`/ffmpeg/libswscale" >> config.mak
-		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil -L`pwd`/ffmpeg/libavdevice -L`pwd`/ffmpeg/libswscale" >> config.mak
+		echo "CFLAGS+=-I`pwd`/ffmpeg -I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil -I`pwd`/ffmpeg/libavdevice" >> config.mak
+		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil -L`pwd`/ffmpeg/libavdevice" >> config.mak
+		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ]
+		then
+			echo "CFLAGS+=-I`pwd`/ffmpeg/libswscale" >> config.mak
+			echo "LDFLAGS+=-L`pwd`/ffmpeg/libswscale" >> config.mak
+			echo "SWSCALE=1" >> config.mak
+		fi
 		[ $targetos = "Darwin" ] &&
 			echo "LDFLAGS+=-single_module" >> config.mak
 		echo "LOCAL_FFMPEG=1" >> config.mak
@@ -147,7 +143,8 @@ else
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libavformat -I$shared_ffmpeg/include/ffmpeg/libavcodec" >> config.mak
 		[ -d "$shared_ffmpeg/include/libavformat" ] &&
 			echo "CFLAGS+=-I$shared_ffmpeg/include/libavformat -I$shared_ffmpeg/include/libavcodec" >> config.mak
-		if [ "$swscale" != "" ]
+		avcodec_version=$(pkg-config --modversion libavcodec)
+		if [ "$swscale" != "" ] || ( [ $(echo $avcodec_version | cut -d. -f1) -ge 52 ] && [ $(echo $avcodec_version | cut -d. -f2) -ge 21 ] )
 		then
 			[ -d "$shared_ffmpeg/include/ffmpeg/libswscale" ] &&
 				echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libswscale" >> config.mak
