@@ -252,6 +252,7 @@ static void sdl_unlock_display( )
 static inline void display_1( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
 {
 	// Generate the affine transform scaling values
+	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
 	int stride = width * 3;
@@ -281,6 +282,7 @@ static inline void display_1( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 static inline void display_2( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
 {
 	// Generate the affine transform scaling values
+	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
 	int stride = width * 3;
@@ -310,6 +312,7 @@ static inline void display_2( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 static inline void display_3( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
 {
 	// Generate the affine transform scaling values
+	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
 	int stride = width * 3;
@@ -343,6 +346,7 @@ static inline void display_3( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 static inline void display_4( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
 {
 	// Generate the affine transform scaling values
+	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
 	int stride = width * 3;
