@@ -1,9 +1,9 @@
 include ../../../config.mak
 
-TARGET = ../libmltinigo$(LIBSUF)
+TARGET = ../libmltmelt$(LIBSUF)
 
 OBJS = factory.o \
-	   producer_inigo.o 
+	   producer_melt.o 
 
 CFLAGS += -I../..
 

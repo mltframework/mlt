@@ -23,7 +23,7 @@ General build options:
   --arch='arch'             - Compile for a specific architecture (default: none)
   --cpu='cpu'             - Compile for a specific CPU (default: none)
 
-Module disables options:
+Module disable options:
 
 EOF
 
@@ -108,19 +108,27 @@ build_config()
 
 build_pkgconfig()
 {
-	for i in framework valerie miracle
-	do
-		echo prefix="$prefix" > mlt-$i.pc
-		(
-			echo exec_prefix=$prefix
-			echo libdir=$libdir
-			echo includedir=$prefix/include
-			echo version=$version
-			echo cflags=`grep ^$i packages.dat | cut -f 2`
-			echo libs=`grep ^$i packages.dat | cut -f 3`
-		) >> mlt-$i.pc
-		cat mlt-$i.pc.in >>mlt-$i.pc
-	done
+	echo prefix="$prefix" > mlt-framework.pc
+	(
+		echo exec_prefix=$prefix
+		echo libdir=$libdir
+		echo includedir=$prefix/include
+		echo version=$version
+		echo cflags=`grep ^framework packages.dat | cut -f 2`
+		echo libs=`grep ^framework packages.dat | cut -f 3`
+	) >> mlt-framework.pc
+	cat mlt-framework.pc.in >>mlt-framework.pc
+
+	echo prefix="$prefix" > mlt++.pc
+	(
+		echo exec_prefix=$prefix
+		echo libdir=$libdir
+		echo includedir=$prefix/include
+		echo version=$version
+		echo cflags=`grep ^mlt++ packages.dat | cut -f 2`
+		echo libs=`grep ^mlt++ packages.dat | cut -f 3`
+	) >> mlt++.pc
+	cat mlt++.pc.in >>mlt++.pc
 }
 
 # Debug mode
@@ -225,7 +233,7 @@ else
 fi
 
 # Iterate through each of the components
-for i in framework modules inigo valerie miracle humperdink
+for i in framework modules melt mlt++
 do
 	if [ -x src/$i/configure ]
 	then

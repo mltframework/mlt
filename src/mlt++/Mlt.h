@@ -30,9 +30,6 @@
 #include "MltFilteredConsumer.h"
 #include "MltFrame.h"
 #include "MltGeometry.h"
-#ifndef WIN32
-#include "MltMiracle.h"
-#endif
 #include "MltMultitrack.h"
 #include "MltParser.h"
 #include "MltPlaylist.h"
@@ -41,9 +38,6 @@
 #include "MltProperties.h"
 #include "MltPushConsumer.h"
 #include "MltRepository.h"
-#ifndef WIN32
-#include "MltResponse.h"
-#endif
 #include "MltService.h"
 #include "MltTokeniser.h"
 #include "MltTractor.h"

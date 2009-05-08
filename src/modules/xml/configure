@@ -3,14 +3,13 @@
 if [ "$help" != "1" ]
 then
 
-	which xml2-config > /dev/null 2>&1
+	pkg-config libxml-2.0 > /dev/null 2>&1
 	disable_xml2=$?
 
 	if [ "$disable_xml2" != "0" ]
 	then
-		echo "- xml2 not found: disabling westley modules"
-		touch ../disable-westley
+		echo "- xml2 not found: disabling xml module"
+		touch ../disable-xml
 	fi
 	exit 0
 fi
-

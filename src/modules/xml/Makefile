@@ -1,16 +1,16 @@
 include ../../../config.mak
 
-TARGET = ../libmltwestley$(LIBSUF)
+TARGET = ../libmltxml$(LIBSUF)
 
 OBJS = factory.o \
-	   consumer_westley.o \
-	   producer_westley.o
+	   consumer_xml.o \
+	   producer_xml.o
 
 CFLAGS += -I../..
-CFLAGS += `xml2-config --cflags`
+CFLAGS += `pkg-config libxml-2.0 --cflags`
 
 LDFLAGS += -L../../framework -lmlt
-LDFLAGS += `xml2-config --libs`
+LDFLAGS += `pkg-config libxml-2.0 --libs`
 
 SRCS := $(OBJS:.o=.c)
 
@@ -30,7 +30,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -m 644 westley.dtd "$(DESTDIR)$(prefix)/share/mlt"
+	install -d "$(DESTDIR)$(prefix)/share/mlt/xml"
+	install -m 644 mlt-xml.dtd "$(DESTDIR)$(prefix)/share/mlt/xml"
 
 ifneq ($(wildcard .depend),)
 include .depend

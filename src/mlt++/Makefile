@@ -1,4 +1,5 @@
-include ../config.mak
+include ../../config.mak
+include config.mak
 INSTALL = install
 
 ifneq ($(targetos), Darwin)
@@ -13,6 +14,10 @@ SONAME = libmlt++.$(soversion)$(LIBSUF)
 LIBFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
 endif
 
+CXXFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\"
+
+LDFLAGS += -L../framework -lmlt -lpthread
+
 OBJS = MltConsumer.o \
 	   MltDeque.o \
 	   MltEvent.o \
@@ -22,7 +27,6 @@ OBJS = MltConsumer.o \
 	   MltFilteredConsumer.o \
 	   MltFrame.o \
 	   MltGeometry.o \
-	   MltMiracle.o \
 	   MltMultitrack.o \
 	   MltParser.o \
 	   MltPlaylist.o \
@@ -31,7 +35,6 @@ OBJS = MltConsumer.o \
 	   MltProperties.o \
 	   MltPushConsumer.o \
 	   MltRepository.o \
-	   MltResponse.o \
 	   MltService.o \
 	   MltTokeniser.o \
 	   MltTractor.o \
@@ -47,6 +50,9 @@ $(TARGET):	$(OBJS)
 	ln -sf $(TARGET) $(NAME)
 	ln -sf $(TARGET) $(SONAME)
 
+depend:	$(SRCS)
+	$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
+
 clean:
 	$(RM) $(OBJS) $(TARGET) $(NAME)
 
@@ -59,10 +65,13 @@ install:
 	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME)
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
-	/sbin/ldconfig 2> /dev/null || true
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
 	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
 	rm -f "$(DESTDIR)$(libdir)/$(SONAME)"
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt++"
+
+ifneq ($(wildcard .depend),)
+include .depend
+endif

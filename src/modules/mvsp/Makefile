@@ -1,13 +1,13 @@
 include ../../../config.mak
 
-TARGET = ../libmltfezzik$(LIBSUF)
+TARGET = ../libmltmvsp$(LIBSUF)
 
 OBJS = factory.o \
-	   producer_fezzik.o \
-	   producer_hold.o 
+	   consumer_mvsp.o
 
-CFLAGS += -I../..
+CFLAGS += -I../.. 
 
+LDFLAGS += -L../../mvsp -lmvsp
 LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
@@ -28,8 +28,6 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -m 644 ../fezzik.dict "$(DESTDIR)$(prefix)/share/mlt"
-	install -m 644 ../fezzik.ini "$(DESTDIR)$(prefix)/share/mlt"
 
 ifneq ($(wildcard .depend),)
 include .depend

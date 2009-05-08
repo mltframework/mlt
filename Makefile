@@ -1,9 +1,6 @@
 SUBDIRS = src/framework \
-		  src/inigo \
-		  src/valerie \
-		  src/miracle \
-		  src/humperdink \
-		  src/albino \
+		  src/mlt++ \
+		  src/melt \
 		  src/modules \
 		  profiles
 
@@ -46,7 +43,8 @@ install:
 
 uninstall:
 	rm -f "$(DESTDIR)$(bindir)"/mlt-config
-	rm -f "$(DESTDIR)$(libdir)"/pkgconfig/mlt-*.pc
+	rm -f "$(DESTDIR)$(libdir)"/pkgconfig/mlt-framework.pc
+	rm -f "$(DESTDIR)$(libdir)"/pkgconfig/mlt++.pc
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		$(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \

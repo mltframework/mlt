@@ -1,8 +1,8 @@
 include ../../config.mak
 
-TARGET = inigo
+TARGET = melt
 
-OBJS = inigo.o \
+OBJS = melt.o \
 	   io.o
 
 CFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\"

@@ -40,6 +40,8 @@ extern mlt_filter filter_transition_init( mlt_profile profile, mlt_service_type 
 extern mlt_filter filter_watermark_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_colour_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_fezzik_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #include "transition_composite.h"
@@ -70,6 +72,8 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "color", producer_colour_init );
 	MLT_REGISTER( producer_type, "colour", producer_colour_init );
 	MLT_REGISTER( producer_type, "consumer", producer_consumer_init );
+	MLT_REGISTER( producer_type, "fezzik", producer_fezzik_init );
+	MLT_REGISTER( producer_type, "hold", producer_hold_init );
 	MLT_REGISTER( producer_type, "noise", producer_noise_init );
 	MLT_REGISTER( producer_type, "ppm", producer_ppm_init );
 	MLT_REGISTER( transition_type, "composite", transition_composite_init );
