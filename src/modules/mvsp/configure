@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if [ "$help" != "1" ]
-then
-	echo "- pending move to melted: disabling"
-	touch ../disable-mvsp
-fi
