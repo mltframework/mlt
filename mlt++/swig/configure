@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+
+which swig > /dev/null 2>&1
+[ $? != 0 ] && echo "Please install swig" && exit 1
+
+pkg-config mlt-framework --cflags > /dev/null 2>&1
+[ $? != 0 ] && echo "Please install mlt" && exit 1
+
+if [ "$1" = "all" ]
+then languages="perl php python ruby tcl"
+elif [ "$1" != "" ]
+then languages=$*
+else echo "Usage: ./configure [ all | language * ]"
+	 exit 0
+fi
+
+for i in perl php python ruby tcl
+do
+	rm -f .$i
+done
+
+for i in $languages
+do
+	echo -n "Configuring $i ... "
+	if [ -d "$i" ] 
+	then
+		cd $i &&
+		output=`./build 2>/dev/null`
+		if [ $? == 0 ]
+		then echo "OK"
+		 	touch ../.$i
+		elif [ "$output" == "" ]
+		then
+			echo "Failed"
+		else
+			echo $output
+		fi
+		cd ..
+	else
+		echo "Unknown"
+	fi
+done
