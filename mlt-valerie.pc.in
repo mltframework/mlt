@@ -1,7 +1,0 @@
-
-Name: mlt-valerie
-Description: MLT Valerie client API
-Version: ${version}
-Requires:
-Libs: -L${libdir} ${libs}
-Cflags: ${cflags}

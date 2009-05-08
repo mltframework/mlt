@@ -1,2 +1,0 @@
-#!/bin/sh
-echo "miracle	-I$prefix/include/mlt -D_REENTRANT	-L$libdir -lmiracle" >> ../../packages.dat
