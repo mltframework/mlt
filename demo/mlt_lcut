@@ -1,4 +1,4 @@
-inigo \
+melt \
 clip1.dv out=100 \
 -track \
 -blank 49 \

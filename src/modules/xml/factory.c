@@ -21,12 +21,12 @@
 #include <string.h>
 #include <framework/mlt.h>
 
-extern mlt_consumer consumer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "westley", consumer_westley_init );
-	MLT_REGISTER( producer_type, "westley", producer_westley_init );
-	MLT_REGISTER( producer_type, "westley-xml", producer_westley_init );
+	MLT_REGISTER( consumer_type, "xml", consumer_xml_init );
+	MLT_REGISTER( producer_type, "xml", producer_xml_init );
+	MLT_REGISTER( producer_type, "xml-string", producer_xml_init );
 }

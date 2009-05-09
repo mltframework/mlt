@@ -1,4 +1,4 @@
-inigo \
+melt \
 colour:black out=199 \
 -track \
 clip1.dv in=0 out=0 -repeat 99 clip1.dv \

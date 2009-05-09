@@ -1,4 +1,4 @@
-inigo \
+melt \
 "+hello~world.txt" align=1 out=1000 \
 -track "+hello~world.txt" align=1 out=1000 fgcolour=0x000000ff \
 -track watermark1.png out=1000 \

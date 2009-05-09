@@ -11,10 +11,10 @@ mlt_producer create_producer( char *file )
 	mlt_producer result = NULL;
 
 	// 1st Line preferences
-	if ( strstr( file, ".inigo" ) )
+	if ( strstr( file, ".melt" ) )
 	{
 		char *args[ 2 ] = { file, NULL };
-		result = mlt_factory_producer( "inigo", args );
+		result = mlt_factory_producer( "melt", args );
 	}
 	else if ( strstr( file, ".mpg" ) )
 		result = mlt_factory_producer( "mcmpeg", file );

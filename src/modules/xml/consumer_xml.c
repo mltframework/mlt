@@ -1,6 +1,6 @@
 /*
- * consumer_westley.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * consumer_xml.c -- a libxml2 serialiser of mlt service networks
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -57,20 +57,20 @@ static void serialise_service( serialise_context context, mlt_service service, x
 
 typedef enum 
 {
-	westley_existing,
-	westley_producer,
-	westley_multitrack,
-	westley_playlist,
-	westley_tractor,
-	westley_filter,
-	westley_transition
+	xml_existing,
+	xml_producer,
+	xml_multitrack,
+	xml_playlist,
+	xml_tractor,
+	xml_filter,
+	xml_transition
 }
-westley_type;
+xml_type;
 
 /** Create or retrieve an id associated to this service.
 */
 
-static char *westley_get_id( serialise_context context, mlt_service service, westley_type type )
+static char *xml_get_id( serialise_context context, mlt_service service, xml_type type )
 {
 	char *id = NULL;
 	int i = 0;
@@ -82,7 +82,7 @@ static char *westley_get_id( serialise_context context, mlt_service service, wes
 			break;
 
 	// If the service is not in the map, and the type indicates a new id is needed...
-	if ( i >= mlt_properties_count( map ) && type != westley_existing )
+	if ( i >= mlt_properties_count( map ) && type != xml_existing )
 	{
 		// Attempt to reuse existing id
 		id = mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "id" );
@@ -96,25 +96,25 @@ static char *westley_get_id( serialise_context context, mlt_service service, wes
 			{
 				switch( type )
 				{
-					case westley_producer:
+					case xml_producer:
 						sprintf( temp, "producer%d", context->producer_count ++ );
 						break;
-					case westley_multitrack:
+					case xml_multitrack:
 						sprintf( temp, "multitrack%d", context->multitrack_count ++ );
 						break;
-					case westley_playlist:
+					case xml_playlist:
 						sprintf( temp, "playlist%d", context->playlist_count ++ );
 						break;
-					case westley_tractor:
+					case xml_tractor:
 						sprintf( temp, "tractor%d", context->tractor_count ++ );
 						break;
-					case westley_filter:
+					case xml_filter:
 						sprintf( temp, "filter%d", context->filter_count ++ );
 						break;
-					case westley_transition:
+					case xml_transition:
 						sprintf( temp, "transition%d", context->transition_count ++ );
 						break;
-					case westley_existing:
+					case xml_existing:
 						// Never gets here
 						break;
 				}
@@ -133,7 +133,7 @@ static char *westley_get_id( serialise_context context, mlt_service service, wes
 			mlt_properties_set_data( map, id, service, 0, NULL, NULL );
 		}
 	}
-	else if ( type == westley_existing )
+	else if ( type == xml_existing )
 	{
 		id = mlt_properties_get_name( map, i );
 	}
@@ -145,7 +145,7 @@ static char *westley_get_id( serialise_context context, mlt_service service, wes
 	via the argument, but keep it simple.
 */
 
-mlt_consumer consumer_westley_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
 	mlt_consumer this = calloc( sizeof( struct mlt_consumer_s ), 1 );
@@ -182,7 +182,7 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 		if ( name != NULL &&
 			 name[ 0 ] != '_' &&
 			 mlt_properties_get_value( properties, i ) != NULL &&
-			 strcmp( name, "westley" ) != 0 &&
+			 strcmp( name, "mlt" ) != 0 &&
 			 strcmp( name, "in" ) != 0 &&
 			 strcmp( name, "out" ) != 0 && 
 			 strcmp( name, "id" ) != 0 && 
@@ -233,10 +233,10 @@ static inline void serialise_service_filters( serialise_context context, mlt_ser
 	for ( i = 0; ( filter = mlt_producer_filter( MLT_PRODUCER( service ), i ) ) != NULL; i ++ )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-		if ( mlt_properties_get_int( properties, "_fezzik" ) == 0 )
+		if ( mlt_properties_get_int( properties, "_loader" ) == 0 )
 		{
 			// Get a new id - if already allocated, do nothing
-			char *id = westley_get_id( context, MLT_FILTER_SERVICE( filter ), westley_filter );
+			char *id = xml_get_id( context, MLT_FILTER_SERVICE( filter ), xml_filter );
 			if ( id != NULL )
 			{
 				int in = mlt_properties_get_position( properties, "in" );
@@ -269,7 +269,7 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 	{
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( parent );
 		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, parent, westley_producer );
+		char *id = xml_get_id( context, parent, xml_producer );
 		if ( id == NULL )
 			return;
 
@@ -289,7 +289,7 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 	}
 	else
 	{
-		char *id = westley_get_id( context, parent, westley_existing );
+		char *id = xml_get_id( context, parent, xml_existing );
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 		xmlNewProp( node, _x("parent"), _x(id) );
 		xmlNewProp( node, _x("in"), _x(mlt_properties_get( properties, "in" )) );
@@ -315,7 +315,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 	else
 	{
 		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, service, westley_multitrack );
+		char *id = xml_get_id( context, service, xml_multitrack );
 		if ( id == NULL )
 			return;
 
@@ -329,7 +329,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 
 			mlt_service parent = MLT_SERVICE( mlt_producer_cut_parent( producer ) );
 
-			char *id = westley_get_id( context, MLT_SERVICE( parent ), westley_existing );
+			char *id = xml_get_id( context, MLT_SERVICE( parent ), xml_existing );
 			xmlNewProp( track, _x("producer"), _x(id) );
 			if ( mlt_producer_is_cut( producer ) )
 			{
@@ -358,7 +358,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 	if ( context->pass == 0 )
 	{
 		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, service, westley_playlist );
+		char *id = xml_get_id( context, service, xml_playlist );
 		if ( id == NULL )
 			return;
 
@@ -413,7 +413,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 				{
 					char temp[ 20 ];
 					xmlNode *entry = xmlNewChild( child, NULL, _x("entry"), NULL );
-					id = westley_get_id( context, MLT_SERVICE( producer ), westley_existing );
+					id = xml_get_id( context, MLT_SERVICE( producer ), xml_existing );
 					xmlNewProp( entry, _x("producer"), _x(id) );
 					sprintf( temp, "%d", (int)info.frame_in );
 					xmlNewProp( entry, _x("in"), _x(temp) );
@@ -438,7 +438,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 	}
 	else if ( xmlStrcmp( node->name, _x("tractor") ) != 0 )
 	{
-		char *id = westley_get_id( context, service, westley_existing );
+		char *id = xml_get_id( context, service, xml_existing );
 		xmlNewProp( node, _x("producer"), _x(id) );
 	}
 }
@@ -456,7 +456,7 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 	else
 	{
 		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, service, westley_tractor );
+		char *id = xml_get_id( context, service, xml_tractor );
 		if ( id == NULL )
 			return;
 
@@ -492,7 +492,7 @@ static void serialise_filter( serialise_context context, mlt_service service, xm
 	if ( context->pass == 1 )
 	{
 		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, service, westley_filter );
+		char *id = xml_get_id( context, service, xml_filter );
 		if ( id == NULL )
 			return;
 
@@ -521,7 +521,7 @@ static void serialise_transition( serialise_context context, mlt_service service
 	if ( context->pass == 1 )
 	{
 		// Get a new id - if already allocated, do nothing
-		char *id = westley_get_id( context, service, westley_transition );
+		char *id = xml_get_id( context, service, xml_transition );
 		if ( id == NULL )
 			return;
 
@@ -551,7 +551,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 		if ( strcmp( mlt_type, "producer" ) == 0 )
 		{
 			char *mlt_service = mlt_properties_get( properties, "mlt_service" );
-			if ( mlt_properties_get( properties, "westley" ) == NULL && ( mlt_service != NULL && !strcmp( mlt_service, "tractor" ) ) )
+			if ( mlt_properties_get( properties, "xml" ) == NULL && ( mlt_service != NULL && !strcmp( mlt_service, "tractor" ) ) )
 			{
 				context->pass = 0;
 				serialise_tractor( context, service, node );
@@ -564,7 +564,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			{
 				serialise_producer( context, service, node );
 			}
-			if ( mlt_properties_get( properties, "westley" ) != NULL )
+			if ( mlt_properties_get( properties, "xml" ) != NULL )
 				break;
 		}
 
@@ -623,11 +623,11 @@ static void serialise_service( serialise_context context, mlt_service service, x
 	}
 }
 
-xmlDocPtr westley_make_doc( mlt_consumer consumer, mlt_service service )
+xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 {
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 	xmlDocPtr doc = xmlNewDoc( _x("1.0") );
-	xmlNodePtr root = xmlNewNode( NULL, _x("westley") );
+	xmlNodePtr root = xmlNewNode( NULL, _x("mlt") );
 	struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
 	
 	xmlDocSetRootElement( doc, root );
@@ -707,7 +707,7 @@ static int consumer_start( mlt_consumer this )
 		}
 
 		// Make the document
-		doc = westley_make_doc( this, service );
+		doc = xml_make_doc( this, service );
 
 		// Handle the output
 		if ( resource == NULL || !strcmp( resource, "" ) )

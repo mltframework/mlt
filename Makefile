@@ -30,15 +30,13 @@ install:
 	install -d "$(DESTDIR)$(libdir)/mlt"
 	install -d "$(DESTDIR)$(libdir)/pkgconfig"
 	install -d "$(DESTDIR)$(prefix)/share/mlt"
-	install -c -m 755 mlt-config "$(DESTDIR)$(bindir)"
 	install -c -m 644 *.pc "$(DESTDIR)$(libdir)/pkgconfig"
-	install -m 644 packages.dat "$(DESTDIR)$(prefix)/share/mlt/"
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		$(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
 	done; \
 	if test -z "$(DESTDIR)"; then \
-	  /sbin/ldconfig 2> /dev/null || true; \
+	  /sbin/ldconfig -n "$(DESTDIR)$(libdir)" 2> /dev/null || true; \
 	fi
 
 uninstall:

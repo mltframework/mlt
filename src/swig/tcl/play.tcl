@@ -1,10 +1,10 @@
 #!/usr/bin/env tclsh
 
-load mltpp.so
-mltpp.Factory.init
+load mlt.so
+mlt.Factory.init null
 set profile [Profile]
 set arg1 [lindex $argv 0]
-set p [factory_producer $profile fezzik $arg1]
+set p [factory_producer $profile loader $arg1]
 set c [factory_consumer $profile sdl ""]
 set r [mlt_consumer_properties $c]
 mlt_properties_set $r "rescale" "none"

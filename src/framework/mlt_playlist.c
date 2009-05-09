@@ -283,12 +283,12 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 	// Fetch the cuts parent properties
 	parent = MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( producer ) );
 
-	// Remove fezzik normalisers for fx cuts
+	// Remove loader normalisers for fx cuts
 	if ( mlt_properties_get_int( parent, "meta.fx_cut" ) )
 	{
 		mlt_service service = MLT_PRODUCER_SERVICE( mlt_producer_cut_parent( producer ) );
 		mlt_filter filter = mlt_service_filter( service, 0 );
-		while ( filter != NULL && mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "_fezzik" ) )
+		while ( filter != NULL && mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "_loader" ) )
 		{
 			mlt_service_detach( service, filter );
 			filter = mlt_service_filter( service, 0 );

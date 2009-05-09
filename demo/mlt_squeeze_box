@@ -1,4 +1,4 @@
-inigo \
+melt \
 clip1.dv out=124 clip2.dv out=149 clip3.dv in=75 out=224 clip1.dv \
 -track \
 -blank 99 colour:black out=49 -blank 99 colour:black out=49 -blank 99 colour:black out=49 \

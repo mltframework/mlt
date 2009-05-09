@@ -1,6 +1,6 @@
 <?php
 $filename = $argv[1];
-dl("mltpp.so");
+dl("mlt.so");
 mlt_factory_init(NULL);
 $profile = new_profile("dv_ntsc");
 $p = new_producer( $profile, $filename );

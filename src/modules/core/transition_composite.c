@@ -1330,7 +1330,7 @@ mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type 
 		mlt_properties_set( properties, "start", arg != NULL ? arg : "0,0:100%x100%" );
 		
 		// Default factory
-		mlt_properties_set( properties, "factory", "fezzik" );
+		mlt_properties_set( properties, "factory", mlt_environment( "MLT_PRODUCER" ) );
 
 		// Use alignment (and hence alpha of b frame)
 		mlt_properties_set_int( properties, "aligned", 1 );

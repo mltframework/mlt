@@ -21,11 +21,11 @@
 #include <string.h>
 #include <framework/mlt.h>
 
-extern mlt_producer producer_inigo_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
+extern mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( producer_type, "inigo", producer_inigo_init );
-	MLT_REGISTER( producer_type, "inigo_file", producer_inigo_file_init );
+	MLT_REGISTER( producer_type, "melt", producer_melt_init );
+	MLT_REGISTER( producer_type, "melt_file", producer_melt_file_init );
 }

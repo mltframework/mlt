@@ -85,11 +85,11 @@ do
 	
 		if [ "$usable" = "0" -a "$demo" != "" ]
 		then
-			if [ "$MLT_CONSUMER" == "westley:" ]
-			then	export WESTLEY_CONSUMER="westley:$demo.westley"
-					bash $demo -consumer $WESTLEY_CONSUMER
-					inigo +$demo.txt out=100 $demo.westley $demo.westley -filter watermark:watermark1.png composite.fill=1 composite.geometry=85%,5%:10%x10%
-			elif [ "$MLT_CONSUMER" == "westley" ]
+			if [ "$MLT_CONSUMER" == "xml:" ]
+			then	export XML_CONSUMER="xml:$demo.mlt"
+					bash $demo -consumer $XML_CONSUMER
+					melt +$demo.txt out=100 $demo.mlt $demo.mlt -filter watermark:watermark1.png composite.fill=1 composite.geometry=85%,5%:10%x10%
+			elif [ "$MLT_CONSUMER" == "xml" ]
 			then	bash $demo -consumer $MLT_CONSUMER | less
 			else	bash $demo -consumer $MLT_CONSUMER
 			fi

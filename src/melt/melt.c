@@ -1,5 +1,5 @@
 /*
- * inigo.c -- MLT command line utility
+ * melt.c -- MLT command line utility
  * Copyright (C) 2002-2008 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -319,7 +319,7 @@ int main( int argc, char **argv )
 {
 	int i;
 	mlt_consumer consumer = NULL;
-	mlt_producer inigo = NULL;
+	mlt_producer melt = NULL;
 	FILE *store = NULL;
 	char *name = NULL;
 	mlt_profile profile = NULL;
@@ -335,7 +335,7 @@ int main( int argc, char **argv )
 		if ( !strcmp( argv[ i ], "-serialise" ) )
 		{
 			name = argv[ ++ i ];
-			if ( name != NULL && strstr( name, ".inigo" ) )
+			if ( name != NULL && strstr( name, ".melt" ) )
 				store = fopen( name, "w" );
 			else
 			{
@@ -404,7 +404,7 @@ query_all:
 		}
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
-			fprintf( stderr, "MLT inigo " VERSION "\n"
+			fprintf( stderr, "MLT melt " VERSION "\n"
 				"Copyright (C) 2002-2008 Ushodaya Enterprises Limited\n"
 				"<http://www.mltframework.org/>\n"
 				"This is free software; see the source for copying conditions.  There is NO\n"
@@ -441,22 +441,22 @@ query_all:
 	if ( store == NULL && consumer == NULL )
 		consumer = create_consumer( profile, NULL );
 
-	// Get inigo producer
+	// Get melt producer
 	if ( argc > 1 )
-		inigo = mlt_factory_producer( profile, "inigo", &argv[ 1 ] );
+		melt = mlt_factory_producer( profile, "melt", &argv[ 1 ] );
 
 	// Set transport properties on consumer and produder
-	if ( consumer != NULL && inigo != NULL )
+	if ( consumer != NULL && melt != NULL )
 	{
-		mlt_properties_set_data( MLT_CONSUMER_PROPERTIES( consumer ), "transport_producer", inigo, 0, NULL, NULL );
-		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( inigo ), "transport_consumer", consumer, 0, NULL, NULL );
+		mlt_properties_set_data( MLT_CONSUMER_PROPERTIES( consumer ), "transport_producer", melt, 0, NULL, NULL );
+		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( melt ), "transport_consumer", consumer, 0, NULL, NULL );
 		if ( is_progress )
 			mlt_properties_set_int(  MLT_CONSUMER_PROPERTIES( consumer ), "progress", is_progress );
 		if ( is_silent )
 			mlt_properties_set_int(  MLT_CONSUMER_PROPERTIES( consumer ), "silent", is_silent );
 	}
 
-	if ( argc > 1 && inigo != NULL && mlt_producer_get_length( inigo ) > 0 )
+	if ( argc > 1 && melt != NULL && mlt_producer_get_length( melt ) > 0 )
 	{
 		// Parse the arguments
 		for ( i = 1; i < argc; i ++ )
@@ -486,24 +486,24 @@ query_all:
 
 		if ( consumer != NULL && store == NULL )
 		{
-			// Get inigo's properties
-			mlt_properties inigo_props = MLT_PRODUCER_PROPERTIES( inigo );
+			// Get melt's properties
+			mlt_properties melt_props = MLT_PRODUCER_PROPERTIES( melt );
 	
 			// Get the last group
-			mlt_properties group = mlt_properties_get_data( inigo_props, "group", 0 );
+			mlt_properties group = mlt_properties_get_data( melt_props, "group", 0 );
 	
 			// Apply group settings
 			mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 			mlt_properties_inherit( properties, group );
 
-			// Connect consumer to inigo
-			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( inigo ) );
+			// Connect consumer to melt
+			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( melt ) );
 
 			// Start the consumer
 			mlt_consumer_start( consumer );
 
 			// Transport functionality
-			transport( inigo, consumer );
+			transport( melt, consumer );
 
 			// Stop the consumer
 			mlt_consumer_stop( consumer );
@@ -517,7 +517,7 @@ query_all:
 	else
 	{
 		fprintf( stderr,
-"Usage: inigo [options] [producer [name=value]* ]+\n"
+"Usage: melt [options] [producer [name=value]* ]+\n"
 "Options:\n"
 "  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
 "  -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut\n"
@@ -560,8 +560,8 @@ query_all:
 		mlt_consumer_close( consumer );
 
 	// Close the producer
-	if ( inigo != NULL )
-		mlt_producer_close( inigo );
+	if ( melt != NULL )
+		mlt_producer_close( melt );
 
 	// Close the factory
 	mlt_profile_close( profile );

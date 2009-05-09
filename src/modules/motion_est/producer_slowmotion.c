@@ -367,8 +367,8 @@ mlt_producer producer_slowmotion_init( mlt_profile profile, mlt_service_type typ
 {
 	mlt_producer this = mlt_producer_new( );
 
-	// Wrap fezzik
-	mlt_producer real_producer = mlt_factory_producer( profile, "fezzik", arg );
+	// Wrap the loader
+	mlt_producer real_producer = mlt_factory_producer( profile, NULL, arg );
 
 	// We need to apply the motion estimation filter manually
 	mlt_filter filter = mlt_factory_filter( profile, "motion_est", NULL );
@@ -381,8 +381,8 @@ mlt_producer producer_slowmotion_init( mlt_profile profile, mlt_service_type typ
 		// Get the properties of this producer
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
-		// Fezzik normalised it for us already
-		mlt_properties_set_int( properties, "fezzik_normalised", 1);
+		// The loader normalised it for us already
+		mlt_properties_set_int( properties, "loader_normalised", 1);
 
 		// Store the producer and fitler
 		mlt_properties_set_data( properties, "producer", real_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );

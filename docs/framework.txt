@@ -1,8 +1,8 @@
 Framework Documentation
 
-Copyright (C) 2004 Ushodaya Enterprises Limited
+Copyright (C) 2004-2009 Ushodaya Enterprises Limited
 Author: Charles Yates <charles.yates@pandora.be>
-Last Revision: 2004-10-08
+Last Revision: 2005-05-08
 
 
 MLT FRAMEWORK
@@ -44,7 +44,7 @@ Target Audience:
 	opposed to the implementation details.
 
 	It is not required reading for the MLT client/server integration - please
-	refer to valerie.txt and dvcp.txt for more details on this area.
+	refer to libmvsp.txt and mvsp.txt for more details on this area.
 
 
 SECTION 1 - BASIC OVERVIEW
@@ -187,12 +187,12 @@ Hello World:
 	The defaults requested here are a special case - the NULL usage requests
 	that we use the default producers and consumers. 
 	
-	The default producer is "fezzik". This producer matches file names to 
+	The default producer is "loader". This producer matches file names to 
 	locate a service to use and attaches 'normalising filters' (such as scalers,
 	deinterlacers, resamplers and field normalisers) to the loaded content -
 	these filters ensure that the consumer gets what it asks for.
 
-	The default consumer is "sdl". The combination of fezzik and sdl will
+	The default consumer is "sdl". The combination of loader and sdl will
 	provide a media player.
 
 	In this example, we connect the producer and then start the consumer. We
@@ -205,11 +205,11 @@ Hello World:
 
 	Also note, you can override the defaults as follows:
 
-	$ MLT_CONSUMER=westley ./hello file.avi
+	$ MLT_CONSUMER=xml ./hello file.avi
 
-	This will create a westley xml document on stdout.
+	This will create a XML document on stdout.
 
-	$ MLT_CONSUMER=westley MLT_PRODUCER=avformat ./hello file.avi
+	$ MLT_CONSUMER=xml MLT_PRODUCER=avformat ./hello file.avi
 
 	This will play the video using the avformat producer directly, thus it will
 	bypass the normalising functions.
@@ -256,7 +256,7 @@ Factories:
 	+------------------+------------------------------------+------------------+
 	|MLT_NORMALISATION |The normalisation of the system     |PAL or NTSC       |
 	+------------------+------------------------------------+------------------+
-	|MLT_PRODUCER      |The default producer                |"fezzik" or other |
+	|MLT_PRODUCER      |The default producer                |"loader" or other |
 	+------------------+------------------------------------+------------------+
 	|MLT_CONSUMER      |The default consumer                |"sdl" or other    |
 	+------------------+------------------------------------+------------------+
@@ -573,7 +573,7 @@ Practicalities and Optimisations:
 	    mlt_producer_optimise( mlt_playlist_producer( playlist ) );
 	
 	after the mix calls have be done. Note that this is automatically applied
-	to deserialised westleys.
+	to deserialised MLT XML.
 
 
 Multiple Tracks and Transitions:
@@ -714,8 +714,8 @@ Multiple Tracks and Transitions:
 	    // Create track 0
 	    mlt_producer track0 = create_playlist( argc, argv );
 	
-	    // Create the watermark track - note we NEED fezzik for scaling here
-	    mlt_producer track1 = mlt_factory_producer( "fezzik", "pango" );
+	    // Create the watermark track - note we NEED loader for scaling here
+	    mlt_producer track1 = mlt_factory_producer( "loader", "pango" );
 	
 	    // Get the length of track0
 	    mlt_position length = mlt_producer_get_playtime( track0 );
@@ -1179,7 +1179,7 @@ mlt_service:
 
 	A service does not define any properties when constructed. It should be
 	noted that producers, filters and transitions my be serialised (say, via the
-	westley consumer), and care should be taken to distinguish between
+	xml consumer), and care should be taken to distinguish between
 	serialisable and transient properties. The convention used is to prefix
 	transient properties with an underscore.
 

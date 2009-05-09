@@ -1,4 +1,4 @@
-inigo \
+melt \
 clip1.mpeg in=100 out=500 \
 -filter greyscale in=100 out=199 \
 $*

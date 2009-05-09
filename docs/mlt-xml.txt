@@ -1,27 +1,27 @@
-Westley Documentation
+MLT XML Schema Documentation
 
-Copyright (C) 2004 Ushodaya Enterprised Limited
+Copyright (C) 2004-2009 Ushodaya Enterprised Limited
 Authors: Charles Yates <charles.yates@pandora.be>
-Last Revision: 2004-03-20
+Last Revision: 2009-05-08
 
 
-WESTLEY
+MLT XML
 -------
 
 Preamble:
 
-	Westley is the MLT projects XML serialisation/deserialisation format -
+	This is the MLT projects XML serialisation/deserialisation format -
 	as such, it closely mirrors the internal structure of the MLT API.
 
 	If you just want to go straight to the DTD, then see 
-	mlt/src/modules/westley/westley.dtd, which gets installed at 
-	$(prefix)/share/mlt/modules/westley.dtd. Currently, the westley parser is
+	mlt/src/modules/xml/mlt-xml.dtd, which gets installed at 
+	$(prefix)/share/mlt/modules/xml/mlt-xml.dtd. Currently, the XML parser is
 	non-validating.
 
 
 Introduction:
 
-	A westley document is essentially a list of 'producers' - a producer is
+	A MLT XML document is essentially a list of 'producers' - a producer is
 	an mlt object which generates mlt frames (images and associated audio
 	samples). 
 	
@@ -33,19 +33,19 @@ Introduction:
 
 	In the mlt model, producers are created and attached to 'consumers' -
 	consumers are software playback components (such as SDL), or wrappers for
-	hardware drivers (such as bluefish) or even the westley serialising
+	hardware drivers (such as bluefish) or even the XML serialising
 	consumer itself (the latter doesn't receive frames - it merely
 	interrogates the connected producer for its configuration).
 
-	Although westley was defined as a serialisation mechanism for instantiated 
+	Although MLT XML was defined as a serialisation mechanism for instantiated 
 	MLT components, this document will concentrate on the hand authoring of 
-	westley documents.
+	MLT XML documents.
 
 
 Rules:
 
 	As shall become apparent through the remainder of this document, the basic
-	tenet of westley authoring is to organise the document in the following
+	tenet of MLT XML authoring is to organise the document in the following
 	manner:
 
 	1) create producer elements for each unique media clip in the project;
@@ -53,33 +53,33 @@ Rules:
 	3) create a multitrack and specify filters and transitions;
 	4) adding global filters.
 
-	While other uses of westley exist, the approach taken here is to maximise
+	While other uses of MLT XML exist, the approach taken here is to maximise
 	efficiency for complex projects. 
 
 
 Basic Producers:
 
-	The simplest westley document is:
+	The simplest MLT XML document is:
 
-	<westley>
+	<mlt>
 	  <producer id="producer0">
 	    <property name="resource">clip1.dv</property>
 	  </producer>
-	</westley>
+	</mlt>
 
-	The westley wrapping is of course superfluous here - loading this document
+	The XML wrapping is of course superfluous here - loading this document
 	with MLT is identical to loading the clip directly. 
 
 	Of course, you can specify additional properties. For example, consider an
-	MPEG file with multiple soundtracks - you could define a westley document to
+	MPEG file with multiple soundtracks - you could define a MLT XML document to
 	ensure that the second audio track is loaded:
 
-	<westley>
+	<mlt>
 	  <producer id="producer0">
 	    <property name="resource">clip1.mpeg</property>
 	    <property name="audio_track">1</property>
 	  </producer>
-	</westley>
+	</mlt>
 
 	NB: This relies on the mpeg being handled by the avformat producer, rather
 	than the mcmpeg one. See services.txt for more details.
@@ -95,8 +95,8 @@ Basic Producers:
 	restricts the amount of the clip available, and could lead to the same clip
 	being loaded multiple times if you need different regions of the clip
 	elsewhere;
-	2) A westley can be specified as a resource, so westleys can naturally
-	encapsulate other westleys.
+	2) A MLT XML doc can be specified as a resource, so XML docs can naturally
+	encapsulate other XML docs.
 
 
 Playlists:
@@ -108,7 +108,7 @@ Playlists:
 	As an example, the following defines two basic producers and a playlist with 3
 	items:
 
-	<westley>
+	<mlt>
 	  <producer id="producer0">
 	    <property name="resource">clip1.dv</property>
 	  </producer>
@@ -120,7 +120,7 @@ Playlists:
 	    <entry producer="producer1" in="0" out="999"/>
 	    <entry producer="producer0" in="3000" out="6999"/>
 	  </playlist>
-	</westley>
+	</mlt>
 
 	Here we see how the playlist defines the in/out points of the basic
 	producers.
@@ -129,7 +129,7 @@ Playlists:
 
 	1) All in/out points are absolute frame positions relative to the producer
 	being appended to the playlist;
-	2) Westley documents are currently authored for a specific normalisation;
+	2) MLT XML documents are currently authored for a specific normalisation;
 	3) The last 'producer' in the document is the default for play out;
 	4) Playlists can reference the same producer multiple times. In/out regions
 	do not need to be contiguous - duplication and skipping is acceptable.
@@ -181,17 +181,17 @@ Interlude - Introducing Multitracks:
 	consumer. 
 	
 	The consumer receives the first non-blank frame (see below). It has no say
-	in the order in which gets them (the sdl consumer when used with inigo might 
+	in the order in which gets them (the sdl consumer when used with melt might 
 	appear to be an exception - it isn't - it simply has a route back to the 
 	application to allow the application to interpret key presses).
 
 
 Tractors:
 
-	To create a multitrack westley, we can use two playlists and introduce a
+	To create a multitrack XML, we can use two playlists and introduce a
 	tractor. For the purposes of demonstration, I'll add a filter here too:
 
-	<westley>
+	<mlt>
 	  <producer id="producer0">
 	    <property name="resource">clip1.dv</property>
 	  </producer>
@@ -216,7 +216,7 @@ Tractors:
 	      <property name="mlt_service">greyscale</property>
 	    </filter>
 	  </tractor>
-	</westley>
+	</mlt>
 	
 	Here we see that blank frames are inserted into the first playlist and a
 	blank is provided at the beginning of the second - this can be visualised in
@@ -245,7 +245,7 @@ Tractors:
 	let's assume we wish to watermark all output, then we could use the 
 	following:
 
-	<westley>
+	<mlt>
 	  <producer id="producer0">
 	    <property name="resource">clip1.dv</property>
 	  </producer>
@@ -279,7 +279,7 @@ Tractors:
 	      <property name="resource">watermark1.png</property>
 	    </filter>
 	  </tractor>
-	</westley>
+	</mlt>
 	
 	Here we employ another tractor and we define a single track (being the
 	tractor we previously defined) and apply a watermarking filter there.
@@ -300,7 +300,7 @@ Tractors:
 	clip. Remember, nothing is affected like mixing or compositing until one
 	applies a transition or appropriate filter.
 	
-	<westley>
+	<mlt>
 	  <producer id="producer0">
 	    <property name="resource">clip1.dv</property>
 	  </producer>
@@ -332,7 +332,7 @@ Tractors:
 	      <property name="end">1.0</property>
 	    </transition>
 	  </tractor>
-	</westley>
+	</mlt>
 
 	A "luma" transition is a video wipe processor that takes a greyscale bitmap
 	for the wipe definition. When one does not specify a bitmap, luma performs
@@ -345,19 +345,19 @@ Tractors:
 
 Flexibility:
 
-	The information presented above is considered the MLT Westley "normal"
-	form. This is the output generated by the westley consumer, for example,
-	when used with inigo. It is the output generated when you use the
-	"Westley to File" consumer in the demo script, which beginners will find
-	most useful for learning to use westley XML. This section describes 
-	alternative forms the westley producer accepts.
+	The information presented above is considered the MLT XML "normal"
+	form. This is the output generated by the xml consumer, for example,
+	when used with melt. It is the output generated when you use the
+	"XML to File" consumer in the demo script, which beginners will find
+	most useful for learning to use MLT XML. This section describes 
+	alternative forms the xml producer accepts.
 
 	First of all, the normal form is more of a linear format with producers
-	and playlists defined prior to their usage in a multitrack. Westley
+	and playlists defined prior to their usage in a multitrack. The producer
 	also accepts a hierarchical format with producers as children of tracks
 	or playlist entries and with playlists as children of tracks:
 
-	<westley>
+	<mlt>
 	  <tractor>
 	    <multitrack>
 	      <track>
@@ -371,18 +371,18 @@ Flexibility:
 	      </track>
 	    </multitrack>
 	  </tractor>
-	</westley>
+	</mlt>
 
 	Obviously, this example is meant to demonstrate hierarchy and not effective
 	use of playlist or multitrack!
 
-	Secondly, as part of error handling, westley is forgiving if you fail to
-	supply <tractor>, <track>, and <entry> where one can be understood. This
-	affords an abbreviated syntax that is less verbose and perhaps less 
+	Secondly, as part of error handling, the producer is forgiving if you fail
+	to supply <tractor>, <track>, and <entry> where one can be understood.
+	This affords an abbreviated syntax that is less verbose and perhaps less 
 	intimidating for a human to read and understand. One can simplify the
 	above example as:
 
-	<westley>
+	<mlt>
 	  <multitrack>
 	    <playlist>
 	      <producer>
@@ -390,11 +390,11 @@ Flexibility:
 	      </producer>
 	    </playlist>
 	  </multitrack>
-	</westley>
+	</mlt>
 
 	Yes, filters and transitions can be added to the above example after the
 	closing multitrack tag (</multitrack>) because it is still enclosed within
-	the westley body tags.
+	the mlt body tags.
 
 	If you specify in and out on a producer and it has been enclosed within
 	an <entry> or <playlist>, then the edit points apply to the playlist
@@ -410,7 +410,7 @@ Flexibility:
 	In the above example, the producer attribute of the entry element is 
 	a reference to the preceding producer. All references must follow the 
 	definition. The edit points supplied on the producer above will not affect
-	the entry that references it below because westley knows the clip is a 
+	the entry that references it below because the producer knows the clip is a 
 	playlist entry and optimises this situation. The advantage is that one
 	does not need to determine every clip to be included ahead of time 
 	and specify them outside the context of the mutlitrack timeline.
@@ -418,7 +418,7 @@ Flexibility:
 	This form of authoring will be easier for many to visualise as a non-linear 
 	editor's timeline. Here is a more complex example:
 
-	<westley>
+	<mlt>
 	  <multitrack>
 	    <playlist>
 	      <producer id="foo" in="100" out="149">
@@ -440,14 +440,14 @@ Flexibility:
 	  <transition mlt_service="luma" in="75" out="99" a_track="0" b_track="1">
 	    <property name="reverse" value="1"/>
 	  </transition>
-	</westley>
+	</mlt>
 
 	Did you notice something different in the last example? Properties can be 
 	expressed using XML attributes on the element as well. However, only 
 	non-service-specific properties are supported in this way. For example,
 	"mlt_service" is available to any producer, filter, or transition. However,
 	"resource" is actually service-specific. Notice the syntax of the last 
-	property, on the last transition. Westley accepts property values using 
+	property, on the last transition. The producer accepts property values using 
 	the "value" attribute as well as using element text.
 
 	We have seen a few different ways of expressing property values. There are
@@ -462,7 +462,7 @@ Flexibility:
 	property tag and that the section closing tag immediately precedes the
 	closing property tag.
 
-	However, westley can also accept inline embedded XML:
+	However, the producer can also accept inline embedded XML:
 
 	<property name="resource">
 	  <svg>
@@ -471,46 +471,46 @@ Flexibility:
 
 	Currently, there is no namespace handling so a conflict will occur only on 
 	any embedded XML that contains an element named "property" because 
-	westley collects embedded XML until it reaches a closing property tag.
+	the producer collects embedded XML until it reaches a closing property tag.
 	
 	
 Entities and Parameterisation:
 	
-	The westley producer parser supports XML entities. An example:
+	The MLT XML producer parser supports XML entities. An example:
 	
 	<?xml version="1.0"?>
-	<!DOCTYPE westley [
+	<!DOCTYPE mlt [
 	    <!ENTITY msg "Hello world!">
 	]>
-	<westley>
+	<mlt>
 	  <producer id="producer0">
 	    <property name="mlt_service">pango</property>
 	    <property name="text">&msg;</property>
 	  </producer>
-	</westley>
+	</mlt>
 	
 	If you are embedding another XML document into a property value not using
 	a CNODE section, then any DOCTYPE section must be relocated before any of
-	the xml elements to be well-formed. See demo/svg.westley for an example.
+	the xml elements to be well-formed. See demo/svg.mlt for an example.
 	
-	Entities can be used to parameterise westley! Using the above example, the
+	Entities can be used to parameterise MLT XML! Using the above example, the
 	entity declared serves as the default value for &msg;. The entity content
-	can be overridden from the resource property supplied to the westley
+	can be overridden from the resource property supplied to the xml
 	producer. The syntax is the familiar, url-encoded query string used with
 	HTTP, e.g.: file?name=value&name=value...
 	
-	There are a couple of rules of usage. The Miracle LOAD command and inigo
-	command line tool require you to preface the URL with "westley:" because
+	There are a couple of rules of usage. The melted LOAD command and melt
+	command line tool require you to preface the URL with "xml:" because
 	the query string destroys the filename extension matching peformed by
-	Fezzik. Also, inigo looks for '=' to tokenise property settings. Therefore, 
-	one uses ':' between name and value instead of '='. Finally, since inigo
-	is run from the shell, one must enclose the URL within single quotes to 
-	prevent shell filename expansion, or similar.
+	the auto-loader. Also, melt looks for '=' to tokenise property settings.
+	Therefore, one uses ':' between name and value instead of '='. Finally,
+	since melt is run from the shell, one must enclose the URL within single
+	quotes to prevent shell filename expansion, or similar.
 	
-	Needless to say, the ability to parameterise westley XML compositions is
+	Needless to say, the ability to parameterise MLT XML compositions is
 	an extremely powerful tool. An example for you to play with is available in 
-	demo/entity.westley. Try overriding the name from inigo:
-	inigo 'westley:entity.westley?name:Charlie'
+	demo/entity.mlt. Try overriding the name from melt:
+	melt 'xml:entity.mlt?name:Charlie'
 	
 	Technically, the entity declaration is not needed in the head of the XML
 	document if you always supply the parameter. However, you run the risk
@@ -524,14 +524,14 @@ Tips and Technique:
 
 	If one finds the above hierarchical, abbreviated format intuitive,
 	start with a simple template and fill and extend as needed:
-	    <westley>
+	    <mlt>
 	      <multitrack>
 	        <playlist>
 	        </playlist>
 	        ...add a playlist for each track...
 	      </multitrack>
 	      ...add filters and transitions...
-	    </westley>
+	    </mlt>
 	    
 	By using a playlist for each track, it is easier to iteratively add new 
 	clips and blank regions as you develop the project. You will not have to

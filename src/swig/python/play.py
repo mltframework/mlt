@@ -1,22 +1,23 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Import required modules
-import mltpp
+import mlt
 import time
 import sys
 
 # Start the mlt system
-mltpp.Factory().init( )
+mlt.Factory().init( )
 
 # Establish a profile
-profile = mltpp.Profile( )
+profile = mlt.Profile( )
 
 # Create the producer
-p = mltpp.Producer( profile, sys.argv[1] )
+p = mlt.Producer( profile, sys.argv[1] )
 
 if p:
 	# Create the consumer
-	c = mltpp.Consumer( profile, "sdl" )
+	c = mlt.Consumer( profile, "sdl" )
 
 	# Turn off the default rescaling
 	c.set( "rescale", "none" )

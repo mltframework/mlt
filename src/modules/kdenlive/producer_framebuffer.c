@@ -199,14 +199,14 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	this = calloc( 1, sizeof( struct mlt_producer_s ) );
 	mlt_producer_init( this, NULL );
 
-	// Wrap fezzik
+	// Wrap loader
 	mlt_producer real_producer;
 	
 	// Check if a speed was specified.
 	/** 
 
 	* Speed must be appended to the filename with '?'. To play your video at 50%:
-	 inigo framebuffer:my_video.mpg?0.5
+	 melt framebuffer:my_video.mpg?0.5
 
 	* Stroboscope effect can be obtained by adding a stobe=x parameter, where
 	 x is the number of frames that will be ignored.
@@ -231,7 +231,7 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 			*ptr = '\0';
 	}
 		
-	real_producer = mlt_factory_producer( profile, "fezzik", props );
+	real_producer = mlt_factory_producer( profile, NULL, props );
 	free( props );
 
 	if (speed == 0.0) speed = 1.0;
@@ -241,8 +241,8 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 		// Get the properties of this producer
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
-		// Fezzik normalised it for us already
-		mlt_properties_set_int( properties, "fezzik_normalised", 1);
+		// The loader normalised it for us already
+		mlt_properties_set_int( properties, "loader_normalised", 1);
 		mlt_properties_set( properties, "resource", arg);
 
 		// Store the producer and fitler

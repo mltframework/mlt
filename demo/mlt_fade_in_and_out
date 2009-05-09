@@ -1,4 +1,4 @@
-inigo \
+melt \
 clip1.dv out=74 -blank 99 clip3.dv in=25 \
 -track \
 -blank 49 clip2.mpeg out=149 \

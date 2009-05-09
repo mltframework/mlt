@@ -115,7 +115,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 			"buffer, prefill" );
 	
 		// Encapsulate a real producer for the resource
-		cx->producer = mlt_factory_producer( cx->profile, mlt_environment( "MLT_PRODUCER" ),
+		cx->producer = mlt_factory_producer( cx->profile, NULL,
 			mlt_properties_get( properties, "resource" ) );
 		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( cx->producer ),
 			"out, length" );
@@ -198,7 +198,7 @@ mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type,
 	mlt_producer this = mlt_producer_new( );
 
 	// Encapsulate the real producer
-	mlt_producer real_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), arg );
+	mlt_producer real_producer = mlt_factory_producer( profile, NULL, arg );
 
 	if ( this && real_producer )
 	{

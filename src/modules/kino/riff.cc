@@ -15,63 +15,6 @@
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, write to the Free Software Foundation,
 * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*
-* Tag: $Name$
-*
-* Change log:
-* 
-* $Log$
-* Revision 1.3  2005/07/25 14:41:29  lilo_booter
-* + Minor correction for entry length being less than the data length
-*
-* Revision 1.2  2005/07/25 07:21:39  lilo_booter
-* + fixes for opendml dv avi
-*
-* Revision 1.1  2005/04/15 14:28:26  lilo_booter
-* Initial version
-*
-* Revision 1.18  2005/04/01 23:43:10  ddennedy
-* apply endian fixes from Daniel Kobras
-*
-* Revision 1.17  2004/10/11 01:37:11  ddennedy
-* mutex safety locks in RIFF and AVI classes, type 2 AVI optimization, mencoder export script
-*
-* Revision 1.16  2003/11/25 23:01:24  ddennedy
-* cleanup and a few bugfixes
-*
-* Revision 1.15  2003/10/21 16:34:34  ddennedy
-* GNOME2 port phase 1: initial checkin
-*
-* Revision 1.13.2.3  2003/08/26 20:39:00  ddennedy
-* relocate mutex unlock and add assert includes
-*
-* Revision 1.13.2.2  2003/01/28 12:54:13  lilo_booter
-* New 'no change' image transition
-*
-* Revision 1.13.2.1  2002/11/25 04:48:31  ddennedy
-* bugfix to report errors when loading files
-*
-* Revision 1.13  2002/09/13 06:49:49  ddennedy
-* build update, cleanup, bugfixes
-*
-* Revision 1.12  2002/04/21 06:36:40  ddennedy
-* kindler avc and 1394 bus reset support in catpure page, honor max file size
-*
-* Revision 1.11  2002/04/09 06:53:42  ddennedy
-* cleanup, new libdv 0.9.5, large AVI, dnd storyboard
-*
-* Revision 1.4  2002/03/25 21:34:25  arne
-* Support for large (64 bit) files mostly completed
-*
-* Revision 1.3  2002/03/10 21:28:29  arne
-* release 1.1b1, 64 bit support for type 1 avis
-*
-* Revision 1.2  2002/03/04 19:22:43  arne
-* updated to latest Kino avi code
-*
-* Revision 1.1.1.1  2002/03/03 19:08:08  arne
-* import of version 1.01
-*
 */
 
 #include "config.h"

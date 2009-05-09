@@ -11,9 +11,9 @@ what details to look for.
 First, a note on consumers. When you start the script, the main menu asks
 you to choose a consumer. A consumer is like a viewer, but it could also
 write to a stream/file. The "SDL" consumer is the popular Simple DirectMedia
-Layer audio and video output. The "Westley" consumer generates an XML
+Layer audio and video output. The "xml" consumer generates an XML
 representation of the service network. That can be played directly due to the
-westley producer plugin. See docs/westley.txt for more information. The
+XML producer plugin. See docs/mlt-xml.txt for more information. The
 "MainConcept DV" consumer refers to the proprietary MLT plugin required to
 use MLT with MainConcept DV, DVCPro, and MPEG codecs. "/dev/dv1394/0" refers
 to a device file for transmitting DV over FireWire using the Linux dv1394 kernel

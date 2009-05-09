@@ -1,6 +1,6 @@
 /*
- * producer_fezzik.c -- a normalising filter
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * producer_loader.c -- auto-load producer by file name extension
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -74,7 +74,7 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 		if ( dictionary == NULL )
 		{
 			char temp[ 1024 ];
-			sprintf( temp, "%s/fezzik.dict", mlt_environment( "MLT_DATA" ) );
+			sprintf( temp, "%s/core/loader.dict", mlt_environment( "MLT_DATA" ) );
 			dictionary = mlt_properties_load( temp );
 			mlt_factory_register_for_clean_up( dictionary, ( mlt_destructor )mlt_properties_close );
 		}
@@ -120,7 +120,7 @@ static void create_filter( mlt_profile profile, mlt_producer producer, char *eff
 	mlt_filter filter = mlt_factory_filter( profile, id, arg );
 	if ( filter != NULL )
 	{
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_fezzik", 1 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
 		mlt_producer_attach( producer, filter );
 		mlt_filter_close( filter );
 		*created = 1;
@@ -140,7 +140,7 @@ static void attach_normalisers( mlt_profile profile, mlt_producer producer )
 	if ( normalisers == NULL )
 	{
 		char temp[ 1024 ];
-		sprintf( temp, "%s/fezzik.ini", mlt_environment( "MLT_DATA" ) );
+		sprintf( temp, "%s/core/loader.ini", mlt_environment( "MLT_DATA" ) );
 		normalisers = mlt_properties_load( temp );
 		mlt_factory_register_for_clean_up( normalisers, ( mlt_destructor )mlt_properties_close );
 	}
@@ -160,7 +160,7 @@ static void attach_normalisers( mlt_profile profile, mlt_producer producer )
 	mlt_tokeniser_close( tokeniser );
 }
 
-mlt_producer producer_fezzik_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the producer 
 	mlt_producer producer = NULL;
@@ -172,10 +172,10 @@ mlt_producer producer_fezzik_init( mlt_profile profile, mlt_service_type type, c
 	if ( producer != NULL )
 		properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Attach filters if we have a producer and it isn't already westley'd :-)
-	if ( producer != NULL && mlt_properties_get( properties, "westley" ) == NULL && \
-		mlt_properties_get( properties, "_westley" ) == NULL && \
-		mlt_properties_get( properties, "fezzik_normalised" ) == NULL )
+	// Attach filters if we have a producer and it isn't already xml'd :-)
+	if ( producer != NULL && mlt_properties_get( properties, "xml" ) == NULL && \
+		mlt_properties_get( properties, "_xml" ) == NULL && \
+		mlt_properties_get( properties, "loader_normalised" ) == NULL )
 		attach_normalisers( profile, producer );
 
 	// Now make sure we don't lose our identity

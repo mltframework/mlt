@@ -434,7 +434,7 @@ mlt_transition transition_region_init( mlt_profile profile, mlt_service_type typ
 		this->process = transition_process;
 
 		// Default factory
-		mlt_properties_set( properties, "factory", "fezzik" );
+		mlt_properties_set( properties, "factory", mlt_environment( "MLT_PRODUCER" ) );
 		
 		// Resource defines the shape of the region
 		mlt_properties_set( properties, "resource", arg == NULL ? "rectangle" : arg );

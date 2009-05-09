@@ -1,8 +1,8 @@
 Installation Documentation
 
-Copyright (C) 2004 Ushodaya Enterprises Limited
+Copyright (C) 2004-2009 Ushodaya Enterprises Limited
 Author: Charles Yates <charles.yates@pandora.be>
-Last Revision: 2004-04-13
+Last Revision: 2009-05-08
 
 
 INSTALL
@@ -26,7 +26,6 @@ Directories
 	        + bluefish      - Bluefish dependent services (*)
 	        + core          - Independent MLT services
 	        + dv            - libdv dependent services
-	        + fezzik        - A giant (meta) service to load and normalise media
 	        + gtk2          - pango and pixbuf dependent services
 	        + mainconcept   - mainconcept dependent services (*)
 	        + normalize     - audio normalisation functions (**)
@@ -34,14 +33,10 @@ Directories
 	        + resample      - libresample dependent services (**)
 	        + sdl           - SDL dependent services
 	        + vorbis        - vorbis dependenent services
-	        + westley       - Nice and clever XML services
+	        + xml           - XML (de)serialization services
 	        + xine          - Xine-derived sources (**)
-	    + albino            - A simple console (protocol level) example (**)
-	    + inigo             - A media playing test application (**)
-	    + humperdink        - A terminal-based example client (**)
-	    + miracle           - The server implementation (**)
+	    + melt              - A media playing test application (**)
 	    + tests             - Reserved for regression and unit tests
-	    + valerie           - Client API to access the server
 
 	Additional subdirectories may be nested below those shown and should be
 	documented in their parent.
@@ -90,7 +85,7 @@ Dependencies
 	vorbis      libvorbis 1.0.1 or later.
 	            URL: http://www.vorbis.com/
 	----------- ----------------------------------------------------------
-	westley     libxml2 2.5 or later.
+	xml         libxml2 2.5 or later.
 	            URL: http://www.xmlsoft.org/
 	----------- ----------------------------------------------------------
 
@@ -143,14 +138,6 @@ Installation
 	The framework produces a single shared object which is installed in 
 	$prefix/lib/ and public header files which are installed in
 	$prefix/include/mlt/framework.
-
-	Valerie produces a single shared object which is installed in 
-	$prefix/lib/ and public header which are installed in 
-	$prefix/include/mlt/valerie.
-
-	Miracle produces a single exectuable which is installed in
-	$prefix/bin/, a library in $prefix/lib and associated header files in
-	$prefix/include.
 
 	The modules produce a shared object per module and update text files
 	containing a list of modules provided by this build. These are installed 

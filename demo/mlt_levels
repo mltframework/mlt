@@ -1,4 +1,4 @@
-inigo \
+melt \
 *.dv \
 -filter gamma:1.5 \
 -filter volume normalise=-20db \

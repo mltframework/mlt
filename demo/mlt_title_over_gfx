@@ -1,4 +1,4 @@
-inigo \
+melt \
 	watermark1.png out=9999 \
 -track \
 	"+title over gfx.txt" fgcolour=0x000000ff \

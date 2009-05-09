@@ -2,7 +2,7 @@ Service Documentation
 
 Authors: Charles Yates <charles.yates@pandora.be>
          Dan Dennedy <dan@dennedy.org>
-Last Revision: $Date$
+Last Revision: 2009-05-08
 
 
 SERVICES
@@ -62,7 +62,7 @@ Producers
 	        Fails to play beyond first frame of video of sources with PTS not
 	        starting at 0 (video4linux).
 
-	fezzik
+	loader
 
 	    Description
 
@@ -281,10 +281,10 @@ Producers
 	                      
 	    Details
 	    
-	        Supplying a filename with extension ".txt" causes the Fezzik 
+	        Supplying a filename with extension ".txt" causes the loader 
 	        producer to load with pango. If the filename begins with "+" the 
 	        pango producer interprets the filename as pango text. This is a
-	        shortcut to embed titles in inigo commands. For westley, it is 
+	        shortcut to embed titles in melt commands. For MLT XML, it is 
 	        recommended that you embed the title text in the property value.
 	        
 	        Pango has builtin scaling. It will rescale the originally rendered
@@ -357,7 +357,7 @@ Producers
 	                 load all pictures with matching extension from a directory.
 	               - If filename contains the string "<svg", then pixbuf tries
 	                 to load the filename as inline SVG XML, which is convenient
-	                 for inigo commands.
+	                 for melt commands.
 	                 
 	    Details
 	    
@@ -421,26 +421,26 @@ Producers
 
 	        Since it uses pipes, it is not compatible with bluefish.
 
-	westley
+	xml
 
 	    Description
 
 	        Construct a service network from an XML description.
-	        See docs/westley.txt.
+	        See docs/mlt-xml.txt.
 
 	    Constructor Argument
 
-	        URL - an XML text file containing westley XML (schema/DTD pending)
-	            - Since westley files can be parameterised, the URL syntax is:
+	        URL - an XML text file containing MLT XML
+	            - Since MLT XML files can be parameterised, the URL syntax is:
 	              {file-name}[?{param-name}{'='|':'}{param-value}[&{param-name}{'='|':'}{param-value}...]]
-	              A colon is allowed instead of an equal sign to pacify inigo,
+	              A colon is allowed instead of an equal sign to pacify melt,
 	              who tokenises anything with an equal sign as a property 
-	              setting. Also, when running inigo from the shell, beware of
+	              setting. Also, when running melt from the shell, beware of
 	              the '?' and shell filename expansion. You can surround the URL
-	              with single quotations to prevent expansion. Finally, fezzik
+	              with single quotations to prevent expansion. Finally, the loader
 	              will fail to match the filename when you use parameters, so
-	              preface the url with 'westley:' to force fezzik to load with
-	              the westley service.
+	              preface the url with 'xml:' to force the loader to load with
+	              the xml service.
 	              
 	    Read Only Properties
 
@@ -649,7 +649,7 @@ Filters
 	    Description
 
 	        Scale the producer video frame size to match the consumer.
-	        This filter is designed for use as a Fezzik normaliser.
+	        This filter is designed for use as a normaliser for the loader producer.
 
 	    Constructor Argument
 
@@ -817,7 +817,7 @@ Filters
 	    Description
 
 	        Scale the producer video frame size to match the consumer.
-	        This filter is designed for use as a Fezzik normaliser.
+	        This filter is designed for use as a normaliser for the loader producer.
 
 	    Constructor Argument
 
@@ -986,8 +986,8 @@ Filters
 	        Adjust an audio stream's sampling rate, and duplicate channels if 
 	        producer provides less than consumer requested.
 	        
-	        This filter is automatically invoked by Fezzik for the sake of
-	        normalisation over inputs and with the consumer.
+	        This filter is automatically invoked by the loader producer for the
+	        sake of normalisation over inputs and with the consumer.
 
 	    Constructor Argument
 
@@ -1016,7 +1016,7 @@ Filters
 	    Description
 
 	        Scale the producer video frame size to match the consumer.
-	        This filter is designed for use as a Fezzik normaliser.
+	        This filter is designed for use as a normaliser for the loader producer.
 
 	    Constructor Argument
 
@@ -1060,7 +1060,7 @@ Filters
 	        This filter also adjusts the field order to lower field first
 	        if the frame property "top_field_first" has been set to 1.
 	        Therefore, when done, it sets the top_field_first to 0.
-	        This filter is automatically invoked by Fezzik as part of image
+	        This filter is automatically invoked by the loader as part of image
 	        sample aspect ratio normalisation.
 	        
 	    Constructor Argument
@@ -1155,7 +1155,7 @@ Filters
 	    Initialisation Properties
 
 	        string resource - the producer to use
-	        string factory - producer required for the resource ('fezzik')
+	        string factory - producer required for the resource (default: 'loader')
 	        string geometry - composite geometry
 	        string distort - control scaling
 	        int in - in point
@@ -1167,7 +1167,7 @@ Filters
 
 	    Dependencies
 
-	        mlt core modules and optionally, fezzik
+	        mlt core modules and optionally, loader
 
 	    Known Bugs
 
@@ -1203,7 +1203,7 @@ Transitions
 	        int in - in point
 	        int out - out point
 	        string factory - The name of a factory service used as a non-PGM
-	                         producer loader. The default is fezzik.
+	                         producer loader. The default is 'loader'.
 	
 	    Read Only Properties
 
@@ -1284,7 +1284,7 @@ Transitions
 	        int in - in point
 	        int out - out point
 	        string factory - The name of a factory service used as a non-PGM
-	                         producer loader. The default is Fezzik.
+	                         producer loader. The default is 'loader'.
 
 	    Mutable Properties
 
@@ -1361,7 +1361,7 @@ Transitions
 	        string resource - nothing is rectangle, "circle" is a pixbuf-
 	            generated SVG circle, anything else is loaded by the factory.
 	        string factory - the service that creates the shape producer.
-	                       - the default is fezzik.
+	                       - the default is 'loader'.
 	        string filter[N] - one or more filters to apply. All filter
 	                           properties are passed using the same filter "key"
 	        Any property starting with "composite." is passed to the 
@@ -1555,12 +1555,12 @@ Consumers
 
 	        none
 
-	westley
+	xml
 
 	    Description
 
 	        Serialise the service network to XML.
-	        See docs/westley.txt for more information.
+	        See docs/mlt-xml.txt for more information.
 	        
 	    Constructor Argument
 

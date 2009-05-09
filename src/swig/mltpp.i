@@ -18,7 +18,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-%module mltpp
+%module mlt
 %include "carrays.i"
 %array_class(unsigned char, unsignedCharArray);
 
@@ -50,9 +50,6 @@ namespace Mlt {
 %newobject Tractor::field( );
 %newobject Tractor::track( int );
 %newobject Frame::get_original_producer( );
-%newobject Miracle::execute( char * );
-%newobject Miracle::push( char *, Service & );
-%newobject Miracle::unit( int );
 %newobject Repository::consumers( );
 %newobject Repository::filters( );
 %newobject Repository::producers( );
@@ -83,8 +80,6 @@ namespace Mlt {
 %include <MltTractor.h>
 %include <MltParser.h>
 %include <MltFilteredConsumer.h>
-%include <MltMiracle.h>
-%include <MltResponse.h>
 
 #if defined(SWIGRUBY)
 

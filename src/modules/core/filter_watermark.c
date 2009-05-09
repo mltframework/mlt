@@ -253,7 +253,7 @@ mlt_filter filter_watermark_init( mlt_profile profile, mlt_service_type type, co
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		this->process = filter_process;
-		mlt_properties_set( properties, "factory", "fezzik" );
+		mlt_properties_set( properties, "factory", mlt_environment( "MLT_PRODUCER" ) );
 		if ( arg != NULL )
 			mlt_properties_set( properties, "resource", arg );
 		// Ensure that attached filters are handled privately

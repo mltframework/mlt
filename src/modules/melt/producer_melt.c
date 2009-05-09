@@ -1,5 +1,5 @@
 /*
- * producer_inigo.c -- simple inigo test case
+ * producer_melt.c -- load from melt command line syntax
  * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
@@ -24,9 +24,9 @@
 
 #include <framework/mlt.h>
 
-mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
+mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 
-mlt_producer producer_inigo_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
+mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
 {
 	FILE *input = fopen( file, "r" );
 	char **args = calloc( sizeof( char * ), 1000 );
@@ -43,7 +43,7 @@ mlt_producer producer_inigo_file_init( mlt_profile profile, mlt_service_type typ
 		}
 	}
 
-	mlt_producer result = producer_inigo_init( profile, type, id, args );
+	mlt_producer result = producer_melt_init( profile, type, id, args );
 
 	if ( result != NULL )
 	{
@@ -69,7 +69,7 @@ static void track_service( mlt_field field, void *service, mlt_destructor destru
 
 static mlt_producer create_producer( mlt_profile profile, mlt_field field, char *file )
 {
-	mlt_producer result = mlt_factory_producer( profile, "fezzik", file );
+	mlt_producer result = mlt_factory_producer( profile, NULL, file );
 
 	if ( result != NULL )
 		track_service( field, result, ( mlt_destructor )mlt_producer_close );
@@ -120,7 +120,7 @@ static mlt_transition create_transition( mlt_profile profile, mlt_field field, c
 	return transition;
 }
 
-mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv )
+mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv )
 {
 	int i;
 	int track = 0;
@@ -136,7 +136,7 @@ mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, co
 	char *title = NULL;
 
 	// Assistance for template construction (allows -track usage to specify the first track)
-	mlt_properties_set_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_inigo_first", 1 );
+	mlt_properties_set_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first", 1 );
 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( field_properties, "registered", 0 );
@@ -369,7 +369,7 @@ mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, co
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
-			if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_inigo_first" ) || 
+			if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first" ) || 
 				  mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
 			{
 				mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track ++ );
@@ -437,7 +437,7 @@ mlt_producer producer_inigo_init( mlt_profile profile, mlt_service_type type, co
 	track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
 
 	// We must have a playlist to connect
-	if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_inigo_first" ) || 
+	if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first" ) || 
 		  mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
 		mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track );
 

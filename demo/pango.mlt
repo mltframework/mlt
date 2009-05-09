@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<westley>
+<mlt>
   <producer id="video">
     <property name="resource">clip1.dv</property>
   </producer>
@@ -31,4 +31,4 @@ HíÉà~ÉÒ+àeôÒ`ò­÷ +y«ÉKÉ §ÉÉWð~É]]></property>
       <property name="valign">centre</property>
     </transition>
   </tractor>
-</westley>
+</mlt>

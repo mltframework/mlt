@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<!-- MLT westley DTD v0.1.0 -->
+<!-- MLT XML DTD v0.1.0 -->
 
-<!ELEMENT westley (producer | playlist | tractor | multitrack)+ >
+<!ELEMENT mlt (producer | playlist | tractor | multitrack)+ >
 <!ELEMENT property ANY >
 <!ATTLIST property 
     name     CDATA    #REQUIRED

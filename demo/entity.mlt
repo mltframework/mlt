@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
-<!DOCTYPE westley SYSTEM "../src/modules/westley/westley.dtd" [
-	<!ENTITY name "Westley">
+<!DOCTYPE mlt SYSTEM "../src/modules/xml/mlt-xml.dtd" [
+	<!ENTITY name "mlt">
 ]>
-<westley>
+<mlt>
   <producer id="producer0">
     <property name="mlt_service">pango</property>
 	<property name="text">Hello &name;,
 My name is Inigo Montoya.</property>
   </producer>
-</westley>
+</mlt>

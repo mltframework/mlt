@@ -1,6 +1,6 @@
 /*
- * producer_westley.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * producer_xml.c -- a libxml2 parser of mlt service networks
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -40,7 +40,7 @@
 
 #undef DEBUG
 #ifdef DEBUG
-extern xmlDocPtr westley_make_doc( mlt_service service );
+extern xmlDocPtr xml_make_doc( mlt_service service );
 #endif
 
 enum service_type
@@ -112,10 +112,10 @@ static int context_push_service( deserialise_context this, mlt_service that, enu
 		this->stack_types[ this->stack_service_size++ ] = type;
 		
 		// Record the tree branch on which this service lives
-		if ( that != NULL && mlt_properties_get( MLT_SERVICE_PROPERTIES( that ), "_westley_branch" ) == NULL )
+		if ( that != NULL && mlt_properties_get( MLT_SERVICE_PROPERTIES( that ), "_xml_branch" ) == NULL )
 		{
 			char s[ BRANCH_SIG_LEN ];
-			mlt_properties_set( MLT_SERVICE_PROPERTIES( that ), "_westley_branch", serialise_branch( this, s ) );
+			mlt_properties_set( MLT_SERVICE_PROPERTIES( that ), "_xml_branch", serialise_branch( this, s ) );
 		}
 	}
 	return ret;
@@ -213,8 +213,8 @@ static int add_producer( deserialise_context context, mlt_service service, mlt_p
 
 	if ( service != NULL && container != NULL )
 	{
-		char *container_branch = mlt_properties_get( MLT_SERVICE_PROPERTIES( container ), "_westley_branch" );
-		char *service_branch = mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "_westley_branch" );
+		char *container_branch = mlt_properties_get( MLT_SERVICE_PROPERTIES( container ), "_xml_branch" );
+		char *service_branch = mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "_xml_branch" );
 		contained = !strncmp( container_branch, service_branch, strlen( container_branch ) );
 	}
 
@@ -345,7 +345,7 @@ static void on_start_multitrack( deserialise_context context, const xmlChar *nam
 		type = mlt_tractor_type;
 
 		// Flag it as a synthesised tractor for clean up later
-		mlt_properties_set_int( MLT_SERVICE_PROPERTIES( parent ), "fezzik_synth", 1 );
+		mlt_properties_set_int( MLT_SERVICE_PROPERTIES( parent ), "loader_synth", 1 );
 	}
 
 	if ( type == mlt_tractor_type )
@@ -391,7 +391,7 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 
 		// Out will be overwritten later as we append, so we need to save it
 		if ( xmlStrcmp( atts[ 0 ], _x("out") ) == 0 )
-			mlt_properties_set( properties, "_westley.out", ( const char* )atts[ 1 ] );
+			mlt_properties_set( properties, "_xml.out", ( const char* )atts[ 1 ] );
 	}
 
 	if ( mlt_properties_get( properties, "id" ) != NULL )
@@ -504,18 +504,18 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 				strcat( temp, ":" );
 				strncat( temp, resource, 1023 - strlen( temp ) );
 			}
-			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", temp ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, temp ) );
 		}
 
 		// Just in case the plugin requested doesn't exist...
 		if ( producer == NULL && resource != NULL )
-			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", resource ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, resource ) );
 	
 		if ( producer == NULL )
-			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", "+INVALID.txt" ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "+INVALID.txt" ) );
 
 		if ( producer == NULL )
-			producer = MLT_SERVICE( mlt_factory_producer( context->profile, "fezzik", "colour:red" ) );
+			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "colour:red" ) );
 
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
@@ -1093,7 +1093,7 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_transition( context, name, atts );
 	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_start_property( context, name, atts );
-	else if ( xmlStrcmp( name, _x("westley") ) == 0 )
+	else if ( xmlStrcmp( name, _x("westley") ) == 0 || xmlStrcmp( name, _x("mlt") ) == 0 )
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
 			mlt_properties_set( context->producer_map, ( const char * )atts[ 0 ], ( const char * )atts[ 1 ] );
 }
@@ -1207,7 +1207,7 @@ static void on_internal_subset( void *ctx, const xmlChar* name,
 	params_to_entities( context );
 }
 
-// TODO: Check this with Dan... I think this is for westley parameterisation
+// TODO: Check this with Dan... I think this is for parameterisation
 // but it's breaking standard escaped entities (like &lt; etc).
 static void on_entity_declaration( void *ctx, const xmlChar* name, int type, 
 	const xmlChar* publicId, const xmlChar* systemId, xmlChar* content)
@@ -1228,7 +1228,7 @@ static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	// Setup for entity declarations if not ready
 	if ( xmlGetIntSubset( context->entity_doc ) == NULL )
 	{
-		xmlCreateIntSubset( context->entity_doc, _x("westley"), _x(""), _x("") );
+		xmlCreateIntSubset( context->entity_doc, _x("mlt"), _x(""), _x("") );
 		context->publicId = _x("");
 		context->systemId = _x("");
 	}
@@ -1333,7 +1333,7 @@ static int file_exists( char *file )
 	return exists;
 }
 
-mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
+mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
 {
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
@@ -1342,7 +1342,7 @@ mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type servty
 	struct _xmlParserCtxt *xmlcontext;
 	int well_formed = 0;
 	char *filename = NULL;
-	int info = strcmp( id, "westley-xml" ) ? 0 : 1;
+	int info = strcmp( id, "xml-string" ) ? 0 : 1;
 
 	if ( data == NULL || !strcmp( data, "" ) || ( info == 0 && !file_exists( data ) ) )
 		return NULL;
@@ -1363,7 +1363,7 @@ mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type servty
 		filename = strdup( data );
 		parse_url( context->params, url_decode( filename, data ) );
 
-		// We need the directory prefix which was used for the westley
+		// We need the directory prefix which was used for the xml
 		if ( strchr( filename, '/' ) )
 		{
 			char *root = NULL;
@@ -1446,7 +1446,7 @@ mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type servty
 	}
 
 #ifdef DEBUG
-	xmlDocPtr doc = westley_make_doc( service );
+	xmlDocPtr doc = xml_make_doc( service );
 	xmlDocFormatDump( stdout, doc, 1 );
 	xmlFreeDoc( doc );
 	service = NULL;
@@ -1481,19 +1481,19 @@ mlt_producer producer_westley_init( mlt_profile profile, mlt_service_type servty
 		mlt_producer_optimise( MLT_PRODUCER( service ) );
 
 		// Handle deep copies
-		if ( getenv( "MLT_WESTLEY_DEEP" ) == NULL )
+		if ( getenv( "MLT_XML_DEEP" ) == NULL )
 		{
 			// Now assign additional properties
 			if ( info == 0 )
 				mlt_properties_set( properties, "resource", data );
 
-			// This tells consumer_westley not to deep copy
-			mlt_properties_set( properties, "westley", "was here" );
+			// This tells consumer_xml not to deep copy
+			mlt_properties_set( properties, "xml", "was here" );
 		}
 		else
 		{
 			// Allow the project to be edited
-			mlt_properties_set( properties, "_westley", "was here" );
+			mlt_properties_set( properties, "_xml", "was here" );
 			mlt_properties_set_int( properties, "_mlt_service_hidden", 1 );
 		}
 	}

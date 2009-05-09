@@ -1,6 +1,6 @@
 /*
  * producer_hold.c -- frame holding producer
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -39,8 +39,8 @@ mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, con
 	// Construct a new holding producer
 	mlt_producer this = mlt_producer_new( );
 
-	// Construct the requested producer via fezzik
-	mlt_producer producer = mlt_factory_producer( profile, "fezzik", arg );
+	// Construct the requested producer via loader
+	mlt_producer producer = mlt_factory_producer( profile, NULL, arg );
 
 	// Initialise the frame holding capabilities
 	if ( this != NULL && producer != NULL )

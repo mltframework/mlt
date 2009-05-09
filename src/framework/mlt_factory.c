@@ -76,7 +76,7 @@ static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner
 
 /** Construct the repository and factories.
  *
- * The environment variable MLT_PRODUCER is the name of a default producer often used by other services, defaults to "fezzil".
+ * The environment variable MLT_PRODUCER is the name of a default producer often used by other services, defaults to "loader".
  *
  * The environment variable MLT_CONSUMER is the name of a default consumer, defaults to "sdl".
  *
@@ -138,7 +138,7 @@ mlt_repository mlt_factory_init( const char *directory )
 	if ( global_properties != NULL )
 	{
 		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
-		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "fezzik" );
+		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "loader" );
 		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );

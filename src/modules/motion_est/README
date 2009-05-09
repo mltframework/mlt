@@ -16,49 +16,49 @@ EXAMPLES:
 
 Estimate the motion:
 
-	> inigo -filter motion_est <movie_file>
+	> melt -filter motion_est <movie_file>
 
 To display the motion vectors as pretty arrows:
 
-	> inigo -filter motion_est -filter vismv <movie_file>
+	> melt -filter motion_est -filter vismv <movie_file>
 
 If your using a movie file that contains a crop, you will get better results with this:
 
-	> inigo -filter crop_detect -filter motion_est -filter vismv <movie_file>
+	> melt -filter crop_detect -filter motion_est -filter vismv <movie_file>
 
 If your computer is unable to do the above examples in real time, try this:
 
-	> inigo -filter motion_est -filter vismv -consumer inigo real_time=0 <movie_file>
+	> melt -filter motion_est -filter vismv -consumer melt real_time=0 <movie_file>
 
 If you'd like to see the motion vectors without the median denoising function, do this:
 
-	> inigo -filter motion_est denoise=0 -filter vismv <movie_file>
+	> melt -filter motion_est denoise=0 -filter vismv <movie_file>
 
 To reconstruct each frame by applying the motion to the previous frame:
 
-	> inigo -filter motion_est show_reconstruction=1 <movie_file>
+	> melt -filter motion_est show_reconstruction=1 <movie_file>
 
 To compare the reconstructed frame and the real frame (while paused):
 
-	> inigo -filter motion_est show_reconstruction=1 toggle_when_paused=1 <movie_file>
+	> melt -filter motion_est show_reconstruction=1 toggle_when_paused=1 <movie_file>
 
 To show the difference (residual) between the reconstructed frame the real frame:
 
-	> inigo -filter motion_est show_residual=1 <movie_file>
+	> melt -filter motion_est show_residual=1 <movie_file>
 
 To automatically track an object in the frame, try this:
 
-	> inigo -filter autotrack_rectangle:X,Y:WxH debug=1 <movie_file>
+	> melt -filter autotrack_rectangle:X,Y:WxH debug=1 <movie_file>
 
 (Where X,Y is the origin of the rectangle indexed from upper left and WxH is the dimensions of the rectangle.)
 
 To obscure that same object in the frame, try this:
 
-	> inigo -filter autotrack_rectangle:X,Y:WxH obscure=1 <movie_file>
+	> melt -filter autotrack_rectangle:X,Y:WxH obscure=1 <movie_file>
 
 There is now a slow motion producer that does interpolation based on the motion vectors:
 
-	> inigo slowmotion:<movie_file> _speed=0.1 method=1 debug=1
+	> melt slowmotion:<movie_file> _speed=0.1 method=1 debug=1
 
 NOTES (and deficiencies):
 

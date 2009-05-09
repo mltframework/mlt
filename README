@@ -1,12 +1,12 @@
-MLT/Miracle README
-------------------
+MLT FRAMEWORK README
+--------------------
 
 	Sponsored by Ushodaya Enterprises Limited
 	Written by Charles Yates <charles.yates@pandora.be>
 	and Dan Dennedy <dan@dennedy.org>
 
 	MLT is a LGPL multimedia framework designed for television broadcasting,
-	and Miracle is a GPL multi-unit video playout server with realtime
+	and melted is a GPL multi-unit video playout server with realtime
 	effects.
 
 	This document provides a quick reference for the minimal configuration,

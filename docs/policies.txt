@@ -7,11 +7,11 @@ Policies
 Any contribution to the "core" module must assign copyright to Ushodaya
 Enterprises Limited because they need license control over that module.
 
-The framework and valerie client libraries are covered under LGPL. Miracle,
-inigo, albino, and humperdink applications are covered under GPL. Modules
+The framework and libmvsp client libraries are covered under LGPL. melted,
+melt, melted-console, and melted-client applications are covered under GPL. Modules
 should strive to be LGPL to make them available through the framework as LGPL.
 
-Comments in the framework and valerie header files must be C-style, not C++.
+Comments in the framework and libmvsp header files must be C-style, not C++.
 
 Coding Style:
 There are not a lot of rules, but we prefer brackets on their own line,

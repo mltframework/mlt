@@ -342,22 +342,22 @@ Events
 
 	As an example, consider the following:
 
-	    class Westley
+	    class Xml
 	    {
 	        private:
 	            Consumer consumer;
 	            Tractor &tractor;
 	        public:
-	            Westley( MltTractor &tractor ) :
+	            Xml( MltTractor &tractor ) :
 	                tractor( tractor ),
-	                consumer( "westley" )
+	                consumer( "xml" )
 	            {
 	                consumer.connect( tractor );
 	                tractor.listen( tractor, "producer-changed", 
-	                                ( mlt_listener )Westley::listener );
+	                                ( mlt_listener )Xml::listener );
 	            }
 	            
-	            static void listener( Properties *tractor, Westley *object )
+	            static void listener( Properties *tractor, Xml *object )
 	            {
 	                object->activate( );
 	            }
@@ -368,7 +368,7 @@ Events
 	            }
 	    };
 
-	Now, each time the tractor is changed, the westley representation is output to 
+	Now, each time the tractor is changed, the XML representation is output to 
 	stderr.
 
 
@@ -462,41 +462,41 @@ Events
 ------
 
 
-Servers and Westley Docs
+Servers and MLT XML Docs
 ------------------------
 
 	For various reasons, you might want to serialise a producer to a string.
 	To do this, you just need to specify a property to write to:
 
-	    Consumer westley( "westley", "buffer" );
-	    westley.connect( producer );
-	    westley.start( );
-	    buffer = westley.get( "buffer" );
+	    Consumer xml( "xml", "buffer" );
+	    xml.connect( producer );
+	    xml.start( );
+	    buffer = xml.get( "buffer" );
 
 	You can use any name you want, and you can change it using the "resource"
 	property. Any name with a '.' in it is considered to be a file. Hence, you
-	can use a westley consumer to store multiple instances of the same MLT 
+	can use a xml consumer to store multiple instances of the same MLT 
 	object - useful if you want to provide undo/redo capabilities in an
 	editing application.
 
-	Should you receive an xml document as a string, and you want to send it
+	Should you receive an XML document as a string, and you want to send it
 	on to a server, you can use:
 
-	    Conumser valerie( "valerie", "localhost:5250" );
-	    valerie.set( "westley", buffer );
-	    valerie.start( );
+	    Consumer client( "mvsp", "localhost:5250" );
+	    client.set( "xml", buffer );
+	    client.start( );
 
-	If you need to obtain an MLT object from a string:
+	If you need to obtain an MLT object from a XML string:
 
-	    Producer producer( "westley-xml", buffer );
+	    Producer producer( "xml-string", buffer );
     
 	The following shows a working example of an extended server:
 
-	    class ShotcutServer : public Miracle
+	    class ShotcutServer : public Melted
 	    {
 	        public:
 	            ShotcutServer( char *id, int port ) :
-	                Miracle( id, port )
+	                Melted( id, port )
 	            {
 	            }
     
@@ -508,28 +508,28 @@ Servers and Westley Docs
 	            // Reject all commands other than push/receive
 	            Response *execute( char *command )
 	            {
-	                valerie_response response = valerie_response_init( );
-	                valerie_response_set_error( response, 400, "Not OK" );
+	                mvsp_response response = mvsp_response_init( );
+	                mvsp_response_set_error( response, 400, "Not OK" );
 	                return new Response( response );
 	            }
 	
 	            // Push document handler
 	            Response *received( char *command, char *doc )
 	            {
-	                valerie_response response = valerie_response_init( );
+	                mvsp_response response = mvsp_response_init( );
 	                // Use doc in some way and assign Response
 	                if ( doc != NULL )
-	                    valerie_response_set_error( response, 200, "OK" );
+	                    mvsp_response_set_error( response, 200, "OK" );
 	                return new Response( response );
 	            }
 
 	            // Push service handler
 	            Response *push( char *command, Service *service )
 	            {
-	                valerie_response response = valerie_response_init( );
+	                mvsp_response response = mvsp_response_init( );
 	                // Use service in some way and assign Response
 	                if ( service != NULL )
-	                    valerie_response_set_error( response, 200, "OK" );
+	                    mvsp_response_set_error( response, 200, "OK" );
 	                return new Response( response );
 	            }
 	    };

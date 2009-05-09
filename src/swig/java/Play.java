@@ -1,9 +1,9 @@
-import net.sourceforge.mltpp.*;
+import net.sourceforge.mlt.*;
 
 public class Play {
 
 	static {
-		System.loadLibrary("mltpp_java");
+		System.loadLibrary("mlt_java");
 	}
 
 	public static void main (String[] args) {

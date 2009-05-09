@@ -582,7 +582,7 @@ mlt_transition transition_luma_init( mlt_profile profile, mlt_service_type type,
 		transition->process = transition_process;
 		
 		// Default factory
-		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "factory", "fezzik" );
+		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "factory", mlt_environment( "MLT_PRODUCER" ) );
 
 		// Set the main property
 		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "resource", lumafile );

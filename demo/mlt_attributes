@@ -1,4 +1,4 @@
-inigo clip1.dv \
+melt clip1.dv \
 meta.attr.location=1 meta.attr.location.markup="Location" \
 meta.attr.exclusive=1 meta.attr.exclusive.markup="Exclusive" \
 meta.attr.special=1 meta.attr.special.markup="Special" \

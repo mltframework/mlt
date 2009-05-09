@@ -726,7 +726,7 @@ static mlt_producer mlt_producer_clone( mlt_producer this )
 		clone = mlt_factory_producer( profile, service, resource );
 
 	if ( clone == NULL && resource != NULL )
-		clone = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), resource );
+		clone = mlt_factory_producer( profile, NULL, resource );
 
 	if ( clone != NULL )
 		mlt_properties_inherit( MLT_PRODUCER_PROPERTIES( clone ), properties );

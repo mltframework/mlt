@@ -1,4 +1,4 @@
-inigo \
+melt \
 -blank 49 colour:black out=25 -blank 999 \
 -track \
 clip3.dv in=200 out=275 \

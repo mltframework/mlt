@@ -1,24 +1,24 @@
 #!/usr/bin/env ruby
 
 # Import required modules
-require 'mltpp'
+require 'mlt'
 
 # Create the mlt system
-Mltpp::Factory::init
+mlt::Factory::init
 
 # Establish the mlt profile
-profile = Mltpp::Profile.new
+profile = mlt::Profile.new
 
 # Get and check the argument
 file = ARGV.shift
 raise "Usage: test.rb file" if file.nil?
 
 # Create the producer
-producer = Mltpp::Factory::producer( profile, file )
+producer = mlt::Factory::producer( profile, file )
 raise "Unable to load #{file}" if !producer.is_valid
 
 # Create the consumer
-consumer = Mltpp::Consumer.new( profile, "sdl" )
+consumer = mlt::Consumer.new( profile, "sdl" )
 raise "Unable to open sdl consumer" if !consumer.is_valid
 
 # Turn off the default rescaling

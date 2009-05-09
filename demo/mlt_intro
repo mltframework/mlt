@@ -1,4 +1,4 @@
-inigo \
+melt \
 music1.ogg in=100 out=224 \
 -track \
 watermark1.png out=124 \

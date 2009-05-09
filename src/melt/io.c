@@ -1,5 +1,5 @@
 /*
- * io.c -- inigo input/output
+ * io.c -- melt input/output
  * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *

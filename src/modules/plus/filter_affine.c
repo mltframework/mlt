@@ -50,7 +50,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		{
 			char *background = mlt_properties_get( properties, "background" );
 			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
-			producer = mlt_factory_producer( profile, "fezzik", background );
+			producer = mlt_factory_producer( profile, NULL, background );
 			mlt_properties_set_data( properties, "producer", producer, 0, (mlt_destructor)mlt_producer_close, NULL );
 		}
 

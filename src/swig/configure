@@ -14,7 +14,7 @@ else echo "Usage: ./configure [ all | language * ]"
 	 exit 0
 fi
 
-for i in perl php python ruby tcl
+for i in java perl php python ruby tcl
 do
 	rm -f .$i
 done

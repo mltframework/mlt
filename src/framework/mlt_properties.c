@@ -193,7 +193,7 @@ static inline int generate_hash( const char *name )
 
 /** Copy a serializable property to properties list that is mirroring this one.
  *
- * Special case - when a container (such as fezzik) is protecting another
+ * Special case - when a container (such as loader) is protecting another
  * producer, we need to ensure that properties are passed through to the
  * real producer.
  * \private \memberof mlt_properties_s

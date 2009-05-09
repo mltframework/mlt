@@ -1,6 +1,6 @@
 #!/bin/sh
 
 ln -s ../mltpp.i
-swig -c++ -I../../src `pkg-config --cflags mlt-framework` -php5 -noproxy mltpp.i
-g++ -fPIC -DPIC -D_GNU_SOURCE -c -rdynamic -pthread `pkg-config --cflags mlt-framework` `php-config --includes` mltpp_wrap.cpp
+swig -c++ -I../../mlt+++ `pkg-config --cflags mlt-framework` -php5 -noproxy mltpp.i
+g++ -fPIC -DPIC -D_GNU_SOURCE -c -rdynamic -pthread `pkg-config --cflags mlt-framework` `php-config --includes` mlt_wrap.cpp
 
