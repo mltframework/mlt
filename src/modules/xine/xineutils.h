@@ -659,7 +659,7 @@ void xine_strdupa(char *dest, char *src);
 #ifdef HAVE_STRPBRK
 #define xine_strpbrk strpbrk
 #else
-static inline const char *_private_strpbrk(const char *s, const char *accept) {
+static inline char *_private_strpbrk(char *s, const char *accept) {
 
   while(*s != '\0') {
     const char *a = accept;
