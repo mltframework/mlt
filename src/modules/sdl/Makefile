@@ -19,7 +19,7 @@ endif
 CFLAGS += -I../..
 CFLAGS += `sdl-config --cflags`
 
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lpthread -lm
 LDFLAGS += `sdl-config --libs`
 
 ifeq ($(WITH_SDL_IMAGE),1)

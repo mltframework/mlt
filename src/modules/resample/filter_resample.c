@@ -24,8 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <samplerate.h>
-#define __USE_ISOC99 1
-#include <math.h>
 
 #define BUFFER_LEN 20480
 #define RESAMPLE_TYPE SRC_SINC_FASTEST

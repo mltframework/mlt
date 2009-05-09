@@ -85,7 +85,7 @@ distclean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(OBJS) $(TARGET) $(NAME)
+		rm -f $(OBJS) $(TARGET) $(NAME) $(SONAME)
 
 install:
 	install -d $(DESTDIR)$(libdir)

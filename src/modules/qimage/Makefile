@@ -9,7 +9,7 @@ CPPOBJS = qimage_wrapper.o
 CFLAGS += -I../..
 CXXFLAGS += $(CFLAGS) $(QTCXXFLAGS) -Wno-deprecated
 
-LDFLAGS = -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lpthread -lm
 LDFLAGS += $(QTLIBS)
 LDFLAGS += -lstdc++
 

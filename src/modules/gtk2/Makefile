@@ -6,7 +6,7 @@ TARGET = ../libmltgtk2$(LIBSUF)
 OBJS = factory.o
 
 CFLAGS += -I../..
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lpthread
 
 ifdef USE_GTK2
 OBJS += consumer_gtk2.o

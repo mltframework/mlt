@@ -38,7 +38,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <math.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422

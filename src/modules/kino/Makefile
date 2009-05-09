@@ -9,7 +9,7 @@ CPPOBJS = kino_wrapper.o avi.o error.o filehandler.o riff.o
 CFLAGS += -I../../
 CXXFLAGS += $(CFLAGS) -Wno-deprecated
 
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lpthread
 LDFLAGS += -lstdc++
 
 ifdef HAVE_LIBQUICKTIME

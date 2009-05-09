@@ -20,7 +20,6 @@
 
 #include <framework/mlt_filter.h>
 #include <stdlib.h>
-#include <math.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>

@@ -35,7 +35,7 @@ ASM_OBJS =
 
 CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lm -lpthread
 
 SRCS := $(OBJS:.o=.c)
 

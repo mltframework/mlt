@@ -1,7 +1,5 @@
-include ../config.mak
-
-CXXFLAGS+=-Wall -g `pkg-config mlt-framework --cflags` -I ../src
-LDFLAGS+=-L../src -lmlt++ `pkg-config mlt-framework --libs`
+CXXFLAGS += -Wall -g `pkg-config mlt-framework --cflags` -I ../mlt++
+LDFLAGS += -L../mlt++ -lmlt++ `pkg-config mlt-framework --libs`
 CC=c++
 
 all:		play

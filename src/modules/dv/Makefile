@@ -9,7 +9,7 @@ OBJS = factory.o \
 CFLAGS += -I../..
 CFLAGS += `pkg-config --cflags libdv`
 
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lpthread
 LDFLAGS += `pkg-config --libs libdv`
 
 SRCS := $(OBJS:.o=.c)

@@ -31,7 +31,6 @@
 #include <limits.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include <math.h>
 #include <unistd.h>
 
 // avformat header files

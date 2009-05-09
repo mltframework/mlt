@@ -16,7 +16,7 @@ endif
 
 CXXFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\"
 
-LDFLAGS += -L../framework -lmlt -lpthread
+LDFLAGS += -L../framework -lmlt
 
 OBJS = MltConsumer.o \
 	   MltDeque.o \
@@ -54,7 +54,7 @@ depend:	$(SRCS)
 	$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
 
 clean:
-	$(RM) $(OBJS) $(TARGET) $(NAME)
+	$(RM) $(OBJS) $(TARGET) $(NAME) $(SONAME)
 
 distclean:	clean
 

@@ -6,7 +6,7 @@ then
 	pkg-config jack
 	disable_jack=$?
 
-	which xml2-config > /dev/null 2>&1
+	pkg-config libxml-2.0 > /dev/null 2>&1
 	disable_xml2=$?
 
 	disable_ladspa=1
