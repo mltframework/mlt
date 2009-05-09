@@ -9,16 +9,16 @@ then
 	path=`dirname $path`
 
 	# Change this as needed
-	export JAVA_INCLUDE="-I$path/include -I$path/include/linux"
+	# export JAVA_INCLUDE="-I$path/include -I$path/include/linux"
 
-	ln -sf ../mltpp.i .
+	ln -sf ../mlt.i
 
 	# Invoke swig
-	mkdir -p src_swig/net/sourceforge/mlt
-	swig -c++ -I../../mlt++ `pkg-config mlt-framework --cflags` -java -outdir src_swig/net/sourceforge/mlt -package net.sourceforge.mlt mltpp.i || exit $?
+	mkdir -p src_swig/org/mltframework
+	swig -c++ -I../../mlt++ -I../.. -java -outdir src_swig/org/mltframework -package org.mltframework mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I../../mlt++ `pkg-config mlt-framework --cflags` mlt_wrap.cxx $JAVA_INCLUDE || exit $?
+	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I../.. mlt_wrap.cxx $JAVA_INCLUDE || exit $?
 	
 	# Create the module
 	gcc -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmlt_java.so || exit $?

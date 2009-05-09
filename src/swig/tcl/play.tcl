@@ -1,18 +1,17 @@
 #!/usr/bin/env tclsh
 
 load mlt.so
-mlt.Factory.init null
+Factory_init
 set profile [Profile]
 set arg1 [lindex $argv 0]
-set p [factory_producer $profile loader $arg1]
-set c [factory_consumer $profile sdl ""]
-set r [mlt_consumer_properties $c]
-mlt_properties_set $r "rescale" "none"
-consumer_connect $c $p
-mlt_consumer_start $c
-while { ![mlt_consumer_is_stopped $c] } {
+set p [Factory_producer $profile loader $arg1]
+set c [Factory_consumer $profile sdl ""]
+Properties_set $c "rescale" "none"
+Consumer_connect $c $p
+Consumer_start $c
+while { ![Consumer_is_stopped $c] } {
 	after 1000
 }
-mlt_consumer_close $c
-mlt_producer_close $p
-factory_close
+delete_Consumer $c
+delete_Producer $p
+Factory_close

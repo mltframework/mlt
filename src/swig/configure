@@ -7,7 +7,7 @@ pkg-config mlt-framework --cflags > /dev/null 2>&1
 [ $? != 0 ] && echo "Please install mlt" && exit 1
 
 if [ "$1" = "all" ]
-then languages="perl php python ruby tcl"
+then languages="java perl php python ruby tcl"
 elif [ "$1" != "" ]
 then languages=$*
 else echo "Usage: ./configure [ all | language * ]"
@@ -25,7 +25,7 @@ do
 	if [ -d "$i" ] 
 	then
 		cd $i &&
-		output=`./build 2>/dev/null`
+		output=`./build`
 		if [ $? == 0 ]
 		then echo "OK"
 		 	touch ../.$i

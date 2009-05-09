@@ -9,13 +9,13 @@ then
 
 	[ ! -d "$PYTHON_INCLUDE" ] && echo python development missing && exit 1
 
-	ln -sf ../mltpp.i .
+	ln -sf ../mlt.i
 
 	# Invoke swig
-	swig -c++ -I../../mlt++ `pkg-config mlt-framework --cflags` -python mltpp.i || exit $?
+	swig -c++ -I../../mlt++ -I../.. -python mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -fPIC -D_GNU_SOURCE -c -rdynamic -pthread `pkg-config mlt-framework --cflags` -I$PYTHON_INCLUDE mlt_wrap.cxx || exit $?
+	g++ -fPIC -D_GNU_SOURCE -c -rdynamic -pthread -I../.. -I$PYTHON_INCLUDE mlt_wrap.cxx || exit $?
 
 	# Create the module
 	gcc -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o _mlt.so || exit $?

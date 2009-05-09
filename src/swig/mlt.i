@@ -1,5 +1,5 @@
 /**
- * mltpp.i - Swig Bindings for mlt++
+ * mlt.i - Swig Bindings for mlt++
  * Copyright (C) 2004-2005 Charles Yates
  * Author: Charles Yates <charles.yates@pandora.be>
  *
