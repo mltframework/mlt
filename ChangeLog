@@ -1,9 +1,277 @@
-2009-04-14  Dan Dennedy <dan@dennedy.org>
+2009-05-09  Dan Dennedy <dan@dennedy.org>
 
-  * src/modules/avformat/configure: Fix build for --avformat-svn to use FFmpeg
-  v0.5 and HEAD build to not use --enable-swscale.
+  * src/swig/configure, src/swig/java/Play.java, src/swig/java/build,
+  src/swig/mlt.i, src/swig/mltpp.i, src/swig/perl/Makefile.PL,
+  src/swig/php/build, src/swig/python/build, src/swig/ruby/build,
+  src/swig/ruby/play.rb, src/swig/ruby/thumbs.rb, src/swig/tcl/build,
+  src/swig/tcl/play.tcl: Fixup the swig bindings. 
+
+  * src/modules/xine/xineutils.h: Fix compilation warning in xineutils.h. 
+
+  * configure, src/examples/Makefile, src/framework/Makefile,
+  src/framework/mlt_geometry.c, src/framework/mlt_producer.c,
+  src/mlt++/Makefile, src/mlt++/configure, src/modules/avformat/Makefile,
+  src/modules/avformat/configure, src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c, src/modules/core/Makefile,
+  src/modules/dgraft/filter_telecide.c, src/modules/dv/Makefile,
+  src/modules/effectv/Makefile, src/modules/frei0r/Makefile,
+  src/modules/gtk2/Makefile, src/modules/jackrack/Makefile,
+  src/modules/jackrack/configure, src/modules/kino/Makefile,
+  src/modules/normalize/Makefile, src/modules/plus/Makefile,
+  src/modules/qimage/Makefile, src/modules/resample/filter_resample.c,
+  src/modules/sdl/Makefile, src/modules/vmfx/filter_chroma.c,
+  src/modules/xml/consumer_xml.c: Fix over- and under-linking.
+
+  * src/mlt++/Mlt.h, src/mlt++/MltConsumer.cpp, src/mlt++/MltConsumer.h,
+  src/mlt++/MltDeque.cpp, src/mlt++/MltDeque.h, src/mlt++/MltEvent.cpp,
+  src/mlt++/MltEvent.h, src/mlt++/MltFactory.cpp, src/mlt++/MltFactory.h,
+  src/mlt++/MltField.cpp, src/mlt++/MltField.h, src/mlt++/MltFilter.cpp,
+  src/mlt++/MltFilter.h, src/mlt++/MltFilteredConsumer.cpp,
+  src/mlt++/MltFilteredConsumer.h, src/mlt++/MltFilteredProducer.cpp,
+  src/mlt++/MltFilteredProducer.h, src/mlt++/MltFrame.cpp,
+  src/mlt++/MltFrame.h, src/mlt++/MltGeometry.cpp, src/mlt++/MltGeometry.h,
+  src/mlt++/MltMultitrack.cpp, src/mlt++/MltMultitrack.h,
+  src/mlt++/MltParser.cpp, src/mlt++/MltParser.h, src/mlt++/MltPlaylist.cpp,
+  src/mlt++/MltPlaylist.h, src/mlt++/MltProducer.cpp, src/mlt++/MltProducer.h,
+  src/mlt++/MltProfile.cpp, src/mlt++/MltProfile.h,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h,
+  src/mlt++/MltPushConsumer.cpp, src/mlt++/MltPushConsumer.h,
+  src/mlt++/MltRepository.cpp, src/mlt++/MltRepository.h,
+  src/mlt++/MltService.cpp, src/mlt++/MltService.h, src/mlt++/MltTokeniser.cpp,
+  src/mlt++/MltTokeniser.h, src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h,
+  src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h: Fix LGPL information
+  in comment headers of mlt++.
+
+  * Makefile, README, demo/README, demo/consumers.ini, demo/demo,
+  demo/demo.ini, demo/entity.mlt, demo/entity.westley, demo/mlt_all,
+  demo/mlt_attributes, demo/mlt_audio_stuff, demo/mlt_avantika_title,
+  demo/mlt_bouncy, demo/mlt_bouncy_ball, demo/mlt_clock_in_and_out,
+  demo/mlt_composite_transition, demo/mlt_effect_in_middle,
+  demo/mlt_fade_black, demo/mlt_fade_in_and_out, demo/mlt_intro, demo/mlt_jcut,
+  demo/mlt_lcut, demo/mlt_levels, demo/mlt_my_name_is, demo/mlt_news,
+  demo/mlt_obscure, demo/mlt_push, demo/mlt_slideshow,
+  demo/mlt_slideshow_black, demo/mlt_squeeze, demo/mlt_squeeze_box,
+  demo/mlt_ticker, demo/mlt_title_over_gfx, demo/mlt_titleshadow_watermark,
+  demo/mlt_voiceover, demo/mlt_watermark, demo/new.mlt, demo/new.westley,
+  demo/pango.mlt, demo/pango.westley, demo/svg.mlt, demo/svg.westley,
+  docs/framework.txt, docs/install.txt, docs/melt.txt, docs/mlt++.txt,
+  docs/mlt-xml.txt, docs/policies.txt, docs/services.txt, mlt++/.gitignore,
+  mlt++/Makefile, mlt++/configure, src/framework/mlt_factory.c,
+  src/framework/mlt_playlist.c, src/framework/mlt_producer.c,
+  src/framework/mlt_properties.c, src/melt/io.c, src/melt/io.h,
+  src/melt/melt.c, src/modules/core/factory.c,
+  src/modules/core/filter_watermark.c, src/modules/core/loader.dict,
+  src/modules/core/producer_consumer.c, src/modules/core/producer_hold.c,
+  src/modules/core/producer_loader.c, src/modules/core/transition_composite.c,
+  src/modules/core/transition_luma.c, src/modules/core/transition_region.c,
+  src/modules/kdenlive/producer_framebuffer.c, src/modules/kino/avi.h,
+  src/modules/kino/riff.cc, src/modules/melt/factory.c,
+  src/modules/melt/producer_melt.c, src/modules/motion_est/Makefile,
+  src/modules/motion_est/README, src/modules/motion_est/producer_slowmotion.c,
+  src/modules/plus/filter_affine.c, src/modules/xml/consumer_xml.c,
+  src/modules/xml/factory.c, src/modules/xml/mlt-xml.dtd,
+  src/modules/xml/producer_xml.c, src/swig/Makefile, src/swig/configure,
+  src/swig/java/Play.java, src/swig/java/build, src/swig/mltpp.i,
+  src/swig/perl/Makefile.PL, src/swig/perl/play.pl, src/swig/php/build,
+  src/swig/php/play.php, src/swig/python/build, src/swig/python/play.py,
+  src/swig/ruby/build, src/swig/ruby/play.rb, src/swig/ruby/thumbs.rb,
+  src/swig/tcl/build, src/swig/tcl/play.tcl, src/tests/charlie.c,
+  src/tests/hello.c: Complete reorganization and renaming to usable state.
+
+2009-05-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/mvsp/Makefile, src/modules/mvsp/configure,
+  src/modules/mvsp/consumer_mvsp.c, src/modules/mvsp/factory.c: Remove mvsp -
+  moving to melted project.
+
+  * .gitignore, Makefile, configure, mlt++.pc.in, setenv,
+  src/examples/Makefile, src/melt/Makefile, src/mlt++/Makefile,
+  src/mlt++/Mlt.h, src/mlt++/configure, src/modules/core/Makefile,
+  src/modules/core/factory.c, src/modules/feeds/Makefile,
+  src/modules/fezzik/Makefile, src/modules/fezzik/factory.c,
+  src/modules/melt/Makefile, src/modules/mvsp/Makefile,
+  src/modules/mvsp/configure, src/modules/mvsp/consumer_mvsp.c,
+  src/modules/mvsp/factory.c, src/modules/valerie/Makefile,
+  src/modules/valerie/consumer_valerie.c, src/modules/valerie/factory.c,
+  src/modules/xml/Makefile, src/modules/xml/configure: Fix the build afer the
+  reorg.
+
+  * docs/inigo.txt, docs/melt.txt, docs/mlt-xml.txt, docs/westley.txt,
+  src/inigo/Makefile, src/inigo/inigo.c, src/inigo/io.c, src/inigo/io.h,
+  src/melt/Makefile, src/melt/io.c, src/melt/io.h, src/melt/melt.c,
+  src/modules/core/data_fx.properties, src/modules/core/loader.dict,
+  src/modules/core/loader.ini, src/modules/core/producer_hold.c,
+  src/modules/core/producer_loader.c, src/modules/data_fx.properties,
+  src/modules/fezzik.dict, src/modules/fezzik.ini,
+  src/modules/fezzik/producer_fezzik.c, src/modules/fezzik/producer_hold.c,
+  src/modules/inigo/Makefile, src/modules/inigo/factory.c,
+  src/modules/inigo/producer_inigo.c, src/modules/melt/Makefile,
+  src/modules/melt/factory.c, src/modules/melt/producer_melt.c,
+  src/modules/westley/Makefile, src/modules/westley/configure,
+  src/modules/westley/consumer_westley.c, src/modules/westley/factory.c,
+  src/modules/westley/producer_westley.c, src/modules/westley/westley.dtd,
+  src/modules/xml/Makefile, src/modules/xml/configure,
+  src/modules/xml/consumer_xml.c, src/modules/xml/factory.c,
+  src/modules/xml/mlt-xml.dtd, src/modules/xml/producer_xml.c,
+  src/tests/README: Rename inigo, fezzik, and westley.
+
+  * docs/mlt++.txt, mlt++/README: Merge mlt++/README into docs/mlt++.txt.
+
+  * docs/mlt++.txt, mlt++/HOWTO, mlt++/src/Makefile, mlt++/src/Mlt.h,
+  mlt++/src/MltConsumer.cpp, mlt++/src/MltConsumer.h, mlt++/src/MltDeque.cpp,
+  mlt++/src/MltDeque.h, mlt++/src/MltEvent.cpp, mlt++/src/MltEvent.h,
+  mlt++/src/MltFactory.cpp, mlt++/src/MltFactory.h, mlt++/src/MltField.cpp,
+  mlt++/src/MltField.h, mlt++/src/MltFilter.cpp, mlt++/src/MltFilter.h,
+  mlt++/src/MltFilteredConsumer.cpp, mlt++/src/MltFilteredConsumer.h,
+  mlt++/src/MltFilteredProducer.cpp, mlt++/src/MltFilteredProducer.h,
+  mlt++/src/MltFrame.cpp, mlt++/src/MltFrame.h, mlt++/src/MltGeometry.cpp,
+  mlt++/src/MltGeometry.h, mlt++/src/MltMultitrack.cpp,
+  mlt++/src/MltMultitrack.h, mlt++/src/MltParser.cpp, mlt++/src/MltParser.h,
+  mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/src/MltProfile.cpp,
+  mlt++/src/MltProfile.h, mlt++/src/MltProperties.cpp,
+  mlt++/src/MltProperties.h, mlt++/src/MltPushConsumer.cpp,
+  mlt++/src/MltPushConsumer.h, mlt++/src/MltRepository.cpp,
+  mlt++/src/MltRepository.h, mlt++/src/MltService.cpp, mlt++/src/MltService.h,
+  mlt++/src/MltTokeniser.cpp, mlt++/src/MltTokeniser.h,
+  mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h,
+  mlt++/src/MltTransition.cpp, mlt++/src/MltTransition.h, mlt++/src/config.h,
+  mlt++/swig/Makefile, mlt++/swig/configure, mlt++/swig/java/Play.java,
+  mlt++/swig/java/Play.sh, mlt++/swig/java/build, mlt++/swig/mltpp.i,
+  mlt++/swig/perl/Makefile.PL, mlt++/swig/perl/build, mlt++/swig/perl/play.pl,
+  mlt++/swig/php/build, mlt++/swig/php/play.php, mlt++/swig/python/build,
+  mlt++/swig/python/play.py, mlt++/swig/ruby/build, mlt++/swig/ruby/play.rb,
+  mlt++/swig/ruby/thumbs.rb, mlt++/swig/tcl/build, mlt++/swig/tcl/play.tcl,
+  mlt++/test/Makefile, mlt++/test/play.cpp, src/examples/Makefile,
+  src/examples/play.cpp, src/mlt++/Makefile, src/mlt++/Mlt.h,
+  src/mlt++/MltConsumer.cpp, src/mlt++/MltConsumer.h, src/mlt++/MltDeque.cpp,
+  src/mlt++/MltDeque.h, src/mlt++/MltEvent.cpp, src/mlt++/MltEvent.h,
+  src/mlt++/MltFactory.cpp, src/mlt++/MltFactory.h, src/mlt++/MltField.cpp,
+  src/mlt++/MltField.h, src/mlt++/MltFilter.cpp, src/mlt++/MltFilter.h,
+  src/mlt++/MltFilteredConsumer.cpp, src/mlt++/MltFilteredConsumer.h,
+  src/mlt++/MltFilteredProducer.cpp, src/mlt++/MltFilteredProducer.h,
+  src/mlt++/MltFrame.cpp, src/mlt++/MltFrame.h, src/mlt++/MltGeometry.cpp,
+  src/mlt++/MltGeometry.h, src/mlt++/MltMultitrack.cpp,
+  src/mlt++/MltMultitrack.h, src/mlt++/MltParser.cpp, src/mlt++/MltParser.h,
+  src/mlt++/MltPlaylist.cpp, src/mlt++/MltPlaylist.h,
+  src/mlt++/MltProducer.cpp, src/mlt++/MltProducer.h, src/mlt++/MltProfile.cpp,
+  src/mlt++/MltProfile.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/MltPushConsumer.cpp,
+  src/mlt++/MltPushConsumer.h, src/mlt++/MltRepository.cpp,
+  src/mlt++/MltRepository.h, src/mlt++/MltService.cpp, src/mlt++/MltService.h,
+  src/mlt++/MltTokeniser.cpp, src/mlt++/MltTokeniser.h,
+  src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h,
+  src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h, src/mlt++/config.h,
+  src/swig/Makefile, src/swig/configure, src/swig/java/Play.java,
+  src/swig/java/Play.sh, src/swig/java/build, src/swig/mltpp.i,
+  src/swig/perl/Makefile.PL, src/swig/perl/build, src/swig/perl/play.pl,
+  src/swig/php/build, src/swig/php/play.php, src/swig/python/build,
+  src/swig/python/play.py, src/swig/ruby/build, src/swig/ruby/play.rb,
+  src/swig/ruby/thumbs.rb, src/swig/tcl/build, src/swig/tcl/play.tcl:
+  Reorganize mlt++ files.
+
+  * docs/dvcp.txt, docs/testing-20040110.txt, docs/testing.txt,
+  docs/valerie.txt, mlt++/AUTHORS, mlt++/COPYING, mlt++/CUSTOMISING,
+  mlt++/ChangeLog, mlt++/mlt++.sln, mlt++/mlt++.vcproj,
+  mlt++/src/MltMiracle.cpp, mlt++/src/MltMiracle.h, mlt++/src/MltResponse.cpp,
+  mlt++/src/MltResponse.h, mlt++/swig/ruby/miracle.rb, mlt++/test/server.cpp,
+  mlt-miracle.pc.in, mlt-valerie.pc.in, src/albino/Makefile,
+  src/albino/albino.c, src/humperdink/Makefile, src/humperdink/client.c,
+  src/humperdink/client.h, src/humperdink/io.c, src/humperdink/io.h,
+  src/humperdink/remote.c, src/miracle/Makefile, src/miracle/configure,
+  src/miracle/miracle.c, src/miracle/miracle_commands.c,
+  src/miracle/miracle_commands.h, src/miracle/miracle_connection.c,
+  src/miracle/miracle_connection.h, src/miracle/miracle_local.c,
+  src/miracle/miracle_local.h, src/miracle/miracle_log.c,
+  src/miracle/miracle_log.h, src/miracle/miracle_server.c,
+  src/miracle/miracle_server.h, src/miracle/miracle_unit.c,
+  src/miracle/miracle_unit.h, src/miracle/miracle_unit_commands.c,
+  src/miracle/miracle_unit_commands.h, src/valerie/Makefile,
+  src/valerie/configure, src/valerie/valerie.c, src/valerie/valerie.h,
+  src/valerie/valerie_notifier.c, src/valerie/valerie_notifier.h,
+  src/valerie/valerie_parser.c, src/valerie/valerie_parser.h,
+  src/valerie/valerie_remote.c, src/valerie/valerie_remote.h,
+  src/valerie/valerie_response.c, src/valerie/valerie_response.h,
+  src/valerie/valerie_socket.c, src/valerie/valerie_socket.h,
+  src/valerie/valerie_status.c, src/valerie/valerie_status.h,
+  src/valerie/valerie_tokeniser.c, src/valerie/valerie_tokeniser.h,
+  src/valerie/valerie_util.c, src/valerie/valerie_util.h: Remove files that no
+  longer belong.
+
+2009-05-07  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * src/modules/avformat/configure: Update avformat configure script to deal
+  with ffmpeg changes to swscale. 
+
+  * src/modules/sdl/consumer_sdl_still.c: Prevent potential divide-by-zero
+  errors in sdl_still consumer. 
+
+  * src/modules/avformat/ffmpeg.patch: Remove ffmpeg.patch - no longer
+  necessary. 
+
+  * Makefile: Fix uninstall of pkg-config files. 
+
+2009-05-05  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * src/modules/avformat/producer_avformat.c: Improve seek performance with
+  dnxhd and huffyuv codecs. 
+
+2009-05-03  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * configure, src/albino/Makefile, src/humperdink/Makefile,
+  src/miracle/Makefile, src/modules/avformat/Makefile,
+  src/modules/core/Makefile, src/modules/dgraft/Makefile,
+  src/modules/effectv/Makefile, src/modules/fezzik/Makefile,
+  src/modules/frei0r/Makefile, src/modules/inigo/Makefile,
+  src/modules/kdenlive/Makefile, src/modules/kino/Makefile,
+  src/modules/motion_est/Makefile, src/modules/normalize/Makefile,
+  src/modules/oldfilm/Makefile, src/modules/plus/Makefile,
+  src/modules/qimage/Makefile, src/modules/sox/configure,
+  src/modules/valerie/Makefile, src/modules/vmfx/Makefile,
+  src/modules/xine/Makefile, src/tests/Makefile, src/valerie/Makefile: Apply
+  cosmetic cleanup part of ldflags_order patch from Alberto Villa.  
+
+  * src/modules/avformat/configure, src/modules/qimage/configure: Apply FreeBSD
+  fixes part of ldflags_order patch from Alberto Villa.  
+
+  * src/modules/avformat/Makefile, src/modules/dv/Makefile,
+  src/modules/gtk2/Makefile, src/modules/jackrack/Makefile,
+  src/modules/sdl/Makefile, src/modules/sox/Makefile,
+  src/modules/westley/Makefile: Apply ldflags-order part of ldflags_order patch
+  from Alberto Villa.  Alberto wrote: "on freebsd (as well as on linuces
+  without /usr/local/lib in default ld path) building concurrent versions of
+  mlt is not possible, because of the wrong linking of -lmlt while using
+  LDFLAGS=-L/usr/local/lib this patch fixes the issue using pkg-config"  
+
+2009-04-30  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * src/modules/avformat/producer_avformat.c: producer_avformat.c: improve
+  audio synchronization after seek (including in point) 
+
+2009-04-18  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * src/modules/resample/Makefile, src/modules/vorbis/Makefile: Apply patch
+  from Alberto Villa to use pkg-config for resample and vorbis modules.  
+
+2009-04-16  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * src/modules/jackrack/plugin_mgr.c: Add /usr/lib64 libdir to default LADSPA
+  plugin path. 
+
+  * configure, src/framework/mlt.h, src/modules/kino/configure: Use pkg-config
+  instead of lqt-config. 
 
 2009-04-15  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * Doxyfile: Update version in Doxygen. 
+
+  * mlt++/ChangeLog, mlt++/Makefile: Add ChangeLog and remove svn log from dist
+  make target. 
+
+  * ChangeLog: update changelog 
+
+  * src/modules/avformat/configure: Fix build for --avformat-svn to use FFmpeg
+  v0.5 and HEAD build to not use --enable-swscale. 
 
   * ChangeLog, Makefile: Update ChangeLog and remove svn log from the make
   install target. 
@@ -18,6 +286,41 @@
 
   * src/modules/kdenlive/producer_framebuffer.c: producer_framebuffer.c:
   interpret negative speed as reverse 
+
+2009-04-10  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/test/play.cpp, mlt++/test/server.cpp: cleanup some warnings  
+
+  * mlt++/src/MltResponse.cpp, mlt++/src/MltResponse.h: const update for
+  MltResponse 
+
+  * mlt++/src/MltResponse.cpp, mlt++/src/MltResponse.h: Constness changes  
+
+  * mlt++/src/MltTransition.cpp, mlt++/src/MltTransition.h: Constness changes  
+
+  * mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h: Constness changes  
+
+  * mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h: Constness changes  
+
+  * mlt++/src/MltConsumer.cpp, mlt++/src/MltConsumer.h: Constness changes  
+
+  * mlt++/src/MltProperties.cpp, mlt++/src/MltResponse.cpp: Constness changes  
+
+  * mlt++/src/MltProperties.cpp, mlt++/src/MltPushConsumer.cpp: Constness
+  changes  
+
+  * mlt++/src/MltFilter.cpp, mlt++/src/MltFilter.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h: Constness changes  
+
+  * mlt++/src/MltConsumer.cpp, mlt++/src/MltField.cpp, mlt++/src/MltFilter.cpp,
+  mlt++/src/MltFrame.cpp, mlt++/src/MltMultitrack.cpp,
+  mlt++/src/MltPlaylist.cpp, mlt++/src/MltProducer.cpp,
+  mlt++/src/MltTractor.cpp, mlt++/src/MltTransition.cpp: Fix up warnings about
+  explicit base initializers in copy constructors  
+
+  * mlt++/configure: Add more warnings  
+
+  * mlt++/.gitignore: Add a .gitignore file  
 
 2009-04-09  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -107,6 +410,11 @@
 2009-04-03  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/modules/core/filter_crop.c: filter_crop.c: bugfix chroma alignment 
+
+2009-04-02  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/swig/ruby/thumbs.rb: thumbs.rb: fix setting size property for
+  avformat consumer 
 
 2009-03-17  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -279,6 +587,10 @@
 
 2009-02-04  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/debian/changelog, mlt++/debian/control, mlt++/debian/copyright,
+  mlt++/debian/rules: remove debian package subdirectory (they provide their
+  own) 
+
   * debian/changelog, debian/control, debian/copyright, debian/rules: remove
   the debian package subdirectory (they provide their own) 
 
@@ -326,6 +638,11 @@
 
   * src/modules/gtk2/producer_pixbuf.c: producer_pixbuf.c: bugfix
   (kdenlive-575) memory leak 
+
+2009-01-26  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/swig/configure, mlt++/swig/php/build, mlt++/swig/php/play.php:
+  swig/configure, swig/php/*: add php bindings 
 
 2009-01-24  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -468,6 +785,13 @@
   ratio overrides. It expects a generic input. Only the DV decoder produces the
   special, proper aspect ratios for which MLT is not yet prepared. 
 
+2008-12-28  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/swig/java/build, mlt++/swig/python/build, mlt++/swig/python/play.py,
+  mlt++/swig/tcl/build: swig/{java,python,tcl}/build: fix linking error
+  __stack_chk_fail_local. swig/python/play.py: fix syntax error reported by
+  Jonathon Thomas. 
+
 2008-12-28  j-b-m <j-b-m@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/modules/sox/filter_sox.c: filter_sox.c: fix crash when trying to create
@@ -488,6 +812,9 @@
 
   * mlt-config-template: mlt-config-template: send deprecation warning to
   stderr to prevent breaking legacy scripts and makefiles 
+
+  * mlt++/swig/configure: swig/configure: use pkg-config mlt-framework instead
+  of deprecated mlt-config. 
 
   * src/modules/core/filter_luma.c: filter_luma.c: prevent the first
   application of the nested luma transition from being applied to a test card
@@ -645,6 +972,14 @@
 
 2008-12-04  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/README: README: update instructions to use pkg-config instead of
+  mlt-config 
+
+  * mlt++/swig/java/build, mlt++/swig/perl/Makefile.PL,
+  mlt++/swig/python/build, mlt++/swig/ruby/build, mlt++/swig/tcl/build,
+  mlt++/test/Makefile: test/Makefile, swig/*/build: replace more mlt-config
+  with pkg-config 
+
   * profiles/atsc_1080i_50: profiles/atsc_1080i_50: added new profile for
   square pixel 1080i at a PAL-like rate 
 
@@ -786,6 +1121,8 @@
   * docs/services.txt: services.txt: minor corrections to documentation for
   producer_avformat 
 
+  * mlt++/src/Makefile: src/Makefile: suppress warning on ldconfig failure 
+
 2008-11-05  j-b-m <j-b-m@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/modules/kdenlive/Makefile, src/modules/kdenlive/factory.c,
@@ -846,6 +1183,9 @@
 
 2008-10-25  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/configure: configure: apply patch from Alberto Villa to fix build on
+  FreeBSD 
+
   * configure, src/modules/kino/endian_types.h, src/modules/kino/riff.cc,
   src/modules/sox/configure: configure, kino/enadian_types.h, kino/riff.c,
   sox/configure: apply patch from Alberto Villa to fix build on FreeBSD and to
@@ -888,6 +1228,9 @@
 
   * src/modules/avformat/producer_avformat.c: producer_avformat.c: bugfix Ogg
   Vorbis files and possibly others that report invalid pts on some packets 
+
+  * mlt++/configure: configure: convert to use pkg-config; mlt-config is
+  deprecated 
 
   * src/modules/xine/configure: xine/configure: disable module on ppc64 
 
@@ -932,13 +1275,24 @@
 
 2008-08-06  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/AUTHORS: update mlt++ AUTHORS 
+
+  * mlt++/Makefile: fix make dist target 
+
   * configure: bump versions for 0.3.0 release 
 
+  * mlt++/configure: bump versions for 0.3.0 release 
+
   * Makefile: improve make dist target 
+
+  * mlt++/Makefile: improve make dist target 
 
   * AUTHORS: add AUTHORS file 
 
   * NEWS: Add release notes file 
+
+  * mlt++/swig/java/Play.java, mlt++/swig/java/Play.sh, mlt++/swig/java/build:
+  swig/java: fixup the java bindings build script and example (bug 1523941) 
 
   * demo/mlt_news: demo/mlt_news: small typo 
 
@@ -1032,6 +1386,12 @@
   make it fail over gracefully. Do not set this property if you do not have
   permission. 
 
+2008-06-26  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/swig/mltpp.i:
+  MltProducer.{h,cpp}, mltpp.i: remove Producer::get_frame that is unncessary
+  and introduced a memory leak. 
+
 2008-06-25  j-b-m <j-b-m@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/framework/mlt_field.c: mlt_field.c: correctly reconnect transitions
@@ -1047,6 +1407,9 @@
   producing the "test card" image. 
 
 2008-06-24  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltPlaylist.cpp: MltPlaylist.cpp: return null on clip_info method
+  if mlt_playlist_get_clip_info fails. 
 
   * src/framework/mlt_playlist.c: mlt_playlist.c: return error on
   mlt_playlist_get_clip_info if producer is null. 
@@ -1084,6 +1447,9 @@
   presented a file descriptor limit issue when loading very large playlists. 
 
 2008-06-08  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltPlaylist.cpp: MltPlaylist.cpp: prevent strdup from crashing on
+  a null pointer. 
 
   * src/framework/mlt_playlist.c: mlt_playlist.c: remove some unncessary and
   inefficient accounting code. 
@@ -1197,11 +1563,17 @@
 
 2008-04-23  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/swig/mltpp.i:
+  MltProducer.{h,cpp}, swig/mltpp.i: add method Producer::get_frame.  
+
   * src/modules/core/filter_watermark.c,
   src/modules/core/transition_composite.c: filter_watermark.c,
   filter_composite.c: support explicit deinterlace of composited image.  
 
 2008-04-12  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/test/server.cpp: test/server.cpp: bugfix (1940389) compilation on gcc
+  4.3 
 
   * src/modules/lumas/create_lumas: lumas/create_lumas: bugfix (1940387)
   bash-ism in script 
@@ -1333,6 +1705,10 @@
 
 2008-02-27  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltRepository.cpp, mlt++/src/MltRepository.h:
+  MltRepository.{h,cpp}: update to latest mlt_repository.h change -
+  finalization of callback declarations and metadata handling 
+
   * src/modules/avformat/configure: avformat/Makefile: compilation fix for
   latest FFmpeg update 
 
@@ -1369,6 +1745,12 @@
 
 2008-02-16  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/swig/python/build: swig/python/build: add -fPIC 
+
+  * mlt++/src/MltRepository.cpp, mlt++/src/MltRepository.h, mlt++/swig/mltpp.i:
+  MltRepository.{h,cpp}, swig/mltpp.i: added consumers, filters, producers,
+  transitions, register_metadata, and metadata methods to Repository class 
+
   * src/framework/mlt_repository.c, src/framework/mlt_repository.h:
   mlt_consumer.[hc]: added new functions mlt_repository_consumers,
   mlt_repository_filters, mlt_repository_producers, mlt_repository_transitions,
@@ -1392,6 +1774,10 @@
   * src/modules/avformat/producer_avformat.c: producer_avformat.c: cleanup
   whitespace 
 
+2008-02-12  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/Makefile: do not make tests automatically 
+
 2008-02-11  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/modules/avformat/consumer_avformat.c,
@@ -1406,12 +1792,25 @@
 
 2008-02-07  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/configure, mlt++/src/Makefile: configure: add soversion variable
+  src/Makefile: improve library versioning by linking on interface version
+  (soversion)  
+
   * configure, src/framework/Makefile, src/framework/mlt.h,
   src/miracle/Makefile, src/valerie/Makefile: configure: add soversion
   variable, move version variables to top for easier access framework/Makefile,
   miracle/Makefile, valerie/Makefile: improve library versioning by linking on
   interface version (soversion) mlt.h: add version info to header so apps can
   have build time adaptations 
+
+  * mlt++/swig/ruby/thumbs.rb: thumbs.rb: fix error on Playlist.append due to
+  args not int 
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltFactory.cpp,
+  mlt++/src/MltFactory.h, mlt++/src/MltRepository.cpp,
+  mlt++/src/MltRepository.h, mlt++/swig/mltpp.i: Mlt.h, MltFactory.{h,cpp},
+  MltRepository.{h,cpp}, swig/mltpp.i: update to deal with changes and new
+  capabilities in mlt_factory and mlt_repository. 
 
   * src/framework/mlt_factory.c, src/framework/mlt_factory.h,
   src/framework/mlt_repository.c, src/framework/mlt_repository.h: cleanup some
@@ -1459,6 +1858,8 @@
 
 2008-02-04  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/COPYING: add COPYING to disclose license 
+
   * src/framework/config.h: remove config.h 
 
   * Makefile, setenv, src/framework/Makefile, src/framework/mlt_consumer.c,
@@ -1489,6 +1890,21 @@
   remove need for config.h   
 
 2008-02-02  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltConsumer.cpp,
+  mlt++/src/MltConsumer.h, mlt++/src/MltFactory.cpp, mlt++/src/MltFactory.h,
+  mlt++/src/MltFilter.cpp, mlt++/src/MltFilter.h,
+  mlt++/src/MltFilteredConsumer.cpp, mlt++/src/MltFilteredConsumer.h,
+  mlt++/src/MltFilteredProducer.cpp, mlt++/src/MltFilteredProducer.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/src/MltProfile.cpp,
+  mlt++/src/MltProfile.h, mlt++/src/MltPushConsumer.cpp,
+  mlt++/src/MltPushConsumer.h, mlt++/src/MltService.cpp,
+  mlt++/src/MltService.h, mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h,
+  mlt++/src/MltTransition.cpp, mlt++/src/MltTransition.h, mlt++/swig/mltpp.i,
+  mlt++/swig/perl/play.pl, mlt++/swig/python/play.py,
+  mlt++/swig/ruby/miracle.rb, mlt++/swig/ruby/play.rb,
+  mlt++/swig/ruby/thumbs.rb, mlt++/swig/tcl/play.tcl, mlt++/test/play.cpp,
+  mlt++/test/server.cpp: add MltProfile and update examples 
 
   * src/framework/mlt_factory.c, src/framework/mlt_profile.c: mlt_factory.c:
   guard against accessing mlt_environment before it is ready mlt_profile.c: fix
@@ -1884,7 +2300,12 @@
 
 2007-06-12  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/Makefile: added dist make targets 
+
   * Makefile: added dist make targets 
+
+  * mlt++/Makefile, mlt++/src/Makefile, mlt++/test/Makefile: added uninstall
+  make targets 
 
   * Makefile, src/albino/Makefile, src/framework/Makefile,
   src/humperdink/Makefile, src/inigo/Makefile, src/miracle/Makefile,
@@ -2379,6 +2800,10 @@
   utility function for listing files in a directory (aids with cross platform
   support)  
 
+2006-03-20  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltFactory.h: + Fix for swig parsing  
+
 2006-03-02  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * docs/services.txt, src/framework/mlt_manager.h, src/modules/core/Makefile,
@@ -2392,6 +2817,25 @@
   * configure: log configuration history to config.log  
 
 2006-02-23  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/Makefile: + Install of config.h for linux and os/x usage  
+
+  * mlt++/src/config.h: + Added the config.h for win32  
+
+  * mlt++/mlt++.sln, mlt++/mlt++.vcproj, mlt++/src/Mlt.h,
+  mlt++/src/MltConsumer.h, mlt++/src/MltDeque.h, mlt++/src/MltEvent.h,
+  mlt++/src/MltFactory.cpp, mlt++/src/MltFactory.h, mlt++/src/MltField.h,
+  mlt++/src/MltFilter.h, mlt++/src/MltFilteredConsumer.h,
+  mlt++/src/MltFilteredProducer.h, mlt++/src/MltFrame.cpp,
+  mlt++/src/MltFrame.h, mlt++/src/MltGeometry.h, mlt++/src/MltMultitrack.h,
+  mlt++/src/MltParser.h, mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltPushConsumer.h, mlt++/src/MltService.h,
+  mlt++/src/MltTokeniser.h, mlt++/src/MltTractor.h, mlt++/src/MltTransition.h:
+  + Win32 port - dev studio is required to avoid issues with C++ ABI
+  compatibility + Fix for image render in NTSC  NB: mlt patch to follow (this
+  one isn't much use without it :-)) - mlt build is purely mingw32 of course  
 
   * src/modules/vmfx/filter_shape.c: + Activates the mixdown in the combine to
   allow audio sync'd with wipe (smooth ramping not implemented yet)  
@@ -2426,12 +2870,20 @@
   * debian/control, debian/rules, src/miracle/Makefile: + Fix for libmiracle
   and alternative deb packaging  
 
+  * mlt++/configure, mlt++/src/Makefile: + Fix for Darwin and soname logic  
+
   * src/framework/Makefile, src/miracle/Makefile,
   src/modules/avformat/configure, src/valerie/Makefile: + Fix for Darwin and
   soname logic  
 
+  * mlt++/debian/changelog, mlt++/debian/control, mlt++/debian/copyright,
+  mlt++/debian/rules: + Functional debian build rules  
+
   * debian/changelog, debian/control, debian/copyright, debian/rules: +
   Functional debian build rules  
+
+  * mlt++/Makefile, mlt++/configure, mlt++/src/Makefile, mlt++/test/Makefile: +
+  MLT++ updates for 0.2.1 - distclean corrected, soname usage in linking  
 
   * Makefile, configure, src/albino/Makefile, src/framework/Makefile,
   src/humperdink/Makefile, src/inigo/Makefile, src/miracle/Makefile,
@@ -2454,16 +2906,32 @@
   * src/framework/configure, src/miracle/configure, src/valerie/configure: +
   More fixes for lib64  
 
+  * mlt++/Makefile, mlt++/configure: + Correction to a typo  
+
   * src/modules/avformat/Makefile: + Uses libdir in private build of ffmpeg too
    
 
   * src/modules/avformat/configure: + 64 bit fix for ffmpeg built externally
   (should switch to pkg-config here)  
 
+  * mlt++/swig/perl/Makefile.PL: + Perl compilation patch submitted by Torsten
+  Spindler  
+
+  * mlt++/configure, mlt++/src/Makefile: + Added a --libdir switch to the
+  configure and build and fixed test case compilation  
+
   * configure: - Removed a diagnostic  
 
   * Makefile, configure, src/framework/Makefile, src/miracle/Makefile,
   src/valerie/Makefile: + Added a --libdir switch to the configure and build  
+
+2005-11-22  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/configure: + Allow LDFLAGS to be inherited from the environment  
+
+2005-11-21  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/Makefile: + Creates the lib directory on an install  
 
 2005-11-17  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -2471,6 +2939,9 @@
   generation  
 
 2005-11-10  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/Makefile, mlt++/src/Makefile: + DESTDIR patch from Anthony Green
+  (green at redhat dot com) - many thanks :-)  
 
   * Makefile, src/albino/Makefile, src/framework/Makefile,
   src/humperdink/Makefile, src/inigo/Makefile, src/miracle/Makefile,
@@ -2561,6 +3032,9 @@
 
   * configure: + OS/X Tiger patch  
 
+  * mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h: OS/X gcc/g++ 4.x
+  fix  
+
   * src/framework/mlt_events.h, src/framework/mlt_types.h: gcc/g++ 4.x fix  
 
   * src/humperdink/client.c, src/humperdink/io.c, src/humperdink/io.h,
@@ -2568,6 +3042,10 @@
 
   * src/framework/mlt.h, src/inigo/inigo.c: + Whoops - removed dependency on
   sdl in the framework for darwin  
+
+  * mlt++/configure, mlt++/src/Makefile, mlt++/src/MltProperties.cpp,
+  mlt++/src/MltProperties.h, mlt++/test/Makefile: + Whoops - had forgotten
+  these OS/X patches...  
 
   * src/modules/sdl/producer_sdl_image.c: + Surface conversion  
 
@@ -2585,10 +3063,15 @@
 
 2005-09-29  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltPushConsumer.cpp: + Oops - fix for memory leak  
+
   * src/modules/avformat/filter_avcolour_space.c: + Extracts alpha from rgb24a
   images  
 
 2005-09-28  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltPushConsumer.cpp,
+  mlt++/src/MltPushConsumer.h: + Added a push based consumer wrapper  
 
   * src/framework/mlt_frame.c, src/framework/mlt_tractor.c,
   src/modules/core/filter_rescale.c, src/modules/core/filter_resize.c,
@@ -2882,6 +3365,10 @@
   * src/modules/core/filter_watermark.c: + Correction to long outstanding
   oddity regarding composite.out - not needed in many cases now  
 
+  * mlt++/swig/Makefile, mlt++/swig/configure, mlt++/swig/perl/Makefile.PL,
+  mlt++/swig/python/build, mlt++/swig/tcl/build: + Cleaned up swig build so it
+  doesn't require an mlt++ install first - Temporarily disabled java  
+
 2005-07-25  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/modules/kino/riff.cc: + Minor correction for entry length being less
@@ -3070,6 +3557,10 @@
 
 2005-06-27  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/CUSTOMISING, mlt++/test/server.cpp: CUSTOMISING + Replaced TBD for
+  frame rendering notification event  test/server.cpp + Added an example frame
+  rendering callback that removes all shotcut related fx  
+
   * src/modules/sdl/consumer_sdl.c: src/modules/sdl/consumer_sdl.c + (Re)Added
   audio volume control  
 
@@ -3103,6 +3594,10 @@
   'and' and 'xor' logic (may change property triggering soon) + Provided
   support for transition as filter usage + Cleaned up public copy region
   functionality  
+
+  * mlt++/CUSTOMISING, mlt++/swig/ruby/thumbs.rb: CUSTOMISING + Added an
+  example of how to hide a track on reception  swig/ruby/thumbs.rb + Changed
+  generator to run, rather than sleep and poll  
 
   * src/modules/core/transition_composite.c: + Cleaned up compositing and alpha
   usage (all frames always have an alpha mask) + Provided an alternative
@@ -3365,6 +3860,8 @@
   src/modules/xine/configure, src/tests/Makefile, src/valerie/Makefile,
   src/valerie/valerie_socket.c: OS/X Patch from Torsten Spindler  
 
+  * mlt++/CUSTOMISING: Minor doc updates  
+
   * src/framework/mlt_factory.c, src/framework/mlt_factory.h,
   src/framework/mlt_repository.c, src/framework/mlt_repository.h: More const
   usage  
@@ -3400,6 +3897,10 @@
   to producer_pixbuf  
 
 2005-03-16  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/CUSTOMISING, mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltResponse.cpp, mlt++/src/MltResponse.h, mlt++/test/server.cpp:
+  Server customisation  
 
   * src/framework/mlt_consumer.c, src/framework/mlt_producer.c: Frame rendering
   event  
@@ -3439,6 +3940,8 @@
   * src/miracle/miracle_unit.c: Smoother unit load  
 
 2005-02-12  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltService.cpp: Minor correction  
 
   * src/framework/mlt_producer.c, src/framework/mlt_tractor.c,
   src/modules/core/producer_colour.c, src/modules/core/transition_composite.c,
@@ -3576,6 +4079,9 @@
 
 2005-01-14  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h: Const string usage
+  in properties  
+
   * demo/mlt_attributes: Correction for ETV specific filters  
 
   * src/modules/feeds/PAL/etv.properties: Seperation for ETV specific filters  
@@ -3599,11 +4105,17 @@
 
 2005-01-03  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltGeometry.cpp, mlt++/src/MltGeometry.h: Next/Prev key
+  extraction  
+
   * src/framework/mlt_geometry.c, src/framework/mlt_geometry.h: Next/Prev key
   extraction  
 
   * src/modules/feeds/PAL/data_fx.properties,
   src/modules/feeds/PAL/obscure.properties: Smaller mask width/height  
+
+  * mlt++/src/MltMiracle.cpp, mlt++/src/MltMiracle.h, mlt++/swig/mltpp.i: Fetch
+  unit from miracle server  
 
   * src/miracle/miracle_server.c, src/miracle/miracle_server.h: Fetch unit from
   miracle server  
@@ -3617,6 +4129,8 @@
   * demo/demo.ini, src/framework/mlt_producer.c,
   src/framework/mlt_properties.c, src/framework/mlt_property.c,
   src/framework/mlt_transition.c: Corrections after valgrinding  
+
+  * mlt++/src/MltGeometry.h: Update for geometry  
 
   * demo/demo.ini, demo/mlt_attributes, demo/mlt_news, demo/mlt_slideshow,
   demo/mlt_slideshow_black, demo/mlt_squeeze, demo/mlt_ticker,
@@ -3705,6 +4219,9 @@
 
 2004-12-24  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltGeometry.cpp,
+  mlt++/src/MltGeometry.h, mlt++/swig/mltpp.i: Geometry  
+
   * src/modules/core/transition_composite.c: Luma generation and use  
 
   * src/modules/core/transition_composite.c,
@@ -3748,15 +4265,22 @@
 
 2004-12-12  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h: blank_at method added  
+
   * src/framework/mlt_playlist.c, src/framework/mlt_playlist.h: blank_at method
   added  
 
 2004-12-11  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h: split_at method added  
+
   * src/framework/mlt_playlist.c, src/framework/mlt_playlist.h: split_at method
   added  
 
 2004-12-09  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h: Tractor constructor
+  modifications  
 
   * src/framework/mlt_playlist.c, src/framework/mlt_service.c,
   src/modules/inigo/producer_inigo.c: Corrections to playlist manipulations and
@@ -3821,6 +4345,14 @@
 
 2004-11-25  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/swig/Makefile: Install makefile for swig  
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltDeque.cpp,
+  mlt++/src/MltDeque.h, mlt++/src/MltFactory.cpp, mlt++/src/MltFactory.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltTransition.cpp, mlt++/src/MltTransition.h: Deque added;
+  simplified producer parent access; transition in and out  
+
   * src/framework/mlt_factory.c, src/framework/mlt_factory.h,
   src/framework/mlt_multitrack.c, src/framework/mlt_playlist.c,
   src/framework/mlt_producer.c, src/framework/mlt_properties.c,
@@ -3830,6 +4362,12 @@
   producer related modifications; westley storage; sdl_still increased latency 
 
 2004-11-22  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltService.cpp,
+  mlt++/src/MltService.h, mlt++/test/Makefile: More playlist modifications;
+  service locking  
 
   * src/modules/sdl/consumer_sdl_still.c: Consumer sdl preview correction -
   attach colour space conversion on start  
@@ -3843,6 +4381,10 @@
 
   * src/framework/mlt_producer.c: Extendible blank producers  
 
+  * mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h: Ref count and event firing
+  method on properties; locate_cut on tractor  
+
   * src/framework/mlt_consumer.c, src/framework/mlt_frame.c,
   src/framework/mlt_properties.c, src/framework/mlt_properties.h,
   src/modules/sdl/consumer_sdl_still.c, src/modules/valerie/consumer_valerie.c:
@@ -3850,6 +4392,11 @@
   titles with valerie  
 
 2004-11-11  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h: Playlist reorganisation  
 
   * src/framework/mlt_consumer.c, src/framework/mlt_playlist.c,
   src/framework/mlt_playlist.h, src/framework/mlt_producer.c,
@@ -3859,12 +4406,19 @@
 
 2004-11-07  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h: Simplified playlist and
+  track access  
+
   * src/modules/sdl/consumer_sdl_still.c: Increased delay for polling  
 
   * src/framework/mlt_playlist.c, src/framework/mlt_playlist.h: Simplified
   playlist access  
 
 2004-11-05  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h: Added cut related
+  methods  
 
   * src/framework/mlt_multitrack.c: Behavioural change - tracks with hide
   properties now affect length (might be problematic)  
@@ -3882,6 +4436,10 @@
 
 2004-10-31  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltTokeniser.cpp,
+  mlt++/src/MltTokeniser.h, mlt++/test/server.cpp: Added courtesy tokenising
+  class  
+
   * src/framework/mlt_tokeniser.c, src/modules/fezzik.dict,
   src/modules/gtk2/factory.c, src/modules/inigo/producer_inigo.c,
   src/modules/sdl/consumer_sdl_preview.c,
@@ -3891,6 +4449,9 @@
 2004-10-27  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/modules/plus/filter_charcoal.c: Minor optimisation  
+
+  * mlt++/configure, mlt++/swig/configure, mlt++/swig/ruby/build,
+  mlt++/swig/ruby/miracle.rb: Config changes  
 
   * src/framework/mlt_consumer.c, src/framework/mlt_frame.c,
   src/framework/mlt_producer.c, src/framework/mlt_tractor.c, src/inigo/inigo.c,
@@ -3938,11 +4499,16 @@
 
 2004-10-17  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltMiracle.cpp, mlt++/src/MltMiracle.h: id and log level for
+  server  
+
   * src/framework/mlt_properties.c, src/miracle/miracle_server.c,
   src/miracle/miracle_server.h: Convenience functionality for properties load
   and miracle_server_id function  
 
   * src/miracle/miracle_server.c: Server shutdown state oops  
+
+  * mlt++/src/MltMiracle.cpp: Server shutdown state  
 
   * src/miracle/miracle_server.c: Server shutdown state  
 
@@ -3953,8 +4519,13 @@
 
 2004-10-14  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltConsumer.cpp, mlt++/src/MltConsumer.h, mlt++/test/play.cpp:
+  buffer fix and tractor handling  
+
   * src/modules/westley/consumer_westley.c, src/valerie/valerie_remote.c:
   buffer fix and tractor handling  
+
+  * mlt++/HOWTO: Doc updates  
 
   * src/miracle/miracle_connection.c, src/miracle/miracle_local.c,
   src/miracle/miracle_server.c, src/miracle/miracle_unit_commands.c,
@@ -3962,6 +4533,9 @@
   src/modules/westley/producer_westley.c, src/valerie/valerie.c,
   src/valerie/valerie.h, src/valerie/valerie_parser.c,
   src/valerie/valerie_parser.h, src/valerie/valerie_remote.c: Improved push
+  capabilities  
+
+  * mlt++/src/MltMiracle.cpp, mlt++/src/MltMiracle.h: Improved push
   capabilities  
 
 2004-10-13  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
@@ -3992,6 +4566,9 @@
   * src/framework/mlt_playlist.c: Mix on Mix and length corrections  
 
 2004-10-08  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h: Same and following clip
+  identification  
 
   * docs/framework.txt, docs/inigo.txt, docs/install.txt: Some documentation
   updates - more to follow  
@@ -4024,6 +4601,11 @@
   * src/framework/mlt_multitrack.c, src/framework/mlt_playlist.c,
   src/framework/mlt_producer.c, src/framework/mlt_tractor.c, src/inigo/inigo.c:
   Multitrack rearrangement and tractor cleanup  
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltFrame.cpp,
+  mlt++/src/MltFrame.h, mlt++/src/MltParser.cpp, mlt++/src/MltParser.h,
+  mlt++/src/MltService.cpp, mlt++/src/MltService.h, mlt++/swig/mltpp.i: Added
+  the parser object and moved type identity into mlt  
 
   * src/framework/mlt_parser.c, src/framework/mlt_producer.c: Yikes - another
   corrections to cloning (oops)  
@@ -4060,6 +4642,9 @@
 
 2004-09-29  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h, mlt++/swig/mltpp.i: new
+  mix related methods  
+
   * src/framework/mlt_frame.c, src/framework/mlt_playlist.c,
   src/framework/mlt_playlist.h: clip and mix manipulation on playlist  
 
@@ -4085,6 +4670,9 @@
   First attempt at a composite clean up  
 
 2004-09-26  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/README, mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h: Playlist
+  repeat clip functionality  
 
   * src/inigo/inigo.c: Clean up - added new usage options  
 
@@ -4119,6 +4707,9 @@
 
   * src/framework/mlt_properties.c: ...gah...  
 
+  * mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/swig/mltpp.i: Cut
+  management part 1  
+
   * src/framework/mlt_playlist.c, src/framework/mlt_producer.c,
   src/framework/mlt_producer.h, src/framework/mlt_properties.c,
   src/framework/mlt_service.c, src/modules/westley/consumer_westley.c,
@@ -4131,7 +4722,15 @@
 
   * src/framework/mlt_tractor.c: Alpha from the tractor fix  
 
+  * mlt++/src/MltService.cpp, mlt++/swig/mltpp.i: get_frame and ruby listen fix
+   
+
 2004-09-22  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltFrame.cpp, mlt++/src/MltProperties.cpp,
+  mlt++/src/MltProperties.h, mlt++/swig/mltpp.i: Event and frame handling  
+
+  * mlt++/configure, mlt++/src/MltMiracle.cpp: Server shutdown  
 
   * src/framework/mlt_properties.c: Whoops  
 
@@ -4152,7 +4751,16 @@
 
 2004-09-19  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltMiracle.cpp,
+  mlt++/src/MltMiracle.h, mlt++/src/MltResponse.cpp, mlt++/src/MltResponse.h,
+  mlt++/swig/mltpp.i: Added the response object  
+
   * src/valerie/valerie_response.h: Obtain stdio definitions  
+
+  * mlt++/HOWTO, mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltMiracle.cpp,
+  mlt++/src/MltMiracle.h, mlt++/swig/mltpp.i, mlt++/swig/ruby/miracle.rb,
+  mlt++/test/Makefile, mlt++/test/play.cpp, mlt++/test/server.cpp: Adding
+  miracle  
 
   * src/miracle/miracle.c, src/miracle/miracle_server.c,
   src/miracle/miracle_server.h: Extending miracles functionality  
@@ -4207,6 +4815,8 @@
   src/modules/inigo/producer_inigo.c: Fixes for removed tracks before/after mix
    
 
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h: Adding the mix part 1  
+
   * src/framework/mlt_field.c, src/framework/mlt_playlist.c,
   src/framework/mlt_playlist.h, src/modules/inigo/producer_inigo.c,
   src/modules/westley/consumer_westley.c,
@@ -4227,6 +4837,10 @@
 
 2004-09-06  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/src/MltFilteredConsumer.cpp, mlt++/src/MltFilteredConsumer.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/src/MltService.cpp,
+  mlt++/src/MltService.h, mlt++/swig/mltpp.i: Service attach filters  
+
   * src/framework/mlt_producer.c, src/framework/mlt_service.c,
   src/framework/mlt_service.h, src/inigo/inigo.c,
   src/modules/core/filter_region.c, src/modules/core/filter_watermark.c,
@@ -4236,12 +4850,20 @@
 
 2004-09-03  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/HOWTO, mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/swig/mltpp.i, mlt++/swig/perl/play.pl: More event stuff  
+
   * src/framework/mlt_multitrack.c, src/framework/mlt_tractor.c: Multitrack and
   tractor producer-changed event  
 
 2004-09-02  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * src/modules/sdl/consumer_sdl.c: Fix occassional sdl core dumps  
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltEvent.cpp,
+  mlt++/src/MltEvent.h, mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/swig/mltpp.i, mlt++/swig/ruby/play.rb, mlt++/test/play.cpp: Event
+  modifications  
 
   * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h,
   src/framework/mlt_events.c, src/framework/mlt_events.h,
@@ -4259,6 +4881,15 @@
   of event handling  
 
 2004-08-31  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/HOWTO, mlt++/src/Makefile, mlt++/src/MltConsumer.cpp,
+  mlt++/src/MltConsumer.h, mlt++/src/MltFilter.cpp, mlt++/src/MltFilter.h,
+  mlt++/src/MltFrame.cpp, mlt++/src/MltFrame.h, mlt++/src/MltMultitrack.cpp,
+  mlt++/src/MltMultitrack.h, mlt++/src/MltPlaylist.cpp,
+  mlt++/src/MltPlaylist.h, mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltService.cpp, mlt++/src/MltService.h, mlt++/src/MltTractor.cpp,
+  mlt++/src/MltTractor.h, mlt++/src/MltTransition.cpp,
+  mlt++/src/MltTransition.h: Run time type identification  
 
   * configure, src/framework/Makefile, src/framework/mlt_frame.c,
   src/framework/mlt_frame.h, src/modules/westley/consumer_westley.c,
@@ -4281,16 +4912,34 @@
 
 2004-08-28  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
+  * mlt++/README, mlt++/src/MltMultitrack.cpp, mlt++/src/MltMultitrack.h,
+  mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h, mlt++/swig/mltpp.i: Tractor
+  enhancements  
+
   * src/framework/mlt_multitrack.h, src/framework/mlt_playlist.c,
   src/framework/mlt_tractor.c, src/framework/mlt_tractor.h: Tractor
   enhancements  
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltField.cpp,
+  mlt++/src/MltField.h, mlt++/src/MltMultitrack.cpp, mlt++/src/MltMultitrack.h,
+  mlt++/src/MltTractor.cpp, mlt++/src/MltTractor.h, mlt++/swig/mltpp.i:
+  Multitrack classes added  
 
   * docs/framework.txt, src/framework/mlt_field.c, src/framework/mlt_field.h,
   src/framework/mlt_tractor.c, src/framework/mlt_tractor.h,
   src/modules/inigo/producer_inigo.c, src/modules/westley/producer_westley.c:
   New tractor constructor  
 
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/swig/mltpp.i:
+  Producer filter extraction method  
+
 2004-08-27  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltFilteredProducer.cpp,
+  mlt++/src/MltFilteredProducer.h, mlt++/src/MltProducer.cpp,
+  mlt++/src/MltProducer.h, mlt++/src/MltService.cpp, mlt++/src/MltService.h,
+  mlt++/swig/mltpp.i: Removed FilteredProducer  
 
   * src/framework/mlt_playlist.c, src/framework/mlt_producer.c,
   src/framework/mlt_producer.h, src/modules/fezzik/producer_fezzik.c,
@@ -4299,6 +4948,19 @@
   methods; major rework on westley consumer, minor on producer  
 
 2004-08-26  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/Makefile, mlt++/test/Makefile, mlt++/test/play.cpp: Build
+  modifications  
+
+  * mlt++/src/MltConsumer.cpp, mlt++/src/MltConsumer.h,
+  mlt++/src/MltFilter.cpp, mlt++/src/MltFilter.h,
+  mlt++/src/MltFilteredConsumer.cpp, mlt++/src/MltFilteredConsumer.h,
+  mlt++/src/MltFrame.cpp, mlt++/src/MltFrame.h, mlt++/src/MltPlaylist.cpp,
+  mlt++/src/MltPlaylist.h, mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltService.cpp, mlt++/src/MltService.h,
+  mlt++/src/MltTransition.cpp, mlt++/src/MltTransition.h,
+  mlt++/swig/perl/play.pl: Mlt Ref Counts and Playlist split/join  
 
   * docs/framework.txt, setenv_mc, src/framework/mlt_consumer.c,
   src/framework/mlt_field.c, src/framework/mlt_filter.c,
@@ -4314,11 +4976,30 @@
   src/modules/gtk2/producer_pixbuf.c, src/modules/westley/consumer_westley.c:
   Mlt Ref Counts and Playlist split/join  
 
+2004-08-23  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/swig/perl/play.pl: Added play.pl  
+
+  * mlt++/src/Makefile, mlt++/swig/mltpp.i: Workaround for perl  
+
 2004-08-21  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltConsumer.cpp, mlt++/src/MltFilter.cpp,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltTransition.cpp: Constructor clean up  
+
+  * mlt++/src/MltConsumer.cpp, mlt++/src/MltConsumer.h: consumer purge  
 
   * src/miracle/miracle_local.c, src/miracle/miracle_unit.c: Unit purge  
 
   * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h: consumer purge 
+
+2004-08-20  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltFilter.cpp, mlt++/src/MltFilter.h, mlt++/src/MltPlaylist.cpp,
+  mlt++/src/MltPlaylist.h, mlt++/swig/configure, mlt++/swig/java/build,
+  mlt++/swig/ruby/build, mlt++/swig/ruby/thumbs.rb: mlt_position, /usr/bin/env
+  and Instance fix  
 
 2004-08-19  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -4330,11 +5011,60 @@
 
   * src/framework/mlt_consumer.c: Prefil consumer property  
 
+2004-08-18  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/MltFrame.cpp, mlt++/src/MltFrame.h, mlt++/src/MltProducer.cpp,
+  mlt++/src/MltProducer.h, mlt++/src/MltService.cpp, mlt++/swig/mltpp.i,
+  mlt++/swig/ruby/play.rb: image handling  
+
 2004-08-17  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/swig/java/Play.java, mlt++/swig/ruby/play.rb,
+  mlt++/swig/ruby/thumbs.rb: Fixes for mods to api  
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h, mlt++/src/MltConsumer.cpp,
+  mlt++/src/MltConsumer.h, mlt++/src/MltFilteredConsumer.cpp,
+  mlt++/src/MltFilteredConsumer.h, mlt++/src/MltFilteredProducer.cpp,
+  mlt++/src/MltFilteredProducer.h, mlt++/src/MltService.cpp,
+  mlt++/src/MltService.h, mlt++/swig/mltpp.i: Filtered producers and consumers 
 
   * src/framework/mlt_service.c: NULL accpectance for connect/disconnect  
 
+  * mlt++/test/play.cpp: oops  
+
 2004-08-16  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/swig/configure, mlt++/swig/java/Play.java, mlt++/swig/java/Play.sh,
+  mlt++/swig/java/build, mlt++/swig/mltpp.i, mlt++/swig/perl/Makefile.PL,
+  mlt++/swig/perl/build, mlt++/swig/python/build, mlt++/swig/python/play.py,
+  mlt++/swig/ruby/build, mlt++/swig/ruby/play.rb, mlt++/swig/ruby/thumbs.rb,
+  mlt++/swig/tcl/build, mlt++/swig/tcl/play.tcl: Experimental swig bindings  
+
+  * mlt++/README, mlt++/src/MltFactory.cpp, mlt++/src/MltFactory.h,
+  mlt++/src/MltFilter.cpp, mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProperties.cpp,
+  mlt++/src/MltProperties.h, mlt++/src/MltService.cpp, mlt++/src/MltService.h,
+  mlt++/src/MltTransition.cpp, mlt++/test/Makefile: More cleanups  
+
+  * mlt++/README, mlt++/src/MltConsumer.cpp, mlt++/src/MltConsumer.h,
+  mlt++/src/MltFactory.cpp, mlt++/src/MltFactory.h, mlt++/src/MltFilter.cpp,
+  mlt++/src/MltFilter.h, mlt++/src/MltFrame.cpp, mlt++/src/MltFrame.h,
+  mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltService.cpp, mlt++/src/MltService.h,
+  mlt++/src/MltTransition.cpp, mlt++/src/MltTransition.h, mlt++/test/play.cpp:
+  Class rework and simplification  
+
+  * mlt++/src/Makefile, mlt++/src/Mlt.h: Added Mlt.h convenience header  
+
+  * mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltService.cpp: Complete methods for properties and playlist;
+  reversed NULL handling on service class  
+
+  * mlt++/README, mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/test/play.cpp: Object validity checks  
 
   * src/framework/mlt_consumer.c, src/framework/mlt_field.c,
   src/framework/mlt_filter.c, src/framework/mlt_frame.c,
@@ -4342,6 +5072,22 @@
   src/framework/mlt_producer.c, src/framework/mlt_service.c,
   src/framework/mlt_tractor.c, src/framework/mlt_transition.c: NULL safety
   checks  
+
+  * mlt++/AUTHORS, mlt++/Makefile, mlt++/README, mlt++/configure,
+  mlt++/src/Makefile, mlt++/src/MltService.cpp, mlt++/test/play.cpp: Build and
+  docs modifications  
+
+2004-08-15  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
+
+  * mlt++/src/Makefile, mlt++/src/MltConsumer.cpp, mlt++/src/MltConsumer.h,
+  mlt++/src/MltFactory.cpp, mlt++/src/MltFactory.h, mlt++/src/MltFilter.cpp,
+  mlt++/src/MltFilter.h, mlt++/src/MltFrame.cpp, mlt++/src/MltFrame.h,
+  mlt++/src/MltPlaylist.cpp, mlt++/src/MltPlaylist.h,
+  mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h,
+  mlt++/src/MltProperties.cpp, mlt++/src/MltProperties.h,
+  mlt++/src/MltService.cpp, mlt++/src/MltService.h,
+  mlt++/src/MltTransition.cpp, mlt++/src/MltTransition.h, mlt++/test/Makefile,
+  mlt++/test/play.cpp: Initial revision  
 
 2004-08-12  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
