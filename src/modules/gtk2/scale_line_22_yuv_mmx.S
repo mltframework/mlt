@@ -19,6 +19,7 @@
  */
 	.file	"scale_line_22_yuv_mmx.S"
 	.version	"01.01"
+	.section .note.GNU-stack,"",%progbits
 
 .extern printf
 

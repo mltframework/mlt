@@ -1,5 +1,7 @@
 	.file	"have_mmx.S"
 	.version	"01.01"
+	.section .note.GNU-stack,"",%progbits
+
 gcc2_compiled.:
 .text
 	.align 16
