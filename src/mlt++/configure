@@ -1,4 +1,5 @@
 #!/bin/sh
+echo "soversion=2" > config.mak
 echo "mlt++	-I$prefix/include -I$prefix/include/mlt++ -D_REENTRANT	-L$libdir -lmlt++" >> ../../packages.dat
 
 WARNINGS="-W -Wwrite-strings -Wcast-qual -Wpointer-arith -Wcast-align -Wredundant-decls"
@@ -15,4 +16,4 @@ case $targetos in
 		echo "CXXFLAGS+=-Wall $WARNINGS -fPIC -dPIC"
 		echo "LIBFLAGS=-shared"
 		;;
-esac > config.mak
+esac >> config.mak
