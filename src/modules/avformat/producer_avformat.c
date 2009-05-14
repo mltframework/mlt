@@ -23,6 +23,7 @@
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_log.h>
 
 // ffmpeg Header files
 #include <avformat.h>
@@ -358,9 +359,6 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 
 	// AV option (0 = both, 1 = video, 2 = audio)
 	int av = 0;
-
-	// Setting lowest log level
-	av_log_set_level( -1 );
 
 	// Only if there is not a protocol specification that avformat can handle
 	if ( mrl && !url_exist( file ) )
@@ -745,8 +743,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				  strcmp( codec_context->codec->name, "mjpeg" ) &&
 				  strcmp( codec_context->codec->name, "rawvideo" );
 
+	int last_position = mlt_properties_get_int( properties, "_last_position" );
+
 	// Seek if necessary
-	if ( position != expected )
+	if ( position != expected || last_position == -1 )
 	{
 		if ( av_frame != NULL && position + 1 == expected )
 		{
@@ -758,7 +758,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = ( int )( ( position - expected ) / fps * source_fps );
 		}
-		else if ( seekable && ( position < expected || position - expected >= 12 ) )
+		else if ( seekable && ( position < expected || position - expected >= 12 || last_position == -1 ) )
 		{
 			// Calculate the timestamp for the requested frame
 			int64_t timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE + 0.5 );
@@ -812,12 +812,19 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
 				// Determine time code of the packet
-				int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
-				if ( context->start_time != AV_NOPTS_VALUE )
-					int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
-				int last_position = mlt_properties_get_int( properties, "_last_position" );
-				if ( int_position == last_position )
-					int_position = last_position + 1;
+				if (pkt.dts != AV_NOPTS_VALUE)
+				{
+					int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
+					if ( context->start_time != AV_NOPTS_VALUE )
+						int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
+					last_position = mlt_properties_get_int( properties, "_last_position" );
+					if ( int_position == last_position )
+						int_position = last_position + 1;
+				}
+				else
+				{
+					int_position = req_position;
+				}
 				mlt_properties_set_int( properties, "_last_position", int_position );
 
 				// Decode the image
@@ -841,6 +848,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						got_picture = 0;
 					}
 				}
+				mlt_log_debug( MLT_PRODUCER_SERVICE(this), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d got_pic %d key %d\n",
+					pkt.dts, req_position, current_position, int_position, got_picture, pkt.flags & PKT_FLAG_KEY );
 				av_free_packet( &pkt );
 			}
 			else if ( ret >= 0 )
