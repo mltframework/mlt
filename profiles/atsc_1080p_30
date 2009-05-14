@@ -1,4 +1,4 @@
-description=ATSC 1080p 30Hz
+description=HD 1080p 30Hz
 frame_rate_num=30
 frame_rate_den=1
 width=1920

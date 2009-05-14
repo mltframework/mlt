@@ -1,4 +1,4 @@
-description=ATSC 1080p 24Hz
+description=HD 1080p 24Hz
 frame_rate_num=24
 frame_rate_den=1
 width=1920

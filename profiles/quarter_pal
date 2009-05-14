@@ -1,4 +1,4 @@
-description=Quarter Square PAL
+description=384x288 4:3 PAL
 frame_rate_num=25
 frame_rate_den=1
 width=384
