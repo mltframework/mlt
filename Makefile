@@ -51,7 +51,4 @@ uninstall:
 	rm -rf "$(DESTDIR)$(prefix)/share/mlt"
 
 dist:
-	#[ -d "mlt-$(version)" ] && rm -rf "mlt-$(version)" || echo
-	#svn export http://mlt.svn.sourceforge.net/svnroot/mlt/trunk/mlt "mlt-$(version)"
-	#tar -cvzf "mlt-$(version).tar.gz" "mlt-$(version)"
-	git archive --format=tar --prefix=mlt-$(version)/ HEAD | gzip >mlt-$(version).tar.gz
+	git archive --format=tar --prefix=mlt-$(version)/ v$(version) | gzip >mlt-$(version).tar.gz

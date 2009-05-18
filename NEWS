@@ -1,6 +1,25 @@
 MLT Release Notes
 -----------------
 
+Version 0.4.0
+
+The recommended version of FFmpeg for use with this release is 0.5.0.
+
+This release is primarily a reorganization of the mlt and mlt++ projects.
+In brief:
+* "inigo" was renamed "melt"
+* "westley" is no longer the XML file extension and root element - they are
+  simply "mlt" now
+* mlt++ is included with mlt and no longer a separate project
+* miracle, valerie, and humperdink were moved to a new, separate project
+For details: http://www.mltframework.org/twiki/bin/view/MLT/ExtremeMakeover
+
+avformat producer improvements:
+* improve audio synchronization
+* improve reliability of video playback with FFmpeg newer than v0.5.0
+* improve seeking performance of DNxHD and HuffYUV
+
+
 Version 0.3.8
 
 The recommended version of FFmpeg for use with this release is SVN r17923.
