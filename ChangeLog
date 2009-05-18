@@ -1,4 +1,45 @@
+2009-05-17  Dan Dennedy <dan@dennedy.org>
+
+  * Makefile, NEWS: Add v0.4.0 release notes. 
+
+  * Doxyfile, configure, src/framework/mlt.h: Bump version to 0.4.0 
+
+2009-05-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/configure: Bump soversion for mlt++ due to removal of classes. 
+
+  * profiles/atsc_1080i_50, profiles/atsc_1080i_60, profiles/atsc_1080p_2398,
+  profiles/atsc_1080p_24, profiles/atsc_1080p_25, profiles/atsc_1080p_2997,
+  profiles/atsc_1080p_30, profiles/atsc_720p_30, profiles/dv_ntsc,
+  profiles/dv_ntsc_wide, profiles/dv_pal, profiles/dv_pal_wide,
+  profiles/hdv_1080_25p, profiles/hdv_1080_30p, profiles/hdv_1080_50i,
+  profiles/hdv_1080_60i, profiles/hdv_720_25p, profiles/hdv_720_30p,
+  profiles/hdv_720_50p, profiles/hdv_720_60p, profiles/quarter_ntsc,
+  profiles/quarter_ntsc_wide, profiles/quarter_pal, profiles/quarter_pal_wide,
+  profiles/square_ntsc, profiles/square_ntsc_wide, profiles/square_pal,
+  profiles/square_pal_wide, profiles/svcd_ntsc_wide, profiles/svcd_pal_wide:
+  Make profile descriptions more user friendly. 
+
+  * src/modules/avformat/producer_avformat.c: Improve reliability of video
+  playback.  After the v0.5 release of FFmpeg, a change was introduced that
+  prevented reliable playback of some files, namely HDV. This fixes it by
+  introducing a seek upon opening the file. Also, this change provides simple
+  fallback support for when invalid DTS is returned by libavformat. 
+
+2009-05-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/have_mmx.S, src/modules/gtk2/scale_line_22_yuv_mmx.S:
+  Apply patch from Orcan Ogetbil that adds .note.GNU-stack section. 
+
+  * setenv: Add libmlt++ to the ld path. 
+
+  * src/mlt++/configure: Make libmlt++ PIC. 
+
 2009-05-09  Dan Dennedy <dan@dennedy.org>
+
+  * configure: Fix build on Mac OS X. 
+
+  * ChangeLog, Makefile: Change dist make target to use git-archive. 
 
   * src/swig/configure, src/swig/java/Play.java, src/swig/java/build,
   src/swig/mlt.i, src/swig/mltpp.i, src/swig/perl/Makefile.PL,
