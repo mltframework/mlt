@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export version=0.3.9
+export version=0.4.0
 export soversion=1
 
 show_help()
@@ -20,7 +20,7 @@ General build options:
   --disable-debug         - Compile without debug support (default: on)
   --disable-mmx           - Compile without MMX support (default: on)
   --disable-sse           - Compile without SSE support (default: on)
-  --arch='arch'             - Compile for a specific architecture (default: none)
+  --arch='arch'           - Compile for a specific architecture (default: none)
   --cpu='cpu'             - Compile for a specific CPU (default: none)
 
 Module disable options:
