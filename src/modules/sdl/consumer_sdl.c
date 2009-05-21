@@ -117,9 +117,6 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		// Default buffer for low latency
 		mlt_properties_set_int( this->properties, "buffer", 1 );
 
-		// Default progressive true
-		mlt_properties_set_int( this->properties, "progressive", 0 );
-
 		// Default audio buffer
 		mlt_properties_set_int( this->properties, "audio_buffer", 512 );
 
