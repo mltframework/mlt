@@ -146,6 +146,8 @@ static void load_filenames( producer_qimage this, mlt_properties producer_proper
 				gap ++;
 			}
 		}
+		if ( mlt_properties_count( this->filenames ) > 0 )
+			mlt_properties_set_int( producer_properties, "ttl", 1 );
 	}
 	else if ( strstr( filename, "/.all." ) != NULL )
 	{
