@@ -13,7 +13,7 @@ case $targetos in
 		;;
 	Linux|FreeBSD)
 		echo LIBSUF=.so
-		echo "CXXFLAGS+=-Wall $WARNINGS -fPIC -dPIC"
+		echo "CXXFLAGS+=-Wall $WARNINGS -fPIC -DPIC"
 		echo "LIBFLAGS=-shared"
 		;;
 esac >> config.mak

@@ -159,12 +159,11 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
     // optimization for subsequent iterations on single picture
 	if ( width != 0 && ( image_idx != self->image_idx || width != self->current_width || height != self->current_height ) )
 		self->current_image = NULL;
-	if ( image_idx != self->image_idx )
+	if ( image_idx != self->qimage_idx )
 		qimage = NULL;
-	if ( qimage == NULL && ( width == 0 || self->current_image == NULL ) )
+	if ( !qimage && !self->current_image )
 	{
 		self->current_image = NULL;
-		self->image_idx = image_idx;
 		qimage = new QImage( mlt_properties_get_value( self->filenames, image_idx ) );
 
 		if ( !qimage->isNull( ) )
@@ -177,6 +176,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 			mlt_cache_item_close( qimage_cache );
 			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
 			qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+			self->qimage_idx = image_idx;
 
 			mlt_events_block( producer_props, NULL );
 			mlt_properties_set_int( producer_props, "_real_width", self->current_width );
@@ -191,7 +191,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 	}
 
 	// If we have a pixbuf and this request specifies a valid dimension and we haven't already got a cached version...
-	if ( qimage && width > 0 && self->current_image == NULL )
+	if ( qimage && width > 0 && !self->current_image )
 	{
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 		int interp = 0;
@@ -230,6 +230,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 			mlt_cache_item_close( self->image_cache );
 		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, width * ( height + 1 ) * 2, mlt_pool_release );
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
+		self->image_idx = image_idx;
 
 		if (!hasAlpha) {
 			mlt_convert_rgb24_to_yuv422( temp.bits(), self->current_width, self->current_height, temp.bytesPerLine(), self->current_image ); 
