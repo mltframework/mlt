@@ -21,6 +21,7 @@
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_cache.h>
+#include <framework/mlt_log.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include <stdio.h>
@@ -45,7 +46,7 @@ struct producer_pixbuf_s
 	mlt_properties filenames;
 	int count;
 	int image_idx;
-
+	int pixbuf_idx;
 	int width;
 	int height;
 	uint8_t *image;
@@ -274,12 +275,13 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
     // optimization for subsequent iterations on single picture
 	if ( width != 0 && ( image_idx != this->image_idx || width != this->width || height != this->height ) )
 		this->image = NULL;
-	if ( image_idx != this->image_idx )
+	if ( image_idx != this->pixbuf_idx )
 		pixbuf = NULL;
-	if ( pixbuf == NULL && ( width == 0 || this->image == NULL ) )
+	mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "image %p pixbuf %p idx %d image_idx %d pixbuf_idx %d width %d\n",
+		this->image, pixbuf, image_idx, this->image_idx, this->pixbuf_idx, width );
+	if ( !pixbuf && !this->image )
 	{
 		this->image = NULL;
-		this->image_idx = image_idx;
 		pixbuf = gdk_pixbuf_new_from_file( mlt_properties_get_value( this->filenames, image_idx ), &error );
 
 		if ( pixbuf )
@@ -288,6 +290,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 			mlt_cache_item_close( pixbuf_cache );
 			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref );
 			pixbuf_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf" );
+			this->pixbuf_idx = image_idx;
 
 			mlt_events_block( producer_props, NULL );
 			mlt_properties_set_int( producer_props, "_real_width", gdk_pixbuf_get_width( pixbuf ) );
@@ -301,7 +304,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 	}
 
 	// If we have a pixbuf and we need an image
-	if ( pixbuf && width > 0 && this->image == NULL )
+	if ( pixbuf && width > 0 && !this->image )
 	{
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 		int interp = GDK_INTERP_BILINEAR;
@@ -326,6 +329,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 			mlt_cache_item_close( this->image_cache );
 		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image", this->image, width * ( height + 1 ) * 2, mlt_pool_release );
 		this->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image" );
+		this->image_idx = image_idx;
 
 		// Extract YUV422 and alpha
 		if ( gdk_pixbuf_get_has_alpha( pixbuf ) )
