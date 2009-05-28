@@ -26,7 +26,7 @@
 
 #include <string.h>
 
-static int log_level = MLT_LOG_WARNING;
+static int log_level = MLT_LOG_PANIC;
 
 void default_callback( void* ptr, int level, const char* fmt, va_list vl )
 {
