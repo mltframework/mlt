@@ -46,12 +46,6 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 		
 		// Return the output
 		*image = mlt_properties_get_data( properties, "image", NULL );
-
-		// Scale the alpha channel only if exists and not correct size
-		int alpha_size = 0;
-		mlt_properties_get_data( properties, "alpha", &alpha_size );
-		if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
-			scale_alpha( this, iwidth, iheight, owidth, oheight );
 	}
 	else if ( iformat == mlt_image_rgb24 || iformat == mlt_image_rgb24a )
 	{
@@ -256,6 +250,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			{
 				*width = iwidth;
 				*height = iheight;
+			}
+			if ( *width == owidth )
+			{
+				// Scale the alpha channel only if exists and not correct size
+				int alpha_size = 0;
+				mlt_properties_get_data( properties, "alpha", &alpha_size );
+				if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
+					scale_alpha( this, iwidth, iheight, owidth, oheight );
 			}
 		}
 		else
