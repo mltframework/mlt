@@ -29,16 +29,15 @@
 
 static void crop( uint8_t *src, uint8_t *dest, int bpp, int width, int height, int left, int right, int top, int bottom )
 {
-	int stride = ( width - left - right ) * bpp + 1;
+	int stride = ( width - left - right ) * bpp;
 	int y      = height - top - bottom + 1;
 	uint8_t *s = &src[ ( ( top * width ) + left ) * bpp ];
 
 	while ( --y )
 	{
-		int x = stride;
-		while ( --x )
-			*dest ++ = *s ++;
-		s += ( right + left ) * bpp;
+		memcpy( dest, s, stride );
+		dest += stride;
+		s += stride + ( right + left ) * bpp;
 	}
 }
 
