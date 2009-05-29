@@ -12,7 +12,7 @@ tags:
   - Video # this may produce video
 description: Oversaturate the Color in Video, like in old Technicolor movies
 icon:
-filename: oldfilm/tcolor.svg # relative to $MLT_DATA/modules/
+  filename: oldfilm/tcolor.svg # relative to $MLT_DATA/modules/
   content-type: image/svg
 
 notes: Implementation or additional usage notes go here.

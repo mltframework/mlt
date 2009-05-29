@@ -10,11 +10,11 @@ url: none
 creator: Marco Gittler
 tags:
   - Video # this may produce video
-description: |
-  Vigentte around a point with adjustable smooth, radius, position
+description: >
+  Vignette around a point with adjustable smooth, radius, position
   and transparency
 icon:
-filename: oldfilm/vignette.svg # relative to $MLT_DATA/modules/
+  filename: oldfilm/vignette.svg # relative to $MLT_DATA/modules/
   content-type: image/svg
 
 notes: Implementation or additional usage notes go here.
@@ -30,6 +30,4 @@ parameters:
     required: yes
     mutable: no
     format: %d:%d:%dx%d:%d
-    minimum: 0:0:0:0:0
-    maximum: 100:100:100:100:100
     default: 80:50%:50%:50%:0
