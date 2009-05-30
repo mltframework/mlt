@@ -1,6 +1,13 @@
 MLT Release Notes
 -----------------
 
+Version 0.4.2
+
+The recommended version of FFmpeg for use with this release is 0.5.0.
+This release is a minor maintenance update to the 0.4.0 - just build and
+bug fixes.
+
+
 Version 0.4.0
 
 The recommended version of FFmpeg for use with this release is 0.5.0.
