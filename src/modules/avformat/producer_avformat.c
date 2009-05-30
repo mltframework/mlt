@@ -840,6 +840,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					int_position = req_position;
 				}
+				// Make a dumb assumption on streams that contain wild timestamps
+				if ( (unsigned) req_position - (unsigned) int_position > 999 )
+					int_position = req_position;
 				mlt_properties_set_int( properties, "_last_position", int_position );
 
 				// Decode the image
