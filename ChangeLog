@@ -1,4 +1,59 @@
+2009-05-30  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, NEWS, configure, src/framework/mlt.h: Bump versions and update
+  release notes. 
+
+2009-05-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/oldfilm/filter_tcolor.yml,
+  src/modules/oldfilm/filter_vignette.yml: Fix YAML validation errors and
+  spelling of Vignette. 
+
+2009-05-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_crop.c: Improve performance of crop filter. 
+
+2009-05-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_rescale.c: Bugfix (kdenlive-791) crash when using
+  crop filter.  The alpha channel was not getting scaled by gtkrescale (and
+  possibly others). I moved the core alpha scaling to a fallback position for
+  scalers that do not handle alpha channel. 
+
+  * src/framework/mlt_log.c: Change default log level to panic.  Some testing
+  against FFmpeg v0.5 shows logging is still verbose with warnings enabled, but
+  panic is better? 
+
+  * src/framework/mlt_log.c: Change default log level to warning or worse. 
+
+  * src/mlt++/configure: Fix typo in mlt++ CXXFLAGS. 
+
+2009-05-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp,
+  src/modules/qimage/qimage_wrapper.h: Fix image sequences sometimes not
+  advancing. 
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/producer_qimage.c:
+  Change the ttl default value for image sequences.  When using printf-style
+  image sequences only, the default ttl is now 1. 
+
+2009-05-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl.c: Bugfix sdl consumer not using
+  profile.progressive 
+
+2009-05-20  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt.h: Bump to an interim version. 
+
+  * src/modules/motion_est/Makefile: Link motionest against libm. 
+
+  * src/mlt++/config.h: Fix license in comment header. 
+
 2009-05-17  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update ChangeLog 
 
   * Makefile, NEWS: Add v0.4.0 release notes. 
 
