@@ -1146,8 +1146,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Do the calculation
 		// NB: Locks needed here since the properties are being modified
+		int invert = mlt_properties_get_int( properties, "invert" );
 		mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
-		composite_calculate( this, &result, a_frame, position );
+		composite_calculate( this, &result, invert ? b_frame : a_frame, position );
 		mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 
 		// Since we are the consumer of the b_frame, we must pass along these
@@ -1175,7 +1176,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 
 		// Get the image from the a frame
-		mlt_frame_get_image( a_frame, image, format, width, height, 1 );
+		mlt_frame_get_image( a_frame, invert ? &image_b : image, format, width, height, 1 );
 		alpha_a = mlt_frame_get_alpha_mask( a_frame );
 
 		// Optimisation - no compositing required
@@ -1205,7 +1206,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			height_b = mlt_properties_get_int( a_props, "dest_height" );
 		}
 
-		if ( *image != image_b && ( image_b != NULL || get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result ) == 0 ) )
+		if ( *image != image_b && ( ( invert ? 0 : image_b ) || get_b_frame_image( this, b_frame, invert ? image : &image_b, &width_b, &height_b, &result ) == 0 ) )
 		{
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
@@ -1248,7 +1249,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Do the calculation if we need to
 				// NB: Locks needed here since the properties are being modified
 				mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
-				composite_calculate( this, &result, a_frame, field_position );
+				composite_calculate( this, &result, invert ? b_frame : a_frame, field_position );
 				mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 
 				if ( mlt_properties_get_int( properties, "titles" ) )
@@ -1276,7 +1277,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				}
 
 				// Composite the b_frame on the a_frame
-				composite_yuv( dest, *width, *height, src, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
+				if ( invert )
+					composite_yuv( dest, width_b, height_b, src, *width, *height, alpha_a, alpha_b, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
+				else
+					composite_yuv( dest, *width, *height, src, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
 			}
 		}
 	}
