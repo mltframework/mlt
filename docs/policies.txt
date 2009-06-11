@@ -22,9 +22,9 @@ Commit messages must be prefaced with the name of the changed files. This makes
 the Subversion log more useful as a ChangeLog. For example,
     docs/policies.txt: added policy about commit message
 
-Increment the version number in ./configure AND mlt.h on the first commit after
-a release as well as just prior to a new release. This way we can track if
-someone is using an unreleased version from the source code repository.
+Increment the version number in ./configure, mlt.h, and melt.1 on the first
+commit after a release as well as just prior to a new release. This way we can
+track if someone is using an unreleased version from the source code repository.
 
 Do not write messages to stdout. stdout is reserved for writing streams that
 can be redirected: e.g. raw DV in consumer_libdv. I recommended to use the
