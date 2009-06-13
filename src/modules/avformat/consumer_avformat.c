@@ -23,6 +23,7 @@
 #include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_log.h>
 
 // System header files
 #include <stdio.h>
@@ -421,6 +422,7 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 
 		// Set parameters controlled by MLT
 		c->sample_rate = mlt_properties_get_int( properties, "frequency" );
+		c->time_base = ( AVRational ){ 1, c->sample_rate };
 		c->channels = mlt_properties_get_int( properties, "channels" );
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
@@ -471,9 +473,9 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 		}
 
 		// Some formats want stream headers to be seperate (hmm)
-		if( !strcmp( oc->oformat->name, "mp4" ) || 
-			!strcmp( oc->oformat->name, "mov" ) || 
-			!strcmp( oc->oformat->name, "3gp" ) )
+		if ( !strcmp( oc->oformat->name, "mp4" ) ||
+			 !strcmp( oc->oformat->name, "mov" ) ||
+			 !strcmp( oc->oformat->name, "3gp" ) )
 			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
 	}
 	else
@@ -795,7 +797,7 @@ static void *consumer_thread( void *arg )
 	int samples = 0;
 
 	// AVFormat audio buffer and frame size
-	int audio_outbuf_size = 10000;
+	int audio_outbuf_size = ( 1024 * 256 );
 	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
 	int audio_input_frame_size = 0;
 
@@ -874,7 +876,7 @@ static void *consumer_thread( void *arg )
 	video_codec_id = fmt->video_codec;
 
 	// Check for audio codec overides
-	if ( ( acodec && strcmp( "acodec", "none" ) == 0 ) || mlt_properties_get_int( properties, "an" ) )
+	if ( ( acodec && strcmp( acodec, "none" ) == 0 ) || mlt_properties_get_int( properties, "an" ) )
 		audio_codec_id = CODEC_ID_NONE;
 	else if ( acodec )
 	{
@@ -886,7 +888,7 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Check for video codec overides
-	if ( ( vcodec && strcmp( "vcodec", "none" ) == 0 ) || mlt_properties_get_int( properties, "vn" ) )
+	if ( ( vcodec && strcmp( vcodec, "none" ) == 0 ) || mlt_properties_get_int( properties, "vn" ) )
 		video_codec_id = CODEC_ID_NONE;
 	else if ( vcodec )
 	{
@@ -1025,20 +1027,10 @@ static void *consumer_thread( void *arg )
 		// While we have stuff to process, process...
 		while ( 1 )
 		{
-			if (audio_st)
-				audio_pts = (double)audio_st->pts.val * audio_st->time_base.num / audio_st->time_base.den;
-			else
-				audio_pts = 0.0;
-        
-			if (video_st)
-				video_pts = (double)video_st->pts.val * video_st->time_base.num / video_st->time_base.den;
-			else
-				video_pts = 0.0;
-
 			// Write interleaved audio and video frames
 			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
 			{
-				if ( channels * audio_input_frame_size < sample_fifo_used( fifo ) )
+				if ( ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
 				{
  					AVCodecContext *c;
 					AVPacket pkt;
@@ -1052,6 +1044,7 @@ static void *consumer_thread( void *arg )
 					// Write the compressed frame in the media file
 					if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 						pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st->time_base );
+					mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "audio pkt pts %lld frame pts %lld", pkt.pts, c->coded_frame->pts );
 					pkt.flags |= PKT_FLAG_KEY;
 					pkt.stream_index= audio_st->index;
 					pkt.data= audio_outbuf;
@@ -1060,7 +1053,11 @@ static void *consumer_thread( void *arg )
 						if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
 							fprintf( stderr, "%s: Error while writing audio frame\n", __FILE__ );
 
-					audio_pts += c->frame_size;
+					mlt_log_debug( MLT_CONSUMER_SERVICE( this ), " frame_size %d\n", c->frame_size );
+					if ( audio_codec_id == CODEC_ID_VORBIS )
+						audio_pts = (double)c->coded_frame->pts * av_q2d( audio_st->time_base );
+					else
+						audio_pts = (double)audio_st->pts.val * av_q2d( audio_st->time_base );
 				}
 				else
 				{
@@ -1181,6 +1178,7 @@ static void *consumer_thread( void *arg )
 
 							if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 								pkt.pts= av_rescale_q( c->coded_frame->pts, c->time_base, video_st->time_base );
+							mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "video pkt pts %lld frame pts %lld", pkt.pts, c->coded_frame->pts );
 							if( c->coded_frame && c->coded_frame->key_frame )
 								pkt.flags |= PKT_FLAG_KEY;
 							pkt.stream_index= video_st->index;
@@ -1189,7 +1187,8 @@ static void *consumer_thread( void *arg )
 
 							// write the compressed frame in the media file
 							ret = av_interleaved_write_frame(oc, &pkt);
-							video_pts += c->frame_size;
+							mlt_log_debug( MLT_CONSUMER_SERVICE( this ), " frame_size %d\n", c->frame_size );
+							video_pts = (double)video_st->pts.val * av_q2d( video_st->time_base );
 							
 							// Dual pass logging
 							if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out)
@@ -1208,6 +1207,11 @@ static void *consumer_thread( void *arg )
 					break;
 				}
 			}
+			if ( audio_st )
+				mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "audio pts %lld (%f) ", audio_st->pts.val, audio_pts );
+			if ( video_st )
+				mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "video pts %lld (%f) ", video_st->pts.val, video_pts );
+			mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "\n" );
 		}
 
 		if ( real_time_output == 1 && frames % 12 == 0 )
