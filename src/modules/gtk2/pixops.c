@@ -63,7 +63,7 @@ typedef void ( *PixopsPixelFunc ) ( guchar *dest, guint y1, guint cr, guint y2, 
 /* mmx function declarations */
 #if defined(USE_MMX) && !defined(ARCH_X86_64)
 guchar *pixops_scale_line_22_yuv_mmx ( guint32 weights[ 16 ][ 8 ], guchar *p, guchar *q1, guchar *q2, int x_step, guchar *p_stop, int x_init, int destx );
-int pixops_have_mmx ( void );
+int _pixops_have_mmx ( void );
 #endif
 
 static inline int
@@ -719,7 +719,7 @@ yuv422_scale ( guchar *dest_buf,
 	PixopsLineFunc line_func;
 
 #if defined(USE_MMX) && !defined(ARCH_X86_64)
-	gboolean found_mmx = pixops_have_mmx();
+	gboolean found_mmx = _pixops_have_mmx();
 #endif
 
 	//g_return_if_fail ( !( dest_channels == 3 && dest_has_alpha ) );
