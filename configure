@@ -79,7 +79,7 @@ build_config()
 		echo "SHFLAGS=-shared"
 		echo "LIBDL=-ldl"
 		echo "RDYNAMIC=-rdynamic"
-		echo "LDFLAGS+=-Wl,--as-needed"
+		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		FreeBSD)
 		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
@@ -87,7 +87,7 @@ build_config()
 		echo "CFLAGS+=-pthread"
 		echo "SHFLAGS=-shared"
 		echo "RDYNAMIC=-rdynamic"
-		echo "LDFLAGS+=-Wl,--as-needed"
+		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		*)
 		;;
