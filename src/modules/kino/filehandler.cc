@@ -23,7 +23,7 @@ extern "C" {
 #include <framework/mlt_frame.h>
 }
 
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <iomanip>

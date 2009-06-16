@@ -21,7 +21,7 @@
 
 // C++ includes
 
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 

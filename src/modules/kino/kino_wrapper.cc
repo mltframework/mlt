@@ -20,8 +20,8 @@
 
 #include "config.h"
 
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 #include "kino_wrapper.h"
 #include "filehandler.h"
