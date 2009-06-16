@@ -1,6 +1,6 @@
 include ../../config.mak
 
-TARGET = melt
+TARGET = mlt
 
 OBJS = melt.o \
 	   io.o
@@ -15,6 +15,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 		$(CC) -o $@ $(OBJS) $(LDFLAGS)
+		ln -sf $@ melt
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend

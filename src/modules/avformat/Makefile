@@ -73,13 +73,13 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(prefix)/share/mlt/avformat"
-	install -m 644 producer_avformat.yml "$(DESTDIR)$(prefix)/share/mlt/avformat"
+	install -d "$(DESTDIR)$(datadir)/mlt/avformat"
+	install -m 644 producer_avformat.yml "$(DESTDIR)$(datadir)/mlt/avformat"
 
 uninstall:
 	rm "$(DESTDIR)$(libdir)/mlt/libmltavformat$(LIBSUF)" 2> /dev/null || true
 	rm "$(DESTDIR)$(libdir)/mlt/libmltffmpeg$(LIBSUF)" 2> /dev/null || true
-	rm -rf "$(DESTDIR)$(prefix)/share/mlt/avformat"
+	rm -rf "$(DESTDIR)$(datadir)/mlt/avformat"
 
 ifneq ($(wildcard .depend),)
 include .depend

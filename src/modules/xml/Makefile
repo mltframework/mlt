@@ -30,8 +30,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(prefix)/share/mlt/xml"
-	install -m 644 mlt-xml.dtd "$(DESTDIR)$(prefix)/share/mlt/xml"
+	install -d "$(DESTDIR)$(datadir)/mlt/xml"
+	install -m 644 mlt-xml.dtd "$(DESTDIR)$(datadir)/mlt/xml"
 
 ifneq ($(wildcard .depend),)
 include .depend
