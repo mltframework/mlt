@@ -1,21 +1,42 @@
+/*
+ * Copyright (C) 2000 Red Hat, Inc
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
 	.file	"have_mmx.S"
 	.version	"01.01"
-	.section .note.GNU-stack,"",%progbits
-
 gcc2_compiled.:
 .text
 	.align 16
 
-#if !defined(__MINGW32__) && !defined(__CYGWIN__)	
+#if !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__INTERIX)
 
-.globl pixops_have_mmx
-	.type	 pixops_have_mmx,@function
-pixops_have_mmx:
+/* Magic indicating no need for an executable stack */
+#if !defined __powerpc64__ && !defined __ia64__
+.section .note.GNU-stack;  .previous
+#endif
+	
+.globl _pixops_have_mmx
+	.type	 _pixops_have_mmx,@function
+_pixops_have_mmx:
 
 #else
 
-.globl _pixops_have_mmx
-_pixops_have_mmx:
+.globl __pixops_have_mmx
+__pixops_have_mmx:
 
 #endif
 	
