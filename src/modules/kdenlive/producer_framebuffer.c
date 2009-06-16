@@ -38,12 +38,28 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 
 	// Get the filter object and properties
 	mlt_producer producer = mlt_frame_pop_service( this );
-	mlt_frame first_frame = mlt_frame_pop_service( this );
-
-	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Frame properties objects
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
+	mlt_frame first_frame = mlt_properties_get_data( properties, "first_frame", NULL );
+	if ( first_frame == NULL )
+	{
+		int need_first = mlt_properties_get_int( properties, "_need_first" );
+		int index = mlt_properties_get_int( properties, "_index" );
+
+		// Get the real producer
+		mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
+
+		// Seek the producer to the correct place
+		mlt_producer_seek( real_producer, need_first );
+
+		// Get the frame
+		mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
+
+		// Cache the frame
+		mlt_properties_set_data( properties, "first_frame", first_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+	}
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
 
 	*width = mlt_properties_get_int( frame_properties, "width" );
@@ -64,14 +80,14 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 			break;
 	}
 
-	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", NULL );
+	uint8_t *output = mlt_properties_get_data( properties, "output_buffer", NULL );
 
 	if( output == NULL )
 	{
 		output = mlt_pool_alloc( size );
 
 		// Let someone else clean up
-		mlt_properties_set_data( producer_properties, "output_buffer", output, size, mlt_pool_release, NULL ); 
+		mlt_properties_set_data( properties, "output_buffer", output, size, mlt_pool_release, NULL ); 
 	}
 
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
@@ -105,8 +121,6 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	mlt_properties_set( frame_properties, "rescale.interps", "none" );
 	mlt_properties_set( frame_properties, "scale", "off" );
 
-	mlt_frame_close( first_frame );
-
 	return 0;
 }
 
@@ -122,10 +136,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 		mlt_position first_position = (first_frame != NULL) ? mlt_frame_get_position( first_frame ) : -1;
 
-		// Get the real producer
-		mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
-
-		// get properties		
+		// get properties
 		int strobe = mlt_properties_get_int( properties, "strobe");
 		int freeze = mlt_properties_get_int( properties, "freeze");
 		int freeze_after = mlt_properties_get_int( properties, "freeze_after");
@@ -157,32 +168,17 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		}
 		else need_first = freeze;
 
-		if( need_first != first_position )
+		if ( need_first != first_position )
 		{
-			mlt_frame_close( first_frame );
-			first_position = -1;
-			first_frame = NULL;
+			// Bust the cached frame
+			mlt_properties_set_data( properties, "first_frame", NULL, 0, NULL, NULL );
 		}
-
-		if( first_frame == NULL )
-		{
-			// Seek the producer to the correct place
-			mlt_producer_seek( real_producer, need_first );
-
-			// Get the frame
-			mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
-		}
-
-		// Make sure things are in their place
-		mlt_properties_set_data( properties, "first_frame", first_frame, 0, NULL, NULL );
+		mlt_properties_set_int( properties, "_need_first", need_first );
+		mlt_properties_set_int( properties, "_index", index );
 
 		// Stack the producer and producer's get image
-		mlt_frame_push_service( *frame, first_frame );
-		mlt_properties_inc_ref( MLT_FRAME_PROPERTIES( first_frame ) );
-
 		mlt_frame_push_service( *frame, this );
 		mlt_frame_push_service( *frame, framebuffer_get_image );
-
 
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
