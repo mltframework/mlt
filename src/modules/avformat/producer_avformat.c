@@ -1151,7 +1151,10 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	}
 	else if ( resample == NULL )
 	{
-		*channels = codec_context->channels;
+		// TODO: uncomment and remove following line when full multi-channel support is ready
+		// *channels = codec_context->channels;
+		codec_context->request_channels = *channels;
+
 		*frequency = codec_context->sample_rate;
 	}
 

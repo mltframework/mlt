@@ -404,7 +404,7 @@ query_all:
 		}
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
-			fprintf( stderr, "MLT melt " VERSION "\n"
+			fprintf( stderr, "MLT mlt-process " VERSION "\n"
 				"Copyright (C) 2002-2009 Ushodaya Enterprises Limited\n"
 				"<http://www.mltframework.org/>\n"
 				"This is free software; see the source for copying conditions.  There is NO\n"
@@ -517,7 +517,7 @@ query_all:
 	else
 	{
 		fprintf( stderr,
-"Usage: melt [options] [producer [name=value]* ]+\n"
+"Usage: mlt-process [options] [producer [name=value]* ]+\n"
 "Options:\n"
 "  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
 "  -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut\n"
