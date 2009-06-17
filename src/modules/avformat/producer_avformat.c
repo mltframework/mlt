@@ -1144,7 +1144,12 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	if ( resample == NULL && codec_context->channels <= 2 )
 	{
 		// Create the resampler
+#if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
+		resample = av_audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate,
+			SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
+#else
 		resample = audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate );
+#endif
 
 		// And store it on properties
 		mlt_properties_set_data( properties, "audio_resample", resample, 0, ( mlt_destructor )audio_resample_close, NULL );
