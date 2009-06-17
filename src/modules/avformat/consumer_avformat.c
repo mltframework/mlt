@@ -827,7 +827,11 @@ static void *consumer_thread( void *arg )
 	int count = 0;
 
 	// Allocate the context
+#if (LIBAVFORMAT_VERSION_INT >= ((52<<16)+(26<<8)+0))
+	AVFormatContext *oc = avformat_alloc_context( );
+#else
 	AVFormatContext *oc = av_alloc_format_context( );
+#endif
 
 	// Streams
 	AVStream *audio_st = NULL;
