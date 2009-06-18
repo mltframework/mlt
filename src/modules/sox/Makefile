@@ -2,7 +2,7 @@ include ../../../config.mak
 
 CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lm
 
 include config.mak
 
