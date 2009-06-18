@@ -38,17 +38,59 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 
 	// Get the filter object and properties
 	mlt_producer producer = mlt_frame_pop_service( this );
+	int index = ( int )mlt_frame_pop_service( this );
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Frame properties objects
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
 	mlt_frame first_frame = mlt_properties_get_data( properties, "first_frame", NULL );
+
+	// Get producer parameters
+	int strobe = mlt_properties_get_int( properties, "strobe" );
+	int freeze = mlt_properties_get_int( properties, "freeze" );
+	int freeze_after = mlt_properties_get_int( properties, "freeze_after" );
+	int freeze_before = mlt_properties_get_int( properties, "freeze_before" );
+
+	// Determine the position
+	mlt_position first_position = (first_frame != NULL) ? mlt_frame_get_position( first_frame ) : -1;
+	mlt_position need_first = freeze;
+
+	if ( !freeze || freeze_after || freeze_before )
+	{
+		double prod_speed = mlt_properties_get_double( properties, "_speed" );
+		double actual_position = prod_speed * (double) mlt_producer_position( producer );
+
+		if ( mlt_properties_get_int( properties, "reverse" ) )
+			actual_position = mlt_producer_get_playtime( producer ) - actual_position;
+
+		if ( strobe < 2 )
+		{
+			need_first = floor( actual_position );
+		}
+		else
+		{
+			// Strobe effect wanted, calculate frame position
+			need_first = floor( actual_position );
+			need_first -= need_first % strobe;
+		}
+		if ( freeze )
+		{
+			if ( freeze_after && need_first > freeze ) need_first = freeze;
+			else if ( freeze_before && need_first < freeze ) need_first = freeze;
+		}
+	}
+
+	if ( need_first != first_position )
+	{
+		// Bust the cached frame
+		first_frame = NULL;
+		mlt_properties_set_data( properties, "first_frame", NULL, 0, NULL, NULL );
+	}
+
+	// Get the cached frame
 	if ( first_frame == NULL )
 	{
-		int need_first = mlt_properties_get_int( properties, "_need_first" );
-		int index = mlt_properties_get_int( properties, "_index" );
-
-		// Get the real producer
+		// Get the frame to cache from the real producer
 		mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
 
 		// Seek the producer to the correct place
@@ -62,9 +104,9 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	}
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
 
+	// Determine output buffer size
 	*width = mlt_properties_get_int( frame_properties, "width" );
 	*height = mlt_properties_get_int( frame_properties, "height" );
-
 	int size;
 	switch ( *format )
 	{
@@ -80,8 +122,8 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 			break;
 	}
 
+	// Get output buffer
 	uint8_t *output = mlt_properties_get_data( properties, "output_buffer", NULL );
-
 	if( output == NULL )
 	{
 		output = mlt_pool_alloc( size );
@@ -90,12 +132,8 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		mlt_properties_set_data( properties, "output_buffer", output, size, mlt_pool_release, NULL ); 
 	}
 
+	// Which frames are buffered?
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
-
-	// which frames are buffered?
-
-	int error = 0;
-
 	if( first_image == NULL )
 	{
 		mlt_properties props = MLT_FRAME_PROPERTIES( this );
@@ -103,9 +141,9 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( props, "consumer_aspect_ratio" ) );
 		mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( props, "rescale.interp" ) );
 
-		error = mlt_frame_get_image( first_frame, &first_image, format, width, height, writable );
+		int error = mlt_frame_get_image( first_frame, &first_image, format, width, height, writable );
 
-		if( error != 0 ) {
+		if ( error != 0 ) {
 			fprintf(stderr, "first_image == NULL get image died\n");
 			return error;
 		}
@@ -114,6 +152,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	// Start with a base image
 	memcpy( output, first_image, size );
 
+	// Set the output image
 	*image = output;
 	mlt_properties_set_data( frame_properties, "image", output, size, NULL, NULL );
 
@@ -128,55 +167,10 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 {
 	// Construct a new frame
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
-
 	if( frame != NULL )
 	{
-		mlt_frame first_frame = mlt_properties_get_data( properties, "first_frame", NULL );
-
-		mlt_position first_position = (first_frame != NULL) ? mlt_frame_get_position( first_frame ) : -1;
-
-		// get properties
-		int strobe = mlt_properties_get_int( properties, "strobe");
-		int freeze = mlt_properties_get_int( properties, "freeze");
-		int freeze_after = mlt_properties_get_int( properties, "freeze_after");
-		int freeze_before = mlt_properties_get_int( properties, "freeze_before");
-
-		mlt_position need_first;
-
-		if (!freeze || freeze_after || freeze_before) {
-			double prod_speed = mlt_properties_get_double( properties, "_speed");
-			double actual_position = prod_speed * (double) mlt_producer_position( this );
-
-			if (mlt_properties_get_int( properties, "reverse")) actual_position = mlt_producer_get_playtime(this) - actual_position;
-
-			if (strobe < 2)
-			{ 
-				need_first = floor( actual_position );
-			}
-			else 
-			{
-				// Strobe effect wanted, calculate frame position
-				need_first = floor( actual_position );
-				need_first -= need_first%strobe;
-			}
-			if (freeze)
-			{
-				if (freeze_after && need_first > freeze) need_first = freeze;
-				else if (freeze_before && need_first < freeze) need_first = freeze;
-			}
-		}
-		else need_first = freeze;
-
-		if ( need_first != first_position )
-		{
-			// Bust the cached frame
-			mlt_properties_set_data( properties, "first_frame", NULL, 0, NULL, NULL );
-		}
-		mlt_properties_set_int( properties, "_need_first", need_first );
-		mlt_properties_set_int( properties, "_index", index );
-
 		// Stack the producer and producer's get image
+		mlt_frame_push_service( *frame, (void*) index );
 		mlt_frame_push_service( *frame, this );
 		mlt_frame_push_service( *frame, framebuffer_get_image );
 
