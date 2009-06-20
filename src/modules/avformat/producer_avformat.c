@@ -1109,15 +1109,9 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	// Obtain the resample context if it exists (not always needed)
 	ReSampleContext *resample = mlt_properties_get_data( properties, "audio_resample", NULL );
 
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-	// Get the format converter context if it exists
-	AVAudioConvert *convert = mlt_properties_get_data( properties, "audio_convert", NULL );
-#endif
-
 	// Obtain the audio buffers
 	int16_t *audio_buffer = mlt_properties_get_data( properties, "audio_buffer", NULL );
 	int16_t *decode_buffer = mlt_properties_get_data( properties, "decode_buffer", NULL );
-	int16_t *convert_buffer = mlt_properties_get_data( properties, "convert_buffer", NULL );
 
 	// Get amount of audio used
 	int audio_used =  mlt_properties_get_int( properties, "_audio_used" );
@@ -1163,17 +1157,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		*frequency = codec_context->sample_rate;
 	}
 
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-	// Check for audio format converter and create if necessary
-	// TODO: support higher resolutions than 16-bit.
-	if ( convert == NULL && codec_context->sample_fmt != SAMPLE_FMT_S16 )
-	{
-		// Create single channel converter for interleaved with no mixing matrix
-		convert = av_audio_convert_alloc( SAMPLE_FMT_S16, 1, codec_context->sample_fmt, 1, NULL, 0 );
-		mlt_properties_set_data( properties, "audio_convert", convert, 0, ( mlt_destructor )av_audio_convert_free, NULL );
-	}
-#endif
-
 	// Check for audio buffer and create if necessary
 	if ( audio_buffer == NULL )
 	{
@@ -1193,18 +1176,6 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		// And store it on properties for reuse
 		mlt_properties_set_data( properties, "decode_buffer", decode_buffer, 0, ( mlt_destructor )av_free, NULL );
 	}
-
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-	// Check for format converter buffer and create if necessary
-	if ( resample && convert && convert_buffer == NULL )
-	{
-		// Allocate the audio buffer
-		convert_buffer = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
-
-		// And store it on properties for reuse
-		mlt_properties_set_data( properties, "convert_buffer", convert_buffer, 0, ( mlt_destructor )mlt_pool_release, NULL );
-	}
-#endif
 
 	// Seek if necessary
 	if ( position != expected )
@@ -1281,41 +1252,18 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 				if ( data_size > 0 )
 				{
-					int src_stride[6]= { av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 };
-					int dst_stride[6]= { av_get_bits_per_sample_format( SAMPLE_FMT_S16 ) / 8 };
-
 					if ( resample )
 					{
 						int16_t *source = decode_buffer;
 						int16_t *dest = &audio_buffer[ audio_used * *channels ];
-						int convert_samples = data_size / src_stride[0];
+						int convert_samples = data_size / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8 / codec_context->channels;
 
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-						if ( convert )
-						{
-							const void *src_buf[6] = { decode_buffer };
-							void *dst_buf[6] = { convert_buffer };
-							av_audio_convert( convert, dst_buf, dst_stride, src_buf, src_stride, convert_samples );
-							source = convert_buffer;
-						}
-#endif
-						audio_used += audio_resample( resample, dest, source, convert_samples / codec_context->channels );
+						audio_used += audio_resample( resample, dest, source, convert_samples );
 					}
 					else
 					{
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-						if ( convert )
-						{
-							const void *src_buf[6] = { decode_buffer };
-							void *dst_buf[6] = { &audio_buffer[ audio_used * *channels ] };
-							av_audio_convert( convert, dst_buf, dst_stride, src_buf, src_stride, data_size / src_stride[0] );
-						}
-						else
-#endif
-						{
-							memcpy( &audio_buffer[ audio_used * *channels ], decode_buffer, data_size );
-						}
-						audio_used += data_size / *channels / src_stride[0];
+						memcpy( &audio_buffer[ audio_used * *channels ], decode_buffer, data_size );
+						audio_used += data_size / *channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
 					}
 
 					// Handle ignore
