@@ -797,7 +797,7 @@ static void *consumer_thread( void *arg )
 	int samples = 0;
 
 	// AVFormat audio buffer and frame size
-	int audio_outbuf_size = ( 1024 * 256 );
+	int audio_outbuf_size = ( 1024 * 42 );
 	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
 	int audio_input_frame_size = 0;
 
