@@ -1250,7 +1250,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 				len -= ret;
 				ptr += ret;
 
-				if ( data_size > 0 )
+				if ( data_size > 0 && ( audio_used * *channels + data_size < AVCODEC_MAX_AUDIO_FRAME_SIZE ) )
 				{
 					if ( resample )
 					{
