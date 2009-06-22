@@ -95,6 +95,20 @@ static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner
 
 mlt_repository mlt_factory_init( const char *directory )
 {
+	if ( ! global_properties )
+		global_properties = mlt_properties_new( );
+
+	// Allow property refresh on a subsequent initialisation
+	if ( global_properties )
+	{
+		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
+		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "loader" );
+		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
+		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
+		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
+		mlt_properties_set_or_default( global_properties, "MLT_DATA", getenv( "MLT_DATA" ), PREFIX_DATA );
+	}
+
 	// Only initialise once
 	if ( mlt_directory == NULL )
 	{
@@ -124,27 +138,12 @@ mlt_repository mlt_factory_init( const char *directory )
 		mlt_events_register( event_object, "consumer-create-request", ( mlt_transmitter )mlt_factory_create_request );
 		mlt_events_register( event_object, "consumer-create-done", ( mlt_transmitter )mlt_factory_create_done );
 
-		// Create the global properties
-		global_properties = mlt_properties_new( );
-
 		// Create the repository of services
 		repository = mlt_repository_init( directory );
 
 		// Force a clean up when app closes
 		atexit( mlt_factory_close );
 	}
-
-	// Allow property refresh on a subsequent initialisation
-	if ( global_properties != NULL )
-	{
-		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
-		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "loader" );
-		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
-		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
-		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
-		mlt_properties_set_or_default( global_properties, "MLT_DATA", getenv( "MLT_DATA" ), PREFIX_DATA );
-	}
-
 
 	return repository;
 }
