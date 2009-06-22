@@ -283,9 +283,12 @@ MLT_REPOSITORY
 	mlt_tokeniser tokeniser = mlt_tokeniser_init ( );
 	int dircount=mlt_tokeniser_parse_new (
 		tokeniser ,
-   	getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH,
+		getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH,
 		":"
 	);
+	char temp[ 1024 ];
+	sprintf( temp, "%s/frei0r/blacklist.txt", mlt_environment( "MLT_DATA" ) );
+	mlt_properties blacklist = mlt_properties_load( temp );
 
 	while (dircount--){
 
@@ -293,7 +296,7 @@ MLT_REPOSITORY
 		char* dirname = mlt_tokeniser_get_string ( tokeniser , dircount ) ;
 		mlt_properties_dir_list(direntries, dirname ,"*.so",1);
 
-		for (i=0;i<mlt_properties_count(direntries);i++){
+		for (i=0; i<mlt_properties_count(direntries);i++){
 			char* name=mlt_properties_get_value(direntries,i);
 			char* shortname=name+strlen(dirname)+1;
 			char fname[1024]="";
@@ -305,6 +308,9 @@ MLT_REPOSITORY
 			char pluginname[1024]="frei0r.";
 			char* firstname = strtok_r ( shortname , "." , &save_firstptr );
 			strcat(pluginname,firstname);
+
+			if ( mlt_properties_get( blacklist, firstname ) )
+				continue;
 
 			void* handle=dlopen(strcat(name,".so"),RTLD_LAZY);
 			if (handle){
@@ -332,4 +338,5 @@ MLT_REPOSITORY
 		mlt_properties_close(direntries);
 	}
 	mlt_tokeniser_close ( tokeniser );
+	mlt_properties_close( blacklist );
 }
