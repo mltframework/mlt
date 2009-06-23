@@ -18,6 +18,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -404,12 +405,12 @@ query_all:
 		}
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
-			fprintf( stderr, "MLT melt " VERSION "\n"
+			fprintf( stderr, "MLT %s " VERSION "\n"
 				"Copyright (C) 2002-2009 Ushodaya Enterprises Limited\n"
 				"<http://www.mltframework.org/>\n"
 				"This is free software; see the source for copying conditions.  There is NO\n"
-				"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
-			);
+				"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
+				basename( argv[0] ) );
 			goto exit_factory;
 		}
 		else if ( !strcmp( argv[ i ], "-debug" ) )
@@ -517,7 +518,7 @@ query_all:
 	else
 	{
 		fprintf( stderr,
-"Usage: melt [options] [producer [name=value]* ]+\n"
+"Usage: %s [options] [producer [name=value]* ]+\n"
 "Options:\n"
 "  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
 "  -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut\n"
@@ -552,7 +553,8 @@ query_all:
 "  -verbose                                 Set the logging level to verbose\n"
 "  -version                                 Show the version and copyright\n"
 "  -video-track | -hide-audio               Add a video-only track\n"
-"For more help: <http://www.mltframework.org/>\n" );
+"For more help: <http://www.mltframework.org/>\n",
+		basename( argv[0] ) );
 	}
 
 	// Close the consumer

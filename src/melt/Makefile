@@ -1,6 +1,5 @@
 include ../../config.mak
-
-TARGET = melt
+include config.mak
 
 OBJS = melt.o \
 	   io.o
@@ -27,7 +26,7 @@ clean:
 
 install:	all
 	install -d "$(DESTDIR)$(bindir)"
-	install -c -s -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
+	install -c -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
 
 uninstall:
 	rm -f "$(DESTDIR)$(bindir)/$(TARGET)"

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if [ "$help" = "1" ]
+then
+	cat << EOF
+Melt options:
+
+  --rename-melt           - Give melt executable a different name.
+
+EOF
+
+else
+	target=melt
+	for i in "$@"
+	do
+		case $i in
+			--rename-melt=* ) target="${i#--rename-melt=}" ;;
+		esac
+	done
+	echo "TARGET=$target" > config.mak
+fi
