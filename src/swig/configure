@@ -6,7 +6,7 @@ then
 SWIG options:
 
   --enable-swig           - Build the high level language bindings.
-  --swig-languages=[all | [java | perl | php | python | ruby | tcl]*]
+  --swig-languages=[all | [java | lua | perl | php | python | ruby | tcl]*]
                           - Languages to build (default: all)
 
 EOF
@@ -16,7 +16,7 @@ else
 	which swig > /dev/null 2>&1
 	[ $? != 0 ] && echo "Please install swig" && exit 1
 	
-	languages="java perl php python ruby tcl"
+	languages="java lua perl php python ruby tcl"
 	touch config.mak
 
 	# Iterate through arguments
