@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ "$1" = "clean" ]
+then
+	( cd `dirname $0`; rm -rf *.cxx *.so mlt.i ../.java *.class src_swig )
+	exit 0
+fi
+
 path=`which java 2> /dev/null`
 
 if [ $? = 0 ]

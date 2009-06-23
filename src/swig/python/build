@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ "$1" = "clean" ]
+then
+	( cd `dirname $0`; rm -f *.cxx *.so mlt.i ../.python mlt.py? )
+	exit 0
+fi
+
 path=`which python 2> /dev/null`
 
 if [ $? = 0 ]

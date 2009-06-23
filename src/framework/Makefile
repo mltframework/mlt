@@ -102,7 +102,7 @@ uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(SONAME)"
 	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
-	rm "$(DESTDIR)$(datadir)/mlt/metaschema.yaml"
+	rm -f "$(DESTDIR)$(datadir)/mlt/metaschema.yaml"
 
 ifneq ($(wildcard .depend),)
 include .depend

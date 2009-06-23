@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ "$1" = "clean" ]
+then
+	( cd `dirname $0`; rm -f *.cxx *.so mlt.i ../.tcl )
+	exit 0
+fi
+
 path=`which tclsh 2>/dev/null`
 
 if [ "$path" != "" ]

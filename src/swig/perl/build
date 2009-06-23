@@ -1,3 +1,9 @@
 #!/bin/sh
+
+if [ "$1" = "clean" ]
+then
+	( cd `dirname $0`; rm -f *.cxx *.so mlt.i ../.perl mlt.pm )
+	exit 0
+fi
+
 perl Makefile.PL || exit 1
-make

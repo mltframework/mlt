@@ -5,7 +5,7 @@ then
 	cat << EOF
 Melt options:
 
-  --rename-melt           - Give melt executable a different name.
+  --rename-melt=name      - Give melt executable a different name.
 
 EOF
 

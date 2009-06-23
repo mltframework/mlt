@@ -1,42 +1,29 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
-which swig > /dev/null 2>&1
-[ $? != 0 ] && echo "Please install swig" && exit 1
+if [ "$help" = "1" ]
+then
+	cat << EOF
+SWIG options:
 
-pkg-config mlt-framework --cflags > /dev/null 2>&1
-[ $? != 0 ] && echo "Please install mlt" && exit 1
+  --enable-swig           - Build the high level language bindings.
+  --swig-languages=[all | [java | perl | php | python | ruby | tcl]*]
+                          - Languages to build (default: all)
 
-if [ "$1" = "all" ]
-then languages="java perl php python ruby tcl"
-elif [ "$1" != "" ]
-then languages=$*
-else echo "Usage: ./configure [ all | language * ]"
-	 exit 0
+EOF
+
+else
+	
+	which swig > /dev/null 2>&1
+	[ $? != 0 ] && echo "Please install swig" && exit 1
+	
+	languages="java perl php python ruby tcl"
+	touch config.mak
+
+	# Iterate through arguments
+	for i in "$@"
+	do
+		case $i in
+			--swig-languages=* ) echo SUBDIRS = ${i#--swig-languages=} > config.mak ;;
+		esac
+	done
 fi
-
-for i in java perl php python ruby tcl
-do
-	rm -f .$i
-done
-
-for i in $languages
-do
-	echo -n "Configuring $i ... "
-	if [ -d "$i" ] 
-	then
-		cd $i &&
-		output=`./build`
-		if [ $? == 0 ]
-		then echo "OK"
-		 	touch ../.$i
-		elif [ "$output" == "" ]
-		then
-			echo "Failed"
-		else
-			echo $output
-		fi
-		cd ..
-	else
-		echo "Unknown"
-	fi
-done
