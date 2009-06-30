@@ -1,6 +1,23 @@
 MLT Release Notes
 -----------------
 
+Version 0.4.4
+
+The recommended version of FFmpeg for use with this release is 0.5.0.
+This release is a minor maintenance update to the 0.4.2 - just build and
+bug fixes.
+
+* new configure script options:
+  --swig-languages
+  --rename-melt
+  --mandir
+  --datadir
+* added man page for melt (not installed)
+* added invert property to composite transition
+* added frei0r plugin blacklist, currently only contains facedetect
+* added Lua binding via SWIG
+
+
 Version 0.4.2
 
 The recommended version of FFmpeg for use with this release is 0.5.0.
