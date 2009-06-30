@@ -238,8 +238,8 @@ static int consumer_stop( mlt_consumer parent )
 		pthread_mutex_lock( &this->refresh_mutex );
 		pthread_cond_broadcast( &this->refresh_cond );
 		pthread_mutex_unlock( &this->refresh_mutex );
-
-		pthread_join( this->thread, NULL );
+		if ( this->thread )
+			pthread_join( this->thread, NULL );
 		this->joined = 1;
 
 		if ( app_locked && lock ) lock( );
