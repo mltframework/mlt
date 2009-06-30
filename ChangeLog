@@ -1,4 +1,157 @@
+2009-06-30  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set to v0.4.4
+  and update release notes. 
+
+  * src/modules/sdl/consumer_sdl.c: Log failure to open audio. 
+
+2009-06-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_preview.c: Fix crash with invalid video_driver
+  property. 
+
+  * src/modules/gtk2/Makefile: Link gtk2 module against libiconv on FreeBSD. 
+
+2009-06-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/configure: Fix conditional swig build and remove --enable-swig. 
+
+2009-06-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/configure, src/swig/lua/build, src/swig/lua/play.lua: Add SWIG Lua
+  bindings. 
+
+2009-06-22  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/Makefile, src/melt/configure, src/swig/Makefile,
+  src/swig/configure, src/swig/java/build, src/swig/perl/build,
+  src/swig/php/build, src/swig/python/build, src/swig/ruby/build,
+  src/swig/tcl/build: Further integrate swig into build system.  This is not
+  enabled by default. It adds configure options --enable-swig and
+  --swig-languages. 
+
+  * src/melt/Makefile, src/melt/configure, src/melt/melt.c: Add configure
+  option --rename-melt. 
+
+  * src/modules/avformat/producer_avformat.c: Fix crash in avformat producer on
+  audio overrun.  Fixes Kdenlive bug 754 and possibly others due to unchecked
+  bounds writing to an audio buffer. 
+
+  * src/modules/frei0r/Makefile, src/modules/frei0r/blacklist.txt,
+  src/modules/frei0r/factory.c: Add blacklist to frei0r module.  This is for
+  Kdenlive bugs 913 and 917. It is populated with only facedetect for now. 
+
+  * src/framework/mlt_factory.c: Initialize the environment before the module
+  repo.  This lets module factory functions get info from mlt_environment(). 
+
+2009-06-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/Makefile.orig, src/modules/avformat/Makefile.rej:
+  Remove these bogus make files in avformat. 
+
+  * src/modules/avformat/Makefile.orig, src/modules/avformat/Makefile.rej,
+  src/modules/avformat/consumer_avformat.c: Fix avformat consumer crashing on
+  pcm_s16le. 
+
+2009-06-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/Makefile: Fix underlink libm gtk2 module (floor). 
+
+  * src/modules/avformat/producer_avformat.c: Fix regression in 8bit audio
+  handling.  Regression occurred with migration to FFmpeg
+  av_audio_resample_init(). This also drops usage of non-public audio convert;
+  instead, relying upon new resample to do the same task. audioconvert.h is
+  still used, however, to get the sample format description. 
+
+2009-06-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sox/Makefile: Fix underlinking libm for sdl module.  Patch from
+  Debian. 
+
+  * docs/melt.1: Fix manpage whatis entry.  Patch from Debian. 
+
+  * src/modules/kdenlive/producer_framebuffer.c: Fix framebuffer producer to be
+  thread-safe. 
+
+2009-06-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Migrate to FFmpeg
+  avformat_alloc_context(). 
+
+  * src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/producer_avformat.c: Migrate to FFmpeg
+  av_audio_resample_init. 
+
+  * src/melt/Makefile, src/melt/melt.c,
+  src/modules/avformat/producer_avformat.c: Fix (kdenlive-824) >2 channels not
+  downmixed. 
+
+  * src/modules/jackrack/Makefile: Fix underlinking jackrack plugin. 
+
+2009-06-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/producer_framebuffer.c: Fix big memory leak in
+  framebuffer producer.  This fix is for kdenlive bug 898. This was due to
+  allocating a frame in get_frame that might not get closed by a skipped call
+  to get_image. This skipping can happen when using realtime mode (frame
+  dropping). 
+
+  * configure, profiles/Makefile, src/framework/Makefile, src/melt/Makefile,
+  src/modules/avformat/Makefile, src/modules/core/Makefile,
+  src/modules/feeds/Makefile, src/modules/lumas/Makefile,
+  src/modules/oldfilm/Makefile, src/modules/xml/Makefile: Add datadir and
+  mandir options to configure. 
+
+  * src/modules/qimage/configure: Fix building qimage when QtGui does not
+  include QtCore. 
+
+  * src/modules/gtk2/pixops.c: Fix compilation of gtk2 module. 
+
+  * src/modules/kino/avi.cc, src/modules/kino/filehandler.cc,
+  src/modules/kino/kino_wrapper.cc: Apply patch from Debian to fix compilation
+  of kino module. 
+
+  * src/modules/gtk2/have_mmx.S: Apply patch from Debian to update have_mmx. 
+
+  * Makefile: Distributors do not like us to run ldconfig. 
+
+  * configure: Link with --no-undefined flag. 
+
+2009-06-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fix encoding to Ogg Theora with
+  Vorbis.  This applies to Kdenlive bug 465. After fixing the huge memory leak,
+  there was an audio sync problem, and the fix for that might help other
+  formats as well (fix was to initialize the audio codec time base). This also
+  increases the size of the audio encoding buffer to fix flac encoding. 
+
+2009-06-10  Dan Dennedy <dan@dennedy.org>
+
+  * docs/melt.1, docs/policies.txt, src/melt/melt.c: Add man page for melt. 
+  Not yet installed. 
+
+2009-06-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_composite.c: Add invert boolean property to
+  composite transition. 
+
+2009-05-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Workaround video streams with
+  wild timestamps (kdenlive-854) 
+
+2009-06-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Add support for RGBA formats such
+  as QT Anim. 
+
+  * configure, src/framework/mlt.h: Set to interim version 0.4.3 
+
+  * src/modules/core/filter_rescale.c: Improve alpha scaling conditional logic.
+
 2009-05-30  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update Changelog for 0.4.2 release. 
 
   * Doxyfile, NEWS, configure, src/framework/mlt.h: Bump versions and update
   release notes. 
