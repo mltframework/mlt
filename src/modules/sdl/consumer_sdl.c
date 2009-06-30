@@ -23,6 +23,7 @@
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_filter.h>
+#include <framework/mlt_log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -383,7 +384,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		request.userdata = (void *)this;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
 		{
-			fprintf( stderr, "SDL failed to open audio: %s\n", SDL_GetError() );
+			mlt_log_error( MLT_CONSUMER_SERVICE( this ), "SDL failed to open audio: %s\n", SDL_GetError() );
 			init_audio = 2;
 		}
 		else if ( got.size != 0 )
