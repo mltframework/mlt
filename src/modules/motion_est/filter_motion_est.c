@@ -787,6 +787,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 
 	// Get the new image and frame number
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	#ifdef BENCHMARK
@@ -869,17 +870,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		c->former_vectors_valid = 0;
 		memset( c->former_vectors, 0, c->mv_size );
 
-		// Calculate the size of our steps (the number of bytes that seperate adjacent pixels in X and Y direction)
-		switch( *format ) {
-			case mlt_image_yuv422:
-				c->xstride = 2;
-				c->ystride = c->xstride * *width;
-				break;
-			default:
-				// I don't know
-				fprintf(stderr, "\"I am unfamiliar with your new fangled pixel format!\" -filter_motion_est\n");
-				return -1;
-		}
+		c->xstride = 2;
+		c->ystride = c->xstride * *width;
 
 		// Allocate a cache for the previous frame's image
 		c->former_image = mlt_pool_alloc( *width * *height * 2 );

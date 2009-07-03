@@ -307,7 +307,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		 writable = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
 
 	// Get the input image
-	error = mlt_frame_get_image( this, image, format, width, height, writable );
+	*format = mlt_image_yuv422;
+	error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
 	// Check that we want progressive and we aren't already progressive
 	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL && !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) )
@@ -316,11 +317,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		AVPicture *output = mlt_pool_alloc( sizeof( AVPicture ) );
 
 		// Fill the picture
-		if ( *format == mlt_image_yuv422 )
-		{
-			avpicture_fill( output, *image, PIX_FMT_YUYV422, *width, *height );
-			mlt_avpicture_deinterlace( output, output, PIX_FMT_YUYV422, *width, *height );
-		}
+		avpicture_fill( output, *image, PIX_FMT_YUYV422, *width, *height );
+		mlt_avpicture_deinterlace( output, output, PIX_FMT_YUYV422, *width, *height );
 
 		// Free the picture
 		mlt_pool_release( output );

@@ -401,6 +401,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		position = abs( position - length );
 
 	// Fetch the a frame image
+	*format = mlt_image_yuv422;
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// Calculate the region now

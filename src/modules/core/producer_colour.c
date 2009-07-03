@@ -93,9 +93,6 @@ rgba_color parse_color( char *color, unsigned int color_int )
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
-	// May need to know the size of the image to clone it
-	int size = 0;
-	
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
@@ -110,9 +107,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	char *then = mlt_properties_get( producer_props, "_resource" );
 
 	// Get the current image and dimensions cached in the producer
+	int size = 0;
 	uint8_t *image = mlt_properties_get_data( producer_props, "image", &size );
 	int current_width = mlt_properties_get_int( producer_props, "_width" );
 	int current_height = mlt_properties_get_int( producer_props, "_height" );
+	mlt_image_format current_format = mlt_properties_get_int( producer_props, "_format" );
 
 	// Parse the colour
 	if ( now && strchr( now, '/' ) )
@@ -123,78 +122,105 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	rgba_color color = parse_color( now, mlt_properties_get_int( producer_props, "resource" ) );
 
 	// See if we need to regenerate
-	if ( strcmp( now, then ) || *width != current_width || *height != current_height )
+	if ( strcmp( now, then ) || *width != current_width || *height != current_height || *format != current_format )
 	{
 		// Color the image
-		uint8_t y, u, v;
-		int i = *height;
-		int j = 0;
-		int uneven = *width % 2;
-		int count = ( *width - uneven ) / 2;
-		uint8_t *p = NULL;
+		int i = *width * *height + 1;
+		int bpp;
+
+		switch ( *format )
+		{
+			case mlt_image_rgb24:
+				bpp = 3;
+				break;
+			case mlt_image_rgb24a:
+			case mlt_image_opengl:
+				bpp = 4;
+				break;
+			default:
+				bpp = 2;
+				*format = mlt_image_yuv422;
+				break;
+		}
 
 		// Allocate the image
-		size = *width * *height * 2;
-		image = mlt_pool_alloc( size );
+		size = *width * *height * bpp;
+		uint8_t *p = image = mlt_pool_alloc( size );
 
 		// Update the producer
 		mlt_properties_set_data( producer_props, "image", image, size, mlt_pool_release, NULL );
 		mlt_properties_set_int( producer_props, "_width", *width );
 		mlt_properties_set_int( producer_props, "_height", *height );
+		mlt_properties_set_int( producer_props, "_format", *format );
 		mlt_properties_set( producer_props, "_resource", now );
 
-		RGB2YUV( color.r, color.g, color.b, y, u, v );
-
-		p = image;
-
-		while ( i -- )
+		switch ( *format )
 		{
-			j = count;
-			while ( j -- )
+		case mlt_image_yuv422:
+		{
+			int uneven = *width % 2;
+			int count = ( *width - uneven ) / 2 + 1;
+			uint8_t y, u, v;
+
+			RGB2YUV( color.r, color.g, color.b, y, u, v );
+			i = *height + 1;
+			while ( --i )
 			{
-				*p ++ = y;
-				*p ++ = u;
-				*p ++ = y;
-				*p ++ = v;
+				int j = count;
+				while ( --j )
+				{
+					*p ++ = y;
+					*p ++ = u;
+					*p ++ = y;
+					*p ++ = v;
+				}
+				if ( uneven )
+				{
+					*p ++ = y;
+					*p ++ = u;
+				}
 			}
-			if ( uneven )
+			break;
+		}
+		case mlt_image_rgb24:
+			while ( --i )
 			{
-				*p ++ = y;
-				*p ++ = u;
+				*p ++ = color.r;
+				*p ++ = color.g;
+				*p ++ = color.b;
 			}
+			break;
+		case mlt_image_rgb24a:
+		case mlt_image_opengl:
+			while ( --i )
+			{
+				*p ++ = color.r;
+				*p ++ = color.g;
+				*p ++ = color.b;
+				*p ++ = color.a;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 
-	// Update the frame
-	mlt_properties_set_int( properties, "width", *width );
-	mlt_properties_set_int( properties, "height", *height );
-	
-	// Clone if necessary (deemed always necessary)
-	if ( 1 )
-	{
-		// Create the alpha channel
-		uint8_t *alpha = mlt_pool_alloc( size >> 1 );
+	// Create the alpha channel
+	int alpha_size = *width * *height;
+	uint8_t *alpha = mlt_pool_alloc( alpha_size );
 
-		// Clone our image
-		uint8_t *copy = mlt_pool_alloc( size );
-		memcpy( copy, image, size );
+	// Initialise the alpha
+	if ( alpha )
+		memset( alpha, color.a, alpha_size );
 
-		// We're going to pass the copy on
-		image = copy;
+	// Clone our image
+	*buffer = mlt_pool_alloc( size );
+	memcpy( *buffer, image, size );
 
-		// Initialise the alpha
-		if ( alpha )
-			memset( alpha, color.a, size >> 1 );
-
-		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", copy, size, mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "alpha", alpha, size >> 1, mlt_pool_release, NULL );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
-	}
-
-	// Pass on the image
-	*buffer = image;
-	*format = mlt_image_yuv422;
+	// Now update properties so we free the copy after
+	mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
+	mlt_properties_set_data( properties, "alpha", alpha, alpha_size, mlt_pool_release, NULL );
+	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
 
 	return 0;
 }

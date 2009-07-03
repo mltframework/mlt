@@ -236,10 +236,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter this = mlt_frame_pop_service( frame );
 
 	// Get the image from the frame
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	// Get the image from the frame
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 )
 	{
 		if ( this != NULL )
 		{

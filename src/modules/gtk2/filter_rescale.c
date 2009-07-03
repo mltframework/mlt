@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight )
+static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Get the properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
@@ -48,7 +48,9 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 		interp = PIXOPS_INTERP_HYPER;
 
 	// Carry out the rescaling
-	if ( iformat == mlt_image_yuv422 && oformat == mlt_image_yuv422 )
+	switch ( *format )
+	{
+	case mlt_image_yuv422:
 	{
 		// Create the output image
 		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
@@ -66,67 +68,58 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iform
 
 		// Return the output
 		*image = output;
+		break;
 	}
-	else if ( iformat == mlt_image_rgb24 || iformat == mlt_image_rgb24a )
+	case mlt_image_rgb24:
+	case mlt_image_rgb24a:
+	case mlt_image_opengl:
 	{
-		int bpp = (iformat == mlt_image_rgb24a ? 4 : 3 );
-			
-		// Create the yuv image
-		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
+		int bpp = ( *format == mlt_image_rgb24 ? 3 : 4 );
+
+		// Create the output image
+		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * bpp );
 
 		if ( strcmp( interps, "none" ) && ( iwidth != owidth || iheight != oheight ) )
 		{
 			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data( *image, GDK_COLORSPACE_RGB,
-				( iformat == mlt_image_rgb24a ), 8, iwidth, iheight,
+				( *format == mlt_image_rgb24a || *format == mlt_image_opengl ), 8, iwidth, iheight,
 				iwidth * bpp, NULL, NULL );
-
 			GdkPixbuf *scaled = gdk_pixbuf_scale_simple( pixbuf, owidth, oheight, interp );
 			g_object_unref( pixbuf );
-			
-			// Extract YUV422 and alpha
-			if ( bpp == 4 )
+
+			int src_stride = gdk_pixbuf_get_rowstride( scaled );
+			int dst_stride = owidth * bpp;
+			if ( src_stride != dst_stride )
 			{
-				// Allocate the alpha mask
-				uint8_t *alpha = mlt_pool_alloc( owidth * ( oheight + 1 ) );
-
-				// Convert the image and extract alpha
-				mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( scaled ), owidth, oheight, gdk_pixbuf_get_rowstride( scaled ), output, alpha );
-
-				mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
+				int y = oheight;
+				uint8_t *src = gdk_pixbuf_get_pixels( scaled );
+				uint8_t *dst = output;
+				while ( y-- )
+				{
+					memcpy( dst, src, dst_stride );
+					dst += dst_stride;
+					src += src_stride;
+				}
 			}
 			else
 			{
-				// No alpha to extract
-				mlt_convert_rgb24_to_yuv422( gdk_pixbuf_get_pixels( scaled ), owidth, oheight, gdk_pixbuf_get_rowstride( scaled ), output );
+				memcpy( output, gdk_pixbuf_get_pixels( scaled ), owidth * oheight * bpp );
 			}
+
 			g_object_unref( scaled );
+
+			// Now update the frame
+			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
+			mlt_properties_set_int( properties, "width", owidth );
+			mlt_properties_set_int( properties, "height", oheight );
+	
+			// Return the output
+			*image = output;
 		}
-		else
-		{
-			// Extract YUV422 and alpha
-			if ( bpp == 4 )
-			{
-				// Allocate the alpha mask
-				uint8_t *alpha = mlt_pool_alloc( owidth * ( oheight + 1 ) );
-
-				// Convert the image and extract alpha
-				mlt_convert_rgb24a_to_yuv422( *image, owidth, oheight, owidth * 4, output, alpha );
-
-				mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
-			}
-			else
-			{
-				// No alpha to extract
-				mlt_convert_rgb24_to_yuv422( *image, owidth, oheight, owidth * 3, output );
-			}
-		}
-
-		// Now update the frame
-		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "width", owidth );
-		mlt_properties_set_int( properties, "height", oheight );
-
-		*image = output;
+		break;
+	}
+	default:
+		break;
 	}
 
 	return 0;

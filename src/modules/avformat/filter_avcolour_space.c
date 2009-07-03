@@ -20,6 +20,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 
 // ffmpeg Header files
 #include <avformat.h>
@@ -28,7 +29,6 @@
 #endif
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
-#define PIX_FMT_RGB32 PIX_FMT_RGBA32
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
@@ -53,7 +53,8 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 			value = PIX_FMT_RGB24;
 			break;
 		case mlt_image_rgb24a:
-			value = PIX_FMT_RGB32;
+		case mlt_image_opengl:
+			value = PIX_FMT_RGBA;
 			break;
 		case mlt_image_yuv422:
 			value = PIX_FMT_YUYV422;
@@ -61,16 +62,15 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 		case mlt_image_yuv420p:
 			value = PIX_FMT_YUV420P;
 			break;
-		case mlt_image_opengl:
 		case mlt_image_none:
-			fprintf( stderr, "Invalid format...\n" );
+			mlt_log_error( NULL, "[filter avcolour_space] Invalid format\n" );
 			break;
 	}
 
 	return value;
 }
 
-static inline void convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt, int width, int height )
+static inline void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt, int width, int height )
 {
 	AVPicture input;
 	AVPicture output;
@@ -90,111 +90,110 @@ static inline void convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in
 /** Do it :-).
 */
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+// static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, mlt_image_format output_format )
 {
-	mlt_filter filter = mlt_frame_pop_service( this );
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-	int output_format = *format;
-	mlt_image_format forced = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "forced" );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+	int width = mlt_properties_get_int( properties, "width" );
+	int height = mlt_properties_get_int( properties, "height" );
 	int error = 0;
 
-	// Allow this filter to force processing in a colour space other than requested
-	*format = forced != 0 ? forced : *format;
-   
-	error = mlt_frame_get_image( this, image, format, width, height, 0 );
-
-	if ( error == 0 && *format != output_format && *image != NULL && output_format != mlt_image_opengl )
+	if ( *format != output_format )
 	{
-		int in_fmt = convert_mlt_to_av_cs( *format );
-		int out_fmt = convert_mlt_to_av_cs( output_format );
-		int size = avpicture_get_size( out_fmt, *width, *height );
-		uint8_t *output = mlt_pool_alloc( size );
-		convert_image( output, *image, out_fmt, in_fmt, *width, *height );
-
-		// Special case for alpha rgb input
-		if ( *format == mlt_image_rgb24a )
+		mlt_log_debug( NULL, "[filter avcolour_space] %s -> %s\n",
+			mlt_image_format_name( *format ), mlt_image_format_name( output_format ) );
+		if ( output_format != mlt_image_opengl )
 		{
-			register uint8_t *alpha = mlt_frame_get_alpha_mask( this );
-			register int len = *width * *height;
-			register uint8_t *bits = *image;
-			register int n = ( len + 7 ) / 8;
-
-			if( !is_big_endian( ) )
-				bits += 3;
-
-			// Extract alpha mask from the image using Duff's Device
-			switch( len % 8 )
+			int in_fmt = convert_mlt_to_av_cs( *format );
+			int out_fmt = convert_mlt_to_av_cs( output_format );
+			int size = avpicture_get_size( out_fmt, width, height );
+			uint8_t *output = mlt_pool_alloc( size );
+			av_convert_image( output, *image, out_fmt, in_fmt, width, height );
+	
+			// Special case for alpha rgb input
+			//if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+if (0)
 			{
-				case 0:	do { *alpha ++ = *bits; bits += 4;
-				case 7:		 *alpha ++ = *bits; bits += 4;
-				case 6:		 *alpha ++ = *bits; bits += 4;
-				case 5:		 *alpha ++ = *bits; bits += 4;
-				case 4:		 *alpha ++ = *bits; bits += 4;
-				case 3:		 *alpha ++ = *bits; bits += 4;
-				case 2:		 *alpha ++ = *bits; bits += 4;
-				case 1:		 *alpha ++ = *bits; bits += 4;
-						}
-						while( --n );
-			}
-		}
-
-		// Update the output
-		*image = output;
-		*format = output_format;
-		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "format", output_format );
-
-		// Special case for alpha rgb output
-		if ( *format == mlt_image_rgb24a )
-		{
-			// Fetch the alpha
-			register uint8_t *alpha = mlt_frame_get_alpha_mask( this );
-
-			if ( alpha != NULL )
-			{
+				register uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+				register int len = width * height;
 				register uint8_t *bits = *image;
-				register int len = *width * *height;
 				register int n = ( len + 7 ) / 8;
-				
+	
 				if( !is_big_endian( ) )
 					bits += 3;
-
-				// Merge the alpha mask into the RGB image using Duff's Device
+	
+				// Extract alpha mask from the image using Duff's Device
 				switch( len % 8 )
 				{
-					case 0:	do { *bits = *alpha++; bits += 4;
-					case 7:		 *bits = *alpha++; bits += 4;
-					case 6:		 *bits = *alpha++; bits += 4;
-					case 5:		 *bits = *alpha++; bits += 4;
-					case 4:		 *bits = *alpha++; bits += 4;
-					case 3:		 *bits = *alpha++; bits += 4;
-					case 2:		 *bits = *alpha++; bits += 4;
-					case 1:		 *bits = *alpha++; bits += 4;
+					case 0:	do { *alpha ++ = *bits; bits += 4;
+					case 7:		 *alpha ++ = *bits; bits += 4;
+					case 6:		 *alpha ++ = *bits; bits += 4;
+					case 5:		 *alpha ++ = *bits; bits += 4;
+					case 4:		 *alpha ++ = *bits; bits += 4;
+					case 3:		 *alpha ++ = *bits; bits += 4;
+					case 2:		 *alpha ++ = *bits; bits += 4;
+					case 1:		 *alpha ++ = *bits; bits += 4;
 							}
 							while( --n );
 				}
 			}
+	
+			// Update the output
+			*image = output;
+			*format = output_format;
+			mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
+			mlt_properties_set_int( properties, "format", output_format );
+	
+			// Special case for alpha rgb output
+// 			if ( output_format == mlt_image_rgb24a )
+if (0)
+			{
+				// Fetch the alpha
+				register uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+	
+				if ( alpha != NULL )
+				{
+					register uint8_t *bits = *image;
+					register int len = width * height;
+					register int n = ( len + 7 ) / 8;
+					
+					if( !is_big_endian( ) )
+						bits += 3;
+	
+					// Merge the alpha mask into the RGB image using Duff's Device
+					switch( len % 8 )
+					{
+						case 0:	do { *bits = *alpha++; bits += 4;
+						case 7:		 *bits = *alpha++; bits += 4;
+						case 6:		 *bits = *alpha++; bits += 4;
+						case 5:		 *bits = *alpha++; bits += 4;
+						case 4:		 *bits = *alpha++; bits += 4;
+						case 3:		 *bits = *alpha++; bits += 4;
+						case 2:		 *bits = *alpha++; bits += 4;
+						case 1:		 *bits = *alpha++; bits += 4;
+								}
+								while( --n );
+					}
+				}
+			}
 		}
-	}
-	else if ( error == 0 && *format != output_format && *image != NULL && output_format == mlt_image_opengl )
-	{
-		if ( *format == mlt_image_yuv422 )
+		else if ( *format == mlt_image_yuv422 ) // && output_format == mlt_image_opengl
 		{
-			int size = *width * *height * 4;
+			int size = width * height * 4;
 			uint8_t *output = mlt_pool_alloc( size );
-			int h = *height;
-			int w = *width;
+			int h = height;
+			int w = width;
 			uint8_t *o = output + size;
 			int ostride = w * 4;
 			uint8_t *p = *image;
-			uint8_t *alpha = mlt_frame_get_alpha_mask( this ) + *width * *height;
+			uint8_t *alpha = mlt_frame_get_alpha_mask( frame ) + width * height;
 			int r, g, b;
 
 			while( h -- )
 			{
-				w = *width;
+				w = width;
 				o -= ostride;
-				alpha -= *width;
+				alpha -= width;
 				while( w >= 2 )
 				{
 					YUV2RGB( *p, *( p + 1 ), *( p + 3 ), r, g, b );
@@ -211,7 +210,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 					p += 4;
 				}
 				o -= ostride;
-				alpha -= *width;
+				alpha -= width;
 			}
 
 			mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
@@ -220,7 +219,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			*format = output_format;
 		}
 	}
-
 	return error;
 }
 
@@ -229,8 +227,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	mlt_frame_push_service( frame, this );
-	mlt_frame_push_get_image( frame, filter_get_image );
+	frame->convert_image = convert_image;
 	return frame;
 }
 

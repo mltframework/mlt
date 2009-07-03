@@ -43,6 +43,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	
 	if ( out == 0 )
 		out = 24;
+	*format = mlt_image_yuv422;
 
 	if ( b_frame == NULL || mlt_properties_get_int( b_frame_props, "width" ) != *width || mlt_properties_get_int( b_frame_props, "height" ) != *height )
 	{

@@ -35,6 +35,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int invert = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( this ) );
 
 	// Render the frame
+	*format = mlt_image_yuv422;
 	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 )
 	{
 		uint8_t *p = *image;

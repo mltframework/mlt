@@ -25,16 +25,18 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 
 	mlt_filter filter = mlt_frame_pop_service( this );
-	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	*format = mlt_image_rgb24a;
+	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "frei0r %dx%d\n", *width, *height );
+	int error = mlt_frame_get_image( this, image, format, width, height, 0 );
 	
-	if ( error == 0 && *image && *format == mlt_image_yuv422 )
+	if ( error == 0 && *image )
 	{
 		mlt_position in = mlt_filter_get_in( filter );
 		mlt_position out = mlt_filter_get_out( filter );
 		mlt_position time = mlt_frame_get_position( this );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
 		
-		process_frei0r_item( filter_type , position, MLT_FILTER_PROPERTIES ( filter ), this , image, format , width , height , writable );
+		process_frei0r_item( filter_type, position, MLT_FILTER_PROPERTIES ( filter ), this, image, width, height );
 		
 	}
 
@@ -49,8 +51,7 @@ mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	return frame;
 }
 
-void filter_close( mlt_filter this ){
-	
+void filter_close( mlt_filter this )
+{
 	destruct( MLT_FILTER_PROPERTIES ( this ) );
-	
 }

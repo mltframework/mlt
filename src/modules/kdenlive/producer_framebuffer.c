@@ -116,6 +116,9 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		case mlt_image_rgb24:
 			size = *width * ( *height + 1 ) * 3;
 			break;
+		case mlt_image_rgb24a:
+			size = *width * ( *height + 1 ) * 4;
+			break;
 		default:
 			*format = mlt_image_yuv422;
 			size = *width * ( *height + 1 ) * 2;
@@ -133,7 +136,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	}
 
 	// Which frames are buffered?
-	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
+	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", &size );
 	if( first_image == NULL )
 	{
 		mlt_properties props = MLT_FRAME_PROPERTIES( this );

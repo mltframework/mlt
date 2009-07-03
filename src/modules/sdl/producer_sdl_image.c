@@ -38,13 +38,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	SDL_Surface *surface = mlt_properties_get_data( properties, "surface", NULL );
 	SDL_Surface *converted = NULL;
-	uint8_t *alpha;
 
 	*width = surface->w;
 	*height = surface->h;
-	*format = mlt_image_yuv422;
-	*image = mlt_pool_alloc( *width * *height * 2 );
-	alpha = mlt_pool_alloc( *width * *height );
+	int image_size = *width * *height * 3;
 
 	if ( surface->format->BitsPerPixel != 32 && surface->format->BitsPerPixel != 24 )
 	{
@@ -63,15 +60,19 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 	switch( surface->format->BitsPerPixel )
 	{
 		case 32:
-			mlt_convert_rgb24a_to_yuv422( surface->pixels, *width, *height, surface->pitch, *image, alpha );
+			*format = mlt_image_rgb24a;
+			image_size = *width * *height * 4;
+			*image = mlt_pool_alloc( image_size );
+			memcpy( *image, surface->pixels, image_size );
 			break;
 		case 24:
-			mlt_convert_rgb24_to_yuv422( surface->pixels, *width, *height, surface->pitch, *image );
-			memset( alpha, 255, *width * *height );
+			*format = mlt_image_rgb24;
+			*image = mlt_pool_alloc( image_size );
+			memcpy( *image, surface->pixels, image_size );
 			break;
 		default:
-			mlt_convert_rgb24_to_yuv422( converted->pixels, *width, *height, converted->pitch, *image );
-			memset( alpha, 255, *width * *height );
+			*image = mlt_pool_alloc( image_size );
+			memcpy( *image, converted->pixels, image_size );
 			break;
 	}
 
@@ -79,8 +80,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 		SDL_FreeSurface( converted );
 
 	// Update the frame
-	mlt_properties_set_data( properties, "image", *image, *width * *height * 2, mlt_pool_release, NULL );
-	mlt_properties_set_data( properties, "alpha", alpha, *width * *height, mlt_pool_release, NULL );
+	mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
 

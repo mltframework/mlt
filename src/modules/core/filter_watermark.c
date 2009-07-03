@@ -165,6 +165,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_properties_set_int( b_props, "distort", 1 );
 			}
 
+			*format = mlt_image_yuv422;
 			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
 			{
 				// Apply all filters that are attached to this filter to the b frame

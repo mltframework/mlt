@@ -63,24 +63,24 @@ static void DoWave(uint8_t *src, int src_w, int src_h, uint8_t *dst, mlt_positio
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the image
-	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	*format = mlt_image_yuv422;
+	int error = mlt_frame_get_image( this, image, format, width, height, 0 );
 	mlt_position position = mlt_frame_get_position( this );
 
 	// Only process if we have no error and a valid colour space
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 )
 	{
 		double factor = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "wave" );
 		int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "speed" );
-        	int deformX = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "deformX" );
-        	int deformY = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "deformY" );
-        	if (factor != 0) {
+		int deformX = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "deformX" );
+		int deformY = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "deformY" );
+		if (factor != 0) {
 			int image_size = *width * (*height + 1) * 2;
-            		uint8_t *dest = mlt_pool_alloc (image_size);
-            		DoWave(*image, *width, (*height + 1), dest, position, speed, factor, deformX, deformY);
-            		memcpy(*image, dest, image_size);
-            		mlt_pool_release(dest);
-        	}
-    	}
+			*image = mlt_pool_alloc (image_size);
+			DoWave(*image, *width, (*height + 1), *image, position, speed, factor, deformX, deformY);
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "image", *image, image_size, mlt_pool_release, NULL );
+		}
+	}
 
 	return error;
 }

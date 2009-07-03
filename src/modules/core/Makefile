@@ -16,6 +16,7 @@ OBJS = factory.o \
 	   filter_data_show.o \
 	   filter_gamma.o \
 	   filter_greyscale.o \
+	   filter_imageconvert.o \
 	   filter_luma.o \
 	   filter_mirror.o \
 	   filter_mono.o \

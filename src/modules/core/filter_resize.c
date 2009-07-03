@@ -36,6 +36,145 @@ static inline void swap_bytes( uint8_t *upper, uint8_t *lower )
 	*upper = t;
 }
 
+static uint8_t *resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, int iheight, uint8_t alpha_value )
+{
+	uint8_t *output = NULL;
+
+	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) && ( owidth > 6 && oheight > 6 ) )
+	{
+		uint8_t *out_line;
+		int offset_x = ( owidth - iwidth ) / 2;
+		int offset_y = ( oheight - iheight ) / 2;
+		int iused = iwidth;
+
+		output = mlt_pool_alloc( owidth * oheight );
+		memset( output, alpha_value, owidth * oheight );
+
+		offset_x -= offset_x % 2;
+
+		out_line = output + offset_y * owidth;
+		out_line += offset_x;
+
+		// Loop for the entirety of our output height.
+		while ( iheight -- )
+		{
+			// We're in the input range for this row.
+			memcpy( out_line, input, iused );
+
+			// Move to next input line
+			input += iwidth;
+
+			// Move to next output line
+			out_line += owidth;
+		}
+	}
+
+	return output;
+}
+
+static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight, int bpp )
+{
+	// Calculate strides
+	int istride = iwidth * bpp;
+	int ostride = owidth * bpp;
+	int offset_x = ( owidth - iwidth ) / 2 * bpp;
+	int offset_y = ( oheight - iheight ) / 2;
+	uint8_t *in_line = input;
+	uint8_t *out_line;
+	int size = owidth * oheight;
+	uint8_t *p = output;
+
+	// Optimisation point
+	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || oheight <= 6 ) )
+	{
+		return;
+	}
+	else if ( iwidth == owidth && iheight == oheight )
+	{
+		memcpy( output, input, iheight * istride );
+		return;
+	}
+
+	if ( bpp == 2 )
+	{
+		while( size -- )
+		{
+			*p ++ = 16;
+			*p ++ = 128;
+		}
+		offset_x -= offset_x % 4;
+	}
+	else
+	{
+		size *= bpp;
+		while ( size-- )
+			*p ++ = 0;
+	}
+
+	out_line = output + offset_y * ostride;
+	out_line += offset_x;
+
+	// Loop for the entirety of our output height.
+	while ( iheight -- )
+	{
+		// We're in the input range for this row.
+		memcpy( out_line, in_line, iwidth * bpp );
+
+		// Move to next input line
+		in_line += istride;
+
+		// Move to next output line
+		out_line += ostride;
+	}
+}
+
+/** A resizing function for yuv422 frames - this does not rescale, but simply
+	resizes. It assumes yuv422 images available on the frame so use with care.
+*/
+
+static uint8_t *frame_resize_image( mlt_frame this, int owidth, int oheight, int bpp )
+{
+	// Get properties
+	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+
+	// Get the input image, width and height
+	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
+	uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+
+	int iwidth = mlt_properties_get_int( properties, "width" );
+	int iheight = mlt_properties_get_int( properties, "height" );
+
+	// If width and height are correct, don't do anything
+	if ( iwidth != owidth || iheight != oheight )
+	{
+		uint8_t alpha_value = mlt_properties_get_int( properties, "resize_alpha" );
+
+		// Create the output image
+		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * bpp );
+
+		// Call the generic resize
+		resize_image( output, owidth, oheight, input, iwidth, iheight, bpp );
+
+		// Now update the frame
+		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_int( properties, "width", owidth );
+		mlt_properties_set_int( properties, "height", oheight );
+
+		// We should resize the alpha too
+		alpha = resize_alpha( alpha, owidth, oheight, iwidth, iheight, alpha_value );
+		if ( alpha != NULL )
+		{
+			mlt_properties_set_data( properties, "alpha", alpha, owidth * oheight, ( mlt_destructor )mlt_pool_release, NULL );
+			this->get_alpha_mask = NULL;
+		}
+
+		// Return the output
+		return output;
+	}
+	// No change, return input
+	return input;
+}
+
 /** Do it :-).
 */
 
@@ -120,11 +259,28 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Now get the image
 	error = mlt_frame_get_image( this, image, format, &owidth, &oheight, writable );
 
-	// We only know how to process yuv422 at the moment
-	if ( error == 0 && *format == mlt_image_yuv422 && *image != NULL )
+	if ( error == 0 && *image )
 	{
 		// Get the requested scale operation
 		char *op = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "scale" );
+		int bpp;
+
+		switch ( *format )
+		{
+			case mlt_image_yuv422:
+				bpp = 2;
+				break;
+			case mlt_image_rgb24:
+				bpp = 3;
+				break;
+			case mlt_image_rgb24a:
+			case mlt_image_opengl:
+				bpp = 4;
+				break;
+			default:
+				// XXX: we only know how to resize packed formats
+				return 1;
+		}
 
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
@@ -136,8 +292,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			// Get the input image, width and height
 			int size;
 			uint8_t *image = mlt_properties_get_data( properties, "image", &size );
-			uint8_t *ptr = image + owidth * 2;
-			memmove( ptr, image, size - owidth * 2 );
+			uint8_t *ptr = image + owidth * bpp;
+			memmove( ptr, image, size - owidth * bpp );
 			
 			// Set the normalised field order
 			mlt_properties_set_int( properties, "top_field_first", 0 );
@@ -146,11 +302,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		if ( !strcmp( op, "affine" ) )
 		{
-			*image = mlt_frame_rescale_yuv422( this, *width, *height );
+			// TODO: Determine where this is needed and find a different way
+			// *image = mlt_frame_rescale_image( this, *width, *height, bpp );
 		}
 		else if ( strcmp( op, "none" ) != 0 )
 		{
-			*image = mlt_frame_resize_yuv422( this, *width, *height );
+			*image = frame_resize_image( this, *width, *height, bpp );
 		}
 		else
 		{

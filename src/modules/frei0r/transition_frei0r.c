@@ -23,10 +23,6 @@
  
 static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable ){
 	
-	if (*format!=mlt_image_yuv422 ){
-		return -1;
-	}
-	
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
 	mlt_transition transition = mlt_frame_pop_service( a_frame );
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
@@ -50,8 +46,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	
 	uint8_t *images[]={NULL,NULL,NULL};
 
-	mlt_frame_get_image( a_frame, &images[0], format, width, height, 1 );
-	mlt_frame_get_image( b_frame, &images[1], format, width, height, 1 );
+	*format = mlt_image_rgb24a;
+	mlt_frame_get_image( a_frame, &images[0], format, width, height, 0 );
+	mlt_frame_get_image( b_frame, &images[1], format, width, height, 0 );
 	
 	mlt_position in = mlt_transition_get_in( transition );
 	mlt_position out = mlt_transition_get_out( transition );
@@ -62,7 +59,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	float pos=( float )( position - in ) / ( float )( out - in + 1 );
 	
-	process_frei0r_item( transition_type , pos , properties, !invert ? a_frame : b_frame , images , format, width,height, writable );
+	process_frei0r_item( transition_type, pos, properties, !invert ? a_frame : b_frame, images, width, height );
 	
 	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
         *height = mlt_properties_get_int( !invert ? a_props : b_props, "height" );

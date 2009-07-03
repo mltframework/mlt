@@ -31,8 +31,8 @@ static void parse_color( int color, f0r_param_color_t *fcolor )
 	fcolor->b /= 255;
 }
 
-int process_frei0r_item( mlt_service_type type,  double position , mlt_properties prop , mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable ){
-
+int process_frei0r_item( mlt_service_type type, double position, mlt_properties prop, mlt_frame this, uint8_t **image, int *width, int *height )
+{
 	int i=0;
 	f0r_instance_t ( *f0r_construct ) ( unsigned int , unsigned int ) =  mlt_properties_get_data(  prop , "f0r_construct" ,NULL);
 	void (*f0r_update)(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)=mlt_properties_get_data(  prop , "f0r_update" ,NULL);
@@ -101,35 +101,17 @@ int process_frei0r_item( mlt_service_type type,  double position , mlt_propertie
 	}
 
 	int video_area = *width * *height;
-	uint32_t *img_a;
-
-	if ( type != producer_type )
-	    img_a = mlt_pool_alloc( video_area * sizeof(uint32_t) );
-	uint32_t *img_b = mlt_pool_alloc( video_area * sizeof(uint32_t) );
+	uint32_t *result = mlt_pool_alloc( video_area * sizeof(uint32_t) );
 
 	if (type==producer_type) {
-		f0r_update ( inst , position , NULL , img_b );
-		mlt_convert_rgb24a_to_yuv422((uint8_t *)img_b , *width, *height, *width * sizeof(uint32_t),*image, NULL);
+		f0r_update (inst, position, NULL, result );
 	} else if (type==filter_type) {
-		mlt_convert_yuv422_to_rgb24a(*image, (uint8_t *)img_a, video_area);
-		f0r_update ( inst , position , img_a , img_b );
-		mlt_convert_rgb24a_to_yuv422((uint8_t *)img_b , *width, *height, *width * sizeof(uint32_t),
-												*image, NULL );
+		f0r_update ( inst, position, (uint32_t *)image[0], result );
 	} else if (type==transition_type && f0r_update2 ){
-		uint32_t *result = mlt_pool_alloc( video_area * sizeof(uint32_t) );
-
-		mlt_convert_yuv422_to_rgb24a ( image[0] , (uint8_t *)img_a , video_area );
-		mlt_convert_yuv422_to_rgb24a ( image[1] , (uint8_t *)img_b , video_area );
-		f0r_update2 ( inst , position , img_a , img_b , NULL , result );
-
-		uint8_t * image_ptr=mlt_properties_get_data(MLT_FRAME_PROPERTIES(this), "image", NULL );
-		if (image_ptr)
-    		    mlt_convert_rgb24a_to_yuv422((uint8_t *)result, *width, *height, *width * sizeof(uint32_t), image_ptr , NULL );
-
-		mlt_pool_release(result);
- 	}
-	if ( type != producer_type ) mlt_pool_release(img_a);
-	mlt_pool_release(img_b);
+		f0r_update2 ( inst, position, (uint32_t *)image[0], (uint32_t *)image[1], NULL, result );
+	}
+	*image = (uint8_t*) result;
+	mlt_properties_set_data(MLT_FRAME_PROPERTIES(this), "image", result, video_area * sizeof(uint32_t), mlt_pool_release, NULL);
 
 	return 0;
 }

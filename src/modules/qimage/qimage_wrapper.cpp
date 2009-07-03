@@ -39,6 +39,7 @@
 #include <QtGui/QImage>
 #include <QtCore/QSysInfo>
 #include <QtCore/QMutex>
+#include <QtCore/QtEndian>
 #endif
 
 
@@ -96,10 +97,6 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 	self->current_image = static_cast<uint8_t*>( mlt_cache_item_data( self->image_cache, NULL ) );
 
-	// restore alpha channel
-	self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
-	self->current_alpha = static_cast<uint8_t*>( mlt_cache_item_data( self->alpha_cache, NULL ) );
-
 	// Check if user wants us to reload the image
 	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) 
 	{
@@ -149,7 +146,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 			mlt_properties_set_int( producer_props, "_real_width", mlt_properties_get_int( cached_props, "real_width" ) );
 			mlt_properties_set_int( producer_props, "_real_height", mlt_properties_get_int( cached_props, "real_height" ) );
 			self->current_image = ( uint8_t * )mlt_properties_get_data( cached_props, "image", NULL );
-			self->current_alpha = ( uint8_t * )mlt_properties_get_data( cached_props, "alpha", NULL );
+			self->has_alpha = mlt_properties_get_int( cached_props, "alpha" );
 
 			if ( width != 0 && ( width != self->current_width || height != self->current_height ) )
 				self->current_image = NULL;
@@ -204,60 +201,51 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 
 #ifdef USE_QT4
 		// Note - the original qimage is already safe and ready for destruction
-		QImage scaled = interp == 0 ? qimage->scaled( QSize( width, height)) : qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		QImage scaled = interp == 0 ? qimage->scaled( QSize( width, height ) ) :
+			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
 		QImage temp;
-		bool hasAlpha = scaled.hasAlphaChannel();
-		if (hasAlpha)
-		    temp = scaled.convertToFormat(QImage::Format_ARGB32);
-		else 
-		    temp = scaled.convertToFormat(QImage::Format_RGB888);
+		self->has_alpha = scaled.hasAlphaChannel();
 #endif
 
 #ifdef USE_QT3
 		// Note - the original qimage is already safe and ready for destruction
-		QImage scaled = interp == 0 ? qimage->scale( width, height, QImage::ScaleFree ) : qimage->smoothScale( width, height, QImage::ScaleFree );
-		QImage temp = scaled.convertDepth( 32 );
-		bool hasAlpha = true;
+		QImage scaled = interp == 0 ? qimage->scale( width, height, QImage::ScaleFree ) :
+			qimage->smoothScale( width, height, QImage::ScaleFree );
+		self->has_alpha = 1;
 #endif
 
 		// Store width and height
 		self->current_width = width;
 		self->current_height = height;
-		
+
 		// Allocate/define image
-		self->current_image = ( uint8_t * )mlt_pool_alloc( width * ( height + 1 ) * 2 );
+		int dst_stride = width * ( self->has_alpha ? 4 : 3 );
+		int image_size = dst_stride * ( height + 1 );
+		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
+
+		// Copy the image
+		int y = self->current_height + 1;
+		uint8_t *dst = self->current_image;
+		while ( --y )
+		{
+			QRgb *src = (QRgb*) scaled.scanLine( self->current_height - y );
+			int x = self->current_width + 1;
+			while ( --x )
+			{
+				*dst++ = qRed(*src);
+				*dst++ = qGreen(*src);
+				*dst++ = qBlue(*src);
+				if ( self->has_alpha ) *dst++ = qAlpha(*src);
+				++src;
+			}
+		}
+
+		// Update the cache
 		if ( !use_cache )
 			mlt_cache_item_close( self->image_cache );
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, width * ( height + 1 ) * 2, mlt_pool_release );
+		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, image_size, mlt_pool_release );
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 		self->image_idx = image_idx;
-
-		if (!hasAlpha) {
-			mlt_convert_rgb24_to_yuv422( temp.bits(), self->current_width, self->current_height, temp.bytesPerLine(), self->current_image ); 
-		}
-		else {
-			// Allocate the alpha mask
-			self->current_alpha = ( uint8_t * )mlt_pool_alloc( width * height );
-			if ( !use_cache )
-				mlt_cache_item_close( self->alpha_cache );
-			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, width * height, mlt_pool_release );
-			self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
-
-#ifdef USE_QT4
-			if ( QSysInfo::ByteOrder == QSysInfo::BigEndian )
-				mlt_convert_argb_to_yuv422( temp.bits( ), self->current_width, self->current_height, temp.bytesPerLine(), self->current_image, self->current_alpha );
-			else
-				mlt_convert_bgr24a_to_yuv422( temp.bits( ), self->current_width, self->current_height, temp.bytesPerLine( ), self->current_image, self->current_alpha );
-#endif
-
-#ifdef USE_QT3
-			// Convert the image
-			if ( QImage::systemByteOrder( ) == QImage::BigEndian )
-				mlt_convert_argb_to_yuv422( temp.bits( ), self->current_width, self->current_height, temp.bytesPerLine( ), self->current_image, self->current_alpha );
-			else
-				mlt_convert_bgr24a_to_yuv422( temp.bits( ), self->current_width, self->current_height, temp.bytesPerLine( ), self->current_image, self->current_alpha );
-#endif
-		}
 
 		// Ensure we update the cache when we need to
 		update_cache = use_cache;
@@ -269,7 +257,6 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 	{
 		pthread_mutex_unlock( &self->mutex );
 		mlt_cache_item_close( self->image_cache );
-		mlt_cache_item_close( self->alpha_cache );
 	}
 
 	// Set width/height of frame
@@ -286,8 +273,10 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 		mlt_properties_set_int( cached_props, "height", self->current_height );
 		mlt_properties_set_int( cached_props, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
 		mlt_properties_set_int( cached_props, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
-		mlt_properties_set_data( cached_props, "image", self->current_image, self->current_width * ( self->current_height + 1 ) * 2, mlt_pool_release, NULL );
-		mlt_properties_set_data( cached_props, "alpha", self->current_alpha, self->current_width * self->current_height, mlt_pool_release, NULL );
+		mlt_properties_set_data( cached_props, "image", self->current_image,
+			self->current_width * ( self->current_height + 1 ) * ( self->has_alpha ? 4 : 3 ),
+			mlt_pool_release, NULL );
+		mlt_properties_set_int( cached_props, "alpha", self->has_alpha );
 		mlt_properties_set_data( cache, image_key, cached, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
 	g_mutex.unlock();

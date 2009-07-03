@@ -19,6 +19,7 @@
  */
 
 #include <framework/mlt_filter.h>
+#include <framework/mlt_log.h>
 #include "deinterlace.h"
 
 #include <framework/mlt_frame.h>
@@ -33,19 +34,25 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 	int error = 0;
 	int deinterlace = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" );
+	int progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
 	
 	// Pop the service off the stack
 	mlt_filter filter = mlt_frame_pop_service( this );
 
 	// Determine if we need a writable version or not
 	if ( deinterlace && !writable )
-		 writable = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
+		 writable = !progressive;
 
 	// Get the input image
+	if ( deinterlace && !progressive )
+		*format = mlt_image_yuv422;
+	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "xine.deinterlace %d prog %d format %s\n",
+		deinterlace, progressive, mlt_image_format_name( *format ) );
 	error = mlt_frame_get_image( this, image, format, width, height, writable );
+	progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
 
 	// Check that we want progressive and we aren't already progressive
-	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL && !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) )
+	if ( deinterlace && *format == mlt_image_yuv422 && *image && !progressive )
 	{
 		// Determine deinterlace method
 		char *method_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "method" );

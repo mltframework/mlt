@@ -39,10 +39,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Get the image
 	mlt_filter filter = mlt_frame_pop_service( this );
 	int mask = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "alpha" );
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
 	// Only process if we have no error and a valid colour space
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 )
 	{
 		uint8_t *p = *image;
 		uint8_t *q = *image + *width * *height * 2;

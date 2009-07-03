@@ -20,97 +20,101 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
 
-typedef int ( *image_scaler )( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight );
+/** virtual function declaration for an image scaler
+ *
+ * image scaler implementations are expected to support the following in and out formats:
+ * yuv422 -> yuv422
+ * rgb24 -> rgb24
+ * rgb24a -> rgb24a
+ * rgb24 -> yuv422
+ * rgb24a -> yuv422
+ */
 
-static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight );
+typedef int ( *image_scaler )( mlt_frame this, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight );
 
-static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format iformat, mlt_image_format oformat, int iwidth, int iheight, int owidth, int oheight )
+static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Get the properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
-	// Get the rescaling interpolsation
-	char *interps = mlt_properties_get( properties, "rescale.interp" );
+	// Convert the image to yuv422
+	*format = mlt_image_yuv422;
+	mlt_frame_get_image( this, image, format, &iwidth, &iheight, 0 );
 
-	// Carry out the rescaling
-	if ( iformat == mlt_image_yuv422 && oformat == mlt_image_yuv422 )
+	// Create the output image
+	uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
+
+	// Calculate strides
+	int istride = iwidth * 2;
+	int ostride = owidth * 2;
+	iwidth = iwidth - ( iwidth % 4 );
+
+	// Derived coordinates
+	int dy, dx;
+
+	// Calculate ranges
+	int out_x_range = owidth / 2;
+	int out_y_range = oheight / 2;
+	int in_x_range = iwidth / 2;
+	int in_y_range = iheight / 2;
+
+	// Output pointers
+	register uint8_t *out_line = output;
+	register uint8_t *out_ptr;
+
+	// Calculate a middle pointer
+	uint8_t *in_middle = *image + istride * in_y_range + in_x_range * 2;
+	uint8_t *in_line;
+
+	// Generate the affine transform scaling values
+	register int scale_width = ( iwidth << 16 ) / owidth;
+	register int scale_height = ( iheight << 16 ) / oheight;
+	register int base = 0;
+
+	int outer = out_x_range * scale_width;
+	int bottom = out_y_range * scale_height;
+
+	// Loop for the entirety of our output height.
+	for ( dy = - bottom; dy < bottom; dy += scale_height )
 	{
-		// Scale the frame
-		mlt_frame_rescale_yuv422( this, owidth, oheight );
-		
-		// Return the output
-		*image = mlt_properties_get_data( properties, "image", NULL );
-	}
-	else if ( iformat == mlt_image_rgb24 || iformat == mlt_image_rgb24a )
-	{
-		int bpp = (iformat == mlt_image_rgb24a ? 4 : 3 );
-			
-		// Create the yuv image
-		uint8_t *output = mlt_pool_alloc( iwidth * ( iheight + 1 ) * 2 );
+		// Start at the beginning of the line
+		out_ptr = out_line;
 
-		if ( strcmp( interps, "none" ) && ( iwidth != owidth || iheight != oheight ) )
+		// Pointer to the middle of the input line
+		in_line = in_middle + ( dy >> 16 ) * istride;
+
+		// Loop for the entirety of our output row.
+		for ( dx = - outer; dx < outer; dx += scale_width )
 		{
-			// Extract YUV422 and alpha
-			if ( bpp == 4 )
-			{
-				// Allocate the alpha mask
-				uint8_t *alpha = mlt_pool_alloc( iwidth * ( iheight + 1 ) );
-
-				// Convert the image and extract alpha
-				mlt_convert_rgb24a_to_yuv422( *image, iwidth, iheight, iwidth * 4, output, alpha );
-
-				mlt_properties_set_data( properties, "alpha", alpha, iwidth * ( iheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
-
-				scale_alpha( this, iwidth, iheight, owidth, oheight );
-			}
-			else
-			{
-				// No alpha to extract
-				mlt_convert_rgb24_to_yuv422( *image, iwidth, iheight, iwidth * 3, output );
-			}
-
-			mlt_properties_set_data( properties, "image", output, iwidth * ( iheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
-
-			// Scale the frame
-			output = mlt_frame_rescale_yuv422( this, owidth, oheight );
-
+			base = dx >> 15;
+			base &= 0xfffffffe;
+			*out_ptr ++ = *( in_line + base );
+			base &= 0xfffffffc;
+			*out_ptr ++ = *( in_line + base + 1 );
+			dx += scale_width;
+			base = dx >> 15;
+			base &= 0xfffffffe;
+			*out_ptr ++ = *( in_line + base );
+			base &= 0xfffffffc;
+			*out_ptr ++ = *( in_line + base + 3 );
 		}
-		else
-		{
-			// Extract YUV422 and alpha
-			if ( bpp == 4 )
-			{
-				// Allocate the alpha mask
-				uint8_t *alpha = mlt_pool_alloc( owidth * ( oheight + 1 ) );
-
-				// Convert the image and extract alpha
-				mlt_convert_rgb24a_to_yuv422( *image, owidth, oheight, owidth * 4, output, alpha );
-
-				mlt_properties_set_data( properties, "alpha", alpha, owidth * ( oheight + 1 ), ( mlt_destructor )mlt_pool_release, NULL );
-
-				scale_alpha( this, iwidth, iheight, owidth, oheight );
-			}
-			else
-			{
-				// No alpha to extract
-				mlt_convert_rgb24_to_yuv422( *image, owidth, oheight, owidth * 3, output );
-			}
-		}
-
-		// Now update the frame
-		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "width", owidth );
-		mlt_properties_set_int( properties, "height", oheight );
-
-		*image = output;
+		// Move to next output line
+		out_line += ostride;
 	}
+ 
+	// Now update the frame
+	mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor ) mlt_pool_release, NULL );
+	mlt_properties_set_int( properties, "width", owidth );
+	mlt_properties_set_int( properties, "height", oheight );
 
+	*image = output;
 	return 0;
 }
 
@@ -172,7 +176,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int owidth = *width;
 		int oheight = *height;
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
-		int wanted_format = *format;
 
 		// Default from the scaler if not specifed on the frame
 		if ( interps == NULL )
@@ -189,7 +192,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 	
 		// Let the producer know what we are actually requested to obtain
-		if ( *format == mlt_image_yuv422 && strcmp( interps, "none" ) )
+		if ( strcmp( interps, "none" ) )
 		{
 			mlt_properties_set_int( properties, "rescale_width", *width );
 			mlt_properties_set_int( properties, "rescale_height", *height );
@@ -212,53 +215,25 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Get rescale interpretation again, in case the producer wishes to override scaling
 		interps = mlt_properties_get( properties, "rescale.interp" );
 	
-		if ( *image != NULL && ( *format != mlt_image_yuv422 || ( iwidth != owidth || iheight != oheight ) ) )
+		if ( *image && strcmp( interps, "none" ) && ( iwidth != owidth || iheight != oheight ) )
 		{
-			// If the colour space is correct and scaling is off, do nothing
-			if ( *format == mlt_image_yuv422 && !strcmp( interps, "none" ) )
-			{
-				*width = iwidth;
-				*height = iheight;
-			}
-			else if ( *format == mlt_image_yuv422 )
-			{
-				// Call the local scaler
-				scaler_method( this, image, *format, mlt_image_yuv422, iwidth, iheight, owidth, oheight );
-				*width = owidth;
-				*height = oheight;
-			}
-			else if ( *format == mlt_image_rgb24 && wanted_format == mlt_image_rgb24 )
-			{
-				// Call the local scaler
-				scaler_method( this, image, *format, mlt_image_rgb24, iwidth, iheight, owidth, oheight );
+			mlt_log_debug( MLT_FILTER_SERVICE( filter ), "%dx%d -> %dx%d (%s)\n",
+				iwidth, iheight, owidth, oheight, mlt_image_format_name( *format ) );
 
-				// Return the output
+			// If valid colorspace
+			if ( *format == mlt_image_yuv422 || *format == mlt_image_rgb24 ||
+			     *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+			{
+				// Call the virtual function
+				scaler_method( this, image, format, iwidth, iheight, owidth, oheight );
 				*width = owidth;
 				*height = oheight;
 			}
-			else if ( *format == mlt_image_rgb24 || *format == mlt_image_rgb24a )
-			{
-				// Call the local scaler
-				scaler_method( this, image, *format, mlt_image_yuv422, iwidth, iheight, owidth, oheight );
-
-				// Return the output
-				*format = mlt_image_yuv422;
-				*width = owidth;
-				*height = oheight;
-			}
-			else
-			{
-				*width = iwidth;
-				*height = iheight;
-			}
-			if ( *width == owidth )
-			{
-				// Scale the alpha channel only if exists and not correct size
-				int alpha_size = 0;
-				mlt_properties_get_data( properties, "alpha", &alpha_size );
-				if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) && alpha_size != ( owidth * ( oheight + 1 ) ) )
-					scale_alpha( this, iwidth, iheight, owidth, oheight );
-			}
+			// Scale the alpha channel only if exists and not correct size
+			int alpha_size = 0;
+			mlt_properties_get_data( properties, "alpha", &alpha_size );
+			if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) && alpha_size != ( owidth * ( oheight + 1 ) ) )
+				scale_alpha( this, iwidth, iheight, owidth, oheight );
 		}
 		else
 		{

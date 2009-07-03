@@ -75,6 +75,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
 
 	// Get the new image
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	if( error != 0 )

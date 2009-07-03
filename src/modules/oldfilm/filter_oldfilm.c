@@ -29,9 +29,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 
 	mlt_filter filter = mlt_frame_pop_service( this );
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 	
-	if (  error == 0 && *image && *format == mlt_image_yuv422 )
+	if (  error == 0 && *image )
 	{
 		int h = *height;
 		int w = *width;

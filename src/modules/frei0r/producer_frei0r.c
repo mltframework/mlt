@@ -37,7 +37,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Allocate the image
-	int size = *width * ( *height + 1 ) * 2;
+	int size = *width * ( *height + 1 ) * 4;
 
 	// Allocate the image
 	*buffer = mlt_pool_alloc( size );
@@ -47,14 +47,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
 
-	*format = mlt_image_yuv422;
+	*format = mlt_image_rgb24a;
 	if ( *buffer != NULL )
 	{
 		mlt_position in = mlt_producer_get_in( producer );
 		mlt_position out = mlt_producer_get_out( producer );
 		mlt_position time = mlt_frame_get_position( frame );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
-		process_frei0r_item( producer_type , position, producer_props, frame , buffer, format , width , height , writable );
+		process_frei0r_item( producer_type, position, producer_props, frame, buffer, width, height );
 	}
 
     return 0;

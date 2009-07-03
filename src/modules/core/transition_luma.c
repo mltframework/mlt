@@ -137,9 +137,6 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	int stride_dest;
 	uint16_t weight = 0;
 
-	format_src = mlt_image_yuv422;
-	format_dest = mlt_image_yuv422;
-
 	if ( mlt_properties_get( &a_frame->parent, "distort" ) )
 		mlt_properties_set( &b_frame->parent, "distort", mlt_properties_get( &a_frame->parent, "distort" ) );
 	mlt_properties_set_int( &b_frame->parent, "consumer_deinterlace", mlt_properties_get_int( &a_frame->parent, "consumer_deinterlace" ) );
@@ -348,12 +345,6 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
 }
 
-/** Generate a luma map from a YUV image.
-*/
-static void luma_read_rgb24( uint8_t *image, uint16_t **map, int width, int height )
-{
-}
-
 /** Get the image.
 */
 
@@ -470,11 +461,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
 
 					// Generate the luma map
-					if ( luma_image != NULL && luma_format == mlt_image_yuv422 )
+					if ( luma_image != NULL )
 						luma_read_yuv422( luma_image, &luma_bitmap, luma_width, luma_height );
-						
-					else if ( luma_image != NULL && luma_format == mlt_image_rgb24 )
-						luma_read_rgb24( luma_image, &luma_bitmap, luma_width, luma_height );
 					
 					// Set the transition properties
 					mlt_properties_set_int( properties, "width", luma_width );

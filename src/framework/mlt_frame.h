@@ -59,6 +59,7 @@ struct mlt_frame_s
 
 	/* Virtual methods */
 	uint8_t * ( *get_alpha_mask )( mlt_frame self );
+	int ( *convert_image )( mlt_frame self, uint8_t **image, mlt_image_format *input, mlt_image_format output );
 
 	/* Private properties */
 	mlt_deque stack_image;
@@ -99,20 +100,11 @@ extern mlt_producer mlt_frame_get_original_producer( mlt_frame self );
 extern void mlt_frame_close( mlt_frame self );
 
 /* convenience functions */
-extern int mlt_convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, unsigned int total );
-extern int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha );
-extern int mlt_convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv );
-extern int mlt_convert_bgr24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha );
-extern int mlt_convert_argb_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha );
-extern int mlt_convert_bgr24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv );
-extern int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int stride, uint8_t *yuv );
-extern uint8_t *mlt_frame_resize_yuv422( mlt_frame self, int owidth, int oheight );
-extern uint8_t *mlt_frame_rescale_yuv422( mlt_frame self, int owidth, int oheight );
-extern void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight );
 extern int mlt_frame_mix_audio( mlt_frame self, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
 extern int mlt_frame_combine_audio( mlt_frame self, mlt_frame that, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
+extern const char * mlt_image_format_name( mlt_image_format format );
 
 /** This macro scales rgb into the yuv gamut - y is scaled by 219/255 and uv by 224/255. */
 #define RGB2YUV(r, g, b, y, u, v)\

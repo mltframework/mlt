@@ -44,10 +44,9 @@ static pthread_mutex_t pango_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct producer_pango_s
 {
 	struct mlt_producer_s parent;
-	int width;
-	int height;
-	uint8_t *image;
-	uint8_t *alpha;
+	int   width;
+	int   height;
+	GdkPixbuf *pixbuf;
 	char *fgcolor;
 	char *bgcolor;
 	int   align;
@@ -55,7 +54,7 @@ struct producer_pango_s
 	char *markup;
 	char *text;
 	char *font;
-	int weight;
+	int   weight;
 };
 
 // special color type used by internal pango routines
@@ -312,7 +311,7 @@ static int iconv_utf8( mlt_properties properties, const char *prop_name, const c
 
 static void refresh_image( mlt_frame frame, int width, int height )
 {
-	// Pixbuf 
+	// Pixbuf
 	GdkPixbuf *pixbuf = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", NULL );
 
 	// Obtain properties of frame
@@ -381,10 +380,9 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		rgba_color fgcolor = parse_color( this->fgcolor );
 		rgba_color bgcolor = parse_color( this->bgcolor );
 
-		mlt_pool_release( this->image );
-		mlt_pool_release( this->alpha );
-		this->image = NULL;
-		this->alpha = NULL;
+		if ( this->pixbuf )
+			g_object_unref( this->pixbuf );
+		this->pixbuf = NULL;
 
 		// Convert from specified encoding to UTF-8
 		if ( encoding != NULL && !strncaseeq( encoding, "utf-8", 5 ) && !strncaseeq( encoding, "utf8", 4 ) )
@@ -419,13 +417,11 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			this->height = gdk_pixbuf_get_height( pixbuf );
 		}
 	}
-	else if ( pixbuf == NULL && ( width > 0 && ( this->image == NULL || width != this->width || height != this->height ) ) )
+	else if ( pixbuf == NULL && width > 0 && ( this->pixbuf == NULL || width != this->width || height != this->height ) )
 	{
-		mlt_pool_release( this->image );
-		mlt_pool_release( this->alpha );
-		this->image = NULL;
-		this->alpha = NULL;
-
+		if ( this->pixbuf )
+			g_object_unref( this->pixbuf );
+		this->pixbuf = NULL;
 		pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
 	}
 
@@ -445,24 +441,11 @@ static void refresh_image( mlt_frame frame, int width, int height )
 // fprintf(stderr,"%s: scaling from %dx%d to %dx%d\n", __FILE__, this->width, this->height, width, height);
 
 		// Note - the original pixbuf is already safe and ready for destruction
-		pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
+		this->pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
 
 		// Store width and height
 		this->width = width;
 		this->height = height;
-
-		// Allocate/define image
-		this->image = mlt_pool_alloc( width * ( height + 1 ) * 2 );
-		this->alpha = mlt_pool_alloc( this->width * this->height );
-
-		// Convert the image
-		mlt_convert_rgb24a_to_yuv422( gdk_pixbuf_get_pixels( pixbuf ),
-									  this->width, this->height,
-									  gdk_pixbuf_get_rowstride( pixbuf ),
-									  this->image, this->alpha );
-
-		// Finished with pixbuf now
-		g_object_unref( pixbuf );
 	}
 
 	// Set width/height
@@ -470,23 +453,14 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	mlt_properties_set_int( properties, "height", this->height );
 	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "real_width" ) );
 	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
-
-	// pass the image data without destructor
-	mlt_properties_set_data( properties, "image", this->image, this->width * ( this->height + 1 ) * 2, NULL, NULL );
-	mlt_properties_set_data( properties, "alpha", this->alpha, this->width * this->height, NULL, NULL );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
+	producer_pango this = ( producer_pango ) mlt_frame_pop_service( frame );
+
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
-	// We need to know the size of the image to clone it
-	int image_size = 0;
-	int alpha_size = 0;
-
-	// Alpha channel
-	uint8_t *alpha = NULL;
 
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
@@ -495,57 +469,35 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	pthread_mutex_lock( &pango_mutex );
 	refresh_image( frame, *width, *height );
 
-	// Get the image
-	*buffer = mlt_properties_get_data( properties, "image", &image_size );
-	alpha = mlt_properties_get_data( properties, "alpha", &alpha_size );
-
 	// Get width and height
-	*width = mlt_properties_get_int( properties, "width" );
-	*height = mlt_properties_get_int( properties, "height" );
+	*width = this->width;
+	*height = this->height;
 
 	// Always clone here to allow 'animated' text
-	if ( *buffer != NULL )
+	if ( this->pixbuf )
 	{
-		// Clone the image and the alpha
-		uint8_t *image_copy = mlt_pool_alloc( image_size );
-		uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
-
-		memcpy( image_copy, *buffer, image_size );
-
-		// Copy or default the alpha
-		if ( alpha != NULL )
-			memcpy( alpha_copy, alpha, alpha_size );
-		else
-			memset( alpha_copy, 255, alpha_size );
+		// Clone the image
+		int image_size = this->width * this->height * 4;
+		*buffer = mlt_pool_alloc( image_size );
+		memcpy( *buffer, gdk_pixbuf_get_pixels( this->pixbuf ), image_size );
 
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
-		mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
-
-		// We're going to pass the copy on
-		*buffer = image_copy;
+		mlt_properties_set_data( properties, "image", *buffer, image_size, mlt_pool_release, NULL );
+		*format = mlt_image_rgb24a;
 	}
 	else
 	{
 		// TODO: Review all cases of invalid images
 		*buffer = mlt_pool_alloc( 50 * 50 * 2 );
-		mlt_properties_set_data( properties, "image", *buffer, image_size, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", *buffer, 50 * 50 * 2, mlt_pool_release, NULL );
 		*width = 50;
 		*height = 50;
+		*format = mlt_image_yuv422;
 	}
 
 	pthread_mutex_unlock( &pango_mutex );
 
 	return 0;
-}
-
-static uint8_t *producer_get_alpha_mask( mlt_frame this )
-{
-	// Obtain properties of frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-
-	// Return the alpha mask
-	return mlt_properties_get_data( properties, "alpha", NULL );
 }
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
@@ -574,10 +526,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties_set_int( properties, "progressive", 1 );
 	mlt_properties_set_double( properties, "aspect_ratio", 1 );
 
-	// Set alpha call back
-	( *frame )->get_alpha_mask = producer_get_alpha_mask;
-
 	// Stack the get image callback
+	mlt_frame_push_service( *frame, this );
 	mlt_frame_push_get_image( *frame, producer_get_image );
 
 	// Calculate the next timecode
@@ -589,8 +539,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_pango this = parent->child;
-	mlt_pool_release( this->image );
-	mlt_pool_release( this->alpha );
+	if ( this->pixbuf )
+		g_object_unref( this->pixbuf );
 	free( this->fgcolor );
 	free( this->bgcolor );
 	free( this->markup );

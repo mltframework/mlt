@@ -163,12 +163,13 @@ static void DoBoxBlur(uint8_t *yuv, int32_t *rgb, unsigned int width, unsigned i
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the image
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 	short hori = mlt_properties_get_int(MLT_FRAME_PROPERTIES( this ), "hori" );
 	short vert = mlt_properties_get_int(MLT_FRAME_PROPERTIES( this ), "vert" );
 
 	// Only process if we have no error and a valid colour space
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 )
 	{
 		double factor = mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "boxblur" );
 		if (factor != 0) {
@@ -178,7 +179,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			DoBoxBlur (*image, rgb, *width, h, (int) factor*hori, (int) factor*vert);
 			mlt_pool_release (rgb);
 		}
-    	}
+	}
 	return error;
 }
 

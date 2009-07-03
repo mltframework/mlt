@@ -43,13 +43,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int reverse = mlt_properties_get_int( properties, "reverse" );
 
 	// Get the image
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	// Get the alpha
 	uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 
 	// If we have an image of the right colour space
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 )
 	{
 		// We'll KISS here
 		int hh = *height / 2;

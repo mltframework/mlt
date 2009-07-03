@@ -163,17 +163,10 @@ static int slowmotion_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	mlt_properties second_frame_properties = MLT_FRAME_PROPERTIES( second_frame );
 
 	// image stride
-	int size, xstride, ystride;
-	switch( *format ){
-		case mlt_image_yuv422:
-			size = *width * *height * 2;
-			xstride = 2;
-			ystride = 2 * *width;
-			break;
-		default:
-			fprintf(stderr, "Unsupported image format\n");
-			return -1;
-	}
+	*format = mlt_image_yuv422;
+	int size = *width * *height * 2;
+	int xstride = 2;
+	int ystride = 2 * *width;
 
 	uint8_t *output = mlt_properties_get_data( producer_properties, "output_buffer", 0 );
 	if( output == NULL )

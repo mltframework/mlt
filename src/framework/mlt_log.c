@@ -38,11 +38,17 @@ void default_callback( void* ptr, int level, const char* fmt, va_list vl )
 	if ( print_prefix && properties )
 	{
 		char *mlt_type = mlt_properties_get( properties, "mlt_type" );
+		char *mlt_service = mlt_properties_get( properties, "mlt_service" );
 		char *resource = mlt_properties_get( properties, "resource" );
 	
-		if ( resource && *resource && resource[0] == '<' && resource[ strlen(resource) - 1 ] == '>' )
-			mlt_type = resource;
-		fprintf( stderr, "[%s @ %p]", mlt_type, ptr );
+		if ( !( resource && *resource && resource[0] == '<' && resource[ strlen(resource) - 1 ] == '>' ) )
+			mlt_type = mlt_properties_get( properties, "mlt_type" );
+		if ( mlt_service )
+			fprintf( stderr, "[%s %s] ", mlt_type, mlt_service );
+		else
+			fprintf( stderr, "[%s %p] ", mlt_type, ptr );
+		if ( resource )
+			fprintf( stderr, "%s\n    ", resource );
 	}
 	print_prefix = strstr( fmt, "\n" ) != NULL;
 	vfprintf( stderr, fmt, vl );

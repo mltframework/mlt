@@ -70,7 +70,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_position out = mlt_filter_get_out( filter );
 	mlt_position time = mlt_frame_get_position( this );
 	double position = ( double )( time - in ) / ( double )( out - in + 1 );
-
+	
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );	
 	// load svg
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
@@ -156,7 +157,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 	if (piccount>0 )
 		return 0;
-	if ( error == 0 && *image && *format == mlt_image_yuv422 )
+	if ( error == 0 && *image )
 	{
 
 		int h = *height;

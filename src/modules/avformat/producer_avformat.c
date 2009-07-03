@@ -41,6 +41,7 @@
 #include <pthread.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
+#define PIX_FMT_RGB32 PIX_FMT_RGBA32
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
@@ -611,6 +612,16 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
+	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+	{
+		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+			width, height, PIX_FMT_RGBA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+		AVPicture output;
+		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
+		sws_scale( context, frame->data, frame->linesize, 0, height,
+			output.data, output.linesize);
+		sws_freeContext( context );
+	}
 	else
 	{
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
@@ -638,6 +649,12 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
 		img_convert( &output, PIX_FMT_RGB24, (AVPicture *)frame, pix_fmt, width, height );
+	}
+	else if ( format == mlt_image_rgb24a || format == mlt_image_opengl )
+	{
+		AVPicture output;
+		avpicture_fill( &output, buffer, PIX_FMT_RGB32, width, height );
+		img_convert( &output, PIX_FMT_RGB32, (AVPicture *)frame, pix_fmt, width, height );
 	}
 	else
 	{
@@ -672,6 +689,10 @@ static int allocate_buffer( mlt_properties frame_properties, AVCodecContext *cod
 			break;
 		case mlt_image_rgb24:
 			size = *width * ( *height + 1 ) * 3;
+			break;
+		case mlt_image_rgb24a:
+		case mlt_image_opengl:
+			size = *width * ( *height + 1 ) * 4;
 			break;
 		default:
 			*format = mlt_image_yuv422;
@@ -881,7 +902,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
 				{
 					convert_image( av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
-					mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
+					if ( !mlt_properties_get( properties, "force_progressive" ) )
+						mlt_properties_set_int( frame_properties, "progressive", !av_frame->interlaced_frame );
 					mlt_properties_set_int( properties, "top_field_first", av_frame->top_field_first );
 					mlt_properties_set_int( properties, "_current_position", int_position );
 					mlt_properties_set_int( properties, "_got_picture", 1 );
@@ -1062,6 +1084,8 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 			mlt_properties_set_int( frame_properties, "real_width", codec_context->width );
 			mlt_properties_set_int( frame_properties, "real_height", codec_context->height );
 			mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
+			if ( mlt_properties_get( properties, "force_progressive" ) )
+				mlt_properties_set_int( frame_properties, "progressive", mlt_properties_get_int( properties, "force_progressive" ) );
 
 			mlt_frame_push_get_image( frame, producer_get_image );
 			mlt_properties_set_data( frame_properties, "avformat_producer", this, 0, NULL, NULL );

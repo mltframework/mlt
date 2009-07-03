@@ -184,81 +184,41 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Refresh the image
 	refresh_qimage( this, frame, *width, *height );
 
-	// We need to know the size of the image to clone it
-	int image_size = this->current_width * ( this->current_height + 1 ) * 2;
-	int alpha_size = this->current_width * this->current_height;
-
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
 
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of the qimage producer...
-	if ( this->current_image != NULL )
+	if ( this->current_image )
 	{
-		if ( *format == mlt_image_yuv422 || *format == mlt_image_yuv420p )
-		{
-			// Clone the image and the alpha
-			uint8_t *image_copy = mlt_pool_alloc( image_size );
-			uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
-
-			memcpy( image_copy, this->current_image, image_size );
-
-			// Copy or default the alpha
-			if ( this->current_alpha )
-				memcpy( alpha_copy, this->current_alpha, alpha_size );
-			else
-				memset( alpha_copy, 255, alpha_size );
-
-			// Now update properties so we free the copy after
-			mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
-			mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
-
-			// We're going to pass the copy on
-			*buffer = image_copy;
-		}
-		else if ( *format == mlt_image_rgb24a )
-		{
-			// Clone the image and the alpha
-			image_size = *width * ( *height + 1 ) * 4;
-			alpha_size = *width * ( *height + 1 );
-			uint8_t *image_copy = mlt_pool_alloc( image_size );
-			uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
-
-			mlt_convert_yuv422_to_rgb24a(this->current_image, image_copy, (*width)*(*height));
-
-			// Now update properties so we free the copy after
-			mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
-			mlt_properties_set_data( properties, "alpha", alpha_copy, alpha_size, mlt_pool_release, NULL );
-
-			// We're going to pass the copy on
-			*buffer = image_copy;
-		}
+		// Clone the image and the alpha
+		int image_size = this->current_width * ( this->current_height + 1 ) * ( this->has_alpha ? 4 :3 );
+		uint8_t *image_copy = mlt_pool_alloc( image_size );
+		memcpy( image_copy, this->current_image, image_size );
+		// Now update properties so we free the copy after
+		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+		// We're going to pass the copy on
+		*buffer = image_copy;
+		*format = this->has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+		mlt_log_debug( MLT_PRODUCER_SERVICE( &this->parent ), "%dx%d (%s)\n", 
+			this->current_width, this->current_height, mlt_image_format_name( *format ) );
 	}
 	else
 	{
 		// TODO: Review all cases of invalid images
 		*buffer = mlt_pool_alloc( 50 * 50 * 2 );
-		mlt_properties_set_data( properties, "image", *buffer, image_size, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", *buffer, 50 * 50 * 2, mlt_pool_release, NULL );
 		*width = 50;
 		*height = 50;
+		*format = mlt_image_yuv422;
 	}
 
 	// Release references and locks
 	pthread_mutex_unlock( &this->mutex );
 	mlt_cache_item_close( this->image_cache );
-	mlt_cache_item_close( this->alpha_cache );
 
 	return 0;
-}
-
-static uint8_t *producer_get_alpha_mask( mlt_frame this )
-{
-	// Obtain properties of frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-
-	// Return the alpha mask
-	return mlt_properties_get_data( properties, "alpha", NULL );
 }
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
@@ -295,9 +255,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_properties, "aspect_ratio" ) );
-
-		// Set alpha call back
-		( *frame )->get_alpha_mask = producer_get_alpha_mask;
 
 		// Push the get_image method
 		mlt_frame_push_get_image( *frame, producer_get_image );

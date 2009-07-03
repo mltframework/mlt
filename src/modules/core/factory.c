@@ -29,6 +29,7 @@ extern mlt_filter filter_data_feed_init( mlt_profile profile, mlt_service_type t
 extern mlt_filter filter_data_show_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_gamma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_greyscale_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_imageconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_mirror_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -60,6 +61,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "gamma", filter_gamma_init );
 	MLT_REGISTER( filter_type, "greyscale", filter_greyscale_init );
 	MLT_REGISTER( filter_type, "grayscale", filter_greyscale_init );
+	MLT_REGISTER( filter_type, "imageconvert", filter_imageconvert_init );
 	MLT_REGISTER( filter_type, "luma", filter_luma_init );
 	MLT_REGISTER( filter_type, "mirror", filter_mirror_init );
 	MLT_REGISTER( filter_type, "mono", filter_mono_init );

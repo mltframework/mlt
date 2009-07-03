@@ -53,6 +53,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	RGB2YUV( r, g, b, y, u, v );
 
+	*format = mlt_image_yuv422;
 	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
 	{
 		uint8_t *alpha = mlt_frame_get_alpha_mask( frame );

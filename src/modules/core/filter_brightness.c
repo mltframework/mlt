@@ -33,10 +33,11 @@
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the image
+	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
 	// Only process if we have no error and a valid colour space
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 )
 	{
 		// Get the brightness level
 		double level = mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "brightness" );

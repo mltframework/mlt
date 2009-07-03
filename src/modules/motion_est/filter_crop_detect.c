@@ -87,17 +87,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// There is no way to detect a crop for sure, so make up an arbitrary one
 	int thresh = mlt_properties_get_int( properties, "thresh" );
 
-	int xstride, ystride;
-
-	switch( *format ) {
-		case mlt_image_yuv422:
-			xstride = 2;
-			ystride = 2 * *width;
-			break;
-		default:
-			fprintf(stderr, "image format not supported by filter_crop_detect\n");
-			return -1;
-	}
+	*format = mlt_image_yuv422;
+	int xstride = 2;
+	int ystride = 2 * *width;
 
 	int x, y, average_brightness, deviation; // Scratch variables
 	uint8_t *q;

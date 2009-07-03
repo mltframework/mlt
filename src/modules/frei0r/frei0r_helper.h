@@ -18,5 +18,6 @@
  */
 #include <framework/mlt.h>
 
-int process_frei0r_item( mlt_service_type type,  double position , mlt_properties prop , mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable );
+int process_frei0r_item( mlt_service_type, double position, mlt_properties,
+	mlt_frame, uint8_t **image, int *width, int *height );
 void destruct (mlt_properties prop );

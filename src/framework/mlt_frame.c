@@ -25,6 +25,7 @@
 #include "mlt_producer.h"
 #include "mlt_factory.h"
 #include "mlt_profile.h"
+#include "mlt_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -244,6 +245,20 @@ void mlt_frame_replace_image( mlt_frame this, uint8_t *image, mlt_image_format f
 	this->get_alpha_mask = NULL;
 }
 
+const char * mlt_image_format_name( mlt_image_format format )
+{
+	switch ( format )
+	{
+		case mlt_image_none:    return "none";
+		case mlt_image_rgb24:   return "rgb24";
+		case mlt_image_rgb24a:  return "rgb24a";
+		case mlt_image_yuv422:  return "yuv422";
+		case mlt_image_yuv420p: return "yuv420p";
+		case mlt_image_opengl:  return "opengl";
+	}
+	return "invalid";
+}
+
 /** Get the image associated to the frame.
 */
 
@@ -252,41 +267,46 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	mlt_get_image get_image = mlt_frame_pop_get_image( this );
 	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
+	mlt_image_format requested_format = *format;
 	int error = 0;
 
-	if ( get_image != NULL )
+	if ( get_image )
 	{
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
 		mlt_position position = mlt_frame_get_position( this );
-	   	error = get_image( this, buffer, format, width, height, writable );
+		error = get_image( this, buffer, format, width, height, writable );
 		mlt_properties_set_int( properties, "width", *width );
 		mlt_properties_set_int( properties, "height", *height );
 		mlt_properties_set_int( properties, "format", *format );
 		mlt_frame_set_position( this, position );
+		if ( this->convert_image )
+			this->convert_image( this, buffer, format, requested_format );
 	}
-	else if ( mlt_properties_get_data( properties, "image", NULL ) != NULL )
+	else if ( mlt_properties_get_data( properties, "image", NULL ) )
 	{
 		*format = mlt_properties_get_int( properties, "format" );
 		*buffer = mlt_properties_get_data( properties, "image", NULL );
 		*width = mlt_properties_get_int( properties, "width" );
 		*height = mlt_properties_get_int( properties, "height" );
+		if ( this->convert_image )
+			this->convert_image( this, buffer, format, requested_format );
 	}
-	else if ( producer != NULL )
+	else if ( producer )
 	{
 		mlt_frame test_frame = NULL;
 		mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &test_frame, 0 );
-		if ( test_frame != NULL )
+		if ( test_frame )
 		{
 			mlt_properties test_properties = MLT_FRAME_PROPERTIES( test_frame );
 			mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
 			mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
 			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
 			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
-			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
-			mlt_properties_set_int( properties, "width", *width );
-			mlt_properties_set_int( properties, "height", *height );
-			mlt_properties_set_int( properties, "format", *format );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
+// 			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
+// 			mlt_properties_set_int( properties, "width", *width );
+// 			mlt_properties_set_int( properties, "height", *height );
+// 			mlt_properties_set_int( properties, "format", *format );
 		}
 		else
 		{
@@ -518,591 +538,6 @@ void mlt_frame_close( mlt_frame this )
 }
 
 /***** convenience functions *****/
-
-int mlt_convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, unsigned int total )
-{
-	int ret = 0;
-	int yy, uu, vv;
-      	int r,g,b;
-	total /= 2;
-	while (total--)
-	{
-		yy = yuv[0];
-		uu = yuv[1];
-		vv = yuv[3];
-		YUV2RGB(yy, uu, vv, r, g, b);
-		rgba[0] = r;
-		rgba[1] = g;
-		rgba[2] = b;
-		rgba[3] = 255;
-		yy = yuv[2];
-		YUV2RGB(yy, uu, vv, r, g, b);
-		rgba[4] = r;
-		rgba[5] = g;
-		rgba[6] = b;
-		rgba[7] = 255;
-		yuv += 4;
-		rgba += 8;
-	}
-	return ret;
-}
-
-int mlt_convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha )
-{
-	int ret = 0;
-	register int y0, y1, u0, u1, v0, v1;
-	register int r, g, b;
-	register uint8_t *d = yuv;
-	register int i, j;
-
-	if ( alpha )
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-	else
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-
-	return ret;
-}
-
-int mlt_convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv )
-{
-	int ret = 0;
-	register int y0, y1, u0, u1, v0, v1;
-	register int r, g, b;
-	register uint8_t *d = yuv;
-	register int i, j;
-
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgb + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-	return ret;
-}
-
-int mlt_convert_bgr24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha )
-{
-	int ret = 0;
-	register int y0, y1, u0, u1, v0, v1;
-	register int r, g, b;
-	register uint8_t *d = yuv;
-	register int i, j;
-
-	if ( alpha )
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-	else
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-	return ret;
-}
-
-int mlt_convert_bgr24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv )
-{
-	int ret = 0;
-	register int y0, y1, u0, u1, v0, v1;
-	register int r, g, b;
-	register uint8_t *d = yuv;
-	register int i, j;
-
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgb + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			b = *s++;
-			g = *s++;
-			r = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-	return ret;
-}
-
-int mlt_convert_argb_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha )
-{
-	int ret = 0;
-	register int y0, y1, u0, u1, v0, v1;
-	register int r, g, b;
-	register uint8_t *d = yuv;
-	register int i, j;
-
-	if ( alpha )
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			*alpha++ = *s++;
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*alpha++ = *s++;
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			*alpha++ = *s++;
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-	else
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
-		{
-			s++;
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			s++;
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			s++;
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-	return ret;
-}
-
-int mlt_convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, int stride, uint8_t *yuv )
-{
-	int ret = 0;
-	register int i, j;
-
-	int half = width >> 1;
-
-	uint8_t *Y = yuv420p;
-	uint8_t *U = Y + width * height;
-	uint8_t *V = U + width * height / 4;
-
-	register uint8_t *d = yuv;
-
-	for ( i = 0; i < height; i++ )
-	{
-		register uint8_t *u = U + ( i / 2 ) * ( half );
-		register uint8_t *v = V + ( i / 2 ) * ( half );
-
-		for ( j = 0; j < half; j++ )
-		{
-			*d ++ = *Y ++;
-			*d ++ = *u ++;
-			*d ++ = *Y ++;
-			*d ++ = *v ++;
-		}
-	}
-	return ret;
-}
-
-uint8_t *mlt_resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, int iheight, uint8_t alpha_value )
-{
-	uint8_t *output = NULL;
-
-	if ( input != NULL && ( iwidth != owidth || iheight != oheight ) && ( owidth > 6 && oheight > 6 ) )
-	{
-		uint8_t *out_line;
-		int offset_x = ( owidth - iwidth ) / 2;
-		int offset_y = ( oheight - iheight ) / 2;
-		int iused = iwidth;
-
-		output = mlt_pool_alloc( owidth * oheight );
-		memset( output, alpha_value, owidth * oheight );
-
-		offset_x -= offset_x % 2;
-
-		out_line = output + offset_y * owidth;
-		out_line += offset_x;
-
-   		// Loop for the entirety of our output height.
-		while ( iheight -- )
-   		{
-   			// We're in the input range for this row.
-			memcpy( out_line, input, iused );
-
-  			// Move to next input line
-   			input += iwidth;
-
-       		// Move to next output line
-       		out_line += owidth;
-   		}
-	}
-
-	return output;
-}
-
-void mlt_resize_yuv422( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight )
-{
-	// Calculate strides
-	int istride = iwidth * 2;
-	int ostride = owidth * 2;
-	int offset_x = ( owidth - iwidth );
-	int offset_y = ( oheight - iheight ) / 2;
-	uint8_t *in_line = input;
-	uint8_t *out_line;
-	int size = owidth * oheight;
-	uint8_t *p = output;
-
-	// Optimisation point
-	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || oheight <= 6 ) )
-	{
-		return;
-	}
-	else if ( iwidth == owidth && iheight == oheight )
-	{
-		memcpy( output, input, iheight * istride );
-		return;
-	}
-
-	while( size -- )
-	{
-		*p ++ = 16;
-		*p ++ = 128;
-	}
-
-	offset_x -= offset_x % 4;
-
-	out_line = output + offset_y * ostride;
-	out_line += offset_x;
-
-   	// Loop for the entirety of our output height.
-	while ( iheight -- )
-   	{
-   		// We're in the input range for this row.
-		memcpy( out_line, in_line, iwidth * 2 );
-
-		// Move to next input line
-		in_line += istride;
-
-   		// Move to next output line
-   		out_line += ostride;
-   	}
-}
-
-/** A resizing function for yuv422 frames - this does not rescale, but simply
-	resizes. It assumes yuv422 images available on the frame so use with care.
-*/
-
-uint8_t *mlt_frame_resize_yuv422( mlt_frame this, int owidth, int oheight )
-{
-	// Get properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-
-	// Get the input image, width and height
-	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
-	uint8_t *alpha = mlt_frame_get_alpha_mask( this );
-
-	int iwidth = mlt_properties_get_int( properties, "width" );
-	int iheight = mlt_properties_get_int( properties, "height" );
-
-	// If width and height are correct, don't do anything
-	if ( iwidth != owidth || iheight != oheight )
-	{
-		uint8_t alpha_value = mlt_properties_get_int( properties, "resize_alpha" );
-
-		// Create the output image
-		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
-
-		// Call the generic resize
-		mlt_resize_yuv422( output, owidth, oheight, input, iwidth, iheight );
-
-		// Now update the frame
-		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "width", owidth );
-		mlt_properties_set_int( properties, "height", oheight );
-
-		// We should resize the alpha too
-		alpha = mlt_resize_alpha( alpha, owidth, oheight, iwidth, iheight, alpha_value );
-		if ( alpha != NULL )
-		{
-			mlt_properties_set_data( properties, "alpha", alpha, owidth * oheight, ( mlt_destructor )mlt_pool_release, NULL );
-			this->get_alpha_mask = NULL;
-		}
-
-		// Return the output
-		return output;
-	}
-	// No change, return input
-	return input;
-}
-
-/** A rescaling function for yuv422 frames - low quality, and provided for testing
- 	only. It assumes yuv422 images available on the frame so use with care.
-*/
-
-uint8_t *mlt_frame_rescale_yuv422( mlt_frame this, int owidth, int oheight )
-{
-	// Get properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-
-	// Get the input image, width and height
-	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
-	int iwidth = mlt_properties_get_int( properties, "width" );
-	int iheight = mlt_properties_get_int( properties, "height" );
-
-	// If width and height are correct, don't do anything
-	if ( iwidth != owidth || iheight != oheight )
-	{
-		// Create the output image
-		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
-
-		// Calculate strides
-		int istride = iwidth * 2;
-		int ostride = owidth * 2;
-
-		iwidth = iwidth - ( iwidth % 4 );
-
-		// Derived coordinates
-		int dy, dx;
-
-    	// Calculate ranges
-    	int out_x_range = owidth / 2;
-    	int out_y_range = oheight / 2;
-    	int in_x_range = iwidth / 2;
-    	int in_y_range = iheight / 2;
-
-    	// Output pointers
-    	register uint8_t *out_line = output;
-    	register uint8_t *out_ptr;
-
-    	// Calculate a middle pointer
-    	uint8_t *in_middle = input + istride * in_y_range + in_x_range * 2;
-    	uint8_t *in_line;
-
-		// Generate the affine transform scaling values
-		register int scale_width = ( iwidth << 16 ) / owidth;
-		register int scale_height = ( iheight << 16 ) / oheight;
-		register int base = 0;
-
-		int outer = out_x_range * scale_width;
-		int bottom = out_y_range * scale_height;
-
-    	// Loop for the entirety of our output height.
-    	for ( dy = - bottom; dy < bottom; dy += scale_height )
-    	{
-        	// Start at the beginning of the line
-        	out_ptr = out_line;
-
-        	// Pointer to the middle of the input line
-        	in_line = in_middle + ( dy >> 16 ) * istride;
-
-        	// Loop for the entirety of our output row.
-        	for ( dx = - outer; dx < outer; dx += scale_width )
-        	{
-				base = dx >> 15;
-				base &= 0xfffffffe;
-				*out_ptr ++ = *( in_line + base );
-				base &= 0xfffffffc;
-				*out_ptr ++ = *( in_line + base + 1 );
-				dx += scale_width;
-				base = dx >> 15;
-				base &= 0xfffffffe;
-				*out_ptr ++ = *( in_line + base );
-				base &= 0xfffffffc;
-				*out_ptr ++ = *( in_line + base + 3 );
-        	}
-
-        	// Move to next output line
-        	out_line += ostride;
-    	}
-
-		// Now update the frame
-		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "width", owidth );
-		mlt_properties_set_int( properties, "height", oheight );
-
-		// Return the output
-		return output;
-	}
-
-	// No change, return input
-	return input;
-}
 
 int mlt_frame_mix_audio( mlt_frame this, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {

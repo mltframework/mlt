@@ -23,6 +23,7 @@
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_filter.h>
+#include <framework/mlt_log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,7 +55,6 @@ struct consumer_sdl_s
 	uint8_t *buffer;
 	int last_position;
 	mlt_producer last_producer;
-	int filtered;
 };
 
 /** Forward references to static functions.
@@ -95,9 +95,6 @@ mlt_consumer consumer_sdl_still_init( mlt_profile profile, mlt_service_type type
 
 		// We're always going to run this in non-realtime mode
 		mlt_properties_set( this->properties, "real_time", "0" );
-
-		// Default progressive true
-		mlt_properties_set_int( this->properties, "progressive", 1 );
 
 		// Ensure we don't join on a non-running object
 		this->joined = 1;
@@ -151,17 +148,6 @@ static int consumer_start( mlt_consumer parent )
 		int preview_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "preview_off" );
 		int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
 
-		// Attach a colour space converter
-		if ( !this->filtered )
-		{
-			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( parent ) );
-			mlt_filter filter = mlt_factory_filter( profile, "avcolour_space", NULL );
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "forced", mlt_image_yuv422 );
-			mlt_service_attach( MLT_CONSUMER_SERVICE( parent ), filter );
-			mlt_filter_close( filter );
-			this->filtered = 1;
-		}
-	
 		consumer_stop( parent );
 
 		this->last_position = -1;
@@ -439,23 +425,21 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		SDL_FillRect( this->sdl_screen, NULL, color >> 8 );
 		changed = 1;
 	}
-	else
-	{
-		changed = 1;
-	}
 
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
-		 this->last_producer == mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL ) )
+		 this->last_producer == mlt_frame_get_original_producer( frame ) )
 	{
 		sdl_unlock_display( );
 		if ( unlock != NULL ) unlock( );
+		struct timespec tm = { 0, 100000 };
+		nanosleep( &tm, NULL );
 		return 0;
 	}
 
 	// Update last frame shown info
 	this->last_position = mlt_frame_get_position( frame );
-	this->last_producer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer", NULL );
+	this->last_producer = mlt_frame_get_original_producer( frame );
 
 	// Get the image, width and height
 	mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
@@ -539,21 +523,10 @@ static void *consumer_thread( void *arg )
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
-
-	// internal intialization
 	mlt_frame frame = NULL;
-	mlt_image_format vfmt = mlt_image_rgb24a;
-	int height = this->height;
-	int width = this->width;
-	uint8_t *image = NULL;
 
 	// Allow the hosting app to provide the preview
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
-	mlt_image_format preview_format = mlt_properties_get_int( properties, "preview_format" );
-
-	// Check if a specific colour space has been requested
-	if ( preview_off && preview_format != mlt_image_none )
-		vfmt = preview_format;
 
 	// Loop until told not to
 	while( this->running )
@@ -570,6 +543,16 @@ static void *consumer_thread( void *arg )
 			}
 			else
 			{
+				mlt_image_format vfmt = mlt_image_rgb24a;
+				int height = this->height;
+				int width = this->width;
+				uint8_t *image = NULL;
+				mlt_image_format preview_format = mlt_properties_get_int( properties, "preview_format" );
+
+				// Check if a specific colour space has been requested
+				if ( preview_off && preview_format != mlt_image_none )
+					vfmt = preview_format;
+			
 				mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 				mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
 				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );

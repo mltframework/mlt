@@ -49,6 +49,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" ) * 255;
 
 	// Render the frame
+	*format = mlt_image_yuv422;
 	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 && ( !use_luminance || ( int )mix != 1 ) )
 	{
 		// Get the alpha mask of the source

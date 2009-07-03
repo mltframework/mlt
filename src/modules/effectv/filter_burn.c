@@ -71,10 +71,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_filter filter = mlt_frame_pop_service( this );
 
 	// Get the image
+	*format = mlt_image_rgb24a;
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
 	// Only process if we have no error and a valid colour space
-	if ( error == 0 && *format == mlt_image_yuv422 )
+	if ( error == 0 )
 	{
 		// Get the "Burn the foreground" value
 		int burn_foreground = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "foreground" );
@@ -90,14 +91,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int video_height = *height;
 		int video_area = video_width * video_height;
 		// We need to create a new frame as this effect modifies the input
-		RGB32 *dest = mlt_pool_alloc( video_area * sizeof(RGB32) );
-		RGB32 *src = (RGB32*)dest;
+		RGB32 *dest = (RGB32*)*image;
+		RGB32 *src = (RGB32*)*image;
 
 		unsigned char v, w;
 		RGB32 a, b;
-
-		mlt_convert_yuv422_to_rgb24a(*image, (uint8_t *)dest, video_area);
-
 
 		diff = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), 
 						"_diff", NULL );
@@ -170,11 +168,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			}
 			i += 2;
 		}
-
-		mlt_convert_rgb24a_to_yuv422((uint8_t *)dest, *width, *height, *width * sizeof(RGB32), 
-				*image, NULL );
-
-		mlt_pool_release(dest);
 	}
 
 	return error;

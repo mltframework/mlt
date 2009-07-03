@@ -50,6 +50,13 @@ copyright the MLT integration code as your own. However, if you have heavily
 modified the original code beyond nearly all recognition, you can copyright it
 as your own and attribute the original author as inspiration.
 
+A producer should validate its input and return NULL on failure.
+
+A filter or transition should express the image format it wants before calling
+mlt_frame_get_image(). It should expect to receive what it requested as long
+as it is yuv422, rgb24, or rgb24a and you are using the imageconvert filter
+(typically via the loader producer and its loader.ini file).
+
 Bug Reporting:
 First preference is to use the SourceForge tracker:
 http://sourceforge.net/tracker/?group_id=96039&atid=613414

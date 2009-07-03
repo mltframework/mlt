@@ -58,19 +58,23 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		*height = mlt_properties_get_int( properties, "normalised_height" );
 	}
 
-	// Now get the image
-	error = mlt_frame_get_image( this, image, format, width, height, writable );
-
 	int left    = mlt_properties_get_int( properties, "crop.left" );
 	int right   = mlt_properties_get_int( properties, "crop.right" );
 	int top     = mlt_properties_get_int( properties, "crop.top" );
 	int bottom  = mlt_properties_get_int( properties, "crop.bottom" );
+
+	// We only know how to process yuv422 at the moment
+	if ( left || right || top || bottom )
+		*format = mlt_image_yuv422;
+
+	// Now get the image
+	error = mlt_frame_get_image( this, image, format, width, height, writable );
+
 	int owidth  = *width - left - right;
 	int oheight = *height - top - bottom;
 
-	// We only know how to process yuv422 at the moment
 	if ( ( owidth != *width || oheight != *height ) &&
-		error == 0 && *format == mlt_image_yuv422 && *image != NULL && owidth > 0 && oheight > 0 )
+		error == 0 && *image != NULL && owidth > 0 && oheight > 0 )
 	{
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )

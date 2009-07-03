@@ -73,24 +73,10 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	if ( mlt_properties_get_int( properties, "has_image" ) )
 	{
 		// Get the RGB image
-		uint8_t *rgb = mlt_properties_get_data( properties, "image", NULL );
-
-		// Get width and height
+		*buffer = mlt_properties_get_data( properties, "image", NULL );
 		*width = mlt_properties_get_int( properties, "width" );
 		*height = mlt_properties_get_int( properties, "height" );
-
-		// Convert to requested format
-		if ( *format == mlt_image_yuv422 )
-		{
-			uint8_t *image = mlt_pool_alloc( *width * ( *height + 1 ) * 2 );
-			mlt_convert_rgb24_to_yuv422( rgb, *width, *height, *width * 3, image );
-			mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
-			*buffer = image;
-		}
-		else if ( *format == mlt_image_rgb24 )
-		{
-			*buffer = rgb;
-		}
+		*format = mlt_image_rgb24;
 	}
 	else
 	{
@@ -113,7 +99,7 @@ FILE *producer_ppm_run_video( producer_ppm this )
 			char command[ 1024 ];
 			float fps = mlt_producer_get_fps( &this->parent );
 			float position = mlt_producer_position( &this->parent );
-			sprintf( command, "ffmpeg -i \"%s\" -ss %f -f imagepipe -r %f -img ppm - 2>/dev/null", this->command, position, fps );
+			sprintf( command, "ffmpeg -i \"%s\" -ss %f -f image2pipe -r %f -vcodec ppm - 2>/dev/null", this->command, position, fps );
 			this->video = popen( command, "r" );
 		}
 	}

@@ -46,7 +46,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	int result = mlt_frame_get_image( nested_frame, image, format, width, height, writable );
 
 	// Allocate the image
-	int size = *width * *height * ( *format == mlt_image_yuv422 ? 2 : *format == mlt_image_rgb24 ? 3 : *format == mlt_image_rgb24a ? 4 : ( 3 / 2 ) );
+	int size = *width * *height * ( *format == mlt_image_yuv422 ? 2 : *format == mlt_image_rgb24 ? 3 :
+		( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) ? 4 : ( 3 / 2 ) );
 	uint8_t *new_image = mlt_pool_alloc( size );
 
 	// Update the frame

@@ -41,11 +41,10 @@ struct producer_qimage_s
 	int image_idx;
 	int qimage_idx;
 	uint8_t *current_image;
-	uint8_t *current_alpha;
+	int has_alpha;
 	int current_width;
 	int current_height;
 	mlt_cache_item image_cache;
-	mlt_cache_item alpha_cache;
 	pthread_mutex_t mutex;
 };
 
