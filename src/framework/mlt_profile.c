@@ -138,6 +138,26 @@ mlt_profile mlt_profile_init( const char *name )
 	return profile;
 }
 
+static void set_mlt_normalisation( const char *profile_name )
+{
+	if ( profile_name )
+	{
+		if ( strstr( profile_name, "_ntsc" ) ||
+		     strstr( profile_name, "_60" ) ||
+		     strstr( profile_name, "_2997" ) ||
+		     strstr( profile_name, "_30" ) )
+		{
+			mlt_environment_set( "MLT_NORMALISATION", "NTSC" );
+		}
+		else if ( strstr( profile_name, "_pal" ) ||
+		          strstr( profile_name, "_50" ) ||
+		          strstr( profile_name, "_25" ) )
+		{
+			mlt_environment_set( "MLT_NORMALISATION", "PAL" );
+		}
+	}
+}
+
 /** Load a profile from specific file.
  *
  * \public \memberof mlt_profile_s
@@ -161,6 +181,7 @@ mlt_profile mlt_profile_load_file( const char *file )
 			// Set MLT_PROFILE to basename
 			char *filename = strdup( file );
 			mlt_environment_set( "MLT_PROFILE", basename( filename ) );
+			set_mlt_normalisation( basename( filename ) );
 			free( filename );
 		}
 		mlt_properties_close( properties );
@@ -168,21 +189,7 @@ mlt_profile mlt_profile_load_file( const char *file )
 
 	// Set MLT_NORMALISATION to appease legacy modules
 	char *profile_name = mlt_environment( "MLT_PROFILE" );
-	if ( profile_name )
-	{
-		if ( strstr( profile_name, "_ntsc" ) ||
-			strstr( profile_name, "_60" ) ||
-			strstr( profile_name, "_30" ) )
-		{
-			mlt_environment_set( "MLT_NORMALISATION", "NTSC" );
-		}
-		else if ( strstr( profile_name, "_pal" ) ||
-				strstr( profile_name, "_50" ) ||
-				strstr( profile_name, "_25" ) )
-		{
-			mlt_environment_set( "MLT_NORMALISATION", "PAL" );
-		}
-	}
+	set_mlt_normalisation( profile_name );
 	return profile;
 }
 
