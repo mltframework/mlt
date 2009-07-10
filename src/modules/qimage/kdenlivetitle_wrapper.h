@@ -20,6 +20,7 @@
 #include <QtCore/QObject>
 #include <framework/mlt_frame.h>
 #include <QtXml/QDomElement>
+class QGraphicsPolygonItem;
 class QCoreApplication;
 class QApplication;
 class QObject;
@@ -39,6 +40,7 @@ class Title: public QObject {
            int loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv);
             QGraphicsView *view;
             QGraphicsScene *m_scene;
+            QGraphicsPolygonItem *start,*end;
     QString colorToString(const QColor&);
     QString rectFToString(const QRectF&);
     QRectF stringToRect(const QString &);

@@ -26,6 +26,7 @@
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
+#include <QtGui/QGraphicsPolygonItem>
 #include <QtGui/QTextCursor>
 #include "kdenlivetitle_wrapper.h"
 #include <framework/mlt_producer.h>
@@ -35,15 +36,16 @@ void init_qt (const char* c){
 }
 void refresh_kdenlivetitle( void* buffer, int width, int height , double position){
    titleclass->drawKdenliveTitle(buffer,width,height,position);
-   int i=0;
+   int i=0,tmp=0;
    unsigned char* pointer;
    //rotate bytes for correct order in mlt
    for (i=0;i<width*height*4;i+=4){
         pointer=(unsigned char*)buffer+i;
+        tmp=pointer[3];
+        pointer[3]=pointer[0];
         pointer[0]=pointer[1];
         pointer[1]=pointer[2];
-        pointer[2]=pointer[3];
-        pointer[3]=pointer[0];
+        pointer[2]=tmp;
    }
 }
 }
@@ -51,37 +53,24 @@ Title::Title(const QString& filename){
     int argc=0;
     char* argv[1];
     argv[0]="xxx"; 
-    //app=new QApplication(argc,argv);
     app=new QApplication(argc,argv);
-    QGraphicsPolygonItem i;
-    m_scene=new QGraphicsScene(10,10,100,100);
-    loadDocument(filename,&i,&i);
-    m_scene->addText("hello");
-    m_scene->setSceneRect(0,0,1000,1000);
-    //view=new QGraphicsView(scene);
-    //view->show();
-    qDebug() << filename;
+    //must be extracted from kdenlive title
+    start =new QGraphicsPolygonItem(QPolygonF(QRectF(100, 100, 600, 600)));;
+    end=new QGraphicsPolygonItem(QPolygonF(QRectF(0, 0, 300, 300)));;
+    m_scene=new QGraphicsScene;
+    loadDocument(filename,start,end);
 }
 void Title::drawKdenliveTitle(void * buffer ,int width,int height,double position){
     QImage img((uchar*)buffer,width,height,width*4,QImage::Format_ARGB32);
-    img.fill(255);
-    //qDebug() << "ja" << width << height << buffer << position << endl;
-    QList<QGraphicsItem*> items=m_scene->items();
-    for(int i=0;i<items.size();i++){
-        items[i]->moveBy(width*position,width*position); 
-    }
-    /*
-    QPainter p;
-    p.begin(&img);
-    p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing);
-    p.setFont(QFont("Arial",60));
-    p.setPen(QPen(QColor(255,255,255)));
-    p.drawText(width*.2+width*20*position,height/2,"test");
-    p.end();
-*/
+    img.fill(Qt::transparent);
+    QRectF rstart=start->boundingRect();
+    QRectF rend=end->boundingRect();
+    QPointF topleft=rstart.topLeft()+(rend.topLeft()-rstart.topLeft())*position;
+    QPointF bottomRight=rstart.bottomRight()+(rend.bottomRight()-rstart.bottomRight())*position;
     QPainter p1;
     p1.begin(&img);
-    m_scene->render(&p1);
+    p1.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing);
+    m_scene->render(&p1,QRect(),QRectF(topleft,bottomRight));
     p1.end();
 }
 int Title::loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv)
@@ -92,7 +81,6 @@ int Title::loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraph
 
         QFile file(url);
         if (file.open(QIODevice::ReadOnly)) {
-            qDebug() << "loaded";
             doc.setContent(&file, false);
             file.close();
         } 
@@ -147,7 +135,6 @@ int Title::loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGrap
 
                     gitem = txt;
                 } else if (items.item(i).attributes().namedItem("type").nodeValue() == "QGraphicsRectItem") {
-                    qDebug()  << "rectitem";
                     QString rect = items.item(i).namedItem("content").attributes().namedItem("rect").nodeValue();
                     QString br_str = items.item(i).namedItem("content").attributes().namedItem("brushcolor").nodeValue();
                     QString pen_str = items.item(i).namedItem("content").attributes().namedItem("pencolor").nodeValue();

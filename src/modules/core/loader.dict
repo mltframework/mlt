@@ -38,4 +38,5 @@ http://*=avformat
 *.wav=avformat
 *.wmv=avformat
 *.xcf=qimage,sdl_image
+*.kdenlivetitle=kdenlivetitle
 *=avformat
