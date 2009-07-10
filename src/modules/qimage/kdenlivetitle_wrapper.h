@@ -20,11 +20,12 @@
 #include <QtCore/QObject>
 #include <framework/mlt_frame.h>
 class QCoreApplication;
+class QApplication;
 class QObject;
 class Title;
 class QGraphicsView;
 class QGraphicsScene;
-QCoreApplication *app;
+QApplication *app;
 Title* titleclass;
 
 class Title: public QObject {

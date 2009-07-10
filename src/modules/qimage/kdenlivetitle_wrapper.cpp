@@ -20,9 +20,11 @@
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtCore/QCoreApplication>
+#include <QtGui/QApplication>
 #include <QtCore/QDebug>
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
+#include <QtGui/QGraphicsTextItem>
 #include "kdenlivetitle_wrapper.h"
 #include <framework/mlt_producer.h>
 extern "C" {
@@ -46,17 +48,22 @@ void refresh_kdenlivetitle( void* buffer, int width, int height , double positio
 Title::Title(const QString& filename){
     int argc=0;
     char* argv[1];
-    argv[0]=0; 
-    app=new QCoreApplication(argc,argv);
-    //scene=new QGraphicsScene;
+    argv[0]="xxx"; 
+    //app=new QApplication(argc,argv);
+    app=new QApplication(argc,argv);
+    scene=new QGraphicsScene(10,10,100,100);
+    scene->addText("hello");
     //view=new QGraphicsView(scene);
     //view->show();
 }
 void Title::drawKdenliveTitle(void * buffer ,int width,int height,double position){
     //qDebug() << "ja" << width << height << buffer << position << endl;
+    QList<QGraphicsItem*> items=scene->items();
+    for(int i=0;i<items.size();i++){
+        items[i]->moveBy(1,1); 
+    }
     QImage img((uchar*)buffer,width,height,width*4,QImage::Format_ARGB32);
     img.fill(0);
-    //scene->addText("hello");
     QPainter p;
     p.begin(&img);
     p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing);
@@ -65,8 +72,8 @@ void Title::drawKdenliveTitle(void * buffer ,int width,int height,double positio
     p.drawText(width*.2+width*20*position,height/2,"test");
     p.end();
 
-    //QPainter p1;
-    //p1.begin(&img);
-    // scene->render(&p1);
-    //p1.end();
+    QPainter p1;
+    p1.begin(&img);
+     scene->render(&p1);
+    p1.end();
 }
