@@ -14,13 +14,16 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+ 
 #include <QtCore/QObject>
 #include <framework/mlt_frame.h>
 class QCoreApplication;
 class QObject;
 class Title;
+class QGraphicsView;
+class QGraphicsScene;
 QCoreApplication *app;
 Title* titleclass;
 
@@ -29,4 +32,7 @@ class Title: public QObject {
     public:
             Title(const QString &);
             void drawKdenliveTitle(void*,int,int,double);
+    private:
+            QGraphicsView *view;
+            QGraphicsScene *scene;
 };
