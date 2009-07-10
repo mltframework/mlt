@@ -58,7 +58,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
         refresh_kdenlivetitle(*buffer,*width,*height,position);
         mlt_properties_set_int( properties, "alpha", 1 );
-	}
+        mlt_properties_set_int( producer_props, "alpha", 1 );
+    }	
 
     return 0;
 }
@@ -114,7 +115,7 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
       this->get_frame = producer_get_frame;
       this->close = ( mlt_destructor )producer_close;
    }
-    init_qt();
+    init_qt(arg);
    return this;
 }
 

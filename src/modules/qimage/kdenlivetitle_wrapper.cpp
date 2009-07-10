@@ -22,9 +22,11 @@
 #include <QtCore/QCoreApplication>
 #include <QtGui/QApplication>
 #include <QtCore/QDebug>
+#include <QtCore/QFile>
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
+#include <QtGui/QtextCursor>
 #include "kdenlivetitle_wrapper.h"
 #include <framework/mlt_producer.h>
 extern "C" {
@@ -51,19 +53,24 @@ Title::Title(const QString& filename){
     argv[0]="xxx"; 
     //app=new QApplication(argc,argv);
     app=new QApplication(argc,argv);
-    scene=new QGraphicsScene(10,10,100,100);
-    scene->addText("hello");
+    QGraphicsPolygonItem i;
+    m_scene=new QGraphicsScene(10,10,100,100);
+    loadDocument(filename,&i,&i);
+    m_scene->addText("hello");
+    m_scene->setSceneRect(0,0,1000,1000);
     //view=new QGraphicsView(scene);
     //view->show();
+    qDebug() << filename;
 }
 void Title::drawKdenliveTitle(void * buffer ,int width,int height,double position){
-    //qDebug() << "ja" << width << height << buffer << position << endl;
-    QList<QGraphicsItem*> items=scene->items();
-    for(int i=0;i<items.size();i++){
-        items[i]->moveBy(1,1); 
-    }
     QImage img((uchar*)buffer,width,height,width*4,QImage::Format_ARGB32);
-    img.fill(0);
+    img.fill(255);
+    //qDebug() << "ja" << width << height << buffer << position << endl;
+    QList<QGraphicsItem*> items=m_scene->items();
+    for(int i=0;i<items.size();i++){
+        items[i]->moveBy(width*position,width*position); 
+    }
+    /*
     QPainter p;
     p.begin(&img);
     p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing);
@@ -71,9 +78,175 @@ void Title::drawKdenliveTitle(void * buffer ,int width,int height,double positio
     p.setPen(QPen(QColor(255,255,255)));
     p.drawText(width*.2+width*20*position,height/2,"test");
     p.end();
-
+*/
     QPainter p1;
     p1.begin(&img);
-     scene->render(&p1);
+    m_scene->render(&p1);
     p1.end();
+}
+int Title::loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv)
+{
+    QDomDocument doc;
+    if (!m_scene)
+        return -1;
+
+        QFile file(url);
+        if (file.open(QIODevice::ReadOnly)) {
+            qDebug() << "loaded";
+            doc.setContent(&file, false);
+            file.close();
+        } 
+        return loadFromXml(doc, startv, endv);
+}
+int Title::loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/)
+{
+    QDomNodeList titles = doc.elementsByTagName("kdenlivetitle");
+    int maxZValue = 0;
+    if (titles.size()) {
+
+        QDomNodeList items = titles.item(0).childNodes();
+        for (int i = 0; i < items.count(); i++) {
+            QGraphicsItem *gitem = NULL;
+            int zValue = items.item(i).attributes().namedItem("z-index").nodeValue().toInt();
+            if (zValue > -1000) {
+                if (items.item(i).attributes().namedItem("type").nodeValue() == "QGraphicsTextItem") {
+                    QDomNamedNodeMap txtProperties = items.item(i).namedItem("content").attributes();
+                    QFont font(txtProperties.namedItem("font").nodeValue());
+                    font.setBold(txtProperties.namedItem("font-bold").nodeValue().toInt());
+                    font.setItalic(txtProperties.namedItem("font-italic").nodeValue().toInt());
+                    font.setUnderline(txtProperties.namedItem("font-underline").nodeValue().toInt());
+                    // Older Kdenlive version did not store pixel size but point size
+                    if (txtProperties.namedItem("font-pixel-size").isNull()) {
+                        QFont f2;
+                        f2.setPointSize(txtProperties.namedItem("font-size").nodeValue().toInt());
+                        font.setPixelSize(QFontInfo(f2).pixelSize());
+                    } else
+                        font.setPixelSize(txtProperties.namedItem("font-pixel-size").nodeValue().toInt());
+                    QColor col(stringToColor(txtProperties.namedItem("font-color").nodeValue()));
+                    QGraphicsTextItem *txt = m_scene->addText(items.item(i).namedItem("content").firstChild().nodeValue(), font);
+                    txt->setDefaultTextColor(col);
+                    txt->setTextInteractionFlags(Qt::NoTextInteraction);
+                    if (txtProperties.namedItem("alignment").isNull() == false) {
+                        txt->setTextWidth(txt->boundingRect().width());
+                        QTextCursor cur = txt->textCursor();
+                        QTextBlockFormat format = cur.blockFormat();
+                        format.setAlignment((Qt::Alignment) txtProperties.namedItem("alignment").nodeValue().toInt());
+                        cur.select(QTextCursor::Document);
+                        cur.setBlockFormat(format);
+                        txt->setTextCursor(cur);
+                        cur.clearSelection();
+                        txt->setTextCursor(cur);
+                    }
+
+                    if (!txtProperties.namedItem("kdenlive-axis-x-inverted").isNull()) {
+                        //txt->setData(OriginXLeft, txtProperties.namedItem("kdenlive-axis-x-inverted").nodeValue().toInt());
+                    }
+                    if (!txtProperties.namedItem("kdenlive-axis-y-inverted").isNull()) {
+                        //txt->setData(OriginYTop, txtProperties.namedItem("kdenlive-axis-y-inverted").nodeValue().toInt());
+                    }
+
+                    gitem = txt;
+                } else if (items.item(i).attributes().namedItem("type").nodeValue() == "QGraphicsRectItem") {
+                    qDebug()  << "rectitem";
+                    QString rect = items.item(i).namedItem("content").attributes().namedItem("rect").nodeValue();
+                    QString br_str = items.item(i).namedItem("content").attributes().namedItem("brushcolor").nodeValue();
+                    QString pen_str = items.item(i).namedItem("content").attributes().namedItem("pencolor").nodeValue();
+                    double penwidth = items.item(i).namedItem("content").attributes().namedItem("penwidth").nodeValue().toDouble();
+                    QGraphicsRectItem *rec = m_scene->addRect(stringToRect(rect), QPen(QBrush(stringToColor(pen_str)), penwidth), QBrush(stringToColor(br_str)));
+                    gitem = rec;
+                } else if (items.item(i).attributes().namedItem("type").nodeValue() == "QGraphicsPixmapItem") {
+                    QString url = items.item(i).namedItem("content").attributes().namedItem("url").nodeValue();
+                    QPixmap pix(url);
+                    QGraphicsPixmapItem *rec = m_scene->addPixmap(pix);
+                    rec->setData(Qt::UserRole, url);
+                    gitem = rec;
+                } else if (items.item(i).attributes().namedItem("type").nodeValue() == "QGraphicsSvgItem") {
+                    QString url = items.item(i).namedItem("content").attributes().namedItem("url").nodeValue();
+                    //QGraphicsSvgItem *rec = new QGraphicsSvgItem(url);
+                    //m_scene->addItem(rec);
+                    //rec->setData(Qt::UserRole, url);
+                    //gitem = rec;
+                }
+            }
+            //pos and transform
+            if (gitem) {
+                QPointF p(items.item(i).namedItem("position").attributes().namedItem("x").nodeValue().toDouble(),
+                          items.item(i).namedItem("position").attributes().namedItem("y").nodeValue().toDouble());
+                gitem->setPos(p);
+                gitem->setTransform(stringToTransform(items.item(i).namedItem("position").firstChild().firstChild().nodeValue()));
+                int zValue = items.item(i).attributes().namedItem("z-index").nodeValue().toInt();
+                if (zValue > maxZValue) maxZValue = zValue;
+                gitem->setZValue(zValue);
+                gitem->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            }
+            if (items.item(i).nodeName() == "background") {
+                QColor color = QColor(stringToColor(items.item(i).attributes().namedItem("color").nodeValue()));
+                //color.setAlpha(items.item(i).attributes().namedItem("alpha").nodeValue().toInt());
+                QList<QGraphicsItem *> items = m_scene->items();
+                for (int i = 0; i < items.size(); i++) {
+                    if (items.at(i)->zValue() == -1100) {
+                        ((QGraphicsRectItem *)items.at(i))->setBrush(QBrush(color));
+                        break;
+                    }
+                }
+            } /*else if (items.item(i).nodeName() == "startviewport" && startv) {
+                    QPointF p(items.item(i).attributes().namedItem("x").nodeValue().toDouble(), items.item(i).attributes().namedItem("y").nodeValue().toDouble());
+                    double width = items.item(i).attributes().namedItem("size").nodeValue().toDouble();
+                    QRectF rect(-width, -width / aspect_ratio, width*2.0, width / aspect_ratio*2.0);
+                    kDebug() << width << rect;
+                    startv->setPolygon(rect);
+                    startv->setPos(p);
+                } else if (items.item(i).nodeName() == "endviewport" && endv) {
+                    QPointF p(items.item(i).attributes().namedItem("x").nodeValue().toDouble(), items.item(i).attributes().namedItem("y").nodeValue().toDouble());
+                    double width = items.item(i).attributes().namedItem("size").nodeValue().toDouble();
+                    QRectF rect(-width, -width / aspect_ratio, width*2.0, width / aspect_ratio*2.0);
+                    kDebug() << width << rect;
+                    endv->setPolygon(rect);
+                    endv->setPos(p);
+                }*/
+        }
+    }
+    return maxZValue;
+}
+
+QString Title::colorToString(const QColor& c)
+{
+    QString ret = "%1,%2,%3,%4";
+    ret = ret.arg(c.red()).arg(c.green()).arg(c.blue()).arg(c.alpha());
+    return ret;
+}
+
+QString Title::rectFToString(const QRectF& c)
+{
+    QString ret = "%1,%2,%3,%4";
+    ret = ret.arg(c.top()).arg(c.left()).arg(c.width()).arg(c.height());
+    return ret;
+}
+
+QRectF Title::stringToRect(const QString & s)
+{
+
+    QStringList l = s.split(',');
+    if (l.size() < 4)
+        return QRectF();
+    return QRectF(l.at(0).toDouble(), l.at(1).toDouble(), l.at(2).toDouble(), l.at(3).toDouble()).normalized();
+}
+
+QColor Title::stringToColor(const QString & s)
+{
+    QStringList l = s.split(',');
+    if (l.size() < 4)
+        return QColor();
+    return QColor(l.at(0).toInt(), l.at(1).toInt(), l.at(2).toInt(), l.at(3).toInt());;
+}
+QTransform Title::stringToTransform(const QString& s)
+{
+    QStringList l = s.split(',');
+    if (l.size() < 9)
+        return QTransform();
+    return QTransform(
+               l.at(0).toDouble(), l.at(1).toDouble(), l.at(2).toDouble(),
+               l.at(3).toDouble(), l.at(4).toDouble(), l.at(5).toDouble(),
+               l.at(6).toDouble(), l.at(7).toDouble(), l.at(8).toDouble()
+           );
 }

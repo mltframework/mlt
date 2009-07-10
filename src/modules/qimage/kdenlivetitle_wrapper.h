@@ -19,6 +19,7 @@
  
 #include <QtCore/QObject>
 #include <framework/mlt_frame.h>
+#include <QtXml/QDomElement>
 class QCoreApplication;
 class QApplication;
 class QObject;
@@ -34,6 +35,13 @@ class Title: public QObject {
             Title(const QString &);
             void drawKdenliveTitle(void*,int,int,double);
     private:
+           int  loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/);
+           int loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv);
             QGraphicsView *view;
-            QGraphicsScene *scene;
+            QGraphicsScene *m_scene;
+    QString colorToString(const QColor&);
+    QString rectFToString(const QRectF&);
+    QRectF stringToRect(const QString &);
+    QColor stringToColor(const QString &);
+    QTransform stringToTransform(const QString &);
 };
