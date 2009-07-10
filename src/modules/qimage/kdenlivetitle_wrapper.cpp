@@ -26,7 +26,7 @@
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
-#include <QtGui/QtextCursor>
+#include <QtGui/QTextCursor>
 #include "kdenlivetitle_wrapper.h"
 #include <framework/mlt_producer.h>
 extern "C" {
