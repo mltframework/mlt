@@ -31,23 +31,25 @@
 #include "kdenlivetitle_wrapper.h"
 #include <framework/mlt_producer.h>
 extern "C" {
-void init_qt (const char* c){
-    titleclass=new Title(QString(c));
-}
-void refresh_kdenlivetitle( void* buffer, int width, int height , double position){
-   titleclass->drawKdenliveTitle(buffer,width,height,position);
-   int i=0,tmp=0;
-   unsigned char* pointer;
-   //rotate bytes for correct order in mlt
-   for (i=0;i<width*height*4;i+=4){
-        pointer=(unsigned char*)buffer+i;
-        tmp=pointer[3];
-        pointer[3]=pointer[0];
-        pointer[0]=pointer[1];
-        pointer[1]=pointer[2];
-        pointer[2]=tmp;
-   }
-}
+    void init_qt (const char* c){
+        titleclass=new Title(QString(c));
+    }
+    void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position){
+       titleclass->drawKdenliveTitle(buffer,width,height,position);
+       int i=0,tmp=0;
+       uint8_t* pointer;
+       //rotate bytes for correct order in mlt
+       for (i=0;i<width*height*4;i+=4){
+            pointer=buffer+i;
+            uint8_t v=i%8==0?255:0;
+            uint8_t a=pointer[0],r=pointer[1],g=pointer[2],b=pointer[3];
+            pointer[0]=g;//g
+            pointer[1]=r;//r
+            pointer[2]=b;//b
+            pointer[3]=a;//a
+       }
+       //memset(buffer,127,width*height*4);
+    }
 }
 Title::Title(const QString& filename){
     int argc=0;
@@ -60,18 +62,22 @@ Title::Title(const QString& filename){
     m_scene=new QGraphicsScene;
     loadDocument(filename,start,end);
 }
-void Title::drawKdenliveTitle(void * buffer ,int width,int height,double position){
+void Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double position){
+    //qDebug() << width << height;
     QImage img((uchar*)buffer,width,height,width*4,QImage::Format_ARGB32);
     img.fill(Qt::transparent);
+    //img.fill(66);
     QRectF rstart=start->boundingRect();
     QRectF rend=end->boundingRect();
     QPointF topleft=rstart.topLeft()+(rend.topLeft()-rstart.topLeft())*position;
     QPointF bottomRight=rstart.bottomRight()+(rend.bottomRight()-rstart.bottomRight())*position;
     QPainter p1;
     p1.begin(&img);
-    p1.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing);
-    m_scene->render(&p1,QRect(),QRectF(topleft,bottomRight));
+    p1.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform );
+    m_scene->render(&p1,QRect(0,0,width,height),QRectF(topleft,bottomRight));
     p1.end();
+    //qDebug() << img.hasAlphaChannel();
+    //img.save("test.png");
 }
 int Title::loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv)
 {

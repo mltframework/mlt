@@ -34,16 +34,16 @@ class Title: public QObject {
 
     public:
             Title(const QString &);
-            void drawKdenliveTitle(void*,int,int,double);
+            void drawKdenliveTitle(uint8_t*,int,int,double);
     private:
-           int  loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/);
-           int loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv);
+            int  loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/);
+            int loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv);
             QGraphicsView *view;
             QGraphicsScene *m_scene;
             QGraphicsPolygonItem *start,*end;
-    QString colorToString(const QColor&);
-    QString rectFToString(const QRectF&);
-    QRectF stringToRect(const QString &);
-    QColor stringToColor(const QString &);
-    QTransform stringToTransform(const QString &);
+            QString colorToString(const QColor&);
+            QString rectFToString(const QRectF&);
+            QRectF stringToRect(const QString &);
+            QColor stringToColor(const QString &);
+            QTransform stringToTransform(const QString &);
 };
