@@ -1,13 +1,13 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lm
+
 include ../../../config.mak
 
 TARGET = ../libmltnormalize$(LIBSUF)
 
 OBJS = factory.o \
 	   filter_volume.o 
-
-CFLAGS += -I../..
-
-LDFLAGS += -L../../framework -lmlt -lm
 
 SRCS := $(OBJS:.o=.c)
 

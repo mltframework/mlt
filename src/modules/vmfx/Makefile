@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltvmfx$(LIBSUF)
@@ -8,10 +12,6 @@ OBJS = factory.o \
 	   filter_mono.o \
 	   filter_shape.o \
 	   producer_pgm.o
-
-CFLAGS += -I../..
-
-LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

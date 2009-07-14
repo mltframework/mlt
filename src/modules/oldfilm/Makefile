@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lm
+
 include ../../../config.mak
 
 TARGET = ../libmltoldfilm$(LIBSUF)
@@ -9,11 +13,6 @@ OBJS = factory.o \
 	   filter_grain.o \
 	   filter_tcolor.o \
 	   filter_vignette.o
-
-CFLAGS += -I../..
-
-LDFLAGS += -L../../framework -lmlt
-LDFLAGS += -lm
 
 SRCS := $(OBJS:.o=.c)
 

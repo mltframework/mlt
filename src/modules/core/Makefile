@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lm -lpthread
+
 include ../../../config.mak
 
 TARGET = ../libmltcore$(LIBSUF)
@@ -33,10 +37,6 @@ OBJS = factory.o \
 	   consumer_null.o
 
 ASM_OBJS = 
-
-CFLAGS += -I../..
-
-LDFLAGS += -L../../framework -lmlt -lm -lpthread
 
 SRCS := $(OBJS:.o=.c)
 

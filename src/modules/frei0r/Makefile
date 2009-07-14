@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltfrei0r$(LIBSUF)
@@ -8,12 +12,10 @@ OBJS = factory.o \
 	   transition_frei0r.o \
 	   frei0r_helper.o
 
-CFLAGS += -I../..
-CFLAGS += `pkg-config --cflags frei0r`
+CFLAGS += `pkg-config --cflags frei0r 2> /dev/null`
 
-LDFLAGS += -L../../framework -lmlt
 LDFLAGS += -lm $(LIBDL)
-LDFLAGS += `pkg-config --libs frei0r`
+LDFLAGS += `pkg-config --libs frei0r 2> /dev/null`
 
 SRCS := $(OBJS:.o=.c)
 

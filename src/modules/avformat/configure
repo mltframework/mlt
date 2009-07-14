@@ -112,7 +112,7 @@ else
 			echo "LDFLAGS+=-single_module" >> config.mak
 		echo "LOCAL_FFMPEG=1" >> config.mak
 		echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
-		extra_libs="$extra_libs -lz -lbz2"
+		extra_libs="$extra_libs -lm -lz -lbz2"
 	elif [ "$static_ffmpeg" != "" ]
 	then 
 		if [ -d "$static_ffmpeg" ]
@@ -128,7 +128,7 @@ else
 				echo "SWSCALE=1" >> config.mak
 			fi
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
-			extra_libs="$extra_libs -lz -lbz2"
+			extra_libs="$extra_libs -lm -lz -lbz2"
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat

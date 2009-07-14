@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltkdenlive$(LIBSUF)
@@ -8,9 +12,7 @@ OBJS = factory.o \
 	   filter_wave.o \
 	   producer_framebuffer.o
 
-CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt
 LDFLAGS += -lm
 
 SRCS := $(OBJS:.o=.c)

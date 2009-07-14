@@ -1,3 +1,7 @@
+CFLAGS += -I../../ -DARCH_X86
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltxine$(LIBSUF)
@@ -9,10 +13,6 @@ OBJS = factory.o \
 ifdef MMX_FLAGS
 OBJS += cpu_accel.o
 endif
-
-CFLAGS += -I../../ -DARCH_X86
-
-LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

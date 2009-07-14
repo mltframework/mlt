@@ -1,13 +1,13 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltmelt$(LIBSUF)
 
 OBJS = factory.o \
 	   producer_melt.o 
-
-CFLAGS += -I../..
-
-LDFLAGS += -L../../framework -lmlt
 
 SRCS := $(OBJS:.o=.c)
 

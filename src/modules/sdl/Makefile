@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lpthread -lm
+
 include ../../../config.mak
 
 include config.mak
@@ -16,10 +20,8 @@ else
 LDFLAGS += -lX11
 endif
 
-CFLAGS += -I../..
 CFLAGS += `sdl-config --cflags`
 
-LDFLAGS += -L../../framework -lmlt -lpthread -lm
 LDFLAGS += `sdl-config --libs`
 
 ifeq ($(WITH_SDL_IMAGE),1)

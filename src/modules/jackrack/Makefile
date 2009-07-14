@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lpthread -lm
+
 include ../../../config.mak
 
 TARGET = ../libmltjackrack$(LIBSUF)
@@ -13,12 +17,11 @@ OBJS = factory.o \
 	   filter_jackrack.o \
 	   filter_ladspa.o
 
-CFLAGS += -I../..
 CFLAGS += `pkg-config --cflags jack`
 CFLAGS += `pkg-config --cflags libxml-2.0`
 CFLAGS += `pkg-config --cflags glib-2.0`
 
-LDFLAGS += -L../../framework -lmlt -lpthread -lm $(LIBDL)
+LDFLAGS += $(LIBDL)
 LDFLAGS += `pkg-config --libs jack`
 LDFLAGS += `pkg-config --libs libxml-2.0`
 LDFLAGS += `pkg-config --libs glib-2.0`

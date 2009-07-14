@@ -1,3 +1,7 @@
+CFLAGS += -I../.. 
+
+LDFLAGS += -L../../framework -lmlt -lm
+
 include ../../../config.mak
 
 TARGET = ../libmltmotion_est.so
@@ -9,10 +13,6 @@ OBJS = factory.o \
 	   arrow_code.o \
 	   filter_vismv.o \
 	   producer_slowmotion.o
-
-CFLAGS += -I../.. 
-
-LDFLAGS += -L../../framework -lmlt -lm
 
 SRCS := $(OBJS:.o=.c)
 
