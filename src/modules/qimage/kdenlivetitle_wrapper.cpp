@@ -36,19 +36,17 @@ extern "C" {
     }
     void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position){
        titleclass->drawKdenliveTitle(buffer,width,height,position);
-       int i=0,tmp=0;
+       int i=0;
        uint8_t* pointer;
        //rotate bytes for correct order in mlt
        for (i=0;i<width*height*4;i+=4){
             pointer=buffer+i;
-            uint8_t v=i%8==0?255:0;
             uint8_t a=pointer[0],r=pointer[1],g=pointer[2],b=pointer[3];
             pointer[0]=g;//g
             pointer[1]=r;//r
             pointer[2]=b;//b
             pointer[3]=a;//a
        }
-       //memset(buffer,127,width*height*4);
     }
 }
 Title::Title(const QString& filename){

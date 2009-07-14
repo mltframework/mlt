@@ -24,7 +24,7 @@
 //#include <QtCore/QCoreApplication>
 //#include <QtGui/QImage>
 extern void init_qt();
-extern void refresh_kdenlivetitle(void*,int,int,double);
+extern void refresh_kdenlivetitle(uint8_t*,int,int,double);
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -44,7 +44,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
     // Update the frame
     mlt_properties_set_int( properties, "width", *width );
     mlt_properties_set_int( properties, "height", *height );
-
+    //unchached now
     if ( 1 )
     {
         // Allocate the image
@@ -60,14 +60,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
         *buffer=image;
         mlt_properties_set_data( properties, "image", image, size, mlt_pool_release, NULL );
         mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "width:%d height:%d %s\n",*width,*height, mlt_image_format_name( *format ) );
-        FILE* f=fopen("aus.pbm","w");
-        fprintf(f,"P1\n%d %d\n",*width,*height);
-        for (size1=3;size1<*width**height*4;size1+=4){
-            fprintf (f,"%d ",*(*buffer+size1)>0? 1: 0);
-            if (size1%*width==0)
-                fprintf(f,"\n");
-        }
-        fclose(f);
     }   
 
     return 0;
