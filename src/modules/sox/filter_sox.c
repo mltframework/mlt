@@ -181,6 +181,9 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 
 static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,3,0))
+ 	SOX_SAMPLE_LOCALS;
+#endif
 	// Get the properties of the frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 

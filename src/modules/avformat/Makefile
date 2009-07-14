@@ -9,7 +9,8 @@ include config.mak
 LDFLAGS += -lavformat$(AVFORMAT_SUFFIX)
 LDFLAGS += -lavcodec$(AVFORMAT_SUFFIX)
 LDFLAGS += -lavutil$(AVFORMAT_SUFFIX)
-LDFLAGS += -lavdevice$(AVFORMAT_SUFFIX) $(EXTRA_LIBS)
+LDFLAGS += -lavdevice$(AVFORMAT_SUFFIX)
+LDFLAGS += -lm $(EXTRA_LIBS)
 
 ifndef CODECS
 TARGET = ../libmltffmpeg$(LIBSUF)
