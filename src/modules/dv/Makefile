@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lpthread
+
 include ../../../config.mak
 
 TARGET = ../libmltdv$(LIBSUF)
@@ -6,10 +10,8 @@ OBJS = factory.o \
 	   producer_libdv.o \
 	   consumer_libdv.o
 
-CFLAGS += -I../..
 CFLAGS += `pkg-config --cflags libdv`
 
-LDFLAGS += -L../../framework -lmlt -lpthread
 LDFLAGS += `pkg-config --libs libdv`
 
 SRCS := $(OBJS:.o=.c)

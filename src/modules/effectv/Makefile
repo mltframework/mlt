@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lm
+
 include ../../../config.mak
 
 TARGET = ../libmlteffectv$(LIBSUF)
@@ -6,10 +10,6 @@ OBJS = factory.o \
 	   filter_burn.o \
 	   image.o \
 	   utils.o
-
-CFLAGS += -I../..
-
-LDFLAGS += -L../../framework -lmlt -lm
 
 SRCS := $(OBJS:.o=.c)
 

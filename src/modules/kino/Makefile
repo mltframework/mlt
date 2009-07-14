@@ -1,3 +1,8 @@
+CFLAGS += -I../../
+CXXFLAGS += $(CFLAGS) -Wno-deprecated
+
+LDFLAGS += -L../../framework -lmlt -lpthread
+
 include ../../../config.mak
 include config.mak
 
@@ -6,10 +11,6 @@ TARGET = ../libmltkino.so
 OBJS = factory.o producer_kino.o
 CPPOBJS = kino_wrapper.o avi.o error.o filehandler.o riff.o
 
-CFLAGS += -I../../
-CXXFLAGS += $(CFLAGS) -Wno-deprecated
-
-LDFLAGS += -L../../framework -lmlt -lpthread
 LDFLAGS += -lstdc++
 
 ifdef HAVE_LIBQUICKTIME

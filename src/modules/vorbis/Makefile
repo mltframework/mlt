@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltvorbis$(LIBSUF)
@@ -5,11 +9,9 @@ TARGET = ../libmltvorbis$(LIBSUF)
 OBJS = factory.o \
 	   producer_vorbis.o
 
-CFLAGS += -I../..
 CFLAGS += `pkg-config --cflags vorbis`
 CFLAGS += `pkg-config --cflags vorbisfile`
 
-LDFLAGS += -L../../framework -lmlt
 LDFLAGS += `pkg-config --libs vorbis`
 LDFLAGS += `pkg-config --libs vorbisfile`
 

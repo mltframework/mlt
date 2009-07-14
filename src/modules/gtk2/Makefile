@@ -1,12 +1,13 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lpthread -lm
+
 include ../../../config.mak
 include config.mak
 
 TARGET = ../libmltgtk2$(LIBSUF)
 
 OBJS = factory.o
-
-CFLAGS += -I../..
-LDFLAGS += -L../../framework -lmlt -lpthread -lm
 
 ifdef USE_GTK2
 OBJS += consumer_gtk2.o

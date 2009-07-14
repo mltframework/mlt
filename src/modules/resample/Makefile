@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltresample$(LIBSUF)
@@ -5,10 +9,8 @@ TARGET = ../libmltresample$(LIBSUF)
 OBJS = factory.o \
 	   filter_resample.o 
 
-CFLAGS += -I../..
 CFLAGS += `pkg-config --cflags samplerate`
 
-LDFLAGS += -L../../framework -lmlt
 LDFLAGS += `pkg-config --libs samplerate`
 
 SRCS := $(OBJS:.o=.c)

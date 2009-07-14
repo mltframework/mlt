@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
 
 TARGET = ../libmltxml$(LIBSUF)
@@ -6,10 +10,8 @@ OBJS = factory.o \
 	   consumer_xml.o \
 	   producer_xml.o
 
-CFLAGS += -I../..
 CFLAGS += `pkg-config libxml-2.0 --cflags`
 
-LDFLAGS += -L../../framework -lmlt
 LDFLAGS += `pkg-config libxml-2.0 --libs`
 
 SRCS := $(OBJS:.o=.c)

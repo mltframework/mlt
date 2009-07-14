@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lm
+
 include ../../../config.mak
 
 TARGET = ../libmltplus$(LIBSUF)
@@ -8,10 +12,6 @@ OBJS = factory.o \
 	   filter_invert.o \
 	   filter_sepia.o \
 	   transition_affine.o
-
-CFLAGS += -I../..
-
-LDFLAGS += -L../../framework -lmlt -lm
 
 SRCS := $(OBJS:.o=.c)
 

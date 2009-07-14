@@ -1,3 +1,7 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt -lpthread -lm
+
 include ../../../config.mak
 include config.mak
 
@@ -6,10 +10,8 @@ TARGET = ../libmltqimage$(LIBSUF)
 OBJS = factory.o producer_qimage.o
 CPPOBJS = qimage_wrapper.o
 
-CFLAGS += -I../..
 CXXFLAGS += $(CFLAGS) $(QTCXXFLAGS) -Wno-deprecated
 
-LDFLAGS += -L../../framework -lmlt -lpthread -lm
 LDFLAGS += $(QTLIBS)
 LDFLAGS += -lstdc++
 
