@@ -53,7 +53,8 @@ Title::Title(const QString& filename){
     int argc=0;
     char* argv[1];
     argv[0]="xxx"; 
-    app=new QApplication(argc,argv);
+    if (! QApplication::activeWindow())
+        app=new QApplication(argc,argv);
     //must be extracted from kdenlive title
     start =new QGraphicsPolygonItem(QPolygonF(QRectF(100, 100, 600, 600)));;
     end=new QGraphicsPolygonItem(QPolygonF(QRectF(0, 0, 300, 300)));;
