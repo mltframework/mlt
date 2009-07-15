@@ -24,7 +24,7 @@
 //#include <QtCore/QCoreApplication>
 //#include <QtGui/QImage>
 extern void init_qt();
-extern uint8_t* refresh_kdenlivetitle(uint8_t*,int,int,double);
+extern void refresh_kdenlivetitle(uint8_t*,int,int,double);
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -36,41 +36,19 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
     mlt_producer producer = mlt_properties_get_data( properties, "producer_kdenlivetitle", NULL );
 
     // Obtain properties of producer
-    mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+    // save extra data
+    //mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
     // Allocate the image
     int size = *width * ( *height  ) * 4;
+    
     *buffer = mlt_pool_alloc( size);
     // Update the frame
     mlt_properties_set_int( properties, "width", *width );
     mlt_properties_set_int( properties, "height", *height );
-    //printf("%x %x %x\n",*(buffer),*(buffer+1),*(buffer+2));
-    
-    //######### noise
+   
     // Update the frame
     mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
-#if 0
-    // Before we write to the image, make sure we have one
-    if ( *buffer != NULL )
-    {
-        // Calculate the end of the buffer
-        uint8_t *p = *buffer + *width * *height * 2;
 
-        // Value to hold a random number
-        uint32_t value;
-
-        // Generate random noise
-        while ( p != *buffer )
-        {
-            value = rand() & 0xff;
-            *( -- p ) = 128;
-            *( -- p ) = value < 16 ? 16 : value > 240 ? 240 : value;
-        }
-    }
-
-
-    printf("%x %x\n", mlt_properties_get_data(properties,"image",NULL),mlt_properties_get_data(producer_props,"image",NULL));
-    //unchached now
-#else
     if ( 1 )
     {
         // Allocate the image
@@ -80,28 +58,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
         mlt_position out = mlt_producer_get_out( producer );
         mlt_position time = mlt_frame_get_position( frame );
         double position = ( double )( time - in ) / ( double )( out - in + 1 );
-        //uint8_t *pic= mlt_pool_alloc( size);
-        uint8_t* pic1=refresh_kdenlivetitle(*buffer, *width, *height, position );
-        
-        
-        memcpy(*buffer,pic1,size); 
-        
-        /*uint8_t *p = *buffer + *width * *height * 2;
-
-        // Value to hold a random number
-        uint32_t value;
-
-        // Generate random noise
-        while ( p != *buffer )
-        {
-            value = rand() & 0xff;
-            *( -- p ) = 128;
-            *( -- p ) = value < 16 ? 16 : value > 240 ? 240 : value;
-        }
-        */
+        refresh_kdenlivetitle(*buffer, *width, *height, position );
         mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "width:%d height:%d %s\n",*width,*height, mlt_image_format_name( *format ) );
     }   
-#endif
     return 0;
 }
 

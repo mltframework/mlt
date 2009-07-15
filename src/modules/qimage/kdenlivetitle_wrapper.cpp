@@ -34,33 +34,25 @@ extern "C" {
     void init_qt (const char* c){
         titleclass=new Title(QString(c));
     }
-    uint8_t* refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position){
-        void * cpy=malloc( width*height*4);
-        uint8_t* ret=titleclass->drawKdenliveTitle(buffer,width,height,position);
-        memcpy(cpy,ret,width*height*4);
-        return (uint8_t*)cpy;
+    void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position){
+        QImage* ret=titleclass->drawKdenliveTitle(buffer,width,height,position);
+        memcpy(buffer,ret->bits(),width*height*4);
+        delete(ret);
+        //return (uint8_t*)cpy;
     }
 }
 Title::Title(const QString& filename):m_filename(filename),m_scene(NULL){
-    /*int argc=0;
-    char* argv[1];
-    argv[0]="xxx"; 
-    if (! QApplication::activeWindow())
-        app=new QApplication(argc,argv);
-    */
     //must be extracted from kdenlive title
     start =new QGraphicsPolygonItem(QPolygonF(QRectF(100, 100, 600, 600)));;
     end=new QGraphicsPolygonItem(QPolygonF(QRectF(0, 0, 300, 300)));;
-    //m_scene=new QGraphicsScene;
-    //loadDocument(filename,start,end);
 }
-uint8_t* Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double position){
+QImage* Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double position){
     if (!m_scene){
         int argc=0;
         char* argv[1];
         argv[0]="xxx"; 
-        //if (! QApplication::activeWindow())
-        if (!app)
+        if (! QApplication::activeWindow())
+        //if (!app)
             app=new QApplication(argc,argv);
         m_scene=new QGraphicsScene;
         loadDocument(m_filename,start,end);
@@ -70,8 +62,7 @@ uint8_t* Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double 
     //qDebug() << width << height;
     QImage *img=new QImage(width,height,QImage::Format_ARGB32);
     //QImage img((uchar*)buffer,width,height,width*4,QImage::Format_ARGB32);
-    img->fill(Qt::transparent);
-    //img.fill(66);
+    //img->fill(Qt::transparent);
     //memset(buffer,127,width*height+4);
     QRectF rstart=start->boundingRect();
     QRectF rend=end->boundingRect();
@@ -79,21 +70,23 @@ uint8_t* Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double 
     QPointF bottomRight=rstart.bottomRight()+(rend.bottomRight()-rstart.bottomRight())*position;
     QPainter p1;
     p1.begin(img);
-    p1.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform );
+    p1.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing);//|QPainter::SmoothPixmapTransform );
     m_scene->render(&p1,QRect(0,0,width,height),QRectF(topleft,bottomRight));
     p1.end();
     uint8_t* pointer=img->bits();
      for (int i=0;i<width*height*4;i+=4){
-            pointer=buffer+i;
+            uint8_t v=i>11000 && i< 35000 ?255:0; 
             uint8_t a=pointer[0],r=pointer[1],g=pointer[2],b=pointer[3];
             pointer[0]=g;//g
             pointer[1]=r;//r
             pointer[2]=b;//b
             pointer[3]=a;//a
+            //qDebug() << a;
+            pointer+=4;
        }
-    return img->bits();
+    img->save("test.png");
+    return img;
     //qDebug() << img.hasAlphaChannel();
-    //img.save("test.png");
 }
 int Title::loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv)
 {
@@ -186,7 +179,7 @@ int Title::loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGrap
                 int zValue = items.item(i).attributes().namedItem("z-index").nodeValue().toInt();
                 if (zValue > maxZValue) maxZValue = zValue;
                 gitem->setZValue(zValue);
-                gitem->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+                //gitem->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
             }
             if (items.item(i).nodeName() == "background") {
                 QColor color = QColor(stringToColor(items.item(i).attributes().namedItem("color").nodeValue()));

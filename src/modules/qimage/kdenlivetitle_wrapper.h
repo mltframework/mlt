@@ -35,7 +35,7 @@ class Title: public QObject {
 
     public:
             Title(const QString &);
-            uint8_t* drawKdenliveTitle(uint8_t*,int,int,double);
+            QImage* drawKdenliveTitle(uint8_t*,int,int,double);
     private:
             QString m_filename;
             int  loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/);
@@ -49,3 +49,4 @@ class Title: public QObject {
             QColor stringToColor(const QString &);
             QTransform stringToTransform(const QString &);
 };
+
