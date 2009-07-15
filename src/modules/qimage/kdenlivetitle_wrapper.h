@@ -18,6 +18,7 @@
  */
  
 #include <QtCore/QObject>
+#include <QtCore/QString>
 #include <framework/mlt_frame.h>
 #include <QtXml/QDomElement>
 class QGraphicsPolygonItem;
@@ -34,8 +35,9 @@ class Title: public QObject {
 
     public:
             Title(const QString &);
-            void drawKdenliveTitle(uint8_t*,int,int,double);
+            uint8_t* drawKdenliveTitle(uint8_t*,int,int,double);
     private:
+            QString m_filename;
             int  loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/);
             int loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv);
             QGraphicsView *view;
