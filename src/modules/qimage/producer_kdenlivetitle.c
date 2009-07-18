@@ -18,11 +18,8 @@
  */
 
 #include <framework/mlt.h>
-//#include "frei0r_helper.h"
 #include <stdlib.h>
 #include <string.h>
-//#include <QtCore/QCoreApplication>
-//#include <QtGui/QImage>
 extern void init_qt();
 extern void refresh_kdenlivetitle(uint8_t*,int,int,double);
 
@@ -48,12 +45,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
    
     // Update the frame
     mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
-
+    //cache later ??
     if ( 1 )
     {
         // Allocate the image
         *format = mlt_image_rgb24a;
-        //*format = mlt_image_yuv422;
         mlt_position in = mlt_producer_get_in( producer );
         mlt_position out = mlt_producer_get_out( producer );
         mlt_position time = mlt_frame_get_position( frame );

@@ -28,14 +28,12 @@ class QObject;
 class Title;
 class QGraphicsView;
 class QGraphicsScene;
-QApplication *app;
-Title* titleclass;
 
 class Title: public QObject {
 
     public:
             Title(const QString &);
-            QImage* drawKdenliveTitle(uint8_t*,int,int,double);
+            void drawKdenliveTitle(uint8_t*,int,int,double);
     private:
             QString m_filename;
             int  loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/);

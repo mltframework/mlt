@@ -30,15 +30,16 @@
 #include <QtGui/QTextCursor>
 #include "kdenlivetitle_wrapper.h"
 #include <framework/mlt_producer.h>
+
+static Title* titleclass;
+static QApplication *app;
+
 extern "C" {
     void init_qt (const char* c){
         titleclass=new Title(QString(c));
     }
     void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position){
-        QImage* ret=titleclass->drawKdenliveTitle(buffer,width,height,position);
-        memcpy(buffer,ret->bits(),width*height*4);
-        delete(ret);
-        //return (uint8_t*)cpy;
+        titleclass->drawKdenliveTitle(buffer,width,height,position);
     }
 }
 Title::Title(const QString& filename):m_filename(filename),m_scene(NULL){
@@ -46,7 +47,7 @@ Title::Title(const QString& filename):m_filename(filename),m_scene(NULL){
     start =new QGraphicsPolygonItem(QPolygonF(QRectF(100, 100, 600, 600)));;
     end=new QGraphicsPolygonItem(QPolygonF(QRectF(0, 0, 300, 300)));;
 }
-QImage* Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double position){
+void Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double position){
     if (!m_scene){
         int argc=0;
         char* argv[1];
@@ -59,11 +60,7 @@ QImage* Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double p
     }
     //must be extracted from kdenlive title
     
-    //qDebug() << width << height;
     QImage *img=new QImage(width,height,QImage::Format_ARGB32);
-    //QImage img((uchar*)buffer,width,height,width*4,QImage::Format_ARGB32);
-    //img->fill(Qt::transparent);
-    //memset(buffer,127,width*height+4);
     QRectF rstart=start->boundingRect();
     QRectF rend=end->boundingRect();
     QPointF topleft=rstart.topLeft()+(rend.topLeft()-rstart.topLeft())*position;
@@ -73,20 +70,16 @@ QImage* Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double p
     p1.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing);//|QPainter::SmoothPixmapTransform );
     m_scene->render(&p1,QRect(0,0,width,height),QRectF(topleft,bottomRight));
     p1.end();
-    uint8_t* pointer=img->bits();
-     for (int i=0;i<width*height*4;i+=4){
-            uint8_t v=i>11000 && i< 35000 ?255:0; 
-            uint8_t a=pointer[0],r=pointer[1],g=pointer[2],b=pointer[3];
-            pointer[0]=g;//g
-            pointer[1]=r;//r
-            pointer[2]=b;//b
-            pointer[3]=a;//a
-            //qDebug() << a;
-            pointer+=4;
-       }
-    img->save("test.png");
-    return img;
-    //qDebug() << img.hasAlphaChannel();
+    uint8_t *pointer=img->bits();
+    QRgb* src = (QRgb*) pointer;
+    for (int i=0;i<width*height*4;i+=4){
+        *buffer++=qRed(*src);
+        *buffer++=qGreen(*src);
+        *buffer++=qBlue(*src);
+        *buffer++=qAlpha(*src);
+        src++;
+    }
+    delete img;
 }
 int Title::loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv)
 {
