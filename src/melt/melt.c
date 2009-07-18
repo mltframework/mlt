@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sched.h>
+#include <libgen.h>
 
 #include <framework/mlt.h>
 
