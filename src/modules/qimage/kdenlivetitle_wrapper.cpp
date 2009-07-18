@@ -94,7 +94,7 @@ int Title::loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraph
         } 
         return loadFromXml(doc, startv, endv);
 }
-int Title::loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/)
+int Title::loadFromXml(QDomDocument doc, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv)
 {
     QDomNodeList titles = doc.elementsByTagName("kdenlivetitle");
     int maxZValue = 0;
@@ -184,21 +184,13 @@ int Title::loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGrap
                         break;
                     }
                 }
-            } /*else if (items.item(i).nodeName() == "startviewport" && startv) {
-                    QPointF p(items.item(i).attributes().namedItem("x").nodeValue().toDouble(), items.item(i).attributes().namedItem("y").nodeValue().toDouble());
-                    double width = items.item(i).attributes().namedItem("size").nodeValue().toDouble();
-                    QRectF rect(-width, -width / aspect_ratio, width*2.0, width / aspect_ratio*2.0);
-                    kDebug() << width << rect;
-                    startv->setPolygon(rect);
-                    startv->setPos(p);
+            } else if (items.item(i).nodeName() == "startviewport" && startv) {
+		    QString rect = items.item(i).attributes().namedItem("rect").nodeValue();
+                    startv->setPolygon(stringToRect(rect));
                 } else if (items.item(i).nodeName() == "endviewport" && endv) {
-                    QPointF p(items.item(i).attributes().namedItem("x").nodeValue().toDouble(), items.item(i).attributes().namedItem("y").nodeValue().toDouble());
-                    double width = items.item(i).attributes().namedItem("size").nodeValue().toDouble();
-                    QRectF rect(-width, -width / aspect_ratio, width*2.0, width / aspect_ratio*2.0);
-                    kDebug() << width << rect;
-                    endv->setPolygon(rect);
-                    endv->setPos(p);
-                }*/
+		    QString rect = items.item(i).attributes().namedItem("rect").nodeValue();
+                    endv->setPolygon(stringToRect(rect));
+                }
         }
     }
     return maxZValue;
