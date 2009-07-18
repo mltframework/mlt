@@ -112,6 +112,9 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
         // Callback registration
         this->get_frame = producer_get_frame;
         this->close = ( mlt_destructor )producer_close;
+        mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+        mlt_properties_set( properties, "resource", arg );
+
     }
     return this;
 }
