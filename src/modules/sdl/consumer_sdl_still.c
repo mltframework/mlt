@@ -428,7 +428,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
-		 this->last_producer == mlt_frame_get_original_producer( frame ) )
+		 this->last_producer == mlt_frame_get_original_producer( frame ) &&
+		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "refresh" ) )
 	{
 		sdl_unlock_display( );
 		if ( unlock != NULL ) unlock( );
