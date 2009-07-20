@@ -61,6 +61,7 @@ void Title::drawKdenliveTitle(uint8_t * buffer ,int width,int height,double posi
     //must be extracted from kdenlive title
     
     QImage *img=new QImage(width,height,QImage::Format_ARGB32);
+    img->fill(0);
     QRectF rstart=start->boundingRect();
     QRectF rend=end->boundingRect();
     QPointF topleft=rstart.topLeft()+(rend.topLeft()-rstart.topLeft())*position;
