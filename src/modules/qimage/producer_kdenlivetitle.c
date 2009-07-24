@@ -23,7 +23,7 @@
 
 extern void init_qt();
 
-extern void refresh_kdenlivetitle( uint8_t*, int, int, double );
+extern void refresh_kdenlivetitle( uint8_t*, int, int, double, char*, char* );
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -57,7 +57,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_position out = mlt_producer_get_out( producer );
 		mlt_position time = mlt_frame_get_position( frame );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
-		refresh_kdenlivetitle( *buffer, *width, *height, position );
+		refresh_kdenlivetitle(*buffer, *width, *height, position, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "templatexml" ), mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "templatetext" ));
 		mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "width:%d height:%d %s\n", *width, *height, mlt_image_format_name( *format ) );
 	}
 
