@@ -26,5 +26,6 @@ extern mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_servic
 
 MLT_REPOSITORY
 {
+    MLT_REGISTER( producer_type, "qimage", producer_qimage_init );
 	MLT_REGISTER( producer_type, "kdenlivetitle", producer_kdenlivetitle_init );
 }
