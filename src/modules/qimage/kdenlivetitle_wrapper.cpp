@@ -130,7 +130,20 @@ int Title::loadFromXml( QDomDocument doc, QGraphicsPolygonItem* startv, QGraphic
 				{
 					QDomNamedNodeMap txtProperties = items.item( i ).namedItem( "content" ).attributes();
 					QFont font( txtProperties.namedItem( "font" ).nodeValue() );
-					font.setBold( txtProperties.namedItem( "font-bold" ).nodeValue().toInt() );
+
+					QDomNode node = txtProperties.namedItem( "font-bold" );
+					if ( !node.isNull() )
+					{
+						// Old: Bold/Not bold.
+						font.setBold( node.nodeValue().toInt() );
+					}
+					else
+					{
+						// New: Font weight (QFont::)
+						font.setWeight( txtProperties.namedItem( "font-weight" ).nodeValue().toInt() );
+					}
+
+					//font.setBold(txtProperties.namedItem("font-bold").nodeValue().toInt());
 					font.setItalic( txtProperties.namedItem( "font-italic" ).nodeValue().toInt() );
 					font.setUnderline( txtProperties.namedItem( "font-underline" ).nodeValue().toInt() );
 					// Older Kdenlive version did not store pixel size but point size
