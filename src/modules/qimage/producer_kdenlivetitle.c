@@ -55,8 +55,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*format = mlt_image_rgb24a;
 		mlt_position in = mlt_producer_get_in( producer );
 		mlt_position out = mlt_producer_get_out( producer );
-		mlt_position time = mlt_frame_get_position( frame );
+		mlt_position time = mlt_producer_position( producer );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
+		fprintf(stderr, "TITLE POS: %dx%d = %d\n", (int)in, (int)out, (int) time);
 		if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
 			refresh_kdenlivetitle( *buffer, *width, *height, position, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ),  1);
 			mlt_properties_set_int( producer_props, "force_reload", 0 );

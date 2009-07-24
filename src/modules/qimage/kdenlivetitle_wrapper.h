@@ -33,15 +33,15 @@ class Title: public QObject
 
 public:
 	Title( const QString & );
+	virtual ~Title();
 	void drawKdenliveTitle( uint8_t*, int, int, double, char*, char* );
 	void reloadXml(char *templatexml, char *templatetext);
 private:
 	QString m_filename;
 	int loadDocument( const QString& url, const QString templateXml, const QString templateText );
 	int  loadFromXml( QDomDocument doc, const QString templateText );
-	QGraphicsScene m_scene;
+	QGraphicsScene *m_scene;
 	QGraphicsPolygonItem m_start, m_end;
-	bool sceneLoaded;
 	QString colorToString( const QColor& );
 	QString rectFToString( const QRectF& );
 	QRectF stringToRect( const QString & );
