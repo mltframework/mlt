@@ -16,7 +16,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
- 
+
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <framework/mlt_frame.h>
@@ -29,22 +29,23 @@ class Title;
 class QGraphicsView;
 class QGraphicsScene;
 
-class Title: public QObject {
+class Title: public QObject
+{
 
-    public:
-            Title(const QString &);
-            void drawKdenliveTitle(uint8_t*,int,int,double);
-    private:
-            QString m_filename;
-            int  loadFromXml(QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/);
-            int loadDocument(const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv);
-            QGraphicsView *view;
-            QGraphicsScene *m_scene;
-            QGraphicsPolygonItem *start,*end;
-            QString colorToString(const QColor&);
-            QString rectFToString(const QRectF&);
-            QRectF stringToRect(const QString &);
-            QColor stringToColor(const QString &);
-            QTransform stringToTransform(const QString &);
+public:
+	Title( const QString & );
+	void drawKdenliveTitle( uint8_t*,int,int,double );
+private:
+	QString m_filename;
+	int  loadFromXml( QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/ );
+	int loadDocument( const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv );
+	QGraphicsView *view;
+	QGraphicsScene *m_scene;
+	QGraphicsPolygonItem *start,*end;
+	QString colorToString( const QColor& );
+	QString rectFToString( const QRectF& );
+	QRectF stringToRect( const QString & );
+	QColor stringToColor( const QString & );
+	QTransform stringToTransform( const QString & );
 };
 
