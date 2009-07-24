@@ -23,7 +23,6 @@
 #include <QtGui/QApplication>
 #include <QtCore/QDebug>
 #include <QtCore/QFile>
-#include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
 #include <QtGui/QGraphicsPolygonItem>
@@ -40,22 +39,34 @@ extern "C"
 	{
 		titleclass=new Title( QString( c ) );
 	}
-	void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position, char *templatexml, char *templatetext )
+	void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position, char *templatexml, char *templatetext, int force_refresh )
 	{
+		if (force_refresh) titleclass->reloadXml(templatexml, templatetext);
 		titleclass->drawKdenliveTitle( buffer, width, height, position, templatexml, templatetext );
 	}
 }
-Title::Title( const QString& filename ):m_filename( filename ),m_scene( NULL )
+
+Title::Title( const QString& filename ):m_filename( filename ), m_scene( NULL )
 {
 	//must be extracted from kdenlive title
-	start =new QGraphicsPolygonItem( QPolygonF( QRectF( 100, 100, 600, 600 ) ) );
-	;
-	end=new QGraphicsPolygonItem( QPolygonF( QRectF( 0, 0, 300, 300 ) ) );
-	;
+	/*m_start( QPolygonF( QRectF( 100, 100, 600, 600 ) ) );
+	m_end( QPolygonF( QRectF( 0, 0, 300, 300 ) ) );*/
 }
+
+Title::~Title()
+{
+	delete m_scene;
+}
+
+void Title::reloadXml(char *templatexml, char *templatetext)
+{
+	if (m_scene == NULL) return;
+	loadDocument( m_filename, QString( templatexml ), QString( templatetext ) );
+}
+
 void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double position, char *templatexml, char *templatetext )
 {
-	if ( !m_scene )
+	if ( m_scene == NULL )
 	{
 		int argc=0;
 		char* argv[1];
@@ -63,21 +74,27 @@ void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double p
 		if ( ! QApplication::activeWindow() )
 			//if (!app)
 			app=new QApplication( argc,argv );
-		m_scene=new QGraphicsScene;
-		loadDocument( m_filename, start, end, QString( templatexml ), QString( templatetext ) );
+		m_scene = new QGraphicsScene();
+		loadDocument( m_filename, QString( templatexml ), QString( templatetext ) );
 	}
 	//must be extracted from kdenlive title
 
 	QImage *img=new QImage( width,height,QImage::Format_ARGB32 );
 	img->fill( 0 );
-	QRectF rstart=start->boundingRect();
-	QRectF rend=end->boundingRect();
-	QPointF topleft=rstart.topLeft()+( rend.topLeft()-rstart.topLeft() )*position;
-	QPointF bottomRight=rstart.bottomRight()+( rend.bottomRight()-rstart.bottomRight() )*position;
 	QPainter p1;
 	p1.begin( img );
 	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );//|QPainter::SmoothPixmapTransform );
-	m_scene->render( &p1,QRect( 0,0,width,height ),QRectF( topleft,bottomRight ) );
+	
+	if (m_start.polygon().isEmpty() && m_end.polygon().isEmpty()) {
+	    m_scene->render( &p1,QRect( 0, 0, width, height ) );
+	}
+	else {
+	    QRectF rstart=m_start.boundingRect();
+	    QRectF rend=m_end.boundingRect();
+	    QPointF topleft=rstart.topLeft()+( rend.topLeft()-rstart.topLeft() )*position;
+	    QPointF bottomRight=rstart.bottomRight()+( rend.bottomRight()-rstart.bottomRight() )*position;
+	    m_scene->render( &p1,QRect( 0,0,width,height ),QRectF( topleft,bottomRight ) );
+	}
 	p1.end();
 	uint8_t *pointer=img->bits();
 	QRgb* src = ( QRgb* ) pointer;
@@ -91,11 +108,11 @@ void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double p
 	}
 	delete img;
 }
-int Title::loadDocument( const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv, const QString templateXml, const QString templateText )
+
+int Title::loadDocument( const QString& url, const QString templateXml, const QString templateText )
 {
+	if (m_scene == NULL) return 0;
 	QDomDocument doc;
-	if ( !m_scene )
-		return -1;
 	if ( !templateXml.isEmpty() )
 	{
 		doc.setContent( templateXml );
@@ -109,11 +126,12 @@ int Title::loadDocument( const QString& url, QGraphicsPolygonItem* startv, QGrap
 			file.close();
 		}
 	}
-	return loadFromXml( doc, startv, endv, templateText );
+	return loadFromXml( doc, templateText );
 }
 
-int Title::loadFromXml( QDomDocument doc, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv, const QString templateText )
+int Title::loadFromXml( QDomDocument doc, const QString templateText )
 {
+	m_scene->clear();
 	QDomNodeList titles = doc.elementsByTagName( "kdenlivetitle" );
 	int maxZValue = 0;
 	if ( titles.size() )
@@ -242,15 +260,15 @@ int Title::loadFromXml( QDomDocument doc, QGraphicsPolygonItem* startv, QGraphic
 					}
 				}
 			}
-			else if ( items.item( i ).nodeName() == "startviewport" && startv )
+			else if ( items.item( i ).nodeName() == "startviewport" )
 			{
 				QString rect = items.item( i ).attributes().namedItem( "rect" ).nodeValue();
-				startv->setPolygon( stringToRect( rect ) );
+				m_start.setPolygon( stringToRect( rect ) );
 			}
-			else if ( items.item( i ).nodeName() == "endviewport" && endv )
+			else if ( items.item( i ).nodeName() == "endviewport" )
 			{
 				QString rect = items.item( i ).attributes().namedItem( "rect" ).nodeValue();
-				endv->setPolygon( stringToRect( rect ) );
+				m_end.setPolygon( stringToRect( rect ) );
 			}
 		}
 	}
