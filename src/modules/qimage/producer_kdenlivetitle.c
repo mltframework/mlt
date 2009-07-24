@@ -23,7 +23,7 @@
 
 extern void init_qt();
 
-extern void refresh_kdenlivetitle( uint8_t*, int, int, double, char*, char* );
+extern void refresh_kdenlivetitle( uint8_t*, int, int, double, char*, char*, int );
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -35,8 +35,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_producer producer = mlt_properties_get_data( properties, "producer_kdenlivetitle", NULL );
 
 	// Obtain properties of producer
-	// save extra data
-	//mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+	
 	// Allocate the image
 	int size = *width * ( *height ) * 4;
 
@@ -57,7 +57,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_position out = mlt_producer_get_out( producer );
 		mlt_position time = mlt_frame_get_position( frame );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
-		refresh_kdenlivetitle( *buffer, *width, *height, position, mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "templatexml" ), mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "templatetext" ) );
+		if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
+			refresh_kdenlivetitle( *buffer, *width, *height, position, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ),  1);
+			mlt_properties_set_int( producer_props, "force_reload", 0 );
+		}
+		else refresh_kdenlivetitle( *buffer, *width, *height, position, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ),  0);
 		mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "width:%d height:%d %s\n", *width, *height, mlt_image_format_name( *format ) );
 	}
 
@@ -122,7 +126,6 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
 		this->close = ( mlt_destructor ) producer_close;
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 		mlt_properties_set( properties, "resource", arg );
-
 	}
 
 	return this;

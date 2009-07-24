@@ -21,12 +21,11 @@
 #include <QtCore/QString>
 #include <framework/mlt_frame.h>
 #include <QtXml/QDomElement>
+
 class QGraphicsPolygonItem;
 class QCoreApplication;
 class QApplication;
-class QObject;
 class Title;
-class QGraphicsView;
 class QGraphicsScene;
 
 class Title: public QObject
@@ -35,13 +34,14 @@ class Title: public QObject
 public:
 	Title( const QString & );
 	void drawKdenliveTitle( uint8_t*, int, int, double, char*, char* );
+	void reloadXml(char *templatexml, char *templatetext);
 private:
 	QString m_filename;
-	int loadDocument( const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv, const QString templateXml, const QString templateText );
-	int  loadFromXml( QDomDocument doc, QGraphicsPolygonItem* /*startv*/, QGraphicsPolygonItem* /*endv*/, const QString templateText );
-	QGraphicsView *view;
-	QGraphicsScene *m_scene;
-	QGraphicsPolygonItem *start,*end;
+	int loadDocument( const QString& url, const QString templateXml, const QString templateText );
+	int  loadFromXml( QDomDocument doc, const QString templateText );
+	QGraphicsScene m_scene;
+	QGraphicsPolygonItem m_start, m_end;
+	bool sceneLoaded;
 	QString colorToString( const QColor& );
 	QString rectFToString( const QRectF& );
 	QRectF stringToRect( const QString & );
