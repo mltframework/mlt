@@ -22,12 +22,11 @@
 #include <string.h>
 
 extern void init_qt();
-
+extern void close_qt();
 extern void refresh_kdenlivetitle( uint8_t*, int, int, double, char*, char*, int );
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
-
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
@@ -107,7 +106,7 @@ void producer_close( mlt_producer producer )
 {
 	producer->close = NULL;
 	mlt_producer_close( producer );
-
+	close_qt();
 	free( producer );
 }
 

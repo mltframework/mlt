@@ -21,7 +21,6 @@
 #include <QtGui/QPainter>
 #include <QtCore/QCoreApplication>
 #include <QtGui/QApplication>
-#include <QtCore/QDebug>
 #include <QtCore/QFile>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
@@ -39,6 +38,12 @@ extern "C"
 	{
 		titleclass=new Title( QString( c ) );
 	}
+
+	void close_qt()
+	{
+		delete titleclass;
+	}
+	
 	void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position, char *templatexml, char *templatetext, int force_refresh )
 	{
 		if (force_refresh) titleclass->reloadXml(templatexml, templatetext);
@@ -52,7 +57,8 @@ Title::Title( const QString& filename ):m_filename( filename ), m_scene( NULL )
 
 Title::~Title()
 {
-	delete m_scene;
+	if (m_scene) delete m_scene;
+	if (app) delete app;
 }
 
 void Title::reloadXml(char *templatexml, char *templatetext)
