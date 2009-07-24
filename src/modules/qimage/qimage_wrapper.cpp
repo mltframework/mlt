@@ -73,6 +73,7 @@ void init_qimage()
 	if (!instance) {
 	    instance = new KInstance("qimage_prod");
 	    KImageIO::registerFormats();
+        //QApplication *app=new QApplication();
 	}
 }
 #endif

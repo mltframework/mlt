@@ -40,9 +40,9 @@ extern "C"
 	{
 		titleclass=new Title( QString( c ) );
 	}
-	void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position )
+	void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position, char *templatexml, char *templatetext )
 	{
-		titleclass->drawKdenliveTitle( buffer,width,height,position );
+		titleclass->drawKdenliveTitle( buffer, width, height, position, templatexml, templatetext );
 	}
 }
 Title::Title( const QString& filename ):m_filename( filename ),m_scene( NULL )
@@ -53,7 +53,7 @@ Title::Title( const QString& filename ):m_filename( filename ),m_scene( NULL )
 	end=new QGraphicsPolygonItem( QPolygonF( QRectF( 0, 0, 300, 300 ) ) );
 	;
 }
-void Title::drawKdenliveTitle( uint8_t * buffer ,int width,int height,double position )
+void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double position, char *templatexml, char *templatetext )
 {
 	if ( !m_scene )
 	{
@@ -64,7 +64,7 @@ void Title::drawKdenliveTitle( uint8_t * buffer ,int width,int height,double pos
 			//if (!app)
 			app=new QApplication( argc,argv );
 		m_scene=new QGraphicsScene;
-		loadDocument( m_filename,start,end );
+		loadDocument( m_filename, start, end, QString( templatexml ), QString( templatetext ) );
 	}
 	//must be extracted from kdenlive title
 
@@ -91,21 +91,28 @@ void Title::drawKdenliveTitle( uint8_t * buffer ,int width,int height,double pos
 	}
 	delete img;
 }
-int Title::loadDocument( const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv )
+int Title::loadDocument( const QString& url, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv, const QString templateXml, const QString templateText )
 {
 	QDomDocument doc;
 	if ( !m_scene )
 		return -1;
-
-	QFile file( url );
-	if ( file.open( QIODevice::ReadOnly ) )
+	if ( !templateXml.isEmpty() )
 	{
-		doc.setContent( &file, false );
-		file.close();
+		doc.setContent( templateXml );
 	}
-	return loadFromXml( doc, startv, endv );
+	else
+	{
+		QFile file( url );
+		if ( file.open( QIODevice::ReadOnly ) )
+		{
+			doc.setContent( &file, false );
+			file.close();
+		}
+	}
+	return loadFromXml( doc, startv, endv, templateText );
 }
-int Title::loadFromXml( QDomDocument doc, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv )
+
+int Title::loadFromXml( QDomDocument doc, QGraphicsPolygonItem* startv, QGraphicsPolygonItem* endv, const QString templateText )
 {
 	QDomNodeList titles = doc.elementsByTagName( "kdenlivetitle" );
 	int maxZValue = 0;
@@ -136,7 +143,14 @@ int Title::loadFromXml( QDomDocument doc, QGraphicsPolygonItem* startv, QGraphic
 					else
 						font.setPixelSize( txtProperties.namedItem( "font-pixel-size" ).nodeValue().toInt() );
 					QColor col( stringToColor( txtProperties.namedItem( "font-color" ).nodeValue() ) );
-					QGraphicsTextItem *txt = m_scene->addText( items.item( i ).namedItem( "content" ).firstChild().nodeValue(), font );
+					QGraphicsTextItem *txt;
+					if ( !templateText.isEmpty() )
+					{
+						QString text = items.item( i ).namedItem( "content" ).firstChild().nodeValue();
+						text = text.replace( "%s", templateText );
+						txt = m_scene->addText( text, font );
+					}
+					else txt = m_scene->addText( items.item( i ).namedItem( "content" ).firstChild().nodeValue(), font );
 					txt->setDefaultTextColor( col );
 					txt->setTextInteractionFlags( Qt::NoTextInteraction );
 					if ( txtProperties.namedItem( "alignment" ).isNull() == false )
