@@ -48,9 +48,6 @@ extern "C"
 
 Title::Title( const QString& filename ):m_filename( filename ), m_scene( NULL )
 {
-	//must be extracted from kdenlive title
-	/*m_start( QPolygonF( QRectF( 100, 100, 600, 600 ) ) );
-	m_end( QPolygonF( QRectF( 0, 0, 300, 300 ) ) );*/
 }
 
 Title::~Title()
@@ -74,7 +71,7 @@ void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double p
 		if ( ! QApplication::activeWindow() )
 			//if (!app)
 			app=new QApplication( argc,argv );
-		m_scene = new QGraphicsScene();
+		m_scene = new QGraphicsScene(app);
 		loadDocument( m_filename, QString( templatexml ), QString( templatetext ) );
 	}
 	//must be extracted from kdenlive title
@@ -85,14 +82,12 @@ void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double p
 	p1.begin( img );
 	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );//|QPainter::SmoothPixmapTransform );
 	
-	if (m_start.polygon().isEmpty() && m_end.polygon().isEmpty()) {
+	if (m_start.isNull() && m_end.isNull()) {
 	    m_scene->render( &p1,QRect( 0, 0, width, height ) );
 	}
 	else {
-	    QRectF rstart=m_start.boundingRect();
-	    QRectF rend=m_end.boundingRect();
-	    QPointF topleft=rstart.topLeft()+( rend.topLeft()-rstart.topLeft() )*position;
-	    QPointF bottomRight=rstart.bottomRight()+( rend.bottomRight()-rstart.bottomRight() )*position;
+	    QPointF topleft=m_start.topLeft()+( m_end.topLeft()-m_start.topLeft() )*position;
+	    QPointF bottomRight=m_start.bottomRight()+( m_end.bottomRight()-m_start.bottomRight() )*position;
 	    m_scene->render( &p1,QRect( 0,0,width,height ),QRectF( topleft,bottomRight ) );
 	}
 	p1.end();
@@ -263,12 +258,12 @@ int Title::loadFromXml( QDomDocument doc, const QString templateText )
 			else if ( items.item( i ).nodeName() == "startviewport" )
 			{
 				QString rect = items.item( i ).attributes().namedItem( "rect" ).nodeValue();
-				m_start.setPolygon( stringToRect( rect ) );
+				m_start = stringToRect( rect );
 			}
 			else if ( items.item( i ).nodeName() == "endviewport" )
 			{
 				QString rect = items.item( i ).attributes().namedItem( "rect" ).nodeValue();
-				m_end.setPolygon( stringToRect( rect ) );
+				m_end = stringToRect( rect );
 			}
 		}
 	}
