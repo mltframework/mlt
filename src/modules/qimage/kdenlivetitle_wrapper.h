@@ -41,7 +41,7 @@ private:
 	int loadDocument( const QString& url, const QString templateXml, const QString templateText );
 	int  loadFromXml( QDomDocument doc, const QString templateText );
 	QGraphicsScene *m_scene;
-	QGraphicsPolygonItem m_start, m_end;
+	QRectF m_start, m_end;
 	QString colorToString( const QColor& );
 	QString rectFToString( const QRectF& );
 	QRectF stringToRect( const QString & );
