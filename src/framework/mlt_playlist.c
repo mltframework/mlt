@@ -1693,7 +1693,7 @@ int mlt_playlist_remove_region( mlt_playlist this, mlt_position position, int le
 			clip_length -= position - clip_start;
 		}
 
-		while( length > 0 )
+		while( length >= 0 )
 		{
 			if ( mlt_playlist_clip_length( this, index ) > length )
 				mlt_playlist_split( this, index, length );
