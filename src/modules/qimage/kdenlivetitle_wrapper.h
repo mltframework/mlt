@@ -21,25 +21,25 @@
 #include <QtCore/QString>
 #include <framework/mlt_frame.h>
 #include <QtXml/QDomElement>
+#include <QtCore/QRectF>
+#include <QtGui/QColor>
+#include <QtGui/QWidget>
 
-class QGraphicsPolygonItem;
-class QCoreApplication;
 class QApplication;
-class Title;
 class QGraphicsScene;
+class QTransform;
 
 class Title: public QObject
 {
 
 public:
-	Title( const QString & );
+	Title( const char *filename);
 	virtual ~Title();
-	void drawKdenliveTitle( uint8_t*, int, int, double, char*, char* );
-	void reloadXml(char *templatexml, char *templatetext);
+	void drawKdenliveTitle( uint8_t*, int, int, double, const char*, const char* );
+	void loadFromXml( const char *templateXml, const QString templateText );
+
 private:
 	QString m_filename;
-	int loadDocument( const QString& url, const QString templateXml, const QString templateText );
-	int  loadFromXml( QDomDocument doc, const QString templateText );
 	QGraphicsScene *m_scene;
 	QRectF m_start, m_end;
 	QString colorToString( const QColor& );

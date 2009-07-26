@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "kdenlivetitle_wrapper.h"
+#include <framework/mlt_producer.h>
+
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
-#include <QtCore/QCoreApplication>
+#include <QtCore/QDebug>
 #include <QtGui/QApplication>
 #include <QtCore/QFile>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
-#include <QtGui/QGraphicsPolygonItem>
 #include <QtGui/QTextCursor>
-#include "kdenlivetitle_wrapper.h"
-#include <framework/mlt_producer.h>
 
-static Title* titleclass;
-static QApplication *app;
+static Title* titleclass = NULL;
+static QApplication *app = NULL;
 
 extern "C"
 {
 	void init_qt( const char* c )
 	{
-		titleclass=new Title( QString( c ) );
+		titleclass=new Title( c );
 	}
 
 	void close_qt()
@@ -46,60 +46,60 @@ extern "C"
 	
 	void refresh_kdenlivetitle( uint8_t* buffer, int width, int height , double position, char *templatexml, char *templatetext, int force_refresh )
 	{
-		if (force_refresh) titleclass->reloadXml(templatexml, templatetext);
+		if (force_refresh) titleclass->loadFromXml( templatexml, QString( templatetext ) );
 		titleclass->drawKdenliveTitle( buffer, width, height, position, templatexml, templatetext );
 	}
 }
 
-Title::Title( const QString& filename ):m_filename( filename ), m_scene( NULL )
+
+Title::Title( const char *filename ):m_filename( filename ), m_scene( NULL )
 {
 }
 
 Title::~Title()
 {
-	if (m_scene) delete m_scene;
-	if (app) delete app;
+	if (m_scene) {
+	    m_scene->clear();
+	    delete m_scene;
+	}
 }
 
-void Title::reloadXml(char *templatexml, char *templatetext)
-{
-	if (m_scene == NULL) return;
-	loadDocument( m_filename, QString( templatexml ), QString( templatetext ) );
-}
-
-void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double position, char *templatexml, char *templatetext )
+void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double position, const char *templatexml, const char *templatetext )
 {
 	if ( m_scene == NULL )
 	{
-		int argc=0;
+		int argc = 1;
 		char* argv[1];
-		argv[0]="xxx";
-		if ( ! QApplication::activeWindow() )
-			//if (!app)
-			app=new QApplication( argc,argv );
-		m_scene = new QGraphicsScene(app);
-		loadDocument( m_filename, QString( templatexml ), QString( templatetext ) );
+		argv[0] = "xxx";
+		if (qApp) {
+		    app = qApp;
+		}
+		else {
+		    app=new QApplication( argc,argv );
+		}
+		m_scene = new QGraphicsScene(0, 0, (qreal) width, (qreal) height, app);
+		loadFromXml( templatexml, QString( templatetext ) );
 	}
 	//must be extracted from kdenlive title
-
-	QImage *img=new QImage( width,height,QImage::Format_ARGB32 );
+	QImage *img = new QImage( width,height,QImage::Format_ARGB32 );
 	img->fill( 0 );
 	QPainter p1;
 	p1.begin( img );
 	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );//|QPainter::SmoothPixmapTransform );
-	
 	if (m_start.isNull() && m_end.isNull()) {
-	    m_scene->render( &p1,QRect( 0, 0, width, height ) );
+	    m_scene->render( &p1 );
 	}
 	else {
 	    QPointF topleft=m_start.topLeft()+( m_end.topLeft()-m_start.topLeft() )*position;
 	    QPointF bottomRight=m_start.bottomRight()+( m_end.bottomRight()-m_start.bottomRight() )*position;
-	    m_scene->render( &p1,QRect( 0,0,width,height ),QRectF( topleft,bottomRight ) );
+	    const QRectF r1( 0, 0, width, height );
+	    const QRectF r2( topleft, bottomRight );
+	    m_scene->render( &p1, r1, r2 );
 	}
 	p1.end();
 	uint8_t *pointer=img->bits();
 	QRgb* src = ( QRgb* ) pointer;
-	for ( int i=0;i<width*height*4;i+=4 )
+	for ( int i = 0; i < width * height * 4; i += 4 )
 	{
 		*buffer++=qRed( *src );
 		*buffer++=qGreen( *src );
@@ -110,29 +110,13 @@ void Title::drawKdenliveTitle( uint8_t * buffer, int width, int height, double p
 	delete img;
 }
 
-int Title::loadDocument( const QString& url, const QString templateXml, const QString templateText )
+void Title::loadFromXml( const char *templateXml, const QString templateText )
 {
-	if (m_scene == NULL) return 0;
-	QDomDocument doc;
-	if ( !templateXml.isEmpty() )
-	{
-		doc.setContent( templateXml );
-	}
-	else
-	{
-		QFile file( url );
-		if ( file.open( QIODevice::ReadOnly ) )
-		{
-			doc.setContent( &file, false );
-			file.close();
-		}
-	}
-	return loadFromXml( doc, templateText );
-}
-
-int Title::loadFromXml( QDomDocument doc, const QString templateText )
-{
+	if (m_scene == NULL) return;
 	m_scene->clear();
+	QDomDocument doc;
+	QString data(templateXml);
+	doc.setContent(data);
 	QDomNodeList titles = doc.elementsByTagName( "kdenlivetitle" );
 	int maxZValue = 0;
 	if ( titles.size() )
@@ -260,7 +244,7 @@ int Title::loadFromXml( QDomDocument doc, const QString templateText )
 			}
 		}
 	}
-	return maxZValue;
+	return;
 }
 
 QString Title::colorToString( const QColor& c )
