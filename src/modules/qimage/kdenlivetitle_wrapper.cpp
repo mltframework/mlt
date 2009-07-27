@@ -22,11 +22,7 @@
 
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
-<<<<<<< HEAD:src/modules/qimage/kdenlivetitle_wrapper.cpp
-#include <QtCore/QCoreApplication>
-=======
 #include <QtCore/QDebug>
->>>>>>> jbm/kdenlivetitle:src/modules/qimage/kdenlivetitle_wrapper.cpp
 #include <QtGui/QApplication>
 #include <QtCore/QFile>
 #include <QtGui/QGraphicsScene>
