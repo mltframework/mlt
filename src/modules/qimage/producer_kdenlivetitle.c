@@ -129,7 +129,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_close( mlt_producer producer )
 {
-	fprintf(stderr, "000000000000000000000000  CLOSING\n");
+	/* fprintf(stderr, "::::::::::::::  CLOSING TITLE\n"); */
 	producer->close = NULL;
 	close_qt();
 	mlt_producer_close( producer );
@@ -139,7 +139,7 @@ static void producer_close( mlt_producer producer )
 
 mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
-  	fprintf(stderr, "\n\n,,,,,,,,, CREATE 1 TITLE\n");
+  	/* fprintf(stderr, ":::::::::::: CREATE TITLE\n"); */
 	/* Create a new producer object */
 
 	mlt_producer producer = calloc( 1, sizeof( struct mlt_producer_s ) );
