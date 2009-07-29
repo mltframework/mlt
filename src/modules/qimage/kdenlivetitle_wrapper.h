@@ -17,7 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <QtCore/QObject>
+#include <framework/mlt.h>
+
 #include <QtCore/QString>
 #include <framework/mlt_frame.h>
 #include <QtXml/QDomElement>
@@ -29,23 +30,13 @@ class QApplication;
 class QGraphicsScene;
 class QTransform;
 
-class Title: public QObject
-{
+void drawKdenliveTitle( mlt_producer producer, uint8_t*, int, int, double );
+void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText );
 
-public:
-	Title( const char *filename);
-	virtual ~Title();
-	void drawKdenliveTitle( uint8_t*, int, int, double, const char*, const char* );
-	void loadFromXml( const char *templateXml, const QString templateText );
+QString colorToString( const QColor& );
+QString rectFToString( const QRectF& );
+QRectF stringToRect( const QString & );
+QColor stringToColor( const QString & );
+QTransform stringToTransform( const QString & );
 
-private:
-	QString m_filename;
-	QGraphicsScene *m_scene;
-	QRectF m_start, m_end;
-	QString colorToString( const QColor& );
-	QString rectFToString( const QRectF& );
-	QRectF stringToRect( const QString & );
-	QColor stringToColor( const QString & );
-	QTransform stringToTransform( const QString & );
-};
 
