@@ -22,9 +22,7 @@
 #include <string.h>
 
 
-extern void init_qt();
-extern void close_qt();
-extern void refresh_kdenlivetitle( uint8_t*, int, int, double, char*, char*, int );
+extern void refresh_kdenlivetitle( mlt_producer producer, uint8_t*, int, int, double, int );
 
 void read_xml(mlt_properties properties)
 {
@@ -79,10 +77,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_position time = mlt_producer_position( producer );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
 		if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
-			read_xml(producer_props);
+			if (mlt_properties_get_int( producer_props, "force_reload" ) > 1) read_xml(producer_props);
 			mlt_properties_set_int( producer_props, "force_reload", 0 );
+			refresh_kdenlivetitle( producer, *buffer, *width, *height, position, 1);
 		}
-		refresh_kdenlivetitle( *buffer, *width, *height, position, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ),  0);
+		else refresh_kdenlivetitle( producer, *buffer, *width, *height, position, 0);
 		/* Update the frame */
 		mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
 		
@@ -131,7 +130,6 @@ static void producer_close( mlt_producer producer )
 {
 	/* fprintf(stderr, "::::::::::::::  CLOSING TITLE\n"); */
 	producer->close = NULL;
-	close_qt();
 	mlt_producer_close( producer );
 	free( producer );
 }
@@ -153,7 +151,6 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
 		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		read_xml(properties);
-		init_qt( filename );
 		return producer;
 	}
 	free( producer );
