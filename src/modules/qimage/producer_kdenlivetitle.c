@@ -56,6 +56,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	/* Obtain properties of producer */
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 	
+	*width = mlt_properties_get_int( properties, "rescale_width" );
+	*height = mlt_properties_get_int( properties, "rescale_height" );
+	
 	/* Allocate the image */
 	int size = *width * ( *height ) * 4;
 
@@ -63,8 +66,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
-
-
 
 	/* cache later ?? */
 
