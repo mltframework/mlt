@@ -84,10 +84,10 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 	g_mutex.unlock();
 	
 	//must be extracted from kdenlive title
-	QImage *img = new QImage( width,height,QImage::Format_ARGB32 );
-	img->fill( 0 );
+	QImage img( width, height, QImage::Format_ARGB32 );
+	img.fill( 0 );
 	QPainter p1;
-	p1.begin( img );
+	p1.begin( &img );
 	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 	//| QPainter::SmoothPixmapTransform );
 	
@@ -105,7 +105,7 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 	    scene->render( &p1, r1, r2 );
 	}
 	p1.end();
-	uint8_t *pointer=img->bits();
+	uint8_t *pointer=img.bits();
 	QRgb* src = ( QRgb* ) pointer;
 	for ( int i = 0; i < width * height * 4; i += 4 )
 	{
@@ -115,7 +115,6 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 		*buffer++=qAlpha( *src );
 		src++;
 	}
-	delete img;
 }
 
 void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText )
@@ -128,8 +127,8 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	scene->clear();
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 	QDomDocument doc;
-	QString data(templateXml);
-	QString replacementText(templateText);
+	QString data = QString::fromUtf8(templateXml);
+	QString replacementText = QString::fromUtf8(templateText);
 	doc.setContent(data);
 	QDomNodeList titles = doc.elementsByTagName( "kdenlivetitle" );
 	int maxZValue = 0;
