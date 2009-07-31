@@ -33,6 +33,7 @@ class QTransform;
 void drawKdenliveTitle( mlt_producer producer, uint8_t*, int, int, double );
 void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText );
 
+QString rectTransform( QString s, QTransform t );
 QString colorToString( const QColor& );
 QString rectFToString( const QRectF& );
 QRectF stringToRect( const QString & );
