@@ -1,6 +1,7 @@
 /*
  * kdenlivetitle_wrapper.cpp -- kdenlivetitle wrapper
  * Copyright (c) 2009 Marco Gittler <g.marco@freenet.de>
+ * Copyright (c) 2009 Jean-Baptiste Mardelle <jb@kdenlive.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,6 +28,7 @@
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
 #include <QtGui/QTextCursor>
+#include <QtGui/QStyleOptionGraphicsItem>
 
 static QApplication *app = NULL;
 
@@ -50,6 +52,29 @@ extern "C"
 	}
 }
 
+
+class ImageItem: public QGraphicsRectItem
+{
+public:
+    ImageItem(QImage img)
+    {
+	m_img = img;
+    }
+    
+    QImage m_img;
+
+protected:
+virtual void paint( QPainter *painter,
+                       const QStyleOptionGraphicsItem *option,
+                       QWidget* )
+{
+   //todo: clip rect ?
+   painter->drawImage(QPointF(), m_img);
+   //painter->fillRect(option->exposedRect, QBrush(QColor(0,255,0)));
+}
+    
+    
+};
 
 
 void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int height, double position, int force_refresh )
@@ -136,7 +161,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	    int originalHeight = doc.documentElement().attribute("height").toInt();
 	    if (originalWidth != width || originalHeight != height) {
 #if QT_VERSION < 0x40500
-            transform = QTransform().scale(  (double) width / originalWidth, (double) height / originalHeight );
+		    transform = QTransform().scale(  (double) width / originalWidth, (double) height / originalHeight );
 #else
 		    transform = QTransform::fromScale ( (double) width / originalWidth, (double) height / originalHeight);
 #endif
@@ -228,8 +253,9 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
 				{
 					QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
-					QPixmap pix( url );
-					QGraphicsPixmapItem *rec = scene->addPixmap( pix );
+					QImage img( url );
+					ImageItem *rec = new ImageItem(img);
+					scene->addItem( rec );
 					rec->setData( Qt::UserRole, url );
 					gitem = rec;
 				}
