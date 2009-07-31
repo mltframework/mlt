@@ -39,13 +39,9 @@ extern "C"
 	static QMutex g_mutex;
 	void refresh_kdenlivetitle( mlt_producer producer, uint8_t* buffer, int width, int height , double position, int force_refresh )
 	{
-		if (force_refresh) {
-			mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
-			loadFromXml( producer, NULL, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
-		}
-		drawKdenliveTitle( producer, buffer, width, height, position );
+		drawKdenliveTitle( producer, buffer, width, height, position, force_refresh );
 	}
-	
+
 	static void qscene_delete( void *data )
 	{
 		QGraphicsScene *scene = ( QGraphicsScene * )data;
@@ -56,14 +52,19 @@ extern "C"
 
 
 
-void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int height, double position )
+void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int height, double position, int force_refresh )
 {
   
   	// restore QGraphicsScene
 	g_mutex.lock();
-	mlt_cache_item qscene_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qscene" );
-	QGraphicsScene *scene = static_cast<QGraphicsScene *>( mlt_cache_item_data( qscene_cache, NULL ) );
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+	QGraphicsScene *scene = static_cast<QGraphicsScene *> (mlt_properties_get_data( producer_props, "qscene", NULL ));
+
+	if ( force_refresh == 1 && scene )
+	{
+		scene = NULL;
+		mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
+	}
  
 	if ( scene == NULL )
 	{
@@ -76,11 +77,11 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 		else {
 		    app=new QApplication( argc,argv );
 		}
-		scene = new QGraphicsScene(0, 0, (qreal) width, (qreal) height, app);
-		loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qscene", scene, 0, ( mlt_destructor )qscene_delete );
+		scene = new QGraphicsScene( 0, 0, width, height, app );
+		loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ), width, height );
+		mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 	}
-	
+
 	g_mutex.unlock();
 	
 	//must be extracted from kdenlive title
@@ -90,19 +91,22 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 	p1.begin( &img );
 	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 	//| QPainter::SmoothPixmapTransform );
-	
-	QRectF m_start = stringToRect( QString( mlt_properties_get( producer_props, "startrect" ) ) );
-	QRectF m_end = stringToRect( QString( mlt_properties_get( producer_props, "endrect" ) ) );
-	
-	if (m_start.isNull() && m_end.isNull()) {
-	    scene->render( &p1 );
+
+	const QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "startrect" ) ) );
+	const QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "endrect" ) ) );
+	const QRectF source( 0, 0, width, height );
+
+	if (end.isNull()) {
+		if (start.isNull())
+			scene->render( &p1, source, source );
+		else
+			scene->render( &p1, start, source );
 	}
 	else {
-	    QPointF topleft=m_start.topLeft()+( m_end.topLeft()-m_start.topLeft() )*position;
-	    QPointF bottomRight=m_start.bottomRight()+( m_end.bottomRight()-m_start.bottomRight() )*position;
-	    const QRectF r1( 0, 0, width, height );
-	    const QRectF r2( topleft, bottomRight );
-	    scene->render( &p1, r1, r2 );
+	    QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * position;
+	    QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * position;
+	    const QRectF r1( topleft, bottomRight );
+	    scene->render( &p1, r1, source );
 	}
 	p1.end();
 	uint8_t *pointer=img.bits();
@@ -117,13 +121,8 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 	}
 }
 
-void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText )
+void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText, int width, int height  )
 {
-	if (scene == NULL) {
-	  	mlt_cache_item qscene_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qscene" );
-		scene = static_cast<QGraphicsScene *>( mlt_cache_item_data( qscene_cache, NULL ) );
-		if (scene == NULL) return;
-	}
 	scene->clear();
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 	QDomDocument doc;
@@ -131,7 +130,14 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	QString replacementText = QString::fromUtf8(templateText);
 	doc.setContent(data);
 	QDomNodeList titles = doc.elementsByTagName( "kdenlivetitle" );
-	int maxZValue = 0;
+	QTransform transform;
+	if ( doc.documentElement().hasAttribute("width") ) {
+	    int originalWidth = doc.documentElement().attribute("width").toInt();
+	    int originalHeight = doc.documentElement().attribute("height").toInt();
+	    if (originalWidth != width || originalHeight != height) {
+		    transform = QTransform::fromScale ( (double) width / originalWidth, (double) height / originalHeight);
+	    }
+	}
 	if ( titles.size() )
 	{
 
@@ -237,11 +243,12 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 			{
 				QPointF p( items.item( i ).namedItem( "position" ).attributes().namedItem( "x" ).nodeValue().toDouble(),
 				           items.item( i ).namedItem( "position" ).attributes().namedItem( "y" ).nodeValue().toDouble() );
+				if ( transform != QTransform() ) p = QPointF(p.x() * transform.m11(), p.y() * transform.m22());
 				gitem->setPos( p );
 				gitem->setTransform( stringToTransform( items.item( i ).namedItem( "position" ).firstChild().firstChild().nodeValue() ) );
 				int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
-				if ( zValue > maxZValue ) maxZValue = zValue;
 				gitem->setZValue( zValue );
+				if ( transform != QTransform() ) gitem->setTransform( transform, true );
 				//gitem->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
 			}
 			if ( items.item( i ).nodeName() == "background" )
@@ -261,17 +268,30 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 			else if ( items.item( i ).nodeName() == "startviewport" )
 			{
 				QString rect = items.item( i ).attributes().namedItem( "rect" ).nodeValue();
-				
+				if ( transform != QTransform() ) {
+				    rect = rectTransform( rect, transform );
+				}
 				mlt_properties_set( producer_props, "startrect", rect.toUtf8().data() );
 			}
 			else if ( items.item( i ).nodeName() == "endviewport" )
 			{
 				QString rect = items.item( i ).attributes().namedItem( "rect" ).nodeValue();
+				if ( transform != QTransform() ) {
+				    rect = rectTransform( rect, transform );
+				}
 				mlt_properties_set( producer_props, "endrect", rect.toUtf8().data() );
 			}
 		}
 	}
+	if ( mlt_properties_get( producer_props, "startrect") == mlt_properties_get( producer_props, "endrect") )
+		mlt_properties_set( producer_props, "endrect", "" );
 	return;
+}
+
+QString rectTransform( QString s, QTransform t )
+{
+	QStringList l = s.split( ',' );
+	return QString::number(l.at(0).toDouble() * t.m11()) + ',' + QString::number(l.at(1).toDouble() * t.m22()) + ',' + QString::number(l.at(2).toDouble() * t.m11()) + ',' + QString::number(l.at(3).toDouble() * t.m22());
 }
 
 QString colorToString( const QColor& c )

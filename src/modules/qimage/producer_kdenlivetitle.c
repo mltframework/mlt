@@ -56,8 +56,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	/* Obtain properties of producer */
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 	
-	*width = mlt_properties_get_int( properties, "rescale_width" );
-	*height = mlt_properties_get_int( properties, "rescale_height" );
+	*width = mlt_properties_get_int( properties, "width" );
+	*height = mlt_properties_get_int( properties, "height" );
 	
 	/* Allocate the image */
 	int size = *width * ( *height ) * 4;
@@ -85,7 +85,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else refresh_kdenlivetitle( producer, *buffer, *width, *height, position, 0);
 		/* Update the frame */
 		mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
-		
+
 		mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "width:%d height:%d %s\n", *width, *height, mlt_image_format_name( *format ) );
 	}
 
@@ -150,7 +150,7 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
 		mlt_properties_set( properties, "resource", filename );
-		mlt_properties_set_int( properties, "aspect_ratio", 1 );
+		//mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		read_xml(properties);
 		return producer;
 	}

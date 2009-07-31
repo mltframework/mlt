@@ -30,9 +30,10 @@ class QApplication;
 class QGraphicsScene;
 class QTransform;
 
-void drawKdenliveTitle( mlt_producer producer, uint8_t*, int, int, double );
-void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText );
+void drawKdenliveTitle( mlt_producer producer, uint8_t*, int, int, double, int );
+void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText,int width, int height );
 
+QString rectTransform( QString s, QTransform t );
 QString colorToString( const QColor& );
 QString rectFToString( const QRectF& );
 QRectF stringToRect( const QString & );
