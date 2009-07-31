@@ -39,11 +39,7 @@ extern "C"
 	static QMutex g_mutex;
 	void refresh_kdenlivetitle( mlt_producer producer, uint8_t* buffer, int width, int height , double position, int force_refresh )
 	{
-		if (force_refresh) {
-			mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
-			loadFromXml( producer, NULL, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
-		}
-		drawKdenliveTitle( producer, buffer, width, height, position );
+		drawKdenliveTitle( producer, buffer, width, height, position, force_refresh );
 	}
 
 	static void qscene_delete( void *data )
@@ -56,14 +52,19 @@ extern "C"
 
 
 
-void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int height, double position )
+void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int height, double position, int force_refresh )
 {
   
   	// restore QGraphicsScene
 	g_mutex.lock();
-	mlt_cache_item qscene_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qscene" );
-	QGraphicsScene *scene = static_cast<QGraphicsScene *>( mlt_cache_item_data( qscene_cache, NULL ) );
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+	QGraphicsScene *scene = static_cast<QGraphicsScene *> (mlt_properties_get_data( producer_props, "qscene", NULL ));
+
+	if ( force_refresh == 1 && scene )
+	{
+		scene = NULL;
+		mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
+	}
  
 	if ( scene == NULL )
 	{
@@ -76,9 +77,9 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 		else {
 		    app=new QApplication( argc,argv );
 		}
-		scene = new QGraphicsScene(0, 0, (qreal) width, (qreal) height, app);
-		loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qscene", scene, 0, ( mlt_destructor )qscene_delete );
+		scene = new QGraphicsScene( 0, 0, width, height, app );
+		loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ), width, height );
+		mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 	}
 
 	g_mutex.unlock();
@@ -97,7 +98,7 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 
 	if (end.isNull()) {
 		if (start.isNull())
-			scene->render( &p1 );
+			scene->render( &p1, source, source );
 		else
 			scene->render( &p1, start, source );
 	}
@@ -120,13 +121,8 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 	}
 }
 
-void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText )
+void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText, int width, int height  )
 {
-	if (scene == NULL) {
-	  	mlt_cache_item qscene_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qscene" );
-		scene = static_cast<QGraphicsScene *>( mlt_cache_item_data( qscene_cache, NULL ) );
-		if (scene == NULL) return;
-	}
 	scene->clear();
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 	QDomDocument doc;
@@ -138,8 +134,8 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	if ( doc.documentElement().hasAttribute("width") ) {
 	    int originalWidth = doc.documentElement().attribute("width").toInt();
 	    int originalHeight = doc.documentElement().attribute("height").toInt();
-	    if (originalWidth != scene->width() || originalHeight != scene->height()) {
-		    transform = QTransform::fromScale ( scene->width() / originalWidth, scene->height() / originalHeight);
+	    if (originalWidth != width || originalHeight != height) {
+		    transform = QTransform::fromScale ( (double) width / originalWidth, (double) height / originalHeight);
 	    }
 	}
 	if ( titles.size() )
