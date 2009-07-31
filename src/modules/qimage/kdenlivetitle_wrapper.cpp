@@ -135,7 +135,11 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	    int originalWidth = doc.documentElement().attribute("width").toInt();
 	    int originalHeight = doc.documentElement().attribute("height").toInt();
 	    if (originalWidth != width || originalHeight != height) {
+#if QT_VERSION < 0x40500
+            transform = QTransform().scale(  (double) width / originalWidth, (double) height / originalHeight );
+#else
 		    transform = QTransform::fromScale ( (double) width / originalWidth, (double) height / originalHeight);
+#endif
 	    }
 	}
 	if ( titles.size() )
