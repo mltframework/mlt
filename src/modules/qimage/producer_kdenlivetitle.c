@@ -1,6 +1,7 @@
 /*
  * producer_kdenlivetitle.c -- kdenlive producer
  * Copyright (c) 2009 Marco Gittler <g.marco@freenet.de>
+ * Copyright (c) 2009 Jean-Baptiste Mardelle <jb@kdenlive.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
