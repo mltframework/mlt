@@ -30,28 +30,15 @@
 #include <QtGui/QTextCursor>
 #include <QtGui/QStyleOptionGraphicsItem>
 
+#include <QtCore/QString>
+
+#include <QtXml/QDomElement>
+#include <QtCore/QRectF>
+#include <QtGui/QColor>
+#include <QtGui/QWidget>
+
+static QMutex g_mutex;
 static QApplication *app = NULL;
-
-extern "C"
-{
-  
-#include <framework/mlt_producer.h>
-#include <framework/mlt_cache.h>
-
-	static QMutex g_mutex;
-	void refresh_kdenlivetitle( mlt_producer producer, uint8_t* buffer, int width, int height , double position, int force_refresh )
-	{
-		drawKdenliveTitle( producer, buffer, width, height, position, force_refresh );
-	}
-
-	static void qscene_delete( void *data )
-	{
-		QGraphicsScene *scene = ( QGraphicsScene * )data;
-		delete scene;
-		scene = NULL;
-	}
-}
-
 
 class ImageItem: public QGraphicsRectItem
 {
@@ -74,97 +61,62 @@ virtual void paint( QPainter *painter,
 };
 
 
-void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int height, double position, int force_refresh )
+QString rectTransform( QString s, QTransform t )
 {
-  
-	// restore cached image if any
-	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
-
-	if ( force_refresh == 0 )
-	{
-		uint8_t * cache = ( uint8_t * )mlt_properties_get_data( producer_props, "image", NULL );
-		if (cache) {
-		    buffer = cache;
-		    return;
-		}
-	}
-	
-	// restore QGraphicsScene
-	QGraphicsScene *scene = static_cast<QGraphicsScene *> (mlt_properties_get_data( producer_props, "qscene", NULL ));
-
-	if ( force_refresh == 1 && scene )
-	{
-		scene = NULL;
-		mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
-	}
- 
-	if ( scene == NULL )
-	{
-		int argc = 1;
-		char* argv[1];
-		argv[0] = "xxx";
-		if (qApp) {
-		    app = qApp;
-		}
-		else {
-		    app=new QApplication( argc,argv ); //, QApplication::Tty );
-		}
-		scene = new QGraphicsScene( 0, 0, width, height, app );
-		loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ), width, height );
-		mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
-	}
-
-
-	//must be extracted from kdenlive title
-	QImage img( width, height, QImage::Format_ARGB32 );
-	img.fill( 0 );
-	QPainter p1;
-	p1.begin( &img );
-	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
-	//| QPainter::SmoothPixmapTransform );
-
-	const QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "_startrect" ) ) );
-	const QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );
-	const QRectF source( 0, 0, width, height );
-
-	if (end.isNull()) {
-		if (start.isNull())
-			scene->render( &p1, source, source );
-		else
-			scene->render( &p1, start, source );
-	}
-	else {
-	    QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * position;
-	    QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * position;
-	    const QRectF r1( topleft, bottomRight );
-	    scene->render( &p1, r1, source );
-	}
-	p1.end();
-	g_mutex.lock();
-	uint8_t *pointer=img.bits();
-	QRgb* src = ( QRgb* ) pointer;
-	int size = width * height * 4;
-	for ( int i = 0; i < width * height * 4; i += 4 )
-	{
-		*buffer++=qRed( *src );
-		*buffer++=qGreen( *src );
-		*buffer++=qBlue( *src );
-		*buffer++=qAlpha( *src );
-		src++;
-	}
-
-	if ( end.isNull() )
-	{
-	    // No animation, cache image for further requests
-	    uint8_t *cached_image = (uint8_t *)mlt_pool_alloc( size );
-	    cached_image = buffer;
-	    mlt_properties_set_data( producer_props, "image", cached_image, width * height * 4, NULL, NULL );
-	    
-	    // Clear scene, we don't need it anymore
-	    mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
-	}
-	g_mutex.unlock();
+	QStringList l = s.split( ',' );
+	return QString::number(l.at(0).toDouble() * t.m11()) + ',' + QString::number(l.at(1).toDouble() * t.m22()) + ',' + QString::number(l.at(2).toDouble() * t.m11()) + ',' + QString::number(l.at(3).toDouble() * t.m22());
 }
+
+QString colorToString( const QColor& c )
+{
+	QString ret = "%1,%2,%3,%4";
+	ret = ret.arg( c.red() ).arg( c.green() ).arg( c.blue() ).arg( c.alpha() );
+	return ret;
+}
+
+QString rectFToString( const QRectF& c )
+{
+	QString ret = "%1,%2,%3,%4";
+	ret = ret.arg( c.top() ).arg( c.left() ).arg( c.width() ).arg( c.height() );
+	return ret;
+}
+
+QRectF stringToRect( const QString & s )
+{
+
+	QStringList l = s.split( ',' );
+	if ( l.size() < 4 )
+		return QRectF();
+	return QRectF( l.at( 0 ).toDouble(), l.at( 1 ).toDouble(), l.at( 2 ).toDouble(), l.at( 3 ).toDouble() ).normalized();
+}
+
+QColor stringToColor( const QString & s )
+{
+	QStringList l = s.split( ',' );
+	if ( l.size() < 4 )
+		return QColor();
+	return QColor( l.at( 0 ).toInt(), l.at( 1 ).toInt(), l.at( 2 ).toInt(), l.at( 3 ).toInt() );
+	;
+}
+QTransform stringToTransform( const QString& s )
+{
+	QStringList l = s.split( ',' );
+	if ( l.size() < 9 )
+		return QTransform();
+	return QTransform(
+	           l.at( 0 ).toDouble(), l.at( 1 ).toDouble(), l.at( 2 ).toDouble(),
+	           l.at( 3 ).toDouble(), l.at( 4 ).toDouble(), l.at( 5 ).toDouble(),
+	           l.at( 6 ).toDouble(), l.at( 7 ).toDouble(), l.at( 8 ).toDouble()
+	       );
+}
+
+static void qscene_delete( void *data )
+{
+	QGraphicsScene *scene = ( QGraphicsScene * )data;
+	delete scene;
+	scene = NULL;
+}
+
 
 void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText, int width, int height  )
 {
@@ -337,51 +289,102 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	return;
 }
 
-QString rectTransform( QString s, QTransform t )
+
+void drawKdenliveTitle( producer_ktitle self, uint8_t * buffer, int width, int height, double position, int force_refresh )
 {
-	QStringList l = s.split( ',' );
-	return QString::number(l.at(0).toDouble() * t.m11()) + ',' + QString::number(l.at(1).toDouble() * t.m22()) + ',' + QString::number(l.at(2).toDouble() * t.m11()) + ',' + QString::number(l.at(3).toDouble() * t.m22());
+  
+  	// Obtain the producer 
+	mlt_producer producer = &self->parent;
+	
+	// restore cached image if any
+	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+
+	/*if ( force_refresh == 0 )
+	{
+		uint8_t * cache = ( uint8_t * )mlt_properties_get_data( producer_props, "image", NULL );
+		if (cache) {
+		    buffer = cache;
+		    return;
+		}
+	}*/
+	
+	// restore QGraphicsScene
+	QGraphicsScene *scene = static_cast<QGraphicsScene *> (mlt_properties_get_data( producer_props, "qscene", NULL ));
+
+	if ( force_refresh == 1 && scene )
+	{
+		scene = NULL;
+		mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
+	}
+ 
+	if ( scene == NULL )
+	{
+		int argc = 1;
+		char* argv[1];
+		argv[0] = "xxx";
+		if (qApp) {
+		    app = qApp;
+		}
+		else {
+		    app=new QApplication( argc,argv ); //, QApplication::Tty );
+		}
+		scene = new QGraphicsScene( 0, 0, width, height, app );
+		loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ), width, height );
+		mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
+	}
+
+
+	//must be extracted from kdenlive title
+	QImage img( width, height, QImage::Format_ARGB32 );
+	img.fill( 0 );
+	QPainter p1;
+	p1.begin( &img );
+	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
+	//| QPainter::SmoothPixmapTransform );
+
+	const QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "_startrect" ) ) );
+	const QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );
+	const QRectF source( 0, 0, width, height );
+
+	if (end.isNull()) {
+		if (start.isNull())
+			scene->render( &p1, source, source );
+		else
+			scene->render( &p1, start, source );
+	}
+	else {
+	    QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * position;
+	    QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * position;
+	    const QRectF r1( topleft, bottomRight );
+	    scene->render( &p1, r1, source );
+	}
+	p1.end();
+	g_mutex.lock();
+	uint8_t *pointer=img.bits();
+	QRgb* src = ( QRgb* ) pointer;
+	int size = width * height * 4;
+	for ( int i = 0; i < width * height * 4; i += 4 )
+	{
+		*buffer++=qRed( *src );
+		*buffer++=qGreen( *src );
+		*buffer++=qBlue( *src );
+		*buffer++=qAlpha( *src );
+		src++;
+	}
+
+	if ( end.isNull() )
+	{
+	    // No animation, cache image for further requests
+	    self->current_image = (uint8_t *)mlt_pool_alloc( size );
+	    self->current_image = buffer;
+	    mlt_properties_set_data( producer_props, "image", self->current_image, width * height * 4, NULL, NULL );
+	    
+	    // Clear scene, we don't need it anymore
+	    mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
+	}
+	g_mutex.unlock();
 }
 
-QString colorToString( const QColor& c )
-{
-	QString ret = "%1,%2,%3,%4";
-	ret = ret.arg( c.red() ).arg( c.green() ).arg( c.blue() ).arg( c.alpha() );
-	return ret;
-}
 
-QString rectFToString( const QRectF& c )
-{
-	QString ret = "%1,%2,%3,%4";
-	ret = ret.arg( c.top() ).arg( c.left() ).arg( c.width() ).arg( c.height() );
-	return ret;
-}
 
-QRectF stringToRect( const QString & s )
-{
 
-	QStringList l = s.split( ',' );
-	if ( l.size() < 4 )
-		return QRectF();
-	return QRectF( l.at( 0 ).toDouble(), l.at( 1 ).toDouble(), l.at( 2 ).toDouble(), l.at( 3 ).toDouble() ).normalized();
-}
-
-QColor stringToColor( const QString & s )
-{
-	QStringList l = s.split( ',' );
-	if ( l.size() < 4 )
-		return QColor();
-	return QColor( l.at( 0 ).toInt(), l.at( 1 ).toInt(), l.at( 2 ).toInt(), l.at( 3 ).toInt() );
-	;
-}
-QTransform stringToTransform( const QString& s )
-{
-	QStringList l = s.split( ',' );
-	if ( l.size() < 9 )
-		return QTransform();
-	return QTransform(
-	           l.at( 0 ).toDouble(), l.at( 1 ).toDouble(), l.at( 2 ).toDouble(),
-	           l.at( 3 ).toDouble(), l.at( 4 ).toDouble(), l.at( 5 ).toDouble(),
-	           l.at( 6 ).toDouble(), l.at( 7 ).toDouble(), l.at( 8 ).toDouble()
-	       );
-}

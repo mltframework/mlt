@@ -20,25 +20,30 @@
 
 #include <framework/mlt.h>
 
-#include <QtCore/QString>
+#ifdef __cplusplus
+extern "C" {
+#endif
+  
+#include <framework/mlt_producer.h>
+#include <framework/mlt_cache.h>
 #include <framework/mlt_frame.h>
-#include <QtXml/QDomElement>
-#include <QtCore/QRectF>
-#include <QtGui/QColor>
-#include <QtGui/QWidget>
 
-class QApplication;
-class QGraphicsScene;
-class QTransform;
 
-void drawKdenliveTitle( mlt_producer producer, uint8_t*, int, int, double, int );
-void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText,int width, int height );
+struct producer_ktitle_s
+{
+	struct mlt_producer_s parent;
+	uint8_t *current_image;
+	pthread_mutex_t mutex;
+};
 
-QString rectTransform( QString s, QTransform t );
-QString colorToString( const QColor& );
-QString rectFToString( const QRectF& );
-QRectF stringToRect( const QString & );
-QColor stringToColor( const QString & );
-QTransform stringToTransform( const QString & );
+typedef struct producer_ktitle_s *producer_ktitle;
+
+extern void drawKdenliveTitle( producer_ktitle self, uint8_t*, int, int, double, int );
+
+
+#ifdef __cplusplus
+}
+#endif
+
 
 
