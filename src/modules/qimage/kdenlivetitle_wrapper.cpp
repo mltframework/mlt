@@ -60,29 +60,36 @@ public:
     {
 	m_img = img;
     }
-    
     QImage m_img;
+
 
 protected:
 virtual void paint( QPainter *painter,
-                       const QStyleOptionGraphicsItem *option,
+                       const QStyleOptionGraphicsItem * /*option*/,
                        QWidget* )
-{
-   //todo: clip rect ?
-   painter->drawImage(QPointF(), m_img);
-   //painter->fillRect(option->exposedRect, QBrush(QColor(0,255,0)));
+{ 
+    painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
+    painter->drawImage(QPoint(), m_img);
 }
-    
-    
 };
 
 
 void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int height, double position, int force_refresh )
 {
   
-  	// restore QGraphicsScene
-	g_mutex.lock();
+	// restore cached image if any
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+
+	if ( force_refresh == 0 )
+	{
+		uint8_t * cache = ( uint8_t * )mlt_properties_get_data( producer_props, "image", NULL );
+		if (cache) {
+		    buffer = cache;
+		    return;
+		}
+	}
+	
+	// restore QGraphicsScene
 	QGraphicsScene *scene = static_cast<QGraphicsScene *> (mlt_properties_get_data( producer_props, "qscene", NULL ));
 
 	if ( force_refresh == 1 && scene )
@@ -100,15 +107,14 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 		    app = qApp;
 		}
 		else {
-		    app=new QApplication( argc,argv );
+		    app=new QApplication( argc,argv ); //, QApplication::Tty );
 		}
 		scene = new QGraphicsScene( 0, 0, width, height, app );
 		loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ), width, height );
 		mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 	}
 
-	g_mutex.unlock();
-	
+
 	//must be extracted from kdenlive title
 	QImage img( width, height, QImage::Format_ARGB32 );
 	img.fill( 0 );
@@ -117,8 +123,8 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 	p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 	//| QPainter::SmoothPixmapTransform );
 
-	const QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "startrect" ) ) );
-	const QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "endrect" ) ) );
+	const QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "_startrect" ) ) );
+	const QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );
 	const QRectF source( 0, 0, width, height );
 
 	if (end.isNull()) {
@@ -134,8 +140,10 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 	    scene->render( &p1, r1, source );
 	}
 	p1.end();
+	g_mutex.lock();
 	uint8_t *pointer=img.bits();
 	QRgb* src = ( QRgb* ) pointer;
+	int size = width * height * 4;
 	for ( int i = 0; i < width * height * 4; i += 4 )
 	{
 		*buffer++=qRed( *src );
@@ -144,6 +152,18 @@ void drawKdenliveTitle( mlt_producer producer, uint8_t * buffer, int width, int 
 		*buffer++=qAlpha( *src );
 		src++;
 	}
+
+	if ( end.isNull() )
+	{
+	    // No animation, cache image for further requests
+	    uint8_t *cached_image = (uint8_t *)mlt_pool_alloc( size );
+	    cached_image = buffer;
+	    mlt_properties_set_data( producer_props, "image", cached_image, width * height * 4, NULL, NULL );
+	    
+	    // Clear scene, we don't need it anymore
+	    mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
+	}
+	g_mutex.unlock();
 }
 
 void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText, int width, int height  )
@@ -207,16 +227,15 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					else
 						font.setPixelSize( txtProperties.namedItem( "font-pixel-size" ).nodeValue().toInt() );
 					QColor col( stringToColor( txtProperties.namedItem( "font-color" ).nodeValue() ) );
-					QGraphicsTextItem *txt;
+					QString text = items.item( i ).namedItem( "content" ).firstChild().nodeValue();
 					if ( !replacementText.isEmpty() )
 					{
-						QString text = items.item( i ).namedItem( "content" ).firstChild().nodeValue();
 						text = text.replace( "%s", replacementText );
-						txt = scene->addText( text, font );
 					}
-					else txt = scene->addText( items.item( i ).namedItem( "content" ).firstChild().nodeValue(), font );
+					QGraphicsTextItem *txt = new QGraphicsTextItem( text );
+					txt->setFont(font);
+					scene->addItem(txt);
 					txt->setDefaultTextColor( col );
-					txt->setTextInteractionFlags( Qt::NoTextInteraction );
 					if ( txtProperties.namedItem( "alignment" ).isNull() == false )
 					{
 						txt->setTextWidth( txt->boundingRect().width() );
@@ -301,7 +320,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				if ( transform != QTransform() ) {
 				    rect = rectTransform( rect, transform );
 				}
-				mlt_properties_set( producer_props, "startrect", rect.toUtf8().data() );
+				mlt_properties_set( producer_props, "_startrect", rect.toUtf8().data() );
 			}
 			else if ( items.item( i ).nodeName() == "endviewport" )
 			{
@@ -309,12 +328,12 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				if ( transform != QTransform() ) {
 				    rect = rectTransform( rect, transform );
 				}
-				mlt_properties_set( producer_props, "endrect", rect.toUtf8().data() );
+				mlt_properties_set( producer_props, "_endrect", rect.toUtf8().data() );
 			}
 		}
 	}
-	if ( mlt_properties_get( producer_props, "startrect") == mlt_properties_get( producer_props, "endrect") )
-		mlt_properties_set( producer_props, "endrect", "" );
+	if ( !strcmp( mlt_properties_get( producer_props, "_startrect" ), mlt_properties_get( producer_props, "_endrect" ) ) )
+		mlt_properties_set( producer_props, "_endrect", "" );
 	return;
 }
 
