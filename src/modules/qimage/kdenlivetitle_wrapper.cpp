@@ -352,7 +352,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		{
 			QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * position;
 			QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * position;
-			const QRectF r1( topleft, bottomRight - topleft );
+			const QRectF r1( topleft, bottomRight );
 			scene->render( &p1, source, r1, Qt::IgnoreAspectRatio );
 		}
 		p1.end();
