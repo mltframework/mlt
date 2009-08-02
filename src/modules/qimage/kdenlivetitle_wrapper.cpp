@@ -133,6 +133,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	    int originalHeight = doc.documentElement().attribute("height").toInt();
 	    mlt_properties_set_int( producer_props, "_original_height", originalHeight );
 	}
+
 	if ( titles.size() )
 	{
 
@@ -178,9 +179,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					{
 						text = text.replace( "%s", replacementText );
 					}
-					QGraphicsTextItem *txt = new QGraphicsTextItem( text );
-					txt->setFont(font);
-					scene->addItem(txt);
+					QGraphicsTextItem *txt = scene->addText(text, font);
 					txt->setDefaultTextColor( col );
 					if ( txtProperties.namedItem( "alignment" ).isNull() == false )
 					{
@@ -221,7 +220,6 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					QImage img( url );
 					ImageItem *rec = new ImageItem(img);
 					scene->addItem( rec );
-					rec->setData( Qt::UserRole, url );
 					gitem = rec;
 				}
 				else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsSvgItem" )
@@ -328,7 +326,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 			else {
 				app=new QApplication( argc,argv ); //, QApplication::Tty );
 			}
-			scene = new QGraphicsScene( app );
+			scene = new QGraphicsScene();
 			loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ), width, height );
 			mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 		}
@@ -389,12 +387,6 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		mlt_properties_set_data( producer_props, "cached_image", self->current_image, size, mlt_pool_release, NULL );
 		self->current_width = width;
 		self->current_height = height;
-	
-		if ( end.isNull() )
-		{
-			// Clear scene, we don't need it anymore
-			mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
-		}
 	}
 
 	pthread_mutex_unlock( &self->mutex );
