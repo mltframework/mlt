@@ -33,12 +33,14 @@ struct producer_ktitle_s
 {
 	struct mlt_producer_s parent;
 	uint8_t *current_image;
+	int current_width;
+	int current_height;
 	pthread_mutex_t mutex;
 };
 
 typedef struct producer_ktitle_s *producer_ktitle;
 
-extern void drawKdenliveTitle( producer_ktitle self, uint8_t*, int, int, double, int );
+extern void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int, int, double, int );
 
 
 #ifdef __cplusplus
