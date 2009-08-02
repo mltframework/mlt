@@ -27,6 +27,7 @@
 #include <QtCore/QMutex>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
+#include <QtSvg/QGraphicsSvgItem>
 #include <QtGui/QTextCursor>
 #include <QtGui/QStyleOptionGraphicsItem>
 
@@ -216,7 +217,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				}
 				else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
 				{
-					QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
+					const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
 					QImage img( url );
 					ImageItem *rec = new ImageItem(img);
 					scene->addItem( rec );
@@ -224,11 +225,10 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				}
 				else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsSvgItem" )
 				{
-					QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
-					//QGraphicsSvgItem *rec = new QGraphicsSvgItem(url);
-					//m_scene->addItem(rec);
-					//rec->setData(Qt::UserRole, url);
-					//gitem = rec;
+					const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
+					QGraphicsSvgItem *rec = new QGraphicsSvgItem(url);
+					scene->addItem(rec);
+					gitem = rec;
 				}
 			}
 			//pos and transform
