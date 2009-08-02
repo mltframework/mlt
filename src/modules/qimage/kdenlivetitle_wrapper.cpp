@@ -118,7 +118,7 @@ static void qscene_delete( void *data )
 }
 
 
-void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText, int width, int height  )
+void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText )
 {
 	scene->clear();
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
@@ -133,6 +133,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	    mlt_properties_set_int( producer_props, "_original_width", originalWidth );
 	    int originalHeight = doc.documentElement().attribute("height").toInt();
 	    mlt_properties_set_int( producer_props, "_original_height", originalHeight );
+	    scene->setSceneRect(0, 0, originalWidth, originalHeight);
 	}
 
 	if ( titles.size() )
@@ -162,7 +163,6 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 						font.setWeight( txtProperties.namedItem( "font-weight" ).nodeValue().toInt() );
 					}
 
-					//font.setBold(txtProperties.namedItem("font-bold").nodeValue().toInt());
 					font.setItalic( txtProperties.namedItem( "font-italic" ).nodeValue().toInt() );
 					font.setUnderline( txtProperties.namedItem( "font-underline" ).nodeValue().toInt() );
 					// Older Kdenlive version did not store pixel size but point size
@@ -260,7 +260,6 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	}
 
 	QString startRect;
-	QString endRect;
 	n = doc.documentElement().firstChildElement( "startviewport" );
 	if (!n.isNull())
 	{
@@ -327,25 +326,15 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 				app=new QApplication( argc,argv ); //, QApplication::Tty );
 			}
 			scene = new QGraphicsScene();
-			loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ), width, height );
+			loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
 			mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 		}
 	
 		int originalWidth = mlt_properties_get_int( producer_props, "_original_width" );
 		int originalHeight= mlt_properties_get_int( producer_props, "_original_height" );
-		const QRectF source( 0, 0, originalWidth, originalHeight );
-		if (start.isNull()) start = source;
-		
-		if (originalWidth != width || originalHeight != height)
-		{
-			QTransform transform;
-#if QT_VERSION < 0x40500
-			transform = QTransform().scale(  (double) width / originalWidth, (double) height / originalHeight );
-#else
-			transform = QTransform::fromScale ( (double) width / originalWidth, (double) height / originalHeight);
-#endif
-			start = transform.mapRect(start);
-			if (!end.isNull()) end = transform.mapRect(end);
+		const QRectF source( 0, 0, width, height );
+		if (start.isNull()) {
+		    start = QRectF( 0, 0, originalWidth, originalHeight );
 		}
 	
 		//must be extracted from kdenlive title
@@ -355,17 +344,16 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		p1.begin( &img );
 		p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		//| QPainter::SmoothPixmapTransform );
-
 		if (end.isNull())
 		{
-			scene->render( &p1, start, source );
+			scene->render( &p1, source, start, Qt::IgnoreAspectRatio );
 		}
 		else
 		{
 			QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * position;
 			QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * position;
-			const QRectF r1( topleft, bottomRight );
-			scene->render( &p1, r1, source );
+			const QRectF r1( topleft, bottomRight - topleft );
+			scene->render( &p1, source, r1, Qt::IgnoreAspectRatio );
 		}
 		p1.end();
 
