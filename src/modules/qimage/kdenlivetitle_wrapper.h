@@ -35,7 +35,6 @@ struct producer_ktitle_s
 	uint8_t *current_image;
 	int current_width;
 	int current_height;
-	mlt_cache_item image_cache;
 	pthread_mutex_t mutex;
 };
 
