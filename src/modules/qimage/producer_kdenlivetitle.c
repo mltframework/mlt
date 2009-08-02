@@ -25,8 +25,6 @@
 #include <string.h>
 
 
-extern void refresh_kdenlivetitle( mlt_producer producer, uint8_t*, int, int, double, int );
-
 void read_xml(mlt_properties properties)
 {
 	FILE *f = fopen( mlt_properties_get( properties, "resource" ), "r");
@@ -59,41 +57,40 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	/* Obtain properties of producer */
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( &this->parent );
 	
-	*width = mlt_properties_get_int( properties, "width" );
-	*height = mlt_properties_get_int( properties, "height" );
+	*width = mlt_properties_get_int( properties, "rescale_width" );
+	*height = mlt_properties_get_int( properties, "rescale_height" );
 	
 	/* Allocate the image */
 	int size = *width * ( *height ) * 4;
 
-	*buffer = mlt_pool_alloc( size );
+	/* Allocate the image */
+	*format = mlt_image_rgb24a;
+	mlt_position in = mlt_producer_get_in( &this->parent );
+	mlt_position out = mlt_producer_get_out( &this->parent );
+	mlt_position time = mlt_producer_position( &this->parent );
+	double position = ( double )( time - in ) / ( double )( out - in + 1 );
+	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
+		if (mlt_properties_get_int( producer_props, "force_reload" ) > 1) read_xml(producer_props);
+		mlt_properties_set_int( producer_props, "force_reload", 0 );
+		drawKdenliveTitle( this, frame, *width, *height, position, 1);
+	}
+	else drawKdenliveTitle( this, frame, *width, *height, position, 0);
 
-	mlt_properties_set_int( properties, "width", *width );
-	mlt_properties_set_int( properties, "height", *height );
-	
+	// Get width and height (may have changed during the refresh)
+	*width = mlt_properties_get_int( properties, "width" );
+	*height = mlt_properties_get_int( properties, "height" );
+		
 	if ( this->current_image )
 	{
-		// Clone the image
-		uint8_t *image_copy = mlt_pool_alloc( size );
-		memcpy( image_copy, this->current_image, size );
+		// Clone the image and the alpha
+		int image_size = this->current_width * ( this->current_height ) * 4;
+		uint8_t *image_copy = mlt_pool_alloc( image_size );
+		memcpy( image_copy, this->current_image, image_size );
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", image_copy, size, mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
 		// We're going to pass the copy on
-		*buffer = image_copy;
-	}
-	else
-	{
-		/* Allocate the image */
-		*format = mlt_image_rgb24a;
-		mlt_position in = mlt_producer_get_in( &this->parent );
-		mlt_position out = mlt_producer_get_out( &this->parent );
-		mlt_position time = mlt_producer_position( &this->parent );
-		double position = ( double )( time - in ) / ( double )( out - in + 1 );
-		if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
-			if (mlt_properties_get_int( producer_props, "force_reload" ) > 1) read_xml(producer_props);
-			mlt_properties_set_int( producer_props, "force_reload", 0 );
-			drawKdenliveTitle( this, *buffer, *width, *height, position, 1);
-		}
-		else drawKdenliveTitle( this, *buffer, *width, *height, position, 0);
+		*buffer = image_copy;		
+		
 		/* Update the frame */
 		mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
 
