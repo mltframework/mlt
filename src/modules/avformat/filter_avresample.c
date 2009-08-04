@@ -31,7 +31,7 @@
 /** Get the audio.
 */
 
-static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -60,6 +60,7 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		output_rate = *frequency;
 
 	// Get the producer's audio
+	*format = mlt_audio_s16;
 	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
 
 	// Duplicate channels as necessary
@@ -74,7 +75,7 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		{
 			for ( j = 0; j < *channels; j++ )
 			{
-				new_buffer[ ( i * *channels ) + j ] = (*buffer)[ ( i * channels_avail ) + k ];
+				new_buffer[ ( i * *channels ) + j ] = ((int16_t*)(*buffer))[ ( i * channels_avail ) + k ];
 				k = ( k + 1 ) % channels_avail;
 			}
 		}
@@ -93,8 +94,8 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		// Drop all but the first *channels
 		for ( i = 0; i < *samples; i++ )
 		{
-			new_buffer[ ( i * *channels ) + 0 ] = (*buffer)[ ( i * channels_avail ) + 2 ];
-			new_buffer[ ( i * *channels ) + 1 ] = (*buffer)[ ( i * channels_avail ) + 3 ];
+			new_buffer[ ( i * *channels ) + 0 ] = ((int16_t*)(*buffer))[ ( i * channels_avail ) + 2 ];
+			new_buffer[ ( i * *channels ) + 1 ] = ((int16_t*)(*buffer))[ ( i * channels_avail ) + 3 ];
 		}
 
 		// Update the audio buffer now - destroys the old
@@ -129,16 +130,17 @@ static int resample_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 
 		// Resample the audio
 		used = audio_resample( resample, sample_buffer, *buffer, *samples );
+		int size = used * *channels * sizeof( int16_t );
 
 		// Resize if necessary
 		if ( used > *samples )
 		{
-			*buffer = mlt_pool_realloc( *buffer, *samples * *channels * sizeof( int16_t ) );
-			mlt_properties_set_data( properties, "audio", *buffer, *channels * used * sizeof( int16_t ), mlt_pool_release, NULL );
+			*buffer = mlt_pool_realloc( *buffer, size );
+			mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 		}
 
 		// Copy samples
-		memcpy( *buffer, sample_buffer, *channels * used * sizeof( int16_t ) );
+		memcpy( *buffer, sample_buffer, size );
 
 		// Update output variables
 		*samples = used;

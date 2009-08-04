@@ -63,11 +63,24 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	return result;
 }
 
-static int get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	mlt_frame nested_frame = mlt_frame_pop_audio( frame );
 	int result = mlt_frame_get_audio( nested_frame, buffer, format, frequency, channels, samples );
-	int size = *channels * *samples * sizeof( int16_t );
+	int size = *channels * *samples;
+
+	switch ( *format )
+	{
+		case mlt_audio_s16:
+			size *= sizeof( int16_t );
+			break;
+		case mlt_audio_s32:
+			size *= sizeof( int32_t );
+		case mlt_audio_float:
+			size *= sizeof( float );
+		default:
+			mlt_log_error( NULL, "[producer consumer] Invalid audio format\n" );
+	}
 	int16_t *new_buffer = mlt_pool_alloc( size );
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "audio", new_buffer, size, mlt_pool_release, NULL );
 	memcpy( new_buffer, *buffer, size );

@@ -179,14 +179,11 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 /** Get the audio.
 */
 
-static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 #if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,3,0))
  	SOX_SAMPLE_LOCALS;
 #endif
-	// Get the properties of the frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Get the filter service
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 
@@ -194,55 +191,14 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the properties
-	st_sample_t *input_buffer = mlt_properties_get_data( filter_properties, "input_buffer", NULL );
+	st_sample_t *input_buffer;// = mlt_properties_get_data( filter_properties, "input_buffer", NULL );
 	st_sample_t *output_buffer = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
-	int channels_avail = *channels;
 	int i; // channel
 	int count = mlt_properties_get_int( filter_properties, "_effect_count" );
 
 	// Get the producer's audio
-	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
-
-	// Duplicate channels as necessary
-	if ( channels_avail < *channels )
-	{
-		int size = *channels * *samples * sizeof( int16_t );
-		int16_t *new_buffer = mlt_pool_alloc( size );
-		int j, k = 0;
-		
-		// Duplicate the existing channels
-		for ( i = 0; i < *samples; i++ )
-		{
-			for ( j = 0; j < *channels; j++ )
-			{
-				new_buffer[ ( i * *channels ) + j ] = (*buffer)[ ( i * channels_avail ) + k ];
-				k = ( k + 1 ) % channels_avail;
-			}
-		}
-		
-		// Update the audio buffer now - destroys the old
-		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
-		
-		*buffer = new_buffer;
-	}
-	else if ( channels_avail == 6 && *channels == 2 )
-	{
-		// Nasty hack for ac3 5.1 audio - may be a cause of failure?
-		int size = *channels * *samples * sizeof( int16_t );
-		int16_t *new_buffer = mlt_pool_alloc( size );
-		
-		// Drop all but the first *channels
-		for ( i = 0; i < *samples; i++ )
-		{
-			new_buffer[ ( i * *channels ) + 0 ] = (*buffer)[ ( i * channels_avail ) + 2 ];
-			new_buffer[ ( i * *channels ) + 1 ] = (*buffer)[ ( i * channels_avail ) + 3 ];
-		}
-
-		// Update the audio buffer now - destroys the old
-		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
-		
-		*buffer = new_buffer;
-	}
+	*format = mlt_audio_s32;
+	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
 	// Even though some effects are multi-channel aware, it is not reliable
 	// We must maintain a separate effect state for each channel
@@ -296,32 +252,21 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		}
 		if ( *samples > 0 && count > 0 )
 		{
+			input_buffer = (st_sample_t*) *buffer + i * *samples;
 			st_sample_t *p = input_buffer;
-			st_sample_t *end = p + *samples;
-			int16_t *q = *buffer + i;
 			st_size_t isamp = *samples;
 			st_size_t osamp = *samples;
 			double rms = 0;
-			int j;
+			int j = *samples + 1;
 			char *normalise = mlt_properties_get( filter_properties, "normalise" );
 			double normalised_gain = 1.0;
-#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(13,0,0))
-			st_sample_t dummy_clipped_count = 0;
-#endif
 			
-			// Convert to sox encoding
-			while( p != end )
+			// Convert from interleaved
+			while( --j )
 			{
-#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(13,0,0))
-				*p = ST_SIGNED_WORD_TO_SAMPLE( *q, dummy_clipped_count );
-#else
-				*p = ST_SIGNED_WORD_TO_SAMPLE( *q );
-#endif
 				// Compute rms amplitude while we are accessing each sample
 				rms += ( double )*p * ( double )*p;
-				
 				p ++;
-				q += *channels;
 			}
 			
 			// Compute final rms amplitude
@@ -411,20 +356,9 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 					}
 				}
 			}
-			
-			// Convert back to signed 16bit
-			p = input_buffer;
-			q = *buffer + i;
-			end = p + *samples;
-			while ( p != end )
-			{
-#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(13,0,0))
-				*q = ST_SAMPLE_TO_SIGNED_WORD( *p ++, dummy_clipped_count );
-#else
-				*q = ST_SAMPLE_TO_SIGNED_WORD( *p ++ );
-#endif
-				q += *channels;
-			}
+
+			// Write back
+			memcpy( output_buffer, input_buffer, *samples * sizeof(st_sample_t) );
 		}
 	}
 

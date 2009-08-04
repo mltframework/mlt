@@ -163,7 +163,7 @@ double signal_max_power( int16_t *buffer, int channels, int samples, int16_t *pe
 /** Get the audio.
 */
 
-static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the a frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -186,6 +186,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		limiter_level = mlt_properties_get_double( properties, "volume.limiter" );
 	
 	// Get the producer's audio
+	*format = mlt_audio_s16;
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 //	fprintf( stderr, "filter_volume: frequency %d\n", *frequency );
 
@@ -217,7 +218,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 		}
 		else
 		{
-			gain *= amplitude / signal_max_power( *buffer, *channels, *samples, &peak );
+			gain *= amplitude / signal_max_power( (int16_t*) *buffer, *channels, *samples, &peak );
 		}
 	}
 	
@@ -248,7 +249,7 @@ static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format
 	// Ramp from the previous gain to the current
 	gain = previous_gain;
 
-	int16_t *p = *buffer;
+	int16_t *p = (int16_t*) *buffer;
 
 	// Apply the gain
 	for ( i = 0; i < *samples; i++ )

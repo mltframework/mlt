@@ -39,7 +39,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	NB: Not all transitions will accept a and b frames being the same...
 */
 
-static int filter_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int filter_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Obtain the transition instance
 	mlt_transition transition = mlt_frame_pop_audio( this );

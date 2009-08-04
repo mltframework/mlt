@@ -49,7 +49,10 @@ mlt_image_format;
 typedef enum
 {
 	mlt_audio_none = 0,/**< audio not available */
-	mlt_audio_pcm      /**< signed 16-bit interleaved PCM */
+	mlt_audio_pcm = 1, /**< \deprecated signed 16-bit interleaved PCM */
+	mlt_audio_s16 = 1, /**< signed 16-bit interleaved PCM */
+	mlt_audio_s32,     /**< signed 32-bit non-interleaved PCM */
+	mlt_audio_float    /**< 32-bit non-interleaved floating point */
 }
 mlt_audio_format;
 
