@@ -32,6 +32,8 @@
 #include <SDL/SDL_syswm.h>
 #include <sys/time.h>
 
+extern pthread_mutex_t mlt_sdl_mutex;
+
 /** This classes definition.
 */
 
@@ -216,7 +218,9 @@ int consumer_start( mlt_consumer parent )
 				this->sdl_flags |= SDL_FULLSCREEN;
 				SDL_ShowCursor( SDL_DISABLE );
 			}
+			pthread_mutex_lock( &mlt_sdl_mutex );
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
@@ -252,7 +256,11 @@ int consumer_stop( mlt_consumer parent )
 		}
 
 		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+		{
+			pthread_mutex_lock( &mlt_sdl_mutex );
 			SDL_Quit( );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
+		}
 
 		this->sdl_screen = NULL;
 	}
@@ -268,15 +276,20 @@ int consumer_is_stopped( mlt_consumer parent )
 
 static int sdl_lock_display( )
 {
+	pthread_mutex_lock( &mlt_sdl_mutex );
 	SDL_Surface *screen = SDL_GetVideoSurface( );
-	return screen != NULL && ( !SDL_MUSTLOCK( screen ) || SDL_LockSurface( screen ) >= 0 );
+	int result = screen != NULL && ( !SDL_MUSTLOCK( screen ) || SDL_LockSurface( screen ) >= 0 );
+	pthread_mutex_unlock( &mlt_sdl_mutex );
+	return result;
 }
 
 static void sdl_unlock_display( )
 {
+	pthread_mutex_lock( &mlt_sdl_mutex );
 	SDL_Surface *screen = SDL_GetVideoSurface( );
 	if ( screen != NULL && SDL_MUSTLOCK( screen ) )
 		SDL_UnlockSurface( screen );
+	pthread_mutex_unlock( &mlt_sdl_mutex );
 }
 
 static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
@@ -433,7 +446,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			SDL_Event event;
 	
 			sdl_lock_display( );
+			pthread_mutex_lock( &mlt_sdl_mutex );
 			changed = consumer_get_dimensions( &this->window_width, &this->window_height );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
 			sdl_unlock_display( );
 
 			while ( SDL_PollEvent( &event ) )
@@ -483,9 +498,11 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			this->sdl_overlay = NULL;
 
 			// open SDL window with video overlay, if possible
+			pthread_mutex_lock( &mlt_sdl_mutex );
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
 			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 				this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
 
 			uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
 			SDL_FillRect( this->sdl_screen, NULL, color >> 8 );

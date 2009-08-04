@@ -28,6 +28,8 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
 
+pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 typedef struct consumer_sdl_s *consumer_sdl;
 
 struct consumer_sdl_s
@@ -244,7 +246,9 @@ static int consumer_stop( mlt_consumer parent )
 
 		if ( app_locked && lock ) lock( );
 
+		pthread_mutex_lock( &mlt_sdl_mutex );
 		SDL_Quit( );
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	return 0;
