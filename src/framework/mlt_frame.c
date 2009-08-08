@@ -589,43 +589,23 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
 {
 	int samples = 0;
 
-	if ( ( int )( fps * 100 ) == 2997 )
+	if ( fps )
 	{
-		samples = frequency / 30;
+		/* Compute the cumulative number of samples until the start of this frame and the
+		cumulative number of samples until the start of the next frame. Round each to the
+		nearest integer and take the difference to determine the number of samples in
+		this frame.
 
-		switch ( frequency )
-		{
-			case 48000:
-				if ( position % 5 != 0 )
-					samples += 2;
-				break;
-			case 44100:
-				if ( position % 300 == 0 )
-					samples = 1471;
-				else if ( position % 30 == 0 )
-					samples = 1470;
-				else if ( position % 2 == 0 )
-					samples = 1472;
-				else
-					samples = 1471;
-				break;
-			case 32000:
-				if ( position % 30 == 0 )
-					samples = 1068;
-				else if ( position % 29 == 0 )
-					samples = 1067;
-				else if ( position % 4 == 2 )
-					samples = 1067;
-				else
-					samples = 1068;
-				break;
-			default:
-				samples = 0;
-		}
-	}
-	else if ( fps != 0 )
-	{
-		samples = frequency / fps;
+		This approach should prevent rounding errors that can accumulate over a large number
+		of frames causing A/V sync problems. */
+
+		int64_t samples_at_this =
+			(int64_t)( (double) position * (double) frequency / (double) fps +
+			( position < 0 ? -0.5 : 0.5 ) );
+		int64_t samples_at_next =
+			(int64_t)( (double) (position + 1) * (double) frequency / (double) fps +
+			( position < 0 ? -0.5 : 0.5 ) );
+		samples = (int)( samples_at_next - samples_at_this );
 	}
 
 	return samples;
@@ -635,26 +615,10 @@ int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t frame )
 {
 	int64_t samples = 0;
 
-	// TODO: Correct rules for NTSC and drop the * 100 hack
-	if ( ( int )( fps * 100 ) == 2997 )
+	if ( fps )
 	{
-		samples = ( ( double )( frame * frequency ) / 30 );
-		switch( frequency )
-		{
-			case 48000:
-				samples += 2 * ( frame / 5 );
-				break;
-			case 44100:
-				samples += frame + ( frame / 2 ) - ( frame / 30 ) + ( frame / 300 );
-				break;
-			case 32000:
-				samples += ( 2 * frame ) - ( frame / 4 ) - ( frame / 29 );
-				break;
-		}
-	}
-	else if ( fps != 0 )
-	{
-		samples = ( ( frame * frequency ) / ( int )fps );
+		samples = (int64_t)( (double) frame * (double) frequency / (double) fps +
+			( frame < 0 ? -0.5 : 0.5 ) );
 	}
 
 	return samples;
