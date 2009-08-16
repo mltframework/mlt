@@ -361,7 +361,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	return 0;
 }
 
-static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int producer_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	int16_t *p;
 	int i, j;
@@ -382,20 +382,23 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 	// Check that we have audio
 	if ( decoder->audio->num_channels > 0 )
 	{
+		int size = *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t );
+
 		// Obtain required values
 		*frequency = decoder->audio->frequency;
 		*samples = decoder->audio->samples_this_frame;
 		*channels = decoder->audio->num_channels;
+		*format = mlt_audio_s16;
 
 		// Create a temporary workspace
 		for ( i = 0; i < 4; i++ )
 			audio_channels[ i ] = mlt_pool_alloc( DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
 	
 		// Create a workspace for the result
-		*buffer = mlt_pool_alloc( *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ) );
+		*buffer = mlt_pool_alloc( size );
 	
 		// Pass the allocated audio buffer as a property
-		mlt_properties_set_data( properties, "audio", *buffer, *channels * DV_AUDIO_MAX_SAMPLES * sizeof( int16_t ), ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_frame_set_audio( this, *buffer, *format, size, mlt_pool_release );
 	
 		// Decode the audio
 		dv_decode_full_audio( decoder, dv_data, audio_channels );

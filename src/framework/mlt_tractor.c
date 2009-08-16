@@ -284,7 +284,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	return 0;
 }
 
-static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int producer_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 	mlt_frame frame = mlt_frame_pop_audio( this );

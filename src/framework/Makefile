@@ -69,7 +69,7 @@ SRCS := $(OBJS:.o=.c)
 
 CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\"" -DLIBDIR="\"$(libdir)\""
 
-LDFLAGS += -lm $(LIBDL) -lpthread
+LDFLAGS += $(LIBDL) -lpthread
 
 all:	$(TARGET)
 

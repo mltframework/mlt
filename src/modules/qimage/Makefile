@@ -7,8 +7,8 @@ include config.mak
 
 TARGET = ../libmltqimage$(LIBSUF)
 
-OBJS = factory.o producer_qimage.o
-CPPOBJS = qimage_wrapper.o
+OBJS = factory.o producer_qimage.o producer_kdenlivetitle.o
+CPPOBJS = qimage_wrapper.o kdenlivetitle_wrapper.o
 
 CXXFLAGS += $(CFLAGS) $(QTCXXFLAGS) -Wno-deprecated
 

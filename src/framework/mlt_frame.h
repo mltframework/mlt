@@ -38,7 +38,7 @@ typedef int ( *mlt_get_image )( mlt_frame self, uint8_t **buffer, mlt_image_form
  *
  */
 
-typedef int ( *mlt_get_audio )( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
+typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
 
 /** \brief Frame class
  *
@@ -60,6 +60,7 @@ struct mlt_frame_s
 	/* Virtual methods */
 	uint8_t * ( *get_alpha_mask )( mlt_frame self );
 	int ( *convert_image )( mlt_frame self, uint8_t **image, mlt_image_format *input, mlt_image_format output );
+	int ( *convert_audio )( mlt_frame self, void **audio, mlt_audio_format *input, mlt_audio_format output );
 
 	/* Private properties */
 	mlt_deque stack_image;
@@ -83,7 +84,8 @@ extern int mlt_frame_set_position( mlt_frame self, mlt_position value );
 extern void mlt_frame_replace_image( mlt_frame self, uint8_t *image, mlt_image_format format, int width, int height );
 extern int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame self );
-extern int mlt_frame_get_audio( mlt_frame self, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
+extern int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
+extern int mlt_frame_set_audio( mlt_frame self, void *buffer, mlt_audio_format, int size, mlt_destructor );
 extern unsigned char *mlt_frame_get_waveform( mlt_frame self, int w, int h );
 extern int mlt_frame_push_get_image( mlt_frame self, mlt_get_image get_image );
 extern mlt_get_image mlt_frame_pop_get_image( mlt_frame self );
@@ -100,11 +102,10 @@ extern mlt_producer mlt_frame_get_original_producer( mlt_frame self );
 extern void mlt_frame_close( mlt_frame self );
 
 /* convenience functions */
-extern int mlt_frame_mix_audio( mlt_frame self, mlt_frame that, float weight_start, float weight_end, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
-extern int mlt_frame_combine_audio( mlt_frame self, mlt_frame that, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples  );
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
 extern const char * mlt_image_format_name( mlt_image_format format );
+extern const char * mlt_audio_format_name( mlt_audio_format format );
 
 /** This macro scales rgb into the yuv gamut - y is scaled by 219/255 and uv by 224/255. */
 #define RGB2YUV(r, g, b, y, u, v)\

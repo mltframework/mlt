@@ -579,13 +579,13 @@ static void *consumer_read_ahead_thread( void *arg )
 	int preview_format = mlt_properties_get_int( properties, "preview_format" );
 
 	// Get the audio settings
-	mlt_audio_format afmt = mlt_audio_pcm;
+	mlt_audio_format afmt = mlt_audio_s16;
 	int counter = 0;
 	double fps = mlt_properties_get_double( properties, "fps" );
 	int channels = mlt_properties_get_int( properties, "channels" );
 	int frequency = mlt_properties_get_int( properties, "frequency" );
 	int samples = 0;
-	int16_t *pcm = NULL;
+	void *audio = NULL;
 
 	// See if audio is turned off
 	int audio_off = mlt_properties_get_int( properties, "audio_off" );
@@ -631,7 +631,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	if ( !audio_off )
 	{
 		samples = mlt_sample_calculator( fps, frequency, counter++ );
-		mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
+		mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 	}
 
 	// Unlock the lock object
@@ -723,7 +723,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( !audio_off )
 		{
 			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
+			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 		}
 
 		// Increment the time take for this frame

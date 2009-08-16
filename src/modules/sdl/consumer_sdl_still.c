@@ -32,6 +32,8 @@
 #include <SDL/SDL_syswm.h>
 #include <sys/time.h>
 
+extern pthread_mutex_t mlt_sdl_mutex;
+
 /** This classes definition.
 */
 
@@ -183,7 +185,11 @@ static int consumer_start( mlt_consumer parent )
 		}
 
 		if ( this->sdl_screen == NULL && preview_off == 0 )
+		{
+			pthread_mutex_lock( &mlt_sdl_mutex );
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
+		}
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
@@ -208,7 +214,11 @@ static int consumer_stop( mlt_consumer parent )
 		this->joined = 1;
 
 		if ( sdl_started == 0 && preview_off == 0 )
+		{
+			pthread_mutex_lock( &mlt_sdl_mutex );
 			SDL_Quit( );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
+		}
 
 		this->sdl_screen = NULL;
 	}
@@ -224,15 +234,20 @@ static int consumer_is_stopped( mlt_consumer parent )
 
 static int sdl_lock_display( )
 {
+	pthread_mutex_lock( &mlt_sdl_mutex );
 	SDL_Surface *screen = SDL_GetVideoSurface( );
-	return screen != NULL && ( !SDL_MUSTLOCK( screen ) || SDL_LockSurface( screen ) >= 0 );
+	int result = screen != NULL && ( !SDL_MUSTLOCK( screen ) || SDL_LockSurface( screen ) >= 0 );
+	pthread_mutex_unlock( &mlt_sdl_mutex );
+	return result;
 }
 
 static void sdl_unlock_display( )
 {
+	pthread_mutex_lock( &mlt_sdl_mutex );
 	SDL_Surface *screen = SDL_GetVideoSurface( );
 	if ( screen != NULL && SDL_MUSTLOCK( screen ) )
 		SDL_UnlockSurface( screen );
+	pthread_mutex_unlock( &mlt_sdl_mutex );
 }
 
 static inline void display_1( SDL_Surface *screen, SDL_Rect rect, uint8_t *image, int width, int height )
@@ -383,7 +398,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	{
 		SDL_Event event;
 
+		pthread_mutex_lock( &mlt_sdl_mutex );
 		changed = consumer_get_dimensions( &this->window_width, &this->window_height );
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 
 		while ( SDL_PollEvent( &event ) )
 		{
@@ -417,10 +434,13 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 	if ( this->sdl_screen == NULL || changed )
 	{
-		// open SDL window 
+		// open SDL window
+		pthread_mutex_lock( &mlt_sdl_mutex );
 		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 		if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+		pthread_mutex_unlock( &mlt_sdl_mutex );
+
 		uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
 		SDL_FillRect( this->sdl_screen, NULL, color >> 8 );
 		changed = 1;
@@ -428,7 +448,8 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
-		 this->last_producer == mlt_frame_get_original_producer( frame ) )
+		 this->last_producer == mlt_frame_get_original_producer( frame ) &&
+		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "refresh" ) )
 	{
 		sdl_unlock_display( );
 		if ( unlock != NULL ) unlock( );

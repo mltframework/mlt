@@ -22,6 +22,7 @@
 #include <string.h>
 
 extern mlt_consumer consumer_null_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_audioconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_brightness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_channelcopy_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_crop_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -53,6 +54,7 @@ extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "null", consumer_null_init );
+	MLT_REGISTER( filter_type, "audioconvert", filter_audioconvert_init );
 	MLT_REGISTER( filter_type, "brightness", filter_brightness_init );
 	MLT_REGISTER( filter_type, "channelcopy", filter_channelcopy_init );
 	MLT_REGISTER( filter_type, "crop", filter_crop_init );

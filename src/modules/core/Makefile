@@ -13,6 +13,7 @@ OBJS = factory.o \
 	   producer_loader.o \
 	   producer_noise.o \
 	   producer_ppm.o \
+	   filter_audioconvert.o \
 	   filter_brightness.o \
 	   filter_channelcopy.o \
 	   filter_crop.o \

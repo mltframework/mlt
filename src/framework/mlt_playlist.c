@@ -1680,7 +1680,6 @@ int mlt_playlist_remove_region( mlt_playlist this, mlt_position position, int le
 	{
 		mlt_properties properties = MLT_PLAYLIST_PROPERTIES( this );
 		int clip_start = mlt_playlist_clip_start( this, index );
-		int clip_length = mlt_playlist_clip_length( this, index );
 		int list_length = mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( this ) );
 		mlt_events_block( properties, this );
 
@@ -1689,14 +1688,13 @@ int mlt_playlist_remove_region( mlt_playlist this, mlt_position position, int le
 
 		if ( clip_start < position )
 		{
-			mlt_playlist_split( this, index ++, position - clip_start );
-			clip_length -= position - clip_start;
+			mlt_playlist_split( this, index ++, position - clip_start - 1 );
 		}
 
 		while( length >= 0 )
 		{
 			if ( mlt_playlist_clip_length( this, index ) > length )
-				mlt_playlist_split( this, index, length );
+				mlt_playlist_split( this, index, length - 1 );
 			length -= mlt_playlist_clip_length( this, index );
 			mlt_playlist_remove( this, index );
 		}

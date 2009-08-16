@@ -20,43 +20,60 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
-#define __USE_ISOC99 1
-#include <math.h>
+#include <string.h>
 
 /** Get the audio.
 */
 
-static int filter_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties of the a frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-	int i, j;
+
+	// Get the filter service
+	mlt_filter filter = mlt_frame_pop_audio( frame );
+
 	int from = mlt_properties_get_int( properties, "channelcopy.from" );
 	int to = mlt_properties_get_int( properties, "channelcopy.to" );
 
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
-	// Duplicate channels as necessary
+	// Copy channels as necessary
+	switch ( *format )
 	{
-		int size = *channels * *samples * 2;
-		int16_t *new_buffer = mlt_pool_alloc( size );
-		
-		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
-		
-		// Duplicate the existing channels
-		for ( i = 0; i < *samples; i++ )
+		case mlt_audio_s16:
 		{
-			for ( j = 0; j < *channels; j++ )
-			{
-				new_buffer[ ( i * *channels ) + j ] = (*buffer)[ ( i * *channels ) + ( j == to ? from : j ) ];
-			}
+			int16_t *f = (int16_t*) *buffer + from;
+			int16_t *t = (int16_t*) *buffer + to;
+			int i;
+			for ( i = 0; i < *samples; i++, f += *channels, t += *channels )
+				*t = *f;
+			break;
 		}
-		*buffer = new_buffer;
+		case mlt_audio_s32:
+		{
+			int32_t *f = (int32_t*) *buffer + from * *samples;
+			int32_t *t = (int32_t*) *buffer + to * *samples;
+			memcpy( t, f, *samples * sizeof(int32_t) );
+			break;
+		}
+		case mlt_audio_float:
+		{
+			float *f = (float*) *buffer + from * *samples;
+			float *t = (float*) *buffer + to * *samples;
+			memcpy( t, f, *samples * sizeof(float) );
+			break;
+		}
+		default:
+			mlt_log_error( MLT_FILTER_SERVICE( filter ), "Invalid audio format\n" );
+			break;
 	}
+
 	return 0;
 }
 
@@ -73,6 +90,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	mlt_properties_set_int( frame_props, "channelcopy.from", mlt_properties_get_int( properties, "from" ) );
 
 	// Override the get_audio method
+	mlt_frame_push_audio( frame, this );
 	mlt_frame_push_audio( frame, filter_get_audio );
 
 	return frame;

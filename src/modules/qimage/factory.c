@@ -22,8 +22,10 @@
 #include <framework/mlt.h>
 
 extern mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 MLT_REPOSITORY
 {
 	MLT_REGISTER( producer_type, "qimage", producer_qimage_init );
+	MLT_REGISTER( producer_type, "kdenlivetitle", producer_kdenlivetitle_init );
 }

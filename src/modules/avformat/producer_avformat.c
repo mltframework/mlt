@@ -1104,7 +1104,7 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 /** Get the audio from a frame.
 */
 
-static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the properties from the frame
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -1318,8 +1318,10 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 			av_free_packet( &pkt );
 		}
 
-		*buffer = mlt_pool_alloc( *samples * *channels * sizeof( int16_t ) );
-		mlt_properties_set_data( frame_properties, "audio", *buffer, 0, ( mlt_destructor )mlt_pool_release, NULL );
+		int size = *samples * *channels * sizeof( int16_t );
+		*format = mlt_audio_s16;
+		*buffer = mlt_pool_alloc( size );
+		mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 
 		// Now handle the audio if we have enough
 		if ( audio_used >= *samples )

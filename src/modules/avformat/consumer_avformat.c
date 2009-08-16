@@ -790,7 +790,7 @@ static void *consumer_thread( void *arg )
 	int img_height = height;
 
 	// Get default audio properties
-	mlt_audio_format aud_fmt = mlt_audio_pcm;
+	mlt_audio_format aud_fmt = mlt_audio_s16;
 	int channels = mlt_properties_get_int( properties, "channels" );
 	int frequency = mlt_properties_get_int( properties, "frequency" );
 	int16_t *pcm = NULL;
@@ -1004,7 +1004,7 @@ static void *consumer_thread( void *arg )
 			if ( !terminated && audio_st )
 			{
 				samples = mlt_sample_calculator( fps, frequency, count ++ );
-				mlt_frame_get_audio( frame, &pcm, &aud_fmt, &frequency, &channels, &samples );
+				mlt_frame_get_audio( frame, (void**) &pcm, &aud_fmt, &frequency, &channels, &samples );
 
 				// Create the fifo if we don't have one
 				if ( fifo == NULL )
