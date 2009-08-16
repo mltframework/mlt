@@ -245,17 +245,11 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	}
 	QDomNode n = doc.documentElement().firstChildElement("background");
 	if (!n.isNull()) {
-	  QColor color = QColor( stringToColor( n.attributes().namedItem( "color" ).nodeValue() ) );
-				//color.setAlpha(items.item(i).attributes().namedItem("alpha").nodeValue().toInt());
-				QList<QGraphicsItem *> items = scene->items();
-				for ( int i = 0; i < items.size(); i++ )
-				{
-					if ( items.at( i )->zValue() == -1100 )
-					{
-						(( QGraphicsRectItem * )items.at( i ) )->setBrush( QBrush( color ) );
-						break;
-					}
-				}
+		QColor color = QColor( stringToColor( n.attributes().namedItem( "color" ).nodeValue() ) );
+		QList<QGraphicsItem *> items = scene->items();
+		QGraphicsRectItem *rec = scene->addRect(0, 0, scene->width(), scene->height() , QPen( Qt::NoPen ), QBrush( color ) );
+		rec->setZValue(-1100);
+		scene->addItem(rec);
 	  
 	}
 
