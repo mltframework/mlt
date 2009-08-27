@@ -52,9 +52,9 @@ struct consumer_sdl_s
 	pthread_cond_t video_cond;
 	int playing;
 
-    pthread_cond_t refresh_cond;
-    pthread_mutex_t refresh_mutex;
-    int refresh_count;
+	pthread_cond_t refresh_cond;
+	pthread_mutex_t refresh_mutex;
+	int refresh_count;
 };
 
 /** Forward references to static functions.
@@ -105,7 +105,7 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 		mlt_properties_set( this->properties, "rescale", "nearest" );
 
 		// Default buffer for low latency
-        mlt_properties_set_int( this->properties, "buffer", 1 );
+		mlt_properties_set_int( this->properties, "buffer", 1 );
 
 		// Default audio buffer
 		mlt_properties_set_int( this->properties, "audio_buffer", 512 );
@@ -118,12 +118,12 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
 
-        // Initialize the refresh handler
-        pthread_cond_init( &this->refresh_cond, NULL );
-        pthread_mutex_init( &this->refresh_mutex, NULL );
-        mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), this, "property-changed", ( mlt_listener )consumer_refresh_cb );
+		// Initialize the refresh handler
+		pthread_cond_init( &this->refresh_cond, NULL );
+		pthread_mutex_init( &this->refresh_mutex, NULL );
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), this, "property-changed", ( mlt_listener )consumer_refresh_cb );
 
-        // Return the consumer produced
+		// Return the consumer produced
 		return parent;
 	}
 
@@ -136,14 +136,14 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 
 static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *name )
 {
-    if ( !strcmp( name, "refresh" ) )
-    {
-        consumer_sdl this = parent->child;
-        pthread_mutex_lock( &this->refresh_mutex );
-        this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count ++;
-        pthread_cond_broadcast( &this->refresh_cond );
-        pthread_mutex_unlock( &this->refresh_mutex );
-    }
+	if ( !strcmp( name, "refresh" ) )
+	{
+		consumer_sdl this = parent->child;
+		pthread_mutex_lock( &this->refresh_mutex );
+		this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count ++;
+		pthread_cond_broadcast( &this->refresh_cond );
+		pthread_mutex_unlock( &this->refresh_mutex );
+	}
 }
 
 int consumer_start( mlt_consumer parent )
@@ -157,11 +157,11 @@ int consumer_start( mlt_consumer parent )
 		this->running = 1;
 		this->joined = 0;
 
-        if ( SDL_Init( SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
-        {
-            mlt_log_error( MLT_CONSUMER_SERVICE(parent), "Failed to initialize SDL: %s\n", SDL_GetError() );
-            return -1;
-        }
+		if ( SDL_Init( SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
+		{
+			mlt_log_error( MLT_CONSUMER_SERVICE(parent), "Failed to initialize SDL: %s\n", SDL_GetError() );
+			return -1;
+		}
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
@@ -180,21 +180,21 @@ int consumer_stop( mlt_consumer parent )
 		this->joined = 1;
 		this->running = 0;
 
-        // Unlatch the consumer thread
-        pthread_mutex_lock( &this->refresh_mutex );
-        pthread_cond_broadcast( &this->refresh_cond );
-        pthread_mutex_unlock( &this->refresh_mutex );
+		// Unlatch the consumer thread
+		pthread_mutex_lock( &this->refresh_mutex );
+		pthread_cond_broadcast( &this->refresh_cond );
+		pthread_mutex_unlock( &this->refresh_mutex );
 
-        // Cleanup the main thread
-        if ( this->thread )
+		// Cleanup the main thread
+		if ( this->thread )
 			pthread_join( this->thread, NULL );
 
-        // Unlatch the audio callback
-        pthread_mutex_lock( &this->audio_mutex );
-        pthread_cond_broadcast( &this->audio_cond );
-        pthread_mutex_unlock( &this->audio_mutex );
+		// Unlatch the audio callback
+		pthread_mutex_lock( &this->audio_mutex );
+		pthread_cond_broadcast( &this->audio_cond );
+		pthread_mutex_unlock( &this->audio_mutex );
 
-        SDL_QuitSubSystem( SDL_INIT_AUDIO );
+		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 	}
 
 	return 0;
@@ -222,9 +222,9 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	if ( this->audio_avail >= len )
 	{
 		// Place in the audio buffer
-        if ( volume != 1.0 )
-            SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
-        else
+		if ( volume != 1.0 )
+			SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+		else
 			memcpy( stream, this->audio_buffer, len );
 
 		// Remove len from the audio available
@@ -239,7 +239,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		memset( stream, 0, len );
 
 		// Mix the audio 
-        SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+		SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
 		// No audio left
 		this->audio_avail = 0;
@@ -301,7 +301,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		}
 		else if ( got.size != 0 )
 		{
-            SDL_PauseAudio( 0 );
+			SDL_PauseAudio( 0 );
 			init_audio = 0;
 		}
 	}
@@ -336,7 +336,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 {
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
-    if ( this->running && !mlt_consumer_is_stopped( &this->parent ) )
+	if ( this->running && !mlt_consumer_is_stopped( &this->parent ) )
 		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 	return 0;
@@ -377,7 +377,7 @@ static void *video_thread( void *arg )
 		}
 		pthread_mutex_unlock( &this->video_mutex );
 
-        if ( !this->running || next == NULL ) break;
+		if ( !this->running || next == NULL ) break;
 
 		// Get the properties
 		properties =  MLT_FRAME_PROPERTIES( next );
@@ -444,10 +444,10 @@ static void *consumer_thread( void *arg )
 	// Get the consumer
 	mlt_consumer consumer = &this->parent;
 
-    // Get the properties
-    mlt_properties consumer_props = MLT_CONSUMER_PROPERTIES( consumer );
+	// Get the properties
+	mlt_properties consumer_props = MLT_CONSUMER_PROPERTIES( consumer );
 
-    // Video thread
+	// Video thread
 	pthread_t thread;
 
 	// internal intialization
@@ -458,33 +458,33 @@ static void *consumer_thread( void *arg )
 	int duration = 0;
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
-    int last_position = -1;
-    this->refresh_count = 0;
+	int last_position = -1;
+	this->refresh_count = 0;
 
 	// Loop until told not to
-    while( this->running )
+	while( this->running )
 	{
 		// Get a frame from the attached producer
 		frame = mlt_consumer_rt_frame( consumer );
 
 		// Ensure that we have a frame
-        if ( frame )
+		if ( frame )
 		{
 			// Get the frame properties
 			properties =  MLT_FRAME_PROPERTIES( frame );
 
-            // Get the speed of the frame
-            double speed = mlt_properties_get_double( properties, "_speed" );
+			// Get the speed of the frame
+			double speed = mlt_properties_get_double( properties, "_speed" );
 
-            // Get refresh request for the current frame
-            int refresh = mlt_properties_get_int( consumer_props, "refresh" );
+			// Get refresh request for the current frame
+			int refresh = mlt_properties_get_int( consumer_props, "refresh" );
 
-            // Clear refresh
-            mlt_events_block( consumer_props, consumer_props );
-            mlt_properties_set_int( consumer_props, "refresh", 0 );
-            mlt_events_unblock( consumer_props, consumer_props );
+			// Clear refresh
+			mlt_events_block( consumer_props, consumer_props );
+			mlt_properties_set_int( consumer_props, "refresh", 0 );
+			mlt_events_unblock( consumer_props, consumer_props );
 
-            // Play audio
+			// Play audio
 			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
 
 			// Determine the start time now
@@ -500,45 +500,45 @@ static void *consumer_thread( void *arg )
 			// Set playtime for this frame
 			mlt_properties_set_int( properties, "playtime", playtime );
 
-            while ( this->running && speed != 0 && mlt_deque_count( this->queue ) > 15 )
+			while ( this->running && speed != 0 && mlt_deque_count( this->queue ) > 15 )
 				nanosleep( &tm, NULL );
 
 			// Push this frame to the back of the queue
-            if ( this->running && speed )
-            {
-                pthread_mutex_lock( &this->video_mutex );
-                mlt_deque_push_back( this->queue, frame );
-                pthread_cond_broadcast( &this->video_cond );
-                pthread_mutex_unlock( &this->video_mutex );
+			if ( this->running && speed )
+			{
+				pthread_mutex_lock( &this->video_mutex );
+				mlt_deque_push_back( this->queue, frame );
+				pthread_cond_broadcast( &this->video_cond );
+				pthread_mutex_unlock( &this->video_mutex );
 
-                // Calculate the next playtime
-                playtime += ( duration * 1000 );
-            }
-            else if ( this->running )
-            {
-                pthread_mutex_lock( &this->refresh_mutex );
-                if ( refresh == 0 && this->refresh_count <= 0 )
-                {
-                    consumer_play_video( this, frame );
-                    pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
-                }
-                this->refresh_count --;
-                pthread_mutex_unlock( &this->refresh_mutex );
-            }
+				// Calculate the next playtime
+				playtime += ( duration * 1000 );
+			}
+			else if ( this->running )
+			{
+				pthread_mutex_lock( &this->refresh_mutex );
+				if ( refresh == 0 && this->refresh_count <= 0 )
+				{
+					consumer_play_video( this, frame );
+					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
+				}
+				this->refresh_count --;
+				pthread_mutex_unlock( &this->refresh_mutex );
+			}
 
-            // Optimisation to reduce latency
-            if ( speed == 1.0 )
-            {
-                if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
-                    mlt_consumer_purge( consumer );
-                last_position = mlt_frame_get_position( frame );
-            }
-            else
-            {
-                mlt_consumer_purge( consumer );
-                last_position = -1;
-            }
-        }
+			// Optimisation to reduce latency
+			if ( speed == 1.0 )
+			{
+				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
+					mlt_consumer_purge( consumer );
+				last_position = mlt_frame_get_position( frame );
+			}
+			else
+			{
+				mlt_consumer_purge( consumer );
+				last_position = -1;
+			}
+		}
 	}
 
 	// Kill the video thread
@@ -567,10 +567,10 @@ static void consumer_close( mlt_consumer parent )
 	consumer_sdl this = parent->child;
 
 	// Stop the consumer
-    mlt_consumer_stop( parent );
+	mlt_consumer_stop( parent );
 
 	// Now clean up the rest
-    mlt_consumer_close( parent );
+	mlt_consumer_close( parent );
 
 	// Close the queue
 	mlt_deque_close( this->queue );
@@ -578,7 +578,7 @@ static void consumer_close( mlt_consumer parent )
 	// Destroy mutexes
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );
-		
+
 	// Finally clean up this
 	free( this );
 }
