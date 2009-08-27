@@ -256,7 +256,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 {
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
-	mlt_audio_format afmt = mlt_audio_pcm;
+	mlt_audio_format afmt = mlt_audio_s16;
 
 	// Set the preferred params of the test card signal
 	int channels = mlt_properties_get_int( properties, "channels" );
@@ -268,7 +268,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	int16_t *pcm;
 	int bytes;
 
-	mlt_frame_get_audio( frame, &pcm, &afmt, &frequency, &channels, &samples );
+	mlt_frame_get_audio( frame, (void**) &pcm, &afmt, &frequency, &channels, &samples );
 	*duration = ( ( samples * 1000 ) / frequency );
 
 	if ( mlt_properties_get_int( properties, "audio_off" ) )
