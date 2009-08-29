@@ -50,24 +50,23 @@ typedef struct mlt_pool_s
 *mlt_pool;
 
 /** \brief private to mlt_pool_s, for tracking items to release
+ *
+ * Aligned to 16 byte in case we toss buffers to external assembly
+ * optimized libraries (sse/altivec).
  */
 
-typedef struct mlt_release_s
+typedef struct __attribute__ ((aligned (16))) mlt_release_s
 {
 	mlt_pool pool;
 	int references;
-#ifdef __ALTIVEC__
-#warning FIXME: altivec 16byte align hack
+
 	/*
 	sizeof( struct mlt_release_s ) = 8
 	altivec:
 	Data must be aligned in memory on 16 byte boundaries.
-	We'll crash on pointer arithmetic below. See pool_fetch()
+	Otherwise, we'll crash on pointer arithmetic below. See pool_fetch()
 	*/
-
 	int64_t __padding;
-
-#endif
 }
 *mlt_release;
 
