@@ -56,6 +56,18 @@ typedef struct mlt_release_s
 {
 	mlt_pool pool;
 	int references;
+#ifdef __ALTIVEC__
+#warning FIXME: altivec 16byte align hack
+	/*
+	sizeof( struct mlt_release_s ) = 8
+	altivec:
+	Data must be aligned in memory on 16 byte boundaries.
+	We'll crash on pointer arithmetic below. See pool_fetch()
+	*/
+
+	int64_t __padding;
+
+#endif
 }
 *mlt_release;
 
@@ -266,7 +278,7 @@ void *mlt_pool_alloc( int size )
 	int index = 8;
 
 	// Minimum size pooled is 256 bytes
-	size = size + sizeof( mlt_release );
+	size += sizeof( struct mlt_release_s );
 	while ( ( 1 << index ) < size )
 		index ++;
 
