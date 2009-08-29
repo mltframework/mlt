@@ -79,6 +79,44 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 			else if ( freeze_before && need_first < freeze ) need_first = freeze;
 		}
 	}
+	
+	// Determine output buffer size
+	*width = mlt_properties_get_int( frame_properties, "width" );
+	*height = mlt_properties_get_int( frame_properties, "height" );
+	
+	int size;
+	switch ( *format )
+	{
+		case mlt_image_yuv420p:
+			size = *width * 3 * ( *height + 1 ) / 2;
+			break;
+		case mlt_image_rgb24:
+			size = *width * ( *height + 1 ) * 3;
+			break;
+		case mlt_image_rgb24a:
+		case mlt_image_opengl:
+			size = *width * ( *height + 1 ) * 4;
+			break;
+		default:
+			*format = mlt_image_yuv422;
+			size = *width * ( *height + 1 ) * 2;
+			break;
+	}
+	
+
+	// Get output buffer
+	int buffersize;
+	uint8_t *output = mlt_properties_get_data( properties, "output_buffer", &buffersize );
+	
+	if (output != NULL && buffersize != size)
+	{
+	      // buffer size changed
+	      output = NULL;
+	      mlt_properties_set_data( properties, "output_buffer", NULL, 0, NULL, NULL );
+	      
+	      // invalidate cached frame
+	      first_position = -1;
+	}
 
 	if ( need_first != first_position )
 	{
@@ -103,30 +141,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		mlt_properties_set_data( properties, "first_frame", first_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
-
-	// Determine output buffer size
-	*width = mlt_properties_get_int( frame_properties, "width" );
-	*height = mlt_properties_get_int( frame_properties, "height" );
-	int size;
-	switch ( *format )
-	{
-		case mlt_image_yuv420p:
-			size = *width * 3 * ( *height + 1 ) / 2;
-			break;
-		case mlt_image_rgb24:
-			size = *width * ( *height + 1 ) * 3;
-			break;
-		case mlt_image_rgb24a:
-			size = *width * ( *height + 1 ) * 4;
-			break;
-		default:
-			*format = mlt_image_yuv422;
-			size = *width * ( *height + 1 ) * 2;
-			break;
-	}
-
-	// Get output buffer
-	uint8_t *output = mlt_properties_get_data( properties, "output_buffer", NULL );
+	
 	if( output == NULL )
 	{
 		output = mlt_pool_alloc( size );
@@ -136,7 +151,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	}
 
 	// Which frames are buffered?
-	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", &size );
+	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
 	if( first_image == NULL )
 	{
 		mlt_properties props = MLT_FRAME_PROPERTIES( this );
