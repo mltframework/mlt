@@ -59,14 +59,6 @@ typedef struct __attribute__ ((aligned (16))) mlt_release_s
 {
 	mlt_pool pool;
 	int references;
-
-	/*
-	sizeof( struct mlt_release_s ) = 8
-	altivec:
-	Data must be aligned in memory on 16 byte boundaries.
-	Otherwise, we'll crash on pointer arithmetic below. See pool_fetch()
-	*/
-	int64_t __padding;
 }
 *mlt_release;
 
