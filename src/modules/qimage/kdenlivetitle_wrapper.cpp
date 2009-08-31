@@ -126,130 +126,127 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	QString data = QString::fromUtf8(templateXml);
 	QString replacementText = QString::fromUtf8(templateText);
 	doc.setContent(data);
-	QDomNodeList titles = doc.elementsByTagName( "kdenlivetitle" );
+	QDomElement title = doc.documentElement();
+	
+	// Check for invalid title
+	if ( title.isNull() || title.tagName() != "kdenlivetitle" ) return;
+	
 	QTransform transform;
-	if ( doc.documentElement().hasAttribute("width") ) {
-	    int originalWidth = doc.documentElement().attribute("width").toInt();
+	if ( title.hasAttribute("width") ) {
+	    int originalWidth = title.attribute("width").toInt();
 	    mlt_properties_set_int( producer_props, "_original_width", originalWidth );
-	    int originalHeight = doc.documentElement().attribute("height").toInt();
+	    int originalHeight = title.attribute("height").toInt();
 	    mlt_properties_set_int( producer_props, "_original_height", originalHeight );
 	    scene->setSceneRect(0, 0, originalWidth, originalHeight);
 	}
 
-	if ( titles.size() )
+	QDomNodeList items = title.elementsByTagName("item");
+        for ( int i = 0; i < items.count(); i++ )
 	{
-
-		QDomNodeList items = titles.item( 0 ).childNodes();
-		for ( int i = 0; i < items.count(); i++ )
+		QGraphicsItem *gitem = NULL;
+		int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
+		if ( zValue > -1000 )
 		{
-			QGraphicsItem *gitem = NULL;
-			int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
-			if ( zValue > -1000 )
+			if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsTextItem" )
 			{
-				if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsTextItem" )
-				{
-					QDomNamedNodeMap txtProperties = items.item( i ).namedItem( "content" ).attributes();
-					QFont font( txtProperties.namedItem( "font" ).nodeValue() );
-
+				QDomNamedNodeMap txtProperties = items.item( i ).namedItem( "content" ).attributes();
+				QFont font( txtProperties.namedItem( "font" ).nodeValue() );
 					QDomNode node = txtProperties.namedItem( "font-bold" );
-					if ( !node.isNull() )
-					{
-						// Old: Bold/Not bold.
-						font.setBold( node.nodeValue().toInt() );
-					}
-					else
-					{
-						// New: Font weight (QFont::)
-						font.setWeight( txtProperties.namedItem( "font-weight" ).nodeValue().toInt() );
-					}
-
+				if ( !node.isNull() )
+				{
+				// Old: Bold/Not bold.
+					font.setBold( node.nodeValue().toInt() );
+				}
+				else
+				{
+					// New: Font weight (QFont::)
+					font.setWeight( txtProperties.namedItem( "font-weight" ).nodeValue().toInt() );
+				}
 					font.setItalic( txtProperties.namedItem( "font-italic" ).nodeValue().toInt() );
-					font.setUnderline( txtProperties.namedItem( "font-underline" ).nodeValue().toInt() );
-					// Older Kdenlive version did not store pixel size but point size
-					if ( txtProperties.namedItem( "font-pixel-size" ).isNull() )
-					{
-						QFont f2;
-						f2.setPointSize( txtProperties.namedItem( "font-size" ).nodeValue().toInt() );
-						font.setPixelSize( QFontInfo( f2 ).pixelSize() );
-					}
-					else
-						font.setPixelSize( txtProperties.namedItem( "font-pixel-size" ).nodeValue().toInt() );
-					QColor col( stringToColor( txtProperties.namedItem( "font-color" ).nodeValue() ) );
-					QString text = items.item( i ).namedItem( "content" ).firstChild().nodeValue();
-					if ( !replacementText.isEmpty() )
-					{
-						text = text.replace( "%s", replacementText );
-					}
-					QGraphicsTextItem *txt = scene->addText(text, font);
-					txt->setDefaultTextColor( col );
-					if ( txtProperties.namedItem( "alignment" ).isNull() == false )
-					{
-						txt->setTextWidth( txt->boundingRect().width() );
-						QTextCursor cur = txt->textCursor();
-						QTextBlockFormat format = cur.blockFormat();
-						format.setAlignment(( Qt::Alignment ) txtProperties.namedItem( "alignment" ).nodeValue().toInt() );
-						cur.select( QTextCursor::Document );
-						cur.setBlockFormat( format );
-						txt->setTextCursor( cur );
-						cur.clearSelection();
-						txt->setTextCursor( cur );
-					}
-
+				font.setUnderline( txtProperties.namedItem( "font-underline" ).nodeValue().toInt() );
+				// Older Kdenlive version did not store pixel size but point size
+				if ( txtProperties.namedItem( "font-pixel-size" ).isNull() )
+				{
+					QFont f2;
+					f2.setPointSize( txtProperties.namedItem( "font-size" ).nodeValue().toInt() );
+					font.setPixelSize( QFontInfo( f2 ).pixelSize() );
+				}
+				else
+					font.setPixelSize( txtProperties.namedItem( "font-pixel-size" ).nodeValue().toInt() );
+				QColor col( stringToColor( txtProperties.namedItem( "font-color" ).nodeValue() ) );
+				QString text = items.item( i ).namedItem( "content" ).firstChild().nodeValue();
+				if ( !replacementText.isEmpty() )
+				{
+					text = text.replace( "%s", replacementText );
+				}
+				QGraphicsTextItem *txt = scene->addText(text, font);
+				txt->setDefaultTextColor( col );
+				if ( txtProperties.namedItem( "alignment" ).isNull() == false )
+				{
+					txt->setTextWidth( txt->boundingRect().width() );
+					QTextCursor cur = txt->textCursor();
+					QTextBlockFormat format = cur.blockFormat();
+					format.setAlignment(( Qt::Alignment ) txtProperties.namedItem( "alignment" ).nodeValue().toInt() );
+					cur.select( QTextCursor::Document );
+					cur.setBlockFormat( format );
+					txt->setTextCursor( cur );
+					cur.clearSelection();
+					txt->setTextCursor( cur );
+				}
 					if ( !txtProperties.namedItem( "kdenlive-axis-x-inverted" ).isNull() )
-					{
-						//txt->setData(OriginXLeft, txtProperties.namedItem("kdenlive-axis-x-inverted").nodeValue().toInt());
-					}
-					if ( !txtProperties.namedItem( "kdenlive-axis-y-inverted" ).isNull() )
-					{
-						//txt->setData(OriginYTop, txtProperties.namedItem("kdenlive-axis-y-inverted").nodeValue().toInt());
-					}
-
+				{
+					//txt->setData(OriginXLeft, txtProperties.namedItem("kdenlive-axis-x-inverted").nodeValue().toInt());
+				}
+				if ( !txtProperties.namedItem( "kdenlive-axis-y-inverted" ).isNull() )
+				{
+					//txt->setData(OriginYTop, txtProperties.namedItem("kdenlive-axis-y-inverted").nodeValue().toInt());
+				}
 					gitem = txt;
-				}
-				else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
-				{
-					QString rect = items.item( i ).namedItem( "content" ).attributes().namedItem( "rect" ).nodeValue();
-					QString br_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "brushcolor" ).nodeValue();
-					QString pen_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "pencolor" ).nodeValue();
-					double penwidth = items.item( i ).namedItem( "content" ).attributes().namedItem( "penwidth" ).nodeValue().toDouble();
-					QGraphicsRectItem *rec = scene->addRect( stringToRect( rect ), QPen( QBrush( stringToColor( pen_str ) ), penwidth ), QBrush( stringToColor( br_str ) ) );
-					gitem = rec;
-				}
-				else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
-				{
-					const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
-					QImage img( url );
-					ImageItem *rec = new ImageItem(img);
-					scene->addItem( rec );
-					gitem = rec;
-				}
-				else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsSvgItem" )
-				{
-					const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
-					QGraphicsSvgItem *rec = new QGraphicsSvgItem(url);
-					scene->addItem(rec);
-					gitem = rec;
-				}
 			}
-			//pos and transform
-			if ( gitem )
+			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
 			{
-				QPointF p( items.item( i ).namedItem( "position" ).attributes().namedItem( "x" ).nodeValue().toDouble(),
-				           items.item( i ).namedItem( "position" ).attributes().namedItem( "y" ).nodeValue().toDouble() );
-				gitem->setPos( p );
-				gitem->setTransform( stringToTransform( items.item( i ).namedItem( "position" ).firstChild().firstChild().nodeValue() ) );
-				int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
-				gitem->setZValue( zValue );
+				QString rect = items.item( i ).namedItem( "content" ).attributes().namedItem( "rect" ).nodeValue();
+				QString br_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "brushcolor" ).nodeValue();
+				QString pen_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "pencolor" ).nodeValue();
+				double penwidth = items.item( i ).namedItem( "content" ).attributes().namedItem( "penwidth") .nodeValue().toDouble();
+				QGraphicsRectItem *rec = scene->addRect( stringToRect( rect ), QPen( QBrush( stringToColor( pen_str ) ), penwidth ), QBrush( stringToColor( br_str ) ) );
+				gitem = rec;
+			}
+			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
+			{
+				const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
+				QImage img( url );
+				ImageItem *rec = new ImageItem(img);
+				scene->addItem( rec );
+				gitem = rec;
+			}
+			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsSvgItem" )
+			{
+				const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
+				QGraphicsSvgItem *rec = new QGraphicsSvgItem(url);
+				scene->addItem(rec);
+				gitem = rec;
 			}
 		}
+		//pos and transform
+		if ( gitem )
+		{
+			QPointF p( items.item( i ).namedItem( "position" ).attributes().namedItem( "x" ).nodeValue().toDouble(),
+			           items.item( i ).namedItem( "position" ).attributes().namedItem( "y" ).nodeValue().toDouble() );
+			gitem->setPos( p );
+			gitem->setTransform( stringToTransform( items.item( i ).namedItem( "position" ).firstChild().firstChild().nodeValue() ) );
+			int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
+			gitem->setZValue( zValue );
+		}
 	}
+
 	QDomNode n = doc.documentElement().firstChildElement("background");
 	if (!n.isNull()) {
 		QColor color = QColor( stringToColor( n.attributes().namedItem( "color" ).nodeValue() ) );
-		QList<QGraphicsItem *> items = scene->items();
-		QGraphicsRectItem *rec = scene->addRect(0, 0, scene->width(), scene->height() , QPen( Qt::NoPen ), QBrush( color ) );
-		rec->setZValue(-1100);
-		scene->addItem(rec);
+                if (color.alpha() > 0) {
+                        QGraphicsRectItem *rec = scene->addRect(0, 0, scene->width(), scene->height() , QPen( Qt::NoPen ), QBrush( color ) );
+                        rec->setZValue(-1100);
+                }
 	  
 	}
 
@@ -269,7 +266,6 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	if (!startRect.isEmpty()) {
 	  	mlt_properties_set( producer_props, "_startrect", startRect.toUtf8().data() );
 	}
-
 	return;
 }
 
@@ -282,17 +278,13 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
-	pthread_mutex_lock( &self->mutex );
-
-	QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "_startrect" ) ) );
-	QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );
+        
+        pthread_mutex_lock( &self->mutex );
 	
 	// Check if user wants us to reload the image
-	if ( force_refresh == 1 || width != self->current_width || height != self->current_height || !end.isNull())
+	if ( force_refresh == 1 || width != self->current_width || height != self->current_height || mlt_properties_get( producer_props, "_endrect" ) != NULL )
 	{
 		//mlt_cache_item_close( self->image_cache );
-		
 		self->current_image = NULL;
 		mlt_properties_set_data( producer_props, "cached_image", NULL, 0, NULL, NULL );
 		mlt_properties_set_int( producer_props, "force_reload", 0 );
@@ -323,6 +315,9 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 			loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
 			mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 		}
+                
+                QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "_startrect" ) ) );
+                QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );
 	
 		int originalWidth = mlt_properties_get_int( producer_props, "_original_width" );
 		int originalHeight= mlt_properties_get_int( producer_props, "_original_height" );
