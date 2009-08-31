@@ -50,9 +50,12 @@ typedef struct mlt_pool_s
 *mlt_pool;
 
 /** \brief private to mlt_pool_s, for tracking items to release
+ *
+ * Aligned to 16 byte in case we toss buffers to external assembly
+ * optimized libraries (sse/altivec).
  */
 
-typedef struct mlt_release_s
+typedef struct __attribute__ ((aligned (16))) mlt_release_s
 {
 	mlt_pool pool;
 	int references;
@@ -266,7 +269,7 @@ void *mlt_pool_alloc( int size )
 	int index = 8;
 
 	// Minimum size pooled is 256 bytes
-	size = size + sizeof( mlt_release );
+	size += sizeof( struct mlt_release_s );
 	while ( ( 1 << index ) < size )
 		index ++;
 

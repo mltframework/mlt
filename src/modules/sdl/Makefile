@@ -10,6 +10,7 @@ TARGET = ../libmltsdl$(LIBSUF)
 
 OBJS = factory.o \
 	   consumer_sdl.o \
+	   consumer_sdl_audio.o \
 	   consumer_sdl_preview.o \
 	   consumer_sdl_still.o 
 

@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@
 #include <framework/mlt.h>
 
 extern mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_consumer consumer_sdl_still_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
@@ -32,6 +33,7 @@ extern mlt_producer producer_sdl_image_init( mlt_profile profile, mlt_service_ty
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "sdl", consumer_sdl_init );
+	MLT_REGISTER( consumer_type, "sdl_audio", consumer_sdl_audio_init );
 	MLT_REGISTER( consumer_type, "sdl_preview", consumer_sdl_preview_init );
 	MLT_REGISTER( consumer_type, "sdl_still", consumer_sdl_still_init );
 #ifdef WITH_SDL_IMAGE

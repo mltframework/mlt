@@ -312,7 +312,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		{
 			int argc = 1;
 			char* argv[1];
-			argv[0] = "xxx";
+			argv[0] = (char*) "xxx";
 			if (qApp) {
 				app = qApp;
 			}

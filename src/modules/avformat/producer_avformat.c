@@ -861,9 +861,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					int_position = req_position;
 				}
+				mlt_log_debug( MLT_PRODUCER_SERVICE(this), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d",
+					pkt.dts, req_position, current_position, int_position );
 				// Make a dumb assumption on streams that contain wild timestamps
-				if ( (unsigned) req_position - (unsigned) int_position > 999 )
+				if ( abs( req_position - int_position ) > 999 )
+				{
 					int_position = req_position;
+					mlt_log_debug( MLT_PRODUCER_SERVICE(this), " WILD TIMESTAMP!" );
+				}
 				mlt_properties_set_int( properties, "_last_position", int_position );
 
 				// Decode the image
@@ -887,8 +892,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						got_picture = 0;
 					}
 				}
-				mlt_log_debug( MLT_PRODUCER_SERVICE(this), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d got_pic %d key %d\n",
-					pkt.dts, req_position, current_position, int_position, got_picture, pkt.flags & PKT_FLAG_KEY );
+				mlt_log_debug( MLT_PRODUCER_SERVICE(this), " got_pic %d key %d\n", got_picture, pkt.flags & PKT_FLAG_KEY );
 				av_free_packet( &pkt );
 			}
 			else if ( ret >= 0 )
@@ -1070,6 +1074,12 @@ static void producer_set_up_video( mlt_producer this, mlt_frame frame )
 
 			// Determine the fps
 			source_fps = ( double )codec_context->time_base.den / ( codec_context->time_base.num == 0 ? 1 : codec_context->time_base.num );
+
+			// If the muxer reports a frame rate different than the codec
+			double muxer_fps = av_q2d( context->streams[ index ]->r_frame_rate );
+			if ( source_fps != muxer_fps )
+				// Choose the lesser - the wrong tends to be off by some multiple of 10
+				source_fps = muxer_fps < source_fps ? muxer_fps : source_fps;
 
 			// We'll use fps if it's available
 			if ( source_fps > 0 )
