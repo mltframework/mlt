@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ "$help" = "1" ]
+then
+	cat << EOF
+Linsys options:
+
+  --enable-linsys         - Enable the Linsys SDI module (disabled by default)
+
+EOF
+
+else
+	export enable=
+
+	for i in "$@"
+	do
+		case $i in
+			--enable-linsys )	enable=1
+		esac
+	done
+
+	[ "$enable" != "1" ] && touch ../disable-linsys
+	exit 0
+fi
+
