@@ -37,6 +37,7 @@
 #include <QtCore/QRectF>
 #include <QtGui/QColor>
 #include <QtGui/QWidget>
+#include <framework/mlt_log.h>
 
 static QApplication *app = NULL;
 
@@ -113,7 +114,7 @@ QTransform stringToTransform( const QString& s )
 static void qscene_delete( void *data )
 {
 	QGraphicsScene *scene = ( QGraphicsScene * )data;
-	delete scene;
+	if (scene) delete scene;
 	scene = NULL;
 }
 
@@ -299,17 +300,30 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 			scene = NULL;
 			mlt_properties_set_data( producer_props, "qscene", NULL, 0, NULL, NULL );
 		}
- 
+
 		if ( scene == NULL )
 		{
 			int argc = 1;
 			char* argv[1];
 			argv[0] = (char*) "xxx";
+			
+			// Warning: all Qt graphic objects (QRect, ...) must be initialized AFTER 
+			// the QApplication is created, otherwise their will be NULL
+			
 			if (qApp) {
 				app = qApp;
 			}
 			else {
-				app=new QApplication( argc,argv ); //, QApplication::Tty );
+#ifdef linux
+				if ( getenv("DISPLAY") == 0 )
+				{
+					mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
+					pthread_mutex_unlock( &self->mutex );
+					exit(1);
+					return;
+				}
+#endif
+				app = new QApplication( argc, argv );
 			}
 			scene = new QGraphicsScene();
 			loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
