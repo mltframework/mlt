@@ -22,7 +22,7 @@ else
 			--swig-languages=* ) languages=${i#--swig-languages=}
 				which swig > /dev/null 2>&1
 				[ $? != 0 ] && echo "Please install swig" && exit 1
-				[ $languages = "all" ] && languages="java lua perl php python ruby tcl"
+				[ "$languages" = "all" ] && languages="java lua perl php python ruby tcl"
 				echo SUBDIRS = ${i#--swig-languages=} > config.mak ;;
 		esac
 	done
