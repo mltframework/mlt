@@ -45,6 +45,10 @@
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
+#define SEEK_ON_OPEN
+#define POSITION_INITIAL (-2)
+#define POSITION_INVALID (-1)
+
 void avformat_lock( );
 void avformat_unlock( );
 
@@ -478,7 +482,9 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 			// Store selected audio and video indexes on properties
 			mlt_properties_set_int( properties, "_audio_index", audio_index );
 			mlt_properties_set_int( properties, "_video_index", video_index );
-			mlt_properties_set_int( properties, "_last_position", -1 );
+			mlt_properties_set_int( properties, "_pts_dts_delta", -1 );
+			mlt_properties_set_int( properties, "_first_pts", -1 );
+			mlt_properties_set_int( properties, "_last_position", POSITION_INITIAL );
 
 			// Fetch the width, height and aspect ratio
 			if ( video_index != -1 )
@@ -508,6 +514,33 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 					mlt_properties_set_double( properties, "aspect_ratio",
 						get_aspect_ratio( context->streams[ video_index ], codec_context, NULL ) );
 				}
+
+#ifdef SEEK_ON_OPEN
+				int use_new_seek = codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
+				if ( mlt_properties_get( properties, "new_seek" ) )
+					use_new_seek = mlt_properties_get_int( properties, "new_seek" );
+				if ( use_new_seek && mlt_properties_get_int( properties, "seekable" ) )
+				{
+					// find first key frame
+					int ret = 0;
+					int toscan = 100;
+					AVPacket pkt;
+					while ( ret >= 0 && toscan-- > 0 )
+					{
+						ret = av_read_frame( context, &pkt );
+						if ( pkt.flags & PKT_FLAG_KEY &&
+							pkt.stream_index == video_index )
+						{
+							mlt_log_verbose( MLT_PRODUCER_SERVICE(this), "first_pts %lld dts %lld pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
+							mlt_properties_set_int( properties, "_pts_dts_delta", pkt.pts - pkt.dts );
+							mlt_properties_set_int( properties, "_first_pts", pkt.pts );
+							toscan = 0;
+						}
+						av_free_packet( &pkt );
+					}
+					av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
+				}
+#endif
 			}
 
 			// Read Metadata
@@ -758,6 +791,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	double source_fps = mlt_properties_get_double( properties, "source_fps" );
 	double fps = mlt_producer_get_fps( this );
 
+	// Get pts info
+	//int pts_dts_delta = mlt_properties_get_int( properties, "_pts_dts_delta" );
+	int first_pts = mlt_properties_get_int( properties, "_first_pts" );
+
 	// This is the physical frame position in the source
 	int req_position = ( int )( position / fps * source_fps + 0.5 );
 
@@ -779,8 +816,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	int last_position = mlt_properties_get_int( properties, "_last_position" );
 
+	// Turn on usage of new seek API and PTS for seeking
+	int use_new_seek = codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
+	if ( mlt_properties_get( properties, "new_seek" ) )
+		use_new_seek = mlt_properties_get_int( properties, "new_seek" );
+
 	// Seek if necessary
-	if ( position != expected || last_position == -1 )
+	if ( position != expected || last_position < 0 )
 	{
 		if ( av_frame != NULL && position + 1 == expected )
 		{
@@ -791,35 +833,89 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		{
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
 			ignore = ( int )( ( position - expected ) / fps * source_fps );
+			codec_context->skip_loop_filter = AVDISCARD_NONREF;
 		}
-		else if ( seekable && ( position < expected || position - expected >= 12 || last_position == -1 ) )
+		else if ( seekable && ( position < expected || position - expected >= 12 || last_position <-0 ) )
 		{
+#ifndef SEEK_ON_OPEN
+			if ( use_new_seek && last_position == POSITION_INITIAL )
+			{
+				// find first key frame
+				int ret = 0;
+				int toscan = 100;
+
+				while ( ret >= 0 && toscan-- > 0 )
+				{
+					ret = av_read_frame( context, &pkt );
+					if ( pkt.flags & PKT_FLAG_KEY &&
+						pkt.stream_index == index )
+					{
+						mlt_log_verbose( MLT_PRODUCER_SERVICE(this), "first_pts %lld dts %lld pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
+						mlt_properties_set_int( properties, "_pts_dts_delta", pkt.pts - pkt.dts );
+						mlt_properties_set_int( properties, "_first_pts", pkt.pts );
+						toscan = 0;
+					}
+					av_free_packet( &pkt );
+				}
+				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
+			}
+#endif
 			// Calculate the timestamp for the requested frame
-			int64_t timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE + 0.5 );
-			if ( ( uint64_t )context->start_time != AV_NOPTS_VALUE )
-				timestamp += context->start_time;
-			if ( must_decode )
-				timestamp -= AV_TIME_BASE;
+			int64_t timestamp;
+			if ( use_new_seek )
+			{
+				timestamp = ( req_position - 0.1 / source_fps ) /
+					( av_q2d( stream->time_base ) * source_fps );
+				mlt_log_verbose( MLT_PRODUCER_SERVICE(this), "pos %d pts %lld ", req_position, timestamp );
+				if ( first_pts > 0 )
+					timestamp += first_pts;
+				else if ( context->start_time != AV_NOPTS_VALUE )
+					timestamp += context->start_time;
+			}
+			else
+			{
+				timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE + 0.5 );
+				if ( ( uint64_t )context->start_time != AV_NOPTS_VALUE )
+					timestamp += context->start_time;
+				if ( must_decode )
+					timestamp -= AV_TIME_BASE;
+			}
+
 			if ( timestamp < 0 )
 				timestamp = 0;
 
 			// Set to the timestamp
 			mlt_log_debug( MLT_PRODUCER_SERVICE( this ), "seeking timestamp %lld position %d expected %d last_pos %d\n",
 				timestamp, position, expected, last_position );
-			av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD );
+
+			if ( use_new_seek )
+			{
+				codec_context->skip_loop_filter = AVDISCARD_NONREF;
+				av_seek_frame( context, index, timestamp, AVSEEK_FLAG_BACKWARD );
+			}
+			else
+			{
+				av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD );
+			}
 
 			// Remove the cached info relating to the previous position
 			mlt_properties_set_int( properties, "_current_position", -1 );
-			mlt_properties_set_int( properties, "_last_position", -1 );
+			mlt_properties_set_int( properties, "_last_position", POSITION_INVALID );
 			mlt_properties_set_data( properties, "av_frame", NULL, 0, NULL, NULL );
 			av_frame = NULL;
+
+			if ( use_new_seek )
+			{
+				// flush any pictures still in decode buffer
+				avcodec_flush_buffers( codec_context );
+			}
 		}
 	}
 
 	// Duplicate the last image if necessary (see comment on rawvideo below)
 	int current_position = mlt_properties_get_int( properties, "_current_position" );
 	int got_picture = mlt_properties_get_int( properties, "_got_picture" );
-	if ( av_frame != NULL && got_picture && ( paused || current_position >= req_position ) && av_bypass == 0 )
+	if ( av_frame != NULL && got_picture && ( paused || current_position == req_position || ( !use_new_seek && current_position > req_position ) ) && av_bypass == 0 )
 	{
 		// Duplicate it
 		if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
@@ -831,6 +927,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		int ret = 0;
 		int int_position = 0;
+		int decode_errors = 0;
 		got_picture = 0;
 
 		av_init_packet( &pkt );
@@ -848,35 +945,73 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
 			{
 				// Determine time code of the packet
-				if (pkt.dts != AV_NOPTS_VALUE)
+				if ( use_new_seek )
 				{
-					int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
-					if ( context->start_time != AV_NOPTS_VALUE )
-						int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
-					last_position = mlt_properties_get_int( properties, "_last_position" );
-					if ( int_position == last_position )
-						int_position = last_position + 1;
+					int64_t pts = pkt.pts;
+					if ( first_pts > 0 )
+						pts -= first_pts;
+					else if ( context->start_time != AV_NOPTS_VALUE )
+						pts -= context->start_time;
+					int_position = ( int )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 );
 				}
 				else
 				{
-					int_position = req_position;
-				}
-				mlt_log_debug( MLT_PRODUCER_SERVICE(this), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d",
-					pkt.dts, req_position, current_position, int_position );
-				// Make a dumb assumption on streams that contain wild timestamps
-				if ( abs( req_position - int_position ) > 999 )
-				{
-					int_position = req_position;
-					mlt_log_debug( MLT_PRODUCER_SERVICE(this), " WILD TIMESTAMP!" );
+					if ( pkt.dts != AV_NOPTS_VALUE )
+					{
+						int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
+						if ( context->start_time != AV_NOPTS_VALUE )
+							int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
+						last_position = mlt_properties_get_int( properties, "_last_position" );
+						if ( int_position == last_position )
+							int_position = last_position + 1;
+					}
+					else
+					{
+						int_position = req_position;
+					}
+					mlt_log_debug( MLT_PRODUCER_SERVICE(this), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d",
+						pkt.dts, req_position, current_position, int_position );
+					// Make a dumb assumption on streams that contain wild timestamps
+					if ( abs( req_position - int_position ) > 999 )
+					{
+						int_position = req_position;
+						mlt_log_debug( MLT_PRODUCER_SERVICE(this), " WILD TIMESTAMP!" );
+					}
 				}
 				mlt_properties_set_int( properties, "_last_position", int_position );
 
 				// Decode the image
 				if ( must_decode || int_position >= req_position )
+				{
+					codec_context->reordered_opaque = pkt.pts;
+					if ( int_position >= req_position )
+						codec_context->skip_loop_filter = AVDISCARD_NONE;
 					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
+					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
+					if ( ret < 0 )
+					{
+						if ( ++decode_errors <= 10 )
+							ret = 0;
+					}
+					else
+					{
+						decode_errors = 0;
+					}
+				}
 
 				if ( got_picture )
 				{
+					if ( use_new_seek )
+					{
+						// Determine time code of the packet
+						int64_t pts = av_frame->reordered_opaque;
+						if ( first_pts > 0 )
+							pts -= first_pts;
+						else if ( context->start_time != AV_NOPTS_VALUE )
+							pts -= context->start_time;
+						int_position = ( int )( av_q2d( stream->time_base) * pts * source_fps + 0.1 );
+						mlt_log_verbose( MLT_PRODUCER_SERVICE(this), "got frame %d, key %d\n", int_position, av_frame->key_frame );
+					}
 					// Handle ignore
 					if ( int_position < req_position )
 					{
@@ -886,6 +1021,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					else if ( int_position >= req_position )
 					{
 						ignore = 0;
+						codec_context->skip_loop_filter = AVDISCARD_NONE;
 					}
 					else if ( ignore -- )
 					{
