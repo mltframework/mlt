@@ -100,7 +100,7 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 		pthread_cond_init( &this->audio_cond, NULL);
 		pthread_mutex_init( &this->video_mutex, NULL );
 		pthread_cond_init( &this->video_cond, NULL);
-		
+
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
 
@@ -578,6 +578,10 @@ static void consumer_close( mlt_consumer parent )
 	// Destroy mutexes
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );
+	pthread_mutex_destroy( &this->video_mutex );
+	pthread_cond_destroy( &this->video_cond );
+	pthread_mutex_destroy( &this->refresh_mutex );
+	pthread_cond_destroy( &this->refresh_cond );
 
 	// Finally clean up this
 	free( this );
