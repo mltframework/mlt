@@ -105,13 +105,12 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	
 
 	// Get output buffer
-	int buffersize;
+	int buffersize = 0;
 	uint8_t *output = mlt_properties_get_data( properties, "output_buffer", &buffersize );
 	
 	if (output != NULL && buffersize != size)
 	{
 	      // buffer size changed
-	      output = NULL;
 	      mlt_properties_set_data( properties, "output_buffer", NULL, 0, NULL, NULL );
 	      
 	      // invalidate cached frame
@@ -123,6 +122,28 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		// Bust the cached frame
 		first_frame = NULL;
 		mlt_properties_set_data( properties, "first_frame", NULL, 0, NULL, NULL );
+	}
+
+	if( output == NULL )
+	{
+		output = mlt_pool_alloc( size );
+
+		// Let someone else clean up
+		mlt_properties_set_data( properties, "output_buffer", output, size, mlt_pool_release, NULL ); 
+	}
+	else if (first_position != -1) {
+		// Using the cached frame
+	  	uint8_t *image_copy = mlt_pool_alloc( size );
+		memcpy( image_copy, output, size );
+
+		// Set the output image
+		*image = image_copy;
+		mlt_properties_set_data( frame_properties, "image", image_copy, size, NULL, NULL );
+
+		// Make sure that no further scaling is done
+		mlt_properties_set( frame_properties, "rescale.interps", "none" );
+		mlt_properties_set( frame_properties, "scale", "off" );
+		return 0;
 	}
 
 	// Get the cached frame
@@ -142,22 +163,13 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	}
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
 	
-	if( output == NULL )
-	{
-		output = mlt_pool_alloc( size );
-
-		// Let someone else clean up
-		mlt_properties_set_data( properties, "output_buffer", output, size, mlt_pool_release, NULL ); 
-	}
 
 	// Which frames are buffered?
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
 	if( first_image == NULL )
 	{
-		mlt_properties props = MLT_FRAME_PROPERTIES( this );
-		mlt_properties test_properties = MLT_FRAME_PROPERTIES( first_frame );
-		mlt_properties_set_double( test_properties, "consumer_aspect_ratio", mlt_properties_get_double( props, "consumer_aspect_ratio" ) );
-		mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( props, "rescale.interp" ) );
+		mlt_properties_set_double( first_frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( frame_properties, "consumer_aspect_ratio" ) );
+		mlt_properties_set( first_frame_properties, "rescale.interp", mlt_properties_get( frame_properties, "rescale.interp" ) );
 
 		int error = mlt_frame_get_image( first_frame, &first_image, format, width, height, writable );
 
@@ -165,14 +177,16 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 			fprintf(stderr, "first_image == NULL get image died\n");
 			return error;
 		}
+		memcpy( output, first_image, size );
 	}
 
-	// Start with a base image
-	memcpy( output, first_image, size );
+	// Create a copy
+	uint8_t *image_copy = mlt_pool_alloc( size );
+	memcpy( image_copy, first_image, size );
 
 	// Set the output image
-	*image = output;
-	mlt_properties_set_data( frame_properties, "image", output, size, NULL, NULL );
+	*image = image_copy;
+	mlt_properties_set_data( frame_properties, "image", image_copy, size, NULL, NULL );
 
 	// Make sure that no further scaling is done
 	mlt_properties_set( frame_properties, "rescale.interps", "none" );
