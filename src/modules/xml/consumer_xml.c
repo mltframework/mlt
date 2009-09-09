@@ -191,8 +191,9 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "height" ) != 0 )
 		{
 			char *value = mlt_properties_get_value( properties, i );
-			if ( strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
-				value += strlen( context->root ) + 1;
+			int rootlen = strlen( context->root );
+			if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
+				value += rootlen + 1;
 			p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 			xmlNewProp( p, _x("name"), _x(name) );
 		}
@@ -213,8 +214,9 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 			char *value = mlt_properties_get_value( properties, i );
 			if ( value != NULL )
 			{
-				if ( strcmp( context->root, "" ) && !strncmp( value, context->root, strlen( context->root ) ) )
-					value += strlen( context->root ) + 1;
+				int rootlen = strlen( context->root );
+				if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
+					value += rootlen + 1;
 				p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
 			}
