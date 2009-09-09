@@ -44,10 +44,6 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	// Get the properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
-	// Convert the image to yuv422
-	*format = mlt_image_yuv422;
-	mlt_frame_get_image( this, image, format, &iwidth, &iheight, 0 );
-
 	// Create the output image
 	uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 
@@ -126,18 +122,21 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
 
 	if ( input != NULL )
 	{
-		uint8_t *out_line;
-		int x, y;
-		int ox = ( iwidth << 10 ) / owidth;
-		int oy = ( iheight << 10 ) / oheight;
+		uint8_t *out_line, *in_line;
+		register int i, j, x, y;
+		register int ox = ( iwidth << 16 ) / owidth;
+		register int oy = ( iheight << 16 ) / oheight;
 
 		output = mlt_pool_alloc( owidth * oheight );
 		out_line = output;
 
    		// Loop for the entirety of our output height.
-		for ( y = 0; y < oheight; y ++ )
-			for ( x = 0; x < owidth; x ++ )
-				*out_line ++ = *( input + ( ( 512 + ( y * oy * iwidth ) + x * ox ) >> 10 ) );
+		for ( i = 0, y = (oy >> 1); i < oheight; i++, y += oy )
+		{
+			in_line = &input[ (y >> 16) * iwidth ];
+			for ( j = 0, x = (ox >> 1); j < owidth; j++, x += ox )
+				*out_line ++ = in_line[ x >> 16 ];
+		}
 
 		// Set it back on the frame
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output, owidth * oheight, mlt_pool_release, NULL );
@@ -208,6 +207,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// One exception: non-interpolated, integral scaling
 		if ( iheight != oheight && ( strcmp( interps, "nearest" ) || ( iheight % oheight != 0 ) ) )
 			mlt_properties_set_int( properties, "consumer_deinterlace", 1 );
+
+		// Convert the image to yuv422 when using the local scaler
+		if ( scaler_method == filter_scale )
+			*format = mlt_image_yuv422;
 
 		// Get the image as requested
 		mlt_frame_get_image( this, image, format, &iwidth, &iheight, writable );
