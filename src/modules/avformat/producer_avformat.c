@@ -875,11 +875,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			else
 			{
 				timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE + 0.5 );
-				if ( ( uint64_t )context->start_time != AV_NOPTS_VALUE )
+				if ( context->start_time != AV_NOPTS_VALUE )
 					timestamp += context->start_time;
-				if ( must_decode )
-					timestamp -= AV_TIME_BASE;
 			}
+			if ( must_decode )
+				timestamp -= AV_TIME_BASE;
 
 			if ( timestamp < 0 )
 				timestamp = 0;
