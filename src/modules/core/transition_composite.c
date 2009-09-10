@@ -370,9 +370,10 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 
 static inline int calculate_mix( uint16_t *luma, int j, double soft, int weight, int alpha )
 {
-	int32_t i_softness = soft * ( 1 << 16 );
-	uint32_t a = ( 1.0 + soft ) * weight / 100 * ( ( 1 << 16 ) - 1 );
-	return ( ( luma == NULL ) ? weight : smoothstep( luma[ j ], luma[ j ] + i_softness, a ) * alpha ) >> 8;
+	int i_softness = soft * ( 1 << 16 );
+	int w = ( ( 1 << 16 ) - 1 ) * weight / 100;
+	uint32_t a = ( ( 1 << 16 ) - 1 ) * weight / 100 * ( 1.0 + soft );
+	return ( ( luma ? smoothstep( luma[ j ], luma[ j ] + i_softness, a ) : w ) * alpha ) >> 8;
 }
 
 static inline uint8_t sample_mix( uint8_t dest, uint8_t src, int mix )
