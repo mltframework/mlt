@@ -522,9 +522,12 @@ static void *consumer_thread( void *arg )
 					consumer_play_video( this, frame );
 					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
 				}
+				mlt_frame_close( frame );
 				this->refresh_count --;
 				pthread_mutex_unlock( &this->refresh_mutex );
 			}
+			else
+				mlt_frame_close( frame );
 
 			// Optimisation to reduce latency
 			if ( speed == 1.0 )
