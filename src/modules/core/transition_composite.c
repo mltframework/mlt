@@ -27,7 +27,7 @@
 #include <string.h>
 #include <math.h>
 
-typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, double softness );
+typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int softness, uint32_t step );
 
 /** Geometry struct.
 */
@@ -368,12 +368,9 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
 }
 
-static inline int calculate_mix( uint16_t *luma, int j, double soft, int weight, int alpha )
+static inline int calculate_mix( uint16_t *luma, int j, int softness, int weight, int alpha, uint32_t step )
 {
-	int i_softness = soft * ( 1 << 16 );
-	int w = ( ( 1 << 16 ) - 1 ) * weight / 100;
-	uint32_t a = ( ( 1 << 16 ) - 1 ) * weight / 100 * ( 1.0 + soft );
-	return ( ( luma ? smoothstep( luma[ j ], luma[ j ] + i_softness, a ) : w ) * alpha ) >> 8;
+	return ( ( luma ? smoothstep( luma[ j ], luma[ j ] + softness, step ) : weight ) * alpha ) >> 8;
 }
 
 static inline uint8_t sample_mix( uint8_t dest, uint8_t src, int mix )
@@ -384,14 +381,14 @@ static inline uint8_t sample_mix( uint8_t dest, uint8_t src, int mix )
 /** Composite a source line over a destination line
 */
 
-static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, double soft )
+static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step )
 {
 	register int j;
 	register int mix;
 
 	for ( j = 0; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ );
+		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++, step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
@@ -401,14 +398,14 @@ static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t 
 	}
 }
 
-static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, double soft )
+static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step )
 {
 	register int j;
 	register int mix;
 
 	for ( j = 0; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ | *alpha_a );
+		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ | *alpha_a, step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
@@ -417,14 +414,14 @@ static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8
 	}
 }
 
-static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, double soft )
+static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step  )
 {
 	register int j;
 	register int mix;
 
 	for ( j = 0; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ & *alpha_a );
+		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ & *alpha_a, step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
@@ -433,14 +430,14 @@ static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint
 	}
 }
 
-static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, double soft )
+static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step )
 {
 	register int j;
 	register int mix;
 
 	for ( j = 0; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ ^ *alpha_a );
+		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ ^ *alpha_a, step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
@@ -462,7 +459,10 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int bpp = 2;
 	int stride_src = geometry.sw * bpp;
 	int stride_dest = width_dest * bpp;
-	
+	int i_softness = ( 1 << 16 ) * softness;
+	int weight = ( ( 1 << 16 ) - 1 ) * geometry.item.mix / 100;
+	uint32_t luma_step = ( ( 1 << 16 ) - 1 ) * geometry.item.mix / 100 * ( 1.0 + softness );
+
 	// Adjust to consumer scale
 	int x = rint( geometry.item.x * width_dest / geometry.nw );
 	int y = rint( geometry.item.y * height_dest / geometry.nh );
@@ -568,7 +568,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	// now do the compositing only to cropped extents
 	for ( i = 0; i < height_src; i += step )
 	{
-		line_fn( p_dest, p_src, width_src, alpha_b, alpha_a, geometry.item.mix, p_luma, softness );
+		line_fn( p_dest, p_src, width_src, alpha_b, alpha_a, weight, p_luma, i_softness, luma_step );
 
 		p_src += stride_src;
 		p_dest += stride_dest;
