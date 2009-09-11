@@ -2,6 +2,7 @@ SUBDIRS = src/framework \
 		  src/mlt++ \
 		  src/melt \
 		  src/modules \
+		  src/swig \
 		  profiles
 
 all clean:

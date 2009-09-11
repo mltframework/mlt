@@ -20,10 +20,16 @@ else
 	do
 		case $i in
 			--swig-languages=* ) languages=${i#--swig-languages=}
+				[ "$languages" = "none" ] && languages=""
+				if [ -z "$languages" ]; then
+					echo SUBDIRS = $languages > config.mak
+					continue
+				fi
 				which swig > /dev/null 2>&1
 				[ $? != 0 ] && echo "Please install swig" && exit 1
 				[ "$languages" = "all" ] && languages="java lua perl php python ruby tcl"
-				echo SUBDIRS = ${i#--swig-languages=} > config.mak ;;
+				echo SUBDIRS = $languages > config.mak
+			;;
 		esac
 	done
 fi

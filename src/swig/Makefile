@@ -1,7 +1,7 @@
 include ../../config.mak
 include config.mak
 
-all clean depend install:
+all clean:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -x $$subdir/build -a ! -f .$$subdir -o $@ = clean ] ; \
@@ -20,3 +20,7 @@ all clean depend install:
 			fi ; \
 		fi \
 	done
+
+depend:
+
+install:
