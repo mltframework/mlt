@@ -41,7 +41,7 @@ else
 		if [ "$KDEDIR" != "" ]
 		then
 			kde_includedir="$KDEDIR/include"
-			kde_libdir="$KDEDIR"
+			kde_libdir="$KDEDIR/lib"
 		fi
 	fi
 
@@ -111,7 +111,7 @@ else
 			    echo "#define USE_QT3" >> config.h
 			    echo "USE_QT3=1" >> config.mak
 			    echo QTCXXFLAGS=-I$qimage_includedir -I$kde_includedir -DQT_THREAD_SUPPORT >> config.mak
-			    echo QTLIBS=-L$qimage_libdir -L$kde_libdir/lib -lqt-mt >> config.mak
+				echo QTLIBS=-L$qimage_libdir -L$kde_libdir -lqt-mt >> config.mak
 		    else 
 			    echo "qimage: KDE environment not found - disabling extra image formats"
 			    echo "#define USE_QT3" >> config.h
