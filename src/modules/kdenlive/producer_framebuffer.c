@@ -259,8 +259,6 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 		// Get the properties of this producer
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
-		// The loader normalised it for us already
-		mlt_properties_set_int( properties, "loader_normalised", 1);
 		mlt_properties_set( properties, "resource", arg);
 
 		// Store the producer and fitler
