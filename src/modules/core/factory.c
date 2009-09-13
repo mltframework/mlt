@@ -73,6 +73,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "resize", filter_resize_init );
 	MLT_REGISTER( filter_type, "transition", filter_transition_init );
 	MLT_REGISTER( filter_type, "watermark", filter_watermark_init );
+	MLT_REGISTER( producer_type, "abnormal", producer_loader_init );
 	MLT_REGISTER( producer_type, "color", producer_colour_init );
 	MLT_REGISTER( producer_type, "colour", producer_colour_init );
 	MLT_REGISTER( producer_type, "consumer", producer_consumer_init );

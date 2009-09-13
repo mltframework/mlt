@@ -132,9 +132,10 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		*image = image_copy;
 		mlt_properties_set_data( frame_properties, "image", image_copy, size, ( mlt_destructor )mlt_pool_release, NULL );
 
-		// Make sure that no further scaling is done
-		mlt_properties_set( frame_properties, "rescale.interps", "none" );
-		mlt_properties_set( frame_properties, "scale", "off" );
+		*width = mlt_properties_get_int( properties, "_output_width" );
+		*height = mlt_properties_get_int( properties, "_output_height" );
+		*format = mlt_properties_get_int( properties, "_output_format" );
+
 		return 0;
 	}
 
@@ -173,6 +174,9 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		memcpy( output, first_image, size );
 		// Let someone else clean up
 		mlt_properties_set_data( properties, "output_buffer", output, size, mlt_pool_release, NULL ); 
+		mlt_properties_set_int( properties, "_output_width", *width );
+		mlt_properties_set_int( properties, "_output_height", *height );
+		mlt_properties_set_int( properties, "_output_format", *format );
 	
 	}
 
@@ -183,10 +187,6 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	// Set the output image
 	*image = image_copy;
 	mlt_properties_set_data( frame_properties, "image", *image, size, ( mlt_destructor )mlt_pool_release, NULL );
-
-	// Make sure that no further scaling is done
-	mlt_properties_set( frame_properties, "rescale.interps", "none" );
-	mlt_properties_set( frame_properties, "scale", "off" );
 
 	return 0;
 }
@@ -204,6 +204,10 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
+
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES(*frame), "real_width", mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(this), "width" ) );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES(*frame), "real_height", mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(this), "height" ) );
+		mlt_properties_pass_list( MLT_FRAME_PROPERTIES(*frame), MLT_PRODUCER_PROPERTIES(this), "width, height, aspect_ratio" );
 	}
 
 	return 0;
@@ -249,7 +253,7 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 			*ptr = '\0';
 	}
 		
-	real_producer = mlt_factory_producer( profile, NULL, props );
+	real_producer = mlt_factory_producer( profile, "abnormal", props );
 	free( props );
 
 	if (speed == 0.0) speed = 1.0;
@@ -265,7 +269,7 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 		mlt_properties_set_data( properties, "producer", real_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 		// Grab some stuff from the real_producer
-		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "length, width,height" );
+		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "length, width, height, aspect_ratio" );
 
 		if ( speed < 0 )
 		{

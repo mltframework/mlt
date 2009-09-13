@@ -173,8 +173,9 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 		properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Attach filters if we have a producer and it isn't already xml'd :-)
-	if ( producer != NULL && mlt_properties_get( properties, "xml" ) == NULL && \
-		mlt_properties_get( properties, "_xml" ) == NULL && \
+	if ( producer && strcmp( id, "abnormal" ) &&
+		mlt_properties_get( properties, "xml" ) == NULL &&
+		mlt_properties_get( properties, "_xml" ) == NULL &&
 		mlt_properties_get( properties, "loader_normalised" ) == NULL )
 		attach_normalisers( profile, producer );
 
