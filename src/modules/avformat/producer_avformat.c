@@ -734,7 +734,7 @@ static int allocate_buffer( mlt_properties frame_properties, AVCodecContext *cod
 	// Construct the output image
 	*buffer = mlt_pool_alloc( size );
 	if ( *buffer )
-		mlt_properties_set_data( frame_properties, "image", *buffer, size, (mlt_destructor)mlt_pool_release, NULL );
+		mlt_properties_set_data( frame_properties, "image", *buffer, size, mlt_pool_release, NULL );
 	else
 		size = 0;
 
@@ -757,6 +757,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+
+	avformat_lock();
 
 	// Fetch the video_context
 	AVFormatContext *context = mlt_properties_get_data( properties, "video_context", NULL );
@@ -934,11 +936,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		while( ret >= 0 && !got_picture )
 		{
 			// Read a packet
-			if ( use_new_seek )
-				avformat_lock();
 			ret = av_read_frame( context, &pkt );
-			if ( use_new_seek )
-				avformat_unlock();
 
 			// We only deal with video from the selected video_index
 			if ( ret >= 0 && pkt.stream_index == index && pkt.size > 0 )
@@ -985,11 +983,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					codec_context->reordered_opaque = pkt.pts;
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
-					if ( use_new_seek )
-						avformat_lock();
 					ret = avcodec_decode_video( codec_context, av_frame, &got_picture, pkt.data, pkt.size );
-					if ( use_new_seek )
-						avformat_unlock();
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
 					if ( ret < 0 )
 					{
@@ -1066,6 +1060,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// above will break the pause behaviour - so we wipe the frame now
 	if ( !strcmp( codec_context->codec->name, "rawvideo" ) )
 		mlt_properties_set_data( properties, "av_frame", NULL, 0, NULL, NULL );
+
+	avformat_unlock();
 
 	// Set the field order property for this frame
 	mlt_properties_set_int( frame_properties, "top_field_first", mlt_properties_get_int( properties, "top_field_first" ) );
@@ -1347,7 +1343,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		decode_buffer = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
 
 		// And store it on properties for reuse
-		mlt_properties_set_data( properties, "decode_buffer", decode_buffer, 0, ( mlt_destructor )av_free, NULL );
+		mlt_properties_set_data( properties, "decode_buffer", decode_buffer, 0, av_free, NULL );
 	}
 
 	// Seek if necessary
