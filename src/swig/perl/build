@@ -2,7 +2,7 @@
 
 if [ "$1" = "clean" ]
 then
-	( cd `dirname $0`; rm -f *.cxx *.so mlt.i ../.perl mlt.pm )
+	( cd `dirname $0`; rm -f *.cxx *.so *.o mlt.i ../.perl mlt.pm )
 	exit 0
 fi
 

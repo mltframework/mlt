@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'mkmf'
 if ARGV.shift == 'clean'
-  system( "rm -f *.cxx *.so mlt.i ../.ruby Makefile" )
+  system( "rm -f *.cxx *.so *.o mlt.i ../.ruby Makefile" )
   exit 0
 end
 system( "ln -sf ../mlt.i" )

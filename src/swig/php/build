@@ -2,7 +2,7 @@
 
 if [ "$1" = "clean" ]
 then
-	( cd `dirname $0`; rm -f *.cpp *.so mlt.i ../.php mlt.php *.h )
+	( cd `dirname $0`; rm -f *.cpp *.so *.o mlt.i ../.php mlt.php *.h )
 	exit 0
 fi
 

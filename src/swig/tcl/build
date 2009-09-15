@@ -2,7 +2,7 @@
 
 if [ "$1" = "clean" ]
 then
-	( cd `dirname $0`; rm -f *.cxx *.so mlt.i ../.tcl )
+	( cd `dirname $0`; rm -f *.cxx *.so *.o mlt.i ../.tcl )
 	exit 0
 fi
 

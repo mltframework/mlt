@@ -2,7 +2,7 @@
 
 if [ "$1" = "clean" ]
 then
-	( cd `dirname $0`; rm -rf *.cxx *.so mlt.i ../.java *.class src_swig )
+	( cd `dirname $0`; rm -rf *.cxx *.so *.o mlt.i ../.java *.class src_swig )
 	exit 0
 fi
 

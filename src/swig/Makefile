@@ -21,6 +21,8 @@ all clean:
 		fi \
 	done
 
+distclean: clean
+
 depend:
 
 install:
