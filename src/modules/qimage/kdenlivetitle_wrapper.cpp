@@ -132,14 +132,19 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	// Check for invalid title
 	if ( title.isNull() || title.tagName() != "kdenlivetitle" ) return;
 	
-	QTransform transform;
+        int originalWidth;
+        int originalHeight;
 	if ( title.hasAttribute("width") ) {
-	    int originalWidth = title.attribute("width").toInt();
-	    mlt_properties_set_int( producer_props, "_original_width", originalWidth );
-	    int originalHeight = title.attribute("height").toInt();
-	    mlt_properties_set_int( producer_props, "_original_height", originalHeight );
-	    scene->setSceneRect(0, 0, originalWidth, originalHeight);
-	}
+            originalWidth = title.attribute("width").toInt();
+            originalHeight = title.attribute("height").toInt();
+            scene->setSceneRect(0, 0, originalWidth, originalHeight);
+        }
+        else {
+            originalWidth = scene->sceneRect().width();
+            originalHeight = scene->sceneRect().height();
+        }
+	mlt_properties_set_int( producer_props, "_original_width", originalWidth );
+	mlt_properties_set_int( producer_props, "_original_height", originalHeight );
 
 	QDomNodeList items = title.elementsByTagName("item");
         for ( int i = 0; i < items.count(); i++ )
@@ -241,7 +246,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 		}
 	}
 
-	QDomNode n = doc.documentElement().firstChildElement("background");
+	QDomNode n = title.firstChildElement("background");
 	if (!n.isNull()) {
 		QColor color = QColor( stringToColor( n.attributes().namedItem( "color" ).nodeValue() ) );
                 if (color.alpha() > 0) {
@@ -252,13 +257,15 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	}
 
 	QString startRect;
-	n = doc.documentElement().firstChildElement( "startviewport" );
-	if (!n.isNull())
+	n = title.firstChildElement( "startviewport" );
+        // Check if node exists, if it has an x attribute, it is an old version title, don't use viewport
+	if (!n.isNull() && !n.toElement().hasAttribute("x"))
 	{
 		startRect = n.attributes().namedItem( "rect" ).nodeValue();
 	}
-	n = doc.documentElement().firstChildElement( "endviewport" );
-	if (!n.isNull())
+	n = title.firstChildElement( "endviewport" );
+        // Check if node exists, if it has an x attribute, it is an old version title, don't use viewport
+	if (!n.isNull() && !n.toElement().hasAttribute("x"))
 	{
 		QString rect = n.attributes().namedItem( "rect" ).nodeValue();
 		if (startRect != rect)
@@ -326,6 +333,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 				app = new QApplication( argc, argv );
 			}
 			scene = new QGraphicsScene();
+                        scene->setSceneRect(0, 0, mlt_properties_get_int( properties, "width" ), mlt_properties_get_int( properties, "height" ));
 			loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
 			mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 		}
