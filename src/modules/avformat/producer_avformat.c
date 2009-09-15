@@ -45,7 +45,6 @@
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
-#undef SEEK_ON_OPEN
 #define POSITION_INITIAL (-2)
 #define POSITION_INVALID (-1)
 
@@ -513,32 +512,6 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 					mlt_properties_set_double( properties, "aspect_ratio",
 						get_aspect_ratio( context->streams[ video_index ], codec_context, NULL ) );
 				}
-
-#ifdef SEEK_ON_OPEN
-				int use_new_seek = codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
-				if ( mlt_properties_get( properties, "new_seek" ) )
-					use_new_seek = mlt_properties_get_int( properties, "new_seek" );
-				if ( use_new_seek && mlt_properties_get_int( properties, "seekable" ) )
-				{
-					// find first key frame
-					int ret = 0;
-					int toscan = 100;
-					AVPacket pkt;
-					while ( ret >= 0 && toscan-- > 0 )
-					{
-						ret = av_read_frame( context, &pkt );
-						if ( pkt.flags & PKT_FLAG_KEY &&
-							pkt.stream_index == video_index )
-						{
-							mlt_log_verbose( MLT_PRODUCER_SERVICE(this), "first_pts %lld dts %lld pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
-							mlt_properties_set_int( properties, "_first_pts", pkt.pts );
-							toscan = 0;
-						}
-						av_free_packet( &pkt );
-					}
-					av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
-				}
-#endif
 			}
 
 			// Read Metadata
@@ -836,7 +809,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		}
 		else if ( seekable && ( position < expected || position - expected >= 12 || last_position < 0 ) )
 		{
-#ifndef SEEK_ON_OPEN
 			if ( use_new_seek && last_position == POSITION_INITIAL )
 			{
 				// find first key frame
@@ -858,7 +830,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				// Rewind
 				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
 			}
-#endif
+
 			// Calculate the timestamp for the requested frame
 			int64_t timestamp;
 			if ( use_new_seek )
