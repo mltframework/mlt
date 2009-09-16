@@ -1047,8 +1047,10 @@ static void *consumer_thread( void *arg )
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
 					// Write the compressed frame in the media file
 					if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
+					{
 						pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st->time_base );
-					mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "audio pkt pts %lld frame pts %lld", pkt.pts, c->coded_frame->pts );
+						mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "audio pkt pts %lld frame pts %lld", pkt.pts, c->coded_frame->pts );
+					}
 					pkt.flags |= PKT_FLAG_KEY;
 					pkt.stream_index= audio_st->index;
 					pkt.data= audio_outbuf;
