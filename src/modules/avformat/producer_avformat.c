@@ -55,9 +55,9 @@ struct producer_avformat_s
 {
 	struct mlt_producer_s parent;
 	AVFormatContext *dummy_context;
-	AVFormatContext *audio_context;
+	AVFormatContext *audio_format;
 	AVFormatContext *video_context;
-	AVCodec *audio_codec;
+	AVCodecContext *audio_codec;
 	AVCodec *video_codec;
 	AVFrame *av_frame;
 	ReSampleContext *audio_resample;
@@ -81,7 +81,7 @@ typedef struct producer_avformat_s *producer_avformat;
 // Forward references.
 static int producer_open( producer_avformat this, mlt_profile profile, char *file );
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
-static void producer_file_close( void *context );
+static void producer_format_close( void *context );
 static void producer_close( mlt_producer parent );
 
 /** Constructor for libavformat.
@@ -155,11 +155,11 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 			else
 			{
 				// Close the file to release resources for large playlists - reopen later as needed
-				producer_file_close( this->dummy_context );
+				producer_format_close( this->dummy_context );
 				this->dummy_context = NULL;
-				producer_file_close( this->audio_context );
-				this->audio_context = NULL;
-				producer_file_close( this->video_context );
+				producer_format_close( this->audio_format );
+				this->audio_format = NULL;
+				producer_format_close( this->video_context );
 				this->video_context = NULL;
 
 				// Default the user-selectable indices from the auto-detected indices
@@ -253,7 +253,7 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 /** Producer file destructor.
 */
 
-static void producer_file_close( void *context )
+static void producer_format_close( void *context )
 {
 	if ( context )
 	{
@@ -509,7 +509,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			{
 				this->seekable = av_seek_frame( context, -1, this->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 				mlt_properties_set_int( properties, "seekable", this->seekable );
-				producer_file_close( this->dummy_context );
+				producer_format_close( this->dummy_context );
 				this->dummy_context = context;
 				av_open_input_file( &context, file, NULL, 0, NULL );
 				av_find_stream_info( context );
@@ -571,7 +571,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			if ( av == 0 && audio_index != -1 && video_index != -1 )
 			{
 				// We'll use the open one as our video_context
-				producer_file_close( this->video_context );
+				producer_format_close( this->video_context );
 				this->video_context = context;
 
 				// And open again for our audio context
@@ -579,20 +579,20 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 				av_find_stream_info( context );
 
 				// Audio context
-				producer_file_close( this->audio_context );
-				this->audio_context = context;
+				producer_format_close( this->audio_format );
+				this->audio_format = context;
 			}
 			else if ( av != 2 && video_index != -1 )
 			{
 				// We only have a video context
-				producer_file_close( this->video_context );
+				producer_format_close( this->video_context );
 				this->video_context = context;
 			}
 			else if ( audio_index != -1 )
 			{
 				// We only have an audio context
-				producer_file_close( this->audio_context );
-				this->audio_context = context;
+				producer_format_close( this->audio_format );
+				this->audio_format = context;
 			}
 			else
 			{
@@ -1108,7 +1108,7 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = this->video_context;
-		producer_file_close( this->dummy_context );
+		producer_format_close( this->dummy_context );
 		this->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
 
@@ -1262,8 +1262,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Fetch the audio_context
-	AVFormatContext *context = this->audio_context;
+	// Fetch the audio_format
+	AVFormatContext *context = this->audio_format;
 
 	// Get the audio stream
 	AVStream *stream = context->streams[ this->audio_index ];
@@ -1476,6 +1476,44 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	return 0;
 }
 
+/** Initialize the audio codec context.
+*/
+
+static int audio_codec_init( producer_avformat this, int index, mlt_properties properties )
+{
+	// Initialise the codec if necessary
+	if ( !this->audio_codec )
+	{
+		// Get the audio stream
+		AVStream *stream = this->audio_format->streams[ index ];
+
+		// Get codec context
+		AVCodecContext *codec_context = stream->codec;
+
+		// Find the codec
+		AVCodec *codec = avcodec_find_decoder( stream->codec->codec_id );
+
+		// If we don't have a codec and we can't initialise it, we can't do much more...
+		avformat_lock( );
+		if ( codec && avcodec_open( codec_context, codec ) >= 0 )
+		{
+			// Now store the codec with its destructor
+			producer_codec_close( this->audio_codec );
+			this->audio_codec = codec_context;
+		}
+		else
+		{
+			// Remember that we can't use this later
+			this->audio_index = -1;
+		}
+		avformat_unlock( );
+
+		// Process properties as AVOptions
+		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+	}
+	return this->audio_codec && this->audio_index > -1;
+}
+
 /** Set up audio handling.
 */
 
@@ -1487,8 +1525,8 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	// Get the properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Fetch the audio_context
-	AVFormatContext *context = this->audio_context;
+	// Fetch the audio format context
+	AVFormatContext *context = this->audio_format;
 
 	// Get the audio_index
 	int index = mlt_properties_get_int( properties, "audio_index" );
@@ -1499,8 +1537,8 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 		mlt_events_block( properties, producer );
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
-		context = this->audio_context;
-		producer_file_close( this->dummy_context );
+		context = this->audio_format;
+		producer_format_close( this->dummy_context );
 		this->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
 	}
@@ -1527,55 +1565,15 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 		this->audio_codec = NULL;
 	}
 
-	// Deal with audio context
-	if ( context && index > -1 )
+	// Get the codec
+	if ( context && index > -1 && audio_codec_init( this, index, properties ) )
 	{
-		// Get the frame properties
+		// Set the frame properties
 		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-
-		// Get the audio stream
-		AVStream *stream = context->streams[ index ];
-
-		// Get codec context
-		AVCodecContext *codec_context = stream->codec;
-
-		// Get the codec
-		AVCodec *codec = this->audio_codec;
-
-		// Initialise the codec if necessary
-		if ( !codec )
-		{
-			// Find the codec
-			codec = avcodec_find_decoder( codec_context->codec_id );
-
-			// If we don't have a codec and we can't initialise it, we can't do much more...
-			avformat_lock( );
-			if ( codec && avcodec_open( codec_context, codec ) >= 0 )
-			{
-				// Now store the codec with its destructor
-				producer_codec_close( this->audio_codec );
-				this->audio_codec = codec_context;
-
-			}
-			else
-			{
-				// Remember that we can't use this later
-				this->audio_index = index = -1;
-			}
-			avformat_unlock( );
-
-			// Process properties as AVOptions
-			apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-		}
-
-		// No codec, no show...
-		if ( codec && index > -1 )
-		{
-			mlt_frame_push_audio( frame, this );
-			mlt_frame_push_audio( frame, producer_get_audio );
-			mlt_properties_set_int( frame_properties, "frequency", codec_context->sample_rate );
-			mlt_properties_set_int( frame_properties, "channels", codec_context->channels );
-		}
+		mlt_properties_set_int( frame_properties, "frequency", this->audio_codec->sample_rate );
+		mlt_properties_set_int( frame_properties, "channels", this->audio_codec->channels );
+		mlt_frame_push_audio( frame, this );
+		mlt_frame_push_audio( frame, producer_get_audio );
 	}
 }
 
@@ -1623,11 +1621,11 @@ static void producer_close( mlt_producer parent )
 		audio_resample_close( this->audio_resample );
 	mlt_pool_release( this->audio_buffer );
 	av_free( this->decode_buffer );
-	producer_file_close( this->dummy_context );
-	producer_file_close( this->audio_context );
-	producer_file_close( this->video_context );
 	producer_codec_close( this->audio_codec );
 	producer_codec_close( this->video_codec );
+	producer_format_close( this->dummy_context );
+	producer_format_close( this->audio_format );
+	producer_format_close( this->video_context );
 
 	// Close the parent
 	parent->close = NULL;
