@@ -45,6 +45,12 @@ Properties::Properties( mlt_properties properties ) :
 	inc_ref( );
 }
 
+Properties::Properties( void *properties ) :
+	instance( mlt_properties( properties ) )
+{
+	inc_ref( );
+}
+
 Properties::Properties( const char *file ) :
 	instance( NULL )
 {

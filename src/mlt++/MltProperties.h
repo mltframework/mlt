@@ -42,6 +42,7 @@ namespace Mlt
 			Properties( bool dummy );
 			Properties( Properties &properties );
 			Properties( mlt_properties properties );
+			Properties( void *properties );
 			Properties( const char *file );
 			virtual ~Properties( );
 			virtual mlt_properties get_properties( );
