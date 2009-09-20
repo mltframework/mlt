@@ -79,3 +79,8 @@ Properties *Repository::metadata( mlt_service_type type, const char *service ) c
 {
 	return new Properties( mlt_repository_metadata( instance, type, service ) );
 }
+
+Properties *Repository::languages( ) const
+{
+	return new Properties( mlt_repository_languages( instance ) );
+}

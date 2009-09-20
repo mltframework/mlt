@@ -157,3 +157,8 @@ bool Tractor::locate_cut( Producer *producer, int &track, int &cut )
 
 	return found;
 }
+
+int Tractor::connect( Producer &producer )
+{
+	return mlt_tractor_connect( get_tractor( ), producer.get_service( ) );
+}

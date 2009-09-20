@@ -56,14 +56,18 @@ namespace Mlt
 			int count( );
 			char *get( const char *name );
 			int get_int( const char *name );
+			int64_t get_int64( const char *name );
 			double get_double( const char *name );
 			void *get_data( const char *name, int &size );
 			void *get_data( const char *name );
 			int set( const char *name, const char *value );
 			int set( const char *name, int value );
+			int set( const char *name, int64_t value );
 			int set( const char *name, double value );
 			int set( const char *name, void *value, int size, mlt_destructor destroy = NULL, mlt_serialiser serial = NULL );
+			void pass_property( Properties &that, const char *name );
 			int pass_values( Properties &that, const char *prefix );
+			int pass_list( Properties &that, const char *list );
 			int parse( const char *namevalue );
 			char *get_name( int index );
 			char *get( int index );
@@ -83,6 +87,9 @@ namespace Mlt
 			static void delete_event( Event * );
 			Event *setup_wait_for( const char *id );
 			void wait_for( Event *, bool destroy = true );
+			bool is_sequence( );
+			static Properties *parse_yaml( const char *file );
+			char *serialise_yaml( );
 	};
 }
 

@@ -61,4 +61,8 @@ int Field::plant_transition( Transition &transition, int a_track, int b_track )
 	return mlt_field_plant_transition( get_field( ), transition.get_transition( ), a_track, b_track );
 }
 
+void Field::disconnect_service( Service &service )
+{
+	mlt_field_disconnect_service( get_field(), service.get_service() );
+}
 

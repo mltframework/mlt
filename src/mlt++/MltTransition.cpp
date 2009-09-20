@@ -22,6 +22,7 @@
 #include <string.h>
 #include "MltTransition.h"
 #include "MltProfile.h"
+#include "MltProducer.h"
 using namespace Mlt;
 
 Transition::Transition( Profile& profile, const char *id, const char *arg ) :
@@ -89,4 +90,29 @@ mlt_service Transition::get_service( )
 void Transition::set_in_and_out( int in, int out )
 {
 	mlt_transition_set_in_and_out( get_transition( ), in, out );
+}
+
+int Transition::connect( Producer &producer, int a_track, int b_track )
+{
+	return mlt_transition_connect( get_transition(), producer.get_service(), a_track, b_track );
+}
+
+int Transition::get_a_track( )
+{
+	return mlt_transition_get_a_track( get_transition() );
+}
+
+int Transition::get_b_track( )
+{
+	return mlt_transition_get_b_track( get_transition() );
+}
+
+int Transition::get_in( )
+{
+	return mlt_transition_get_in( get_transition() );
+}
+
+int Transition::get_out( )
+{
+	return mlt_transition_get_out( get_transition() );
 }

@@ -117,6 +117,11 @@ int Properties::get_int( const char *name )
 	return mlt_properties_get_int( get_properties( ), name );
 }
 
+int64_t Properties::get_int64( const char *name )
+{
+	return mlt_properties_get_int64( get_properties( ), name );
+}
+
 double Properties::get_double( const char *name )
 {
 	return mlt_properties_get_double( get_properties( ), name );
@@ -142,6 +147,11 @@ int Properties::set( const char *name, int value )
 	return mlt_properties_set_int( get_properties( ), name, value );
 }
 
+int Properties::set( const char *name, int64_t value )
+{
+	return mlt_properties_set_int64( get_properties( ), name, value );
+}
+
 int Properties::set( const char *name, double value )
 {
 	return mlt_properties_set_double( get_properties( ), name, value );
@@ -152,9 +162,19 @@ int Properties::set( const char *name, void *value, int size, mlt_destructor des
 	return mlt_properties_set_data( get_properties( ), name, value, size, destructor, serialiser );
 }
 
+void Properties::pass_property( Properties &that, const char *name )
+{
+	return mlt_properties_pass_property( get_properties( ), that.get_properties( ), name );
+}
+
 int Properties::pass_values( Properties &that, const char *prefix )
 {
 	return mlt_properties_pass( get_properties( ), that.get_properties( ), prefix );
+}
+
+int Properties::pass_list( Properties &that, const char *list )
+{
+	return mlt_properties_pass_list( get_properties( ), that.get_properties( ), list );
 }
 
 int Properties::parse( const char *namevalue )
@@ -265,3 +285,17 @@ void Properties::wait_for( Event *event, bool destroy )
 		mlt_events_close_wait_for( get_properties( ), event->get_event( ) );
 }
 
+bool Properties::is_sequence( )
+{
+	return mlt_properties_is_sequence( get_properties( ) );
+}
+
+Properties *Properties::parse_yaml( const char *file )
+{
+	return new Properties( mlt_properties_parse_yaml( file ) );
+}
+
+char *Properties::serialise_yaml( )
+{
+	return mlt_properties_serialise_yaml( get_properties( ) );
+}

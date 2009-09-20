@@ -191,3 +191,8 @@ void Producer::optimise( )
 {
 	mlt_producer_optimise( get_producer( ) );
 }
+
+int Producer::clear( )
+{
+	return mlt_producer_clear( get_producer( ) );
+}

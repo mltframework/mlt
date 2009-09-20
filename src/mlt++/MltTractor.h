@@ -60,6 +60,7 @@ namespace Mlt
 			void plant_filter( Filter &filter, int track = 0 );
 			void plant_filter( Filter *filter, int track = 0 );
 			bool locate_cut( Producer *producer, int &track, int &cut );
+			int connect( Producer &producer );
 	};
 }
 

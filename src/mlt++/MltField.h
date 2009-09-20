@@ -45,6 +45,7 @@ namespace Mlt
 			mlt_service get_service( );
 			int plant_filter( Filter &filter, int track = 0 );
 			int plant_transition( Transition &transition, int a_track = 0, int b_track = 1 );
+			void disconnect_service( Service &service );
 	};
 }
 
