@@ -24,6 +24,8 @@
 
 %{
 #include <mlt++/Mlt.h>
+int mlt_log_get_level( void );
+void mlt_log_set_level( int );
 %}
 
 /** These methods return objects which should be gc'd.
@@ -64,7 +66,8 @@ namespace Mlt {
 
 %include <framework/mlt_types.h>
 %include <framework/mlt_factory.h>
-%include <framework/mlt_log.h>
+int mlt_log_get_level( void );
+void mlt_log_set_level( int );
 %include <MltFactory.h>
 %include <MltRepository.h>
 %include <MltEvent.h>
