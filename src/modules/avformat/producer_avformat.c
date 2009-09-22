@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <limits.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_RGB32 PIX_FMT_RGBA32
@@ -47,6 +48,8 @@
 
 #define POSITION_INITIAL (-2)
 #define POSITION_INVALID (-1)
+
+#define MAX_AUDIO_STREAMS (8)
 
 void avformat_lock( );
 void avformat_unlock( );
@@ -57,10 +60,10 @@ struct producer_avformat_s
 	AVFormatContext *dummy_context;
 	AVFormatContext *audio_format;
 	AVFormatContext *video_format;
-	AVCodecContext *audio_codec;
+	AVCodecContext *audio_codec[ MAX_AUDIO_STREAMS ];
 	AVCodecContext *video_codec;
 	AVFrame *av_frame;
-	ReSampleContext *audio_resample;
+	ReSampleContext *audio_resample[ MAX_AUDIO_STREAMS ];
 	mlt_position audio_expected;
 	mlt_position video_expected;
 	int audio_index;
@@ -72,9 +75,13 @@ struct producer_avformat_s
 	int current_position;
 	int got_picture;
 	int top_field_first;
-	int16_t *audio_buffer;
-	int16_t *decode_buffer;
-	int audio_used;
+	int16_t *audio_buffer[ MAX_AUDIO_STREAMS ];
+	int16_t *decode_buffer[ MAX_AUDIO_STREAMS ];
+	int audio_used[ MAX_AUDIO_STREAMS ];
+	int audio_streams;
+	int audio_max_stream;
+	int total_channels;
+	int max_channel;
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -571,7 +578,9 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			if ( av == 0 && audio_index != -1 && video_index != -1 )
 			{
 				// We'll use the open one as our video_format
+				avformat_unlock();
 				producer_format_close( this->video_format );
+				avformat_lock();
 				this->video_format = context;
 
 				// And open again for our audio context
@@ -579,19 +588,25 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 				av_find_stream_info( context );
 
 				// Audio context
+				avformat_unlock();
 				producer_format_close( this->audio_format );
+				avformat_lock();
 				this->audio_format = context;
 			}
 			else if ( av != 2 && video_index != -1 )
 			{
 				// We only have a video context
+				avformat_unlock();
 				producer_format_close( this->video_format );
+				avformat_lock();
 				this->video_format = context;
 			}
 			else if ( audio_index != -1 )
 			{
 				// We only have an audio context
+				avformat_unlock();
 				producer_format_close( this->audio_format );
+				avformat_lock();
 				this->audio_format = context;
 			}
 			else
@@ -614,6 +629,41 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 static double producer_time_of_frame( mlt_producer this, mlt_position position )
 {
 	return ( double )position / mlt_producer_get_fps( this );
+}
+
+		// Collect information about all audio streams
+
+static void get_audio_streams_info( producer_avformat this )
+{
+	// Fetch the audio format context
+	AVFormatContext *context = this->audio_format;
+	int i;
+
+	for ( i = 0;
+		  i < context->nb_streams;
+		  i++ )
+	{
+		if ( context->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO )
+		{
+			AVCodecContext *codec_context = context->streams[i]->codec;
+			AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+
+			// If we don't have a codec and we can't initialise it, we can't do much more...
+			avformat_lock( );
+			if ( codec && avcodec_open( codec_context, codec ) >= 0 )
+			{
+				this->audio_streams++;
+				this->audio_max_stream = i;
+				this->total_channels += codec_context->channels;
+				if ( codec_context->channels > this->max_channel )
+					this->max_channel = codec_context->channels;
+				avcodec_close( codec_context );
+			}
+			avformat_unlock( );
+		}
+	}
+	mlt_log_verbose( NULL, "total_streams %d max_stream %d total_channels %d max_channels %d\n",
+		this->audio_streams, this->audio_max_stream, this->total_channels, this->max_channel );
 }
 
 static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format *format, int width, int height )
@@ -1180,9 +1230,10 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		producer_format_close( this->dummy_context );
 		this->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
+		get_audio_streams_info( this );
 
 		// Process properties as AVOptions
-		apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );
+		apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );		
 	}
 
 	// Exception handling for video_index
@@ -1274,7 +1325,9 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 				paused = 1;
 
 			// Clear the usage in the audio buffer
-			this->audio_used = 0;
+			int i = MAX_AUDIO_STREAMS + 1;
+			while ( --i )
+				this->audio_used[i - 1] = 0;
 		}
 	}
 	return paused;
@@ -1289,19 +1342,19 @@ static int decode_audio( producer_avformat this, int index, int samples, double 
 	AVStream *stream = context->streams[ index ];
 
 	// Get codec context
-	AVCodecContext *codec_context = stream->codec;
+	AVCodecContext *codec_context = this->audio_codec[ index ];
 
 	// Obtain the resample context if it exists (not always needed)
-	ReSampleContext *resample = this->audio_resample;
+	ReSampleContext *resample = this->audio_resample[ index ];
 
 	// Obtain the audio buffers
-	int16_t *audio_buffer = this->audio_buffer;
-	int16_t *decode_buffer = this->decode_buffer;
+	int16_t *audio_buffer = this->audio_buffer[ index ];
+	int16_t *decode_buffer = this->decode_buffer[ index ];
 
 	// Get the source fps
 	double source_fps = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( &this->parent ), "source_fps" );
 
-	int audio_used = this->audio_used;
+	int audio_used = this->audio_used[ index ];
 	int channels = codec_context->channels;
 	int ret = 0;
 	int got_audio = 0;
@@ -1387,7 +1440,7 @@ static int decode_audio( producer_avformat this, int index, int samples, double 
 		av_free_packet( &pkt );
 	}
 
-	this->audio_used = audio_used;
+	this->audio_used[ index ] = audio_used;
 
 	return ret;
 }
@@ -1413,50 +1466,38 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 	int index = this->audio_index;
 
-	// Get the audio stream
-	AVStream *stream = context->streams[ index ];
-
 	// Get codec context
-	AVCodecContext *codec_context = stream->codec;
-
-	// Obtain the resample context if it exists (not always needed)
-	ReSampleContext *resample = this->audio_resample;
+	AVCodecContext *codec_context = context->streams[ index ]->codec;
 
 	// Obtain the audio buffers
-	int16_t *audio_buffer = this->audio_buffer;
-	int16_t *decode_buffer = this->decode_buffer;
+	int16_t *audio_buffer = this->audio_buffer[ index ];
 
 	// Check for resample and create if necessary
-	if ( !resample && codec_context->channels <= 2 )
+	if ( !this->audio_resample[ index ] && codec_context->channels <= 2 )
 	{
 		// Create the resampler
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
-		resample = av_audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate,
+		this->audio_resample[ index ] = av_audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate,
 			SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
 #else
-		resample = audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate );
+		this->audio_resample[ index ] = audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate );
 #endif
-
-		// And store it
-		if ( this->audio_resample ) audio_resample_close( this->audio_resample );
-		this->audio_resample = resample;
 	}
-	else if ( !resample )
+	else if ( !this->audio_resample[ index ] )
 	{
 		// TODO: uncomment and remove following line when full multi-channel support is ready
 		// *channels = codec_context->channels;
 		codec_context->request_channels = *channels;
-
 		*frequency = codec_context->sample_rate;
 	}
 
 	// Check for audio buffer and create if necessary
 	if ( !audio_buffer )
-		this->audio_buffer = audio_buffer = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+		this->audio_buffer[ index ] = audio_buffer = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
 
 	// Check for decoder buffer and create if necessary
-	if ( !decode_buffer )
-		this->decode_buffer = decode_buffer = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+	if ( !this->decode_buffer[ index ] )
+		this->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
 
 	// Number of frames to ignore (for ffwd)
 	int ignore = 0;
@@ -1476,11 +1517,11 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 
 		// Now handle the audio if we have enough
-		if ( this->audio_used >= *samples )
+		if ( this->audio_used[ index ] >= *samples )
 		{
 			memcpy( *buffer, audio_buffer, *samples * *channels * sizeof( int16_t ) );
-			this->audio_used -= *samples;
-			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], this->audio_used * *channels * sizeof( int16_t ) );
+			this->audio_used[ index ] -= *samples;
+			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], this->audio_used[ index ] * *channels * sizeof( int16_t ) );
 		}
 		else
 		{
@@ -1506,13 +1547,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 static int audio_codec_init( producer_avformat this, int index, mlt_properties properties )
 {
 	// Initialise the codec if necessary
-	if ( !this->audio_codec )
+	if ( !this->audio_codec[ index ] )
 	{
-		// Get the audio stream
-		AVStream *stream = this->audio_format->streams[ index ];
-
 		// Get codec context
-		AVCodecContext *codec_context = stream->codec;
+		AVCodecContext *codec_context = this->audio_format->streams[index]->codec;
 
 		// Find the codec
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
@@ -1522,20 +1560,21 @@ static int audio_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( codec && avcodec_open( codec_context, codec ) >= 0 )
 		{
 			// Now store the codec with its destructor
-			producer_codec_close( this->audio_codec );
-			this->audio_codec = codec_context;
+			avformat_unlock();
+			producer_codec_close( this->audio_codec[index] );
+			this->audio_codec[ index ] = codec_context;
 		}
 		else
 		{
 			// Remember that we can't use this later
 			this->audio_index = -1;
+			avformat_unlock( );
 		}
-		avformat_unlock( );
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 	}
-	return this->audio_codec && this->audio_index > -1;
+	return this->audio_codec[ index ] && this->audio_index > -1;
 }
 
 /** Set up audio handling.
@@ -1565,6 +1604,7 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 		producer_format_close( this->dummy_context );
 		this->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
+		get_audio_streams_info( this );
 	}
 
 	// Exception handling for audio_index
@@ -1584,18 +1624,18 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	// Update the audio properties if the index changed
 	if ( index > -1 && index != this->audio_index )
 	{
-		this->audio_index = index;
-		producer_codec_close( this->audio_codec );
-		this->audio_codec = NULL;
+		producer_codec_close( this->audio_codec[ this->audio_index ] );
+		this->audio_codec[ this->audio_index ] = NULL;
 	}
+	this->audio_index = index;
 
 	// Get the codec
 	if ( context && index > -1 && audio_codec_init( this, index, properties ) )
 	{
 		// Set the frame properties
 		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-		mlt_properties_set_int( frame_properties, "frequency", this->audio_codec->sample_rate );
-		mlt_properties_set_int( frame_properties, "channels", this->audio_codec->channels );
+		mlt_properties_set_int( frame_properties, "frequency", this->audio_codec[ index ]->sample_rate );
+		mlt_properties_set_int( frame_properties, "channels", this->audio_codec[ index ]->channels );
 
 		// Add our audio operation
 		mlt_frame_push_audio( frame, this );
@@ -1639,11 +1679,15 @@ static void producer_close( mlt_producer parent )
 
 	// Close the file
 	av_free( this->av_frame );
-	if ( this->audio_resample )
-		audio_resample_close( this->audio_resample );
-	mlt_pool_release( this->audio_buffer );
-	av_free( this->decode_buffer );
-	producer_codec_close( this->audio_codec );
+	int i;
+	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
+	{
+		if ( this->audio_resample[i] )
+			audio_resample_close( this->audio_resample[i] );
+		mlt_pool_release( this->audio_buffer[i] );
+		av_free( this->decode_buffer[i] );
+		producer_codec_close( this->audio_codec[i] );
+	}
 	producer_codec_close( this->video_codec );
 	producer_format_close( this->dummy_context );
 	producer_format_close( this->audio_format );
