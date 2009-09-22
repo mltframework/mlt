@@ -1241,35 +1241,55 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 	}
 }
 
-/** Get the audio from a frame.
-*/
-
-static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int seek_audio( producer_avformat this, mlt_position position, double timecode, int *ignore )
 {
-	// Get the producer
-	producer_avformat this = mlt_frame_pop_audio( frame );
-	mlt_producer producer = &this->parent;
-
-	// Get the properties from the frame
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-
-	// Obtain the frame number of this frame
-	mlt_position position = mlt_properties_get_position( frame_properties, "avformat_position" );
-
-	// Get the producer properties
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
+	int paused = 0;
 
 	// Fetch the audio_format
 	AVFormatContext *context = this->audio_format;
 
+	// Seek if necessary
+	if ( position != this->audio_expected )
+	{
+		if ( position + 1 == this->audio_expected )
+		{
+			// We're paused - silence required
+			paused = 1;
+		}
+		else if ( !this->seekable && position > this->audio_expected && ( position - this->audio_expected ) < 250 )
+		{
+			// Fast forward - seeking is inefficient for small distances - just ignore following frames
+			*ignore = position - this->audio_expected;
+		}
+		else if ( position < this->audio_expected || position - this->audio_expected >= 12 )
+		{
+			int64_t timestamp = ( int64_t )( timecode * AV_TIME_BASE + 0.5 );
+			if ( context->start_time != AV_NOPTS_VALUE )
+				timestamp += context->start_time;
+			if ( timestamp < 0 )
+				timestamp = 0;
+
+			// Set to the real timecode
+			if ( av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD ) != 0 )
+				paused = 1;
+
+			// Clear the usage in the audio buffer
+			this->audio_used = 0;
+		}
+	}
+	return paused;
+}
+
+static int decode_audio( producer_avformat this, int index, int samples, double timecode, int ignore )
+{
+	// Fetch the audio_format
+	AVFormatContext *context = this->audio_format;
+
 	// Get the audio stream
-	AVStream *stream = context->streams[ this->audio_index ];
+	AVStream *stream = context->streams[ index ];
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
-
-	// Packet
-	AVPacket pkt;
 
 	// Obtain the resample context if it exists (not always needed)
 	ReSampleContext *resample = this->audio_resample;
@@ -1278,17 +1298,133 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	int16_t *audio_buffer = this->audio_buffer;
 	int16_t *decode_buffer = this->decode_buffer;
 
-	// Get amount of audio used
-	int audio_used =  this->audio_used;
+	// Get the source fps
+	double source_fps = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( &this->parent ), "source_fps" );
+
+	int audio_used = this->audio_used;
+	int channels = codec_context->channels;
+	int ret = 0;
+	int got_audio = 0;
+	AVPacket pkt;
+
+	av_init_packet( &pkt );
+
+	while( ret >= 0 && !got_audio )
+	{
+		// Check if the buffer already contains the samples required
+		if ( audio_used >= samples && ignore == 0 )
+		{
+			got_audio = 1;
+			break;
+		}
+
+		// Read a packet
+		ret = av_read_frame( context, &pkt );
+
+		int len = pkt.size;
+		uint8_t *ptr = pkt.data;
+
+		// We only deal with audio from the selected audio_index
+		while ( ptr && ret >= 0 && pkt.stream_index == index && len > 0 )
+		{
+			int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
+
+			// Decode the audio
+#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
+			ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
+#else
+			ret = avcodec_decode_audio( codec_context, decode_buffer, &data_size, ptr, len );
+#endif
+			if ( ret < 0 )
+			{
+				ret = 0;
+				break;
+			}
+
+			len -= ret;
+			ptr += ret;
+
+			if ( data_size > 0 && ( audio_used * channels + data_size < AVCODEC_MAX_AUDIO_FRAME_SIZE ) )
+			{
+				if ( resample )
+				{
+					int16_t *source = decode_buffer;
+					int16_t *dest = &audio_buffer[ audio_used * channels ];
+					int convert_samples = data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
+
+					audio_used += audio_resample( resample, dest, source, convert_samples );
+				}
+				else
+				{
+					memcpy( &audio_buffer[ audio_used * channels ], decode_buffer, data_size );
+					audio_used += data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
+				}
+
+				// Handle ignore
+				while ( ignore && audio_used > samples )
+				{
+					ignore --;
+					audio_used -= samples;
+					memmove( audio_buffer, &audio_buffer[ samples * channels ], audio_used * sizeof( int16_t ) );
+				}
+			}
+
+			// If we're behind, ignore this packet
+			if ( pkt.pts >= 0 )
+			{
+				double current_pts = av_q2d( stream->time_base ) * pkt.pts;
+				int req_position = ( int )( timecode * source_fps + 0.5 );
+				int int_position = ( int )( current_pts * source_fps + 0.5 );
+
+				if ( context->start_time != AV_NOPTS_VALUE )
+					int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
+				if ( this->seekable && !ignore && int_position < req_position )
+					ignore = 1;
+			}
+		}
+
+		// We're finished with this packet regardless
+		av_free_packet( &pkt );
+	}
+
+	this->audio_used = audio_used;
+
+	return ret;
+}
+
+/** Get the audio from a frame.
+*/
+
+static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+{
+	// The frequency must be set to that of any track with >2 channels.
+
+	// Get the producer
+	producer_avformat this = mlt_frame_pop_audio( frame );
+
+	// Obtain the frame number of this frame
+	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), "avformat_position" );
 
 	// Calculate the real time code
-	double real_timecode = producer_time_of_frame( producer, position );
+	double real_timecode = producer_time_of_frame( &this->parent, position );
 
-	// Number of frames to ignore (for ffwd)
-	int ignore = 0;
+	// Fetch the audio_format
+	AVFormatContext *context = this->audio_format;
 
-	// Flag for paused (silence)
-	int paused = 0;
+	int index = this->audio_index;
+
+	// Get the audio stream
+	AVStream *stream = context->streams[ index ];
+
+	// Get codec context
+	AVCodecContext *codec_context = stream->codec;
+
+	// Obtain the resample context if it exists (not always needed)
+	ReSampleContext *resample = this->audio_resample;
+
+	// Obtain the audio buffers
+	int16_t *audio_buffer = this->audio_buffer;
+	int16_t *decode_buffer = this->decode_buffer;
 
 	// Check for resample and create if necessary
 	if ( !resample && codec_context->channels <= 2 )
@@ -1301,7 +1437,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		resample = audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate );
 #endif
 
-		// And store it on properties
+		// And store it
 		if ( this->audio_resample ) audio_resample_close( this->audio_resample );
 		this->audio_resample = resample;
 	}
@@ -1322,143 +1458,34 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	if ( !decode_buffer )
 		this->decode_buffer = decode_buffer = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
 
-	// Seek if necessary
-	if ( position != this->audio_expected )
-	{
-		if ( position + 1 == this->audio_expected )
-		{
-			// We're paused - silence required
-			paused = 1;
-		}
-		else if ( !this->seekable && position > this->audio_expected && ( position - this->audio_expected ) < 250 )
-		{
-			// Fast forward - seeking is inefficient for small distances - just ignore following frames
-			ignore = position - this->audio_expected;
-		}
-		else if ( position < this->audio_expected || position - this->audio_expected >= 12 )
-		{
-			int64_t timestamp = ( int64_t )( real_timecode * AV_TIME_BASE + 0.5 );
-			if ( context->start_time != AV_NOPTS_VALUE )
-				timestamp += context->start_time;
-			if ( timestamp < 0 )
-				timestamp = 0;
+	// Number of frames to ignore (for ffwd)
+	int ignore = 0;
 
-			// Set to the real timecode
-			if ( av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD ) != 0 )
-				paused = 1;
-
-			// Clear the usage in the audio buffer
-			audio_used = 0;
-		}
-	}
+	// Flag for paused (silence)
+	int paused = seek_audio( this, position, real_timecode, &ignore );
 
 	// Get the audio if required
 	if ( !paused )
 	{
-		int ret = 0;
-		int got_audio = 0;
+		decode_audio( this, index, *samples, real_timecode, ignore );
 
-		av_init_packet( &pkt );
-
-		while( ret >= 0 && !got_audio )
-		{
-			// Check if the buffer already contains the samples required
-			if ( audio_used >= *samples && ignore == 0 )
-			{
-				got_audio = 1;
-				break;
-			}
-
-			// Read a packet
-			ret = av_read_frame( context, &pkt );
-
-			int len = pkt.size;
-			uint8_t *ptr = pkt.data;
-
-			// We only deal with audio from the selected audio_index
-			while ( ptr && ret >= 0 && pkt.stream_index == this->audio_index && len > 0 )
-			{
-				int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
-
-				// Decode the audio
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
-				ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
-#else
-				ret = avcodec_decode_audio( codec_context, decode_buffer, &data_size, ptr, len );
-#endif
-				if ( ret < 0 )
-				{
-					ret = 0;
-					break;
-				}
-
-				len -= ret;
-				ptr += ret;
-
-				if ( data_size > 0 && ( audio_used * *channels + data_size < AVCODEC_MAX_AUDIO_FRAME_SIZE ) )
-				{
-					if ( resample )
-					{
-						int16_t *source = decode_buffer;
-						int16_t *dest = &audio_buffer[ audio_used * *channels ];
-						int convert_samples = data_size / av_get_bits_per_sample_format( codec_context->sample_fmt )
-											  * 8 / codec_context->channels;
-
-						audio_used += audio_resample( resample, dest, source, convert_samples );
-					}
-					else
-					{
-						memcpy( &audio_buffer[ audio_used * *channels ], decode_buffer, data_size );
-						audio_used += data_size / *channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
-					}
-
-					// Handle ignore
-					while ( ignore && audio_used > *samples )
-					{
-						ignore --;
-						audio_used -= *samples;
-						memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * sizeof( int16_t ) );
-					}
-				}
-
-				// If we're behind, ignore this packet
-				if ( pkt.pts >= 0 )
-				{
-					double current_pts = av_q2d( stream->time_base ) * pkt.pts;
-					double source_fps = mlt_properties_get_double( properties, "source_fps" );
-					int req_position = ( int )( real_timecode * source_fps + 0.5 );
-					int int_position = ( int )( current_pts * source_fps + 0.5 );
-
-					if ( context->start_time != AV_NOPTS_VALUE )
-						int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
-					if ( this->seekable && !ignore && int_position < req_position )
-						ignore = 1;
-				}
-			}
-
-			// We're finished with this packet regardless
-			av_free_packet( &pkt );
-		}
-
+		// Allocate the frame's audio buffer
 		int size = *samples * *channels * sizeof( int16_t );
 		*format = mlt_audio_s16;
 		*buffer = mlt_pool_alloc( size );
 		mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 
 		// Now handle the audio if we have enough
-		if ( audio_used >= *samples )
+		if ( this->audio_used >= *samples )
 		{
 			memcpy( *buffer, audio_buffer, *samples * *channels * sizeof( int16_t ) );
-			audio_used -= *samples;
-			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * *channels * sizeof( int16_t ) );
+			this->audio_used -= *samples;
+			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], this->audio_used * *channels * sizeof( int16_t ) );
 		}
 		else
 		{
 			memset( *buffer, 0, *samples * *channels * sizeof( int16_t ) );
 		}
-
-		// Store the number of audio samples still available
-		this->audio_used = audio_used;
 	}
 	else
 	{
