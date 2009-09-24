@@ -480,7 +480,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	}
 	else
 	{
-		mlt_log_warning( "%s: Unable to encode audio - disabling audio output.\n", __FILE__ );
+		mlt_log_warning( NULL, "%s: Unable to encode audio - disabling audio output.\n", __FILE__ );
 	}
 
 	return audio_input_frame_size;
