@@ -488,7 +488,12 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 
 static void close_audio( AVFormatContext *oc, AVStream *st )
 {
-	avcodec_close( st->codec );
+	if ( st && st->codec )
+	{
+		if ( st->codec->thread_count > 1 )
+			avcodec_thread_free( st->codec );
+		avcodec_close( st->codec );
+	}
 }
 
 /** Add a video output stream 
@@ -749,7 +754,18 @@ static int open_video(AVFormatContext *oc, AVStream *st)
 
 void close_video(AVFormatContext *oc, AVStream *st)
 {
-	avcodec_close(st->codec);
+	if ( st && st->codec )
+	{
+		if ( st->codec->thread_count > 1 )
+		{
+			if ( st->codec->codec_id == CODEC_ID_H264 )
+				// XXX: Some versions of x264 are crashing on close when using multiple threads
+				return;
+			else
+				avcodec_thread_free( st->codec );
+		}
+		avcodec_close(st->codec);
+	}
 }
 
 static inline long time_difference( struct timeval *time1 )
@@ -1301,7 +1317,7 @@ static void *consumer_thread( void *arg )
 	}
 #endif
 
-	// close each codec 
+	// close each codec
 	if (video_st)
 		close_video(oc, video_st);
 	if (audio_st)
@@ -1353,6 +1369,11 @@ static void *consumer_thread( void *arg )
 		remove( full );
 		free( full );
 		file = "x264_2pass.log.temp";
+		full = malloc( strlen( cwd ) + strlen( file ) + 2 );
+		sprintf( full, "%s/%s", cwd, file );
+		remove( full );
+		free( full );
+		file = "x264_2pass.log.mbtree";
 		full = malloc( strlen( cwd ) + strlen( file ) + 2 );
 		sprintf( full, "%s/%s", cwd, file );
 		remove( full );
