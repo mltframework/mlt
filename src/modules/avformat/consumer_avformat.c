@@ -951,7 +951,11 @@ static void *consumer_thread( void *arg )
 		if ( video_st && !open_video( oc, video_st ) )
 			video_st = NULL;
 		if ( audio_st )
+		{
 			audio_input_frame_size = open_audio( oc, audio_st, audio_outbuf_size );
+			if ( !audio_input_frame_size )
+				audio_st = NULL;
+		}
 
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
@@ -1057,8 +1061,8 @@ static void *consumer_thread( void *arg )
 					pkt.stream_index= audio_st->index;
 					pkt.data= audio_outbuf;
 
-					if ( pkt.size )
-						if ( av_interleaved_write_frame( oc, &pkt ) != 0) 
+					if ( pkt.size > 0 )
+						if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 							mlt_log_error( MLT_CONSUMER_SERVICE( this ), "error writing audio frame\n" );
 
 					mlt_log_debug( MLT_CONSUMER_SERVICE( this ), " frame_size %d\n", c->frame_size );
@@ -1179,7 +1183,7 @@ static void *consumer_thread( void *arg )
 	 					out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
 
 	 					// If zero size, it means the image was buffered
-	 					if (out_size > 0) 
+						if ( out_size > 0 )
 						{
 							AVPacket pkt;
 							av_init_packet( &pkt );
