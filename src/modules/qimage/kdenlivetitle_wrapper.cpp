@@ -331,6 +331,8 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 				}
 #endif
 				app = new QApplication( argc, argv );
+                //fix to let the decimal point for every locale be: "."
+                setlocale(LC_NUMERIC,"POSIX");
 			}
 			scene = new QGraphicsScene();
                         scene->setSceneRect(0, 0, mlt_properties_get_int( properties, "width" ), mlt_properties_get_int( properties, "height" ));
