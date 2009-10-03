@@ -65,16 +65,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	/* Allocate the image */
 	*format = mlt_image_rgb24a;
-	mlt_position in = mlt_producer_get_in( &this->parent );
-	mlt_position out = mlt_producer_get_out( &this->parent );
-	mlt_position time = mlt_producer_position( &this->parent );
-	double position = ( double )( time - in ) / ( double )( out - in + 1 );
+	mlt_position time = mlt_producer_position( &this->parent ) + mlt_producer_get_in( &this->parent );
 	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
 		if (mlt_properties_get_int( producer_props, "force_reload" ) > 1) read_xml(producer_props);
 		mlt_properties_set_int( producer_props, "force_reload", 0 );
-		drawKdenliveTitle( this, frame, *width, *height, position, 1);
+		drawKdenliveTitle( this, frame, *width, *height, time, 1);
 	}
-	else drawKdenliveTitle( this, frame, *width, *height, position, 0);
+	else drawKdenliveTitle( this, frame, *width, *height, time, 0);
 
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );

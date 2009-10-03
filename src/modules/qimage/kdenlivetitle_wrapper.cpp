@@ -143,6 +143,13 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
             originalWidth = scene->sceneRect().width();
             originalHeight = scene->sceneRect().height();
         }
+        if ( title.hasAttribute( "out" ) ) {
+            mlt_properties_set_position( producer_props, "_animation_out", title.attribute( "out" ).toDouble() );
+        }
+        else {
+            mlt_properties_set_position( producer_props, "_animation_out", mlt_producer_get_out( producer ) );
+        }
+        
 	mlt_properties_set_int( producer_props, "_original_width", originalWidth );
 	mlt_properties_set_int( producer_props, "_original_height", originalHeight );
 
@@ -357,14 +364,19 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		p1.begin( &img );
 		p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		//| QPainter::SmoothPixmapTransform );
+                mlt_position anim_out = mlt_properties_get_position( producer_props, "_animation_out" );
+                
 		if (end.isNull())
 		{
 			scene->render( &p1, source, start, Qt::IgnoreAspectRatio );
 		}
-		else
-		{
-			QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * position;
-			QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * position;
+		else if ( position > anim_out ) {
+                        scene->render( &p1, source, end, Qt::IgnoreAspectRatio );
+                }
+		else {
+                        double percentage = position / anim_out;
+			QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * percentage;
+			QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * percentage;
 			const QRectF r1( topleft, bottomRight );
 			scene->render( &p1, source, r1, Qt::IgnoreAspectRatio );
 		}
