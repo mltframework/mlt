@@ -202,12 +202,19 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_frame_push_service( *frame, this );
 		mlt_frame_push_service( *frame, framebuffer_get_image );
 
+                mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+                mlt_properties frame_properties = MLT_FRAME_PROPERTIES(*frame);
+                
+                double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
+                if ( force_aspect_ratio <= 0.0 ) force_aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
+                mlt_properties_set_double( frame_properties, "aspect_ratio", force_aspect_ratio );
+                
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES(*frame), "real_width", mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(this), "width" ) );
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES(*frame), "real_height", mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(this), "height" ) );
-		mlt_properties_pass_list( MLT_FRAME_PROPERTIES(*frame), MLT_PRODUCER_PROPERTIES(this), "width, height, aspect_ratio" );
+		mlt_properties_set_int( frame_properties, "real_width", mlt_properties_get_int( properties, "width" ) );
+		mlt_properties_set_int( frame_properties, "real_height", mlt_properties_get_int( properties, "height" ) );
+		mlt_properties_pass_list( frame_properties, properties, "width, height" );
 	}
 
 	return 0;
