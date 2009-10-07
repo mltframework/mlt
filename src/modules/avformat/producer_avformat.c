@@ -82,6 +82,7 @@ struct producer_avformat_s
 	int audio_max_stream;
 	int total_channels;
 	int max_channel;
+	int max_frequency;
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -657,6 +658,8 @@ static void get_audio_streams_info( producer_avformat this )
 				this->total_channels += codec_context->channels;
 				if ( codec_context->channels > this->max_channel )
 					this->max_channel = codec_context->channels;
+				if ( codec_context->sample_rate > this->max_frequency )
+					this->max_frequency = codec_context->sample_rate;
 				avcodec_close( codec_context );
 			}
 			avformat_unlock( );
@@ -1082,7 +1085,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					convert_image( this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
 					if ( !mlt_properties_get( properties, "force_progressive" ) )
 						mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
-					this->top_field_first = this->av_frame->top_field_first;
+					this->top_field_first |= this->av_frame->top_field_first;
 					this->current_position = int_position;
 					this->got_picture = 1;
 				}
@@ -1233,7 +1236,7 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		get_audio_streams_info( this );
 
 		// Process properties as AVOptions
-		apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );		
+		apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );
 	}
 
 	// Exception handling for video_index
@@ -1333,13 +1336,13 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 	return paused;
 }
 
-static int decode_audio( producer_avformat this, int index, int samples, double timecode, int ignore )
+static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int samples, double timecode, double source_fps )
 {
 	// Fetch the audio_format
 	AVFormatContext *context = this->audio_format;
 
-	// Get the audio stream
-	AVStream *stream = context->streams[ index ];
+	// Get the current stream index
+	int index = pkt->stream_index;
 
 	// Get codec context
 	AVCodecContext *codec_context = this->audio_codec[ index ];
@@ -1351,93 +1354,71 @@ static int decode_audio( producer_avformat this, int index, int samples, double 
 	int16_t *audio_buffer = this->audio_buffer[ index ];
 	int16_t *decode_buffer = this->decode_buffer[ index ];
 
-	// Get the source fps
-	double source_fps = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( &this->parent ), "source_fps" );
-
 	int audio_used = this->audio_used[ index ];
 	int channels = codec_context->channels;
+	int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
+	uint8_t *ptr = pkt->data;
+	int len = pkt->size;
 	int ret = 0;
-	int got_audio = 0;
-	AVPacket pkt;
 
-	av_init_packet( &pkt );
-
-	while( ret >= 0 && !got_audio )
+	while ( ptr && ret >= 0 && len > 0 )
 	{
-		// Check if the buffer already contains the samples required
-		if ( audio_used >= samples && ignore == 0 )
+		// Decode the audio
+#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
+		ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
+#else
+		ret = avcodec_decode_audio( codec_context, decode_buffer, &data_size, ptr, len );
+#endif
+		if ( ret < 0 )
 		{
-			got_audio = 1;
+			ret = 0;
 			break;
 		}
 
-		// Read a packet
-		ret = av_read_frame( context, &pkt );
+		len -= ret;
+		ptr += ret;
 
-		int len = pkt.size;
-		uint8_t *ptr = pkt.data;
-
-		// We only deal with audio from the selected audio_index
-		while ( ptr && ret >= 0 && pkt.stream_index == index && len > 0 )
+		// If decoded successfully and will not overflow
+		if ( data_size > 0 && ( audio_used * channels + data_size  / sizeof(int16_t) < AVCODEC_MAX_AUDIO_FRAME_SIZE ) )
 		{
-			int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
-
-			// Decode the audio
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
-			ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
-#else
-			ret = avcodec_decode_audio( codec_context, decode_buffer, &data_size, ptr, len );
-#endif
-			if ( ret < 0 )
+			if ( resample )
 			{
-				ret = 0;
-				break;
+				int16_t *source = decode_buffer;
+				int16_t *dest = &audio_buffer[ audio_used * channels ];
+				int convert_samples = data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
+				audio_used += audio_resample( resample, dest, source, convert_samples );
+			}
+			else
+			{
+				memcpy( &audio_buffer[ audio_used * channels ], decode_buffer, data_size );
+				audio_used += data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
 			}
 
-			len -= ret;
-			ptr += ret;
-
-			if ( data_size > 0 && ( audio_used * channels + data_size < AVCODEC_MAX_AUDIO_FRAME_SIZE ) )
+			// Handle ignore
+			while ( *ignore && audio_used > samples )
 			{
-				if ( resample )
-				{
-					int16_t *source = decode_buffer;
-					int16_t *dest = &audio_buffer[ audio_used * channels ];
-					int convert_samples = data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
-
-					audio_used += audio_resample( resample, dest, source, convert_samples );
-				}
-				else
-				{
-					memcpy( &audio_buffer[ audio_used * channels ], decode_buffer, data_size );
-					audio_used += data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
-				}
-
-				// Handle ignore
-				while ( ignore && audio_used > samples )
-				{
-					ignore --;
-					audio_used -= samples;
-					memmove( audio_buffer, &audio_buffer[ samples * channels ], audio_used * sizeof( int16_t ) );
-				}
-			}
-
-			// If we're behind, ignore this packet
-			if ( pkt.pts >= 0 )
-			{
-				double current_pts = av_q2d( stream->time_base ) * pkt.pts;
-				int req_position = ( int )( timecode * source_fps + 0.5 );
-				int int_position = ( int )( current_pts * source_fps + 0.5 );
-
-				if ( context->start_time != AV_NOPTS_VALUE )
-					int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
-				if ( this->seekable && !ignore && int_position < req_position )
-					ignore = 1;
+				*ignore -= 1;
+				audio_used -= samples;
+				memmove( audio_buffer, &audio_buffer[ samples * channels ], audio_used * sizeof( int16_t ) );
 			}
 		}
+		else
+		{
+			mlt_log_error( MLT_PRODUCER_SERVICE( &this->parent ), "audio_buffer overflow: audio_used %d data_size %d\n", audio_used, data_size );
+		}
+	}
 
-		// We're finished with this packet regardless
-		av_free_packet( &pkt );
+	// If we're behind, ignore this packet
+	if ( pkt->pts >= 0 )
+	{
+		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt->pts;
+		int req_position = ( int )( timecode * source_fps + 0.5 );
+		int int_position = ( int )( current_pts * source_fps + 0.5 );
+
+		if ( context->start_time != AV_NOPTS_VALUE )
+			int_position -= ( int )( source_fps * context->start_time / AV_TIME_BASE + 0.5 );
+		if ( this->seekable && *ignore == 0 && int_position < req_position )
+			*ignore = 1;
 	}
 
 	this->audio_used[ index ] = audio_used;
@@ -1450,8 +1431,6 @@ static int decode_audio( producer_avformat this, int index, int samples, double 
 
 static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// The frequency must be set to that of any track with >2 channels.
-
 	// Get the producer
 	producer_avformat this = mlt_frame_pop_audio( frame );
 
@@ -1461,43 +1440,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Calculate the real time code
 	double real_timecode = producer_time_of_frame( &this->parent, position );
 
-	// Fetch the audio_format
-	AVFormatContext *context = this->audio_format;
-
-	int index = this->audio_index;
-
-	// Get codec context
-	AVCodecContext *codec_context = context->streams[ index ]->codec;
-
-	// Obtain the audio buffers
-	int16_t *audio_buffer = this->audio_buffer[ index ];
-
-	// Check for resample and create if necessary
-	if ( !this->audio_resample[ index ] && codec_context->channels <= 2 )
-	{
-		// Create the resampler
-#if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
-		this->audio_resample[ index ] = av_audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate,
-			SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
-#else
-		this->audio_resample[ index ] = audio_resample_init( *channels, codec_context->channels, *frequency, codec_context->sample_rate );
-#endif
-	}
-	else if ( !this->audio_resample[ index ] )
-	{
-		// TODO: uncomment and remove following line when full multi-channel support is ready
-		// *channels = codec_context->channels;
-		codec_context->request_channels = *channels;
-		*frequency = codec_context->sample_rate;
-	}
-
-	// Check for audio buffer and create if necessary
-	if ( !audio_buffer )
-		this->audio_buffer[ index ] = audio_buffer = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
-
-	// Check for decoder buffer and create if necessary
-	if ( !this->decode_buffer[ index ] )
-		this->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+	// Get the source fps
+	double source_fps = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( &this->parent ), "source_fps" );
 
 	// Number of frames to ignore (for ffwd)
 	int ignore = 0;
@@ -1505,27 +1449,151 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Flag for paused (silence)
 	int paused = seek_audio( this, position, real_timecode, &ignore );
 
+	// Fetch the audio_format
+	AVFormatContext *context = this->audio_format;
+
+	// Determine the tracks to use
+	int index = this->audio_index;
+	int index_max = this->audio_index + 1;
+	if ( this->audio_index == INT_MAX )
+	{
+		index = 0;
+		index_max = context->nb_streams;
+		*channels = this->total_channels;
+		*frequency = this->max_frequency;
+	}
+
+	// Initialize the resamplers and buffers
+	for ( ; index < index_max; index++ )
+	{
+		// Get codec context
+		AVCodecContext *codec_context = this->audio_codec[ index ];
+
+		if ( codec_context && !this->audio_buffer[ index ] )
+		{
+			// Check for resample and create if necessary
+			if ( codec_context->channels <= 2 )
+			{
+				// Create the resampler
+#if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
+				this->audio_resample[ index ] = av_audio_resample_init(
+					this->audio_index == INT_MAX ? codec_context->channels : *channels,
+					codec_context->channels, *frequency, codec_context->sample_rate,
+					SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
+#else
+				this->audio_resample[ index ] = audio_resample_init(
+					this->audio_index == INT_MAX ? codec_context->channels : *channels,
+					codec_context->channels, *frequency, codec_context->sample_rate );
+#endif
+			}
+			else
+			{
+				codec_context->request_channels = this->audio_index == INT_MAX ? codec_context->channels : *channels;
+			}
+
+			// Check for audio buffer and create if necessary
+			this->audio_buffer[ index ] = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+
+			// Check for decoder buffer and create if necessary
+			this->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+		}
+	}
+
 	// Get the audio if required
 	if ( !paused )
 	{
-		decode_audio( this, index, *samples, real_timecode, ignore );
+		int ret = 0;
+		int got_audio = 0;
+		AVPacket pkt;
 
-		// Allocate the frame's audio buffer
-		int size = *samples * *channels * sizeof( int16_t );
-		*format = mlt_audio_s16;
+		av_init_packet( &pkt );
+
+		while ( ret >= 0 && !got_audio )
+		{
+			// Check if the buffer already contains the samples required
+			if ( this->audio_index != INT_MAX && this->audio_used[ this->audio_index ] >= *samples && ignore == 0 )
+			{
+				got_audio = 1;
+				break;
+			}
+
+			// Read a packet
+			ret = av_read_frame( context, &pkt );
+
+			// We only deal with audio from the selected audio index
+			if ( ret >= 0 && pkt.data && pkt.size > 0 && ( pkt.stream_index == this->audio_index ||
+				 ( this->audio_index == INT_MAX && context->streams[ pkt.stream_index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
+				ret = decode_audio( this, &ignore, &pkt, *samples, real_timecode, source_fps );
+			av_free_packet( &pkt );
+
+			if ( this->audio_index == INT_MAX && ret >= 0 )
+			{
+				// Determine if there is enough audio for all streams
+				got_audio = 1;
+				for ( index = 0; index < context->nb_streams; index++ )
+				{
+					if ( this->audio_codec[ index ] && this->audio_used[ index ] < *samples )
+						got_audio = 0;
+				}
+			}
+		}
+
+		// Allocate and set the frame's audio buffer
+		int size = *samples * *channels * sizeof(int16_t);
 		*buffer = mlt_pool_alloc( size );
+		*format = mlt_audio_s16;
 		mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 
-		// Now handle the audio if we have enough
-		if ( this->audio_used[ index ] >= *samples )
+		// Interleave tracks if audio_index=all
+		if ( this->audio_index == INT_MAX )
 		{
-			memcpy( *buffer, audio_buffer, *samples * *channels * sizeof( int16_t ) );
-			this->audio_used[ index ] -= *samples;
-			memmove( audio_buffer, &audio_buffer[ *samples * *channels ], this->audio_used[ index ] * *channels * sizeof( int16_t ) );
+			int16_t *dest = *buffer;
+			int i;
+			for ( i = 0; i < *samples; i++ )
+			{
+				for ( index = 0; index < index_max; index++ )
+				if ( this->audio_codec[ index ] )
+				{
+					int current_channels = this->audio_codec[ index ]->channels;
+					int16_t *src = this->audio_buffer[ index ] + i * current_channels;
+					memcpy( dest, src, current_channels * sizeof(int16_t) );
+					dest += current_channels;
+				}
+			}
+			for ( index = 0; index < index_max; index++ )
+			if ( this->audio_codec[ index ] )
+			{
+				int current_channels = this->audio_codec[ index ]->channels;
+				int16_t *src = this->audio_buffer[ index ] + *samples * current_channels;
+				this->audio_used[index] -= *samples;
+				memmove( this->audio_buffer[ index ], src, this->audio_used[ index ] * current_channels * sizeof(int16_t) );
+			}
 		}
+		// Copy a single track to the output buffer
 		else
 		{
-			memset( *buffer, 0, *samples * *channels * sizeof( int16_t ) );
+			index = this->audio_index;
+			int current_channels = this->audio_codec[ index ]->channels;
+
+			// Now handle the audio if we have enough
+			if ( this->audio_used[ index ] >= *samples )
+			{
+				int16_t *src = this->audio_buffer[ index ];
+				memcpy( *buffer, src, *samples * current_channels * sizeof(int16_t) );
+				this->audio_used[ index ] -= *samples;
+				memmove( src, &src[ *samples * current_channels ], this->audio_used[ index ] * current_channels * sizeof(int16_t) );
+			}
+			else
+			{
+				// Otherwise fill with silence
+				memset( *buffer, 0, *samples * current_channels * sizeof(int16_t) );
+			}
+			if ( !this->audio_resample[ index ] )
+			{
+				// TODO: uncomment and remove following line when full multi-channel support is ready
+				// *channels = codec_context->channels;
+				*frequency = this->audio_codec[ index ]->sample_rate;
+			}
 		}
 	}
 	else
@@ -1591,8 +1659,15 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	// Fetch the audio format context
 	AVFormatContext *context = this->audio_format;
 
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+
 	// Get the audio_index
 	int index = mlt_properties_get_int( properties, "audio_index" );
+
+	// Handle all audio tracks
+	if ( mlt_properties_get( properties, "audio_index" ) &&
+		 !strcmp( mlt_properties_get( properties, "audio_index" ), "all" ) )
+		index = INT_MAX;
 
 	// Reopen the file if necessary
 	if ( !context && index > -1 )
@@ -1608,14 +1683,15 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	}
 
 	// Exception handling for audio_index
-	if ( context && index >= (int) context->nb_streams )
+	if ( context && index >= (int) context->nb_streams && index < INT_MAX )
 	{
 		for ( index = context->nb_streams - 1;
 			  index >= 0 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO;
 			  index-- );
 		mlt_properties_set_int( properties, "audio_index", index );
 	}
-	if ( context && index > -1 && context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO )
+	if ( context && index > -1 && index < INT_MAX &&
+		 context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO )
 	{
 		index = -1;
 		mlt_properties_set_int( properties, "audio_index", index );
@@ -1629,14 +1705,28 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	}
 	this->audio_index = index;
 
-	// Get the codec
-	if ( context && index > -1 && audio_codec_init( this, index, properties ) )
+	// Get the codec(s)
+	if ( context && index == INT_MAX )
+	{
+		mlt_properties_set_int( frame_properties, "frequency", this->max_frequency );
+		mlt_properties_set_int( frame_properties, "channels", this->total_channels );
+		for ( index = 0; index < context->nb_streams; index++ )
+		{
+			if ( context->streams[ index ]->codec->codec_type == CODEC_TYPE_AUDIO )
+				audio_codec_init( this, index, properties );
+		}
+	}
+	else if ( context && index > -1 && audio_codec_init( this, index, properties ) )
 	{
 		// Set the frame properties
-		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-		mlt_properties_set_int( frame_properties, "frequency", this->audio_codec[ index ]->sample_rate );
-		mlt_properties_set_int( frame_properties, "channels", this->audio_codec[ index ]->channels );
-
+		if ( index < INT_MAX )
+		{
+			mlt_properties_set_int( frame_properties, "frequency", this->audio_codec[ index ]->sample_rate );
+			mlt_properties_set_int( frame_properties, "channels", this->audio_codec[ index ]->channels );
+		}
+	}
+	if ( context && index > -1 )
+	{
 		// Add our audio operation
 		mlt_frame_push_audio( frame, this );
 		mlt_frame_push_audio( frame, producer_get_audio );
