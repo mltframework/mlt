@@ -1,6 +1,43 @@
 MLT Release Notes
 -----------------
 
+Version 0.4.6
+
+The recommended version of FFmpeg for use with this release is SVN r19873.
+This release is an enhancement release along with numerous build, A/V synch,
+concurrency, and other bug fixes.
+
+configure:  new option --avformat-svn-version
+
+modules:
+* avformat: much improved seeking on H.264/MPEG2-TS (AVCHD) (Ivan Schreter)
+* core: new imageconvert and audioconvert filters (framework refactorization)
+* linsys: new SDI consumer (Broadcast Centre Europe)
+* qimage: new kdenlivetitle producer (J.B. Mardelle and Marco Gittler)
+* sdl: new audio_only consumer for OS X
+
+mlt++ and swig: update bindings
+
+framework:
+* refactored image format conversion
+  mlt_frame.h:
+  - added convert_image() virtual function
+  - added mlt_image_format_name()
+  - removed many mlt_convert_ and scaling/padding functions
+* refactored audio format conversion
+  mlt_frame.h:
+  - mlt_get_audio() virtual function parameters changed
+  - added convert_audio() virtual function
+  - mlt_frame_get_audio() parameters changed
+  - added mlt_frame_set_audio()
+  - added mlt_audio_format_name()
+  mlt_types.h:
+  - deprecated mlt_audio_pcm
+  - added mlt_audio_s16
+  - added mlt_audio_s32
+  - added mlt_audio_float
+
+
 Version 0.4.4
 
 The recommended version of FFmpeg for use with this release is 0.5.0.
