@@ -59,12 +59,12 @@ $(TARGET): $(OBJS) $(LOCAL_FFMPEG_OBJS)
 	$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
-	if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dep ; fi
+	#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dep ; fi
 	$(CC) -MM $(CFLAGS) $^ 1>.depend
 
 distclean:	clean
-	if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg distclean ; fi
 	rm -f .depend
+	if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg distclean ; fi
 
 clean:	
 	#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg clean ; fi

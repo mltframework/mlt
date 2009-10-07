@@ -3,7 +3,7 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-svn_rev="17887"
+svn_rev="19873"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
 [ "$odd_version" -eq "1" ] && svn_rev="HEAD"
@@ -11,19 +11,20 @@ odd_version=$(($micro_version % 2))
 if [ "$help" = "1" ]
 then
 	cat << EOF
-FFMPEG/avformat options:
+FFmpeg/avformat options:
 
-  --avformat-svn          - Obtain ffmpeg from Subversion
+  --avformat-svn          - Obtain FFmpeg from its Subversion repository
+  --avformat-svn-version  - Specify a particular revision for --avformat-svn
   --avformat-svn-extra    - Add extra configure options for --avformat-svn
-  --avformat-shared=path  - Link against a shared installation of ffmpeg (default)
-  --avformat-static=path  - Link against a static ffmpeg dev tree
+  --avformat-shared=path  - Link against a shared installation of FFmpeg (default)
+  --avformat-static=path  - Link against a static FFmpeg development tree
   --avformat-ldextra=libs - Provide additional libs to link with
-  --avformat-suffix=suff  - Specify a custom suffix for an ffmpeg shared build
-  --avformat-swscale      - Use ffmpeg libswcale instead of img_convert
+  --avformat-suffix=suff  - Specify a custom suffix for a shared build of FFmpeg
+  --avformat-swscale      - Use libswcale instead of img_convert
   --avformat-no-codecs    - Disable the producer and consumer to avoid the FFmpeg codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
 
-  NOTE: The recommended version of FFmpeg is SVN-r$svn_rev.
+  NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.5" ] && echo $svn_rev || echo SVN-r$svn_rev).
 
 EOF
 
@@ -70,6 +71,7 @@ else
 			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
 			--avformat-svn )		svn_ffmpeg=true ;;
 			--avformat-svn-extra=* ) svn_ffmpeg_extra="${i#--avformat-svn-extra=}" ;;
+			--avformat-svn-version=* )	svn_rev="${i#--avformat-svn-version=}" ;;
 			--avformat-cvs )		svn_ffmpeg=true ;;
 			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
 			--avformat-swscale )	swscale=true ;;
@@ -84,7 +86,7 @@ else
 		if [ "$gpl" = "true" ]
 		then
 			enable_gpl="--enable-gpl"
-			[ "$swscale" != "" ] && [ "$svn_rev" = "17887" ] &&
+			[ "$swscale" != "" ] && [ "$svn_rev" = "0.5" ] &&
 				enable_swscale="--enable-swscale"
 		fi
 		if [ ! -d "ffmpeg" ]
@@ -92,8 +94,8 @@ else
 			echo
 			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
 			echo
-			if [ "$svn_rev" = "17887" ]; then
-				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/branches/0.5 ffmpeg
+			if [ "$svn_rev" = "0.5" ]; then
+				svn checkout svn://svn.mplayerhq.hu/ffmpeg/branches/$svn_rev ffmpeg
 			else
 				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
 			fi
