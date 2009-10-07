@@ -1,4 +1,633 @@
+2009-10-07  Dan Dennedy <dan@dennedy.org>
+
+  * AUTHORS, Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set
+  version to 0.4.6 and update release notes.
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure: Add
+  configure option --avformat-svn-version.  Also update recommended version to
+  Sept 15, 2009 and other cleanup.
+
+2009-10-05  j-b-m <jb@kdenlive.org>
+
+  * src/modules/kdenlive/producer_framebuffer.c: Framebuffer producer should
+  obey to the force_aspect_ratio value  modified:  
+  src/modules/kdenlive/producer_framebuffer.c
+
+2009-10-04  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/producer_kdenlivetitle.c: Fix behaviour of title clips
+  when in and out points are given  modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp modified:  
+  src/modules/qimage/producer_kdenlivetitle.c
+
+2009-09-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Improve exception handling in
+  consumer_avformat.
+
+2009-09-26  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: locale fix for decial numbers
+
+2009-09-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Improve exception handling in
+  consumer_avformat.
+
+2009-09-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Wait for and close AVCodec
+  threads at end.  Except when using x264 because it may crash at the end of
+  the second pass when using multiple threads. Also, cleanup another dual pass
+  log file that new versions of x264 creates.
+
+  * src/modules/avformat/consumer_avformat.c: Fix crash in logging warning
+  (2865906).
+
+2009-09-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/mlt.i: Fix swig building with some Python versions and possibly
+  more.
+
+2009-09-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltField.cpp, src/mlt++/MltField.h, src/mlt++/MltProducer.cpp,
+  src/mlt++/MltProducer.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/MltRepository.cpp,
+  src/mlt++/MltRepository.h, src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h,
+  src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h, src/swig/mlt.i:
+  Update bindings.
+
+2009-09-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h: Add Properties
+  constructor from opaque pointer.
+
+2009-09-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fix crash when audio encode does
+  not yield frame (2859643).
+
+  * src/modules/avformat/consumer_avformat.c: Convert consumer_avformat message
+  to mlt_log API.
+
+2009-09-15  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Fix compatibility with older
+  Kdenlive titles: Kdenlive bug 1137 modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+2009-09-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Remove the old location of the
+  first_pts calculation.
+
+  * src/modules/avformat/producer_avformat.c: Fix concurrency instability. 
+  (not related to new_seek)
+
+2009-09-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Relocate setting first_pts and
+  fix ffmpeg concurrency.
+
+2009-09-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Restore seeking to one second
+  before target.  Since Ivan Schreter's FFmpeg mpegts new-seek patches were
+  disabled, this is temporarily required for H.264 MPEG2-TS.
+
+2009-09-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Patch from Ivan Schreter to fix
+  seeking on AVCHD.  This is intended to improve seeking in general, but it not
+  ready for all formats. It can be explicitly enabled by setting the new_seek
+  property to 1. I added code to enable it by default for H.264 in MPEG-2
+  Transport Stream, but one can disable it by setting new_seek to 0. 
+
+2009-09-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltFrame.cpp: Remove construction of unused properties object.
+
+  * src/swig/Makefile, src/swig/java/build, src/swig/lua/build,
+  src/swig/perl/build, src/swig/php/build, src/swig/python/build,
+  src/swig/ruby/build, src/swig/tcl/build: Fix distclean make target under swig
+  and cleanup object files.
+
+2009-09-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/factory.c, src/modules/core/producer_loader.c,
+  src/modules/kdenlive/producer_framebuffer.c: Invert position of normalization
+  filters with framebuffer producer.  Previously, the framebuffer producer
+  loaded a normalized producer, which can give undesired results with things
+  like crop and really any time you want to filter the unpadded images of the
+  speed-altered video. Now, the framebuffer uses the new "abnormal" producer to
+  load the clip without normalization filters and sets appropriate frame
+  properties to allow the normalizing filters attached to the framebuffer to
+  act appropriately. This new abnormal filter is simply an alias to the
+  existing loader filter, which uses the name by which it is invoked to toggle
+  the behaviour of whether to attach normalizing filters.
+
+2009-09-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/producer_framebuffer.c: Fix framebuffer producer
+  preventing image conversion and crop.
+
+  * src/modules/qimage/configure: Fix kde_libdir detection for qimage (patch
+  2151852).  Patch from Roberto Castagnola <roberto.castagnola@gmail.com>. In
+  particular, Gentoo users have needed this.
+
+2009-09-10  Dan Dennedy <dan@dennedy.org>
+
+  * Makefile, src/swig/Makefile, src/swig/configure: Improve swig build with
+  help from Michael Forney.
+
+2009-09-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_composite.c: Restore performance
+  characteristics of recent composite fix.
+
+  * src/modules/core/transition_composite.c: Fix composite regression with no
+  luma.
+
+  * src/modules/core/transition_composite.c: Fix abruptness when using a luma
+  with softness in composite.
+
+  * src/modules/sdl/consumer_sdl_audio.c: Fix big memory leak when scrubbing.
+
+2009-09-10  j-b-m <jb@kdenlive.org>
+
+  * src/modules/kdenlive/producer_framebuffer.c: Fix memleaks modified:  
+  src/modules/kdenlive/producer_framebuffer.c
+
+2009-09-09  j-b-m <jb@kdenlive.org>
+
+  * src/modules/kdenlive/producer_framebuffer.c: Fix framebuffer flicker
+  modified:   src/modules/kdenlive/producer_framebuffer.c
+
+2009-09-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_audio.c: Cleanup pthread mutexes and
+  conditions.
+
+  * src/modules/core/filter_rescale.c: Fix core scaler regression. 
+
+2009-09-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/configure: Patch from Michael Forney to fix swig configure.  If
+  configure is run with --swig-languages="lang1 lang2", it complains because it
+  is compared to "all" without any quotes. 
+
+2009-09-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c: Fix making paths relative (kdenlive-1111). 
+
+2009-09-01  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Don't crash when running
+  kdenlivetitle module from a console, instead print error message and exit
+  modified:   src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+2009-08-31  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Fix flicker frame appearing
+  at 0 position, small optimisations modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Fix flicker frame appearing
+  at 0 position, small optimisations modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+2009-08-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_pool.c: The padding is no longer necessary with the gcc
+  aligned attribute. 
+
+  * src/framework/mlt_pool.c: Chris Rudorff (ppc contributor) strongly suggests
+  16 byte alignment and padding for all arch. 
+
+  * src/modules/kdenlive/producer_framebuffer.c: Apply JBM's fix to framebuffer
+  regression on big image convert refactoring. 
+
+  * src/framework/mlt_pool.c: Apply mem alignment and corruption patches from
+  Christoph Rudorff while debugging ppc. 
+
+2009-08-29  gmarco <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: removed warning
+
+2009-08-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_audio.c: Convert audio-only SDL consumer to
+  new audio API. 
+
+  * src/modules/sdl/consumer_sdl_audio.c: Cleanup indentation 
+
+  * src/modules/sdl/Makefile, src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/factory.c: Add audio-only SDL consumer (for Kdenlive on OS
+  X). 
+
+  * src/modules/sdl/consumer_sdl_audio.c: Convert audio-only SDL consumer to
+  new audio API. 
+
+  * src/modules/sdl/consumer_sdl_audio.c: Cleanup indentation 
+
+  * src/modules/sdl/Makefile, src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/factory.c: Add audio-only SDL consumer (for Kdenlive on OS
+  X). 
+
+2009-08-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/linsys/Makefile, src/modules/linsys/configure,
+  src/modules/linsys/consumer_SDIstream.c, src/modules/linsys/factory.c,
+  src/modules/linsys/sdi_generator.c: Add Linsys SDI consumer from B.C.E. 
+
+2009-08-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix a/v sync on files with
+  incorrect codec frame rate, but correct muxer rate. 
+
+2009-08-16  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Titler: add support for
+  background property modified:   src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Titler: add support for
+  background property modified:   src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+2009-08-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.c: Fix a/v synch drift with some unhandled
+  framerates (kdenlive-1034).  Previously only special handling provided for
+  32000, 44100, and 48000 sample rates on the strange NTSC frame rate. Patch
+  provided by Mike Adkins makes it generic including 24000/1001. Thanks! 
+
+2009-08-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/Makefile, src/framework/mlt_consumer.c,
+  src/framework/mlt_frame.c, src/framework/mlt_frame.h,
+  src/framework/mlt_tractor.c, src/framework/mlt_types.h,
+  src/mlt++/MltFrame.cpp, src/mlt++/MltFrame.h, src/mlt++/configure,
+  src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/producer_avformat.c, src/modules/core/Makefile,
+  src/modules/core/factory.c, src/modules/core/filter_audioconvert.c,
+  src/modules/core/filter_channelcopy.c, src/modules/core/filter_mono.c,
+  src/modules/core/filter_transition.c, src/modules/core/loader.ini,
+  src/modules/core/producer_consumer.c, src/modules/core/transition_mix.c,
+  src/modules/dv/consumer_libdv.c, src/modules/dv/producer_libdv.c,
+  src/modules/jackrack/filter_jackrack.c, src/modules/jackrack/filter_ladspa.c,
+  src/modules/normalize/filter_volume.c,
+  src/modules/resample/filter_resample.c, src/modules/sdl/consumer_sdl.c,
+  src/modules/sox/filter_sox.c, src/modules/vorbis/producer_vorbis.c: Refactor
+  audio conversion and mixing. 
+
+  * src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_preview.c,
+  src/modules/sdl/consumer_sdl_still.c: Fix some SDL concurrency issues I am
+  seeing in Kdenlive on my quad core. 
+
+2009-08-02  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Fix start / endviewport
+  movement, do not respect aspect ratio when resizing modified:  
+  kdenlivetitle_wrapper.cpp
+
+  * src/modules/qimage/configure, src/modules/qimage/kdenlivetitle_wrapper.cpp:
+  Add support for svg items in titles modified:   configure modified:  
+  kdenlivetitle_wrapper.cpp
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Dont's set Graphicscene
+  parent to avoid warning message, fix display of images modified:  
+  kdenlivetitle_wrapper.cpp
+
+  * src/modules/qimage/kdenlivetitle_wrapper.h: remove unused var modified:  
+  kdenlivetitle_wrapper.h
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Fix errors in caching + mem
+  leaks, fix resize issue modified:   kdenlivetitle_wrapper.cpp modified:  
+  kdenlivetitle_wrapper.h modified:   producer_kdenlivetitle.c
+
+2009-08-01  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Rewrote caching, similar to
+  qimage producer modified:   kdenlivetitle_wrapper.cpp modified:  
+  kdenlivetitle_wrapper.h modified:   producer_kdenlivetitle.c
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Cache image if there is no
+  animation modified:   kdenlivetitle_wrapper.cpp
+
+2009-07-31  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Use QImage instead of QPixmap,
+  add myself in copyright modified:   kdenlivetitle_wrapper.cpp modified:  
+  kdenlivetitle_wrapper.h modified:   producer_kdenlivetitle.c
+
+2009-07-31  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: kdenlivetitle_wrapper.cpp: qt
+  4.4 fix for scale
+
+2009-07-31  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h: don't use cache, just normal
+  properties to store scene modified:   kdenlivetitle_wrapper.cpp modified:  
+  kdenlivetitle_wrapper.h
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Rescale title when they are
+  played with a different profile modified:   kdenlivetitle_wrapper.cpp
+  modified:   kdenlivetitle_wrapper.h modified:   producer_kdenlivetitle.c
+
+2009-07-30  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/producer_kdenlivetitle.c: Fix image size, fix utf-8
+  characters in titles modified:   kdenlivetitle_wrapper.cpp modified:  
+  producer_kdenlivetitle.c
+
+2009-07-29  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Fix use of several title
+  producers in one instance of Kdenlive modified:   kdenlivetitle_wrapper.cpp
+  modified:   kdenlivetitle_wrapper.h modified:   producer_kdenlivetitle.c
+
+2009-07-27  gmarco <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: kdenlivetitle_wrapper.cpp:
+  fixed merge conflict
+
+2009-07-27  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/producer_kdenlivetitle.c: debug -- modified:  
+  producer_kdenlivetitle.c
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Cleanup + fix crashes when used
+  in Kdenlive modified:   kdenlivetitle_wrapper.cpp modified:  
+  kdenlivetitle_wrapper.h modified:   producer_kdenlivetitle.c
+
+2009-07-24  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/producer_kdenlivetitle.c: Fix mem leak modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp modified:  
+  src/modules/qimage/producer_kdenlivetitle.c
+
+2009-07-26  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h: Cleanup & fix crash modified:  
+  kdenlivetitle_wrapper.cpp modified:   kdenlivetitle_wrapper.h
+
+2009-07-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_playlist.c: Fix handling of length parameter in
+  mlt_playlist_remove_region.  This fixes kdenlive bug 1030. The calls to
+  mlt_playlist_split() inside this function appear to have forgotten that it
+  splits _after_ the specified position. 
+
+2009-07-26  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h: Cleanup & fix crash modified:  
+  kdenlivetitle_wrapper.cpp modified:   kdenlivetitle_wrapper.h
+
+2009-07-25  j-b-m <jb@kdenlive.org>
+
+  * src/framework/mlt_playlist.c: Fix bug preventing removal of one frame
+  region modified:   mlt_playlist.c
+
+  * src/framework/mlt_playlist.c: Fix bug preventing deletion of one frame
+  region modified:   mlt_playlist.c
+
+2009-07-24  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/producer_kdenlivetitle.c: Fix mem leak modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp modified:  
+  src/modules/qimage/producer_kdenlivetitle.c
+
+  * src/modules/qimage/producer_kdenlivetitle.c: Remove debug output
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Fix crash + position in time
+  modified:   src/modules/qimage/kdenlivetitle_wrapper.cpp modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.h modified:  
+  src/modules/qimage/producer_kdenlivetitle.c
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: * Fix memleaks * Cleanup *
+  Reload xml when setting "reload_xml" property modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.h modified:  
+  src/modules/qimage/producer_kdenlivetitle.c
+
+2009-07-24  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: kdenlivetitle_wrapper.cpp:
+  use changed format of title-xml
+
+  * src/modules/qimage/qimage_wrapper.cpp: qimage_wrapper: removed unused line
+
+2009-07-24  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: Add feature to dynamically
+  replace text in a block modified:   kdenlivetitle_wrapper.cpp modified:  
+  kdenlivetitle_wrapper.h modified:   producer_kdenlivetitle.c
+
+2009-07-24  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/factory.c: qimage/factory.c: readded deleted qimage
+  producer
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: kdenlivetitle: reindent code /
+  readded qimage_producer
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h: reindent c++
+
+  * src/modules/qimage/producer_kdenlivetitle.c: reindent code
+
+  * src/modules/qimage/factory.c, src/modules/qimage/qimage_wrapper.cpp:
+  readded deleted qimage producer in factory
+
+2009-07-20  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: clean image before painting
+
+2009-07-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_still.c: Fix image refresh in sdl_still
+  consmuer. 
+
+  * src/melt/melt.c: Avoid redefining _GNU_SOURCE. 
+
+2009-07-19  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/configure, src/modules/qimage/producer_kdenlivetitle.c:
+  kdenlivetitle: added QtXml during configure, add rescource to producer
+
+2009-07-18  gmarco <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: use start/end from kdenlive
+  titlefiles
+
+2009-07-18  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: working color conversion
+
+2009-07-15  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: memcpy works now
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: memhandling changed
+
+2009-07-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/melt/melt.c: Add missing include for basename(). 
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure,
+  src/modules/core/Makefile, src/modules/dgraft/Makefile,
+  src/modules/dv/Makefile, src/modules/effectv/Makefile,
+  src/modules/frei0r/Makefile, src/modules/gtk2/Makefile,
+  src/modules/jackrack/Makefile, src/modules/kdenlive/Makefile,
+  src/modules/kino/Makefile, src/modules/melt/Makefile,
+  src/modules/motion_est/Makefile, src/modules/normalize/Makefile,
+  src/modules/oldfilm/Makefile, src/modules/plus/Makefile,
+  src/modules/qimage/Makefile, src/modules/resample/Makefile,
+  src/modules/sdl/Makefile, src/modules/sox/Makefile,
+  src/modules/vmfx/Makefile, src/modules/vorbis/Makefile,
+  src/modules/xine/Makefile, src/modules/xml/Makefile: Fix build on OS X and
+  possibly others.  Gives higher priority to local lib and include dirs than
+  system or SDL-based lib and include dirs. Also, moves previous -lm fix to
+  from general build to --avformat-svn and --avformat-static builds. 
+
+2009-07-14  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: don't block under
+  qt-application (kdenlive)
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/producer_kdenlivetitle.c: cleanup
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: test alpha channel
+
+2009-07-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/Makefile: Fix underlinking avformat on some systems
+  (bug 2821055). 
+
+  * src/modules/sox/filter_sox.c: Apply sox 14.3 compatibility patch from Fathi
+  Boudra. 
+
+2009-07-11  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/core/loader.dict, src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h: kdenlivetitle_wrapper:
+  interpolate from start-> end, added title to dict
+
+2009-07-10  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: kdenlivetitle_wrapper: fixed
+  typo, not seen in Mac OS (QtXml also needed
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: kdenlivetitle_wrapper: load
+  kdenlive titles
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h: kdenlivetitle_wrapper: use
+  QApplication, else QGrahicsScene ist not working
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: kdenlivetitle_wrapper.{cpp,h},
+  producer_kdenlivetitle.c: LGPL header and byte move for right RGBA values
+
+  * src/modules/qimage/Makefile, src/modules/qimage/factory.c,
+  src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c: first work on kdenlive title
+  producer  should later read the xml-file from kdenlive and let the title have
+  scroll and zoom
+
+2009-07-03  Dan Dennedy <dan@dennedy.org>
+
+  * configure, docs/policies.txt, src/framework/mlt.h,
+  src/framework/mlt_frame.c, src/framework/mlt_frame.h,
+  src/framework/mlt_log.c, src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_avdeinterlace.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c, src/modules/core/Makefile,
+  src/modules/core/factory.c, src/modules/core/filter_brightness.c,
+  src/modules/core/filter_crop.c, src/modules/core/filter_gamma.c,
+  src/modules/core/filter_greyscale.c, src/modules/core/filter_imageconvert.c,
+  src/modules/core/filter_luma.c, src/modules/core/filter_mirror.c,
+  src/modules/core/filter_obscure.c, src/modules/core/filter_rescale.c,
+  src/modules/core/filter_resize.c, src/modules/core/filter_watermark.c,
+  src/modules/core/loader.ini, src/modules/core/producer_colour.c,
+  src/modules/core/producer_consumer.c, src/modules/core/producer_ppm.c,
+  src/modules/core/transition_luma.c, src/modules/effectv/filter_burn.c,
+  src/modules/frei0r/filter_frei0r.c, src/modules/frei0r/frei0r_helper.c,
+  src/modules/frei0r/frei0r_helper.h, src/modules/frei0r/producer_frei0r.c,
+  src/modules/frei0r/transition_frei0r.c, src/modules/gtk2/filter_rescale.c,
+  src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pixbuf.c,
+  src/modules/kdenlive/filter_boxblur.c, src/modules/kdenlive/filter_wave.c,
+  src/modules/kdenlive/producer_framebuffer.c,
+  src/modules/motion_est/filter_crop_detect.c,
+  src/modules/motion_est/filter_motion_est.c,
+  src/modules/motion_est/filter_vismv.c,
+  src/modules/motion_est/producer_slowmotion.c,
+  src/modules/oldfilm/filter_dust.c, src/modules/oldfilm/filter_grain.c,
+  src/modules/oldfilm/filter_lines.c, src/modules/oldfilm/filter_oldfilm.c,
+  src/modules/oldfilm/filter_tcolor.c, src/modules/oldfilm/filter_vignette.c,
+  src/modules/plus/filter_affine.c, src/modules/plus/filter_charcoal.c,
+  src/modules/plus/filter_invert.c, src/modules/plus/filter_sepia.c,
+  src/modules/plus/transition_affine.c, src/modules/qimage/producer_qimage.c,
+  src/modules/qimage/qimage_wrapper.cpp, src/modules/qimage/qimage_wrapper.h,
+  src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_still.c,
+  src/modules/sdl/producer_sdl_image.c, src/modules/vmfx/filter_chroma.c,
+  src/modules/vmfx/filter_chroma_hold.c, src/modules/vmfx/filter_mono.c,
+  src/modules/vmfx/filter_shape.c, src/modules/xine/filter_deinterlace.c:
+  Massive refactoring of image conversion.  This drops all image color space
+  and pixel format conversions from the mlt_frame class. Instead, it adds a
+  convert_image virtual function to the mlt_frame class that is called within
+  mlt_frame_get_image(). The newly added imageconvert filter sets that virtual
+  function and contains the various conversion routines. The loader producer
+  automatically attaches this filter to the producer it creates. 
+
+  * src/framework/mlt_profile.c: Slightly improve auto-setting
+  MLT_NORMALISATION. 
+
 2009-06-30  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update ChangeLog for 0.4.4 release. 
 
   * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set to v0.4.4
   and update release notes. 
