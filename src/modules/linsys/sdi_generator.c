@@ -525,22 +525,26 @@ static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_
 			if (linenumber_video >= 576)
 				linenumber_video = 575;
 
-			*p++ = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) + 1] << 2; // Cb
+			*p = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) + 1] << 2; // Cb
+			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040; // check values
 			if (*(p - 1) > 0x3c0)
 				*(p - 1) = 0x3c0;
-			*p++ = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) - 1] << 2; // Y1
+			*p = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) - 1] << 2; // Y1
+			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040;
 			if (*(p - 1) > 0x3ac)
 				*(p - 1) = 0x3ac;
-			*p++ = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) + 1] << 2; // Cr
+			*p = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) + 1] << 2; // Cr
+			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040;
 			if (*(p - 1) > 0x3c0)
 				*(p - 1) = 0x3c0;
-			*p++ = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) - 1] << 2; // Y2
+			*p = video_buffer[(linenumber_video * 1440) + ((p - 288) - buf) - 1] << 2; // Y2
+			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040;
 			if (*(p - 1) > 0x3ac)
@@ -639,9 +643,6 @@ static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DB
 			buffer+= 256; // 01 0000 0000 // set bit8 = even parity bit and bit9 = !bit8
 		}
 		*p++ = buffer;
-
-		// z-bit for beginning of a new AES channel status block
-		int8_t z = 0;
 
 		int16_t sample_number=0;
 		int16_t counter = 0;
