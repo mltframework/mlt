@@ -83,7 +83,7 @@
 // function prototypes
 static int sdimaster_init(char *outputpath, int format);
 static int sdimaster_close();
-static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN);
+static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int audio_streams, int my_DBN);
 
 static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t audio_buffer[8][MAX_AUDIO_SAMPLES],
 		int linenumber_sdiframe, int linenumber_video, int my_DBN, int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams);
@@ -206,14 +206,12 @@ static int sdimaster_init(char *outputpath, int format) {
 /** Writes video and audio to specified files in SDI format
  * @param *vBuffer: Pointer to a video Buffer
  * @param aBuffer: An array of 8 audio channel pairs (2 mono channels)
- * @param sizeofVideo: size of the video Buffer
- * @param sizeofAudio: size of every audio Buffer
  * @param audio_streams: number of audio streams which have content in aBuffer (available 0-8)
  *
  * @return current DBN (data block number of SDI frame)
  *
  */
-static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN) {
+static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int audio_streams, int my_DBN) {
 
 	// Buffer for one line of SDI
 	uint16_t buf[TOTAL_SAMPLES];

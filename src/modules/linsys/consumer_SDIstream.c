@@ -69,12 +69,6 @@
 
 #include "sdi_generator.c"
 
-// definitions
-#define PAL_HEIGHT 576				// only used for MAX_FRAMESIZE
-#define PAL_WIDTH 720				// only used for MAX_FRAMESIZE
-#define MAX_FRAMESIZE (PAL_HEIGHT*PAL_WIDTH*2) // SDI frame size, (2 Pixels are represented by 4 bytes, yuyv422)
-
-// alias for "struct consumer_SDIstream_s *" , now we can write "consumer_SDIstream". Makes it more readable...
 typedef struct consumer_SDIstream_s *consumer_SDIstream;
 
 struct consumer_SDIstream_s {
@@ -284,8 +278,7 @@ static void *consumer_thread(void *arg) {
 							src += channels;
 						}
 					}
-					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, sizeof(video_buffer),
-							samples * 2 * sizeof(int16_t), /*channels /*/ 2, my_dbn);
+					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, channels / 2, my_dbn);
 				} else
 					printf("SDI-Consumer: Videobuffer was NULL, skipping playout!\n");
 
