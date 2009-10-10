@@ -60,6 +60,7 @@
 
 #include <framework/mlt_frame.h>
 #include <framework/mlt_consumer.h>
+#include <framework/mlt_log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -235,7 +236,7 @@ static void *consumer_thread(void *arg) {
 			if (terminate_on_pause && frame != NULL) {
 				terminated = mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame), "_speed") == 0.0;
 				if (terminated == 1) {
-					printf("\nEnd of playout reached, terminating\n");
+					mlt_log_info(MLT_CONSUMER_SERVICE(consumer), "End of playout reached, terminating\n");
 					fflush(stdout);
 					consumer_stop(consumer);
 				}
@@ -261,8 +262,7 @@ static void *consumer_thread(void *arg) {
 
 				// Get the audio from this frame and save it to our audio_buffer
 				mlt_frame_get_audio(frame, (void**) &audio_buffer_tmp, &aformat, &frequency, &channels, &samples);
-
-//				printf("\n channels: %i samples: %i\n", channels, samples);
+				mlt_log_debug(MLT_CONSUMER_SERVICE(consumer), "channels: %i samples: %i\n", channels, samples);
 
 				// Tell the sdi_generator.c to playout our frame
 				// 8 audio streams with 2 stereo channels are possible
@@ -280,10 +280,10 @@ static void *consumer_thread(void *arg) {
 					}
 					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, channels / 2, my_dbn);
 				} else
-					printf("SDI-Consumer: Videobuffer was NULL, skipping playout!\n");
+					mlt_log_warning(MLT_CONSUMER_SERVICE(consumer), "video_buffer was NULL, skipping playout\n");
 
 			} else {
-				printf("WARNING the requested frame is not yet rendered! This will cause image disturbance!\n");
+				mlt_log_warning(MLT_CONSUMER_SERVICE(consumer), "WARNING the requested frame is not yet rendered! This will cause image disturbance!\n");
 			}
 
 			if (frame != NULL)

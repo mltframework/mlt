@@ -380,7 +380,7 @@ static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMP
 				// TODO react
 			}
 			if (val & SDI_EVENT_TX_DATA) {
-				printf("SDI transmit data change detected.\n");
+				// printf("SDI transmit data change detected.\n");
 			}
 		}
 	}
