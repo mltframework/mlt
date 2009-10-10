@@ -59,6 +59,7 @@
 #include <pthread.h>
 
 // defines
+#define MAX_AUDIO_SAMPLES (1920*2)    // 1920 Samples per Channel and we have stereo (48000 Hz /25 fps = 1920 Samples per frame)
 #define TOTAL_SAMPLES 1728
 #define ANCILLARY_DATA_SAMPLES 280
 #define TOTAL_LINES 625
@@ -82,15 +83,11 @@
 // function prototypes
 static int sdimaster_init(char *outputpath, int format);
 static int sdimaster_close();
-static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aBuffer1, int16_t **aBuffer2, int16_t **aBuffer3, int16_t **aBuffer4,
-		int16_t **aBuffer5, int16_t **aBuffer6, int16_t **aBuffer7, int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN);
-static int sdimaster_playout_raw(uint8_t *vBuffer, int16_t *aBuffer0, int16_t *aBuffer1, int16_t *aBuffer2, int16_t *aBuffer3, int16_t *aBuffer4,
-		int16_t *aBuffer5, int16_t *aBuffer6, int16_t *aBuffer7, int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN);
+static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN);
 
-static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t *audio_buffer0, int16_t *audio_buffer1, int16_t *aBuffer2,
-		int16_t *aBuffer3, int16_t *aBuffer4, int16_t *aBuffer5, int16_t *aBuffer6, int16_t *aBuffer7, int linenumber_sdiframe, int linenumber_video,
-		int my_DBN, int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams);
-static int writeANC(uint16_t *p, int linenumber_sdiframe, uint16_t DID, int my_DBN, int16_t *audio_buffer_A, int16_t *audio_buffer_B,
+static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t audio_buffer[8][MAX_AUDIO_SAMPLES],
+		int linenumber_sdiframe, int linenumber_video, int my_DBN, int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams);
+static int writeANC(uint16_t *p, int linenumber_sdiframe, uint16_t DID, int my_DBN, int16_t audio_buffer_A[MAX_AUDIO_SAMPLES], int16_t audio_buffer_B[MAX_AUDIO_SAMPLES],
 		int16_t AudioDataPacketCounter, int16_t AudioGroups2Write, int audio_streams);
 static uint16_t checker(uint16_t *DID_pointer);
 
@@ -102,7 +99,7 @@ static uint8_t getDBN(int my_DBN);
 
 static uint8_t *pack10(uint8_t *outbuf, uint16_t *inbuf, size_t count);
 
-static int pack_AES_subframe(uint16_t *p, int8_t c, int8_t z, int8_t ch, int16_t *audio_sample);
+static int pack_AES_subframe(uint16_t *p, int8_t c, int8_t z, int8_t ch, int32_t audio_sample);
 
 // Filehandler for sdi output
 static int fh_sdi_dest;
@@ -207,15 +204,8 @@ static int sdimaster_init(char *outputpath, int format) {
 //****************************************************************************************
 
 /** Writes video and audio to specified files in SDI format
- * @param **vBuffer: Pointer to a video Buffer
- * @param **aBuffer0: Pointer to an audio Buffer (2 mono channels)
- * @param **aBuffer1: Pointer to an audio Buffer (2 mono channels)
- * @param **aBuffer2: Pointer to an audio Buffer (2 mono channels)
- * @param **aBuffer3: Pointer to an audio Buffer (2 mono channels)
- * @param **aBuffer4: Pointer to an audio Buffer (2 mono channels)
- * @param **aBuffer5: Pointer to an audio Buffer (2 mono channels)
- * @param **aBuffer6: Pointer to an audio Buffer (2 mono channels)
- * @param **aBuffer7: Pointer to an audio Buffer (2 mono channels)
+ * @param *vBuffer: Pointer to a video Buffer
+ * @param aBuffer: An array of 8 audio channel pairs (2 mono channels)
  * @param sizeofVideo: size of the video Buffer
  * @param sizeofAudio: size of every audio Buffer
  * @param audio_streams: number of audio streams which have content in aBuffer (available 0-8)
@@ -223,8 +213,7 @@ static int sdimaster_init(char *outputpath, int format) {
  * @return current DBN (data block number of SDI frame)
  *
  */
-static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aBuffer1, int16_t **aBuffer2, int16_t **aBuffer3, int16_t **aBuffer4,
-		int16_t **aBuffer5, int16_t **aBuffer6, int16_t **aBuffer7, int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN) {
+static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN) {
 
 	// Buffer for one line of SDI
 	uint16_t buf[TOTAL_SAMPLES];
@@ -252,19 +241,19 @@ static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aB
 
 	// line 1-22	VERTICAL_BLANKING:23 lines				SAV 0x2ac		EAV 0x2d8
 	for (i = 1; i <= 5; i++) {
-		create_SDI_line(buf, FIELD_1, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+		create_SDI_line(buf, FIELD_1, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 				getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
 	}
 	for (i = 6; i <= 8; i++) {
-		create_SDI_line(buf, FIELD_1, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+		create_SDI_line(buf, FIELD_1, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 				getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
 	}
 	for (i = 9; i <= 22; i++) {
-		create_SDI_line(buf, FIELD_1, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+		create_SDI_line(buf, FIELD_1, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 				getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
@@ -272,7 +261,7 @@ static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aB
 	// line 23-310  ACTIVE: 287 lines						SAV 0x200		EAV 0x274
 	int f1counter = 1; // only odd lines
 	for (i = 23; i <= 310; i++) {
-		create_SDI_line(buf, FIELD_1, ACTIVE_VIDEO, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i,
+		create_SDI_line(buf, FIELD_1, ACTIVE_VIDEO, vBuffer, aBuffer, i,
 				f1counter, getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
@@ -280,11 +269,11 @@ static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aB
 	}
 	i = 311;
 	// line 311-312 VERTICAL_BLANKING: 2 lines				SAV 0x2ac		EAV 0x2d8
-	create_SDI_line(buf, FIELD_1, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_1, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
-	create_SDI_line(buf, FIELD_1, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_1, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
@@ -294,45 +283,45 @@ static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aB
 	/*#####################################################*/
 
 	// line 313-336 VERTICAL_BLANKING: 23 lines				SAV 0x3b0		EAV 0x3c4
-	create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
 
-	create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
 
-	create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
 
-	create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
 
-	create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
 
-	create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+	create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 			getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 	AudioGroupCounter += getNumberOfAudioGroups2Write(i++);
 	p = pack10(p, buf, TOTAL_SAMPLES);
 
 	// `getAudioGroups2Write()`=0
 	for (i = 319; i <= 321; i++) {
-		create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+		create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 				getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
 	}
 	for (i = 322; i <= 335; i++) {
-		create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+		create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 				getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
@@ -341,7 +330,7 @@ static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aB
 	int f2counter = 2; // only even Lines
 	for (i = 336; i <= 623; i++) {
 
-		create_SDI_line(buf, FIELD_2, ACTIVE_VIDEO, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i,
+		create_SDI_line(buf, FIELD_2, ACTIVE_VIDEO, vBuffer, aBuffer, i,
 				f2counter, getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
@@ -349,7 +338,7 @@ static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aB
 	}
 	// line 624-625 VERTICAL_BLANKING: 2 lines				SAV 0x3b0		EAV 0x3c4
 	for (i = 624; i <= 625; i++) {
-		create_SDI_line(buf, FIELD_2, VERT_BLANKING, *vBuffer, *aBuffer0, *aBuffer1, *aBuffer2, *aBuffer3, *aBuffer4, *aBuffer5, *aBuffer6, *aBuffer7, i, 0,
+		create_SDI_line(buf, FIELD_2, VERT_BLANKING, vBuffer, aBuffer, i, 0,
 				getDBN(my_DBN++), AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 		AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 		p = pack10(p, buf, TOTAL_SAMPLES);
@@ -401,15 +390,6 @@ static int sdimaster_playout(uint8_t **vBuffer, int16_t **aBuffer0, int16_t **aB
 	return getDBN(my_DBN);
 } // end sdimaster_playout()
 
-// used by raw2sdi.c
-// interface to this sdimaster_playout()
-static int sdimaster_playout_raw(uint8_t *vBuffer, int16_t *aBuffer0, int16_t *aBuffer1, int16_t *aBuffer2, int16_t *aBuffer3, int16_t *aBuffer4,
-		int16_t *aBuffer5, int16_t *aBuffer6, int16_t *aBuffer7, int sizeofVideo, int sizeofAudio, int audio_streams, int my_DBN) {
-
-	return sdimaster_playout(&vBuffer, &aBuffer0, &aBuffer1, &aBuffer2, &aBuffer3, &aBuffer4, &aBuffer5, &aBuffer6, &aBuffer7, sizeofVideo, sizeofAudio,
-			audio_streams, my_DBN);
-}
-
 // ****************************************************************************************
 // ***************************  Create Line  **********************************************
 // ****************************************************************************************
@@ -419,15 +399,13 @@ static int sdimaster_playout_raw(uint8_t *vBuffer, int16_t *aBuffer0, int16_t *a
  * @param field: size of the video Buffer
  * @param active: v-blank or active-video
  * @param *video_buffer: video buffer
- * @param *audio_buffer2: 1.audio buffer ch1-ch2
- * @param *audio_buffer1: 2.audio buffer ch2-ch3
+ * @param audio_buffer: array of 8 channel pairs
  * @param line: linenumber
  * @param AudioGroupCounter: count written AudioGroup
  * @param AudioGroups2Write: number of samples to write
  * @param audio_streams: number of audio streams to integrate
  */
-static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t *audio_buffer0, int16_t *audio_buffer1, int16_t *audio_buffer2,
-		int16_t *audio_buffer3, int16_t *audio_buffer4, int16_t *audio_buffer5, int16_t *audio_buffer6, int16_t *audio_buffer7, int linenumber_sdiframe,
+static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t audio_buffer[8][MAX_AUDIO_SAMPLES], int linenumber_sdiframe,
 		int linenumber_video, int my_DBN, int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams) {
 
 	// write line with TRS(EAV) ANC(audio) TRS(SAV) activeVideo(CbY1CrY2)
@@ -499,21 +477,21 @@ static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_
 
 	// Audio Group 1 with AES Frame 1 - 2
 	if (audio_streams > 0 && audio_streams <= 2) {
-		p += writeANC(p, linenumber_sdiframe, 0x2FF, my_DBN, audio_buffer0, audio_buffer1, AudioGroupCounter, AudioGroups2Write, audio_streams);
+		p += writeANC(p, linenumber_sdiframe, 0x2FF, my_DBN, audio_buffer[0], audio_buffer[1], AudioGroupCounter, AudioGroups2Write, audio_streams);
 	}
 
 	// Audio Group 2 with AES Frame 3 - 4
 	if (audio_streams > 2 && audio_streams <= 4) {
-		p += writeANC(p, linenumber_sdiframe, 0x1FD, my_DBN, audio_buffer2, audio_buffer3, AudioGroupCounter, AudioGroups2Write, audio_streams);
+		p += writeANC(p, linenumber_sdiframe, 0x1FD, my_DBN, audio_buffer[2], audio_buffer[3], AudioGroupCounter, AudioGroups2Write, audio_streams);
 	}
 
 	// Audio Group 3 with AES Frame 5 - 6
 	if (audio_streams > 4 && audio_streams <= 6)
-		p += writeANC(p, linenumber_sdiframe, 0x1FB, my_DBN, audio_buffer4, audio_buffer5, AudioGroupCounter, AudioGroups2Write, audio_streams);
+		p += writeANC(p, linenumber_sdiframe, 0x1FB, my_DBN, audio_buffer[4], audio_buffer[5], AudioGroupCounter, AudioGroups2Write, audio_streams);
 
 	if (audio_streams > 6 && audio_streams <= 8)
 		// Audio Group 4 with AES Frame 6 - 7
-		p += writeANC(p, linenumber_sdiframe, 0x2F9, my_DBN, audio_buffer6, audio_buffer7, AudioGroupCounter, AudioGroups2Write, audio_streams);
+		p += writeANC(p, linenumber_sdiframe, 0x2F9, my_DBN, audio_buffer[6], audio_buffer[7], AudioGroupCounter, AudioGroups2Write, audio_streams);
 
 	// Fill ANC data in until the end (position(p) to `ANCILLARY_DATA_SAMPLES`)
 	while (p < (buf + ANCILLARY_DATA_SAMPLES + 4)) {
@@ -574,7 +552,7 @@ static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_
 	return 0;
 }
 
-static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DBN, int16_t *audio_buffer_A, int16_t *audio_buffer_B, int16_t AudioGroupCounter,
+static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DBN, int16_t audio_buffer_A[MAX_AUDIO_SAMPLES], int16_t audio_buffer_B[MAX_AUDIO_SAMPLES], int16_t AudioGroupCounter,
 		int16_t AudioGroups2Write, int audio_streams) {
 
 	/* ANC Ancillary
@@ -682,22 +660,22 @@ static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DB
 
 			sample_number=(AudioGroupCounter*2)+ counter;
 			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 1),
-					getZBit(sample_number/2), 0, &audio_buffer_A[sample_number]); // left
+					getZBit(sample_number/2), 0, audio_buffer_A[sample_number]); // left
 			p+=3; // step 3 words
 
 			sample_number=(AudioGroupCounter*2)+ counter+1;
 			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 2),
-					getZBit(sample_number/2), 1, &audio_buffer_A[sample_number]); // right
+					getZBit(sample_number/2), 1, audio_buffer_A[sample_number]); // right
 			p+=3;
 
 			sample_number=(AudioGroupCounter*2)+ counter;
 			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 3),
-					getZBit(sample_number/2), 2, &audio_buffer_B[sample_number]); // left
+					getZBit(sample_number/2), 2, audio_buffer_B[sample_number]); // left
 			p+=3;
 
 			sample_number=(AudioGroupCounter*2)+ counter+1;
 			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 4),
-					getZBit(sample_number/2), 3, &audio_buffer_B[sample_number]); // right
+					getZBit(sample_number/2), 3, audio_buffer_B[sample_number]); // right
 			p+=3;
 			counter+=2;
 		}
@@ -772,11 +750,10 @@ static uint16_t checker(uint16_t *DID_pointer) {
  * @param ch: channel od AES subframe (value:0,1,2,3)
  * @param *audio_samplex: pointer to the audio buffer
  * */
-static int pack_AES_subframe(uint16_t *p, int8_t c, int8_t z, int8_t ch, int16_t *audio_samplex) {
+static int pack_AES_subframe(uint16_t *p, int8_t c, int8_t z, int8_t ch, int32_t audio_sample) {
 
 	// push 16bit up to 20bit(32bit)
-	int32_t audio_sample = *audio_samplex;
-	audio_sample = audio_sample << 4; // Shift by 4 (louder)
+	audio_sample <<= 4; // Shift by 4 (louder)
 
 	// parity_counter
 	int8_t parity_counter = 0;

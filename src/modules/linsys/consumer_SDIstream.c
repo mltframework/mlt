@@ -70,8 +70,6 @@
 #include "sdi_generator.c"
 
 // definitions
-
-#define MAX_AUDIO_SAMPLES (1920*2)  // 1920 Samples per Channel and we have stereo (48000 Hz /25 fps = 1920 Samples per frame)
 #define PAL_HEIGHT 576				// only used for MAX_FRAMESIZE
 #define PAL_WIDTH 720				// only used for MAX_FRAMESIZE
 #define MAX_FRAMESIZE (PAL_HEIGHT*PAL_WIDTH*2) // SDI frame size, (2 Pixels are represented by 4 bytes, yuyv422)
@@ -82,16 +80,8 @@ typedef struct consumer_SDIstream_s *consumer_SDIstream;
 struct consumer_SDIstream_s {
 
 	struct mlt_consumer_s parent; // This is the basic Consumer from which we fetch our data
-	mlt_image_format pix_fmt; // Must be mlt_image_yuv422 for SDI
-	mlt_audio_format aformat; // default: mlt_audio_pcm
-	int width;
-	int height;
-	int frequency;
-	int samples;
-	int channels;
 	char *path_destination_sdi; // Path for SDI output
-	uint8_t video_buffer[MAX_FRAMESIZE]; // our picture for this frame
-	int16_t audio_buffer0[MAX_AUDIO_SAMPLES]; // our audio channelpair 1 for this frame
+	int16_t audio_buffer[8][MAX_AUDIO_SAMPLES]; // The SDI audio channel pairs for this frame
 };
 
 /** Forward references to static functions.
@@ -141,6 +131,9 @@ mlt_consumer consumer_SDIstream_init(mlt_profile profile, mlt_service_type type,
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
+
+		// Hardcode the audio sample rate to 48KHz for SDI
+		mlt_properties_set_int(MLT_CONSUMER_PROPERTIES(parent), "frequency", 48000);
 
 		// Return the consumer produced
 		return parent;
@@ -235,6 +228,9 @@ static void *consumer_thread(void *arg) {
 	// set Datablock number for SDI encoding
 	int my_dbn = 1;
 
+	double fps = mlt_properties_get_double(MLT_CONSUMER_PROPERTIES(consumer), "fps");
+	unsigned int count = 0;
+
 	// Loop until told not to
 	while (!consumer_is_stopped(consumer) && terminated == 0) { //
 
@@ -253,25 +249,43 @@ static void *consumer_thread(void *arg) {
 
 			// True if mlt_consumer_rt_frame(...) successful
 			if (mlt_properties_get_int(mlt_frame_properties(frame), "rendered") == 1) {
+				mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
+
+				// Tell the framework how we want our audio and video
+				int width = mlt_properties_get_int(properties, "width");
+				int height = mlt_properties_get_int(properties, "height");
+				int frequency = 48000;
+				int channels = 0;
+				int samples = mlt_sample_calculator(fps, frequency, count++);
+				mlt_image_format pix_fmt = mlt_image_yuv422;
+				mlt_audio_format aformat = mlt_audio_s16;
+				uint8_t *video_buffer;
+				int16_t *audio_buffer_tmp; // the upstream audio buffer
 
 				// Get the video from this frame and save it to our video_buffer
-				mlt_frame_get_image(frame, &this->video_buffer, &this->pix_fmt, &this->width, &this->height, 1);
+				mlt_frame_get_image(frame, &video_buffer, &pix_fmt, &width, &height, 0);
 
 				// Get the audio from this frame and save it to our audio_buffer
-				//mlt_frame_get_audio(frame, &this->audio_buffer0, &this->aformat, &this->frequency, &this->channels, &this->samples );
-				mlt_frame_get_audio(frame, &this->audio_buffer0, &this->aformat, &this->frequency, &this->channels, &this->samples);
+				mlt_frame_get_audio(frame, (void**) &audio_buffer_tmp, &aformat, &frequency, &channels, &samples);
 
-				//printf("\n &this->channels: %i\n", this->channels);
+//				printf("\n channels: %i samples: %i\n", channels, samples);
 
 				// Tell the sdi_generator.c to playout our frame
 				// 8 audio streams with 2 stereo channels are possible
-				// copy first to all audio stream, because no second or more audio streams are currently available (we think)
-				// TODO struct params with <n> audio buffer and properties (size_of)
-				if (this->video_buffer) {
-
-					my_dbn = sdimaster_playout(&this->video_buffer, &this->audio_buffer0, &this->audio_buffer0, &this->audio_buffer0, &this->audio_buffer0,
-							&this->audio_buffer0, &this->audio_buffer0, &this->audio_buffer0, &this->audio_buffer0, sizeof(this->video_buffer),
-							sizeof(this->audio_buffer0), 1, my_dbn);
+				if (video_buffer) {
+					int c;
+					for (c = 0; c < channels/2; c++) {
+						int16_t *src = audio_buffer_tmp + c * 2;
+						int16_t *dest = this->audio_buffer[c];
+						int s = samples + 1;
+						while (--s) {
+							memcpy(dest, src, 2 * sizeof(int16_t));
+							dest += 2;
+							src += channels;
+						}
+					}
+					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, sizeof(video_buffer),
+							samples * 2 * sizeof(int16_t), /*channels /*/ 2, my_dbn);
 				} else
 					printf("SDI-Consumer: Videobuffer was NULL, skipping playout!\n");
 
