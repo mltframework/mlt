@@ -665,7 +665,7 @@ static void get_audio_streams_info( producer_avformat this )
 			avformat_unlock( );
 		}
 	}
-	mlt_log_verbose( NULL, "total_streams %d max_stream %d total_channels %d max_channels %d\n",
+	mlt_log_verbose( NULL, "[producer avformat] audio: total_streams %d max_stream %d total_channels %d max_channels %d\n",
 		this->audio_streams, this->audio_max_stream, this->total_channels, this->max_channel );
 }
 
