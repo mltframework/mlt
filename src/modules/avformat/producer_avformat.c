@@ -216,6 +216,9 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->sample_aspect_ratio ) );
 #endif
+				snprintf( key, sizeof(key), "meta.media.%d.codec.frame_rate", i );
+				mlt_properties_set_double( meta_media, key, (double) codec_context->time_base.den /
+										   ( codec_context->time_base.num == 0 ? 1 : codec_context->time_base.num ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.pix_fmt", i );
 				mlt_properties_set( meta_media, key, avcodec_get_pix_fmt_name( codec_context->pix_fmt ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
@@ -249,10 +252,10 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 		mlt_properties_set_int( meta_media, key, codec_context->bit_rate );
 // 		snprintf( key, sizeof(key), "meta.media.%d.codec.time_base", i );
 // 		mlt_properties_set_double( meta_media, key, av_q2d( codec_context->time_base ) );
-		snprintf( key, sizeof(key), "meta.media.%d.codec.profile", i );
-		mlt_properties_set_int( meta_media, key, codec_context->profile );
-		snprintf( key, sizeof(key), "meta.media.%d.codec.level", i );
-		mlt_properties_set_int( meta_media, key, codec_context->level );
+//		snprintf( key, sizeof(key), "meta.media.%d.codec.profile", i );
+//		mlt_properties_set_int( meta_media, key, codec_context->profile );
+//		snprintf( key, sizeof(key), "meta.media.%d.codec.level", i );
+//		mlt_properties_set_int( meta_media, key, codec_context->level );
 	}
 
 	return meta_media;
