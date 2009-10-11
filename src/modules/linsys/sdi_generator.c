@@ -60,6 +60,7 @@
 
 // defines
 #define MAX_AUDIO_SAMPLES (1920*2)    // 1920 Samples per Channel and we have stereo (48000 Hz /25 fps = 1920 Samples per frame)
+#define MAX_AUDIO_STREAMS (8)
 #define TOTAL_SAMPLES 1728
 #define ANCILLARY_DATA_SAMPLES 280
 #define TOTAL_LINES 625
@@ -83,9 +84,9 @@
 // function prototypes
 static int sdimaster_init(char *outputpath, int format);
 static int sdimaster_close();
-static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int audio_streams, int my_DBN);
+static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES], int audio_streams, int my_DBN);
 
-static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t audio_buffer[8][MAX_AUDIO_SAMPLES],
+static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t audio_buffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES],
 		int linenumber_sdiframe, int linenumber_video, int my_DBN, int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams);
 static int writeANC(uint16_t *p, int linenumber_sdiframe, uint16_t DID, int my_DBN, int16_t audio_buffer_A[MAX_AUDIO_SAMPLES], int16_t audio_buffer_B[MAX_AUDIO_SAMPLES],
 		int16_t AudioDataPacketCounter, int16_t AudioGroups2Write, int audio_streams);
@@ -211,7 +212,7 @@ static int sdimaster_init(char *outputpath, int format) {
  * @return current DBN (data block number of SDI frame)
  *
  */
-static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMPLES], int audio_streams, int my_DBN) {
+static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES], int audio_streams, int my_DBN) {
 
 	// Buffer for one line of SDI
 	uint16_t buf[TOTAL_SAMPLES];
@@ -403,8 +404,8 @@ static int sdimaster_playout(uint8_t *vBuffer, int16_t aBuffer[8][MAX_AUDIO_SAMP
  * @param AudioGroups2Write: number of samples to write
  * @param audio_streams: number of audio streams to integrate
  */
-static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t audio_buffer[8][MAX_AUDIO_SAMPLES], int linenumber_sdiframe,
-		int linenumber_video, int my_DBN, int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams) {
+static int create_SDI_line(uint16_t *buf, int field, int active, uint8_t *video_buffer, int16_t audio_buffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES],
+		int linenumber_sdiframe, int linenumber_video, int my_DBN, int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams) {
 
 	// write line with TRS(EAV) ANC(audio) TRS(SAV) activeVideo(CbY1CrY2)
 	// 					*************************************************************************
