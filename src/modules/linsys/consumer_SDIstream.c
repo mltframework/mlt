@@ -76,7 +76,7 @@ struct consumer_SDIstream_s {
 
 	struct mlt_consumer_s parent; // This is the basic Consumer from which we fetch our data
 	char *path_destination_sdi; // Path for SDI output
-	int16_t audio_buffer[8][MAX_AUDIO_SAMPLES]; // The SDI audio channel pairs for this frame
+	int16_t audio_buffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES]; // The SDI audio channel pairs for this frame
 };
 
 /** Forward references to static functions.
@@ -267,18 +267,32 @@ static void *consumer_thread(void *arg) {
 				// Tell the sdi_generator.c to playout our frame
 				// 8 audio streams with 2 stereo channels are possible
 				if (video_buffer) {
-					int c;
-					for (c = 0; c < channels/2; c++) {
-						int16_t *src = audio_buffer_tmp + c * 2;
-						int16_t *dest = this->audio_buffer[c];
-						int s = samples + 1;
-						while (--s) {
-							memcpy(dest, src, 2 * sizeof(int16_t));
-							dest += 2;
-							src += channels;
+					int i, j = 0;
+					int map_channels, map_start;
+
+					for (i = 0; i < MAX_AUDIO_STREAMS && j < channels; i++) {
+						char key[27];
+						int c;
+
+						sprintf(key, "meta.map.audio.%d.channels", i);
+						map_channels = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), key);
+						sprintf(key, "meta.map.audio.%d.start", i);
+						map_start = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), key);
+						if (!map_channels)
+							map_channels = channels - j;
+						for (c = 0; c < map_channels && j < channels; c++, j++) {
+							int16_t *src = audio_buffer_tmp + j;
+							int16_t *dest = this->audio_buffer[(map_start + c) / 2] + (map_start + c) % 2;
+							int s = samples + 1;
+
+							while (--s) {
+								*dest = *src;
+								dest += 2;
+								src += channels;
+							}
 						}
 					}
-					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, channels / 2, my_dbn);
+					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, (channels + 1) / 2, my_dbn);
 				} else
 					mlt_log_warning(MLT_CONSUMER_SERVICE(consumer), "video_buffer was NULL, skipping playout\n");
 
