@@ -388,6 +388,16 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				// Get the temporary properties
 				temp_properties = MLT_FRAME_PROPERTIES( temp );
 
+				// Pass all unique meta properties from the producer's frame to the new frame
+				int count = mlt_properties_count( temp_properties );
+				int j;
+				for ( j = 0; j < count; j ++ )
+				{
+					char *name = mlt_properties_get_name( temp_properties, j );
+					if ( !strncmp( name, "meta.", 5 ) && !mlt_properties_get( frame_properties, name ) )
+						mlt_properties_set( frame_properties, name, mlt_properties_get( temp_properties, name ) );
+				}
+
 				// Check for last track
 				done = mlt_properties_get_int( temp_properties, "last_track" );
 
