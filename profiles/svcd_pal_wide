@@ -6,5 +6,5 @@ height=576
 progressive=0
 sample_aspect_num=59
 sample_aspect_den=27
-display_aspect_num=4
-display_aspect_den=3
+display_aspect_num=16
+display_aspect_den=9
