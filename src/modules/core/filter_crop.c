@@ -72,6 +72,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	int owidth  = *width - left - right;
 	int oheight = *height - top - bottom;
+	owidth = owidth < 0 ? 0 : owidth;
+	oheight = oheight < 0 ? 0 : oheight;
 
 	if ( ( owidth != *width || oheight != *height ) &&
 		error == 0 && *image != NULL && owidth > 0 && oheight > 0 )
@@ -85,9 +87,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		if ( top % 2 )
 			mlt_properties_set_int( properties, "top_field_first", !mlt_properties_get_int( properties, "top_field_first" ) );
-
-		left  -= left % 2;
-		owidth = *width - left - right;
 
 		// Create the output image
 		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
@@ -143,12 +142,14 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		int width  = mlt_properties_get_int( frame_props, "real_width" );
 		int height = mlt_properties_get_int( frame_props, "real_height" );
 
+		left  -= left % 2;
+		right -= right % 2;
 		mlt_properties_set_int( frame_props, "crop.left", left );
 		mlt_properties_set_int( frame_props, "crop.right", right );
 		mlt_properties_set_int( frame_props, "crop.top", top );
 		mlt_properties_set_int( frame_props, "crop.bottom", bottom );
-		mlt_properties_set_int( frame_props, "real_width", width - left - right );
-		mlt_properties_set_int( frame_props, "real_height", height - top - bottom );
+		mlt_properties_set_int( frame_props, "real_width", ( width - left - right ) < 0 ? 0 : width - left - right );
+		mlt_properties_set_int( frame_props, "real_height", ( height - top - bottom ) < 0 ? 0 : height - top - bottom );
 	}
 	return frame;
 }
