@@ -24,11 +24,15 @@
 #include <framework/mlt_factory.h>
 #include <framework/mlt_property.h>
 
+#include <stdio.h>
+#include <string.h>
+
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the image
 	mlt_filter filter = mlt_frame_pop_service( this );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_properties props = MLT_FRAME_PROPERTIES( this );
 
 	mlt_frame freeze_frame = NULL;;
 	int freeze_before = mlt_properties_get_int( properties, "freeze_before" );
@@ -47,27 +51,54 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if (do_freeze == 1) {
 		freeze_frame = mlt_properties_get_data( properties, "freeze_frame", NULL );
-
-		if( freeze_frame == NULL || mlt_properties_get_position( properties, "_frame" ) != pos )
+		if( freeze_frame == NULL || mlt_properties_get_position( properties, "_frame" ) != pos || mlt_properties_get_int( props , "width" ) != mlt_properties_get_int( MLT_FRAME_PROPERTIES( freeze_frame ), "width" )  || mlt_properties_get_int( props , "height" ) != mlt_properties_get_int( MLT_FRAME_PROPERTIES( freeze_frame ), "height" ) )
 		{
-			// freeze_frame has not been fetched yet, so fetch it and cache it.
+			// freeze_frame has not been fetched yet or is not useful, so fetch it and cache it.
 			mlt_producer producer = mlt_frame_get_original_producer(this);
 			mlt_producer_seek( producer, pos );
 	    
 			// Get the frame
 			mlt_service_get_frame( mlt_producer_service(producer), &freeze_frame, 0 );
 
-			mlt_properties props = MLT_FRAME_PROPERTIES( this );
 			mlt_properties freeze_properties = MLT_FRAME_PROPERTIES( freeze_frame );
 			mlt_properties_set_double( freeze_properties, "consumer_aspect_ratio", mlt_properties_get_double( props, "consumer_aspect_ratio" ) );
 			mlt_properties_set( freeze_properties, "rescale.interp", mlt_properties_get( props, "rescale.interp" ) );
 			mlt_properties_set_double( freeze_properties, "aspect_ratio", mlt_frame_get_aspect_ratio( this ) );
 			mlt_properties_set_int( freeze_properties, "progressive", mlt_properties_get_int( props, "progressive" ) );
-
+			mlt_properties_set_int( freeze_properties, "consumer_deinterlace", mlt_properties_get_int( props, "consumer_deinterlace" ) || mlt_properties_get_int( properties, "deinterlace" ) );
+			mlt_properties_set_double( freeze_properties, "output_ratio", mlt_properties_get_double( props, "output_ratio" ) );
 			mlt_properties_set_data( properties, "freeze_frame", freeze_frame, 0, NULL, NULL );
 			mlt_properties_set_position( properties, "_frame", pos );
 		}
-		int error = mlt_frame_get_image( freeze_frame, image, format, width, height, 1 );
+
+		// Get frozen image
+		uint8_t *buffer = NULL;
+		int error = mlt_frame_get_image( freeze_frame, &buffer, format, width, height, 1 );
+
+		int size = 0;
+		switch ( *format )
+		{
+			case mlt_image_yuv420p:
+				size = *width * 3 * ( *height + 1 ) / 2;
+				break;
+			case mlt_image_rgb24:
+				size = *width * ( *height + 1 ) * 3;
+				break;
+			case mlt_image_rgb24a:
+			case mlt_image_opengl:
+				size = *width * ( *height + 1 ) * 4;
+				break;
+			default:
+				*format = mlt_image_yuv422;
+				size = *width * ( *height + 1 ) * 2;
+				break;
+		}
+
+		// Copy it to current frame
+	  	uint8_t *image_copy = mlt_pool_alloc( size );
+		memcpy( image_copy, buffer, size );
+		*image = image_copy;
+		mlt_properties_set_data( props, "image", *image, size, ( mlt_destructor ) mlt_pool_release, NULL );
 		return error;
 	}
 
