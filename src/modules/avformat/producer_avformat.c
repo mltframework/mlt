@@ -1236,7 +1236,8 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		producer_format_close( this->dummy_context );
 		this->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
-		get_audio_streams_info( this );
+		if ( this->audio_format )
+			get_audio_streams_info( this );
 
 		// Process properties as AVOptions
 		apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );
