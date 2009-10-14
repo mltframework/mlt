@@ -76,6 +76,7 @@ struct producer_avformat_s
 	int got_picture;
 	int top_field_first;
 	int16_t *audio_buffer[ MAX_AUDIO_STREAMS ];
+	size_t audio_buffer_size[ MAX_AUDIO_STREAMS ];
 	int16_t *decode_buffer[ MAX_AUDIO_STREAMS ];
 	int audio_used[ MAX_AUDIO_STREAMS ];
 	int audio_streams;
@@ -1382,11 +1383,19 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 		len -= ret;
 		ptr += ret;
 
-		// If decoded successfully and will not overflow
-		if ( data_size > 0 && ( audio_used * channels + data_size  / sizeof(int16_t) < AVCODEC_MAX_AUDIO_FRAME_SIZE ) )
+		// If decoded successfully
+		if ( data_size > 0 )
 		{
+			// Resize audio buffer to prevent overflow
+			if ( audio_used * channels + data_size > this->audio_buffer_size[ index ] )
+			{
+				mlt_pool_release( this->audio_buffer[ index ] );
+				this->audio_buffer_size[ index ] = audio_used * channels * sizeof(int16_t) + data_size * 2;
+				audio_buffer = this->audio_buffer[ index ] = mlt_pool_alloc( this->audio_buffer_size[ index ] );
+			}
 			if ( resample )
 			{
+				// Copy to audio buffer while resampling
 				int16_t *source = decode_buffer;
 				int16_t *dest = &audio_buffer[ audio_used * channels ];
 				int convert_samples = data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
@@ -1394,6 +1403,7 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 			}
 			else
 			{
+				// Straight copy to audio buffer
 				memcpy( &audio_buffer[ audio_used * channels ], decode_buffer, data_size );
 				audio_used += data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
 			}
@@ -1405,10 +1415,6 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 				audio_used -= samples;
 				memmove( audio_buffer, &audio_buffer[ samples * channels ], audio_used * sizeof( int16_t ) );
 			}
-		}
-		else
-		{
-			mlt_log_error( MLT_PRODUCER_SERVICE( &this->parent ), "audio_buffer overflow: audio_used %d data_size %d\n", audio_used, data_size );
 		}
 	}
 
@@ -1497,6 +1503,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 			// Check for audio buffer and create if necessary
 			this->audio_buffer[ index ] = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+			this->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE;
 
 			// Check for decoder buffer and create if necessary
 			this->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
