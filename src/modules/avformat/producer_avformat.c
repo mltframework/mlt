@@ -1361,13 +1361,14 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 
 	int audio_used = this->audio_used[ index ];
 	int channels = codec_context->channels;
-	int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
 	uint8_t *ptr = pkt->data;
 	int len = pkt->size;
 	int ret = 0;
 
 	while ( ptr && ret >= 0 && len > 0 )
 	{
+		int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
+
 		// Decode the audio
 #if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
 		ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
