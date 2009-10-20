@@ -46,6 +46,8 @@
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
+#define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2)
+
 //
 // This structure should be extended and made globally available in mlt
 //
@@ -825,7 +827,7 @@ static void *consumer_thread( void *arg )
 	mlt_image_format img_fmt = mlt_image_yuv422;
 
 	// For receiving audio samples back from the fifo
-	int16_t *buffer = av_malloc( 48000 * 2 );
+	int16_t *buffer = av_malloc( AUDIO_ENCODE_BUFFER_SIZE );
 	int count = 0;
 
 	// Allocate the context
@@ -989,7 +991,7 @@ static void *consumer_thread( void *arg )
 	gettimeofday( &ante, NULL );
 
 	// Loop while running
-	while( mlt_properties_get_int( properties, "running" ) && !terminated )
+	while( mlt_properties_get_int( properties, "running" ) && ( !terminated || mlt_deque_count( queue ) ) )
 	{
 		// Get the frame
 		frame = mlt_consumer_rt_frame( this );
@@ -1040,7 +1042,7 @@ static void *consumer_thread( void *arg )
 			// Write interleaved audio and video frames
 			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
 			{
-				if ( ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
+				if ( terminated || ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
 				{
  					AVCodecContext *c;
 					AVPacket pkt;
@@ -1048,7 +1050,13 @@ static void *consumer_thread( void *arg )
 
 					c = audio_st->codec;
 
-					sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
+					if ( ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
+						sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
+					else if ( sample_fifo_used( fifo ) )
+						sample_fifo_fetch( fifo, buffer,
+							sample_fifo_used( fifo ) > AUDIO_ENCODE_BUFFER_SIZE ? AUDIO_ENCODE_BUFFER_SIZE : sample_fifo_used( fifo ) );
+					else
+						memset( buffer, 0, AUDIO_ENCODE_BUFFER_SIZE * sizeof( *buffer ) );
 
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
 					// Write the compressed frame in the media file
@@ -1300,7 +1308,7 @@ static void *consumer_thread( void *arg )
 			// write the compressed frame in the media file
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				fprintf( stderr, "%s: Error while writing flushed video frame\n". __FILE__ );
+				mlt_log_error( MLT_CONSUMER_SERVICE(this), "error while writing flushing video frame\n" );
 				break;
 			}
 		}
