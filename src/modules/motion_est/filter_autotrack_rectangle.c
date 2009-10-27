@@ -138,6 +138,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the motion vectors
 	struct motion_vector_s *vectors = mlt_properties_get_data( frame_properties, "motion_est.vectors", NULL );
 
+	// Cleanse the geometry item
+	boundry.w = boundry.x < 0 ? boundry.w + boundry.x : boundry.w;
+	boundry.h = boundry.y < 0 ? boundry.h + boundry.y : boundry.h;
+	boundry.x = boundry.x < 0 ? 0 : boundry.x;
+	boundry.x = boundry.y < 0 ? 0 : boundry.y;
+	boundry.w = boundry.w < 0 ? 0 : boundry.w;
+	boundry.h = boundry.h < 0 ? 0 : boundry.h;
+
 	// How did the rectangle move?
 	if( vectors != NULL &&
 	    boundry.key != 1 ) // Paused?
@@ -227,6 +235,14 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 	// Get the current geometry item
 	mlt_geometry_item geometry_item = mlt_pool_alloc( sizeof( struct mlt_geometry_item_s ) );
 	mlt_geometry_fetch(geometry, geometry_item, position);
+
+	// Cleanse the geometry item
+	geometry_item->w = geometry_item->x < 0 ? geometry_item->w + geometry_item->x : geometry_item->w;
+	geometry_item->h = geometry_item->y < 0 ? geometry_item->h + geometry_item->y : geometry_item->h;
+	geometry_item->x = geometry_item->x < 0 ? 0 : geometry_item->x;
+	geometry_item->y = geometry_item->y < 0 ? 0 : geometry_item->y;
+	geometry_item->w = geometry_item->w < 0 ? 0 : geometry_item->w;
+	geometry_item->h = geometry_item->h < 0 ? 0 : geometry_item->h;
 
 	mlt_properties_set_data( frame_properties, "bounds", geometry_item, sizeof( struct mlt_geometry_item_s ), mlt_pool_release, NULL );
 
