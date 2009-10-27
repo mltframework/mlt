@@ -272,12 +272,10 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	if ( get_image )
 	{
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
-		mlt_position position = mlt_frame_get_position( this );
 		error = get_image( this, buffer, format, width, height, writable );
 		mlt_properties_set_int( properties, "width", *width );
 		mlt_properties_set_int( properties, "height", *height );
 		mlt_properties_set_int( properties, "format", *format );
-		mlt_frame_set_position( this, position );
 		if ( this->convert_image )
 			this->convert_image( this, buffer, format, requested_format );
 	}
@@ -420,9 +418,7 @@ int mlt_frame_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format
 
 	if ( hide == 0 && get_audio != NULL )
 	{
-		mlt_position position = mlt_frame_get_position( this );
 		get_audio( this, buffer, format, frequency, channels, samples );
-		mlt_frame_set_position( this, position );
 		mlt_properties_set_int( properties, "audio_frequency", *frequency );
 		mlt_properties_set_int( properties, "audio_channels", *channels );
 		mlt_properties_set_int( properties, "audio_samples", *samples );
