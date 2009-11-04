@@ -39,9 +39,15 @@
 #include <QtGui/QWidget>
 #include <framework/mlt_log.h>
 
+#if QT_VERSION >= 0x040600
+#include <QtGui/QGraphicsEffect>
+#include <QtGui/QGraphicsBlurEffect>
+#include <QtGui/QGraphicsDropShadowEffect>
+#endif
+
 static QApplication *app = NULL;
 
-class ImageItem: public QGraphicsRectItem
+class ImageItem: public QGraphicsItem
 {
 public:
     ImageItem(QImage img)
@@ -52,6 +58,12 @@ public:
 
 
 protected:
+
+virtual QRectF boundingRect() const
+{
+    return QRectF(0, 0, m_img.width(), m_img.height());
+}
+
 virtual void paint( QPainter *painter,
                        const QStyleOptionGraphicsItem * /*option*/,
                        QWidget* )
@@ -250,6 +262,25 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 			gitem->setTransform( stringToTransform( items.item( i ).namedItem( "position" ).firstChild().firstChild().nodeValue() ) );
 			int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
 			gitem->setZValue( zValue );
+
+#if QT_VERSION >= 0x040600
+			// effects
+			QDomNode eff = items.item(i).namedItem("effect");
+			if (!eff.isNull()) {
+				QDomElement e = eff.toElement();
+				if (e.attribute("type") == "blur") {
+					QGraphicsBlurEffect *blur = new QGraphicsBlurEffect();
+					blur->setBlurRadius(e.attribute("blurradius").toInt());
+					gitem->setGraphicsEffect(blur);
+				}
+				else if (e.attribute("type") == "shadow") {
+					QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect();
+					shadow->setBlurRadius(e.attribute("blurradius").toInt());
+					shadow->setOffset(e.attribute("xoffset").toInt(), e.attribute("yoffset").toInt());
+					gitem->setGraphicsEffect(shadow);
+				}
+			}
+#endif
 		}
 	}
 
@@ -365,7 +396,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		//| QPainter::SmoothPixmapTransform );
                 mlt_position anim_out = mlt_properties_get_position( producer_props, "_animation_out" );
-                
+
 		if (end.isNull())
 		{
 			scene->render( &p1, source, start, Qt::IgnoreAspectRatio );
