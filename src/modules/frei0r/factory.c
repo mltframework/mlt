@@ -71,6 +71,8 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	if (!handle) return NULL;
 	void (*plginfo)(f0r_plugin_info_t*)=dlsym(handle,"f0r_get_plugin_info");
 	void (*param_info)(f0r_param_info_t*,int param_index)=dlsym(handle,"f0r_get_param_info");
+	void (*f0r_init)(void)=dlsym(handle,"f0r_init");
+	void (*f0r_deinit)(void)=dlsym(handle,"f0r_deinit");
 	if (!plginfo || !param_info) {
 		dlclose(handle);
 		return NULL;
@@ -80,6 +82,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	char string[48];
 	int j=0;
 
+	f0r_init();
 	plginfo(&info);
 	snprintf ( string, sizeof(string) , "%d.%d" , info.major_version , info.minor_version );
 	mlt_properties_set ( metadata, "schema_version" , "0.1" );
@@ -139,6 +142,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 			mlt_properties_set ( pnum , "readonly" , "no" );
 		}
 	}
+	f0r_deinit();
 	dlclose(handle);
 	free(name);
 
