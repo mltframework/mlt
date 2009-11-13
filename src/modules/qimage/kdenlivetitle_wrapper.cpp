@@ -29,6 +29,7 @@
 #include <QtGui/QGraphicsTextItem>
 #include <QtSvg/QGraphicsSvgItem>
 #include <QtGui/QTextCursor>
+#include <QtGui/QTextDocument>
 #include <QtGui/QStyleOptionGraphicsItem>
 
 #include <QtCore/QString>
@@ -206,17 +207,21 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				}
 				QGraphicsTextItem *txt = scene->addText(text, font);
 				txt->setDefaultTextColor( col );
+				
+				// Effects
+				if (!txtProperties.namedItem( "typewriter" ).isNull()) {
+					// typewriter effect
+					mlt_properties_set_int( producer_props, "_animated", 1 );
+					QStringList effetData = QStringList() << "typewriter" << text << txtProperties.namedItem( "typewriter" ).nodeValue();
+					txt->setData(0, effetData);
+				}
+				
 				if ( txtProperties.namedItem( "alignment" ).isNull() == false )
 				{
 					txt->setTextWidth( txt->boundingRect().width() );
-					QTextCursor cur = txt->textCursor();
-					QTextBlockFormat format = cur.blockFormat();
-					format.setAlignment(( Qt::Alignment ) txtProperties.namedItem( "alignment" ).nodeValue().toInt() );
-					cur.select( QTextCursor::Document );
-					cur.setBlockFormat( format );
-					txt->setTextCursor( cur );
-					cur.clearSelection();
-					txt->setTextCursor( cur );
+					QTextOption opt = txt->document()->defaultTextOption ();
+					opt.setAlignment(( Qt::Alignment ) txtProperties.namedItem( "alignment" ).nodeValue().toInt() );
+					txt->document()->setDefaultTextOption (opt);
 				}
 					if ( !txtProperties.namedItem( "kdenlive-axis-x-inverted" ).isNull() )
 				{
@@ -328,7 +333,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
         pthread_mutex_lock( &self->mutex );
 	
 	// Check if user wants us to reload the image
-	if ( force_refresh == 1 || width != self->current_width || height != self->current_height || mlt_properties_get( producer_props, "_endrect" ) != NULL )
+	if ( mlt_properties_get( producer_props, "_animated" ) != NULL || force_refresh == 1 || width != self->current_width || height != self->current_height || mlt_properties_get( producer_props, "_endrect" ) != NULL )
 	{
 		//mlt_cache_item_close( self->image_cache );
 		self->current_image = NULL;
@@ -355,22 +360,24 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 			// Warning: all Qt graphic objects (QRect, ...) must be initialized AFTER 
 			// the QApplication is created, otherwise their will be NULL
 			
-			if (qApp) {
-				app = qApp;
-			}
-			else {
-#ifdef linux
-				if ( getenv("DISPLAY") == 0 )
-				{
-					mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
-					pthread_mutex_unlock( &self->mutex );
-					exit(1);
-					return;
+			if ( app == NULL ) {
+				if ( qApp ) {
+					app = qApp;
 				}
+				else {
+#ifdef linux
+					if ( getenv("DISPLAY") == 0 )
+					{
+						mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
+						pthread_mutex_unlock( &self->mutex );
+						exit(1);
+						return;
+					}
 #endif
-				app = new QApplication( argc, argv );
-                //fix to let the decimal point for every locale be: "."
-                setlocale(LC_NUMERIC,"POSIX");
+					app = new QApplication( argc, argv );
+					//fix to let the decimal point for every locale be: "."
+					setlocale(LC_NUMERIC,"POSIX");
+				}
 			}
 			scene = new QGraphicsScene();
                         scene->setSceneRect(0, 0, mlt_properties_get_int( properties, "width" ), mlt_properties_get_int( properties, "height" ));
@@ -387,7 +394,25 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		if (start.isNull()) {
 		    start = QRectF( 0, 0, originalWidth, originalHeight );
 		}
-	
+
+		// Effects
+		QList <QGraphicsItem *> items = scene->items();
+		QGraphicsTextItem *titem = NULL;
+		for (int i = 0; i < items.count(); i++) {
+		    titem = static_cast <QGraphicsTextItem*> ( items.at( i ) );
+		    if (titem && !titem->data( 0 ).isNull()) {
+			    QStringList params = titem->data( 0 ).toStringList();
+			    if (params.at( 0 ) == "typewriter") {
+				    int interval = ( ( int ) position) / params.at( 2 ).toInt();
+				    QTextDocument *td = new QTextDocument( params.at( 1 ).left( interval ) );
+				    td->setDefaultFont( titem->font() );
+				    td->setDefaultTextOption( titem->document()->defaultTextOption() );
+				    td->setTextWidth( titem->document()->textWidth() );
+				    titem->setDocument( td );
+			    }
+		    }
+		}
+
 		//must be extracted from kdenlive title
 		QImage img( width, height, QImage::Format_ARGB32 );
 		img.fill( 0 );
