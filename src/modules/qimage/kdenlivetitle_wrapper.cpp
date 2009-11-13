@@ -402,8 +402,11 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		    titem = static_cast <QGraphicsTextItem*> ( items.at( i ) );
 		    if (titem && !titem->data( 0 ).isNull()) {
 			    QStringList params = titem->data( 0 ).toStringList();
-			    if (params.at( 0 ) == "typewriter") {
-				    int interval = ( ( int ) position) / params.at( 2 ).toInt();
+			    if (params.at( 0 ) == "typewriter" ) {
+				    // typewriter effect has 2 param values:
+				    // the keystroke delay and a start offset, both in frames
+				    QStringList values = params.at( 2 ).split( ";" );
+				    int interval = qMax( 0, ( ( int ) position) / values.at( 0 ).toInt() - values.at( 1 ).toInt() );
 				    QTextDocument *td = new QTextDocument( params.at( 1 ).left( interval ) );
 				    td->setDefaultFont( titem->font() );
 				    td->setDefaultTextOption( titem->document()->defaultTextOption() );
