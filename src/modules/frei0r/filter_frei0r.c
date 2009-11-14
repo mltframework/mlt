@@ -25,18 +25,18 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
 
 	mlt_filter filter = mlt_frame_pop_service( this );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	*format = mlt_image_rgb24a;
 	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "frei0r %dx%d\n", *width, *height );
 	int error = mlt_frame_get_image( this, image, format, width, height, 0 );
-	
+
 	if ( error == 0 && *image )
 	{
-		mlt_position in = mlt_filter_get_in( filter );
-		mlt_position out = mlt_filter_get_out( filter );
-		mlt_position time = mlt_frame_get_position( this );
-		double position = ( double )( time - in ) / ( double )( out - in + 1 );
+		mlt_position length = mlt_filter_get_out( filter ) - mlt_filter_get_in( filter ) + 1;
+		mlt_position time = mlt_properties_get_position( properties, "_filter_position" );
+		double position = ( double )( time ) / ( double )( length );
 		
-		process_frei0r_item( filter_type, position, MLT_FILTER_PROPERTIES ( filter ), this, image, width, height );
+		process_frei0r_item( filter_type, position, properties, this, image, width, height );
 		
 	}
 
@@ -47,6 +47,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	mlt_frame_push_service( frame, this );
+	// Determine the time position of this frame
+	mlt_properties_set_position( MLT_FILTER_PROPERTIES( this ), "_filter_position", mlt_frame_get_position( frame ) -  mlt_filter_get_in( this ) );
+	
 	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }
