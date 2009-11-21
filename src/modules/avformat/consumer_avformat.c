@@ -991,7 +991,8 @@ static void *consumer_thread( void *arg )
 	gettimeofday( &ante, NULL );
 
 	// Loop while running
-	while( mlt_properties_get_int( properties, "running" ) && ( !terminated || mlt_deque_count( queue ) ) )
+	while( mlt_properties_get_int( properties, "running" ) &&
+	       ( !terminated || ( video_st && mlt_deque_count( queue ) ) ) )
 	{
 		// Get the frame
 		frame = mlt_consumer_rt_frame( this );
@@ -1042,7 +1043,7 @@ static void *consumer_thread( void *arg )
 			// Write interleaved audio and video frames
 			if ( !video_st || ( video_st && audio_st && audio_pts < video_pts ) )
 			{
-				if ( terminated || ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
+				if ( ( video_st && terminated ) || ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
 				{
  					AVCodecContext *c;
 					AVPacket pkt;
