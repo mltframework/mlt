@@ -1399,14 +1399,14 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 				// Copy to audio buffer while resampling
 				int16_t *source = decode_buffer;
 				int16_t *dest = &audio_buffer[ audio_used * channels ];
-				int convert_samples = data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
+				int convert_samples = data_size / channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
 				audio_used += audio_resample( resample, dest, source, convert_samples );
 			}
 			else
 			{
 				// Straight copy to audio buffer
 				memcpy( &audio_buffer[ audio_used * channels ], decode_buffer, data_size );
-				audio_used += data_size / channels / av_get_bits_per_sample_format( codec_context->sample_fmt ) * 8;
+				audio_used += data_size / channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
 			}
 
 			// Handle ignore
