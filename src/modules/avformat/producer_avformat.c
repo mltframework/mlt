@@ -1049,7 +1049,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					codec_context->reordered_opaque = pkt.pts;
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
+#if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(26<<8)+0))
+					ret = avcodec_decode_video2( codec_context, this->av_frame, &got_picture, &pkt );
+#else
 					ret = avcodec_decode_video( codec_context, this->av_frame, &got_picture, pkt.data, pkt.size );
+#endif
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
 					if ( ret < 0 )
 					{
@@ -1388,7 +1392,9 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 		int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
 
 		// Decode the audio
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
+#if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(26<<8)+0))
+		ret = avcodec_decode_audio3( codec_context, decode_buffer, &data_size, pkt );
+#elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
 		ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
 #else
 		ret = avcodec_decode_audio( codec_context, decode_buffer, &data_size, ptr, len );
