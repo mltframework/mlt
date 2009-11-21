@@ -84,6 +84,7 @@ struct producer_avformat_s
 	int total_channels;
 	int max_channel;
 	int max_frequency;
+	unsigned int invalid_pts_counter;
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -998,6 +999,23 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					else if ( context->start_time != AV_NOPTS_VALUE )
 						pts -= context->start_time;
 					int_position = ( int )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 );
+					if ( pkt.pts == AV_NOPTS_VALUE )
+					{
+						this->invalid_pts_counter++;
+						if ( this->invalid_pts_counter > 20 )
+						{
+							mlt_log_panic( MLT_PRODUCER_SERVICE(producer), "\ainvalid PTS; DISABLING NEW_SEEK!\n" );
+							mlt_properties_set_int( properties, "new_seek", 0 );
+							int_position = req_position;
+							use_new_seek = 0;
+						}
+					}
+					else
+					{
+						this->invalid_pts_counter = 0;
+					}
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %llu req_pos %d cur_pos %d pkt_pos %d",
+						pkt.pts, req_position, this->current_position, int_position );
 				}
 				else
 				{
