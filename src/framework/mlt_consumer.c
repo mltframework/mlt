@@ -38,6 +38,10 @@
  */
 #undef DEINTERLACE_ON_NOT_NORMAL_SPEED
 
+/** This is not the ideal place for this, but it is needed by VDPAU as well.
+ */
+pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name );

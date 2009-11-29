@@ -28,7 +28,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
 
-pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
+extern pthread_mutex_t mlt_sdl_mutex;
 
 typedef struct consumer_sdl_s *consumer_sdl;
 
@@ -245,10 +245,6 @@ static int consumer_stop( mlt_consumer parent )
 		this->joined = 1;
 
 		if ( app_locked && lock ) lock( );
-
-		pthread_mutex_lock( &mlt_sdl_mutex );
-		SDL_Quit( );
-		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	return 0;
@@ -421,6 +417,10 @@ static void consumer_close( mlt_consumer parent )
 
 	// Now clean up the rest
 	mlt_consumer_close( parent );
+
+	pthread_mutex_lock( &mlt_sdl_mutex );
+	SDL_Quit( );
+	pthread_mutex_unlock( &mlt_sdl_mutex );
 
 	// Finally clean up this
 	free( this );
