@@ -25,7 +25,6 @@ parameters:
   - identifier: smooth
     title: Unsharpness of Border
     type: integer
-    description:
     readonly: no
     required: yes
     mutable: no
@@ -35,7 +34,6 @@ parameters:
   - identifier: radius
     title: Radius
     type: integer
-    description:
     readonly: no
     required: yes
     mutable: no
@@ -45,7 +43,6 @@ parameters:
   - identifier: x
     title: X Position
     type: integer
-    description:
     readonly: no
     required: yes
     mutable: no
@@ -55,7 +52,6 @@ parameters:
   - identifier: y
     title: Y Position
     type: integer
-    description:
     readonly: no
     required: yes
     mutable: no
@@ -65,10 +61,8 @@ parameters:
   - identifier: opacity
     title: Opacity
     type: integer
-    description:
     readonly: no
     required: yes
     mutable: no
     format: %d
     default: 0
-
