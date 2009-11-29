@@ -30,6 +30,19 @@
 #define SIGMOD_STEPS 1000
 #define POSITION_VALUE(p,s,e) (s+((double)(e-s)*p ))
 //static double pow2[SIGMOD_STEPS];
+static float geometry_to_float(char *val, mlt_position pos )
+{
+    float ret=0.0;
+    struct mlt_geometry_item_s item;
+
+	mlt_geometry geom=mlt_geometry_init();
+    mlt_geometry_parse(geom,val,-1,-1,-1);
+    mlt_geometry_fetch(geom,&item , pos );
+    ret=item.x;
+    mlt_geometry_close(geom);
+
+    return ret;
+}
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -44,18 +57,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		//mlt_position out = mlt_filter_get_out( filter );
 		mlt_position time = mlt_frame_get_position( this );
 		
-		mlt_geometry geom=mlt_geometry_init();
-		struct mlt_geometry_item_s item;
 		float smooth, radius, cx, cy, opac;
-		char *val=mlt_properties_get(MLT_FILTER_PROPERTIES( filter ), "geometry" );
-		mlt_geometry_parse(geom,val,-1,-1,-1);
-		mlt_geometry_fetch(geom,&item,time-in);
-		smooth=item.x;
-		radius=item.y;
-		cx=item.w;
-		cy=item.h;
-		opac=item.mix;
-		mlt_geometry_close(geom);
+        mlt_position pos = time - in;
+        mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter ) ;
+		smooth = geometry_to_float ( mlt_properties_get( filter_props , "smooth" ) , pos );
+        radius = geometry_to_float ( mlt_properties_get( filter_props , "radius" ) , pos );
+		cx = geometry_to_float ( mlt_properties_get( filter_props , "x" ) , pos );
+		cy = geometry_to_float ( mlt_properties_get( filter_props , "y" ) , pos );
+		opac = geometry_to_float ( mlt_properties_get( filter_props , "opacity" ) , pos );
 		
 		int video_width = *width;
 		int video_height = *height;
@@ -118,7 +127,12 @@ mlt_filter filter_vignette_init( mlt_profile profile, mlt_service_type type, con
 		*/
 		
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", "80:50%:50%:50%:0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "smooth", "80" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "radius", "50%" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "x", "50%" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "y", "50%" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "opacity", "0" );
+
 		//mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "end", "" );
 
 	}
