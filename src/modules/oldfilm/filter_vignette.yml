@@ -23,13 +23,14 @@ bugs: # this can be just for documentation, or the tool may disclose it to help 
 
 parameters:
   - identifier: smooth
-    title: Unsharpness of Border
+    title: Feathering
     type: integer
     readonly: no
     required: yes
     mutable: no
-    format: %d
-    default: 80:50%:50%:50%:0
+    min: 0.0
+    max: 1.0
+    default: 0.8
 
   - identifier: radius
     title: Radius
@@ -37,8 +38,9 @@ parameters:
     readonly: no
     required: yes
     mutable: no
-    format: %d
-    default: 50%
+    min: 0.0
+    max: 1.0
+    default: 0.5
 
   - identifier: x
     title: X Position
@@ -46,8 +48,9 @@ parameters:
     readonly: no
     required: yes
     mutable: no
-    format: %d
-    default: 50%
+    min: 0.0
+    max: 1.0
+    default: 0.5
 
   - identifier: y
     title: Y Position
@@ -55,8 +58,9 @@ parameters:
     readonly: no
     required: yes
     mutable: no
-    format: %d
-    default: 50%
+    min: 0.0
+    max: 1.0
+    default: 0.5
 
   - identifier: opacity
     title: Opacity
@@ -64,5 +68,6 @@ parameters:
     readonly: no
     required: yes
     mutable: no
-    format: %d
-    default: 0
+    min: 0.0
+    max: 1.0
+    default: 0.0

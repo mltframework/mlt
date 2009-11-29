@@ -60,19 +60,18 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		float smooth, radius, cx, cy, opac;
         mlt_position pos = time - in;
         mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter ) ;
-		smooth = geometry_to_float ( mlt_properties_get( filter_props , "smooth" ) , pos );
-        radius = geometry_to_float ( mlt_properties_get( filter_props , "radius" ) , pos );
-		cx = geometry_to_float ( mlt_properties_get( filter_props , "x" ) , pos );
-		cy = geometry_to_float ( mlt_properties_get( filter_props , "y" ) , pos );
+		smooth = geometry_to_float ( mlt_properties_get( filter_props , "smooth" ) , pos ) * 100.0 ;
+        radius = geometry_to_float ( mlt_properties_get( filter_props , "radius" ) , pos ) * *width;
+		cx = geometry_to_float ( mlt_properties_get( filter_props , "x" ) , pos ) * *width;
+		cy = geometry_to_float ( mlt_properties_get( filter_props , "y" ) , pos ) * *height;
 		opac = geometry_to_float ( mlt_properties_get( filter_props , "opacity" ) , pos );
-		
 		int video_width = *width;
 		int video_height = *height;
 		
 		int x,y;
 		int w2=cx,h2=cy;
 		double delta=1.0;
-		double max_opac=opac/100.0;
+		double max_opac=opac;
 
 		for (y=0;y<video_height;y++){
 			int h2_pow2=pow(y-h2,2.0);
@@ -127,11 +126,11 @@ mlt_filter filter_vignette_init( mlt_profile profile, mlt_service_type type, con
 		*/
 		
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "smooth", "80" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "radius", "50%" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "x", "50%" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "y", "50%" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "opacity", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "smooth", "0.8" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "radius", "0.5" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "x", "0.5" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "y", "0.5" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "opacity", "0.0" );
 
 		//mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "end", "" );
 
