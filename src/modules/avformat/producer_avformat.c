@@ -1,7 +1,8 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Author: Dan Dennedy <dan@dennedy.org>
  * Much code borrowed from ffmpeg.c: Copyright (c) 2000-2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
@@ -24,6 +25,8 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
 #include <framework/mlt_log.h>
+#include <framework/mlt_deque.h>
+#include <framework/mlt_factory.h>
 
 // ffmpeg Header files
 #include <avformat.h>
@@ -34,12 +37,16 @@
 #if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
 #  include "audioconvert.h"
 #endif
+#ifdef VDPAU
+#include <vdpau.h>
+#endif
 
 // System header files
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
+#include <dlfcn.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_RGB32 PIX_FMT_RGBA32
@@ -50,6 +57,7 @@
 #define POSITION_INVALID (-1)
 
 #define MAX_AUDIO_STREAMS (8)
+#define MAX_VDPAU_SURFACES (10)
 
 void avformat_lock( );
 void avformat_unlock( );
@@ -86,6 +94,20 @@ struct producer_avformat_s
 	int max_frequency;
 	unsigned int invalid_pts_counter;
 	double resample_factor;
+#ifdef VDPAU
+	struct
+	{
+		// from FFmpeg
+		struct vdpau_render_state render_states[MAX_VDPAU_SURFACES];
+		
+		// internal
+		mlt_deque deque;
+		int b_age;
+		int ip_age[2];
+		int is_decoded;
+		uint8_t *buffer;
+	} *vdpau;
+#endif
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -94,6 +116,10 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
 static void producer_format_close( void *context );
 static void producer_close( mlt_producer parent );
+
+#ifdef VDPAU
+#include "vdpau.c"
+#endif
 
 /** Constructor for libavformat.
 */
@@ -968,6 +994,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		// Duplicate it
 		if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
+#ifdef VDPAU
+			if ( this->vdpau && this->vdpau->buffer )
+			{
+				AVPicture picture;
+				picture.data[0] = this->vdpau->buffer;
+				picture.data[2] = this->vdpau->buffer + codec_context->width * codec_context->height;
+				picture.data[1] = this->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
+				picture.linesize[0] = codec_context->width;
+				picture.linesize[1] = codec_context->width / 2;
+				picture.linesize[2] = codec_context->width / 2;
+				convert_image( (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P, format, *width, *height );
+			}
+			else
+#endif
 			convert_image( this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
 		else
 			mlt_frame_get_image( frame, buffer, format, width, height, writable );
@@ -1017,7 +1057,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						this->invalid_pts_counter = 0;
 					}
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %llu req_pos %d cur_pos %d pkt_pos %d",
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %llu req_pos %d cur_pos %d pkt_pos %d\n",
 						pkt.pts, req_position, this->current_position, int_position );
 				}
 				else
@@ -1035,7 +1075,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						int_position = req_position;
 					}
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d",
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d\n",
 						pkt.dts, req_position, this->current_position, int_position );
 					// Make a dumb assumption on streams that contain wild timestamps
 					if ( abs( req_position - int_position ) > 999 )
@@ -1049,6 +1089,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				// Decode the image
 				if ( must_decode || int_position >= req_position )
 				{
+#ifdef VDPAU
+					if ( g_vdpau && this->vdpau )
+					{
+						if ( g_vdpau->producer != this )
+						{
+							vdpau_decoder_close();
+							vdpau_decoder_init( this );
+						}
+						if ( this->vdpau )
+							this->vdpau->is_decoded = 0;
+					}
+#endif
 					codec_context->reordered_opaque = pkt.pts;
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
@@ -1111,6 +1163,45 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
 				{
+#ifdef VDPAU
+					if ( this->vdpau )
+					{
+						if ( this->vdpau->is_decoded )
+						{
+							struct vdpau_render_state *render = (struct vdpau_render_state*) this->av_frame->data[0];
+							void *planes[3];
+							uint32_t pitches[3];
+							VdpYCbCrFormat dest_format = VDP_YCBCR_FORMAT_YV12;
+							AVPicture picture;
+							
+							if ( !this->vdpau->buffer )
+								this->vdpau->buffer = mlt_pool_alloc( codec_context->width * codec_context->height * 3 / 2 );
+							picture.data[0] = planes[0] = this->vdpau->buffer;
+							picture.data[2] = planes[1] = this->vdpau->buffer + codec_context->width * codec_context->height;
+							picture.data[1] = planes[2] = this->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
+							picture.linesize[0] = pitches[0] = codec_context->width;
+							picture.linesize[1] = pitches[1] = codec_context->width / 2;
+							picture.linesize[2] = pitches[2] = codec_context->width / 2;
+
+							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
+							if ( status == VDP_STATUS_OK )
+							{
+								convert_image( (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P, format, *width, *height );
+							}
+							else
+							{
+								mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU Error: %s\n", vdp_get_error_string( status ) );
+								this->vdpau->is_decoded = 0;
+							}
+						}
+						else
+						{
+							mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU error in VdpDecoderRender\n" );
+							got_picture = 0;
+						}
+					}
+					else
+#endif
 					convert_image( this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
 					if ( !mlt_properties_get( properties, "force_progressive" ) )
 						mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
@@ -1182,6 +1273,22 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 
 		// Find the codec
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+#ifdef VDPAU
+		if ( codec_context->codec_id == CODEC_ID_H264 )
+		{
+			if ( ( codec = avcodec_find_decoder_by_name( "h264_vdpau" ) ) )
+			{
+				if ( vdpau_init( this ) )
+				{
+					this->video_codec = codec_context;
+					if ( !vdpau_decoder_init( this ) )
+						vdpau_decoder_close();
+				}
+			}
+			if ( !this->vdpau )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		}
+#endif
 
 		// Initialise multi-threading
 		int thread_count = mlt_properties_get_int( properties, "threads" );
@@ -1198,7 +1305,6 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( codec && avcodec_open( codec_context, codec ) >= 0 )
 		{
 			// Now store the codec with its destructor
-			producer_codec_close( this->video_codec );
 			this->video_codec = codec_context;
 		}
 		else
@@ -1835,6 +1941,9 @@ static void producer_close( mlt_producer parent )
 	producer_format_close( this->dummy_context );
 	producer_format_close( this->audio_format );
 	producer_format_close( this->video_format );
+#ifdef VDPAU
+	vdpau_producer_close( this );
+#endif
 
 	// Close the parent
 	parent->close = NULL;

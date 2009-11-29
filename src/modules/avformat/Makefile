@@ -28,6 +28,11 @@ endif
 CFLAGS += -DFILTERS
 endif
 
+ifdef VDPAU
+CFLAGS += -DVDPAU
+LDFLAGS += -ldl
+endif
+
 ifdef CODECS
 OBJS += producer_avformat.o \
 	    consumer_avformat.o
