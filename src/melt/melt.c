@@ -560,13 +560,13 @@ query_all:
 		basename( argv[0] ) );
 	}
 
-	// Close the consumer
-	if ( consumer != NULL )
-		mlt_consumer_close( consumer );
-
 	// Close the producer
 	if ( melt != NULL )
 		mlt_producer_close( melt );
+
+	// Close the consumer
+	if ( consumer != NULL )
+		mlt_consumer_close( consumer );
 
 	// Close the factory
 	mlt_profile_close( profile );
