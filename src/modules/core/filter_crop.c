@@ -144,12 +144,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 		left  -= left % 2;
 		right -= right % 2;
+		if ( width - left - right < 8 )
+			left = right = 0;
+		if ( height - top - bottom < 8 )
+			top = bottom = 0;
 		mlt_properties_set_int( frame_props, "crop.left", left );
 		mlt_properties_set_int( frame_props, "crop.right", right );
 		mlt_properties_set_int( frame_props, "crop.top", top );
 		mlt_properties_set_int( frame_props, "crop.bottom", bottom );
-		mlt_properties_set_int( frame_props, "real_width", ( width - left - right ) < 0 ? 0 : width - left - right );
-		mlt_properties_set_int( frame_props, "real_height", ( height - top - bottom ) < 0 ? 0 : height - top - bottom );
+		mlt_properties_set_int( frame_props, "real_width", width - left - right );
+		mlt_properties_set_int( frame_props, "real_height", height - top - bottom );
 	}
 	return frame;
 }
