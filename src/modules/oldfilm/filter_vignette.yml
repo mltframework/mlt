@@ -24,50 +24,50 @@ bugs: # this can be just for documentation, or the tool may disclose it to help 
 parameters:
   - identifier: smooth
     title: Feathering
-    type: integer
+    type: float
     readonly: no
     required: yes
     mutable: no
-    min: 0.0
-    max: 1.0
+    minimum: 0.0
+    maximum: 1.0
     default: 0.8
 
   - identifier: radius
     title: Radius
-    type: integer
+    type: float
     readonly: no
     required: yes
     mutable: no
-    min: 0.0
-    max: 1.0
+    minimum: 0.0
+    maximum: 1.0
     default: 0.5
 
   - identifier: x
     title: X Position
-    type: integer
+    type: float
     readonly: no
     required: yes
     mutable: no
-    min: 0.0
-    max: 1.0
+    minimum: 0.0
+    maximum: 1.0
     default: 0.5
 
   - identifier: y
     title: Y Position
-    type: integer
+    type: float
     readonly: no
     required: yes
     mutable: no
-    min: 0.0
-    max: 1.0
+    minimum: 0.0
+    maximum: 1.0
     default: 0.5
 
   - identifier: opacity
     title: Opacity
-    type: integer
+    type: float
     readonly: no
     required: yes
     mutable: no
-    min: 0.0
-    max: 1.0
+    minimum: 0.0
+    maximum: 1.0
     default: 0.0
