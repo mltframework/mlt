@@ -1216,12 +1216,19 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		// Determine the fps first from the codec
 		double source_fps = (double) this->video_codec->time_base.den /
 								   ( this->video_codec->time_base.num == 0 ? 1 : this->video_codec->time_base.num );
-
-		// If the muxer reports a frame rate different than the codec
-		double muxer_fps = av_q2d( stream->r_frame_rate );
-		if ( source_fps != muxer_fps )
+		
+		if ( mlt_properties_get( properties, "force_fps" ) )
+		{
+			source_fps = mlt_properties_get_double( properties, "force_fps" );
+			stream->time_base = av_d2q( source_fps, 255 );
+		}
+		else
+		{
+			// If the muxer reports a frame rate different than the codec
+			double muxer_fps = av_q2d( stream->r_frame_rate );
 			// Choose the lesser - the wrong tends to be off by some multiple of 10
-			source_fps = muxer_fps < source_fps ? muxer_fps : source_fps;
+			source_fps = FFMIN( source_fps, muxer_fps );
+		}
 
 		// We'll use fps if it's available
 		if ( source_fps > 0 )
