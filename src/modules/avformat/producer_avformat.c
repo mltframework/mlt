@@ -160,7 +160,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 			{
 				// Clean up
 				mlt_producer_close( producer );
-				this = NULL;
+				producer = NULL;
 			}
 			else
 			{
