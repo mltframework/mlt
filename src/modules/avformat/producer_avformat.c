@@ -695,7 +695,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 		AVPicture output;
 		output.data[0] = buffer;
 		output.data[1] = buffer + width * height;
-		output.data[2] = buffer + ( 3 * width * height ) / 2;
+		output.data[2] = buffer + ( 5 * width * height ) / 4;
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
@@ -739,7 +739,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 		AVPicture pict;
 		pict.data[0] = buffer;
 		pict.data[1] = buffer + width * height;
-		pict.data[2] = buffer + ( 3 * width * height ) / 2;
+		pict.data[2] = buffer + ( 5 * width * height ) / 4;
 		pict.linesize[0] = width;
 		pict.linesize[1] = width >> 1;
 		pict.linesize[2] = width >> 1;
