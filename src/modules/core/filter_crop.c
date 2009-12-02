@@ -21,6 +21,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -163,6 +164,20 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		int bottom = mlt_properties_get_int( filter_props, "bottom" );
 		int width  = mlt_properties_get_int( frame_props, "real_width" );
 		int height = mlt_properties_get_int( frame_props, "real_height" );
+
+		if ( mlt_properties_get_int( filter_props, "center" ) )
+		{
+			double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
+			if ( aspect_ratio == 0.0 )
+				aspect_ratio = mlt_properties_get_double( frame_props, "consumer_aspect_ratio" );
+			double input_ar = aspect_ratio * width / height;
+			double output_ar = mlt_profile_dar( mlt_service_profile( MLT_FILTER_SERVICE(this) ) );
+			
+			if ( input_ar > output_ar )
+				left = right = ( width - rint( output_ar * height / aspect_ratio ) ) / 2;
+			else
+				top = bottom = ( height - rint( aspect_ratio * width / output_ar ) ) / 2;
+		}		
 
 		left  -= left % 2;
 		right -= right % 2;
