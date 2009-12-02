@@ -63,10 +63,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int top     = mlt_properties_get_int( properties, "crop.top" );
 	int bottom  = mlt_properties_get_int( properties, "crop.bottom" );
 
-	// We only know how to process yuv422 at the moment
-	if ( left || right || top || bottom )
-		*format = mlt_image_yuv422;
-
 	// Now get the image
 	error = mlt_frame_get_image( this, image, format, width, height, writable );
 
@@ -78,6 +74,25 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	if ( ( owidth != *width || oheight != *height ) &&
 		error == 0 && *image != NULL && owidth > 0 && oheight > 0 )
 	{
+		int bpp;
+
+		switch ( *format )
+		{
+			case mlt_image_yuv422:
+				bpp = 2;
+				break;
+			case mlt_image_rgb24:
+				bpp = 3;
+				break;
+			case mlt_image_rgb24a:
+			case mlt_image_opengl:
+				bpp = 4;
+				break;
+			default:
+				// XXX: we only know how to crop packed formats
+				return 1;
+		}
+
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
 		{
@@ -87,13 +102,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		if ( top % 2 )
 			mlt_properties_set_int( properties, "top_field_first", !mlt_properties_get_int( properties, "top_field_first" ) );
-
+		
 		// Create the output image
-		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
+		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * bpp );
 		if ( output )
 		{
 			// Call the generic resize
-			crop( *image, output, 2, *width, *height, left, right, top, bottom );
+			crop( *image, output, bpp, *width, *height, left, right, top, bottom );
 
 			// Now update the frame
 			*image = output;
