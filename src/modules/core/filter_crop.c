@@ -63,6 +63,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int top     = mlt_properties_get_int( properties, "crop.top" );
 	int bottom  = mlt_properties_get_int( properties, "crop.bottom" );
 
+	// Request the image at its original resolution
+	if ( left || right || top || bottom )
+	{
+		mlt_properties_set_int( properties, "rescale_width", mlt_properties_get_int( properties, "crop.original_width" ) );
+		mlt_properties_set_int( properties, "rescale_height", mlt_properties_get_int( properties, "crop.original_height" ) );
+	}
+	
 	// Now get the image
 	error = mlt_frame_get_image( this, image, format, width, height, writable );
 
@@ -167,6 +174,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_properties_set_int( frame_props, "crop.right", right );
 		mlt_properties_set_int( frame_props, "crop.top", top );
 		mlt_properties_set_int( frame_props, "crop.bottom", bottom );
+		mlt_properties_set_int( frame_props, "crop.original_width", width );
+		mlt_properties_set_int( frame_props, "crop.original_height", height );
 		mlt_properties_set_int( frame_props, "real_width", width - left - right );
 		mlt_properties_set_int( frame_props, "real_height", height - top - bottom );
 	}
