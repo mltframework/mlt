@@ -85,6 +85,7 @@ struct producer_avformat_s
 	int max_channel;
 	int max_frequency;
 	unsigned int invalid_pts_counter;
+	double resample_factor;
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -154,6 +155,8 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 
 			// Register our get_frame implementation
 			producer->get_frame = producer_get_frame;
+			
+			this->resample_factor = 1.0;
 
 			// Open the file
 			if ( producer_open( this, profile, file ) != 0 )
@@ -1417,26 +1420,28 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 		// If decoded successfully
 		if ( data_size > 0 )
 		{
+			// Figure out how many samples will be needed after resampling
+			int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
+			int samples_needed = lrint( this->resample_factor * convert_samples );
+			
 			// Resize audio buffer to prevent overflow
-			if ( audio_used * channels + data_size > this->audio_buffer_size[ index ] )
+			if ( audio_used * channels + samples_needed > this->audio_buffer_size[ index ] )
 			{
-				mlt_pool_release( this->audio_buffer[ index ] );
-				this->audio_buffer_size[ index ] = audio_used * channels * sizeof(int16_t) + data_size * 2;
-				audio_buffer = this->audio_buffer[ index ] = mlt_pool_alloc( this->audio_buffer_size[ index ] );
+				this->audio_buffer_size[ index ] *= 2;
+				audio_buffer = this->audio_buffer[ index ] = mlt_pool_realloc( audio_buffer, this->audio_buffer_size[ index ] * sizeof(int16_t) );
 			}
 			if ( resample )
 			{
 				// Copy to audio buffer while resampling
 				int16_t *source = decode_buffer;
 				int16_t *dest = &audio_buffer[ audio_used * channels ];
-				int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
 				audio_used += audio_resample( resample, dest, source, convert_samples );
 			}
 			else
 			{
 				// Straight copy to audio buffer
 				memcpy( &audio_buffer[ audio_used * codec_context->channels ], decode_buffer, data_size );
-				audio_used += data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
+				audio_used += convert_samples;
 			}
 
 			// Handle ignore
@@ -1493,7 +1498,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 	// Fetch the audio_format
 	AVFormatContext *context = this->audio_format;
-
+	
 	// Determine the tracks to use
 	int index = this->audio_index;
 	int index_max = this->audio_index + 1;
@@ -1516,6 +1521,12 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			// Check for resample and create if necessary
 			if ( codec_context->channels <= 2 )
 			{
+				// Determine by how much resampling will increase number of samples
+				double resample_factor = this->audio_index == INT_MAX ? 1 : (double) *channels / codec_context->channels;
+				resample_factor *= (double) *frequency / codec_context->sample_rate;
+				if ( resample_factor > this->resample_factor )
+					this->resample_factor = resample_factor;
+				
 				// Create the resampler
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
 				this->audio_resample[ index ] = av_audio_resample_init(
@@ -1534,8 +1545,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			}
 
 			// Check for audio buffer and create if necessary
-			this->audio_buffer[ index ] = mlt_pool_alloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
 			this->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+			this->audio_buffer[ index ] = mlt_pool_alloc( this->audio_buffer_size[ index ] * sizeof( int16_t ) );
 
 			// Check for decoder buffer and create if necessary
 			this->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
