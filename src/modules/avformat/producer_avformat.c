@@ -1370,7 +1370,7 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 	return paused;
 }
 
-static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int samples, double timecode, double source_fps )
+static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int channels, int samples, double timecode, double source_fps )
 {
 	// Fetch the audio_format
 	AVFormatContext *context = this->audio_format;
@@ -1389,7 +1389,6 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 	int16_t *decode_buffer = this->decode_buffer[ index ];
 
 	int audio_used = this->audio_used[ index ];
-	int channels = codec_context->channels;
 	uint8_t *ptr = pkt->data;
 	int len = pkt->size;
 	int ret = 0;
@@ -1430,14 +1429,14 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 				// Copy to audio buffer while resampling
 				int16_t *source = decode_buffer;
 				int16_t *dest = &audio_buffer[ audio_used * channels ];
-				int convert_samples = data_size / channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
+				int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
 				audio_used += audio_resample( resample, dest, source, convert_samples );
 			}
 			else
 			{
 				// Straight copy to audio buffer
-				memcpy( &audio_buffer[ audio_used * channels ], decode_buffer, data_size );
-				audio_used += data_size / channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
+				memcpy( &audio_buffer[ audio_used * codec_context->channels ], decode_buffer, data_size );
+				audio_used += data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
 			}
 
 			// Handle ignore
@@ -1445,7 +1444,8 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 			{
 				*ignore -= 1;
 				audio_used -= samples;
-				memmove( audio_buffer, &audio_buffer[ samples * channels ], audio_used * sizeof( int16_t ) );
+				memmove( audio_buffer, &audio_buffer[ samples * (resample? channels : codec_context->channels) ],
+				         audio_used * sizeof( int16_t ) );
 			}
 		}
 	}
@@ -1566,7 +1566,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			// We only deal with audio from the selected audio index
 			if ( ret >= 0 && pkt.data && pkt.size > 0 && ( pkt.stream_index == this->audio_index ||
 				 ( this->audio_index == INT_MAX && context->streams[ pkt.stream_index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
-				ret = decode_audio( this, &ignore, &pkt, *samples, real_timecode, source_fps );
+				ret = decode_audio( this, &ignore, &pkt, *channels, *samples, real_timecode, source_fps );
 			av_free_packet( &pkt );
 
 			if ( this->audio_index == INT_MAX && ret >= 0 )
