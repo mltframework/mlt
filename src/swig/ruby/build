@@ -6,6 +6,6 @@ if ARGV.shift == 'clean'
 end
 system( "ln -sf ../mlt.i" )
 system( "swig -c++ -ruby -I../../mlt++ -I../.. mlt.i" )
-$CFLAGS += "-I../.."
+$CFLAGS += " -I../.."
 $LDFLAGS += " -L../../mlt++ -lmlt++"
 create_makefile('mlt')
