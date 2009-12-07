@@ -1057,7 +1057,7 @@ static void *consumer_thread( void *arg )
 						sample_fifo_fetch( fifo, buffer,
 							sample_fifo_used( fifo ) > AUDIO_ENCODE_BUFFER_SIZE ? AUDIO_ENCODE_BUFFER_SIZE : sample_fifo_used( fifo ) );
 					else
-						memset( buffer, 0, AUDIO_ENCODE_BUFFER_SIZE * sizeof( *buffer ) );
+						memset( buffer, 0, AUDIO_ENCODE_BUFFER_SIZE );
 
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
 					// Write the compressed frame in the media file
