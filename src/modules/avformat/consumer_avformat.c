@@ -390,6 +390,7 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 
 		c->codec_id = codec_id;
 		c->codec_type = CODEC_TYPE_AUDIO;
+		c->sample_fmt = SAMPLE_FMT_S16;
 
 		// Setup multi-threading
 		int thread_count = mlt_properties_get_int( properties, "threads" );
@@ -1045,21 +1046,18 @@ static void *consumer_thread( void *arg )
 			{
 				if ( ( video_st && terminated ) || ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
 				{
- 					AVCodecContext *c;
+					AVCodecContext *c = audio_st->codec;
 					AVPacket pkt;
-					av_init_packet( &pkt );
+					int n = FFMIN( FFMIN( channels * audio_input_frame_size, sample_fifo_used( fifo ) ), AUDIO_ENCODE_BUFFER_SIZE );
 
-					c = audio_st->codec;
-
-					if ( ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
-						sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
-					else if ( sample_fifo_used( fifo ) )
-						sample_fifo_fetch( fifo, buffer,
-							sample_fifo_used( fifo ) > AUDIO_ENCODE_BUFFER_SIZE ? AUDIO_ENCODE_BUFFER_SIZE : sample_fifo_used( fifo ) );
+					if ( n > 0 )
+						sample_fifo_fetch( fifo, buffer, n );
 					else
 						memset( buffer, 0, AUDIO_ENCODE_BUFFER_SIZE );
-
+					
+					av_init_packet( &pkt );
 					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
+					
 					// Write the compressed frame in the media file
 					if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 					{
