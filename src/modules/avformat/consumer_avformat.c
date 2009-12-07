@@ -1316,8 +1316,15 @@ static void *consumer_thread( void *arg )
 	}
 #endif
 
+	// XXX ugly hack to prevent x264 from crashing on second pass of multi-threaded encoding
+	int pass = mlt_properties_get_int( properties, "pass" );
+	int thread_count = mlt_properties_get_int( properties, "threads" );
+	if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
+		thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
+	int multithreaded_x264 = ( video_codec_id == CODEC_ID_H264 && pass == 2 && thread_count > 1 );
+	
 	// close each codec
-	if (video_st)
+	if ( video_st && !multithreaded_x264 )
 		close_video(oc, video_st);
 	if (audio_st)
 		close_audio(oc, audio_st);
@@ -1354,7 +1361,7 @@ static void *consumer_thread( void *arg )
 
 	mlt_consumer_stopped( this );
 
-	if ( mlt_properties_get_int( properties, "pass" ) == 2 )
+	if ( pass == 2 )
 	{
 		// Remove the dual pass log file
 		if ( mlt_properties_get( properties, "_logfilename" ) )
