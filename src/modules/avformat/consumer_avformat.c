@@ -392,12 +392,14 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->codec_type = CODEC_TYPE_AUDIO;
 		c->sample_fmt = SAMPLE_FMT_S16;
 
+#if 0 // disabled until some audio codecs are multi-threaded
 		// Setup multi-threading
 		int thread_count = mlt_properties_get_int( properties, "threads" );
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
 		if ( thread_count > 1 )
 			avcodec_thread_init( c, thread_count );		
+#endif
 	
 		if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
 			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
