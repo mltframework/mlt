@@ -1,4 +1,253 @@
+2009-12-07  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.4.6.
+
+  * NEWS: Add v0.4.8 release notes.
+
+  * src/modules/core/loader.ini, src/modules/core/producer_loader.c: Fix some
+  cases image and audio formats not converting (kdenlive-1259).
+
+  * src/modules/core/transition_composite.c: Fix crash in
+  composite-on-composite (kdenlive-1315).
+
+2009-12-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fix crash in x264 on second pass
+  of multi-threaded encoding.
+
+  * src/modules/avformat/consumer_avformat.c: Disable multi-threaded audio
+  encoding (not useful).
+
+  * src/modules/avformat/consumer_avformat.c: Fix encoding PCM on some recent
+  FFmpeg change (kdenlive 1282).  Also includes a little cleanup and extra
+  buffer overwrite protection.
+
+  * src/modules/avformat/consumer_avformat.c: Fix regression causing writing
+  beyond end of buffer (kdenlive 1282).  Anything with a PCM output is still
+  crashing including DV and WAV.
+
+2009-12-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/ruby/build: Fix build (CFLAGS) of Ruby binding.
+
+2009-12-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix audio buffer overflow on
+  large resampling (2902193).
+
+  * src/modules/avformat/producer_avformat.c: Fix regression converting mono to
+  stereo.
+
+  * src/modules/core/filter_crop.c: Add center property to crop to
+  automatically fill frame.
+
+2009-12-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_crop.c: Fix distorting aspect ratio of images with
+  crop.  Unfortunately, this has the side effect of breaking the crop extents
+  of existing projects when crop was applied to an image or image sequence.
+  However, those projects were using a distorting version of crop and would
+  need to be revised anyways.
+
+  * src/modules/core/filter_crop.c: Add support for cropping RGB(A).
+
+  * src/modules/core/filter_resize.c: Only correct field order if the source is
+  interlaced.
+
+2009-11-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_crop.c: Re-Fix bounds checking of crop filter
+  (kdenlive-1148).
+
+  * src/modules/avformat/producer_avformat.c: Add force_fps property to
+  avformat producer.
+
+  * src/modules/frei0r/factory.c: Fix locating plugins in $HOME/.frei0r-1/lib
+  (2897195).
+
+  * src/modules/avformat/producer_avformat.c: Fix pointer of V plane for
+  yuv420p.
+
+  * src/modules/avformat/producer_avformat.c: Fix crash in avformat producer on
+  unusable file.
+
+  * src/modules/oldfilm/filter_vignette.yml: Fix validation and consistency
+  errors in vignette YAML.
+
+2009-11-29  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/oldfilm/filter_vignette.c,
+  src/modules/oldfilm/filter_vignette.yml: use float for vignette effect fixed
+  also bug in wrong y center
+
+2009-11-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/oldfilm/filter_vignette.yml: Fix broken vignette YAML.
+
+2009-11-29  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/oldfilm/filter_vignette.c,
+  src/modules/oldfilm/filter_vignette.yml: use extra paramters for vignette
+  settings
+
+2009-11-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Add support for new libavcodec
+  decode functions.
+
+  * src/modules/avformat/producer_avformat.c: Fix seek on some AVCHD causing
+  infinite loop.  This detects when libavformat starts to consistently report
+  invalid PTS and then will disable Ivan's new_seek code. In the example file I
+  have this only happens when seeking backwards, which typically implies an
+  interactive use case (except when using framebuffer with speed < 0). Then, it
+  should still use the new_seek when simply apply an in point to allow for a
+  clean, accurate cut.
+
+2009-11-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fix regression in audio only
+  output.
+
+  * src/modules/avformat/producer_avformat.c: Fix dropping samples on math
+  error (kdenlive 1219).
+
+2009-11-14  j-b-m <jb@kdenlive.org>
+
+  * src/modules/frei0r/filter_frei0r.c: Fix frei0r helper filter position (used
+  for keyframes)
+
+2009-11-13  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Fix typewriter start param
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Add an offset start param to
+  typewriter effect
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Get ready for typewriter
+  effect in titles
+
+2009-11-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/factory.c: Some frei0r filters need to be initialized
+  before getting param info.
+
+  * src/modules/frei0r/factory.c: Some frei0r filters need to be initialized
+  before getting param info.
+
+2009-11-04  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Fix images hidden
+  (kdenlive-1247) Get ready for title effects (blur, shadow)
+
+2009-10-26  Dan Dennedy <dan@dennedy.org>
+
+  * .../motion_est/filter_autotrack_rectangle.c: Fix autotrack_rectangle with
+  negative origin (kdenlive 766).
+
+  * src/framework/mlt_frame.c: These get/set position calls are unnecessary.
+
+2009-10-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fix short output when video
+  shorter than audio (kdenlive 1207).
+
+2009-10-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix audio distortion due to
+  supplying incorrect decode buffer size.
+
+  * src/modules/avformat/producer_avformat.c: Add dynamically resizing audio
+  buffer.
+
+2009-10-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix regression on video-only
+  files (kdenlive-1206).
+
+2009-10-13  j-b-m <jb@kdenlive.org>
+
+  * src/modules/kdenlive/filter_freeze.c: Fix freeze effect issues with
+  transitions (kdenlive 1192)  modified:   src/modules/kdenlive/filter_freeze.c
+
+2009-10-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_crop.c: Fix bounds checking of crop filter
+  (kdenlive-1148).
+
+  * src/modules/avformat/producer_avformat.c: Fix regression with mono audio
+  (kdenlive-1204).
+
+2009-10-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Add codec.frame_rate and drop the
+  profile/level meta properties.
+
+  * profiles/svcd_pal_wide: Fix the display aspect ratio of SVCD Widescreen
+  PAL.
+
+  * configure, src/framework/mlt.h: Bump the version to 0.4.7.
+
+  * src/modules/linsys/consumer_SDIstream.c: Add audio channel mapping.  This
+  uses meta properties on the producer: meta.map.audio.<N>.channels=<integer>
+  meta.map.audio.<N>.start=<integer> where 8 > N >= 0. The consumer loops over
+  N, consumes meta...channels and outputs them from channel meta...start. The
+  channel index starts at 0. For example, if the first audio track of the clip
+  is stereo English and the second audio track is stereo French, then this will
+  swap them: $ melt someclip audio_index=all meta.map.audio.0.channels=2
+  meta.map.audio.0.start=2 meta.map.audio.1.channels=2 meta.map.audio.1.start=0
+  -consumer linsys_sdi.  However, the last pair of meta properties in this
+  example are actually optional. The algorithm outputs the remaining channels
+  at the start channel you specify. But since getting an unspecified property
+  yields 0, the last meta properties is unnecessary as well.
+
+  * src/modules/linsys/sdi_generator.c: Add MAX_AUDIO_STREAMS constant.
+
+  * src/modules/avformat/producer_avformat.c: Improve this log message.
+
+  * src/framework/mlt_tractor.c: Fix the tractor not passing meta properties to
+  its new frame.
+
+  * src/modules/linsys/consumer_SDIstream.c,
+  src/modules/linsys/sdi_generator.c: Convert some printfs to mlt_log.
+
+  * src/modules/linsys/consumer_SDIstream.c,
+  src/modules/linsys/sdi_generator.c: Cleanup unused parameters.
+
+  * src/modules/linsys/sdi_generator.c: Cleanup compiler warnings.
+
+  * src/modules/linsys/consumer_SDIstream.c,
+  src/modules/linsys/sdi_generator.c: Add support for >2 audio channels to
+  Linsys SDI consumer.  This does not yet have any remapping support.
+
+2009-10-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Add support for audio_index=all.
+
+2009-09-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Convert audio structures to
+  arrays.  Also collect info about audio channels and streams.
+
+2009-09-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Factor out audio seeking and
+  decoding from the get_audio callback.
+
+2009-09-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Factor out video codec
+  initialization.
+
+  * src/modules/avformat/producer_avformat.c: Factor out audio codec setup from
+  audio index handling.
+
+  * src/modules/avformat/producer_avformat.c: Reduce usage of properties for
+  state.
+
 2009-10-07  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update changelog for 0.4.6 release.
 
   * AUTHORS, Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set
   version to 0.4.6 and update release notes.
