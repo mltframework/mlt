@@ -859,6 +859,11 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 
 	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
 
+	// composite_yuv uses geometry->sw to determine source stride, which
+	// should equal the image width if not using crop property.
+	if ( !mlt_properties_get( properties, "crop" ) )
+		geometry->sw = *width;
+
 	// Set the frame back
 	mlt_properties_set_int( b_props, "resize_alpha", resize_alpha );
 
