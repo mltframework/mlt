@@ -1,6 +1,25 @@
 MLT Release Notes
 -----------------
 
+Version 0.4.8
+
+The recommended version of FFmpeg for use with this release is SVN r19873.
+This is mainly a maintenance release. Besides bug fixes here are other
+notable changes.
+
+modules:
+* avformat producer:
+  - refactored producer to use much less properties
+  - added support for audio_index=all for linsys_sdi consumer
+  - added force_fps property (does yet not adjust duration)
+* core/crop: added "center" property to crop filter
+* linsys_sdi:
+  - added support for >2 audio channels
+  - added property meta.map.audio.<N>.channels=<integer>
+  - added property meta.map.audio.<N>.start=<integer>
+* qimage/kdenlivetitle: add typewriter effect
+
+
 Version 0.4.6
 
 The recommended version of FFmpeg for use with this release is SVN r19873.
