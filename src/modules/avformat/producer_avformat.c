@@ -1422,7 +1422,7 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 		{
 			// Figure out how many samples will be needed after resampling
 			int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
-			int samples_needed = lrint( this->resample_factor * convert_samples );
+			int samples_needed = this->resample_factor * convert_samples + 1;
 			
 			// Resize audio buffer to prevent overflow
 			if ( audio_used * channels + samples_needed > this->audio_buffer_size[ index ] )
