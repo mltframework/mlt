@@ -1,7 +1,22 @@
+2009-12-08  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.4.10 and update release notes.
+
+  * src/modules/core/filter_audioconvert.c: Fix audioconvert setting frame
+  audio on no conversion.  This was causing the existing audio to be released
+  and then telling mlt_properties to release the audio again with the old
+  pointer (double free).
+
+  * configure, src/framework/mlt.h, src/modules/avformat/producer_avformat.c:
+  Fix underlinking libm by removing math function.
+
 2009-12-07  Dan Dennedy <dan@dennedy.org>
 
+  * ChangeLog: Update ChangeLog for 0.4.8 release.
+
   * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
-  0.4.6.
+  0.4.8.
 
   * NEWS: Add v0.4.8 release notes.
 
