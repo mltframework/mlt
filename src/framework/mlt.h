@@ -23,8 +23,8 @@
 #ifndef _MLT_H_
 #define _MLT_H_
 
-#define LIBMLT_VERSION_INT ((0<<16)+(4<<8)+9)
-#define LIBMLT_VERSION     0.4.9
+#define LIBMLT_VERSION_INT ((0<<16)+(4<<8)+10)
+#define LIBMLT_VERSION     0.4.10
 
 #ifdef __cplusplus
 extern "C"

@@ -1,6 +1,13 @@
 MLT Release Notes
 -----------------
 
+Version 0.4.10
+
+The recommended version of FFmpeg for use with this release is SVN r19873.
+This is "hotfix" for the 0.4.8 release that fixes a couple of regression
+bugs introduced just before the release.
+
+
 Version 0.4.8
 
 The recommended version of FFmpeg for use with this release is SVN r19873.
