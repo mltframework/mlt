@@ -161,7 +161,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 			error = 1;
 		}
 	}
-	if ( !error )
+	if ( size )
 	{
 		mlt_frame_set_audio( frame, *audio, requested_format, size, mlt_pool_release );
 		*format = requested_format;
