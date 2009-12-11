@@ -172,11 +172,24 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 				aspect_ratio = mlt_properties_get_double( frame_props, "consumer_aspect_ratio" );
 			double input_ar = aspect_ratio * width / height;
 			double output_ar = mlt_profile_dar( mlt_service_profile( MLT_FILTER_SERVICE(this) ) );
+			int bias = mlt_properties_get_int( filter_props, "center_bias" );
 			
 			if ( input_ar > output_ar )
+			{
 				left = right = ( width - rint( output_ar * height / aspect_ratio ) ) / 2;
+				if ( abs(bias) > left )
+					bias = bias < 0 ? -left : left;
+				left -= bias;
+				right += bias;
+			}
 			else
+			{
 				top = bottom = ( height - rint( aspect_ratio * width / output_ar ) ) / 2;
+				if ( abs(bias) > top )
+					bias = bias < 0 ? -top : top;
+				top -= bias;
+				bottom += bias;
+			}
 		}		
 
 		left  -= left % 2;
