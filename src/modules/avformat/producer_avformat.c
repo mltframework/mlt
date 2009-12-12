@@ -27,6 +27,7 @@
 #include <framework/mlt_log.h>
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
+#include <framework/mlt_cache.h>
 
 // ffmpeg Header files
 #include <avformat.h>
@@ -64,7 +65,7 @@ void avformat_unlock( );
 
 struct producer_avformat_s
 {
-	struct mlt_producer_s parent;
+	mlt_producer parent;
 	AVFormatContext *dummy_context;
 	AVFormatContext *audio_format;
 	AVFormatContext *video_format;
@@ -115,6 +116,7 @@ typedef struct producer_avformat_s *producer_avformat;
 static int producer_open( producer_avformat this, mlt_profile profile, char *file );
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
 static void producer_format_close( void *context );
+static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
 
 #ifdef VDPAU
@@ -163,12 +165,13 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 	if ( !skip && file )
 	{
 		// Construct the producer
+		mlt_producer producer = calloc( 1, sizeof( struct mlt_producer_s ) );
 		producer_avformat this = calloc( 1, sizeof( struct producer_avformat_s ) );
 
 		// Initialise it
-		if ( mlt_producer_init( &this->parent, this ) == 0 )
+		if ( mlt_producer_init( producer, this ) == 0 )
 		{
-			mlt_producer producer = &this->parent;
+			this->parent = producer;
 
 			// Get the properties
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -182,8 +185,6 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 			// Register our get_frame implementation
 			producer->get_frame = producer_get_frame;
 			
-			this->resample_factor = 1.0;
-
 			// Open the file
 			if ( producer_open( this, profile, file ) != 0 )
 			{
@@ -193,17 +194,14 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 			}
 			else
 			{
-				// Close the file to release resources for large playlists - reopen later as needed
-				producer_format_close( this->dummy_context );
-				this->dummy_context = NULL;
-				producer_format_close( this->audio_format );
-				this->audio_format = NULL;
-				producer_format_close( this->video_format );
-				this->video_format = NULL;
-
 				// Default the user-selectable indices from the auto-detected indices
 				mlt_properties_set_int( properties, "audio_index",  this->audio_index );
 				mlt_properties_set_int( properties, "video_index",  this->video_index );
+				
+#ifdef VDPAU
+				mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
+#endif
+				mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
 			}
 			return producer;
 		}
@@ -422,7 +420,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 	AVFormatContext *context = NULL;
 
 	// Get the properties
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this->parent );
 
 	// We will treat everything with the producer fps
 	double fps = mlt_profile_fps( profile );
@@ -701,6 +699,9 @@ static void get_audio_streams_info( producer_avformat this )
 	}
 	mlt_log_verbose( NULL, "[producer avformat] audio: total_streams %d max_stream %d total_channels %d max_channels %d\n",
 		this->audio_streams, this->audio_max_stream, this->total_channels, this->max_channel );
+	
+	// Other audio-specific initializations
+	this->resample_factor = 1.0;
 }
 
 static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format *format, int width, int height )
@@ -847,7 +848,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 {
 	// Get the producer
 	producer_avformat this = mlt_frame_pop_service( frame );
-	mlt_producer producer = &this->parent;
+	mlt_producer producer = this->parent;
 
 	// Get the properties from the frame
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -1343,7 +1344,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( source_fps > 0 )
 			mlt_properties_set_double( properties, "source_fps", source_fps );
 		else
-			mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( &this->parent ) );
+			mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( this->parent ) );
 	}
 	return this->video_codec && this->video_index > -1;
 }
@@ -1354,7 +1355,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 {
 	// Get the producer
-	mlt_producer producer = &this->parent;
+	mlt_producer producer = this->parent;
 
 	// Get the properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -1591,10 +1592,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), "avformat_position" );
 
 	// Calculate the real time code
-	double real_timecode = producer_time_of_frame( &this->parent, position );
+	double real_timecode = producer_time_of_frame( this->parent, position );
 
 	// Get the source fps
-	double source_fps = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( &this->parent ), "source_fps" );
+	double source_fps = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( this->parent ), "source_fps" );
 
 	// Number of frames to ignore (for ffwd)
 	int ignore = 0;
@@ -1810,7 +1811,7 @@ static int audio_codec_init( producer_avformat this, int index, mlt_properties p
 static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 {
 	// Get the producer
-	mlt_producer producer = &this->parent;
+	mlt_producer producer = this->parent;
 
 	// Get the properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -1898,16 +1899,31 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Access the private data
-	producer_avformat this = producer->child;
+	mlt_cache_item cache_item = mlt_service_cache_get( MLT_PRODUCER_SERVICE(producer), "producer_avformat" );
+	producer_avformat this = mlt_cache_item_data( cache_item, NULL );
 
 	// Create an empty frame
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
+	
+	if ( *frame )
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES(*frame), "avformat_cache", cache_item, 0, (mlt_destructor) mlt_cache_item_close, NULL );
+	else
+		mlt_cache_item_close( cache_item );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 	// Set the position of this producer
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", mlt_producer_frame( producer ) );
+	
+	// If cache miss
+	if ( !this )
+	{
+		this = calloc( 1, sizeof( struct producer_avformat_s ) );
+		producer->child = this;
+		this->parent = producer;
+		mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
+	}
 
 	// Set up the video
 	producer_set_up_video( this, *frame );
@@ -1921,11 +1937,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	return 0;
 }
 
-static void producer_close( mlt_producer parent )
+static void producer_avformat_close( producer_avformat this )
 {
-	// Obtain this
-	producer_avformat this = parent->child;
-
+	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "producer_avformat_close\n" );
 	// Close the file
 	av_free( this->av_frame );
 	int i;
@@ -1944,11 +1958,15 @@ static void producer_close( mlt_producer parent )
 #ifdef VDPAU
 	vdpau_producer_close( this );
 #endif
+	free( this );
+}
 
+static void producer_close( mlt_producer parent )
+{
 	// Close the parent
 	parent->close = NULL;
 	mlt_producer_close( parent );
 
 	// Free the memory
-	free( this );
+	free( parent );
 }
