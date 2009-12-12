@@ -30,7 +30,7 @@
 #include <pthread.h>
 
 /** the maximum number of data objects to cache per line */
-#define CACHE_SIZE (10)
+#define MAX_CACHE_SIZE (10)
 
 /** \brief Cache item class
  *
@@ -78,9 +78,10 @@ typedef struct mlt_cache_item_s
 struct mlt_cache_s
 {
 	int count;             /**< the number of items currently in the cache */
+	int size;              /**< the maximum number of items permitted in the cache <= \p MAX_CACHE_SIZE */
 	void* *current;        /**< pointer to the current array of pointers */
-	void* A[ CACHE_SIZE ];
-	void* B[ CACHE_SIZE ];
+	void* A[ MAX_CACHE_SIZE ];
+	void* B[ MAX_CACHE_SIZE ];
 	pthread_mutex_t mutex; /**< a mutex to prevent multi-threaded race conditions */
 	mlt_properties active; /**< a list of cache items some of which may no longer
 	                            be in \p current but to which there are
@@ -175,6 +176,7 @@ void mlt_cache_item_close( mlt_cache_item item )
 
 /** Create a new cache.
  *
+ * The default size is \p MAX_CACHE_SIZE.
  * \public \memberof mlt_cache_s
  * \return a new cache or NULL if there was an error
  */
@@ -184,6 +186,7 @@ mlt_cache mlt_cache_init()
 	mlt_cache result = calloc( 1, sizeof( struct mlt_cache_s ) );
 	if ( result )
 	{
+		result->size = MAX_CACHE_SIZE;
 		result->current = result->A;
 		pthread_mutex_init( &result->mutex, NULL );
 		result->active = mlt_properties_new();
@@ -192,10 +195,25 @@ mlt_cache mlt_cache_init()
 	return result;
 }
 
+/** Set the numer of items to cache.
+ *
+ * This must be called before using the cache. The size can not be more
+ * than \p MAX_CACHE_SIZE.
+ * \public \memberof mlt_cache_s
+ * \param cache the cache to adjust
+ * \param size the new size of the cache
+ */
+
+void mlt_cache_set_size( mlt_cache cache, int size )
+{
+	if ( size <= MAX_CACHE_SIZE )
+		cache->size = size;
+}
+
 /** Destroy a cache.
  *
  * \public \memberof mlt_cache_s
- * \param cache the cache to detroy
+ * \param cache the cache to destroy
  */
 
 void mlt_cache_close( mlt_cache cache )
@@ -293,7 +311,7 @@ static void** shuffle_get_hit( mlt_cache cache, void *object )
 	void **hit = NULL;
 	void **alt = cache->current == cache->A ? cache->B : cache->A;
 
-	if ( cache->count > 0 && cache->count < CACHE_SIZE )
+	if ( cache->count > 0 && cache->count < cache->size )
 	{
 		// first determine if we have a hit
 		while ( i-- && !hit )
@@ -355,7 +373,7 @@ void mlt_cache_put( mlt_cache cache, void *object, void* data, int size, mlt_des
 		// the MRU end gets the updated data
 		hit = &alt[ cache->count - 1 ];
 	}
-	else if ( cache->count < CACHE_SIZE )
+	else if ( cache->count < cache->size )
 	{
 		// more room in cache, add it to MRU end
 		hit = &alt[ cache->count++ ];
