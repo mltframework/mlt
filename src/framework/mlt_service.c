@@ -736,3 +736,18 @@ mlt_cache_item mlt_service_cache_get( mlt_service self, const char *name )
 
 	return result;
 }
+
+/** Set the number of items to cache for the named cache.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param name a name for the object that is unique to the service class, but not to the instance
+ * \param size the number of items to cache
+ */
+
+void mlt_service_cache_set_size( mlt_service self, const char *name, int size )
+{
+	mlt_cache cache = get_cache( self, name );
+	if ( cache )
+		mlt_cache_set_size( cache, size );
+}

@@ -95,6 +95,7 @@ extern mlt_profile mlt_service_profile( mlt_service self );
 extern void mlt_service_close( mlt_service self );
 extern void mlt_service_cache_put( mlt_service self, const char *name, void* data, int size, mlt_destructor destructor );
 extern mlt_cache_item mlt_service_cache_get( mlt_service self, const char *name );
+extern void mlt_service_cache_set_size( mlt_service self, const char *name, int size );
 
 #endif
 
