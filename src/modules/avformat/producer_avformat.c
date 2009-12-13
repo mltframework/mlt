@@ -194,6 +194,14 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 			}
 			else
 			{
+				// Close the file to release resources for large playlists - reopen later as needed
+				producer_format_close( this->dummy_context );
+				this->dummy_context = NULL;
+				producer_format_close( this->audio_format );
+				this->audio_format = NULL;
+				producer_format_close( this->video_format );
+				this->video_format = NULL;
+
 				// Default the user-selectable indices from the auto-detected indices
 				mlt_properties_set_int( properties, "audio_index",  this->audio_index );
 				mlt_properties_set_int( properties, "video_index",  this->video_index );
