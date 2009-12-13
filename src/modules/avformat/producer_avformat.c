@@ -1692,7 +1692,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			// We only deal with audio from the selected audio index
 			if ( ret >= 0 && pkt.data && pkt.size > 0 && ( pkt.stream_index == this->audio_index ||
 				 ( this->audio_index == INT_MAX && context->streams[ pkt.stream_index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
-				ret = decode_audio( this, &ignore, &pkt, *channels, *samples, real_timecode, source_fps );
+			{
+				int channels2 = this->audio_index == INT_MAX ? this->audio_codec[pkt.stream_index]->channels : *channels;
+				ret = decode_audio( this, &ignore, &pkt, channels2, *samples, real_timecode, source_fps );
+			}
 			av_free_packet( &pkt );
 
 			if ( this->audio_index == INT_MAX && ret >= 0 )
