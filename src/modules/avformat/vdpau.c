@@ -50,8 +50,8 @@ static int vdpau_init( producer_avformat this )
 	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "vdpau_init\n" );
 	int success = 0;
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this->parent );
-	Display *display = (Display*) strtol( mlt_environment( "x11_display" ), NULL, 16 );
-	if ( !display || mlt_properties_get_int( properties, "novdpau" ) )
+	
+	if ( !mlt_environment( "x11_display" ) || mlt_properties_get_int( properties, "novdpau" ) )
 		return success;
 
 	if ( !g_vdpau )
@@ -66,6 +66,7 @@ static int vdpau_init( producer_avformat this )
 			{
 				int screen = mlt_properties_get_int( properties, "x11_screen" );
 				VdpDevice device;
+				Display *display = (Display*) strtol( mlt_environment( "x11_display" ), NULL, 16 );
 				
 				mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "X11 Display = %p\n", display );
 				if ( VDP_STATUS_OK == create_device( display, screen, &device, &vdp_get_proc_address ) )
