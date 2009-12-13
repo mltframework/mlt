@@ -57,7 +57,7 @@
 #define POSITION_INITIAL (-2)
 #define POSITION_INVALID (-1)
 
-#define MAX_AUDIO_STREAMS (8)
+#define MAX_AUDIO_STREAMS (10)
 #define MAX_VDPAU_SURFACES (10)
 
 void avformat_lock( );
