@@ -126,7 +126,7 @@ static void producer_close( mlt_producer parent );
 /** Constructor for libavformat.
 */
 
-mlt_producer producer_avformat_init( mlt_profile profile, char *file )
+mlt_producer producer_avformat_init( mlt_profile profile, const char *service, char *file )
 {
 	int skip = 0;
 
@@ -185,27 +185,37 @@ mlt_producer producer_avformat_init( mlt_profile profile, char *file )
 			// Register our get_frame implementation
 			producer->get_frame = producer_get_frame;
 			
-			// Open the file
-			if ( producer_open( this, profile, file ) != 0 )
+			if ( strcmp( service, "avformat-novalidate" ) )
 			{
-				// Clean up
-				mlt_producer_close( producer );
-				producer = NULL;
+				// Open the file
+				if ( producer_open( this, profile, file ) != 0 )
+				{
+					// Clean up
+					mlt_producer_close( producer );
+					producer = NULL;
+				}
+				else
+				{
+					// Close the file to release resources for large playlists - reopen later as needed
+					producer_format_close( this->dummy_context );
+					this->dummy_context = NULL;
+					producer_format_close( this->audio_format );
+					this->audio_format = NULL;
+					producer_format_close( this->video_format );
+					this->video_format = NULL;
+	
+					// Default the user-selectable indices from the auto-detected indices
+					mlt_properties_set_int( properties, "audio_index",  this->audio_index );
+					mlt_properties_set_int( properties, "video_index",  this->video_index );
+					
+#ifdef VDPAU
+					mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
+#endif
+					mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
+				}
 			}
 			else
 			{
-				// Close the file to release resources for large playlists - reopen later as needed
-				producer_format_close( this->dummy_context );
-				this->dummy_context = NULL;
-				producer_format_close( this->audio_format );
-				this->audio_format = NULL;
-				producer_format_close( this->video_format );
-				this->video_format = NULL;
-
-				// Default the user-selectable indices from the auto-detected indices
-				mlt_properties_set_int( properties, "audio_index",  this->audio_index );
-				mlt_properties_set_int( properties, "video_index",  this->video_index );
-				
 #ifdef VDPAU
 				mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
 #endif

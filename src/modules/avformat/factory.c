@@ -29,7 +29,7 @@ extern mlt_filter filter_avcolour_space_init( void *arg );
 extern mlt_filter filter_avdeinterlace_init( void *arg );
 extern mlt_filter filter_avresample_init( char *arg );
 extern mlt_filter filter_swscale_init( mlt_profile profile, char *arg );
-extern mlt_producer producer_avformat_init( mlt_profile profile, char *file );
+extern mlt_producer producer_avformat_init( mlt_profile profile, const char *service, char *file );
 
 // ffmpeg Header files
 #include <avformat.h>
@@ -98,10 +98,10 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 {
 	avformat_init( );
 #ifdef CODECS
-	if ( !strcmp( id, "avformat" ) )
+	if ( !strncmp( id, "avformat", 8 ) )
 	{
 		if ( type == producer_type )
-			return producer_avformat_init( profile, arg );
+			return producer_avformat_init( profile, id, arg );
 		else if ( type == consumer_type )
 			return consumer_avformat_init( profile, arg );
 	}
@@ -151,6 +151,7 @@ MLT_REPOSITORY
 #ifdef CODECS
 	MLT_REGISTER( consumer_type, "avformat", create_service );
 	MLT_REGISTER( producer_type, "avformat", create_service );
+	MLT_REGISTER( producer_type, "avformat-novalidate", create_service );
 	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
 #endif
 #ifdef FILTERS
