@@ -355,6 +355,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 	// Set the preferred params of the test card signal
 	int channels = mlt_properties_get_int( properties, "channels" );
+	int dest_channels = channels;
 	int frequency = mlt_properties_get_int( properties, "frequency" );
 	static int counter = 0;
 
@@ -365,6 +366,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 	mlt_frame_get_audio( frame, (void**) &pcm, &afmt, &frequency, &channels, &samples );
 	*duration = ( ( samples * 1000 ) / frequency );
+	pcm += mlt_properties_get_int( properties, "audio_offset" );
 
 	if ( mlt_properties_get_int( properties, "audio_off" ) )
 	{
@@ -385,7 +387,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		this->playing = 0;
 		request.freq = frequency;
 		request.format = AUDIO_S16SYS;
-		request.channels = channels;
+		request.channels = dest_channels;
 		request.samples = audio_buffer;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
@@ -404,16 +406,36 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	if ( init_audio == 0 )
 	{
 		mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-		bytes = ( samples * channels * 2 );
+		
+		bytes = samples * dest_channels * sizeof(*pcm);
 		pthread_mutex_lock( &this->audio_mutex );
 		while ( this->running && bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
 			pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
 		if ( this->running )
 		{
 			if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
-				memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
+			{
+				if ( channels == dest_channels )
+				{
+					memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
+				}
+				else
+				{
+					int16_t *dest = (int16_t*) &this->audio_buffer[ this->audio_avail ];
+					int i = samples + 1;
+					
+					while ( --i )
+					{
+						memcpy( dest, pcm, dest_channels * sizeof(*pcm) );
+						pcm += channels;
+						dest += dest_channels;
+					}
+				}
+			}
 			else
+			{
 				memset( &this->audio_buffer[ this->audio_avail ], 0, bytes );
+			}
 			this->audio_avail += bytes;
 		}
 		pthread_cond_broadcast( &this->audio_cond );
