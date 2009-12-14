@@ -302,6 +302,7 @@ static void vdpau_decoder_close( )
 	
 }
 
+#if 0
 static void vdpau_close( void *ignored )
 {
 	mlt_log_debug( NULL, "vdpau_close\n" );
@@ -312,3 +313,4 @@ static void vdpau_close( void *ignored )
 		g_vdpau = NULL;
 	}
 }
+#endif
