@@ -62,7 +62,8 @@ else
 	export swscale=
 	export codecs=true
 	export filters=true
-	export vdpau=
+	pkg-config x11 > /dev/null 2>&1
+	export x11=$?
 
 	for i in "$@"
 	do
@@ -116,8 +117,9 @@ else
 		echo "LOCAL_FFMPEG=1" >> config.mak
 		echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 		extra_libs="$extra_libs -lm -lz -lbz2"
+		
 		echo -e "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"`pwd`/ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
-		[ "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+		[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 	elif [ "$static_ffmpeg" != "" ]
 	then 
 		if [ -d "$static_ffmpeg" ]
@@ -134,8 +136,9 @@ else
 			fi
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 			extra_libs="$extra_libs -lm -lz -lbz2"
+			
 			echo -e "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$static_ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
-			[ "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat
@@ -159,8 +162,9 @@ else
 				echo "CFLAGS+=-I$shared_ffmpeg/include/libswscale" >> config.mak
 			echo "SWSCALE=1" >> config.mak
 		fi
+		
 		echo -e "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$(pkg-config --cflags libavformat)" -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
-		[ "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+		[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 	else
 		echo "avformat: No build environment found. "
 		echo "          Try configuring mlt with --avformat-svn."

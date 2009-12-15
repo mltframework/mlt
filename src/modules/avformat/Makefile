@@ -29,8 +29,8 @@ CFLAGS += -DFILTERS
 endif
 
 ifdef VDPAU
-CFLAGS += -DVDPAU
-LDFLAGS += -ldl
+CFLAGS += -DVDPAU `pkg-config --cflags x11`
+LDFLAGS += -ldl `pkg-config --libs x11`
 endif
 
 ifdef CODECS
