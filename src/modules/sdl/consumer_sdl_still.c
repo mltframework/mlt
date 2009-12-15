@@ -175,22 +175,6 @@ static int consumer_start( mlt_consumer parent )
 
 			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 			SDL_EnableUNICODE( 1 );
-			
-#ifndef __DARWIN__
-			// Get the wm structure
-			SDL_SysWMinfo wm;
-			SDL_VERSION( &wm.version );
-			// Only on X11
-			if ( SDL_GetWMInfo( &wm ) == 1 && wm.subsystem == SDL_SYSWM_X11 )
-			{
-				// Set the x11_display property for use by VDPAU
-				mlt_properties_set_int( this->properties, "x11_display", (int) wm.info.x11.display );
-				mlt_log_verbose( MLT_CONSUMER_SERVICE(parent), "X11 Display = %p\n", wm.info.x11.display );
-				char tmp[20];
-				sprintf( tmp, "%p", wm.info.x11.display );
-				mlt_environment_set( "x11_display", tmp );
-			}
-#endif
 		}
 		else if ( preview_off == 0 )
 		{
@@ -220,11 +204,21 @@ static int consumer_stop( mlt_consumer parent )
 
 	if ( this->joined == 0 )
 	{
+		int preview_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "preview_off" );
+		int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
+	
 		// Kill the thread and clean up
 		this->running = 0;
 
 		pthread_join( this->thread, NULL );
 		this->joined = 1;
+
+		if ( sdl_started == 0 && preview_off == 0 )
+		{
+			pthread_mutex_lock( &mlt_sdl_mutex );
+			SDL_Quit( );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
+		}
 
 		this->sdl_screen = NULL;
 	}
@@ -643,21 +637,12 @@ static void consumer_close( mlt_consumer parent )
 {
 	// Get the actual object
 	consumer_sdl this = parent->child;
-	int preview_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "preview_off" );
-	int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
 
 	// Stop the consumer
 	mlt_consumer_stop( parent );
 
 	// Now clean up the rest
 	mlt_consumer_close( parent );
-
-	if ( sdl_started == 0 && preview_off == 0 )
-	{
-		pthread_mutex_lock( &mlt_sdl_mutex );
-		SDL_Quit( );
-		pthread_mutex_unlock( &mlt_sdl_mutex );
-	}
 
 	// Finally clean up this
 	free( this );

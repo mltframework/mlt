@@ -194,22 +194,6 @@ int consumer_start( mlt_consumer parent )
 
 			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 			SDL_EnableUNICODE( 1 );
-			
-#ifndef __DARWIN__
-			// Get the wm structure
-			SDL_SysWMinfo wm;
-			SDL_VERSION( &wm.version );
-			// Only on X11
-			if ( SDL_GetWMInfo( &wm ) == 1 && wm.subsystem == SDL_SYSWM_X11 )
-			{
-				// Set the x11_display property for use by VDPAU
-				mlt_properties_set_int( this->properties, "x11_display", (int) wm.info.x11.display );
-				mlt_log_verbose( MLT_CONSUMER_SERVICE(parent), "X11 Display = %p\n", wm.info.x11.display );
-				char tmp[20];
-				sprintf( tmp, "%p", wm.info.x11.display );
-				mlt_environment_set( "x11_display", tmp );
-			}
-#endif
 		}
 		else if ( display_off == 0 )
 		{
@@ -269,6 +253,13 @@ int consumer_stop( mlt_consumer parent )
 			pthread_cond_broadcast( &this->audio_cond );
 			pthread_mutex_unlock( &this->audio_mutex );
 			SDL_QuitSubSystem( SDL_INIT_AUDIO );
+		}
+
+		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
+		{
+			pthread_mutex_lock( &mlt_sdl_mutex );
+			SDL_Quit( );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
 
 		this->sdl_screen = NULL;
@@ -872,7 +863,6 @@ static void consumer_close( mlt_consumer parent )
 {
 	// Get the actual object
 	consumer_sdl this = parent->child;
-	int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
 
 	// Stop the consumer
 	///mlt_consumer_stop( parent );
@@ -887,13 +877,6 @@ static void consumer_close( mlt_consumer parent )
 	pthread_mutex_destroy( &this->audio_mutex );
 	pthread_cond_destroy( &this->audio_cond );
 		
-	if ( sdl_started == 0 )
-	{
-		pthread_mutex_lock( &mlt_sdl_mutex );
-		SDL_Quit( );
-		pthread_mutex_unlock( &mlt_sdl_mutex );
-	}
-
 	// Finally clean up this
 	free( this );
 }
