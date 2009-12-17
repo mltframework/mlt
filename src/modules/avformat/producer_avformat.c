@@ -115,7 +115,6 @@ typedef struct producer_avformat_s *producer_avformat;
 // Forward references.
 static int producer_open( producer_avformat this, mlt_profile profile, char *file );
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
-static void producer_format_close( void *context );
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
 
@@ -197,12 +196,17 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 				else
 				{
 					// Close the file to release resources for large playlists - reopen later as needed
-					producer_format_close( this->dummy_context );
+					avformat_lock();
+					if ( this->dummy_context )
+						av_close_input_file( this->dummy_context );
 					this->dummy_context = NULL;
-					producer_format_close( this->audio_format );
+					if ( this->audio_format )
+						av_close_input_file( this->audio_format );
 					this->audio_format = NULL;
-					producer_format_close( this->video_format );
+					if ( this->video_format )
+						av_close_input_file( this->video_format );
 					this->video_format = NULL;
+					avformat_unlock();
 	
 					// Default the user-selectable indices from the auto-detected indices
 					mlt_properties_set_int( properties, "audio_index",  this->audio_index );
@@ -306,42 +310,6 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 	}
 
 	return meta_media;
-}
-
-/** Producer file destructor.
-*/
-
-static void producer_format_close( void *context )
-{
-	if ( context )
-	{
-		// Lock the mutex now
-		avformat_lock( );
-
-		// Close the file
-		av_close_input_file( context );
-
-		// Unlock the mutex now
-		avformat_unlock( );
-	}
-}
-
-/** Producer file destructor.
-*/
-
-static void producer_codec_close( void *codec )
-{
-	if ( codec )
-	{
-		// Lock the mutex now
-		avformat_lock( );
-
-		// Close the file
-		avcodec_close( codec );
-
-		// Unlock the mutex now
-		avformat_unlock( );
-	}
 }
 
 static inline int dv_is_pal( AVPacket *pkt )
@@ -567,7 +535,6 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			{
 				this->seekable = av_seek_frame( context, -1, this->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 				mlt_properties_set_int( properties, "seekable", this->seekable );
-				producer_format_close( this->dummy_context );
 				this->dummy_context = context;
 				av_open_input_file( &context, file, NULL, 0, NULL );
 				av_find_stream_info( context );
@@ -629,9 +596,6 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			if ( av == 0 && audio_index != -1 && video_index != -1 )
 			{
 				// We'll use the open one as our video_format
-				avformat_unlock();
-				producer_format_close( this->video_format );
-				avformat_lock();
 				this->video_format = context;
 
 				// And open again for our audio context
@@ -639,25 +603,16 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 				av_find_stream_info( context );
 
 				// Audio context
-				avformat_unlock();
-				producer_format_close( this->audio_format );
-				avformat_lock();
 				this->audio_format = context;
 			}
 			else if ( av != 2 && video_index != -1 )
 			{
 				// We only have a video context
-				avformat_unlock();
-				producer_format_close( this->video_format );
-				avformat_lock();
 				this->video_format = context;
 			}
 			else if ( audio_index != -1 )
 			{
 				// We only have an audio context
-				avformat_unlock();
-				producer_format_close( this->audio_format );
-				avformat_lock();
 				this->audio_format = context;
 			}
 			else
@@ -1391,7 +1346,12 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = this->video_format;
-		producer_format_close( this->dummy_context );
+		if ( this->dummy_context )
+		{
+			avformat_lock();
+			av_close_input_file( this->dummy_context );
+			avformat_unlock();
+		}
 		this->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
 		if ( this->audio_format )
@@ -1422,7 +1382,12 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 	{
 		// Reset the video properties if the index changed
 		this->video_index = index;
-		producer_codec_close( this->video_codec );
+		if ( this->video_codec )
+		{
+			avformat_lock();
+			avcodec_close( this->video_codec );
+			avformat_unlock();
+		}
 		this->video_codec = NULL;
 	}
 
@@ -1719,7 +1684,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				}
 			}
 		}
-
+		
 		// Allocate and set the frame's audio buffer
 		int size = *samples * *channels * sizeof(int16_t);
 		*buffer = mlt_pool_alloc( size );
@@ -1782,7 +1747,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		// Get silence and don't touch the context
 		mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	}
-
+	
 	// Regardless of speed (other than paused), we expect to get the next frame
 	if ( !paused )
 		this->audio_expected = position + 1;
@@ -1809,16 +1774,16 @@ static int audio_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( codec && avcodec_open( codec_context, codec ) >= 0 )
 		{
 			// Now store the codec with its destructor
-			avformat_unlock();
-			producer_codec_close( this->audio_codec[index] );
+			if ( this->audio_codec[ index ] )
+				avcodec_close( this->audio_codec[ index ] );
 			this->audio_codec[ index ] = codec_context;
 		}
 		else
 		{
 			// Remember that we can't use this later
 			this->audio_index = -1;
-			avformat_unlock( );
 		}
+		avformat_unlock( );
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
@@ -1857,7 +1822,12 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = this->audio_format;
-		producer_format_close( this->dummy_context );
+		if ( this->dummy_context )
+		{
+			avformat_lock();
+			av_close_input_file( this->dummy_context );
+			avformat_unlock();
+		}
 		this->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
 		get_audio_streams_info( this );
@@ -1881,7 +1851,12 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	// Update the audio properties if the index changed
 	if ( index > -1 && index != this->audio_index )
 	{
-		producer_codec_close( this->audio_codec[ this->audio_index ] );
+		if ( this->audio_codec[ this->audio_index ] )
+		{
+			avformat_lock();
+			avcodec_close( this->audio_codec[ this->audio_index ] );
+			avformat_unlock();
+		}
 		this->audio_codec[ this->audio_index ] = NULL;
 	}
 	this->audio_index = index;
@@ -1963,6 +1938,7 @@ static void producer_avformat_close( producer_avformat this )
 	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "producer_avformat_close\n" );
 	// Close the file
 	av_free( this->av_frame );
+	avformat_lock();
 	int i;
 	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
 	{
@@ -1970,12 +1946,18 @@ static void producer_avformat_close( producer_avformat this )
 			audio_resample_close( this->audio_resample[i] );
 		mlt_pool_release( this->audio_buffer[i] );
 		av_free( this->decode_buffer[i] );
-		producer_codec_close( this->audio_codec[i] );
+		if ( this->audio_codec[i] )
+			avcodec_close( this->audio_codec[i] );
 	}
-	producer_codec_close( this->video_codec );
-	producer_format_close( this->dummy_context );
-	producer_format_close( this->audio_format );
-	producer_format_close( this->video_format );
+	if ( this->video_codec )
+		avcodec_close( this->video_codec );
+	if ( this->dummy_context )
+		av_close_input_file( this->dummy_context );
+	if ( this->audio_format )
+		av_close_input_file( this->audio_format );
+	if ( this->video_format )
+		av_close_input_file( this->video_format );
+	avformat_unlock();
 #ifdef VDPAU
 	vdpau_producer_close( this );
 #endif
