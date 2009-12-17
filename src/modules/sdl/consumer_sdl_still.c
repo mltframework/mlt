@@ -523,7 +523,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 
 		// Flip it into sight
+		pthread_mutex_lock( &mlt_sdl_mutex );
 		SDL_Flip( this->sdl_screen );
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	sdl_unlock_display();
