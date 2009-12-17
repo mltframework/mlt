@@ -1708,7 +1708,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				}
 			}
 			for ( index = 0; index < index_max; index++ )
-			if ( this->audio_codec[ index ] )
+			if ( this->audio_codec[ index ] && this->audio_used[ index ] >= *samples )
 			{
 				int current_channels = this->audio_codec[ index ]->channels;
 				int16_t *src = this->audio_buffer[ index ] + *samples * current_channels;
@@ -1935,7 +1935,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_avformat_close( producer_avformat this )
 {
-	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "producer_avformat_close\n" );
+	mlt_log_debug( NULL, "producer_avformat_close\n" );
 	// Close the file
 	av_free( this->av_frame );
 	avformat_lock();
