@@ -263,6 +263,10 @@ static void *consumer_thread(void *arg) {
 				// Get the audio from this frame and save it to our audio_buffer
 				mlt_frame_get_audio(frame, (void**) &audio_buffer_tmp, &aformat, &frequency, &channels, &samples);
 				mlt_log_debug(MLT_CONSUMER_SERVICE(consumer), "channels: %i samples: %i\n", channels, samples);
+				
+				int out_channels = channels;
+				if ( mlt_properties_get( properties, "force_channels" ) )
+					out_channels = mlt_properties_get_int( properties, "force_channels" );
 
 				// Tell the sdi_generator.c to playout our frame
 				// 8 audio streams with 2 stereo channels are possible
@@ -270,7 +274,7 @@ static void *consumer_thread(void *arg) {
 					int i, j = 0;
 					int map_channels, map_start;
 
-					for (i = 0; i < MAX_AUDIO_STREAMS && j < channels; i++) {
+					for (i = 0; i < MAX_AUDIO_STREAMS && j < out_channels; i++) {
 						char key[27];
 						int c;
 
@@ -292,7 +296,7 @@ static void *consumer_thread(void *arg) {
 							}
 						}
 					}
-					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, (channels + 1) / 2, my_dbn);
+					my_dbn = sdimaster_playout(video_buffer, this->audio_buffer, (out_channels + 1) / 2, my_dbn);
 				} else
 					mlt_log_warning(MLT_CONSUMER_SERVICE(consumer), "video_buffer was NULL, skipping playout\n");
 
