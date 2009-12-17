@@ -485,6 +485,7 @@ static void producer_close( mlt_producer parent )
 	producer_pixbuf this = parent->child;
 	pthread_mutex_destroy( &this->mutex );
 	parent->close = NULL;
+	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
 	mlt_producer_close( parent );
 	mlt_properties_close( this->filenames );
 	free( this );

@@ -66,7 +66,6 @@ static void mlt_service_disconnect( mlt_service this );
 static void mlt_service_connect( mlt_service this, mlt_service that );
 static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
 static void mlt_service_property_changed( mlt_listener, mlt_properties owner, mlt_service this, void **args );
-static void purge_cache( mlt_service self );
 
 /** Initialize a service.
  *
@@ -635,7 +634,6 @@ void mlt_service_close( mlt_service this )
 			free( base->in );
 			pthread_mutex_destroy( &base->mutex );
 			free( base );
-			purge_cache( this );
 			mlt_properties_close( &this->parent );
 		}
 	}
@@ -651,7 +649,7 @@ void mlt_service_close( mlt_service this )
  * \param self a service
  */
 
-static void purge_cache( mlt_service self )
+void mlt_service_cache_purge( mlt_service self )
 {
 	mlt_properties caches = mlt_properties_get_data( mlt_global_properties(), "caches", NULL );
 
