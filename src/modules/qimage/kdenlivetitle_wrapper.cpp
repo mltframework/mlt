@@ -206,7 +206,20 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					text = text.replace( "%s", replacementText );
 				}
 				QGraphicsTextItem *txt = scene->addText(text, font);
-				txt->setDefaultTextColor( col );
+				if (txtProperties.namedItem("font-outline").nodeValue().toDouble()>0.0){
+					QTextCursor cursor(txt->document());
+					cursor.select(QTextCursor::Document);
+					QTextCharFormat format;
+					format.setTextOutline(
+							QPen(QColor( stringToColor( txtProperties.namedItem( "font-outline-color" ).nodeValue() ) ),
+							txtProperties.namedItem("font-outline").nodeValue().toDouble())
+					);
+					format.setForeground(QBrush(col));
+
+					cursor.mergeCharFormat(format);
+				} else {
+					txt->setDefaultTextColor( col );
+				}
 				
 				// Effects
 				if (!txtProperties.namedItem( "typewriter" ).isNull()) {
