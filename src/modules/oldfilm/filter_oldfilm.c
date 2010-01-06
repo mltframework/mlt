@@ -23,7 +23,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
+static double sinarr[]={
+	0.0,0.125270029508395,0.2485664757507,0.3679468485397,0.481530353985902,
+	0.587527525713892,0.684268417247276,0.770228911401552,0.84405473219009,0.904582780944473,
+	0.95085946050647,0.982155698800724,0.997978435097294,0.99807838800221,0.982453982794196,
+	0.951351376233828,0.90526057845426,0.844907733031696,0.771243676860277,0.685428960066342,
+	0.588815561967795,0.48292559113694,0.369427305139443,0.250108827749629,0.12684997771773,
+	0.00159265291648683,-0.123689763546002,-0.247023493251739,-0.366465458626247,-0.48013389541149,
+	-0.586237999170027,-0.683106138750633,-0.769212192222595,-0.84319959036574,-0.903902688919827,
+	-0.950365132881376,-0.981854923525203,-0.997875950775248,-0.998175809236459,-0.982749774749007,
+	-0.951840878815686,-0.905936079729926,-0.845758590726883,-0.772256486024771,-0.68658776426406,
+	-0.590102104664575,-0.484319603325524,-0.37090682467023,-0.251650545336281,-0.128429604166398,0.0};
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -53,6 +63,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int bdd = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "brightnessdelta_down" );
 		int bevery = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "brightnessdelta_every" );
 			
+		int udu = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "unevendevelop_up" );
+		int udd = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "unevendevelop_down" );
+		int uduration = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "unevendevelop_duration" );
+
 		int diffpic=0;
 		if (delta)
 			diffpic=rand()%delta*2-delta;
@@ -65,6 +79,15 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		if (rand()%100>bevery)
 			brightdelta=0;
 		int yend,ydiff;
+		int unevendevelop_delta=0;
+		if (uduration>0){
+			float uval= sinarr[ ( ((int)position) % uduration) *50 / uduration ] ;
+			unevendevelop_delta = uval * ( uval>0 ? udu : udd );
+			printf("pos=%d delta =%d uval=%f\n", ( ((int)position) % uduration) *50 / uduration ,unevendevelop_delta ,uval);
+		}
+
+			
+
 		if (diffpic<=0){
 			y=h;
 			yend=0;
@@ -95,12 +118,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 							//oldval=oldval*(randx*randy)/500.0;
 						}
 						*/
-						if ( ((int) oldval + brightdelta ) >255)
+						if ( ((int) oldval + brightdelta + unevendevelop_delta ) >255)
 							*pic=255;
-						else if ( ( (int) oldval+brightdelta )  <0){
+						else if ( ( (int) oldval + brightdelta + unevendevelop_delta )	<0){
 							*pic=0;
 						}else
-							*pic=oldval+brightdelta;
+							*pic = oldval + brightdelta + unevendevelop_delta;
 						*(pic+1)=*(pic+diffpic*w*2+1);
 
 					}else{
@@ -135,6 +158,9 @@ mlt_filter filter_oldfilm_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "brightnessdelta_up" , "20" );
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "brightnessdelta_down" , "30" );
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "brightnessdelta_every" , "70" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "unevendevelop_up" , "60" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "unevendevelop_down" , "20" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "unevendevelop_duration" , "70" );
 	}
 	return this;
 }
