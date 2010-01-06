@@ -66,7 +66,7 @@ parameters:
     required: yes
     minimum: 0
     maximum: 100
-    default: 20
+    default: 30
     mutable: no
     widget: spinner
 
@@ -78,6 +78,43 @@ parameters:
     required: yes
     minimum: 0
     maximum: 100
+    default: 70
+    mutable: no
+    widget: spinner
+    unit: %
+
+  - identifier: unevendevelop_up
+    title: Unevendevelop up
+    type: integer
+    description: Makes image n values lighter
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 100
+    default: 60
+    mutable: no
+    widget: spinner
+
+  - identifier: unevendevelop_down
+    title: Unevendevelop down
+    type: integer
+    description: Makes image n values darker
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 100
+    default: 20
+    mutable: no
+    widget: spinner
+
+  - identifier: unevendevelop_duration
+    title: Unevendevelop Duration
+    type: integer
+    description: Time (in frames) of a up/down cycle
+    readonly: no
+    required: yes
+    minimum: 0
+    maximum: 10000
     default: 70
     mutable: no
     widget: spinner
