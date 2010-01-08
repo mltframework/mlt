@@ -212,7 +212,8 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					QTextCharFormat format;
 					format.setTextOutline(
 							QPen(QColor( stringToColor( txtProperties.namedItem( "font-outline-color" ).nodeValue() ) ),
-							txtProperties.namedItem("font-outline").nodeValue().toDouble())
+							txtProperties.namedItem("font-outline").nodeValue().toDouble(),
+							Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin)
 					);
 					format.setForeground(QBrush(col));
 
