@@ -1177,8 +1177,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					else
 #endif
 					convert_image( this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
-					if ( !mlt_properties_get( properties, "force_progressive" ) )
-						mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
 					this->top_field_first |= this->av_frame->top_field_first;
 					this->current_position = int_position;
 					this->got_picture = 1;
@@ -1199,6 +1197,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		av_freep( &this->av_frame );
 
 	avformat_unlock();
+
+	// Set the progressive flag
+	mlt_properties_set_int( frame_properties, "progressive", 
+		!this->av_frame->interlaced_frame || !!mlt_properties_get_int( properties, "force_progressive" ) );
 
 	// Set the field order property for this frame
 	mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
@@ -1408,8 +1410,6 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		mlt_properties_set_int( frame_properties, "real_width", this->video_codec->width );
 		mlt_properties_set_int( frame_properties, "real_height", this->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
-		if ( mlt_properties_get( properties, "force_progressive" ) )
-			mlt_properties_set_int( frame_properties, "progressive", mlt_properties_get_int( properties, "force_progressive" ) );
 
 		// Add our image operation
 		mlt_frame_push_service( frame, this );

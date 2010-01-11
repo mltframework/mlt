@@ -46,10 +46,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Get the input image
 	if ( deinterlace && !progressive )
 		*format = mlt_image_yuv422;
-	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "xine.deinterlace %d prog %d format %s\n",
-		deinterlace, progressive, mlt_image_format_name( *format ) );
 	error = mlt_frame_get_image( this, image, format, width, height, writable );
 	progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
+	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "xine.deinterlace %d prog %d format %s\n",
+		deinterlace, progressive, mlt_image_format_name( *format ) );
 
 	// Check that we want progressive and we aren't already progressive
 	if ( deinterlace && *format == mlt_image_yuv422 && *image && !progressive )
