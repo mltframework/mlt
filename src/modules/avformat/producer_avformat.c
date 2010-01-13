@@ -1296,7 +1296,9 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		// Reset some image properties
 		mlt_properties_set_int( properties, "width", this->video_codec->width );
 		mlt_properties_set_int( properties, "height", this->video_codec->height );
-		mlt_properties_set_double( properties, "aspect_ratio", get_aspect_ratio( stream, this->video_codec, NULL ) );
+		// For DV, we'll just use the saved aspect ratio
+		if ( codec_context->codec_id != CODEC_ID_DVVIDEO )
+			mlt_properties_set_double( properties, "aspect_ratio", get_aspect_ratio( stream, this->video_codec, NULL ) );
 
 		// Determine the fps first from the codec
 		double source_fps = (double) this->video_codec->time_base.den /
