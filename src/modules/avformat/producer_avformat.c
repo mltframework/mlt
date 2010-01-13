@@ -1426,9 +1426,6 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 {
 	int paused = 0;
 
-	// Fetch the audio_format
-	AVFormatContext *context = this->audio_format;
-
 	// Seek if necessary
 	if ( position != this->audio_expected )
 	{
@@ -1444,6 +1441,7 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 		}
 		else if ( position < this->audio_expected || position - this->audio_expected >= 12 )
 		{
+			AVFormatContext *context = this->audio_format;
 			int64_t timestamp = ( int64_t )( timecode * AV_TIME_BASE + 0.5 );
 			if ( context->start_time != AV_NOPTS_VALUE )
 				timestamp += context->start_time;
@@ -1463,7 +1461,7 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 	return paused;
 }
 
-static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int channels, int samples, double timecode, double source_fps )
+static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int channels, int samples, double timecode, double fps )
 {
 	// Fetch the audio_format
 	AVFormatContext *context = this->audio_format;
@@ -1549,13 +1547,20 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 	if ( pkt->pts >= 0 )
 	{
 		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt->pts;
-		int req_position = ( int )( timecode * source_fps + 0.5 );
-		int int_position = ( int )( current_pts * source_fps + 0.5 );
-
+		int req_position = ( int )( timecode * fps + 0.5 );
+		int int_position = ( int )( current_pts * fps + 0.5 );
 		if ( context->start_time != AV_NOPTS_VALUE )
-			int_position -= ( int )( source_fps * context->start_time / AV_TIME_BASE + 0.5 );
-		if ( this->seekable && *ignore == 0 && int_position < req_position )
-			*ignore = 1;
+			int_position -= ( int )( fps * context->start_time / AV_TIME_BASE + 0.5 );
+
+		if ( this->seekable && *ignore == 0 )
+		{
+			if ( int_position < req_position )
+				// We are behind, so skip some
+				*ignore = 1;
+			else if ( int_position > req_position + 2 )
+				// We are ahead, so seek backwards some more
+				seek_audio( this, req_position, timecode - 1.0, ignore );
+		}
 	}
 
 	this->audio_used[ index ] = audio_used;
@@ -1577,8 +1582,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Calculate the real time code
 	double real_timecode = producer_time_of_frame( this->parent, position );
 
-	// Get the source fps
-	double source_fps = mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( this->parent ), "source_fps" );
+	// Get the producer fps
+	double fps = mlt_producer_get_fps( this->parent );
 
 	// Number of frames to ignore (for ffwd)
 	int ignore = 0;
@@ -1669,7 +1674,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				 ( this->audio_index == INT_MAX && context->streams[ pkt.stream_index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
 			{
 				int channels2 = this->audio_index == INT_MAX ? this->audio_codec[pkt.stream_index]->channels : *channels;
-				ret = decode_audio( this, &ignore, &pkt, channels2, *samples, real_timecode, source_fps );
+				ret = decode_audio( this, &ignore, &pkt, channels2, *samples, real_timecode, fps );
 			}
 			av_free_packet( &pkt );
 
