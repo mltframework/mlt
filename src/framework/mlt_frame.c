@@ -783,28 +783,15 @@ void mlt_frame_close( mlt_frame this )
 
 int mlt_sample_calculator( float fps, int frequency, int64_t position )
 {
-	int samples = 0;
+	/* Compute the cumulative number of samples until the start of this frame and the
+	cumulative number of samples until the start of the next frame. Round each to the
+	nearest integer and take the difference to determine the number of samples in
+	this frame.
 
-	if ( fps )
-	{
-		/* Compute the cumulative number of samples until the start of this frame and the
-		cumulative number of samples until the start of the next frame. Round each to the
-		nearest integer and take the difference to determine the number of samples in
-		this frame.
-
-		This approach should prevent rounding errors that can accumulate over a large number
-		of frames causing A/V sync problems. */
-
-		int64_t samples_at_this =
-			(int64_t)( (double) position * (double) frequency / (double) fps +
-			( position < 0 ? -0.5 : 0.5 ) );
-		int64_t samples_at_next =
-			(int64_t)( (double) (position + 1) * (double) frequency / (double) fps +
-			( position < 0 ? -0.5 : 0.5 ) );
-		samples = (int)( samples_at_next - samples_at_this );
-	}
-
-	return samples;
+	This approach should prevent rounding errors that can accumulate over a large number
+	of frames causing A/V sync problems. */
+	return mlt_sample_calculator_to_now( fps, frequency, position )
+		 - mlt_sample_calculator_to_now( fps, frequency, position + 1 );
 }
 
 /** Determine the number of samples that belong before a time position.
@@ -817,7 +804,7 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
  * \bug Will this break when mlt_position is converted to double?
  */
 
-int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position )
+inline int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position )
 {
 	int64_t samples = 0;
 
