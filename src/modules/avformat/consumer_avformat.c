@@ -350,7 +350,7 @@ static int consumer_is_stopped( mlt_consumer this )
 /** Process properties as AVOptions and apply to AV context obj
 */
 
-static void apply_properties( void *obj, mlt_properties properties, int flags )
+static void apply_properties( void *obj, mlt_properties properties, int flags, int alloc )
 {
 	int i;
 	int count = mlt_properties_count( properties ); 
@@ -360,9 +360,9 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
 		if ( opt != NULL )
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
-			av_set_string3( obj, opt_name, mlt_properties_get( properties, opt_name), 0, NULL );
+			av_set_string3( obj, opt_name, mlt_properties_get( properties, opt_name), alloc, NULL );
 #elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
-			av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
+			av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), alloc );
 #else
 			av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
 #endif
@@ -416,7 +416,14 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 		}
 
 		// Process properties as AVOptions
-		apply_properties( c, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
+		char *apre = mlt_properties_get( properties, "apre" );
+		if ( apre )
+		{
+			mlt_properties p = mlt_properties_load( apre );
+			apply_properties( c, p, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			mlt_properties_close( p );
+		}
+		apply_properties( c, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 0 );
 
 		int audio_qscale = mlt_properties_get_int( properties, "aq" );
         if ( audio_qscale > QSCALE_NONE )
@@ -527,7 +534,14 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			avcodec_thread_init( c, thread_count );		
 	
 		// Process properties as AVOptions
-		apply_properties( c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
+		char *vpre = mlt_properties_get( properties, "vpre" );
+		if ( vpre )
+		{
+			mlt_properties p = mlt_properties_load( vpre );
+			apply_properties( c, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			mlt_properties_close( p );
+		}
+		apply_properties( c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 0 );
 
 		// Set options controlled by MLT
 		c->width = mlt_properties_get_int( properties, "width" );
@@ -951,7 +965,14 @@ static void *consumer_thread( void *arg )
 		oc->max_delay= ( int )( mlt_properties_get_double( properties, "muxdelay" ) * AV_TIME_BASE );
 
 		// Process properties as AVOptions
-		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM );
+		char *fpre = mlt_properties_get( properties, "fpre" );
+		if ( fpre )
+		{
+			mlt_properties p = mlt_properties_load( fpre );
+			apply_properties( oc, p, AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			mlt_properties_close( p );
+		}
+		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM, 0 );
 
 		if ( video_st && !open_video( oc, video_st ) )
 			video_st = NULL;
