@@ -31,8 +31,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** Constructor for a frame.
-*/
+/** Construct a frame object.
+ *
+ * \public \memberof mlt_frame_s
+ * \param service the pointer to any service that can provide access to the profile
+ * \return a frame object on success or NULL if there was an allocation error
+ */
 
 mlt_frame mlt_frame_init( mlt_service service )
 {
@@ -67,48 +71,73 @@ mlt_frame mlt_frame_init( mlt_service service )
 	return this;
 }
 
-/** Fetch the frames properties.
-*/
+/** Get a frame's properties.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return the frame's properties or NULL if an invalid frame is supplied
+ */
 
 mlt_properties mlt_frame_properties( mlt_frame this )
 {
 	return this != NULL ? &this->parent : NULL;
 }
 
-/** Check if we have a way to derive something other than a test card.
-*/
+/** Determine if the frame will produce a test card image.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return true (non-zero) if this will produce from a test card
+ */
 
 int mlt_frame_is_test_card( mlt_frame this )
 {
 	return mlt_deque_count( this->stack_image ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_image" );
 }
 
-/** Check if we have a way to derive something other than test audio.
-*/
+/** Determine if the frame will produce audio from a test card.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return true (non-zero) if this will produce from a test card
+ */
 
 int mlt_frame_is_test_audio( mlt_frame this )
 {
 	return mlt_deque_count( this->stack_audio ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_audio" );
 }
 
-/** Get the aspect ratio of the frame.
-*/
+/** Get the sample aspect ratio of the frame.
+ *
+ * \public \memberof  mlt_frame_s
+ * \param this a frame
+ * \return the aspect ratio
+ */
 
 double mlt_frame_get_aspect_ratio( mlt_frame this )
 {
 	return mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "aspect_ratio" );
 }
 
-/** Set the aspect ratio of the frame.
-*/
+/** Set the sample aspect ratio of the frame.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param value the new image sample aspect ratio
+ * \return true if error
+ */
 
 int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
 {
 	return mlt_properties_set_double( MLT_FRAME_PROPERTIES( this ), "aspect_ratio", value );
 }
 
-/** Get the position of this frame.
-*/
+/** Get the time position of this frame.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return the position
+ */
 
 mlt_position mlt_frame_get_position( mlt_frame this )
 {
@@ -116,8 +145,13 @@ mlt_position mlt_frame_get_position( mlt_frame this )
 	return pos < 0 ? 0 : pos;
 }
 
-/** Set the position of this frame.
-*/
+/** Set the time position of this frame.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param value the position
+ * \return true if error
+ */
 
 int mlt_frame_set_position( mlt_frame this, mlt_position value )
 {
@@ -125,7 +159,12 @@ int mlt_frame_set_position( mlt_frame this, mlt_position value )
 }
 
 /** Stack a get_image callback.
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param the get_image callback
+ * \return true if error
+ */
 
 int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image )
 {
@@ -133,7 +172,11 @@ int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image )
 }
 
 /** Pop a get_image callback.
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return the get_image callback
+ */
 
 mlt_get_image mlt_frame_pop_get_image( mlt_frame this )
 {
@@ -141,7 +184,12 @@ mlt_get_image mlt_frame_pop_get_image( mlt_frame this )
 }
 
 /** Push a frame.
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param that the frame to push onto \p this
+ * \return true if error
+ */
 
 int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
 {
@@ -149,7 +197,11 @@ int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
 }
 
 /** Pop a frame.
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return a frame that was previously pushed
+ */
 
 mlt_frame mlt_frame_pop_frame( mlt_frame this )
 {
@@ -157,7 +209,12 @@ mlt_frame mlt_frame_pop_frame( mlt_frame this )
 }
 
 /** Push a service.
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param that an opaque pointer
+ * \return true if error
+ */
 
 int mlt_frame_push_service( mlt_frame this, void *that )
 {
@@ -165,23 +222,36 @@ int mlt_frame_push_service( mlt_frame this, void *that )
 }
 
 /** Pop a service.
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return an opaque pointer to something previously pushed
+ */
 
 void *mlt_frame_pop_service( mlt_frame this )
 {
 	return mlt_deque_pop_back( this->stack_image );
 }
 
-/** Push a service.
-*/
+/** Push a number.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param that an integer
+ * \return true if error
+ */
 
 int mlt_frame_push_service_int( mlt_frame this, int that )
 {
 	return mlt_deque_push_back_int( this->stack_image, that );
 }
 
-/** Pop a service.
-*/
+/** Pop a number.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return an integer that was previously pushed
+ */
 
 int mlt_frame_pop_service_int( mlt_frame this )
 {
@@ -189,7 +259,12 @@ int mlt_frame_pop_service_int( mlt_frame this )
 }
 
 /** Push an audio item on the stack.
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param that an opaque pointer
+ * \return true if error
+ */
 
 int mlt_frame_push_audio( mlt_frame this, void *that )
 {
@@ -197,7 +272,11 @@ int mlt_frame_push_audio( mlt_frame this, void *that )
 }
 
 /** Pop an audio item from the stack
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return an opaque pointer to something that was pushed onto the frame's audio stack
+ */
 
 void *mlt_frame_pop_audio( mlt_frame this )
 {
@@ -205,7 +284,11 @@ void *mlt_frame_pop_audio( mlt_frame this )
 }
 
 /** Return the service stack
-*/
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return the service stack
+ */
 
 mlt_deque mlt_frame_service_stack( mlt_frame this )
 {
@@ -213,23 +296,30 @@ mlt_deque mlt_frame_service_stack( mlt_frame this )
 }
 
 /** Replace image stack with the information provided.
-
-  	This might prove to be unreliable and restrictive - the idea is that a transition
-	which normally uses two images may decide to only use the b frame (ie: in the case
-	of a composite where the b frame completely obscures the a frame).
-
-	The image must be writable and the destructor for the image itself must be taken
-	care of on another frame and that frame cannot have a replace applied to it...
-	Further it assumes that no alpha mask is in use.
-
-	For these reasons, it can only be used in a specific situation - when you have
-	multiple tracks each with their own transition and these transitions are applied
-	in a strictly reversed order (ie: highest numbered [lowest track] is processed
-	first).
-
-	More reliable approach - the cases should be detected during the process phase
-	and the upper tracks should simply not be invited to stack...
-*/
+ *
+ * This might prove to be unreliable and restrictive - the idea is that a transition
+ * which normally uses two images may decide to only use the b frame (ie: in the case
+ * of a composite where the b frame completely obscures the a frame).
+ *
+ * The image must be writable and the destructor for the image itself must be taken
+ * care of on another frame and that frame cannot have a replace applied to it...
+ * Further it assumes that no alpha mask is in use.
+ *
+ * For these reasons, it can only be used in a specific situation - when you have
+ * multiple tracks each with their own transition and these transitions are applied
+ * in a strictly reversed order (ie: highest numbered [lowest track] is processed
+ * first).
+ *
+ * More reliable approach - the cases should be detected during the process phase
+ * and the upper tracks should simply not be invited to stack...
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param image a new image
+ * \param format the image format
+ * \param width the width of the new image
+ * \param height the height of the new image
+ */
 
 void mlt_frame_replace_image( mlt_frame this, uint8_t *image, mlt_image_format format, int width, int height )
 {
@@ -243,6 +333,13 @@ void mlt_frame_replace_image( mlt_frame this, uint8_t *image, mlt_image_format f
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "format", format );
 	this->get_alpha_mask = NULL;
 }
+
+/** Get the short name for an image format.
+ *
+ * \public \memberof mlt_frame_s
+ * \param format the image format
+ * \return a string
+ */
 
 const char * mlt_image_format_name( mlt_image_format format )
 {
@@ -259,7 +356,24 @@ const char * mlt_image_format_name( mlt_image_format format )
 }
 
 /** Get the image associated to the frame.
-*/
+ *
+ * You should express the desired format, width, and height as inputs. As long
+ * as the loader producer was used to generate this or the imageconvert filter
+ * was attached, then you will get the image back in the format you desire.
+ * However, you do not always get the width and height you request depending
+ * on properties and filters. You do not need to supply a pre-allocated
+ * buffer, but you should always supply the desired image format.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param[out] buffer an image buffer
+ * \param[in,out] format the image format
+ * \param[in,out] width the horizontal size in pixels
+ * \param[in,out] height the vertical size in pixels
+ * \param writable whether or not you will need to be able to write to the memory returned in \p buffer
+ * \return true if error
+ * \todo Better describe the width and height as inputs.
+ */
 
 int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -377,6 +491,13 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	return error;
 }
 
+/** Get the alpha channel associated to the frame.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return the alpha channel
+ */
+
 uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 {
 	uint8_t *alpha = NULL;
@@ -397,6 +518,15 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 	return alpha;
 }
 
+/** Get the short name for an audio format.
+ *
+ * You do not need to deallocate the returned string.
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param format an image format enum
+ * \return a string for the name of the image format
+ */
+
 const char * mlt_audio_format_name( mlt_audio_format format )
 {
 	switch ( format )
@@ -408,6 +538,27 @@ const char * mlt_audio_format_name( mlt_audio_format format )
 	}
 	return "invalid";
 }
+
+/** Get the audio associated to the frame.
+ *
+ * You should express the desired format, frequency, channels, and samples as inputs. As long
+ * as the loader producer was used to generate this or the audioconvert filter
+ * was attached, then you will get the audio back in the format you desire.
+ * However, you do not always get the channels and samples you request depending
+ * on properties and filters. You do not need to supply a pre-allocated
+ * buffer, but you should always supply the desired audio format.
+ * The audio is always in interleaved format.
+ * You should use the \p mlt_sample_calculator to determine the number of samples you want.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param[out] buffer an audio buffer
+ * \param[in,out] format the audio format
+ * \param[in,out] frequency the sample rate
+ * \param[in,out] channels
+ * \param[in,out] samples the number of samples per frame
+ * \return true if error
+ */
 
 int mlt_frame_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
@@ -497,11 +648,36 @@ int mlt_frame_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format
 	return 0;
 }
 
+/** Set the audio on a frame.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param buffer an buffer containing audio samples
+ * \param format the format of the audio in the \p buffer
+ * \param size the total size of the buffer (optional)
+ * \param destructor a function that releases or deallocates the \p buffer
+ * \return true if error
+ */
+
 int mlt_frame_set_audio( mlt_frame this, void *buffer, mlt_audio_format format, int size, mlt_destructor destructor )
 {
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "audio_format", format );
 	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "audio", buffer, size, destructor, NULL );
 }
+
+/** Get audio on a frame as a waveform image.
+ *
+ * This generates an 8-bit grayscale image representation of the audio in a
+ * frame. Currently, this only really works for 2 channels.
+ * This allocates the bitmap using mlt_pool so you should release the return
+ * value with \p mlt_pool_release.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \param w the width of the image
+ * \param h the height of the image to create
+ * \return a pointer to a new bitmap
+ */
 
 unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 {
@@ -557,12 +733,28 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	return bitmap;
 }
 
+/** Get the end service that produced this frame.
+ *
+ * This fetches the first producer of the frame and not any producers that
+ * encapsulate it.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ * \return a producer
+ */
+
 mlt_producer mlt_frame_get_original_producer( mlt_frame this )
 {
 	if ( this != NULL )
 		return mlt_properties_get_data( MLT_FRAME_PROPERTIES( this ), "_producer", NULL );
 	return NULL;
 }
+
+/** Destroy the frame.
+ *
+ * \public \memberof mlt_frame_s
+ * \param this a frame
+ */
 
 void mlt_frame_close( mlt_frame this )
 {
@@ -580,7 +772,15 @@ void mlt_frame_close( mlt_frame this )
 
 /***** convenience functions *****/
 
-/* Will this break when mlt_position is converted to double? -Zach */
+/** Determine the number of samples that belong in a frame at a time position.
+ *
+ * \public \memberof mlt_frame_s
+ * \param fps the frame rate
+ * \param frequency the sample rate
+ * \param position the time position
+ * \return the number of samples per channel
+ */
+
 int mlt_sample_calculator( float fps, int frequency, int64_t position )
 {
 	int samples = 0;
@@ -607,14 +807,24 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
 	return samples;
 }
 
-int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t frame )
+/** Determine the number of samples that belong before a time position.
+ *
+ * \public \memberof mlt_frame_s
+ * \param fps the frame rate
+ * \param frequency the sample rate
+ * \param position the time position
+ * \return the number of samples per channel
+ * \bug Will this break when mlt_position is converted to double?
+ */
+
+int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position )
 {
 	int64_t samples = 0;
 
 	if ( fps )
 	{
-		samples = (int64_t)( (double) frame * (double) frequency / (double) fps +
-			( frame < 0 ? -0.5 : 0.5 ) );
+		samples = (int64_t)( (double) position * (double) frequency / (double) fps +
+			( position < 0 ? -0.5 : 0.5 ) );
 	}
 
 	return samples;

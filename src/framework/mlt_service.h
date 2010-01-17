@@ -56,7 +56,7 @@
 
 struct mlt_service_s
 {
-	struct mlt_properties_s parent; /**< \private */
+	struct mlt_properties_s parent; /**< \private A service extends properties. */
 
 	/** Get a frame of data (virtual function).
 	 *

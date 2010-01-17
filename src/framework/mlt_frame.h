@@ -28,13 +28,13 @@
 #include "mlt_deque.h"
 #include "mlt_service.h"
 
-/** callback function to get video data
+/** Callback function to get video data.
  *
  */
 
 typedef int ( *mlt_get_image )( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
 
-/** callback function to get audio data
+/** Callback function to get audio data.
  *
  */
 
@@ -42,6 +42,9 @@ typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format 
 
 /** \brief Frame class
  *
+ * The frame is the primary data object that gets passed around to and through services.
+ *
+ * \extends mlt_properties
  * \properties \em test_image set if the frame holds a "test card" image
  * \properties \em test_audio set if the frame holds "test card" audio
  * \properties \em _producer holds a reference to the frame's end producer
@@ -54,18 +57,35 @@ typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format 
 
 struct mlt_frame_s
 {
-	/* We're extending properties here */
-	struct mlt_properties_s parent;
+	struct mlt_properties_s parent; /**< \private A frame extends properties. */
 
-	/* Virtual methods */
+	/** Get the alpha channel (callback function).
+	 * \param self a frame
+	 * \return the 8-bit alpha channel
+	 */
 	uint8_t * ( *get_alpha_mask )( mlt_frame self );
+
+	/** Convert the image format (callback function).
+	 * \param self a frame
+	 * \param[in,out] image a buffer of image data
+	 * \param[in,out] input the image format of supplied image data
+	 * \param output the image format to which to convert
+	 * \return true if error
+	 */
 	int ( *convert_image )( mlt_frame self, uint8_t **image, mlt_image_format *input, mlt_image_format output );
+
+	/** Convert the audio format (callback function).
+	 * \param self a frame
+	 * \param[in,out] audio a buffer of audio data
+	 * \param[in,out] input the audio format of supplied data
+	 * \param output the audio format to which to convert
+	 * \return true if error
+	 */
 	int ( *convert_audio )( mlt_frame self, void **audio, mlt_audio_format *input, mlt_audio_format output );
 
-	/* Private properties */
-	mlt_deque stack_image;
-	mlt_deque stack_audio;
-	mlt_deque stack_service;
+	mlt_deque stack_image;   /**< \private the image processing stack of operations and data */
+	mlt_deque stack_audio;   /**< \private the audio processing stack of operations and data */
+	mlt_deque stack_service; /**< \private a general purpose data stack */
 };
 
 #define MLT_FRAME_PROPERTIES( frame )		( &( frame )->parent )
