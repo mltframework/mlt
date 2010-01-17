@@ -1236,9 +1236,9 @@ static void *consumer_thread( void *arg )
 							if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out )
 								fprintf( mlt_properties_get_data( properties, "_logfile", NULL ), "%s", c->stats_out );
 	 					} 
-						else
+						else if ( out_size < 0 )
 						{
-							mlt_log_warning( MLT_CONSUMER_SERVICE( this ), "error with video encode\n" );
+							mlt_log_warning( MLT_CONSUMER_SERVICE( this ), "error with video encode %d\n", frame_count );
 						}
  					}
  					frame_count++;
