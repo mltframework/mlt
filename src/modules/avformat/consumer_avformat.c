@@ -882,15 +882,27 @@ static void *consumer_thread( void *arg )
 
 	// Check for user selected format first
 	if ( format != NULL )
+#if LIBAVFORMAT_VERSION_INT < ((52<<16)+(45<<8)+0)
 		fmt = guess_format( format, NULL, NULL );
+#else
+		fmt = av_guess_format( format, NULL, NULL );
+#endif
 
 	// Otherwise check on the filename
 	if ( fmt == NULL && filename != NULL )
+#if LIBAVFORMAT_VERSION_INT < ((52<<16)+(45<<8)+0)
 		fmt = guess_format( NULL, filename, NULL );
+#else
+		fmt = av_guess_format( NULL, filename, NULL );
+#endif
 
 	// Otherwise default to mpeg
 	if ( fmt == NULL )
+#if LIBAVFORMAT_VERSION_INT < ((52<<16)+(45<<8)+0)
 		fmt = guess_format( "mpeg", NULL, NULL );
+#else
+		fmt = av_guess_format( "mpeg", NULL, NULL );
+#endif
 
 	// We need a filename - default to stdout?
 	if ( filename == NULL || !strcmp( filename, "" ) )
