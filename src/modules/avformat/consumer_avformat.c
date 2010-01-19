@@ -1220,6 +1220,7 @@ static void *consumer_thread( void *arg )
 						// Set frame interlace hints
 						output->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
 						output->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+						output->pts = frame_count;
 
 	 					// Encode the image
 	 					out_size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, output );
