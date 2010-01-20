@@ -457,6 +457,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
+	int error = 0;
 	producer_pango this = ( producer_pango ) mlt_frame_pop_service( frame );
 
 	// Obtain properties of frame
@@ -487,17 +488,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	else
 	{
-		// TODO: Review all cases of invalid images
-		*buffer = mlt_pool_alloc( 50 * 50 * 2 );
-		mlt_properties_set_data( properties, "image", *buffer, 50 * 50 * 2, mlt_pool_release, NULL );
-		*width = 50;
-		*height = 50;
-		*format = mlt_image_yuv422;
+		error = 1;
 	}
 
 	pthread_mutex_unlock( &pango_mutex );
 
-	return 0;
+	return error;
 }
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )

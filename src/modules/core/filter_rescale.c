@@ -148,6 +148,8 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
 
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	int error = 0;
+	
 	// Get the frame properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
@@ -246,20 +248,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 	else
 	{
-		// Store the requested width/height
-		int iwidth = *width;
-		int iheight = *height;
-
-		// Get the image as requested
-		mlt_frame_get_image( this, image, format, &iwidth, &iheight, writable );
-
-		// Too small - for now just assign as though we got what we wanted
-		*width = iwidth;
-		*height = iheight;
+		error = 1;
 	}
 
-
-	return 0;
+	return error;
 }
 
 /** Filter processing.
