@@ -1269,7 +1269,7 @@ static void *consumer_thread( void *arg )
 			mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "\n" );
 		}
 
-		if ( real_time_output == 1 && frames % 12 == 0 )
+		if ( real_time_output == 1 && frames % 2 == 0 )
 		{
 			long passed = time_difference( &ante );
 			if ( fifo != NULL )
