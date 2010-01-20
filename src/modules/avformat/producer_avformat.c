@@ -449,8 +449,6 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			params->sample_rate = 48000;
 		}
 
-		// XXX: this does not work anymore since avdevice
-		// TODO: make producer_avddevice?
 		// Parse out params
 		mrl = strchr( file, '?' );
 		while ( mrl )
@@ -527,6 +525,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 
 			// Check if we're seekable (something funny about mpeg here :-/)
 			if ( strncmp( file, "pipe:", 5 ) &&
+				 strncmp( file, "/dev/", 5 ) &&
 				 strncmp( file, "http:", 5 ) &&
 				 strncmp( file, "udp:", 4 )  &&
 				 strncmp( file, "tcp:", 4 )  &&
