@@ -128,8 +128,8 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 	}
 }
 
-/** A resizing function for yuv422 frames - this does not rescale, but simply
-	resizes. It assumes yuv422 images available on the frame so use with care.
+/** A padding function for frames - this does not rescale, but simply
+	resizes.
 */
 
 static uint8_t *frame_resize_image( mlt_frame this, int owidth, int oheight, int bpp )
