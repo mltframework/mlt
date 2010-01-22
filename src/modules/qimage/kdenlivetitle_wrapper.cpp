@@ -253,7 +253,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				QString br_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "brushcolor" ).nodeValue();
 				QString pen_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "pencolor" ).nodeValue();
 				double penwidth = items.item( i ).namedItem( "content" ).attributes().namedItem( "penwidth") .nodeValue().toDouble();
-				QGraphicsRectItem *rec = scene->addRect( stringToRect( rect ), QPen( QBrush( stringToColor( pen_str ) ), penwidth ), QBrush( stringToColor( br_str ) ) );
+				QGraphicsRectItem *rec = scene->addRect( stringToRect( rect ), QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin ), QBrush( stringToColor( br_str ) ) );
 				gitem = rec;
 			}
 			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
