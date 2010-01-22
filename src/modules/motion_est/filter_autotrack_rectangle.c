@@ -142,7 +142,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	boundry.w = boundry.x < 0 ? boundry.w + boundry.x : boundry.w;
 	boundry.h = boundry.y < 0 ? boundry.h + boundry.y : boundry.h;
 	boundry.x = boundry.x < 0 ? 0 : boundry.x;
-	boundry.x = boundry.y < 0 ? 0 : boundry.y;
+	boundry.y = boundry.y < 0 ? 0 : boundry.y;
 	boundry.w = boundry.w < 0 ? 0 : boundry.w;
 	boundry.h = boundry.h < 0 ? 0 : boundry.h;
 
