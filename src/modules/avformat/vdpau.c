@@ -20,6 +20,7 @@
 
 #include <vdpau.h>
 #include <X11/Xlib.h>
+#include <dlfcn.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -53,7 +54,8 @@ static int vdpau_init( producer_avformat this )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this->parent );
 	Display *display = XOpenDisplay( NULL );
 	
-	if ( !display || mlt_properties_get_int( properties, "novdpau" ) )
+	if ( !display || mlt_properties_get_int( properties, "novdpau" )
+	     || ( getenv( "MLT_NO_VDPAU" ) && strcmp( getenv( "MLT_NO_VDPAU" ), "1" ) == 0 ) )
 		return success;
 
 	if ( !g_vdpau )

@@ -47,7 +47,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
-#include <dlfcn.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_RGB32 PIX_FMT_RGBA32
