@@ -53,15 +53,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( error == 0 && *image )
 	{
-		mlt_position in = mlt_filter_get_in( filter );
-		//mlt_position out = mlt_filter_get_out( filter );
-		mlt_position time = mlt_frame_get_position( this );
-		
 		float smooth, radius, cx, cy, opac;
-        mlt_position pos = time - in;
-        mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter ) ;
+		mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter ) ;
+		mlt_position pos = mlt_properties_get_position( filter_props, "_pos" );
+
 		smooth = geometry_to_float ( mlt_properties_get( filter_props , "smooth" ) , pos ) * 100.0 ;
-        radius = geometry_to_float ( mlt_properties_get( filter_props , "radius" ) , pos ) * *width;
+		radius = geometry_to_float ( mlt_properties_get( filter_props , "radius" ) , pos ) * *width;
 		cx = geometry_to_float ( mlt_properties_get( filter_props , "x" ) , pos ) * *width;
 		cy = geometry_to_float ( mlt_properties_get( filter_props , "y" ) , pos ) * *height;
 		opac = geometry_to_float ( mlt_properties_get( filter_props , "opacity" ) , pos );
@@ -108,6 +105,10 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	
 	mlt_frame_push_service( frame, this );
+	
+	// Determine the time position of this frame
+	mlt_properties_set_position( MLT_FILTER_PROPERTIES( this ), "_pos", mlt_frame_get_position( frame ) -  mlt_filter_get_in( this ) );
+	
 	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }
