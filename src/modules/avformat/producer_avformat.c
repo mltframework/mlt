@@ -1816,12 +1816,12 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	int index = mlt_properties_get_int( properties, "audio_index" );
 
 	// Handle all audio tracks
-	if ( mlt_properties_get( properties, "audio_index" ) &&
+	if ( this->audio_index > -1 &&
 		 !strcmp( mlt_properties_get( properties, "audio_index" ), "all" ) )
 		index = INT_MAX;
 
 	// Reopen the file if necessary
-	if ( !context && index > -1 )
+	if ( !context && this->audio_index > -1 && index > -1 )
 	{
 		mlt_events_block( properties, producer );
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
@@ -1849,12 +1849,12 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	if ( context && index > -1 && index < INT_MAX &&
 		 context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO )
 	{
-		index = -1;
+		index = this->audio_index;
 		mlt_properties_set_int( properties, "audio_index", index );
 	}
 
 	// Update the audio properties if the index changed
-	if ( index > -1 && index != this->audio_index )
+	if ( context && index > -1 && index != this->audio_index )
 	{
 		if ( this->audio_codec[ this->audio_index ] )
 		{
@@ -1864,7 +1864,10 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 		}
 		this->audio_codec[ this->audio_index ] = NULL;
 	}
-	this->audio_index = index;
+	if ( this->audio_index != -1 )
+		this->audio_index = index;
+	else
+		index = -1;
 
 	// Get the codec(s)
 	if ( context && index == INT_MAX )
