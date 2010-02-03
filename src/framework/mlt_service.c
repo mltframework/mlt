@@ -27,6 +27,7 @@
 #include "mlt_cache.h"
 #include "mlt_factory.h"
 #include "mlt_log.h"
+#include "mlt_producer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -451,6 +452,7 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
+		mlt_position position = mlt_service_identify( this ) == producer_type ? mlt_producer_position( MLT_PRODUCER( this ) ) : -1;
 
 		result = this->get_frame( this, frame, index );
 
@@ -458,6 +460,7 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 		{
 			mlt_properties_inc_ref( properties );
 			properties = MLT_FRAME_PROPERTIES( *frame );
+			
 			if ( in >=0 && out > 0 )
 			{
 				mlt_properties_set_position( properties, "in", in );
@@ -465,6 +468,34 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 			}
 			mlt_service_apply_filters( this, *frame, 1 );
 			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), this );
+			
+			if ( mlt_service_identify( this ) == producer_type &&
+			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( this ), "need-previous-next" ) )
+			{
+				// Save the new position from this->get_frame
+				mlt_position new_position = mlt_producer_position( MLT_PRODUCER( this ) );
+				
+				// Get the preceding frame, unfiltered
+				mlt_frame previous_frame;
+				mlt_producer_seek( MLT_PRODUCER(this), position - 1 );
+				result = this->get_frame( this, &previous_frame, index );
+				if ( !result )
+					mlt_properties_set_data( properties, "previous frame",
+						previous_frame, 0, ( mlt_destructor ) mlt_frame_close, NULL );
+
+				// Get the following frame, unfiltered
+				mlt_frame next_frame;
+				mlt_producer_seek( MLT_PRODUCER(this), position + 1 );
+				result = this->get_frame( this, &next_frame, index );
+				if ( !result )
+				{
+					mlt_properties_set_data( properties, "next frame",
+						next_frame, 0, ( mlt_destructor ) mlt_frame_close, NULL );
+				}
+				
+				// Restore the new position
+				mlt_producer_seek( MLT_PRODUCER(this), new_position );
+			}
 		}
 	}
 
@@ -524,7 +555,9 @@ int mlt_service_attach( mlt_service this, mlt_filter filter )
 				mlt_properties props = MLT_FILTER_PROPERTIES( filter );
 				mlt_properties_inc_ref( MLT_FILTER_PROPERTIES( filter ) );
 				base->filters[ base->filter_count ++ ] = filter;
+				mlt_properties_set_data( props, "service", this, 0, NULL, NULL );
 				mlt_events_fire( properties, "service-changed", NULL );
+				mlt_events_fire( props, "service-changed", NULL );
 				mlt_events_listen( props, this, "service-changed", ( mlt_listener )mlt_service_filter_changed );
 				mlt_events_listen( props, this, "property-changed", ( mlt_listener )mlt_service_filter_changed );
 			}

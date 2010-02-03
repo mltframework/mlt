@@ -32,6 +32,8 @@
  *
  * \extends mlt_service_s
  * \properties \em track the index of the track of a multitrack on which the filter is applied
+ * \properties \em service a reference to the service to which this filter is attached.
+ * Currently this is not cleared when the filter is detached.
  */
 
 struct mlt_filter_s
