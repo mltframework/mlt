@@ -22,6 +22,7 @@ General build options:
   --disable-debug         - Compile without debug support (default: on)
   --disable-mmx           - Compile without MMX support (default: on)
   --disable-sse           - Compile without SSE support (default: on)
+  --disable-sse2          - Compile without SSE2 support (default: on)
   --arch='arch'           - Compile for a specific architecture (default: none)
   --cpu='cpu'             - Compile for a specific CPU (default: none)
 
@@ -58,6 +59,9 @@ build_config()
 		[ "$sse" = "true" ] && 
 		echo "SSE_FLAGS=-DUSE_SSE"
 
+		[ "$sse2" = "true" ] && 
+		echo "SSE2_FLAGS=-DUSE_SSE2"
+
 		[ "$debug" = "true" ] && 
 		echo "DEBUG_FLAGS=-g"
 
@@ -67,7 +71,7 @@ build_config()
 		[ "$cpu" != "" ] && echo "TARGETCPU=-mcpu=$cpu"
 		echo "OPTIMISATIONS=-O2 -pipe -fomit-frame-pointer"
 
-		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(SSE_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
+		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(SSE_FLAGS) \$(SSE2_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
 
 		case $targetos in
 		Darwin)
@@ -154,6 +158,7 @@ export help=0
 export debug=true
 export mmx=true
 export sse=true
+export sse2=true
 export gpl=false
 export arch=
 export cpu=
@@ -187,6 +192,7 @@ do
 		--disable-debug )	debug=false ;;
 		--disable-mmx )		mmx=false; sse=false ;;
 		--disable-sse )		sse=false ;;
+		--disable-sse2 )	sse2=false ;;
 		--enable-gpl )		gpl=true ;;
 		--arch=* )			arch="${i#--arch=}" ;;
 		--cpu=* )			cpu="${i#--cpu=}" ;;
@@ -232,6 +238,25 @@ then
 		;;
 		*)
 		grep sse /proc/cpuinfo > /dev/null 2>&1 || sse=false
+		;;
+	esac
+fi
+
+# Double check SSE2 (Darwin, Linux and FreeBSD supported, may end up disabling SSE2 on other platforms incorrectly)
+if [ "$sse2" = "true" ]
+then
+	case $targetos in
+		Darwin)
+		sysctl -a hw | grep "sse2: 1" > /dev/null || sse2=false
+		;;
+		Linux)
+		grep sse2 /proc/cpuinfo > /dev/null 2>&1 || sse2=false
+		;;
+		FreeBSD)
+		[ "$(make -V MACHINE_CPU:Msse2)" ] || sse2=false
+		;;
+		*)
+		grep sse2 /proc/cpuinfo > /dev/null 2>&1 || sse2=false
 		;;
 	esac
 fi
