@@ -1222,8 +1222,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 exit_get_image:
 	// Set the progressive flag
-	mlt_properties_set_int( frame_properties, "progressive", 
-		!this->av_frame->interlaced_frame || !!mlt_properties_get_int( properties, "force_progressive" ) );
+	if ( mlt_properties_get( properties, "force_progressive" ) )
+		mlt_properties_set_int( frame_properties, "progressive", !!mlt_properties_get_int( properties, "force_progressive" ) );
+	else
+		mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
 
 	// Set the field order property for this frame
 	mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
