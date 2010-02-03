@@ -831,23 +831,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Get the image cache
-	if ( ! this->image_cache )
-		this->image_cache = mlt_cache_init();
-	mlt_cache_item item = mlt_cache_get( this->image_cache, (void*) position );
-	*buffer = mlt_cache_item_data( item, NULL );
-	if ( *buffer )
-	{
-		// Cache hit
-		mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
-		mlt_properties_set_data( frame_properties, "image", *buffer, 0, NULL, NULL );
-		goto exit_get_image;
-	}
-	// Cache miss
-	int image_size = 0;
-
-	avformat_lock();
-
 	// Fetch the video format context
 	AVFormatContext *context = this->video_format;
 
@@ -856,6 +839,29 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
+
+	// Get the image cache
+	if ( ! this->image_cache )
+		this->image_cache = mlt_cache_init();
+	mlt_cache_item item = mlt_cache_get( this->image_cache, (void*) position );
+	*buffer = mlt_cache_item_data( item, format );
+	if ( *buffer )
+	{
+		// Cache hit
+		mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
+		mlt_properties_set_data( frame_properties, "image", *buffer, 0, NULL, NULL );
+		
+		// Set the resolution
+		*width = codec_context->width;
+		*height = codec_context->height;
+		mlt_properties_set_int( frame_properties, "width", *width );
+		mlt_properties_set_int( frame_properties, "height", *height );
+		goto exit_get_image;
+	}
+	// Cache miss
+	int image_size = 0;
+
+	avformat_lock();
 
 	// Packet
 	AVPacket pkt;
@@ -1217,7 +1223,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Copy buffer to image cache	
 		uint8_t *image = mlt_pool_alloc( image_size );
 		memcpy( image, *buffer, image_size );
-		mlt_cache_put( this->image_cache, (void*) position, image, image_size, mlt_pool_release );
+		mlt_cache_put( this->image_cache, (void*) position, image, *format, mlt_pool_release );
 	}
 
 exit_get_image:
