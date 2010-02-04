@@ -52,7 +52,7 @@
  * \properties \em disable Set this on a filter to disable it while keeping it in the object model.
  * \properties \em _profile stores the mlt_profile for a service
  * \properties \em _unique_id is a unique identifier
- * \properties \em need-previous-next boolean that instructs producers to get
+ * \properties \em _need_previous_next boolean that instructs producers to get
  * preceding and following frames inside of \p mlt_service_get_frame
  */
 

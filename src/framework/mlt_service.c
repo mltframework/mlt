@@ -470,7 +470,7 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), this );
 			
 			if ( mlt_service_identify( this ) == producer_type &&
-			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( this ), "need-previous-next" ) )
+			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( this ), "_need_previous_next" ) )
 			{
 				// Save the new position from this->get_frame
 				mlt_position new_position = mlt_producer_position( MLT_PRODUCER( this ) );
