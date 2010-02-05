@@ -41,7 +41,9 @@ void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc[],
 #define DEINTERLACE_ONEFIELD    4
 #define DEINTERLACE_ONEFIELDXV  5
 #define DEINTERLACE_LINEARBLEND 6
-
+#define DEINTERLACE_YADIF       7
+#define DEINTERLACE_YADIF_NOSPATIAL 8
+		
 extern const char *deinterlace_methods[];
 
 #endif

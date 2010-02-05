@@ -8,6 +8,7 @@ TARGET = ../libmltxine$(LIBSUF)
 
 OBJS = factory.o \
 	   deinterlace.o \
+	   yadif.o \
 	   filter_deinterlace.o
 
 ifdef MMX_FLAGS
