@@ -54,6 +54,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_properties properties = mlt_frame_properties( frame );
 	mlt_properties_set_data( properties, "image", new_image, size, mlt_pool_release, NULL );
 	memcpy( new_image, *image, size );
+	mlt_properties_set( properties, "progressive", mlt_properties_get( MLT_FRAME_PROPERTIES(nested_frame), "progressive" ) );
 	mlt_frame_close( nested_frame );
 	*image = new_image;
 
@@ -126,7 +127,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( cx->consumer ), "real_time",
 			mlt_properties_get_int( properties, "real_time" ) );
 		mlt_properties_pass_list( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties,
-			"buffer, prefill" );
+			"buffer, prefill, deinterlace_method, rescale" );
 	
 		// Encapsulate a real producer for the resource
 		cx->producer = mlt_factory_producer( cx->profile, NULL,
