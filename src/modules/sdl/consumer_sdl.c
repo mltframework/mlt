@@ -115,6 +115,7 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( this->properties, "rescale", "nearest" );
+		mlt_properties_set( this->properties, "deinterlace_method", "onefield" );
 
 		// Default buffer for low latency
 		mlt_properties_set_int( this->properties, "buffer", 1 );
