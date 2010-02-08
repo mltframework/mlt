@@ -1712,6 +1712,12 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		AVPacket pkt;
 
 		av_init_packet( &pkt );
+		
+		// If not resampling, give consumer more than requested.
+		// It requested number samples based on requested frame rate.
+		// Do not clean this up with a samples *= ...!
+		if ( this->audio_index != INT_MAX && ! this->audio_resample[ this->audio_index ] )
+			*samples = *samples * this->audio_codec[ this->audio_index ]->sample_rate / *frequency;
 
 		while ( ret >= 0 && !got_audio )
 		{
