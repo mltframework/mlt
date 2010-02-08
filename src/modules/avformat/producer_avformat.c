@@ -841,22 +841,45 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	AVCodecContext *codec_context = stream->codec;
 
 	// Get the image cache
-	if ( ! this->image_cache )
+	if ( ! this->image_cache && ! mlt_properties_get_int( properties, "noimagecache" ) )
 		this->image_cache = mlt_cache_init();
-	mlt_cache_item item = mlt_cache_get( this->image_cache, (void*) position );
-	*buffer = mlt_cache_item_data( item, format );
-	if ( *buffer )
+	if ( this->image_cache )
 	{
-		// Cache hit
-		mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
-		mlt_properties_set_data( frame_properties, "image", *buffer, 0, NULL, NULL );
-		
-		// Set the resolution
-		*width = codec_context->width;
-		*height = codec_context->height;
-		mlt_properties_set_int( frame_properties, "width", *width );
-		mlt_properties_set_int( frame_properties, "height", *height );
-		goto exit_get_image;
+		mlt_cache_item item = mlt_cache_get( this->image_cache, (void*) position );
+		*buffer = mlt_cache_item_data( item, format );
+		if ( *buffer )
+		{
+			// Set the resolution
+			*width = codec_context->width;
+			*height = codec_context->height;
+			mlt_properties_set_int( frame_properties, "width", *width );
+			mlt_properties_set_int( frame_properties, "height", *height );
+
+			// Cache hit
+			int size;
+			switch ( *format )
+			{
+				case mlt_image_yuv420p:
+					size = *width * 3 * ( *height + 1 ) / 2;
+					break;
+				case mlt_image_rgb24:
+					size = *width * ( *height + 1 ) * 3;
+					break;
+				case mlt_image_rgb24a:
+				case mlt_image_opengl:
+					size = *width * ( *height + 1 ) * 4;
+					break;
+				default:
+					*format = mlt_image_yuv422;
+					size = *width * ( *height + 1 ) * 2;
+					break;
+			}
+			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
+			mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
+			this->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+
+			goto exit_get_image;
+		}
 	}
 	// Cache miss
 	int image_size = 0;
@@ -1218,7 +1241,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	avformat_unlock();
 
-	if ( this->got_picture && image_size > 0 )
+	if ( this->got_picture && image_size > 0 && this->image_cache )
 	{
 		// Copy buffer to image cache	
 		uint8_t *image = mlt_pool_alloc( image_size );
