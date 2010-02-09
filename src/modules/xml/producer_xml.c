@@ -409,8 +409,13 @@ static void on_end_playlist( deserialise_context context, const xmlChar *name )
 	if ( service != NULL && type == mlt_playlist_type )
 	{
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-		mlt_position in = mlt_properties_get_position( properties, "in" );
-		mlt_position out = mlt_properties_get_position( properties, "out" );
+		mlt_position in = -1;
+		mlt_position out = -1;
+
+		if ( mlt_properties_get( properties, "in" ) )
+			in = mlt_properties_get_position( properties, "in" );
+		if ( mlt_properties_get( properties, "out" ) )
+			out = mlt_properties_get_position( properties, "out" );
 
 		// See if the playlist should be added to a playlist or multitrack
 		if ( add_producer( context, service, in, out ) == 0 )
@@ -595,8 +600,8 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 					// If the parent is a track or entry
 					if ( resource && ( strcmp( resource, "<entry>" ) == 0 ) )
 					{
-						mlt_properties_set_position( properties, "in", in );
-						mlt_properties_set_position( properties, "out", out );
+						if ( in > -1 ) mlt_properties_set_position( properties, "in", in );
+						if ( out > -1 ) mlt_properties_set_position( properties, "out", out );
 					}
 					else
 					{
@@ -679,16 +684,13 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 		if ( parent_type == mlt_playlist_type )
 		{
 			// Append the producer to the playlist
-			if ( mlt_properties_get( temp, "in" ) != NULL || mlt_properties_get( temp, "out" ) != NULL )
-			{
-				mlt_playlist_append_io( MLT_PLAYLIST( parent ), producer,
-					mlt_properties_get_position( temp, "in" ), 
-					mlt_properties_get_position( temp, "out" ) );
-			}
-			else
-			{
-				mlt_playlist_append( MLT_PLAYLIST( parent ), producer );
-			}
+			mlt_position in = -1;
+			mlt_position out = -1;
+			if ( mlt_properties_get( temp, "in" ) )
+				in = mlt_properties_get_position( temp, "in" );
+			if ( mlt_properties_get( temp, "out" ) )
+				out = mlt_properties_get_position( temp, "out" );
+			mlt_playlist_append_io( MLT_PLAYLIST( parent ), producer, in, out );
 
 			// Handle the repeat property
 			if ( mlt_properties_get_int( temp, "repeat" ) > 0 )
@@ -781,9 +783,13 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 			if ( mlt_properties_get( track_props, "in" ) != NULL ||
 				 mlt_properties_get( track_props, "out" ) != NULL )
 			{
-				mlt_producer cut = mlt_producer_cut( MLT_PRODUCER( producer ),
-					mlt_properties_get_position( track_props, "in" ),
-					mlt_properties_get_position( track_props, "out" ) );
+				mlt_position in = -1;
+				mlt_position out = -1;
+				if ( mlt_properties_get( track_props, "in" ) )
+					in = mlt_properties_get_position( track_props, "in" );
+				if ( mlt_properties_get( track_props, "out" ) )
+					out = mlt_properties_get_position( track_props, "out" );
+				mlt_producer cut = mlt_producer_cut( MLT_PRODUCER( producer ), in, out );
 				mlt_multitrack_connect( multitrack, cut, mlt_multitrack_count( multitrack ) );
 				mlt_properties_inherit( MLT_PRODUCER_PROPERTIES( cut ), track_props );
 				track_props = MLT_PRODUCER_PROPERTIES( cut );
