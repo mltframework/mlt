@@ -393,8 +393,8 @@ double mlt_producer_get_fps( mlt_producer this )
  *
  * \public \memberof mlt_producer_s
  * \param this a producer
- * \param in the relative starting time
- * \param out the relative ending time
+ * \param in the relative starting time; a negative value is the same as 0
+ * \param out the relative ending time; a negative value is the same as length - 1
  * \return false
  */
 
@@ -408,12 +408,12 @@ int mlt_producer_set_in_and_out( mlt_producer this, mlt_position in, mlt_positio
 	else if ( in >= mlt_producer_get_length( this ) )
 		in = mlt_producer_get_length( this ) - 1;
 
-	if ( out < 0 )
-		out = 0;
-	else if ( out >= mlt_producer_get_length( this ) && !mlt_producer_is_blank( this ) )
+	if ( ( out < 0 || out >= mlt_producer_get_length( this ) ) && !mlt_producer_is_blank( this ) )
 		out = mlt_producer_get_length( this ) - 1;
-	else if ( out >= mlt_producer_get_length( this ) && mlt_producer_is_blank( this ) )
+	else if ( ( out < 0 || out >= mlt_producer_get_length( this ) ) && mlt_producer_is_blank( this ) )
 		mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( this ), "length", out + 1 );
+	else if ( out < 0 )
+		out = 0;
 
 	// Swap ins and outs if wrong
 	if ( out < in )
