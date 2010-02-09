@@ -263,9 +263,9 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 	else if ( mlt_producer_is_cut( source ) )
 	{
 		producer = source;
-		if ( in == -1 )
+		if ( in < 0 )
 			in = mlt_producer_get_in( producer );
-		if ( out == -1 || out > mlt_producer_get_out( producer ) )
+		if ( out < 0 || out > mlt_producer_get_out( producer ) )
 			out = mlt_producer_get_out( producer );
 		properties = MLT_PRODUCER_PROPERTIES( producer );
 		mlt_properties_inc_ref( properties );
@@ -273,9 +273,9 @@ static int mlt_playlist_virtual_append( mlt_playlist this, mlt_producer source, 
 	else
 	{
 		producer = mlt_producer_cut( source, in, out );
-		if ( in == -1 || in < mlt_producer_get_in( producer ) )
+		if ( in < 0 || in < mlt_producer_get_in( producer ) )
 			in = mlt_producer_get_in( producer );
-		if ( out == -1 || out > mlt_producer_get_out( producer ) )
+		if ( out < 0 || out > mlt_producer_get_out( producer ) )
 			out = mlt_producer_get_out( producer );
 		properties = MLT_PRODUCER_PROPERTIES( producer );
 	}
@@ -686,7 +686,7 @@ int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
 int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, mlt_position in, mlt_position out )
 {
 	// Append to virtual list
-	if ( in != -1 && out != -1 )
+	if ( in > -1 && out > -1 )
 		return mlt_playlist_virtual_append( this, producer, in, out );
 	else
 		return mlt_playlist_append( this, producer );
@@ -930,9 +930,9 @@ int mlt_playlist_resize_clip( mlt_playlist this, int clip, mlt_position in, mlt_
 			}
 		}
 
-		if ( in <= -1 )
+		if ( in < 0 )
 			in = 0;
-		if ( out <= -1 || out >= mlt_producer_get_length( producer ) )
+		if ( out < 0 || out >= mlt_producer_get_length( producer ) )
 			out = mlt_producer_get_length( producer ) - 1;
 
 		if ( out < in )
