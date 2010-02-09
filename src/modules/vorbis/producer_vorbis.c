@@ -306,7 +306,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			{
 				ignore --;
 				audio_used -= *samples;
-				memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * sizeof( int16_t ) );
+				memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * sizeof( int16_t ) * *channels );
 				*samples = mlt_sample_calculator( fps, *frequency, expected ++ );
 			}
 		}
