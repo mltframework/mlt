@@ -678,18 +678,18 @@ int mlt_playlist_append( mlt_playlist this, mlt_producer producer )
  * \public \memberof mlt_playlist_s
  * \param this a playlist
  * \param producer the producer to append
- * \param in the starting point on the producer
- * \param out the ending point on the producer
+ * \param in the starting point on the producer; a negative value is the same as 0
+ * \param out the ending point on the producer; a negative value is the same as producer length - 1
  * \return true if there was an error
  */
 
 int mlt_playlist_append_io( mlt_playlist this, mlt_producer producer, mlt_position in, mlt_position out )
 {
 	// Append to virtual list
-	if ( in > -1 && out > -1 )
-		return mlt_playlist_virtual_append( this, producer, in, out );
-	else
+	if ( in < 0 && out < 0 )
 		return mlt_playlist_append( this, producer );
+	else
+		return mlt_playlist_virtual_append( this, producer, in, out );
 }
 
 /** Append a blank to the playlist of a given length.
@@ -902,8 +902,8 @@ int mlt_playlist_repeat_clip( mlt_playlist this, int clip, int repeat )
  * \public \memberof mlt_playlist_s
  * \param this a playlist
  * \param clip the index of the playlist entry
- * \param in the new starting time on the clip's producer
- * \param out the new ending time on the clip's producer
+ * \param in the new starting time on the clip's producer;  a negative value is the same as 0
+ * \param out the new ending time on the clip's producer;  a negative value is the same as length - 1
  * \return true if there was an error
  */
 
