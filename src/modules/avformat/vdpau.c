@@ -61,8 +61,10 @@ static int vdpau_init( producer_avformat this )
 	if ( !g_vdpau )
 	{
 		int flags = RTLD_NOW;
-		void *object = dlopen( "/usr/lib/libvdpau.so", flags );
-		
+		void *object = dlopen( "/usr/lib64/libvdpau.so", flags );
+
+		if ( !object )
+			object = dlopen( "/usr/lib/libvdpau.so", flags );
 		if ( object )
 		{
 			VdpDeviceCreateX11 *create_device = dlsym( object, "vdp_device_create_x11" );
@@ -99,6 +101,10 @@ static int vdpau_init( producer_avformat this )
 				mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "VDPAU failed to initialize device\n" );
 				dlclose( object );
 			}
+		}
+		else
+		{
+			mlt_log( MLT_PRODUCER_SERVICE(this->parent), MLT_LOG_WARNING, "%s: failed to dlopen libvdpau.so\n  (%s)\n", __FUNCTION__, dlerror() );
 		}
 	}
 	else
