@@ -1,4 +1,4 @@
-description=QVGA 15fps
+description=QVGA 15 fps
 frame_rate_num=15
 frame_rate_den=1
 width=320

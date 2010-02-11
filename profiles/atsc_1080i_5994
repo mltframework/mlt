@@ -1,6 +1,6 @@
-description=HD 1080i 30 fps
-frame_rate_num=30
-frame_rate_den=1
+description=HD 1080i 29.97 fps
+frame_rate_num=30000
+frame_rate_den=1001
 width=1920
 height=1080
 progressive=0
