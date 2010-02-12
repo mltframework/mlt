@@ -6,16 +6,19 @@ then
 Linsys options:
 
   --enable-linsys         - Enable the Linsys SDI module (disabled by default)
+  --linsys-with-jpeg      - Enable the option to export JPEGs (disabled by default)
 
 EOF
 
 else
 	export enable=
+	touch config.mak
 
 	for i in "$@"
 	do
 		case $i in
-			--enable-linsys )	enable=1
+			--enable-linsys )	enable=1 ;;
+			--linsys-with-jpeg )	echo "WITH_JPEG=1" > config.mak ;;
 		esac
 	done
 

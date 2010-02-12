@@ -3,11 +3,17 @@ CFLAGS += -I../..
 LDFLAGS += -L../../framework -lmlt -lpthread
 
 include ../../../config.mak
+include config.mak
 
 TARGET = ../libmltlinsys$(LIBSUF)
 
 OBJS = factory.o \
 	   consumer_SDIstream.o
+
+ifdef WITH_JPEG
+CFLAGS += -DWITH_JPEG
+LDFLAGS += -ljpeg
+endif
 
 SRCS := $(OBJS:.o=.c)
 
