@@ -9,5 +9,5 @@ extern mlt_consumer consumer_SDIstream_init( mlt_profile profile, mlt_service_ty
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "linsys_sdi", consumer_SDIstream_init );
+	MLT_REGISTER( consumer_type, "sdi", consumer_SDIstream_init );
 }
