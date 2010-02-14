@@ -120,7 +120,6 @@ static void cache_object_close( mlt_cache cache, void *object, void* data )
 
 	// Fetch the cache item from the active list by its owner's address
 	sprintf( key, "%p", object );
-	pthread_mutex_lock( &cache->mutex );
 	mlt_cache_item item = mlt_properties_get_data( cache->active, key, NULL );
 	if ( item )
 	{
@@ -156,7 +155,6 @@ static void cache_object_close( mlt_cache cache, void *object, void* data )
 			}
 		}
 	}
-	pthread_mutex_unlock( &cache->mutex );
 }
 
 /** Close a cache item.
@@ -171,7 +169,11 @@ static void cache_object_close( mlt_cache cache, void *object, void* data )
 void mlt_cache_item_close( mlt_cache_item item )
 {
 	if ( item )
+	{
+		pthread_mutex_lock( &item->cache->mutex );
 		cache_object_close( item->cache, item->object, item->data );
+		pthread_mutex_unlock( &item->cache->mutex );
+	}
 }
 
 /** Create a new cache.
@@ -254,9 +256,7 @@ void mlt_cache_purge( mlt_cache cache, void *object )
 
 			if ( o == object )
 			{
-				pthread_mutex_unlock( &cache->mutex );
 				cache_object_close( cache, o, NULL );
-				pthread_mutex_lock( &cache->mutex );
 			}
 			else
 			{
@@ -367,9 +367,7 @@ void mlt_cache_put( mlt_cache cache, void *object, void* data, int size, mlt_des
 	if ( hit )
 	{
 		// release the old data
-		pthread_mutex_unlock( &cache->mutex );
 		cache_object_close( cache, *hit, NULL );
-		pthread_mutex_lock( &cache->mutex );
 		// the MRU end gets the updated data
 		hit = &alt[ cache->count - 1 ];
 	}
@@ -381,9 +379,7 @@ void mlt_cache_put( mlt_cache cache, void *object, void* data, int size, mlt_des
 	else
 	{
 		// release the entry at the LRU end
-		pthread_mutex_unlock( &cache->mutex );
 		cache_object_close( cache, cache->current[0], NULL );
-		pthread_mutex_lock( &cache->mutex );
 
 		// The MRU end gets the new item
 		hit = &alt[ cache->count - 1 ];
