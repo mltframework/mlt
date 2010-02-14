@@ -1276,14 +1276,17 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
-		if ( opt )
+		if ( opt_name && mlt_properties_get( properties, opt_name ) )
+		{
+			if ( opt )
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
-			av_set_string3( obj, opt_name, mlt_properties_get( properties, opt_name), 0, NULL );
+				av_set_string3( obj, opt_name, mlt_properties_get( properties, opt_name), 0, NULL );
 #elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
-			av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
+				av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
 #else
-			av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
+				av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
 #endif
+		}
 	}
 }
 
@@ -1879,7 +1882,8 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 
 	// Handle all audio tracks
 	if ( this->audio_index > -1 &&
-		 !strcmp( mlt_properties_get( properties, "audio_index" ), "all" ) )
+	     mlt_properties_get( properties, "audio_index" ) &&
+	     !strcmp( mlt_properties_get( properties, "audio_index" ), "all" ) )
 		index = INT_MAX;
 
 	// Reopen the file if necessary
@@ -1965,16 +1969,32 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Access the private data
-	mlt_cache_item cache_item = mlt_service_cache_get( MLT_PRODUCER_SERVICE(producer), "producer_avformat" );
+	mlt_service service = MLT_PRODUCER_SERVICE( producer );
+	mlt_cache_item cache_item = mlt_service_cache_get( service, "producer_avformat" );
 	producer_avformat this = mlt_cache_item_data( cache_item, NULL );
 
+	// If cache miss
+	if ( !this )
+	{
+		this = calloc( 1, sizeof( struct producer_avformat_s ) );
+		producer->child = this;
+		this->parent = producer;
+		mlt_service_cache_put( service, "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
+		cache_item = mlt_service_cache_get( service, "producer_avformat" );
+	}
+
 	// Create an empty frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
+	*frame = mlt_frame_init( service);
 	
 	if ( *frame )
+	{
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES(*frame), "avformat_cache", cache_item, 0, (mlt_destructor) mlt_cache_item_close, NULL );
+	}
 	else
+	{
 		mlt_cache_item_close( cache_item );
+		return 1;
+	}
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
@@ -1982,15 +2002,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Set the position of this producer
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", mlt_producer_frame( producer ) );
 	
-	// If cache miss
-	if ( !this )
-	{
-		this = calloc( 1, sizeof( struct producer_avformat_s ) );
-		producer->child = this;
-		this->parent = producer;
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
-	}
-
 	// Set up the video
 	producer_set_up_video( this, *frame );
 
