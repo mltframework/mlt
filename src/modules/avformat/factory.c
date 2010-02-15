@@ -33,6 +33,7 @@ extern mlt_producer producer_avformat_init( mlt_profile profile, const char *ser
 
 // ffmpeg Header files
 #include <avformat.h>
+#include <avdevice.h>
 
 // A static flag used to determine if avformat has been initialised
 static int avformat_initialised = 0;
@@ -89,6 +90,7 @@ static void avformat_init( )
 		avformat_initialised = 1;
 		pthread_mutex_init( &avformat_mutex, NULL );
 		av_register_all( );
+		avdevice_register_all();
 		mlt_factory_register_for_clean_up( NULL, avformat_destroy );
 		av_log_set_level( mlt_log_get_level() );
 	}

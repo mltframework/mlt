@@ -144,6 +144,7 @@ static void set_mlt_normalisation( const char *profile_name )
 	{
 		if ( strstr( profile_name, "_ntsc" ) ||
 		     strstr( profile_name, "_60" ) ||
+		     strstr( profile_name, "_5994" ) ||
 		     strstr( profile_name, "_2997" ) ||
 		     strstr( profile_name, "_30" ) )
 		{

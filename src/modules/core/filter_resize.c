@@ -128,8 +128,8 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 	}
 }
 
-/** A resizing function for yuv422 frames - this does not rescale, but simply
-	resizes. It assumes yuv422 images available on the frame so use with care.
+/** A padding function for frames - this does not rescale, but simply
+	resizes.
 */
 
 static uint8_t *frame_resize_image( mlt_frame this, int owidth, int oheight, int bpp )
@@ -292,10 +292,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		     mlt_properties_get_int( properties, "progressive" ) == 0 )
 		{
 			// Get the input image, width and height
-			int size;
-			uint8_t *image = mlt_properties_get_data( properties, "image", &size );
-			uint8_t *ptr = image + owidth * bpp;
-			memmove( ptr, image, size - owidth * bpp );
+			int size = owidth * oheight * bpp;
+			uint8_t *ptr = *image + owidth * bpp;
+			memmove( ptr, *image, size - owidth * bpp );
 			
 			// Set the normalised field order
 			mlt_properties_set_int( properties, "top_field_first", 0 );

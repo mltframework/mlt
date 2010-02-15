@@ -455,7 +455,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		// Indicate speed of this producer
 		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 		mlt_properties_set_double( properties, "_speed", speed );
-		mlt_properties_set_position( properties, "_position", position );
+		mlt_frame_set_position( *frame, position );
 		mlt_properties_set_int( properties, "hide", hide );
 	}
 	else

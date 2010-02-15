@@ -20,6 +20,7 @@
 
 #include <vdpau.h>
 #include <X11/Xlib.h>
+#include <dlfcn.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -53,14 +54,17 @@ static int vdpau_init( producer_avformat this )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this->parent );
 	Display *display = XOpenDisplay( NULL );
 	
-	if ( !display || mlt_properties_get_int( properties, "novdpau" ) )
+	if ( !display || mlt_properties_get_int( properties, "novdpau" )
+	     || ( getenv( "MLT_NO_VDPAU" ) && strcmp( getenv( "MLT_NO_VDPAU" ), "1" ) == 0 ) )
 		return success;
 
 	if ( !g_vdpau )
 	{
 		int flags = RTLD_NOW;
-		void *object = dlopen( "/usr/lib/libvdpau.so", flags );
-		
+		void *object = dlopen( "/usr/lib64/libvdpau.so", flags );
+
+		if ( !object )
+			object = dlopen( "/usr/lib/libvdpau.so", flags );
 		if ( object )
 		{
 			VdpDeviceCreateX11 *create_device = dlsym( object, "vdp_device_create_x11" );
@@ -97,6 +101,10 @@ static int vdpau_init( producer_avformat this )
 				mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "VDPAU failed to initialize device\n" );
 				dlclose( object );
 			}
+		}
+		else
+		{
+			mlt_log( MLT_PRODUCER_SERVICE(this->parent), MLT_LOG_WARNING, "%s: failed to dlopen libvdpau.so\n  (%s)\n", __FUNCTION__, dlerror() );
 		}
 	}
 	else

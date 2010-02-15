@@ -147,12 +147,12 @@ else
 	elif [ "$shared_ffmpeg" != "" ]
 	then
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
-		echo "CFLAGS+=$(pkg-config --cflags libavformat) $TMP_CFLAGS" >> config.mak
-		echo "LDFLAGS+=$(pkg-config --libs libavformat)" >> config.mak
+		echo "CFLAGS+=$(pkg-config --cflags libavformat libavdevice) $TMP_CFLAGS" >> config.mak
+		echo "LDFLAGS+=$(pkg-config --libs-only-L libavformat libavdevice)" >> config.mak
 		[ -d "$shared_ffmpeg/include/ffmpeg/libavformat" ] &&
-			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libavformat -I$shared_ffmpeg/include/ffmpeg/libavcodec" >> config.mak
+			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libavformat -I$shared_ffmpeg/include/ffmpeg/libavcodec -I$shared_ffmpeg/include/ffmpeg/libavdevice" >> config.mak
 		[ -d "$shared_ffmpeg/include/libavformat" ] &&
-			echo "CFLAGS+=-I$shared_ffmpeg/include/libavformat -I$shared_ffmpeg/include/libavcodec" >> config.mak
+			echo "CFLAGS+=-I$shared_ffmpeg/include/libavformat -I$shared_ffmpeg/include/libavcodec -I$shared_ffmpeg/include/libavdevice" >> config.mak
 		avcodec_version=$(pkg-config --modversion libavcodec)
 		if [ "$swscale" != "" ] || ( [ $(echo $avcodec_version | cut -d. -f1) -ge 52 ] && [ $(echo $avcodec_version | cut -d. -f2) -ge 21 ] )
 		then

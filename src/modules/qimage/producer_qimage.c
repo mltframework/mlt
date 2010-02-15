@@ -172,6 +172,8 @@ static void load_filenames( producer_qimage this, mlt_properties producer_proper
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
+	int error = 0;
+	
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
@@ -206,19 +208,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	else
 	{
-		// TODO: Review all cases of invalid images
-		*buffer = mlt_pool_alloc( 50 * 50 * 2 );
-		mlt_properties_set_data( properties, "image", *buffer, 50 * 50 * 2, mlt_pool_release, NULL );
-		*width = 50;
-		*height = 50;
-		*format = mlt_image_yuv422;
+		error = 1;
 	}
 
 	// Release references and locks
 	pthread_mutex_unlock( &this->mutex );
 	mlt_cache_item_close( this->image_cache );
 
-	return 0;
+	return error;
 }
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )

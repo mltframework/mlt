@@ -387,11 +387,19 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	{
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
 		error = get_image( this, buffer, format, width, height, writable );
-		mlt_properties_set_int( properties, "width", *width );
-		mlt_properties_set_int( properties, "height", *height );
-		mlt_properties_set_int( properties, "format", *format );
-		if ( this->convert_image )
-			this->convert_image( this, buffer, format, requested_format );
+		if ( !error )
+		{
+			mlt_properties_set_int( properties, "width", *width );
+			mlt_properties_set_int( properties, "height", *height );
+			mlt_properties_set_int( properties, "format", *format );
+			if ( this->convert_image )
+				this->convert_image( this, buffer, format, requested_format );
+		}
+		else
+		{
+			// Cause the image to be loaded from test card or fallback (white) below.
+			mlt_frame_get_image( this, buffer, format, width, height, writable );
+		}
 	}
 	else if ( mlt_properties_get_data( properties, "image", NULL ) )
 	{

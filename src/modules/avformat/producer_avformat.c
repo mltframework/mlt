@@ -47,7 +47,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
-#include <dlfcn.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_RGB32 PIX_FMT_RGBA32
@@ -95,6 +94,7 @@ struct producer_avformat_s
 	int max_frequency;
 	unsigned int invalid_pts_counter;
 	double resample_factor;
+	mlt_cache image_cache;
 #ifdef VDPAU
 	struct
 	{
@@ -449,8 +449,6 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			params->sample_rate = 48000;
 		}
 
-		// XXX: this does not work anymore since avdevice
-		// TODO: make producer_avddevice?
 		// Parse out params
 		mrl = strchr( file, '?' );
 		while ( mrl )
@@ -527,6 +525,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 
 			// Check if we're seekable (something funny about mpeg here :-/)
 			if ( strncmp( file, "pipe:", 5 ) &&
+				 strncmp( file, "/dev/", 5 ) &&
 				 strncmp( file, "http:", 5 ) &&
 				 strncmp( file, "udp:", 4 )  &&
 				 strncmp( file, "tcp:", 4 )  &&
@@ -832,8 +831,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	avformat_lock();
-
 	// Fetch the video format context
 	AVFormatContext *context = this->video_format;
 
@@ -842,6 +839,52 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
+
+	// Get the image cache
+	if ( ! this->image_cache && ! mlt_properties_get_int( properties, "noimagecache" ) )
+		this->image_cache = mlt_cache_init();
+	if ( this->image_cache )
+	{
+		mlt_cache_item item = mlt_cache_get( this->image_cache, (void*) position );
+		*buffer = mlt_cache_item_data( item, format );
+		if ( *buffer )
+		{
+			// Set the resolution
+			*width = codec_context->width;
+			*height = codec_context->height;
+			mlt_properties_set_int( frame_properties, "width", *width );
+			mlt_properties_set_int( frame_properties, "height", *height );
+
+			// Cache hit
+			int size;
+			switch ( *format )
+			{
+				case mlt_image_yuv420p:
+					size = *width * 3 * ( *height + 1 ) / 2;
+					break;
+				case mlt_image_rgb24:
+					size = *width * ( *height + 1 ) * 3;
+					break;
+				case mlt_image_rgb24a:
+				case mlt_image_opengl:
+					size = *width * ( *height + 1 ) * 4;
+					break;
+				default:
+					*format = mlt_image_yuv422;
+					size = *width * ( *height + 1 ) * 2;
+					break;
+			}
+			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
+			mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
+			this->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+
+			goto exit_get_image;
+		}
+	}
+	// Cache miss
+	int image_size = 0;
+
+	avformat_lock();
 
 	// Packet
 	AVPacket pkt;
@@ -967,7 +1010,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			  || ( !use_new_seek && this->current_position > req_position ) ) )
 	{
 		// Duplicate it
-		if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
+		if ( ( image_size = allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) ) )
 #ifdef VDPAU
 			if ( this->vdpau && this->vdpau->buffer )
 			{
@@ -1106,7 +1149,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						else if ( context->start_time != AV_NOPTS_VALUE )
 							pts -= context->start_time;
 						int_position = ( int )( av_q2d( stream->time_base) * pts * source_fps + 0.1 );
-						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "got frame %d, key %d\n", int_position, this->av_frame->key_frame );
+						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "got frame %d, key %d\n", int_position, this->av_frame->key_frame );
 					}
 					// Handle ignore
 					if ( int_position < req_position )
@@ -1135,7 +1178,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Now handle the picture if we have one
 			if ( got_picture )
 			{
-				if ( allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) )
+				if ( ( image_size = allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) ) )
 				{
 #ifdef VDPAU
 					if ( this->vdpau )
@@ -1198,9 +1241,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	avformat_unlock();
 
+	if ( this->got_picture && image_size > 0 && this->image_cache )
+	{
+		// Copy buffer to image cache	
+		uint8_t *image = mlt_pool_alloc( image_size );
+		memcpy( image, *buffer, image_size );
+		mlt_cache_put( this->image_cache, (void*) position, image, *format, mlt_pool_release );
+	}
+
+exit_get_image:
 	// Set the progressive flag
-	mlt_properties_set_int( frame_properties, "progressive", 
-		!this->av_frame->interlaced_frame || !!mlt_properties_get_int( properties, "force_progressive" ) );
+	if ( mlt_properties_get( properties, "force_progressive" ) )
+		mlt_properties_set_int( frame_properties, "progressive", !!mlt_properties_get_int( properties, "force_progressive" ) );
+	else
+		mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
 
 	// Set the field order property for this frame
 	mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
@@ -1222,14 +1276,17 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
-		if ( opt )
+		if ( opt_name && mlt_properties_get( properties, opt_name ) )
+		{
+			if ( opt )
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
-			av_set_string3( obj, opt_name, mlt_properties_get( properties, opt_name), 0, NULL );
+				av_set_string3( obj, opt_name, mlt_properties_get( properties, opt_name), 0, NULL );
 #elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
-			av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
+				av_set_string2( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
 #else
-			av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
+				av_set_string( obj, opt_name, mlt_properties_get( properties, opt_name) );
 #endif
+		}
 	}
 }
 
@@ -1658,6 +1715,12 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		AVPacket pkt;
 
 		av_init_packet( &pkt );
+		
+		// If not resampling, give consumer more than requested.
+		// It requested number samples based on requested frame rate.
+		// Do not clean this up with a samples *= ...!
+		if ( this->audio_index != INT_MAX && ! this->audio_resample[ this->audio_index ] )
+			*samples = *samples * this->audio_codec[ this->audio_index ]->sample_rate / *frequency;
 
 		while ( ret >= 0 && !got_audio )
 		{
@@ -1818,12 +1881,13 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	int index = mlt_properties_get_int( properties, "audio_index" );
 
 	// Handle all audio tracks
-	if ( mlt_properties_get( properties, "audio_index" ) &&
-		 !strcmp( mlt_properties_get( properties, "audio_index" ), "all" ) )
+	if ( this->audio_index > -1 &&
+	     mlt_properties_get( properties, "audio_index" ) &&
+	     !strcmp( mlt_properties_get( properties, "audio_index" ), "all" ) )
 		index = INT_MAX;
 
 	// Reopen the file if necessary
-	if ( !context && index > -1 )
+	if ( !context && this->audio_index > -1 && index > -1 )
 	{
 		mlt_events_block( properties, producer );
 		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
@@ -1851,12 +1915,12 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	if ( context && index > -1 && index < INT_MAX &&
 		 context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO )
 	{
-		index = -1;
+		index = this->audio_index;
 		mlt_properties_set_int( properties, "audio_index", index );
 	}
 
 	// Update the audio properties if the index changed
-	if ( index > -1 && index != this->audio_index )
+	if ( context && index > -1 && index != this->audio_index )
 	{
 		if ( this->audio_codec[ this->audio_index ] )
 		{
@@ -1866,7 +1930,10 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 		}
 		this->audio_codec[ this->audio_index ] = NULL;
 	}
-	this->audio_index = index;
+	if ( this->audio_index != -1 )
+		this->audio_index = index;
+	else
+		index = -1;
 
 	// Get the codec(s)
 	if ( context && index == INT_MAX )
@@ -1902,16 +1969,32 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Access the private data
-	mlt_cache_item cache_item = mlt_service_cache_get( MLT_PRODUCER_SERVICE(producer), "producer_avformat" );
+	mlt_service service = MLT_PRODUCER_SERVICE( producer );
+	mlt_cache_item cache_item = mlt_service_cache_get( service, "producer_avformat" );
 	producer_avformat this = mlt_cache_item_data( cache_item, NULL );
 
+	// If cache miss
+	if ( !this )
+	{
+		this = calloc( 1, sizeof( struct producer_avformat_s ) );
+		producer->child = this;
+		this->parent = producer;
+		mlt_service_cache_put( service, "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
+		cache_item = mlt_service_cache_get( service, "producer_avformat" );
+	}
+
 	// Create an empty frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
+	*frame = mlt_frame_init( service);
 	
 	if ( *frame )
+	{
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES(*frame), "avformat_cache", cache_item, 0, (mlt_destructor) mlt_cache_item_close, NULL );
+	}
 	else
+	{
 		mlt_cache_item_close( cache_item );
+		return 1;
+	}
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
@@ -1919,15 +2002,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Set the position of this producer
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", mlt_producer_frame( producer ) );
 	
-	// If cache miss
-	if ( !this )
-	{
-		this = calloc( 1, sizeof( struct producer_avformat_s ) );
-		producer->child = this;
-		this->parent = producer;
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
-	}
-
 	// Set up the video
 	producer_set_up_video( this, *frame );
 
@@ -1968,6 +2042,8 @@ static void producer_avformat_close( producer_avformat this )
 #ifdef VDPAU
 	vdpau_producer_close( this );
 #endif
+	if ( this->image_cache )
+		mlt_cache_close( this->image_cache );
 	free( this );
 }
 
