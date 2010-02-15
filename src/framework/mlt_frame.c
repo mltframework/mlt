@@ -798,8 +798,8 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
 
 	This approach should prevent rounding errors that can accumulate over a large number
 	of frames causing A/V sync problems. */
-	return mlt_sample_calculator_to_now( fps, frequency, position )
-		 - mlt_sample_calculator_to_now( fps, frequency, position + 1 );
+	return mlt_sample_calculator_to_now( fps, frequency, position + 1 )
+		 - mlt_sample_calculator_to_now( fps, frequency, position );
 }
 
 /** Determine the number of samples that belong before a time position.
