@@ -1,4 +1,368 @@
+2010-02-15  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.5.0.
+
+  * NEWS, src/modules/avformat/configure: Add v0.5.0 release notes.
+
+2010-02-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.c: Fix mlt_sample_calculator returning negative
+  result.
+
+  * src/framework/mlt_cache.c: Simplify some of the cache locking and less
+  flip-flop.
+
+  * src/modules/avformat/producer_avformat.c: Add a reference to avformat
+  producer on the frame when cache miss.  Also adds some additional checks on
+  null pointers.
+
+2010-02-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/linsys/consumer_SDIstream.c,
+  src/modules/linsys/sdi_generator.c, src/modules/linsys/sdi_generator.h: Add
+  HD-SDI support to Linsys SDI module.  This has only been tested with the
+  VidPort. At this time, you must run the linsys sdiaudiocfg and sdivideocfg
+  utilities to configure your card. In time, we hope to remove this step.
+
+  * src/modules/linsys/Makefile, src/modules/linsys/configure: Add
+  --linsys-with-jpeg configure option.
+
+  * src/modules/linsys/factory.c: Change linssys_sdi consumer to just "sdi"
+
+2010-02-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Make avformat producer less
+  chatty in verbose mode.
+
+  * profiles/atsc_1080i_50, profiles/atsc_1080i_5994, profiles/atsc_1080i_60,
+  profiles/atsc_1080p_2398, profiles/atsc_1080p_24, profiles/atsc_1080p_25,
+  profiles/atsc_1080p_2997, profiles/atsc_1080p_30, profiles/atsc_720p_2398,
+  profiles/atsc_720p_24, profiles/atsc_720p_25, profiles/atsc_720p_2997,
+  profiles/atsc_720p_30, profiles/atsc_720p_50, profiles/atsc_720p_5994,
+  profiles/atsc_720p_60, profiles/hdv_1080_25p, profiles/hdv_1080_30p,
+  profiles/hdv_1080_50i, profiles/hdv_1080_60i, profiles/hdv_720_25p,
+  profiles/hdv_720_30p, profiles/hdv_720_50p, profiles/hdv_720_60p,
+  profiles/qcif_15, profiles/quarter_15, profiles/quarter_ntsc,
+  profiles/sdi_486i_5994, src/framework/mlt_profile.c: Revise Hz->fps in
+  profiles and add more ATSC profiles.
+
+  * src/modules/avformat/vdpau.c: Look for libvdpau.so in /usr/lib64 as well.
+
+2010-02-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/producer_xml.c: Add support for unspecified out points in
+  XML.
+
+  * src/framework/mlt_playlist.c: Add support for only negative out in
+  mlt_pplaylist_append_io.
+
+  * src/framework/mlt_producer.c: Add support for negative out in
+  mlt_producer_set_in_and_out.
+
+  * src/framework/mlt_playlist.c: Change -1 handling for in/out points to be
+  any negative value.
+
+  * src/modules/vorbis/producer_vorbis.c: Fix short forward seeking in vorbis
+  producer.
+
+  * src/modules/avformat/producer_avformat.c: Fix audio muxing when
+  downsampling >2 channels.  A side effect of this bug was a big memory
+  consumption. This occurs mostly commonly when using 5.1 audio sources such as
+  AVCHD or DVD and encoding to 44.1 KHz.
+
+2010-02-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_resize.c: Safer to use the image from get_image and
+  to compute the size.
+
+  * src/modules/avformat/producer_avformat.c: Fix crash in filter resize with
+  cached images (kdenlive-1330).  Also properly sets the top_field_first flag
+  on frames with cached image. Also adds the noimagecache property for
+  troubleshooting.
+
+2010-02-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Sometimes x264 is crashing on
+  single or first pass with multithreading.
+
+  * src/modules/core/producer_consumer.c: Fix progressive property on frames in
+  the consumer producer.  This also adds deinterlace_method and rescale
+  (method) properties to the producer so it can set those on its embedded
+  consumer.
+
+  * src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/consumer_sdl_preview.c: Default SDL to use the onefield
+  deinterlace filter.  The previous default in the deinterlace filter was
+  linearblend. The new default is yadif. However, onefield is faster is gives
+  cleaner results than linearblend where preserving most resolution is not a
+  factor. Since most usess of SDL are applications with preview windows smaller
+  than actual resolution, it makes sense to use onefield by default in the SDL
+  consumers.
+
+  * src/modules/xine/Makefile, src/modules/xine/deinterlace.h,
+  src/modules/xine/filter_deinterlace.c, src/modules/xine/vf_yadif_template.h,
+  src/modules/xine/yadif.c, src/modules/xine/yadif.h: Add YADIF methods in
+  deinterlace filter.
+
+2010-02-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.h, src/framework/mlt_service.c,
+  src/framework/mlt_service.h: Hide need_previous_next property from
+  serialization.
+
+  * src/modules/avformat/producer_avformat.c: Fix setting resolution and format
+  in avformat image caching.
+
+2010-02-02  Dan Dennedy <dan@dennedy.org>
+
+  * configure: Add SSE2_FLAGS and --disable-sse2 to configure.  This is
+  required for YADIF assembler.
+
+  * src/framework/mlt_filter.h, src/framework/mlt_frame.h,
+  src/framework/mlt_service.c, src/framework/mlt_service.h: Add fetching
+  previous and next frames in producers.  This is only enabled when the
+  property need-previous-next is set true on the producer. This also adds
+  firing a service-changed event on the filter when it gets attached so the
+  filter can set this property on the producer to which it is attached. These
+  frame references are set as "previous frame" and "next frame" properties on
+  the current frame. It is also important to note that these frames do not have
+  ANY filters applied to them, which is important for YADIF and telecide
+  filters, which process before all other filters.
+
+  * src/framework/mlt_multitrack.c: Prefer the API over setting property.
+
+  * src/modules/avformat/producer_avformat.c: Fix force_progressive=0 on
+  avformat producer.
+
+  * src/modules/avformat/producer_avformat.c: Add image caching to avformat
+  producer.  This not only helps with very short seeking around a point
+  especially on AVCHD but also will help immensely with YADIF.
+
+2010-01-28  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile: Sort members in doxygen docs.
+
+2010-01-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix segfault when using
+  audio_index=all on file with no audio.
+
+2010-01-23  j-b-m <jb@kdenlive.org>
+
+  * src/modules/oldfilm/filter_vignette.c: Fix vignette filter position 
+  modified:   src/modules/oldfilm/filter_vignette.c
+
+2010-01-22  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Round corners in titles for
+  rectangle borders (Patch from Till Theato) modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+  * .../motion_est/filter_autotrack_rectangle.c: Fix typo in autotrack filter 
+  modified:   src/modules/motion_est/filter_autotrack_rectangle.c
+
+2010-01-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c, src/modules/avformat/vdpau.c: Let
+  environment variable MLT_NO_VDPAU=1 disable VDPAU.
+
+2010-01-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Make realtime (streaming)
+  avformat consumer less bursty.  Patch from PrimeTel PLC -
+  http://www.prime-tel.com
+
+  * src/modules/avformat/configure, src/modules/avformat/factory.c,
+  src/modules/avformat/producer_avformat.c: Add support for libavdevice
+  (v4l/v4l2).  Thanks to hints from Volodymyr M. Lisivka. 
+  LD_PRELOAD=/usr/lib/libv4l/v4l2convert.so is required to get some formats to
+  work.
+
+  * src/framework/mlt_frame.c, src/modules/core/filter_rescale.c,
+  src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pixbuf.c,
+  src/modules/qimage/producer_qimage.c: Return and handle errors on failure to
+  produce image (kdenlive-1312).
+
+  * src/modules/core/filter_resize.c: Fix incorrect comment about yuv422 only
+  in resize filter.
+
+2010-01-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fix muxing when encoding with
+  x264 and B frames (2928953).
+
+  * src/modules/avformat/consumer_avformat.c: Remove deprecation warnings on
+  guess_format.
+
+2010-01-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Only report video encode error
+  when truly error result.
+
+  * src/modules/avformat/consumer_avformat.c: Add apre, fpre, and vpre
+  properties to avformat consumer.  These read ffmpeg preset files, which is
+  really handy for x264 encoding on the command line. They require the full
+  path to the file unlike the ffmpeg utility. apre is for audio, vpre is for
+  video, and fpre is for the format/muxer.
+
+  * src/framework/mlt_frame.c: Refactor mlt_sample_calculator to reuse
+  mlt_sample_calculator_to_now.
+
+  * Doxyfile, src/framework/mlt_frame.c, src/framework/mlt_frame.h,
+  src/framework/mlt_service.h: Add mlt_frame doxygen docs.
+
+2010-01-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix detection of aspect ratio of
+  DV in AVI.
+
+2010-01-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix A/V sync after seeking on
+  some files (2892086).
+
+2010-01-12  j-b-m <jb@kdenlive.org>
+
+  * src/modules/kdenlive/filter_freeze.c: Fix memleak in freeze filter -
+  Kdenlive issue 1379 modified:   src/modules/kdenlive/filter_freeze.c
+
+2010-01-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/xine/filter_deinterlace.c: Fix setting progressive property on
+  repeated frames (kdenlive-1335).
+
+2010-01-09  gmarco <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: round outline pen
+
+2009-12-23  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: outline text possible (with
+  use of font-outline/font-outline-color)
+
+2010-01-06  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/oldfilm/filter_oldfilm.c,
+  src/modules/oldfilm/filter_oldfilm.yml: user array with 100 values yml file
+  updated
+
+  * src/modules/oldfilm/filter_oldfilm.c: unevendevelop effect
+
+2009-12-21  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: Fix crash when opening a
+  kdenlive document with titles  modified:  
+  src/modules/qimage/kdenlivetitle_wrapper.cpp
+
+2009-12-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/linsys/consumer_SDIstream.c: Add force_channels to sdi consumer
+  for troubleshooting.
+
+  * src/modules/avformat/producer_avformat.c: Fix crash at end of some files
+  with audio_index=all.
+
+2009-12-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_still.c: This lock makes kdenlive start more
+  reliably in the debugger.
+
+  * src/framework/mlt_service.c, src/framework/mlt_service.h,
+  src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/producer_qimage.c: Add
+  mlt_service_cache_purge and remove purge in mlt_service_close.  The avformat
+  producer holds references to cache items within frame objects. This means
+  mlt_service_close can not purge the cache because frames may be closed after
+  the producer.
+
+  * src/modules/avformat/producer_avformat.c: Redo avformat producer locking -
+  less off-and-on.
+
+2009-12-14  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt.h: Bump to unreleased version.
+
+  * src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_preview.c,
+  src/modules/sdl/consumer_sdl_still.c: Revert a bunch of changes made to SDL
+  for VDPAU.  This set of changes conflicted with Kdenlive, which requires two
+  consumers that need to release SDL on stop. Now, VDPAU support does not need
+  SDL as it gets its own X11 Display pointer.
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure,
+  src/modules/avformat/vdpau.c: Make VDPAU independent of SDL X11 Display. 
+  This prevents VDPAU from crashing on calls to SDL_Quit() and allows it to be
+  used with non-SDL consumers! (Still requires an X11 session.)
+
+2009-12-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl.c: Fix for when actual channels does not match
+  requested.  This typically only happens when using audio_index=all on the
+  avformat producer. This also adds a audio_offset property to the sdl consumer
+  to help with testing audio_index. It takes a numeric value in units of
+  channels over which to skip.
+
+  * src/modules/avformat/vdpau.c: Do not compile vdpau_close() until it can be
+  used.
+
+  * src/modules/avformat/factory.c, src/modules/avformat/producer_avformat.c:
+  Add producer variant avformat-novalidate.  The purpose of this is to increase
+  the speed of loading playlists with known good files. Use with care. This
+  assumes a few properties have been set, in particular "length." This was only
+  tested thus far by modifying the output of consumer xml to change mlt_service
+  from "avformat" to "avformat-novalidate".
+
+  * src/modules/avformat/producer_avformat.c: Fix audio_index=all when stream
+  not stereo.
+
+  * src/modules/avformat/vdpau.c: Fix segfault in vdpau_init when x11_display
+  not set.
+
+  * src/modules/avformat/producer_avformat.c: Some B.C.E. sample files need
+  more audio streams.
+
+  * src/modules/avformat/producer_avformat.c: Fix regression with addition of
+  mlt_cache.  This change would cause the producer to not fully initialize on
+  the first call to get_frame.
+
+2009-12-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c, src/modules/avformat/vdpau.c: Add
+  cache support to avformat producer.  This also includes a change to make
+  VDPAU work on some versions of FFmpeg beyond Sept 15, 2009 (do not know
+  exactly when).
+
+  * src/framework/mlt_service.c, src/framework/mlt_service.h: Add
+  mlt_service_cache_set_size() to limit the cache size.
+
+  * src/framework/mlt_cache.c, src/framework/mlt_cache.h: Add
+  mlt_cache_set_size() to limit the amount of caching.
+
+2009-11-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure,
+  src/modules/avformat/producer_avformat.c, src/modules/avformat/vdpau.c: Add
+  support for decoding H.264 with VDPAU.  This applies to all H.264 at the
+  moment unless novdpau=1 is set on the producer. Also, this can only handle up
+  to about 10 - 15 clips using VDPAU in the project at the moment until the
+  avformat producer is changed to use mlt_cache.
+
+  * src/melt/melt.c: SDL must not close X11 while VDPAU is still using it.
+
+  * src/framework/mlt_consumer.c, src/modules/sdl/consumer_sdl.c,
+  src/modules/sdl/consumer_sdl_preview.c, src/modules/sdl/consumer_sdl_still.c:
+  Make the SDL consumer cooperate with VDPAU.  This moves the SDL_Quit calls
+  from the consumer_stop to the consumer_close functions. Also, it exports the
+  X11 Display pointer to the mlt_environment and the global SDL mutex to the
+  consumer class.
+
+2009-12-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_crop.c: Add center_bias property to crop filter.
+
 2009-12-08  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update ChangeLog for 0.4.10 release.
 
   * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set version to
   0.4.10 and update release notes.
