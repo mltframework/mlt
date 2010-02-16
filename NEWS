@@ -1,6 +1,55 @@
 MLT Release Notes
 -----------------
 
+Version 0.5.0
+
+The recommended version of FFmpeg for use with this release is SVN r21322.
+This is an enhancement release, confined mainly to the modules rather than
+the framework. In particular, this adds support for VDPAU, YADIF, and HD-SDI
+technologies!
+
+configure: added --disable-sse2
+
+framework:
+* mlt_cache: added mlt_cache_set_size()
+* mlt_filter: added data property "service" - set when attached
+* mlt_frame:
+  - added Doxygen docs
+  - added "previous frame" and "next frame" data properties - available
+    when its producer has _need_previous_next=1
+* mlt_playlist: added support for negative out point same as length-1
+* mlt_service:
+  - added mlt_service_cache_purge()
+  - added "_need_previous_next" handling in mlt_service_get_frame()
+  - added firing event "service-changed" in mlt_service_attach()
+
+modules:
+* avformat producer:
+  - added decoding H.264 with NVIDIA VDPAU
+    Requires FFmpeg built with vdpau.
+    This is automatically detected and enabled. You can disable this by
+	setting environment variable MLT_NO_VDPAU=1 or property novdpau=1.
+  - added caching of FFmpeg contexts and decoded images
+    This allows large numbers of clips in a project avoiding limitations
+	with number of threads and file descriptors permitted per process.
+    You can disable image caching with property noimagecache=1.
+  - added variant of producer named avformat-novalidate
+  - restored support for video4linux(2)
+* avformat consumer: added apre, fpre, and vpre preset properties
+* crop filter: added center_bias integer property
+* deinterlace filter: added the excellent YADIF as a method
+* kdenlivetitle producer: added text outlining
+* linsys/sdi consumer:
+  - added support for HD-SDI
+  - changed name from "linsys_sdi" to just "sdi"
+* oldfilm filter: added "uneven development" effect
+* xml producer: add support for unspecified out points
+
+profiles:
+* added several missing ATSC (HD) profiles
+* change descriptions from using Hz to fps
+
+
 Version 0.4.10
 
 The recommended version of FFmpeg for use with this release is SVN r19873.
