@@ -681,12 +681,12 @@ static void *consumer_read_ahead_thread( void *arg )
 		height = mlt_properties_get_int( properties, "height" );
 
 		// Put the current frame into the queue
-		pthread_mutex_lock( &this->mutex );
-		while( this->ahead && mlt_deque_count( this->queue ) >= buffer )
-			pthread_cond_wait( &this->cond, &this->mutex );
-		mlt_deque_push_back( this->queue, frame );
-		pthread_cond_broadcast( &this->cond );
-		pthread_mutex_unlock( &this->mutex );
+		pthread_mutex_lock( &this->frame_queue_mutex );
+		while( this->ahead && mlt_deque_count( this->frame_queue ) >= buffer )
+			pthread_cond_wait( &this->frame_queue_cond, &this->frame_queue_mutex );
+		mlt_deque_push_back( this->frame_queue, frame );
+		pthread_cond_broadcast( &this->frame_queue_cond );
+		pthread_mutex_unlock( &this->frame_queue_mutex );
 
 		time_wait += time_difference( &ante );
 
@@ -760,7 +760,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		time_process += time_difference( &ante );
 
 		// Determine if the next frame should be skipped
-		if ( mlt_deque_count( this->queue ) <= 5 )
+		if ( mlt_deque_count( this->frame_queue ) <= 5 )
 		{
 			int frame_duration = mlt_properties_get_int( properties, "frame_duration" );
 			if ( ( ( time_wait + time_frame + time_process ) / count ) > frame_duration )
@@ -789,13 +789,13 @@ static void consumer_read_ahead_start( mlt_consumer this )
 	this->ahead = 1;
 
 	// Create the frame queue
-	this->queue = mlt_deque_init( );
+	this->frame_queue = mlt_deque_init( );
 
-	// Create the mutex
-	pthread_mutex_init( &this->mutex, NULL );
+	// Create the frame_queue mutex
+	pthread_mutex_init( &this->frame_queue_mutex, NULL );
 
 	// Create the condition
-	pthread_cond_init( &this->cond, NULL );
+	pthread_cond_init( &this->frame_queue_cond, NULL );
 
 	// Create the read ahead
 	if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES( this ), "priority" ) )
@@ -833,9 +833,9 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 		this->ahead = 0;
 
 		// Broadcast to the condition in case it's waiting
-		pthread_mutex_lock( &this->mutex );
-		pthread_cond_broadcast( &this->cond );
-		pthread_mutex_unlock( &this->mutex );
+		pthread_mutex_lock( &this->frame_queue_mutex );
+		pthread_cond_broadcast( &this->frame_queue_cond );
+		pthread_mutex_unlock( &this->frame_queue_mutex );
 
 		// Broadcast to the put condition in case it's waiting
 		pthread_mutex_lock( &this->put_mutex );
@@ -845,18 +845,18 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 		// Join the thread
 		pthread_join( this->ahead_thread, NULL );
 
-		// Destroy the mutex
-		pthread_mutex_destroy( &this->mutex );
+		// Destroy the frame queue mutex
+		pthread_mutex_destroy( &this->frame_queue_mutex );
 
 		// Destroy the condition
-		pthread_cond_destroy( &this->cond );
+		pthread_cond_destroy( &this->frame_queue_cond );
 
 		// Wipe the queue
-		while ( mlt_deque_count( this->queue ) )
-			mlt_frame_close( mlt_deque_pop_back( this->queue ) );
+		while ( mlt_deque_count( this->frame_queue ) )
+			mlt_frame_close( mlt_deque_pop_back( this->frame_queue ) );
 
 		// Close the queue
-		mlt_deque_close( this->queue );
+		mlt_deque_close( this->frame_queue );
 	}
 }
 
@@ -870,11 +870,11 @@ void mlt_consumer_purge( mlt_consumer this )
 {
 	if ( this->ahead )
 	{
-		pthread_mutex_lock( &this->mutex );
-		while ( mlt_deque_count( this->queue ) )
-			mlt_frame_close( mlt_deque_pop_back( this->queue ) );
-		pthread_cond_broadcast( &this->cond );
-		pthread_mutex_unlock( &this->mutex );
+		pthread_mutex_lock( &this->frame_queue_mutex );
+		while ( mlt_deque_count( this->frame_queue ) )
+			mlt_frame_close( mlt_deque_pop_back( this->frame_queue ) );
+		pthread_cond_broadcast( &this->frame_queue_cond );
+		pthread_mutex_unlock( &this->frame_queue_mutex );
 	}
 }
 
@@ -913,12 +913,12 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 		}
 
 		// Get frame from queue
-		pthread_mutex_lock( &this->mutex );
-		while( this->ahead && mlt_deque_count( this->queue ) < size )
-			pthread_cond_wait( &this->cond, &this->mutex );
-		frame = mlt_deque_pop_front( this->queue );
-		pthread_cond_broadcast( &this->cond );
-		pthread_mutex_unlock( &this->mutex );
+		pthread_mutex_lock( &this->frame_queue_mutex );
+		while( this->ahead && mlt_deque_count( this->frame_queue ) < size )
+			pthread_cond_wait( &this->frame_queue_cond, &this->frame_queue_mutex );
+		frame = mlt_deque_pop_front( this->frame_queue );
+		pthread_cond_broadcast( &this->frame_queue_cond );
+		pthread_mutex_unlock( &this->frame_queue_mutex );
 	}
 	else
 	{

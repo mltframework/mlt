@@ -103,10 +103,10 @@ struct mlt_consumer_s
 	int real_time;
 	int ahead;
 	mlt_image_format format;
-	mlt_deque queue;
+	mlt_deque frame_queue;
 	pthread_t ahead_thread;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
+	pthread_mutex_t frame_queue_mutex;
+	pthread_cond_t frame_queue_cond;
 	pthread_mutex_t put_mutex;
 	pthread_cond_t put_cond;
 	mlt_frame put;
