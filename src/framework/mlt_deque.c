@@ -195,6 +195,34 @@ void *mlt_deque_peek_front( mlt_deque this )
 	return this->count > 0 ? this->list[ 0 ].addr : NULL;
 }
 
+/** Insert an item in a sorted fashion.
+ *
+ * Optimized for the equivalent of \p mlt_deque_push_back.
+ *
+ * \public \memberof mlt_deque_s
+ * \param this a deque
+ * \param item an opaque pointer
+ * \param cmp a function pointer to the comparison function
+ * \return true if there was an error
+ */
+
+int mlt_deque_insert( mlt_deque this, void *item, mlt_deque_compare cmp )
+{
+	int error = mlt_deque_allocate( this );
+
+	if ( error == 0 )
+	{
+		int n = this->count + 1;
+		while ( --n )
+			if ( cmp( item, this->list[ n - 1 ].addr ) >= 0 )
+				break;
+		memmove( &this->list[ n + 1 ], &this->list[ n ], ( this->count - n ) * sizeof( deque_entry ) );
+		this->list[ n ].addr = item;
+		this->count++;
+	}
+	return error;
+}
+
 /** Push an integer to the end.
  *
  * \public \memberof mlt_deque_s
