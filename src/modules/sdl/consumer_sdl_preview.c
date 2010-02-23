@@ -44,6 +44,7 @@ struct consumer_sdl_s
 	int running;
 	int sdl_flags;
 	double last_speed;
+	mlt_position last_position;
 
 	pthread_cond_t refresh_cond;
 	pthread_mutex_t refresh_mutex;
@@ -112,6 +113,7 @@ void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_frame fr
 {
 	consumer_sdl this = parent->child;
 	this->last_speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+	this->last_position = mlt_frame_get_position( frame );
 	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-frame-show", frame, NULL );
 }
 
@@ -345,12 +347,19 @@ static void *consumer_thread( void *arg )
 					mlt_consumer_stop( this->play );
 				if ( mlt_consumer_is_stopped( this->still ) )
 				{
+					mlt_producer producer = mlt_service_get_producer( MLT_CONSUMER_SERVICE( consumer ) );
+					if ( producer )
+						mlt_producer_seek( producer, this->last_position );
 					this->last_speed = speed;
 					this->active = this->still;
 					this->ignore_change = 0;
 					mlt_consumer_start( this->still );
+					mlt_frame_close( frame );
 				}
-				mlt_consumer_put_frame( this->still, frame );
+				else
+				{
+					mlt_consumer_put_frame( this->still, frame );
+				}
 			}
 			// Otherwise use the normal player
 			else
