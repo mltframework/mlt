@@ -42,14 +42,17 @@
 
 static RGB32 palette[256];
 
-/* FIXME: endianess? */
 static void makePalette(void)
 {
 	int i, r, g, b;
+	uint8_t *p = (uint8_t*) palette;
 
 	for(i=0; i<MaxColor; i++) {
 		HSItoRGB(4.6-1.5*i/MaxColor, (double)i/MaxColor, (double)i/MaxColor, &r, &g, &b);
-		palette[i] = ((r<<16)|(g<<8)|b) & 0xfefeff;
+		*p++ = r & 0xfe;
+		*p++ = g & 0xfe;
+		*p++ = b & 0xfe;
+		*p++;
 	}
 	for(i=MaxColor; i<256; i++) {
 		if(r<255)r++;if(r<255)r++;if(r<255)r++;
@@ -57,7 +60,10 @@ static void makePalette(void)
 		if(g<255)g++;
 		if(b<255)b++;
 		if(b<255)b++;
-		palette[i] = ((r<<16)|(g<<8)|b) & 0xfefeff;
+		*p++ = r & 0xfe;
+		*p++ = g & 0xfe;
+		*p++ = b & 0xfe;
+		*p++;
 	}
 }
 
