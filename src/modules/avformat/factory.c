@@ -109,6 +109,8 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 	}
 #endif
 #ifdef FILTERS
+	if ( !strcmp( id, "avcolor_space" ) )
+		return filter_avcolour_space_init( arg );
 	if ( !strcmp( id, "avcolour_space" ) )
 		return filter_avcolour_space_init( arg );
 	if ( !strcmp( id, "avdeinterlace" ) )
