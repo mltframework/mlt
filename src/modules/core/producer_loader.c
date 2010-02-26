@@ -181,7 +181,11 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 	
 	// Always let the image and audio be converted
 	int created = 0;
-	create_filter( profile, producer, "imageconvert", &created );
+#ifndef __DARWIN__
+	create_filter( profile, producer, "avcolor_space", &created );
+	if ( !created )
+#endif
+		create_filter( profile, producer, "imageconvert", &created );
 	create_filter( profile, producer, "audioconvert", &created );
 
 	// Now make sure we don't lose our identity
