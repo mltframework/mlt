@@ -1175,11 +1175,7 @@ static void *consumer_thread( void *arg )
 							for ( i = 0; i < height; i ++ )
 							{
 								n = ( width + 7 ) / 8;
-								p = output->data[ 0 ] + i * output->linesize[ 0 ];
-
-								#ifndef __DARWIN__
-								p += 3;
-								#endif
+								p = output->data[ 0 ] + i * output->linesize[ 0 ] + 3;
 
 								switch( width % 8 )
 								{
