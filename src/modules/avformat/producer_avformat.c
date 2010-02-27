@@ -1234,11 +1234,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 
-	// Very untidy - for rawvideo, the packet contains the frame, hence the free packet
-	// above will break the pause behaviour - so we wipe the frame now
-	if ( !strcmp( codec_context->codec->name, "rawvideo" ) )
-		av_freep( &this->av_frame );
-
 	avformat_unlock();
 
 	if ( this->got_picture && image_size > 0 && this->image_cache )
@@ -1253,7 +1248,7 @@ exit_get_image:
 	// Set the progressive flag
 	if ( mlt_properties_get( properties, "force_progressive" ) )
 		mlt_properties_set_int( frame_properties, "progressive", !!mlt_properties_get_int( properties, "force_progressive" ) );
-	else
+	else if ( this->av_frame )
 		mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
 
 	// Set the field order property for this frame
