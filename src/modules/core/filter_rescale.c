@@ -222,8 +222,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	
 		if ( *image && strcmp( interps, "none" ) && ( iwidth != owidth || iheight != oheight ) )
 		{
-			mlt_log_debug( MLT_FILTER_SERVICE( filter ), "%dx%d -> %dx%d (%s)\n",
-				iwidth, iheight, owidth, oheight, mlt_image_format_name( *format ) );
+			mlt_log_debug( MLT_FILTER_SERVICE( filter ), "%dx%d -> %dx%d (%s) %s\n",
+				iwidth, iheight, owidth, oheight, mlt_image_format_name( *format ), interps );
 
 			// If valid colorspace
 			if ( *format == mlt_image_yuv422 || *format == mlt_image_rgb24 ||
