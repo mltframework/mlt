@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_RGB32 PIX_FMT_RGBA32
@@ -124,46 +123,57 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	avpicture_fill( &output, outbuf, avformat, owidth, oheight );
 
 	// Create the context and output image
+	owidth = owidth > 5120 ? 5120 : owidth;
 	struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
-	assert(context);
-
-	// Perform the scaling
-	sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
-	sws_freeContext( context );
-
-	// Now update the frame
-	mlt_properties_set_data( properties, "image", output.data[0], owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
-	mlt_properties_set_int( properties, "width", owidth );
-	mlt_properties_set_int( properties, "height", oheight );
-
-	// Return the output
-	*image = output.data[0];
-
-	// Scale the alpha channel only if exists and not correct size
-	int alpha_size = 0;
-	mlt_properties_get_data( properties, "alpha", &alpha_size );
-	if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
+	if ( !context )
 	{
-		// Create the context and output image
-		uint8_t *alpha = mlt_frame_get_alpha_mask( this );
-		if ( alpha )
-		{
-			avformat = PIX_FMT_GRAY8;
-			struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
-			avpicture_fill( &input, alpha, avformat, iwidth, iheight );
-			outbuf = mlt_pool_alloc( owidth * oheight );
-			avpicture_fill( &output, outbuf, avformat, owidth, oheight );
-
-			// Perform the scaling
-			sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
-			sws_freeContext( context );
-
-			// Set it back on the frame
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
-		}
+		owidth = owidth > 2048 ? 2048 : owidth;
+		context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
 	}
-
-	return 0;
+	if ( context )
+	{
+		// Perform the scaling
+		sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
+		sws_freeContext( context );
+	
+		// Now update the frame
+		mlt_properties_set_data( properties, "image", output.data[0], owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_int( properties, "width", owidth );
+		mlt_properties_set_int( properties, "height", oheight );
+	
+		// Return the output
+		*image = output.data[0];
+	
+		// Scale the alpha channel only if exists and not correct size
+		int alpha_size = 0;
+		mlt_properties_get_data( properties, "alpha", &alpha_size );
+		if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
+		{
+			// Create the context and output image
+			uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+			if ( alpha )
+			{
+				avformat = PIX_FMT_GRAY8;
+				struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
+				avpicture_fill( &input, alpha, avformat, iwidth, iheight );
+				outbuf = mlt_pool_alloc( owidth * oheight );
+				avpicture_fill( &output, outbuf, avformat, owidth, oheight );
+	
+				// Perform the scaling
+				sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
+				sws_freeContext( context );
+	
+				// Set it back on the frame
+				mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
+			}
+		}
+	
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
 }
 
 /** Constructor for the filter.
@@ -171,9 +181,20 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 
 mlt_filter filter_swscale_init( mlt_profile profile, void *arg )
 {
-	// Create a new scaler
-	mlt_filter this = mlt_factory_filter( profile, "rescale", arg );
+	// Test to see if swscale accepts the arg as resolution
+	if ( arg )
+	{
+		int width = (int) arg;
+		struct SwsContext *context = sws_getContext( width, width, PIX_FMT_RGB32, 64, 64, PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
+		if ( context )
+			sws_freeContext( context );
+		else
+			return NULL;
+	}		
 
+	// Create a new scaler
+	mlt_filter this = mlt_factory_filter( profile, "rescale", NULL );
+	
 	// If successful, then initialise it
 	if ( this != NULL )
 	{
@@ -181,7 +202,7 @@ mlt_filter filter_swscale_init( mlt_profile profile, void *arg )
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 		// Set the inerpolation
-		mlt_properties_set( properties, "interpolation", arg == NULL ? "bilinear" : arg );
+		mlt_properties_set( properties, "interpolation", "bilinear" );
 
 		// Set the method
 		mlt_properties_set_data( properties, "method", filter_scale, 0, NULL, NULL );
