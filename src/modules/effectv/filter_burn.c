@@ -52,7 +52,7 @@ static void makePalette(void)
 		*p++ = r & 0xfe;
 		*p++ = g & 0xfe;
 		*p++ = b & 0xfe;
-		*p++;
+		p++;
 	}
 	for(i=MaxColor; i<256; i++) {
 		if(r<255)r++;if(r<255)r++;if(r<255)r++;
@@ -63,7 +63,7 @@ static void makePalette(void)
 		*p++ = r & 0xfe;
 		*p++ = g & 0xfe;
 		*p++ = b & 0xfe;
-		*p++;
+		p++;
 	}
 }
 

@@ -812,7 +812,7 @@ int mlt_sample_calculator( float fps, int frequency, int64_t position )
  * \bug Will this break when mlt_position is converted to double?
  */
 
-inline int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position )
+int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position )
 {
 	int64_t samples = 0;
 
