@@ -373,7 +373,7 @@ static void *consumer_thread( void *arg )
 					// Start the still consumer
 					this->last_speed = speed;
 					this->active = this->still;
-					this->ignore_change = 25;
+					this->ignore_change = 0;
 					mlt_consumer_start( this->still );
 				}
 				// Use the still consumer
