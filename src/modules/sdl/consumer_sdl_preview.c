@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
+#include <assert.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -281,6 +282,8 @@ static void *consumer_thread( void *arg )
 	mlt_frame frame = NULL;
 	int last_position = -1;
 	int eof_threshold = 10 + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
+	int prefill = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "prefill" );
+	int buffer = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
 
 	// Determine if the application is dealing with the preview
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
@@ -345,15 +348,21 @@ static void *consumer_thread( void *arg )
 				if ( mlt_consumer_is_stopped( this->still ) )
 				{
 					// If near the end, wait for the normal consumer to play out its buffers
+					assert( this->active == this->play );
 					if ( ! mlt_consumer_is_stopped( this->play ) && speed == 0.0 )
 					{
 						// This frame with speed=0 will tell normal consumer to terminate
 						mlt_consumer_put_frame( this->play, frame );
-						while ( ! mlt_consumer_is_stopped( this->play ) )
+
+						if ( ( duration - this->last_position ) > ( prefill > 0 ? prefill : buffer ) )
 						{
-							struct timespec tm = { 0, 10000000L }; // 10 ms
-							nanosleep( &tm, NULL );
+							while ( ! mlt_consumer_is_stopped( this->play ) )
+							{
+								struct timespec tm = { 0, 10000000L }; // 10 ms
+								nanosleep( &tm, NULL );
+							}
 						}
+						mlt_consumer_stop( this->play );
 
 						// We want to be positioned at the end
 						if ( duration - this->last_position < 10 )
