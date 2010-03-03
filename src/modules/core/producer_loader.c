@@ -177,14 +177,17 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties_get( properties, "loader_normalised" ) == NULL )
 		attach_normalisers( profile, producer );
 	
-	// Always let the image and audio be converted
-	int created = 0;
+	if ( producer )
+	{
+		// Always let the image and audio be converted
+		int created = 0;
 #ifndef __DARWIN__
-	create_filter( profile, producer, "avcolor_space", &created );
-	if ( !created )
+		create_filter( profile, producer, "avcolor_space", &created );
+		if ( !created )
 #endif
-		create_filter( profile, producer, "imageconvert", &created );
-	create_filter( profile, producer, "audioconvert", &created );
+			create_filter( profile, producer, "imageconvert", &created );
+		create_filter( profile, producer, "audioconvert", &created );
+	}
 
 	// Now make sure we don't lose our identity
 	if ( properties != NULL )
