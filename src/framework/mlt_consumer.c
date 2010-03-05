@@ -445,6 +445,10 @@ int mlt_consumer_start( mlt_consumer this )
 	// Set the real_time preference
 	this->real_time = mlt_properties_get_int( properties, "real_time" );
 
+	// For worker threads implementation, buffer must be at least # threads
+	if ( abs( this->real_time ) > 1 && mlt_properties_get_int( properties, "buffer" ) <= abs( this->real_time ) )
+		mlt_properties_set_int( properties, "buffer", abs( this->real_time ) + 1 );
+
 	// Start the service
 	if ( this->start != NULL )
 		return this->start( this );
@@ -777,6 +781,152 @@ static void *consumer_read_ahead_thread( void *arg )
 	return NULL;
 }
 
+static int compare_frame_position( mlt_frame a, mlt_frame b )
+{
+	return mlt_frame_get_position( a ) - mlt_frame_get_position( b );
+}
+
+/** The worker thread procedure for parallel processing frames.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param arg a consumer
+ */
+
+static void *consumer_worker_thread( void *arg )
+{
+	// The argument is the consumer
+	mlt_consumer this = arg;
+
+	// Get the properties of the consumer
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+
+	// Get the width and height
+	int width = mlt_properties_get_int( properties, "width" );
+	int height = mlt_properties_get_int( properties, "height" );
+
+	// See if video is turned off
+	int video_off = mlt_properties_get_int( properties, "video_off" );
+	int preview_off = mlt_properties_get_int( properties, "preview_off" );
+	int preview_format = mlt_properties_get_int( properties, "preview_format" );
+
+	// Get the audio settings
+	mlt_audio_format afmt = mlt_audio_s16;
+	int counter = 0;
+	double fps = mlt_properties_get_double( properties, "fps" );
+	int channels = mlt_properties_get_int( properties, "channels" );
+	int frequency = mlt_properties_get_int( properties, "frequency" );
+	int samples = 0;
+	void *audio = NULL;
+
+	// See if audio is turned off
+	int audio_off = mlt_properties_get_int( properties, "audio_off" );
+
+	// Get the maximum size of the buffer
+	int buffer = mlt_properties_get_int( properties, "buffer" );
+
+	// General frame variable
+	mlt_frame frame = NULL;
+	uint8_t *image = NULL;
+	mlt_service lock_object = NULL;
+
+	if ( preview_off && preview_format != 0 )
+		this->format = preview_format;
+
+	// Get the first frame
+	frame = mlt_consumer_get_frame( this );
+
+	// Get the lock object
+	lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
+
+	// Lock it
+	if ( lock_object ) mlt_service_lock( lock_object );
+
+	// Get the image of the first frame
+	if ( !video_off )
+	{
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
+		mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+	}
+
+	if ( !audio_off )
+	{
+		samples = mlt_sample_calculator( fps, frequency, counter++ );
+		mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
+	}
+
+	// Unlock the lock object
+	if ( lock_object ) mlt_service_unlock( lock_object );
+
+	// Mark as rendered
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+
+	// Continue to read ahead
+	while ( this->ahead )
+	{
+		// Fetch width/height again
+		width = mlt_properties_get_int( properties, "width" );
+		height = mlt_properties_get_int( properties, "height" );
+
+		// Put the processed frame into the done queue
+		if ( frame )
+		{
+			pthread_mutex_lock( &this->done_queue_mutex );
+			mlt_deque_insert( this->done_queue, frame, ( mlt_deque_compare ) compare_frame_position );
+			pthread_mutex_unlock( &this->done_queue_mutex );
+			pthread_cond_broadcast( &this->done_queue_cond );
+		}
+
+		pthread_mutex_lock( &this->done_queue_mutex );
+		while ( this->ahead && mlt_deque_count( this->done_queue ) >= buffer )
+			pthread_cond_wait( &this->done_queue_cond, &this->done_queue_mutex );
+		pthread_mutex_unlock( &this->done_queue_mutex );
+
+		// Get the next frame
+		frame = mlt_consumer_get_frame( this );
+
+		// If there's no frame, we're probably stopped...
+		if ( frame == NULL )
+			continue;
+
+		// Attempt to fetch the lock object
+		lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
+
+		// Lock if there's a lock object
+		if ( lock_object ) mlt_service_lock( lock_object );
+
+		// All non normal playback frames should be shown
+		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
+		{
+#ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
+#endif
+		}
+
+		// Get the image
+		if ( !video_off )
+		{
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
+			mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+		}
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+
+		// Always process audio
+		if ( !audio_off )
+		{
+			samples = mlt_sample_calculator( fps, frequency, counter++ );
+			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
+		}
+
+		// Unlock if there's a lock object
+		if ( lock_object ) mlt_service_unlock( lock_object );
+	}
+
+	// Remove the last frame
+	mlt_frame_close( frame );
+
+	return NULL;
+}
+
 /** Start the read/render thread.
  *
  * \private \memberof mlt_consumer_s
@@ -815,6 +965,66 @@ static void consumer_read_ahead_start( mlt_consumer this )
 	else
 	{
 		pthread_create( &this->ahead_thread, NULL, consumer_read_ahead_thread, this );
+	}
+}
+
+/** Start the worker threads.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param this a consumer
+ */
+
+static void consumer_work_start( mlt_consumer this )
+{
+	int n = abs( this->real_time );
+	pthread_t thread;
+
+	// We're running now
+	this->ahead = 1;
+
+	// Create the queues
+	this->frame_queue = mlt_deque_init();
+	this->done_queue = mlt_deque_init();
+	this->worker_threads = mlt_deque_init();
+
+	// Create the mutexes
+	pthread_mutex_init( &this->frame_queue_mutex, NULL );
+	pthread_mutex_init( &this->done_queue_mutex, NULL );
+
+	// Create the conditions
+	pthread_cond_init( &this->frame_queue_cond, NULL );
+	pthread_cond_init( &this->done_queue_cond, NULL );
+
+	// Create the read ahead
+	if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES( this ), "priority" ) )
+	{
+
+		struct sched_param priority;
+		pthread_attr_t thread_attributes;
+
+		priority.sched_priority = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this ), "priority" );
+		pthread_attr_init( &thread_attributes );
+		pthread_attr_setschedpolicy( &thread_attributes, SCHED_OTHER );
+		pthread_attr_setschedparam( &thread_attributes, &priority );
+		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_EXPLICIT_SCHED );
+		pthread_attr_setscope( &thread_attributes, PTHREAD_SCOPE_SYSTEM );
+
+		while ( n-- )
+		{
+			if ( pthread_create( &thread, &thread_attributes, consumer_read_ahead_thread, this ) < 0 )
+				if ( pthread_create( &thread, NULL, consumer_read_ahead_thread, this ) == 0 )
+					mlt_deque_push_back( this->worker_threads, (void*) thread );
+		}
+		pthread_attr_destroy( &thread_attributes );
+	}
+
+	else
+	{
+		while ( n-- )
+		{
+			if ( pthread_create( &thread, NULL, consumer_worker_thread, this ) == 0 )
+				mlt_deque_push_back( this->worker_threads, (void*) thread );
+		}
 	}
 }
 
@@ -860,6 +1070,61 @@ static void consumer_read_ahead_stop( mlt_consumer this )
 	}
 }
 
+/** Stop the worker threads.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param this a consumer
+ */
+
+static void consumer_work_stop( mlt_consumer this )
+{
+	// Make sure we're running
+	if ( this->ahead )
+	{
+		// Inform thread to stop
+		this->ahead = 0;
+
+		// Broadcast to the frame_queue condition in case it's waiting
+		pthread_mutex_lock( &this->frame_queue_mutex );
+		pthread_cond_broadcast( &this->frame_queue_cond );
+		pthread_mutex_unlock( &this->frame_queue_mutex );
+
+		// Broadcast to the done_queue condition in case it's waiting
+		pthread_mutex_lock( &this->done_queue_mutex );
+		pthread_cond_broadcast( &this->done_queue_cond );
+		pthread_mutex_unlock( &this->done_queue_mutex );
+
+		// Broadcast to the put condition in case it's waiting
+		pthread_mutex_lock( &this->put_mutex );
+		pthread_cond_broadcast( &this->put_cond );
+		pthread_mutex_unlock( &this->put_mutex );
+
+		// Join the threads
+		pthread_t thread;
+		while ( ( thread = (pthread_t) mlt_deque_pop_front( this->worker_threads ) ) )
+			pthread_join( thread, NULL );
+
+		// Destroy the mutexes
+		pthread_mutex_destroy( &this->frame_queue_mutex );
+		pthread_mutex_destroy( &this->done_queue_mutex );
+
+		// Destroy the conditions
+		pthread_cond_destroy( &this->frame_queue_cond );
+		pthread_cond_destroy( &this->done_queue_cond );
+
+		// Wipe the queues
+		while ( mlt_deque_count( this->frame_queue ) )
+			mlt_frame_close( mlt_deque_pop_back( this->frame_queue ) );
+		while ( mlt_deque_count( this->done_queue ) )
+			mlt_frame_close( mlt_deque_pop_back( this->done_queue ) );
+
+		// Close the queues
+		mlt_deque_close( this->frame_queue );
+		mlt_deque_close( this->done_queue );
+		mlt_deque_close( this->worker_threads );
+	}
+}
+
 /** Flush the read/render thread's buffer.
  *
  * \public \memberof mlt_consumer_s
@@ -875,6 +1140,15 @@ void mlt_consumer_purge( mlt_consumer this )
 			mlt_frame_close( mlt_deque_pop_back( this->frame_queue ) );
 		pthread_cond_broadcast( &this->frame_queue_cond );
 		pthread_mutex_unlock( &this->frame_queue_mutex );
+
+		if ( this->done_queue )
+		{
+			pthread_mutex_lock( &this->done_queue_mutex );
+			while ( mlt_deque_count( this->done_queue ) )
+				mlt_frame_close( mlt_deque_pop_back( this->done_queue ) );
+			pthread_cond_broadcast( &this->done_queue_cond );
+			pthread_mutex_unlock( &this->done_queue_mutex );
+		}
 	}
 }
 
@@ -898,7 +1172,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
 
 	// Check if the user has requested real time or not
-	if ( this->real_time )
+	if ( this->real_time == 1 || this->real_time == -1 )
 	{
 		int size = 1;
 
@@ -919,6 +1193,37 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 		frame = mlt_deque_pop_front( this->frame_queue );
 		pthread_cond_broadcast( &this->frame_queue_cond );
 		pthread_mutex_unlock( &this->frame_queue_mutex );
+	}
+	else if ( this->real_time > 1 || this->real_time < -1 )
+	{
+		// Use multiple worker threads and a work queue
+		int size = abs( this->real_time );
+
+		// Start worker threads if not already
+		if ( ! this->ahead )
+		{
+			int buffer = mlt_properties_get_int( properties, "buffer" );
+			int prefill = mlt_properties_get_int( properties, "prefill" );
+			consumer_work_start( this );
+			if ( buffer > 1 )
+				size = prefill > 0 && prefill < buffer ? prefill : buffer;
+		}
+
+		// Get frame from the done queue
+		mlt_log_verbose( MLT_CONSUMER_SERVICE(this), "size %d done count %d\n", size, mlt_deque_count( this->done_queue ) );
+		if ( this->real_time > 0 && size == this->real_time && mlt_deque_count( this->done_queue ) <= size )
+		{
+			frame = mlt_consumer_get_frame( this );
+		}
+		else
+		{
+			pthread_mutex_lock( &this->done_queue_mutex );
+			while( this->ahead && mlt_deque_count( this->done_queue ) <= size )
+				pthread_cond_wait( &this->done_queue_cond, &this->done_queue_mutex );
+			frame = mlt_deque_pop_front( this->done_queue );
+			pthread_mutex_unlock( &this->done_queue_mutex );
+			pthread_cond_signal( &this->done_queue_cond );
+		}
 	}
 	else
 	{
@@ -972,8 +1277,10 @@ int mlt_consumer_stop( mlt_consumer this )
 
 	// Check if the user has requested real time or not and stop if necessary
 	mlt_log( MLT_CONSUMER_SERVICE( this ), MLT_LOG_DEBUG, "stopping read_ahead\n" );
-	if ( mlt_properties_get_int( properties, "real_time" ) )
+	if ( abs( this->real_time ) == 1 )
 		consumer_read_ahead_stop( this );
+	else if ( abs( this->real_time ) > 1 )
+		consumer_work_stop( this );
 
 	// Kill the test card
 	mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );

@@ -113,6 +113,11 @@ struct mlt_consumer_s
 	int put_active;
 	mlt_event event_listener;
 	mlt_position position;
+
+	mlt_deque worker_threads;
+	mlt_deque done_queue;
+	pthread_mutex_t done_queue_mutex;
+	pthread_cond_t done_queue_cond;
 };
 
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )
