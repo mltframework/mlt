@@ -174,11 +174,12 @@ int consumer_start( mlt_consumer parent )
 
 	if ( !this->running )
 	{
-		int video_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "video_off" );
-		int preview_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "preview_off" );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
+		int video_off = mlt_properties_get_int( properties, "video_off" );
+		int preview_off = mlt_properties_get_int( properties, "preview_off" );
 		int display_off = video_off | preview_off;
-		int audio_off = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" );
-		int sdl_started = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" );
+		int audio_off = mlt_properties_get_int( properties, "audio_off" );
+		int sdl_started = mlt_properties_get_int( properties, "sdl_started" );
 
 		consumer_stop( parent );
 
@@ -733,7 +734,8 @@ static void *video_thread( void *arg )
 		}
 		else
 		{
-			mlt_log_debug( MLT_CONSUMER_SERVICE(&this->parent), "dropped video frame\n" );
+			static int dropped = 0;
+			mlt_log_info( MLT_CONSUMER_SERVICE(&this->parent), "dropped video frame %d\n", ++dropped );
 		}
 
 		// This frame can now be closed
