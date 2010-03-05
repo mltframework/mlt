@@ -273,7 +273,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( frame_properties, "normalised_width", mlt_properties_get_int( properties, "normalised_width" ) );
 	mlt_properties_set_int( frame_properties, "normalised_height", mlt_properties_get_int( properties, "normalised_height" ) );
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
-	mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
+	mlt_properties_set_data( properties, "image", *buffer, 0, NULL, NULL );
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
 	mlt_properties_set_int( properties, "format", *format );
