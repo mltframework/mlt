@@ -63,6 +63,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	/* Allocate the image */
 	int size = *width * ( *height ) * 4;
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
+
 	/* Allocate the image */
 	*format = mlt_image_rgb24a;
 	mlt_position time = mlt_producer_position( &this->parent ) + mlt_producer_get_in( &this->parent );
@@ -93,6 +95,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		mlt_log_debug( MLT_PRODUCER_SERVICE( &this->parent ), "width:%d height:%d %s\n", *width, *height, mlt_image_format_name( *format ) );
 	}
+
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( &this->parent ) );
 
 	return 0;
 }

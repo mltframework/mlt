@@ -220,6 +220,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE( this ) );
+
 	// Get the ogg vorbis file
 	OggVorbis_File *ov = mlt_properties_get_data( properties, "ogg_vorbis_file", NULL );
 
@@ -341,6 +343,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
 	mlt_properties_set_position( properties, "audio_expected", position + 1 );
+
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( this ) );
 
 	return 0;
 }

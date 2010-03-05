@@ -201,6 +201,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	int samplemax = (1 << (bytes_per_samp * 8 - 1)) - 1;
 	int samplemin = -samplemax - 1;
 
+	mlt_service_lock( MLT_FILTER_SERVICE( this ) );
+
 	if ( normalise )
 	{
 		int window = mlt_properties_get_int( filter_props, "window" );
@@ -251,6 +253,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	// Save the current gain for the next iteration
 	mlt_properties_set_double( filter_props, "_previous_gain", gain );
 	mlt_properties_set_position( filter_props, "_last_position", current_position );
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( this ) );
 
 	// Ramp from the previous gain to the current
 	gain = previous_gain;

@@ -44,6 +44,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 )
 	{
+		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 		mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 		mlt_transition transition = mlt_properties_get_data( properties, "transition", NULL );
 		mlt_frame a_frame = NULL;
@@ -106,6 +107,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_data( frame_properties, "image", *image, *width * *height * 4, NULL, NULL );
 			mlt_properties_set_data( frame_properties, "alpha", mlt_frame_get_alpha_mask( a_frame ), *width * *height, NULL, NULL );
 		}
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
 
 	return error;

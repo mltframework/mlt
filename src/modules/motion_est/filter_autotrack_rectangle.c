@@ -128,6 +128,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( error != 0 )
 		mlt_properties_debug( frame_properties, "error after mlt_frame_get_image() in autotrack_rectangle", stderr );
 
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	// Get the geometry object
 	mlt_geometry geometry = mlt_properties_get_data(filter_properties, "filter_geometry", NULL);
 
@@ -171,7 +173,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_geometry_insert(geometry, &boundry);
 	}
 
-       	if( mlt_properties_get_int( filter_properties, "debug" ) == 1 )
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+
+	if( mlt_properties_get_int( filter_properties, "debug" ) == 1 )
 	{
 		init_arrows( format, *width, *height );
 		draw_rectangle_outline(*image, boundry.x, boundry.y, boundry.w, boundry.h, 100);
@@ -213,6 +217,8 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 	// Get the frame position
 	mlt_position position = mlt_frame_get_position( frame );
 	
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	// Get the geometry object
 	mlt_geometry geometry = mlt_properties_get_data(filter_properties, "filter_geometry", NULL);
 	if (geometry == NULL) {
@@ -231,6 +237,8 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 		mlt_properties_set_data( filter_properties, "filter_geometry", geom, 0, (mlt_destructor)mlt_geometry_close, (mlt_serialiser)mlt_geometry_serialise );
 		geometry = mlt_properties_get_data(filter_properties, "filter_geometry", NULL);
 	}
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	// Get the current geometry item
 	mlt_geometry_item geometry_item = mlt_pool_alloc( sizeof( struct mlt_geometry_item_s ) );

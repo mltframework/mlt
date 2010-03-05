@@ -63,6 +63,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Producers may start with blank footage, by default we will skip, oh, 5 frames unless overridden
 	int skip = mlt_properties_get_int( properties, "skip");
 
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	// The result
 	mlt_geometry_item bounds = mlt_properties_get_data( properties, "bounds", NULL );
 
@@ -190,6 +192,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	/* inject into frame */
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES(this), "bounds", bounds, sizeof( struct mlt_geometry_item_s ), NULL, NULL );
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	return error;
 }

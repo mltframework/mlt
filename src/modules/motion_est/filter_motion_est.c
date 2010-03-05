@@ -782,9 +782,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the filter
 	mlt_filter filter = mlt_frame_pop_service( frame );
 
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	// Get the motion_est context object
 	struct motion_est_context_s *c = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "context", NULL);
-
 
 	// Get the new image and frame number
 	*format = mlt_image_yuv422;
@@ -1030,7 +1031,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Remember which frame this is
 	c->former_frame_position = c->current_frame_position;
 
-
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_width", c->mb_w );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.macroblock_height", c->mb_h );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "motion_est.left_mb", c->left_mb );
@@ -1043,6 +1043,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	fprintf(stderr, " in frame %d:%d usec\n", c->current_frame_position, difference);
 	#endif
 
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	return error;
 }

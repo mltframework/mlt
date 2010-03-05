@@ -412,7 +412,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// Calculate the region now
+	mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
 	composite_calculate( this, &result, normalised_width, normalised_height, ( float )position );
+	mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 
 	// Fetch the b frame image
 	result.w = ( result.w * *width / normalised_width );

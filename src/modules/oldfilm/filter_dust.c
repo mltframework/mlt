@@ -86,6 +86,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		return 0;
 	srand(position*10000);
 
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	int im=rand()%maxcount;
 	int piccount=mlt_properties_count(direntries);
 	while (im-- && piccount){
@@ -155,6 +157,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			overlay_image ( *image , *width, *height , luma_image , dx , mlt_properties_get_int ( properties , cachedy ) , alpha , x1 , y1 , updown , mirror );
 		}
 	}
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+
 	if (piccount>0 )
 		return 0;
 	if ( error == 0 && *image )

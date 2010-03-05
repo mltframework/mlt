@@ -195,6 +195,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	// Get the filter properties
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	// Get the properties
 	st_sample_t *input_buffer;// = mlt_properties_get_data( filter_properties, "input_buffer", NULL );
 	st_sample_t *output_buffer = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
@@ -363,6 +365,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			memcpy( input_buffer, output_buffer, *samples * sizeof(st_sample_t) );
 		}
 	}
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	return 0;
 }
