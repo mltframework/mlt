@@ -466,6 +466,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
+
 	// Refresh the image
 	pthread_mutex_lock( &pango_mutex );
 	refresh_image( frame, *width, *height );
@@ -492,6 +494,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	pthread_mutex_unlock( &pango_mutex );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( &this->parent ) );
 
 	return error;
 }

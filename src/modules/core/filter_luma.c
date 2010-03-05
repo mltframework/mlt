@@ -37,6 +37,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int error = 0;
 	mlt_filter filter = mlt_frame_pop_service( this );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	mlt_transition luma = mlt_properties_get_data( properties, "luma", NULL );
 	mlt_frame b_frame = mlt_properties_get_data( properties, "frame", NULL );
 	mlt_properties b_frame_props = b_frame ? MLT_FRAME_PROPERTIES( b_frame ) : NULL;
@@ -110,6 +113,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_int( b_props, "format", *format );
 		}
 	}
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	return error;
 }

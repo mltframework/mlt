@@ -152,6 +152,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	// Get the properties of the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 
+	mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
+
 	// Get the composite from the transition
 	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
 
@@ -385,6 +387,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		// Get the image
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 	}
+
+	mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 
 	return error;
 }

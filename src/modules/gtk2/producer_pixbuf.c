@@ -461,6 +461,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
+
 	// Refresh the image
 	refresh_image( this, frame, *width, *height );
 
@@ -492,6 +494,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Release references and locks
 	pthread_mutex_unlock( &this->mutex );
 	mlt_cache_item_close( this->image_cache );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( &this->parent ) );
 
 	return error;
 }

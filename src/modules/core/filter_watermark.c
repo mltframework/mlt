@@ -42,6 +42,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the properties of the filter
 	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
+	mlt_service_lock( MLT_FILTER_SERVICE( this ) );
+
 	// Get the producer from the filter
 	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 
@@ -114,6 +116,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Now pass all producer. properties on the filter down
 		mlt_properties_pass( producer_properties, properties, "producer." );
 	}
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( this ) );
 
 	// Only continue if we have both producer and composite
 	if ( composite != NULL && producer != NULL )

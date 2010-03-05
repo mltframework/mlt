@@ -99,6 +99,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain the producer for this frame
 	mlt_producer producer = mlt_properties_get_data( properties, "producer_colour", NULL );
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
@@ -154,6 +156,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_set_int( producer_props, "_format", *format );
 		mlt_properties_set( producer_props, "_resource", now );
 
+		mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+
 		switch ( *format )
 		{
 		case mlt_image_yuv422:
@@ -203,6 +207,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		default:
 			break;
 		}
+	}
+	else
+	{
+		mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 	}
 
 	// Create the alpha channel

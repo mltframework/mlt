@@ -368,6 +368,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// This compositer is yuv422 only
 	*format = mlt_image_yuv422;
 
+	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
+
 	// The cached luma map information
 	int luma_width = mlt_properties_get_int( properties, "width" );
 	int luma_height = mlt_properties_get_int( properties, "height" );
@@ -479,6 +481,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			}
 		}
 	}
+
+	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
 	// Arbitrary composite defaults
 	float mix = position_calculate( transition, a_frame );

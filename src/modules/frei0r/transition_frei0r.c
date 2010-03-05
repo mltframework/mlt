@@ -59,7 +59,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	float pos=( float )( position - in ) / ( float )( out - in + 1 );
 	
+	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 	process_frei0r_item( transition_type, pos, properties, !invert ? a_frame : b_frame, images, width, height );
+	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 	
 	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
         *height = mlt_properties_get_int( !invert ? a_props : b_props, "height" );

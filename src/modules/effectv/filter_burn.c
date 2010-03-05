@@ -103,8 +103,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		unsigned char v, w;
 		RGB32 a, b;
 
-		diff = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), 
-						"_diff", NULL );
+		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
+		diff = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "_diff", NULL );
 		if (diff == NULL)
 		{
 			diff = mlt_pool_alloc(video_area*sizeof(unsigned char));
@@ -112,8 +113,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 					diff, video_area*sizeof(unsigned char), mlt_pool_release, NULL );
 		}
 
-		buffer = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), 
-						"_buffer", NULL );
+		buffer = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "_buffer", NULL );
 		if (buffer == NULL)
 		{
 			buffer = mlt_pool_alloc(video_area*sizeof(unsigned char));
@@ -121,7 +121,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "_buffer", 
 					buffer, video_area*sizeof(unsigned char), mlt_pool_release, NULL );
 		}
-
 
 		if (burn_foreground == 1) {
 			/* to burn the foreground, we need a background */
@@ -135,6 +134,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 					background, video_area*sizeof(RGB32), mlt_pool_release, NULL );
 			}
 		}
+
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 		if (burn_foreground == 1) {
 			image_bgsubtract_y(diff, background, src, video_area, y_threshold);

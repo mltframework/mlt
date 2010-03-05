@@ -947,6 +947,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 {
 	// Get the producer
 	producer_avformat this = mlt_frame_pop_service( frame );
+	mlt_service_lock( MLT_PRODUCER_SERVICE(this->parent) );
 	mlt_producer producer = this->parent;
 
 	// Get the properties from the frame
@@ -1134,7 +1135,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		}
 	}
 
-	// Duplicate the last image if necessary (see comment on rawvideo below)
+	// Duplicate the last image if necessary
 	if ( this->av_frame && this->av_frame->linesize[0] && this->got_picture && this->seekable
 		 && ( paused
 			  || this->current_position == req_position
@@ -1401,6 +1402,8 @@ exit_get_image:
 	// Set immutable properties of the selected track's (or overridden) source attributes.
 	mlt_properties_set_int( properties, "meta.media.top_field_first", this->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
+
+	mlt_service_unlock( MLT_PRODUCER_SERVICE(this->parent) );
 
 	return !this->got_picture;
 }
@@ -1720,8 +1723,10 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 				timestamp = 0;
 
 			// Set to the real timecode
+			avformat_lock();
 			if ( av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD ) != 0 )
 				paused = 1;
+			avformat_unlock();
 
 			// Clear the usage in the audio buffer
 			int i = MAX_AUDIO_STREAMS + 1;
@@ -1794,7 +1799,9 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket pkt, int 
 				// Copy to audio buffer while resampling
 				int16_t *source = decode_buffer;
 				int16_t *dest = &audio_buffer[ audio_used * channels ];
+				avformat_lock();
 				audio_used += audio_resample( resample, dest, source, convert_samples );
+				avformat_unlock();
 			}
 			else
 			{
@@ -1847,6 +1854,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Get the producer
 	producer_avformat this = mlt_frame_pop_audio( frame );
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE(this->parent) );
+	
 	// Obtain the frame number of this frame
 	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), "avformat_position" );
 
@@ -1944,7 +1953,9 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			}
 
 			// Read a packet
+			avformat_lock();
 			ret = av_read_frame( context, &pkt );
+			avformat_unlock();
 
 			// We only deal with audio from the selected audio index
 			if ( ret >= 0 && pkt.data && pkt.size > 0 && ( pkt.stream_index == this->audio_index ||
@@ -2034,6 +2045,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Regardless of speed (other than paused), we expect to get the next frame
 	if ( !paused )
 		this->audio_expected = position + 1;
+
+	mlt_service_unlock( MLT_PRODUCER_SERVICE(this->parent) );
 
 	return 0;
 }

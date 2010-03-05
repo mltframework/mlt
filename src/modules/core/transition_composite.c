@@ -1223,7 +1223,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			int field;
 			
 			double luma_softness = mlt_properties_get_double( properties, "softness" );
+			mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
 			uint16_t *luma_bitmap = get_luma( this, properties, width_b, height_b );
+			mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 			char *operator = mlt_properties_get( properties, "operator" );
 
 			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha_mask( b_frame ) : alpha_b;

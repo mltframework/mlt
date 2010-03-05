@@ -42,6 +42,8 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Get the filter properties
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	// Get the resample information
 	int output_rate = mlt_properties_get_int( filter_properties, "frequency" );
 	int16_t *sample_buffer = mlt_properties_get_data( filter_properties, "buffer", NULL );
@@ -128,6 +130,8 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			mlt_properties_set_int( filter_properties, "last_frequency", *frequency );
 		}
 
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+
 		// Resample the audio
 		used = audio_resample( resample, sample_buffer, *buffer, *samples );
 		int size = used * *channels * sizeof( int16_t );
@@ -145,6 +149,10 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		// Update output variables
 		*samples = used;
 		*frequency = output_rate;
+	}
+	else
+	{
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
 
 	return 0;

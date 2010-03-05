@@ -41,6 +41,8 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	int index = ( int )mlt_frame_pop_service( this );
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+
 	// Frame properties objects
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
 	mlt_frame first_frame = mlt_properties_get_data( properties, "first_frame", NULL );
@@ -179,6 +181,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		mlt_properties_set_int( properties, "_output_format", *format );
 	
 	}
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Create a copy
 	uint8_t *image_copy = mlt_pool_alloc( size );

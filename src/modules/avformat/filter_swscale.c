@@ -47,7 +47,7 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
-			value = PIX_FMT_RGB32;
+			value = PIX_FMT_RGBA;
 			break;
 		case mlt_image_yuv422:
 			value = PIX_FMT_YUYV422;

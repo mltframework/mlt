@@ -300,11 +300,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+
 	// Track specific
 	process_queue( mlt_properties_get_data( frame_properties, "data_queue", NULL ), frame, filter );
 
 	// Global
 	process_queue( mlt_properties_get_data( frame_properties, "global_queue", NULL ), frame, filter );
+
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	// Need to get the image
 	return mlt_frame_get_image( frame, image, format, width, height, 1 );
