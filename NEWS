@@ -4,6 +4,22 @@ MLT Release Notes
 Version 0.5.0
 
 The recommended version of FFmpeg for use with this release is SVN r21322.
+This is a minor maintenance release, but it is interesting because it now
+enables usage of libswscale as the default choice for image scaling,
+image format conversion, and color space conversion. That gives better
+quality and performance. In addition, there are some improvements in the
+sdl_preview consumer to make it suitable for use in OpenShot 1.1. Other
+things:
+
+* Fixed mlt++/MltFilteredProducer
+* Fixed playing to the end in Kdenlive (mantis bug 1207)
+* Fixed crash load uncompressed video
+* Fixed compiling yadif for non-sse2 builds
+
+
+Version 0.5.0
+
+The recommended version of FFmpeg for use with this release is SVN r21322.
 This is an enhancement release, confined mainly to the modules rather than
 the framework. In particular, this adds support for VDPAU, YADIF, and HD-SDI
 technologies!
