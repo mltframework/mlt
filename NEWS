@@ -1,7 +1,7 @@
 MLT Release Notes
 -----------------
 
-Version 0.5.0
+Version 0.5.2
 
 The recommended version of FFmpeg for use with this release is SVN r21322.
 This is a minor maintenance release, but it is interesting because it now
