@@ -141,9 +141,9 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	info.blanking = blanking;
 
 	// set pack methode for SDI word conversion
-	//pack = pack8;
+	pack = pack8;
 	//pack = pack10;
-	pack = pack_v210;
+	//pack = pack_v210;
 
 	// check format
 	if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30 && myProfile->frame_rate_den == 1 && myProfile->progressive
@@ -201,16 +201,16 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 			&& myProfile->progressive == 0) {
 		info.fmt = &FMT_480i5994;
 	} else {
-		printf("Consumer gets unknown format: %s", myProfile->description);
+		printf("Consumer got unknown format: %s", myProfile->description);
 		info.fmt = &FMT_576i50;
 	}
 
 	printf("Consumer use format: %s\nProfile: %i %i %i %i %i\n", myProfile->description, myProfile->width, myProfile->height, myProfile->frame_rate_num,
 			myProfile->frame_rate_den, myProfile->progressive);
 
-	// Check if the format support own blanking (note: model 193 support currently only active video at the video device file)
+	// Check if the format supports own blanking (note: model 193 supports currently only active video at the video device file)
 	if (info.blanking && info.fmt != &FMT_576i50) {
-		printf("SDI consumer doesn't support blanking(HANC) for this configurred SD board and SDI format. Try arguemnt: blanking=false\n");
+		printf("SDI consumer doesn't support blanking(HANC) for the configured SD board and SDI format. Try argument: blanking=false\n");
 		return EXIT_FAILURE;
 	}
 
@@ -223,12 +223,12 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 		printf("SDI consumer use video device file: %s\n", device_file_video);
 	}
 
-	// Check if seperat device file for audio must use
+	// Check if we have to use a separate device file for audio
 	if (device_file_audio != NULL) {
 		// open file handler for audio output
 		if ((fh_sdi_audio = open(device_file_audio, O_WRONLY | O_CREAT, 0777)) == -1) {
 			perror(NULL);
-			printf("\ncould not open audio output destination: %s\n", device_file_audio);
+			printf("\nCould not open audio output destination: %s\n", device_file_audio);
 			return EXIT_FAILURE;
 		}
 		printf("SDI consumer use audio device file: %s\n", device_file_audio);
@@ -248,7 +248,7 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 			AESChannelStatusBitArray[i] = 0;
 
 		/**
-		 * Professionel Format - Channel Status Bits
+		 * Professional Format - Channel Status Bits
 		 **/
 		////// Byte 0 //////
 		AESChannelStatusBitArray[0] = 1; // professional format
@@ -261,7 +261,7 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 
 		AESChannelStatusBitArray[5] = 0; // locked
 
-		AESChannelStatusBitArray[6] = 0; // sample frequncy Fs: [01]48kHz, [10]44kHz, [11]32kHz
+		AESChannelStatusBitArray[6] = 0; // sample frequency Fs: [01]48kHz, [10]44kHz, [11]32kHz
 		AESChannelStatusBitArray[7] = 1; // ^
 		////// Byte 1 //////
 		AESChannelStatusBitArray[8] = 0; // channel mode: [0000] not indicated, [0001]2channels, [0010]1channel mono, ...
@@ -339,7 +339,6 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 		}
 	}
 
-	// hack/overwrite because we use default the pack_v210() not as befor the pack10()
 	//(*10/8 because we store (TOTAL_SAMPLES*TOTAL_LINES) words with 10 bit in this 8 bit array) )
 	if (info.fmt == &FMT_576i50 && info.blanking) {
 		sdi_frame_size = info.fmt->samples_per_line * 10 / 8 * info.fmt->lines_per_frame;
@@ -777,35 +776,39 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 	// Write the complete frame to output
 	// The "while" is necessary because the sdi device file does not take the complete frame at once
 	written_bytes = 0;
-	while (bytes < sdi_frame_size) {
+	while (bytes < sdi_frame_size)
+	{
 
 		if ((written_bytes = write(fh_sdi_video, data + bytes, sdi_frame_size - bytes)) < 0) {
 			fprintf(stderr, "\nunable to write SDI video.\n");
 			return -1;
 		}
 		bytes += written_bytes;
-
-		// Check for events of the SDI board
-		unsigned int val;
-		if (ioctl(fh_sdi_video, SDI_IOC_TXGETEVENTS, &val) < 0) {
-			// Maybe this is not an SDI device...
-			fprintf(stderr, "SDI VIDEO output:");
-			perror("unable to get the transmitter event flags");
-		} else if (val) {
-			if (val & SDI_EVENT_TX_BUFFER) {
-				printf("SDI VIDEO driver transmit buffer queue underrun "
-					"detected.\n");
-			}
-			if (val & SDI_EVENT_TX_FIFO) {
-				printf("SDI VIDEO onboard transmit FIFO underrun detected.\n");
-				// TODO react
-			}
-			if (val & SDI_EVENT_TX_DATA) {
-				printf("SDI VIDEO transmit data change detected.\n");
-			}
-		}
-		fflush(stdout);
 	}
+
+	// Check for events of the SDI board
+	unsigned int val;
+	if (ioctl(fh_sdi_video, SDI_IOC_TXGETEVENTS, &val) < 0) {
+		// Maybe this is not an SDI device...
+		//fprintf(stderr, "SDI VIDEO output:");
+		//perror("unable to get the transmitter event flags");
+	} else if (val) {
+		if (val & SDI_EVENT_TX_BUFFER) {
+			printf("SDI VIDEO driver transmit buffer queue underrun "
+				"detected.\n");
+			fflush(stdout);
+		}
+		if (val & SDI_EVENT_TX_FIFO) {
+			printf("SDI VIDEO onboard transmit FIFO underrun detected.\n");
+			fflush(stdout);
+		}
+		if (val & SDI_EVENT_TX_DATA) {
+			printf("SDI VIDEO transmit data change detected.\n");
+			fflush(stdout);
+		}
+	}
+
+
 
 	// if available write audio data
 	if (fh_sdi_audio) {
@@ -900,25 +903,25 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 
 			sample_number++;
 
-//			// Check for events of the SDI board (only firmware 0.9)
-//			unsigned int val;
-//			if (ioctl(fh_sdi_audio, SDI_IOC_TXGETEVENTS, &val) < 0) {
-//				//Maybe this is not an SDI device...
-//				fprintf(stderr, "SDI AUDIO output:");
-//				perror("unable to get the transmitter event flags");
-//			} else if (val) {
-//				if (val & SDI_EVENT_TX_BUFFER) {
-//					printf("SDI AUDIO driver transmit buffer queue underrun "
-//						"detected.\n");
-//				}
-//				if (val & SDI_EVENT_TX_FIFO) {
-//					printf("SDI AUDIO onboard transmit FIFO underrun detected.\n");
-//					//TODO react
-//				}
-//				if (val & SDI_EVENT_TX_DATA) {
-//					printf("SDI AUDIO transmit data change detected.\n");
-//				}
-//			}
+			// Check for events of the SDI audio device
+			unsigned int val;
+			if (ioctl(fh_sdi_audio, SDIAUDIO_IOC_TXGETEVENTS, &val) < 0) {
+				//Maybe this is not an SDI device...
+				//				fprintf(stderr, "SDI AUDIO output:");
+				//				perror("unable to get the transmitter event flags");
+			} else if (val) {
+				if (val & SDIAUDIO_EVENT_TX_BUFFER) {
+					printf("SDI AUDIO driver transmit buffer queue underrun "
+							"detected.\n");
+				}
+				if (val & SDIAUDIO_EVENT_TX_FIFO) {
+					printf("SDI AUDIO onboard transmit FIFO underrun detected.\n");
+					//TODO react
+				}
+				if (val & SDIAUDIO_EVENT_TX_DATA) {
+					printf("SDI AUDIO transmit data change detected.\n");
+				}
+			}
 		}
 	}
 
@@ -1039,6 +1042,14 @@ static inline int create_SD_SDI_Line(uint16_t *buf, const struct line_info *info
 	*p++ = info->xyz->sav;
 	//#########################################################################################
 
+
+	// Because we skip the first line of video, it can happen that we read too far in the buffer
+	if (active_video_line >= info->fmt->active_lines_per_frame) {
+		active_video_line = info->fmt->active_lines_per_frame - 1; // in SD PAL was set 575
+	}
+	//Index of the start of the current line in the video_buffer
+	int start_of_current_line  = active_video_line * info->fmt->active_samples_per_line;
+
 	// If VBlank then fill the line with 0x200 and 0x040 (total black)
 	switch (active) {
 	default:
@@ -1055,30 +1066,25 @@ static inline int create_SD_SDI_Line(uint16_t *buf, const struct line_info *info
 
 			// shift "<< 2" because 8 bit data in 10 bit word
 
-			// Because we skip the first line of video, it can happen that we read too far in the buffer
-			if (active_video_line >= info->fmt->active_lines_per_frame) {
-				active_video_line = info->fmt->active_lines_per_frame - 1; // in SD PAL was set 575
-			}
-
-			*p = video_buffer[(active_video_line * 1440) + ((p - 288) - buf) + 1] << 2; // Cb
+			*p = video_buffer[start_of_current_line + ((p - 288) - buf) + 1] << 2; // Cb
 			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040; // check values
 			if (*(p - 1) > 0x3c0)
 				*(p - 1) = 0x3c0;
-			*p = video_buffer[(active_video_line * 1440) + ((p - 288) - buf) - 1] << 2; // Y1
+			*p = video_buffer[start_of_current_line + ((p - 288) - buf) - 1] << 2; // Y1
 			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040;
 			if (*(p - 1) > 0x3ac)
 				*(p - 1) = 0x3ac;
-			*p = video_buffer[(active_video_line * 1440) + ((p - 288) - buf) + 1] << 2; // Cr
+			*p = video_buffer[start_of_current_line + ((p - 288) - buf) + 1] << 2; // Cr
 			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040;
 			if (*(p - 1) > 0x3c0)
 				*(p - 1) = 0x3c0;
-			*p = video_buffer[(active_video_line * 1440) + ((p - 288) - buf) - 1] << 2; // Y2
+			*p = video_buffer[start_of_current_line + ((p - 288) - buf) - 1] << 2; // Y2
 			p++;
 			if (*(p - 1) < 0x040)
 				*(p - 1) = 0x040;
@@ -1104,6 +1110,14 @@ static inline int create_SD_SDI_Line(uint16_t *buf, const struct line_info *info
 static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info, uint16_t active_video_line, unsigned int active, uint8_t *video_buffer) {
 	uint16_t *p = buf, *endp, ln;
 	uint16_t samples = info->blanking ? info->fmt->samples_per_line : info->fmt->active_samples_per_line;
+
+
+	if (active_video_line >= info->fmt->active_lines_per_frame) {
+		active_video_line = info->fmt->active_lines_per_frame - 1;
+	}
+
+	int start_of_current_line = active_video_line * info->fmt->active_samples_per_line;
+
 
 	if (info->blanking) {
 
@@ -1199,42 +1213,30 @@ static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info
 
 		while (p < (buf + samples)) {
 
-			if (active_video_line >= info->fmt->active_lines_per_frame) {
-				active_video_line = info->fmt->active_lines_per_frame - 1;
-			}
 
-			//			sample = (active_video_line * info->fmt->active_samples_per_line) + (p - buf) + 1;
-			//			*p++ = sample > 1440 ? 735 : (video_buffer[sample] << 2);
-			//			sample = (active_video_line * info->fmt->active_samples_per_line) + (p - buf) - 1;
-			//			*p++ = sample > 1440 ? 335 : (video_buffer[sample] << 2);
-			//			sample = (active_video_line * info->fmt->active_samples_per_line) + (p - buf) + 1;
-			//			*p++ = sample > 1440 ? 793 : (video_buffer[sample] << 2);
-			//			sample = (active_video_line * info->fmt->active_samples_per_line) + (p - buf) - 1;
-			//			*p++ = sample > 1440 ? 335 : (video_buffer[sample] << 2);
-
-			*p = video_buffer[(active_video_line * info->fmt->active_samples_per_line) + (p - buf) + 1] << 2; // Cb
+			*p = video_buffer[start_of_current_line + (p - buf) + 1] << 2; // Cb
 			p++;
-			// check values, but need manny resources
+			//check values, this needs a lot of resources
 			//			if (*(p - 1) < 0x040)
 			//				*(p - 1) = 0x040;
 			//			if (*(p - 1) > 0x3c0)
 			//				*(p - 1) = 0x3c0;
 			//
-			*p = video_buffer[(active_video_line * info->fmt->active_samples_per_line) + (p - buf) - 1] << 2; // Y1
+			*p = video_buffer[start_of_current_line + (p - buf) - 1] << 2; // Y1
 			p++;
 			//			if (*(p - 1) < 0x040)
 			//				*(p - 1) = 0x040;
 			//			if (*(p - 1) > 0x3ac)
 			//				*(p - 1) = 0x3ac;
 			//
-			*p = video_buffer[(active_video_line * info->fmt->active_samples_per_line) + (p - buf) + 1] << 2; // Cr
+			*p = video_buffer[start_of_current_line + (p - buf) + 1] << 2; // Cr
 			p++;
 			//			if (*(p - 1) < 0x040)
 			//				*(p - 1) = 0x040;
 			//			if (*(p - 1) > 0x3c0)
 			//				*(p - 1) = 0x3c0;
 			//
-			*p = video_buffer[(active_video_line * info->fmt->active_samples_per_line) + (p - buf) - 1] << 2; // Y2
+			*p = video_buffer[start_of_current_line + (p - buf) - 1] << 2; // Y2
 			p++;
 			//			if (*(p - 1) < 0x040)
 			//				*(p - 1) = 0x040;

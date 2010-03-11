@@ -48,9 +48,28 @@
 #define SDI_EVENT_TX_DATA_ORDER		2
 #define SDI_EVENT_TX_DATA		(1 << SDI_EVENT_TX_DATA_ORDER)
 
+
+// part of the linsys sdiaudio.h
+
+#define SDIAUDIO_IOC_TXGETCAP			_IOR(SDIAUDIO_IOC_MAGIC, 1, unsigned int)
+#define SDIAUDIO_IOC_TXGETEVENTS		_IOR(SDIAUDIO_IOC_MAGIC, 2, unsigned int)
+#define SDIAUDIO_IOC_TXGETBUFLEVEL		_IOR(SDIAUDIO_IOC_MAGIC, 3, unsigned int)
+#define SDIAUDIO_IOC_TXGETTXD			_IOR(SDIAUDIO_IOC_MAGIC, 4, int)
+
+#define SDIAUDIO_IOC_MAGIC '~' /* This ioctl magic number is currently free. See
+			   * /usr/src/linux/Documentation/ioctl-number.txt */
+/* Transmitter event flag bit locations */
+#define SDIAUDIO_EVENT_TX_BUFFER_ORDER	0
+#define SDIAUDIO_EVENT_TX_BUFFER	(1 << SDIAUDIO_EVENT_TX_BUFFER_ORDER)
+#define SDIAUDIO_EVENT_TX_FIFO_ORDER	1
+#define SDIAUDIO_EVENT_TX_FIFO		(1 << SDIAUDIO_EVENT_TX_FIFO_ORDER)
+#define SDIAUDIO_EVENT_TX_DATA_ORDER	2
+#define SDIAUDIO_EVENT_TX_DATA		(1 << SDIAUDIO_EVENT_TX_DATA_ORDER)
+
 // Filehandler for sdi output
 static int fh_sdi_video;
 static int fh_sdi_audio;
+
 
 #define MAX_SAMPLES_PER_LINE (2*2750)
 #define MAX_LINES_PER_FRAME 1125

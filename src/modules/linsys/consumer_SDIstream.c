@@ -191,7 +191,7 @@ static void consumer_close(mlt_consumer parent);
 static void *consumer_thread(void *);
 
 static void consumer_write_JPEG(char * path, uint8_t **vBuffer, mlt_profile myProfile);
-int convertYCBCRtoRGB(int y1, int cb, int cr, int y2, int * target_rgb);
+int convertYCBCRtoRGB(int y1, int cb, int cr, int y2, uint8_t * target_rgb);
 
 /*****************************************************************************************************
  ****************************************** SDI Master Consumer **************************************
@@ -229,7 +229,7 @@ mlt_consumer consumer_SDIstream_init(mlt_profile profile, mlt_service_type type,
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
 
-		// Set explizit to zero or other value
+		// Set explicit to zero or other value
 		int i, j;
 		for (i = 0; i < MAX_AUDIO_STREAMS; i++) {
 			for (j = 0; j < MAX_AUDIO_SAMPLES; j++) {
@@ -579,69 +579,44 @@ static void consumer_write_JPEG(char * filename, uint8_t **vBuffer, mlt_profile 
  * @param target pointer
  * @return 0 upon success
  **/
-int convertYCBCRtoRGB(int y1, int cb, int cr, int y2, int * target_rgb) {
+int convertYCBCRtoRGB(int y1, int cb, int cr, int y2, uint8_t * target_rgb) {
 
 #ifdef WITH_JPEG
 
-	uint32_t tmp = 0;
+	if(y1 > 235)
+		y1 = 235;
+	if(y1 < 16)
+		y1 = 16;
+
+	if(y2 > 235)
+		y2 = 235;
+	if(y2 < 16)
+		y2 = 16;
+
+	if(cr > 240)
+		cr = 240;
+	if(cr < 16)
+		cr = 16;
+
+	if(cb > 240)
+		cb = 240;
+	if(cb < 16)
+		cb = 16;
+
 	uint8_t r1, g1, b1, r2, g2, b2;
 
 	//pointer to current output buffer position
 	uint8_t * target_pointer = target_rgb;
 
-	// colorconversion for first pixel and output to rgb buffer
-	/* B1 */
-	tmp = 1.164 * (y1 - 16) + 2.017 * (cb - 128);
-	if (tmp > 255)
-		tmp = 255;
-	if (tmp < 0)
-		tmp = 0;
-	b1 = tmp;
+	r1 = y1 + 1.402 * (cr - 128);
+	g1 = y1 - 0.34414 * (cb - 128) - 0.71414 * (cr - 128);
+	b1 = y1 + 1.772 * (cb - 128);
 
-	/* G1 */
-	tmp = 1.164 * (y1 - 16) - 0.813 * (cr - 128) - 0.392 * (cb - 128);
-	if (tmp > 255)
-		tmp = 255;
-	if (tmp < 0)
-		tmp = 0;
-	g1 = tmp;
 
-	/* R1 */
-	tmp = 1.164 * (y1 - 16) + 1.596 * (cr - 128);
-	if (tmp > 255)
-		tmp = 255;
-	if (tmp < 0)
-		tmp = 0;
-	r1 = tmp;
+	r2 = y2 + 1.402 * (cr - 128);
+	g2 = y2 - 0.34414 * (cb - 128) - 0.71414 *(cr - 128);
+	b2 = y2 + 1.772 * (cb - 128);
 
-	// colorconversion for second pixel and output to rgb buffer
-	/* B2 */
-	tmp = 1.164 * (y2 - 16) + 2.017 * (cb - 128);
-	if (tmp > 255)
-		tmp = 255;
-	if (tmp < 0)
-		tmp = 0;
-	b2 = tmp;
-
-	/* G2 */
-	tmp = 1.164 * (y2 - 16) - 0.813 * (cr - 128) - 0.392 * (cb - 128);
-	if (tmp > 255)
-		tmp = 255;
-	if (tmp < 0)
-		tmp = 0;
-	g2 = tmp;
-
-	/* R2 */
-	tmp = 1.164 * (y2 - 16) + 1.596 * (cr - 128);
-	if (tmp > 255)
-		tmp = 255;
-	if (tmp < 0)
-		tmp = 0;
-	r2 = tmp;
-
-	//	r=y+1.5958*v;
-	//  g=y-0.39173*u-0.81290*v;
-	//  b=y+2.017*u;
 
 	*target_pointer++ = r1;
 	*target_pointer++ = g1;
