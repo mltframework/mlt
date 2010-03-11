@@ -1,4 +1,81 @@
+2010-03-10  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.5.2.
+
+  * NEWS: Add v0.5.2 release notes.
+
+  * src/modules/linsys/consumer_SDIstream.c,
+  src/modules/linsys/sdi_generator.c, src/modules/linsys/sdi_generator.h:
+  Improve performance of sdi consumer (patch from BCE).  consumer_SDIstream.c -
+  convertYCBCRtoRGB: different calculation  sdi_generator.h - SDIAUDIO
+  transmitter event definitions  sdi_generator.c - pack changed to pack8
+  instead of packv210 - Transmitter events are checked only once a frame -
+  create_HD_SDI_Line and create_SD_SDI_Line do not calculate the current
+  position in the video_buffer for each sample. Now it is done once a line.
+
+  * src/mlt++/Makefile, src/mlt++/MltFilteredProducer.cpp,
+  src/mlt++/MltFilteredProducer.h: Fix MltFilteredProducer not building.
+
+2010-03-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_preview.c: Fix regressions playing all frames
+  at end (kdenlive-1207).
+
+  * src/modules/core/producer_loader.c: Fix recent regression on failure to
+  load file.
+
+2010-02-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/loader.ini: Make swscale the preferred rescale filter. 
+  Should be safe now since the default compile-time max resolution for
+  libswscale was increased to 5120 for non-ppc systems as of May, 2009. Also,
+  because I added the initialization and range tests.
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c, src/modules/core/producer_loader.c:
+  Add resolution as init arg to libswscale filters.
+
+  * src/framework/mlt_frame.c, src/modules/effectv/filter_burn.c: Fix a couple
+  of compile warnings.
+
+2010-02-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix crash on reading uncompressed
+  (rawvideo).
+
+  * src/modules/core/filter_rescale.c: Report scaling method in debug logging.
+
+  * src/modules/avformat/consumer_avformat.c: Fix offset to alpha component on
+  OS X.
+
+2010-02-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/core/producer_loader.c: Make FFmpeg the primary image converter
+  if available.  Except on OS X.
+
+  * src/modules/avformat/factory.c: Fix avcolor_space alias.
+
+  * src/modules/effectv/filter_burn.c: Fix endianness of the palette in
+  burningtv.
+
+  * src/modules/sdl/consumer_sdl_preview.c: Fix playing all frames at end of
+  project (kdenlive-1207).
+
+2010-02-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xine/Makefile, src/modules/xine/yadif.c: Fix build on
+  --disable-sse(2) or non-sse(2) architectures.
+
+2010-02-22  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/modules/sdl/consumer_sdl_preview.c: Fix video glitches when
+  switching still and normal sdl consumers.
+
 2010-02-15  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update ChangeLog for 0.5.0 release.
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
   0.5.0.
