@@ -71,7 +71,7 @@ int FilteredProducer::detach( Filter &filter )
 			Service *consumer = it->consumer( );
 			if ( consumer->is_valid( ) )
 				consumer->connect_producer( *producer );
-			Producer dummy( "colour" );
+			Producer dummy( *profile(), "colour" );
 			dummy.connect_producer( *it );
 			if ( last->get_service( ) == it->get_service( ) )
 			{

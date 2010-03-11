@@ -25,6 +25,7 @@ OBJS = MltConsumer.o \
 	   MltField.o \
 	   MltFilter.o \
 	   MltFilteredConsumer.o \
+	   MltFilteredProducer.o \
 	   MltFrame.o \
 	   MltGeometry.o \
 	   MltMultitrack.o \

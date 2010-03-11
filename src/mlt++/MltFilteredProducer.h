@@ -39,7 +39,7 @@ namespace Mlt
 		private:
 			Service *last;
 		public:
-			FilteredProducer( Profile* profile, char *id, char *arg = NULL );
+			FilteredProducer( Profile& profile, char *id, char *arg = NULL );
 			virtual ~FilteredProducer( );
 			int attach( Filter &filter );
 			int detach( Filter &filter );
