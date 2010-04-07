@@ -55,11 +55,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_properties_set_data( properties, "image", new_image, size, mlt_pool_release, NULL );
 	memcpy( new_image, *image, size );
 	mlt_properties_set( properties, "progressive", mlt_properties_get( MLT_FRAME_PROPERTIES(nested_frame), "progressive" ) );
-	mlt_frame_close( nested_frame );
 	*image = new_image;
-
-// 	mlt_properties_debug( properties, "frame", stderr );
-// 	mlt_properties_debug( mlt_frame_properties( nested_frame ), "nested_frame", stderr );
 
 	return result;
 }
@@ -86,7 +82,7 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "audio", new_buffer, size, mlt_pool_release, NULL );
 	memcpy( new_buffer, *buffer, size );
 	*buffer = new_buffer;
-	mlt_frame_close( nested_frame );
+
 	return result;
 }
 
@@ -169,12 +165,11 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 		
-		// Put additional references on the frame so both get_image and get_audio
-		// methods can close it.
-		mlt_properties_inc_ref( MLT_FRAME_PROPERTIES( nested_frame ) );
+		// Store the nested frame on the produced frame for destruction
+		mlt_properties frame_props = MLT_FRAME_PROPERTIES( *frame );
+		mlt_properties_set_data( frame_props, "_producer_consumer.frame", nested_frame, 0, (mlt_destructor) mlt_frame_close, NULL );
 
 		// Inform the normalizers about our video properties
-		mlt_properties frame_props = MLT_FRAME_PROPERTIES( *frame );
 		mlt_properties_set_double( frame_props, "aspect_ratio", mlt_profile_sar( cx->profile ) );
 		mlt_properties_set_int( frame_props, "width", cx->profile->width );
 		mlt_properties_set_int( frame_props, "height", cx->profile->height );
