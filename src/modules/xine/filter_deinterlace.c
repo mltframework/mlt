@@ -50,7 +50,7 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 
 	if ( !previous_frame || !next_frame )
 		return 1;
-	
+
 	// Get the preceding frame's image
 	int error = mlt_frame_get_image( previous_frame, &previous_image, format, &previous_width, &previous_height, 0 );
 	
@@ -176,8 +176,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		if ( error || ( method > DEINTERLACE_NONE && method < DEINTERLACE_YADIF ) )
 		{
 			// Signal that we no longer need previous and next frames
-			mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer(this) );
-			mlt_properties_set_int( MLT_PRODUCER_PROPERTIES(producer), "_need_previous_next", 0 );
+			mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
+			mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
 			
 			if ( error )
 				method = DEINTERLACE_ONEFIELD;
@@ -214,6 +214,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 	else
 	{
+		// Signal that we no longer need previous and next frames
+		mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
+		mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
+
 		// Pass through
 		error = mlt_frame_get_image( this, image, format, width, height, writable );
 	}
