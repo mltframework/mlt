@@ -1,0 +1,37 @@
+#!/bin/sh
+
+if [ "$1" = "clean" ]
+then
+	( cd `dirname $0`; rm -rf *.cxx *.snk *.so *.o *.exe *.dll mlt.i ../.cs src_swig )
+	exit 0
+fi
+
+path=`which mcs 2> /dev/null`
+
+if [ $? = 0 ]
+then
+	ln -sf ../mlt.i
+
+	# Invoke swig
+	mkdir src_swig
+	swig -c++ -I../../mlt++ -I../.. -csharp -dllimport libmltsharp -outdir src_swig -namespace Mlt mlt.i || exit $?
+
+	# Compile the wrapper
+	g++ -D_GNU_SOURCE -c -rdynamic -pthread -I../.. mlt_wrap.cxx -fPIC || exit $?
+	
+	# Create the module
+	gcc -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmltsharp.so || exit $?
+
+	# Compile the library assembly
+	mcs -out:mlt-sharp.dll -target:library src_swig/*.cs
+	# uncomment the below if you want to sign the assembly
+	# sn -k mlt-sharp.snk
+	# mcs -out:mlt-sharp.dll -target:library -keyfile:mlt-sharp.snk src_swig/*.cs
+
+	# Compile the example
+	mcs -r:mlt-sharp.dll play.cs
+	
+else
+	echo Mono C# compiler not installed.
+	exit 1
+fi

@@ -5,7 +5,7 @@ then
 	cat << EOF
 SWIG options:
 
-  --swig-languages=[all | [java | lua | perl | php | python | ruby | tcl]*]
+  --swig-languages=[all | [csharp | java | lua | perl | php | python | ruby | tcl]*]
                           - High level language bindings (default: none)
 
 EOF
@@ -27,7 +27,7 @@ else
 				fi
 				which swig > /dev/null 2>&1
 				[ $? != 0 ] && echo "Please install swig" && exit 1
-				[ "$languages" = "all" ] && languages="java lua perl php python ruby tcl"
+				[ "$languages" = "all" ] && languages="csharp java lua perl php python ruby tcl"
 				echo SUBDIRS = $languages > config.mak
 			;;
 		esac
