@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include <pthread.h>
 
@@ -22,7 +23,7 @@
 #ifndef SDI_GENERATOR_H_
 #define SDI_GENERATOR_H_
 
-// defines only for SD NTSC (mkline funktion for test pattern)
+// definitions are only for SD NTSC (mkline funktion for test pattern)
 #define VERT_BLANKING 0
 #define MAIN_SET 1
 #define CHROMA_SET 2
@@ -48,7 +49,6 @@
 #define SDI_EVENT_TX_DATA_ORDER		2
 #define SDI_EVENT_TX_DATA		(1 << SDI_EVENT_TX_DATA_ORDER)
 
-
 // part of the linsys sdiaudio.h
 
 #define SDIAUDIO_IOC_TXGETCAP			_IOR(SDIAUDIO_IOC_MAGIC, 1, unsigned int)
@@ -70,7 +70,6 @@
 static int fh_sdi_video;
 static int fh_sdi_audio;
 
-
 #define MAX_SAMPLES_PER_LINE (2*2750)
 #define MAX_LINES_PER_FRAME 1125
 #define MAX_AUDIO_STREAMS (8)
@@ -80,7 +79,7 @@ static int fh_sdi_audio;
  * 23.98Hz = fix:{2002}
  * 24Hz = fix:{2000}
  * 25Hz = fix:{1920}
- * 29.97Hz = vari:{1601,1602,1602}
+ * 29.97Hz = varies:{1601,1602,1602}
  * 30Hz = fix:{1600}
  **/
 
@@ -100,15 +99,81 @@ struct audio_format {
 	mlt_audio_format aformat; // default: mlt_audio_pcm
 	uint16_t samples; // default 2*1920
 	uint16_t sample_rate; // default 48000
+	/**
+	 * 0 channels = audio disabled, transmit only
+	 * 2 channels (stereo)
+	 * 4 channels
+	 * 6 channels
+	 * 8 channels
+	 **/
 	int channels; // default 2 (stereo)
-/**
- * 0 channels = audio disabled, transmit only
- * 2 channels (stereo)
- * 4 channels
- * 6 channels
- * 8 channels
- **/
 };
+
+/**
+ * SDI DEVICE FILE SETTINGS AND MODES
+ **/
+enum sdi_setting_video_e {
+
+	SETTING_BUFFER_NUMBER_VIDEO = 0, SETTING_BUFFER_SIZE_VIDEO = 1, SETTING_CLOCK_SOURCE = 2, SETTING_DATA_MODE = 3, SETTING_FRAME_MODE = 4
+};
+enum sdi_setting_audio_e {
+
+	SETTING_BUFFER_NUMBER_AUDIO = 0,
+	SETTING_BUFFER_SIZE_AUDIO = 1,
+	SETTING_SAMPLE_SIZE = 2,
+	SETTING_CHANNELS = 3,
+	SETTING_SAMPEL_RATE = 4,
+	SETTING_NON_AUDIO = 5
+};
+
+static int sdi_frame_mode = 0;
+
+/* Frame mode settings */
+#define SDIVIDEO_CTL_UNLOCKED                    0
+#define SDIVIDEO_CTL_SMPTE_125M_486I_59_94HZ     1
+#define SDIVIDEO_CTL_BT_601_576I_50HZ            2
+#define SDIVIDEO_CTL_SMPTE_260M_1035I_60HZ       5
+#define SDIVIDEO_CTL_SMPTE_260M_1035I_59_94HZ    6
+#define SDIVIDEO_CTL_SMPTE_295M_1080I_50HZ       7
+#define SDIVIDEO_CTL_SMPTE_274M_1080I_60HZ       8
+#define SDIVIDEO_CTL_SMPTE_274M_1080PSF_30HZ     9
+#define SDIVIDEO_CTL_SMPTE_274M_1080I_59_94HZ   10
+#define SDIVIDEO_CTL_SMPTE_274M_1080PSF_29_97HZ 11
+#define SDIVIDEO_CTL_SMPTE_274M_1080I_50HZ      12
+#define SDIVIDEO_CTL_SMPTE_274M_1080PSF_25HZ    13
+#define SDIVIDEO_CTL_SMPTE_274M_1080PSF_24HZ    14
+#define SDIVIDEO_CTL_SMPTE_274M_1080PSF_23_98HZ 15
+#define SDIVIDEO_CTL_SMPTE_274M_1080P_30HZ      16
+#define SDIVIDEO_CTL_SMPTE_274M_1080P_29_97HZ   17
+#define SDIVIDEO_CTL_SMPTE_274M_1080P_25HZ      18
+#define SDIVIDEO_CTL_SMPTE_274M_1080P_24HZ      19
+#define SDIVIDEO_CTL_SMPTE_274M_1080P_23_98HZ   20
+#define SDIVIDEO_CTL_SMPTE_296M_720P_60HZ       21
+#define SDIVIDEO_CTL_SMPTE_296M_720P_59_94HZ    22
+#define SDIVIDEO_CTL_SMPTE_296M_720P_50HZ       23
+#define SDIVIDEO_CTL_SMPTE_296M_720P_30HZ       24
+#define SDIVIDEO_CTL_SMPTE_296M_720P_29_97HZ    25
+#define SDIVIDEO_CTL_SMPTE_296M_720P_25HZ       26
+#define SDIVIDEO_CTL_SMPTE_296M_720P_24HZ       27
+#define SDIVIDEO_CTL_SMPTE_296M_720P_23_98HZ    28
+
+/* Audio sample size */
+#define SDIAUDIO_CTL_AUDSAMP_SZ_16	16 /* 16 bit */
+#define SDIAUDIO_CTL_AUDSAMP_SZ_24	24 /* 24 bit */
+#define SDIAUDIO_CTL_AUDSAMP_SZ_32	32 /* 32 bit */
+
+/* Audio channel enable */
+#define SDIAUDIO_CTL_AUDCH_EN_0		0 /* 0 channel/disable audio */
+#define SDIAUDIO_CTL_AUDCH_EN_2		2 /* 2 channel */
+#define SDIAUDIO_CTL_AUDCH_EN_4		4 /* 4 channel */
+#define SDIAUDIO_CTL_AUDCH_EN_6		6 /* 6 channel */
+#define SDIAUDIO_CTL_AUDCH_EN_8		8 /* 8 channel */
+
+static char * itoa(uint64_t i);
+static ssize_t util_read(const char *name, char *buf, size_t count);
+static ssize_t util_write(const char *name, const char *buf, size_t count);
+static int setSDIVideoProperties(enum sdi_setting_video_e setting, char * value, char * device);
+static int setSDIAudioProperties(enum sdi_setting_audio_e setting, char * value, char * device);
 
 // HD
 static const struct source_format FMT_1080i60 = { .lines_per_frame = 1125, .active_lines_per_frame = 1080, .samples_per_line = 2*2200,
@@ -212,7 +277,7 @@ static size_t elements;
 static unsigned int samples;
 
 // functions
-static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, mlt_profile myProfile);
+static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, mlt_profile myProfile, const struct audio_format * audio_format);
 
 static int sdimaster_close();
 

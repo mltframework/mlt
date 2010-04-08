@@ -126,21 +126,21 @@
 
 #include "sdi_generator.h"
 
-/*!/brief Initialization of the file handlers for the Playout
+/*!/brief initialization of the file handlers for the playout
  * @param *device_video: file or SDITX device or SDIVIDEOTX device
  * @param *device_audio: file or SDIAUDIOTX device
  * @param blanking: true or false (if false the consumer write only active video data without any VANH or HANC)
  */
-static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, mlt_profile myProfile) {
+static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, mlt_profile myProfile, const struct audio_format * audio_format) {
 
 	// set device file
 	device_file_video = device_video;
 	device_file_audio = device_audio;
 
-	// set flag for using of blanking with anilary data
+	// set flag for using of blanking with ancillary data
 	info.blanking = blanking;
 
-	// set pack methode for SDI word conversion
+	// set pack method for SDI word conversion
 	pack = pack8;
 	//pack = pack10;
 	//pack = pack_v210;
@@ -149,60 +149,79 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30 && myProfile->frame_rate_den == 1 && myProfile->progressive
 			== 0) {
 		info.fmt = &FMT_1080i60;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080I_60HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
 			&& myProfile->progressive == 0) {
 		info.fmt = &FMT_1080i5994;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080I_59_94HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 0) {
 		info.fmt = &FMT_1080i50;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080I_50HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p30;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_30HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p2997;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_29_97HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p25;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_25HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 24 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p24;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_24HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 24000 && myProfile->frame_rate_den == 1001
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p2398;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_23_98HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 60 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p60;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_60HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 60000 && myProfile->frame_rate_den == 1001
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p5994;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_59_94HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 50 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p50;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_50HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 30 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p30;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_30HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p2997;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_29_97HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p25;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_25HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 24 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p24;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_24HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 24000 && myProfile->frame_rate_den == 1001
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p2398;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_23_98HZ;
 	} else if (myProfile->width == 720 && myProfile->height == 576 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 0) {
 		info.fmt = &FMT_576i50;
+		sdi_frame_mode = SDIVIDEO_CTL_BT_601_576I_50HZ;
 	} else if (myProfile->width == 720 && myProfile->height == 480 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
 			&& myProfile->progressive == 0) {
 		info.fmt = &FMT_480i5994;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_125M_486I_59_94HZ;
 	} else {
 		printf("Consumer got unknown format: %s", myProfile->description);
 		info.fmt = &FMT_576i50;
+		sdi_frame_mode = SDIVIDEO_CTL_BT_601_576I_50HZ;
 	}
 
 	printf("Consumer use format: %s\nProfile: %i %i %i %i %i\n", myProfile->description, myProfile->width, myProfile->height, myProfile->frame_rate_num,
@@ -212,26 +231,6 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	if (info.blanking && info.fmt != &FMT_576i50) {
 		printf("SDI consumer doesn't support blanking(HANC) for the configured SD board and SDI format. Try argument: blanking=false\n");
 		return EXIT_FAILURE;
-	}
-
-	if (device_file_video != NULL) {
-		// open file handler for SDI(video) output
-		if ((fh_sdi_video = open(device_file_video, O_WRONLY)) == -1) {
-			perror(NULL);
-			printf("\ncould not open video output destination: %s\n", device_file_video);
-		}
-		printf("SDI consumer use video device file: %s\n", device_file_video);
-	}
-
-	// Check if we have to use a separate device file for audio
-	if (device_file_audio != NULL) {
-		// open file handler for audio output
-		if ((fh_sdi_audio = open(device_file_audio, O_WRONLY | O_CREAT, 0777)) == -1) {
-			perror(NULL);
-			printf("\nCould not open audio output destination: %s\n", device_file_audio);
-			return EXIT_FAILURE;
-		}
-		printf("SDI consumer use audio device file: %s\n", device_file_audio);
 	}
 
 	// if we write our own HANC we need an AES channel status bit array
@@ -339,12 +338,112 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 		}
 	}
 
-	//(*10/8 because we store (TOTAL_SAMPLES*TOTAL_LINES) words with 10 bit in this 8 bit array) )
+	// (*10/8 because we store (TOTAL_SAMPLES*TOTAL_LINES) words with 10 bit in this 8 bit array) )
 	if (info.fmt == &FMT_576i50 && info.blanking) {
 		sdi_frame_size = info.fmt->samples_per_line * 10 / 8 * info.fmt->lines_per_frame;
 	}
 
-	printf("SDI frame size:%li\n", sdi_frame_size);
+	if (info.blanking) {
+		printf("SDI frame size: %li\n", sdi_frame_size);
+	} else {
+		printf("Frame size for active video: %li\n", sdi_frame_size);
+	}
+
+	/**
+	 * Setup HD-SDI Master device (vidport):
+	 *
+	 * if device_file_video available then
+	 * 	if vidport available
+	 * 		1. setup
+	 * 	end
+	 * 	1. open device file handler
+	 *
+	 * 	if device_file_audio available then
+	 * 		1. setup
+	 * 		2. open device file handler
+	 * 	end
+	 * end
+	 **/
+	if (device_file_video != NULL) {
+
+		// If we use a Linsys HD board with active video (without blanking) setup the board for the used mode
+		if (strstr(device_file_video, "sdivideotx") != NULL && !info.blanking) {
+
+			char * value;
+
+			// Buffer size
+			value = itoa(sdi_frame_size);
+			setSDIVideoProperties(SETTING_BUFFER_SIZE_VIDEO, value, device_video);
+			free(value);
+
+			// Frame Mode
+			value = itoa(sdi_frame_mode);
+			setSDIVideoProperties(SETTING_FRAME_MODE, value, device_video);
+			free(value);
+
+			// Data Mode
+			if (pack == pack8)
+				setSDIVideoProperties(SETTING_DATA_MODE, "0", device_video);
+			else if (pack == pack_v210)
+				setSDIVideoProperties(SETTING_DATA_MODE, "1", device_video);
+		}
+
+		// open file handle for SDI(video) output
+		if ((fh_sdi_video = open(device_file_video, O_WRONLY)) == -1) {
+			perror(NULL);
+			printf("\ncould not open video output destination: %s\n", device_file_video);
+			return EXIT_FAILURE;
+		}
+		printf("SDI consumer uses video device file: %s\n", device_file_video);
+
+		// Check if we have to use a separate device file for audio
+		if (device_file_audio != NULL) {
+
+			// set settings for audio device file
+			if (strstr(device_file_audio, "sdiaudiotx") != NULL && !info.blanking) {
+
+				char * value;
+
+				/**
+				 * prepare sample size
+				 * MLT suports: 16bit, 32bit
+				 * LINSYS SDI boards supports: 16bit, 24bit, 32bit
+				 * we set 16bit as default
+				 **/
+				uint8_t sample_size = audio_format->aformat == mlt_audio_s32 ? 32 : 16;
+
+				// Buffer size
+				// audio buffer per frame (Bytes) = sample rate / frame rate * ( sample size / 1Byte ) x channels
+				value = itoa(audio_format->sample_rate / (myProfile->frame_rate_num / myProfile->frame_rate_den) * sample_size / 8 * audio_format->channels );
+				setSDIAudioProperties(SETTING_BUFFER_SIZE_AUDIO, value, device_audio);
+				free(value);
+
+				// channels
+				value = itoa(audio_format->channels);
+				setSDIAudioProperties(SETTING_CHANNELS, value, device_audio);
+				free(value);
+
+				// sample rate
+				value = itoa(audio_format->sample_rate);
+				setSDIAudioProperties(SETTING_SAMPEL_RATE, value, device_audio);
+				free(value);
+
+				// sample size
+				value = itoa(sample_size);
+				setSDIAudioProperties(SETTING_SAMPLE_SIZE, value, device_audio);
+				free(value);
+			}
+
+			// open file handle for audio output
+			if ((fh_sdi_audio = open(device_file_audio, O_WRONLY)) == -1) {
+				perror(NULL);
+				printf("\nCould not open audio output destination: %s\n", device_file_audio);
+				return EXIT_FAILURE;
+			}
+			printf("SDI consumer uses audio device file: %s\n", device_file_audio);
+		}
+
+	}
 
 	// set buffer for the complete SDI frame
 	data = (uint8_t*) calloc(sdi_frame_size, sizeof(uint8_t));
@@ -678,7 +777,7 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 						create_HD_SDI_Line(line_buffer, &info, 0, VERT_BLANKING, vBuffer);
 						p = pack(p, line_buffer, elements);
 					}
-					// 9 lines opt. video data ?? // TODO have look to SMPTE
+					// 9 lines opt. video data ?? // TODO have a look to SMPTE
 					for (info.ln = 270; info.ln <= 278; info.ln++) {
 						create_HD_SDI_Line(line_buffer, &info, 0, VERT_BLANKING, vBuffer);
 						p = pack(p, line_buffer, elements);
@@ -776,8 +875,7 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 	// Write the complete frame to output
 	// The "while" is necessary because the sdi device file does not take the complete frame at once
 	written_bytes = 0;
-	while (bytes < sdi_frame_size)
-	{
+	while (bytes < sdi_frame_size) {
 
 		if ((written_bytes = write(fh_sdi_video, data + bytes, sdi_frame_size - bytes)) < 0) {
 			fprintf(stderr, "\nunable to write SDI video.\n");
@@ -808,8 +906,6 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 		}
 	}
 
-
-
 	// if available write audio data
 	if (fh_sdi_audio) {
 
@@ -817,7 +913,6 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 		written_bytes = 0;
 
 		// set number of samples and cut by 1600 if NTSC (handle problem of real time encoding of NTSC frequencies)
-		//size_t samples_total_per_track = audio_format->samples == 1601 || audio_format->samples == 1602 ? 1600 : audio_format->samples; // TODO buffer underrun by NTSC frequencs because of 3/2 pull down
 		size_t samples_total_per_track = audio_format->samples;
 		uint16_t sample_number = 0;
 		size_t channels_per_track_total = 2;
@@ -831,7 +926,7 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 		// set total bytes per session
 		size_t bytes_total = 0;
 		bytes_total = audio_format->aformat == mlt_audio_s16 ? channels_per_track_total * sizeof(int16_t) : bytes_total;
-		bytes_total = audio_format->aformat == mlt_audio_s32 ? channels_per_track_total * sizeof(int32_t) : bytes_total; // TODO sdi board must be pre-configured for 32bit samples!!!!
+		bytes_total = audio_format->aformat == mlt_audio_s32 ? channels_per_track_total * sizeof(int32_t) : bytes_total;
 
 		// write all samples of all streams interleaved
 		/**
@@ -886,8 +981,8 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 			}
 
 			// write pseudo tracks
-			// now fill rest of audio tracks with NULL or copy of first track
-			while (stream_number < 4) { // TODO linsys board model 193 have a limit to 4 AES groups (=4streams,8channels)
+			// now fill rest of audio tracks(AES frames) with NULL or copy of first track
+			while (stream_number < audio_format->channels/2) {
 
 				// write for every stream n samples
 				// n = number of channels per stream
@@ -912,11 +1007,10 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 			} else if (val) {
 				if (val & SDIAUDIO_EVENT_TX_BUFFER) {
 					printf("SDI AUDIO driver transmit buffer queue underrun "
-							"detected.\n");
+						"detected.\n");
 				}
 				if (val & SDIAUDIO_EVENT_TX_FIFO) {
 					printf("SDI AUDIO onboard transmit FIFO underrun detected.\n");
-					//TODO react
 				}
 				if (val & SDIAUDIO_EVENT_TX_DATA) {
 					printf("SDI AUDIO transmit data change detected.\n");
@@ -1048,7 +1142,7 @@ static inline int create_SD_SDI_Line(uint16_t *buf, const struct line_info *info
 		active_video_line = info->fmt->active_lines_per_frame - 1; // in SD PAL was set 575
 	}
 	//Index of the start of the current line in the video_buffer
-	int start_of_current_line  = active_video_line * info->fmt->active_samples_per_line;
+	int start_of_current_line = active_video_line * info->fmt->active_samples_per_line;
 
 	// If VBlank then fill the line with 0x200 and 0x040 (total black)
 	switch (active) {
@@ -1111,13 +1205,11 @@ static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info
 	uint16_t *p = buf, *endp, ln;
 	uint16_t samples = info->blanking ? info->fmt->samples_per_line : info->fmt->active_samples_per_line;
 
-
 	if (active_video_line >= info->fmt->active_lines_per_frame) {
 		active_video_line = info->fmt->active_lines_per_frame - 1;
 	}
 
 	int start_of_current_line = active_video_line * info->fmt->active_samples_per_line;
-
 
 	if (info->blanking) {
 
@@ -1212,7 +1304,6 @@ static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info
 	{
 
 		while (p < (buf + samples)) {
-
 
 			*p = video_buffer[start_of_current_line + (p - buf) + 1] << 2; // Cb
 			p++;
@@ -1972,4 +2063,296 @@ static int mkline(unsigned short int *buf, const struct line_info *info, unsigne
 		break;
 	}
 	return 0;
+}
+
+static int setSDIVideoProperties(enum sdi_setting_video_e setting, char * value, char * device) {
+
+	const char fmt[] = "/sys/class/sdivideo/sdivideo%cx%i/%s";
+	struct stat buf;
+	int num;
+	char type, name[256], data[256];
+	char *endptr;
+
+	/* Get the sysfs info */
+	memset(&buf, 0, sizeof(buf));
+
+	/**
+	 * Stat the file, fills the structure with info about the file
+	 * Get the major number from device node
+	 **/
+	if (stat(device, &buf) < 0) {
+		fprintf(stderr, "%s: ", device);
+		perror("unable to get the file status");
+		return -1;
+	}
+
+	/* Check if it is a character device or not */
+	if (!S_ISCHR (buf.st_mode)) {
+		fprintf(stderr, "%s: not a character device\n", device);
+		return -1;
+	}
+
+	/* Check the minor number to determine if it is a receive or transmit device */
+	type = (buf.st_rdev & 0x0080) ? 'r' : 't';
+
+	/* Get the receiver or transmitter number */
+	num = buf.st_rdev & 0x007f;
+
+	/* Build the path to sysfs file */
+	snprintf(name, sizeof(name), fmt, type, num, "dev");
+	memset(data, 0, sizeof(data));
+
+	/* Read sysfs file (dev) */
+	if (util_read(name, data, sizeof(data)) < 0) {
+		fprintf(stderr, "%s: ", device);
+		perror("unable to get the device number");
+		return -1;
+	}
+	/* Compare the major number taken from sysfs file to the one taken from device node */
+	if (strtoul(data, &endptr, 0) != (buf.st_rdev >> 8)) {
+		fprintf(stderr, "%s: not a SMPTE 292M/SMPTE 259M-C device\n", device);
+		return -1;
+	}
+	if (*endptr != ':') {
+		fprintf(stderr, "%s: error reading %s\n", device, name);
+		return -1;
+	}
+
+	// Which setting do we write
+	if (setting == SETTING_BUFFER_NUMBER_VIDEO) {
+		snprintf(name, sizeof(name), fmt, type, num, "buffers");
+		snprintf(data, sizeof(data), "%s\n", value);
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the number of buffers");
+			return -1;
+		}
+		printf("\tSet number of buffers = %s\n", value);
+	} else if (setting == SETTING_BUFFER_SIZE_VIDEO) {
+		snprintf(name, sizeof(name), fmt, type, num, "bufsize");
+		snprintf(data, sizeof(data), "%s\n", value);
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the buffer size");
+			return -1;
+		}
+		printf("\tSet buffer size = %s Bytes\n", value);
+	} else if (setting == SETTING_CLOCK_SOURCE) {
+		snprintf(name, sizeof(name), fmt, type, num, "clock_source");
+		snprintf(data, sizeof(data), "%s\n", value);
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the clock source");
+			return -1;
+		}
+		printf("\tSet clock source = %s\n", value);
+	} else if (setting == SETTING_DATA_MODE) {
+		snprintf(name, sizeof(name), fmt, type, num, "mode");
+		snprintf(data, sizeof(data), "%s\n", value);
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the interface operating mode");
+			return -1;
+		}
+		printf("\tSet data mode = %s\n", value);
+	} else if (setting == SETTING_FRAME_MODE) {
+		snprintf(name, sizeof(name), fmt, type, num, "frame_mode");
+		snprintf(data, sizeof(data), "%s\n", value);
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the interface frame mode");
+			return -1;
+		}
+		printf("\tSet frame mode = %s\n", value);
+	}
+
+	return 0;
+
+}
+
+static int setSDIAudioProperties(enum sdi_setting_audio_e setting, char * value, char * device) {
+	const char fmt[] = "/sys/class/sdiaudio/sdiaudio%cx%i/%s";
+	struct stat buf;
+	int num;
+	char type, name[256], data[256];
+	char *endptr;
+
+	/* Get the sysfs info */
+	memset(&buf, 0, sizeof(buf));
+	if (stat(device, &buf) < 0) {
+		fprintf(stderr, "%s: ", device);
+		perror("unable to get the file status");
+		return -1;
+	}
+	if (!S_ISCHR (buf.st_mode)) {
+		fprintf(stderr, "%s: not a character device\n", device);
+		return -1;
+	}
+	type = (buf.st_rdev & 0x0080) ? 'r' : 't';
+	num = buf.st_rdev & 0x007f;
+	snprintf(name, sizeof(name), fmt, type, num, "dev");
+	memset(data, 0, sizeof(data));
+	if (util_read(name, data, sizeof(data)) < 0) {
+		fprintf(stderr, "%s: ", device);
+		perror("unable to get the device number");
+		return -1;
+	}
+
+	if (strtoul(data, &endptr, 0) != (buf.st_rdev >> 8)) {
+		fprintf(stderr, "%s: not an audio device\n", device);
+		return -1;
+	}
+	if (*endptr != ':') {
+		fprintf(stderr, "%s: error reading %s\n", device, name);
+		return -1;
+	}
+
+	if (setting == SETTING_BUFFER_NUMBER_AUDIO) {
+		snprintf(name, sizeof(name), fmt, type, num, "buffers");
+		snprintf(data, sizeof(data), "%s\n", value);
+
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the number of buffers");
+			return -1;
+		}
+		printf("\tSet number of buffers = %s\n", value);
+	} else if (setting == SETTING_BUFFER_SIZE_AUDIO) {
+		snprintf(name, sizeof(name), fmt, type, num, "bufsize");
+		snprintf(data, sizeof(data), "%s\n", value);
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the buffer size");
+			return -1;
+		}
+		printf("\tSet buffer size = %s Bytes\n", value);
+	} else if (setting == SETTING_SAMPLE_SIZE) {
+		snprintf(name, sizeof(name), fmt, type, num, "sample_size");
+		snprintf(data, sizeof(data), "%s\n", value);
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the interface audio sample size");
+			return -1;
+		}
+		switch (atol(value)) {
+		case SDIAUDIO_CTL_AUDSAMP_SZ_16:
+			printf("\tAssuming 16-bit audio.\n");
+			break;
+		case SDIAUDIO_CTL_AUDSAMP_SZ_24:
+			printf("\tAssuming 24-bit audio.\n");
+			break;
+		case SDIAUDIO_CTL_AUDSAMP_SZ_32:
+			printf("\tAssuming 32-bit audio.\n");
+			break;
+		default:
+			printf("\tSet audio sample size = %lu.\n", atol(value));
+			break;
+		}
+	} else if (setting == SETTING_SAMPEL_RATE) {
+		snprintf(name, sizeof(name), fmt, type, num, "sample_rate");
+		snprintf(data, sizeof(data), "%lu\n", atol(value));
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set the interface audio sample rate");
+			return -1;
+		}
+		switch (atoi(value)) {
+		case 32000:
+			printf("\tAssuming 32 kHz audio.\n");
+			break;
+		case 44100:
+			printf("\tAssuming 44.1 kHz audio.\n");
+			break;
+		case 48000:
+			printf("\tAssuming 48 kHz audio.\n");
+			break;
+		default:
+			printf("\tSet audio sample rate = %lu.\n", atol(value));
+			break;
+		}
+	} else if (setting == SETTING_CHANNELS) {
+		snprintf(name, sizeof(name), fmt, type, num, "channels");
+		snprintf(data, sizeof(data), "%lu\n", atol(value));
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set "
+				"the interface audio channel enable");
+			return -1;
+		}
+		switch (atol(value)) {
+		case SDIAUDIO_CTL_AUDCH_EN_0:
+			printf("\tDisabling audio.\n");
+			break;
+		case SDIAUDIO_CTL_AUDCH_EN_2:
+			printf("\tAssuming 2 channels of audio.\n");
+			break;
+		case SDIAUDIO_CTL_AUDCH_EN_4:
+			printf("\tAssuming 4 channels of audio.\n");
+			break;
+		case SDIAUDIO_CTL_AUDCH_EN_6:
+			printf("\tAssuming 6 channels of audio.\n");
+			break;
+		case SDIAUDIO_CTL_AUDCH_EN_8:
+			printf("\tAssuming 8 channels of audio.\n");
+			break;
+		default:
+			printf("\tSet audio channel enable = %lu.\n", atol(value));
+			break;
+		}
+	} else if (setting == SETTING_NON_AUDIO) {
+		snprintf(name, sizeof(name), fmt, type, num, "non_audio");
+		snprintf(data, sizeof(data), "0x%04lX\n", atol(value));
+		if (util_write(name, data, sizeof(data)) < 0) {
+			fprintf(stderr, "%s: ", device);
+			perror("unable to set "
+				"the interface non-audio");
+			return -1;
+		}
+		switch (atol(value)) {
+		case 0x0000:
+			printf("\tPassing PCM audio.\n");
+			break;
+		case 0x00ff:
+			printf("\tPassing non-audio.\n");
+			break;
+		default:
+			printf("\tSet non-audio = 0x%04lX.\n", atol(value));
+			break;
+		}
+	}
+
+	return 0;
+}
+
+static ssize_t util_read(const char *name, char *buf, size_t count) {
+	ssize_t fd, ret;
+
+	if ((fd = open(name, O_RDONLY)) < 0) {
+		return fd;
+	}
+	ret = read(fd, buf, count);
+	close(fd);
+	return ret;
+}
+
+static ssize_t util_write(const char *name, const char *buf, size_t count) {
+	ssize_t fd, ret;
+
+	if ((fd = open(name, O_WRONLY)) < 0) {
+		return fd;
+	}
+	ret = write(fd, buf, count);
+	close(fd);
+	return ret;
+}
+
+static char * itoa(uint64_t i) {
+
+	if (i == 0)
+		return strdup("0");
+
+	char * mystring = (char *) malloc(50);
+	sprintf(mystring, "%llui", i);
+
+	return mystring;
 }

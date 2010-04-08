@@ -156,7 +156,8 @@ struct consumer_SDIstream_s {
 	int height;
 
 	struct audio_format audio_format;
-	/** device file:
+	/**
+	 * device file:
 	 *		/dev/sditx0
 	 *		/dev/sdivideotx0
 	 *		/dev/sdiaudiotx0
@@ -164,14 +165,15 @@ struct consumer_SDIstream_s {
 	char *device_file_video; // Path for SDI output
 	char *device_file_audio; // Path for exlusive SDI audio output
 
-	/* write own HANC (ancillary data) is available for:
+	/**
+	 *  write own HANC (ancillary data) is available for:
 	 * SDI board ASSY 193 HD        'blanking=false'
 	 * SDI board ASSY 180 SD quad   'blanking=true'
 	 * SDI board ASSY 145 SD single 'blanking=true'
 	 *
 	 * 0=false, 1=true
 	 *
-	 * */
+	 **/
 	uint8_t blanking;
 
 	// our audio channel pair for this frame
@@ -368,10 +370,6 @@ static void *consumer_thread(void *arg) {
 	// Define a frame pointer
 	mlt_frame frame;
 
-	if (!sdi_init(this->device_file_video, this->device_file_audio, this->blanking, mlt_service_profile((mlt_service) consumer))) {
-		exit(0);
-	}
-
 	// set Datablock number for SDI encoding
 	int my_dbn = 1;
 
@@ -379,13 +377,19 @@ static void *consumer_thread(void *arg) {
 	unsigned int count = 0;
 
 	// Tell the framework how we want our audio and video
-	int frequency = 48000;
+	int frequency = this->audio_format.sample_rate;
 	int channels = 0;
 	int samples = mlt_sample_calculator(fps, frequency, count++);
 
-	this->audio_format.aformat = mlt_audio_s16;
-	this->audio_format.channels = 0;
+	// set number of audio channels, linsys vidport model 193 is limited to 8 channels (4AES frames)
+	this->audio_format.channels = 8; /* 0,2,4,6,8 */
+	this->audio_format.aformat = mlt_audio_s16; /* 16, 24, 32 */
+	this->audio_format.sample_rate = 48000;
 	this->pix_fmt = mlt_image_yuv422;
+
+	if (!sdi_init(this->device_file_video, this->device_file_audio, this->blanking, mlt_service_profile((mlt_service) consumer), &this->audio_format)) {
+		exit(0);
+	}
 
 	uint8_t *video_buffer;
 	int16_t *audio_buffer_tmp; // the upstream audio buffer
@@ -417,10 +421,10 @@ static void *consumer_thread(void *arg) {
 				this->audio_format.sample_rate = frequency;
 				this->audio_format.samples = samples;
 
-				// TODO, current hard coded to all 8 channels, also we write 8 channels to the sdi board
-				// the Linys SDI board must be right configured with the same number of channels!!!
-				this->audio_format.channels = 8;
-				// this->audio_format.channels = channels; // take given number of channels
+				/* TODO: Audio is currently hard coded to 8 channels because write 8 channels to the sdi board.
+				 The Linys SDI board has to be configured with the same number of channels!
+				 this->audio_format.channels = channels; // take given number of channels
+				 */
 
 				/* Tell the sdi_generator.c to playout our frame
 				 * 8 AES (8 x stereo channels are possible, max. 16 channels) Linsys SD board model:	107, 159, 145, 180
@@ -612,11 +616,9 @@ int convertYCBCRtoRGB(int y1, int cb, int cr, int y2, uint8_t * target_rgb) {
 	g1 = y1 - 0.34414 * (cb - 128) - 0.71414 * (cr - 128);
 	b1 = y1 + 1.772 * (cb - 128);
 
-
 	r2 = y2 + 1.402 * (cr - 128);
 	g2 = y2 - 0.34414 * (cb - 128) - 0.71414 *(cr - 128);
 	b2 = y2 + 1.772 * (cb - 128);
-
 
 	*target_pointer++ = r1;
 	*target_pointer++ = g1;
