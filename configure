@@ -190,8 +190,8 @@ do
 		--datadir=* )		datadir="${i#--datadir=}" ;;
 		--mandir=* )		mandir="${i#--mandir=}" ;;
 		--disable-debug )	debug=false ;;
-		--disable-mmx )		mmx=false; sse=false ;;
-		--disable-sse )		sse=false ;;
+		--disable-mmx )		mmx=false; sse=false; sse2=false ;;
+		--disable-sse )		sse=false; sse2=false ;;
 		--disable-sse2 )	sse2=false ;;
 		--enable-gpl )		gpl=true ;;
 		--arch=* )			arch="${i#--arch=}" ;;
