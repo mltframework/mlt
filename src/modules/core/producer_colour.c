@@ -221,6 +221,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
 	mlt_properties_set_data( properties, "alpha", alpha, alpha_size, mlt_pool_release, NULL );
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
+	mlt_properties_set_int( properties, "real_width", *width );
+	mlt_properties_set_int( properties, "real_height", *height );
+
 
 	return 0;
 }
