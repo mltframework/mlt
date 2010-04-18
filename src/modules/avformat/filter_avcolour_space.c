@@ -163,6 +163,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_avcolour_space_init( void *arg )
 {
+#if (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	// Test to see if swscale accepts the arg as resolution
 	if ( arg )
 	{
@@ -178,5 +179,8 @@ mlt_filter filter_avcolour_space_init( void *arg )
 	if ( this != NULL )
 		this->process = filter_process;
 	return this;
+#else
+	return NULL;
+#endif
 }
 
