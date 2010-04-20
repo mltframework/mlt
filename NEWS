@@ -1,6 +1,17 @@
 MLT Release Notes
 -----------------
 
+Version 0.5.4
+
+The recommended version of FFmpeg for use with this release is SVN r21322.
+This is another maintenance release to address some bugs that appeared
+this far in the 0.5.x series. Beyond that it adds two things that only
+very specific users will see:
+
+* Added C# (ECMA CLR) binding (not enabled by default).
+* Linsys SDI consumer now configures itself from MLT profile.
+
+
 Version 0.5.2
 
 The recommended version of FFmpeg for use with this release is SVN r21322.
