@@ -1,4 +1,57 @@
+2010-04-19  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.5.4.
+
+  * NEWS: Add v0.5.4 release notes.
+
+  * src/framework/mlt_frame.c, src/modules/avformat/producer_avformat.c:
+  Improve error handling on video decode failure (kdenlive-1553).
+
+2010-04-18  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/modules/avformat/filter_avcolour_space.c: Only use newish
+  version of libswcale.  Some early revisions of 0.7.1 would cause garbage on
+  last column of image with non-even width.
+
+2010-04-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_colour.c: Fix color producer not setting
+  real_wdith and _height.
+
+2010-04-15  Dan Dennedy <dan@dennedy.org>
+
+  * configure: --disable-mmx, --disable-sse should also disable sse2.
+
+2010-04-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/configure, src/swig/csharp/build, src/swig/csharp/play.cs,
+  src/swig/csharp/play.sh: Add C# bindings.  Thank you to Steeve Descarpentries
+  for the initial contribution.
+
+2010-04-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/linsys/consumer_SDIstream.c,
+  src/modules/linsys/sdi_generator.c, src/modules/linsys/sdi_generator.h: Add
+  automatic driver configuration to sdi consumer.  This uses the MLT profile to
+  determine the configuration values: video buffer size, audio buffer size,
+  video frame mode (resolution, frame rate), video data mode (8 bit or v210),
+  number of audio channels, audio sampling rate, audio sample size. It does
+  _not_ set the clock source or the number of buffers for audio and video.
+
+2010-04-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_consumer.c: Bugfix memory leak with producer
+  consumer (2976110).  Also kdenlive bug 1197.
+
+  * src/modules/xine/filter_deinterlace.c: Better signal previous/next frames
+  not needed.
+
 2010-03-10  Dan Dennedy <dan@dennedy.org>
+
+  * NEWS: Fix version number in release notes :(
+
+  * ChangeLog: Update ChangeLog for v0.5.2.
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
   0.5.2.
