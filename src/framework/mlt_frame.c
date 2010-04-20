@@ -387,7 +387,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	{
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
 		error = get_image( this, buffer, format, width, height, writable );
-		if ( !error )
+		if ( !error && *buffer )
 		{
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
@@ -407,7 +407,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		*buffer = mlt_properties_get_data( properties, "image", NULL );
 		*width = mlt_properties_get_int( properties, "width" );
 		*height = mlt_properties_get_int( properties, "height" );
-		if ( this->convert_image )
+		if ( this->convert_image && *buffer )
 			this->convert_image( this, buffer, format, requested_format );
 	}
 	else if ( producer )

@@ -877,6 +877,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
 			mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
 			this->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+			this->got_picture = 1;
 
 			goto exit_get_image;
 		}
@@ -1230,8 +1231,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				}
 			}
 		}
-		if ( !got_picture )
-			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 
 	avformat_unlock();
@@ -1257,7 +1256,7 @@ exit_get_image:
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
 	this->video_expected = position + 1;
 
-	return 0;
+	return !this->got_picture;
 }
 
 /** Process properties as AVOptions and apply to AV context obj
