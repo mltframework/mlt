@@ -310,8 +310,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 		else if ( strcmp( op, "none" ) != 0 )
 		{
-			*width = owidth;
-			*height = oheight;
 			*image = frame_resize_image( this, *width, *height, bpp );
 		}
 		else
