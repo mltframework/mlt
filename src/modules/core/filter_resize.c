@@ -118,7 +118,7 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 	while ( iheight -- )
 	{
 		// We're in the input range for this row.
-		memcpy( out_line, in_line, iwidth * bpp );
+		memcpy( out_line, in_line, istride );
 
 		// Move to next input line
 		in_line += istride;
@@ -257,6 +257,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	mlt_properties_set_int( properties, "resize_height", *height );
 
 	// Now get the image
+	if ( *format == mlt_image_yuv422 )
+		owidth -= owidth % 2;
 	error = mlt_frame_get_image( this, image, format, &owidth, &oheight, writable );
 
 	if ( error == 0 && *image )
@@ -308,6 +310,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 		else if ( strcmp( op, "none" ) != 0 )
 		{
+			*width = owidth;
+			*height = oheight;
 			*image = frame_resize_image( this, *width, *height, bpp );
 		}
 		else
