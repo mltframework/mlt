@@ -7,3 +7,4 @@ then
 fi
 
 perl Makefile.PL || exit 1
+make

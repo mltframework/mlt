@@ -9,3 +9,4 @@ system( "swig -c++ -ruby -I../../mlt++ -I../.. mlt.i" )
 $CFLAGS += " -I../.."
 $LDFLAGS += " -L../../mlt++ -lmlt++"
 create_makefile('mlt')
+system( "make" )
