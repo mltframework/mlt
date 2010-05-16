@@ -814,6 +814,7 @@ static void *consumer_thread( void *arg )
 	// Get default audio properties
 	mlt_audio_format aud_fmt = mlt_audio_s16;
 	int channels = mlt_properties_get_int( properties, "channels" );
+	int total_channels = channels;
 	int frequency = mlt_properties_get_int( properties, "frequency" );
 	int16_t *pcm = NULL;
 	int samples = 0;
@@ -973,18 +974,32 @@ static void *consumer_thread( void *arg )
 	oc->oformat = fmt;
 	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
 
-	// Get the first frame
-	frame = mlt_consumer_rt_frame( this );
-
 	// Add audio and video streams
 	if ( video_codec_id != CODEC_ID_NONE )
 		video_st = add_video_stream( this, oc, video_codec_id );
 	if ( audio_codec_id != CODEC_ID_NONE )
 	{
-		i = 0;
-		if ( frame )
-			i = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "meta.map.audio.0.channels" );
-		audio_st[0] = add_audio_stream( this, oc, audio_codec_id, i ? i : channels );
+		int is_multi = 0;
+
+		total_channels = 0;
+		// multitrack audio
+		for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
+		{
+			sprintf( key, "channels.%d", i );
+			int j = mlt_properties_get_int( properties, key );
+			if ( j )
+			{
+				is_multi = 1;
+				total_channels += j;
+				audio_st[i] = add_audio_stream( this, oc, audio_codec_id, j );
+			}
+		}
+		// single track
+		if ( !is_multi )
+		{
+			audio_st[0] = add_audio_stream( this, oc, audio_codec_id, channels );
+			total_channels = channels;
+		}
 	}
 
 	// Set the parameters (even though we have none...)
@@ -1005,11 +1020,11 @@ static void *consumer_thread( void *arg )
 
 		if ( video_st && !open_video( oc, video_st ) )
 			video_st = NULL;
-		if ( audio_st[0] ) // Add audio streams as needed later
+		for ( i = 0; i < MAX_AUDIO_STREAMS && audio_st[i]; i++ )
 		{
-			audio_input_frame_size = open_audio( oc, audio_st[0], audio_outbuf_size );
+			audio_input_frame_size = open_audio( oc, audio_st[i], audio_outbuf_size );
 			if ( !audio_input_frame_size )
-				audio_st[0] = NULL;
+				audio_st[i] = NULL;
 		}
 
 		// Open the output file, if needed
@@ -1022,9 +1037,8 @@ static void *consumer_thread( void *arg )
 			}
 		}
 	
-		// Write the stream header now if there are no audio streams.
-		// Otherwise, we wait until we possibly add additional audio streams below.
-		if ( ! audio_st[0] && mlt_properties_get_int( properties, "running" ) )
+		// Write the stream header.
+		if ( mlt_properties_get_int( properties, "running" ) )
 			av_write_header( oc );
 	}
 	else
@@ -1048,6 +1062,8 @@ static void *consumer_thread( void *arg )
 	while( mlt_properties_get_int( properties, "running" ) &&
 	       ( !terminated || ( video_st && mlt_deque_count( queue ) ) ) )
 	{
+		frame = mlt_consumer_rt_frame( this );
+
 		// Check that we have a frame to work with
 		if ( frame != NULL )
 		{
@@ -1066,30 +1082,8 @@ static void *consumer_thread( void *arg )
 				samples = mlt_sample_calculator( fps, frequency, count ++ );
 				mlt_frame_get_audio( frame, (void**) &pcm, &aud_fmt, &frequency, &channels, &samples );
 
-				// Add audio streams based on channel mapping
-				if ( ! is_audio_initialized )
-				{
-					int j = 0;
-					for ( i = 0; i < MAX_AUDIO_STREAMS && j < channels; i++ )
-					{
-						sprintf( key, "meta.map.audio.%d.channels", i );
-						int map_channels = mlt_properties_get_int( frame_properties, key );
-						if ( !map_channels && i > 0 )
-							map_channels = channels - j;
-						if ( map_channels )
-						{
-							if ( i && ( audio_st[i] = add_audio_stream( this, oc, audio_codec_id, map_channels ) )
-								   && ( ! open_audio( oc, audio_st[i], audio_outbuf_size ) ) )
-								audio_st[i] = NULL;
-						}
-						j += i ? map_channels : audio_st[0]->codec->channels;
-					}
-					mlt_properties_pass( frame_meta_properties, frame_properties, "meta.map.audio." );
-
-					// Write the stream header now that we have all streams
-					av_write_header( oc );
-					is_audio_initialized = 1;
-				}
+				// Save the audio channel remap properties for later
+				mlt_properties_pass( frame_meta_properties, frame_properties, "meta.map.audio." );
 
 				// Create the fifo if we don't have one
 				if ( fifo == NULL )
@@ -1098,6 +1092,7 @@ static void *consumer_thread( void *arg )
 					mlt_properties_set_data( properties, "sample_fifo", fifo, 0, ( mlt_destructor )sample_fifo_close, NULL );
 				}
 
+				// Silence if not normal forward speed
 				if ( mlt_properties_get_double( frame_properties, "_speed" ) != 1.0 )
 					memset( pcm, 0, samples * channels * 2 );
 
@@ -1119,19 +1114,21 @@ static void *consumer_thread( void *arg )
 			// Write interleaved audio and video frames
 			if ( !video_st || ( video_st && audio_st[0] && audio_pts < video_pts ) )
 			{
+				// Write audio
 				if ( ( video_st && terminated ) || ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
 				{
+					int j = 0; // channel offset into interleaved source buffer
 					int n = FFMIN( FFMIN( channels * audio_input_frame_size, sample_fifo_used( fifo ) ), AUDIO_ENCODE_BUFFER_SIZE );
+
+					// Get the audio samples
 					if ( n > 0 )
 						sample_fifo_fetch( fifo, audio_buf_1, n );
 					else
 						memset( audio_buf_1, 0, AUDIO_ENCODE_BUFFER_SIZE );
 					samples = n / channels;
 
-					// Extract the audio channels according to channel mapping
-					int j = 0; // channel offset into interleaved source buffer
-					int map_start = 0, map_channels = 0;
-					for ( i = 0; i < MAX_AUDIO_STREAMS && audio_st[i] && j < channels; i++ )
+					// For each output stream
+					for ( i = 0; i < MAX_AUDIO_STREAMS && audio_st[i] && j < total_channels; i++ )
 					{
 						AVStream *stream = audio_st[i];
 						AVCodecContext *codec = stream->codec;
@@ -1139,50 +1136,76 @@ static void *consumer_thread( void *arg )
 
 						av_init_packet( &pkt );
 
-						// Get the audio channel mapping
-						sprintf( key, "%d.channels", i );
-						map_channels = mlt_properties_get_int( frame_meta_properties, key );
-						sprintf( key, "%d.start", i );
-						if ( mlt_properties_get( frame_meta_properties, key ) )
-							map_start = mlt_properties_get_int( frame_meta_properties, key );
-						else
-							map_start = -1;
-
-						// Optimized for no channel remapping.
-						if ( !map_channels && map_start == -1 )
+						// Optimized for single track and no channel remap
+						if ( !audio_st[1] && !mlt_properties_count( frame_meta_properties ) )
 						{
-							// Encode the audio.
 							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, audio_buf_1 );
 						}
 						else
 						{
-							int ch; // channel offset into interleaved dest buffer
+							// Extract the audio channels according to channel mapping
+							int dest_offset = 0; // channel offset into interleaved dest buffer
 
-							// If last map..channels not specific, use the remaining channels.
-							if ( !map_channels )
-								map_channels = channels - j;
+							// Get the number of channels for this stream
+							sprintf( key, "channels.%d", i );
+							int current_channels = mlt_properties_get_int( properties, key );
 
-							// Clear or allocate the audio buffer.
+							// Clear the destination audio buffer.
 							if ( !audio_buf_2 )
 								audio_buf_2 = av_mallocz( AUDIO_ENCODE_BUFFER_SIZE );
 							else
 								memset( audio_buf_2, 0, AUDIO_ENCODE_BUFFER_SIZE );
 
-							// Interleave the audio buffer with the #channels for this stream.
-							for ( ch = 0; ch < map_channels && j < channels; ch++, j++ )
+							// For each output channel
+							while ( dest_offset < current_channels && j < total_channels )
 							{
-								int16_t *src = audio_buf_1 + ( map_start > -1 ? ( map_start + ch ) : j );
-								int16_t *dest = audio_buf_2 + ch;
-								int s = samples + 1;
+								int map_start = -1, map_channels = 0;
+								int source_offset = 0;
+								int k;
 
-								while ( --s ) {
-									*dest = *src;
-									dest += map_channels;
-									src += channels;
+								// Look for a mapping that starts at j
+								for ( k = 0; k < (MAX_AUDIO_STREAMS * 2) && map_start != j; k++ )
+								{
+									sprintf( key, "%d.channels", k );
+									map_channels = mlt_properties_get_int( frame_meta_properties, key );
+									sprintf( key, "%d.start", k );
+									if ( mlt_properties_get( frame_meta_properties, key ) )
+										map_start = mlt_properties_get_int( frame_meta_properties, key );
+									if ( map_start != j )
+										source_offset += map_channels;
+								}
+
+								// If no mapping
+								if ( map_start != j )
+								{
+									map_channels = current_channels;
+									source_offset = j;
+								}
+
+								// Copy samples if source offset valid
+								if ( source_offset < channels )
+								{
+									// Interleave the audio buffer with the # channels for this stream/mapping.
+									for ( k = 0; k < map_channels; k++, j++, source_offset++, dest_offset++ )
+									{
+										int16_t *src = audio_buf_1 + source_offset;
+										int16_t *dest = audio_buf_2 + dest_offset;
+										int s = samples + 1;
+
+										while ( --s ) {
+											*dest = *src;
+											dest += current_channels;
+											src += channels;
+										}
+									}
+								}
+								// Otherwise silence
+								else
+								{
+									j += current_channels;
+									dest_offset += current_channels;
 								}
 							}
-
-							// Encode the audio.
 							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, audio_buf_2 );
 						}
 
@@ -1220,6 +1243,7 @@ static void *consumer_thread( void *arg )
 			}
 			else if ( video_st )
 			{
+				// Write video
 				if ( mlt_deque_count( queue ) )
 				{
 					int out_size, ret;
@@ -1380,9 +1404,6 @@ static void *consumer_thread( void *arg )
 				nanosleep( &t, NULL );
 			}
 		}
-
-		// Get the next frame
-		frame = mlt_consumer_rt_frame( this );
 	}
 
 #ifdef FLUSH
