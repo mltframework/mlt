@@ -551,7 +551,11 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
 		if ( st->time_base.den == 0 )
 			st->time_base = c->time_base;
+#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
+		c->pix_fmt = pix_fmt ? av_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
+#else
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
+#endif
 
 		if ( mlt_properties_get( properties, "aspect" ) )
 		{
@@ -860,7 +864,6 @@ static void *consumer_thread( void *arg )
 	// Streams
 	AVStream *video_st = NULL;
 	AVStream *audio_st[ MAX_AUDIO_STREAMS ];
-	int is_audio_initialized = 0;
 
 	// Time stamps
 	double audio_pts = 0;
