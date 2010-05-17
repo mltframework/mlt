@@ -1223,7 +1223,7 @@ static void *consumer_thread( void *arg )
 						pkt.stream_index = stream->index;
 						pkt.data = audio_outbuf;
 
-						if ( pkt.size > 0 && stream->pts.den )
+						if ( pkt.size > 0 )
 						{
 							if ( av_interleaved_write_frame( oc, &pkt ) )
 								mlt_log_error( MLT_CONSUMER_SERVICE( this ), "error writing audio frame %d\n", frames - 1 );
@@ -1409,13 +1409,14 @@ static void *consumer_thread( void *arg )
 		}
 	}
 
-#ifdef FLUSH
-	if ( ! real_time_output )
+	// Flush the encoder buffers
+	if ( real_time_output <= 0 )
 	{
 		// Flush audio fifo
-		if ( audio_st && audio_st->codec->frame_size > 1 ) for (;;)
+		// TODO: flush all audio streams
+		if ( audio_st[0] && audio_st[0]->codec->frame_size > 1 ) for (;;)
 		{
-			AVCodecContext *c = audio_st->codec;
+			AVCodecContext *c = audio_st[0]->codec;
 			AVPacket pkt;
 			av_init_packet( &pkt );
 			pkt.size = 0;
@@ -1423,23 +1424,24 @@ static void *consumer_thread( void *arg )
 			if ( /*( c->capabilities & CODEC_CAP_SMALL_LAST_FRAME ) &&*/
 				( channels * audio_input_frame_size < sample_fifo_used( fifo ) ) )
 			{
-				sample_fifo_fetch( fifo, buffer, channels * audio_input_frame_size );
-				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, buffer );
+				sample_fifo_fetch( fifo, audio_buf_1, channels * audio_input_frame_size );
+				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, audio_buf_1 );
 			}
 			if ( pkt.size <= 0 )
 				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, NULL );
+			mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "flushing audio size %d\n", pkt.size );
 			if ( pkt.size <= 0 )
 				break;
 
 			// Write the compressed frame in the media file
 			if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
-				pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st->time_base );
+				pkt.pts = av_rescale_q( c->coded_frame->pts, c->time_base, audio_st[0]->time_base );
 			pkt.flags |= PKT_FLAG_KEY;
-			pkt.stream_index = audio_st->index;
+			pkt.stream_index = audio_st[0]->index;
 			pkt.data = audio_outbuf;
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				fprintf( stderr, "%s: Error while writing flushed audio frame\n", __FILE__ );
+				mlt_log_error( MLT_CONSUMER_SERVICE( this ), "%s: error writing flushed audio frame\n", __FILE__ );
 				break;
 			}
 		}
@@ -1453,6 +1455,7 @@ static void *consumer_thread( void *arg )
 
 			// Encode the image
 			pkt.size = avcodec_encode_video( c, video_outbuf, video_outbuf_size, NULL );
+			mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "flushing video size %d\n", pkt.size );
 			if ( pkt.size <= 0 )
 				break;
 
@@ -1466,25 +1469,20 @@ static void *consumer_thread( void *arg )
 			// write the compressed frame in the media file
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				mlt_log_error( MLT_CONSUMER_SERVICE(this), "error while writing flushing video frame\n" );
+				mlt_log_error( MLT_CONSUMER_SERVICE(this), "error writing flushed video frame\n" );
 				break;
 			}
+			// Dual pass logging
+			if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out )
+				fprintf( mlt_properties_get_data( properties, "_logfile", NULL ), "%s", c->stats_out );
 		}
 	}
-#endif
 
 	// Write the trailer, if any
 	av_write_trailer( oc );
 
-	// XXX ugly hack to prevent x264 from crashing on multi-threaded encoding
-	int pass = mlt_properties_get_int( properties, "pass" );
-	int thread_count = mlt_properties_get_int( properties, "threads" );
-	if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
-		thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
-	int multithreaded_x264 = ( video_codec_id == CODEC_ID_H264 && thread_count > 1 );
-	
 	// close each codec
-	if ( video_st && !multithreaded_x264 )
+	if ( video_st )
 		close_video(oc, video_st);
 	for ( i = 0; i < MAX_AUDIO_STREAMS && audio_st[i]; i++ )
 		close_audio( oc, audio_st[i] );
@@ -1520,7 +1518,7 @@ static void *consumer_thread( void *arg )
 	mlt_consumer_stopped( this );
 	mlt_properties_close( frame_meta_properties );
 
-	if ( pass == 2 )
+	if ( mlt_properties_get_int( properties, "pass" ) > 1 )
 	{
 		// Remove the dual pass log file
 		if ( mlt_properties_get( properties, "_logfilename" ) )
