@@ -31,6 +31,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
 #include <sys/time.h>
+#include "consumer_sdl_osx.h"
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -390,7 +391,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	void ( *unlock )( void ) = mlt_properties_get_data( properties, "app_unlock", NULL );
 
 	if ( lock != NULL ) lock( );
-
+	void *pool = mlt_cocoa_autorelease_init();
 	sdl_lock_display();
 	
 	// Handle events
@@ -452,6 +453,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "refresh" ) )
 	{
 		sdl_unlock_display( );
+		mlt_cocoa_autorelease_close( pool );
 		if ( unlock != NULL ) unlock( );
 		struct timespec tm = { 0, 100000 };
 		nanosleep( &tm, NULL );
@@ -529,7 +531,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	}
 
 	sdl_unlock_display();
-
+	mlt_cocoa_autorelease_close( pool );
 	if ( unlock != NULL ) unlock( );
 
 	return 1;

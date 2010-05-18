@@ -32,6 +32,10 @@ LDFLAGS += -lSDL_image
 endif
 
 SRCS := $(OBJS:.o=.c)
+ifeq ($(targetos),Darwin)
+OBJS += consumer_sdl_osx.o
+SRCS += consumer_sdl_osx.m consumer_sdl_osx.h
+endif
 
 all: 	$(TARGET)
 
