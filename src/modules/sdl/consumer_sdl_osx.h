@@ -31,7 +31,7 @@ static inline void *mlt_cocoa_autorelease_init()
 	return NULL;
 }
 
-static inline void mlt_cocoa_autorelease_close(void*)
+static inline void mlt_cocoa_autorelease_close(void* p)
 {
 }
 #endif
