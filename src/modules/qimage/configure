@@ -101,7 +101,7 @@ else
 				echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg) >> config.mak
 			else
 				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-				echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtSvg >> config.mak
+                                echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg >> config.mak
 			fi
 		else 
 		    if [ -d "$kde_includedir" ]
