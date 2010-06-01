@@ -30,7 +30,7 @@ endif
 
 ifdef VDPAU
 CFLAGS += -DVDPAU `pkg-config --cflags x11`
-LDFLAGS += -ldl `pkg-config --libs x11`
+LDFLAGS += $(LIBDL) `pkg-config --libs x11`
 endif
 
 ifdef CODECS
