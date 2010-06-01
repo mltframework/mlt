@@ -40,6 +40,9 @@
 #include <swscale.h>
 #endif
 #include <opt.h>
+#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
+#include <libavutil/pixdesc.h>
+#endif
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_RGB32 PIX_FMT_RGBA32
