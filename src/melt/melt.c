@@ -260,7 +260,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				}
 			}
 
-			if ( silent )
+			if ( silent || progress )
 				nanosleep( &tm, NULL );
 		}
 
