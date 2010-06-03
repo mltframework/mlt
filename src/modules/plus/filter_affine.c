@@ -38,7 +38,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	// Get the image
 	int error = 0;
-	*format = mlt_image_yuv422;
+	*format = mlt_image_rgb24a;
 	//mlt_frame_get_image( this, image, format, width, height, 0 );
 
 	// Only process if we have no error and a valid colour space
@@ -76,8 +76,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), properties, "producer." );
 			mlt_properties_pass( MLT_TRANSITION_PROPERTIES( transition ), properties, "transition." );
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &a_frame, 0 );
-			mlt_properties_set( MLT_FRAME_PROPERTIES( a_frame ), "rescale.interp", "nearest" );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "distort", 1 );
+//			mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "distort", 1 );
 
 			// Special case - aspect_ratio = 0
 			if ( mlt_properties_get_double( frame_properties, "aspect_ratio" ) == 0 )
@@ -89,7 +88,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_transition_process( transition, a_frame, this );
 			mlt_frame_get_image( a_frame, image, format, width, height, writable );
 			mlt_properties_set_data( frame_properties, "affine_frame", a_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
-			mlt_properties_set_data( frame_properties, "image", *image, *width * *height * 2, NULL, NULL );
+			mlt_properties_set_data( frame_properties, "image", *image, *width * *height * 4, NULL, NULL );
 			mlt_properties_set_data( frame_properties, "alpha", mlt_frame_get_alpha_mask( a_frame ), *width * *height, NULL, NULL );
 		}
 	}

@@ -1,7 +1,8 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2010 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +27,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+
+#include "interp.h"
 
 /** Calculate real geometry.
 */
@@ -240,25 +243,25 @@ static void affine_shear( float this[3][3], float shear_x, float shear_y, float 
 	affine_multiply( this, affine );
 }
 
-static void affine_offset( float this[3][3], int x, int y )
+static void affine_offset( float this[3][3], float x, float y )
 {
 	this[0][2] += x;
 	this[1][2] += y;
 }
 
 // Obtain the mapped x coordinate of the input
-static inline double MapX( float this[3][3], int x, int y )
+static inline double MapX( float this[3][3], float x, float y )
 {
 	return this[0][0] * x + this[0][1] * y + this[0][2];
 }
 
 // Obtain the mapped y coordinate of the input
-static inline double MapY( float this[3][3], int x, int y )
+static inline double MapY( float this[3][3], float x, float y )
 {
 	return this[1][0] * x + this[1][1] * y + this[1][2];
 }
 
-static inline double MapZ( float this[3][3], int x, int y )
+static inline double MapZ( float this[3][3], float x, float y )
 {
 	return this[2][0] * x + this[2][1] * y + this[2][2];
 }
@@ -266,16 +269,16 @@ static inline double MapZ( float this[3][3], int x, int y )
 #define MAX( x, y ) x > y ? x : y
 #define MIN( x, y ) x < y ? x : y
 
-static void affine_max_output( float this[3][3], float *w, float *h, float dz )
+static void affine_max_output( float this[3][3], float *w, float *h, float dz, float max_width, float max_height )
 {
-	int tlx = MapX( this, -720, 576 ) / dz;
-	int tly = MapY( this, -720, 576 ) / dz;
-	int trx = MapX( this, 720, 576 ) / dz;
-	int try = MapY( this, 720, 576 ) / dz;
-	int blx = MapX( this, -720, -576 ) / dz;
-	int bly = MapY( this, -720, -576 ) / dz;
-	int brx = MapX( this, 720, -576 ) / dz;
-	int bry = MapY( this, 720, -576 ) / dz;
+	int tlx = MapX( this, -max_width,  max_height ) / dz;
+	int tly = MapY( this, -max_width,  max_height ) / dz;
+	int trx = MapX( this,  max_width,  max_height ) / dz;
+	int try = MapY( this,  max_width,  max_height ) / dz;
+	int blx = MapX( this, -max_width, -max_height ) / dz;
+	int bly = MapY( this, -max_width, -max_height ) / dz;
+	int brx = MapX( this,  max_width, -max_height ) / dz;
+	int bry = MapY( this,  max_width, -max_height ) / dz;
 
 	int max_x;
 	int max_y;
@@ -298,8 +301,8 @@ static void affine_max_output( float this[3][3], float *w, float *h, float dz )
 	min_y = MIN( min_y, bly );
 	min_y = MIN( min_y, bry );
 
-	*w = ( float )( max_x - min_x + 1 ) / 1440.0;
-	*h = ( float )( max_y - min_y + 1 ) / 1152.0;
+	*w = ( float )( max_x - min_x + 1 ) / max_width / 2.0;
+	*h = ( float )( max_y - min_y + 1 ) / max_height / 2.0;
 }
 
 #define IN_RANGE( v, r )	( v >= - r / 2 && v < r / 2 )
@@ -308,7 +311,6 @@ static inline void get_affine( affine_t *affine, mlt_transition this, float posi
 {
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 	int keyed = mlt_properties_get_int( properties, "keyed" );
-	affine_init( affine->matrix );
 
 	if ( keyed == 0 )
 	{
@@ -374,7 +376,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Image, format, width, height and image for the b frame
 	uint8_t *b_image = NULL;
-	mlt_image_format b_format = mlt_image_yuv422;
+	mlt_image_format b_format = mlt_image_rgb24a;
 	int b_width;
 	int b_height;
 
@@ -392,7 +394,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
 	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
 
-	double consumer_ar = mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) ;
+	double consumer_ar = mlt_properties_get_double( a_props, "consumer_aspect_ratio" );
+	const char *interps = mlt_properties_get( b_props, "rescale.interp" );
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE(this) );
 
 	// Structures for geometry
 	struct mlt_geometry_item_s result;
@@ -401,167 +405,136 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		position = abs( position - length );
 
 	// Fetch the a frame image
-	*format = mlt_image_yuv422;
+	*format = mlt_image_rgb24a;
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// Calculate the region now
 	composite_calculate( this, &result, normalised_width, normalised_height, ( float )position );
 
 	// Fetch the b frame image
-	result.w = ( int )( result.w * *width / normalised_width );
-	result.h = ( int )( result.h * *height / normalised_height );
-	result.x = ( int )( result.x * *width / normalised_width );
-	result.y = ( int )( result.y * *height / normalised_height );
-	//result.w -= ( int )abs( result.w ) % 2;
-	//result.x -= ( int )abs( result.x ) % 2;
-	b_width = result.w;
-	b_height = result.h;
-
+	result.w = ( result.w * *width / normalised_width );
+	result.h = ( result.h * *height / normalised_height );
+	result.x = ( result.x * *width / normalised_width );
+	result.y = ( result.y * *height / normalised_height );
+	b_width = mlt_properties_get_int(b_props, "real_width");
+	b_height = mlt_properties_get_int(b_props, "real_height");
+	if ( 0 && b_width > result.w * 2 && b_height > result.h * 2 )
+	{
+		// This downscale can reduce aliasing by acting as a low pass filter.
+		b_width = b_width / 2;
+		b_height = b_height / 2;
+	}
+	mlt_properties_set_int( b_props, "rescale_width", b_width );
+	mlt_properties_set_int( b_props, "rescale_height", b_height );
 	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
 		mlt_properties_set_double( b_props, "aspect_ratio", consumer_ar );
-
-	if ( !strcmp( mlt_properties_get( a_props, "rescale.interp" ), "none" ) )
+	mlt_properties_set_int( b_props, "progressive", 1 );
+	if ( interps == NULL || !strcmp( interps, "none" ) )
 	{
-		mlt_properties_set( b_props, "rescale.interp", "nearest" );
+		mlt_properties_set( b_props, "rescale.interp", "bilinear" );
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", consumer_ar );
 	}
-	else
-	{
-		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", consumer_ar );
-	}
-
-	mlt_properties_set_int( b_props, "distort", mlt_properties_get_int( properties, "distort" ) );
 	mlt_frame_get_image( b_frame, &b_image, &b_format, &b_width, &b_height, 0 );
-	result.w = b_width;
-	result.h = b_height;
 
 	// Check that both images are of the correct format and process
-	if ( *format == mlt_image_yuv422 && b_format == mlt_image_yuv422 )
+	if ( *format == mlt_image_rgb24a && b_format == mlt_image_rgb24a )
 	{
-		register int x, y;
-		register int dx, dy;
-		double dz;
+		float x, y;
+		float dx, dy;
+		float dz;
 		float sw, sh;
+		uint8_t *p = *image;
 
 		// Get values from the transition
 		float scale_x = mlt_properties_get_double( properties, "scale_x" );
 		float scale_y = mlt_properties_get_double( properties, "scale_y" );
 		int scale = mlt_properties_get_int( properties, "scale" );
-
-		uint8_t *p = *image;
-		uint8_t *q = *image;
-
-		int cx = result.x + ( b_width >> 1 );
-		int cy = result.y + ( b_height >> 1 );
-		cx -= cx % 2;
-
-		int lower_x = 0 - cx;
-		int upper_x = *width - cx;
-		int lower_y = 0 - cy;
-		int upper_y = *height - cy;
-
-		int b_stride = b_width << 1;
-		int a_stride = *width << 1;
-		int x_offset = ( int )result.w >> 1;
-		int y_offset = ( int )result.h >> 1;
-
-		uint8_t *alpha = mlt_frame_get_alpha_mask( b_frame );
-		uint8_t *mask = mlt_frame_get_alpha_mask( a_frame );
-		uint8_t *pmask = mask;
-		float mix;
-
+		float sar = (float) profile->sample_aspect_num / profile->sample_aspect_den;
+		float geom_scale_x = (float) b_width / result.w / sar;
+		float geom_scale_y = (float) b_height / result.h * sar;
+		float cx = result.x + result.w / 2.0;
+		float cy = result.y + result.h / 2.0;
+		float lower_x = - cx;
+		float upper_x = (float) *width - cx;
+		float lower_y = - cy;
+		float upper_y = (float) *height - cy;
+		float x_offset = (float) b_width / 2.0;
+		float y_offset = (float) b_height / 2.0;
+		float sar_affine[3][3];
 		affine_t affine;
+		interpp interp = interpBL_b32;
 
+		affine_init( affine.matrix );
+
+		// Factor aspect ratio into transforms
+		affine_init( sar_affine);
+		sar_affine[0][0] /= sar;
+		affine_multiply( affine.matrix, sar_affine );
+
+		// Compute the affine transform
 		get_affine( &affine, this, ( float )position );
-
-		q = *image;
-
 		dz = MapZ( affine.matrix, 0, 0 );
-
-		if ( mask == NULL )
-		{
-			mask = mlt_pool_alloc( *width * *height );
-			pmask = mask;
-			memset( mask, 255, *width * *height );
-		}
-
 		if ( ( int )abs( dz * 1000 ) < 25 )
-			goto getout;
+			return 0;
 
+		// Factor scaling into the transformation based on output resolution.
+		if ( mlt_properties_get_int( properties, "distort" ) )
+		{
+			scale_x = geom_scale_x * ( scale_x == 0 ? 1 : scale_x );
+			scale_y = geom_scale_y / sar * ( scale_y == 0 ? 1 : scale_y );
+		}
+		else
+		{
+			float scaling = MIN( geom_scale_x, geom_scale_y );
+			if ( b_height / scaling > result.h / sar )
+				scaling = geom_scale_y / sar;
+			else if ( b_width / scaling > result.w * sar )
+				scaling = geom_scale_x * sar;
+			scale_x = scaling * ( scale_x == 0 ? 1 : scale_x );
+			scale_y = scaling * ( scale_y == 0 ? 1 : scale_y );
+		}
 		if ( scale )
 		{
-			affine_max_output( affine.matrix, &sw, &sh, dz );
-			affine_scale( affine.matrix, sw, sh );
+			affine_max_output( affine.matrix, &sw, &sh, dz, profile->width, profile->height );
+			affine_scale( affine.matrix, sw * MIN( geom_scale_x, geom_scale_y ), sh * MIN( geom_scale_x, geom_scale_y ) );
 		}
 		else if ( scale_x != 0 && scale_y != 0 )
 		{
 			affine_scale( affine.matrix, scale_x, scale_y );
 		}
 
-		if ( alpha == NULL )
+		// Invert transform aspect ratio factor
+		sar_affine[0][0] *= sar; // return to identity matrix
+		sar_affine[0][0] *= sar; // reverse the sample aspect adjustment
+		affine_multiply( affine.matrix, sar_affine );
+
+		// Set the interpolation function
+		if ( interps == NULL || strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
+			interp = interpNN_b32;
+		else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
+			interp = interpNN_b32;
+		else if ( strcmp( interps, "bilinear" ) == 0 )
+			interp = interpBL_b32;
+		else if ( strcmp( interps, "bicubic" ) == 0 )
+			interp = interpBC_b32;
+		 // TODO: lanczos 8x8
+		else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "sinc" ) == 0 || strcmp( interps, "lanczos" ) == 0 )
+			interp = interpBC_b32;
+		else if ( strcmp( interps, "spline" ) == 0 ) // TODO: spline 4x4 or 6x6
+			interp = interpBC_b32;
+
+		// Do the transform with interpolation
+		for ( y = lower_y; y < upper_y; y ++ )
 		{
-			for ( y = lower_y; y < upper_y; y ++ )
+			for ( x = lower_x; x < upper_x; x ++ )
 			{
-				p = q;
-
-				for ( x = lower_x; x < upper_x; x ++ )
-				{
-					dx = MapX( affine.matrix, x, y ) / dz + x_offset;
-					dy = MapY( affine.matrix, x, y ) / dz + y_offset;
-
-					if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
-					{
-						pmask ++;
-						dx -= dx & 1;
-						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) );
-						*p ++ = *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
-					}
-					else
-					{
-						p += 2;
-						pmask ++;
-					}
-				}
-
-				q += a_stride;
+				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
+				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
+				if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
+					interp( b_image, b_width, b_height, dx, dy, p );
+				p += 4;
 			}
 		}
-		else
-		{
-			for ( y = lower_y; y < upper_y; y ++ )
-			{
-				p = q;
-
-				for ( x = lower_x; x < upper_x; x ++ )
-				{
-					dx = MapX( affine.matrix, x, y ) / dz + x_offset;
-					dy = MapY( affine.matrix, x, y ) / dz + y_offset;
-
-					if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
-					{
-						*pmask ++ = *( alpha + dy * b_width + dx );
-						mix = ( float )*( alpha + dy * b_width + dx ) / 255.0;
-						dx -= dx & 1;
-						*p = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) );
-						p ++;
-						*p = *p * ( 1 - mix ) + mix * *( b_image + dy * b_stride + ( dx << 1 ) + ( ( x & 1 ) << 1 ) + 1 );
-						p ++;
-					}
-					else
-					{
-						p += 2;
-						pmask ++;
-					}
-				}
-
-				q += a_stride;
-			}
-		}
-
-getout:
-		a_frame->get_alpha_mask = NULL;
-		mlt_properties_set_data( a_props, "alpha", mask, 0, mlt_pool_release, NULL );
 	}
 
 	return 0;
@@ -599,8 +572,6 @@ mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type typ
 	mlt_transition transition = mlt_transition_new( );
 	if ( transition != NULL )
 	{
-		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sx", 1 );
-		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "sy", 1 );
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "distort", 0 );
 		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "geometry", "0,0:100%x100%" );
 		// Inform apps and framework that this is a video only transition
