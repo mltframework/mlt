@@ -36,7 +36,7 @@
 
 //compile:   gcc -c -O2 -Wall -std=c99 -fPIC interp.c -o interp.o
 
-//	-std=c99 za roundf()
+//	-std=c99 za rintf()
 //	-fPIC da lahko linkas v .so (za frei0r)
 
 #include <math.h>
@@ -119,13 +119,13 @@ int interpNNpr_b(unsigned char *sl, int w, int h, float x, float y, unsigned cha
 {
 	//printf("u=%5.2f v=%5.2f   ",x,y);
 	printf("u=%5.3f v=%5.3f     ",x/(w-1),y/(h-1));
-	//printf("U=%2d V=%2d   ",(int)roundf(x),(int)roundf(y));
+	//printf("U=%2d V=%2d   ",(int)rintf(x),(int)rintf(y));
 
 #ifdef TEST_XY_LIMITS
 	if ((x<0)||(x>w)||(y<0)||(y>h)) return -1;
 #endif
 
-	*v=sl[(int)roundf(x)+(int)roundf(y)*w];
+	*v=sl[(int)rintf(x)+(int)rintf(y)*w];
 	return 0;
 }
 
@@ -142,7 +142,7 @@ int interpNN_b(unsigned char *sl, int w, int h, float x, float y, unsigned char 
 	if ((x<0)||(x>w)||(y<0)||(y>h)) return -1;
 #endif
 
-	*v=sl[(int)roundf(x)+(int)roundf(y)*w];
+	*v=sl[(int)rintf(x)+(int)rintf(y)*w];
 	return 0;
 }
 
@@ -159,11 +159,11 @@ int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, unsigned cha
 #ifdef TEST_XY_LIMITS
 	if ((x<0)||(x>w)||(y<0)||(y>h)) return -1;
 #endif
-	v[3]= sl[(int)roundf(x)*4+(int)roundf(y)*4*w+3];
+	v[3]= sl[(int)rintf(x)*4+(int)rintf(y)*4*w+3];
 	float alpha = (float) v[3] / 255.0;
-	v[0]= v[0] * (1.0 - alpha) + sl[(int)roundf(x)*4+(int)roundf(y)*4*w] * alpha;
-	v[1]= v[1] * (1.0 - alpha) + sl[(int)roundf(x)*4+(int)roundf(y)*4*w+1] * alpha;
-	v[2]= v[2] * (1.0 - alpha) + sl[(int)roundf(x)*4+(int)roundf(y)*4*w+2] * alpha;
+	v[0]= v[0] * (1.0 - alpha) + sl[(int)rintf(x)*4+(int)rintf(y)*4*w] * alpha;
+	v[1]= v[1] * (1.0 - alpha) + sl[(int)rintf(x)*4+(int)rintf(y)*4*w+1] * alpha;
+	v[2]= v[2] * (1.0 - alpha) + sl[(int)rintf(x)*4+(int)rintf(y)*4*w+2] * alpha;
 
 	return 0;
 }
