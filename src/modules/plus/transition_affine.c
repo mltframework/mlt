@@ -396,7 +396,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	double consumer_ar = mlt_properties_get_double( a_props, "consumer_aspect_ratio" );
 	const char *interps = mlt_properties_get( b_props, "rescale.interp" );
-	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE(this) );
 
 	// Structures for geometry
 	struct mlt_geometry_item_s result;
@@ -416,8 +415,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	result.h = ( result.h * *height / normalised_height );
 	result.x = ( result.x * *width / normalised_width );
 	result.y = ( result.y * *height / normalised_height );
-	b_width = mlt_properties_get_int(b_props, "real_width");
-	b_height = mlt_properties_get_int(b_props, "real_height");
+	b_width = mlt_properties_get_int( b_props, "real_width" );
+	b_height = mlt_properties_get_int( b_props, "real_height" );
 	if ( 0 && b_width > result.w * 2 && b_height > result.h * 2 )
 	{
 		// This downscale can reduce aliasing by acting as a low pass filter.
@@ -428,7 +427,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
 	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
 		mlt_properties_set_double( b_props, "aspect_ratio", consumer_ar );
-	mlt_properties_set_int( b_props, "progressive", 1 );
+	mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 	if ( interps == NULL || !strcmp( interps, "none" ) )
 	{
 		mlt_properties_set( b_props, "rescale.interp", "bilinear" );
@@ -449,9 +448,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float scale_x = mlt_properties_get_double( properties, "scale_x" );
 		float scale_y = mlt_properties_get_double( properties, "scale_y" );
 		int scale = mlt_properties_get_int( properties, "scale" );
-		float sar = (float) profile->sample_aspect_num / profile->sample_aspect_den;
-		float geom_scale_x = (float) b_width / result.w / sar;
-		float geom_scale_y = (float) b_height / result.h * sar;
+		float geom_scale_x = (float) b_width / result.w / consumer_ar;
+		float geom_scale_y = (float) b_height / result.h * consumer_ar;
 		float cx = result.x + result.w / 2.0;
 		float cy = result.y + result.h / 2.0;
 		float lower_x = - cx;
@@ -468,7 +466,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Factor aspect ratio into transforms
 		affine_init( sar_affine);
-		sar_affine[0][0] /= sar;
+		sar_affine[0][0] /= consumer_ar;
 		affine_multiply( affine.matrix, sar_affine );
 
 		// Compute the affine transform
@@ -481,21 +479,21 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( mlt_properties_get_int( properties, "distort" ) )
 		{
 			scale_x = geom_scale_x * ( scale_x == 0 ? 1 : scale_x );
-			scale_y = geom_scale_y / sar * ( scale_y == 0 ? 1 : scale_y );
+			scale_y = geom_scale_y / consumer_ar * ( scale_y == 0 ? 1 : scale_y );
 		}
 		else
 		{
-			float scaling = MIN( geom_scale_x, geom_scale_y );
-			if ( b_height / scaling > result.h / sar )
-				scaling = geom_scale_y / sar;
-			else if ( b_width / scaling > result.w * sar )
-				scaling = geom_scale_x * sar;
+			float scaling = MIN( geom_scale_x * consumer_ar, geom_scale_y / consumer_ar );
+			if ( (float) b_height / scaling > (float) *height / consumer_ar )
+				scaling = geom_scale_y / consumer_ar;
+			else if ( (float) b_width / scaling > (float) *width * consumer_ar )
+				scaling = geom_scale_x * consumer_ar;
 			scale_x = scaling * ( scale_x == 0 ? 1 : scale_x );
 			scale_y = scaling * ( scale_y == 0 ? 1 : scale_y );
 		}
 		if ( scale )
 		{
-			affine_max_output( affine.matrix, &sw, &sh, dz, profile->width, profile->height );
+			affine_max_output( affine.matrix, &sw, &sh, dz, *width, *height );
 			affine_scale( affine.matrix, sw * MIN( geom_scale_x, geom_scale_y ), sh * MIN( geom_scale_x, geom_scale_y ) );
 		}
 		else if ( scale_x != 0 && scale_y != 0 )
@@ -504,8 +502,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 
 		// Invert transform aspect ratio factor
-		sar_affine[0][0] *= sar; // return to identity matrix
-		sar_affine[0][0] *= sar; // reverse the sample aspect adjustment
+		sar_affine[0][0] *= consumer_ar; // return to identity matrix
+		sar_affine[0][0] *= consumer_ar; // reverse the sample aspect adjustment
 		affine_multiply( affine.matrix, sar_affine );
 
 		// Set the interpolation function
