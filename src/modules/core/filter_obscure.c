@@ -112,7 +112,7 @@ static float lerp( float value, float lower, float upper )
 {
 	if ( value < lower )
 		return lower;
-	else if ( value > upper )
+	else if ( upper > lower && value > upper )
 		return upper;
 	return value;
 }
@@ -127,8 +127,8 @@ static void geometry_calculate( struct geometry_s *output, struct geometry_s *in
 	output->y = lerp( ( in->y + ( out->y - in->y ) * position ) / ( float )out->nh * oh, 0, oh );
 	output->w = lerp( ( in->w + ( out->w - in->w ) * position ) / ( float )out->nw * ow, 0, ow - output->x );
 	output->h = lerp( ( in->h + ( out->h - in->h ) * position ) / ( float )out->nh * oh, 0, oh - output->y );
-	output->mask_w = in->mask_w + ( out->mask_w - in->mask_w ) * position;
-	output->mask_h = in->mask_h + ( out->mask_h - in->mask_h ) * position;
+	output->mask_w = lerp( in->mask_w + ( out->mask_w - in->mask_w ) * position, 1, -1 );
+	output->mask_h = lerp( in->mask_h + ( out->mask_h - in->mask_h ) * position, 1, -1 );
 }
 
 /** Calculate the position for this frame.
