@@ -550,7 +550,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 
 	// Assign the current position to the name
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
-	mlt_properties_set_position( a_props, name, mlt_frame_get_position( a_frame ) );
+	mlt_properties_set_position( a_props, name, mlt_frame_get_position( a_frame ) - mlt_transition_get_in( transition ) );
 
 	// Push the transition on to the frame
 	mlt_frame_push_service( a_frame, transition );
