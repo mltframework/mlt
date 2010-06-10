@@ -670,10 +670,6 @@ void mlt_service_close( mlt_service this )
 			mlt_properties_close( &this->parent );
 		}
 	}
-	else
-	{
-		mlt_service_unlock( this );
-	}
 }
 
 /** Release a service's cache items.
