@@ -5,4 +5,4 @@ config.mak
 config.h
 .depend
 *~
-
+*.cxx
