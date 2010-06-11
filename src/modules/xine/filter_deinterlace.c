@@ -68,6 +68,7 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 		
 			if ( !error && next_image && *format == mlt_image_yuv422 )
 			{
+				mlt_service_lock( MLT_FILTER_SERVICE(filter) );
 				if ( !yadif->ysrc )
 				{
 					// Create intermediate planar planes
@@ -114,6 +115,8 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 				// Convert planar to packed
 				YUY2FromPlanes( *image, pitch, *width, *height, yadif->ydest,
 					yadif->ypitch, yadif->udest, yadif->vdest, yadif->uvpitch, yadif->cpu);
+
+				mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
 			}
 		}
 	}
