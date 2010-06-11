@@ -514,7 +514,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			mlt_frame_set_position( *frame, mlt_producer_frame( parent ) );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_audio", audio == NULL );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_image", video == NULL );
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( *frame ), "consumer_lock_service", this, 0, NULL, NULL );
 		}
 		else if ( producer != NULL )
 		{

@@ -641,19 +641,12 @@ static void *consumer_read_ahead_thread( void *arg )
 	int64_t time_frame = 0;
 	int64_t time_process = 0;
 	int skip_next = 0;
-	mlt_service lock_object = NULL;
 
 	if ( preview_off && preview_format != 0 )
 		this->format = preview_format;
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( this );
-
-	// Get the lock object
-	lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
-
-	// Lock it
-	if ( lock_object ) mlt_service_lock( lock_object );
 
 	// Get the image of the first frame
 	if ( !video_off )
@@ -667,9 +660,6 @@ static void *consumer_read_ahead_thread( void *arg )
 		samples = mlt_sample_calculator( fps, frequency, counter++ );
 		mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 	}
-
-	// Unlock the lock object
-	if ( lock_object ) mlt_service_unlock( lock_object );
 
 	// Mark as rendered
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
@@ -702,14 +692,8 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( frame == NULL )
 			continue;
 
-		// Attempt to fetch the lock object
-		lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
-
 		// Increment the count
 		count ++;
-
-		// Lock if there's a lock object
-		if ( lock_object ) mlt_service_lock( lock_object );
 
 		// All non normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
@@ -770,9 +754,6 @@ static void *consumer_read_ahead_thread( void *arg )
 			if ( ( ( time_wait + time_frame + time_process ) / count ) > frame_duration )
 				skip_next = 1;
 		}
-
-		// Unlock if there's a lock object
-		if ( lock_object ) mlt_service_unlock( lock_object );
 	}
 
 	// Remove the last frame
@@ -824,7 +805,6 @@ static void *consumer_worker_thread( void *arg )
 	// General frame variable
 	mlt_frame frame = NULL;
 	uint8_t *image = NULL;
-	mlt_service lock_object = NULL;
 
 	if ( preview_off && preview_format != 0 )
 		this->format = preview_format;
@@ -836,12 +816,6 @@ static void *consumer_worker_thread( void *arg )
 	frame = mlt_deque_pop_front( this->frame_queue );
 	pthread_cond_signal( &this->frame_queue_cond );
 	pthread_mutex_unlock( &this->frame_queue_mutex );
-
-	// Get the lock object
-	lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
-
-	// Lock it
-	if ( lock_object ) mlt_service_lock( lock_object );
 
 	// Get the image of the first frame
 	if ( !video_off )
@@ -855,9 +829,6 @@ static void *consumer_worker_thread( void *arg )
 		samples = mlt_sample_calculator( fps, frequency, counter++ );
 		mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 	}
-
-	// Unlock the lock object
-	if ( lock_object ) mlt_service_unlock( lock_object );
 
 	// Mark as rendered
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
@@ -890,12 +861,6 @@ static void *consumer_worker_thread( void *arg )
 		if ( frame == NULL )
 			continue;
 
-		// Attempt to fetch the lock object
-		lock_object = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "consumer_lock_service", NULL );
-
-		// Lock if there's a lock object
-		if ( lock_object ) mlt_service_lock( lock_object );
-
 		// All non normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
 		{
@@ -918,9 +883,6 @@ static void *consumer_worker_thread( void *arg )
 			samples = mlt_sample_calculator( fps, frequency, counter++ );
 			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 		}
-
-		// Unlock if there's a lock object
-		if ( lock_object ) mlt_service_unlock( lock_object );
 	}
 
 	// Remove the last frame
