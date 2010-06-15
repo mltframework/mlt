@@ -63,7 +63,7 @@ plugin_desc_t * plugin_desc_new ();
 plugin_desc_t * plugin_desc_new_with_descriptor (const char * object_file,
                                                  unsigned long index,
                                                  const LADSPA_Descriptor * descriptor);
-void            plugin_desc_destroy ();
+void            plugin_desc_destroy (plugin_desc_t * pd);
 
 void plugin_desc_set_object_file (plugin_desc_t * pd, const char * object_file);
 void plugin_desc_set_index       (plugin_desc_t * pd, unsigned long index);
