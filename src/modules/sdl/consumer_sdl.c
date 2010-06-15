@@ -489,7 +489,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	{
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
 		
 		void *pool = mlt_cocoa_autorelease_init();
 
@@ -648,7 +647,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
 		if ( !video_off )
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
 		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 	}
 

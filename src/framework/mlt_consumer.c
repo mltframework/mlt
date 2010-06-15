@@ -784,6 +784,7 @@ static void *consumer_worker_thread( void *arg )
 	// Get the width and height
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
+	int format = this->format;
 
 	// See if video is turned off
 	int video_off = mlt_properties_get_int( properties, "video_off" );
@@ -807,7 +808,7 @@ static void *consumer_worker_thread( void *arg )
 	uint8_t *image = NULL;
 
 	if ( preview_off && preview_format != 0 )
-		this->format = preview_format;
+		format = preview_format;
 
 	// Get the first frame from the work queue
 	pthread_mutex_lock( &this->frame_queue_mutex );
@@ -821,7 +822,7 @@ static void *consumer_worker_thread( void *arg )
 	if ( !video_off )
 	{
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
-		mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+		mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 	}
 
 	if ( !audio_off )
@@ -873,7 +874,7 @@ static void *consumer_worker_thread( void *arg )
 		if ( !video_off )
 		{
 			mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
-			mlt_frame_get_image( frame, &image, &this->format, &width, &height, 0 );
+			mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 		}
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
 

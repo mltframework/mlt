@@ -361,8 +361,6 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 			error = 1;
 		}
 	}
-	if ( !error )
-		mlt_properties_set_int( properties, "format", *format );
 
 	return error;
 }

@@ -285,6 +285,8 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	data = mlt_frame_get_alpha_mask( frame );
 	mlt_properties_get_data( frame_properties, "alpha", &size );
 	mlt_properties_set_data( properties, "alpha", data, size, NULL, NULL );
+	this->convert_image = frame->convert_image;
+	this->convert_audio = frame->convert_audio;
 	return 0;
 }
 
