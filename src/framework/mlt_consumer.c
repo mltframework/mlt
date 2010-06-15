@@ -784,7 +784,7 @@ static void *consumer_worker_thread( void *arg )
 	// Get the width and height
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
-	int format = this->format;
+	mlt_image_format format = this->format;
 
 	// See if video is turned off
 	int video_off = mlt_properties_get_int( properties, "video_off" );
