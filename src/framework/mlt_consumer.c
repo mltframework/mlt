@@ -1196,7 +1196,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 		}
 
 		// Try to get frame from the done queue
-		mlt_log_verbose( MLT_CONSUMER_SERVICE(this), "size %d done count %d work count %d\n",
+		mlt_log_debug( MLT_CONSUMER_SERVICE(this), "size %d done count %d work count %d\n",
 			size, mlt_deque_count( this->done_queue ), mlt_deque_count( this->frame_queue ) );
 		if ( this->real_time > 0 && mlt_deque_count( this->done_queue ) <= 0 )
 		{
