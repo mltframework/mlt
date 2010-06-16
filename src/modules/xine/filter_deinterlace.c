@@ -30,7 +30,73 @@
 #include <string.h>
 #include <stdlib.h>
 
-int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_image_format *format, int *width, int *height, int mode )
+static yadif_filter *init_yadif( int width, int height )
+{
+	yadif_filter *yadif = mlt_pool_alloc( sizeof( *yadif ) );
+
+	yadif->cpu = 0; // Pure C
+#ifdef USE_SSE
+	yadif->cpu |= AVS_CPU_INTEGER_SSE;
+#endif
+#ifdef USE_SSE2
+	yadif->cpu |= AVS_CPU_SSE2;
+#endif
+	// Create intermediate planar planes
+	yadif->yheight = height;
+	yadif->ywidth  = width;
+	yadif->uvwidth = yadif->ywidth / 2;
+	yadif->ypitch  = ( yadif->ywidth +  15 ) / 16 * 16;
+	yadif->uvpitch = ( yadif->uvwidth + 15 ) / 16 * 16;
+	yadif->ysrc  = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
+	yadif->usrc  = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch);
+	yadif->vsrc  = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
+	yadif->yprev = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
+	yadif->uprev = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
+	yadif->vprev = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
+	yadif->ynext = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
+	yadif->unext = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
+	yadif->vnext = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
+	yadif->ydest = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
+	yadif->udest = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
+	yadif->vdest = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
+
+	return yadif;
+}
+
+static void close_yadif(yadif_filter *yadif)
+{
+	mlt_pool_release( yadif->ysrc );
+	mlt_pool_release( yadif->usrc );
+	mlt_pool_release( yadif->vsrc );
+	mlt_pool_release( yadif->yprev );
+	mlt_pool_release( yadif->uprev );
+	mlt_pool_release( yadif->vprev );
+	mlt_pool_release( yadif->ynext );
+	mlt_pool_release( yadif->unext );
+	mlt_pool_release( yadif->vnext );
+	mlt_pool_release( yadif->ydest );
+	mlt_pool_release( yadif->udest );
+	mlt_pool_release( yadif->vdest );
+	mlt_pool_release( yadif );
+
+#if defined(__GNUC__) && !defined(PIC)
+	// Set SSSE3 bit to cpu
+	asm (\
+	"mov $1, %%eax \n\t"\
+	"push %%ebx \n\t"\
+	"cpuid \n\t"\
+	"pop %%ebx \n\t"\
+	"mov %%ecx, %%edx \n\t"\
+	"shr $9, %%edx \n\t"\
+	"and $1, %%edx \n\t"\
+	"shl $9, %%edx \n\t"\
+	"and $511, %%ebx \n\t"\
+	"or %%edx, %%ebx \n\t"\
+	: "=b"(yadif->cpu) : "p"(yadif->cpu) : "%eax", "%ecx", "%edx");
+#endif
+}
+
+static int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_image_format *format, int *width, int *height, int mode )
 {
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_frame previous_frame = mlt_properties_get_data( properties, "previous frame", NULL );
@@ -41,7 +107,6 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 	uint8_t* next_image = NULL;
 	int next_width = *width;
 	int next_height = *height;
-	yadif_filter *yadif = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "yadif", NULL );
 	
 	mlt_log_debug( MLT_FILTER_SERVICE(filter), "previous %d current %d next %d\n",
 		previous_frame? mlt_frame_get_position(previous_frame) : -1,
@@ -68,55 +133,35 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 		
 			if ( !error && next_image && *format == mlt_image_yuv422 )
 			{
-				mlt_service_lock( MLT_FILTER_SERVICE(filter) );
-				if ( !yadif->ysrc )
+				yadif_filter *yadif = init_yadif( *width, *height );
+				if ( yadif )
 				{
-					// Create intermediate planar planes
-					yadif->yheight = *height;
-					yadif->ywidth  = *width;
-					yadif->uvwidth = yadif->ywidth / 2;
-					yadif->ypitch  = ( yadif->ywidth +  15 ) / 16 * 16;
-					yadif->uvpitch = ( yadif->uvwidth + 15 ) / 16 * 16;
-					yadif->ysrc  = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
-					yadif->usrc  = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch);
-					yadif->vsrc  = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
-					yadif->yprev = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
-					yadif->uprev = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
-					yadif->vprev = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
-					yadif->ynext = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
-					yadif->unext = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
-					yadif->vnext = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
-					yadif->ydest = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->ypitch );
-					yadif->udest = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
-					yadif->vdest = (unsigned char *) mlt_pool_alloc( yadif->yheight * yadif->uvpitch );
-					
-				}
-			
-				const int order = mlt_properties_get_int( properties, "top_field_first" );
-				const int pitch = *width << 1;
-				const int parity = 0;
-			
-				// Convert packed to planar
-				YUY2ToPlanes( *image, pitch, *width, *height, yadif->ysrc,
-					yadif->ypitch, yadif->usrc, yadif->vsrc, yadif->uvpitch, yadif->cpu );
-				YUY2ToPlanes( previous_image, pitch, *width, *height, yadif->yprev,
-					yadif->ypitch, yadif->uprev, yadif->vprev, yadif->uvpitch, yadif->cpu );
-				YUY2ToPlanes( next_image, pitch, *width, *height, yadif->ynext,
-					yadif->ypitch, yadif->unext, yadif->vnext, yadif->uvpitch, yadif->cpu );
-				
-				// Deinterlace each plane
-				filter_plane( mode, yadif->ydest, yadif->ypitch, yadif->yprev, yadif->ysrc,
-					yadif->ynext, yadif->ypitch, *width, *height, parity, order, yadif->cpu);
-				filter_plane( mode, yadif->udest, yadif->uvpitch,yadif->uprev, yadif->usrc,
-					yadif->unext, yadif->uvpitch, *width >> 1, *height, parity, order, yadif->cpu);
-				filter_plane( mode, yadif->vdest, yadif->uvpitch, yadif->vprev, yadif->vsrc,
-					yadif->vnext, yadif->uvpitch, *width >> 1, *height, parity, order, yadif->cpu);
-				
-				// Convert planar to packed
-				YUY2FromPlanes( *image, pitch, *width, *height, yadif->ydest,
-					yadif->ypitch, yadif->udest, yadif->vdest, yadif->uvpitch, yadif->cpu);
+					const int order = mlt_properties_get_int( properties, "top_field_first" );
+					const int pitch = *width << 1;
+					const int parity = 0;
 
-				mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
+					// Convert packed to planar
+					YUY2ToPlanes( *image, pitch, *width, *height, yadif->ysrc,
+						yadif->ypitch, yadif->usrc, yadif->vsrc, yadif->uvpitch, yadif->cpu );
+					YUY2ToPlanes( previous_image, pitch, *width, *height, yadif->yprev,
+						yadif->ypitch, yadif->uprev, yadif->vprev, yadif->uvpitch, yadif->cpu );
+					YUY2ToPlanes( next_image, pitch, *width, *height, yadif->ynext,
+						yadif->ypitch, yadif->unext, yadif->vnext, yadif->uvpitch, yadif->cpu );
+
+					// Deinterlace each plane
+					filter_plane( mode, yadif->ydest, yadif->ypitch, yadif->yprev, yadif->ysrc,
+						yadif->ynext, yadif->ypitch, *width, *height, parity, order, yadif->cpu);
+					filter_plane( mode, yadif->udest, yadif->uvpitch,yadif->uprev, yadif->usrc,
+						yadif->unext, yadif->uvpitch, *width >> 1, *height, parity, order, yadif->cpu);
+					filter_plane( mode, yadif->vdest, yadif->uvpitch, yadif->vprev, yadif->vsrc,
+						yadif->vnext, yadif->uvpitch, *width >> 1, *height, parity, order, yadif->cpu);
+
+					// Convert planar to packed
+					YUY2FromPlanes( *image, pitch, *width, *height, yadif->ydest,
+						yadif->ypitch, yadif->udest, yadif->vdest, yadif->uvpitch, yadif->cpu);
+
+					close_yadif( yadif );
+				}
 			}
 		}
 	}
@@ -251,30 +296,6 @@ static mlt_frame deinterlace_process( mlt_filter this, mlt_frame frame )
 	return frame;
 }
 
-static void filter_close( mlt_filter this )
-{
-	yadif_filter *yadif = mlt_properties_get_data( MLT_FILTER_PROPERTIES( this ), "yadif", NULL );
-	if ( yadif )
-	{
-		if ( yadif->ysrc )
-		{
-			mlt_pool_release( yadif->ysrc );
-			mlt_pool_release( yadif->usrc );
-			mlt_pool_release( yadif->vsrc );
-			mlt_pool_release( yadif->yprev );
-			mlt_pool_release( yadif->uprev );
-			mlt_pool_release( yadif->vprev );
-			mlt_pool_release( yadif->ynext );
-			mlt_pool_release( yadif->unext );
-			mlt_pool_release( yadif->vnext );
-			mlt_pool_release( yadif->ydest );
-			mlt_pool_release( yadif->udest );
-			mlt_pool_release( yadif->vdest );
-		}
-		mlt_pool_release( yadif );
-	}
-}
-
 static void on_service_changed( mlt_service owner, mlt_service filter )
 {
 	mlt_service service = mlt_properties_get_data( MLT_SERVICE_PROPERTIES(filter), "service", NULL );
@@ -289,37 +310,9 @@ mlt_filter filter_deinterlace_init( mlt_profile profile, mlt_service_type type, 
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		yadif_filter *yadif = mlt_pool_alloc( sizeof( *yadif ) );
-
-		yadif->cpu = 0; // Pure C
-#ifdef USE_SSE
-		yadif->cpu |= AVS_CPU_INTEGER_SSE;
-#endif
-#ifdef USE_SSE2
-		yadif->cpu |= AVS_CPU_SSE2;
-#endif
-		yadif->ysrc = NULL;
 		this->process = deinterlace_process;
-		this->close = filter_close;
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "method", arg );
-		mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "yadif", yadif, sizeof(*yadif), NULL, NULL );
 		mlt_events_listen( MLT_FILTER_PROPERTIES( this ), this, "service-changed", (mlt_listener) on_service_changed ); 
-		
-#if defined(__GNUC__) && !defined(PIC)
-		// Set SSSE3 bit to cpu
-		asm (\
-		"mov $1, %%eax \n\t"\
-		"push %%ebx \n\t"\
-		"cpuid \n\t"\
-		"pop %%ebx \n\t"\
-		"mov %%ecx, %%edx \n\t"\
-		"shr $9, %%edx \n\t"\
-		"and $1, %%edx \n\t"\
-		"shl $9, %%edx \n\t"\
-		"and $511, %%ebx \n\t"\
-		"or %%edx, %%ebx \n\t"\
-		: "=b"(yadif->cpu) : "p"(yadif->cpu) : "%eax", "%ecx", "%edx");
-#endif
 	}
 	return this;
 }
