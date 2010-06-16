@@ -136,6 +136,8 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef WITH_JPEG
 // for JPEG output
@@ -339,21 +341,6 @@ static void *consumer_thread(void *arg) {
 
 	int counter = 0; // each second we save a Jpeg
 
-	// set blanking flag; is not nessary we write no own blanking(HANC) for HD board ASSY 193
-	if (mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "blanking") != NULL) {
-		// set value
-		if (strcmp(strdup(mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "blanking")), "false")) {
-			this->blanking = 1;
-		} else if (strcmp(strdup(mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "blanking")), "true")) {
-			this->blanking = 0;
-		} else {
-			this->blanking = 1;
-		}
-	} else {
-		// set default value without HD board, also with blanking
-		this->blanking = 1;
-	}
-
 	// set properties (path) for device files
 	if (mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "dev_video") != NULL) {
 		this->device_file_video = strdup(mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "dev_video"));
@@ -365,6 +352,48 @@ static void *consumer_thread(void *arg) {
 			// if we write HANC we do not write further audio data
 			mlt_log_info(MLT_CONSUMER_SERVICE(consumer), "Audio device file is set but will not be used.\n");
 		}
+	}
+
+	// Set additional device file defaults
+	struct stat st;
+	int fd = stat(this->device_file_video, &st);
+	if (fd == -1) {
+		if (this->device_file_video)
+			free(this->device_file_video);
+		this->device_file_video = strdup("/dev/sdivideotx0");
+	} else {
+		close(fd);
+	}
+	if (this->device_file_audio) {
+		fd = stat(this->device_file_audio, &st);
+		if (fd == -1) {
+			if (this->device_file_audio)
+				free(this->device_file_audio);
+			this->device_file_audio = strdup("/dev/sdiaudiotx0");
+		} else {
+			close(fd);
+		}
+	} else if (strstr(this->device_file_video, "sdivideotx")) {
+		if (this->device_file_audio)
+			free(this->device_file_audio);
+		this->device_file_audio = strdup("/dev/sdiaudiotx0");
+	}
+
+	// set blanking flag; is not nessary we write no own blanking(HANC) for HD board ASSY 193
+	if (mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "blanking")) {
+		// set value
+		if (!strcmp( mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "blanking"), "false")) {
+			this->blanking = 0;
+		} else if (!strcmp( mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "blanking"), "true")) {
+			this->blanking = 1;
+		} else {
+			this->blanking = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES( consumer ), "blanking");
+		}
+	} else if (strstr(this->device_file_video, "sdivideotx")) {
+		this->blanking = 0;
+	} else {
+		// set default value without HD board, also with blanking
+		this->blanking = 1;
 	}
 
 	// Define a frame pointer
