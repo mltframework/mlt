@@ -791,18 +791,6 @@ static void *consumer_worker_thread( void *arg )
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
 	int preview_format = mlt_properties_get_int( properties, "preview_format" );
 
-	// Get the audio settings
-	mlt_audio_format afmt = mlt_audio_s16;
-	int counter = 0;
-	double fps = mlt_properties_get_double( properties, "fps" );
-	int channels = mlt_properties_get_int( properties, "channels" );
-	int frequency = mlt_properties_get_int( properties, "frequency" );
-	int samples = 0;
-	void *audio = NULL;
-
-	// See if audio is turned off
-	int audio_off = mlt_properties_get_int( properties, "audio_off" );
-
 	// General frame variable
 	mlt_frame frame = NULL;
 	uint8_t *image = NULL;
@@ -823,12 +811,6 @@ static void *consumer_worker_thread( void *arg )
 	{
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
 		mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
-	}
-
-	if ( !audio_off )
-	{
-		samples = mlt_sample_calculator( fps, frequency, counter++ );
-		mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 	}
 
 	// Mark as rendered
@@ -877,13 +859,6 @@ static void *consumer_worker_thread( void *arg )
 			mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 		}
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
-
-		// Always process audio
-		if ( !audio_off )
-		{
-			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
-		}
 	}
 
 	// Remove the last frame
