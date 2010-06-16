@@ -1198,7 +1198,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 		// Try to get frame from the done queue
 		mlt_log_debug( MLT_CONSUMER_SERVICE(this), "size %d done count %d work count %d\n",
 			size, mlt_deque_count( this->done_queue ), mlt_deque_count( this->frame_queue ) );
-		if ( this->real_time > 0 && mlt_deque_count( this->done_queue ) <= 0 )
+		if ( this->real_time > 0 && size == this->real_time && mlt_deque_count( this->done_queue ) <= size )
 		{
 			// Non-realtime and no ready frames
 			frame = mlt_consumer_get_frame( this );
@@ -1223,7 +1223,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer this )
 
 			// Get the frame from the done queue
 			pthread_mutex_lock( &this->done_queue_mutex );
-			while( this->ahead && mlt_deque_count( this->done_queue ) <= 0 )
+			while( this->ahead && mlt_deque_count( this->done_queue ) <= size )
 				pthread_cond_wait( &this->done_queue_cond, &this->done_queue_mutex );
 			frame = mlt_deque_pop_front( this->done_queue );
 			pthread_mutex_unlock( &this->done_queue_mutex );
