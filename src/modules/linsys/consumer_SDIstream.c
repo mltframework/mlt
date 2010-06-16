@@ -408,7 +408,7 @@ static void *consumer_thread(void *arg) {
 	// Tell the framework how we want our audio and video
 	int frequency = this->audio_format.sample_rate;
 	int channels = 0;
-	int samples = mlt_sample_calculator(fps, frequency, count++);
+	int samples;
 
 	// set number of audio channels, linsys vidport model 193 is limited to 8 channels (4AES frames)
 	this->audio_format.channels = 8; /* 0,2,4,6,8 */
@@ -445,6 +445,7 @@ static void *consumer_thread(void *arg) {
 				mlt_frame_get_image(frame, &video_buffer, &this->pix_fmt, &this->width, &this->height, 1);
 
 				// Get the audio from this frame and save it to our audio_buffer
+				samples = mlt_sample_calculator(fps, frequency, count++);
 				mlt_frame_get_audio(frame, (void**) &audio_buffer_tmp, &this->audio_format.aformat, &frequency, &channels, &samples);
 
 				this->audio_format.sample_rate = frequency;
