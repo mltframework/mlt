@@ -483,7 +483,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 		else
 		{
-			float scaling = MIN( geom_scale_x * consumer_ar, geom_scale_y / consumer_ar );
+			float scaling = MAX( geom_scale_x * consumer_ar, geom_scale_y / consumer_ar );
 			if ( (float) b_height / scaling > (float) *height / consumer_ar )
 				scaling = geom_scale_y / consumer_ar;
 			else if ( (float) b_width / scaling > (float) *width * consumer_ar )
