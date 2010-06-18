@@ -1235,10 +1235,7 @@ static void *consumer_thread( void *arg )
 						mlt_log_debug( MLT_CONSUMER_SERVICE( this ), " frame_size %d\n", codec->frame_size );
 						if ( i == 0 )
 						{
-							if ( audio_codec_id == CODEC_ID_VORBIS )
-								audio_pts = (double)codec->coded_frame->pts * av_q2d( stream->time_base );
-							else
-								audio_pts = (double)stream->pts.val * av_q2d( stream->time_base );
+							audio_pts = (double)stream->pts.val * av_q2d( stream->time_base );
 						}
 					}
 				}
