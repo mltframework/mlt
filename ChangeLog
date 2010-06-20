@@ -1,4 +1,160 @@
+2010-06-20  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.5.6.
+
+  * NEWS: Add v0.5.6 release notes.
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure,
+  src/modules/avformat/factory.c: Fixup local ffmpeg build.  Set PIC compiler
+  flag, make libavdevice optional, and set recommended version to 0.6 branch.
+
+2010-06-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_affine.c: Fix the relative position of affine
+  filter.
+
+2010-06-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/interp.h: Fix affine interpolation reading outside image. 
+  This created image garbage along some edges.
+
+  * src/modules/plus/transition_affine.c: Fix max affine geometry size wrt
+  aspect.
+
+2010-06-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Revoke special handling for
+  vorbis.  It is no longer needed for Ogg and messes up WebM output.
+
+2010-06-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/linsys/consumer_SDIstream.c: Fix sdi sample count to be
+  recomputed on each iteration.
+
+  * src/modules/linsys/consumer_SDIstream.c: Provide sensible defaults for HD
+  SDI.  Also, now blanking may also be set to 0 or 1 to be consistent with
+  other boolean MLT properties.
+
+  * src/modules/jackrack/filter_jackrack.c, src/modules/jackrack/plugin_desc.h:
+  Fix a few compiler warnings in jackrack.
+
+2010-06-09  Dan Dennedy <dan@dennedy.org>
+
+  * .gitignore: Tell git to ignore swig-generated .cxx files.
+
+2010-06-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/interp.h: Use rint instead of roundf to suppress compiler
+  warnings.
+
+  * src/modules/plus/transition_affine.c: Cleanup affine and fix a glitch that
+  may appear.
+
+  * src/modules/plus/transition_affine.c: Fix the repeat/mirror cycle to be
+  relative to start of transition.  Before, it was relative to start of
+  timeline, and this meant geometry animations would start at unpredictable
+  locations.
+
+  * src/modules/core/filter_obscure.c: Fix infinite loop when obscure blocking
+  <1.  Patch from Till Theato.
+
+2010-06-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/filter_boxblur.c: Make bloxblur faster and simpler. 
+  It no longer does YUV-RGB-YUV conversion; just operates in RGB.
+
+  * src/melt/melt.c: Fix superficial cpu usage with melt progress option (used
+  by Kdenlive).
+
+2010-06-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_affine.c, src/modules/plus/interp.h,
+  src/modules/plus/transition_affine.c: Revise affine to use interpolation and
+  sub-pixel positioning.
+
+2010-05-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/Makefile: Fix build on BSD with VDPAU (Alberto Villa).
+
+2010-05-30  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qimage/configure: Fix compilation (Qt Xml linking)
+
+2010-05-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fix compilation warning
+  undeclared av_get_pix_fmt().
+
+  * src/modules/frei0r/factory.c: Fix a memory leak registering frei0r
+  services.
+
+2010-05-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_osx.h: Fix build on non-OSX due to missing
+  parameter name.
+
+2010-05-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_osx.h, src/modules/sdl/consumer_sdl_osx.m: Fix
+  leaking OS X Cocoa objects in SDL consumers.
+
+  * src/modules/sdl/Makefile, src/modules/sdl/consumer_sdl.c,
+  src/modules/sdl/consumer_sdl_still.c: Fix leaking OS X Cocoa objects in SDL
+  consumers.
+
+2010-05-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Enable flushing the encoder
+  buffers.  This improves reliability of encoding especially multithreaded x264
+  (remove ugly hack).
+
+  * src/modules/avformat/consumer_avformat.c: Fix deprecated function and
+  remove unused variable.
+
+  * src/modules/avformat/consumer_avformat.c: Multitrack audio encoding
+  continued.  This version changes the configuration and remapping. The number
+  of channels per output audio track is set using "channels.<N>" properties on
+  the avformat consumer, where <N> is a 0-based numeric representing the output
+  track. At this time, all tracks must share all other attributes such as
+  sample rate, codec, and bitrate.  As for the remapping, this attempts to
+  reuse the meta.map.audio... properties set on the producers as used with the
+  sdi consumer. One exception: to skip or silence channels at the beginning
+  tracks or in the middle, you must add additional map properties to the end of
+  the list to simulate these "gaps."
+
+2010-05-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Add multitrack audio encoding. 
+  This is a check point for the first working version. Changes are forthcoming.
+
+2010-05-07  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/producer_kdenlivetitle.c: interlaced titles
+
+2010-05-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/perl/Makefile.PL: Remove hardcoded 32-bit arch in Perl binding
+  (2995474).
+
+  * src/swig/csharp/build, src/swig/java/build, src/swig/lua/build,
+  src/swig/perl/Makefile.PL, src/swig/perl/build, src/swig/php/build,
+  src/swig/python/build, src/swig/ruby/build, src/swig/tcl/build: Fix missing
+  PIC flags for bindings (2931009)  Also, use g++ for linking bindings because
+  some systems (OS X) do not otherwise know to link with libstdc++.
+
+2010-04-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix white artifacts in image
+  (2972137)  Also applies to Kdenlive bug 1509.
+
+  * configure, src/modules/core/filter_resize.c: Fix bad stride in yuv422 due
+  to non-even width requests.
+
 2010-04-19  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update ChangeLog for v0.5.4.
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
   0.5.4.
