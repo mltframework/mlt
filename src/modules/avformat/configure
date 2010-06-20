@@ -3,7 +3,7 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-svn_rev="21322"
+svn_rev="0.6"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
 [ "$odd_version" -eq "1" ] && svn_rev="HEAD"
@@ -24,7 +24,7 @@ FFmpeg/avformat options:
   --avformat-no-codecs    - Disable the producer and consumer to avoid the FFmpeg codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
 
-  NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.5" ] && echo $svn_rev || echo SVN-r$svn_rev).
+  NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.6" ] && echo $svn_rev || echo SVN-r$svn_rev).
 
 EOF
 
@@ -62,6 +62,7 @@ else
 	export swscale=
 	export codecs=true
 	export filters=true
+	export devices=true
 	pkg-config x11 > /dev/null 2>&1
 	export x11=$?
 
@@ -80,6 +81,7 @@ else
 			--avformat-swscaler )	swscale=true ;;
 			--avformat-no-codecs )	codecs=false ;;
 			--avformat-no-filters )	filters=false ;;
+			--avformat-no-devices )	devices=false ;;
 		esac
 	done
 
@@ -96,21 +98,27 @@ else
 			echo
 			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
 			echo
-			if [ "$svn_rev" = "0.5" ]; then
+			if [ "$svn_rev" = "0.6" ]; then
 				svn checkout svn://svn.mplayerhq.hu/ffmpeg/branches/$svn_rev ffmpeg
 			else
 				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
 			fi
 		fi
-		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $enable_swscale $svn_ffmpeg_extra )
+		[ "$devices" = "false" ] && disable_devices="--disable-devices"
+		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $disable_devices $enable_swscale $svn_ffmpeg_extra --extra-cflags=-fPIC )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
-		echo "CFLAGS+=-I`pwd`/ffmpeg -I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil -I`pwd`/ffmpeg/libavdevice" >> config.mak
-		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil -L`pwd`/ffmpeg/libavdevice" >> config.mak
-		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ]
+		echo "CFLAGS+=-I`pwd`/ffmpeg -I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil" >> config.mak
+		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil" >> config.mak
+		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ] || [ "$svn_rev" = "0.6" ]
 		then
 			echo "CFLAGS+=-I`pwd`/ffmpeg/libswscale" >> config.mak
 			echo "LDFLAGS+=-L`pwd`/ffmpeg/libswscale" >> config.mak
 			echo "SWSCALE=1" >> config.mak
+		fi
+		if [ "$devices" = "true" ]
+		then
+			echo "CFLAGS+=-I`pwd`/ffmpeg/libavdevice" >> config.mak
+			echo "LDFLAGS+=-L`pwd`/ffmpeg/libavdevice" >> config.mak
 		fi
 		[ $targetos = "Darwin" ] &&
 			echo "LDFLAGS+=-single_module" >> config.mak
@@ -124,8 +132,8 @@ else
 	then 
 		if [ -d "$static_ffmpeg" ]
 		then
-			echo "CFLAGS+=-I$static_ffmpeg/libavformat -I$static_ffmpeg/libavcodec -I$static_ffmpeg/libavutil -I$static_ffmpeg/libavdevice" >> config.mak
-			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil -L$static_ffmpeg/libavdevice" >> config.mak
+			echo "CFLAGS+=-I$static_ffmpeg/libavformat -I$static_ffmpeg/libavcodec -I$static_ffmpeg/libavutil" >> config.mak
+			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil" >> config.mak
 			[ $targetos = "Darwin" ] &&
 			 	echo "LDFLAGS+=-single_module" >> config.mak
 			if [ "$swscale" != "" ]
@@ -133,6 +141,11 @@ else
 				echo "CFLAGS+=-I$static_ffmpeg/libswscale" >> config.mak
 				echo "LDFLAGS+=-L$static_ffmpeg/libswscale" >> config.mak
 				echo "SWSCALE=1" >> config.mak
+			fi
+			if [ "$devices" = "true" ]
+			then
+				echo "CFLAGS+=-I$static_ffmpeg/libavdevice" >> config.mak
+				echo "LDFLAGS+=-L$static_ffmpeg/libavdevice" >> config.mak
 			fi
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 			extra_libs="$extra_libs -lm -lz -lbz2"
@@ -147,8 +160,13 @@ else
 	elif [ "$shared_ffmpeg" != "" ]
 	then
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
-		echo "CFLAGS+=$(pkg-config --cflags libavformat libavdevice) $TMP_CFLAGS" >> config.mak
-		echo "LDFLAGS+=$(pkg-config --libs-only-L libavformat libavdevice)" >> config.mak
+		echo "CFLAGS+=$(pkg-config --cflags libavformat) $TMP_CFLAGS" >> config.mak
+		echo "LDFLAGS+=$(pkg-config --libs-only-L libavformat)" >> config.mak
+		if [ "$devices" = "true" ]
+		then
+			echo "CFLAGS+=$(pkg-config --cflags libavdevice) $TMP_CFLAGS" >> config.mak
+			echo "LDFLAGS+=$(pkg-config --libs-only-L libavdevice)" >> config.mak
+		fi
 		[ -d "$shared_ffmpeg/include/ffmpeg/libavformat" ] &&
 			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libavformat -I$shared_ffmpeg/include/ffmpeg/libavcodec -I$shared_ffmpeg/include/ffmpeg/libavdevice" >> config.mak
 		[ -d "$shared_ffmpeg/include/libavformat" ] &&
@@ -176,6 +194,7 @@ else
 	echo "AVFORMAT_SUFFIX=$avformat_suffix" >> config.mak
 	[ "$codecs" = "true" ] && echo "CODECS=1" >> config.mak
 	[ "$filters" = "true" ] && echo "FILTERS=1" >> config.mak
+	[ "$devices" = "true" ] && echo "DEVICES=1" >> config.mak
 	exit 0
 
 fi

@@ -7,7 +7,6 @@ include config.mak
 LDFLAGS += -lavformat$(AVFORMAT_SUFFIX)
 LDFLAGS += -lavcodec$(AVFORMAT_SUFFIX)
 LDFLAGS += -lavutil$(AVFORMAT_SUFFIX)
-LDFLAGS += -lavdevice$(AVFORMAT_SUFFIX)
 LDFLAGS += $(EXTRA_LIBS)
 
 ifndef CODECS
@@ -44,11 +43,15 @@ CFLAGS += -DSWSCALE
 LDFLAGS += -lswscale$(AVFORMAT_SUFFIX)
 endif
 
+ifdef DEVICES
+CFLAGS += -DAVDEVICE
+LDFLAGS += -lavdevice$(AVFORMAT_SUFFIX)
+endif
+
 ifdef LOCAL_FFMPEG
 LOCAL_FFMPEG_OBJS = ffmpeg/libavformat/libavformat$(AVFORMAT_SUFFIX) \
                     ffmpeg/libavcodec/libavcodec$(AVFORMAT_SUFFIX) \
-                    ffmpeg/libavutil/libavutil$(AVFORMAT_SUFFIX) \
-                    ffmpeg/libavutil/libavdevice$(AVFORMAT_SUFFIX)
+                    ffmpeg/libavutil/libavutil$(AVFORMAT_SUFFIX)
 endif
 
 SRCS := $(OBJS:.o=.c)
