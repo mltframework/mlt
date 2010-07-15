@@ -1005,7 +1005,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Duplicate the last image if necessary (see comment on rawvideo below)
-	if ( this->av_frame && this->got_picture && this->seekable
+	if ( this->av_frame && this->av_frame->linesize[0] && this->got_picture && this->seekable
 		 && ( paused
 			  || this->current_position == req_position
 			  || ( !use_new_seek && this->current_position > req_position ) ) )
