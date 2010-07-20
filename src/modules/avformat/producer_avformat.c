@@ -1551,7 +1551,7 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 #endif
 		if ( ret < 0 )
 		{
-			ret = 0;
+			mlt_log_warning( MLT_PRODUCER_SERVICE(this->parent), "audio decoding error\n", ret );
 			break;
 		}
 
