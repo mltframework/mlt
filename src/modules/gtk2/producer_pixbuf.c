@@ -217,7 +217,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 	this->image = mlt_cache_item_data( this->image_cache, NULL );
 
 	// Check if user wants us to reload the image
-	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) 
+	if ( mlt_properties_get_int( producer_props, "force_reload" ) || mlt_properties_get_int( producer_props, "_orientation" ) != mlt_properties_get_int( producer_props, "meta.attr.orientation" ) )
 	{
 		pixbuf = NULL;
 		this->image = NULL;
@@ -281,6 +281,45 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 
 		if ( pixbuf )
 		{
+			int exif_orientation = mlt_properties_get_int( producer_props, "meta.attr.orientation" );
+
+			if ( exif_orientation > 1 )
+			{
+			      GdkPixbuf *processed;
+			      GdkPixbufRotation matrix = GDK_PIXBUF_ROTATE_NONE;
+
+			      // Rotate image according to exif data
+			      switch ( exif_orientation ) {
+				case 2:
+				    processed = gdk_pixbuf_flip ( pixbuf, TRUE );
+				    break;
+				case 4:
+				    processed = gdk_pixbuf_flip ( pixbuf, FALSE );
+				    break;
+				case 8:
+				    matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
+				    processed = pixbuf;
+				    break;
+				case 3:
+				    matrix = GDK_PIXBUF_ROTATE_UPSIDEDOWN;
+				    processed = pixbuf;
+				    break;
+				case 6:
+				    matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
+				    processed = pixbuf;
+				    break;
+				case 5:
+				    matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
+				    processed = gdk_pixbuf_flip ( pixbuf, TRUE );
+				    break;
+				case 7:
+				    matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
+				    processed = gdk_pixbuf_flip ( pixbuf, TRUE );
+				    break;
+
+			      }
+			      pixbuf = gdk_pixbuf_rotate_simple( processed, matrix );
+			}
 			// Register this pixbuf for destruction and reuse
 			mlt_cache_item_close( pixbuf_cache );
 			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref );
@@ -290,6 +329,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 			mlt_events_block( producer_props, NULL );
 			mlt_properties_set_int( producer_props, "_real_width", gdk_pixbuf_get_width( pixbuf ) );
 			mlt_properties_set_int( producer_props, "_real_height", gdk_pixbuf_get_height( pixbuf ) );
+			mlt_properties_set_int( producer_props, "_orientation", exif_orientation );
 			mlt_events_unblock( producer_props, NULL );
 
 			// Store the width/height of the pixbuf temporarily
