@@ -98,7 +98,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 	self->current_image = static_cast<uint8_t*>( mlt_cache_item_data( self->image_cache, NULL ) );
 
 	// Check if user wants us to reload the image
-	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) 
+	if ( mlt_properties_get_int( producer_props, "force_reload" ) || mlt_properties_get_int( producer_props, "_orientation" ) != mlt_properties_get_int( producer_props, "meta.attr.orientation" ) )
 	{
 		qimage = NULL;
 		self->current_image = NULL;
@@ -166,6 +166,44 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 		if ( !qimage->isNull( ) )
 		{
 			// Store the width/height of the qimage
+			int exif_orientation = mlt_properties_get_int( producer_props, "meta.attr.orientation" );
+
+			if ( exif_orientation > 1 )
+			{
+			      // Rotate image according to exif data
+			      QImage processed;
+			      QMatrix matrix;
+
+			      switch ( exif_orientation ) {
+				case 2:
+				    matrix.scale( -1, 1 );
+				    break;
+				case 3:
+				    matrix.rotate( 180 );
+				    break;
+				case 4:
+				    matrix.scale( 1, -1 );
+				    break;
+				case 5:
+				    matrix.rotate( 90 );
+				    matrix.scale( -1, 1 );
+				    break;
+				case 6:
+				    matrix.rotate( 270 );
+				    break;
+				case 7:
+				    matrix.rotate( 270 );
+				    matrix.scale( -1, 1 );
+				    break;
+				case 8:
+				    matrix.rotate( 90 );
+				    break;
+			      }
+			      processed = qimage->transformed( matrix );
+			      delete qimage;
+			      qimage = new QImage( processed );
+			}
+			  
 			self->current_width = qimage->width( );
 			self->current_height = qimage->height( );
 
@@ -178,6 +216,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 			mlt_events_block( producer_props, NULL );
 			mlt_properties_set_int( producer_props, "_real_width", self->current_width );
 			mlt_properties_set_int( producer_props, "_real_height", self->current_height );
+			mlt_properties_set_int( producer_props, "_orientation", exif_orientation );
 			mlt_events_unblock( producer_props, NULL );
 		}
 		else
