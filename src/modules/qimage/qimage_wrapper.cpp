@@ -185,18 +185,18 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 				    matrix.scale( 1, -1 );
 				    break;
 				case 5:
-				    matrix.rotate( 90 );
+				    matrix.rotate( 270 );
 				    matrix.scale( -1, 1 );
 				    break;
 				case 6:
-				    matrix.rotate( 270 );
+				    matrix.rotate( 90 );
 				    break;
 				case 7:
-				    matrix.rotate( 270 );
+				    matrix.rotate( 90 );
 				    matrix.scale( -1, 1 );
 				    break;
 				case 8:
-				    matrix.rotate( 90 );
+				    matrix.rotate( 270 );
 				    break;
 			      }
 			      processed = qimage->transformed( matrix );

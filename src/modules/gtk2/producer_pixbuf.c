@@ -297,7 +297,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 				    processed = gdk_pixbuf_flip ( pixbuf, FALSE );
 				    break;
 				case 8:
-				    matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
+				    matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
 				    processed = pixbuf;
 				    break;
 				case 3:
@@ -305,15 +305,15 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 				    processed = pixbuf;
 				    break;
 				case 6:
-				    matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
+				    matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
 				    processed = pixbuf;
 				    break;
 				case 5:
-				    matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
+				    matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
 				    processed = gdk_pixbuf_flip ( pixbuf, TRUE );
 				    break;
 				case 7:
-				    matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
+				    matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
 				    processed = gdk_pixbuf_flip ( pixbuf, TRUE );
 				    break;
 
