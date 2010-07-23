@@ -31,6 +31,7 @@
 #include <limits.h>
 
 #define FREI0R_PLUGIN_PATH "/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/.frei0r-1/lib"
+#define GET_FREI0R_PATH (getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH)
 
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_frame filter_process( mlt_filter this, mlt_frame frame );
@@ -252,7 +253,7 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 	mlt_tokeniser tokeniser = mlt_tokeniser_init ( );
 	int dircount=mlt_tokeniser_parse_new (
 		tokeniser,
-		getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH,
+		GET_FREI0R_PATH,
 		 ":"
 	);
 	void* ret=NULL;
@@ -291,7 +292,7 @@ MLT_REPOSITORY
 	mlt_tokeniser tokeniser = mlt_tokeniser_init ( );
 	int dircount=mlt_tokeniser_parse_new (
 		tokeniser ,
-		getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH,
+		GET_FREI0R_PATH,
 		":"
 	);
 	char dirname[PATH_MAX];
