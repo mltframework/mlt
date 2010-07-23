@@ -41,7 +41,6 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 	void (*f0r_get_plugin_info)(f0r_plugin_info_t*)=mlt_properties_get_data( prop, "f0r_get_plugin_info" ,NULL);
 	void (*f0r_get_param_info)(f0r_param_info_t* info, int param_index)=mlt_properties_get_data( prop ,  "f0r_get_param_info" ,NULL);
 	void (*f0r_set_param_value)(f0r_instance_t instance, f0r_param_t param, int param_index)=mlt_properties_get_data(  prop , "f0r_set_param_value" ,NULL);
-	void (*f0r_get_param_value)(f0r_instance_t instance, f0r_param_t param, int param_index)=mlt_properties_get_data(  prop , "f0r_get_param_value" ,NULL);
 	void (*f0r_update2) (f0r_instance_t instance, double time,
 			 const uint32_t* inframe1,const uint32_t* inframe2,const uint32_t* inframe3,
 	 uint32_t* outframe)=mlt_properties_get_data(  prop , "f0r_update2" ,NULL);
@@ -69,23 +68,21 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 		for (i=0;i<info.num_params;i++){
 			f0r_param_info_t pinfo;
 			f0r_get_param_info(&pinfo,i);
-			mlt_geometry geom=mlt_geometry_init();
-			struct mlt_geometry_item_s item;
-			//set param if found
-
-			double t=0.0;
-			f0r_get_param_value(inst,&t,i);
-			char *val;
 			if (mlt_properties_get( prop , pinfo.name ) !=NULL ){
 				switch (pinfo.type) {
 					case F0R_PARAM_DOUBLE:
 					case F0R_PARAM_BOOL:
-						val=mlt_properties_get(prop, pinfo.name );
+					{
+						char *val=mlt_properties_get(prop, pinfo.name );
+						mlt_geometry geom=mlt_geometry_init();
+						struct mlt_geometry_item_s item;
 						mlt_geometry_parse(geom,val,-1,-1,-1);
 						mlt_geometry_fetch(geom,&item,position);
-						t=item.x;
+						double t=item.x;
 						f0r_set_param_value(inst,&t,i);
+						mlt_geometry_close(geom);
 						break;
+					}
 					case F0R_PARAM_COLOR:
 					{
 						f0r_param_color_t color;
@@ -95,8 +92,6 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 					}
 				}
 			}
-
-			mlt_geometry_close(geom);
 		}
 	}
 
