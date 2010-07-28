@@ -23,7 +23,12 @@
 #include <framework/mlt_cache.h>
 #include <framework/mlt_log.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include "../qimage/readexif.h"
+
+#include "config.h"
+
+#ifdef USE_EXIF
+#include <exif-data.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -283,10 +288,18 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 
 		if ( pixbuf )
 		{
+#ifdef USE_EXIF
 			// Read the exif value for this file
 			if ( disable_exif == 0) {
-				int exif_orientation = check_exif_orientation(mlt_properties_get_value( this->filenames, image_idx ));
-
+				ExifData *d = exif_data_new_from_file( mlt_properties_get_value( this->filenames, image_idx ) );
+				ExifEntry *entry;
+				ExifByteOrder byte_order = exif_data_get_byte_order (d);
+				int exif_orientation = 0;
+				/* get orientation and rotate image accordingly if necessary */
+				if ((entry = exif_content_get_entry (d->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION)))
+				{
+					exif_orientation = exif_get_short (entry->data, byte_order);
+				}
 				if ( exif_orientation > 1 )
 				{
 					GdkPixbuf *processed;
@@ -324,6 +337,8 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 					pixbuf = gdk_pixbuf_rotate_simple( processed, matrix );
 				}
 			}
+#endif
+
 			// Register this pixbuf for destruction and reuse
 			mlt_cache_item_close( pixbuf_cache );
 			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref );

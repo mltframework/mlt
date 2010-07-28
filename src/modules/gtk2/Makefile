@@ -21,6 +21,11 @@ CFLAGS += `pkg-config gdk-pixbuf-2.0 --cflags`
 LDFLAGS += `pkg-config gdk-pixbuf-2.0 --libs`
 endif
 
+ifdef USE_EXIF
+CFLAGS += $(EXIFCXXFLAGS) 
+LDFLAGS += $(EXIFLIBS)
+endif
+
 ifdef MMX_FLAGS
 ifndef ARCH_X86_64
 ASM_OBJS = have_mmx.o scale_line_22_yuv_mmx.o

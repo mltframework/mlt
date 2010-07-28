@@ -10,6 +10,8 @@ QImage options:
   --qimage-includedir     - Location of QT include directory [/usr/include/qt4 or /usr/include/qt3]
   --kde-libdir            - Location of KDE lib directory [/usr/lib]
   --kde-includedir        - Location of KDE include directory [/usr/include/kde]
+  --exif-libdir           - Location of libexif lib directory [/usr/lib]
+  --exif-includedir       - Location of libexif include directory [/usr/include/libexif]
 
 EOF
 
@@ -61,17 +63,45 @@ else
 			--qimage-includedir=* )	qimage_includedir="${i#--qimage-includedir=}" ;;
 			--kde-libdir=* )	kde_libdir="${i#--kde-libdir=}" ;;
 			--kde-includedir=* )	kde_includedir="${i#--kde-includedir=}" ;;
+			--exif-libdir=* )	exif_libdir="${i#--exif-libdir=}" ;;
+			--exif-includedir=* )	exif_includedir="${i#--exif-includedir=}" ;;
 			--force-qt3 )		force_qt3="true" ;;
 		esac
 	done
+
+	echo > config.h
+	echo > config.mak
+
+	pkg-config --exists 'libexif'
+	if [ $? -eq 0 ]
+	then
+	    echo "Libexif found, enabling auto rotate"
+	    echo "#define USE_EXIF" >> config.h
+	    echo "USE_EXIF=1" >> config.mak
+	    echo EXIFCXXFLAGS=$(pkg-config --cflags libexif ) >> config.mak
+	    echo EXIFLIBS=$(pkg-config --libs libexif) >> config.mak
+	elif [ -d "$exif_libdir" -a -d "$exif_includedir" ]
+	then
+		# test if we have a libexif
+		if [ -f "$exif_libdir/exif-data.h" ]
+		then
+			echo "Libexif found, enabling auto rotate"
+			echo "#define USE_EXIF" >> config.h
+			echo "USE_EXIF=1" >> config.mak
+			echo EXIFCXXFLAGS=-I$exif_includedir >> config.mak
+                        echo EXIFLIBS=-L$exif_libdir lexif >> config.mak
+		else
+			echo "Libexif not found, disabling exif features (auto rotate)"
+		fi
+	fi
 
 	pkg-config --exists 'QtGui >= 4'
 	if [ $? -eq 0 ] && [ "$force_qt3" = "" ]
 	then
 		echo "Qt version 4.x detected, will compile Qt4 qimage producer"
 		qt4_found=true
-		echo "#define USE_QT4" > config.h
-		echo "USE_QT4=1" > config.mak
+		echo "#define USE_QT4" >> config.h
+		echo "USE_QT4=1" >> config.mak
 		echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg ) >> config.mak
 		echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg) >> config.mak
 		
@@ -89,8 +119,6 @@ else
 
 		echo "Include directory: " $qimage_includedir
 
-		echo > config.h
-		echo > config.mak
 		if [ "$qt4_found" != "" ] && [ "$force_qt3" = "" ]
 		then
 			echo "#define USE_QT4" >> config.h

@@ -22,7 +22,6 @@
  */
 
 #include "qimage_wrapper.h"
-#include "readexif.h"
 
 #ifdef USE_QT3
 #include <qimage.h>
@@ -43,6 +42,9 @@
 #include <QtCore/QtEndian>
 #endif
 
+#ifdef USE_EXIF
+#include <exif-data.h>
+#endif
 
 #include <cmath>
 
@@ -169,10 +171,18 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 
 		if ( !qimage->isNull( ) )
 		{
+#ifdef USE_EXIF
 			// Read the exif value for this file
 			if ( disable_exif == 0) {
-				int exif_orientation = check_exif_orientation(mlt_properties_get_value( self->filenames, image_idx ));
-
+				ExifData *d = exif_data_new_from_file( mlt_properties_get_value( self->filenames, image_idx ) );
+				ExifEntry *entry;
+				ExifByteOrder byte_order = exif_data_get_byte_order (d);
+				int exif_orientation = 0;
+				/* get orientation and rotate image accordingly if necessary */
+				if ((entry = exif_content_get_entry (d->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION)))
+				{
+					exif_orientation = exif_get_short (entry->data, byte_order);
+				}
 				if ( exif_orientation > 1 )
 				{
 				      // Rotate image according to exif data
@@ -209,7 +219,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 				      qimage = new QImage( processed );
 				}
 			}
-			
+#endif			
 			// Store the width/height of the qimage  
 			self->current_width = qimage->width( );
 			self->current_height = qimage->height( );
