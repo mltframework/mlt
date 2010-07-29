@@ -176,13 +176,16 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 			if ( disable_exif == 0) {
 				ExifData *d = exif_data_new_from_file( mlt_properties_get_value( self->filenames, image_idx ) );
 				ExifEntry *entry;
-				ExifByteOrder byte_order = exif_data_get_byte_order (d);
 				int exif_orientation = 0;
 				/* get orientation and rotate image accordingly if necessary */
-				if ((entry = exif_content_get_entry (d->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION)))
-				{
-					exif_orientation = exif_get_short (entry->data, byte_order);
+				if (d) {
+					if ( ( entry = exif_content_get_entry ( d->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION ) ) )
+						exif_orientation = exif_get_short (entry->data, exif_data_get_byte_order (d));
+					
+					/* Free the EXIF data */
+					exif_data_unref(d);
 				}
+
 				if ( exif_orientation > 1 )
 				{
 				      // Rotate image according to exif data
