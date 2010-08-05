@@ -306,7 +306,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 
 				if ( exif_orientation > 1 )
 				{
-					GdkPixbuf *processed;
+					GdkPixbuf *processed = NULL;
 					GdkPixbufRotation matrix = GDK_PIXBUF_ROTATE_NONE;
 
 					// Rotate image according to exif data
@@ -338,7 +338,8 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 					      processed = pixbuf;
 					      break;
 					}
-					pixbuf = gdk_pixbuf_rotate_simple( processed, matrix );
+					if ( processed )
+						pixbuf = gdk_pixbuf_rotate_simple( processed, matrix );
 				}
 			}
 #endif
