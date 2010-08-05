@@ -466,7 +466,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 	// Get the image, width and height
 	mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 	if ( image != NULL )
 	{
@@ -533,6 +532,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	sdl_unlock_display();
 	mlt_cocoa_autorelease_close( pool );
 	if ( unlock != NULL ) unlock( );
+	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 	return 1;
 }

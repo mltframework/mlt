@@ -462,7 +462,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 		
 		void *pool = mlt_cocoa_autorelease_init();
 
@@ -614,6 +613,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 		sdl_unlock_display();
 		mlt_cocoa_autorelease_close( pool );
+		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 	}
 	else if ( this->running )
 	{

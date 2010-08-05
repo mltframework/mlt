@@ -500,6 +500,7 @@ static void *consumer_thread(void *arg) {
 					} else if (save_jpegs > 0) {
 						counter++;
 					}
+					mlt_events_fire(MLT_CONSUMER_PROPERTIES( consumer ), "consumer-frame-show", frame, NULL );
 				} else {
 					mlt_log_warning(MLT_CONSUMER_SERVICE(consumer), "Videobuffer was NULL, skipping playout!\n");
 				}
