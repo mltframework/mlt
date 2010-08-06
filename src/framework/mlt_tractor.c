@@ -398,6 +398,12 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 						mlt_properties_set( frame_properties, name, mlt_properties_get( temp_properties, name ) );
 				}
 
+				// Copy the format conversion virtual functions
+				if ( ! (*frame)->convert_image && temp->convert_image )
+					(*frame)->convert_image = temp->convert_image;
+				if ( ! (*frame)->convert_audio && temp->convert_audio )
+					(*frame)->convert_audio = temp->convert_audio;
+
 				// Check for last track
 				done = mlt_properties_get_int( temp_properties, "last_track" );
 
