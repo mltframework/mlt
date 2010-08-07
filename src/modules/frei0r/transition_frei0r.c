@@ -42,8 +42,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
 	if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( b_props, "rescale.interp" ), "none" ) )
-                mlt_properties_set( b_props, "rescale.interp", "nearest" );
-	
+		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
+
 	uint8_t *images[]={NULL,NULL,NULL};
 
 	*format = mlt_image_rgb24a;

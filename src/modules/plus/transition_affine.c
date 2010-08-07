@@ -430,7 +430,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 	if ( interps == NULL || !strcmp( interps, "none" ) )
 	{
-		mlt_properties_set( b_props, "rescale.interp", "bilinear" );
+		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
 		mlt_properties_set_double( b_props, "consumer_aspect_ratio", consumer_ar );
 	}
 	mlt_frame_get_image( b_frame, &b_image, &b_format, &b_width, &b_height, 0 );

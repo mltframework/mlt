@@ -513,7 +513,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Ensure we get scaling on the b_frame
 	if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( b_props, "rescale.interp" ), "none" ) )
-		mlt_properties_set( b_props, "rescale.interp", "nearest" );
+		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
 
 	if ( mlt_properties_get( properties, "fixed" ) )
 		mix = mlt_properties_get_double( properties, "fixed" );
