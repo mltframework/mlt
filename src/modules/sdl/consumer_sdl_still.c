@@ -257,7 +257,7 @@ static inline void display_1( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
-	int stride = width * 3;
+	int stride = width * 4;
 	int x, y, row_index;
 	uint8_t *q, *row;
 
@@ -274,7 +274,7 @@ static inline void display_1( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 4 );
 			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 		}
 		start += scanlength;
@@ -287,7 +287,7 @@ static inline void display_2( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
-	int stride = width * 3;
+	int stride = width * 4;
 	int x, y, row_index;
 	uint8_t *q, *row;
 
@@ -304,7 +304,7 @@ static inline void display_2( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 4 );
 			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 		}
 		start += scanlength;
@@ -317,7 +317,7 @@ static inline void display_3( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
-	int stride = width * 3;
+	int stride = width * 4;
 	int x, y, row_index;
 	uint8_t *q, *row;
 
@@ -335,7 +335,7 @@ static inline void display_3( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 4 );
 			pixel = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 			*p ++ = (pixel & 0xFF0000) >> 16;
 			*p ++ = (pixel & 0x00FF00) >> 8;
@@ -351,7 +351,7 @@ static inline void display_4( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 	if ( rect.w == 0 || rect.h == 0 ) return;
 	int scale_width = ( width << 16 ) / rect.w;
 	int scale_height = ( height << 16 ) / rect.h;
-	int stride = width * 3;
+	int stride = width * 4;
 	int x, y, row_index;
 	uint8_t *q, *row;
 
@@ -368,7 +368,7 @@ static inline void display_4( SDL_Surface *screen, SDL_Rect rect, uint8_t *image
 		row = image + stride * row_index;
 		for ( x = 0; x < rect.w; x ++ )
 		{
-			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 3 );
+			q = row + ( ( ( 32768 + scale_width * x ) >> 16 ) * 4 );
 			*p ++ = SDL_MapRGB( screen->format, *q, *( q + 1 ), *( q + 2 ) );
 		}
 		start += scanlength;
@@ -380,7 +380,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
 
-	mlt_image_format vfmt = mlt_image_rgb24;
+	mlt_image_format vfmt = mlt_image_rgb24a;
 	int height = this->height;
 	int width = this->width;
 	uint8_t *image = NULL;
