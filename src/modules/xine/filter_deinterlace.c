@@ -43,7 +43,7 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 	int next_height = *height;
 	yadif_filter *yadif = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "yadif", NULL );
 	
-	mlt_log_debug( MLT_FILTER_SERVICE(filter), "previous %d current %d next %d\n", 
+	mlt_log_debug( MLT_FILTER_SERVICE(filter), "previous %d current %d next %d\n",
 		previous_frame? mlt_frame_get_position(previous_frame) : -1,
 		mlt_frame_get_position(frame),
 		next_frame?  mlt_frame_get_position(next_frame) : -1);
@@ -53,15 +53,15 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 
 	// Get the preceding frame's image
 	int error = mlt_frame_get_image( previous_frame, &previous_image, format, &previous_width, &previous_height, 0 );
-	
-	if ( !error && previous_image && *format == mlt_image_yuv422 )
+
+	// Check that we aren't already progressive
+	if ( !error && previous_image  && *format == mlt_image_yuv422 &&
+		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" ) )
 	{
 		// Get the current frame's image
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
-		
-		// Check that we aren't already progressive
-		if ( !error && *image && *format == mlt_image_yuv422 &&
-		     !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" ) ) 
+
+		if ( !error && *image && *format == mlt_image_yuv422 )
 		{
 			// Get the following frame's image
 			error = mlt_frame_get_image( next_frame, &next_image, format, &next_width, &next_height, 0 );
@@ -214,14 +214,17 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 	else
 	{
-		// Signal that we no longer need previous and next frames
-		mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
-		mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
-
 		// Pass through
 		error = mlt_frame_get_image( this, image, format, width, height, writable );
 	}
-	
+
+	if ( !deinterlace || progressive )
+	{
+		// Signal that we no longer need previous and next frames
+		mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
+		mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
+	}
+
 	return error;
 }
 
