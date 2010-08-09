@@ -1243,6 +1243,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_cache_put( this->image_cache, (void*) position, image, *format, mlt_pool_release );
 	}
 
+	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
+	this->video_expected = position + 1;
+
 exit_get_image:
 	// Set the progressive flag
 	if ( mlt_properties_get( properties, "force_progressive" ) )
@@ -1252,9 +1255,6 @@ exit_get_image:
 
 	// Set the field order property for this frame
 	mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
-
-	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
-	this->video_expected = position + 1;
 
 	return !this->got_picture;
 }
@@ -1551,7 +1551,7 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 #endif
 		if ( ret < 0 )
 		{
-			mlt_log_warning( MLT_PRODUCER_SERVICE(this->parent), "audio decoding error\n", ret );
+			mlt_log_warning( MLT_PRODUCER_SERVICE(this->parent), "audio decoding error %d\n", ret );
 			break;
 		}
 
