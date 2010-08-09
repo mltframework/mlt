@@ -27,7 +27,7 @@
 #include "config.h"
 
 #ifdef USE_EXIF
-#include <exif-data.h>
+#include <libexif/exif-data.h>
 #endif
 
 #include <stdio.h>
