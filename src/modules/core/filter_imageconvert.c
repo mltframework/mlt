@@ -25,25 +25,56 @@
 
 #include <stdlib.h>
 
+/** This macro converts a YUV value to the RGB color space. */
+#define RGB2YUV_601_UNSCALED(r, g, b, y, u, v)\
+  y = (299*r + 587*g + 114*b) >> 10;\
+  u = ((-169*r - 331*g + 500*b) >> 10) + 128;\
+  v = ((500*r - 419*g - 81*b) >> 10) + 128;\
+  y = y < 16 ? 16 : y;\
+  u = u < 16 ? 16 : u;\
+  v = v < 16 ? 16 : v;\
+  y = y > 235 ? 235 : y;\
+  u = u > 240 ? 240 : u;\
+  v = v > 240 ? 240 : v
 
-static int convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, unsigned int total )
+/** This macro scales YUV up into the full gamut of the RGB color space. */
+#define YUV2RGB_601_SCALED( y, u, v, r, g, b ) \
+  r = ((1192 * ( y - 16 ) + 1634 * ( v - 128 ) ) >> 10 ); \
+  g = ((1192 * ( y - 16 ) - 832 * ( v - 128 ) - 401 * ( u - 128 ) ) >> 10 ); \
+  b = ((1192 * ( y - 16 ) + 2066 * ( u - 128 ) ) >> 10 ); \
+  r = r < 0 ? 0 : r > 255 ? 255 : r; \
+  g = g < 0 ? 0 : g > 255 ? 255 : g; \
+  b = b < 0 ? 0 : b > 255 ? 255 : b;
+
+/** This macro converts a YUV value to the RGB color space. */
+#define YUV2RGB_601_UNSCALED( y, u, v, r, g, b ) \
+  r = ((1024 * y + 1404 * ( v - 128 ) ) >> 10 ); \
+  g = ((1024 * y - 715 * ( v - 128 ) - 345 * ( u - 128 ) ) >> 10 ); \
+  b = ((1024 * y + 1774 * ( u - 128 ) ) >> 10 ); \
+  r = r < 0 ? 0 : r > 255 ? 255 : r; \
+  g = g < 0 ? 0 : g > 255 ? 255 : g; \
+  b = b < 0 ? 0 : b > 255 ? 255 : b;
+
+
+static int convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha, int width, int height )
 {
 	int ret = 0;
 	int yy, uu, vv;
 	int r,g,b;
-	total /= 2;
-	while (total--)
+	int total = width * height / 2 + 1;
+
+	while ( --total )
 	{
 		yy = yuv[0];
 		uu = yuv[1];
 		vv = yuv[3];
-		YUV2RGB(yy, uu, vv, r, g, b);
+		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
 		rgba[0] = r;
 		rgba[1] = g;
 		rgba[2] = b;
 		rgba[3] = 255;
 		yy = yuv[2];
-		YUV2RGB(yy, uu, vv, r, g, b);
+		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
 		rgba[4] = r;
 		rgba[5] = g;
 		rgba[6] = b;
@@ -54,23 +85,24 @@ static int convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, unsigned int t
 	return ret;
 }
 
-static int convert_yuv422_to_rgb24( uint8_t *yuv, uint8_t *rgb, unsigned int total )
+static int convert_yuv422_to_rgb24( uint8_t *yuv, uint8_t *rgb, uint8_t *alpha, int width, int height )
 {
 	int ret = 0;
 	int yy, uu, vv;
 	int r,g,b;
-	total /= 2;
-	while (total--) 
+	int total = width * height / 2 + 1;
+
+	while ( --total )
 	{
 		yy = yuv[0];
 		uu = yuv[1];
 		vv = yuv[3];
-		YUV2RGB(yy, uu, vv, r, g, b);
+		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
 		rgb[0] = r;
 		rgb[1] = g;
 		rgb[2] = b;
 		yy = yuv[2];
-		YUV2RGB(yy, uu, vv, r, g, b);
+		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
 		rgb[3] = r;
 		rgb[4] = g;
 		rgb[5] = b;
@@ -80,30 +112,32 @@ static int convert_yuv422_to_rgb24( uint8_t *yuv, uint8_t *rgb, unsigned int tot
 	return ret;
 }
 
-static int convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int stride, uint8_t *yuv, uint8_t *alpha )
+static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha, int width, int height )
 {
 	int ret = 0;
-	register int y0, y1, u0, u1, v0, v1;
-	register int r, g, b;
-	register uint8_t *d = yuv;
-	register int i, j;
+	int stride = width * 4;
+	int y0, y1, u0, u1, v0, v1;
+	int r, g, b;
+	uint8_t *s, *d = yuv;
+	int i, j, n = width / 2 + 1;
 
 	if ( alpha )
 	for ( i = 0; i < height; i++ )
 	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
+		s = rgba + ( stride * i );
+		j = n;
+		while ( --j )
 		{
 			r = *s++;
 			g = *s++;
 			b = *s++;
 			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
+			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
 			r = *s++;
 			g = *s++;
 			b = *s++;
 			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
+			RGB2YUV_601_SCALED (r, g, b, y1, u1 , v1);
 			*d++ = y0;
 			*d++ = (u0+u1) >> 1;
 			*d++ = y1;
@@ -115,7 +149,7 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int s
 			g = *s++;
 			b = *s++;
 			*alpha++ = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
+			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
 			*d++ = y0;
 			*d++ = u0;
 		}
@@ -123,19 +157,20 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int s
 	else
 	for ( i = 0; i < height; i++ )
 	{
-		register uint8_t *s = rgba + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
+		s = rgba + ( stride * i );
+		j = n;
+		while ( --j )
 		{
 			r = *s++;
 			g = *s++;
 			b = *s++;
 			s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
+			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
 			r = *s++;
 			g = *s++;
 			b = *s++;
 			s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
+			RGB2YUV_601_SCALED (r, g, b, y1, u1 , v1);
 			*d++ = y0;
 			*d++ = (u0+u1) >> 1;
 			*d++ = y1;
@@ -147,7 +182,7 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int s
 			g = *s++;
 			b = *s++;
 			s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
+			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
 			*d++ = y0;
 			*d++ = u0;
 		}
@@ -156,27 +191,29 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, int width, int height, int s
 	return ret;
 }
 
-static int convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int stride, uint8_t *yuv )
+static int convert_rgb24_to_yuv422( uint8_t *rgb, uint8_t *yuv, uint8_t *alpha, int width, int height )
 {
 	int ret = 0;
-	register int y0, y1, u0, u1, v0, v1;
-	register int r, g, b;
-	register uint8_t *d = yuv;
-	register int i, j;
+	int stride = width * 3;
+	int y0, y1, u0, u1, v0, v1;
+	int r, g, b;
+	uint8_t *s, *d = yuv;
+	int i, j, n = width / 2 + 1;
 
 	for ( i = 0; i < height; i++ )
 	{
-		register uint8_t *s = rgb + ( stride * i );
-		for ( j = 0; j < ( width / 2 ); j++ )
+		s = rgb + ( stride * i );
+		j = n;
+		while ( --j )
 		{
 			r = *s++;
 			g = *s++;
 			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
+			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
 			r = *s++;
 			g = *s++;
 			b = *s++;
-			RGB2YUV (r, g, b, y1, u1 , v1);
+			RGB2YUV_601_SCALED (r, g, b, y1, u1 , v1);
 			*d++ = y0;
 			*d++ = (u0+u1) >> 1;
 			*d++ = y1;
@@ -187,7 +224,7 @@ static int convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int str
 			r = *s++;
 			g = *s++;
 			b = *s++;
-			RGB2YUV (r, g, b, y0, u0 , v0);
+			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
 			*d++ = y0;
 			*d++ = u0;
 		}
@@ -195,25 +232,23 @@ static int convert_rgb24_to_yuv422( uint8_t *rgb, int width, int height, int str
 	return ret;
 }
 
-static int convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, uint8_t *yuv )
+static int convert_yuv420p_to_yuv422( uint8_t *yuv420p, uint8_t *yuv, uint8_t *alpha, int width, int height )
 {
 	int ret = 0;
-	register int i, j;
-
+	int i, j;
 	int half = width >> 1;
-
 	uint8_t *Y = yuv420p;
 	uint8_t *U = Y + width * height;
 	uint8_t *V = U + width * height / 4;
-
-	register uint8_t *d = yuv;
+	uint8_t *d = yuv;
 
 	for ( i = 0; i < height; i++ )
 	{
-		register uint8_t *u = U + ( i / 2 ) * ( half );
-		register uint8_t *v = V + ( i / 2 ) * ( half );
+		uint8_t *u = U + ( i / 2 ) * ( half );
+		uint8_t *v = V + ( i / 2 ) * ( half );
 
-		for ( j = 0; j < half; j++ )
+		j = half + 1;
+		while ( --j )
 		{
 			*d ++ = *Y ++;
 			*d ++ = *u ++;
@@ -224,11 +259,13 @@ static int convert_yuv420p_to_yuv422( uint8_t *yuv420p, int width, int height, u
 	return ret;
 }
 
-static int convert_rgb24_to_rgb24a( uint8_t *rgb, uint8_t *rgba, int total )
+static int convert_rgb24_to_rgb24a( uint8_t *rgb, uint8_t *rgba, uint8_t *alpha, int width, int height )
 {
 	uint8_t *s = rgb;
 	uint8_t *d = rgba;
-	while ( total-- )
+	int total = width * height + 1;
+
+	while ( --total )
 	{
 		*d++ = s[0];
 		*d++ = s[1];
@@ -239,11 +276,13 @@ static int convert_rgb24_to_rgb24a( uint8_t *rgb, uint8_t *rgba, int total )
 	return 0;
 }
 
-static int convert_rgb24a_to_rgb24( uint8_t *rgba, uint8_t *rgb, int total, uint8_t *alpha )
+static int convert_rgb24a_to_rgb24( uint8_t *rgba, uint8_t *rgb, uint8_t *alpha, int width, int height )
 {
 	uint8_t *s = rgba;
 	uint8_t *d = rgb;
-	while ( total-- )
+	int total = width * height + 1;
+
+	while ( --total )
 	{
 		*d++ = s[0];
 		*d++ = s[1];
@@ -254,6 +293,18 @@ static int convert_rgb24a_to_rgb24( uint8_t *rgba, uint8_t *rgb, int total, uint
 	return 0;
 }
 
+typedef int ( *conversion_function )( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha, int width, int height );
+
+static conversion_function conversion_matrix[5][5] = {
+	{ NULL, convert_rgb24_to_rgb24a, convert_rgb24_to_yuv422, NULL, convert_rgb24_to_rgb24a },
+	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL },
+	{ convert_yuv422_to_rgb24, convert_yuv422_to_rgb24a, NULL, NULL, convert_yuv422_to_rgb24a },
+	{ NULL, NULL, convert_yuv420p_to_yuv422, NULL, NULL },
+	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL },
+};
+
+static uint8_t bpp_table[4] = { 3, 4, 2, 0 };
+
 static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, mlt_image_format requested_format )
 {
 	int error = 0;
@@ -263,180 +314,35 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 
 	if ( *format != requested_format )
 	{
+		conversion_function converter = conversion_matrix[ *format - 1 ][ requested_format - 1 ];
+
 		mlt_log_debug( NULL, "[filter imageconvert] %s -> %s\n",
 			mlt_image_format_name( *format ), mlt_image_format_name( requested_format ) );
-		switch ( *format )
+		if ( converter )
 		{
-		case mlt_image_yuv422:
-			switch ( requested_format )
+			int size = width * height * bpp_table[ requested_format - 1 ];
+			uint8_t *image = mlt_pool_alloc( size );
+			uint8_t *alpha = ( *format == mlt_image_rgb24a ||
+			                   *format == mlt_image_opengl )
+			                 ? mlt_pool_alloc( width * height ) : NULL;
+
+			if ( !( error = converter( *buffer, image, alpha, width, height ) ) )
 			{
-			case mlt_image_rgb24:
-			{
-				uint8_t *rgb = mlt_pool_alloc( width * height * 3 );
-				error = convert_yuv422_to_rgb24( *buffer, rgb, width * height );
-				if ( error )
-				{
-					mlt_pool_release( rgb );
-				}
-				else
-				{
-					mlt_properties_set_data( properties, "image", rgb, width * height * 3, mlt_pool_release, NULL );
-					*buffer = rgb;
-					*format = mlt_image_rgb24;
-				}
-				break;
-			}
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-			{
-				uint8_t *rgba = mlt_pool_alloc( width * height * 4 );
-				error = convert_yuv422_to_rgb24a( *buffer, rgba, width * height );
-				if ( error )
-				{
-					mlt_pool_release( rgba );
-				}
-				else
-				{
-					mlt_properties_set_data( properties, "image", rgba, width * height * 4, mlt_pool_release, NULL );
-					*buffer = rgba;
-					*format = requested_format;
-				}
-				break;
-			}
-			default:
-				error = 1;
-			}
-			break;
-		case mlt_image_rgb24:
-			switch ( requested_format )
-			{
-			case mlt_image_yuv422:
-			{
-				uint8_t *yuv = mlt_pool_alloc( width * height * 2 );
-				error = convert_rgb24_to_yuv422( *buffer, width, height, width * 3, yuv );
-				if ( error )
-				{
-					mlt_pool_release( yuv );
-				}
-				else
-				{
-					mlt_properties_set_data( properties, "image", yuv, width * height * 2, mlt_pool_release, NULL );
-					*buffer = yuv;
-					*format = mlt_image_yuv422;
-				}
-				break;
-			}
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-			{
-				uint8_t *rgba = mlt_pool_alloc( width * height * 4 );
-				error = convert_rgb24_to_rgb24a( *buffer, rgba, width * height );
-				if ( error )
-				{
-					mlt_pool_release( rgba );
-				}
-				else
-				{
-					mlt_properties_set_data( properties, "image", rgba, width * height * 4, mlt_pool_release, NULL );
-					*buffer = rgba;
-					*format = requested_format;
-				}
-				break;
-			}
-			default:
-				error = 1;
-			}
-			break;
-		case mlt_image_rgb24a:
-		case mlt_image_opengl:
-			switch ( requested_format )
-			{
-			case mlt_image_yuv422:
-			{
-				uint8_t *yuv = mlt_pool_alloc( width * height * 2 );
-				uint8_t *alpha = mlt_pool_alloc( width * height );
-				error = convert_rgb24a_to_yuv422( *buffer, width, height, width * 4, yuv, alpha );
-				if ( error )
-				{
-					mlt_pool_release( yuv );
-					mlt_pool_release( alpha );
-				}
-				else
-				{
-					mlt_properties_set_data( properties, "image", yuv, width * height * 2, mlt_pool_release, NULL );
+				mlt_properties_set_data( properties, "image", image, size, mlt_pool_release, NULL );
+				if ( alpha )
 					mlt_properties_set_data( properties, "alpha", alpha, width * height, mlt_pool_release, NULL );
-					*buffer = yuv;
-					*format = mlt_image_yuv422;
-				}
-				break;
-			}
-			case mlt_image_rgb24:
-			{
-				uint8_t *rgb = mlt_pool_alloc( width * height * 3 );
-				uint8_t *alpha = mlt_pool_alloc( width * height );
-				error = convert_rgb24a_to_rgb24( *buffer, rgb, width * height, alpha );
-				if ( error )
-				{
-					mlt_pool_release( rgb );
-					mlt_pool_release( alpha );
-				}
-				else
-				{
-					mlt_properties_set_data( properties, "image", rgb, width * height * 3, mlt_pool_release, NULL );
-					mlt_properties_set_data( properties, "alpha", alpha, width * height, mlt_pool_release, NULL );
-					*buffer = rgb;
-					*format = mlt_image_rgb24;
-				}
-				break;
-			}
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
+				*buffer = image;
 				*format = requested_format;
-				break;
-			default:
-				error = 1;
 			}
-			break;
-		case mlt_image_yuv420p:
-			switch ( requested_format )
+			else
 			{
-			case mlt_image_rgb24:
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-			case mlt_image_yuv422:
-			{
-				uint8_t *yuv = mlt_pool_alloc( width * height * 2 );
-				int error = convert_yuv420p_to_yuv422( *buffer, width, height, yuv );
-				if ( error )
-				{
-					mlt_pool_release( yuv );
-				}
-				else
-				{
-					mlt_properties_set_data( properties, "image", yuv, width * height * 2, mlt_pool_release, NULL );
-					*buffer = yuv;
-					*format = mlt_image_yuv422;
-				}
-				switch ( requested_format )
-				{
-				case mlt_image_yuv422:
-					break;
-				case mlt_image_rgb24:
-				case mlt_image_rgb24a:
-				case mlt_image_opengl:
-					error = convert_image( frame, buffer, format, requested_format );
-					break;
-				default:
-					error = 1;
-					break;
-				}
-				break;
+				mlt_pool_release( image );
+				if ( alpha )
+					mlt_pool_release( alpha );
 			}
-			default:
-				error = 1;
-			}
-			break;
-		default:
+		}
+		else
+		{
 			error = 1;
 		}
 	}

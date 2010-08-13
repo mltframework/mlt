@@ -162,7 +162,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			int count = ( *width - uneven ) / 2 + 1;
 			uint8_t y, u, v;
 
-			RGB2YUV( color.r, color.g, color.b, y, u, v );
+			RGB2YUV_601_SCALED( color.r, color.g, color.b, y, u, v );
 			i = *height + 1;
 			while ( --i )
 			{

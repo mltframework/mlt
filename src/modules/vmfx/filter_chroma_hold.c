@@ -51,7 +51,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	uint8_t b = ( key_val >>  8 ) & 0xff;
 	uint8_t y, u, v;
 
-	RGB2YUV( r, g, b, y, u, v );
+	RGB2YUV_601_SCALED( r, g, b, y, u, v );
 
 	*format = mlt_image_yuv422;
 	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
