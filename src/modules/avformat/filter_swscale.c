@@ -92,6 +92,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 		interp = SWS_LANCZOS;
 	else if ( strcmp( interps, "spline" ) == 0 )
 		interp = SWS_SPLINE;
+	interp |= SWS_ACCURATE_RND;
 
 	// Determine the bytes per pixel
 	int bpp;
@@ -99,13 +100,16 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	{
 		case mlt_image_yuv422:
 			bpp = 2;
+			interp |= SWS_FULL_CHR_H_INP;
 			break;
 		case mlt_image_rgb24:
 			bpp = 3;
+			interp |= SWS_FULL_CHR_H_INT;
 			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
 			bpp = 4;
+			interp |= SWS_FULL_CHR_H_INT;
 			break;
 		default:
 			// XXX: we only know how to rescale packed formats

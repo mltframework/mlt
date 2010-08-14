@@ -76,11 +76,18 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 {
 	AVPicture input;
 	AVPicture output;
+	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
+
+	if ( out_fmt == PIX_FMT_YUYV422 )
+		flags |= SWS_FULL_CHR_H_INP;
+	else
+		flags |= SWS_FULL_CHR_H_INT;
+
 	avpicture_fill( &input, in, in_fmt, width, height );
 	avpicture_fill( &output, out, out_fmt, width, height );
 #ifdef SWSCALE
 	struct SwsContext *context = sws_getContext( width, height, in_fmt,
-		width, height, out_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+		width, height, out_fmt, flags, NULL, NULL, NULL);
 	sws_scale( context, input.data, input.linesize, 0, height,
 		output.data, output.linesize);
 	sws_freeContext( context );

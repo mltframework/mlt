@@ -679,11 +679,12 @@ static void get_audio_streams_info( producer_avformat this )
 static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format *format, int width, int height )
 {
 #ifdef SWSCALE
+	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
 	if ( pix_fmt == PIX_FMT_RGB32 )
 	{
 		*format = mlt_image_rgb24a;
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_RGBA, SWS_BILINEAR, NULL, NULL, NULL);
+			width, height, PIX_FMT_RGBA, flags, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
@@ -693,7 +694,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 	else if ( *format == mlt_image_yuv420p )
 	{
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
+			width, height, PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
 		AVPicture output;
 		output.data[0] = buffer;
 		output.data[1] = buffer + width * height;
@@ -708,7 +709,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 	else if ( *format == mlt_image_rgb24 )
 	{
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
@@ -718,7 +719,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_RGBA, SWS_BILINEAR, NULL, NULL, NULL);
+			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
@@ -728,7 +729,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 	else
 	{
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_YUYV422, SWS_BILINEAR, NULL, NULL, NULL);
+			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
