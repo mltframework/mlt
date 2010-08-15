@@ -55,6 +55,14 @@
   g = g < 0 ? 0 : g > 255 ? 255 : g; \
   b = b < 0 ? 0 : b > 255 ? 255 : b;
 
+#define SCALED 1
+#if SCALED
+#define RGB2YUV_601 RGB2YUV_601_SCALED
+#define YUV2RGB_601 YUV2RGB_601_SCALED
+#else
+#define RGB2YUV_601 RGB2YUV_601_UNSCALED
+#define YUV2RGB_601 YUV2RGB_601_UNSCALED
+#endif
 
 static int convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha, int width, int height )
 {
@@ -68,13 +76,13 @@ static int convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha
 		yy = yuv[0];
 		uu = yuv[1];
 		vv = yuv[3];
-		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
+		YUV2RGB_601( yy, uu, vv, r, g, b );
 		rgba[0] = r;
 		rgba[1] = g;
 		rgba[2] = b;
 		rgba[3] = 255;
 		yy = yuv[2];
-		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
+		YUV2RGB_601( yy, uu, vv, r, g, b );
 		rgba[4] = r;
 		rgba[5] = g;
 		rgba[6] = b;
@@ -97,12 +105,12 @@ static int convert_yuv422_to_rgb24( uint8_t *yuv, uint8_t *rgb, uint8_t *alpha, 
 		yy = yuv[0];
 		uu = yuv[1];
 		vv = yuv[3];
-		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
+		YUV2RGB_601( yy, uu, vv, r, g, b );
 		rgb[0] = r;
 		rgb[1] = g;
 		rgb[2] = b;
 		yy = yuv[2];
-		YUV2RGB_601_SCALED (yy, uu, vv, r, g, b);
+		YUV2RGB_601( yy, uu, vv, r, g, b );
 		rgb[3] = r;
 		rgb[4] = g;
 		rgb[5] = b;
@@ -132,12 +140,12 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha
 			g = *s++;
 			b = *s++;
 			*alpha++ = *s++;
-			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
+			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			r = *s++;
 			g = *s++;
 			b = *s++;
 			*alpha++ = *s++;
-			RGB2YUV_601_SCALED (r, g, b, y1, u1 , v1);
+			RGB2YUV_601( r, g, b, y1, u1 , v1 );
 			*d++ = y0;
 			*d++ = (u0+u1) >> 1;
 			*d++ = y1;
@@ -149,7 +157,7 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha
 			g = *s++;
 			b = *s++;
 			*alpha++ = *s++;
-			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
+			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			*d++ = y0;
 			*d++ = u0;
 		}
@@ -165,12 +173,12 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha
 			g = *s++;
 			b = *s++;
 			s++;
-			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
+			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			r = *s++;
 			g = *s++;
 			b = *s++;
 			s++;
-			RGB2YUV_601_SCALED (r, g, b, y1, u1 , v1);
+			RGB2YUV_601( r, g, b, y1, u1 , v1 );
 			*d++ = y0;
 			*d++ = (u0+u1) >> 1;
 			*d++ = y1;
@@ -182,7 +190,7 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha
 			g = *s++;
 			b = *s++;
 			s++;
-			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
+			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			*d++ = y0;
 			*d++ = u0;
 		}
@@ -209,11 +217,11 @@ static int convert_rgb24_to_yuv422( uint8_t *rgb, uint8_t *yuv, uint8_t *alpha, 
 			r = *s++;
 			g = *s++;
 			b = *s++;
-			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
+			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			r = *s++;
 			g = *s++;
 			b = *s++;
-			RGB2YUV_601_SCALED (r, g, b, y1, u1 , v1);
+			RGB2YUV_601( r, g, b, y1, u1 , v1 );
 			*d++ = y0;
 			*d++ = (u0+u1) >> 1;
 			*d++ = y1;
@@ -224,7 +232,7 @@ static int convert_rgb24_to_yuv422( uint8_t *rgb, uint8_t *yuv, uint8_t *alpha, 
 			r = *s++;
 			g = *s++;
 			b = *s++;
-			RGB2YUV_601_SCALED (r, g, b, y0, u0 , v0);
+			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			*d++ = y0;
 			*d++ = u0;
 		}
