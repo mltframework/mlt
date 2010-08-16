@@ -244,6 +244,7 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 			// Initialise transition previous mix value to prevent an inadvertant jump from 0
 			mlt_position last_position = mlt_properties_get_position( properties, "_last_position" );
 			mlt_position current_position = mlt_frame_get_position( b_frame );
+			mlt_properties_set_position( properties, "_last_position", current_position );
 			if ( mlt_properties_get( properties, "_previous_mix" ) == NULL
 			     || current_position != last_position + 1 )
 				mlt_properties_set_double( properties, "_previous_mix", mix );
