@@ -45,6 +45,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
 	// Copy channels as necessary
+	if ( from != to)
 	switch ( *format )
 	{
 		case mlt_audio_s16:
