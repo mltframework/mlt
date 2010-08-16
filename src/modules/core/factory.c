@@ -57,7 +57,8 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "audioconvert", filter_audioconvert_init );
 	MLT_REGISTER( filter_type, "brightness", filter_brightness_init );
 	MLT_REGISTER( filter_type, "channelcopy", filter_channelcopy_init );
-	MLT_REGISTER( filter_type, "crop", filter_crop_init );
+    MLT_REGISTER( filter_type, "channelswap", filter_channelcopy_init );
+    MLT_REGISTER( filter_type, "crop", filter_crop_init );
 	MLT_REGISTER( filter_type, "data_feed", filter_data_feed_init );
 	MLT_REGISTER( filter_type, "data_show", filter_data_show_init );
 	MLT_REGISTER( filter_type, "gamma", filter_gamma_init );
