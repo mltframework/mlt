@@ -225,16 +225,14 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 				double end = mlt_properties_get_double( properties, "end" );
 				mix = start + ( end - start ) * mix;
 			}
-			else if ( fabs( mlt_properties_get_double( properties, "start" ) ) <= 2.0 )
+			// Use constant mix level if only start
+			else if ( mlt_properties_get( properties, "start" ) != NULL )
 			{
-				// Otherwise, start/constructor is a constant mix level
 		    	mix = mlt_properties_get_double( properties, "start" );
 			}
-			// >2 means total crossfade (uses position)
-			else
-			{
-				mix = mix * 2.0 - 1.0;
-			}
+
+			// Convert it from [0, 1] to [-1, 1]
+			mix = mix * 2.0 - 1.0;
 		
 			// Finally, set the mix property on the frame
 			mlt_properties_set_double( instance_props, "mix", mix );
