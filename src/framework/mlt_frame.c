@@ -698,6 +698,13 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	double fps = mlt_producer_get_fps( mlt_producer_cut_parent( producer ) );
 	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
 
+	// Increase audio resolution proportional to requested image size
+	while ( samples < w )
+	{
+		frequency += 16000;
+		samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
+	}
+
 	// Get the pcm data
 	mlt_frame_get_audio( this, (void**)&pcm, &format, &frequency, &channels, &samples );
 
@@ -711,8 +718,7 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	// Render vertical lines
 	int16_t *ubound = pcm + samples * channels;
 	int skip = samples / w;
-	if ( !skip )
-		return NULL;
+	skip = !skip ? 1 : skip;
 	unsigned char gray = 0xFF / skip;
 	int i, j, k;
 
