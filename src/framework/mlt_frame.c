@@ -710,32 +710,33 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 
 	// Render vertical lines
 	int16_t *ubound = pcm + samples * channels;
-	int skip = samples / w - 1;
+	int skip = samples / w;
+	unsigned char gray = 0xFF / skip;
 	int i, j, k;
 
 	// Iterate sample stream and along x coordinate
-	for ( i = 0; i < w && pcm < ubound; i++ )
+	for ( i = 0; pcm < ubound; i++ )
 	{
 		// pcm data has channels interleaved
-		for ( j = 0; j < channels; j++ )
+		for ( j = 0; j < channels; j++, pcm++ )
 		{
 			// Determine sample's magnitude from 2s complement;
 			int pcm_magnitude = *pcm < 0 ? ~(*pcm) + 1 : *pcm;
 			// The height of a line is the ratio of the magnitude multiplied by
 			// the vertical resolution of a single channel
-			int height = h * pcm_magnitude / channels / 2 / 32768;
+				int height = h * pcm_magnitude / channels / 2 / 32768;
 			// Determine the starting y coordinate - left top, right bottom
 			int displacement = h * (j * 2 + 1) / channels / 2 - ( *pcm < 0 ? 0 : height );
 			// Position buffer pointer using y coordinate, stride, and x coordinate
-			unsigned char *p = bitmap + i + displacement * w;
+			unsigned char *p = bitmap + i / skip + displacement * w;
 
 			// Draw vertical line
-			for ( k = 0; k < height; k++ )
-				p[ w * k ] = 0xFF;
-
-			pcm++;
+			for ( k = 0; k < height + 1; k++ )
+				if ( *pcm < 0 )
+					p[ w * k ] = ( k == 0 ) ? 0xFF : p[ w * k ] + gray;
+				else
+					p[ w * k ] = ( k == height ) ? 0xFF : p[ w * k ] + gray;
 		}
-		pcm += skip * channels;
 	}
 
 	return bitmap;
