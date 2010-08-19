@@ -694,7 +694,8 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	mlt_audio_format format = mlt_audio_s16;
 	int frequency = 32000; // lower frequency available?
 	int channels = 2;
-	double fps = mlt_profile_fps( NULL );
+	mlt_producer producer = mlt_frame_get_original_producer( this );
+	double fps = mlt_producer_get_fps( producer );
 	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
 
 	// Get the pcm data
@@ -721,13 +722,12 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 			// Determine sample's magnitude from 2s complement;
 			int pcm_magnitude = *pcm < 0 ? ~(*pcm) + 1 : *pcm;
 			// The height of a line is the ratio of the magnitude multiplied by
-			// half the vertical resolution
-			int height = ( int )( ( double )( pcm_magnitude ) / 32768 * h / 2 );
-			// Determine the starting y coordinate - left channel above center,
-			// right channel below - currently assumes 2 channels
-			int displacement = ( h / 2 ) - ( 1 - j ) * height;
+			// the vertical resolution of a single channel
+			int height = h * pcm_magnitude / channels / 2 / 32768;
+			// Determine the starting y coordinate - left top, right bottom
+			int displacement = h * (j * 2 + 1) / channels / 2 - ( *pcm < 0 ? 0 : height );
 			// Position buffer pointer using y coordinate, stride, and x coordinate
-			unsigned char *p = &bitmap[ i + displacement * w ];
+			unsigned char *p = bitmap + i + displacement * w;
 
 			// Draw vertical line
 			for ( k = 0; k < height; k++ )

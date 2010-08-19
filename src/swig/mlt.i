@@ -149,3 +149,28 @@ class RubyListener
 
 #endif
 
+#if defined(SWIGPYTHON)
+%{
+typedef struct {
+	int size;
+	char* data;
+} binary_data;
+
+binary_data frame_get_waveform( Mlt::Frame &frame, int w, int h )
+{
+	binary_data result = {
+		w * h,
+		(char*) frame.get_waveform( w, h )
+	};
+	return result;
+}
+
+%}
+
+%typemap(out) binary_data {
+	$result = PyString_FromStringAndSize( $1.data, $1.size );
+}
+
+binary_data frame_get_waveform(Mlt::Frame&, int, int);
+
+#endif
