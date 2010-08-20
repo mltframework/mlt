@@ -164,7 +164,7 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 	if ( image_idx != self->qimage_idx )
 		qimage = NULL;
 
-	if ( ( !qimage && !self->current_image ) || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif)
+	if ( !qimage || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif)
 	{
 		self->current_image = NULL;
 		qimage = new QImage( mlt_properties_get_value( self->filenames, image_idx ) );

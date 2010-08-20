@@ -281,7 +281,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 		pixbuf = NULL;
 	mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "image %p pixbuf %p idx %d image_idx %d pixbuf_idx %d width %d\n",
 		this->image, pixbuf, image_idx, this->image_idx, this->pixbuf_idx, width );
-	if ( ( !pixbuf && !this->image ) || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif )
+	if ( !pixbuf || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif )
 	{
 		this->image = NULL;
 		pixbuf = gdk_pixbuf_new_from_file( mlt_properties_get_value( this->filenames, image_idx ), &error );
