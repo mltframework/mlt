@@ -109,6 +109,11 @@ struct producer_avformat_s
 		uint8_t *buffer;
 	} *vdpau;
 #endif
+#ifdef SWSCALE
+	struct SwsContext *swscale;
+#else
+	void *swscale;
+#endif
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -676,9 +681,10 @@ static void get_audio_streams_info( producer_avformat this )
 	this->resample_factor = 1.0;
 }
 
-static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format *format, int width, int height )
+static inline void convert_image( void **ctx, AVFrame *frame, uint8_t *buffer, int pix_fmt, mlt_image_format *format, int width, int height )
 {
 #ifdef SWSCALE
+	struct SwsContext **context = ctx;
 	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
 
 #ifdef USE_MMX
@@ -691,17 +697,16 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 	if ( pix_fmt == PIX_FMT_RGB32 )
 	{
 		*format = mlt_image_rgb24a;
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+		*context = sws_getCachedContext( *context, width, height, pix_fmt,
 			width, height, PIX_FMT_RGBA, flags, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( *context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
-		sws_freeContext( context );
 	}
 	else if ( *format == mlt_image_yuv420p )
 	{
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+		*context = sws_getCachedContext( *context, width, height, pix_fmt,
 			width, height, PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
 		AVPicture output;
 		output.data[0] = buffer;
@@ -710,39 +715,35 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( *context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
-		sws_freeContext( context );
 	}
 	else if ( *format == mlt_image_rgb24 )
 	{
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+		*context = sws_getCachedContext( *context, width, height, pix_fmt,
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( *context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
-		sws_freeContext( context );
 	}
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+		*context = sws_getCachedContext( *context, width, height, pix_fmt,
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( *context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
-		sws_freeContext( context );
 	}
 	else
 	{
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+		*context = sws_getCachedContext( *context, width, height, pix_fmt,
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( *context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
-		sws_freeContext( context );
 	}
 #else
 	if ( *format == mlt_image_yuv420p )
@@ -762,7 +763,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
 		img_convert( &output, PIX_FMT_RGB24, (AVPicture *)frame, pix_fmt, width, height );
 	}
-	else if ( format == mlt_image_rgb24a || format == mlt_image_opengl )
+	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB32, width, height );
@@ -855,7 +856,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( this->image_cache )
 	{
 		mlt_cache_item item = mlt_cache_get( this->image_cache, (void*) position );
-		*buffer = mlt_cache_item_data( item, format );
+		*buffer = mlt_cache_item_data( item, (int*) format );
 		if ( *buffer )
 		{
 			// Set the resolution
@@ -1031,11 +1032,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
-				convert_image( (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P, format, *width, *height );
+				convert_image( (void**) &this->swscale, (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P, format, *width, *height );
 			}
 			else
 #endif
-			convert_image( this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
+			convert_image( (void**) &this->swscale, this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
 		else
 			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
@@ -1213,7 +1214,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
 							if ( status == VDP_STATUS_OK )
 							{
-								convert_image( (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P, format, *width, *height );
+								convert_image( (void**) &this->swscale, (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P, format, *width, *height );
 							}
 							else
 							{
@@ -1229,7 +1230,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 #endif
-					convert_image( this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
+					convert_image( (void**) &this->swscale, this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
 					this->top_field_first |= this->av_frame->top_field_first;
 					this->current_position = int_position;
 					this->got_picture = 1;
@@ -2044,6 +2045,9 @@ static void producer_avformat_close( producer_avformat this )
 	avformat_unlock();
 #ifdef VDPAU
 	vdpau_producer_close( this );
+#endif
+#ifdef SWSCALE
+	sws_freeContext( this->swscale );
 #endif
 	if ( this->image_cache )
 		mlt_cache_close( this->image_cache );

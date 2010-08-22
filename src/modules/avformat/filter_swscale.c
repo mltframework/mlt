@@ -21,7 +21,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_factory.h>
-#include <framework/mlt_factory.h>
+#include <framework/mlt_producer.h>
 
 
 // ffmpeg Header files
@@ -132,19 +132,25 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	avpicture_fill( &input, *image, avformat, iwidth, iheight );
 	avpicture_fill( &output, outbuf, avformat, owidth, oheight );
 
+	// Get the cached swscale context
+	mlt_producer producer = mlt_frame_get_original_producer( this );
+	mlt_properties prod_props = MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( producer ) );
+	struct SwsContext *context = mlt_properties_get_data( prod_props, "swscale.context", NULL );
+
 	// Create the context and output image
 	owidth = owidth > 5120 ? 5120 : owidth;
-	struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
-	if ( !context )
+	struct SwsContext *new_context = sws_getCachedContext( context, iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
+	if ( !new_context )
 	{
 		owidth = owidth > 2048 ? 2048 : owidth;
-		context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
+		new_context = sws_getCachedContext( context, iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
 	}
-	if ( context )
+	if ( new_context != context )
+		mlt_properties_set_data( properties, "swscale.context", new_context, 0, NULL, NULL );
+	if ( new_context )
 	{
 		// Perform the scaling
-		sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
-		sws_freeContext( context );
+		sws_scale( new_context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
 	
 		// Now update the frame
 		mlt_properties_set_data( properties, "image", output.data[0], owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
@@ -163,8 +169,12 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 			uint8_t *alpha = mlt_frame_get_alpha_mask( this );
 			if ( alpha )
 			{
+				context = mlt_properties_get_data( prod_props, "swscale.context2", NULL );
+				new_context = sws_getCachedContext( context, iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
+				if ( new_context != context )
+					mlt_properties_set_data( properties, "swscale.context2", new_context, 0, NULL, NULL );
+
 				avformat = PIX_FMT_GRAY8;
-				struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
 				avpicture_fill( &input, alpha, avformat, iwidth, iheight );
 				outbuf = mlt_pool_alloc( owidth * oheight );
 				avpicture_fill( &output, outbuf, avformat, owidth, oheight );
@@ -184,6 +194,14 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	{
 		return 1;
 	}
+}
+
+static void filter_close( mlt_filter filter )
+{
+	struct SwsContext *context = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "swscale.context", NULL );
+	sws_freeContext( context );
+	context = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "swscale.context2", NULL );
+	sws_freeContext( context );
 }
 
 /** Constructor for the filter.
@@ -216,6 +234,8 @@ mlt_filter filter_swscale_init( mlt_profile profile, void *arg )
 
 		// Set the method
 		mlt_properties_set_data( properties, "method", filter_scale, 0, NULL, NULL );
+
+		this->close = filter_close;
 	}
 
 	return this;

@@ -847,6 +847,16 @@ static void *consumer_thread( void *arg )
 	// Need two av pictures for converting
 	AVFrame *output = NULL;
 	AVFrame *input = alloc_picture( PIX_FMT_YUYV422, width, height );
+#ifdef SWSCALE
+	struct SwsContext *swscale = NULL;
+	int swscale_flags = SWS_BILINEAR;
+#ifdef USE_MMX
+	swscale_flags |= SWS_CPU_CAPS_MMX;
+#endif
+#ifdef USE_SSE
+	swscale_flags |= SWS_CPU_CAPS_MMX2;
+#endif
+#endif
 
 	// For receiving images from an mlt_frame
 	uint8_t *image;
@@ -1282,18 +1292,10 @@ static void *consumer_thread( void *arg )
 
 						// Do the colour space conversion
 #ifdef SWSCALE
-						int flags = SWS_BILINEAR;
-#ifdef USE_MMX
-						flags |= SWS_CPU_CAPS_MMX;
-#endif
-#ifdef USE_SSE
-						flags |= SWS_CPU_CAPS_MMX2;
-#endif
-						struct SwsContext *context = sws_getContext( width, height, PIX_FMT_YUYV422,
-							width, height, video_st->codec->pix_fmt, flags, NULL, NULL, NULL);
-						sws_scale( context, input->data, input->linesize, 0, height,
+						swscale = sws_getCachedContext( swscale, width, height, PIX_FMT_YUYV422,
+							width, height, video_st->codec->pix_fmt, swscale_flags, NULL, NULL, NULL);
+						sws_scale( swscale, input->data, input->linesize, 0, height,
 							output->data, output->linesize);
-						sws_freeContext( context );
 #else
 						img_convert( ( AVPicture * )output, video_st->codec->pix_fmt, ( AVPicture * )input, PIX_FMT_YUYV422, width, height );
 #endif
@@ -1515,6 +1517,9 @@ static void *consumer_thread( void *arg )
 	av_free( video_outbuf );
 	av_free( audio_buf_1 );
 	av_free( audio_buf_2 );
+#ifdef SWSCALE
+	sws_freeContext( swscale );
+#endif
 
 	// Free the stream
 	av_free( oc );

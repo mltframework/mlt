@@ -21,6 +21,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
+#include <framework/mlt_producer.h>
 
 // ffmpeg Header files
 #include <avformat.h>
@@ -72,31 +73,35 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	return value;
 }
 
-static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt, int width, int height )
+static void av_convert_image( mlt_properties properties, uint8_t *out, uint8_t *in, int out_fmt, int in_fmt, int width, int height )
 {
 	AVPicture input;
 	AVPicture output;
+	avpicture_fill( &input, in, in_fmt, width, height );
+	avpicture_fill( &output, out, out_fmt, width, height );
+
+#ifdef SWSCALE
 	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
+	struct SwsContext *context = mlt_properties_get_data( properties, "avcolorspace.swscale", NULL );
+	struct SwsContext *new_context;
 
 	if ( out_fmt == PIX_FMT_YUYV422 )
 		flags |= SWS_FULL_CHR_H_INP;
 	else
 		flags |= SWS_FULL_CHR_H_INT;
 #ifdef USE_MMX
-		flags |= SWS_CPU_CAPS_MMX;
+	flags |= SWS_CPU_CAPS_MMX;
 #endif
 #ifdef USE_SSE
-		flags |= SWS_CPU_CAPS_MMX2;
+	flags |= SWS_CPU_CAPS_MMX2;
 #endif
-
-	avpicture_fill( &input, in, in_fmt, width, height );
-	avpicture_fill( &output, out, out_fmt, width, height );
-#ifdef SWSCALE
-	struct SwsContext *context = sws_getContext( width, height, in_fmt,
+	new_context = sws_getCachedContext( context, width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
-	sws_scale( context, input.data, input.linesize, 0, height,
+	if ( new_context != context )
+		mlt_properties_set_data( properties, "avcolorspace.swscale", new_context, 0, NULL, NULL );
+	sws_scale( new_context, input.data, input.linesize, 0, height,
 		output.data, output.linesize);
-	sws_freeContext( context );
+
 #else
 	img_convert( &output, out_fmt, &input, in_fmt, width, height );
 #endif
@@ -153,7 +158,9 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		}
 
 		// Update the output
-		av_convert_image( output, *image, out_fmt, in_fmt, width, height );
+		mlt_producer producer = mlt_frame_get_original_producer( frame );
+		mlt_properties prod_props = MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( producer ) );
+		av_convert_image( prod_props, output, *image, out_fmt, in_fmt, width, height );
 		*image = output;
 		*format = output_format;
 		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
@@ -171,11 +178,20 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	return frame;
 }
 
+static void filter_close( mlt_filter filter )
+{
+#ifdef SWSCALE
+	struct SwsContext *context = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "avcolorspace.swscale", NULL );
+	sws_freeContext( context );
+#endif
+}
+
 /** Constructor for the filter.
 */
 
 mlt_filter filter_avcolour_space_init( void *arg )
 {
+#ifdef SWSCALE
 #if (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	// Test to see if swscale accepts the arg as resolution
 	if ( arg )
@@ -187,13 +203,16 @@ mlt_filter filter_avcolour_space_init( void *arg )
 		else
 			return NULL;
 	}		
-
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
-		this->process = filter_process;
-	return this;
 #else
 	return NULL;
 #endif
+#endif
+	mlt_filter this = mlt_filter_new( );
+	if ( this != NULL )
+	{
+		this->process = filter_process;
+		this->close = filter_close;
+	}
+	return this;
 }
 
