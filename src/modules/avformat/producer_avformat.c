@@ -680,6 +680,14 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 {
 #ifdef SWSCALE
 	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
+
+#ifdef USE_MMX
+	flags |= SWS_CPU_CAPS_MMX;
+#endif
+#ifdef USE_SSE
+	flags |= SWS_CPU_CAPS_MMX2;
+#endif
+
 	if ( pix_fmt == PIX_FMT_RGB32 )
 	{
 		*format = mlt_image_rgb24a;

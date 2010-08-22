@@ -82,6 +82,12 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 		flags |= SWS_FULL_CHR_H_INP;
 	else
 		flags |= SWS_FULL_CHR_H_INT;
+#ifdef USE_MMX
+		flags |= SWS_CPU_CAPS_MMX;
+#endif
+#ifdef USE_SSE
+		flags |= SWS_CPU_CAPS_MMX2;
+#endif
 
 	avpicture_fill( &input, in, in_fmt, width, height );
 	avpicture_fill( &output, out, out_fmt, width, height );

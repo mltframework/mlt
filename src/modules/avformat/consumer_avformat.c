@@ -1282,8 +1282,15 @@ static void *consumer_thread( void *arg )
 
 						// Do the colour space conversion
 #ifdef SWSCALE
+						int flags = SWS_BILINEAR;
+#ifdef USE_MMX
+						flags |= SWS_CPU_CAPS_MMX;
+#endif
+#ifdef USE_SSE
+						flags |= SWS_CPU_CAPS_MMX2;
+#endif
 						struct SwsContext *context = sws_getContext( width, height, PIX_FMT_YUYV422,
-							width, height, video_st->codec->pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
+							width, height, video_st->codec->pix_fmt, flags, NULL, NULL, NULL);
 						sws_scale( context, input->data, input->linesize, 0, height,
 							output->data, output->linesize);
 						sws_freeContext( context );
