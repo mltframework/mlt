@@ -126,7 +126,7 @@ else
 		echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 		extra_libs="$extra_libs -lm -lz -lbz2"
 		
-		echo -e "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"`pwd`/ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
+		printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"`pwd`/ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
 		[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 	elif [ "$static_ffmpeg" != "" ]
 	then 
@@ -150,7 +150,7 @@ else
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 			extra_libs="$extra_libs -lm -lz -lbz2"
 			
-			echo -e "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$static_ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
+			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$static_ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
 			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
@@ -181,7 +181,7 @@ else
 			echo "SWSCALE=1" >> config.mak
 		fi
 		
-		echo -e "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$(pkg-config --cflags libavformat)" -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
+		printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$(pkg-config --cflags libavformat)" -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
 		[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 	else
 		echo "avformat: No build environment found. "
