@@ -42,7 +42,7 @@ struct mlt_profile_s
 	int sample_aspect_den;  /**< the denominator of the pixel aspect ratio */
 	int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
 	int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
-	int luma_function;
+	int colorspace;         /**< the Y'CbCr colorspace standard: =601 for ITU-R 601, =709 for ITU-R 709, or =240 for SMPTE240M */
 };
 
 extern mlt_profile mlt_profile_init( const char *name );
