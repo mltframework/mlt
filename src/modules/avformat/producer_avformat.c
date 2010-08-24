@@ -1326,7 +1326,7 @@ exit_get_image:
 	else
 		mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
 
-	if ( *format == mlt_image_yuv422 && mlt_properties_get( properties, "skip_luma_scale" ) )
+	if ( *format == mlt_image_yuv422 && mlt_properties_get_int( properties, "skip_luma_scale" ) )
 		mlt_properties_set_int( frame_properties, "skip_luma_scale", 1 );
 
 	return !this->got_picture;
