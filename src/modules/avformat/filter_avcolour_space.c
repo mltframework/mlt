@@ -97,10 +97,12 @@ static void av_convert_image( mlt_properties properties, uint8_t *out, uint8_t *
 #endif
 	new_context = sws_getCachedContext( context, width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
-	if ( new_context != context )
-		mlt_properties_set_data( properties, "avcolorspace.swscale", new_context, 0, NULL, NULL );
+//	Disable using cached context here due to crashing in libswscale.
+//	if ( new_context != context )
+//		mlt_properties_set_data( properties, "avcolorspace.swscale", new_context, 0, NULL, NULL );
 	sws_scale( new_context, input.data, input.linesize, 0, height,
 		output.data, output.linesize);
+	sws_freeContext( new_context );
 
 #else
 	img_convert( &output, out_fmt, &input, in_fmt, width, height );
