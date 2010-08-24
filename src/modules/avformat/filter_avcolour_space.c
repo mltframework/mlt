@@ -52,13 +52,16 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	switch( format )
 	{
 		case mlt_image_rgb24:
+		case mlt_image_rgb24_full:
 			value = PIX_FMT_RGB24;
 			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
+		case mlt_image_rgb24a_full:
 			value = PIX_FMT_RGBA;
 			break;
 		case mlt_image_yuv422:
+		case mlt_image_yuv422_709:
 			value = PIX_FMT_YUYV422;
 			break;
 		case mlt_image_yuv420p:
@@ -72,7 +75,48 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	return value;
 }
 
-static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt, int width, int height )
+enum luma_scale {
+	LUMA_SCALE_AUTO = 0,
+	LUMA_SCALE_NONE,
+	LUMA_SCALE_OUT,
+	LUMA_SCALE_IN
+};
+
+static void set_luma_transfer( struct SwsContext *context, int is_709, enum luma_scale scale )
+{
+	int *coefficients;
+	int range_in, range_out;
+	int brightness, contrast, saturation;
+
+	if ( sws_getColorspaceDetails( context, &coefficients, &range_in, &coefficients, &range_out,
+			&brightness, &contrast, &saturation ) != -1 )
+	{
+		// Don't change these from defaults unless explicitly told to.
+		switch ( scale )
+		{
+		case LUMA_SCALE_NONE:
+			range_in = range_out = 1;
+			break;
+		case LUMA_SCALE_OUT:
+			range_in = 0;
+			range_out = 1;
+			break;
+		case LUMA_SCALE_IN:
+			range_in = 1;
+			range_out = 0;
+			break;
+		default:
+			break;
+		}
+		if ( is_709 )
+			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		sws_setColorspaceDetails( context, coefficients, range_in, coefficients, range_out,
+			brightness, contrast, saturation );
+	}
+}
+
+static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
+	int width, int height, int is_709, int is_full )
 {
 	AVPicture input;
 	AVPicture output;
@@ -94,6 +138,7 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 #ifdef SWSCALE
 	struct SwsContext *context = sws_getContext( width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
+	set_luma_transfer( context, is_709, is_full );
 	sws_scale( context, input.data, input.linesize, 0, height,
 		output.data, output.linesize);
 	sws_freeContext( context );
@@ -154,7 +199,9 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		}
 
 		// Update the output
-		av_convert_image( output, *image, out_fmt, in_fmt, width, height );
+		int is_709 = output_format == mlt_image_yuv422 && width * height > 750000;
+		enum luma_scale luma = LUMA_SCALE_AUTO;
+		av_convert_image( output, *image, out_fmt, in_fmt, width, height, is_709, luma );
 		*image = output;
 		*format = output_format;
 		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );

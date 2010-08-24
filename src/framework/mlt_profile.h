@@ -42,6 +42,7 @@ struct mlt_profile_s
 	int sample_aspect_den;  /**< the denominator of the pixel aspect ratio */
 	int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
 	int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
+	int luma_function;
 };
 
 extern mlt_profile mlt_profile_init( const char *name );

@@ -40,7 +40,10 @@ typedef enum
 	mlt_image_rgb24a,  /**< 8-bit RGB with alpha channel */
 	mlt_image_yuv422,  /**< 8-bit YUV 4:2:2 packed */
 	mlt_image_yuv420p, /**< 8-bit YUV 4:2:0 planar */
-	mlt_image_opengl   /**< suitable for OpenGL texture */
+	mlt_image_opengl,  /**< suitable for OpenGL texture */
+	mlt_image_rgb24_full,  /**< 8-bit RGB */
+	mlt_image_rgb24a_full, /**< 8-bit RGB with alpha channel */
+	mlt_image_yuv422_709,  /**< 8-bit YUV 4:2:2 packed */
 }
 mlt_image_format;
 
