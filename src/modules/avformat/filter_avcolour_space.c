@@ -52,16 +52,13 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	switch( format )
 	{
 		case mlt_image_rgb24:
-		case mlt_image_rgb24_full:
 			value = PIX_FMT_RGB24;
 			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
-		case mlt_image_rgb24a_full:
 			value = PIX_FMT_RGBA;
 			break;
 		case mlt_image_yuv422:
-		case mlt_image_yuv422_709:
 			value = PIX_FMT_YUYV422;
 			break;
 		case mlt_image_yuv420p:
