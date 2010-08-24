@@ -690,42 +690,21 @@ static void get_audio_streams_info( producer_avformat this )
 }
 
 #ifdef SWSCALE
-enum luma_scale {
-	LUMA_SCALE_AUTO = 0,
-	LUMA_SCALE_NONE,
-	LUMA_SCALE_OUT,
-	LUMA_SCALE_IN
-};
-
-static void set_luma_transfer( struct SwsContext *context, int is_709, enum luma_scale scale )
+static void set_luma_transfer( struct SwsContext *context, int is_709, int no_scale )
 {
 	int *coefficients;
-	int range_in, range_out;
+	int range;
 	int brightness, contrast, saturation;
 
-	if ( sws_getColorspaceDetails( context, &coefficients, &range_in, &coefficients, &range_out,
+	if ( sws_getColorspaceDetails( context, &coefficients, &range, &coefficients, &range,
 			&brightness, &contrast, &saturation ) != -1 )
 	{
 		// Don't change these from defaults unless explicitly told to.
-		switch ( scale )
-		{
-		case LUMA_SCALE_NONE:
-			range_in = range_out = 1;
-			break;
-		case LUMA_SCALE_OUT:
-			range_in = 0;
-			range_out = 1;
-			break;
-		case LUMA_SCALE_IN:
-			range_in = 1;
-			range_out = 0;
-			break;
-		default:
-			break;
-		}
+		if ( no_scale )
+			range = 1;
 		if ( is_709 )
 			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		sws_setColorspaceDetails( context, coefficients, range_in, coefficients, range_out,
+		sws_setColorspaceDetails( context, coefficients, range, coefficients, range,
 			brightness, contrast, saturation );
 	}
 }
@@ -735,7 +714,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 {
 #ifdef SWSCALE
 	int is_709 = *format == mlt_image_yuv422 && width * height > 750000;
-	enum luma_scale luma = LUMA_SCALE_AUTO;
+	int luma = 0;
 	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
 
 #ifdef USE_MMX
@@ -779,6 +758,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
+		luma = 1;
 		set_luma_transfer( context, is_709, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
@@ -790,6 +770,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt, 
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
+		luma = 1;
 		set_luma_transfer( context, is_709, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
@@ -1338,6 +1319,9 @@ exit_get_image:
 		mlt_properties_set_int( frame_properties, "top_field_first", !!mlt_properties_get_int( properties, "force_tff" ) );
 	else
 		mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
+
+	if ( *format == mlt_image_yuv422 && mlt_properties_get( properties, "skip_luma_scale" ) )
+		mlt_properties_set_int( frame_properties, "skip_luma_scale", 1 );
 
 	return !this->got_picture;
 }

@@ -75,48 +75,27 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	return value;
 }
 
-enum luma_scale {
-	LUMA_SCALE_AUTO = 0,
-	LUMA_SCALE_NONE,
-	LUMA_SCALE_OUT,
-	LUMA_SCALE_IN
-};
-
-static void set_luma_transfer( struct SwsContext *context, int is_709, enum luma_scale scale )
+static void set_luma_transfer( struct SwsContext *context, int is_709, int no_scale )
 {
 	int *coefficients;
-	int range_in, range_out;
+	int range;
 	int brightness, contrast, saturation;
 
-	if ( sws_getColorspaceDetails( context, &coefficients, &range_in, &coefficients, &range_out,
+	if ( sws_getColorspaceDetails( context, &coefficients, &range, &coefficients, &range,
 			&brightness, &contrast, &saturation ) != -1 )
 	{
 		// Don't change these from defaults unless explicitly told to.
-		switch ( scale )
-		{
-		case LUMA_SCALE_NONE:
-			range_in = range_out = 1;
-			break;
-		case LUMA_SCALE_OUT:
-			range_in = 0;
-			range_out = 1;
-			break;
-		case LUMA_SCALE_IN:
-			range_in = 1;
-			range_out = 0;
-			break;
-		default:
-			break;
-		}
+		if ( no_scale )
+			range = 1;
 		if ( is_709 )
 			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		sws_setColorspaceDetails( context, coefficients, range_in, coefficients, range_out,
+		sws_setColorspaceDetails( context, coefficients, range, coefficients, range,
 			brightness, contrast, saturation );
 	}
 }
 
 static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
-	int width, int height, int is_709, int is_full )
+	int width, int height, int is_709, int no_scale )
 {
 	AVPicture input;
 	AVPicture output;
@@ -138,7 +117,7 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 #ifdef SWSCALE
 	struct SwsContext *context = sws_getContext( width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
-	set_luma_transfer( context, is_709, is_full );
+	set_luma_transfer( context, is_709, no_scale );
 	sws_scale( context, input.data, input.linesize, 0, height,
 		output.data, output.linesize);
 	sws_freeContext( context );
@@ -200,8 +179,14 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 		// Update the output
 		int is_709 = output_format == mlt_image_yuv422 && width * height > 750000;
-		enum luma_scale luma = LUMA_SCALE_AUTO;
-		av_convert_image( output, *image, out_fmt, in_fmt, width, height, is_709, luma );
+		int no_scale_luma = 0;
+		if ( *format == mlt_image_yuv422 && mlt_properties_get_int( properties, "skip_luma_scale" )
+			 && ( output_format == mlt_image_rgb24 || output_format == mlt_image_rgb24a ) )
+		{
+			no_scale_luma = 1;
+			mlt_properties_set( properties, "skip_luma_scale", NULL );
+		}
+		av_convert_image( output, *image, out_fmt, in_fmt, width, height, is_709, no_scale_luma );
 		*image = output;
 		*format = output_format;
 		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
