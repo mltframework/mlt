@@ -58,6 +58,11 @@ static void initialise_jack_ports( mlt_properties properties )
 			(mlt_destructor) jack_rack_destroy, NULL );
 		mlt_properties_set( properties, "_rack_client_name", rack_name );
 	}
+	else
+	{
+		// We have to set this to something to prevent re-initialization.
+		mlt_properties_set_data( properties, "jackrack", jack_client, 0, NULL, NULL );
+	}
 		
 	// Allocate buffers and ports
 	jack_ringbuffer_t **output_buffers = mlt_pool_alloc( sizeof( jack_ringbuffer_t *) * channels );
