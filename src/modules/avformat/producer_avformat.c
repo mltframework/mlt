@@ -1524,13 +1524,13 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 	return paused;
 }
 
-static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int channels, int samples, double timecode, double fps )
+static int decode_audio( producer_avformat this, int *ignore, AVPacket pkt, int channels, int samples, double timecode, double fps )
 {
 	// Fetch the audio_format
 	AVFormatContext *context = this->audio_format;
 
 	// Get the current stream index
-	int index = pkt->stream_index;
+	int index = pkt.stream_index;
 
 	// Get codec context
 	AVCodecContext *codec_context = this->audio_codec[ index ];
@@ -1543,8 +1543,8 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 	int16_t *decode_buffer = this->decode_buffer[ index ];
 
 	int audio_used = this->audio_used[ index ];
-	uint8_t *ptr = pkt->data;
-	int len = pkt->size;
+	uint8_t *ptr = pkt.data;
+	int len = pkt.size;
 	int ret = 0;
 
 	while ( ptr && ret >= 0 && len > 0 )
@@ -1553,7 +1553,7 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 
 		// Decode the audio
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(26<<8)+0))
-		ret = avcodec_decode_audio3( codec_context, decode_buffer, &data_size, pkt );
+		ret = avcodec_decode_audio3( codec_context, decode_buffer, &data_size, &pkt );
 #elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
 		ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
 #else
@@ -1565,8 +1565,8 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 			break;
 		}
 
-		len -= ret;
-		ptr += ret;
+		pkt.size = len -= ret;
+		pkt.data = ptr += ret;
 
 		// If decoded successfully
 		if ( data_size > 0 )
@@ -1607,9 +1607,9 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket *pkt, int
 	}
 
 	// If we're behind, ignore this packet
-	if ( pkt->pts >= 0 )
+	if ( pkt.pts >= 0 )
 	{
-		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt->pts;
+		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt.pts;
 		int req_position = ( int )( timecode * fps + 0.5 );
 		int int_position = ( int )( current_pts * fps + 0.5 );
 		if ( context->start_time != AV_NOPTS_VALUE )
@@ -1743,7 +1743,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				 ( this->audio_index == INT_MAX && context->streams[ pkt.stream_index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
 			{
 				int channels2 = this->audio_index == INT_MAX ? this->audio_codec[pkt.stream_index]->channels : *channels;
-				ret = decode_audio( this, &ignore, &pkt, channels2, *samples, real_timecode, fps );
+				ret = decode_audio( this, &ignore, pkt, channels2, *samples, real_timecode, fps );
 			}
 			av_free_packet( &pkt );
 
