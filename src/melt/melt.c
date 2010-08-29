@@ -1,7 +1,8 @@
 /*
  * melt.c -- MLT command line utility
  * Copyright (C) 2002-2010 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Authors: Charles Yates <charles.yates@pandora.be>
+ *          Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +27,7 @@
 #include <string.h>
 #include <sched.h>
 #include <libgen.h>
+#include <limits.h>
 
 #include <framework/mlt.h>
 
@@ -162,15 +164,18 @@ static void transport_action( mlt_producer producer, char *value )
 
 static mlt_consumer create_consumer( mlt_profile profile, char *id )
 {
-	char *arg = id != NULL ? strchr( id, ':' ) : NULL;
+	char *myid = id ? strdup( id ) : NULL;
+	char *arg = myid ? strchr( myid, ':' ) : NULL;
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_consumer consumer = mlt_factory_consumer( profile, id, arg );
+	mlt_consumer consumer = mlt_factory_consumer( profile, myid, arg );
 	if ( consumer != NULL )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		mlt_properties_set_data( properties, "transport_callback", transport_action, 0, NULL, NULL );
 	}
+	if ( myid )
+		free( myid );
 	return consumer;
 }
 
@@ -269,6 +274,40 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	}
 }
 
+static void guess_profile( mlt_producer melt, mlt_profile profile )
+{
+	mlt_frame fr = NULL;
+	uint8_t *buffer;
+	mlt_image_format fmt = mlt_image_yuv422;
+	mlt_properties p;
+	int w, h;
+
+	if ( ! mlt_service_get_frame( MLT_PRODUCER_SERVICE(melt), &fr, 0 ) && fr )
+	{
+		if ( ! mlt_frame_get_image( fr, &buffer, &fmt, &w, &h, 0 ) )
+		{
+			// Some source properties are not exposed until after the first get_image call.
+			mlt_frame_close( fr );
+			mlt_service_get_frame( MLT_PRODUCER_SERVICE(melt), &fr, 0 );
+			p = MLT_FRAME_PROPERTIES( fr );
+			if ( mlt_properties_get_int( p, "meta.media.width" ) )
+			{
+				profile->width = mlt_properties_get_int( p, "meta.media.width" );
+				profile->height = mlt_properties_get_int( p, "meta.media.height" );
+				profile->progressive = mlt_properties_get_int( p, "meta.media.progressive" );
+				profile->frame_rate_num = mlt_properties_get_int( p, "meta.media.frame_rate_num" );
+				profile->frame_rate_den = mlt_properties_get_int( p, "meta.media.frame_rate_den" );
+				profile->sample_aspect_num = mlt_properties_get_int( p, "meta.media.sample_aspect_num" );
+				profile->sample_aspect_den = mlt_properties_get_int( p, "meta.media.sample_aspect_den" );
+				profile->display_aspect_num = (int) ( (double) profile->sample_aspect_num * profile->width / profile->sample_aspect_den + 0.5 );
+				profile->display_aspect_den = profile->height;
+			}
+		}
+	}
+	mlt_frame_close( fr );
+	mlt_producer_seek( melt, 0 );
+}
+
 static void query_metadata( mlt_repository repo, mlt_service_type type, const char *typestr, char *id )
 {
 	mlt_properties metadata = mlt_repository_metadata( repo, type, id );
@@ -327,8 +366,10 @@ int main( int argc, char **argv )
 	FILE *store = NULL;
 	char *name = NULL;
 	mlt_profile profile = NULL;
+	mlt_profile backup_profile = NULL;
 	int is_progress = 0;
 	int is_silent = 0;
+	int is_profile_explicit = 0;
 
 	// Construct the factory
 	mlt_repository repo = mlt_factory_init( NULL );
@@ -425,8 +466,10 @@ query_all:
 	// Create profile if not set explicitly
 	if ( profile == NULL )
 		profile = mlt_profile_init( NULL );
+	else
+		is_profile_explicit = 1;
 
-	// Look for the consumer option
+	// Look for the consumer option to load profile settings from consumer properties
 	for ( i = 1; i < argc; i ++ )
 	{
 		if ( !strcmp( argv[ i ], "-consumer" ) )
@@ -441,14 +484,64 @@ query_all:
 		}
 	}
 
-	// If we have no consumer, default to sdl
-	if ( store == NULL && consumer == NULL )
-		consumer = create_consumer( profile, NULL );
+	// Make backup of profile for determining if we need to use 'consumer' producer.
+	backup_profile = mlt_profile_init( NULL );
+	memcpy( backup_profile, profile, sizeof( struct mlt_profile_s ) );
+	backup_profile->description = strdup( "" );
 
 	// Get melt producer
 	if ( argc > 1 )
 		melt = mlt_factory_producer( profile, "melt", &argv[ 1 ] );
 
+	if ( melt )
+	{
+		// If the producer changed the profile then do not try to guess it.
+		if ( profile->width != backup_profile->width ||
+		     profile->height != backup_profile->height ||
+		     profile->sample_aspect_num != backup_profile->sample_aspect_num ||
+		     profile->sample_aspect_den != backup_profile->sample_aspect_den )
+		{
+			if ( is_profile_explicit )
+			{
+				// We need to use the 'consumer' producer.
+				mlt_producer_close( melt );
+				mlt_profile_close( profile );
+				profile = backup_profile;
+				backup_profile = NULL;
+				if ( profile->description )
+					free( profile->description );
+				// This is a hack to signal create_producer() in producer_melt.c.
+				profile->description = strdup( "consumer:" );
+				melt = mlt_factory_producer( profile, "melt", &argv[ 1 ] );
+			}
+		}
+		else if ( ! is_profile_explicit )
+		{
+			guess_profile( melt, profile );
+		}
+
+		// Reload the consumer with the fully qualified profile
+		for ( i = 1; i < argc; i ++ )
+		{
+			if ( !strcmp( argv[ i ], "-consumer" ) )
+			{
+				if ( consumer )
+					mlt_consumer_close( consumer );
+				consumer = create_consumer( profile, argv[ ++ i ] );
+				if ( consumer )
+				{
+					mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+					while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
+						mlt_properties_parse( properties, argv[ ++ i ] );
+				}
+			}
+		}
+
+		// If we have no consumer, default to sdl
+		if ( store == NULL && consumer == NULL )
+			consumer = create_consumer( profile, NULL );
+	}
+	
 	// Set transport properties on consumer and produder
 	if ( consumer != NULL && melt != NULL )
 	{
@@ -570,6 +663,7 @@ query_all:
 
 	// Close the factory
 	mlt_profile_close( profile );
+	mlt_profile_close( backup_profile );
 
 exit_factory:
 		
