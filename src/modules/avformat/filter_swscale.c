@@ -180,8 +180,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 				avpicture_fill( &output, outbuf, avformat, owidth, oheight );
 	
 				// Perform the scaling
-				sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
-				sws_freeContext( context );
+				sws_scale( new_context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
 	
 				// Set it back on the frame
 				mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
