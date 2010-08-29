@@ -1,8 +1,22 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<!-- MLT XML DTD v0.1.0 -->
+<!-- MLT XML DTD v0.2.0 -->
 
-<!ELEMENT mlt (producer | playlist | tractor | multitrack)+ >
+<!ELEMENT mlt (profile | producer | playlist | tractor | multitrack)+ >
+<!ELEMENT profile EMPTY >
+<!ATTLIST profile
+    name               CDATA    #IMPLIED
+    description        CDATA    #IMPLIED
+    display_aspect_den CDATA    #IMPLIED
+    display_aspect_num CDATA    #IMPLIED
+    frame_rate_den     CDATA    #REQUIRED
+    frame_rate_num     CDATA    #REQUIRED
+    height             CDATA    #REQUIRED
+    progressive        CDATA    #REQUIRED
+    sample_aspect_den  CDATA    #REQUIRED
+    sample_aspect_num  CDATA    #REQUIRED
+    width              CDATA    #REQUIRED
+>
 <!ELEMENT property ANY >
 <!ATTLIST property 
     name     CDATA    #REQUIRED

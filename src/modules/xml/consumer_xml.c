@@ -630,7 +630,10 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	xmlDocPtr doc = xmlNewDoc( _x("1.0") );
 	xmlNodePtr root = xmlNewNode( NULL, _x("mlt") );
 	struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
-	
+	xmlNodePtr profile_node = xmlNewChild( root, NULL, _x("profile"), NULL );
+	mlt_profile profile = mlt_service_profile( service );
+	char tmpstr[ 32 ];
+
 	xmlDocSetRootElement( doc, root );
 
 	// If we have root, then deal with it now
@@ -651,6 +654,27 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	if ( mlt_properties_get( properties, "title" ) != NULL )
 		xmlNewProp( root, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 	mlt_properties_set_int( properties, "global_feed", 1 );
+
+	// Add a profile child element
+	xmlNewProp( profile_node, _x("description"), _x(profile->description) );
+	sprintf( tmpstr, "%d", profile->width );
+	xmlNewProp( profile_node, _x("width"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->height );
+	xmlNewProp( profile_node, _x("height"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->progressive );
+	xmlNewProp( profile_node, _x("progressive"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->sample_aspect_num );
+	xmlNewProp( profile_node, _x("sample_aspect_num"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->sample_aspect_den );
+	xmlNewProp( profile_node, _x("sample_aspect_den"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->display_aspect_num );
+	xmlNewProp( profile_node, _x("display_aspect_num"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->display_aspect_den );
+	xmlNewProp( profile_node, _x("display_aspect_den"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->frame_rate_num );
+	xmlNewProp( profile_node, _x("frame_rate_num"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->frame_rate_den );
+	xmlNewProp( profile_node, _x("frame_rate_den"), _x(tmpstr) );
 
 	// Construct the context maps
 	context->id_map = mlt_properties_new();

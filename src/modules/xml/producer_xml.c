@@ -82,6 +82,7 @@ struct deserialise_context_s
 	const xmlChar *systemId;
 	mlt_properties params;
 	mlt_profile profile;
+	int pass;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -285,6 +286,56 @@ static void attach_filters( mlt_service this, mlt_service that )
 			mlt_service_attach( this, filter );
 			attach_filters( MLT_FILTER_SERVICE( filter ), MLT_FILTER_SERVICE( filter ) );
 		}
+	}
+}
+
+static void on_start_profile( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+{
+	mlt_profile p = context->profile;
+	for ( ; atts != NULL && *atts != NULL; atts += 2 )
+	{
+		if ( xmlStrcmp( atts[ 0 ], _x("name") ) == 0 || xmlStrcmp( atts[ 0 ], _x("profile") ) == 0 )
+		{
+			mlt_profile my_profile = mlt_profile_init( _s(atts[ 1 ]) );
+			if ( my_profile )
+			{
+				p->description = strdup( my_profile->description );
+				p->display_aspect_den = my_profile->display_aspect_den;
+				p->display_aspect_num = my_profile->display_aspect_num;
+				p->frame_rate_den = my_profile->frame_rate_den;
+				p->frame_rate_num = my_profile->frame_rate_num;
+				p->width = my_profile->width;
+				p->height = my_profile->height;
+				p->progressive = my_profile->progressive;
+				p->sample_aspect_den = my_profile->sample_aspect_den;
+				p->sample_aspect_num = my_profile->sample_aspect_num;
+				mlt_profile_close( my_profile );
+			}
+		}
+		else if ( xmlStrcmp( atts[ 0 ], _x("description") ) == 0 )
+		{
+			if ( p->description )
+				free( p->description );
+			p->description = strdup( _s(atts[ 1 ]) );
+		}
+		else if ( xmlStrcmp( atts[ 0 ], _x("display_aspect_den") ) == 0 )
+			p->display_aspect_den = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("display_aspect_num") ) == 0 )
+			p->display_aspect_num = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("sample_aspect_num") ) == 0 )
+			p->sample_aspect_num = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("sample_aspect_den") ) == 0 )
+			p->sample_aspect_den = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("width") ) == 0 )
+			p->width = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("height") ) == 0 )
+			p->height = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("progressive") ) == 0 )
+			p->progressive = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("frame_rate_num") ) == 0 )
+			p->frame_rate_num = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("frame_rate_den") ) == 0 )
+			p->frame_rate_den = strtol( _s(atts[ 1 ]), NULL, 0 );
 	}
 }
 
@@ -1054,6 +1105,14 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 	
 //printf("on_start_element: %s\n", name );
+	if ( context->pass == 0 )
+	{
+		if ( xmlStrcmp( name, _x("mlt") ) == 0 ||
+		     xmlStrcmp( name, _x("profile") ) == 0 ||
+		     xmlStrcmp( name, _x("profileinfo") ) == 0 )
+			on_start_profile( context, name, atts );
+		return;
+	}
 	context->branch[ context->depth ] ++;
 	context->depth ++;
 	
@@ -1395,12 +1454,6 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 
 	// Setup SAX callbacks
 	sax->startElement = on_start_element;
-	sax->endElement = on_end_element;
-	sax->characters = on_characters;
-	sax->cdataBlock = on_characters;
-	sax->internalSubset = on_internal_subset;
-	sax->entityDecl = on_entity_declaration;
-	sax->getEntity = on_get_entity;
 
 	// Setup libxml2 SAX parsing
 	xmlInitParser(); 
@@ -1424,19 +1477,53 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		return NULL;
 	}
 
-	xmlcontext->sax = sax;
-	xmlcontext->_private = ( void* )context;
-	
 	// Parse
+	xmlcontext->sax = sax;
+	xmlcontext->_private = ( void* )context;	
 	xmlParseDocument( xmlcontext );
-	well_formed = xmlcontext->wellFormed;
 	
 	// Cleanup after parsing
-	xmlFreeDoc( context->entity_doc );
-	free( sax );
 	xmlcontext->sax = NULL;
 	xmlcontext->_private = NULL;
 	xmlFreeParserCtxt( xmlcontext );
+
+	// Setup the second pass
+	context->pass ++;
+	if ( info == 0 )
+		xmlcontext = xmlCreateFileParserCtxt( filename );
+	else
+		xmlcontext = xmlCreateMemoryParserCtxt( data, strlen( data ) );
+
+	// Invalid context - clean up and return NULL
+	if ( xmlcontext == NULL )
+	{
+		mlt_properties_close( context->producer_map );
+		mlt_properties_close( context->destructors );
+		mlt_properties_close( context->params );
+		xmlFreeDoc( context->entity_doc );
+		free( context );
+		free( sax );
+		free( filename );
+		return NULL;
+	}
+
+	// Setup SAX callbacks
+	sax->endElement = on_end_element;
+	sax->characters = on_characters;
+	sax->cdataBlock = on_characters;
+	sax->internalSubset = on_internal_subset;
+	sax->entityDecl = on_entity_declaration;
+	sax->getEntity = on_get_entity;
+
+	// Parse
+	xmlcontext->sax = sax;
+	xmlcontext->_private = ( void* )context;
+	xmlParseDocument( xmlcontext );
+	well_formed = xmlcontext->wellFormed;
+
+	// Cleanup after parsing
+	xmlFreeDoc( context->entity_doc );
+	free( sax );
 	xmlMemoryDump( ); // for debugging
 
 	// Get the last producer on the stack
