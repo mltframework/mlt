@@ -344,7 +344,7 @@ static int dv_is_wide( AVPacket *pkt )
 	return 0;
 }
 
-static double get_aspect_ratio( AVStream *stream, AVCodecContext *codec_context, AVPacket *pkt )
+static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVCodecContext *codec_context, AVPacket *pkt )
 {
 	double aspect_ratio = 1.0;
 
@@ -354,15 +354,29 @@ static double get_aspect_ratio( AVStream *stream, AVCodecContext *codec_context,
 		{
 			if ( dv_is_pal( pkt ) )
 			{
-				aspect_ratio = dv_is_wide( pkt )
-					? 64.0/45.0 // 16:9 PAL
-					: 16.0/15.0; // 4:3 PAL
+				if ( dv_is_wide( pkt ) )
+				{
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 64 );
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 45 );
+				}
+				else
+				{
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 16 );
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 15 );
+				}
 			}
 			else
 			{
-				aspect_ratio = dv_is_wide( pkt )
-					? 32.0/27.0 // 16:9 NTSC
-					: 8.0/9.0; // 4:3 NTSC
+				if ( dv_is_wide( pkt ) )
+				{
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 32 );
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 27 );
+				}
+				else
+				{
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 8 );
+					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 9 );
+				}
 			}
 		}
 		else
@@ -380,13 +394,29 @@ static double get_aspect_ratio( AVStream *stream, AVCodecContext *codec_context,
 			// the rescale normaliser when using equivalent producers and consumers.
 			// = display_aspect / (width * height)
 			if ( ar.num == 10 && ar.den == 11 )
-				aspect_ratio = 8.0/9.0; // 4:3 NTSC
+			{
+				// 4:3 NTSC
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 8 );
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 9 );
+			}
 			else if ( ar.num == 59 && ar.den == 54 )
-				aspect_ratio = 16.0/15.0; // 4:3 PAL
+			{
+				// 4:3 PAL
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 16 );
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 15 );
+			}
 			else if ( ar.num == 40 && ar.den == 33 )
-				aspect_ratio = 32.0/27.0; // 16:9 NTSC
+			{
+				// 16:9 NTSC
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 32 );
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 27 );
+			}
 			else if ( ar.num == 118 && ar.den == 81 )
-				aspect_ratio = 64.0/45.0; // 16:9 PAL
+			{
+				// 16:9 PAL
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 64 );
+				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 45 );
+			}
 		}
 	}
 	else
@@ -399,10 +429,20 @@ static double get_aspect_ratio( AVStream *stream, AVCodecContext *codec_context,
 			{ 0, 1 };
 #endif
 		if ( codec_sar.num > 0 )
-			aspect_ratio = av_q2d( codec_sar );
+		{
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", codec_sar.num );
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", codec_sar.den );
+		}
 		else if ( stream_sar.num > 0 )
-			aspect_ratio = av_q2d( stream_sar );
+		{
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", stream_sar.num );
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", stream_sar.den );
+		}
 	}
+	AVRational ar = { mlt_properties_get_double( properties, "meta.media.sample_aspect_num" ), mlt_properties_get_double( properties, "meta.media.sample_aspect_den" ) };
+	aspect_ratio = av_q2d( ar );
+	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
+
 	return aspect_ratio;
 }
 
@@ -574,16 +614,14 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 						ret = av_read_frame( context, &pkt );
 						if ( ret >= 0 && pkt.stream_index == video_index && pkt.size > 0 )
 						{
-							mlt_properties_set_double( properties, "aspect_ratio",
-								get_aspect_ratio( context->streams[ video_index ], codec_context, &pkt ) );
+							get_aspect_ratio( properties, context->streams[ video_index ], codec_context, &pkt );
 							break;
 						}
 					}
 				}
 				else
 				{
-					mlt_properties_set_double( properties, "aspect_ratio",
-						get_aspect_ratio( context->streams[ video_index ], codec_context, NULL ) );
+					get_aspect_ratio( properties, context->streams[ video_index ], codec_context, NULL );
 				}
 #ifdef SWSCALE
 				struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
@@ -967,7 +1005,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int ignore = 0;
 
 	// We may want to use the source fps if available
-	double source_fps = mlt_properties_get_double( properties, "source_fps" );
+	double source_fps = mlt_properties_get_double( properties, "meta.media.frame_rate_num" ) /
+		mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
 	double fps = mlt_producer_get_fps( producer );
 
 	// This is the physical frame position in the source
@@ -1341,6 +1380,10 @@ exit_get_image:
 	else
 		mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
 
+	// Set immutable properties of the selected track's (or overridden) source attributes.
+	mlt_properties_set_int( properties, "meta.media.top_field_first", this->top_field_first );
+	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
+
 	return !this->got_picture;
 }
 
@@ -1434,7 +1477,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		mlt_properties_set_int( properties, "height", this->video_codec->height );
 		// For DV, we'll just use the saved aspect ratio
 		if ( codec_context->codec_id != CODEC_ID_DVVIDEO )
-			mlt_properties_set_double( properties, "aspect_ratio", get_aspect_ratio( stream, this->video_codec, NULL ) );
+			get_aspect_ratio( properties, stream, this->video_codec, NULL );
 
 		// Determine the fps first from the codec
 		double source_fps = (double) this->video_codec->time_base.den /
@@ -1444,6 +1487,8 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		{
 			source_fps = mlt_properties_get_double( properties, "force_fps" );
 			stream->time_base = av_d2q( source_fps, 255 );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_num", stream->time_base.num );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_den", stream->time_base.den );
 		}
 		else
 		{
@@ -1456,9 +1501,26 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 #endif
 			// Choose the lesser - the wrong tends to be off by some multiple of 10
 			source_fps = FFMIN( source_fps, muxer_fps );
+			if ( source_fps > 0 && source_fps < muxer_fps )
+			{
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", this->video_codec->time_base.num );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", this->video_codec->time_base.den );
+			}
+			else if ( muxer_fps > 0 )
+			{
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", stream->r_frame_rate.num );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", stream->r_frame_rate.den );
+			}
+			else
+			{
+				int frame_rate_den = 10000;
+				int frame_rate_num = mlt_producer_get_fps( this->parent ) * frame_rate_den;
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate_num );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate_den );
+			}
 		}
 
-		// We'll use fps if it's available
+		// source_fps is deprecated in favor of meta.media.frame_rate_num and .frame_rate_den
 		if ( source_fps > 0 )
 			mlt_properties_set_double( properties, "source_fps", source_fps );
 		else
@@ -1577,6 +1639,9 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		// Set the width and height
 		mlt_properties_set_int( frame_properties, "width", this->video_codec->width );
 		mlt_properties_set_int( frame_properties, "height", this->video_codec->height );
+		// real_width and real_height are deprecated in favor of meta.media.width and .height
+		mlt_properties_set_int( properties, "meta.media.width", this->video_codec->width );
+		mlt_properties_set_int( properties, "meta.media.height", this->video_codec->height );
 		mlt_properties_set_int( frame_properties, "real_width", this->video_codec->width );
 		mlt_properties_set_int( frame_properties, "real_height", this->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
