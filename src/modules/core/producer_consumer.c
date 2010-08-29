@@ -116,15 +116,6 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		cx->profile->frame_rate_num = profile->frame_rate_num;
 		cx->profile->frame_rate_den = profile->frame_rate_den;
 
-		// We will encapsulate a consumer
-		cx->consumer = mlt_consumer_new( cx->profile );
-		// Do not use _pass_list on real_time so that it defaults to 0 in the absence of
-		// an explicit real_time property.
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( cx->consumer ), "real_time",
-			mlt_properties_get_int( properties, "real_time" ) );
-		mlt_properties_pass_list( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties,
-			"buffer, prefill, deinterlace_method, rescale" );
-	
 		// Encapsulate a real producer for the resource
 		cx->producer = mlt_factory_producer( cx->profile, NULL,
 			mlt_properties_get( properties, "resource" ) );
@@ -134,6 +125,15 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		// Since we control the seeking, prevent it from seeking on its own
 		mlt_producer_set_speed( cx->producer, 0 );
 
+		// We will encapsulate a consumer
+		cx->consumer = mlt_consumer_new( cx->profile );
+		// Do not use _pass_list on real_time so that it defaults to 0 in the absence of
+		// an explicit real_time property.
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( cx->consumer ), "real_time",
+			mlt_properties_get_int( properties, "real_time" ) );
+		mlt_properties_pass_list( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties,
+			"buffer, prefill, deinterlace_method, rescale" );
+	
 		// Connect it all together
 		mlt_consumer_connect( cx->consumer, MLT_PRODUCER_SERVICE( cx->producer ) );
 		mlt_consumer_start( cx->consumer );
@@ -208,7 +208,8 @@ mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type,
 	mlt_producer this = mlt_producer_new( );
 
 	// Encapsulate the real producer
-	mlt_producer real_producer = mlt_factory_producer( profile, NULL, arg );
+	mlt_profile temp_profile = mlt_profile_init( NULL );
+	mlt_producer real_producer = mlt_factory_producer( temp_profile, NULL, arg );
 
 	if ( this && real_producer )
 	{
@@ -233,5 +234,6 @@ mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type,
 
 		this = NULL;
 	}
+	mlt_profile_close( temp_profile );
 	return this;
 }
