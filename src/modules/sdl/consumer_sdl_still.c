@@ -440,11 +440,14 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 		if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
 			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
-		pthread_mutex_unlock( &mlt_sdl_mutex );
 
 		uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
-		SDL_FillRect( this->sdl_screen, NULL, color >> 8 );
-		changed = 1;
+		if ( this->sdl_screen )
+		{
+			SDL_FillRect( this->sdl_screen, NULL, color >> 8 );
+			changed = 1;
+		}
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	if ( changed == 0 &&
