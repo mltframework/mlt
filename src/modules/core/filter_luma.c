@@ -43,6 +43,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int out = mlt_properties_get_int( properties, "period" );
 	int cycle = mlt_properties_get_int( properties, "cycle" );
 	int duration = mlt_properties_get_int( properties, "duration" );
+	char *name = mlt_properties_get( properties, "_unique_id" );
+	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES(this), name );
 
 	out = out? out + 1 : 25;
 	if ( cycle )
@@ -72,15 +74,17 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 	}
 
-	mlt_position relative_pos = mlt_frame_get_position( this ) % out;
-	mlt_log_debug( MLT_FILTER_SERVICE(filter), "pos %d mod period %d\n", mlt_frame_get_position( this ),
-					 relative_pos );
+	mlt_position modulo_pos = position % out;
+	mlt_log_debug( MLT_FILTER_SERVICE(filter), "pos %d mod period %d\n", position, modulo_pos );
 	if ( luma != NULL &&
 	     ( mlt_properties_get( properties, "blur" ) != NULL ||
-	       ( mlt_frame_get_position( this ) >= duration && relative_pos < duration - 1 ) ) )
+		   ( position >= duration && modulo_pos < duration - 1 ) ) )
 	{
 		mlt_properties luma_properties = MLT_TRANSITION_PROPERTIES( luma );
 		mlt_properties_pass( luma_properties, properties, "luma." );
+		int in = position / out * out + mlt_frame_get_position( this ) - position;
+		mlt_properties_set_int( luma_properties, "in", in );
+		mlt_properties_set_int( luma_properties, "out", in + duration - 1 );
 		mlt_transition_process( luma, this, b_frame );
 	}
 
@@ -88,7 +92,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	// We only need a copy of the last frame in the cycle, but we could miss it
 	// with realtime frame-dropping, so we copy the last several frames of the cycle.
-	if ( error == 0 && relative_pos > out - duration )
+	if ( error == 0 && modulo_pos > out - duration )
 	{
 		mlt_properties a_props = MLT_FRAME_PROPERTIES( this );
 		int size = 0;
@@ -97,7 +101,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		if ( dst != NULL )
 		{
-			mlt_log_debug( MLT_FILTER_SERVICE(filter), "copying frame %d\n", relative_pos );
+			mlt_log_debug( MLT_FILTER_SERVICE(filter), "copying frame %d\n", modulo_pos );
 			mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 			memcpy( dst, src, size );
 			mlt_properties_set_data( b_props, "image", dst, size, mlt_pool_release, NULL );
@@ -115,6 +119,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
+	// Get a unique name to store the frame position
+	char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" );
+
+	// Assign the current position to the name
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( frame ), name, mlt_frame_get_position( frame ) );
+
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, this );
 
