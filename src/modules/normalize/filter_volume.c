@@ -165,25 +165,31 @@ double signal_max_power( int16_t *buffer, int channels, int samples, int16_t *pe
 
 static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// Get the properties of the a frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-	double gain = mlt_properties_get_double( properties, "volume.gain" );
-	double max_gain = mlt_properties_get_double( properties, "volume.max_gain" );
-	double limiter_level = 0.5; /* -6 dBFS */
-	int normalise =  mlt_properties_get_int( properties, "volume.normalise" );
-	double amplitude =  mlt_properties_get_double( properties, "volume.amplitude" );
-	int i, j;
-	double sample;
-	int16_t peak;
-
 	// Get the filter from the frame
-	mlt_filter this = mlt_properties_get_data( properties, "filter_volume", NULL );
+	mlt_filter this = mlt_frame_pop_audio( frame );
 
 	// Get the properties from the filter
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
 
-	if ( mlt_properties_get( properties, "volume.limiter" ) != NULL )
-		limiter_level = mlt_properties_get_double( properties, "volume.limiter" );
+	// Get the properties of the a frame
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+
+	// Get the frame's filter instance properties
+	char *name = mlt_properties_get( filter_props, "_unique_id" );
+	mlt_properties instance_props = mlt_properties_get_data( properties, name, NULL );
+
+	// Get the parameters
+	double gain = mlt_properties_get_double( instance_props, "gain" );
+	double max_gain = mlt_properties_get_double( instance_props, "max_gain" );
+	double limiter_level = 0.5; /* -6 dBFS */
+	int normalise =  mlt_properties_get_int( instance_props, "normalise" );
+	double amplitude =  mlt_properties_get_double( instance_props, "amplitude" );
+	int i, j;
+	double sample;
+	int16_t peak;
+
+	if ( mlt_properties_get( instance_props, "limiter" ) != NULL )
+		limiter_level = mlt_properties_get_double( instance_props, "limiter" );
 	
 	// Get the producer's audio
 	*format = mlt_audio_s16;
@@ -286,58 +292,59 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
+	mlt_properties instance_props = mlt_properties_new();
+	char *name = mlt_properties_get( filter_props, "_unique_id" );
+
+	mlt_properties_set_data( properties, name, instance_props, 0, (mlt_destructor) mlt_properties_close, NULL );
+
+	double gain = 1.0; // no adjustment
 
 	// Parse the gain property
-	if ( mlt_properties_get( properties, "gain" ) == NULL )
+	if ( mlt_properties_get( filter_props, "gain" ) != NULL )
 	{
-		double gain = 1.0; // no adjustment
-		
-		if ( mlt_properties_get( filter_props, "gain" ) != NULL )
+		char *p = mlt_properties_get( filter_props, "gain" );
+
+		if ( strncaseeq( p, "normalise", 9 ) )
+			mlt_properties_set( filter_props, "normalise", "" );
+		else
 		{
-			char *p = mlt_properties_get( filter_props, "gain" );
-			
-			if ( strncaseeq( p, "normalise", 9 ) )
-				mlt_properties_set( filter_props, "normalise", "" );
-			else
+			if ( strcmp( p, "" ) != 0 )
+				gain = fabs( strtod( p, &p) );
+
+			while ( isspace( *p ) )
+				p++;
+
+			/* check if "dB" is given after number */
+			if ( strncaseeq( p, "db", 2 ) )
+				gain = DBFSTOAMP( gain );
+
+			// If there is an end adjust gain to the range
+			if ( mlt_properties_get( filter_props, "end" ) != NULL )
 			{
+				// Determine the time position of this frame in the transition duration
+				mlt_position in = mlt_filter_get_in( this );
+				mlt_position out = mlt_filter_get_out( this );
+				mlt_position time = mlt_frame_get_position( frame );
+				double position = ( double )( time - in ) / ( double )( out - in + 1 );
+
+				double end = -1;
+				char *p = mlt_properties_get( filter_props, "end" );
 				if ( strcmp( p, "" ) != 0 )
-					gain = fabs( strtod( p, &p) );
+					end = fabs( strtod( p, &p) );
 
 				while ( isspace( *p ) )
 					p++;
 
 				/* check if "dB" is given after number */
 				if ( strncaseeq( p, "db", 2 ) )
-					gain = DBFSTOAMP( gain );
-					
-				// If there is an end adjust gain to the range
-				if ( mlt_properties_get( filter_props, "end" ) != NULL )
-				{
-					// Determine the time position of this frame in the transition duration
-					mlt_position in = mlt_filter_get_in( this );
-					mlt_position out = mlt_filter_get_out( this );
-					mlt_position time = mlt_frame_get_position( frame );
-					double position = ( double )( time - in ) / ( double )( out - in + 1 );
+					end = DBFSTOAMP( gain );
 
-					double end = -1;
-					char *p = mlt_properties_get( filter_props, "end" );
-					if ( strcmp( p, "" ) != 0 )
-						end = fabs( strtod( p, &p) );
-
-					while ( isspace( *p ) )
-						p++;
-
-					/* check if "dB" is given after number */
-					if ( strncaseeq( p, "db", 2 ) )
-						end = DBFSTOAMP( gain );
-
-					if ( end != -1 )
-						gain += ( end - gain ) * position;
-				}
+				if ( end != -1 )
+					gain += ( end - gain ) * position;
 			}
 		}
-		mlt_properties_set_double( properties, "volume.gain", gain );
 	}
+	mlt_properties_set_double( instance_props, "gain", gain );
 	
 	// Parse the maximum gain property
 	if ( mlt_properties_get( filter_props, "max_gain" ) != NULL )
@@ -352,7 +359,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		if ( strncaseeq( p, "db", 2 ) )
 			gain = DBFSTOAMP( gain );
 			
-		mlt_properties_set_double( properties, "volume.max_gain", gain );
+		mlt_properties_set_double( instance_props, "max_gain", gain );
 	}
 
 	// Parse the limiter property
@@ -378,7 +385,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			if ( level < 0 )
 				level = -level;
 		}
-		mlt_properties_set_double( properties, "volume.limiter", level );
+		mlt_properties_set_double( instance_props, "limiter", level );
 	}
 
 	// Parse the normalise property
@@ -417,8 +424,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			double position = ( double )( time - in ) / ( double )( out - in + 1 );
 			amplitude *= position;
 		}
-		mlt_properties_set_int( properties, "volume.normalise", 1 );
-		mlt_properties_set_double( properties, "volume.amplitude", amplitude );
+		mlt_properties_set_int( instance_props, "normalise", 1 );
+		mlt_properties_set_double( instance_props, "amplitude", amplitude );
 	}
 
 	// Parse the window property and allocate smoothing buffer if needed
@@ -433,8 +440,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_properties_set_data( filter_props, "smooth_buffer", smooth_buffer, 0, free, NULL );
 	}
 	
-	// Put a filter reference onto the frame
-	mlt_properties_set_data( properties, "filter_volume", this, 0, NULL, NULL );
+	// Push the filter onto the stack
+	mlt_frame_push_audio( frame, this );
 
 	// Override the get_audio method
 	mlt_frame_push_audio( frame, filter_get_audio );
