@@ -309,7 +309,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		else
 		{
 			if ( strcmp( p, "" ) != 0 )
-				gain = fabs( strtod( p, &p) );
+				gain = strtod( p, &p );
 
 			while ( isspace( *p ) )
 				p++;
@@ -317,6 +317,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			/* check if "dB" is given after number */
 			if ( strncaseeq( p, "db", 2 ) )
 				gain = DBFSTOAMP( gain );
+			else
+				gain = fabs( gain );
 
 			// If there is an end adjust gain to the range
 			if ( mlt_properties_get( filter_props, "end" ) != NULL )
@@ -330,7 +332,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 				double end = -1;
 				char *p = mlt_properties_get( filter_props, "end" );
 				if ( strcmp( p, "" ) != 0 )
-					end = fabs( strtod( p, &p) );
+					end = strtod( p, &p );
 
 				while ( isspace( *p ) )
 					p++;
@@ -338,6 +340,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 				/* check if "dB" is given after number */
 				if ( strncaseeq( p, "db", 2 ) )
 					end = DBFSTOAMP( gain );
+				else
+					end = fabs( end );
 
 				if ( end != -1 )
 					gain += ( end - gain ) * position;
@@ -350,7 +354,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	if ( mlt_properties_get( filter_props, "max_gain" ) != NULL )
 	{
 		char *p = mlt_properties_get( filter_props, "max_gain" );
-		double gain = fabs( strtod( p, &p) ); // 0 = no max
+		double gain = strtod( p, &p ); // 0 = no max
 			
 		while ( isspace( *p ) )
 			p++;
@@ -358,6 +362,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		/* check if "dB" is given after number */
 		if ( strncaseeq( p, "db", 2 ) )
 			gain = DBFSTOAMP( gain );
+		else
+			gain = fabs( gain );
 			
 		mlt_properties_set_double( instance_props, "max_gain", gain );
 	}
