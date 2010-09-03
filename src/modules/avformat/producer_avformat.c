@@ -790,8 +790,6 @@ static int allocate_buffer( mlt_properties frame_properties, AVCodecContext *cod
 
 	*width = codec_context->width;
 	*height = codec_context->height;
-	mlt_properties_set_int( frame_properties, "width", *width );
-	mlt_properties_set_int( frame_properties, "height", *height );
 
 	if ( codec_context->pix_fmt == PIX_FMT_RGB32 )
 		size = *width * ( *height + 1 ) * 4;
@@ -862,8 +860,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Set the resolution
 			*width = codec_context->width;
 			*height = codec_context->height;
-			mlt_properties_set_int( frame_properties, "width", *width );
-			mlt_properties_set_int( frame_properties, "height", *height );
+
+			// Workaround 1088 encodings missing cropping info.
+			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+				*height = 1080;
 
 			// Cache hit
 			int size;
@@ -1022,6 +1022,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		// Duplicate it
 		if ( ( image_size = allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) ) )
+		{
+			// Workaround 1088 encodings missing cropping info.
+			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+				*height = 1080;
 #ifdef VDPAU
 			if ( this->vdpau && this->vdpau->buffer )
 			{
@@ -1037,6 +1041,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			else
 #endif
 			convert_image( (void**) &this->swscale, this->av_frame, *buffer, codec_context->pix_fmt, format, *width, *height );
+		}
 		else
 			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
@@ -1191,6 +1196,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				if ( ( image_size = allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) ) )
 				{
+					// Workaround 1088 encodings missing cropping info.
+					if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+						*height = 1080;
 #ifdef VDPAU
 					if ( this->vdpau )
 					{
@@ -1473,6 +1481,10 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		mlt_properties_set_int( frame_properties, "real_width", this->video_codec->width );
 		mlt_properties_set_int( frame_properties, "real_height", this->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
+
+		// Workaround 1088 encodings missing cropping info.
+		if ( this->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+			mlt_properties_set_int( frame_properties, "real_height", 1080 );
 
 		// Add our image operation
 		mlt_frame_push_service( frame, this );
