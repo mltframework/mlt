@@ -21,6 +21,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_tokeniser.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -337,15 +338,12 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 					
 					// Apply the effect
 #ifdef SOX14
-					if ( ( * e->handler.flow )( e, input_buffer, output_buffer, &isamp, &osamp ) == ST_SUCCESS )
+					if ( ( * e->handler.flow )( e, input_buffer, output_buffer, &isamp, &osamp ) != ST_SUCCESS )
 #else
-					if ( ( * e->h->flow )( e, input_buffer, output_buffer, &isamp, &osamp ) == ST_SUCCESS )
+					if ( ( * e->h->flow )( e, input_buffer, output_buffer, &isamp, &osamp ) != ST_SUCCESS )
 #endif
 					{
-						// Swap input and output buffer pointers for subsequent effects
-						p = input_buffer;
-						input_buffer = output_buffer;
-						output_buffer = p;
+						mlt_log_warning( MLT_FILTER_SERVICE(filter), "effect processing failed\n" );
 					}
 					
 					// XXX: hack to restore the original vol gain to prevent accumulation
@@ -362,7 +360,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			}
 
 			// Write back
-			memcpy( output_buffer, input_buffer, *samples * sizeof(st_sample_t) );
+			memcpy( input_buffer, output_buffer, *samples * sizeof(st_sample_t) );
 		}
 	}
 
