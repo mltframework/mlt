@@ -129,7 +129,11 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 	{
 		// Supply the effect parameters
 #ifdef SOX14
+#if (ST_LIB_VERSION_CODE >= ST_LIB_VERSION(14,2,0))
+		if ( sox_effect_options( eff, opt_count, &tokeniser->tokens[ tokeniser->count > 1 ? 1 : 0  ] ) == ST_SUCCESS )
+#else
 		if ( ( * eff->handler.getopts )( eff, opt_count, &tokeniser->tokens[ tokeniser->count > 1 ? 1 : 0  ] ) == ST_SUCCESS )
+#endif
 #else
 		if ( ( * eff->h->getopts )( eff, opt_count, &tokeniser->tokens[ tokeniser->count - opt_count ] ) == ST_SUCCESS )
 #endif
