@@ -56,7 +56,7 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 
 	// Check that we aren't already progressive
 	if ( !error && previous_image  && *format == mlt_image_yuv422 &&
-		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" ) )
+		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( previous_frame ), "progressive" ) )
 	{
 		// Get the current frame's image
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
