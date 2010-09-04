@@ -886,7 +886,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			}
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
 			mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
-			this->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+			// this->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 			this->got_picture = 1;
 
 			goto exit_get_image;
@@ -1272,7 +1272,10 @@ exit_get_image:
 		mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
 
 	// Set the field order property for this frame
-	mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
+	if ( mlt_properties_get( properties, "force_tff" ) )
+		mlt_properties_set_int( frame_properties, "top_field_first", !!mlt_properties_get_int( properties, "force_tff" ) );
+	else
+		mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
 
 	return !this->got_picture;
 }
