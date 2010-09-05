@@ -117,6 +117,11 @@ int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **image, mlt_
 			}
 		}
 	}
+	else
+	{
+		// Get the current frame's image
+		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
+	}
 	return error;
 }
 
