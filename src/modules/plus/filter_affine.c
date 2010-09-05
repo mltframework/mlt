@@ -68,14 +68,20 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			char *name = mlt_properties_get( properties, "_unique_id" );
 			mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( this ), name );
 			mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
+			mlt_position in = mlt_filter_get_in( filter );
+			mlt_position out = mlt_filter_get_out( filter );
 			double consumer_ar = mlt_properties_get_double( frame_properties, "consumer_aspect_ratio" );
-			mlt_properties_set_position( MLT_TRANSITION_PROPERTIES( transition ), "in", mlt_filter_get_in( filter ) );
-			mlt_properties_set_position( MLT_TRANSITION_PROPERTIES( transition ), "out", mlt_filter_get_out( filter ) );
-			mlt_producer_seek( producer, position );
+			mlt_transition_set_in_and_out( transition, in, out );
+			if ( out > 0 ) {
+				mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( producer ), "length", out - in + 1 );
+				mlt_producer_set_in_and_out( producer, in, out );
+			}
+			mlt_producer_seek( producer, position - in );
 			mlt_frame_set_position( this, position );
 			mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), properties, "producer." );
 			mlt_properties_pass( MLT_TRANSITION_PROPERTIES( transition ), properties, "transition." );
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &a_frame, 0 );
+			mlt_frame_set_position( a_frame, position );
 //			mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "distort", 1 );
 
 			// Special case - aspect_ratio = 0
