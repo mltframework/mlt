@@ -80,13 +80,13 @@ static int convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha
 		rgba[0] = r;
 		rgba[1] = g;
 		rgba[2] = b;
-		rgba[3] = 255;
+		rgba[3] = *alpha++;
 		yy = yuv[2];
 		YUV2RGB_601( yy, uu, vv, r, g, b );
 		rgba[4] = r;
 		rgba[5] = g;
 		rgba[6] = b;
-		rgba[7] = 255;
+		rgba[7] = *alpha++;
 		yuv += 4;
 		rgba += 8;
 	}
@@ -333,11 +333,13 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 			uint8_t *alpha = ( *format == mlt_image_rgb24a ||
 			                   *format == mlt_image_opengl )
 			                 ? mlt_pool_alloc( width * height ) : NULL;
+			if ( requested_format == mlt_image_rgb24a || requested_format == mlt_image_opengl )
+				alpha = mlt_frame_get_alpha_mask( frame );
 
 			if ( !( error = converter( *buffer, image, alpha, width, height ) ) )
 			{
 				mlt_properties_set_data( properties, "image", image, size, mlt_pool_release, NULL );
-				if ( alpha )
+				if ( alpha && ( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) )
 					mlt_properties_set_data( properties, "alpha", alpha, width * height, mlt_pool_release, NULL );
 				*buffer = image;
 				*format = requested_format;

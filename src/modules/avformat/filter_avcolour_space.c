@@ -167,6 +167,34 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		*format = output_format;
 		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "format", output_format );
+
+		if ( output_format == mlt_image_rgb24a || output_format == mlt_image_opengl )
+		{
+			register int len = width * height;
+			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+
+			if ( alpha )
+			{
+				// Merge the alpha mask from into the RGBA image using Duff's Device
+				register uint8_t *s = alpha;
+				register uint8_t *d = *image + 3; // start on the alpha component
+				register int n = ( len + 7 ) / 8;
+
+				switch ( len % 8 )
+				{
+					case 0:	do { *d = *s++; d += 4;
+					case 7:		 *d = *s++; d += 4;
+					case 6:		 *d = *s++; d += 4;
+					case 5:		 *d = *s++; d += 4;
+					case 4:		 *d = *s++; d += 4;
+					case 3:		 *d = *s++; d += 4;
+					case 2:		 *d = *s++; d += 4;
+					case 1:		 *d = *s++; d += 4;
+							}
+							while ( --n > 0 );
+				}
+			}
+		}
 	}
 	return error;
 }
