@@ -172,7 +172,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 				context = mlt_properties_get_data( prod_props, "swscale.context2", NULL );
 				new_context = sws_getCachedContext( context, iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
 				if ( new_context != context )
-					mlt_properties_set_data( properties, "swscale.context2", new_context, 0, NULL, NULL );
+					mlt_properties_set_data( prod_props, "swscale.context2", new_context, 0, NULL, NULL );
 
 				avformat = PIX_FMT_GRAY8;
 				avpicture_fill( &input, alpha, avformat, iwidth, iheight );
