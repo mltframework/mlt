@@ -171,9 +171,11 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		if ( output_format == mlt_image_rgb24a || output_format == mlt_image_opengl )
 		{
 			register int len = width * height;
+			int alpha_size = 0;
 			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+			mlt_properties_get_data( properties, "alpha", &alpha_size );
 
-			if ( alpha )
+			if ( alpha && alpha_size >= len )
 			{
 				// Merge the alpha mask from into the RGBA image using Duff's Device
 				register uint8_t *s = alpha;
