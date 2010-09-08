@@ -170,6 +170,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	
 				// Perform the scaling
 				sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
+				sws_freeContext( context );
 	
 				// Set it back on the frame
 				mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
