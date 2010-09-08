@@ -28,6 +28,7 @@
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QGraphicsTextItem>
 #include <QtSvg/QGraphicsSvgItem>
+#include <QtSvg/QSvgRenderer>
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocument>
 #include <QtGui/QStyleOptionGraphicsItem>
@@ -259,17 +260,35 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
 			{
 				const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
-				QImage img( url );
+				const QString base64 = items.item(i).namedItem("content").attributes().namedItem("base64").nodeValue();
+				QImage img;
+				if (base64.isEmpty()){
+					img.load(url);
+				}else{
+					img.loadFromData(QByteArray::fromBase64(base64.toAscii()));
+				}
 				ImageItem *rec = new ImageItem(img);
 				scene->addItem( rec );
 				gitem = rec;
 			}
 			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsSvgItem" )
 			{
-				const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
-				QGraphicsSvgItem *rec = new QGraphicsSvgItem(url);
-				scene->addItem(rec);
-				gitem = rec;
+				QString url = items.item(i).namedItem("content").attributes().namedItem("url").nodeValue();
+				QString base64 = items.item(i).namedItem("content").attributes().namedItem("base64").nodeValue();
+				QGraphicsSvgItem *rec = NULL;
+				if (base64.isEmpty()){
+					rec = new QGraphicsSvgItem(url);
+				}else{
+					rec = new QGraphicsSvgItem();
+					QSvgRenderer *renderer= new QSvgRenderer(QByteArray::fromBase64(base64.toAscii()) );
+					rec->setSharedRenderer(renderer);
+					//QString elem=rec->elementId();
+					//QRectF bounds = renderer->boundsOnElement(elem);
+				}
+				if (rec){
+					scene->addItem(rec);
+					gitem = rec;
+				}
 			}
 		}
 		//pos and transform
