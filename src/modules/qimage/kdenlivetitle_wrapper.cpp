@@ -280,10 +280,8 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					rec = new QGraphicsSvgItem(url);
 				}else{
 					rec = new QGraphicsSvgItem();
-					QSvgRenderer *renderer= new QSvgRenderer(QByteArray::fromBase64(base64.toAscii()) );
+					QSvgRenderer *renderer= new QSvgRenderer(QByteArray::fromBase64(base64.toAscii()), rec );
 					rec->setSharedRenderer(renderer);
-					//QString elem=rec->elementId();
-					//QRectF bounds = renderer->boundsOnElement(elem);
 				}
 				if (rec){
 					scene->addItem(rec);
