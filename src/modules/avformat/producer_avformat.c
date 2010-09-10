@@ -1810,9 +1810,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			index = this->audio_index;
 
 			// Now handle the audio if we have enough
-			if ( this->audio_used[ index ] >= *samples )
+			if ( this->audio_used[ index ] > 0 )
 			{
 				int16_t *src = this->audio_buffer[ index ];
+				*samples = this->audio_used[ index ] < *samples ? this->audio_used[ index ] : *samples;
 				memcpy( *buffer, src, *samples * *channels * sizeof(int16_t) );
 				this->audio_used[ index ] -= *samples;
 				memmove( src, &src[ *samples * *channels ], this->audio_used[ index ] * *channels * sizeof(int16_t) );
