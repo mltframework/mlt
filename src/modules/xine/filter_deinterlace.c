@@ -227,7 +227,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	{
 		// Signal that we no longer need previous and next frames
 		mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
-		mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
+		if ( service )
+			mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
 	}
 
 	return error;
