@@ -493,9 +493,6 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		mlt_properties_set_int( properties, "test_image", 1 );
 	}
 
-	mlt_properties_set_int( properties, "scaled_width", *width );
-	mlt_properties_set_int( properties, "scaled_height", *height );
-
 	return error;
 }
 
@@ -517,7 +514,7 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
 			alpha = mlt_properties_get_data( &this->parent, "alpha", NULL );
 		if ( alpha == NULL )
 		{
-			int size = mlt_properties_get_int( &this->parent, "scaled_width" ) * mlt_properties_get_int( &this->parent, "scaled_height" );
+			int size = mlt_properties_get_int( &this->parent, "width" ) * mlt_properties_get_int( &this->parent, "height" );
 			alpha = mlt_pool_alloc( size );
 			memset( alpha, 255, size );
 			mlt_properties_set_data( &this->parent, "alpha", alpha, size, mlt_pool_release, NULL );
