@@ -160,6 +160,8 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha
 			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			*d++ = y0;
 			*d++ = u0;
+			*d++ = y0;
+			*d++ = v0;
 		}
 	}
 	else
@@ -193,6 +195,8 @@ static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha
 			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			*d++ = y0;
 			*d++ = u0;
+			*d++ = y0;
+			*d++ = v0;
 		}
 	}
 
@@ -235,6 +239,8 @@ static int convert_rgb24_to_yuv422( uint8_t *rgb, uint8_t *yuv, uint8_t *alpha, 
 			RGB2YUV_601( r, g, b, y0, u0 , v0 );
 			*d++ = y0;
 			*d++ = u0;
+			*d++ = y0;
+			*d++ = v0;
 		}
 	}
 	return ret;
@@ -324,8 +330,9 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 	{
 		conversion_function converter = conversion_matrix[ *format - 1 ][ requested_format - 1 ];
 
-		mlt_log_debug( NULL, "[filter imageconvert] %s -> %s\n",
-			mlt_image_format_name( *format ), mlt_image_format_name( requested_format ) );
+		mlt_log_debug( NULL, "[filter imageconvert] %s -> %s @ %dx%d\n",
+			mlt_image_format_name( *format ), mlt_image_format_name( requested_format ),
+			width, height );
 		if ( converter )
 		{
 			int size = width * height * bpp_table[ requested_format - 1 ];
