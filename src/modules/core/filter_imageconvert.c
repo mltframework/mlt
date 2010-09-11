@@ -329,18 +329,22 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 		if ( converter )
 		{
 			int size = width * height * bpp_table[ requested_format - 1 ];
+			int alpha_size = width * height;
 			uint8_t *image = mlt_pool_alloc( size );
 			uint8_t *alpha = ( *format == mlt_image_rgb24a ||
 			                   *format == mlt_image_opengl )
 			                 ? mlt_pool_alloc( width * height ) : NULL;
 			if ( requested_format == mlt_image_rgb24a || requested_format == mlt_image_opengl )
+			{
 				alpha = mlt_frame_get_alpha_mask( frame );
+				mlt_properties_get_data( properties, "alpha", &alpha_size );
+			}
 
 			if ( !( error = converter( *buffer, image, alpha, width, height ) ) )
 			{
 				mlt_properties_set_data( properties, "image", image, size, mlt_pool_release, NULL );
 				if ( alpha && ( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) )
-					mlt_properties_set_data( properties, "alpha", alpha, width * height, mlt_pool_release, NULL );
+					mlt_properties_set_data( properties, "alpha", alpha, alpha_size, mlt_pool_release, NULL );
 				*buffer = image;
 				*format = requested_format;
 			}
