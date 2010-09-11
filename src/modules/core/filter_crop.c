@@ -127,7 +127,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		// We should resize the alpha too
 		uint8_t *alpha = mlt_frame_get_alpha_mask( this );
-		if ( alpha != NULL )
+		int alpha_size = 0;
+		mlt_properties_get_data( properties, "alpha", &alpha_size );
+		if ( alpha && alpha_size >= ( *width * *height ) )
 		{
 			uint8_t *newalpha = mlt_pool_alloc( owidth * oheight );
 			if ( newalpha )
