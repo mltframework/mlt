@@ -31,7 +31,8 @@
 static void crop( uint8_t *src, uint8_t *dest, int bpp, int width, int height, int left, int right, int top, int bottom )
 {
 	int stride = ( width - left - right ) * bpp;
-	int y      = height - top - bottom + 1;
+	// Copy an extra line because sometimes the downstream filters (scaler?) access it.
+	int y      = height - top - bottom + 2;
 	uint8_t *s = &src[ ( ( top * width ) + left ) * bpp ];
 
 	while ( --y )
@@ -120,7 +121,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 			// Now update the frame
 			*image = output;
-			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
+			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
 			mlt_properties_set_int( properties, "width", owidth );
 			mlt_properties_set_int( properties, "height", oheight );
 		}
