@@ -324,8 +324,9 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 	{
 		conversion_function converter = conversion_matrix[ *format - 1 ][ requested_format - 1 ];
 
-		mlt_log_debug( NULL, "[filter imageconvert] %s -> %s\n",
-			mlt_image_format_name( *format ), mlt_image_format_name( requested_format ) );
+		mlt_log_debug( NULL, "[filter imageconvert] %s -> %s @ %dx%d\n",
+			mlt_image_format_name( *format ), mlt_image_format_name( requested_format ),
+			width, height );
 		if ( converter )
 		{
 			int size = width * height * bpp_table[ requested_format - 1 ];

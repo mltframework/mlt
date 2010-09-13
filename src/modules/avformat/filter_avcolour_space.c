@@ -114,8 +114,9 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	if ( *format != output_format )
 	{
-		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s\n",
-			mlt_image_format_name( *format ), mlt_image_format_name( output_format ) );
+		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s @ %dx%d\n",
+			mlt_image_format_name( *format ), mlt_image_format_name( output_format ),
+			width, height );
 
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
