@@ -785,7 +785,7 @@ void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc[],
       if( check_for_mmx() )
         deinterlace_bob_yuv_mmx(pdst,psrc,width,height);
       else /* FIXME: provide an alternative? */
-        xine_fast_memcpy(pdst,psrc[0],width*height);
+        deinterlace_linearblend_yuv(pdst,psrc,width,height);
       break;
     case DEINTERLACE_WEAVE:
       if( check_for_mmx() )
@@ -794,7 +794,7 @@ void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc[],
           xine_fast_memcpy(pdst,psrc[0],width*height);
       }
       else /* FIXME: provide an alternative? */
-        xine_fast_memcpy(pdst,psrc[0],width*height);
+        deinterlace_linearblend_yuv(pdst,psrc,width,height);
       break;
     case DEINTERLACE_GREEDY:
       if( check_for_mmx() )
@@ -803,13 +803,13 @@ void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc[],
           xine_fast_memcpy(pdst,psrc[0],width*height);
       }
       else /* FIXME: provide an alternative? */
-        xine_fast_memcpy(pdst,psrc[0],width*height);
+        deinterlace_linearblend_yuv(pdst,psrc,width,height);
       break;
     case DEINTERLACE_ONEFIELD:
       if( check_for_mmx() )
         deinterlace_onefield_yuv_mmx(pdst,psrc,width,height);
       else /* FIXME: provide an alternative? */
-        xine_fast_memcpy(pdst,psrc[0],width*height);
+        deinterlace_linearblend_yuv(pdst,psrc,width,height);
       break;
     case DEINTERLACE_ONEFIELDXV:
       lprintf("ONEFIELDXV must be handled by the video driver.\n");
