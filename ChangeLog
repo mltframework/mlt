@@ -1,4 +1,376 @@
+2010-09-12  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.5.8.
+
+  * NEWS: Add v0.5.8 release notes.
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/core/filter_imageconvert.c: Enhance image conversion logging.
+
+  * src/modules/qimage/Makefile: Use linearblend as the C fallback to xine
+  deinterlacers.
+
+  * src/modules/avformat/producer_avformat.c: Validate that swscale supports
+  the resolution in avformat producer.
+
+  * src/modules/core/filter_crop.c: Fix bugs with odd width YUV processing.  By
+  preferring to crop on RGB and output an even width in case it eventually
+  needs to be converted to YUV, which is usually the case.
+
+2010-09-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_crop.c: Fix sometimes tight crop causes a green
+  line at bottom.
+
+  * src/modules/core/filter_imageconvert.c: Fix a stride and chroma-alignment
+  bug in imageconvert rgb->yuv.  Reported by Marco Gittler.
+
+2010-09-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_crop.c, src/modules/core/filter_resize.c: Validate
+  alpha channel size before cropping and padding it.  Eventually, I need to add
+  mlt_frame_get_alpha() that returns a size and mlt_frame_set_alpha()
+  encapsulates handling of the alpha channel.
+
+  * src/modules/core/filter_imageconvert.c: Set the alpha channel size more
+  reliably in imageconvert.
+
+  * src/framework/mlt_frame.c: Base alpha channel on width and height.  Removes
+  scaled_width and scaled_height properties, which were typically redundant
+  with width and height, but less available. Besides, width and height better
+  reflect the image attributes to help keep the image and alpha channel in
+  sync.
+
+  * src/modules/xine/filter_deinterlace.c: Fix a segfault if one tries to use
+  deinterlace explicitly.
+
+2010-09-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix returning last bit of audio
+  samples from avformat.  Bug reported by Kevin MacPhail.
+
+2010-09-09  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: parent the svgrenderer, to
+  destruct on exit
+
+2010-09-08  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: load inline images
+
+2010-09-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_swscale.c: Refix alpha channel scaling memory
+  leak (3060324).
+
+2010-09-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c: Revert 3a419b4 (Use caching for
+  swscale contexts).  This was just making it too unstable (bug 3060324).
+
+2010-09-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/core/filter_imageconvert.c: Apply alpha on frame to rgba image
+  (kdenlive-1786).
+
+  * src/modules/xine/filter_deinterlace.c: Fix a regression in the yadif
+  deinterlace filter.  Now that it properly checks if the previous frame
+  progressive after getting its image, when progressive, it was returning the
+  previous frame's image for the current frame!
+
+2010-09-04  Till Theato <root@ttill.de>
+
+  * src/modules/plus/filter_affine.c: Fix filter affine stopping to work at
+  frame 15000.  Additionally fix problems with in point > 0 (Kdenlive-1782).
+
+2010-09-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix field order on avformat
+  cached images.  Also, provide a field order override that is consistent with
+  other overrides (force_).
+
+  * src/modules/sox/filter_sox.c: Fix channel alignment in sox filter.  This
+  pointer swapping is somehow breaking the stereo imaging even though I can not
+  see why now. Anyways, it no longer support multiple effects, so it does not
+  matter.
+
+2010-09-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sox/filter_sox.c: Fix sox effect parameters.
+
+  * src/modules/avformat/producer_avformat.c: Automatically crop 8 bottom lines
+  of 1088 source.
+
+2010-09-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/normalize/filter_volume.c: Accept negative dB values for volume
+  filter.
+
+2010-08-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/normalize/filter_volume.c: Fix integrity of volume filter when
+  applying multiple instances.
+
+2010-08-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_luma.c: Fix positioning bugs in filter luma. 
+  Discovered while working on slideshow animation in Kdenlive.
+
+2010-08-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_still.c: Fix segfault in SDL observed in
+  Kdenlive.  Triggered by reloading a clip.
+
+  * src/modules/avformat/filter_swscale.c: Fix regression on scaling alpha
+  channel.  Regression introduced with usage of sws_getCachedContext not too
+  long ago.
+
+2010-08-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix audio decoding when AVPacket
+  has >1 frame.  This was most obvious on FLAC.
+
+  * src/modules/jackrack/filter_jackrack.c: Fix jackrack filter not working
+  without rack file.
+
+2010-08-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avcolour_space.c: Fix regression in
+  avcolorspace filter.
+
+2010-08-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c: Use caching for swscale contexts.
+
+  * src/modules/avformat/configure: Fix detecting VDPAU on dash-based systems. 
+  The script was using 'echo -e' which is not POSIX-compliant. The
+  recommendation is to use printf with string containing escape sequences.
+
+2010-08-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c: Enable swscale CPU flags.  For
+  FFmpeg builds that use runtime CPU detection. This should make things faster
+  and it seems to be same quality as C routines.
+
+  * demo/mlt_slideshow2: Minor fix to mlt_slideshow2.
+
+  * demo/mlt_slideshow2, src/modules/core/filter_luma.c: Enhance luma filter to
+  work with animated filters.  Previously, in a slideshow the luma filter would
+  apply the dissolve or wipe repeatedly over a slide. For example, with a slide
+  duration of 75 frames and a luma period of 25 (expressed as 24), the wipe
+  occurs 3 times. However, since the slides were static, you did not notice it
+  until the transition at the beginning of a new slide - when you do want to
+  see it. However, upon adding an affine filter to animate a smooth pan/zoom,
+  you do notice the extra repetitions - the slides appear to blend with one
+  another when they are not transitioning.  This change fixes that with new
+  properties 'cycle' and 'duration'. Cycle is basically a replacement for
+  'period' that fixes the semantics to properly represent a duration. Where you
+  would previously express, for example, period=24, you now say cycle=25. The
+  'duration' property prevents the repeating and expresses that the transition
+  should only occur within the first N frames of the cycle. See
+  demo/mlt_slideshow2 for an example of using it in conjunction with the affine
+  filter!
+
+2010-08-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp:
+  Fix distorted frame in slideshow transitions.  Applies to the .all.ext
+  slideshow approach. May also apply to image sequences with mixed resolutions.
+
+2010-08-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/filter_audiowave.c: Add audiowave filter.  This replaces the
+  video with the audio waveform. Currently, it only works on producers that
+  also provide video.
+
+  * src/framework/mlt_frame.c: Improve audio waveform resault reliability. 
+  This scales the audio sample rate up to meet the requested image resolution,
+  16 KHz at a time.
+
+  * src/framework/mlt_frame.c: Fix potential segfault in
+  mlt_frame_get_waveform.  Also, reduce sample rate for better performance.
+
+  * src/framework/mlt_frame.c: Improve audio waveform quality.  This averages
+  over the pcm samples in each image column by adding a shade of gray. It also
+  draws a solid white base line for each channel.
+
+2010-08-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.c, src/swig/mlt.i, src/swig/python/waveforms.py:
+  Fix waveform generation.  It was not obtaining a valid fps. Also, changed
+  rendering to something more expected - negative as negative and channels
+  stacked. Also, add a Python binding to this call to return 8-bit grayscale
+  image as a Python string. Finally, add a Python example.
+
+2010-08-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_panner.c: Convert panner to use range [0, 1]. 
+  Instead of [-1, 1]. This works better with Kdenlive.
+
+2010-08-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/filter_panner.c: Add a panning filter.  This does a simple
+  left/right balance when channel=-1 (default). When channel >= 0, you can
+  adjust an individual channel's left/right position. Whereas the simple
+  balance will not cause one channel to appear in another channel, the
+  individual channel does. The start/end properties are floats in the range
+  [-1.0, 1.0]. A start property alone makes it constant over the duration of
+  the filter. There is some handling for more than 2 channels by providing
+  front/rear fade and ganging (balance front and rear together or fade left and
+  right together).
+
+  * src/modules/core/transition_mix.c: Fix ramping the mix level in mix
+  transition.  Without ramping the same mix level is applied across the samples
+  in the frame. The result is a stair-stepping effect. With ramping, the mix
+  levels are actually values _between_ frames and the mix factor gradually
+  changes from one level to the next across all of the samples in the frame.
+
+2010-08-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_channelcopy.c: Only do channelcopy/swap if there is
+  valid work.
+
+  * src/modules/core/factory.c, src/modules/core/filter_channelcopy.c: Add
+  filter channelswap.  It is a permutation of channelcopy that can be used from
+  channelcopy as well by setting swap=1.
+
+2010-08-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_imageconvert.c: Make it easier to switch between
+  scaled and unscaled native colorspace converters.
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c: Improve quality of libswscale
+  conversions and scaling.
+
+2010-08-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.h, src/modules/core/filter_imageconvert.c,
+  src/modules/core/producer_colour.c, src/modules/vmfx/filter_chroma.c,
+  src/modules/vmfx/filter_chroma_hold.c: Cleanup existing native color space
+  conversions.  This change clarifies that the existing conversions are
+  according to the ITU 601 standard and scaled to and from full gamut RGB.
+  Also, adjust 2 coefficients according to Charles Poynton's matrices. This
+  does not yet attempt to make any substantial improvements.  Finally, it
+  replaces the verbose logic and redundancy in the image conversion routine
+  with a concise function dispatch table.
+
+2010-08-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_still.c: Change SDL still consumer to use
+  RGBA.  Since frei0r filters are popular and use rgba, and also because
+  Kdenlive scopes request rgba, this will reduce the number of conversions.
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp:
+  Make libexif include compatible with more systems/versions.
+
+  * src/modules/avformat/producer_avformat.c: Fix image cache hit updating
+  position state (kdenlive-1714).
+
+  * src/modules/xine/filter_deinterlace.c: Optimize some deinterlace filter
+  logic.  Prevents YADIF from fetching current frame image if previous frame
+  image is signalled progressive. Also, tells mlt_service to stop decorating
+  frame with previous and next frames when producer is determined to be
+  progressive or deinterlace is not requested.
+
+2010-08-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_luma.c, src/modules/frei0r/transition_frei0r.c,
+  src/modules/plus/transition_affine.c: Fix scaling method on B frames of some
+  transitions.
+
+2010-08-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_tractor.c: Fix tractor to set conversion functions on
+  frames it generates.
+
+2010-08-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c, src/modules/dv/consumer_libdv.c,
+  src/modules/linsys/consumer_SDIstream.c, src/modules/sdl/consumer_sdl.c,
+  src/modules/sdl/consumer_sdl_still.c: Move firing consumer-frame-show to
+  after done with image.
+
+  * src/modules/gtk2/producer_pixbuf.c: Initialize processed var and skip if
+  NULL.
+
+2010-07-29  j-b-m <jb@kdenlive.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp:
+  Cleanup & fix memleak  modified:   gtk2/producer_pixbuf.c modified:  
+  qimage/qimage_wrapper.cpp
+
+2010-07-28  j-b-m <jb@kdenlive.org>
+
+  * src/modules/gtk2/Makefile, src/modules/gtk2/configure,
+  src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/Makefile,
+  src/modules/qimage/configure, src/modules/qimage/qimage_wrapper.cpp,
+  src/modules/qimage/readexif.h: Use libexif to read exif orientation in images
+  modified:   src/modules/gtk2/Makefile modified:   src/modules/gtk2/configure
+  modified:   src/modules/gtk2/producer_pixbuf.c modified:  
+  src/modules/qimage/Makefile modified:   src/modules/qimage/configure
+  modified:   src/modules/qimage/qimage_wrapper.cpp deleted:   
+  src/modules/qimage/readexif.h
+
+2010-07-27  j-b-m <jb@kdenlive.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp,
+  src/modules/qimage/readexif.h: Read EXIF info inside MLT, based on
+  jpegexiforient  modified:   src/modules/gtk2/producer_pixbuf.c modified:  
+  src/modules/qimage/qimage_wrapper.cpp new file:  
+  src/modules/qimage/readexif.h
+
+2010-07-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/frei0r_helper.c: Fix memory corruption on any frei0r
+  plugin with color param.
+
+  * src/modules/frei0r/factory.c: Recognize new FREI0R_PATH env var. 
+  FREI0R_PATH was introduced in v1.2 of the frei0r specification.
+  MLT_FREI0R_PLUGIN_PATH still accepted for backwards compatibility.
+
+2010-07-20  j-b-m <jb@kdenlive.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp:
+  Fix exif rotation angle modified:   src/modules/gtk2/producer_pixbuf.c
+  modified:   src/modules/qimage/qimage_wrapper.cpp
+
+  * src/modules/gtk2/producer_pixbuf.c: Support exif rotation with pixbuf
+  producer  modified:   src/modules/gtk2/producer_pixbuf.c
+
+  * src/modules/qimage/qimage_wrapper.cpp: Add support for auto rotation for
+  images with exif data The meta.attr.rotation property must be set to the exif
+  data to get the auto rotate effect. Only supported by qimage producer, not
+  with pixbuf currently... modified:   src/modules/qimage/qimage_wrapper.cpp
+
+2010-07-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix infinite loop on some audio
+  decode errors (kdenlive-1690).
+
+2010-07-14  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/modules/avformat/producer_avformat.c: Fix crash when
+  repeating frames after failure to decode video.
+
 2010-06-20  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update ChangeLog for v0.5.6.
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
   0.5.6.
