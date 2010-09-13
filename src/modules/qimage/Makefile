@@ -24,10 +24,10 @@ SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS) $(CPPOBJS)
-		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
+		$(CXX) $(SHFLAGS) -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
-		$(CC) -MM $(CFLAGS) $(QTCXXFLAGS) $^ 1>.depend
+		$(CXX) -MM $(CFLAGS) $(QTCXXFLAGS) $^ 1>.depend
 
 distclean:	clean
 		rm -f .depend config.h config.mak
