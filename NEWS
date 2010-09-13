@@ -5,7 +5,7 @@ Version 0.5.8
 
 The recommended version of FFmpeg for use with this release is 0.6.
 This is a maintenance release to address some bugs that appeared
-this far in the 0.5.x series. Beyond that it a few enhancements:
+thus far in the 0.5.x series. Beyond that is a few enhancements:
 
 * Added EXIF-based auto-rotation of images to pixbuf and qimage producers.
 * Improved quality of libswscale-based image conversion and scaling.
