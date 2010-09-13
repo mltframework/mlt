@@ -573,6 +573,12 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 					mlt_properties_set_double( properties, "aspect_ratio",
 						get_aspect_ratio( context->streams[ video_index ], codec_context, NULL ) );
 				}
+				struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
+					codec_context->width, codec_context->height, PIX_FMT_YUYV422, SWS_BILINEAR, NULL, NULL, NULL);
+				if ( context )
+					sws_freeContext( context );
+				else
+					error = 1;
 			}
 
 			// Read Metadata
