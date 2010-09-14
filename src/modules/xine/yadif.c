@@ -265,7 +265,7 @@ static void filter_line_mmx2(int mode, uint8_t *dst, const uint8_t *prev, const 
 #endif
 
 // ================= SSE2 =================
-#ifdef USE_SSE2
+#if defined(USE_SSE2) && defined(ARCH_X86_64)
 #define PABS(tmp,dst) \
             "pxor     "#tmp", "#tmp" \n\t"\
             "psubw    "#dst", "#tmp" \n\t"\
@@ -365,7 +365,7 @@ void filter_plane(int mode, uint8_t *dst, int dst_stride, const uint8_t *prev0, 
 		filter_line = filter_line_ssse3;
 	else
 #endif
-#ifdef USE_SSE2
+#if defined(USE_SSE2) && defined(ARCH_X86_64)
 	if (cpu & AVS_CPU_SSE2)
 		filter_line = filter_line_sse2;
 	else
