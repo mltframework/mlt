@@ -1,6 +1,14 @@
 MLT Release Notes
 -----------------
 
+Version 0.5.10
+
+This is a quick followup to the 0.5.8 release to address an issue I want to
+address immediately. I noticed an extra unconditional colorspace conversion
+to and from RGB was added for all YCbCr (YUV) video sources. In addition, I
+have enabled the avcolor_space filter on OS X since it works now.
+
+
 Version 0.5.8
 
 The recommended version of FFmpeg for use with this release is 0.6.
