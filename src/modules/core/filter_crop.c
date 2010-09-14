@@ -72,10 +72,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		mlt_properties_set_int( properties, "rescale_height", mlt_properties_get_int( properties, "crop.original_height" ) );
 	}
 
-	// Subsampled YUV is messy and less precise.
-	if ( *format == mlt_image_yuv422 )
-		*format = mlt_image_rgb24;
-
 	// Now get the image
 	error = mlt_frame_get_image( this, image, format, width, height, writable );
 
@@ -89,6 +85,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	{
 		int bpp;
 
+		// Subsampled YUV is messy and less precise.
+		if ( *format == mlt_image_yuv422 )
+		{
+			*format = mlt_image_rgb24;
+			mlt_frame_get_image( this, image, format, width, height, writable );
+		}
+	
 		mlt_log_debug( NULL, "[filter crop] %s %dx%d -> %dx%d\n", mlt_image_format_name(*format),
 				 *width, *height, owidth, oheight);
 		switch ( *format )
