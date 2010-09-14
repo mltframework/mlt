@@ -545,7 +545,10 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			apply_properties( c, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
 			mlt_properties_close( p );
 		}
+		int colorspace = mlt_properties_get_int( properties, "colorspace" );
+		mlt_properties_set( properties, "colorspace", NULL );
 		apply_properties( c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 0 );
+		mlt_properties_set_int( properties, "colorspace", colorspace );
 
 		// Set options controlled by MLT
 		c->width = mlt_properties_get_int( properties, "width" );
@@ -559,6 +562,25 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 #else
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
 #endif
+		
+		switch ( colorspace )
+		{
+		case 170:
+			c->colorspace = AVCOL_SPC_SMPTE170M;
+			break;
+		case 240:
+			c->colorspace = AVCOL_SPC_SMPTE240M;
+			break;
+		case 470:
+			c->colorspace = AVCOL_SPC_BT470BG;
+			break;
+		case 601:
+			c->colorspace = ( 576 % c->height ) ? AVCOL_SPC_SMPTE170M : AVCOL_SPC_BT470BG;
+			break;
+		case 709:
+			c->colorspace = AVCOL_SPC_BT709;
+			break;
+		}
 
 		if ( mlt_properties_get( properties, "aspect" ) )
 		{
