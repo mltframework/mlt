@@ -1,4 +1,27 @@
+2010-09-13  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt.h: Set version to
+  0.5.10.
+
+  * src/melt/melt.c: Update year in copyright notice.
+
+  * NEWS: Update release notes for v0.5.10
+
+  * src/modules/core/filter_crop.c: Fix bug with crop always asking for RGB
+  even when not cropping!
+
+  * src/modules/xine/yadif.c: Only build SSE2 version of YADIF on x86-64
+  (2984003).
+
 2010-09-12  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/modules/core/producer_loader.c: Enable filter avcolor_space
+  on OS X.  It works now!
+
+  * src/modules/xine/deinterlace.c: Use linearblend as the C fallback to xine
+  deinterlacers.
+
+  * ChangeLog: Update ChangeLog for v0.5.8.
 
   * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt.h: Set version to
   0.5.8.
