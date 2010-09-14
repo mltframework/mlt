@@ -704,10 +704,21 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int n
 		// Don't change these from defaults unless explicitly told to.
 		if ( no_scale )
 			range = 1;
-		if ( colorspace == 709 )
-			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		else if ( colorspace == 240 )
+		switch ( colorspace )
+		{
+		case 170:
+		case 470:
+		case 601:
+		case 624:
+			coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+			break;
+		case 240:
 			coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+			break;
+		case 709:
+			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+			break;
+		}
 		sws_setColorspaceDetails( context, coefficients, range, coefficients, range,
 			brightness, contrast, saturation );
 	}
@@ -1453,17 +1464,18 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		{
 			switch ( this->video_codec->colorspace )
 			{
-			case AVCOL_SPC_BT709:
-				this->colorspace = 709;
+			case AVCOL_SPC_SMPTE240M:
+				this->colorspace = 240;
 				break;
 			case AVCOL_SPC_BT470BG:
 			case AVCOL_SPC_SMPTE170M:
 				this->colorspace = 601;
 				break;
-			case AVCOL_SPC_SMPTE240M:
-				this->colorspace = 240;
+			case AVCOL_SPC_BT709:
+				this->colorspace = 709;
 				break;
 			default:
+				// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
 				this->colorspace = this->video_codec->width * this->video_codec->height > 750000 ? 709 : 601;
 				break;
 			}
