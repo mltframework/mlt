@@ -761,7 +761,6 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
-		luma = 1;
 		set_luma_transfer( context, colorspace, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
@@ -773,7 +772,6 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		luma = 1;
 		set_luma_transfer( context, colorspace, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
@@ -1325,9 +1323,6 @@ exit_get_image:
 		mlt_properties_set_int( frame_properties, "top_field_first", !!mlt_properties_get_int( properties, "force_tff" ) );
 	else
 		mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
-
-	if ( *format == mlt_image_yuv422 && mlt_properties_get_int( properties, "skip_luma_scale" ) )
-		mlt_properties_set_int( frame_properties, "skip_luma_scale", 1 );
 
 	return !this->got_picture;
 }
