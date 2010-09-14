@@ -137,6 +137,7 @@ static void apply_profile_properties( mlt_consumer this, mlt_profile profile, ml
 	mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile )  );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
+	mlt_properties_set_int( properties, "colorspace", profile->colorspace );
 	mlt_event_unblock( this->event_listener );
 }
 
@@ -256,6 +257,13 @@ static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this,
 			profile->display_aspect_den = mlt_properties_get_int( properties, "display_aspect_den" );
 			mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile )  );
 		}
+	}
+	else if ( !strcmp( name, "colorspace" ) )
+	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		if ( profile )
+			profile->colorspace = mlt_properties_get_int( properties, "colorspace" );
 	}
 }
 
