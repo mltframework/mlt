@@ -95,7 +95,7 @@ struct producer_avformat_s
 	unsigned int invalid_pts_counter;
 	double resample_factor;
 	mlt_cache image_cache;
-	int yuv_std;
+	int colorspace;
 #ifdef VDPAU
 	struct
 	{
@@ -692,7 +692,7 @@ static void get_audio_streams_info( producer_avformat this )
 	this->resample_factor = 1.0;
 }
 
-static void set_luma_transfer( struct SwsContext *context, int yuv_std, int no_scale )
+static void set_luma_transfer( struct SwsContext *context, int colorspace, int no_scale )
 {
 	int *coefficients;
 	int range;
@@ -704,9 +704,9 @@ static void set_luma_transfer( struct SwsContext *context, int yuv_std, int no_s
 		// Don't change these from defaults unless explicitly told to.
 		if ( no_scale )
 			range = 1;
-		if ( yuv_std == 709 )
+		if ( colorspace == 709 )
 			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		else if ( yuv_std == 240 )
+		else if ( colorspace == 240 )
 			coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
 		sws_setColorspaceDetails( context, coefficients, range, coefficients, range,
 			brightness, contrast, saturation );
@@ -714,7 +714,7 @@ static void set_luma_transfer( struct SwsContext *context, int yuv_std, int no_s
 }
 
 static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
-	mlt_image_format *format, int width, int height, int yuv_std )
+	mlt_image_format *format, int width, int height, int colorspace )
 {
 #ifdef SWSCALE
 	int luma = 0;
@@ -734,7 +734,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGBA, flags, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		set_luma_transfer( context, yuv_std, luma );
+		set_luma_transfer( context, colorspace, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -750,7 +750,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		set_luma_transfer( context, yuv_std, luma );
+		set_luma_transfer( context, colorspace, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -762,7 +762,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
 		luma = 1;
-		set_luma_transfer( context, yuv_std, luma );
+		set_luma_transfer( context, colorspace, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -774,7 +774,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
 		luma = 1;
-		set_luma_transfer( context, yuv_std, luma );
+		set_luma_transfer( context, colorspace, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -785,7 +785,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		set_luma_transfer( context, yuv_std, luma );
+		set_luma_transfer( context, colorspace, luma );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1082,12 +1082,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
 				convert_image( (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, this->yuv_std );
+					PIX_FMT_YUV420P, format, *width, *height, this->colorspace );
 			}
 			else
 #endif
 			convert_image( this->av_frame, *buffer, codec_context->pix_fmt,
-				format, *width, *height, this->yuv_std );
+				format, *width, *height, this->colorspace );
 		}
 		else
 			mlt_frame_get_image( frame, buffer, format, width, height, writable );
@@ -1270,7 +1270,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							if ( status == VDP_STATUS_OK )
 							{
 								convert_image( (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P,
-									format, *width, *height, this->yuv_std );
+									format, *width, *height, this->colorspace );
 							}
 							else
 							{
@@ -1287,7 +1287,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					else
 #endif
 					convert_image( this->av_frame, *buffer, codec_context->pix_fmt,
-						format, *width, *height, this->yuv_std );
+						format, *width, *height, this->colorspace );
 					this->top_field_first |= this->av_frame->top_field_first;
 					this->current_position = int_position;
 					this->got_picture = 1;
@@ -1453,28 +1453,28 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 			mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( this->parent ) );
 
 		// Set the YUV colorspace from override or detect
-		this->yuv_std = mlt_properties_get_int( properties, "force_yuv_std" );
-		if ( ! this->yuv_std )
+		this->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
+		if ( ! this->colorspace )
 		{
 			switch ( this->video_codec->colorspace )
 			{
 			case AVCOL_SPC_BT709:
-				this->yuv_std = 709;
+				this->colorspace = 709;
 				break;
 			case AVCOL_SPC_BT470BG:
 			case AVCOL_SPC_SMPTE170M:
-				this->yuv_std = 601;
+				this->colorspace = 601;
 				break;
 			case AVCOL_SPC_SMPTE240M:
-				this->yuv_std = 240;
+				this->colorspace = 240;
 				break;
 			default:
-				this->yuv_std = this->video_codec->width * this->video_codec->height > 750000 ? 709 : 601;
+				this->colorspace = this->video_codec->width * this->video_codec->height > 750000 ? 709 : 601;
 				break;
 			}
 		}
 		// Let apps get chosen colorspace
-		mlt_properties_set_int( properties, "yuv_std", this->yuv_std );
+		mlt_properties_set_int( properties, "colorspace", this->colorspace );
 	}
 	return this->video_codec && this->video_index > -1;
 }
@@ -1565,7 +1565,7 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		mlt_properties_set_int( frame_properties, "real_width", this->video_codec->width );
 		mlt_properties_set_int( frame_properties, "real_height", this->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
-		mlt_properties_set_int( frame_properties, "yuv_std", this->yuv_std );
+		mlt_properties_set_int( frame_properties, "colorspace", this->colorspace );
 
 		// Workaround 1088 encodings missing cropping info.
 		if ( this->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
