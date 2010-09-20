@@ -280,7 +280,8 @@ static void guess_profile( mlt_producer melt, mlt_profile profile )
 	uint8_t *buffer;
 	mlt_image_format fmt = mlt_image_yuv422;
 	mlt_properties p;
-	int w, h;
+	int w = profile->width;
+	int h = profile->height;
 
 	if ( ! mlt_service_get_frame( MLT_PRODUCER_SERVICE(melt), &fr, 0 ) && fr )
 	{
