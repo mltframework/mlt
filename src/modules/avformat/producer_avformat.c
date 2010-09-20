@@ -1491,7 +1491,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( mlt_properties_get( properties, "force_fps" ) )
 		{
 			source_fps = mlt_properties_get_double( properties, "force_fps" );
-			stream->time_base = av_d2q( source_fps, 255 );
+			stream->time_base = av_d2q( source_fps, 1024 );
 			mlt_properties_set_int( properties, "meta.media.frame_rate_num", stream->time_base.num );
 			mlt_properties_set_int( properties, "meta.media.frame_rate_den", stream->time_base.den );
 		}
@@ -1513,20 +1513,25 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 			}
 			else if ( muxer_fps > 0 )
 			{
-				AVRational *frame_rate = &stream->r_frame_rate;
+				AVRational frame_rate = stream->r_frame_rate;
+				// With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
+				// avg_frame_rate gives some approximate value that does not well match the media.
+				// Also, on my sample where r_frame_rate = 1000, using avg_frame_rate directly
+				// results in some very choppy output, but some value slightly different works
+				// great.
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
-				if ( av_q2d( stream->avg_frame_rate ) > 0 )
-					frame_rate = &stream->avg_frame_rate;
+				if ( av_q2d( stream->r_frame_rate ) >= 1000 && av_q2d( stream->avg_frame_rate ) > 0 )
+					frame_rate = av_d2q( av_q2d( stream->avg_frame_rate ), 1024 );
 #endif
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate->num );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate->den );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 			}
 			else
 			{
-				int frame_rate_den = 10000;
-				int frame_rate_num = mlt_producer_get_fps( this->parent ) * frame_rate_den;
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate_num );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate_den );
+				source_fps = mlt_producer_get_fps( this->parent );
+				AVRational frame_rate = av_d2q( source_fps, 255 );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 			}
 		}
 
