@@ -438,6 +438,11 @@ static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVC
 			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", stream_sar.num );
 			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", stream_sar.den );
 		}
+		else
+		{
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 1 );
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 1 );
+		}
 	}
 	AVRational ar = { mlt_properties_get_double( properties, "meta.media.sample_aspect_num" ), mlt_properties_get_double( properties, "meta.media.sample_aspect_den" ) };
 	aspect_ratio = av_q2d( ar );
@@ -1501,15 +1506,20 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 #endif
 			// Choose the lesser - the wrong tends to be off by some multiple of 10
 			source_fps = FFMIN( source_fps, muxer_fps );
-			if ( source_fps > 0 && source_fps < muxer_fps )
+			if ( source_fps >= 1.0 && source_fps < muxer_fps )
 			{
 				mlt_properties_set_int( properties, "meta.media.frame_rate_num", this->video_codec->time_base.num );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", this->video_codec->time_base.den );
 			}
 			else if ( muxer_fps > 0 )
 			{
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", stream->r_frame_rate.num );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", stream->r_frame_rate.den );
+				AVRational *frame_rate = &stream->r_frame_rate;
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
+				if ( av_q2d( stream->avg_frame_rate ) > 0 )
+					frame_rate = &stream->avg_frame_rate;
+#endif
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate->num );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate->den );
 			}
 			else
 			{
@@ -1648,8 +1658,11 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		mlt_properties_set_int( frame_properties, "colorspace", this->colorspace );
 
 		// Workaround 1088 encodings missing cropping info.
-		if ( this->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+		if ( this->video_codec->height == 1088 && aspect_ratio * this->video_codec->width / 1080 == 16.0/9.0 )
+		{
+			mlt_properties_set_int( properties, "meta.media.height", 1080 );
 			mlt_properties_set_int( frame_properties, "real_height", 1080 );
+		}
 
 		// Add our image operation
 		mlt_frame_push_service( frame, this );
