@@ -300,8 +300,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		{
 			// Get the input image, width and height
 			int size = owidth * oheight * bpp;
-			uint8_t *ptr = *image + owidth * bpp;
-			memmove( ptr, *image, size - owidth * bpp );
+			uint8_t *new_image = mlt_pool_alloc( size );
+			mlt_properties_set_data( properties, "image", new_image, size, ( mlt_destructor )mlt_pool_release, NULL );
+			uint8_t *ptr = new_image + owidth * bpp;
+			memcpy( new_image, *image, owidth * bpp );
+			memcpy( ptr, *image, size - owidth * bpp );
+			*image = new_image;
 			
 			// Set the normalised field order
 			mlt_properties_set_int( properties, "top_field_first", 0 );
