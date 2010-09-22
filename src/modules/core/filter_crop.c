@@ -73,6 +73,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 
 	// Now get the image
+	mlt_log_debug( NULL, "[filter crop] %s %dx%d\n", mlt_image_format_name(*format),
+			 *width, *height);
 	error = mlt_frame_get_image( this, image, format, width, height, writable );
 
 	int owidth  = *width - left - right;
@@ -88,8 +90,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Subsampled YUV is messy and less precise.
 		if ( *format == mlt_image_yuv422 )
 		{
-			*format = mlt_image_rgb24;
-			mlt_frame_get_image( this, image, format, width, height, writable );
+			mlt_image_format requested_format = mlt_image_rgb24;
+			this->convert_image( this, image, format, requested_format );
 		}
 	
 		mlt_log_debug( NULL, "[filter crop] %s %dx%d -> %dx%d\n", mlt_image_format_name(*format),
