@@ -86,7 +86,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int bpp;
 
 		// Subsampled YUV is messy and less precise.
-		if ( *format == mlt_image_yuv422 )
+		if ( *format == mlt_image_yuv422 && this->convert_image )
 		{
 			mlt_image_format requested_format = mlt_image_rgb24;
 			this->convert_image( this, image, format, requested_format );
