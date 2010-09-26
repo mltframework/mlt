@@ -179,7 +179,7 @@ static mlt_consumer create_consumer( mlt_profile profile, char *id )
 	return consumer;
 }
 
-static void load_consumer( mlt_consumer &consumer, int argc, const char **argv )
+static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc, char **argv )
 {
 	int i;
 	for ( i = 1; i < argc; i ++ )
@@ -294,7 +294,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	}
 }
 
-static void show_usage( const char *program_name )
+static void show_usage( char *program_name )
 {
 	fprintf( stderr,
 "Usage: %s [options] [producer [name=value]* ]+\n"
@@ -533,7 +533,7 @@ query_all:
 		is_profile_explicit = 1;
 
 	// Look for the consumer option to load profile settings from consumer properties
-	load_consumer( &consumer, argc, argv );
+	load_consumer( &consumer, profile, argc, argv );
 
 	// Make backup of profile for determining if we need to use 'consumer' producer.
 	backup_profile = mlt_profile_init( NULL );
@@ -572,7 +572,7 @@ query_all:
 		}
 
 		// Reload the consumer with the fully qualified profile
-		load_consumer( consumer, argc, argv );
+		load_consumer( &consumer, profile, argc, argv );
 
 		// If we have no consumer, default to sdl
 		if ( store == NULL && consumer == NULL )
