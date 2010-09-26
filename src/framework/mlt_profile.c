@@ -132,6 +132,7 @@ mlt_profile mlt_profile_init( const char *name )
 				profile->sample_aspect_den = 15;
 				profile->display_aspect_num = 4;
 				profile->display_aspect_den = 3;
+				profile->colorspace = 601;
 			}
 		}
 	}
@@ -219,6 +220,7 @@ mlt_profile mlt_profile_load_properties( mlt_properties properties )
 		profile->sample_aspect_den = mlt_properties_get_int( properties, "sample_aspect_den" );
 		profile->display_aspect_num = mlt_properties_get_int( properties, "display_aspect_num" );
 		profile->display_aspect_den = mlt_properties_get_int( properties, "display_aspect_den" );
+		profile->colorspace = mlt_properties_get_int( properties, "colorspace" );
 	}
 	return profile;
 }
