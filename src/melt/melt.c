@@ -179,6 +179,26 @@ static mlt_consumer create_consumer( mlt_profile profile, char *id )
 	return consumer;
 }
 
+static void load_consumer( mlt_consumer &consumer, int argc, const char **argv )
+{
+	int i;
+	for ( i = 1; i < argc; i ++ )
+	{
+		if ( !strcmp( argv[ i ], "-consumer" ) )
+		{
+			if ( *consumer )
+				mlt_consumer_close( *consumer );
+			*consumer = create_consumer( profile, argv[ ++ i ] );
+			if ( *consumer )
+			{
+				mlt_properties properties = MLT_CONSUMER_PROPERTIES( *consumer );
+				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
+					mlt_properties_parse( properties, argv[ ++ i ] );
+			}
+		}
+	}
+}
+
 #ifdef __DARWIN__
 
 static void event_handling( mlt_producer producer, mlt_consumer consumer )
@@ -471,19 +491,7 @@ query_all:
 		is_profile_explicit = 1;
 
 	// Look for the consumer option to load profile settings from consumer properties
-	for ( i = 1; i < argc; i ++ )
-	{
-		if ( !strcmp( argv[ i ], "-consumer" ) )
-		{
-			consumer = create_consumer( profile, argv[ ++ i ] );
-			if ( consumer )
-			{
-				mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
-				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
-					mlt_properties_parse( properties, argv[ ++ i ] );
-			}
-		}
-	}
+	load_consumer( &consumer, argc, argv );
 
 	// Make backup of profile for determining if we need to use 'consumer' producer.
 	backup_profile = mlt_profile_init( NULL );
@@ -522,21 +530,7 @@ query_all:
 		}
 
 		// Reload the consumer with the fully qualified profile
-		for ( i = 1; i < argc; i ++ )
-		{
-			if ( !strcmp( argv[ i ], "-consumer" ) )
-			{
-				if ( consumer )
-					mlt_consumer_close( consumer );
-				consumer = create_consumer( profile, argv[ ++ i ] );
-				if ( consumer )
-				{
-					mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
-					while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
-						mlt_properties_parse( properties, argv[ ++ i ] );
-				}
-			}
-		}
+		load_consumer( consumer, argc, argv );
 
 		// If we have no consumer, default to sdl
 		if ( store == NULL && consumer == NULL )
