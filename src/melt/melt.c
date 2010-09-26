@@ -294,6 +294,48 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	}
 }
 
+static void show_usage( const char *program_name )
+{
+	fprintf( stderr,
+"Usage: %s [options] [producer [name=value]* ]+\n"
+"Options:\n"
+"  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
+"  -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut\n"
+"  -attach-track filter[:arg] [name=value]* Attach a filter to a track\n"
+"  -attach-clip filter[:arg] [name=value]*  Attach a filter to a producer\n"
+"  -audio-track | -hide-video               Add an audio-only track\n"
+"  -blank frames                            Add blank silence to a track\n"
+"  -consumer id[:arg] [name=value]*         Set the consumer (sink)\n"
+"  -debug                                   Set the logging level to debug\n"
+"  -filter filter[:arg] [name=value]*       Add a filter to the current track\n"
+"  -group [name=value]*                     Apply properties repeatedly\n"
+"  -help                                    Show this message\n"
+"  -join clips                              Join multiple clips into one cut\n"
+"  -mix length                              Add a mix between the last two cuts\n"
+"  -mixer transition                        Add a transition to the mix\n"
+"  -null-track | -hide-track                Add a hidden track\n"
+"  -profile name                            Set the processing settings\n"
+"  -progress                                Display progress along with position\n"
+"  -remove                                  Remove the most recent cut\n"
+"  -repeat times                            Repeat the last cut\n"
+"  -query                                   List all of the registered services\n"
+"  -query \"consumers\" | \"consumer\"=id       List consumers or show info about one\n"
+"  -query \"filters\" | \"filter\"=id           List filters or show info about one\n"
+"  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
+"  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
+"  -serialise [filename]                    Write the commands to a text file\n"
+"  -silent                                  Do not display position/transport\n"
+"  -split relative-frame                    Split the last cut into two cuts\n"
+"  -swap                                    Rearrange the last two cuts\n"
+"  -track                                   Add a track\n"
+"  -transition id[:arg] [name=value]*       Add a transition\n"
+"  -verbose                                 Set the logging level to verbose\n"
+"  -version                                 Show the version and copyright\n"
+"  -video-track | -hide-audio               Add a video-only track\n"
+"For more help: <http://www.mltframework.org/>\n",
+	basename( program_name ) );
+}
+
 static void guess_profile( mlt_producer melt, mlt_profile profile )
 {
 	mlt_frame fr = NULL;
@@ -608,44 +650,7 @@ query_all:
 	}
 	else
 	{
-		fprintf( stderr,
-"Usage: %s [options] [producer [name=value]* ]+\n"
-"Options:\n"
-"  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
-"  -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut\n"
-"  -attach-track filter[:arg] [name=value]* Attach a filter to a track\n"
-"  -attach-clip filter[:arg] [name=value]*  Attach a filter to a producer\n"
-"  -audio-track | -hide-video               Add an audio-only track\n"
-"  -blank frames                            Add blank silence to a track\n"
-"  -consumer id[:arg] [name=value]*         Set the consumer (sink)\n"
-"  -debug                                   Set the logging level to debug\n"
-"  -filter filter[:arg] [name=value]*       Add a filter to the current track\n"
-"  -group [name=value]*                     Apply properties repeatedly\n"
-"  -help                                    Show this message\n"
-"  -join clips                              Join multiple clips into one cut\n"
-"  -mix length                              Add a mix between the last two cuts\n"
-"  -mixer transition                        Add a transition to the mix\n"
-"  -null-track | -hide-track                Add a hidden track\n"
-"  -profile name                            Set the processing settings\n"
-"  -progress                                Display progress along with position\n"
-"  -remove                                  Remove the most recent cut\n"
-"  -repeat times                            Repeat the last cut\n"
-"  -query                                   List all of the registered services\n"
-"  -query \"consumers\" | \"consumer\"=id       List consumers or show info about one\n"
-"  -query \"filters\" | \"filter\"=id           List filters or show info about one\n"
-"  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
-"  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
-"  -serialise [filename]                    Write the commands to a text file\n"
-"  -silent                                  Do not display position/transport\n"
-"  -split relative-frame                    Split the last cut into two cuts\n"
-"  -swap                                    Rearrange the last two cuts\n"
-"  -track                                   Add a track\n"
-"  -transition id[:arg] [name=value]*       Add a transition\n"
-"  -verbose                                 Set the logging level to verbose\n"
-"  -version                                 Show the version and copyright\n"
-"  -video-track | -hide-audio               Add a video-only track\n"
-"For more help: <http://www.mltframework.org/>\n",
-		basename( argv[0] ) );
+		show_usage( argv[0] );
 	}
 
 	// Close the producer
