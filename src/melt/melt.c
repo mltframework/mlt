@@ -353,7 +353,7 @@ static void guess_profile( mlt_producer melt, mlt_profile profile )
 			mlt_frame_close( fr );
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE(melt), &fr, 0 );
 			p = MLT_FRAME_PROPERTIES( fr );
-			if ( mlt_properties_get_int( p, "meta.media.width" ) )
+			if ( mlt_properties_get_int( p, "meta.media.frame_rate_den" ) && mlt_properties_get_int( p, "meta.media.sample_aspect_den" ) )
 			{
 				profile->width = mlt_properties_get_int( p, "meta.media.width" );
 				profile->height = mlt_properties_get_int( p, "meta.media.height" );
