@@ -692,18 +692,18 @@ static void get_audio_streams_info( producer_avformat this )
 	this->resample_factor = 1.0;
 }
 
-static void set_luma_transfer( struct SwsContext *context, int colorspace, int no_scale )
+static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
 {
 	int *coefficients;
-	int range;
+	int full_range;
 	int brightness, contrast, saturation;
 
-	if ( sws_getColorspaceDetails( context, &coefficients, &range, &coefficients, &range,
+	if ( sws_getColorspaceDetails( context, &coefficients, &full_range, &coefficients, &full_range,
 			&brightness, &contrast, &saturation ) != -1 )
 	{
 		// Don't change these from defaults unless explicitly told to.
-		if ( no_scale )
-			range = 1;
+		if ( use_full_range )
+			full_range = 1;
 		switch ( colorspace )
 		{
 		case 170:
@@ -719,7 +719,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int n
 			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
 			break;
 		}
-		sws_setColorspaceDetails( context, coefficients, range, coefficients, range,
+		sws_setColorspaceDetails( context, coefficients, full_range, coefficients, full_range,
 			brightness, contrast, saturation );
 	}
 }
@@ -728,7 +728,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, int colorspace )
 {
 #ifdef SWSCALE
-	int luma = 0;
+	int full_range = 0;
 	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
 
 #ifdef USE_MMX
@@ -745,7 +745,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGBA, flags, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		set_luma_transfer( context, colorspace, luma );
+		set_luma_transfer( context, colorspace, full_range );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -761,7 +761,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		set_luma_transfer( context, colorspace, luma );
+		set_luma_transfer( context, colorspace, full_range );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -772,7 +772,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
-		set_luma_transfer( context, colorspace, luma );
+		set_luma_transfer( context, colorspace, full_range );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -783,7 +783,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		set_luma_transfer( context, colorspace, luma );
+		set_luma_transfer( context, colorspace, full_range );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -794,7 +794,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		set_luma_transfer( context, colorspace, luma );
+		set_luma_transfer( context, colorspace, full_range );
 		sws_scale( context, frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );

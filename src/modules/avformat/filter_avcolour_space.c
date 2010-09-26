@@ -73,18 +73,18 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	return value;
 }
 
-static void set_luma_transfer( struct SwsContext *context, int colorspace, int no_scale )
+static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
 {
 	int *coefficients;
-	int range;
+	int full_range;
 	int brightness, contrast, saturation;
 
-	if ( sws_getColorspaceDetails( context, &coefficients, &range, &coefficients, &range,
+	if ( sws_getColorspaceDetails( context, &coefficients, &full_range, &coefficients, &full_range,
 			&brightness, &contrast, &saturation ) != -1 )
 	{
 		// Don't change these from defaults unless explicitly told to.
-		if ( no_scale )
-			range = 1;
+		if ( use_full_range )
+			full_range = 1;
 		switch ( colorspace )
 		{
 		case 170:
@@ -100,13 +100,13 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int n
 			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
 			break;
 		}
-		sws_setColorspaceDetails( context, coefficients, range, coefficients, range,
+		sws_setColorspaceDetails( context, coefficients, full_range, coefficients, full_range,
 			brightness, contrast, saturation );
 	}
 }
 
 static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
-	int width, int height, int colorspace, int no_scale )
+	int width, int height, int colorspace, int use_full_range )
 {
 	AVPicture input;
 	AVPicture output;
@@ -128,7 +128,7 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 #ifdef SWSCALE
 	struct SwsContext *context = sws_getContext( width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
-	set_luma_transfer( context, colorspace, no_scale );
+	set_luma_transfer( context, colorspace, use_full_range );
 	sws_scale( context, input.data, input.linesize, 0, height,
 		output.data, output.linesize);
 	sws_freeContext( context );
@@ -190,14 +190,11 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 		// Update the output
 		int colorspace = mlt_properties_get_int( properties, "colorspace" );
-		int no_scale_luma = 0;
-		if ( *format == mlt_image_yuv422 && mlt_properties_get_int( properties, "skip_luma_scale" )
+		int force_full_luma = mlt_properties_get_int( properties, "force_full_luma" );
+		if ( *format == mlt_image_yuv422 && force_full_luma
 			 && ( output_format == mlt_image_rgb24 || output_format == mlt_image_rgb24a ) )
-		{
-			no_scale_luma = 1;
-			mlt_properties_set( properties, "skip_luma_scale", NULL );
-		}
-		av_convert_image( output, *image, out_fmt, in_fmt, width, height, colorspace, no_scale_luma );
+			mlt_properties_set( properties, "force_full_luma", NULL );
+		av_convert_image( output, *image, out_fmt, in_fmt, width, height, colorspace, force_full_luma );
 		*image = output;
 		*format = output_format;
 		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
@@ -276,7 +273,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	frame->convert_image = convert_image;
-	mlt_frame_push_get_image( frame, mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
+	mlt_frame_push_service( frame, mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
 	mlt_frame_push_get_image( frame, get_image );
 	return frame;
 }
