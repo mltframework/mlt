@@ -83,8 +83,8 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 			&brightness, &contrast, &saturation ) != -1 )
 	{
 		// Don't change these from defaults unless explicitly told to.
-		if ( use_full_range )
-			full_range = 1;
+		if ( use_full_range >= 0 )
+			full_range = use_full_range;
 		switch ( colorspace )
 		{
 		case 170:
@@ -149,9 +149,12 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	if ( *format != output_format )
 	{
-		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s @ %dx%d\n",
+		int colorspace = mlt_properties_get_int( properties, "colorspace" );
+		int force_full_luma = -1;
+		
+		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s @ %dx%d space %d\n",
 			mlt_image_format_name( *format ), mlt_image_format_name( output_format ),
-			width, height );
+			width, height, colorspace );
 
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
@@ -189,11 +192,15 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		}
 
 		// Update the output
-		int colorspace = mlt_properties_get_int( properties, "colorspace" );
-		int force_full_luma = mlt_properties_get_int( properties, "force_full_luma" );
-		if ( *format == mlt_image_yuv422 && force_full_luma
-			 && ( output_format == mlt_image_rgb24 || output_format == mlt_image_rgb24a ) )
+		if ( *format == mlt_image_yuv422 && mlt_properties_get( properties, "force_full_luma" )
+		     && ( output_format == mlt_image_rgb24 || output_format == mlt_image_rgb24a ) )
+		{
+			// By removing the frame property we only permit the luma to skip scaling once.
+			// Thereafter, we let swscale scale the luma range as it pleases since it seems
+			// we do not have control over the RGB to YUV conversion.
+			force_full_luma = mlt_properties_get_int( properties, "force_full_luma" );			
 			mlt_properties_set( properties, "force_full_luma", NULL );
+		}
 		av_convert_image( output, *image, out_fmt, in_fmt, width, height, colorspace, force_full_luma );
 		*image = output;
 		*format = output_format;
@@ -243,11 +250,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	
 	error = mlt_frame_get_image( frame, image, format, width, height, writable );
 	
+	int frame_colorspace = mlt_properties_get_int( properties, "colorspace" );
+	
 	if ( !error && *format == mlt_image_yuv422 && profile->colorspace > 0 &&
-	     mlt_properties_get_int( properties, "colorspace" ) != profile->colorspace )
+	     frame_colorspace > 0 && frame_colorspace != profile->colorspace )
 	{
 		mlt_log_debug( NULL, "[filter avcolor_space] colorspace %d -> %d\n",
-			mlt_properties_get_int( properties, "colorspace" ), profile->colorspace );
+			frame_colorspace, profile->colorspace );
 		
 		// Convert to RGB using frame's colorspace
 		error = convert_image( frame, image, &format_from, format_to );
@@ -272,6 +281,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
+	// Set a default colorspace on the frame if not yet set by the producer.
+	// The producer may still change it during get_image.
+	// This way we do not have to modify each producer to set a valid colorspace.
+	mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+	if ( mlt_properties_get_int( properties, "colorspace" ) <= 0 )
+		mlt_properties_set_int( properties, "colorspace", mlt_service_profile( MLT_FILTER_SERVICE(filter) )->colorspace );
+
 	frame->convert_image = convert_image;
 	mlt_frame_push_service( frame, mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
 	mlt_frame_push_get_image( frame, get_image );

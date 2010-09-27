@@ -702,8 +702,8 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 			&brightness, &contrast, &saturation ) != -1 )
 	{
 		// Don't change these from defaults unless explicitly told to.
-		if ( use_full_range )
-			full_range = 1;
+		if ( use_full_range >= 0 )
+			full_range = use_full_range;
 		switch ( colorspace )
 		{
 		case 170:
@@ -728,7 +728,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, int colorspace )
 {
 #ifdef SWSCALE
-	int full_range = 0;
+	int full_range = -1;
 	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
 
 #ifdef USE_MMX
