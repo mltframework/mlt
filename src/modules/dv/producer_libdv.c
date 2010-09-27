@@ -491,6 +491,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "real_width", 720 );
 		mlt_properties_set_int( properties, "real_height", this->is_pal ? 576 : 480 );
 		mlt_properties_set_int( properties, "top_field_first", !this->is_pal ? 0 : ( data[ 5 ] & 0x07 ) == 0 ? 0 : 1 );
+		mlt_properties_set_int( properties, "colorspace", 601 );
 	
 		// Parse the header for meta info
 		dv_parse_header( dv_decoder, data );
