@@ -50,6 +50,7 @@ extern "C"
 #include "mlt_profile.h"
 #include "mlt_repository.h"
 #include "mlt_log.h"
+#include "mlt_cache.h"
 
 #ifdef __cplusplus
 }
