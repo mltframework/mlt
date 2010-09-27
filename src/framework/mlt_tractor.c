@@ -280,6 +280,8 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
 	mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_properties_set_int( properties, "distort", mlt_properties_get_int( frame_properties, "distort" ) );
+	mlt_properties_set_int( properties, "colorspace", mlt_properties_get_int( frame_properties, "colorspace" ) );
+	mlt_properties_set_int( properties, "force_full_luma", mlt_properties_get_int( frame_properties, "force_full_luma" ) );
 	data = mlt_frame_get_alpha_mask( frame );
 	mlt_properties_get_data( frame_properties, "alpha", &size );
 	mlt_properties_set_data( properties, "alpha", data, size, NULL, NULL );
