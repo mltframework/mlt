@@ -202,12 +202,12 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_frame_push_service( *frame, this );
 		mlt_frame_push_service( *frame, framebuffer_get_image );
 
-                mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
-                mlt_properties frame_properties = MLT_FRAME_PROPERTIES(*frame);
-                
-                double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
-                if ( force_aspect_ratio <= 0.0 ) force_aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
-                mlt_properties_set_double( frame_properties, "aspect_ratio", force_aspect_ratio );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+		mlt_properties frame_properties = MLT_FRAME_PROPERTIES(*frame);
+		
+		double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
+		if ( force_aspect_ratio <= 0.0 ) force_aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
+		mlt_properties_set_double( frame_properties, "aspect_ratio", force_aspect_ratio );
                 
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
