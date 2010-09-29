@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_preview.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
+ * Copyright (C) 2004-2005, 2010 Ushodaya Enterprises Limited
  * Author: Charles Yates
  *
  * This library is free software; you can redistribute it and/or
@@ -174,7 +174,10 @@ static int consumer_start( mlt_consumer parent )
 		if ( audio_device != NULL )
 			setenv( "AUDIODEV", audio_device, 1 );
 
-		if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
+		pthread_mutex_lock( &mlt_sdl_mutex );
+		int ret = SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE );
+		pthread_mutex_unlock( &mlt_sdl_mutex );
+		if ( ret < 0 )
 		{
 			fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
 			return -1;

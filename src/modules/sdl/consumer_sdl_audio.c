@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_audio.c -- A Simple DirectMedia Layer audio-only consumer
- * Copyright (C) 2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2009, 2010 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -30,6 +30,8 @@
 #include <pthread.h>
 #include <SDL/SDL.h>
 #include <sys/time.h>
+
+extern pthread_mutex_t mlt_sdl_mutex;
 
 /** This classes definition.
 */
@@ -158,7 +160,11 @@ int consumer_start( mlt_consumer parent )
 		this->running = 1;
 		this->joined = 0;
 
-		if ( SDL_Init( SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) < 0 )
+
+		pthread_mutex_lock( &mlt_sdl_mutex );
+		int ret = SDL_Init( SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE );
+		pthread_mutex_unlock( &mlt_sdl_mutex );
+		if ( ret < 0 )
 		{
 			mlt_log_error( MLT_CONSUMER_SERVICE(parent), "Failed to initialize SDL: %s\n", SDL_GetError() );
 			return -1;

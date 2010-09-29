@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_still.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2004, 2010 Ushodaya Enterprises Limited
  * Author: Charles Yates
  *
  * This library is free software; you can redistribute it and/or
@@ -168,7 +168,10 @@ static int consumer_start( mlt_consumer parent )
 
 		if ( sdl_started == 0 && preview_off == 0 )
 		{
-			if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
+			pthread_mutex_lock( &mlt_sdl_mutex );
+			int ret = SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
+			if ( ret < 0 )
 			{
 				fprintf( stderr, "Failed to initialize SDL: %s\n", SDL_GetError() );
 				return -1;
@@ -179,9 +182,12 @@ static int consumer_start( mlt_consumer parent )
 		}
 		else if ( preview_off == 0 )
 		{
-			if ( SDL_GetVideoSurface( ) != NULL )
+			pthread_mutex_lock( &mlt_sdl_mutex );
+			SDL_Surface *screen = SDL_GetVideoSurface( );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
+			if ( screen != NULL )
 			{
-				this->sdl_screen = SDL_GetVideoSurface( );
+				this->sdl_screen = screen;
 			}
 		}
 
@@ -505,7 +511,10 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
 	}
 	
-	if ( !mlt_consumer_is_stopped( &this->parent ) && SDL_GetVideoSurface( ) != NULL && this->sdl_screen != NULL && this->sdl_screen->pixels != NULL )
+	pthread_mutex_lock( &mlt_sdl_mutex );
+	SDL_Surface *screen = SDL_GetVideoSurface( );
+	pthread_mutex_unlock( &mlt_sdl_mutex );
+	if ( !mlt_consumer_is_stopped( &this->parent ) && screen != NULL && this->sdl_screen != NULL && this->sdl_screen->pixels != NULL )
 	{
 		switch( this->sdl_screen->format->BytesPerPixel )
 		{

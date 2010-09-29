@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2004, 2010 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -188,7 +188,10 @@ int consumer_start( mlt_consumer parent )
 
 		if ( sdl_started == 0 && display_off == 0 )
 		{
-			if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE ) < 0 )
+			pthread_mutex_lock( &mlt_sdl_mutex );
+			int ret = SDL_Init( SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
+			if ( ret < 0 )
 			{
 				mlt_log_error( MLT_CONSUMER_SERVICE(parent), "Failed to initialize SDL: %s\n", SDL_GetError() );
 				return -1;
@@ -199,7 +202,9 @@ int consumer_start( mlt_consumer parent )
 		}
 		else if ( display_off == 0 )
 		{
+			pthread_mutex_lock( &mlt_sdl_mutex );
 			this->sdl_screen = SDL_GetVideoSurface( );
+			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
 
 		if ( audio_off == 0 )
@@ -214,7 +219,10 @@ int consumer_start( mlt_consumer parent )
 		{
 			if ( mlt_properties_get_int( this->properties, "fullscreen" ) )
 			{
-				const SDL_VideoInfo *vi = SDL_GetVideoInfo();
+				const SDL_VideoInfo *vi;
+				pthread_mutex_lock( &mlt_sdl_mutex );
+				vi = SDL_GetVideoInfo();
+				pthread_mutex_unlock( &mlt_sdl_mutex );
 				this->window_width = vi->current_w;
 				this->window_height = vi->current_h;
 				this->sdl_flags |= SDL_FULLSCREEN;
