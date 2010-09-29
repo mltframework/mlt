@@ -449,7 +449,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
-
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "test_audio", 1 );
 	if ( changed == 0 &&
 		 this->last_position == mlt_frame_get_position( frame ) &&
 		 this->last_producer == mlt_frame_get_original_producer( frame ) &&
