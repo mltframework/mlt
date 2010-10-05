@@ -116,13 +116,14 @@ typedef struct mlt_cache_item_s *mlt_cache_item;        /**< pointer to CacheIte
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */
 
-#define MLT_SERVICE(x) ( ( mlt_service )( x ) )         /**< Cast to a Service pointer */
-#define MLT_PRODUCER(x) ( ( mlt_producer )( x ) )       /**< Cast to a Producer pointer */
+#define MLT_SERVICE(x)    ( ( mlt_service )( x ) )      /**< Cast to a Service pointer */
+#define MLT_PRODUCER(x)   ( ( mlt_producer )( x ) )     /**< Cast to a Producer pointer */
 #define MLT_MULTITRACK(x) ( ( mlt_multitrack )( x ) )   /**< Cast to a Multitrack pointer */
-#define MLT_PLAYLIST(x) ( ( mlt_playlist )( x ) )       /**< Cast to a Playlist pointer */
-#define MLT_TRACTOR(x) ( ( mlt_tractor )( x ) )         /**< Cast to a Tractor pointer */
-#define MLT_FILTER(x) ( ( mlt_filter )( x ) )           /**< Cast to a Filter pointer */
+#define MLT_PLAYLIST(x)   ( ( mlt_playlist )( x ) )     /**< Cast to a Playlist pointer */
+#define MLT_TRACTOR(x)    ( ( mlt_tractor )( x ) )      /**< Cast to a Tractor pointer */
+#define MLT_FILTER(x)     ( ( mlt_filter )( x ) )       /**< Cast to a Filter pointer */
 #define MLT_TRANSITION(x) ( ( mlt_transition )( x ) )   /**< Cast to a Transition pointer */
 #define MLT_CONSUMER(x) ( ( mlt_consumer )( x ) )       /**< Cast to a Consumer pointer */
+#define MLT_FRAME(x)      ( ( mlt_frame )( x ) )        /**< Cast to a Frame pointer */
 
 #endif
