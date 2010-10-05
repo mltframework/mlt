@@ -195,6 +195,19 @@ void *mlt_deque_peek_front( mlt_deque this )
 	return this->count > 0 ? this->list[ 0 ].addr : NULL;
 }
 
+/** Inquire on item in deque but don't remove.
+ *
+ * \public \memberof mlt_deque_s
+ * \param this a deque
+ * \param index the position in the deque
+ * \return an opaque pointer
+ */
+
+void *mlt_deque_peek( mlt_deque this, int index )
+{
+	return this->count > index ? this->list[ index ].addr : NULL;
+}
+
 /** Insert an item in a sorted fashion.
  *
  * Optimized for the equivalent of \p mlt_deque_push_back.
