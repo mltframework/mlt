@@ -87,7 +87,7 @@ else
 
 	if [ "$svn_ffmpeg" != "" ]
 	then
-		if [ "$gpl" = "true" ]
+		if [ "$gpl" = "true" ]	
 		then
 			enable_gpl="--enable-gpl"
 			[ "$swscale" != "" ] && [ "$svn_rev" = "0.5" ] &&
@@ -98,7 +98,8 @@ else
 			echo
 			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
 			echo
-			if [ "$svn_rev" = "0.6" ]; then
+			if [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
+			then
 				svn checkout svn://svn.mplayerhq.hu/ffmpeg/branches/$svn_rev ffmpeg
 			else
 				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
@@ -107,17 +108,15 @@ else
 		[ "$devices" = "false" ] && disable_devices="--disable-devices"
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $disable_devices $enable_swscale $svn_ffmpeg_extra --extra-cflags=-fPIC )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
-		echo "CFLAGS+=-I`pwd`/ffmpeg -I`pwd`/ffmpeg/libavformat -I`pwd`/ffmpeg/libavcodec -I`pwd`/ffmpeg/libavutil" >> config.mak
+		echo "CFLAGS+=-I`pwd`/ffmpeg" >> config.mak
 		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil" >> config.mak
-		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ] || [ "$svn_rev" = "0.6" ]
+		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ] || [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
 		then
-			echo "CFLAGS+=-I`pwd`/ffmpeg/libswscale" >> config.mak
 			echo "LDFLAGS+=-L`pwd`/ffmpeg/libswscale" >> config.mak
 			echo "SWSCALE=1" >> config.mak
 		fi
 		if [ "$devices" = "true" ]
 		then
-			echo "CFLAGS+=-I`pwd`/ffmpeg/libavdevice" >> config.mak
 			echo "LDFLAGS+=-L`pwd`/ffmpeg/libavdevice" >> config.mak
 		fi
 		[ $targetos = "Darwin" ] &&
@@ -132,19 +131,17 @@ else
 	then 
 		if [ -d "$static_ffmpeg" ]
 		then
-			echo "CFLAGS+=-I$static_ffmpeg/libavformat -I$static_ffmpeg/libavcodec -I$static_ffmpeg/libavutil" >> config.mak
+			echo "CFLAGS+=-I$static_ffmpeg" >> config.mak
 			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil" >> config.mak
 			[ $targetos = "Darwin" ] &&
 			 	echo "LDFLAGS+=-single_module" >> config.mak
 			if [ "$swscale" != "" ]
 			then
-				echo "CFLAGS+=-I$static_ffmpeg/libswscale" >> config.mak
 				echo "LDFLAGS+=-L$static_ffmpeg/libswscale" >> config.mak
 				echo "SWSCALE=1" >> config.mak
 			fi
 			if [ "$devices" = "true" ]
 			then
-				echo "CFLAGS+=-I$static_ffmpeg/libavdevice" >> config.mak
 				echo "LDFLAGS+=-L$static_ffmpeg/libavdevice" >> config.mak
 			fi
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
@@ -160,24 +157,18 @@ else
 	elif [ "$shared_ffmpeg" != "" ]
 	then
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
-		echo "CFLAGS+=$(pkg-config --cflags libavformat) $TMP_CFLAGS" >> config.mak
+		echo "CFLAGS+=$(pkg-config --cflags libavformat)" >> config.mak
 		echo "LDFLAGS+=$(pkg-config --libs-only-L libavformat)" >> config.mak
 		if [ "$devices" = "true" ]
 		then
-			echo "CFLAGS+=$(pkg-config --cflags libavdevice) $TMP_CFLAGS" >> config.mak
+			echo "CFLAGS+=$(pkg-config --cflags libavdevice)" >> config.mak
 			echo "LDFLAGS+=$(pkg-config --libs-only-L libavdevice)" >> config.mak
 		fi
-		[ -d "$shared_ffmpeg/include/ffmpeg/libavformat" ] &&
-			echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libavformat -I$shared_ffmpeg/include/ffmpeg/libavcodec -I$shared_ffmpeg/include/ffmpeg/libavdevice" >> config.mak
-		[ -d "$shared_ffmpeg/include/libavformat" ] &&
-			echo "CFLAGS+=-I$shared_ffmpeg/include/libavformat -I$shared_ffmpeg/include/libavcodec -I$shared_ffmpeg/include/libavdevice" >> config.mak
 		avcodec_version=$(pkg-config --modversion libavcodec)
 		if [ "$swscale" != "" ] || ( [ $(echo $avcodec_version | cut -d. -f1) -ge 52 ] && [ $(echo $avcodec_version | cut -d. -f2) -ge 21 ] )
 		then
-			[ -d "$shared_ffmpeg/include/ffmpeg/libswscale" ] &&
-				echo "CFLAGS+=-I$shared_ffmpeg/include/ffmpeg/libswscale" >> config.mak
-			[ -d "$shared_ffmpeg/include/libswscale" ] &&
-				echo "CFLAGS+=-I$shared_ffmpeg/include/libswscale" >> config.mak
+			echo "CFLAGS+=$(pkg-config --cflags libswscale)" >> config.mak
+			echo "LDFLAGS+=$(pkg-config --libs-only-L libswscale)" >> config.mak
 			echo "SWSCALE=1" >> config.mak
 		fi
 		

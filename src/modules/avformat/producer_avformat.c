@@ -30,16 +30,16 @@
 #include <framework/mlt_cache.h>
 
 // ffmpeg Header files
-#include <avformat.h>
-#include <opt.h>
+#include <libavformat/avformat.h>
+#include <libavcodec/opt.h>
 #ifdef SWSCALE
-#  include <swscale.h>
+#  include <libswscale/swscale.h>
 #endif
 #if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
 #  include "audioconvert.h"
 #endif
 #ifdef VDPAU
-#include <vdpau.h>
+#include <libavcodec/vdpau.h>
 #endif
 
 // System header files
@@ -283,7 +283,9 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( codec_context->sample_aspect_ratio ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.colorspace", i );
+#if LIBAVUTIL_VERSION_INT > ((52<<16)+(28<<8)+0)
 				mlt_properties_set_int( meta_media, key, codec_context->colorspace );
+#endif
 				break;
 			case CODEC_TYPE_AUDIO:
 				if ( *audio_index < 0 )
@@ -583,12 +585,14 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 					mlt_properties_set_double( properties, "aspect_ratio",
 						get_aspect_ratio( context->streams[ video_index ], codec_context, NULL ) );
 				}
+#ifdef SWSCALE
 				struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
 					codec_context->width, codec_context->height, PIX_FMT_YUYV422, SWS_BILINEAR, NULL, NULL, NULL);
 				if ( context )
 					sws_freeContext( context );
 				else
 					error = 1;
+#endif
 			}
 
 			// Read Metadata
@@ -694,6 +698,7 @@ static void get_audio_streams_info( producer_avformat this )
 
 static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
 {
+#if defined(SWSCALE) && (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	int *coefficients;
 	int full_range;
 	int brightness, contrast, saturation;
@@ -722,6 +727,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 		sws_setColorspaceDetails( context, coefficients, full_range, coefficients, full_range,
 			brightness, contrast, saturation );
 	}
+#endif
 }
 
 static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
@@ -1460,6 +1466,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 
 		// Set the YUV colorspace from override or detect
 		this->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
+#if LIBAVUTIL_VERSION_INT > ((52<<16)+(28<<8)+0)		
 		if ( ! this->colorspace )
 		{
 			switch ( this->video_codec->colorspace )
@@ -1480,6 +1487,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 				break;
 			}
 		}
+#endif
 		// Let apps get chosen colorspace
 		mlt_properties_set_int( properties, "colorspace", this->colorspace );
 	}

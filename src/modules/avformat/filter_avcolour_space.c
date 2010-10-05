@@ -24,9 +24,9 @@
 #include <framework/mlt_profile.h>
 
 // ffmpeg Header files
-#include <avformat.h>
+#include <libavformat/avformat.h>
 #ifdef SWSCALE
-#include <swscale.h>
+#include <libswscale/swscale.h>
 #endif
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
@@ -75,6 +75,7 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 
 static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
 {
+#if defined(SWSCALE) && (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	int *coefficients;
 	int full_range;
 	int brightness, contrast, saturation;
@@ -103,6 +104,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 		sws_setColorspaceDetails( context, coefficients, full_range, coefficients, full_range,
 			brightness, contrast, saturation );
 	}
+#endif
 }
 
 static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
@@ -110,6 +112,7 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 {
 	AVPicture input;
 	AVPicture output;
+#ifdef SWSCALE
 	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
 
 	if ( out_fmt == PIX_FMT_YUYV422 )
@@ -122,6 +125,7 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 #ifdef USE_SSE
 	flags |= SWS_CPU_CAPS_MMX2;
 #endif
+#endif /* SWSCALE */
 
 	avpicture_fill( &input, in, in_fmt, width, height );
 	avpicture_fill( &output, out, out_fmt, width, height );

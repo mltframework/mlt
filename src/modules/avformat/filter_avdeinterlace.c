@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 // ffmpeg Header files
-#include <avformat.h>
+#include <libavformat/avformat.h>
 
 #ifdef USE_MMX
 #include "mmx.h"

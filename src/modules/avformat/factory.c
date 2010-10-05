@@ -32,9 +32,9 @@ extern mlt_filter filter_swscale_init( mlt_profile profile, char *arg );
 extern mlt_producer producer_avformat_init( mlt_profile profile, const char *service, char *file );
 
 // ffmpeg Header files
-#include <avformat.h>
+#include <libavformat/avformat.h>
 #ifdef AVDEVICE
-#include <avdevice.h>
+#include <libavdevice/avdevice.h>
 #endif
 
 // A static flag used to determine if avformat has been initialised

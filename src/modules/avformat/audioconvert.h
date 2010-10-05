@@ -29,7 +29,7 @@
  */
 
 
-#include "avcodec.h"
+#include <libavcodec/avcodec.h>
 
 
 /**

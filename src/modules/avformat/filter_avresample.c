@@ -26,7 +26,7 @@
 #include <string.h>
 
 // ffmpeg Header files
-#include <avformat.h>
+#include <libavformat/avformat.h>
 
 /** Get the audio.
 */

@@ -35,11 +35,11 @@
 #include <unistd.h>
 
 // avformat header files
-#include <avformat.h>
+#include <libavformat/avformat.h>
 #ifdef SWSCALE
-#include <swscale.h>
+#include <libswscale/swscale.h>
 #endif
-#include <opt.h>
+#include <libavcodec/opt.h>
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
 #include <libavutil/pixdesc.h>
 #endif
@@ -563,6 +563,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
 #endif
 		
+#if LIBAVUTIL_VERSION_INT > ((52<<16)+(28<<8)+0)
 		switch ( colorspace )
 		{
 		case 170:
@@ -581,6 +582,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			c->colorspace = AVCOL_SPC_BT709;
 			break;
 		}
+#endif
 
 		if ( mlt_properties_get( properties, "aspect" ) )
 		{
