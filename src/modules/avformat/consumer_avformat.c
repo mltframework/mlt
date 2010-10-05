@@ -542,6 +542,30 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		if ( vpre )
 		{
 			mlt_properties p = mlt_properties_load( vpre );
+#ifdef AVDATADIR
+			if ( mlt_properties_count( p ) < 1 )
+			{
+				AVCodec *codec = avcodec_find_encoder( c->codec_id );
+				if ( codec )
+				{
+					char *path = malloc( strlen(AVDATADIR) + strlen(codec->name) + strlen(vpre) + strlen(".ffpreset") + 2 );
+					strcpy( path, AVDATADIR );
+					strcat( path, codec->name );
+					strcat( path, "-" );
+					strcat( path, vpre );
+					strcat( path, ".ffpreset" );
+					
+					mlt_properties_close( p );
+					p = mlt_properties_load( path );
+					mlt_properties_debug( p, path, stderr );
+					free( path );	
+				}
+			}
+			else
+			{
+				mlt_properties_debug( p, vpre, stderr );			
+			}
+#endif
 			apply_properties( c, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
 			mlt_properties_close( p );
 		}

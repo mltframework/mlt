@@ -108,6 +108,7 @@ else
 		[ "$devices" = "false" ] && disable_devices="--disable-devices"
 		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $disable_devices $enable_swscale $svn_ffmpeg_extra --extra-cflags=-fPIC )
 		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
+		echo "CFLAGS+=-DAVDATADIR=\\\"${prefix}/share/ffmpeg/\\\"" >> config.mak
 		echo "CFLAGS+=-I`pwd`/ffmpeg" >> config.mak
 		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil" >> config.mak
 		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ] || [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
@@ -131,6 +132,7 @@ else
 	then 
 		if [ -d "$static_ffmpeg" ]
 		then
+			echo "CFLAGS+=-DAVDATADIR=\\\"${static_ffmpeg}/ffpresets/\\\"" >> config.mak
 			echo "CFLAGS+=-I$static_ffmpeg" >> config.mak
 			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil" >> config.mak
 			[ $targetos = "Darwin" ] &&
@@ -157,6 +159,7 @@ else
 	elif [ "$shared_ffmpeg" != "" ]
 	then
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
+		echo "CFLAGS+=-DAVDATADIR=\\\"${shared_ffmpeg}/share/ffmpeg/\\\"" >> config.mak
 		echo "CFLAGS+=$(pkg-config --cflags libavformat)" >> config.mak
 		echo "LDFLAGS+=$(pkg-config --libs-only-L libavformat)" >> config.mak
 		if [ "$devices" = "true" ]
