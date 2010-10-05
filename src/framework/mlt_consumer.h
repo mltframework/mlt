@@ -3,8 +3,9 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2010 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -103,10 +104,10 @@ struct mlt_consumer_s
 	int real_time;
 	int ahead;
 	mlt_image_format format;
-	mlt_deque frame_queue;
+	mlt_deque queue;
 	pthread_t ahead_thread;
-	pthread_mutex_t frame_queue_mutex;
-	pthread_cond_t frame_queue_cond;
+	pthread_mutex_t queue_mutex;
+	pthread_cond_t queue_cond;
 	pthread_mutex_t put_mutex;
 	pthread_cond_t put_cond;
 	mlt_frame put;
@@ -114,10 +115,13 @@ struct mlt_consumer_s
 	mlt_event event_listener;
 	mlt_position position;
 
+	/* additional fields added for the parallel work queue */
 	mlt_deque worker_threads;
-	mlt_deque done_queue;
-	pthread_mutex_t done_queue_mutex;
-	pthread_cond_t done_queue_cond;
+	pthread_mutex_t done_mutex;
+	pthread_cond_t done_cond;
+	int consecutive_dropped;
+	int consecutive_rendered;
+	int process_head;
 };
 
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )

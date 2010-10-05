@@ -92,6 +92,7 @@ struct mlt_frame_s
 	mlt_deque stack_image;   /**< \private the image processing stack of operations and data */
 	mlt_deque stack_audio;   /**< \private the audio processing stack of operations and data */
 	mlt_deque stack_service; /**< \private a general purpose data stack */
+	int is_processing;       /**< \private indicates if a frame is or was processed by the parallel consumer */
 };
 
 #define MLT_FRAME_PROPERTIES( frame )		( &( frame )->parent )
