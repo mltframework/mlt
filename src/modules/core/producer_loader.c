@@ -70,6 +70,9 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 		char *lookup = strdup( file );
 		char *p = lookup;
 
+		// Make backup of profile for determining if we need to use 'consumer' producer.
+		mlt_profile backup_profile = mlt_profile_clone( profile );
+
 		// We only need to load the dictionary once
 		if ( dictionary == NULL )
 		{
@@ -92,8 +95,32 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 			char *name = mlt_properties_get_name( dictionary, i );
 			if ( fnmatch( name, lookup, 0 ) == 0 )
 				result = create_from( profile, file, mlt_properties_get_value( dictionary, i ) );
+		}	
+
+		// Check if the producer changed the profile - xml does this.
+		if ( result && backup_profile->is_explicit && (
+			 profile->width != backup_profile->width ||
+			 profile->height != backup_profile->height ||
+			 profile->sample_aspect_num != backup_profile->sample_aspect_num ||
+			 profile->sample_aspect_den != backup_profile->sample_aspect_den ) )
+		{
+			// Restore the original profile attributes.
+			profile->display_aspect_den = backup_profile->display_aspect_den;
+			profile->display_aspect_num = backup_profile->display_aspect_num;
+			profile->frame_rate_den = backup_profile->frame_rate_den;
+			profile->frame_rate_num = backup_profile->frame_rate_num;
+			profile->height = backup_profile->height;
+			profile->progressive = backup_profile->progressive;
+			profile->sample_aspect_den = backup_profile->sample_aspect_den;
+			profile->sample_aspect_num = backup_profile->sample_aspect_num;
+			profile->width = backup_profile->width;
+
+			// Use the 'consumer' producer.
+			mlt_producer_close( result );
+			result = mlt_factory_producer( profile, "consumer", file );
 		}
 
+		mlt_profile_close( backup_profile );
 		free( lookup );
 	}
 

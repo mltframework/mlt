@@ -353,6 +353,7 @@ static void guess_profile( mlt_producer melt, mlt_profile profile )
 			mlt_frame_close( fr );
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE(melt), &fr, 0 );
 			p = MLT_FRAME_PROPERTIES( fr );
+//			mlt_properties_dump(p, stderr);
 			if ( mlt_properties_get_int( p, "meta.media.frame_rate_den" ) && mlt_properties_get_int( p, "meta.media.sample_aspect_den" ) )
 			{
 				profile->width = mlt_properties_get_int( p, "meta.media.width" );
@@ -364,6 +365,9 @@ static void guess_profile( mlt_producer melt, mlt_profile profile )
 				profile->sample_aspect_den = mlt_properties_get_int( p, "meta.media.sample_aspect_den" );
 				profile->display_aspect_num = (int) ( (double) profile->sample_aspect_num * profile->width / profile->sample_aspect_den + 0.5 );
 				profile->display_aspect_den = profile->height;
+				free( profile->description );
+				profile->description = strdup( "automatic" );
+				profile->is_explicit = 0;
 			}
 		}
 	}
@@ -429,10 +433,8 @@ int main( int argc, char **argv )
 	FILE *store = NULL;
 	char *name = NULL;
 	mlt_profile profile = NULL;
-	mlt_profile backup_profile = NULL;
 	int is_progress = 0;
 	int is_silent = 0;
-	int is_profile_explicit = 0;
 
 	// Construct the factory
 	mlt_repository repo = mlt_factory_init( NULL );
@@ -530,15 +532,10 @@ query_all:
 	if ( profile == NULL )
 		profile = mlt_profile_init( NULL );
 	else
-		is_profile_explicit = 1;
+		profile->is_explicit = 1;
 
 	// Look for the consumer option to load profile settings from consumer properties
 	load_consumer( &consumer, profile, argc, argv );
-
-	// Make backup of profile for determining if we need to use 'consumer' producer.
-	backup_profile = mlt_profile_init( NULL );
-	memcpy( backup_profile, profile, sizeof( struct mlt_profile_s ) );
-	backup_profile->description = strdup( "" );
 
 	// Get melt producer
 	if ( argc > 1 )
@@ -546,30 +543,9 @@ query_all:
 
 	if ( melt )
 	{
-		// If the producer changed the profile then do not try to guess it.
-		if ( profile->width != backup_profile->width ||
-		     profile->height != backup_profile->height ||
-		     profile->sample_aspect_num != backup_profile->sample_aspect_num ||
-		     profile->sample_aspect_den != backup_profile->sample_aspect_den )
-		{
-			if ( is_profile_explicit )
-			{
-				// We need to use the 'consumer' producer.
-				mlt_producer_close( melt );
-				mlt_profile_close( profile );
-				profile = backup_profile;
-				backup_profile = NULL;
-				if ( profile->description )
-					free( profile->description );
-				// This is a hack to signal create_producer() in producer_melt.c.
-				profile->description = strdup( "consumer:" );
-				melt = mlt_factory_producer( profile, "melt", &argv[ 1 ] );
-			}
-		}
-		else if ( ! is_profile_explicit )
-		{
+		// Generate an automatic profile if needed.
+		if ( ! profile->is_explicit )
 			guess_profile( melt, profile );
-		}
 
 		// Reload the consumer with the fully qualified profile
 		load_consumer( &consumer, profile, argc, argv );
@@ -663,7 +639,6 @@ query_all:
 
 	// Close the factory
 	mlt_profile_close( profile );
-	mlt_profile_close( backup_profile );
 
 exit_factory:
 		

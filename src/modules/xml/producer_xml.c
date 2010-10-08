@@ -309,6 +309,7 @@ static void on_start_profile( deserialise_context context, const xmlChar *name, 
 				p->progressive = my_profile->progressive;
 				p->sample_aspect_den = my_profile->sample_aspect_den;
 				p->sample_aspect_num = my_profile->sample_aspect_num;
+				p->is_explicit = 1;
 				mlt_profile_close( my_profile );
 			}
 		}
@@ -317,6 +318,7 @@ static void on_start_profile( deserialise_context context, const xmlChar *name, 
 			if ( p->description )
 				free( p->description );
 			p->description = strdup( _s(atts[ 1 ]) );
+			p->is_explicit = 1;
 		}
 		else if ( xmlStrcmp( atts[ 0 ], _x("display_aspect_den") ) == 0 )
 			p->display_aspect_den = strtol( _s(atts[ 1 ]), NULL, 0 );

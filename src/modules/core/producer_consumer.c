@@ -104,11 +104,13 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		{
 			cx->profile = mlt_profile_init( profile_name );
 			cx->is_close_profile = 1;
+			cx->profile->is_explicit = 1;
 		}
 		else
 		{
 			cx->profile = profile;
 			cx->is_close_profile = 0;
+			cx->profile->is_explicit = 0;
 		}
 
 		// For now, we must conform the nested network's frame rate to the parent network's

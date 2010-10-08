@@ -69,19 +69,7 @@ static void track_service( mlt_field field, void *service, mlt_destructor destru
 
 static mlt_producer create_producer( mlt_profile profile, mlt_field field, char *file )
 {
-	char *filedup;
-	if ( profile->description && strncmp( file, "consumer:", 9 ) && !strcmp( profile->description, "consumer:" ) )
-	{
-		filedup = calloc( 1, strlen( file ) + strlen( profile->description ) + 1 );
-		strcat( filedup, profile->description );
-		strcat( filedup, file );
-	}
-	else
-	{
-		filedup = strdup( file );
-	}
-	mlt_producer result = mlt_factory_producer( profile, NULL, filedup );
-	free( filedup );
+	mlt_producer result = mlt_factory_producer( profile, NULL, file );
 
 	if ( result != NULL )
 		track_service( field, result, ( mlt_destructor )mlt_producer_close );
