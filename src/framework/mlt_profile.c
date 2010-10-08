@@ -311,3 +311,26 @@ void mlt_profile_close( mlt_profile profile )
 		profile = NULL;
 	}
 }
+
+/** Make a copy of a profile.
+  *
+  * \public \memberof mlt_profile_s
+  * \param profile the profile to clone
+  * \return a copy of the profile
+  */
+
+mlt_profile mlt_profile_clone( mlt_profile profile )
+{
+	mlt_profile clone = NULL;
+
+	if ( profile )
+	{
+		clone = calloc( 1, sizeof( *profile ) );
+		if ( clone )
+		{
+			memcpy( clone, profile, sizeof( *profile ) );
+			clone->description = strdup( profile->description );
+		}
+	}
+	return clone;
+}

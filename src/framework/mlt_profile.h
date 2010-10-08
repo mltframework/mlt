@@ -43,6 +43,7 @@ struct mlt_profile_s
 	int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
 	int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
 	int colorspace;         /**< the Y'CbCr colorspace standard: =601 for ITU-R 601, =709 for ITU-R 709, or =240 for SMPTE240M */
+	int is_explicit;        /**< used internally to indicate if the profile was requested explicitly or computed or defaulted */
 };
 
 extern mlt_profile mlt_profile_init( const char *name );
@@ -53,4 +54,5 @@ extern double mlt_profile_fps( mlt_profile profile );
 extern double mlt_profile_sar( mlt_profile profile );
 extern double mlt_profile_dar( mlt_profile profile );
 extern void mlt_profile_close( mlt_profile profile );
+extern mlt_profile mlt_profile_clone( mlt_profile profile );
 #endif
