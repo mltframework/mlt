@@ -435,6 +435,7 @@ int main( int argc, char **argv )
 	mlt_profile profile = NULL;
 	int is_progress = 0;
 	int is_silent = 0;
+	mlt_profile backup_profile;
 
 	// Construct the factory
 	mlt_repository repo = mlt_factory_init( NULL );
@@ -535,7 +536,20 @@ query_all:
 		profile->is_explicit = 1;
 
 	// Look for the consumer option to load profile settings from consumer properties
+	backup_profile = mlt_profile_clone( profile );
 	load_consumer( &consumer, profile, argc, argv );
+
+	// If the consumer changed the profile, then it is explicit.
+	if ( backup_profile && !profile->is_explicit && (
+	     profile->width != backup_profile->width ||
+	     profile->height != backup_profile->height ||
+	     profile->sample_aspect_num != backup_profile->sample_aspect_num ||
+	     profile->sample_aspect_den != backup_profile->sample_aspect_den ||
+	     profile->frame_rate_den != backup_profile->frame_rate_den ||
+	     profile->frame_rate_num != backup_profile->frame_rate_num ||
+	     profile->colorspace != backup_profile->colorspace ) )
+		profile->is_explicit = 1;
+	mlt_profile_close( backup_profile );
 
 	// Get melt producer
 	if ( argc > 1 )
@@ -547,7 +561,8 @@ query_all:
 		if ( ! profile->is_explicit )
 			guess_profile( melt, profile );
 
-		// Reload the consumer with the fully qualified profile
+		// Reload the consumer with the fully qualified profile.
+		// The producer or guess_profile could have changed the profile.
 		load_consumer( &consumer, profile, argc, argv );
 
 		// If we have no consumer, default to sdl
