@@ -150,7 +150,9 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 
 		// Seek the producer to the correct place
 		// Calculate our positions
-		double actual_position = mlt_producer_get_speed( this ) * (double)mlt_producer_position( this );
+		double actual_position = (double)mlt_producer_position( this );
+		if ( mlt_producer_get_speed( this ) != 0 )
+			actual_position *= mlt_producer_get_speed( this );
 		mlt_position need_first = floor( actual_position );
 		mlt_producer_seek( cx->producer, need_first );
 		
