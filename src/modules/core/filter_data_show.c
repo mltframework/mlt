@@ -98,12 +98,12 @@ char* metadata_value(mlt_properties properties, char* name)
 /** Convert frames to Timecode 
 */
 
-char* frame_to_timecode( int frames , int fps)
+char* frame_to_timecode( int frames, double fps)
 {
 	if (fps == 0) return strdup("-");
 	char *res = malloc(12);
-	int seconds = frames / (int) fps;
-	frames = frames % ((int) fps);
+	int seconds = frames / fps;
+	frames = frames % lrint( fps );
 	int minutes = seconds / 60;
 	seconds = seconds % 60;
 	int hours = minutes / 60;
