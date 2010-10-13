@@ -21,6 +21,7 @@
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 /** Handle the profile.
 */
