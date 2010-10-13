@@ -209,6 +209,14 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 									strcat( result, tc );
 									free( tc );
 								}
+								else if ( !strcmp( keywords, "frame" ) )
+								{
+									// special case: replace #frame# with current frame number
+									int pos = mlt_properties_get_int( feed, "position" );
+									char s[12];
+									snprintf( s, sizeof(s) - 1, "%d", pos );
+									strcat( result, s );
+								}
 								else
 								{
 									// replace keyword with metadata value
