@@ -282,9 +282,25 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 				mlt_properties_set( meta_media, key, avcodec_get_pix_fmt_name( codec_context->pix_fmt ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( codec_context->sample_aspect_ratio ) );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.colorspace", i );
 #if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)
-				mlt_properties_set_int( meta_media, key, codec_context->colorspace );
+				snprintf( key, sizeof(key), "meta.media.%d.codec.colorspace", i );
+				switch ( codec_context->colorspace )
+				{
+				case AVCOL_SPC_SMPTE240M:
+					mlt_properties_set_int( meta_media, key, 240 );
+					break;
+				case AVCOL_SPC_BT470BG:
+				case AVCOL_SPC_SMPTE170M:
+					mlt_properties_set_int( meta_media, key, 601 );
+					break;
+				case AVCOL_SPC_BT709:
+					mlt_properties_set_int( meta_media, key, 709 );
+					break;
+				default:
+					// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
+					mlt_properties_set_int( meta_media, key, codec_context->width * codec_context->height > 750000 ? 709 : 601 );
+					break;
+				}
 #endif
 				break;
 			case CODEC_TYPE_AUDIO:
@@ -1566,7 +1582,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		}
 #endif
 		// Let apps get chosen colorspace
-		mlt_properties_set_int( properties, "colorspace", this->colorspace );
+		mlt_properties_set_int( properties, "meta.media.colorspace", this->colorspace );
 	}
 	return this->video_codec && this->video_index > -1;
 }

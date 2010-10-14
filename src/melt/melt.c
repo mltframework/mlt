@@ -363,6 +363,7 @@ static void guess_profile( mlt_producer melt, mlt_profile profile )
 				profile->frame_rate_den = mlt_properties_get_int( p, "meta.media.frame_rate_den" );
 				profile->sample_aspect_num = mlt_properties_get_int( p, "meta.media.sample_aspect_num" );
 				profile->sample_aspect_den = mlt_properties_get_int( p, "meta.media.sample_aspect_den" );
+				profile->colorspace = mlt_properties_get_int( p, "meta.media.colorspace" );
 				profile->display_aspect_num = (int) ( (double) profile->sample_aspect_num * profile->width / profile->sample_aspect_den + 0.5 );
 				profile->display_aspect_den = profile->height;
 				free( profile->description );
