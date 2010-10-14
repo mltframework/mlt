@@ -656,27 +656,31 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	mlt_properties_set_int( properties, "global_feed", 1 );
 
 	// Add a profile child element
-	xmlNewProp( profile_node, _x("description"), _x(profile->description) );
-	sprintf( tmpstr, "%d", profile->width );
-	xmlNewProp( profile_node, _x("width"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->height );
-	xmlNewProp( profile_node, _x("height"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->progressive );
-	xmlNewProp( profile_node, _x("progressive"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->sample_aspect_num );
-	xmlNewProp( profile_node, _x("sample_aspect_num"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->sample_aspect_den );
-	xmlNewProp( profile_node, _x("sample_aspect_den"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->display_aspect_num );
-	xmlNewProp( profile_node, _x("display_aspect_num"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->display_aspect_den );
-	xmlNewProp( profile_node, _x("display_aspect_den"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->frame_rate_num );
-	xmlNewProp( profile_node, _x("frame_rate_num"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->frame_rate_den );
-	xmlNewProp( profile_node, _x("frame_rate_den"), _x(tmpstr) );
-	sprintf( tmpstr, "%d", profile->colorspace );
-	xmlNewProp( profile_node, _x("colorspace"), _x(tmpstr) );
+	if ( profile )
+	{
+		if ( profile->description )
+			xmlNewProp( profile_node, _x("description"), _x(profile->description) );
+		sprintf( tmpstr, "%d", profile->width );
+		xmlNewProp( profile_node, _x("width"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->height );
+		xmlNewProp( profile_node, _x("height"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->progressive );
+		xmlNewProp( profile_node, _x("progressive"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->sample_aspect_num );
+		xmlNewProp( profile_node, _x("sample_aspect_num"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->sample_aspect_den );
+		xmlNewProp( profile_node, _x("sample_aspect_den"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->display_aspect_num );
+		xmlNewProp( profile_node, _x("display_aspect_num"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->display_aspect_den );
+		xmlNewProp( profile_node, _x("display_aspect_den"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->frame_rate_num );
+		xmlNewProp( profile_node, _x("frame_rate_num"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->frame_rate_den );
+		xmlNewProp( profile_node, _x("frame_rate_den"), _x(tmpstr) );
+		sprintf( tmpstr, "%d", profile->colorspace );
+		xmlNewProp( profile_node, _x("colorspace"), _x(tmpstr) );
+	}
 
 	// Construct the context maps
 	context->id_map = mlt_properties_new();
