@@ -630,8 +630,7 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	xmlDocPtr doc = xmlNewDoc( _x("1.0") );
 	xmlNodePtr root = xmlNewNode( NULL, _x("mlt") );
 	struct serialise_context_s *context = calloc( 1, sizeof( struct serialise_context_s ) );
-	xmlNodePtr profile_node = xmlNewChild( root, NULL, _x("profile"), NULL );
-	mlt_profile profile = mlt_service_profile( service );
+	mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
 	char tmpstr[ 32 ];
 
 	xmlDocSetRootElement( doc, root );
@@ -658,6 +657,7 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	// Add a profile child element
 	if ( profile )
 	{
+		xmlNodePtr profile_node = xmlNewChild( root, NULL, _x("profile"), NULL );
 		if ( profile->description )
 			xmlNewProp( profile_node, _x("description"), _x(profile->description) );
 		sprintf( tmpstr, "%d", profile->width );
