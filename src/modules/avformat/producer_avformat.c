@@ -1524,8 +1524,8 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 			source_fps = FFMIN( source_fps, muxer_fps );
 			if ( source_fps >= 1.0 && source_fps < muxer_fps )
 			{
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", this->video_codec->time_base.num );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", this->video_codec->time_base.den );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", this->video_codec->time_base.den );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", this->video_codec->time_base.num == 0 ? 1 : this->video_codec->time_base.num );
 			}
 			else if ( muxer_fps > 0 )
 			{
