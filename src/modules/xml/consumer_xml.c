@@ -675,6 +675,8 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	xmlNewProp( profile_node, _x("frame_rate_num"), _x(tmpstr) );
 	sprintf( tmpstr, "%d", profile->frame_rate_den );
 	xmlNewProp( profile_node, _x("frame_rate_den"), _x(tmpstr) );
+	sprintf( tmpstr, "%d", profile->colorspace );
+	xmlNewProp( profile_node, _x("colorspace"), _x(tmpstr) );
 
 	// Construct the context maps
 	context->id_map = mlt_properties_new();

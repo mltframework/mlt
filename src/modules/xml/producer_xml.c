@@ -309,6 +309,7 @@ static void on_start_profile( deserialise_context context, const xmlChar *name, 
 				p->progressive = my_profile->progressive;
 				p->sample_aspect_den = my_profile->sample_aspect_den;
 				p->sample_aspect_num = my_profile->sample_aspect_num;
+				p->colorspace = my_profile->colorspace;
 				p->is_explicit = 1;
 				mlt_profile_close( my_profile );
 			}
@@ -338,6 +339,8 @@ static void on_start_profile( deserialise_context context, const xmlChar *name, 
 			p->frame_rate_num = strtol( _s(atts[ 1 ]), NULL, 0 );
 		else if ( xmlStrcmp( atts[ 0 ], _x("frame_rate_den") ) == 0 )
 			p->frame_rate_den = strtol( _s(atts[ 1 ]), NULL, 0 );
+		else if ( xmlStrcmp( atts[ 0 ], _x("colorspace") ) == 0 )
+			p->colorspace = strtol( _s(atts[ 1 ]), NULL, 0 );
 	}
 }
 
