@@ -283,7 +283,7 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( codec_context->sample_aspect_ratio ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.colorspace", i );
-#if LIBAVUTIL_VERSION_INT > ((52<<16)+(28<<8)+0)
+#if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)
 				mlt_properties_set_int( meta_media, key, codec_context->colorspace );
 #endif
 				break;
@@ -1543,7 +1543,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 
 		// Set the YUV colorspace from override or detect
 		this->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
-#if LIBAVUTIL_VERSION_INT > ((52<<16)+(28<<8)+0)		
+#if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)		
 		if ( ! this->colorspace )
 		{
 			switch ( this->video_codec->colorspace )

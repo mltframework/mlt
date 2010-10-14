@@ -587,7 +587,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
 #endif
 		
-#if LIBAVUTIL_VERSION_INT > ((52<<16)+(28<<8)+0)
+#if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)
 		switch ( colorspace )
 		{
 		case 170:
