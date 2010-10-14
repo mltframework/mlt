@@ -23,6 +23,8 @@ FFmpeg/avformat options:
   --avformat-swscale      - Use libswcale instead of img_convert
   --avformat-no-codecs    - Disable the producer and consumer to avoid the FFmpeg codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
+  --avformat-no-devices   - Disable support for libavdevice
+  --avformat-no-vdpau     - Disable support for NVIDIA VDPAU
 
   NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.6" ] && echo $svn_rev || echo SVN-r$svn_rev).
 
@@ -63,6 +65,7 @@ else
 	export codecs=true
 	export filters=true
 	export devices=true
+	export vdpau=true
 	pkg-config x11 > /dev/null 2>&1
 	export x11=$?
 
@@ -82,6 +85,7 @@ else
 			--avformat-no-codecs )	codecs=false ;;
 			--avformat-no-filters )	filters=false ;;
 			--avformat-no-devices )	devices=false ;;
+			--avformat-no-vdpau )   vdpau=false ;;
 		esac
 	done
 
@@ -126,8 +130,11 @@ else
 		echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 		extra_libs="$extra_libs -lm -lz -lbz2"
 		
-		printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"`pwd`/ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
-		[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+		if [ "$vdpau" = "true" ]
+		then
+			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"`pwd`/ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
+			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+		fi
 	elif [ "$static_ffmpeg" != "" ]
 	then 
 		if [ -d "$static_ffmpeg" ]
@@ -149,8 +156,11 @@ else
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 			extra_libs="$extra_libs -lm -lz -lbz2"
 			
-			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$static_ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
-			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+			if [ "$vdpau" = "true" ]
+			then
+				printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$static_ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
+				[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+			fi
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat
@@ -175,8 +185,11 @@ else
 			echo "SWSCALE=1" >> config.mak
 		fi
 		
-		printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$(pkg-config --cflags libavformat)" -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
-		[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+		if [ "$vdpau" = "true" ]
+		then
+			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"$(pkg-config --cflags libavformat)" -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
+			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
+		fi
 	else
 		echo "avformat: No build environment found. "
 		echo "          Try configuring mlt with --avformat-svn."
