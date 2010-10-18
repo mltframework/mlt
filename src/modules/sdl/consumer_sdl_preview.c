@@ -25,8 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_syswm.h>
+#include <SDL.h>
+#include <SDL_syswm.h>
 #include <assert.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;

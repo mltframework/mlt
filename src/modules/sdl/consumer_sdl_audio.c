@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <sys/time.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;
