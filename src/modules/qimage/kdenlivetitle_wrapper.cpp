@@ -414,7 +414,18 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 			scene = new QGraphicsScene();
 			scene->setItemIndexMethod( QGraphicsScene::NoIndex );
                         scene->setSceneRect(0, 0, mlt_properties_get_int( properties, "width" ), mlt_properties_get_int( properties, "height" ));
-			loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
+			if ( mlt_properties_get( producer_props, "resource" ) && mlt_properties_get( producer_props, "resource" )[0] != '\0' )
+			{
+				// The title has a resource property, so we read all properties from the resource.
+				// Do not serialize the xmldata
+				loadFromXml( producer, scene, mlt_properties_get( producer_props, "_xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
+			}
+			else
+			{
+				// The title has no resource, all data should be serialized
+				loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
+			  
+			}
 			mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 		}
                 

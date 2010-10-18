@@ -41,7 +41,7 @@ void read_xml(mlt_properties properties)
 		size=fread(infile,1,lSize,f);
 		infile[size] = '\0';
 		fclose(f);
-		mlt_properties_set(properties, "xmldata", infile);
+		mlt_properties_set(properties, "_xmldata", infile);
 		mlt_pool_release( infile );
 	}
 }
