@@ -831,7 +831,6 @@ static void *consumer_worker_thread( void *arg )
 			pthread_cond_wait( &this->queue_cond, &this->queue_mutex );
 			index = first_unprocessed_frame( this );
 		}
-		pthread_mutex_unlock( &this->queue_mutex );
 
 		// Mark the frame for processing
 		frame = mlt_deque_peek( this->queue, index );
@@ -842,6 +841,7 @@ static void *consumer_worker_thread( void *arg )
 			frame->is_processing = 1;
 			mlt_properties_inc_ref( MLT_FRAME_PROPERTIES( frame ) );
 		}
+		pthread_mutex_unlock( &this->queue_mutex );
 
 		// If there's no frame, we're probably stopped...
 		if ( frame == NULL )
