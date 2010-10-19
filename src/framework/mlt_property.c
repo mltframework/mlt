@@ -299,7 +299,7 @@ int mlt_property_get_int( mlt_property this )
 		return ( int )this->prop_position;
 	else if ( this->types & mlt_prop_int64 )
 		return ( int )this->prop_int64;
-	else if ( this->types & mlt_prop_string )
+	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
 		return mlt_property_atoi( this->prop_string );
 	return 0;
 }
@@ -321,7 +321,7 @@ double mlt_property_get_double( mlt_property this )
 		return ( double )this->prop_position;
 	else if ( this->types & mlt_prop_int64 )
 		return ( double )this->prop_int64;
-	else if ( this->types & mlt_prop_string )
+	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
 		return atof( this->prop_string );
 	return 0;
 }
@@ -344,7 +344,7 @@ mlt_position mlt_property_get_position( mlt_property this )
 		return ( mlt_position )this->prop_double;
 	else if ( this->types & mlt_prop_int64 )
 		return ( mlt_position )this->prop_int64;
-	else if ( this->types & mlt_prop_string )
+	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
 		return ( mlt_position )atol( this->prop_string );
 	return 0;
 }
@@ -384,7 +384,7 @@ int64_t mlt_property_get_int64( mlt_property this )
 		return ( int64_t )this->prop_double;
 	else if ( this->types & mlt_prop_position )
 		return ( int64_t )this->prop_position;
-	else if ( this->types & mlt_prop_string )
+	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
 		return mlt_property_atoll( this->prop_string );
 	return 0;
 }
