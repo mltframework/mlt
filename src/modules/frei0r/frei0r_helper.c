@@ -90,6 +90,12 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 						f0r_set_param_value(inst, &color, i);
 						break;
 					}
+					case F0R_PARAM_STRING:
+					{
+						f0r_param_string val = mlt_properties_get(prop, pinfo.name);
+						if (val) f0r_set_param_value(inst, &val, i);
+						break;
+					}
 				}
 			}
 		}

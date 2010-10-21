@@ -119,7 +119,7 @@ int mlt_tokeniser_parse_new( mlt_tokeniser tokeniser, char *string, const char *
 		}
 		else
 		{
-			index += strlen( delimiter );
+			index += delimiter_size;
 		}
 	}
 
