@@ -560,8 +560,12 @@ query_all:
 	{
 		// Generate an automatic profile if needed.
 		if ( ! profile->is_explicit )
+		{
 			guess_profile( melt, profile );
-
+			mlt_producer_close( melt );
+			melt = mlt_factory_producer( profile, "melt", &argv[ 1 ] );
+		}
+		
 		// Reload the consumer with the fully qualified profile.
 		// The producer or guess_profile could have changed the profile.
 		load_consumer( &consumer, profile, argc, argv );
