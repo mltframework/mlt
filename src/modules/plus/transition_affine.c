@@ -415,24 +415,21 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	result.h = ( result.h * *height / normalised_height );
 	result.x = ( result.x * *width / normalised_width );
 	result.y = ( result.y * *height / normalised_height );
+
+	// Request full resolution of b frame image.
 	b_width = mlt_properties_get_int( b_props, "real_width" );
 	b_height = mlt_properties_get_int( b_props, "real_height" );
-	if ( 0 && b_width > result.w * 2 && b_height > result.h * 2 )
-	{
-		// This downscale can reduce aliasing by acting as a low pass filter.
-		b_width = b_width / 2;
-		b_height = b_height / 2;
-	}
 	mlt_properties_set_int( b_props, "rescale_width", b_width );
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
+
+	// Suppress padding and aspect normalization.
+	mlt_properties_set( b_props, "rescale.interp", "none" );
 	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
 		mlt_properties_set_double( b_props, "aspect_ratio", consumer_ar );
+
+	// This is not a field-aware transform.
 	mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
-	if ( interps == NULL || !strcmp( interps, "none" ) )
-	{
-		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", consumer_ar );
-	}
+
 	mlt_frame_get_image( b_frame, &b_image, &b_format, &b_width, &b_height, 0 );
 
 	// Check that both images are of the correct format and process
@@ -448,8 +445,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float scale_x = mlt_properties_get_double( properties, "scale_x" );
 		float scale_y = mlt_properties_get_double( properties, "scale_y" );
 		int scale = mlt_properties_get_int( properties, "scale" );
-		float geom_scale_x = (float) b_width / result.w / consumer_ar;
-		float geom_scale_y = (float) b_height / result.h * consumer_ar;
+		float geom_scale_x = (float) b_width / result.w;
+		float geom_scale_y = (float) b_height / result.h;
 		float cx = result.x + result.w / 2.0;
 		float cy = result.y + result.h / 2.0;
 		float lower_x = - cx;
@@ -483,13 +480,20 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 		else
 		{
-			float scaling = MAX( geom_scale_x * consumer_ar, geom_scale_y / consumer_ar );
-			if ( (float) b_height / scaling > (float) *height / consumer_ar )
-				scaling = geom_scale_y / consumer_ar;
-			else if ( (float) b_width / scaling > (float) *width * consumer_ar )
-				scaling = geom_scale_x * consumer_ar;
-			scale_x = scaling * ( scale_x == 0 ? 1 : scale_x );
-			scale_y = scaling * ( scale_y == 0 ? 1 : scale_y );
+			// Determine scale with respect to aspect ratio.
+			double consumer_dar = consumer_ar * normalised_width / normalised_height;
+			double b_dar = mlt_properties_get_double( b_props, "aspect_ratio" ) * b_width / b_height;
+
+			if ( b_dar > consumer_dar )
+			{
+				scale_x = geom_scale_x * ( scale_x == 0 ? 1 : scale_x );
+				scale_y = geom_scale_x / consumer_ar * ( scale_y == 0 ? 1 : scale_y );
+			}
+			else
+			{
+				scale_x = geom_scale_y * consumer_ar * ( scale_x == 0 ? 1 : scale_x );
+				scale_y = geom_scale_y * ( scale_y == 0 ? 1 : scale_y );
+			}
 		}
 		if ( scale )
 		{
