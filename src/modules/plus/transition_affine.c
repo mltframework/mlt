@@ -455,16 +455,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float upper_y = (float) *height - cy;
 		float x_offset = (float) b_width / 2.0;
 		float y_offset = (float) b_height / 2.0;
-		float sar_affine[3][3];
 		affine_t affine;
 		interpp interp = interpBL_b32;
 
 		affine_init( affine.matrix );
-
-		// Factor aspect ratio into transforms
-		affine_init( sar_affine);
-		sar_affine[0][0] /= consumer_ar;
-		affine_multiply( affine.matrix, sar_affine );
 
 		// Compute the affine transform
 		get_affine( &affine, this, ( float )position );
@@ -504,11 +498,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			affine_scale( affine.matrix, scale_x, scale_y );
 		}
-
-		// Invert transform aspect ratio factor
-		sar_affine[0][0] *= consumer_ar; // return to identity matrix
-		sar_affine[0][0] *= consumer_ar; // reverse the sample aspect adjustment
-		affine_multiply( affine.matrix, sar_affine );
 
 		// Set the interpolation function
 		if ( interps == NULL || strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
