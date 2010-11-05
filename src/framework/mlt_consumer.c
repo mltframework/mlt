@@ -862,8 +862,8 @@ static void *consumer_worker_thread( void *arg )
 			mlt_events_fire( MLT_CONSUMER_PROPERTIES( this ), "consumer-frame-render", frame, NULL );
 			mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 		}
-		mlt_frame_close( frame );
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+		mlt_frame_close( frame );
 
 		// Tell a waiting thread (non-realtime main consumer thread) that we are done.
 		pthread_mutex_lock( &this->done_mutex );
