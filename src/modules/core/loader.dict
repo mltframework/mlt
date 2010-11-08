@@ -30,6 +30,7 @@ http://*=avformat
 *.psd=qimage
 *.story=xml
 *.svg=pixbuf,qimage
+*.swf=swfdec,avformat
 *.tga=pixbuf,qimage,sdl_image
 *.tif=pixbuf,qimage,sdl_image
 *.tiff=pixbuf,qimage,sdl_image
