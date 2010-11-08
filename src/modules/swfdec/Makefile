@@ -8,9 +8,11 @@ TARGET = ../libmltswfdec$(LIBSUF)
 
 OBJS = producer_swfdec.o
 
-CFLAGS += `pkg-config --cflags swfdec-0.9`
+CFLAGS += `pkg-config --cflags swfdec-0.8 2>/dev/null`
+CFLAGS += `pkg-config --cflags swfdec-0.9 2>/dev/null`
 
-LDFLAGS += `pkg-config --libs swfdec-0.9`
+LDFLAGS += `pkg-config --libs swfdec-0.8 2>/dev/null`
+LDFLAGS += `pkg-config --libs swfdec-0.9 2>/dev/null`
 
 SRCS := $(OBJS:.o=.c)
 
