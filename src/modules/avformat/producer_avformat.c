@@ -1679,7 +1679,7 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 		mlt_properties_set_int( frame_properties, "colorspace", this->colorspace );
 
 		// Workaround 1088 encodings missing cropping info.
-		if ( this->video_codec->height == 1088 && aspect_ratio * this->video_codec->width / 1080 == 16.0/9.0 )
+		if ( this->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 		{
 			mlt_properties_set_int( properties, "meta.media.height", 1080 );
 			mlt_properties_set_int( frame_properties, "real_height", 1080 );
