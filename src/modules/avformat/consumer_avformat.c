@@ -52,6 +52,9 @@
 #define MAX_AUDIO_STREAMS (8)
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
 
+void avformat_lock( );
+void avformat_unlock( );
+
 //
 // This structure should be extended and made globally available in mlt
 //
@@ -463,6 +466,8 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	// Find the encoder
 	AVCodec *codec = avcodec_find_encoder( c->codec_id );
 
+	avformat_lock();
+	
 	// Continue if codec found and we can open it
 	if ( codec != NULL && avcodec_open( c, codec ) >= 0 )
 	{
@@ -498,6 +503,8 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	{
 		mlt_log_warning( NULL, "%s: Unable to encode audio - disabling audio output.\n", __FILE__ );
 	}
+	
+	avformat_unlock();
 
 	return audio_input_frame_size;
 }
@@ -505,7 +512,11 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 static void close_audio( AVFormatContext *oc, AVStream *st )
 {
 	if ( st && st->codec )
+	{
+		avformat_lock();
 		avcodec_close( st->codec );
+		avformat_unlock();
+	}
 }
 
 /** Add a video output stream 
@@ -820,13 +831,21 @@ static int open_video(AVFormatContext *oc, AVStream *st)
 	}
 
 	// Open the codec safely
-	return codec != NULL && avcodec_open( video_enc, codec ) >= 0;
+	avformat_lock();
+	int result = codec != NULL && avcodec_open( video_enc, codec ) >= 0;
+	avformat_unlock();
+	
+	return result;
 }
 
 void close_video(AVFormatContext *oc, AVStream *st)
 {
 	if ( st && st->codec )
+	{
+		avformat_lock();
 		avcodec_close(st->codec);
+		avformat_unlock();
+	}
 }
 
 static inline long time_difference( struct timeval *time1 )
