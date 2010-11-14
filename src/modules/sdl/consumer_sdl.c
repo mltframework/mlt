@@ -128,12 +128,16 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		this->joined = 1;
 		
 		// process actual param
-		if ( arg == NULL || sscanf( arg, "%dx%d", &this->width, &this->height ) != 2 )
+		if ( arg && sscanf( arg, "%dx%d", &this->width, &this->height ) )
+		{
+			mlt_properties_set_int( this->properties, "_arg_size", 1 );
+		}
+		else
 		{
 			this->width = mlt_properties_get_int( this->properties, "width" );
 			this->height = mlt_properties_get_int( this->properties, "height" );
 		}
-
+	
 		// Set the sdl flags
 		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
 
@@ -179,10 +183,13 @@ int consumer_start( mlt_consumer parent )
 		this->running = 1;
 		this->joined = 0;
 
-		if ( mlt_properties_get_int( this->properties, "width" ) > 0 )
-			this->width = mlt_properties_get_int( this->properties, "width" );
-		if ( mlt_properties_get_int( this->properties, "height" ) > 0 )
-			this->height = mlt_properties_get_int( this->properties, "height" );
+		if ( ! mlt_properties_get_int( this->properties, "_arg_size" ) )
+		{
+			if ( mlt_properties_get_int( this->properties, "width" ) > 0 )
+				this->width = mlt_properties_get_int( this->properties, "width" );
+			if ( mlt_properties_get_int( this->properties, "height" ) > 0 )
+				this->height = mlt_properties_get_int( this->properties, "height" );
+		}
 
 		this->bpp = mlt_properties_get_int( this->properties, "bpp" );
 
@@ -211,9 +218,17 @@ int consumer_start( mlt_consumer parent )
 			SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 		// Default window size
-		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
-		this->window_width = ( double )this->height * display_ratio;
-		this->window_height = this->height;
+		if ( mlt_properties_get_int( this->properties, "_arg_size" ) )
+		{
+			this->window_width = this->width;
+			this->window_height = this->height;
+		}
+		else
+		{
+			double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
+			this->window_width = ( double )this->height * display_ratio;
+			this->window_height = this->height;
+		}
 
 		if ( this->sdl_screen == NULL && display_off == 0 )
 		{
