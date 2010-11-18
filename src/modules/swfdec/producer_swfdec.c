@@ -88,6 +88,21 @@ void swfdec_close( producer_swfdec swfdec )
 	swfdec->surface = NULL;
 }
 
+// Cairo uses 32 bit native endian ARGB
+static void bgra_to_rgba( uint8_t *src, uint8_t* dst, int width, int height )
+{
+	int n = width * height + 1;
+
+	while ( --n )
+	{
+		*dst++ = src[2];
+		*dst++ = src[1];
+		*dst++ = src[0];
+		*dst++ = src[3];
+		src += 4;
+	}	
+}
+
 static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	producer_swfdec swfdec = mlt_frame_pop_service( frame );
@@ -130,23 +145,9 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 
 	// Get image from surface
 	uint8_t *image = cairo_image_surface_get_data( swfdec->surface );
-	uint8_t *d = *buffer;
-	int stride = cairo_format_stride_for_width( CAIRO_FORMAT_ARGB32, swfdec->width );
-	int y;
-	for ( y = 0; y < swfdec->height; y++ )
-	{
-		int x = swfdec->width + 1;
-		uint32_t *s = ( uint32_t* )( image + stride * y );
-		while ( --x )
-		{
-			// Cairo uses 32 bit native endian
-			*d++ = *s >> 16;  // R
-			*d++ = *s >> 8;   // G
-			*d++ = *s & 0xFF; // B
-			*d++ = *s >> 24;  // A
-			s++;
-		}
-	}
+	
+	// Convert to RGBA
+	bgra_to_rgba( image, *buffer, swfdec->width, swfdec->height );
 
 	return 0;
 }
