@@ -621,6 +621,9 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 		pango_layout_get_pixel_size( layout, &w, &h );
 	}
 
+        if ( pad == 0 )
+            pad = 1;
+
 	pixbuf = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE /* has alpha */, 8, w + 2 * pad, h + 2 * pad );
 	pango_draw_background( pixbuf, bg );
 
