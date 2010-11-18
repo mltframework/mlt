@@ -31,6 +31,20 @@ static void parse_color( int color, f0r_param_color_t *fcolor )
 	fcolor->b /= 255;
 }
 
+static void rgba_bgra( uint8_t *src, uint8_t* dst, int width, int height )
+{
+	int n = width * height + 1;
+
+	while ( --n )
+	{
+		*dst++ = src[2];
+		*dst++ = src[1];
+		*dst++ = src[0];
+		*dst++ = src[3];
+		src += 4;
+	}	
+}
+
 int process_frei0r_item( mlt_service_type type, double position, mlt_properties prop, mlt_frame this, uint8_t **image, int *width, int *height )
 {
 	int i=0;
@@ -48,6 +62,7 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 
 	//use as name the width and height
 	f0r_instance_t inst;
+	f0r_plugin_info_t info;
 	char ctorname[1024]="";
 	sprintf(ctorname,"ctor-%dx%d",*width,*height);
 
@@ -63,7 +78,6 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 		inst=mlt_properties_get_data( prop ,  ctorname , NULL );
 	}
 	if (f0r_get_plugin_info){
-		f0r_plugin_info_t info;
 		f0r_get_plugin_info(&info);
 		for (i=0;i<info.num_params;i++){
 			f0r_param_info_t pinfo;
@@ -103,16 +117,38 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 
 	int video_area = *width * *height;
 	uint32_t *result = mlt_pool_alloc( video_area * sizeof(uint32_t) );
+	uint32_t *extra = NULL;
+	uint32_t *source[2] = { (uint32_t*) image[0], (uint32_t*) image[1] };
+	uint32_t *dest = result;
 
+	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
+		rgba_bgra(image[0], (uint8_t*) result, *width, *height);
+		source[0] = result;
+		dest = (uint32_t*) image[0];
+		if (type == producer_type) {
+			extra = mlt_pool_alloc( video_area * sizeof(uint32_t) );
+			dest = extra;
+		}
+		else if (type == transition_type && f0r_update2) {
+			extra = mlt_pool_alloc( video_area * sizeof(uint32_t) );
+			rgba_bgra(image[1], (uint8_t*) extra, *width, *height);
+			source[1] = extra;
+		}
+	}
 	if (type==producer_type) {
-		f0r_update (inst, position, NULL, result );
+		f0r_update (inst, position, NULL, dest );
 	} else if (type==filter_type) {
-		f0r_update ( inst, position, (uint32_t *)image[0], result );
+		f0r_update ( inst, position, source[0], dest );
 	} else if (type==transition_type && f0r_update2 ){
-		f0r_update2 ( inst, position, (uint32_t *)image[0], (uint32_t *)image[1], NULL, result );
+		f0r_update2 ( inst, position, source[0], source[1], NULL, dest );
+	}
+	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
+		rgba_bgra((uint8_t*) dest, (uint8_t*) result, *width, *height);
 	}
 	*image = (uint8_t*) result;
 	mlt_properties_set_data(MLT_FRAME_PROPERTIES(this), "image", result, video_area * sizeof(uint32_t), mlt_pool_release, NULL);
+	if (extra)
+		mlt_pool_release(extra);
 
 	return 0;
 }
