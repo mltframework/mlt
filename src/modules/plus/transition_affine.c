@@ -470,22 +470,22 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( mlt_properties_get_int( properties, "distort" ) )
 		{
 			scale_x = geom_scale_x * ( scale_x == 0 ? 1 : scale_x );
-			scale_y = geom_scale_y / consumer_ar * ( scale_y == 0 ? 1 : scale_y );
+			scale_y = geom_scale_y * ( scale_y == 0 ? 1 : scale_y );
 		}
 		else
 		{
 			// Determine scale with respect to aspect ratio.
 			double consumer_dar = consumer_ar * normalised_width / normalised_height;
 			double b_dar = mlt_properties_get_double( b_props, "aspect_ratio" ) * b_width / b_height;
-
+			
 			if ( b_dar > consumer_dar )
 			{
 				scale_x = geom_scale_x * ( scale_x == 0 ? 1 : scale_x );
-				scale_y = geom_scale_x / consumer_ar * ( scale_y == 0 ? 1 : scale_y );
+				scale_y = geom_scale_x * ( scale_y == 0 ? 1 : scale_y );
 			}
 			else
 			{
-				scale_x = geom_scale_y * consumer_ar * ( scale_x == 0 ? 1 : scale_x );
+				scale_x = geom_scale_y * ( scale_x == 0 ? 1 : scale_x );
 				scale_y = geom_scale_y * ( scale_y == 0 ? 1 : scale_y );
 			}
 		}
