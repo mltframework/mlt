@@ -45,7 +45,7 @@ static void rgba_bgra( uint8_t *src, uint8_t* dst, int width, int height )
 	}	
 }
 
-int process_frei0r_item( mlt_service_type type, double position, mlt_properties prop, mlt_frame this, uint8_t **image, int *width, int *height )
+int process_frei0r_item( mlt_service service, double position, mlt_properties prop, mlt_frame this, uint8_t **image, int *width, int *height )
 {
 	int i=0;
 	f0r_instance_t ( *f0r_construct ) ( unsigned int , unsigned int ) =  mlt_properties_get_data(  prop , "f0r_construct" ,NULL);
@@ -57,7 +57,8 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 	void (*f0r_set_param_value)(f0r_instance_t instance, f0r_param_t param, int param_index)=mlt_properties_get_data(  prop , "f0r_set_param_value" ,NULL);
 	void (*f0r_update2) (f0r_instance_t instance, double time,
 			 const uint32_t* inframe1,const uint32_t* inframe2,const uint32_t* inframe3,
-	 uint32_t* outframe)=mlt_properties_get_data(  prop , "f0r_update2" ,NULL);
+	uint32_t* outframe)=mlt_properties_get_data(  prop , "f0r_update2" ,NULL);
+	mlt_service_type type = mlt_service_identify( service );
 
 
 	//use as name the width and height
@@ -66,6 +67,7 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 	char ctorname[1024]="";
 	sprintf(ctorname,"ctor-%dx%d",*width,*height);
 
+	mlt_service_lock( service );
 	void* neu=mlt_properties_get_data( prop , ctorname ,NULL );
 	if (!f0r_construct){
 		//printf("no ctor\n");
@@ -77,6 +79,8 @@ int process_frei0r_item( mlt_service_type type, double position, mlt_properties 
 	}else{
 		inst=mlt_properties_get_data( prop ,  ctorname , NULL );
 	}
+	mlt_service_unlock( service );
+	
 	if (f0r_get_plugin_info){
 		f0r_get_plugin_info(&info);
 		for (i=0;i<info.num_params;i++){

@@ -54,9 +54,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_position out = mlt_producer_get_out( producer );
 		mlt_position time = mlt_frame_get_position( frame );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
-		mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
-		process_frei0r_item( producer_type, position, producer_props, frame, buffer, width, height );
-		mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, producer_props, frame, buffer, width, height );
 	}
 
     return 0;

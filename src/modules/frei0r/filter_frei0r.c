@@ -37,9 +37,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		mlt_position time = mlt_properties_get_position( properties, "_filter_position" );
 		double position = ( double )( time ) / ( double )( length );
 		
-		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-		process_frei0r_item( filter_type, position, properties, this, image, width, height );
-		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, properties, this, image, width, height );
 	}
 
 	return error;
