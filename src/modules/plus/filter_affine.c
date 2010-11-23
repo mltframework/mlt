@@ -93,6 +93,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_double( MLT_FRAME_PROPERTIES( a_frame ), "consumer_aspect_ratio", consumer_ar );
 
 			// Add the affine transition onto the frame stack
+			mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 			mlt_transition_process( transition, a_frame, this );
 
 			if (mlt_properties_get_int( properties, "use_normalised" ))
@@ -107,7 +108,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_data( frame_properties, "image", *image, *width * *height * 4, NULL, NULL );
 			mlt_properties_set_data( frame_properties, "alpha", mlt_frame_get_alpha_mask( a_frame ), *width * *height, NULL, NULL );
 		}
-		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+		else
+		{
+			mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+		}
 	}
 
 	return error;
