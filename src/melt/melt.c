@@ -361,6 +361,11 @@ static void guess_profile( mlt_producer melt, mlt_profile profile )
 				profile->progressive = mlt_properties_get_int( p, "meta.media.progressive" );
 				profile->frame_rate_num = mlt_properties_get_int( p, "meta.media.frame_rate_num" );
 				profile->frame_rate_den = mlt_properties_get_int( p, "meta.media.frame_rate_den" );
+				// AVCHD is mis-reported as double frame rate.
+				if ( profile->progressive == 0 && (
+				     profile->frame_rate_num / profile->frame_rate_den == 50 ||
+				     profile->frame_rate_num / profile->frame_rate_den == 59 ) )
+					profile->frame_rate_num /= 2;
 				profile->sample_aspect_num = mlt_properties_get_int( p, "meta.media.sample_aspect_num" );
 				profile->sample_aspect_den = mlt_properties_get_int( p, "meta.media.sample_aspect_den" );
 				profile->colorspace = mlt_properties_get_int( p, "meta.media.colorspace" );
