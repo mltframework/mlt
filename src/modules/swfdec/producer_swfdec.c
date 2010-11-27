@@ -39,8 +39,12 @@ typedef struct
 
 void swfdec_open( producer_swfdec swfdec, mlt_profile profile )
 {
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( &swfdec->parent );
+
 	// Setup the swfdec player
 	swfdec->player = swfdec_player_new( NULL );
+	if ( mlt_properties_get( properties, "variables") )
+		swfdec_player_set_variables( swfdec->player, mlt_properties_get( properties, "variables" ) );
 	swfdec_player_set_url( swfdec->player, swfdec->url );
 	swfdec_player_set_maximum_runtime( swfdec->player, 10000 );
 
@@ -107,6 +111,9 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 {
 	producer_swfdec swfdec = mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+
+	if ( !swfdec->player )
+		swfdec_open( swfdec, mlt_service_profile( MLT_PRODUCER_SERVICE( &swfdec->parent ) ) );
 
 	// Set width and height
 	*width = swfdec->width;
@@ -216,8 +223,6 @@ mlt_producer producer_swfdec_init( mlt_profile profile, mlt_service_type type, c
 		swfdec->url = swfdec_url_new_from_input( filename );
 		if ( swfdec->url )
 		{
-			swfdec_open( swfdec, profile );
-
 			// Set the return value
 			producer = &swfdec->parent;
 
