@@ -214,33 +214,60 @@ static int consumer_start( mlt_consumer this )
 	char *s = mlt_properties_get( properties, "f" );
 	if ( s && strcmp( s, "list" ) == 0 )
 	{
-		fprintf( stderr, "---\nformats:\n" );
+		mlt_properties doc = mlt_properties_new();
+		mlt_properties formats = mlt_properties_new();
+		char key[20];
 		AVOutputFormat *format = NULL;
+		
+		mlt_properties_set_data( properties, "f", formats, 0, (mlt_destructor) mlt_properties_close, NULL );
+		mlt_properties_set_data( doc, "formats", formats, 0, NULL, NULL );
 		while ( ( format = av_oformat_next( format ) ) )
-			fprintf( stderr, "  - %s\n", format->name );
-		fprintf( stderr, "...\n" );
+		{
+			snprintf( key, sizeof(key), "%d", mlt_properties_count( formats ) );
+			mlt_properties_set( formats, key, format->name );
+		}
+		fprintf( stderr, "%s", mlt_properties_serialise_yaml( doc ) );
+		mlt_properties_close( doc );
 		error = 1;
 	}
 	s = mlt_properties_get( properties, "acodec" );
 	if ( s && strcmp( s, "list" ) == 0 )
 	{
-		fprintf( stderr, "---\naudio_codecs:\n" );
+		mlt_properties doc = mlt_properties_new();
+		mlt_properties codecs = mlt_properties_new();
+		char key[20];
 		AVCodec *codec = NULL;
+
+		mlt_properties_set_data( properties, "acodec", codecs, 0, (mlt_destructor) mlt_properties_close, NULL );
+		mlt_properties_set_data( doc, "audio_codecs", codecs, 0, NULL, NULL );
 		while ( ( codec = av_codec_next( codec ) ) )
 			if ( codec->encode && codec->type == CODEC_TYPE_AUDIO )
-				fprintf( stderr, "  - %s\n", codec->name );
-		fprintf( stderr, "...\n" );
+			{
+				snprintf( key, sizeof(key), "%d", mlt_properties_count( codecs ) );
+				mlt_properties_set( codecs, key, codec->name );
+			}
+		fprintf( stderr, "%s", mlt_properties_serialise_yaml( doc ) );
+		mlt_properties_close( doc );
 		error = 1;
 	}
 	s = mlt_properties_get( properties, "vcodec" );
 	if ( s && strcmp( s, "list" ) == 0 )
 	{
-		fprintf( stderr, "---\nvideo_codecs:\n" );
+		mlt_properties doc = mlt_properties_new();
+		mlt_properties codecs = mlt_properties_new();
+		char key[20];
 		AVCodec *codec = NULL;
+
+		mlt_properties_set_data( properties, "vcodec", codecs, 0, (mlt_destructor) mlt_properties_close, NULL );
+		mlt_properties_set_data( doc, "video_codecs", codecs, 0, NULL, NULL );
 		while ( ( codec = av_codec_next( codec ) ) )
 			if ( codec->encode && codec->type == CODEC_TYPE_VIDEO )
-				fprintf( stderr, "  - %s\n", codec->name );
-		fprintf( stderr, "...\n" );
+			{
+				snprintf( key, sizeof(key), "%d", mlt_properties_count( codecs ) );
+				mlt_properties_set( codecs, key, codec->name );
+			}
+		fprintf( stderr, "%s", mlt_properties_serialise_yaml( doc ) );
+		mlt_properties_close( doc );
 		error = 1;
 	}
 
