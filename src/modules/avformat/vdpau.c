@@ -232,7 +232,7 @@ static int vdpau_decoder_init( producer_avformat this )
 	{
 		if ( !this->vdpau )
 		{
-			int i, n = FFMIN( this->video_codec->refs + 1, MAX_VDPAU_SURFACES );
+			int i, n = FFMIN( this->video_codec->refs + 2, MAX_VDPAU_SURFACES );
 	
 			this->vdpau = calloc( 1, sizeof( *this->vdpau ) );
 			this->vdpau->deque = mlt_deque_init();
