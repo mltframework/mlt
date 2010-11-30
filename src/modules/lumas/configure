@@ -17,7 +17,7 @@ else
 	for i in "$@"
 	do
 		case $i in
-			--luma-compress )	touch .compress ;;
+			--luma-compress )	touch .compress .8bit ;;
 			--luma-8bit )		touch .8bit ;;
 		esac
 	done
