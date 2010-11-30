@@ -1306,11 +1306,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 				}
 				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d\n", got_picture, pkt.flags & PKT_FLAG_KEY );
-				av_free_packet( &pkt );
-			}
-			else if ( ret >= 0 )
-			{
-				av_free_packet( &pkt );
 			}
 
 			// Now handle the picture if we have one
@@ -1372,6 +1367,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					got_picture = 0;
 				}
 			}
+			if ( ret >= 0 )
+				av_free_packet( &pkt );
 		}
 	}
 
