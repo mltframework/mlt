@@ -21,7 +21,7 @@
 #ifndef MLTPP_CONFIG_H_
 #define MLTPP_CONFIG_H_
 
-#ifdef WIN32
+#if defined(WIN32) && defined(_MSC_VER)
     #ifdef MLTPP_EXPORTS
         #define MLTPP_DECLSPEC __declspec( dllexport )
     #else

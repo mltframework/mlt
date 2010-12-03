@@ -53,7 +53,8 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 	mlt_producer result = NULL;
 
 	// 1st Line - check for service:resource handling
-	if ( strchr( file, ':' ) )
+	// And ignore drive letters on Win32 - no single char services supported.
+	if ( strchr( file, ':' ) > file + 1 )
 	{
 		char *temp = strdup( file );
 		char *service = temp;

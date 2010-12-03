@@ -3,9 +3,9 @@
 if [ "$help" != "1" ]
 then
 
-	if [ "$targetos" = "Darwin" ]
+	if [ "$targetos" = "Darwin" ] || [ "$targetos" = "MinGW" ]
 	then
-		echo "- does not build on Darwin: disabling"
+		echo "- does not build on Darwin or Windows: disabling"
 		touch ../disable-kino
 		exit 0
 	fi

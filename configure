@@ -71,19 +71,19 @@ build_config()
 		[ "$cpu" != "" ] && echo "TARGETCPU=-mcpu=$cpu"
 		echo "OPTIMISATIONS=-O2 -pipe -fomit-frame-pointer"
 
-		echo "CFLAGS+=-Wall -fPIC -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(SSE_FLAGS) \$(SSE2_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
+		echo "CFLAGS+=-Wall -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(SSE_FLAGS) \$(SSE2_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
 
 		case $targetos in
 		Darwin)
 		sysctl -a hw | grep "x86_64: 1" > /dev/null && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
-		echo "CFLAGS+=-D__DARWIN__ `sdl-config --cflags`"
+		echo "CFLAGS+=-fPIC -D__DARWIN__ `sdl-config --cflags`"
 		echo "SHFLAGS=-dynamiclib"
 		echo "LDFLAGS+=`sdl-config --libs`"
 		;;
 		Linux)
 		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		echo "OPTIMISATIONS+=-ffast-math"
-		echo "CFLAGS+=-pthread"
+		echo "CFLAGS+=-fPIC -pthread"
 		echo "SHFLAGS=-shared"
 		echo "LIBDL=-ldl"
 		echo "RDYNAMIC=-rdynamic"
@@ -92,7 +92,7 @@ build_config()
 		FreeBSD)
 		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		echo "OPTIMISATIONS+=-ffast-math"
-		echo "CFLAGS+=-pthread"
+		echo "CFLAGS+=-fPIC -pthread"
 		echo "SHFLAGS=-shared"
 		echo "RDYNAMIC=-rdynamic"
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
@@ -105,6 +105,14 @@ build_config()
 		echo "RDYNAMIC=-rdynamic"
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
+		MinGW)
+		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
+		echo "OPTIMISATIONS+=-ffast-math"
+		echo "SHFLAGS=-shared"
+		echo "LIBDL=-ldl"
+		echo "RDYNAMIC="
+		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
+		;;		
 		*)
 		;;
 		esac
@@ -181,6 +189,10 @@ case $targetos in
 	;;
 	Linux|FreeBSD|NetBSD)
 	LIBSUF=".so"
+	;;
+	MINGW32_NT-*)
+	targetos="MinGW"
+	LIBSUF=".dll"
 	;;
 	*)
 	LIBSUF=".so"

@@ -249,7 +249,9 @@ static int consumer_stop( mlt_consumer parent )
 		pthread_mutex_lock( &this->refresh_mutex );
 		pthread_cond_broadcast( &this->refresh_cond );
 		pthread_mutex_unlock( &this->refresh_mutex );
+#ifndef WIN32
 		if ( this->thread )
+#endif
 			pthread_join( this->thread, NULL );
 		this->joined = 1;
 

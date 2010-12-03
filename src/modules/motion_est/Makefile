@@ -4,7 +4,7 @@ LDFLAGS += -L../../framework -lmlt -lm
 
 include ../../../config.mak
 
-TARGET = ../libmltmotion_est.so
+TARGET = ../libmltmotion_est.$(LIBSUF)
 
 OBJS = factory.o \
 	   filter_motion_est.o \

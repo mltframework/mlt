@@ -57,18 +57,6 @@ Consumer *Factory::consumer( Profile& profile, char *id, char *arg )
 	return new Consumer( profile, id, arg );
 }
 
-#ifdef WIN32
-char *Factory::getenv( const char *name )
-{
-	return mlt_getenv( name );
-}
-
-int Factory::setenv( const char *name, const char *value )
-{
-	return mlt_setenv( name, value );
-}
-#endif
-
 void Factory::close( )
 {
 	mlt_factory_close( );

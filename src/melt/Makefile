@@ -10,6 +10,12 @@ LDFLAGS += -L../framework -lmlt -lpthread
 
 SRCS := $(OBJS:.o=.c)
 
+ifeq ($(targetos), MinGW)
+OBJS += ../win32/win32.o
+SRCS += ../win32/win32.c
+bindir = $(prefix)
+endif
+
 all: $(TARGET)
 
 $(TARGET): $(OBJS)

@@ -4,7 +4,6 @@ echo "mlt++	-I$prefix/include -I$prefix/include/mlt++ -D_REENTRANT	-L$libdir -lm
 
 WARNINGS="-W -Wwrite-strings -Wcast-qual -Wpointer-arith -Wcast-align -Wredundant-decls"
 
-targetos=$(uname -s)
 case $targetos in 
 	Darwin)
 		echo LIBSUF=.dylib
@@ -15,5 +14,10 @@ case $targetos in
 		echo LIBSUF=.so
 		echo "CXXFLAGS+=-Wall $WARNINGS -fPIC -DPIC"
 		echo "LIBFLAGS=-shared"
+		;;
+	MinGW)
+		echo LIBSUF=.dll
+		echo "CXXFLAGS+=-Wall $WARNINGS -DPIC"
+		echo "LIBFLAGS=-enable-auto-import -shared"
 		;;
 esac >> config.mak

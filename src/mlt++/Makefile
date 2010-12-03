@@ -2,16 +2,20 @@ include ../../config.mak
 include config.mak
 INSTALL = install
 
-ifneq ($(targetos), Darwin)
-NAME = libmlt++$(LIBSUF)
-TARGET = $(NAME).$(version)
-SONAME = $(NAME).$(soversion)
-LIBFLAGS += -Wl,-soname,$(SONAME)
-else
+ifeq ($(targetos), Darwin)
 NAME = libmlt++$(LIBSUF)
 TARGET = libmlt++.$(version)$(LIBSUF)
 SONAME = libmlt++.$(soversion)$(LIBSUF)
 LIBFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
+else ifeq ($(targetos), MinGW)
+NAME = libmlt++$(LIBSUF)
+TARGET = libmlt++-$(soversion)$(LIBSUF)
+libdir = $(prefix)
+else
+NAME = libmlt++$(LIBSUF)
+TARGET = $(NAME).$(version)
+SONAME = $(NAME).$(soversion)
+LIBFLAGS += -Wl,-soname,$(SONAME)
 endif
 
 CXXFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\"
@@ -49,7 +53,9 @@ all:		$(TARGET)
 $(TARGET):	$(OBJS)
 	$(CXX) $(LIBFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 	ln -sf $(TARGET) $(NAME)
-	ln -sf $(TARGET) $(SONAME)
+	if [ "$(targetos)" != "MinGW" ]; then \
+		ln -sf $(TARGET) $(SONAME) ; \
+	fi
 
 depend:	$(SRCS)
 	$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
@@ -62,15 +68,19 @@ distclean:	clean
 install:
 	$(INSTALL) -d "$(DESTDIR)$(libdir)"
 	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)
-	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME)
-	ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME)
+	if [ "$(targetos)" != "MinGW" ]; then \
+		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME) ; \
+		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
+	fi
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
-	rm -f "$(DESTDIR)$(libdir)/$(NAME)"
-	rm -f "$(DESTDIR)$(libdir)/$(SONAME)"
+	if [ "$(targetos)" != "MinGW" ]; then \
+		rm -f "$(DESTDIR)$(libdir)/$(NAME)" ; \
+		rm -f "$(DESTDIR)$(libdir)/$(SONAME)" ; \
+	fi
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt++"
 
 ifneq ($(wildcard .depend),)

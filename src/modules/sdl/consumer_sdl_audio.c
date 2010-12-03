@@ -193,7 +193,9 @@ int consumer_stop( mlt_consumer parent )
 		pthread_mutex_unlock( &this->refresh_mutex );
 
 		// Cleanup the main thread
+#ifndef WIN32
 		if ( this->thread )
+#endif
 			pthread_join( this->thread, NULL );
 
 		// Unlatch the audio callback

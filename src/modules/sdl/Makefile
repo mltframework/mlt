@@ -17,7 +17,7 @@ OBJS = factory.o \
 ifeq ($(targetos),Darwin)
 CFLAGS += -ObjC
 LDFLAGS += -lobjc -framework Foundation
-else
+else ifeq ($(targetos), Linux|FreeBSD)
 LDFLAGS += -lX11
 endif
 
@@ -35,6 +35,11 @@ SRCS := $(OBJS:.o=.c)
 ifeq ($(targetos),Darwin)
 OBJS += consumer_sdl_osx.o
 SRCS += consumer_sdl_osx.m consumer_sdl_osx.h
+endif
+
+ifeq ($(targetos), MinGW)
+OBJS += ../../win32/win32.o
+SRCS += ../../win32/win32.c
 endif
 
 all: 	$(TARGET)

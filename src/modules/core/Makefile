@@ -43,6 +43,12 @@ ASM_OBJS =
 
 SRCS := $(OBJS:.o=.c)
 
+ifeq ($(targetos), MinGW)
+CFLAGS += -I../../win32
+OBJS += ../../win32/fnmatch.o
+SRCS += ../../win32/fnmatch.c
+endif
+
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS) $(ASM_OBJS)

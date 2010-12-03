@@ -49,10 +49,6 @@ namespace Mlt
 			static Filter *filter( Profile& profile, char *id, char *arg = NULL );
 			static Transition *transition( Profile& profile, char *id, char *arg = NULL );
 			static Consumer *consumer( Profile& profile, char *id, char *arg = NULL );
-#ifdef WIN32
-			static char *getenv( const char * );
-			static int setenv( const char *, const char * );
-#endif
 			static void close( );
 	};
 }
