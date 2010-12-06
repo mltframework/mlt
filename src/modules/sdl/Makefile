@@ -17,7 +17,7 @@ OBJS = factory.o \
 ifeq ($(targetos),Darwin)
 CFLAGS += -ObjC
 LDFLAGS += -lobjc -framework Foundation
-else ifeq ($(targetos), Linux|FreeBSD)
+else ifneq ($(targetos), MinGW)
 LDFLAGS += -lX11
 endif
 
