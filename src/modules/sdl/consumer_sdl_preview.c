@@ -342,22 +342,19 @@ static void *consumer_thread( void *arg )
 			if ( speed != 1 )
 			{
 				mlt_position duration = mlt_producer_get_playtime( producer );
-				int paused = 0;
+				int pause = 0;
 
 				if ( this->active == this->play )
 				{
 					// Do not interrupt the play consumer near the end
 					if ( duration - this->last_position > eos_threshold )
 					{
-						// Stop the play consumer and reposition
-						mlt_consumer_stop( this->play );
-						paused = 1;
-						
 						// Get a new frame at the sought position
 						mlt_frame_close( frame );
 						if ( producer )
 							mlt_producer_seek( producer, this->last_position );
 						frame = mlt_consumer_get_frame( consumer );
+						pause = 1;
 					}
 					else
 					{
@@ -372,15 +369,15 @@ static void *consumer_thread( void *arg )
 						if ( mlt_consumer_is_stopped( this->play ) )
 						{
 							// Stream has ended
-							mlt_consumer_stop( this->play );
-							paused = 1;
+							pause = 1;
 							eos = 0; // reset eof indicator
 						}
 					}
 				}
-				if ( paused )
+				if ( pause )
 				{
 					// Start the still consumer
+					mlt_consumer_stop( this->play );
 					this->last_speed = speed;
 					this->active = this->still;
 					this->ignore_change = 0;
@@ -389,7 +386,7 @@ static void *consumer_thread( void *arg )
 				// Send the frame to the active child
 				if ( frame && !eos )
 					mlt_consumer_put_frame( this->active, frame );
-				if ( paused && speed == 0.0 )
+				if ( pause && speed == 0.0 )
 				{
 					// Wait for last frame to be shown and then fire paused event
 					mlt_event event = mlt_events_setup_wait_for( properties, "consumer-frame-show" );
