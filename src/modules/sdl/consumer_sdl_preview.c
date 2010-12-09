@@ -284,9 +284,8 @@ static void *consumer_thread( void *arg )
 	int first = 1;
 	mlt_frame frame = NULL;
 	int last_position = -1;
-	int eof_threshold = 10 + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
-	int prefill = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "prefill" );
-	int buffer = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
+	int eos = 0;
+	int eos_threshold = 20 + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
 
 	// Determine if the application is dealing with the preview
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
@@ -342,55 +341,53 @@ static void *consumer_thread( void *arg )
 			if ( speed != 1 )
 			{
 				mlt_position duration = mlt_producer_get_playtime( producer );
+				int paused = 0;
 
-				// Do not interrupt the normal consumer near the end
-				if ( !mlt_consumer_is_stopped( this->play ) && ( duration - this->last_position ) > eof_threshold )
-					mlt_consumer_stop( this->play );
-
-				// Switch to the still consumer
-				if ( mlt_consumer_is_stopped( this->still ) )
+				if ( this->active == this->play )
 				{
-					// If near the end, wait for the normal consumer to play out its buffers
-					assert( this->active == this->play );
-					if ( ! mlt_consumer_is_stopped( this->play ) && speed == 0.0 )
+					// Do not interrupt the play consumer near the end
+					if ( duration - this->last_position > eos_threshold )
 					{
-						// This frame with speed=0 will tell normal consumer to terminate
-						mlt_consumer_put_frame( this->play, frame );
-
-						if ( ( duration - this->last_position ) > ( prefill > 0 ? prefill : buffer ) )
-						{
-							while ( ! mlt_consumer_is_stopped( this->play ) )
-							{
-								struct timespec tm = { 0, 10000000L }; // 10 ms
-								nanosleep( &tm, NULL );
-							}
-						}
+						// Stop the play consumer and reposition
 						mlt_consumer_stop( this->play );
-
-						// We want to be positioned at the end
-						if ( duration - this->last_position < 10 )
-							this->last_position = duration - 1;
+						paused = 1;
+						
+						// Get a new frame at the sought position
+						mlt_frame_close( frame );
+						if ( producer )
+							mlt_producer_seek( producer, this->last_position );
+						frame = mlt_consumer_get_frame( consumer );
 					}
 					else
 					{
-						// We will need a new frame at the correct position
-						mlt_frame_close( frame );
+						// Send frame with speed 0 once to stop it
+						if ( frame && !eos && speed == 0.0 )
+						{
+							mlt_consumer_put_frame( this->play, frame );
+							eos = 1;
+						}
+
+						// Check for end of stream
+						if ( mlt_consumer_is_stopped( this->play ) )
+						{
+							// Stream has ended
+							mlt_consumer_stop( this->play );
+							paused = 1;
+							eos = 0; // reset eof indicator
+						}
 					}
-
-					// Get a new frame at the sought position
-					if ( producer )
-						mlt_producer_seek( producer, this->last_position );
-					frame = mlt_consumer_get_frame( consumer );
-
+				}
+				if ( paused )
+				{
 					// Start the still consumer
 					this->last_speed = speed;
 					this->active = this->still;
 					this->ignore_change = 0;
 					mlt_consumer_start( this->still );
 				}
-				// Use the still consumer
-				if ( frame )
-					mlt_consumer_put_frame( this->still, frame );
+				// Send the frame to the active child
+				if ( frame && !eos )
+					mlt_consumer_put_frame( this->active, frame );
 			}
 			// Allow a little grace time before switching consumers on speed changes
 			else if ( this->ignore_change -- > 0 && this->active != NULL && !mlt_consumer_is_stopped( this->active ) )
