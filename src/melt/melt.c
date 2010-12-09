@@ -431,6 +431,12 @@ static void query_services( mlt_repository repo, mlt_service_type type )
 	fprintf( stderr, "...\n" );
 }
 
+static void on_fatal_error( mlt_properties owner, mlt_consumer consumer )
+{
+	mlt_consumer_stop( consumer );
+	exit( EXIT_FAILURE );
+}
+
 int main( int argc, char **argv )
 {
 	int i;
@@ -635,6 +641,7 @@ query_all:
 			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( melt ) );
 
 			// Start the consumer
+			mlt_events_listen( properties, consumer, "consumer-fatal-error", ( mlt_listener )on_fatal_error );
 			mlt_consumer_start( consumer );
 
 			// Transport functionality

@@ -24,6 +24,7 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
 #include <framework/mlt_log.h>
+#include <framework/mlt_events.h>
 
 // System header files
 #include <stdio.h>
@@ -195,6 +196,8 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		this->start = consumer_start;
 		this->stop = consumer_stop;
 		this->is_stopped = consumer_is_stopped;
+		
+		mlt_events_register( properties, "consumer-fatal-error", NULL );
 	}
 
 	// Return this
@@ -1323,7 +1326,11 @@ static void *consumer_thread( void *arg )
 						if ( pkt.size > 0 )
 						{
 							if ( av_interleaved_write_frame( oc, &pkt ) )
-								mlt_log_error( MLT_CONSUMER_SERVICE( this ), "error writing audio frame %d\n", frames - 1 );
+							{
+								mlt_log_fatal( MLT_CONSUMER_SERVICE( this ), "error writing audio frame\n" );
+								mlt_events_fire( properties, "consumer-fatal-error", NULL );
+								goto on_fatal_error;
+							}
 						}
 
 						mlt_log_debug( MLT_CONSUMER_SERVICE( this ), " frame_size %d\n", codec->frame_size );
@@ -1343,7 +1350,7 @@ static void *consumer_thread( void *arg )
 				// Write video
 				if ( mlt_deque_count( queue ) )
 				{
-					int out_size, ret;
+					int out_size, ret = 0;
 					AVCodecContext *c;
 
 					frame = mlt_deque_pop_front( queue );
@@ -1479,6 +1486,12 @@ static void *consumer_thread( void *arg )
 						}
  					}
  					frame_count++;
+					if ( ret )
+					{
+						mlt_log_fatal( MLT_CONSUMER_SERVICE( this ), "error writing video frame\n" );
+						mlt_events_fire( properties, "consumer-fatal-error", NULL );
+						goto on_fatal_error;
+					}
 					mlt_frame_close( frame );
 				}
 				else
@@ -1542,8 +1555,9 @@ static void *consumer_thread( void *arg )
 			pkt.data = audio_outbuf;
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				mlt_log_error( MLT_CONSUMER_SERVICE( this ), "%s: error writing flushed audio frame\n", __FILE__ );
-				break;
+				mlt_log_fatal( MLT_CONSUMER_SERVICE( this ), "error writing flushed audio frame\n" );
+				mlt_events_fire( properties, "consumer-fatal-error", NULL );
+				goto on_fatal_error;
 			}
 		}
 
@@ -1570,8 +1584,9 @@ static void *consumer_thread( void *arg )
 			// write the compressed frame in the media file
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				mlt_log_error( MLT_CONSUMER_SERVICE(this), "error writing flushed video frame\n" );
-				break;
+				mlt_log_fatal( MLT_CONSUMER_SERVICE(this), "error writing flushed video frame\n" );
+				mlt_events_fire( properties, "consumer-fatal-error", NULL );
+				goto on_fatal_error;
 			}
 			// Dual pass logging
 			if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out )
@@ -1579,6 +1594,8 @@ static void *consumer_thread( void *arg )
 		}
 	}
 
+on_fatal_error:
+	
 	// Write the trailer, if any
 	av_write_trailer( oc );
 
