@@ -87,6 +87,7 @@ namespace Mlt
 			static void delete_event( Event * );
 			Event *setup_wait_for( const char *id );
 			void wait_for( Event *, bool destroy = true );
+			void wait_for( const char *id );
 			bool is_sequence( );
 			static Properties *parse_yaml( const char *file );
 			char *serialise_yaml( );

@@ -285,6 +285,13 @@ void Properties::wait_for( Event *event, bool destroy )
 		mlt_events_close_wait_for( get_properties( ), event->get_event( ) );
 }
 
+void Properties::wait_for( const char *id )
+{
+	Event *event = setup_wait_for( id );
+	wait_for( event );
+	delete event;
+}
+
 bool Properties::is_sequence( )
 {
 	return mlt_properties_is_sequence( get_properties( ) );
