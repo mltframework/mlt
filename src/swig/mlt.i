@@ -38,6 +38,7 @@ namespace Mlt {
 %newobject Factory::transition( Profile &, char *, char * );
 %newobject Factory::consumer( Profile &, char *, char * );
 %newobject Properties::listen( const char *, void *, mlt_listener );
+%newobject Properties::setup_wait_for( const char * );
 %newobject Properties::parse_yaml( const char * );
 %newobject Service::producer( );
 %newobject Service::consumer( );
