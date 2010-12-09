@@ -52,6 +52,7 @@ namespace Mlt
 			void purge( );
 			int stop( );
 			bool is_stopped( );
+			int position( );
 	};
 }
 

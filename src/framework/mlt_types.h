@@ -123,5 +123,6 @@ typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serializ
 #define MLT_TRACTOR(x) ( ( mlt_tractor )( x ) )         /**< Cast to a Tractor pointer */
 #define MLT_FILTER(x) ( ( mlt_filter )( x ) )           /**< Cast to a Filter pointer */
 #define MLT_TRANSITION(x) ( ( mlt_transition )( x ) )   /**< Cast to a Transition pointer */
+#define MLT_CONSUMER(x) ( ( mlt_consumer )( x ) )       /**< Cast to a Consumer pointer */
 
 #endif

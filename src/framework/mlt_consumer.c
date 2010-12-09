@@ -44,8 +44,9 @@ pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
-static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name );
+static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer this, char *name );
 static void apply_profile_properties( mlt_consumer this, mlt_profile profile, mlt_properties properties );
+static void on_consumer_frame_show( mlt_properties owner, mlt_consumer this, mlt_frame frame );
 
 /** Initialize a consumer service.
  *
@@ -101,6 +102,7 @@ int mlt_consumer_init( mlt_consumer this, void *child, mlt_profile profile )
 		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
 		mlt_events_register( properties, "consumer-frame-render", ( mlt_transmitter )mlt_consumer_frame_render );
 		mlt_events_register( properties, "consumer-stopped", NULL );
+		mlt_events_listen( properties, this, "consumer-frame-show", ( mlt_listener )on_consumer_frame_show );
 
 		// Register a property-changed listener to handle the profile property -
 		// subsequent properties can override the profile
@@ -144,12 +146,12 @@ static void apply_profile_properties( mlt_consumer this, mlt_profile profile, ml
 /** The property-changed event listener
  *
  * \private \memberof mlt_consumer_s
- * \param owner the service a service (ignored)
+ * \param owner the events object
  * \param this the consumer
  * \param name the name of the property that changed
  */
 
-static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this, char *name )
+static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer this, char *name )
 {
 	if ( !strcmp( name, "profile" ) )
 	{
@@ -273,7 +275,7 @@ static void mlt_consumer_property_changed( mlt_service owner, mlt_consumer this,
  *
  * \private \memberof mlt_consumer_s
  * \param listener a function pointer that will be invoked
- * \param owner  a properties list that will be passed to \p listener
+ * \param owner the events object that will be passed to \p listener
  * \param this  a service that will be passed to \p listener
  * \param args an array of pointers - the first entry is passed as a string to \p listener
  */
@@ -290,7 +292,7 @@ static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner
  *
  * \private \memberof mlt_consumer_s
  * \param listener a function pointer that will be invoked
- * \param owner  a properties list that will be passed to \p listener
+ * \param owner the events object that will be passed to \p listener
  * \param this  a service that will be passed to \p listener
  * \param args an array of pointers - the first entry is passed as a string to \p listener
  */
@@ -299,6 +301,22 @@ static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties own
 {
 	if ( listener != NULL )
 		listener( owner, this, ( mlt_frame )args[ 0 ] );
+}
+
+/** A listener on the consumer-frame-show event
+ *
+ * Saves the position of the frame shown.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param owner the events object
+ * \param consumer the consumer on which this event occurred
+ * \param frame the frame that was shown
+ */
+
+static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_frame frame )
+{
+	if ( frame )
+		consumer->position = mlt_frame_get_position( frame );
 }
 
 /** Create a new consumer.
@@ -1020,3 +1038,16 @@ void mlt_consumer_close( mlt_consumer this )
 		}
 	}
 }
+
+/** Get the position of the last frame shown.
+ *
+ * \public \memberof mlt_consumer_s
+ * \param consumer a consumer
+ * \return the position
+ */
+
+mlt_position mlt_consumer_position( mlt_consumer consumer )
+{
+	return consumer->position;
+}
+		

@@ -281,7 +281,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				}
 				else
 				{
-					fprintf( stderr, "Current Position: %10d\r", (int)mlt_producer_position( producer ) );
+					fprintf( stderr, "Current Position: %10d\r", (int)mlt_consumer_position( consumer ) );
 				}
 			}
 

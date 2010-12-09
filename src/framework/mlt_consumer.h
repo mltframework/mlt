@@ -112,6 +112,7 @@ struct mlt_consumer_s
 	mlt_frame put;
 	int put_active;
 	mlt_event event_listener;
+	mlt_position position;
 };
 
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )
@@ -131,5 +132,6 @@ extern int mlt_consumer_stop( mlt_consumer self );
 extern int mlt_consumer_is_stopped( mlt_consumer self );
 extern void mlt_consumer_stopped( mlt_consumer self );
 extern void mlt_consumer_close( mlt_consumer );
+extern mlt_position mlt_consumer_position( mlt_consumer );
 
 #endif

@@ -135,3 +135,8 @@ int Consumer::run( )
 	}
 	return ret;
 }
+
+int Consumer::position( )
+{
+	return mlt_consumer_position( get_consumer() );
+}
