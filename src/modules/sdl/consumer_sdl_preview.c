@@ -104,6 +104,7 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 		pthread_cond_init( &this->refresh_cond, NULL );
 		pthread_mutex_init( &this->refresh_mutex, NULL );
 		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), this, "property-changed", ( mlt_listener )consumer_refresh_cb );
+		mlt_events_register( properties, "consumer-sdl-paused", NULL );
 		return parent;
 	}
 	free( this );
@@ -388,6 +389,14 @@ static void *consumer_thread( void *arg )
 				// Send the frame to the active child
 				if ( frame && !eos )
 					mlt_consumer_put_frame( this->active, frame );
+				if ( paused && speed == 0.0 )
+				{
+					// Wait for last frame to be shown and then fire paused event
+					mlt_event event = mlt_events_setup_wait_for( properties, "consumer-frame-show" );
+					mlt_events_wait_for( properties, event );
+					mlt_events_close_wait_for( properties, event );
+					mlt_events_fire( properties, "consumer-sdl-paused", NULL );
+				}
 			}
 			// Allow a little grace time before switching consumers on speed changes
 			else if ( this->ignore_change -- > 0 && this->active != NULL && !mlt_consumer_is_stopped( this->active ) )
