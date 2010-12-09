@@ -131,6 +131,7 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
 #include <framework/mlt_log.h>
+#include <framework/mlt_events.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -240,6 +241,8 @@ mlt_consumer consumer_SDIstream_init(mlt_profile profile, mlt_service_type type,
 				this->audio_buffer[i][j] = j;
 			}
 		}
+		
+		mlt_events_register( MLT_CONSUMER_PROPERTIES(parent), "consumer-fatal-error", NULL );
 
 		// Return the consumer produced
 		return parent;
@@ -417,7 +420,8 @@ static void *consumer_thread(void *arg) {
 	this->pix_fmt = mlt_image_yuv422;
 
 	if (!sdi_init(this->device_file_video, this->device_file_audio, this->blanking, mlt_service_profile((mlt_service) consumer), &this->audio_format)) {
-		exit(0);
+		mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "failed to initialize\n" );
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-fatal-error", NULL );
 	}
 
 	uint8_t *video_buffer;
