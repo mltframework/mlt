@@ -18,14 +18,14 @@
  */
 
 #include <framework/mlt.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include "DeckLinkAPI.h"
 
-const unsigned PREROLL_CUTOFF = 2;
+const unsigned PREROLL_MINIMUM = 3;
 
 typedef struct
 {
@@ -92,10 +92,12 @@ private:
 	double                      m_fps;
 	uint64_t                    m_count;
 	sample_fifo                 m_fifo;
-	bool                        m_preroll;
+	unsigned                    m_preroll;
+	bool                        m_isPrerolling;
+	unsigned                    m_prerollCounter;
 	int                         m_channels;
 	uint32_t                    m_maxAudioBuffer;
-	unsigned                    m_prerollCount;
+	mlt_deque                   m_videoFrameQ;
 		
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -113,7 +115,7 @@ private:
 				mode->GetFrameRate( &m_duration, &m_timescale );
 				m_fps = (double) m_timescale / m_duration;
 				int p = mode->GetFieldDominance() == bmdProgressiveFrame;
-				fprintf(stderr, "BMD mode %dx%d %.3f fps prog %d\n", m_width, m_height, m_fps, p );
+				mlt_log_verbose( &m_consumer, "BMD mode %dx%d %.3f fps prog %d\n", m_width, m_height, m_fps, p );
 				
 				if ( m_width == profile->width && m_height == profile->height && p == profile->progressive
 					 && m_fps == mlt_profile_fps( profile ) )
@@ -127,8 +129,8 @@ private:
 public:
 	mlt_consumer getConsumer()
 		{ return &m_consumer; }
-	uint64_t isPreroll() const
-		{ return m_prerollCount <= PREROLL_CUTOFF; }
+	uint64_t isBuffering() const
+		{ return m_prerollCounter < m_preroll; }
 	
 	~DeckLinkConsumer()
 	{
@@ -136,6 +138,8 @@ public:
 			m_deckLinkOutput->Release();
 		if ( m_deckLink )
 			m_deckLink->Release();
+		if ( m_videoFrameQ )
+			mlt_deque_close( m_videoFrameQ );
 	}
 	
 	bool open( unsigned card = 0 )
@@ -176,21 +180,89 @@ public:
 		pthread_mutex_init( &m_mutex, NULL );
 		pthread_cond_init( &m_condition, NULL );
 		m_maxAudioBuffer = bmdAudioSampleRate48kHz;
+		m_videoFrameQ = mlt_deque_init();
 		
 		return true;
 	}
 	
-	void start()
+	bool start( unsigned preroll )
 	{
 		m_displayMode = getDisplayMode();
+		if ( !m_displayMode )
+		{
+			mlt_log_error( &m_consumer, "Profile is not compatible with decklink.\n" );
+			return false;
+		}
 		
 		// Set the video output mode
 		if ( S_OK != m_deckLinkOutput->EnableVideoOutput( m_displayMode->GetDisplayMode(), bmdVideoOutputFlagDefault) )
 		{
-			mlt_log_verbose( &m_consumer, "Failed to enable video output\n" );
-			return;
+			mlt_log_error( &m_consumer, "Failed to enable video output\n" );
+			return false;
 		}
 		
+		// Set the audio output mode
+		m_channels = 2;
+		if ( S_OK != m_deckLinkOutput->EnableAudioOutput( bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
+			m_channels, bmdAudioOutputStreamContinuous ) )
+		{
+			mlt_log_error( &m_consumer, "Failed to enable audio output\n" );
+			stop();
+			return false;
+		}
+		m_fifo = sample_fifo_init();
+		
+		// Preroll
+		m_isPrerolling = true;
+		m_prerollCounter = 0;
+		m_preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
+		m_count = 0;
+		m_deckLinkOutput->BeginAudioPreroll();
+		
+		return true;
+	}
+	
+	void wakeup()
+	{
+		pthread_mutex_lock( &m_mutex );
+		pthread_cond_broadcast( &m_condition );
+		pthread_mutex_unlock( &m_mutex );
+	}
+	
+	void wait()
+	{
+		struct timeval tv;
+		struct timespec ts;
+		
+		gettimeofday( &tv, NULL );
+		ts.tv_sec = tv.tv_sec + 1;
+		ts.tv_nsec = tv.tv_usec * 1000;
+		pthread_mutex_lock( &m_mutex );
+		pthread_cond_timedwait( &m_condition, &m_mutex, &ts );
+		pthread_mutex_unlock( &m_mutex );
+	}
+	
+	void stop()
+	{
+		// Stop the audio and video output streams immediately
+		if ( m_deckLinkOutput )
+		{
+			m_deckLinkOutput->StopScheduledPlayback( 0, 0, 0 );
+			m_deckLinkOutput->DisableAudioOutput();
+			m_deckLinkOutput->DisableVideoOutput();
+		}
+		while ( mlt_deque_count( m_videoFrameQ ) )
+		{
+			m_videoFrame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
+			m_videoFrame->Release();
+		}
+		m_videoFrame = 0;
+		if ( m_fifo ) sample_fifo_close( m_fifo );
+	}
+	
+	void createFrame()
+	{
+		m_videoFrame = 0;
 		// Generate a DeckLink video frame
 		if ( S_OK != m_deckLinkOutput->CreateVideoFrame( m_width, m_height,
 			m_width * 2, bmdFormat8BitYUV, bmdFrameFlagDefault, &m_videoFrame ) )
@@ -210,57 +282,13 @@ public:
 				*buffer++ = 16;
 			}
 		}
+		mlt_log_debug( &m_consumer, "created video frame\n" );
+		mlt_deque_push_back( m_videoFrameQ, m_videoFrame );
+	}
 
-		// Set the audio output mode
-		m_channels = 2;
-		if ( S_OK != m_deckLinkOutput->EnableAudioOutput( bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
-			m_channels, bmdAudioOutputStreamContinuous ) )
-		{
-			mlt_log_verbose( &m_consumer, "Failed to enable audio output\n" );
-			stop();
-			return;
-		}
-		m_fifo = sample_fifo_init();
-		
-		// Preroll
-		m_preroll = true;
-		m_prerollCount = 0;
-		m_count = 0;
-		m_deckLinkOutput->BeginAudioPreroll();
-	}
-	
-	void wakeup()
-	{
-		pthread_mutex_lock( &m_mutex );
-		pthread_cond_broadcast( &m_condition );
-		pthread_mutex_unlock( &m_mutex );
-	}
-	
-	void wait()
-	{
-		pthread_mutex_lock( &m_mutex );
-		pthread_cond_wait( &m_condition, &m_mutex );
-		pthread_mutex_unlock( &m_mutex );
-	}
-	
-	void stop()
-	{
-		// Stop the audio and video output streams immediately
-		if ( m_deckLinkOutput )
-		{
-			m_deckLinkOutput->StopScheduledPlayback( 0, 0, 0 );
-			m_deckLinkOutput->DisableAudioOutput();
-			m_deckLinkOutput->DisableVideoOutput();
-		}
-		if ( m_videoFrame ) m_videoFrame->Release();
-		m_videoFrame = 0;
-		if ( m_fifo ) sample_fifo_close( m_fifo );
-	}
-	
 	HRESULT render( mlt_frame frame )
 	{
 		HRESULT result = S_OK;
-		
 		// Get the audio		
 		double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame), "_speed" );
 		if ( speed == 1.0 )
@@ -274,7 +302,7 @@ public:
 			{
 				int count = samples;
 				
-				if ( !m_preroll )
+				if ( !m_isPrerolling )
 				{
 					uint32_t audioCount = 0;
 					uint32_t videoCount = 0;
@@ -282,18 +310,20 @@ public:
 					// Check for resync
 					m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &audioCount );
 					m_deckLinkOutput->GetBufferedVideoFrameCount( &videoCount );
-					mlt_log_debug( &m_consumer, "audio buf %u video buf %u frames\n", audioCount, videoCount );
 					
 					// Underflow typically occurs during non-normal speed playback.
 					if ( audioCount < 1 || videoCount < 1 )
+					{
 						// Upon switching to normal playback, buffer some frames faster than realtime.
-						m_prerollCount = 0;
+						mlt_log_info( &m_consumer, "buffer underrun: audio buf %u video buf %u frames\n", audioCount, videoCount );
+						m_prerollCounter = 0;
+					}
 					
 					// While rebuffering
-					if ( m_prerollCount <= PREROLL_CUTOFF )
+					if ( isBuffering() )
 					{
 						// Only append audio to reach the ideal level and not overbuffer.
-						int ideal = ( PREROLL_CUTOFF - 1 ) * bmdAudioSampleRate48kHz / m_fps;
+						int ideal = ( m_preroll - 1 ) * bmdAudioSampleRate48kHz / m_fps;
 						int actual = m_fifo->used / m_channels + audioCount;
 						int diff = ideal / 2 - actual;
 						count = diff < 0 ? 0 : diff < count ? diff : count;
@@ -303,6 +333,18 @@ public:
 					sample_fifo_append( m_fifo, pcm, count * m_channels );
 			}
 		}
+		
+		// Create video frames while pre-rolling
+		if ( m_isPrerolling )
+		{
+			createFrame();
+			if ( !m_videoFrame )
+			{
+				mlt_log_error( &m_consumer, "failed to create video frame\n" );
+				return S_FALSE;
+			}
+		}
+		
 		// Get the video
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "rendered") )
 		{
@@ -312,24 +354,30 @@ public:
 
 			if ( !mlt_frame_get_image( frame, &image, &format, &m_width, &m_height, 0 ) )
 			{
+				m_videoFrame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
 				m_videoFrame->GetBytes( (void**) &buffer );
 				if ( m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
 					// convert lower field first to top field first
 					swab( image, buffer + m_width * 2, m_width * ( m_height - 1 ) * 2 );
 				else
 					swab( image, buffer, m_width * m_height * 2 );
-				result = m_deckLinkOutput->ScheduleVideoFrame( m_videoFrame, m_count * m_duration, m_duration, m_timescale );
+				m_deckLinkOutput->ScheduleVideoFrame( m_videoFrame, m_count * m_duration, m_duration, m_timescale );
+				mlt_deque_push_front( m_videoFrameQ, m_videoFrame );
 			}
+		}
+		else
+		{
+			mlt_log_verbose( &m_consumer, "dropped video frame\n" );
 		}
 		++m_count;
 
-		// Preroll handling
-		if ( ++m_prerollCount > PREROLL_CUTOFF && m_preroll )
+		// Check for end of pre-roll
+		if ( ++m_prerollCounter > m_preroll && m_isPrerolling )
 		{
 			// Start audio and video output
 			m_deckLinkOutput->EndAudioPreroll();
 			m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
-			m_preroll = false;
+			m_isPrerolling = false;
 		}
 
 		return result;
@@ -377,7 +425,6 @@ public:
 			
 			buffered = m_maxAudioBuffer - buffered;
 			count = buffered > count ? count : buffered;
-			
 			result = m_deckLinkOutput->ScheduleAudioSamples( m_fifo->buffer, count, 0, 0, &written );
 			if ( written )
 				sample_fifo_remove( m_fifo, written * m_channels );
@@ -406,8 +453,6 @@ static void *run( void *arg )
 	// Frame and size
 	mlt_frame frame = NULL;
 	
-	decklink->start();
-
 	// Loop while running
 	while ( !terminated && mlt_properties_get_int( properties, "running" ) )
 	{
@@ -422,7 +467,7 @@ static void *run( void *arg )
 		if ( frame )
 		{
 			decklink->render( frame );
-			if ( !decklink->isPreroll() )
+			if ( !decklink->isBuffering() )
 				decklink->wait();
 			
 			// Close the frame
@@ -445,9 +490,11 @@ static int start( mlt_consumer consumer )
 {
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+	DeckLinkConsumer* decklink = (DeckLinkConsumer*) consumer->child;
+	int result = decklink->start( mlt_properties_get_int( properties, "preroll" ) ) ? 0 : 1;
 
 	// Check that we're not already running
-	if ( !mlt_properties_get_int( properties, "running" ) )
+	if ( !result && !mlt_properties_get_int( properties, "running" ) )
 	{
 		// Allocate a thread
 		pthread_t *pthread = (pthread_t*) calloc( 1, sizeof( pthread_t ) );
@@ -462,7 +509,7 @@ static int start( mlt_consumer consumer )
 		// Create the thread
 		pthread_create( pthread, NULL, run, consumer->child );
 	}
-	return 0;
+	return result;
 }
 
 /** Stop the consumer.
