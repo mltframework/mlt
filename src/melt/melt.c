@@ -642,13 +642,14 @@ query_all:
 
 			// Start the consumer
 			mlt_events_listen( properties, consumer, "consumer-fatal-error", ( mlt_listener )on_fatal_error );
-			mlt_consumer_start( consumer );
-
-			// Transport functionality
-			transport( melt, consumer );
-
-			// Stop the consumer
-			mlt_consumer_stop( consumer );
+			if ( mlt_consumer_start( consumer ) == 0 )
+			{
+				// Transport functionality
+				transport( melt, consumer );
+				
+				// Stop the consumer
+				mlt_consumer_stop( consumer );
+			}	
 		}
 		else if ( store != NULL && store != stdout && name != NULL )
 		{
