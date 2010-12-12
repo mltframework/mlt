@@ -274,9 +274,8 @@ static void *consumer_thread( void *arg )
 	// Identify the arg
 	consumer_sdl this = arg;
 
-	// Get the consumer and producer
+	// Get the consumer
 	mlt_consumer consumer = &this->parent;
-	mlt_producer producer = MLT_PRODUCER( mlt_service_get_producer( MLT_CONSUMER_SERVICE( consumer ) ) );
 
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -341,6 +340,7 @@ static void *consumer_thread( void *arg )
 			// If we aren't playing normally, then use the still
 			if ( speed != 1 )
 			{
+				mlt_producer producer = MLT_PRODUCER( mlt_service_get_producer( MLT_CONSUMER_SERVICE( consumer ) ) );
 				mlt_position duration = mlt_producer_get_playtime( producer );
 				int pause = 0;
 
