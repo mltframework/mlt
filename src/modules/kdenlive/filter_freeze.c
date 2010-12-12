@@ -51,12 +51,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if (do_freeze == 1) {
 		freeze_frame = mlt_properties_get_data( properties, "freeze_frame", NULL );
-		if( freeze_frame == NULL || mlt_properties_get_position( properties, "_frame" ) != pos || mlt_properties_get_int( props , "width" ) != mlt_properties_get_int( MLT_FRAME_PROPERTIES( freeze_frame ), "width" )  || mlt_properties_get_int( props , "height" ) != mlt_properties_get_int( MLT_FRAME_PROPERTIES( freeze_frame ), "height" ) )
+		if ( freeze_frame == NULL || mlt_properties_get_position( properties, "_frame" ) != pos )
 		{
 			// freeze_frame has not been fetched yet or is not useful, so fetch it and cache it.
 			mlt_producer producer = mlt_frame_get_original_producer(this);
 			mlt_producer_seek( producer, pos );
-	    
+
 			// Get the frame
 			mlt_service_get_frame( mlt_producer_service(producer), &freeze_frame, 0 );
 
