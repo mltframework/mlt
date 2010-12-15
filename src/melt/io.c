@@ -29,6 +29,9 @@
 #include <ctype.h>
 #ifndef WIN32
 #include <termios.h>
+#else
+// MinGW defines struct timespec in pthread.h
+#include <pthread.h>
 #endif
 #include <unistd.h>
 #include <sys/time.h>
@@ -165,6 +168,9 @@ int term_read( )
             return ch;
         return n;
     }
+#else
+	struct timespec tm = { 0, 40000 };
+	nanosleep( &tm, NULL );
 #endif
     return -1;
 }

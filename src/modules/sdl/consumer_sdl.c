@@ -139,8 +139,10 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		}
 	
 		// Set the sdl flags
-		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_RESIZABLE | SDL_DOUBLEBUF;
-
+		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_DOUBLEBUF;
+#if !defined(__DARWIN__) && !defined(WIN32)
+		this->sdl_flags |= SDL_RESIZABLE;
+#endif		
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
@@ -226,7 +228,7 @@ int consumer_start( mlt_consumer parent )
 		else
 		{
 			double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
-			this->window_width = ( double )this->height * display_ratio;
+			this->window_width = ( double )this->height * display_ratio + 0.5;
 			this->window_height = this->height;
 		}
 

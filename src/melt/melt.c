@@ -31,7 +31,7 @@
 
 #include <framework/mlt.h>
 
-#ifdef __DARWIN__
+#if defined(__DARWIN__) || defined(WIN32)
 #include <SDL.h>
 #endif
 
@@ -199,7 +199,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 	}
 }
 
-#ifdef __DARWIN__
+#if defined(__DARWIN__) || defined(WIN32)
 
 static void event_handling( mlt_producer producer, mlt_consumer consumer )
 {
@@ -263,7 +263,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				transport_action( producer, string );
 			}
 
-#ifdef __DARWIN__
+#if defined(__DARWIN__) || defined(WIN32)
 			event_handling( producer, consumer );
 #endif
 
@@ -453,6 +453,10 @@ int main( int argc, char **argv )
 	// Construct the factory
 	mlt_repository repo = mlt_factory_init( NULL );
 
+#ifdef WIN32
+	is_silent = 1;
+#endif
+	
 	for ( i = 1; i < argc; i ++ )
 	{
 		// Check for serialisation switch
