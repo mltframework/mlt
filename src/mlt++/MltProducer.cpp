@@ -128,7 +128,7 @@ int Producer::set_speed( double speed )
 	Event *event = consumer->setup_wait_for( "consumer-sdl-paused" );
 
 	if ( current != speed )
-		mlt_producer_set_speed( get_producer( ), speed );
+		result = mlt_producer_set_speed( get_producer( ), speed );
 	if ( consumer->is_valid() && current != 0 && speed == 0 )
 		consumer->wait_for( event );
 	delete event;
