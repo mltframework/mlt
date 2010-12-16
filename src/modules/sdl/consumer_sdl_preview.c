@@ -385,13 +385,12 @@ static void *consumer_thread( void *arg )
 				}
 				// Send the frame to the active child
 				if ( frame && !eos )
+				{
+					mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "refresh", 1 );
 					mlt_consumer_put_frame( this->active, frame );
+				}
 				if ( pause && speed == 0.0 )
 				{
-					// Wait for last frame to be shown and then fire paused event
-					mlt_event event = mlt_events_setup_wait_for( properties, "consumer-frame-show" );
-					mlt_events_wait_for( properties, event );
-					mlt_events_close_wait_for( properties, event );
 					mlt_events_fire( properties, "consumer-sdl-paused", NULL );
 				}
 			}
