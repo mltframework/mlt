@@ -430,7 +430,10 @@ static void *consumer_thread( void *arg )
 			{
 				pthread_mutex_lock( &this->refresh_mutex );
 				if ( this->running && speed == 0 && this->refresh_count <= 0 )
+				{
+					mlt_events_fire( properties, "consumer-sdl-paused", NULL );
 					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
+				}
 				this->refresh_count --;
 				pthread_mutex_unlock( &this->refresh_mutex );
 			}
