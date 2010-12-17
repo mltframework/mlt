@@ -16,6 +16,7 @@ SHFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compat
 endif
 
 OBJS = mlt_frame.o \
+	   mlt_version.o \
 	   mlt_geometry.o \
 	   mlt_deque.o \
 	   mlt_property.o \
@@ -40,6 +41,7 @@ OBJS = mlt_frame.o \
 	   mlt_cache.o
 
 INCS = mlt_consumer.h \
+	   mlt_version.h \
 	   mlt_factory.h \
 	   mlt_filter.h \
 	   mlt.h \

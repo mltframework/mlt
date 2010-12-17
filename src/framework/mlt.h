@@ -24,9 +24,6 @@
 #ifndef _MLT_H_
 #define _MLT_H_
 
-#define LIBMLT_VERSION_INT ((0<<16)+(5<<8)+10)
-#define LIBMLT_VERSION     0.5.10
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -51,6 +48,7 @@ extern "C"
 #include "mlt_repository.h"
 #include "mlt_log.h"
 #include "mlt_cache.h"
+#include "mlt_version.h"
 
 #ifdef __cplusplus
 }

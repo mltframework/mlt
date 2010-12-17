@@ -67,6 +67,7 @@ namespace Mlt {
 
 %include <framework/mlt_types.h>
 %include <framework/mlt_factory.h>
+%include <framework/mlt_version.h>
 int mlt_log_get_level( void );
 void mlt_log_set_level( int );
 %include <MltFactory.h>
