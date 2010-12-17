@@ -477,6 +477,7 @@ static void *run( void *arg )
 	}
 
 	// Indicate that the consumer is stopped
+	decklink->stop();
 	mlt_properties_set_int( properties, "running", 0 );
 	mlt_consumer_stopped( consumer );
 
