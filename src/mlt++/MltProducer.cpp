@@ -22,6 +22,7 @@
 #include "MltFilter.h"
 #include "MltProfile.h"
 #include "MltEvent.h"
+#include "MltConsumer.h"
 using namespace Mlt;
 
 Producer::Producer( ) :
@@ -124,13 +125,13 @@ int Producer::set_speed( double speed )
 {
 	double current = get_speed();
 	int result = 0;
-	Service *consumer = this->consumer();
-	Event *event = consumer->setup_wait_for( "consumer-sdl-paused" );
+	Consumer consumer( ( mlt_consumer ) mlt_service_consumer( get_service( ) ) );
+	Event *event = consumer.setup_wait_for( "consumer-sdl-paused" );
 
 	if ( current != speed )
 		result = mlt_producer_set_speed( get_producer( ), speed );
-	if ( consumer->is_valid() && current != 0 && speed == 0 )
-		consumer->wait_for( event );
+	if ( current != 0 && speed == 0 && consumer.is_valid() && !consumer.is_stopped() )
+		consumer.wait_for( event );
 	delete event;
 	
 	return result;
