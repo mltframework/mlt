@@ -513,7 +513,6 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	
 	pthread_mutex_lock( &mlt_sdl_mutex );
 	SDL_Surface *screen = SDL_GetVideoSurface( );
-	pthread_mutex_unlock( &mlt_sdl_mutex );
 	if ( !mlt_consumer_is_stopped( &this->parent ) && screen != NULL && this->sdl_screen != NULL && this->sdl_screen->pixels != NULL )
 	{
 		switch( this->sdl_screen->format->BytesPerPixel )
@@ -536,10 +535,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		}
 
 		// Flip it into sight
-		pthread_mutex_lock( &mlt_sdl_mutex );
 		SDL_Flip( this->sdl_screen );
-		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
+	pthread_mutex_unlock( &mlt_sdl_mutex );
 
 	sdl_unlock_display();
 	mlt_cocoa_autorelease_close( pool );
