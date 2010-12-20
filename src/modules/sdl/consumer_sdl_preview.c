@@ -46,7 +46,6 @@ struct consumer_sdl_s
 	int sdl_flags;
 	double last_speed;
 	mlt_position last_position;
-
 	pthread_cond_t refresh_cond;
 	pthread_mutex_t refresh_mutex;
 	int refresh_count;
@@ -153,6 +152,7 @@ static int consumer_start( mlt_consumer parent )
 		char *audio_device = mlt_properties_get( properties, "audio_device" );
 		char *output_display = mlt_properties_get( properties, "output_display" );
 		int progressive = mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" );
+		int audio_off = mlt_properties_get_int( properties, "audio_off" );
 
 		consumer_stop( parent );
 
@@ -186,6 +186,10 @@ static int consumer_start( mlt_consumer parent )
 
 		SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 		SDL_EnableUNICODE( 1 );
+
+		// init audio sub-system (if enabled)
+		if ( !audio_off )
+			SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 		// Pass properties down
 		mlt_properties_set_data( play, "transport_producer", mlt_properties_get_data( properties, "transport_producer", NULL ), 0, NULL, NULL );
@@ -223,6 +227,9 @@ static int consumer_start( mlt_consumer parent )
 		mlt_properties_set_int( play, "sdl_started", 1 );
 		mlt_properties_set_int( still, "sdl_started", 1 );
 
+		// Inform the sdl child consumer to not quit the audio sub-system
+		mlt_properties_set_int( play, "quit_audio_subsystem", 0 );
+
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
 
@@ -236,6 +243,9 @@ static int consumer_stop( mlt_consumer parent )
 
 	if ( this->joined == 0 )
 	{
+		// inform child sdl consumer to quit the audio sub-system
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this->play ), "quit_audio_subsystem", 1 );
+
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
 		int app_locked = mlt_properties_get_int( properties, "app_locked" );
 		void ( *lock )( void ) = mlt_properties_get_data( properties, "app_lock", NULL );
@@ -254,7 +264,6 @@ static int consumer_stop( mlt_consumer parent )
 		this->joined = 1;
 
 		if ( app_locked && lock ) lock( );
-		
 		pthread_mutex_lock( &mlt_sdl_mutex );
 		SDL_Quit( );
 		pthread_mutex_unlock( &mlt_sdl_mutex );
