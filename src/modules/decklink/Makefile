@@ -13,7 +13,7 @@ SRCS := $(OBJS:.o=.cpp)
 
 CXXFLAGS += $(CFLAGS) -Wno-deprecated -Wno-multichar -fno-rtti
 
-LDFLAGS += -ldl
+LDFLAGS += $(LIBDL)
 
 all: 	$(TARGET)
 	
