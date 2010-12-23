@@ -830,3 +830,25 @@ int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position
 
 	return samples;
 }
+
+void mlt_frame_write_ppm( mlt_frame frame )
+{
+	int width;
+	int height;
+	mlt_image_format format = mlt_image_rgb24;
+	uint8_t *image;
+	
+	if ( mlt_frame_get_image( frame, &image, &format, &width, &height, 0 ) == 0 )
+	{
+		FILE *file;
+		char filename[16];
+		
+		sprintf( filename, "frame-%05d.ppm", mlt_frame_get_position( frame ) );
+		file = fopen( filename, "wb" );
+		if ( !file )
+			return;
+		fprintf( file, "P6\n%d %d\n255\n", width, height);
+		fwrite( image, width * height * 3, 1, file );
+		fclose( file );
+	}
+}

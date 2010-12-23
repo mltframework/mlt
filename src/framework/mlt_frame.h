@@ -132,6 +132,7 @@ extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
 extern const char * mlt_image_format_name( mlt_image_format format );
 extern const char * mlt_audio_format_name( mlt_audio_format format );
+extern void mlt_frame_write_ppm( mlt_frame frame );
 
 /** This macro scales RGB into the YUV gamut - y is scaled by 219/255 and uv by 224/255. */
 #define RGB2YUV_601_SCALED(r, g, b, y, u, v)\
