@@ -450,13 +450,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		float cx = result.x + result.w / 2.0;
 		float cy = result.y + result.h / 2.0;
 		float lower_x = - cx;
-		float upper_x = (float) *width - cx;
 		float lower_y = - cy;
-		float upper_y = (float) *height - cy;
 		float x_offset = (float) b_width / 2.0;
 		float y_offset = (float) b_height / 2.0;
 		affine_t affine;
 		interpp interp = interpBL_b32;
+		int i, j; // loop counters
 
 		affine_init( affine.matrix );
 
@@ -515,9 +514,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			interp = interpBC_b32;
 
 		// Do the transform with interpolation
-		for ( y = lower_y; y < upper_y; y ++ )
+		for ( i = 0, y = lower_y; i < *height; i++, y++ )
 		{
-			for ( x = lower_x; x < upper_x; x ++ )
+			for ( j = 0, x = lower_x; j < *width; j++, x++ )
 			{
 				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
 				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
