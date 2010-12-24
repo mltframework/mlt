@@ -227,11 +227,28 @@ mlt_producer producer_swfdec_init( mlt_profile profile, mlt_service_type type, c
 			producer = &swfdec->parent;
 
 			// Set the resource property (required for all producers)
-			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "resource", filename );
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
+			mlt_properties_set( properties, "resource", filename );
 
 			// Set the callbacks
 			producer->close = (mlt_destructor) producer_close;
 			producer->get_frame = get_frame;
+
+			// Set the meta media attributes
+			swfdec->width = profile->width;
+			swfdec->height = profile->height;
+			mlt_properties_set_int( properties, "meta.media.nb_streams", 1 );
+			mlt_properties_set( properties, "meta.media.0.stream.type", "video" );
+			mlt_properties_set( properties, "meta.media.0.codec.name", "swf" );
+			mlt_properties_set( properties, "meta.media.0.codec.long_name", "Adobe Flash" );
+			mlt_properties_set( properties, "meta.media.0.codec.pix_fmt", "bgra" );
+			mlt_properties_set_int( properties, "meta.media.width", profile->width );
+			mlt_properties_set_int( properties, "meta.media.height", profile->height );
+			mlt_properties_set_double( properties, "meta.media.sample_aspect_num", 1.0 );
+			mlt_properties_set_double( properties, "meta.media.sample_aspect_den", 1.0 );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_num", profile->frame_rate_num );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_den", profile->frame_rate_den );
+			mlt_properties_set_int( properties, "meta.media.progressive", 1 );
 		}
 		else
 		{
