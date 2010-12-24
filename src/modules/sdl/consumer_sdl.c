@@ -214,16 +214,8 @@ int consumer_start( mlt_consumer parent )
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
 
-		if ( !audio_off )
-		{
-			if ( !sdl_started )
-				// Init the audio sub-system
-				SDL_InitSubSystem( SDL_INIT_AUDIO );
-			else
-				// write silence to the audio buffer, since the sdl_preview consumer is
-				// in charge of initializing the audio sub-system
-				SDL_PauseAudio( 0 );
-		}
+		if ( audio_off == 0 )
+			SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 		// Default window size
 		if ( mlt_properties_get_int( this->properties, "_arg_size" ) )
@@ -266,14 +258,9 @@ int consumer_stop( mlt_consumer parent )
 {
 	// Get the actual object
 	consumer_sdl this = parent->child;
-	
+
 	if ( this->joined == 0 )
 	{
-		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
-		int sdl_started = mlt_properties_get_int( properties, "sdl_started" );
-		int audio_off = mlt_properties_get_int( properties, "audio_off" );
-		int quit_audio_subsystem = mlt_properties_get_int( properties, "quit_audio_subsystem" );
-	
 		// Kill the thread and clean up
 		this->joined = 1;
 		this->running = 0;
@@ -285,25 +272,15 @@ int consumer_stop( mlt_consumer parent )
 			SDL_FreeYUVOverlay( this->sdl_overlay );
 		this->sdl_overlay = NULL;
 
-		if ( !audio_off )
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
 		{
-			if ( !sdl_started || quit_audio_subsystem )
-			{
-				// quit the audio sub-system, if this is a normal sdl consumer,
-				// or if the 'quit_audio_subsystem' property is set to 1
-				pthread_mutex_lock( &this->audio_mutex );
-				pthread_cond_broadcast( &this->audio_cond );
-				pthread_mutex_unlock( &this->audio_mutex );
-				SDL_QuitSubSystem( SDL_INIT_AUDIO );
-			}
-			else
-				// Write silence to the audio buffer.  This is used when the sdl_preview
-				// consumer is in charge of the audio sub-system.
-				SDL_PauseAudio( 1 );
+			pthread_mutex_lock( &this->audio_mutex );
+			pthread_cond_broadcast( &this->audio_cond );
+			pthread_mutex_unlock( &this->audio_mutex );
+			SDL_QuitSubSystem( SDL_INIT_AUDIO );
 		}
 
-		// Shutdown SDL if this consumer is not controlled by the SDL preview consumer
-		if ( !sdl_started )
+		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
 		{
 			pthread_mutex_lock( &mlt_sdl_mutex );
 			SDL_Quit( );
@@ -430,22 +407,13 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		request.samples = audio_buffer;
 		request.callback = sdl_fill_audio;
 		request.userdata = (void *)this;
-
-		// determine if we should open the audio
-		int audio_opened = mlt_properties_get_int( properties, "audio_opened" );
-
-		// open the audio device once
-		if ( !audio_opened && SDL_OpenAudio( &request, &got ) )
+		if ( SDL_OpenAudio( &request, &got ) != 0 )
 		{
 			mlt_log_error( MLT_CONSUMER_SERVICE( this ), "SDL failed to open audio: %s\n", SDL_GetError() );
 			init_audio = 2;
 		}
-		else
+		else if ( got.size != 0 )
 		{
-			// do not open the audio again for this consumer
-			mlt_properties_set_int( properties, "audio_opened", 1 );
-
-			// write silence to the audio buffer
 			SDL_PauseAudio( 0 );
 			init_audio = 0;
 		}
