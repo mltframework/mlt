@@ -110,10 +110,14 @@ static void bgra_to_rgba( uint8_t *src, uint8_t* dst, int width, int height )
 static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	producer_swfdec swfdec = mlt_frame_pop_service( frame );
+	mlt_service service = MLT_PRODUCER_SERVICE( &swfdec->parent );
+	mlt_profile profile = mlt_service_profile( service );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
+	mlt_service_lock( service );
+	
 	if ( !swfdec->player )
-		swfdec_open( swfdec, mlt_service_profile( MLT_PRODUCER_SERVICE( &swfdec->parent ) ) );
+		swfdec_open( swfdec, profile );
 
 	// Set width and height
 	*width = swfdec->width;
@@ -125,7 +129,6 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 
 	// Seek
 	mlt_position pos = mlt_properties_get_position( properties, "swfdec.position" );
-	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( &swfdec->parent ) );
 	if ( pos > swfdec->last_position )
 	{
 		gulong msec = 1000UL * ( pos - swfdec->last_position ) * profile->frame_rate_den / profile->frame_rate_num;
@@ -135,7 +138,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 	else if ( pos < swfdec->last_position )
 	{
 		swfdec_close( swfdec );
-		swfdec_open( swfdec, mlt_service_profile( MLT_PRODUCER_SERVICE( &swfdec->parent ) ) );
+		swfdec_open( swfdec, mlt_service_profile( service ) );
 		gulong msec = 1000UL * pos * profile->frame_rate_den / profile->frame_rate_num;
 		while ( msec > 0 )
 			msec -= swfdec_player_advance( swfdec->player, msec );
@@ -152,6 +155,8 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 
 	// Get image from surface
 	uint8_t *image = cairo_image_surface_get_data( swfdec->surface );
+	
+	mlt_service_unlock( service );
 	
 	// Convert to RGBA
 	bgra_to_rgba( image, *buffer, swfdec->width, swfdec->height );
