@@ -123,16 +123,23 @@ int Producer::frame( )
 
 int Producer::set_speed( double speed )
 {
-	double current = get_speed();
-	int result = 0;
-	Consumer consumer( ( mlt_consumer ) mlt_service_consumer( get_service( ) ) );
-	Event *event = consumer.setup_wait_for( "consumer-sdl-paused" );
+	return mlt_producer_set_speed( get_producer( ), speed );
+}
 
-	if ( current != speed )
-		result = mlt_producer_set_speed( get_producer( ), speed );
-	if ( current != 0 && speed == 0 && consumer.is_valid() && !consumer.is_stopped() )
-		consumer.wait_for( event );
-	delete event;
+int Producer::pause()
+{
+	int result = 0;
+
+	if ( get_speed() != 0 )
+	{
+		Consumer consumer( ( mlt_consumer ) mlt_service_consumer( get_service( ) ) );
+		Event *event = consumer.setup_wait_for( "consumer-sdl-paused" );
+		
+		result = mlt_producer_set_speed( get_producer( ), 0 );
+		if ( result == 0 && consumer.is_valid() && !consumer.is_stopped() )
+			consumer.wait_for( event );
+		delete event;
+	}
 	
 	return result;
 }

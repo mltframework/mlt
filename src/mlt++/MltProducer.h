@@ -55,6 +55,7 @@ namespace Mlt
 			int position( );
 			int frame( );
 			int set_speed( double speed );
+			int pause( );
 			double get_speed( );
 			double get_fps( );
 			int set_in_and_out( int in, int out );
