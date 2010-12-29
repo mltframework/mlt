@@ -1225,9 +1225,20 @@ static void *consumer_thread( void *arg )
 
 					// Get the audio samples
 					if ( n > 0 )
+					{
 						sample_fifo_fetch( fifo, audio_buf_1, n );
+					}
+					else if ( audio_codec_id == CODEC_ID_VORBIS && terminated )
+					{
+						// This prevents an infinite loop when some versions of vorbis do not
+						// increment pts when encoding silence.
+						audio_pts = video_pts;
+						break;
+					}
 					else
+					{
 						memset( audio_buf_1, 0, AUDIO_ENCODE_BUFFER_SIZE );
+					}
 					samples = n / channels;
 
 					// For each output stream
