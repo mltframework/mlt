@@ -13,7 +13,6 @@ CPPOBJS = qimage_wrapper.o kdenlivetitle_wrapper.o
 CXXFLAGS += $(CFLAGS) $(QTCXXFLAGS) $(EXIFCXXFLAGS) -Wno-deprecated
 
 LDFLAGS += $(QTLIBS) $(EXIFLIBS)
-LDFLAGS += -lstdc++
 
 ifdef USE_KDE
 LDFLAGS += -lkio
@@ -27,7 +26,7 @@ $(TARGET): $(OBJS) $(CPPOBJS)
 		$(CXX) $(SHFLAGS) -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
-		$(CC) -MM $(CFLAGS) $(QTCXXFLAGS) $^ 1>.depend
+		$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
 
 distclean:	clean
 		rm -f .depend config.h config.mak

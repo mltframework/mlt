@@ -40,6 +40,7 @@
 #include <QtCore/QSysInfo>
 #include <QtCore/QMutex>
 #include <QtCore/QtEndian>
+#include <QtCore/QTemporaryFile>
 #endif
 
 #ifdef USE_EXIF
@@ -339,6 +340,33 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 		mlt_properties_set_data( cache, image_key, cached, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
 	g_mutex.unlock();
+}
+
+extern void make_tempfile( producer_qimage self, const char *xml )
+{
+	// Generate a temporary file for the svg
+	QTemporaryFile tempFile( "mlt.XXXXXX" );
+
+	tempFile.setAutoRemove( false );
+	if ( tempFile.open() )
+	{
+		// Write the svg into the temp file
+		char *fullname = tempFile.fileName().toUtf8().data();
+
+		// Strip leading crap
+		while ( xml[0] != '<' )
+			xml++;
+
+		qint64 remaining_bytes = strlen( xml );
+		while ( remaining_bytes > 0 )
+			remaining_bytes -= tempFile.write( xml + strlen( xml ) - remaining_bytes, remaining_bytes );
+		tempFile.close();
+
+		mlt_properties_set( self->filenames, "0", fullname );
+
+		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( &self->parent ), "__temporary_file__",
+			fullname, 0, ( mlt_destructor )unlink, NULL );
+	}
 }
 
 } // extern "C"

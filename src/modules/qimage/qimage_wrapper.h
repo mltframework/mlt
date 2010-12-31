@@ -51,6 +51,8 @@ struct producer_qimage_s
 typedef struct producer_qimage_s *producer_qimage;
 
 extern void refresh_qimage( producer_qimage, mlt_frame, int width, int height );
+extern void make_tempfile( producer_qimage, const char *xml );
+
 #ifdef USE_KDE
 extern void init_qimage();
 #endif

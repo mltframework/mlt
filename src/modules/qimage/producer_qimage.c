@@ -96,30 +96,7 @@ static void load_filenames( producer_qimage this, mlt_properties producer_proper
 	// Read xml string
 	if ( strstr( filename, "<svg" ) )
 	{
-		// Generate a temporary file for the svg
-		char fullname[ 1024 ] = "/tmp/mlt.XXXXXX";
-		int fd = mkstemp( fullname );
-
-		if ( fd > -1 )
-		{
-			// Write the svg into the temp file
-			ssize_t remaining_bytes;
-			char *xml = filename;
-			
-			// Strip leading crap
-			while ( xml[0] != '<' )
-				xml++;
-			
-			remaining_bytes = strlen( xml );
-			while ( remaining_bytes > 0 )
-				remaining_bytes -= write( fd, xml + strlen( xml ) - remaining_bytes, remaining_bytes );
-			close( fd );
-
-			mlt_properties_set( this->filenames, "0", fullname );
-
-			// Teehe - when the producer closes, delete the temp file and the space allo
-			mlt_properties_set_data( producer_properties, "__temporary_file__", fullname, 0, ( mlt_destructor )unlink, NULL );
-		}
+		make_tempfile( this, filename );
 	}
 	// Obtain filenames
 	else if ( strchr( filename, '%' ) != NULL )
@@ -270,7 +247,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_qimage this = parent->child;
-	pthread_mutex_destroy( &this->mutex );
+	if ( this->mutex )
+		pthread_mutex_destroy( &this->mutex );
 	parent->close = NULL;
 	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
 	mlt_producer_close( parent );

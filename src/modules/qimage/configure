@@ -109,7 +109,7 @@ else
 	then
 
 		# test if we have a Qt3 or Qt4
-		if [ -f "$qimage_libdir/libQtCore.so" ] || [ -d "$qimage_libdir/QtGui.framework" ] && [ "$force_qt3" = "" ]
+		if [ -f "$qimage_libdir/libQtCore.so" ] || [ -d "$qimage_libdir/QtGui.framework" ] || [ -f "$qimage_libdir/libQtCore4.a" ] && [ "$force_qt3" = "" ]
 		then
 			echo "Qt version 4.x detected, will compile Qt4 qimage producer"
 			qt4_found=true
@@ -127,9 +127,13 @@ else
 			then
 				echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg ) >> config.mak
 				echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg) >> config.mak
+			elif [ -f "$qimage_libdir/libQtCore4.a" ]
+			then
+				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
+				echo QTLIBS=-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 >> config.mak
 			else
 				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-                                echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg >> config.mak
+				echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg >> config.mak
 			fi
 		else 
 		    if [ -d "$kde_includedir" ]
