@@ -33,6 +33,12 @@
 #define FREI0R_PLUGIN_PATH "/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/.frei0r-1/lib"
 #define GET_FREI0R_PATH (getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH)
 
+#ifdef WIN32
+#define LIBSUF ".dll"
+#else
+#define LIBSUF ".so"
+#endif
+
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_frame filter_process( mlt_filter this, mlt_frame frame );
 extern void filter_close( mlt_filter this );
@@ -260,15 +266,23 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 	while (dircount--){
 		char soname[PATH_MAX];
 
+#ifdef WIN32
+		char *firstname = strtok( strdup(id), "." );
+#else
 		char *save_firstptr = NULL;
-		char *firstname=strtok_r(strdup(id),".",&save_firstptr);
+		char *firstname = strtok_r( strdup(id), ".", &save_firstptr );
+#endif
 		char* directory = mlt_tokeniser_get_string (tokeniser, dircount);
 
-		firstname=strtok_r(NULL,".",&save_firstptr);
+#ifdef WIN32
+		firstname = strtok( NULL, "." );
+#else
+		firstname = strtok_r( NULL, ".", &save_firstptr );
+#endif
 		if (strncmp(directory, "$HOME", 5))
-			snprintf(soname, PATH_MAX, "%s/%s.so", directory, firstname);
+			snprintf(soname, PATH_MAX, "%s/%s" LIBSUF, directory, firstname );
 		else
-			snprintf(soname, PATH_MAX, "%s%s/%s.so", getenv("HOME"), strchr(directory, '/'), firstname);
+			snprintf(soname, PATH_MAX, "%s%s/%s" LIBSUF, getenv("HOME"), strchr(directory, '/'), firstname );
 
 		if (firstname){
 
@@ -308,20 +322,24 @@ MLT_REPOSITORY
 			snprintf(dirname, PATH_MAX, "%s", directory);
 		else
 			snprintf(dirname, PATH_MAX, "%s%s", getenv("HOME"), strchr(directory, '/'));
-		mlt_properties_dir_list(direntries, dirname ,"*.so",1);
+		mlt_properties_dir_list(direntries, dirname ,"*" LIBSUF, 1);
 
 		for (i=0; i<mlt_properties_count(direntries);i++){
 			char* name=mlt_properties_get_value(direntries,i);
 			char* shortname=name+strlen(dirname)+1;
+#ifdef WIN32
+			char* firstname = strtok( shortname, "." );
+#else
 			char *save_firstptr = NULL;
+			char* firstname = strtok_r( shortname, ".", &save_firstptr );
+#endif
 			char pluginname[1024]="frei0r.";
-			char* firstname = strtok_r ( shortname , "." , &save_firstptr );
 			strcat(pluginname,firstname);
 
 			if ( mlt_properties_get( blacklist, firstname ) )
 				continue;
 
-			void* handle=dlopen(strcat(name,".so"),RTLD_LAZY);
+			void* handle=dlopen(strcat(name, LIBSUF),RTLD_LAZY);
 			if (handle){
 				void (*plginfo)(f0r_plugin_info_t*)=dlsym(handle,"f0r_get_plugin_info");
 
