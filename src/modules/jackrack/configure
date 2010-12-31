@@ -9,13 +9,14 @@ then
 	pkg-config libxml-2.0 > /dev/null 2>&1
 	disable_xml2=$?
 
-	disable_ladspa=1
 	ladspa_prefix=`which listplugins 2> /dev/null`
 	if [ "$ladspa_prefix" != "" ]
 	then
 		ladspa_prefix=`dirname "$ladspa_prefix"`
-		disable_ladspa=`[ -f "$ladspa_prefix/include/ladspa.h" ] && echo 1 || echo 0`
+	else
+		ladspa_prefix=`pkg-config --variable=prefix jack`
 	fi
+	disable_ladspa=`[ -f "$ladspa_prefix/include/ladspa.h" ] && echo 0 || echo 1`
 
 	if [ "$disable_jack" = "1" -o "$disable_xml2" = "1" -o "$disable_ladspa" = "1" ]
 	then
