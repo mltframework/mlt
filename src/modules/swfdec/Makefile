@@ -14,6 +14,10 @@ CFLAGS += `pkg-config --cflags swfdec-0.9 2>/dev/null`
 LDFLAGS += `pkg-config --libs swfdec-0.8 2>/dev/null`
 LDFLAGS += `pkg-config --libs swfdec-0.9 2>/dev/null`
 
+ifeq ($(targetos), MinGW)
+LDFLAGS += -enable-auto-import -lz
+endif
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)
