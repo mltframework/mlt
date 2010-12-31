@@ -22,7 +22,11 @@
 #include <framework/mlt_consumer.h>
 #include <framework/mlt_factory.h>
 #include <gdk/gdk.h>
+#ifdef WIN32
+#include <gdk/gdkwin32.h>
+#else
 #include <gdk/gdkx.h>
+#endif
 #include <gtk/gtk.h>
 
 mlt_consumer consumer_gtk2_preview_init( mlt_profile profile, GtkWidget *widget )
@@ -33,9 +37,13 @@ mlt_consumer consumer_gtk2_preview_init( mlt_profile profile, GtkWidget *widget 
 	// This is a nasty little hack which is required by SDL
 	if ( widget != NULL )
 	{
-        Window xwin = GDK_WINDOW_XWINDOW( widget->window );
+#ifdef WIN32
+		HWND xwin = GDK_WINDOW_HWND( widget->window );
+#else
+		Window xwin = GDK_WINDOW_XWINDOW( widget->window );
+#endif
         char windowhack[ 32 ];
-        sprintf( windowhack, "%ld", xwin );
+        sprintf( windowhack, "%ld", (long) xwin );
         setenv( "SDL_WINDOWID", windowhack, 1 );
 	}
 

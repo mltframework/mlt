@@ -39,9 +39,17 @@ LDFLAGS += `pkg-config pangoft2 --libs`
 ifeq ($(targetos),FreeBSD)
 LDFLAGS += -liconv
 endif
+ifeq ($(targetos), MinGW)
+LDFLAGS += -liconv
+endif
 endif
 
 SRCS := $(OBJS:.o=.c)
+
+ifeq ($(targetos), MinGW)
+OBJS += ../../win32/win32.o
+SRCS += ../../win32/win32.c
+endif
 
 all: 	$(TARGET)
 

@@ -124,7 +124,7 @@ static void load_filenames( producer_pixbuf this, mlt_properties producer_proper
 	{
 		// Generate a temporary file for the svg
 		char fullname[ 1024 ] = "/tmp/mlt.XXXXXX";
-		int fd = mkstemp( fullname );
+		int fd = g_mkstemp( fullname );
 
 		if ( fd > -1 )
 		{
