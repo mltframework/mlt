@@ -1096,13 +1096,10 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 			xmlDocDumpMemory( context->value_doc, &value, &size );
 			mlt_properties_set( properties, context->property, _s(value) );
 #ifdef WIN32
-			xmlFreeFunc myXmlFree = NULL;
-			xmlMemGet( &myXmlFree, NULL, NULL, NULL);
-			if ( myXmlFree )
-				myXmlFree( value );
-#else
-			xmlFree( value );
+			xmlFreeFunc xmlFree = NULL;
+			xmlMemGet( &xmlFree, NULL, NULL, NULL);
 #endif
+			xmlFree( value );
 			xmlFreeDoc( context->value_doc );
 			context->value_doc = NULL;
 		}

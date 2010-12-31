@@ -752,13 +752,10 @@ static int consumer_start( mlt_consumer this )
 			xmlDocDumpMemoryEnc( doc, &buffer, &length, "utf-8" );
 			mlt_properties_set( properties, resource, _s(buffer) );
 #ifdef WIN32
-			xmlFreeFunc myXmlFree = NULL;
-			xmlMemGet( &myXmlFree, NULL, NULL, NULL);
-			if ( myXmlFree )
-				myXmlFree( buffer );
-#else
-			xmlFree( buffer );
+			xmlFreeFunc xmlFree = NULL;
+			xmlMemGet( &xmlFree, NULL, NULL, NULL);
 #endif
+			xmlFree( buffer );
 		}
 		else
 		{
