@@ -1095,7 +1095,14 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 			// Serialise the tree to get value
 			xmlDocDumpMemory( context->value_doc, &value, &size );
 			mlt_properties_set( properties, context->property, _s(value) );
+#ifdef WIN32
+			xmlFreeFunc myXmlFree = NULL;
+			xmlMemGet( &myXmlFree, NULL, NULL, NULL);
+			if ( myXmlFree )
+				myXmlFree( value );
+#else
 			xmlFree( value );
+#endif
 			xmlFreeDoc( context->value_doc );
 			context->value_doc = NULL;
 		}
