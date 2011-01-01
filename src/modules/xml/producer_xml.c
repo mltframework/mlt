@@ -128,6 +128,8 @@ static int context_push_service( deserialise_context this, mlt_service that, enu
 static mlt_service context_pop_service( deserialise_context this, enum service_type *type )
 {
 	mlt_service result = NULL;
+	
+	*type = invalid_type;
 	if ( this->stack_service_size > 0 )
 	{
 		result = this->stack_service[ -- this->stack_service_size ];
@@ -479,7 +481,7 @@ static void on_end_playlist( deserialise_context context, const xmlChar *name )
 	}
 	else
 	{
-		fprintf( stderr, "Invalid state of playlist end\n" );
+		fprintf( stderr, "Invalid state of playlist end %d\n", type );
 	}
 }
 
@@ -558,14 +560,20 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		// Instantiate the producer
 		if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
 		{
-			char temp[ 1024 ];
-			strncpy( temp, mlt_properties_get( properties, "mlt_service" ), 1024 );
-			if ( resource != NULL )
+			char *service_name = mlt_properties_get( properties, "mlt_service" );
+			if ( resource )
 			{
+				char *temp = calloc( 1, strlen( service_name ) + strlen( resource ) + 2 );
+				strcat( temp, service_name );
 				strcat( temp, ":" );
-				strncat( temp, resource, 1023 - strlen( temp ) );
+				strcat( temp, resource );
+				producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, temp ) );
+				free( temp );
 			}
-			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, temp ) );
+			else
+			{
+				producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, service_name ) );
+			}
 		}
 
 		// Just in case the plugin requested doesn't exist...
@@ -1122,7 +1130,7 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 	context->depth ++;
 	
 	// Build a tree from nodes within a property value
-	if ( context->is_value == 1 )
+	if ( context->is_value == 1 && context->pass == 1 )
 	{
 		xmlNodePtr node = xmlNewNode( NULL, name );
 		
@@ -1174,7 +1182,7 @@ static void on_end_element( void *ctx, const xmlChar *name )
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 	
 //printf("on_end_element: %s\n", name );
-	if ( context->is_value == 1 && xmlStrcmp( name, _x("property") ) != 0 )
+	if ( context->is_value == 1 && context->pass == 1 && xmlStrcmp( name, _x("property") ) != 0 )
 		context_pop_node( context );
 	else if ( xmlStrcmp( name, _x("multitrack") ) == 0 )
 		on_end_multitrack( context, name );
@@ -1491,6 +1499,8 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	xmlcontext->sax = NULL;
 	xmlcontext->_private = NULL;
 	xmlFreeParserCtxt( xmlcontext );
+	context->stack_node_size = 0;
+	context->stack_service_size = 0;
 
 	// Setup the second pass
 	context->pass ++;

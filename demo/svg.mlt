@@ -9,8 +9,7 @@
 	<!ENTITY st6 "fill-rule:nonzero;clip-rule:nonzero;stroke:#000000;stroke-miterlimit:4;">
 ]>
 <mlt>
-<playlist>
-  <entry>
+  <playlist>
     <producer out="99" length="99">
       <property name="mlt_service">pixbuf</property>
       <property name="resource">
@@ -45,6 +44,5 @@
 
       </property>
     </producer>
-  </entry>
-</playlist>
+  </playlist>
 </mlt>
