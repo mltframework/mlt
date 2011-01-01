@@ -105,7 +105,8 @@ static int consumer_stop( mlt_consumer this )
 		mlt_properties_set_int( properties, "joined", 1 );
 
 		// Wait for termination
-		pthread_join( *thread, NULL );
+		if ( thread )
+			pthread_join( *thread, NULL );
 	}
 
 	return 0;
