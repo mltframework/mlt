@@ -1,6 +1,43 @@
 MLT Release Notes
 -----------------
 
+Version 0.6.0
+
+The recommended version of FFmpeg for use with this release is 0.6.1.
+There were quite a few enhancements and changes including a minor interface
+change. Therefore, this release gets a jump in the versioning.
+
+Framework
+ * mlt_profile
+   - Added (Y'CbCr) colorspace attribute.
+   - Added mlt_profile_clone().
+ * Added mlt_consumer_position() and Mlt::Consumer::position().
+ * Added Mlt::Properties::wait_for(string).
+ * Added a version API: mlt_version_get_int() and others.
+ * Added Mlt::Producer::pause().
+ * Added mlt_frame_write_ppm() for debugging.
+
+Melt
+ * Added automatic detection of profile from first input when profile
+   not specified.
+ * Now exits with error result when consumer fails fatally.
+
+Modules
+ * Added swfdec producer for Flash files including variables support.
+   (Does not support audio.)
+ * Added consumer for Blackmagic Design DeckLink SDI and Intensity HDMI.
+ * Added Y'CbCr colorspace conversion and option to use full luma range.
+ * Added (de)serialization of profile to XML.
+ * Added support for #frame# variable to the data_show filter.
+ * Added support for frei0r string parameters.
+ * Make FFmpeg formats and codecs available as properties (not just stderr).
+ * Try to load .xml file as MLT XML.
+ * Added a consumer-sdl-paused event to sdl_preview.
+ * Added a consumer-fatal-error event to avformat.
+ * Change composite transition to default to progressive rendering; field-
+   based rendering available only explicitly.
+
+
 Version 0.5.10
 
 This is a quick followup to the 0.5.8 release to address an issue I want to
