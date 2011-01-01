@@ -52,6 +52,8 @@
 
 #define MAX_AUDIO_STREAMS (8)
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
+#define AUDIO_BUFFER_SIZE (1024 * 42)
+#define VIDEO_BUFFER_SIZE (2048 * 1024)
 
 void avformat_lock( );
 void avformat_unlock( );
@@ -924,13 +926,13 @@ static void *consumer_thread( void *arg )
 	int samples = 0;
 
 	// AVFormat audio buffer and frame size
-	int audio_outbuf_size = ( 1024 * 42 );
+	int audio_outbuf_size = AUDIO_BUFFER_SIZE;
 	uint8_t *audio_outbuf = av_malloc( audio_outbuf_size );
 	int audio_input_frame_size = 0;
 
 	// AVFormat video buffer and frame count
 	int frame_count = 0;
-	int video_outbuf_size = ( 1024 * 1024 );
+	int video_outbuf_size = VIDEO_BUFFER_SIZE;
 	uint8_t *video_outbuf = av_malloc( video_outbuf_size );
 
 	// Used for the frame properties
