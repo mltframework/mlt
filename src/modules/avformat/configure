@@ -3,7 +3,7 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-svn_rev="0.6"
+svn_rev="0.6.1"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
 [ "$odd_version" -eq "1" ] && svn_rev="HEAD"
@@ -26,7 +26,7 @@ FFmpeg/avformat options:
   --avformat-no-devices   - Disable support for libavdevice
   --avformat-no-vdpau     - Disable support for NVIDIA VDPAU
 
-  NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.6" ] && echo $svn_rev || echo SVN-r$svn_rev).
+  NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.6.1" ] && echo $svn_rev || echo SVN-r$svn_rev).
 
 EOF
 
@@ -102,7 +102,7 @@ else
 			echo
 			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
 			echo
-			if [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
+			if [ "$svn_rev" = "0.6.1" ] || [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
 			then
 				svn checkout svn://svn.mplayerhq.hu/ffmpeg/branches/$svn_rev ffmpeg
 			else
@@ -115,7 +115,7 @@ else
 		echo "CFLAGS+=-DAVDATADIR=\\\"${prefix}/share/ffmpeg/\\\"" >> config.mak
 		echo "CFLAGS+=-I`pwd`/ffmpeg" >> config.mak
 		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil" >> config.mak
-		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ] || [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
+		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ] || [ "$svn_rev" = "0.6.1" ] || [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
 		then
 			echo "LDFLAGS+=-L`pwd`/ffmpeg/libswscale" >> config.mak
 			echo "SWSCALE=1" >> config.mak
