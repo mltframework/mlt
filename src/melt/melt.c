@@ -543,6 +543,8 @@ query_all:
 	}
 
 	// Create profile if not set explicitly
+	if ( getenv( "MLT_PROFILE" ) )
+		profile = mlt_profile_init( NULL );
 	if ( profile == NULL )
 		profile = mlt_profile_init( NULL );
 	else
