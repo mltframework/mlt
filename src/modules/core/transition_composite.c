@@ -1346,6 +1346,9 @@ mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type 
 		// Use alignment (and hence alpha of b frame)
 		mlt_properties_set_int( properties, "aligned", 1 );
 
+		// Default to progressive rendering
+		mlt_properties_set_int( properties, "progressive", 1 );
+		
 		// Inform apps and framework that this is a video only transition
 		mlt_properties_set_int( properties, "_transition_type", 1 );
 	}
