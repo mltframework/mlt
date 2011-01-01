@@ -347,6 +347,7 @@ static void guess_profile( mlt_producer melt, mlt_profile profile )
 
 	if ( ! mlt_service_get_frame( MLT_PRODUCER_SERVICE(melt), &fr, 0 ) && fr )
 	{
+		mlt_properties_set_double( MLT_FRAME_PROPERTIES( fr ), "consumer_aspect_ratio", mlt_profile_sar( profile ) );
 		if ( ! mlt_frame_get_image( fr, &buffer, &fmt, &w, &h, 0 ) )
 		{
 			// Some source properties are not exposed until after the first get_image call.
