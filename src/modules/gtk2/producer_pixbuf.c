@@ -529,7 +529,12 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_properties, "aspect_ratio" ) );
+		
+		double force_ratio = mlt_properties_get_double( producer_properties, "force_aspect_ratio" );
+		if ( force_ratio > 0.0 )
+			mlt_properties_set_double( properties, "aspect_ratio", force_ratio );
+		else
+			mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_properties, "aspect_ratio" ) );
 
 		// Push the get_image method
 		mlt_frame_push_get_image( *frame, producer_get_image );
