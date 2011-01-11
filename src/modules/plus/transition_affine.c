@@ -395,7 +395,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
 
 	double consumer_ar = mlt_properties_get_double( a_props, "consumer_aspect_ratio" );
-	const char *interps = mlt_properties_get( b_props, "rescale.interp" );
 
 	// Structures for geometry
 	struct mlt_geometry_item_s result;
@@ -423,6 +422,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
 
 	// Suppress padding and aspect normalization.
+	const char *interps = strdup( mlt_properties_get( b_props, "rescale.interp" ) );
 	mlt_properties_set( b_props, "rescale.interp", "none" );
 	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
 		mlt_properties_set_double( b_props, "aspect_ratio", consumer_ar );
@@ -463,7 +463,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		get_affine( &affine, this, ( float )position );
 		dz = MapZ( affine.matrix, 0, 0 );
 		if ( ( int )abs( dz * 1000 ) < 25 )
+		{
+			free( interps );
 			return 0;
+		}
 
 		// Factor scaling into the transformation based on output resolution.
 		if ( mlt_properties_get_int( properties, "distort" ) )
@@ -521,11 +524,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
 				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
 				if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
-					interp( b_image, b_width, b_height, dx, dy, p );
+					interp( b_image, b_width, b_height, dx, dy, result.mix/100.0, p );
 				p += 4;
 			}
 		}
 	}
+	free( interps );
 
 	return 0;
 }
