@@ -30,7 +30,7 @@ SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cc)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS) $(CPPOBJS)
-		$(CC) -shared -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
+		$(CXX) -shared -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
