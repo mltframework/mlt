@@ -25,9 +25,6 @@
 //#include <stdio.h>
 #include <iostream>
 #include <iomanip>
-#ifndef __FreeBSD__
-#include <byteswap.h>
-#endif /* __FreeBSD__ */
 
 using std::cout;
 using std::hex;

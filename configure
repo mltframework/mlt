@@ -97,6 +97,14 @@ build_config()
 		echo "RDYNAMIC=-rdynamic"
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
+		NetBSD)
+		[ "$(uname -m)" = "amd64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
+		echo "OPTIMISATIONS+=-ffast-math"
+		echo "CFLAGS+=-pthread"
+		echo "SHFLAGS=-shared"
+		echo "RDYNAMIC=-rdynamic"
+		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
+		;;
 		*)
 		;;
 		esac
@@ -171,7 +179,7 @@ case $targetos in
 	Darwin)
 	LIBSUF=".dylib"
 	;;
-	Linux|FreeBSD)
+	Linux|FreeBSD|NetBSD)
 	LIBSUF=".so"
 	;;
 	*)

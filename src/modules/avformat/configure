@@ -36,7 +36,7 @@ else
 	Darwin)
 		export LIBSUF=.dylib
 		;;
-	Linux|FreeBSD)
+	Linux|FreeBSD|NetBSD)
 		export LIBSUF=.so
 		;;
 	*)

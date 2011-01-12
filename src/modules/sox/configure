@@ -8,7 +8,7 @@ then
 	Darwin)
 		LDD="otool -L"
 		;;
-	Linux|FreeBSD)
+	Linux|FreeBSD|NetBSD)
 		LDD="ldd"
 		;;
 	*)
