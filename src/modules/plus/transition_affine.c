@@ -422,7 +422,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
 
 	// Suppress padding and aspect normalization.
-	const char *interps = mlt_properties_get( b_props, "rescale.interp" );
+	char *interps = mlt_properties_get( b_props, "rescale.interp" );
 	if ( interps )
 		interps = strdup( interps );
 	mlt_properties_set( b_props, "rescale.interp", "none" );
