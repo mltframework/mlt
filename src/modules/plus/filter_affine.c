@@ -91,7 +91,16 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				mlt_properties_set_double( MLT_FRAME_PROPERTIES( a_frame ), "aspect_ratio", consumer_ar );
 			mlt_properties_set_double( MLT_FRAME_PROPERTIES( a_frame ), "consumer_aspect_ratio", consumer_ar );
 
+			// Add the affine transition onto the frame stack
 			mlt_transition_process( transition, a_frame, this );
+
+			if (mlt_properties_get_int( properties, "use_normalised" ))
+			{
+				// Use the normalised width & height from the a_frame
+				*width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame ), "normalised_width" );
+				*height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame ), "normalised_height" );
+			}
+			
 			mlt_frame_get_image( a_frame, image, format, width, height, writable );
 			mlt_properties_set_data( frame_properties, "affine_frame", a_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
 			mlt_properties_set_data( frame_properties, "image", *image, *width * *height * 4, NULL, NULL );
