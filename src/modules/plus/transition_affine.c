@@ -422,7 +422,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
 
 	// Suppress padding and aspect normalization.
-	const char *interps = strdup( mlt_properties_get( b_props, "rescale.interp" ) );
+	const char *interps = mlt_properties_get( b_props, "rescale.interp" );
+	if ( interps )
+		interps = strdup( interps );
 	mlt_properties_set( b_props, "rescale.interp", "none" );
 	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
 		mlt_properties_set_double( b_props, "aspect_ratio", consumer_ar );
@@ -464,7 +466,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		dz = MapZ( affine.matrix, 0, 0 );
 		if ( ( int )abs( dz * 1000 ) < 25 )
 		{
-			free( interps );
+			if ( interps )
+				free( interps );
 			return 0;
 		}
 
@@ -478,7 +481,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			// Determine scale with respect to aspect ratio.
 			double consumer_dar = consumer_ar * normalised_width / normalised_height;
-			double b_dar = mlt_properties_get_double( b_props, "aspect_ratio" ) * b_width / b_height;
+			double b_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
+			double b_dar = b_ar * b_width / b_height;
 			
 			if ( b_dar > consumer_dar )
 			{
@@ -490,6 +494,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				scale_x = geom_scale_y * ( scale_x == 0 ? 1 : scale_x );
 				scale_y = geom_scale_y * ( scale_y == 0 ? 1 : scale_y );
 			}
+			scale_x *= consumer_ar / b_ar;
 		}
 		if ( scale )
 		{
@@ -523,13 +528,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
 				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
-				if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
+				if ( dx >= 0 && dx < (b_width - 1) && dy >=0 && dy < (b_height - 1) )
 					interp( b_image, b_width, b_height, dx, dy, result.mix/100.0, p );
 				p += 4;
 			}
 		}
 	}
-	free( interps );
+	if ( interps )
+		free( interps );
 
 	return 0;
 }
