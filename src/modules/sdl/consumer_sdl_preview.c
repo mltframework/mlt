@@ -130,7 +130,7 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *na
 	{
 		consumer_sdl this = parent->child;
 		pthread_mutex_lock( &this->refresh_mutex );
-		this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count ++;
+		this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count + 1;
 		pthread_cond_broadcast( &this->refresh_cond );
 		pthread_mutex_unlock( &this->refresh_mutex );
 	}
