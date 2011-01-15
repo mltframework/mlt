@@ -36,6 +36,8 @@ typedef struct PointF
     double y;
 } PointF;
 
+enum MODES { MODE_RGB, MODE_ALPHA, MODE_MASK };
+
 /**
  * Extracts the polygon points stored in \param string
  * \param string string containing the points in the format: x1;y1#x2;y2#...
@@ -88,7 +90,7 @@ int ncompare( const void *a, const void *b )
  */
 void fillMap( PointF *vertices, int count, int width, int height, int *map )
 {
-    int nodes, nodeX[1024], pixelX, pixelY, i, j, swap;
+    int nodes, nodeX[1024], pixelY, i, j;
     
     // Loop through the rows of the image
     for ( pixelY = 0; pixelY < height; pixelY++ )
@@ -105,7 +107,7 @@ void fillMap( PointF *vertices, int count, int width, int height, int *map )
 
         qsort( nodeX, nodes, sizeof( int ), ncompare );
 
-        // Fill the pixels between node pairs.
+        // Set map values for points between the node pairs to 1
         for ( i = 0; i < nodes; i += 2 )
         {
             if ( nodeX[i] >= width )
@@ -151,15 +153,34 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             uint8_t *p = *image;
             uint8_t *q = *image + *width * *height * 4;
 
-            while ( p != q )
+            int pixel;
+            switch ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "mode" ) )
             {
-                int pixel = (p - *image) / 4;
-                if ( !map[pixel] ) {
-                    // pixel is not in polygon
-                    // => set to black
-                    p[0] = p[1] = p[2] = 0;
+            case MODE_RGB:
+                while ( p != q )
+                {
+                    pixel = (p - *image) / 4;
+                    if ( !map[pixel] )
+                        p[0] = p[1] = p[2] = 0;
+                    p += 4;
                 }
-                p += 4;
+                break;
+            case MODE_ALPHA:
+                while ( p != q )
+                {
+                    pixel = (p - *image) / 4;
+                    p[3] = map[pixel] * 255;
+                    p += 4;
+                }
+                break;
+            case MODE_MASK:
+                while ( p != q )
+                {
+                    pixel = (p - *image) / 4;
+                    p[0] = p[1] = p[2] = map[pixel] * 255;
+                    p += 4;
+                }
+                break;
             }
 
             free( map );
@@ -174,6 +195,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
     char *polygon = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "polygon" );
+    char *modeStr = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "mode" );
 
     if ( polygon == NULL || strcmp( polygon, "" ) == 0 ) {
         // :( we are redundant
@@ -184,7 +206,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
     int count = parsePolygonString( polygon, &points );
     int length = count * sizeof( struct PointF );
 
+    enum MODES mode = MODE_RGB;
+    if ( strcmp( modeStr, "rgb" ) == 0 )
+        mode = MODE_RGB;
+    else if ( strcmp( modeStr, "alpha" ) == 0 )
+        mode = MODE_ALPHA;
+    else if ( strcmp( modeStr, "mask" ) == 0)
+        mode = MODE_MASK;
+
     mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "points", points, length, free, NULL );
+    mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "mode", (int)mode );
     mlt_frame_push_get_image( frame, filter_get_image );
 
     return frame;
@@ -198,6 +229,7 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
         if ( this != NULL )
         {
                 this->process = filter_process;
+                mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mode", "rgb" );
                 if ( arg != NULL )
                     mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "polygon", arg );
         }
