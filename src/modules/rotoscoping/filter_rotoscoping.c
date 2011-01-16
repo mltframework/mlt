@@ -1,5 +1,5 @@
 /*
- * rotoscoping.c -- (not yet)keyframable vector based rotoscoping
+ * rotoscoping.c -- keyframable vector based rotoscoping
  * Copyright (C) 2011 Till Theato <root@ttill.de>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -77,21 +77,22 @@ int ncompare( const void *a, const void *b )
 }
 
 /**
- * Determines which points are located in the polygon and sets their value in \param map to 1
+ * Determines which points are located in the polygon and sets their value in \param map to \param value
  * \param vertices points defining the polygon
  * \param count number of vertices
  * \param with x range
  * \param height y range
+ * \param value value identifying points in the polygon
  * \param map array of integers of the dimension width * height.
- *            The map entries belonging to the points in the polygon will be set to 1, the other entries remain untouched.
+ *            The map entries belonging to the points in the polygon will be set to \param value, the other entries remain untouched.
  * 
  * based on public-domain code by Darel Rex Finley, 2007
  * \see: http://alienryderflex.com/polygon_fill/
  */
-void fillMap( PointF *vertices, int count, int width, int height, int *map )
+void fillMap( PointF *vertices, int count, int width, int height, int value, int *map )
 {
     int nodes, nodeX[1024], pixelY, i, j;
-    
+
     // Loop through the rows of the image
     for ( pixelY = 0; pixelY < height; pixelY++ )
     {
@@ -117,7 +118,7 @@ void fillMap( PointF *vertices, int count, int width, int height, int *map )
                 nodeX[i] = MAX( 0, nodeX[i] );
                 nodeX[i+1] = MIN( nodeX[i+1], width );
                 for ( j = nodeX[i]; j < nodeX[i+1]; j++ )
-                    map[width * pixelY + j] = 1;
+                    map[width * pixelY + j] = value;
             }
         }
     }
@@ -127,6 +128,8 @@ void fillMap( PointF *vertices, int count, int width, int height, int *map )
 */
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+    mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+
     // Get the image
     *format = mlt_image_rgb24a;
     int error = mlt_frame_get_image( this, image, format, width, height, 1 );
@@ -136,7 +139,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
     {
         struct PointF *points;
         int length, count;
-        points = mlt_properties_get_data( MLT_FRAME_PROPERTIES( this ), "points", &length );
+        points = mlt_properties_get_data( properties, "points", &length );
         count = length / sizeof( struct PointF );
 
         int i;
@@ -148,13 +151,19 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
         if ( count )
         {
             int *map = calloc( *width * *height, sizeof( int ) );
-            fillMap( points, count, *width, *height, map );
+
+            int invert = mlt_properties_get_int( properties, "invert" );
+            if ( invert )
+                for ( i = 0; i < *width * *height; ++i )
+                    map[i] = 1;
+
+            fillMap( points, count, *width, *height, !invert, map );
 
             uint8_t *p = *image;
             uint8_t *q = *image + *width * *height * 4;
 
             int pixel;
-            switch ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "mode" ) )
+            switch ( mlt_properties_get_int( properties, "mode" ) )
             {
             case MODE_RGB:
                 while ( p != q )
@@ -194,8 +203,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 */
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-    char *polygon = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "polygon" );
-    char *modeStr = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "mode" );
+    mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+    mlt_properties frameProperties = MLT_FRAME_PROPERTIES( frame );
+    char *polygon = mlt_properties_get( properties, "polygon" );
+    char *modeStr = mlt_properties_get( properties, "mode" );
 
     if ( polygon == NULL || strcmp( polygon, "" ) == 0 ) {
         // :( we are redundant
@@ -324,8 +335,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
     else if ( strcmp( modeStr, "mask" ) == 0)
         mode = MODE_MASK;
 
-    mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "points", points, length, free, NULL );
-    mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "mode", (int)mode );
+    mlt_properties_set_data( frameProperties, "points", points, length, free, NULL );
+    mlt_properties_set_int( frameProperties, "mode", (int)mode );
+    mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
     mlt_frame_push_get_image( frame, filter_get_image );
 
     return frame;
