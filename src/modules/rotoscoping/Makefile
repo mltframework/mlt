@@ -7,7 +7,8 @@ include ../../../config.mak
 TARGET = ../libmltrotoscoping$(LIBSUF)
 
 OBJS = factory.o \
-	   filter_rotoscoping.o
+	   filter_rotoscoping.o \
+	   cJSON.o
 
 
 LDFLAGS += -lm

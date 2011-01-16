@@ -21,6 +21,8 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_tokeniser.h>
 
+#include "cJSON.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -38,36 +40,34 @@ typedef struct PointF
 
 enum MODES { MODE_RGB, MODE_ALPHA, MODE_MASK };
 
+
 /**
- * Extracts the polygon points stored in \param string
- * \param string string containing the points in the format: x1;y1#x2;y2#...
- * \param points pointer to array of points. Will be allocated and filled with the points in \param string
+ * Turns the array of json elements into an array of points.
+ * \param array cJSON array. values have to be arrays of 2 doubles ( [ [x, y], [x, y], ... ] )
+ * \param points pointer to array of points. Will be allocated and filled with the points in \param array
  * \return number of points
  */
-int parsePolygonString( char *string, PointF **points )
+int json2Polygon( cJSON *array, PointF **points )
 {
-    // Create a tokeniser
-    mlt_tokeniser tokens = mlt_tokeniser_init( );
+    int count = cJSON_GetArraySize( array );
+    cJSON *child = array->child;
+    *points = malloc( count * sizeof( struct PointF ) );
 
-    // Tokenise
-    if ( string != NULL )
-        mlt_tokeniser_parse_new( tokens, string, "#" );
-
-    // Iterate through each token
-    int count = mlt_tokeniser_count( tokens );
-    *points = malloc( (count + 1) * sizeof( struct PointF ) );
-    int i;
-    for ( i = 0; i < count; ++i )
+    int i = 0;
+    do
     {
-        char *value = mlt_tokeniser_get_string( tokens, i );
-        (*points)[i].x = atof( value );
-        (*points)[i].y = atof( strchr( value, ';' ) + 1 );
-    }
+        if ( cJSON_GetArraySize( child ) == 2 )
+        {
+            (*points)[i].x = child->child->valuedouble;
+            (*points)[i].y = child->child->next->valuedouble;
+            i++;
+        }
+    } while ( ( child = child->next ) );
 
-    // Remove the tokeniser
-    mlt_tokeniser_close( tokens );
+    if ( i < count )
+        *points = realloc( *points, i * sizeof( struct PointF ) );
 
-    return count;
+    return i;
 }
 
 /** helper for using qsort with an array of integers. */
@@ -202,9 +202,119 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
         return frame;
     }
 
+    cJSON *root = cJSON_Parse( polygon );
+
+    if ( root == NULL ) {
+        // parameter malformed
+        return frame;
+    }
+
     struct PointF *points;
-    int count = parsePolygonString( polygon, &points );
+    int count;
+
+    if ( root->type == cJSON_Array )
+    {
+        /*
+         * constant (over time)
+         */
+
+        count = json2Polygon( root, &points );
+    }
+    else
+    {
+        /*
+         * keyframes
+         */
+
+        mlt_position time, pos1, pos2;
+        time = mlt_frame_get_position( frame );
+
+        cJSON *keyframe = root->child;
+        cJSON *keyframeOld = NULL;
+        while ( atoi( keyframe->string ) < time && keyframe->next )
+        {
+            keyframeOld = keyframe;
+            keyframe = keyframe->next;
+        }
+
+        if ( keyframeOld == NULL ) {
+            // parameter has only 1 keyframe or we are before the 1. keyframe
+            keyframeOld = keyframe;
+        }
+
+        if ( !keyframe )
+        {
+            if ( keyframeOld )
+            {
+                // parameter malformed
+                keyframe = keyframeOld;
+            }
+            else if ( root->child )
+            {
+                // parameter malformed
+                keyframe = root->child;
+                keyframeOld = keyframe;
+            }
+            else
+            {
+                // json object has no children
+                cJSON_Delete( root );
+                return frame;
+            }
+        }
+
+        pos2 = atoi( keyframe->string );
+        pos1 = atoi( keyframeOld->string );
+
+        if ( pos1 >= pos2 || time >= pos2 )
+        {
+            // keyframes in wrong order or after last keyframe
+            count = json2Polygon( keyframe, &points );
+        }
+        else
+        {
+            /*
+             * pos1 < time < pos2
+             */
+
+            struct PointF *p1, *p2;
+            int c1, c2;
+            c1 = json2Polygon( keyframeOld, &p1 );
+            c2 = json2Polygon( keyframe, &p2 );
+
+            if ( c1 > c2 )
+            {
+                // number of points decreasing from p1 to p2; we can't handle this yet
+                count = c2;
+                points = malloc( count * sizeof( struct PointF ) );
+                memcpy( points, p2, count * sizeof( struct PointF ) );
+                free( p1 );
+                free( p2 );
+            }
+            else
+            {
+                // range 0-1
+                double position = ( time - pos1 ) / (double)( pos2 - pos1 + 1 );
+
+                count = c1;  // additional points in p2 are ignored
+                points = malloc( count * sizeof( struct PointF ) );
+                int i;
+                for ( i = 0; i < count; i++ )
+                {
+                    // linear interp.
+                    points[i].x = p1[i].x + ( p2[i].x - p1[i].x ) * position;
+                    points[i].y = p1[i].y + ( p2[i].y - p1[i].y ) * position;
+                }
+
+                free( p1 );
+                free( p2 );
+            }
+        }
+    }
+
     int length = count * sizeof( struct PointF );
+    cJSON_Delete( root );
+
 
     enum MODES mode = MODE_RGB;
     if ( strcmp( modeStr, "rgb" ) == 0 )
