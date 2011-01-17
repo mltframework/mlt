@@ -169,7 +169,14 @@ else
 	elif [ "$shared_ffmpeg" != "" ]
 	then
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
-		echo "CFLAGS+=-DAVDATADIR=\\\"${shared_ffmpeg}/share/ffmpeg/\\\"" >> config.mak
+		case $targetos in
+			MINGW32_NT-*)
+				echo "CFLAGS+=-DAVDATADIR=\\\"share/ffmpeg/\\\"" >> config.mak
+			;;
+			*)
+				echo "CFLAGS+=-DAVDATADIR=\\\"${shared_ffmpeg}/share/ffmpeg/\\\"" >> config.mak
+			;;
+		esac
 		echo "CFLAGS+=$(pkg-config --cflags libavformat)" >> config.mak
 		echo "LDFLAGS+=$(pkg-config --libs-only-L libavformat)" >> config.mak
 		if [ "$devices" = "true" ]

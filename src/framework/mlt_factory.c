@@ -27,11 +27,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WIN32
+#include <windows.h>
+/** the default subdirectory of the libdir for holding modules (plugins) */
+#define PREFIX_LIB "lib\\mlt"
+/** the default subdirectory of the install prefix for holding module (plugin) data */
+#define PREFIX_DATA "share\\mlt"
+#else
 /** the default subdirectory of the libdir for holding modules (plugins) */
 #define PREFIX_LIB LIBDIR "/mlt"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
 #define PREFIX_DATA PREFIX "/share/mlt"
-
+#endif
 
 /** holds the full path to the modules directory - initialized and retained for the entire session */
 static char *mlt_directory = NULL;
@@ -106,6 +113,7 @@ mlt_repository mlt_factory_init( const char *directory )
 		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
+
 		mlt_properties_set_or_default( global_properties, "MLT_DATA", getenv( "MLT_DATA" ), PREFIX_DATA );
 	}
 
@@ -364,7 +372,8 @@ void mlt_factory_close( )
 	{
 		mlt_properties_close( event_object );
 		mlt_properties_close( global_properties );
-		mlt_repository_close( repository );
+		if ( repository )
+			mlt_repository_close( repository );
 		free( mlt_directory );
 		mlt_directory = NULL;
 		mlt_pool_close( );
