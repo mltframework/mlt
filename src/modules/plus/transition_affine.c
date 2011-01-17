@@ -64,8 +64,9 @@ static mlt_geometry transition_parse_keys( mlt_transition this, const char *name
 	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
 
 	// Get the in and out position
+	int always_active = mlt_properties_get_int( properties, "always_active" );
 	mlt_position in = mlt_transition_get_in( this );
-	mlt_position out = mlt_transition_get_out( this );
+	mlt_position out = !always_active ? mlt_transition_get_out( this ) : -1;
 
 	// Determine length and obtain cycle
 	int length = out - in + 1;
@@ -385,8 +386,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Assign the current position to the name
 	mlt_position position =  mlt_properties_get_position( a_props, name );
-	mlt_position in = mlt_properties_get_position( properties, "in" );
-	mlt_position out = mlt_properties_get_position( properties, "out" );
+	
+	mlt_properties props = mlt_properties_get_data( b_props, "_producer", NULL );
+	int always_active = mlt_properties_get_int( properties, "always_active" );
+
+	mlt_position in = !always_active ? mlt_properties_get_position( properties, "in" ) : mlt_properties_get_int( props, "in" );
+	mlt_position out = !always_active ? mlt_properties_get_position( properties, "out" ) : mlt_properties_get_int( props, "out" );
 	int mirror = mlt_properties_get_position( properties, "mirror" );
 	int length = out - in + 1;
 
