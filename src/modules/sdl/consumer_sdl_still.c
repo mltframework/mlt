@@ -163,7 +163,7 @@ static int consumer_start( mlt_consumer parent )
 
 		// Default window size
 		double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
-		this->window_width = ( double )this->height * display_ratio;
+		this->window_width = ( double )this->height * display_ratio + 0.5;
 		this->window_height = this->height;
 
 		if ( sdl_started == 0 && preview_off == 0 )

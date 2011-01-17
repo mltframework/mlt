@@ -140,7 +140,7 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 	
 		// Set the sdl flags
 		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_DOUBLEBUF;
-#if !defined(__DARWIN__) && !defined(WIN32)
+#if !defined(__DARWIN__)
 		this->sdl_flags |= SDL_RESIZABLE;
 #endif		
 		// Allow thread to be started/stopped
