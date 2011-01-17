@@ -10,7 +10,8 @@ LIBFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compa
 else ifeq ($(targetos), MinGW)
 NAME = libmlt++$(LIBSUF)
 TARGET = libmlt++-$(soversion)$(LIBSUF)
-libdir = $(prefix)
+CXXFLAGS += -DMLTPP_EXPORTS
+LIBFLAGS += -Wl,--output-def,libmlt++.def
 else
 NAME = libmlt++$(LIBSUF)
 TARGET = $(NAME).$(version)
@@ -67,10 +68,14 @@ distclean:	clean
 
 install:
 	$(INSTALL) -d "$(DESTDIR)$(libdir)"
-	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)
-	if [ "$(targetos)" != "MinGW" ]; then \
-		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME) ; \
+	if [ "$(targetos)" = "MinGW" ]; then \
+		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(prefix) ; \
+		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)/libmlt++.dll ; \
+		$(INSTALL) -m 644 libmlt++.def $(DESTDIR)$(libdir) ; \
+	else \
+		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
+		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME) ; \
 	fi
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
 	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"

@@ -11,7 +11,7 @@ SHFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compat
 else ifeq ($(targetos), MinGW)
 NAME = libmlt$(LIBSUF)
 TARGET = libmlt-$(soversion)$(LIBSUF)
-libdir = $(prefix)
+SHFLAGS += -Wl,--output-def,libmlt.def
 else
 NAME = libmlt$(LIBSUF)
 TARGET = $(NAME).$(version)
@@ -97,8 +97,12 @@ clean:
 
 install:
 	install -d $(DESTDIR)$(libdir)
-	install -m 755 $(TARGET) $(DESTDIR)$(libdir)
-	if [ "$(targetos)" != "MinGW" ]; then \
+	if [ "$(targetos)" = "MinGW" ]; then \
+		install -m 755 $(TARGET) $(DESTDIR)$(prefix) ; \
+		install -m 755 $(TARGET) $(DESTDIR)$(libdir)/libmlt.dll ; \
+		install -m 644 libmlt.def $(DESTDIR)$(libdir) ; \
+	else \
+		install -m 755 $(TARGET) $(DESTDIR)$(libdir) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME) ; \
 	fi

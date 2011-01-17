@@ -21,14 +21,14 @@
 #ifndef MLTPP_CONFIG_H_
 #define MLTPP_CONFIG_H_
 
-#if defined(WIN32) && defined(_MSC_VER)
+#if defined(WIN32)
     #ifdef MLTPP_EXPORTS
         #define MLTPP_DECLSPEC __declspec( dllexport )
     #else
         #define MLTPP_DECLSPEC __declspec( dllimport )
     #endif
 #else
-	#define MLTPP_DECLSPEC
+    #define MLTPP_DECLSPEC
 #endif
 
 #endif
