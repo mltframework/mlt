@@ -1,5 +1,5 @@
-CXXFLAGS += -Wall -g `pkg-config mlt-framework --cflags` -I ../mlt++
-LDFLAGS += -L../mlt++ -lmlt++ `pkg-config mlt-framework --libs`
+CXXFLAGS += -Wall -g `pkg-config mlt++ --cflags` 
+LDFLAGS += `pkg-config mlt++ --libs`
 CC=c++
 
 all:		play
