@@ -30,42 +30,62 @@
 
 #define MAX( x, y ) x > y ? x : y
 #define MIN( x, y ) x < y ? x : y
+#define SQR( x ) ( x ) * ( x )
 
-/** x, y pair with double precision */
+/** x, y tuple with double precision */
 typedef struct PointF
 {
     double x;
     double y;
 } PointF;
 
+typedef struct BPointF
+{
+    struct PointF h1;
+    struct PointF p;
+    struct PointF h2;
+} BPointF;
+
 enum MODES { MODE_RGB, MODE_ALPHA, MODE_MASK };
 
 
+/** Turns a json array with two children into a point (x, y tuple). */
+void jsonGetPoint( cJSON *json, PointF *point )
+{
+    if ( cJSON_GetArraySize( json ) == 2 )
+    {
+        point->x = json->child->valuedouble;
+        point->y = json->child->next->valuedouble;
+    }
+}
+
 /**
- * Turns the array of json elements into an array of points.
- * \param array cJSON array. values have to be arrays of 2 doubles ( [ [x, y], [x, y], ... ] )
+ * Turns the array of json elements into an array of Bézier points.
+ * \param array cJSON array. values have to be Bézier points: handle 1, point , handl2
+ *              ( [ [ [h1x, h1y], [px, py], [h2x, h2y] ], ... ] )
  * \param points pointer to array of points. Will be allocated and filled with the points in \param array
  * \return number of points
  */
-int json2Polygon( cJSON *array, PointF **points )
+int json2BCurves( cJSON *array, BPointF **points )
 {
     int count = cJSON_GetArraySize( array );
     cJSON *child = array->child;
-    *points = malloc( count * sizeof( struct PointF ) );
+    *points = malloc( count * sizeof( BPointF ) );
 
     int i = 0;
     do
     {
-        if ( cJSON_GetArraySize( child ) == 2 )
+        if ( cJSON_GetArraySize( child ) == 3 )
         {
-            (*points)[i].x = child->child->valuedouble;
-            (*points)[i].y = child->child->next->valuedouble;
+            jsonGetPoint( child->child , &(*points)[i].h1 );
+            jsonGetPoint( child->child->next, &(*points)[i].p );
+            jsonGetPoint( child->child->next->next, &(*points)[i].h2 );
             i++;
         }
     } while ( ( child = child->next ) );
 
     if ( i < count )
-        *points = realloc( *points, i * sizeof( struct PointF ) );
+        *points = realloc( *points, i * sizeof( BPointF ) );
 
     return i;
 }
@@ -124,6 +144,56 @@ void fillMap( PointF *vertices, int count, int width, int height, int value, int
     }
 }
 
+/** Linear interp. with t = 0.5 */
+static void lerpHalf( const PointF *a, const PointF *b, PointF *result )
+{
+    result->x = a->x + ( ( b->x - a->x ) * .5 );
+    result->y = a->y + ( ( b->y - a->y ) * .5 );
+}
+
+/** Determines the point in the middle of the Bézier curve (t = 0.5) defined by \param p1 and \param p2
+ * using De Casteljau's algorithm.
+ */
+static void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
+{
+    struct PointF ab, bc, cd, abbc, bccd, final;
+
+    lerpHalf( &(p1->p), &(p1->h2), &ab );
+    lerpHalf( &(p1->h2), &(p2->h1), &bc );
+    lerpHalf( &(p2->h1), &(p2->p), &cd );
+    lerpHalf( &ab, &bc, &abbc );
+    lerpHalf( &bc, &cd, &bccd );
+    lerpHalf( &abbc, &bccd, &final );
+
+    p1->h2 = ab;
+    p2->h1 = cd;
+    mid->h1 = abbc;
+    mid->p = final;
+    mid->h2 = bccd;
+}
+
+void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size, const double *errorSquared )
+{
+    double errorSqr = SQR( p1.p.x - p2.p.x ) + SQR( p1.p.y - p2.p.y );
+    if ( errorSqr <= *errorSquared )
+        return;
+
+    BPointF mid;
+    deCasteljau( &p1, &p2, &mid );
+
+    curvePoints( p1, mid, points, count, size, errorSquared );
+
+    if ( *size  == *count )
+    {
+        *size += 50; //(int)sqrt(errorSqr);
+        *points = realloc( *points, *size * sizeof ( struct PointF ) );
+    }
+
+    (*points)[(*count)++] = mid.p;
+
+    curvePoints( mid, p2, points, count, size, errorSquared );
+}
+
 /** Do it :-).
 */
 static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
@@ -137,15 +207,30 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
     // Only process if we have no error and a valid colour space
     if ( !error )
     {
+        BPointF *bpoints;
         struct PointF *points;
-        int length, count;
-        points = mlt_properties_get_data( properties, "points", &length );
-        count = length / sizeof( struct PointF );
+        int bcount, length, count, size, i, j;
+        bpoints = mlt_properties_get_data( properties, "points", &length );
+        bcount = length / sizeof( BPointF );
 
-        int i;
-        for ( i = 0; i < count; ++i ) {
-            points[i].x *= *width;
-            points[i].y *= *height;
+        for ( i = 0; i < bcount; i++ )
+        {
+            bpoints[i].h1.x *= *width;
+            bpoints[i].p.x *= *width;
+            bpoints[i].h2.x *= *width;
+            bpoints[i].h1.y *= *height;
+            bpoints[i].p.y *= *height;
+            bpoints[i].h2.y *= *height;
+        }
+
+        double errorSqr = 2;
+        count = 0;
+        size = 1;
+        points = malloc( size * sizeof( struct PointF ) );
+        for ( i = 0; i < bcount; i++ )
+        {
+            j = (i + 1) % bcount;
+            curvePoints( bpoints[i], bpoints[j], &points, &count, &size, &errorSqr );
         }
 
         if ( count )
@@ -194,6 +279,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
             free( map );
         }
+
+        free( points );
     }
 
     return error;
@@ -220,16 +307,15 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
         return frame;
     }
 
-    struct PointF *points;
-    int count;
+    BPointF *points;
+    int count, i, j;
 
     if ( root->type == cJSON_Array )
     {
         /*
          * constant (over time)
          */
-
-        count = json2Polygon( root, &points );
+        count = json2BCurves( root, &points );
     }
     else
     {
@@ -280,7 +366,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
         if ( pos1 >= pos2 || time >= pos2 )
         {
             // keyframes in wrong order or after last keyframe
-            count = json2Polygon( keyframe, &points );
+            count = json2BCurves( keyframe, &points );
         }
         else
         {
@@ -288,17 +374,17 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
              * pos1 < time < pos2
              */
 
-            struct PointF *p1, *p2;
+            BPointF *p1, *p2;
             int c1, c2;
-            c1 = json2Polygon( keyframeOld, &p1 );
-            c2 = json2Polygon( keyframe, &p2 );
+            c1 = json2BCurves( keyframeOld, &p1 );
+            c2 = json2BCurves( keyframe, &p2 );
 
             if ( c1 > c2 )
             {
                 // number of points decreasing from p1 to p2; we can't handle this yet
                 count = c2;
-                points = malloc( count * sizeof( struct PointF ) );
-                memcpy( points, p2, count * sizeof( struct PointF ) );
+                points = malloc( count * sizeof( BPointF ) );
+                memcpy( points, p2, count * sizeof( BPointF ) );
                 free( p1 );
                 free( p2 );
             }
@@ -308,13 +394,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
                 double position = ( time - pos1 ) / (double)( pos2 - pos1 + 1 );
 
                 count = c1;  // additional points in p2 are ignored
-                points = malloc( count * sizeof( struct PointF ) );
-                int i;
+                points = malloc( count * sizeof( BPointF ) );
                 for ( i = 0; i < count; i++ )
                 {
                     // linear interp.
-                    points[i].x = p1[i].x + ( p2[i].x - p1[i].x ) * position;
-                    points[i].y = p1[i].y + ( p2[i].y - p1[i].y ) * position;
+                    points[i].h1.x = p1[i].h1.x + ( p2[i].h1.x - p1[i].h1.x ) * position;
+                    points[i].h1.y = p1[i].h1.y + ( p2[i].h1.y - p1[i].h1.y ) * position;
+                    points[i].p.x = p1[i].p.x + ( p2[i].p.x - p1[i].p.x ) * position;
+                    points[i].p.y = p1[i].p.y + ( p2[i].p.y - p1[i].p.y ) * position;
+                    points[i].h2.x = p1[i].h2.x + ( p2[i].h2.x - p1[i].h2.x ) * position;
+                    points[i].h2.y = p1[i].h2.y + ( p2[i].h2.y - p1[i].h2.y ) * position;
                 }
 
                 free( p1 );
@@ -322,9 +411,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
             }
         }
     }
-
-    int length = count * sizeof( struct PointF );
     cJSON_Delete( root );
+
+    int length = count * sizeof( BPointF );
 
 
     enum MODES mode = MODE_RGB;
@@ -332,7 +421,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
         mode = MODE_RGB;
     else if ( strcmp( modeStr, "alpha" ) == 0 )
         mode = MODE_ALPHA;
-    else if ( strcmp( modeStr, "mask" ) == 0)
+    else if ( strcmp( modeStr, "mask" ) == 0 )
         mode = MODE_MASK;
 
     mlt_properties_set_data( frameProperties, "points", points, length, free, NULL );
