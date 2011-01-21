@@ -19,7 +19,6 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
-#include <framework/mlt_tokeniser.h>
 
 #include "cJSON.h"
 
@@ -47,7 +46,40 @@ typedef struct BPointF
 } BPointF;
 
 enum MODES { MODE_RGB, MODE_ALPHA, MODE_MASK };
+const char *MODESTR[3] = { "rgb", "alpha", "mask" };
 
+
+/** Returns the index of \param string in \param stringList.
+ * Useful for assigning string parameters to enums. */
+int stringValue( const char *string, const char **stringList, int max )
+{
+    int i;
+    for ( i = 0; i < max; i++ )
+        if ( strcmp( stringList[i], string ) == 0 )
+            return i;
+    return 0;
+}
+
+/** Linear interp */
+void lerp( const PointF *a, const PointF *b, PointF *result, double t )
+{
+    result->x = a->x + ( b->x - a->x ) * t;
+    result->y = a->y + ( b->y - a->y ) * t;
+}
+
+/** Linear interp. with t = 0.5
+ * Speed gain? */
+void lerpHalf( const PointF *a, const PointF *b, PointF *result )
+{
+    result->x = a->x + ( b->x - a->x ) * .5;
+    result->y = a->y + ( b->y - a->y ) * .5;
+}
+
+/** Helper for using qsort with an array of integers. */
+int ncompare( const void *a, const void *b )
+{
+    return *(const int*)a - *(const int*)b;
+}
 
 /** Turns a json array with two children into a point (x, y tuple). */
 void jsonGetPoint( cJSON *json, PointF *point )
@@ -90,12 +122,6 @@ int json2BCurves( cJSON *array, BPointF **points )
     return i;
 }
 
-/** helper for using qsort with an array of integers. */
-int ncompare( const void *a, const void *b )
-{
-    return *(const int*)a - *(const int*)b;
-}
-
 /**
  * Determines which points are located in the polygon and sets their value in \param map to \param value
  * \param vertices points defining the polygon
@@ -104,18 +130,16 @@ int ncompare( const void *a, const void *b )
  * \param height y range
  * \param value value identifying points in the polygon
  * \param map array of integers of the dimension width * height.
- *            The map entries belonging to the points in the polygon will be set to \param value, the other entries remain untouched.
- * 
- * based on public-domain code by Darel Rex Finley, 2007
- * \see: http://alienryderflex.com/polygon_fill/
+ *            The map entries belonging to the points in the polygon will be set to \param set * 255 the others to !set * 255.
  */
-void fillMap( PointF *vertices, int count, int width, int height, int value, int *map )
+void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, uint8_t *map )
 {
-    int nodes, nodeX[1024], pixelY, i, j;
+    int nodes, nodeX[1024], pixelY, i, j, offset;
 
     // Loop through the rows of the image
     for ( pixelY = 0; pixelY < height; pixelY++ )
     {
+        offset = width * pixelY;
         /*
          * Build a list of nodes.
          * nodes are located at the borders of the polygon
@@ -128,33 +152,42 @@ void fillMap( PointF *vertices, int count, int width, int height, int value, int
 
         qsort( nodeX, nodes, sizeof( int ), ncompare );
 
+        if ( nodes && nodeX[0] > 0 )
+            for ( j = 0; j < nodeX[0]; j++ )
+                map[offset + j] = !set * 255;
+        else if ( !nodes )
+            for ( j = 0; j < width; j++ )
+                map[offset + j] = !set * 255;
+
         // Set map values for points between the node pairs to 1
-        for ( i = 0; i < nodes; i += 2 )
+        for ( i = 0; i < nodes - 1; i++ )
         {
             if ( nodeX[i] >= width )
                 break;
+
             if ( nodeX[i+1] > 0 )
             {
                 nodeX[i] = MAX( 0, nodeX[i] );
                 nodeX[i+1] = MIN( nodeX[i+1], width );
-                for ( j = nodeX[i]; j < nodeX[i+1]; j++ )
-                    map[width * pixelY + j] = value;
+                if ( i % 2 )
+                    for ( j = nodeX[i]; j < nodeX[i+1]; j++ )
+                        map[offset + j] = !set * 255;
+                else
+                    for ( j = nodeX[i]; j < nodeX[i+1]; j++ )
+                        map[offset + j] = set * 255;
             }
         }
-    }
-}
 
-/** Linear interp. with t = 0.5 */
-static void lerpHalf( const PointF *a, const PointF *b, PointF *result )
-{
-    result->x = a->x + ( ( b->x - a->x ) * .5 );
-    result->y = a->y + ( ( b->y - a->y ) * .5 );
+        if ( nodes && nodeX[nodes-1] < width )
+            for ( j = nodeX[nodes-1]; j < width; j++ )
+                map[offset + j] = !set * 255;
+    }
 }
 
 /** Determines the point in the middle of the Bézier curve (t = 0.5) defined by \param p1 and \param p2
  * using De Casteljau's algorithm.
  */
-static void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
+void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
 {
     struct PointF ab, bc, cd, abbc, bccd, final;
 
@@ -172,6 +205,13 @@ static void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
     mid->h2 = bccd;
 }
 
+/**
+ * Calculates points for the cubic Bézier curve defined by \param p1 and \param p2.
+ * Points are calculated until the squared distanced between neighbour points is smaller than \param errorSquared.
+ * \param points Pointer to list of points. Will be allocted and filled with calculated points.
+ * \param count Number of calculated points in \param points
+ * \param size Allocated size of \param points (in elements not in bytes)
+ */
 void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size, const double *errorSquared )
 {
     double errorSqr = SQR( p1.p.x - p2.p.x ) + SQR( p1.p.y - p2.p.y );
@@ -185,7 +225,7 @@ void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size
 
     if ( *size  == *count )
     {
-        *size += 50; //(int)sqrt(errorSqr);
+        *size += (int)sqrt( errorSqr / *errorSquared );
         *points = realloc( *points, *size * sizeof ( struct PointF ) );
     }
 
@@ -215,15 +255,16 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
         for ( i = 0; i < bcount; i++ )
         {
+            // map to image dimensions
             bpoints[i].h1.x *= *width;
-            bpoints[i].p.x *= *width;
+            bpoints[i].p.x  *= *width;
             bpoints[i].h2.x *= *width;
             bpoints[i].h1.y *= *height;
-            bpoints[i].p.y *= *height;
+            bpoints[i].p.y  *= *height;
             bpoints[i].h2.y *= *height;
         }
 
-        double errorSqr = 2;
+        double errorSqr = (double)SQR( mlt_properties_get_int( properties, "precision" ) );
         count = 0;
         size = 1;
         points = malloc( size * sizeof( struct PointF ) );
@@ -235,26 +276,19 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
         if ( count )
         {
-            int *map = calloc( *width * *height, sizeof( int ) );
-
-            int invert = mlt_properties_get_int( properties, "invert" );
-            if ( invert )
-                for ( i = 0; i < *width * *height; ++i )
-                    map[i] = 1;
-
-            fillMap( points, count, *width, *height, !invert, map );
+            uint8_t *map = calloc( *width * *height, sizeof( uint8_t ) );
+            uint8_t setPoint = !mlt_properties_get_int( properties, "invert" );
+            fillMap( points, count, *width, *height, setPoint, map );
 
             uint8_t *p = *image;
             uint8_t *q = *image + *width * *height * 4;
 
-            int pixel;
             switch ( mlt_properties_get_int( properties, "mode" ) )
             {
             case MODE_RGB:
                 while ( p != q )
                 {
-                    pixel = (p - *image) / 4;
-                    if ( !map[pixel] )
+                    if ( !map[(p - *image) / 4] )
                         p[0] = p[1] = p[2] = 0;
                     p += 4;
                 }
@@ -262,16 +296,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             case MODE_ALPHA:
                 while ( p != q )
                 {
-                    pixel = (p - *image) / 4;
-                    p[3] = map[pixel] * 255;
+                    p[3] = map[(p - *image) / 4];
                     p += 4;
                 }
                 break;
             case MODE_MASK:
                 while ( p != q )
                 {
-                    pixel = (p - *image) / 4;
-                    p[0] = p[1] = p[2] = map[pixel] * 255;
+                    p[0] = p[1] = p[2] = map[(p - *image) / 4];
                     p += 4;
                 }
                 break;
@@ -292,23 +324,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
     mlt_properties properties = MLT_FILTER_PROPERTIES( this );
     mlt_properties frameProperties = MLT_FRAME_PROPERTIES( frame );
-    char *polygon = mlt_properties_get( properties, "polygon" );
+    char *spline = mlt_properties_get( properties, "spline" );
     char *modeStr = mlt_properties_get( properties, "mode" );
 
-    if ( polygon == NULL || strcmp( polygon, "" ) == 0 ) {
-        // :( we are redundant
-        return frame;
-    }
+    cJSON *root = cJSON_Parse( spline );
 
-    cJSON *root = cJSON_Parse( polygon );
-
-    if ( root == NULL ) {
-        // parameter malformed
+    if ( root == NULL )
         return frame;
-    }
 
     BPointF *points;
-    int count, i, j;
+    int count, i;
 
     if ( root->type == cJSON_Array )
     {
@@ -397,13 +422,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
                 points = malloc( count * sizeof( BPointF ) );
                 for ( i = 0; i < count; i++ )
                 {
-                    // linear interp.
-                    points[i].h1.x = p1[i].h1.x + ( p2[i].h1.x - p1[i].h1.x ) * position;
-                    points[i].h1.y = p1[i].h1.y + ( p2[i].h1.y - p1[i].h1.y ) * position;
-                    points[i].p.x = p1[i].p.x + ( p2[i].p.x - p1[i].p.x ) * position;
-                    points[i].p.y = p1[i].p.y + ( p2[i].p.y - p1[i].p.y ) * position;
-                    points[i].h2.x = p1[i].h2.x + ( p2[i].h2.x - p1[i].h2.x ) * position;
-                    points[i].h2.y = p1[i].h2.y + ( p2[i].h2.y - p1[i].h2.y ) * position;
+                    lerp( &(p1[i].h1), &(p2[i].h1), &(points[i].h1), position );
+                    lerp( &(p1[i].p), &(p2[i].p), &(points[i].p), position );
+                    lerp( &(p1[i].h2), &(p2[i].h2), &(points[i].h2), position );
                 }
 
                 free( p1 );
@@ -415,18 +436,10 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
     int length = count * sizeof( BPointF );
 
-
-    enum MODES mode = MODE_RGB;
-    if ( strcmp( modeStr, "rgb" ) == 0 )
-        mode = MODE_RGB;
-    else if ( strcmp( modeStr, "alpha" ) == 0 )
-        mode = MODE_ALPHA;
-    else if ( strcmp( modeStr, "mask" ) == 0 )
-        mode = MODE_MASK;
-
     mlt_properties_set_data( frameProperties, "points", points, length, free, NULL );
-    mlt_properties_set_int( frameProperties, "mode", (int)mode );
+    mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
     mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
+    mlt_properties_set_int( frameProperties, "precision", mlt_properties_get_int( properties, "precision" ) );
     mlt_frame_push_get_image( frame, filter_get_image );
 
     return frame;
@@ -441,8 +454,10 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
         {
                 this->process = filter_process;
                 mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mode", "rgb" );
+                mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "invert", 0 );
+                mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "precision", 1 );
                 if ( arg != NULL )
-                    mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "polygon", arg );
+                    mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "spline", arg );
         }
         return this;
 }
