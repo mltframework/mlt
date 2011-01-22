@@ -153,7 +153,7 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
         qsort( nodeX, nodes, sizeof( int ), ncompare );
 
         if ( nodes && nodeX[0] > 0 )
-            for ( j = 0; j < nodeX[0]; j++ )
+            for ( j = 0; j < nodeX[0] - 1; j++ )
                 map[offset + j] = !set * 255;
         else if ( !nodes )
             for ( j = 0; j < width; j++ )
@@ -173,13 +173,13 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
                     for ( j = nodeX[i]; j < nodeX[i+1]; j++ )
                         map[offset + j] = !set * 255;
                 else
-                    for ( j = nodeX[i]; j < nodeX[i+1]; j++ )
+                    for ( j = nodeX[i]; j <= nodeX[i+1]; j++ )
                         map[offset + j] = set * 255;
             }
         }
 
         if ( nodes && nodeX[nodes-1] < width )
-            for ( j = nodeX[nodes-1]; j < width; j++ )
+            for ( j = nodeX[nodes-1] + 1; j < width; j++ )
                 map[offset + j] = !set * 255;
     }
 }
@@ -215,6 +215,15 @@ void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
 void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size, const double *errorSquared )
 {
     double errorSqr = SQR( p1.p.x - p2.p.x ) + SQR( p1.p.y - p2.p.y );
+
+    if ( *size + 1 >= *count )
+    {
+        *size += (int)sqrt( errorSqr / *errorSquared );
+        *points = realloc( *points, *size * sizeof ( struct PointF ) );
+    }
+    
+    (*points)[(*count)++] = p1.p;
+
     if ( errorSqr <= *errorSquared )
         return;
 
@@ -223,15 +232,9 @@ void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size
 
     curvePoints( p1, mid, points, count, size, errorSquared );
 
-    if ( *size  == *count )
-    {
-        *size += (int)sqrt( errorSqr / *errorSquared );
-        *points = realloc( *points, *size * sizeof ( struct PointF ) );
-    }
-
-    (*points)[(*count)++] = mid.p;
-
     curvePoints( mid, p2, points, count, size, errorSquared );
+
+    (*points)[*(count)++] = p2.p;
 }
 
 /** Do it :-).
