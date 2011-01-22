@@ -48,6 +48,9 @@ typedef struct BPointF
 enum MODES { MODE_RGB, MODE_ALPHA, MODE_MASK };
 const char *MODESTR[3] = { "rgb", "alpha", "mask" };
 
+enum ALPHAOPERATIONS { ALPHA_CLEAR, ALPHA_MAX, ALPHA_MIN, ALPHA_ADD, ALPHA_SUB };
+const char *ALPHAOPERATIONSTR[5] = { "clear", "max", "min", "add", "sub" };
+
 
 /** Returns the index of \param string in \param stringList.
  * Useful for assigning string parameters to enums. */
@@ -297,10 +300,43 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                 }
                 break;
             case MODE_ALPHA:
-                while ( p != q )
+                switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
                 {
-                    p[3] = map[(p - *image) / 4];
-                    p += 4;
+                case ALPHA_CLEAR:
+                    while ( p != q )
+                    {
+                        p[3] = map[(p - *image) / 4];
+                        p += 4;
+                    }
+                    break;
+                case ALPHA_MAX:
+                    while ( p != q )
+                    {
+                        p[3] = MAX( map[(p - *image) / 4], p[3] );
+                        p += 4;
+                    }
+                    break;
+                case ALPHA_MIN:
+                    while ( p != q )
+                    {
+                        p[3] = MIN( map[(p - *image) / 4], p[3] );
+                        p += 4;
+                    }
+                    break;
+                case ALPHA_ADD:
+                    while ( p != q )
+                    {
+                        p[3] = MIN( p[3] + map[(p - *image) / 4], 255 );
+                        p += 4;
+                    }
+                    break;
+                case ALPHA_SUB:
+                    while ( p != q )
+                    {
+                        p[3] = MAX( p[3] - map[(p - *image) / 4], 0 );
+                        p += 4;
+                    }
+                    break;
                 }
                 break;
             case MODE_MASK:
@@ -441,6 +477,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
     mlt_properties_set_data( frameProperties, "points", points, length, free, NULL );
     mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
+    mlt_properties_set_int( frameProperties, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
     mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
     mlt_properties_set_int( frameProperties, "precision", mlt_properties_get_int( properties, "precision" ) );
     mlt_frame_push_get_image( frame, filter_get_image );
@@ -457,6 +494,7 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
         {
                 this->process = filter_process;
                 mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mode", "rgb" );
+                mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "alpha_operation", "clear" );
                 mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "invert", 0 );
                 mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "precision", 1 );
                 if ( arg != NULL )
