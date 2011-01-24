@@ -364,9 +364,20 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
     mlt_properties properties = MLT_FILTER_PROPERTIES( this );
     mlt_properties frameProperties = MLT_FRAME_PROPERTIES( frame );
     char *spline = mlt_properties_get( properties, "spline" );
+    char *splineOld = mlt_properties_get( properties, "spline_old" );
     char *modeStr = mlt_properties_get( properties, "mode" );
 
-    cJSON *root = cJSON_Parse( spline );
+    cJSON *root;
+    int newSpline = 1;
+    if ( splineOld != NULL && strcmp( spline, splineOld ) == 0 ) {
+        // the very same parameter was already parsed by json, use the saved json struct
+        newSpline = 0;
+        root = mlt_properties_get_data( properties, "spline_json", NULL );
+    }
+    else
+    {
+        root = cJSON_Parse( spline );
+    }
 
     if ( root == NULL )
         return frame;
@@ -471,9 +482,14 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
             }
         }
     }
-    cJSON_Delete( root );
 
     int length = count * sizeof( BPointF );
+
+    if ( newSpline )
+    {
+        mlt_properties_set_data( properties, "spline_json", root, NULL, (mlt_destructor)cJSON_Delete, NULL );
+        mlt_properties_set( properties, "spline_old", strdup( spline ) );
+    }
 
     mlt_properties_set_data( frameProperties, "points", points, length, (mlt_destructor)mlt_pool_release, NULL );
     mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
