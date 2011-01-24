@@ -45,8 +45,8 @@ typedef struct BPointF
     struct PointF h2;
 } BPointF;
 
-enum MODES { MODE_RGB, MODE_ALPHA, MODE_MASK };
-const char *MODESTR[3] = { "rgb", "alpha", "mask" };
+enum MODES { MODE_RGB, MODE_ALPHA, MODE_MATTE };
+const char *MODESTR[3] = { "rgb", "alpha", "matte" };
 
 enum ALPHAOPERATIONS { ALPHA_CLEAR, ALPHA_MAX, ALPHA_MIN, ALPHA_ADD, ALPHA_SUB };
 const char *ALPHAOPERATIONSTR[5] = { "clear", "max", "min", "add", "sub" };
@@ -339,7 +339,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                     break;
                 }
                 break;
-            case MODE_MASK:
+            case MODE_MATTE:
                 while ( p != q )
                 {
                     p[0] = p[1] = p[2] = map[(p - *image) / 4];
