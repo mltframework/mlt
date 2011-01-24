@@ -1,4 +1,64 @@
+2011-01-23  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 0.6.2.
+
+  * NEWS: Add v0.6.2 release notes.
+
+2011-01-16  j-b-m <jb@kdenlive.org>
+
+  * src/modules/plus/transition_affine.c: Add always_active property to affine
+  transition.
+
+2011-01-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/transition_affine.c: fix compiler warning
+
+  * configure, src/mlt++/configure, src/modules/avformat/configure,
+  src/modules/kino/endian_types.h, src/modules/kino/riff.cc,
+  src/modules/qimage/configure, src/modules/sox/configure: Enable build on
+  NetBSD (3090684)
+
+  * src/modules/kino/Makefile, src/modules/qimage/Makefile: Use CXX rather than
+  CC for linking C++ (3090682)
+
+  * src/swig/python/build: Fix underlinking python binding (3082761).  Link the
+  python binding library to MLT and Python needed on some systems like
+  OpenSUSE.  Patch by Cristian Morales Vega
+
+  * src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/consumer_sdl_preview.c: Fix undefined bahavior in SDL module
+  (3066195).  The standard says the post-increment can have effect at any point
+  between the previous and the next sequence point (or something similar), so
+  the behavior of "this->refresh_count = this->refresh_count ++" is undefined. 
+  Patch by Cristian Morales Vega
+
+  * src/modules/plus/filter_affine.c: Add use_normalised to affine filter.
+
+  * src/modules/plus/transition_affine.c: Fix some regressions in affine. 
+  Crashing on null rescale.interp and still some incorrect handling of sample
+  aspect ratios.
+
+2011-01-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/interp.h, src/modules/plus/transition_affine.c: Add
+  geometry opacity interpretation to affine.  Also, fixes interpolation method
+  selection and removes a redundant bounds test.
+
+2011-01-10  j-b-m <jb@kdenlive.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/producer_qimage.c:
+  Add force_aspect_ratio to image producers.
+
+2011-01-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/linsys/20-linsys.rules: Remove NAME= from linsys udev rules.
+
+  * configure, src/framework/mlt_version.h: Move to an interim version.
+
 2011-01-01  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: update ChangeLog for v0.6.0
 
   * NEWS: Add v0.6.0 release notes.
 
