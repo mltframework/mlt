@@ -69,7 +69,6 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 			if ( frame )
 			{
 				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-				pthread_mutex_init( &this->mutex, NULL );
 				mlt_properties_set_data( frame_properties, "producer_qimage", this, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 				mlt_properties_set_position( frame_properties, "qimage_position", mlt_producer_position( producer ) );
@@ -82,6 +81,8 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 			producer_close( producer );
 			producer = NULL;
 		}
+		if ( producer )
+			pthread_mutex_init( &this->mutex, NULL );
 		return producer;
 	}
 	free( this );
@@ -247,8 +248,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_qimage this = parent->child;
-	if ( this->mutex )
-		pthread_mutex_destroy( &this->mutex );
+	pthread_mutex_destroy( &this->mutex );
 	parent->close = NULL;
 	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
 	mlt_producer_close( parent );
