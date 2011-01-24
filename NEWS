@@ -1,6 +1,21 @@
 MLT Release Notes
 -----------------
 
+Version 0.6.2
+
+This is just a minor release to address a few things prior to introducing
+major changes from other branches.
+
+ * Added force_aspect_ratio property to pixbuf and qimage producers.
+ * Added opacity handling in geometry property of the affine filter and
+   transition.
+ * Added use_normalised property to affine filter.
+ * Added always_active property to affine transition.
+ * Fix building on NetBSD.
+
+The recommended version of FFmpeg for use with this release is 0.6.1.
+
+
 Version 0.6.0
 
 The recommended version of FFmpeg for use with this release is 0.6.1.
