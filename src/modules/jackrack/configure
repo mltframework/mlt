@@ -13,6 +13,7 @@ then
 	if [ "$ladspa_prefix" != "" ]
 	then
 		ladspa_prefix=`dirname "$ladspa_prefix"`
+		ladspa_prefix=`dirname "$ladspa_prefix"`
 	else
 		ladspa_prefix=`pkg-config --variable=prefix jack`
 	fi
