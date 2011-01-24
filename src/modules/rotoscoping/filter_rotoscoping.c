@@ -105,7 +105,7 @@ int json2BCurves( cJSON *array, BPointF **points )
 {
     int count = cJSON_GetArraySize( array );
     cJSON *child = array->child;
-    *points = malloc( count * sizeof( BPointF ) );
+    *points = mlt_pool_alloc( count * sizeof( BPointF ) );
 
     int i = 0;
     do
@@ -120,7 +120,7 @@ int json2BCurves( cJSON *array, BPointF **points )
     } while ( ( child = child->next ) );
 
     if ( i < count )
-        *points = realloc( *points, i * sizeof( BPointF ) );
+        *points = mlt_pool_realloc( *points, i * sizeof( BPointF ) );
 
     return i;
 }
@@ -222,7 +222,7 @@ void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size
     if ( *size + 1 >= *count )
     {
         *size += (int)sqrt( errorSqr / *errorSquared );
-        *points = realloc( *points, *size * sizeof ( struct PointF ) );
+        *points = mlt_pool_realloc( *points, *size * sizeof ( struct PointF ) );
     }
     
     (*points)[(*count)++] = p1.p;
@@ -273,7 +273,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
         double errorSqr = (double)SQR( mlt_properties_get_int( properties, "precision" ) );
         count = 0;
         size = 1;
-        points = malloc( size * sizeof( struct PointF ) );
+        points = mlt_pool_alloc( size * sizeof( struct PointF ) );
         for ( i = 0; i < bcount; i++ )
         {
             j = (i + 1) % bcount;
@@ -282,7 +282,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
         if ( count )
         {
-            uint8_t *map = calloc( *width * *height, sizeof( uint8_t ) );
+            uint8_t *map = mlt_pool_alloc( *width * *height );
             uint8_t setPoint = !mlt_properties_get_int( properties, "invert" );
             fillMap( points, count, *width, *height, setPoint, map );
 
@@ -348,10 +348,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                 break;
             }
 
-            free( map );
+            mlt_pool_release( map );
         }
 
-        free( points );
+        mlt_pool_release( points );
     }
 
     return error;
@@ -447,10 +447,10 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
             {
                 // number of points decreasing from p1 to p2; we can't handle this yet
                 count = c2;
-                points = malloc( count * sizeof( BPointF ) );
+                points = mlt_pool_alloc( count * sizeof( BPointF ) );
                 memcpy( points, p2, count * sizeof( BPointF ) );
-                free( p1 );
-                free( p2 );
+                mlt_pool_release( p1 );
+                mlt_pool_release( p2 );
             }
             else
             {
@@ -458,7 +458,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
                 double position = ( time - pos1 ) / (double)( pos2 - pos1 + 1 );
 
                 count = c1;  // additional points in p2 are ignored
-                points = malloc( count * sizeof( BPointF ) );
+                points = mlt_pool_alloc( count * sizeof( BPointF ) );
                 for ( i = 0; i < count; i++ )
                 {
                     lerp( &(p1[i].h1), &(p2[i].h1), &(points[i].h1), position );
@@ -466,8 +466,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
                     lerp( &(p1[i].h2), &(p2[i].h2), &(points[i].h2), position );
                 }
 
-                free( p1 );
-                free( p2 );
+                mlt_pool_release( p1 );
+                mlt_pool_release( p2 );
             }
         }
     }
@@ -475,7 +475,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
     int length = count * sizeof( BPointF );
 
-    mlt_properties_set_data( frameProperties, "points", points, length, free, NULL );
+    mlt_properties_set_data( frameProperties, "points", points, length, (mlt_destructor)mlt_pool_release, NULL );
     mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
     mlt_properties_set_int( frameProperties, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
     mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
