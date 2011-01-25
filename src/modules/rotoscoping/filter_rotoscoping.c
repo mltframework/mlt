@@ -249,7 +249,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
     int mode = mlt_properties_get_int( properties, "mode" );
 
     // Get the image
-    if ( mode == MODE_RGB || ( mode == MODE_MATTE && *format == mlt_image_yuv420p ) )
+    if ( mode == MODE_RGB )
         *format = mlt_image_rgb24;
     int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
@@ -289,21 +289,24 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             uint8_t setPoint = !mlt_properties_get_int( properties, "invert" );
             fillMap( points, count, *width, *height, setPoint, map );
 
-            int bpp = 4;
+            double bpp = 4;
             if ( mode != MODE_ALPHA )
             {
                 if ( *format == mlt_image_rgb24 )
                     bpp = 3;
                 else if ( *format == mlt_image_yuv422 )
                     bpp = 2;
+                else if ( *format == mlt_image_yuv420p )
+                    bpp = 3 / 2.;
             }
 
+            i = 0;
+            length = *width * *height;
+
             uint8_t *p = *image;
-            uint8_t *q = *image + *width * *height * bpp;
+            uint8_t *q = *image + (int)( length * bpp );
 
             uint8_t *alpha;
-
-            i = 0;
 
             switch ( mode )
             {
@@ -325,7 +328,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                         while ( p != q )
                         {
                             p[0] = p[1] = p[2] = map[i++];
-                            p += bpp;
+                            p += (int)bpp;
                         }
                         break;
                     case mlt_image_yuv422:
@@ -336,13 +339,16 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                             p += 2;
                         }
                         break;
+                    case mlt_image_yuv420p:
+                        memcpy( p, map, length );
+                        memset( p + length, 128, length / 2 );
+                        break;
                     default:
                         break;
                 }
                 break;
             case MODE_ALPHA:
                 alpha = mlt_frame_get_alpha_mask( this );
-                length = *width * *height;
                 switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
                 {
                 case ALPHA_CLEAR:
