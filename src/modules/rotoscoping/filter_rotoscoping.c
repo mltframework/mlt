@@ -139,6 +139,9 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
 {
     int nodes, nodeX[1024], pixelY, i, j, offset;
 
+    memset( map, !set * 255, width * height );
+    set *= 255;
+
     // Loop through the rows of the image
     for ( pixelY = 0; pixelY < height; pixelY++ )
     {
@@ -155,15 +158,8 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
 
         qsort( nodeX, nodes, sizeof( int ), ncompare );
 
-        if ( nodes && nodeX[0] > 0 )
-            for ( j = 0; j < nodeX[0] - 1; j++ )
-                map[offset + j] = !set * 255;
-        else if ( !nodes )
-            for ( j = 0; j < width; j++ )
-                map[offset + j] = !set * 255;
-
         // Set map values for points between the node pairs to 1
-        for ( i = 0; i < nodes - 1; i++ )
+        for ( i = 0; i < nodes; i += 2 )
         {
             if ( nodeX[i] >= width )
                 break;
@@ -172,18 +168,10 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
             {
                 nodeX[i] = MAX( 0, nodeX[i] );
                 nodeX[i+1] = MIN( nodeX[i+1], width );
-                if ( i % 2 )
-                    for ( j = nodeX[i]; j < nodeX[i+1]; j++ )
-                        map[offset + j] = !set * 255;
-                else
-                    for ( j = nodeX[i]; j <= nodeX[i+1]; j++ )
-                        map[offset + j] = set * 255;
+                for ( j = nodeX[i]; j <= nodeX[i+1]; j++ )
+                    map[offset + j] = set;
             }
         }
-
-        if ( nodes && nodeX[nodes-1] < width )
-            for ( j = nodeX[nodes-1] + 1; j < width; j++ )
-                map[offset + j] = !set * 255;
     }
 }
 
