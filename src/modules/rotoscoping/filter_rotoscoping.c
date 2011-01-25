@@ -74,8 +74,8 @@ void lerp( const PointF *a, const PointF *b, PointF *result, double t )
  * Speed gain? */
 void lerpHalf( const PointF *a, const PointF *b, PointF *result )
 {
-    result->x = a->x + ( b->x - a->x ) * .5;
-    result->y = a->y + ( b->y - a->y ) * .5;
+    result->x = ( a->x + b->x ) * .5;
+    result->y = ( a->y + b->y ) * .5;
 }
 
 /** Helper for using qsort with an array of integers. */
