@@ -246,8 +246,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 {
     mlt_properties properties = MLT_FRAME_PROPERTIES( this );
 
+    int mode = mlt_properties_get_int( properties, "mode" );
+
     // Get the image
-    *format = mlt_image_rgb24a;
+    if ( mode == MODE_RGB || ( mode == MODE_MATTE && *format == mlt_image_yuv420p ) )
+        *format = mlt_image_rgb24;
     int error = mlt_frame_get_image( this, image, format, width, height, 1 );
 
     // Only process if we have no error and a valid colour space
@@ -286,64 +289,81 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             uint8_t setPoint = !mlt_properties_get_int( properties, "invert" );
             fillMap( points, count, *width, *height, setPoint, map );
 
-            uint8_t *p = *image;
-            uint8_t *q = *image + *width * *height * 4;
+            int bpp = 4;
+            if ( mode != MODE_ALPHA )
+            {
+                if ( *format == mlt_image_rgb24 )
+                    bpp = 3;
+                else if ( *format == mlt_image_yuv422 )
+                    bpp = 2;
+            }
 
-            switch ( mlt_properties_get_int( properties, "mode" ) )
+            uint8_t *p = *image;
+            uint8_t *q = *image + *width * *height * bpp;
+
+            uint8_t *alpha;
+
+            i = 0;
+
+            switch ( mode )
             {
             case MODE_RGB:
+                // *format == mlt_image_rgb24
                 while ( p != q )
                 {
-                    if ( !map[(p - *image) / 4] )
+                    if ( !map[i++] )
                         p[0] = p[1] = p[2] = 0;
-                    p += 4;
-                }
-                break;
-            case MODE_ALPHA:
-                switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
-                {
-                case ALPHA_CLEAR:
-                    while ( p != q )
-                    {
-                        p[3] = map[(p - *image) / 4];
-                        p += 4;
-                    }
-                    break;
-                case ALPHA_MAX:
-                    while ( p != q )
-                    {
-                        p[3] = MAX( map[(p - *image) / 4], p[3] );
-                        p += 4;
-                    }
-                    break;
-                case ALPHA_MIN:
-                    while ( p != q )
-                    {
-                        p[3] = MIN( map[(p - *image) / 4], p[3] );
-                        p += 4;
-                    }
-                    break;
-                case ALPHA_ADD:
-                    while ( p != q )
-                    {
-                        p[3] = MIN( p[3] + map[(p - *image) / 4], 255 );
-                        p += 4;
-                    }
-                    break;
-                case ALPHA_SUB:
-                    while ( p != q )
-                    {
-                        p[3] = MAX( p[3] - map[(p - *image) / 4], 0 );
-                        p += 4;
-                    }
-                    break;
+                    p += 3;
                 }
                 break;
             case MODE_MATTE:
-                while ( p != q )
+                switch ( *format )
                 {
-                    p[0] = p[1] = p[2] = map[(p - *image) / 4];
-                    p += 4;
+                    case mlt_image_rgb24:
+                    case mlt_image_rgb24a:
+                    case mlt_image_opengl:
+                        while ( p != q )
+                        {
+                            p[0] = p[1] = p[2] = map[i++];
+                            p += bpp;
+                        }
+                        break;
+                    case mlt_image_yuv422:
+                        while ( p != q )
+                        {
+                            p[0] = map[i++];
+                            p[1] = 128;
+                            p += 2;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case MODE_ALPHA:
+                alpha = mlt_frame_get_alpha_mask( this );
+                length = *width * *height;
+                switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
+                {
+                case ALPHA_CLEAR:
+                    memcpy( alpha, map, length );
+                    break;
+                case ALPHA_MAX:
+                    for ( ; i < length; i++, alpha++ )
+                        *alpha = MAX( map[i], *alpha );
+                    break;
+                case ALPHA_MIN:
+                    for ( ; i < length; i++, alpha++ )
+                        *alpha = MIN( map[i], *alpha );
+                    break;
+                case ALPHA_ADD:
+                    for ( ; i < length; i++, alpha++ )
+                        *alpha = MIN( *alpha + map[i], 255 );
+                    break;
+                case ALPHA_SUB:
+                    for ( ; i < length; i++, alpha++ )
+                        *alpha = MAX( *alpha - map[i], 0 );
+                    break;
                 }
                 break;
             }
@@ -487,7 +507,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
     if ( newSpline )
     {
-        mlt_properties_set_data( properties, "spline_json", root, NULL, (mlt_destructor)cJSON_Delete, NULL );
+        mlt_properties_set_data( properties, "spline_json", root, 0, (mlt_destructor)cJSON_Delete, NULL );
         mlt_properties_set( properties, "spline_old", strdup( spline ) );
     }
 
