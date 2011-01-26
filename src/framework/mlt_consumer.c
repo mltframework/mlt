@@ -924,7 +924,7 @@ static void consumer_read_ahead_start( mlt_consumer this )
 static void consumer_work_start( mlt_consumer this )
 {
 	int n = abs( this->real_time );
-	pthread_t thread;
+	pthread_t *thread = calloc( 1, sizeof( pthread_t ) );
 
 	// We're running now
 	this->ahead = 1;
@@ -966,9 +966,9 @@ static void consumer_work_start( mlt_consumer this )
 
 		while ( n-- )
 		{
-			if ( pthread_create( &thread, &thread_attributes, consumer_read_ahead_thread, this ) < 0 )
-				if ( pthread_create( &thread, NULL, consumer_read_ahead_thread, this ) == 0 )
-					mlt_deque_push_back( this->worker_threads, (void*) thread );
+			if ( pthread_create( thread, &thread_attributes, consumer_read_ahead_thread, this ) < 0 )
+				if ( pthread_create( thread, NULL, consumer_read_ahead_thread, this ) == 0 )
+					mlt_deque_push_back( this->worker_threads, thread );
 		}
 		pthread_attr_destroy( &thread_attributes );
 	}
@@ -977,8 +977,8 @@ static void consumer_work_start( mlt_consumer this )
 	{
 		while ( n-- )
 		{
-			if ( pthread_create( &thread, NULL, consumer_worker_thread, this ) == 0 )
-				mlt_deque_push_back( this->worker_threads, (void*) thread );
+			if ( pthread_create( thread, NULL, consumer_worker_thread, this ) == 0 )
+				mlt_deque_push_back( this->worker_threads, thread );
 		}
 	}
 }
@@ -1050,9 +1050,9 @@ static void consumer_work_stop( mlt_consumer this )
 		pthread_mutex_unlock( &this->put_mutex );
 
 		// Join the threads
-		pthread_t thread;
-		while ( ( thread = (pthread_t) mlt_deque_pop_front( this->worker_threads ) ) )
-			pthread_join( thread, NULL );
+		pthread_t *thread;
+		while ( ( thread = mlt_deque_pop_front( this->worker_threads ) ) )
+			pthread_join( *thread, NULL );
 
 		// Destroy the mutexes
 		pthread_mutex_destroy( &this->queue_mutex );
