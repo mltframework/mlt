@@ -122,7 +122,7 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set_int( this->properties, "buffer", 1 );
 
 		// Default audio buffer
-		mlt_properties_set_int( this->properties, "audio_buffer", 512 );
+		mlt_properties_set_int( this->properties, "audio_buffer", 2048 );
 
 		// Ensure we don't join on a non-running object
 		this->joined = 1;
