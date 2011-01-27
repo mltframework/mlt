@@ -20,10 +20,20 @@
 
 #include <string.h>
 #include <framework/mlt.h>
+#include <limits.h>
 
 extern mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
+static mlt_properties rotoscoping_metadata( mlt_service_type type, const char *id, void *data )
+{
+    char file[ PATH_MAX ];
+    snprintf( file, PATH_MAX, "%s/rotoscoping/filter_%s.yml", mlt_environment( "MLT_DATA" ), id );
+    return mlt_properties_parse_yaml( file );
+}
 
 MLT_REPOSITORY
 {
         MLT_REGISTER( filter_type, "rotoscoping", filter_rotoscoping_init );
+
+        MLT_REGISTER_METADATA( filter_type, "rotoscoping", rotoscoping_metadata, NULL );
 }

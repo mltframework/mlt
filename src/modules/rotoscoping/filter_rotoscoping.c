@@ -64,7 +64,7 @@ int stringValue( const char *string, const char **stringList, int max )
 }
 
 /** Linear interp */
-void lerp( const PointF *a, const PointF *b, PointF *result, double t )
+inline void lerp( const PointF *a, const PointF *b, PointF *result, double t )
 {
     result->x = a->x + ( b->x - a->x ) * t;
     result->y = a->y + ( b->y - a->y ) * t;
@@ -72,7 +72,7 @@ void lerp( const PointF *a, const PointF *b, PointF *result, double t )
 
 /** Linear interp. with t = 0.5
  * Speed gain? */
-void lerpHalf( const PointF *a, const PointF *b, PointF *result )
+inline void lerpHalf( const PointF *a, const PointF *b, PointF *result )
 {
     result->x = ( a->x + b->x ) * .5;
     result->y = ( a->y + b->y ) * .5;
@@ -137,7 +137,7 @@ int json2BCurves( cJSON *array, BPointF **points )
  */
 void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, uint8_t *map )
 {
-    int nodes, nodeX[1024], pixelY, i, j, offset;
+    int nodes, nodeX[1024], pixelY, i, j;
 
     memset( map, !set * 255, width * height );
     set *= 255;
@@ -145,7 +145,6 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
     // Loop through the rows of the image
     for ( pixelY = 0; pixelY < height; pixelY++ )
     {
-        offset = width * pixelY;
         /*
          * Build a list of nodes.
          * nodes are located at the borders of the polygon
@@ -168,8 +167,7 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
             {
                 nodeX[i] = MAX( 0, nodeX[i] );
                 nodeX[i+1] = MIN( nodeX[i+1], width );
-                for ( j = nodeX[i]; j <= nodeX[i+1]; j++ )
-                    map[offset + j] = set;
+                memset( map + width * pixelY + nodeX[i], set, nodeX[i+1] - nodeX[i] + 1 );
             }
         }
     }
@@ -180,20 +178,17 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
  */
 void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
 {
-    struct PointF ab, bc, cd, abbc, bccd, final;
+    struct PointF ab, bc, cd;
 
     lerpHalf( &(p1->p), &(p1->h2), &ab );
     lerpHalf( &(p1->h2), &(p2->h1), &bc );
     lerpHalf( &(p2->h1), &(p2->p), &cd );
-    lerpHalf( &ab, &bc, &abbc );
-    lerpHalf( &bc, &cd, &bccd );
-    lerpHalf( &abbc, &bccd, &final );
+    lerpHalf( &ab, &bc, &(mid->h1) ); // mid->h1 = abbc
+    lerpHalf( &bc, &cd, &(mid->h2) ); // mid->h2 = bccd
+    lerpHalf( &(mid->h1), &(mid->h2), &(mid->p) );
 
     p1->h2 = ab;
     p2->h1 = cd;
-    mid->h1 = abbc;
-    mid->p = final;
-    mid->h2 = bccd;
 }
 
 /**
@@ -383,7 +378,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
     cJSON *root;
     int newSpline = 1;
-    if ( splineOld != NULL && strcmp( spline, splineOld ) == 0 ) {
+    if ( splineOld != NULL && strlen( spline ) && strcmp( spline, splineOld ) == 0 ) {
         // the very same parameter was already parsed by json, use the saved json struct
         newSpline = 0;
         root = mlt_properties_get_data( properties, "spline_json", NULL );
@@ -523,7 +518,7 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
         if ( this != NULL )
         {
                 this->process = filter_process;
-                mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mode", "rgb" );
+                mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mode", "alpha" );
                 mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "alpha_operation", "clear" );
                 mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "invert", 0 );
                 mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "precision", 1 );
