@@ -1350,21 +1350,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							void *planes[3];
 							uint32_t pitches[3];
 							VdpYCbCrFormat dest_format = VDP_YCBCR_FORMAT_YV12;
-							AVPicture picture;
 							
 							if ( !this->vdpau->buffer )
 								this->vdpau->buffer = mlt_pool_alloc( codec_context->width * codec_context->height * 3 / 2 );
-							picture.data[0] = planes[0] = this->vdpau->buffer;
-							picture.data[2] = planes[1] = this->vdpau->buffer + codec_context->width * codec_context->height;
-							picture.data[1] = planes[2] = this->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
-							picture.linesize[0] = pitches[0] = codec_context->width;
-							picture.linesize[1] = pitches[1] = codec_context->width / 2;
-							picture.linesize[2] = pitches[2] = codec_context->width / 2;
+							this->av_frame->data[0] = planes[0] = this->vdpau->buffer;
+							this->av_frame->data[2] = planes[1] = this->vdpau->buffer + codec_context->width * codec_context->height;
+							this->av_frame->data[1] = planes[2] = this->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
+							this->av_frame->linesize[0] = pitches[0] = codec_context->width;
+							this->av_frame->linesize[1] = pitches[1] = codec_context->width / 2;
+							this->av_frame->linesize[2] = pitches[2] = codec_context->width / 2;
 
 							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
 							if ( status == VDP_STATUS_OK )
 							{
-								convert_image( (AVFrame*) &picture, *buffer, PIX_FMT_YUV420P,
+								convert_image( this->av_frame, *buffer, PIX_FMT_YUV420P,
 									format, *width, *height, this->colorspace );
 							}
 							else
