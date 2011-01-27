@@ -118,6 +118,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
+static void producer_set_up_video( producer_avformat this, mlt_frame frame );
 
 #ifdef VDPAU
 #include "vdpau.c"
@@ -1117,9 +1118,32 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				codec_context->skip_loop_filter = AVDISCARD_NONREF;
 				av_seek_frame( context, this->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
 			}
-			else
+			else if ( timestamp > 0 || last_position <= 0 )
 			{
 				av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD );
+			}
+			else
+			{
+				// Re-open video stream when rewinding to beginning from somewhere else.
+				// This is rather ugly, and I prefer not to do it this way, but ffmpeg is
+				// not reliably seeking to the first frame across formats.
+				if ( this->video_codec )
+					avcodec_close( this->video_codec );
+				this->video_codec = NULL;
+				if ( this->dummy_context )
+					av_close_input_file( this->dummy_context );
+				this->dummy_context = NULL;
+				if ( this->video_format )
+					av_close_input_file( this->video_format );
+				this->video_format = NULL;
+				avformat_unlock();
+				producer_set_up_video( this, frame );
+				if ( this->video_index < 0 )
+					return 1;
+				avformat_lock();
+				context = this->video_format;
+				stream = context->streams[ this->video_index ];
+				codec_context = stream->codec;
 			}
 
 			// Remove the cached info relating to the previous position
