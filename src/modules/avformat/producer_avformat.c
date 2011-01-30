@@ -586,7 +586,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			if ( context->duration != AV_NOPTS_VALUE )
 			{
 				// This isn't going to be accurate for all formats
-				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps );
+				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps - 1 );
 				mlt_properties_set_position( properties, "out", frames - 1 );
 				mlt_properties_set_position( properties, "length", frames );
 			}
