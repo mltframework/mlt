@@ -1374,7 +1374,6 @@ static void *consumer_thread( void *arg )
 					if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 					{
 						int i = 0;
-						int j = 0;
 						uint8_t *p;
 						uint8_t *q;
 
@@ -1386,12 +1385,8 @@ static void *consumer_thread( void *arg )
 						for ( i = 0; i < height; i ++ )
 						{
 							p = input->data[ 0 ] + i * input->linesize[ 0 ];
-							j = width;
-							while( j -- )
-							{
-								*p ++ = *q ++;
-								*p ++ = *q ++;
-							}
+							memcpy( p, q, width * 2 );
+							q += width * 2;
 						}
 
 						// Do the colour space conversion
