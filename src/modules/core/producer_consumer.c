@@ -56,6 +56,15 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	memcpy( new_image, *image, size );
 	mlt_properties_set( properties, "progressive", mlt_properties_get( MLT_FRAME_PROPERTIES(nested_frame), "progressive" ) );
 	*image = new_image;
+	
+	// Copy the alpha channel
+	uint8_t *alpha = mlt_properties_get_data( MLT_FRAME_PROPERTIES( nested_frame ), "alpha", &size );
+	if ( alpha && size > 0 )
+	{
+		new_image = mlt_pool_alloc( size );
+		memcpy( new_image, alpha, size );
+		mlt_properties_set_data( properties, "alpha", new_image, size, mlt_pool_release, NULL );
+	}
 
 	return result;
 }
