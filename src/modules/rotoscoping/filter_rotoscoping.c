@@ -135,12 +135,12 @@ int json2BCurves( cJSON *array, BPointF **points )
  * \param map array of integers of the dimension width * height.
  *            The map entries belonging to the points in the polygon will be set to \param set * 255 the others to !set * 255.
  */
-void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, uint8_t *map )
+void fillMap( PointF *vertices, int count, int width, int height, int invert, uint8_t *map )
 {
-    int nodes, nodeX[1024], pixelY, i, j;
+    int nodes, nodeX[1024], pixelY, i, j, value;
 
-    memset( map, !set * 255, width * height );
-    set *= 255;
+    value = !invert * 255;
+    memset( map, invert * 255, width * height );
 
     // Loop through the rows of the image
     for ( pixelY = 0; pixelY < height; pixelY++ )
@@ -167,7 +167,7 @@ void fillMap( PointF *vertices, int count, int width, int height, uint8_t set, u
             {
                 nodeX[i] = MAX( 0, nodeX[i] );
                 nodeX[i+1] = MIN( nodeX[i+1], width );
-                memset( map + width * pixelY + nodeX[i], set, nodeX[i+1] - nodeX[i] + 1 );
+                memset( map + width * pixelY + nodeX[i], value, nodeX[i+1] - nodeX[i] + 1 );
             }
         }
     }
@@ -269,8 +269,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
         if ( count )
         {
             uint8_t *map = mlt_pool_alloc( *width * *height );
-            uint8_t setPoint = !mlt_properties_get_int( properties, "invert" );
-            fillMap( points, count, *width, *height, setPoint, map );
+            int invert = mlt_properties_get_int( properties, "invert" );
+            fillMap( points, count, *width, *height, invert, map );
 
             double bpp = 4;
             if ( mode != MODE_ALPHA )
@@ -401,7 +401,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
          */
         count = json2BCurves( root, &points );
     }
-    else
+    else if ( root->type == cJSON_Object )
     {
         /*
          * keyframes
@@ -491,6 +491,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
             }
         }
     }
+    else
+    {
+        cJSON_Delete( root );
+        return frame;
+    }
 
     int length = count * sizeof( BPointF );
 
@@ -518,12 +523,13 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
         if ( this != NULL )
         {
                 this->process = filter_process;
-                mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mode", "alpha" );
-                mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "alpha_operation", "clear" );
-                mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "invert", 0 );
-                mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "precision", 1 );
+                mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+                mlt_properties_set( properties, "mode", "alpha" );
+                mlt_properties_set( properties, "alpha_operation", "clear" );
+                mlt_properties_set_int( properties, "invert", 0 );
+                mlt_properties_set_int( properties, "precision", 1 );
                 if ( arg != NULL )
-                    mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "spline", arg );
+                    mlt_properties_set( properties, "spline", arg );
         }
         return this;
 }
