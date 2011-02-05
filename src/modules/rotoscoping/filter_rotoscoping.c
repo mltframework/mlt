@@ -234,7 +234,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
     // Get the image
     if ( mode == MODE_RGB )
         *format = mlt_image_rgb24;
-    int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+    int error = mlt_frame_get_image( this, image, format, width, height, writable );
 
     // Only process if we have no error and a valid colour space
     if ( !error )
@@ -331,27 +331,77 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                 }
                 break;
             case MODE_ALPHA:
-                alpha = mlt_frame_get_alpha_mask( this );
-                switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
+                switch ( *format )
                 {
-                case ALPHA_CLEAR:
-                    memcpy( alpha, map, length );
+                case mlt_image_rgb24a:
+                case mlt_image_opengl:
+                    switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
+                    {
+                    case ALPHA_CLEAR:
+                        while ( p != q )
+                        {
+                            p[3] = map[i++];
+                            p += 4;
+                        }
+                        break;
+                    case ALPHA_MAX:
+                        while ( p != q )
+                        {
+                            p[3] = MAX( p[3], map[i] );
+                            p += 4;
+                            i++;
+                        }
+                        break;
+                    case ALPHA_MIN:
+                        while ( p != q )
+                        {
+                            p[3] = MIN( p[3], map[i] );
+                            p += 4;
+                            i++;
+                        }
+                        break;
+                    case ALPHA_ADD:
+                        while ( p != q )
+                        {
+                            p[3] = MIN( p[3] + map[i], 255 );
+                            p += 4;
+                            i++;
+                        }
+                        break;
+                    case ALPHA_SUB:
+                        while ( p != q )
+                        {
+                            p[3] = MAX( p[3] - map[i], 0 );
+                            p += 4;
+                            i++;
+                        }
+                        break;
+                    }
                     break;
-                case ALPHA_MAX:
-                    for ( ; i < length; i++, alpha++ )
-                        *alpha = MAX( map[i], *alpha );
-                    break;
-                case ALPHA_MIN:
-                    for ( ; i < length; i++, alpha++ )
-                        *alpha = MIN( map[i], *alpha );
-                    break;
-                case ALPHA_ADD:
-                    for ( ; i < length; i++, alpha++ )
-                        *alpha = MIN( *alpha + map[i], 255 );
-                    break;
-                case ALPHA_SUB:
-                    for ( ; i < length; i++, alpha++ )
-                        *alpha = MAX( *alpha - map[i], 0 );
+                default:
+                    alpha = mlt_frame_get_alpha_mask( this );
+                    switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
+                    {
+                    case ALPHA_CLEAR:
+                        memcpy( alpha, map, length );
+                        break;
+                    case ALPHA_MAX:
+                        for ( ; i < length; i++, alpha++ )
+                            *alpha = MAX( map[i], *alpha );
+                        break;
+                    case ALPHA_MIN:
+                        for ( ; i < length; i++, alpha++ )
+                            *alpha = MIN( map[i], *alpha );
+                        break;
+                    case ALPHA_ADD:
+                        for ( ; i < length; i++, alpha++ )
+                            *alpha = MIN( *alpha + map[i], 255 );
+                        break;
+                    case ALPHA_SUB:
+                        for ( ; i < length; i++, alpha++ )
+                            *alpha = MAX( *alpha - map[i], 0 );
+                        break;
+                    }
                     break;
                 }
                 break;
