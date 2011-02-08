@@ -347,11 +347,14 @@ static inline void get_affine( affine_t *affine, mlt_transition this, float posi
 		float shear_x = composite_calculate_key( this, "shear_x", "shear_x_info", 360, position );
 		float shear_y = composite_calculate_key( this, "shear_y", "shear_y_info", 360, position );
 		float shear_z = composite_calculate_key( this, "shear_z", "shear_z_info", 360, position );
-
+		float o_x = composite_calculate_key( this, "ox", "ox_info", 0, position );
+		float o_y = composite_calculate_key( this, "oy", "oy_info", 0, position );
+		
 		affine_rotate_x( affine->matrix, rotate_x );
 		affine_rotate_y( affine->matrix, rotate_y );
 		affine_rotate_z( affine->matrix, rotate_z );
 		affine_shear( affine->matrix, shear_x, shear_y, shear_z );
+		affine_offset( affine->matrix, o_x, o_y );
 	}
 }
 
