@@ -853,6 +853,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 
 	// Adjust to consumer scale
 	*width = rint( geometry->sw * *width / geometry->nw );
+	*width -= *width % 2; // coerce to even width for yuv422
 	*height = rint( geometry->sh * *height / geometry->nh );
 // fprintf(stderr, "%s: scaled %dx%d norm %dx%d resize %dx%d\n", __FILE__,
 // geometry->sw, geometry->sh, geometry->nw, geometry->nh, *width, *height);
