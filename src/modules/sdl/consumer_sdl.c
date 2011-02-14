@@ -771,27 +771,23 @@ static void *consumer_thread( void *arg )
 	int init_audio = 1;
 	int init_video = 1;
 	mlt_frame frame = NULL;
-	mlt_properties properties = NULL;
 	int duration = 0;
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
 
 	// Loop until told not to
-	while( !terminated && this->running )
+	while( this->running )
 	{
 		// Get a frame from the attached producer
-		frame = mlt_consumer_rt_frame( consumer );
+		frame = !terminated? mlt_consumer_rt_frame( consumer ) : NULL;
 
 		// Check for termination
-		if ( terminate_on_pause && frame != NULL )
+		if ( terminate_on_pause && frame )
 			terminated = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0.0;
 
 		// Ensure that we have a frame
-		if ( frame != NULL )
+		if ( frame )
 		{
-			// Get the frame properties
-			properties =  MLT_FRAME_PROPERTIES( frame );
-
 			// Play audio
 			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
 
@@ -806,7 +802,7 @@ static void *consumer_thread( void *arg )
 			}
 
 			// Set playtime for this frame
-			mlt_properties_set_int( properties, "playtime", playtime );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "playtime", playtime );
 
 			while ( this->running && mlt_deque_count( this->queue ) > 15 )
 				nanosleep( &tm, NULL );
@@ -820,9 +816,25 @@ static void *consumer_thread( void *arg )
 			// Calculate the next playtime
 			playtime += ( duration * 1000 );
 		}
+		else if ( terminated )
+		{
+			if ( mlt_deque_count( this->queue ) == 0 )
+				break;
+			else
+				nanosleep( &tm, NULL );
+		}
 	}
 
 	this->running = 0;
+	
+	// Unblock sdl_preview
+	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "put_mode" ) == 1 )
+	{
+		frame = mlt_consumer_get_frame( consumer );
+		if ( frame )
+			mlt_frame_close( frame );
+		frame = NULL;
+	}
 
 	// Kill the video thread
 	if ( init_video == 0 )
