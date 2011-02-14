@@ -22,12 +22,13 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_producer.h>
+#include <framework/mlt_log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
-#include <assert.h>
+#include <sys/time.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -346,6 +347,7 @@ static void *consumer_thread( void *arg )
 				mlt_position duration = mlt_producer_get_playtime( producer );
 				int pause = 0;
 
+#ifndef SKIP_WAIT_EOS
 				if ( this->active == this->play )
 				{
 					// Do not interrupt the play consumer near the end
@@ -360,10 +362,11 @@ static void *consumer_thread( void *arg )
 					}
 					else
 					{
-						// Send frame with speed 0 once to stop it
-						if ( frame && !eos && speed == 0.0 )
+						// Send frame with speed 0 to stop it
+						if ( frame && !mlt_consumer_is_stopped( this->play ) )
 						{
 							mlt_consumer_put_frame( this->play, frame );
+							frame = NULL;
 							eos = 1;
 						}
 
@@ -371,11 +374,21 @@ static void *consumer_thread( void *arg )
 						if ( mlt_consumer_is_stopped( this->play ) )
 						{
 							// Stream has ended
+							mlt_log_verbose( MLT_CONSUMER_SERVICE( consumer ), "END OF STREAM\n" );
 							pause = 1;
-							eos = 0; // reset eof indicator
+							eos = 0; // reset eos indicator
+						}
+						else
+						{
+							// Prevent a tight busy loop
+							struct timespec tm = { 0, 100000L }; // 100 usec
+							nanosleep( &tm, NULL );
 						}
 					}
 				}
+#else
+				pause = this->active == this->play;
+#endif
 				if ( pause )
 				{
 					// Start the still consumer

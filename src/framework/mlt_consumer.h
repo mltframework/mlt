@@ -122,6 +122,7 @@ struct mlt_consumer_s
 	int consecutive_dropped;
 	int consecutive_rendered;
 	int process_head;
+	int started;
 };
 
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )
