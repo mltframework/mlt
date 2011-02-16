@@ -63,6 +63,14 @@ int stringValue( const char *string, const char **stringList, int max )
     return 0;
 }
 
+/** Sets "spline_is_dirty" to 1 if property "spline" was changed.
+ * We then know when to parse the json stored in "spline" */
+static void rotoPropertyChanged( mlt_service owner, mlt_filter this, char *name )
+{
+    if ( !strcmp( name, "spline" ) )
+        mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "spline_is_dirty", 1 );
+}
+
 /** Linear interp */
 inline void lerp( const PointF *a, const PointF *b, PointF *result, double t )
 {
@@ -110,14 +118,14 @@ int json2BCurves( cJSON *array, BPointF **points )
     int i = 0;
     do
     {
-        if ( cJSON_GetArraySize( child ) == 3 )
+        if ( child && cJSON_GetArraySize( child ) == 3 )
         {
             jsonGetPoint( child->child , &(*points)[i].h1 );
             jsonGetPoint( child->child->next, &(*points)[i].p );
             jsonGetPoint( child->child->next->next, &(*points)[i].h2 );
             i++;
         }
-    } while ( ( child = child->next ) );
+    } while ( child && ( child = child->next ) );
 
     if ( i < count )
         *points = mlt_pool_realloc( *points, i * sizeof( BPointF ) );
@@ -422,20 +430,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
     mlt_properties properties = MLT_FILTER_PROPERTIES( this );
     mlt_properties frameProperties = MLT_FRAME_PROPERTIES( frame );
-    char *spline = mlt_properties_get( properties, "spline" );
-    char *splineOld = mlt_properties_get( properties, "spline_old" );
+    int splineIsDirty = mlt_properties_get_int( properties, "spline_is_dirty" );
     char *modeStr = mlt_properties_get( properties, "mode" );
+    cJSON *root = mlt_properties_get_data( properties, "spline_parsed", NULL );
 
-    cJSON *root;
-    int newSpline = 1;
-    if ( splineOld != NULL && strlen( spline ) && strcmp( spline, splineOld ) == 0 ) {
-        // the very same parameter was already parsed by json, use the saved json struct
-        newSpline = 0;
-        root = mlt_properties_get_data( properties, "spline_json", NULL );
-    }
-    else
+    if ( splineIsDirty || root == NULL )
     {
+        char *spline = mlt_properties_get( properties, "spline" );
         root = cJSON_Parse( spline );
+        mlt_properties_set_data( properties, "spline_parsed", root, 0, (mlt_destructor)cJSON_Delete, NULL );
+        mlt_properties_set_int( properties, "spline_is_dirty", 0 );
     }
 
     if ( root == NULL )
@@ -461,16 +465,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
         time = mlt_frame_get_position( frame );
 
         cJSON *keyframe = root->child;
-        cJSON *keyframeOld = NULL;
+        cJSON *keyframeOld = keyframe;
         while ( atoi( keyframe->string ) < time && keyframe->next )
         {
             keyframeOld = keyframe;
             keyframe = keyframe->next;
-        }
-
-        if ( keyframeOld == NULL ) {
-            // parameter has only 1 keyframe or we are before the 1. keyframe
-            keyframeOld = keyframe;
         }
 
         if ( !keyframe )
@@ -549,12 +548,6 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
     int length = count * sizeof( BPointF );
 
-    if ( newSpline )
-    {
-        mlt_properties_set_data( properties, "spline_json", root, 0, (mlt_destructor)cJSON_Delete, NULL );
-        mlt_properties_set( properties, "spline_old", strdup( spline ) );
-    }
-
     mlt_properties_set_data( frameProperties, "points", points, length, (mlt_destructor)mlt_pool_release, NULL );
     mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
     mlt_properties_set_int( frameProperties, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
@@ -580,6 +573,8 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
                 mlt_properties_set_int( properties, "precision", 1 );
                 if ( arg != NULL )
                     mlt_properties_set( properties, "spline", arg );
+
+                mlt_events_listen( properties, this, "property-changed", (mlt_listener)rotoPropertyChanged );
         }
         return this;
 }
