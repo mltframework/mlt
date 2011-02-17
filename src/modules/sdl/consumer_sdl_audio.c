@@ -541,8 +541,9 @@ static void *consumer_thread( void *arg )
 			// Optimisation to reduce latency
 			if ( speed == 1.0 )
 			{
-				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
-					mlt_consumer_purge( consumer );
+                // TODO: disabled due to misbehavior on parallel-consumer
+//				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
+//					mlt_consumer_purge( consumer );
 				last_position = mlt_frame_get_position( frame );
 			}
 			else
