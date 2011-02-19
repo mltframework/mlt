@@ -187,6 +187,9 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 					exif_data_unref(d);
 				}
 
+				// Remember EXIF value, might be useful for someone
+				mlt_properties_set_int( producer_props, "_exif_orientation" , exif_orientation );
+				      
 				if ( exif_orientation > 1 )
 				{
 				      // Rotate image according to exif data

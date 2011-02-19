@@ -303,6 +303,9 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 					/* Free the EXIF data */
 					exif_data_unref(d);
 				}
+				
+				// Remember EXIF value, might be useful for someone
+				mlt_properties_set_int( producer_props, "_exif_orientation" , exif_orientation );
 
 				if ( exif_orientation > 1 )
 				{
