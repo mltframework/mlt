@@ -358,7 +358,7 @@ static int slowmotion_get_frame( mlt_producer this, mlt_frame_ptr frame, int ind
 
 mlt_producer producer_slowmotion_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_producer this = mlt_producer_new( );
+	mlt_producer this = mlt_producer_new( profile );
 
 	// Wrap the loader
 	mlt_producer real_producer = mlt_factory_producer( profile, NULL, arg );

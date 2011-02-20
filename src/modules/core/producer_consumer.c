@@ -218,7 +218,7 @@ static void producer_close( mlt_producer this )
 
 mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_producer this = mlt_producer_new( );
+	mlt_producer this = mlt_producer_new( profile );
 
 	// Encapsulate the real producer
 	mlt_profile temp_profile = mlt_profile_init( NULL );

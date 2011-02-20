@@ -91,7 +91,6 @@ int mlt_producer_init( mlt_producer this, void *child )
 			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
 			mlt_properties_set_position( properties, "_position", 0.0 );
 			mlt_properties_set_double( properties, "_frame", 0 );
-			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL ) );
 			mlt_properties_set_double( properties, "_speed", 1.0 );
 			mlt_properties_set_position( properties, "in", 0 );
 			mlt_properties_set_position( properties, "out", 14999 );
@@ -147,10 +146,17 @@ static void mlt_producer_service_changed( mlt_service owner, mlt_producer this )
  * \return the new producer
  */
 
-mlt_producer mlt_producer_new( )
+mlt_producer mlt_producer_new( mlt_profile profile )
 {
 	mlt_producer this = malloc( sizeof( struct mlt_producer_s ) );
-	mlt_producer_init( this, NULL );
+	if ( this )
+	{
+		if ( mlt_producer_init( this, NULL ) == 0 )
+		{
+			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( this ), "_profile", profile, 0, NULL, NULL );
+			mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( this ), "aspect_ratio", mlt_profile_sar( profile ) );
+		}
+	}
 	return this;
 }
 
@@ -226,7 +232,7 @@ mlt_producer mlt_producer_cut_parent( mlt_producer this )
 
 mlt_producer mlt_producer_cut( mlt_producer this, int in, int out )
 {
-	mlt_producer result = mlt_producer_new( );
+	mlt_producer result = mlt_producer_new( mlt_service_profile( MLT_PRODUCER_SERVICE( this ) ) );
 	mlt_producer parent = mlt_producer_cut_parent( this );
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( result );
 	mlt_properties parent_props = MLT_PRODUCER_PROPERTIES( parent );

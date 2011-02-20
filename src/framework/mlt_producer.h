@@ -26,6 +26,7 @@
 
 #include "mlt_service.h"
 #include "mlt_filter.h"
+#include "mlt_profile.h"
 
 /** \brief Producer abstract service class
  *
@@ -88,7 +89,7 @@ struct mlt_producer_s
 #define MLT_PRODUCER_PROPERTIES( producer )	MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) )
 
 extern int mlt_producer_init( mlt_producer self, void *child );
-extern mlt_producer mlt_producer_new( );
+extern mlt_producer mlt_producer_new( mlt_profile );
 extern mlt_service mlt_producer_service( mlt_producer self );
 extern mlt_properties mlt_producer_properties( mlt_producer self );
 extern int mlt_producer_seek( mlt_producer self, mlt_position position );

@@ -190,7 +190,7 @@ static void * load_lib(  mlt_profile profile, mlt_service_type type , void* hand
 		mlt_properties properties=NULL;
 
 		if (type == producer_type && info.plugin_type == F0R_PLUGIN_TYPE_SOURCE ){
-			mlt_producer this = mlt_producer_new( );
+			mlt_producer this = mlt_producer_new( profile );
 			if ( this != NULL )
 			{
 				this->get_frame = producer_get_frame;

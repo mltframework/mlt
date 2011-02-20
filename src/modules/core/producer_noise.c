@@ -50,7 +50,7 @@ static void producer_close( mlt_producer this );
 mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new producer object
-	mlt_producer this = mlt_producer_new( );
+	mlt_producer this = mlt_producer_new( profile );
 
 	// Initialise the producer
 	if ( this != NULL )
@@ -147,7 +147,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 		// Aspect ratio is whatever it needs to be
-		mlt_properties_set_double( properties, "aspect_ratio", 0 );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( this ), "aspect_ratio" ) );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );

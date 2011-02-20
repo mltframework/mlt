@@ -37,7 +37,7 @@ static void producer_close( mlt_producer this );
 mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Construct a new holding producer
-	mlt_producer this = mlt_producer_new( );
+	mlt_producer this = mlt_producer_new( profile );
 
 	// Construct the requested producer via loader
 	mlt_producer producer = mlt_factory_producer( profile, NULL, arg );
