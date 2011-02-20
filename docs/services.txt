@@ -174,67 +174,6 @@ Producers
 	        DVCPRO is incorrectly identified as 16:9 aspect ratio. You must use
 	        libdv from CVS or a post 0.101 release. 
 
-	mcdv (Proprietary)
-
-	    Description
-
-	        MainConcept based dv decoder for video and audio.
-
-	    Constructor Argument
-
-	        'file'    - produce a/v from file
-
-	    Initialisation Properties
-
-	        int in - in point
-	        int out - out point
-
-	    Read Only Properties
-
-	        string resource - file location
-	        double fps - output frames per second
-	        int length - duration of resource (in frames)
-
-	    Dependencies
-
-	        MainConcept DV or DVCPRO SDK, libdv.
-	        "dv_sdk" installed parallel to mlt.
-
-	    Known Bugs
-
-	        None
-
-	mcmpeg (Proprietary)
-
-	    Description
-
-	        MainConcept based mpeg decoder for video and audio.
-
-	    Constructor Argument
-
-	        'file'    - produce a/v from file
-
-	    Initialisation Properties
-
-	        int in - in point
-	        int out - out point
-
-	    Read Only Properties
-
-	        string resource - file location
-	        double fps - output frames per second
-	        double aspect_ratio - sample aspect ratio of video
-	        int length - duration of resource (in frames)
-	        
-	    Dependencies
-
-	        MainConcept MPEG SDK.
-	        "mpeg_sdk_release" installed parallel to mlt.
-
-	    Known Bugs
-
-	        None.
-
 	noise
 
 	    Description
@@ -812,45 +751,6 @@ Filters
 	    
 	        none
 	    
-	mcrescale
-
-	    Description
-
-	        Scale the producer video frame size to match the consumer.
-	        This filter is designed for use as a normaliser for the loader producer.
-
-	    Constructor Argument
-
-	        interpolation - the rescaling method, one of:
-	            nearest (lowest quality, fastest),
-	            bilinear (default; good quality, moderate speed),
-	            hyper (best quality, slowest).
-
-	    Initialisation Properties
-
-	        int in - in point
-	        int out - out point
-
-	    Mutable Properties
-
-	        string interpolation - see constructor argument above
-
-	        If a property "consumer_aspect_ratio" exists on the frame, then
-	        rescaler normalises the producer's aspect ratio and maximises the
-	        size of the frame, but may not produce the consumer's requested
-	        dimension. Therefore, this option works best in conjunction with the
-	        resize filter. This behavior can be disabled by another service by
-	        either removing the property, setting it to zero, or setting
-	        frame property "distort" to 1.
-
-	    Dependencies
-
-	        the mainconcept rescaling sdk.
-
-	    Known Bugs
-
-	        none
-	
 	mirror
 	
 	    Description
@@ -1156,8 +1056,8 @@ Filters
 
 	        string resource - the producer to use
 	        string factory - producer required for the resource (default: 'loader')
-	        string geometry - composite geometry
-	        string distort - control scaling
+	        string composite.geometry - composite geometry
+	        string composite.distort - control scaling
 	        int in - in point
 	        int out - out point
 
@@ -1412,44 +1312,6 @@ Consumers
 	    
 	        Plenty.
 
-	bluefish (Proprietary)
-	
-	    Description
-
-	        BlueFish444 audio and video output module.
-	    
-	    Constructor Argument
-
-	        card - a numeric card id starting at 1, default is 1.
-	        
-	    Initialisation Properties
-
-	        string standard - "PAL" (default) or "NTSC"
-	                        - default is based upon MLT_NORMALISATION 
-	                          environment variable, which defaults to PAL.
-	        int frames - the number of DMA video frames. default is 8.
-	                     minimum is 2. maximum on my system is 11.
-	        int buffer - the number of frames to buffer within MLT, minimum 1, 
-	                     default 25.
-	        string rescale - a rescale method, see the Filters/rescale.
-	        
-	    Read Only Properties
-
-	        none
-	    
-	    Dependencies
-
-	        BlueVelvet SDK installed parallel to mlt in "bluefish."
-	    
-	    Known Bugs
-
-	        Does not work with any service that uses pipes!
-	        
-	        If mlt crashes, you might need to reload the BlueDriver kernel 
-	        module due to unreleased DMA buffers.
-	        
-	        Only supports 2 channel audio at the moment.
-	    
 	libdv
 	
 	    Description
@@ -1477,41 +1339,6 @@ Consumers
 	    Dependencies
 	    
 	        libdv
-	        
-	    Known Bugs
-	    
-	        none
-
-	mcmpeg
-	
-	    Description
-	    
-	        Mainconcept MPEG encoder.
-
-	    Constructor Argument
-
-	        string target - the filename to write to.
-
-	    Initialisation Properties
-	    
-	        int buffer - the number of frames to buffer, minimum 1, default 25.
-	        string rescale - a rescale method, see the Filters/rescale.
-	        string format - vcd [default], svcd or dvd provide base settings
-	        int motion_search_type - 0 to 16 - reduces quality/cpu usage
-	        int gop - group of picture size (default: format dependent)
-
-	    Mutable Properties
-	    
-	        int progressive - indicates whether to use progressive or field-
-	                          based rendering, default 0 (off).
-	        
-	    Read Only Properties
-	    
-	        none
-	        
-	    Dependencies
-	    
-	        Mainconcept MPEG SDK
 	        
 	    Known Bugs
 	    

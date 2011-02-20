@@ -7,12 +7,7 @@ export MLT_PROFILES_PATH=`pwd`/profiles
 
 export LD_LIBRARY_PATH=\
 `pwd`/src/framework:\
-`pwd`/src/mlt++:\
-`pwd`/src/modules/bluefish:\
-`pwd`/../BlueLinuxDriver/install/lib:\
-`pwd`/../mpeg_sdk_release/bin:\
-`pwd`/../dvcpro_sdk_release/lib:\
-`pwd`/../sr_sdk_release:\
+`pwd`/src/mlt++:
 $LD_LIBRARY_PATH
 
 [ $(uname -s) = Darwin ] && export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH

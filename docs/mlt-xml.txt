@@ -33,7 +33,7 @@ Introduction:
 
 	In the mlt model, producers are created and attached to 'consumers' -
 	consumers are software playback components (such as SDL), or wrappers for
-	hardware drivers (such as bluefish) or even the XML serialising
+	hardware drivers (such as sdi) or even the XML serialising
 	consumer itself (the latter doesn't receive frames - it merely
 	interrogates the connected producer for its configuration).
 

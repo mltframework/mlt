@@ -23,11 +23,9 @@ Directories
 	    + framework         - The mlt media framework
 	    + modules           - All services are defined here
 	        + avformat      - libavformat dependent services
-	        + bluefish      - Bluefish dependent services (*)
 	        + core          - Independent MLT services
 	        + dv            - libdv dependent services
 	        + gtk2          - pango and pixbuf dependent services
-	        + mainconcept   - mainconcept dependent services (*)
 	        + normalize     - audio normalisation functions (**)
 	        + plus          - throwaway silliness
 	        + resample      - libresample dependent services (**)
@@ -64,17 +62,11 @@ Dependencies
 	avformat    Provided from ffmpeg CVS and compiled as a shared library.
 	            URL: http://ffmpeg.sf.net
 	----------- ----------------------------------------------------------
-	bluefish    Bluefish hardware and software development kit
-	            URL: http://www.bluefish444.com
-	----------- ----------------------------------------------------------
 	dv          libdv 0.102 or later.
 	            URL: http://libdv.sf.net
 	----------- ----------------------------------------------------------
 	gtk2        GTK2 and associated dependencies.
 	            URL: http://www.gtk.org
-	----------- ----------------------------------------------------------
-	mainconcept Mainconcept MPEG and DVCPRO Release SDKs.
-	            URL: http://www.mainconcept.com
 	----------- ----------------------------------------------------------
 	resample    libsamplerate 0.15 or later 
 	            URL: http://www.mega-nerd.com/SRC/ (GPL)
