@@ -634,7 +634,7 @@ mlt_filter mlt_service_filter( mlt_service this, int index )
 
 mlt_profile mlt_service_profile( mlt_service this )
 {
-	return mlt_properties_get_data( MLT_SERVICE_PROPERTIES( this ), "_profile", NULL );
+	return this? mlt_properties_get_data( MLT_SERVICE_PROPERTIES( this ), "_profile", NULL ) : NULL;
 }
 
 /** Destroy a service.
