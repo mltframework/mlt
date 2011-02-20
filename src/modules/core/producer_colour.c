@@ -50,7 +50,7 @@ mlt_producer producer_colour_init( mlt_profile profile, mlt_service_type type, c
 		// Set the default properties
 		mlt_properties_set( properties, "resource", colour == NULL ? "0x000000ff" : colour );
 		mlt_properties_set( properties, "_resource", "" );
-		mlt_properties_set_double( properties, "aspect_ratio", 0 );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
 		
 		return producer;
 	}
