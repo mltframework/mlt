@@ -45,8 +45,8 @@ typedef struct BPointF
     struct PointF h2;
 } BPointF;
 
-enum MODES { MODE_RGB, MODE_ALPHA, MODE_MATTE };
-const char *MODESTR[3] = { "rgb", "alpha", "matte" };
+enum MODES { MODE_RGB, MODE_ALPHA, MODE_LUMA };
+const char *MODESTR[3] = { "rgb", "alpha", "luma" };
 
 enum ALPHAOPERATIONS { ALPHA_CLEAR, ALPHA_MAX, ALPHA_MIN, ALPHA_ADD, ALPHA_SUB };
 const char *ALPHAOPERATIONSTR[5] = { "clear", "max", "min", "add", "sub" };
@@ -68,7 +68,7 @@ int stringValue( const char *string, const char **stringList, int max )
 static void rotoPropertyChanged( mlt_service owner, mlt_filter this, char *name )
 {
     if ( !strcmp( name, "spline" ) )
-        mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "spline_is_dirty", 1 );
+        mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "_spline_is_dirty", 1 );
 }
 
 /** Linear interp */
@@ -310,7 +310,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                     p += 3;
                 }
                 break;
-            case MODE_MATTE:
+            case MODE_LUMA:
                 switch ( *format )
                 {
                     case mlt_image_rgb24:
@@ -430,16 +430,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
     mlt_properties properties = MLT_FILTER_PROPERTIES( this );
     mlt_properties frameProperties = MLT_FRAME_PROPERTIES( frame );
-    int splineIsDirty = mlt_properties_get_int( properties, "spline_is_dirty" );
+    int splineIsDirty = mlt_properties_get_int( properties, "_spline_is_dirty" );
     char *modeStr = mlt_properties_get( properties, "mode" );
-    cJSON *root = mlt_properties_get_data( properties, "spline_parsed", NULL );
+    cJSON *root = mlt_properties_get_data( properties, "_spline_parsed", NULL );
 
     if ( splineIsDirty || root == NULL )
     {
         char *spline = mlt_properties_get( properties, "spline" );
         root = cJSON_Parse( spline );
-        mlt_properties_set_data( properties, "spline_parsed", root, 0, (mlt_destructor)cJSON_Delete, NULL );
-        mlt_properties_set_int( properties, "spline_is_dirty", 0 );
+        mlt_properties_set_data( properties, "_spline_parsed", root, 0, (mlt_destructor)cJSON_Delete, NULL );
+        mlt_properties_set_int( properties, "_spline_is_dirty", 0 );
     }
 
     if ( root == NULL )
