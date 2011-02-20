@@ -264,7 +264,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             bpoints[i].h2.y *= *height;
         }
 
-        double errorSqr = (double)SQR( mlt_properties_get_int( properties, "precision" ) );
+        int precision = mlt_properties_get_int( properties, "precision" );
+        double errorSqr = (double)SQR( precision );
         count = 0;
         size = 1;
         points = mlt_pool_alloc( size * sizeof( struct PointF ) );
@@ -281,7 +282,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             fillMap( points, count, *width, *height, invert, map );
 
             double bpp = 4;
-            if ( mode != MODE_ALPHA )
+            if ( mode == MODE_LUMA )
             {
                 if ( *format == mlt_image_rgb24 )
                     bpp = 3;
@@ -451,7 +452,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
     if ( root->type == cJSON_Array )
     {
         /*
-         * constant (over time)
+         * constant
          */
         count = json2BCurves( root, &points );
     }
@@ -466,39 +467,22 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
         cJSON *keyframe = root->child;
         cJSON *keyframeOld = keyframe;
+
+        if ( !keyframe )
+            return frame;
+
         while ( atoi( keyframe->string ) < time && keyframe->next )
         {
             keyframeOld = keyframe;
             keyframe = keyframe->next;
         }
 
-        if ( !keyframe )
-        {
-            if ( keyframeOld )
-            {
-                // parameter malformed
-                keyframe = keyframeOld;
-            }
-            else if ( root->child )
-            {
-                // parameter malformed
-                keyframe = root->child;
-                keyframeOld = keyframe;
-            }
-            else
-            {
-                // json object has no children
-                cJSON_Delete( root );
-                return frame;
-            }
-        }
-
-        pos2 = atoi( keyframe->string );
         pos1 = atoi( keyframeOld->string );
+        pos2 = atoi( keyframe->string );
 
         if ( pos1 >= pos2 || time >= pos2 )
         {
-            // keyframes in wrong order or after last keyframe
+            // keyframes in wrong order or before first / after last keyframe
             count = json2BCurves( keyframe, &points );
         }
         else
@@ -508,47 +492,31 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
              */
 
             BPointF *p1, *p2;
-            int c1, c2;
-            c1 = json2BCurves( keyframeOld, &p1 );
-            c2 = json2BCurves( keyframe, &p2 );
+            int c1 = json2BCurves( keyframeOld, &p1 );
+            int c2 = json2BCurves( keyframe, &p2 );
 
-            if ( c1 > c2 )
+            // range 0-1
+            double position = ( time - pos1 ) / (double)( pos2 - pos1 + 1 );
+
+            count = MIN( c1, c2 );  // additional points are ignored
+            points = mlt_pool_alloc( count * sizeof( BPointF ) );
+            for ( i = 0; i < count; i++ )
             {
-                // number of points decreasing from p1 to p2; we can't handle this yet
-                count = c2;
-                points = mlt_pool_alloc( count * sizeof( BPointF ) );
-                memcpy( points, p2, count * sizeof( BPointF ) );
-                mlt_pool_release( p1 );
-                mlt_pool_release( p2 );
+                lerp( &(p1[i].h1), &(p2[i].h1), &(points[i].h1), position );
+                lerp( &(p1[i].p), &(p2[i].p), &(points[i].p), position );
+                lerp( &(p1[i].h2), &(p2[i].h2), &(points[i].h2), position );
             }
-            else
-            {
-                // range 0-1
-                double position = ( time - pos1 ) / (double)( pos2 - pos1 + 1 );
 
-                count = c1;  // additional points in p2 are ignored
-                points = mlt_pool_alloc( count * sizeof( BPointF ) );
-                for ( i = 0; i < count; i++ )
-                {
-                    lerp( &(p1[i].h1), &(p2[i].h1), &(points[i].h1), position );
-                    lerp( &(p1[i].p), &(p2[i].p), &(points[i].p), position );
-                    lerp( &(p1[i].h2), &(p2[i].h2), &(points[i].h2), position );
-                }
-
-                mlt_pool_release( p1 );
-                mlt_pool_release( p2 );
-            }
+            mlt_pool_release( p1 );
+            mlt_pool_release( p2 );
         }
     }
     else
     {
-        cJSON_Delete( root );
         return frame;
     }
 
-    int length = count * sizeof( BPointF );
-
-    mlt_properties_set_data( frameProperties, "points", points, length, (mlt_destructor)mlt_pool_release, NULL );
+    mlt_properties_set_data( frameProperties, "points", points, count * sizeof( BPointF ), (mlt_destructor)mlt_pool_release, NULL );
     mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
     mlt_properties_set_int( frameProperties, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
     mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
