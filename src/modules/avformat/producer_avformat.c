@@ -1242,7 +1242,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				}
 				else
 				{
-					if ( pkt.dts != AV_NOPTS_VALUE )
+					if ( this->seekable && pkt.dts != AV_NOPTS_VALUE )
 					{
 						int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
 						if ( context->start_time != AV_NOPTS_VALUE )
