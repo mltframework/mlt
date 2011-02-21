@@ -49,6 +49,24 @@ extern void producer_close( mlt_producer this );
 extern void transition_close( mlt_transition this );
 extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame );
 
+static void check_thread_safe( mlt_properties properties, const char *name )
+{
+	char dirname[PATH_MAX];
+	snprintf( dirname, PATH_MAX, "%s/frei0r/not_thread_safe.txt", mlt_environment( "MLT_DATA" ) );
+	mlt_properties not_thread_safe = mlt_properties_load( dirname );
+	int i;
+
+	for ( i = 0; i < mlt_properties_count( not_thread_safe ); i++ )
+	{
+		if ( strcmp( name, mlt_properties_get_name( not_thread_safe, i ) ) == 0 )
+		{
+			mlt_properties_set_int( properties, "_not_thread_safe", 1 );
+			break;
+		}
+	}
+	mlt_properties_close( not_thread_safe );
+}
+
 static mlt_properties fill_param_info ( mlt_service_type type, const char *service_name, char *name )
 {
 	char file[ PATH_MAX ];
@@ -158,7 +176,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	return metadata;
 }
 
-static void * load_lib(  mlt_profile profile, mlt_service_type type , void* handle){
+static void * load_lib( mlt_profile profile, mlt_service_type type , void* handle, const char *name ){
 
 	int i=0;
 	void (*f0r_get_plugin_info)(f0r_plugin_info_t*),
@@ -235,6 +253,7 @@ static void * load_lib(  mlt_profile profile, mlt_service_type type , void* hand
 				ret=transition;
 			}
 		}
+		check_thread_safe( properties, name );
 		mlt_properties_set_data(properties, "_dlclose_handle", handle , sizeof (void*) , NULL , NULL );
 		mlt_properties_set_data(properties, "_dlclose", dlclose , sizeof (void*) , NULL , NULL );
 		mlt_properties_set_data(properties, "f0r_construct", f0r_construct , sizeof(void*),NULL,NULL);
@@ -291,7 +310,7 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 			void* handle=dlopen(soname,RTLD_LAZY);
 
 			if (handle ){
-				ret=load_lib ( profile , type , handle );
+				ret=load_lib ( profile , type , handle, firstname );
 			}else{
 				dlerror();
 			}

@@ -37,6 +37,7 @@ install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
 	install -d "$(DESTDIR)$(prefix)/share/mlt/frei0r"
 	install -m 644 blacklist.txt "$(DESTDIR)$(datadir)/mlt/frei0r"
+	install -m 644 not_thread_safe.txt "$(DESTDIR)$(datadir)/mlt/frei0r"
 
 ifneq ($(wildcard .depend),)
 include .depend

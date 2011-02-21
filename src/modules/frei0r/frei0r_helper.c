@@ -59,7 +59,7 @@ int process_frei0r_item( mlt_service service, double position, mlt_properties pr
 			 const uint32_t* inframe1,const uint32_t* inframe2,const uint32_t* inframe3,
 	uint32_t* outframe)=mlt_properties_get_data(  prop , "f0r_update2" ,NULL);
 	mlt_service_type type = mlt_service_identify( service );
-
+	int not_thread_safe = mlt_properties_get_int( prop, "_not_thread_safe" );
 
 	//use as name the width and height
 	f0r_instance_t inst;
@@ -68,6 +68,7 @@ int process_frei0r_item( mlt_service service, double position, mlt_properties pr
 	sprintf(ctorname,"ctor-%dx%d",*width,*height);
 
 	mlt_service_lock( service );
+
 	void* neu=mlt_properties_get_data( prop , ctorname ,NULL );
 	if (!f0r_construct){
 		//printf("no ctor\n");
@@ -79,7 +80,9 @@ int process_frei0r_item( mlt_service service, double position, mlt_properties pr
 	}else{
 		inst=mlt_properties_get_data( prop ,  ctorname , NULL );
 	}
-	mlt_service_unlock( service );
+
+	if ( !not_thread_safe )
+		mlt_service_unlock( service );
 	
 	if (f0r_get_plugin_info){
 		f0r_get_plugin_info(&info);
@@ -146,6 +149,8 @@ int process_frei0r_item( mlt_service service, double position, mlt_properties pr
 	} else if (type==transition_type && f0r_update2 ){
 		f0r_update2 ( inst, position, source[0], source[1], NULL, dest );
 	}
+	if ( not_thread_safe )
+		mlt_service_unlock( service );
 	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
 		rgba_bgra((uint8_t*) dest, (uint8_t*) result, *width, *height);
 	}
