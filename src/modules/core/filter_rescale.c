@@ -174,8 +174,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	{
 		int iwidth = *width;
 		int iheight = *height;
-		int owidth = *width;
-		int oheight = *height;
+		double factor = mlt_properties_get_double( filter_properties, "factor" );
+		factor = factor > 0 ? factor : 1.0;
+		int owidth = *width * factor;
+		int oheight = *height * factor;
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 
 		// Default from the scaler if not specifed on the frame
