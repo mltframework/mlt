@@ -324,7 +324,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			position = mlt_frame_get_position( this->frames[ a_frame ] );
 
 			// If a is in range, we're active
-			active = position >= in && position <= out;
+			active = position >= in && ( out == 0 || position <= out );
 		}
 
 		// Finally, process the a and b frames
