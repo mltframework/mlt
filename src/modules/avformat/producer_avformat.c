@@ -518,7 +518,6 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			params->width = 640;
 			params->height = 480;
 			params->time_base= (AVRational){1,25};
-			// params->device = file;
 			params->channels = 2;
 			params->sample_rate = 48000;
 		}
@@ -547,6 +546,8 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 					params->channel = atoi( value );
 				else if ( !strcmp( name, "channels" ) )
 					params->channels = atoi( value );
+				else if ( !strcmp( name, "pix_fmt" ) )
+					params->pix_fmt = av_get_pix_fmt( value );
 				else if ( !strcmp( name, "width" ) )
 					params->width = atoi( value );
 				else if ( !strcmp( name, "height" ) )
