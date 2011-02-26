@@ -543,6 +543,8 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 					params->time_base.num = atoi( value );
 				else if ( !strcmp( name, "sample_rate" ) )
 					params->sample_rate = atoi( value );
+				else if ( !strcmp( name, "channel" ) )
+					params->channel = atoi( value );
 				else if ( !strcmp( name, "channels" ) )
 					params->channels = atoi( value );
 				else if ( !strcmp( name, "width" ) )
