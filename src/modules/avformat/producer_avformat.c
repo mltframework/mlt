@@ -600,14 +600,17 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			if ( context->start_time != AV_NOPTS_VALUE )
 				this->start_time = context->start_time;
 
-			// Check if we're seekable (something funny about mpeg here :-/)
-			if ( strncmp( file, "pipe:", 5 ) &&
-				 strncmp( file, "/dev/", 5 ) &&
-				 strncmp( file, "http:", 5 ) &&
-				 strncmp( file, "udp:", 4 )  &&
-				 strncmp( file, "tcp:", 4 )  &&
-				 strncmp( file, "rtsp:", 5 ) &&
-				 strncmp( file, "rtp:", 4 ) )
+			// Check if we're seekable
+			// avdevices are typically AVFMT_NOFILE and not seekable
+			this->seekable = !format || !( format->flags & AVFMT_NOFILE );
+			if ( context->pb )
+			{
+				// protocols can indicate if they support seeking
+				URLContext *uc = url_fileno( context->pb );
+				if ( uc )
+					this->seekable = uc->is_streamed;
+			}
+			if ( this->seekable )
 			{
 				this->seekable = av_seek_frame( context, -1, this->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 				mlt_properties_set_int( properties, "seekable", this->seekable );
