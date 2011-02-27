@@ -27,8 +27,8 @@
 #include <math.h>
 #include <string.h>
 
-#define MAX( x, y ) x > y ? x : y
-#define MIN( x, y ) x < y ? x : y
+#define MAX( x, y ) ( ( x ) > ( y ) ? ( x ) : ( y ) )
+#define MIN( x, y ) ( ( x ) < ( y ) ? ( x ) : ( y ) )
 #define SQR( x ) ( x ) * ( x )
 
 /** x, y tuple with double precision */
@@ -133,6 +133,92 @@ int json2BCurves( cJSON *array, BPointF **points )
     return i;
 }
 
+/** Blurs \param src horizontally. \See funtion blur. */
+void blurHorizontal( uint8_t *src, uint8_t *dst, int width, int height, int radius)
+{
+    int x, y, kx, yOff, total, amount, amountInit;
+    amountInit = radius * 2 + 1;
+    for (y = 0; y < height; ++y)
+    {
+        total = 0;
+        yOff = y * width;
+        // Process entire window for first pixel
+        int size = MIN(radius + 1, width);
+        for ( kx = 0; kx < size; ++kx )
+            total += src[yOff + kx];
+        dst[yOff] = total / ( radius + 1 );
+        // Subsequent pixels just update window total
+        for ( x = 1; x < width; ++x )
+        {
+            amount = amountInit;
+            // Subtract pixel leaving window
+            if ( x - radius - 1 >= 0 )
+                total -= src[yOff + x - radius - 1];
+            else
+                amount -= radius - x;
+            // Add pixel entering window
+            if ( x + radius < width )
+                total += src[yOff + x + radius];
+            else
+                amount -= radius - width + x;
+            dst[yOff + x] = total / amount;
+        }
+    }
+}
+
+/** Blurs \param src vertically. \See funtion blur. */
+void blurVertical( uint8_t *src, uint8_t *dst, int width, int height, int radius)
+{
+    int x, y, ky, total, amount, amountInit;
+    amountInit = radius * 2 + 1;
+    for (x = 0; x < width; ++x)
+    {
+        total = 0;
+        int size = MIN(radius + 1, height);
+        for ( ky = 0; ky < size; ++ky )
+            total += src[x + ky * width];
+        dst[x] = total / ( radius + 1 );
+        for ( y = 1; y < height; ++y )
+        {
+            amount = amountInit;
+            if ( y - radius - 1 >= 0 )
+                total -= src[( y - radius - 1 ) * width + x];
+            else
+                amount -= radius - y;
+            if ( y + radius < height )
+                total += src[( y + radius ) * width + x];
+            else
+                amount -= radius - height + y;
+            dst[y * width + x] = total / amount;
+        }
+    }
+}
+
+/**
+ * Blurs the \param map using a simple "average" blur.
+ * \param map Will be blured; 1bpp
+ * \param width x dimension of channel stored in \param map
+ * \param height y dimension of channel stored in \param map
+ * \param radius blur radius
+ * \param passes blur passes
+ */
+void blur( uint8_t *map, int width, int height, int radius, int passes )
+{
+    uint8_t *src = mlt_pool_alloc( width * height );
+    uint8_t *tmp = mlt_pool_alloc( width * height );
+
+    int i;
+    for ( i = 0; i < passes; ++i )
+    {
+        memcpy( src, map, width * height );
+        blurHorizontal( src, tmp, width, height, radius );
+        blurVertical( tmp, map, width, height, radius );
+    }
+
+    mlt_pool_release(src);
+    mlt_pool_release(tmp);
+}
+
 /**
  * Determines which points are located in the polygon and sets their value in \param map to \param value
  * \param vertices points defining the polygon
@@ -175,7 +261,7 @@ void fillMap( PointF *vertices, int count, int width, int height, int invert, ui
             {
                 nodeX[i] = MAX( 0, nodeX[i] );
                 nodeX[i+1] = MIN( nodeX[i+1], width );
-                memset( map + width * pixelY + nodeX[i], value, nodeX[i+1] - nodeX[i] + 1 );
+                memset( map + width * pixelY + nodeX[i], value, nodeX[i+1] - nodeX[i] );
             }
         }
     }
@@ -281,8 +367,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             int invert = mlt_properties_get_int( properties, "invert" );
             fillMap( points, count, *width, *height, invert, map );
 
+            int feather = mlt_properties_get_int( properties, "feather" );
+            if ( feather )
+                blur( map, *width, *height, feather, mlt_properties_get_int( properties, "feather_passes" ) );
+
             double bpp = 4;
-            if ( mode == MODE_LUMA )
+            if ( mode != MODE_ALPHA )
             {
                 if ( *format == mlt_image_rgb24 )
                     bpp = 3;
@@ -521,6 +611,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
     mlt_properties_set_int( frameProperties, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
     mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
     mlt_properties_set_int( frameProperties, "precision", mlt_properties_get_int( properties, "precision" ) );
+    mlt_properties_set_int( frameProperties, "feather", mlt_properties_get_int( properties, "feather" ) );
+    mlt_properties_set_int( frameProperties, "feather_passes", mlt_properties_get_int( properties, "feather_passes" ) );
     mlt_frame_push_get_image( frame, filter_get_image );
 
     return frame;
@@ -539,6 +631,8 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
                 mlt_properties_set( properties, "alpha_operation", "clear" );
                 mlt_properties_set_int( properties, "invert", 0 );
                 mlt_properties_set_int( properties, "precision", 1 );
+                mlt_properties_set_int( properties, "feather", 0 );
+                mlt_properties_set_int( properties, "feather_passes", 1 );
                 if ( arg != NULL )
                     mlt_properties_set( properties, "spline", arg );
 
