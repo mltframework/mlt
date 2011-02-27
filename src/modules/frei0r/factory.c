@@ -286,12 +286,13 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 	void* ret=NULL;
 	while (dircount--){
 		char soname[PATH_MAX];
+		char *myid = strdup( id );
 
 #ifdef WIN32
-		char *firstname = strtok( strdup(id), "." );
+		char *firstname = strtok( myid, "." );
 #else
 		char *save_firstptr = NULL;
-		char *firstname = strtok_r( strdup(id), ".", &save_firstptr );
+		char *firstname = strtok_r( myid, ".", &save_firstptr );
 #endif
 		char* directory = mlt_tokeniser_get_string (tokeniser, dircount);
 
@@ -315,6 +316,7 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 				dlerror();
 			}
 		}
+		free( myid );
 	}
 	mlt_tokeniser_close ( tokeniser );
 	return ret;
