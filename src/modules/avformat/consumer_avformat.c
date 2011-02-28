@@ -1052,6 +1052,28 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Write metadata
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
+	for ( i = 0; i < mlt_properties_count( properties ); i++ )
+	{
+		char *name = mlt_properties_get_name( properties, i );
+		if ( name && !strncmp( name, "meta.attr.", 10 ) )
+		{
+			char *key = strdup( name + 10 );
+			char *markup = strrchr( key, '.' );
+			if ( markup && !strcmp( markup, ".markup") )
+			{
+				markup[0] = '\0';
+				if ( !strstr( key, ".stream." ) )
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(43<<8)+0)
+					av_metadata_set2( &oc->metadata, key, mlt_properties_get_value( properties, i ), 0 );
+#else
+					av_metadata_set( &oc->metadata, key, mlt_properties_get_value( properties, i ) );
+#endif
+			}
+			free( key );
+		}
+	}
+#else
 	char *tmp = NULL;
 	int metavalue;
 
@@ -1075,6 +1097,7 @@ static void *consumer_thread( void *arg )
 
 	metavalue = mlt_properties_get_int( properties, "meta.attr.track.markup");
 	if (metavalue != 0) oc->track = metavalue;
+#endif
 
 	oc->oformat = fmt;
 	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );

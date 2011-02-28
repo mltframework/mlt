@@ -243,6 +243,7 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 {
 	int i;
 	char key[200];
+	AVMetadataTag *tag = NULL;
 
 	mlt_properties_set_int( meta_media, "meta.media.nb_streams", context->nb_streams );
 
@@ -339,7 +340,44 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 //		mlt_properties_set_int( meta_media, key, codec_context->profile );
 //		snprintf( key, sizeof(key), "meta.media.%d.codec.level", i );
 //		mlt_properties_set_int( meta_media, key, codec_context->level );
+
+		// Read Metadata
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
+		while ( ( tag = av_metadata_get( stream->metadata, "", tag, AV_METADATA_IGNORE_SUFFIX ) ) )
+		{
+			if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
+			{
+				snprintf( key, sizeof(key), "meta.attr.%d.stream.%s.markup", i, tag->key );
+				mlt_properties_set( meta_media, key, tag->value );
+			}
+		}
+#endif
 	}
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
+	while ( ( tag = av_metadata_get( context->metadata, "", tag, AV_METADATA_IGNORE_SUFFIX ) ) )
+	{
+		if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
+		{
+			snprintf( key, sizeof(key), "meta.attr.%s.markup", tag->key );
+			mlt_properties_set( meta_media, key, tag->value );
+		}
+	}
+#else
+	if ( context->title && strcmp( context->title, "" ) )
+		mlt_properties_set(properties, "meta.attr.title.markup", context->title );
+	if ( context->author && strcmp( context->author, "" ) )
+		mlt_properties_set(properties, "meta.attr.author.markup", context->author );
+	if ( context->copyright && strcmp( context->copyright, "" ) )
+		mlt_properties_set(properties, "meta.attr.copyright.markup", context->copyright );
+	if ( context->comment )
+		mlt_properties_set(properties, "meta.attr.comment.markup", context->comment );
+	if ( context->album )
+		mlt_properties_set(properties, "meta.attr.album.markup", context->album );
+	if ( context->year )
+		mlt_properties_set_int(properties, "meta.attr.year.markup", context->year );
+	if ( context->track )
+		mlt_properties_set_int(properties, "meta.attr.track.markup", context->track );
+#endif
 
 	return meta_media;
 }
@@ -665,22 +703,6 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 					error = 1;
 #endif
 			}
-
-			// Read Metadata
-			if ( context->title )
-				mlt_properties_set(properties, "meta.attr.title.markup", context->title );
-			if ( context->author )
-				mlt_properties_set(properties, "meta.attr.author.markup", context->author );
-			if ( context->copyright )
-				mlt_properties_set(properties, "meta.attr.copyright.markup", context->copyright );
-			if ( context->comment )
-				mlt_properties_set(properties, "meta.attr.comment.markup", context->comment );
-			if ( context->album )
-				mlt_properties_set(properties, "meta.attr.album.markup", context->album );
-			if ( context->year )
-				mlt_properties_set_int(properties, "meta.attr.year.markup", context->year );
-			if ( context->track )
-				mlt_properties_set_int(properties, "meta.attr.track.markup", context->track );
 
 			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
 			if ( av == 0 && audio_index != -1 && video_index != -1 )
