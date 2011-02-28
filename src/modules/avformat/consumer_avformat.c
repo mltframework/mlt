@@ -1227,6 +1227,9 @@ static void *consumer_thread( void *arg )
 				// Append the samples
 				sample_fifo_append( fifo, pcm, samples * channels );
 				total_time += ( samples * 1000000 ) / frequency;
+
+				if ( !video_st )
+					mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 			}
 
 			// Encode the image
