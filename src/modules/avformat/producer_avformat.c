@@ -39,7 +39,10 @@
 #  include "audioconvert.h"
 #endif
 #ifdef VDPAU
-#include <libavcodec/vdpau.h>
+#  include <libavcodec/vdpau.h>
+#endif
+#if (LIBAVUTIL_VERSION_INT > ((50<<16)+(7<<8)+0))
+#  include <libavutil/pixdesc.h>
 #endif
 
 // System header files
@@ -546,7 +549,9 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 					params->channel = atoi( value );
 				else if ( !strcmp( name, "channels" ) )
 					params->channels = atoi( value );
+#if (LIBAVUTIL_VERSION_INT > ((50<<16)+(7<<8)+0))
 				else if ( !strcmp( name, "pix_fmt" ) )
+#endif
 					params->pix_fmt = av_get_pix_fmt( value );
 				else if ( !strcmp( name, "width" ) )
 					params->width = atoi( value );
