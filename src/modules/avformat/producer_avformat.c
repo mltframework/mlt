@@ -589,8 +589,8 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 					params->channels = atoi( value );
 #if (LIBAVUTIL_VERSION_INT > ((50<<16)+(7<<8)+0))
 				else if ( !strcmp( name, "pix_fmt" ) )
-#endif
 					params->pix_fmt = av_get_pix_fmt( value );
+#endif
 				else if ( !strcmp( name, "width" ) )
 					params->width = atoi( value );
 				else if ( !strcmp( name, "height" ) )
