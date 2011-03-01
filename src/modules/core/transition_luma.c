@@ -482,12 +482,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 	}
 
-	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
-
 	// Arbitrary composite defaults
 	float mix = position_calculate( transition, a_frame );
 	float frame_delta = delta_calculate( transition, a_frame );
-	
 	float luma_softness = mlt_properties_get_double( properties, "softness" );
 	int progressive = 
 			mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
@@ -532,6 +529,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	else
 		// Dissolve the frames using the time offset for mix value
 		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
+	
+	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
 	// Extract the a_frame image info
 	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
