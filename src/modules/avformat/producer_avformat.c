@@ -651,7 +651,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 				// protocols can indicate if they support seeking
 				URLContext *uc = url_fileno( context->pb );
 				if ( uc )
-					this->seekable = uc->is_streamed;
+					this->seekable = !uc->is_streamed;
 			}
 			if ( this->seekable )
 			{
