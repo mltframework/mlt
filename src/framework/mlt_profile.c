@@ -90,9 +90,9 @@ static mlt_profile mlt_profile_select( const char *name )
  * This will never return NULL as it uses the dv_pal settings as hard-coded fallback default.
  *
  * \public \memberof mlt_profile_s
- * @param name the name of a profile settings file located in the standard location or
+ * \param name the name of a profile settings file located in the standard location or
  * the full path name to a profile settings file
- * @return a profile
+ * \return a profile
  */
 
 mlt_profile mlt_profile_init( const char *name )
@@ -163,8 +163,8 @@ static void set_mlt_normalisation( const char *profile_name )
 /** Load a profile from specific file.
  *
  * \public \memberof mlt_profile_s
- * @param file the full path name to a properties file
- * @return a profile or NULL on error
+ * \param file the full path name to a properties file
+ * \return a profile or NULL on error
  */
 
 mlt_profile mlt_profile_load_file( const char *file )
@@ -198,8 +198,8 @@ mlt_profile mlt_profile_load_file( const char *file )
 /** Load a profile from a properties object.
  *
  * \public \memberof mlt_profile_s
- * @param properties a properties list
- * @return a profile or NULL if out of memory
+ * \param properties a properties list
+ * \return a profile or NULL if out of memory
  */
 
 mlt_profile mlt_profile_load_properties( mlt_properties properties )
@@ -228,8 +228,8 @@ mlt_profile mlt_profile_load_properties( mlt_properties properties )
 /** Load an anonymous profile from string.
  *
  * \public \memberof mlt_profile_s
- * @param string a newline-delimited list of properties as name=value pairs
- * @return a profile or NULL if out of memory
+ * \param string a newline-delimited list of properties as name=value pairs
+ * \return a profile or NULL if out of memory
  */
 
 mlt_profile mlt_profile_load_string( const char *string )
@@ -252,14 +252,14 @@ mlt_profile mlt_profile_load_string( const char *string )
 /** Get the video frame rate as a floating point value.
  *
  * \public \memberof mlt_profile_s
- * @param aprofile a profile
+ * @param profile a profile
  * @return the frame rate
  */
 
-double mlt_profile_fps( mlt_profile aprofile )
+double mlt_profile_fps( mlt_profile profile )
 {
-	if ( aprofile )
-		return ( double ) aprofile->frame_rate_num / aprofile->frame_rate_den;
+	if ( profile )
+		return ( double ) profile->frame_rate_num / profile->frame_rate_den;
 	else
 		return 0;
 }
@@ -267,14 +267,14 @@ double mlt_profile_fps( mlt_profile aprofile )
 /** Get the sample aspect ratio as a floating point value.
  *
  * \public \memberof mlt_profile_s
- * @param aprofile a profile
- * @return the pixel aspect ratio
+ * \param profile a profile
+ * \return the pixel aspect ratio
  */
 
-double mlt_profile_sar( mlt_profile aprofile )
+double mlt_profile_sar( mlt_profile profile )
 {
-	if ( aprofile )
-		return ( double ) aprofile->sample_aspect_num / aprofile->sample_aspect_den;
+	if ( profile )
+		return ( double ) profile->sample_aspect_num / profile->sample_aspect_den;
 	else
 		return 0;
 }
@@ -282,14 +282,14 @@ double mlt_profile_sar( mlt_profile aprofile )
 /** Get the display aspect ratio as floating point value.
  *
  * \public \memberof mlt_profile_s
- * @param aprofile a profile
- * @return the image aspect ratio
+ * \param profile a profile
+ * \return the image aspect ratio
  */
 
-double mlt_profile_dar( mlt_profile aprofile )
+double mlt_profile_dar( mlt_profile profile )
 {
-	if ( aprofile )
-		return ( double ) aprofile->display_aspect_num / aprofile->display_aspect_den;
+	if ( profile )
+		return ( double ) profile->display_aspect_num / profile->display_aspect_den;
 	else
 		return 0;
 }
@@ -297,7 +297,7 @@ double mlt_profile_dar( mlt_profile aprofile )
 /** Free up the global profile resources.
  *
  * \public \memberof mlt_profile_s
- * @param profile a profile
+ * \param profile a profile
  */
 
 void mlt_profile_close( mlt_profile profile )

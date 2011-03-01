@@ -36,7 +36,7 @@
 */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track );
-static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor this );
+static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor self );
 
 /** Construct a tractor without a field or multitrack.
  *
@@ -49,11 +49,11 @@ static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor this );
 
 mlt_tractor mlt_tractor_init( )
 {
-	mlt_tractor this = calloc( sizeof( struct mlt_tractor_s ), 1 );
-	if ( this != NULL )
+	mlt_tractor self = calloc( sizeof( struct mlt_tractor_s ), 1 );
+	if ( self != NULL )
 	{
-		mlt_producer producer = &this->parent;
-		if ( mlt_producer_init( producer, this ) == 0 )
+		mlt_producer producer = &self->parent;
+		if ( mlt_producer_init( producer, self ) == 0 )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
@@ -66,15 +66,15 @@ mlt_tractor mlt_tractor_init( )
 
 			producer->get_frame = producer_get_frame;
 			producer->close = ( mlt_destructor )mlt_tractor_close;
-			producer->close_object = this;
+			producer->close_object = self;
 		}
 		else
 		{
-			free( this );
-			this = NULL;
+			free( self );
+			self = NULL;
 		}
 	}
-	return this;
+	return self;
 }
 
 /** Construct a tractor as well as a field and multitrack.
@@ -88,14 +88,14 @@ mlt_tractor mlt_tractor_init( )
 
 mlt_tractor mlt_tractor_new( )
 {
-	mlt_tractor this = calloc( sizeof( struct mlt_tractor_s ), 1 );
-	if ( this != NULL )
+	mlt_tractor self = calloc( sizeof( struct mlt_tractor_s ), 1 );
+	if ( self != NULL )
 	{
-		mlt_producer producer = &this->parent;
-		if ( mlt_producer_init( producer, this ) == 0 )
+		mlt_producer producer = &self->parent;
+		if ( mlt_producer_init( producer, self ) == 0 )
 		{
 			mlt_multitrack multitrack = mlt_multitrack_init( );
-			mlt_field field = mlt_field_new( multitrack, this );
+			mlt_field field = mlt_field_new( multitrack, self );
 			mlt_properties props = MLT_PRODUCER_PROPERTIES( producer );
 
 			mlt_properties_set( props, "resource", "<tractor>" );
@@ -107,125 +107,125 @@ mlt_tractor mlt_tractor_new( )
 			mlt_properties_set_data( props, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
 			mlt_properties_set_data( props, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
 
-			mlt_events_listen( MLT_MULTITRACK_PROPERTIES( multitrack ), this, "producer-changed", ( mlt_listener )mlt_tractor_listener );
+			mlt_events_listen( MLT_MULTITRACK_PROPERTIES( multitrack ), self, "producer-changed", ( mlt_listener )mlt_tractor_listener );
 
 			producer->get_frame = producer_get_frame;
 			producer->close = ( mlt_destructor )mlt_tractor_close;
-			producer->close_object = this;
+			producer->close_object = self;
 		}
 		else
 		{
-			free( this );
-			this = NULL;
+			free( self );
+			self = NULL;
 		}
 	}
-	return this;
+	return self;
 }
 
 /** Get the service object associated to the tractor.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \return the parent service object
  * \see MLT_TRACTOR_SERVICE
  */
 
-mlt_service mlt_tractor_service( mlt_tractor this )
+mlt_service mlt_tractor_service( mlt_tractor self )
 {
-	return MLT_PRODUCER_SERVICE( &this->parent );
+	return MLT_PRODUCER_SERVICE( &self->parent );
 }
 
 /** Get the producer object associated to the tractor.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \return the parent producer object
  * \see MLT_TRACTOR_PRODUCER
  */
 
-mlt_producer mlt_tractor_producer( mlt_tractor this )
+mlt_producer mlt_tractor_producer( mlt_tractor self )
 {
-	return this != NULL ? &this->parent : NULL;
+	return self != NULL ? &self->parent : NULL;
 }
 
 /** Get the properties object associated to the tractor.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \return the tractor's property list
  * \see MLT_TRACTOR_PROPERTIES
  */
 
-mlt_properties mlt_tractor_properties( mlt_tractor this )
+mlt_properties mlt_tractor_properties( mlt_tractor self )
 {
-	return MLT_PRODUCER_PROPERTIES( &this->parent );
+	return MLT_PRODUCER_PROPERTIES( &self->parent );
 }
 
-/** Get the field this tractor is harvesting.
+/** Get the field self tractor is harvesting.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \return a field or NULL if there is no field for this tractor
  */
 
-mlt_field mlt_tractor_field( mlt_tractor this )
+mlt_field mlt_tractor_field( mlt_tractor self )
 {
-	return mlt_properties_get_data( MLT_TRACTOR_PROPERTIES( this ), "field", NULL );
+	return mlt_properties_get_data( MLT_TRACTOR_PROPERTIES( self ), "field", NULL );
 }
 
-/** Get the multitrack this tractor is pulling.
+/** Get the multitrack a tractor is pulling.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \return a multitrack or NULL if there is none
  */
 
-mlt_multitrack mlt_tractor_multitrack( mlt_tractor this )
+mlt_multitrack mlt_tractor_multitrack( mlt_tractor self )
 {
-	return mlt_properties_get_data( MLT_TRACTOR_PROPERTIES( this ), "multitrack", NULL );
+	return mlt_properties_get_data( MLT_TRACTOR_PROPERTIES( self ), "multitrack", NULL );
 }
 
 /** Ensure the tractors in/out points match the multitrack.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  */
 
-void mlt_tractor_refresh( mlt_tractor this )
+void mlt_tractor_refresh( mlt_tractor self )
 {
-	mlt_multitrack multitrack = mlt_tractor_multitrack( this );
-	mlt_properties properties = MLT_MULTITRACK_PROPERTIES( multitrack );
-	mlt_properties self = MLT_TRACTOR_PROPERTIES( this );
-	mlt_events_block( properties, self );
-	mlt_events_block( self, self );
+	mlt_multitrack multitrack = mlt_tractor_multitrack( self );
+	mlt_properties multitrack_props = MLT_MULTITRACK_PROPERTIES( multitrack );
+	mlt_properties properties = MLT_TRACTOR_PROPERTIES( self );
+	mlt_events_block( multitrack_props, properties );
+	mlt_events_block( properties, properties );
 	mlt_multitrack_refresh( multitrack );
-	mlt_properties_set_position( self, "in", 0 );
-	mlt_properties_set_position( self, "out", mlt_properties_get_position( properties, "out" ) );
-	mlt_events_unblock( self, self );
-	mlt_events_unblock( properties, self );
-	mlt_properties_set_position( self, "length", mlt_properties_get_position( properties, "length" ) );
+	mlt_properties_set_position( properties, "in", 0 );
+	mlt_properties_set_position( properties, "out", mlt_properties_get_position( multitrack_props, "out" ) );
+	mlt_events_unblock( properties, properties );
+	mlt_events_unblock( multitrack_props, properties );
+	mlt_properties_set_position( properties, "length", mlt_properties_get_position( multitrack_props, "length" ) );
 }
 
-static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor this )
+static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor self )
 {
-	mlt_tractor_refresh( this );
+	mlt_tractor_refresh( self );
 }
 
 /** Connect the tractor.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \param producer a producer
  * \return true on error
  */
 
-int mlt_tractor_connect( mlt_tractor this, mlt_service producer )
+int mlt_tractor_connect( mlt_tractor self, mlt_service producer )
 {
-	int ret = mlt_service_connect_producer( MLT_TRACTOR_SERVICE( this ), producer, 0 );
+	int ret = mlt_service_connect_producer( MLT_TRACTOR_SERVICE( self ), producer, 0 );
 
 	// This is the producer we're going to connect to
 	if ( ret == 0 )
-		this->producer = producer;
+		self->producer = producer;
 
 	return ret;
 }
@@ -233,36 +233,36 @@ int mlt_tractor_connect( mlt_tractor this, mlt_service producer )
 /** Set the producer for a specific track.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \param producer a producer
  * \param index the 0-based track index
  * \return true on error
  */
 
-int mlt_tractor_set_track( mlt_tractor this, mlt_producer producer, int index )
+int mlt_tractor_set_track( mlt_tractor self, mlt_producer producer, int index )
 {
-	return mlt_multitrack_connect( mlt_tractor_multitrack( this ), producer, index );
+	return mlt_multitrack_connect( mlt_tractor_multitrack( self ), producer, index );
 }
 
 /** Get the producer for a specific track.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  * \param index the 0-based track index
  * \return the producer for track \p index
  */
 
-mlt_producer mlt_tractor_get_track( mlt_tractor this, int index )
+mlt_producer mlt_tractor_get_track( mlt_tractor self, int index )
 {
-	return mlt_multitrack_track( mlt_tractor_multitrack( this ), index );
+	return mlt_multitrack_track( mlt_tractor_multitrack( self ), index );
 }
 
-static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	uint8_t *data = NULL;
 	int size = 0;
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-	mlt_frame frame = mlt_frame_pop_service( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
+	mlt_frame frame = mlt_frame_pop_service( self );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
 	mlt_properties_set_int( frame_properties, "resize_alpha", mlt_properties_get_int( properties, "resize_alpha" ) );
@@ -285,15 +285,15 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	data = mlt_frame_get_alpha_mask( frame );
 	mlt_properties_get_data( frame_properties, "alpha", &size );
 	mlt_properties_set_data( properties, "alpha", data, size, NULL, NULL );
-	this->convert_image = frame->convert_image;
-	this->convert_audio = frame->convert_audio;
+	self->convert_image = frame->convert_image;
+	self->convert_audio = frame->convert_audio;
 	return 0;
 }
 
-static int producer_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int producer_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-	mlt_frame frame = mlt_frame_pop_audio( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
+	mlt_frame frame = mlt_frame_pop_audio( self );
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	mlt_properties_set_data( properties, "audio", *buffer, 0, NULL, NULL );
 	mlt_properties_set_int( properties, "frequency", *frequency );
@@ -328,10 +328,10 @@ static void destroy_data_queue( void *arg )
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track )
 {
-	mlt_tractor this = parent->child;
+	mlt_tractor self = parent->child;
 
 	// We only respond to the first track requests
-	if ( track == 0 && this->producer != NULL )
+	if ( track == 0 && self->producer != NULL )
 	{
 		int i = 0;
 		int done = 0;
@@ -389,7 +389,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			for ( i = 0; !done; i ++ )
 			{
 				// Get a frame from the producer
-				mlt_service_get_frame( this->producer, &temp, i );
+				mlt_service_get_frame( self->producer, &temp, i );
 
 				// Get the temporary properties
 				temp_properties = MLT_FRAME_PROPERTIES( temp );
@@ -521,12 +521,12 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		{
 			mlt_producer_seek( producer, mlt_producer_frame( parent ) );
 			mlt_producer_set_speed( producer, mlt_producer_get_speed( parent ) );
-			mlt_service_get_frame( this->producer, frame, track );
+			mlt_service_get_frame( self->producer, frame, track );
 		}
 		else
 		{
 			mlt_log( MLT_PRODUCER_SERVICE( parent ), MLT_LOG_ERROR, "tractor without a multitrack!!\n" );
-			mlt_service_get_frame( this->producer, frame, track );
+			mlt_service_get_frame( self->producer, frame, track );
 		}
 
 		// Prepare the next frame
@@ -546,16 +546,16 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 /** Close the tractor and free its resources.
  *
  * \public \memberof mlt_tractor_s
- * \param this a tractor
+ * \param self a tractor
  */
 
-void mlt_tractor_close( mlt_tractor this )
+void mlt_tractor_close( mlt_tractor self )
 {
-	if ( this != NULL && mlt_properties_dec_ref( MLT_TRACTOR_PROPERTIES( this ) ) <= 0 )
+	if ( self != NULL && mlt_properties_dec_ref( MLT_TRACTOR_PROPERTIES( self ) ) <= 0 )
 	{
-		this->parent.close = NULL;
-		mlt_producer_close( &this->parent );
-		free( this );
+		self->parent.close = NULL;
+		mlt_producer_close( &self->parent );
+		free( self );
 	}
 }
 

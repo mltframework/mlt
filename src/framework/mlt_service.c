@@ -63,46 +63,46 @@ mlt_service_base;
 /* Private methods
  */
 
-static void mlt_service_disconnect( mlt_service this );
-static void mlt_service_connect( mlt_service this, mlt_service that );
-static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index );
-static void mlt_service_property_changed( mlt_listener, mlt_properties owner, mlt_service this, void **args );
+static void mlt_service_disconnect( mlt_service self );
+static void mlt_service_connect( mlt_service self, mlt_service that );
+static int service_get_frame( mlt_service self, mlt_frame_ptr frame, int index );
+static void mlt_service_property_changed( mlt_listener, mlt_properties owner, mlt_service self, void **args );
 
 /** Initialize a service.
  *
  * \public \memberof mlt_service_s
- * \param this the service structure to initialize
+ * \param self the service structure to initialize
  * \param child pointer to the child object for the subclass
  * \return true if there was an error
  */
 
-int mlt_service_init( mlt_service this, void *child )
+int mlt_service_init( mlt_service self, void *child )
 {
 	int error = 0;
 
 	// Initialise everything to NULL
-	memset( this, 0, sizeof( struct mlt_service_s ) );
+	memset( self, 0, sizeof( struct mlt_service_s ) );
 
 	// Assign the child
-	this->child = child;
+	self->child = child;
 
 	// Generate local space
-	this->local = calloc( sizeof( mlt_service_base ), 1 );
+	self->local = calloc( sizeof( mlt_service_base ), 1 );
 
 	// Associate the methods
-	this->get_frame = service_get_frame;
+	self->get_frame = service_get_frame;
 
 	// Initialise the properties
-	error = mlt_properties_init( &this->parent, this );
+	error = mlt_properties_init( &self->parent, self );
 	if ( error == 0 )
 	{
-		this->parent.close = ( mlt_destructor )mlt_service_close;
-		this->parent.close_object = this;
+		self->parent.close = ( mlt_destructor )mlt_service_close;
+		self->parent.close_object = self;
 
-		mlt_events_init( &this->parent );
-		mlt_events_register( &this->parent, "service-changed", NULL );
-		mlt_events_register( &this->parent, "property-changed", ( mlt_transmitter )mlt_service_property_changed );
-		pthread_mutex_init( &( ( mlt_service_base * )this->local )->mutex, NULL );
+		mlt_events_init( &self->parent );
+		mlt_events_register( &self->parent, "service-changed", NULL );
+		mlt_events_register( &self->parent, "property-changed", ( mlt_transmitter )mlt_service_property_changed );
+		pthread_mutex_init( &( ( mlt_service_base * )self->local )->mutex, NULL );
 	}
 
 	return error;
@@ -115,53 +115,53 @@ int mlt_service_init( mlt_service this, void *child )
  * \private \memberof mlt_service_s
  * \param listener a function pointer that will be invoked
  * \param owner a properties list that will be passed to \p listener
- * \param this a service that will be passed to \p listener
+ * \param self a service that will be passed to \p listener
  * \param args an array of pointers - the first entry is passed as a string to \p listener
  */
 
-static void mlt_service_property_changed( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+static void mlt_service_property_changed( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
 {
 	if ( listener != NULL )
-		listener( owner, this, ( char * )args[ 0 ] );
+		listener( owner, self, ( char * )args[ 0 ] );
 }
 
 /** Acquire a mutual exclusion lock on this service.
  *
  * \public \memberof mlt_service_s
- * \param this the service to lock
+ * \param self the service to lock
  */
 
-void mlt_service_lock( mlt_service this )
+void mlt_service_lock( mlt_service self )
 {
-	if ( this != NULL )
-		pthread_mutex_lock( &( ( mlt_service_base * )this->local )->mutex );
+	if ( self != NULL )
+		pthread_mutex_lock( &( ( mlt_service_base * )self->local )->mutex );
 }
 
 /** Release a mutual exclusion lock on this service.
  *
  * \public \memberof mlt_service_s
- * \param this the service to unlock
+ * \param self the service to unlock
  */
 
-void mlt_service_unlock( mlt_service this )
+void mlt_service_unlock( mlt_service self )
 {
-	if ( this != NULL )
-		pthread_mutex_unlock( &( ( mlt_service_base * )this->local )->mutex );
+	if ( self != NULL )
+		pthread_mutex_unlock( &( ( mlt_service_base * )self->local )->mutex );
 }
 
 /** Identify the subclass of the service.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \return the subclass
  */
 
-mlt_service_type mlt_service_identify( mlt_service this )
+mlt_service_type mlt_service_identify( mlt_service self )
 {
 	mlt_service_type type = invalid_type;
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( self );
 		char *mlt_type = mlt_properties_get( properties, "mlt_type" );
 		char *resource = mlt_properties_get( properties, "resource" );
 		if ( mlt_type == NULL )
@@ -189,21 +189,21 @@ mlt_service_type mlt_service_identify( mlt_service this )
 /** Connect a producer to the service.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param producer a producer
  * \param index which of potentially multiple producers to this service (0 based)
  * \return > 0 warning, == 0 success, < 0 serious error,
  *         1 = this service does not accept input,
  *         2 = the producer is invalid,
- *         3 = the producer is already registered with this consumer
+ *         3 = the producer is already registered with self consumer
  */
 
-int mlt_service_connect_producer( mlt_service this, mlt_service producer, int index )
+int mlt_service_connect_producer( mlt_service self, mlt_service producer, int index )
 {
 	int i = 0;
 
 	// Get the service base
-	mlt_service_base *base = this->local;
+	mlt_service_base *base = self->local;
 
 	// Special case 'track' index - only works for last filter(s) in a particular chain
 	// but allows a filter to apply to the output frame regardless of which track it comes from
@@ -249,7 +249,7 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 			base->count = index + 1;
 
 		// Now we connect the producer to its connected consumer
-		mlt_service_connect( producer, this );
+		mlt_service_connect( producer, self );
 
 		// Close the current service
 		mlt_service_close( current );
@@ -263,70 +263,70 @@ int mlt_service_connect_producer( mlt_service this, mlt_service producer, int in
 	}
 }
 
-/** Disconnect this service from its consumer.
+/** Disconnect a service from its consumer.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  */
 
-static void mlt_service_disconnect( mlt_service this )
+static void mlt_service_disconnect( mlt_service self )
 {
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// Get the service base
-		mlt_service_base *base = this->local;
+		mlt_service_base *base = self->local;
 
 		// Disconnect
 		base->out = NULL;
 	}
 }
 
-/** Obtain the consumer this service is connected to.
+/** Obtain the consumer a service is connected to.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \return the consumer
  */
 
-mlt_service mlt_service_consumer( mlt_service this )
+mlt_service mlt_service_consumer( mlt_service self )
 {
 	// Get the service base
-	mlt_service_base *base = this->local;
+	mlt_service_base *base = self->local;
 
 	// Return the connected consumer
 	return base->out;
 }
 
-/** Obtain the producer this service is connected to.
+/** Obtain the producer a service is connected to.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \return the last-most producer
  */
 
-mlt_service mlt_service_producer( mlt_service this )
+mlt_service mlt_service_producer( mlt_service self )
 {
 	// Get the service base
-	mlt_service_base *base = this->local;
+	mlt_service_base *base = self->local;
 
 	// Return the connected producer
 	return base->count > 0 ? base->in[ base->count - 1 ] : NULL;
 }
 
-/** Associate this service to a consumer.
+/** Associate a service to a consumer.
  *
  * Overwrites connection to any existing consumer.
  * \private \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param that a consumer
  */
 
-static void mlt_service_connect( mlt_service this, mlt_service that )
+static void mlt_service_connect( mlt_service self, mlt_service that )
 {
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// Get the service base
-		mlt_service_base *base = this->local;
+		mlt_service_base *base = self->local;
 
 		// There's a bit more required here...
 		base->out = that;
@@ -336,16 +336,16 @@ static void mlt_service_connect( mlt_service this, mlt_service that )
 /** Get the first connected producer.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \return the first producer
  */
 
-mlt_service mlt_service_get_producer( mlt_service this )
+mlt_service mlt_service_get_producer( mlt_service self )
 {
 	mlt_service producer = NULL;
 
 	// Get the service base
-	mlt_service_base *base = this->local;
+	mlt_service_base *base = self->local;
 
 	if ( base->in != NULL )
 		producer = base->in[ 0 ];
@@ -356,54 +356,54 @@ mlt_service mlt_service_get_producer( mlt_service this )
 /** Default implementation of the get_frame virtual function.
  *
  * \private \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param[out] frame a frame by reference
  * \param index as determined by the producer
  * \return false
  */
 
-static int service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
+static int service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 {
-	mlt_service_base *base = this->local;
+	mlt_service_base *base = self->local;
 	if ( index < base->count )
 	{
 		mlt_service producer = base->in[ index ];
 		if ( producer != NULL )
 			return mlt_service_get_frame( producer, frame, index );
 	}
-	*frame = mlt_frame_init( this );
+	*frame = mlt_frame_init( self );
 	return 0;
 }
 
 /** Return the properties object.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \return the properties
  */
 
-mlt_properties mlt_service_properties( mlt_service this )
+mlt_properties mlt_service_properties( mlt_service self )
 {
-	return this != NULL ? &this->parent : NULL;
+	return self != NULL ? &self->parent : NULL;
 }
 
 /** Recursively apply attached filters.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param frame a frame
  * \param index used to track depth of recursion, top caller should supply 0
  */
 
-void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
+void mlt_service_apply_filters( mlt_service self, mlt_frame frame, int index )
 {
 	int i;
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties service_properties = MLT_SERVICE_PROPERTIES( this );
-	mlt_service_base *base = this->local;
+	mlt_properties service_properties = MLT_SERVICE_PROPERTIES( self );
+	mlt_service_base *base = self->local;
 	mlt_position position = mlt_frame_get_position( frame );
-	mlt_position this_in = mlt_properties_get_position( service_properties, "in" );
-	mlt_position this_out = mlt_properties_get_position( service_properties, "out" );
+	mlt_position self_in = mlt_properties_get_position( service_properties, "in" );
+	mlt_position self_out = mlt_properties_get_position( service_properties, "out" );
 
 	if ( index == 0 || mlt_properties_get_int( service_properties, "_filter_private" ) == 0 )
 	{
@@ -417,8 +417,8 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 				int disable = mlt_properties_get_int( MLT_FILTER_PROPERTIES( base->filters[ i ] ), "disable" );
 				if ( !disable && ( ( in == 0 && out == 0 ) || ( position >= in && ( position <= out || out == 0 ) ) ) )
 				{
-					mlt_properties_set_position( frame_properties, "in", in == 0 ? this_in : in );
-					mlt_properties_set_position( frame_properties, "out", out == 0 ? this_out : out );
+					mlt_properties_set_position( frame_properties, "in", in == 0 ? self_in : in );
+					mlt_properties_set_position( frame_properties, "out", out == 0 ? self_out : out );
 					mlt_filter_process( base->filters[ i ], frame );
 					mlt_service_apply_filters( MLT_FILTER_SERVICE( base->filters[ i ] ), frame, index + 1 );
 				}
@@ -430,31 +430,31 @@ void mlt_service_apply_filters( mlt_service this, mlt_frame frame, int index )
 /** Obtain a frame.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param[out] frame a frame by reference
  * \param index as determined by the producer
  * \return true if there was an error
  */
 
-int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
+int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 {
 	int result = 0;
 
 	// Lock the service
-	mlt_service_lock( this );
+	mlt_service_lock( self );
 
 	// Ensure that the frame is NULL
 	*frame = NULL;
 
 	// Only process if we have a valid service
-	if ( this != NULL && this->get_frame != NULL )
+	if ( self != NULL && self->get_frame != NULL )
 	{
-		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( self );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
-		mlt_position position = mlt_service_identify( this ) == producer_type ? mlt_producer_position( MLT_PRODUCER( this ) ) : -1;
+		mlt_position position = mlt_service_identify( self ) == producer_type ? mlt_producer_position( MLT_PRODUCER( self ) ) : -1;
 
-		result = this->get_frame( this, frame, index );
+		result = self->get_frame( self, frame, index );
 
 		if ( result == 0 )
 		{
@@ -466,27 +466,27 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 				mlt_properties_set_position( properties, "in", in );
 				mlt_properties_set_position( properties, "out", out );
 			}
-			mlt_service_apply_filters( this, *frame, 1 );
-			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), this );
+			mlt_service_apply_filters( self, *frame, 1 );
+			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), self );
 			
-			if ( mlt_service_identify( this ) == producer_type &&
-			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( this ), "_need_previous_next" ) )
+			if ( mlt_service_identify( self ) == producer_type &&
+			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( self ), "_need_previous_next" ) )
 			{
-				// Save the new position from this->get_frame
-				mlt_position new_position = mlt_producer_position( MLT_PRODUCER( this ) );
+				// Save the new position from self->get_frame
+				mlt_position new_position = mlt_producer_position( MLT_PRODUCER( self ) );
 				
 				// Get the preceding frame, unfiltered
 				mlt_frame previous_frame;
-				mlt_producer_seek( MLT_PRODUCER(this), position - 1 );
-				result = this->get_frame( this, &previous_frame, index );
+				mlt_producer_seek( MLT_PRODUCER(self), position - 1 );
+				result = self->get_frame( self, &previous_frame, index );
 				if ( !result )
 					mlt_properties_set_data( properties, "previous frame",
 						previous_frame, 0, ( mlt_destructor ) mlt_frame_close, NULL );
 
 				// Get the following frame, unfiltered
 				mlt_frame next_frame;
-				mlt_producer_seek( MLT_PRODUCER(this), position + 1 );
-				result = this->get_frame( this, &next_frame, index );
+				mlt_producer_seek( MLT_PRODUCER(self), position + 1 );
+				result = self->get_frame( self, &next_frame, index );
 				if ( !result )
 				{
 					mlt_properties_set_data( properties, "next frame",
@@ -494,17 +494,17 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
 				}
 				
 				// Restore the new position
-				mlt_producer_seek( MLT_PRODUCER(this), new_position );
+				mlt_producer_seek( MLT_PRODUCER(self), new_position );
 			}
 		}
 	}
 
 	// Make sure we return a frame
 	if ( *frame == NULL )
-		*frame = mlt_frame_init( this );
+		*frame = mlt_frame_init( self );
 
 	// Unlock the service
-	mlt_service_unlock( this );
+	mlt_service_unlock( self );
 
 	return result;
 }
@@ -513,30 +513,30 @@ int mlt_service_get_frame( mlt_service this, mlt_frame_ptr frame, int index )
  *
  * \private \memberof mlt_service_s
  * \param owner ignored
- * \param this the service on which the "service-changed" event is fired
+ * \param self the service on which the "service-changed" event is fired
  */
 
-static void mlt_service_filter_changed( mlt_service owner, mlt_service this )
+static void mlt_service_filter_changed( mlt_service owner, mlt_service self )
 {
-	mlt_events_fire( MLT_SERVICE_PROPERTIES( this ), "service-changed", NULL );
+	mlt_events_fire( MLT_SERVICE_PROPERTIES( self ), "service-changed", NULL );
 }
 
 /** Attach a filter.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param filter the filter to attach
  * \return true if there was an error
  */
 
-int mlt_service_attach( mlt_service this, mlt_filter filter )
+int mlt_service_attach( mlt_service self, mlt_filter filter )
 {
-	int error = this == NULL || filter == NULL;
+	int error = self == NULL || filter == NULL;
 	if ( error == 0 )
 	{
 		int i = 0;
-		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
-		mlt_service_base *base = this->local;
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( self );
+		mlt_service_base *base = self->local;
 
 		for ( i = 0; error == 0 && i < base->filter_count; i ++ )
 			if ( base->filters[ i ] == filter )
@@ -555,11 +555,11 @@ int mlt_service_attach( mlt_service this, mlt_filter filter )
 				mlt_properties props = MLT_FILTER_PROPERTIES( filter );
 				mlt_properties_inc_ref( MLT_FILTER_PROPERTIES( filter ) );
 				base->filters[ base->filter_count ++ ] = filter;
-				mlt_properties_set_data( props, "service", this, 0, NULL, NULL );
+				mlt_properties_set_data( props, "service", self, 0, NULL, NULL );
 				mlt_events_fire( properties, "service-changed", NULL );
 				mlt_events_fire( props, "service-changed", NULL );
-				mlt_events_listen( props, this, "service-changed", ( mlt_listener )mlt_service_filter_changed );
-				mlt_events_listen( props, this, "property-changed", ( mlt_listener )mlt_service_filter_changed );
+				mlt_events_listen( props, self, "service-changed", ( mlt_listener )mlt_service_filter_changed );
+				mlt_events_listen( props, self, "property-changed", ( mlt_listener )mlt_service_filter_changed );
 			}
 			else
 			{
@@ -573,19 +573,19 @@ int mlt_service_attach( mlt_service this, mlt_filter filter )
 /** Detach a filter.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param filter the filter to detach
  * \return true if there was an error
  */
 
-int mlt_service_detach( mlt_service this, mlt_filter filter )
+int mlt_service_detach( mlt_service self, mlt_filter filter )
 {
-	int error = this == NULL || filter == NULL;
+	int error = self == NULL || filter == NULL;
 	if ( error == 0 )
 	{
 		int i = 0;
-		mlt_service_base *base = this->local;
-		mlt_properties properties = MLT_SERVICE_PROPERTIES( this );
+		mlt_service_base *base = self->local;
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( self );
 
 		for ( i = 0; i < base->filter_count; i ++ )
 			if ( base->filters[ i ] == filter )
@@ -597,7 +597,7 @@ int mlt_service_detach( mlt_service this, mlt_filter filter )
 			for ( i ++ ; i < base->filter_count; i ++ )
 				base->filters[ i - 1 ] = base->filters[ i ];
 			base->filter_count --;
-			mlt_events_disconnect( MLT_FILTER_PROPERTIES( filter ), this );
+			mlt_events_disconnect( MLT_FILTER_PROPERTIES( filter ), self );
 			mlt_filter_close( filter );
 			mlt_events_fire( properties, "service-changed", NULL );
 		}
@@ -608,17 +608,17 @@ int mlt_service_detach( mlt_service this, mlt_filter filter )
 /** Retrieve a filter.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \param index which one of potentially multiple filters
  * \return the filter or null if there was an error
  */
 
-mlt_filter mlt_service_filter( mlt_service this, int index )
+mlt_filter mlt_service_filter( mlt_service self, int index )
 {
 	mlt_filter filter = NULL;
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		mlt_service_base *base = this->local;
+		mlt_service_base *base = self->local;
 		if ( index >= 0 && index < base->filter_count )
 			filter = base->filters[ index ];
 	}
@@ -628,46 +628,46 @@ mlt_filter mlt_service_filter( mlt_service this, int index )
 /** Retrieve the profile.
  *
  * \public \memberof mlt_service_s
- * \param this a service
+ * \param self a service
  * \return the profile
  */
 
-mlt_profile mlt_service_profile( mlt_service this )
+mlt_profile mlt_service_profile( mlt_service self )
 {
-	return this? mlt_properties_get_data( MLT_SERVICE_PROPERTIES( this ), "_profile", NULL ) : NULL;
+	return self? mlt_properties_get_data( MLT_SERVICE_PROPERTIES( self ), "_profile", NULL ) : NULL;
 }
 
 /** Destroy a service.
  *
  * \public \memberof mlt_service_s
- * \param this the service to destroy
+ * \param self the service to destroy
  */
 
-void mlt_service_close( mlt_service this )
+void mlt_service_close( mlt_service self )
 {
-	if ( this != NULL && mlt_properties_dec_ref( MLT_SERVICE_PROPERTIES( this ) ) <= 0 )
+	if ( self != NULL && mlt_properties_dec_ref( MLT_SERVICE_PROPERTIES( self ) ) <= 0 )
 	{
-		if ( this->close != NULL )
+		if ( self->close != NULL )
 		{
-			this->close( this->close_object );
+			self->close( self->close_object );
 		}
 		else
 		{
-			mlt_service_base *base = this->local;
+			mlt_service_base *base = self->local;
 			int i = 0;
 			int count = base->filter_count;
-			mlt_events_block( MLT_SERVICE_PROPERTIES( this ), this );
+			mlt_events_block( MLT_SERVICE_PROPERTIES( self ), self );
 			while( count -- )
-				mlt_service_detach( this, base->filters[ 0 ] );
+				mlt_service_detach( self, base->filters[ 0 ] );
 			free( base->filters );
 			for ( i = 0; i < base->count; i ++ )
 				if ( base->in[ i ] != NULL )
 					mlt_service_close( base->in[ i ] );
-			this->parent.close = NULL;
+			self->parent.close = NULL;
 			free( base->in );
 			pthread_mutex_destroy( &base->mutex );
 			free( base );
-			mlt_properties_close( &this->parent );
+			mlt_properties_close( &self->parent );
 		}
 	}
 }

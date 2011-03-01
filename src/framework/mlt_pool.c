@@ -72,48 +72,48 @@ typedef struct __attribute__ ((aligned (16))) mlt_release_s
 static mlt_pool pool_init( int size )
 {
 	// Create the pool
-	mlt_pool this = calloc( 1, sizeof( struct mlt_pool_s ) );
+	mlt_pool self = calloc( 1, sizeof( struct mlt_pool_s ) );
 
 	// Initialise it
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// Initialise the mutex
-		pthread_mutex_init( &this->lock, NULL );
+		pthread_mutex_init( &self->lock, NULL );
 
 		// Create the stack
-		this->stack = mlt_deque_init( );
+		self->stack = mlt_deque_init( );
 
 		// Assign the size
-		this->size = size;
+		self->size = size;
 	}
 
 	// Return it
-	return this;
+	return self;
 }
 
 /** Get an item from the pool.
  *
  * \private \memberof mlt_pool_s
- * \param this a pool
+ * \param self a pool
  * \return an opaque pointer
  */
 
-static void *pool_fetch( mlt_pool this )
+static void *pool_fetch( mlt_pool self )
 {
 	// We will generate a release object
 	void *ptr = NULL;
 
 	// Sanity check
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// Lock the pool
-		pthread_mutex_lock( &this->lock );
+		pthread_mutex_lock( &self->lock );
 
 		// Check if the stack is empty
-		if ( mlt_deque_count( this->stack ) != 0 )
+		if ( mlt_deque_count( self->stack ) != 0 )
 		{
 			// Pop the top of the stack
-			ptr = mlt_deque_pop_back( this->stack );
+			ptr = mlt_deque_pop_back( self->stack );
 
 			// Assign the reference
 			( ( mlt_release )ptr )->references = 1;
@@ -122,19 +122,19 @@ static void *pool_fetch( mlt_pool this )
 		{
 			// We need to generate a release item
 #ifdef linux
-			mlt_release release = memalign( 16, this->size );
+			mlt_release release = memalign( 16, self->size );
 #else
-			mlt_release release = malloc( this->size );
+			mlt_release release = malloc( self->size );
 #endif
 
 			// Initialise it
 			if ( release != NULL )
 			{
 				// Increment the number of items allocated to this pool
-				this->count ++;
+				self->count ++;
 
 				// Assign the pool
-				release->pool = this;
+				release->pool = self;
 
 				// Assign the reference
 				release->references = 1;
@@ -145,7 +145,7 @@ static void *pool_fetch( mlt_pool this )
 		}
 
 		// Unlock the pool
-		pthread_mutex_unlock( &this->lock );
+		pthread_mutex_unlock( &self->lock );
 	}
 
 	// Return the generated release object
@@ -167,18 +167,18 @@ static void pool_return( void *ptr )
 		mlt_release that = ( void * )(( char * )ptr - sizeof( struct mlt_release_s ));
 
 		// Get the pool
-		mlt_pool this = that->pool;
+		mlt_pool self = that->pool;
 
-		if ( this != NULL )
+		if ( self != NULL )
 		{
 			// Lock the pool
-			pthread_mutex_lock( &this->lock );
+			pthread_mutex_lock( &self->lock );
 
 			// Push the that back back on to the stack
-			mlt_deque_push_back( this->stack, ptr );
+			mlt_deque_push_back( self->stack, ptr );
 
 			// Unlock the pool
-			pthread_mutex_unlock( &this->lock );
+			pthread_mutex_unlock( &self->lock );
 
 			// Ensure that we don't clean up
 			ptr = NULL;
@@ -196,31 +196,31 @@ static void pool_return( void *ptr )
 /** Destroy a pool.
  *
  * \private \memberof mlt_pool_s
- * \param this a pool
+ * \param self a pool
  */
 
-static void pool_close( mlt_pool this )
+static void pool_close( mlt_pool self )
 {
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// We need to free up all items in the pool
 		void *release = NULL;
 
 		// Iterate through the stack until depleted
-		while ( ( release = mlt_deque_pop_back( this->stack ) ) != NULL )
+		while ( ( release = mlt_deque_pop_back( self->stack ) ) != NULL )
 		{
 			// We'll free this item now
 			free( ( char * )release - sizeof( struct mlt_release_s ) );
 		}
 
 		// We can now close the stack
-		mlt_deque_close( this->stack );
+		mlt_deque_close( self->stack );
 
 		// Destroy the mutex
-		pthread_mutex_destroy( &this->lock );
+		pthread_mutex_destroy( &self->lock );
 
 		// Close the pool
-		free( this );
+		free( self );
 	}
 }
 
@@ -339,20 +339,20 @@ void mlt_pool_purge( )
 	for ( i = 0; i < mlt_properties_count( pools ); i ++ )
 	{
 		// Get the pool
-		mlt_pool this = mlt_properties_get_data_at( pools, i, NULL );
+		mlt_pool self = mlt_properties_get_data_at( pools, i, NULL );
 
 		// Pointer to unused memory
 		void *release = NULL;
 
 		// Lock the pool
-		pthread_mutex_lock( &this->lock );
+		pthread_mutex_lock( &self->lock );
 
 		// We'll free all unused items now
-		while ( ( release = mlt_deque_pop_back( this->stack ) ) != NULL )
+		while ( ( release = mlt_deque_pop_back( self->stack ) ) != NULL )
 			free( ( char * )release - sizeof( struct mlt_release_s ) );
 
 		// Unlock the pool
-		pthread_mutex_unlock( &this->lock );
+		pthread_mutex_unlock( &self->lock );
 	}
 }
 

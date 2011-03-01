@@ -64,14 +64,14 @@ static int properties_destroyed = 0;
  *
  * This does allocate its ::property_list, and it adds a reference count.
  * \public \memberof mlt_properties_s
- * \param this the properties structure to initialize
+ * \param self the properties structure to initialize
  * \param child an opaque pointer to a subclass object
  * \return true if failed
  */
 
-int mlt_properties_init( mlt_properties this, void *child )
+int mlt_properties_init( mlt_properties self, void *child )
 {
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 #ifdef _MLT_PROPERTY_CHECKS_
 		// Increment number of properties created
@@ -79,21 +79,21 @@ int mlt_properties_init( mlt_properties this, void *child )
 #endif
 
 		// NULL all methods
-		memset( this, 0, sizeof( struct mlt_properties_s ) );
+		memset( self, 0, sizeof( struct mlt_properties_s ) );
 
 		// Assign the child of the object
-		this->child = child;
+		self->child = child;
 
 		// Allocate the local structure
-		this->local = calloc( sizeof( property_list ), 1 );
+		self->local = calloc( sizeof( property_list ), 1 );
 
 		// Increment the ref count
-		( ( property_list * )this->local )->ref_count = 1;
-		pthread_mutex_init( &( ( property_list * )this->local )->mutex, NULL );;
+		( ( property_list * )self->local )->ref_count = 1;
+		pthread_mutex_init( &( ( property_list * )self->local )->mutex, NULL );;
 	}
 
 	// Check that initialisation was successful
-	return this != NULL && this->local == NULL;
+	return self != NULL && self->local == NULL;
 }
 
 /** Create a properties object.
@@ -107,13 +107,13 @@ int mlt_properties_init( mlt_properties this, void *child )
 mlt_properties mlt_properties_new( )
 {
 	// Construct a standalone properties object
-	mlt_properties this = calloc( sizeof( struct mlt_properties_s ), 1 );
+	mlt_properties self = calloc( sizeof( struct mlt_properties_s ), 1 );
 
-	// Initialise this
-	mlt_properties_init( this, NULL );
+	// Initialise self
+	mlt_properties_init( self, NULL );
 
 	// Return the pointer
-	return this;
+	return self;
 }
 
 /** Create a properties object by reading a .properties text file.
@@ -128,9 +128,9 @@ mlt_properties mlt_properties_new( )
 mlt_properties mlt_properties_load( const char *filename )
 {
 	// Construct a standalone properties object
-	mlt_properties this = mlt_properties_new( );
+	mlt_properties self = mlt_properties_new( );
 
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// Open the file
 		FILE *file = fopen( filename, "r" );
@@ -163,7 +163,7 @@ mlt_properties mlt_properties_load( const char *filename )
 
 				// Parse and set the property
 				if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
-					mlt_properties_parse( this, temp );
+					mlt_properties_parse( self, temp );
 			}
 
 			// Close the file
@@ -172,7 +172,7 @@ mlt_properties mlt_properties_load( const char *filename )
 	}
 
 	// Return the pointer
-	return this;
+	return self;
 }
 
 /** Generate a hash key.
@@ -191,22 +191,22 @@ static inline int generate_hash( const char *name )
 	return hash;
 }
 
-/** Copy a serializable property to properties list that is mirroring this one.
+/** Copy a serializable property to a properties list that is mirroring this one.
  *
  * Special case - when a container (such as loader) is protecting another
  * producer, we need to ensure that properties are passed through to the
  * real producer.
  * \private \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the name of the property to copy
  */
 
-static inline void mlt_properties_do_mirror( mlt_properties this, const char *name )
+static inline void mlt_properties_do_mirror( mlt_properties self, const char *name )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	if ( list->mirror != NULL )
 	{
-		char *value = mlt_properties_get( this, name );
+		char *value = mlt_properties_get( self, name );
 		if ( value != NULL )
 			mlt_properties_set( list->mirror, name, value );
 	}
@@ -215,16 +215,16 @@ static inline void mlt_properties_do_mirror( mlt_properties this, const char *na
 /** Increment the reference count.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \return the new reference count
  */
 
-int mlt_properties_inc_ref( mlt_properties this )
+int mlt_properties_inc_ref( mlt_properties self )
 {
 	int result = 0;
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		property_list *list = this->local;
+		property_list *list = self->local;
 		pthread_mutex_lock( &list->mutex );
 		result = ++ list->ref_count;
 		pthread_mutex_unlock( &list->mutex );
@@ -235,16 +235,16 @@ int mlt_properties_inc_ref( mlt_properties this )
 /** Decrement the reference count.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \return the new reference count
  */
 
-int mlt_properties_dec_ref( mlt_properties this )
+int mlt_properties_dec_ref( mlt_properties self )
 {
 	int result = 0;
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		property_list *list = this->local;
+		property_list *list = self->local;
 		pthread_mutex_lock( &list->mutex );
 		result = -- list->ref_count;
 		pthread_mutex_unlock( &list->mutex );
@@ -255,15 +255,15 @@ int mlt_properties_dec_ref( mlt_properties this )
 /** Get the reference count.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \return the current reference count
  */
 
-int mlt_properties_ref_count( mlt_properties this )
+int mlt_properties_ref_count( mlt_properties self )
 {
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		property_list *list = this->local;
+		property_list *list = self->local;
 		return list->ref_count;
 	}
 	return 0;
@@ -275,24 +275,24 @@ int mlt_properties_ref_count( mlt_properties this )
  * call this before setting the properties that you wish to copy.
  * \public \memberof mlt_properties_s
  * \param that the properties which will receive copies of the properties as they are set.
- * \param this the properties to mirror
+ * \param self the properties to mirror
  */
 
-void mlt_properties_mirror( mlt_properties this, mlt_properties that )
+void mlt_properties_mirror( mlt_properties self, mlt_properties that )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	list->mirror = that;
 }
 
 /** Copy all serializable properties to another properties list.
  *
  * \public \memberof mlt_properties_s
- * \param this The properties to copy to
+ * \param self The properties to copy to
  * \param that The properties to copy from
  * \return false
  */
 
-int mlt_properties_inherit( mlt_properties this, mlt_properties that )
+int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 {
 	int count = mlt_properties_count( that );
 	int i = 0;
@@ -302,7 +302,7 @@ int mlt_properties_inherit( mlt_properties this, mlt_properties that )
 		if ( value != NULL )
 		{
 			char *name = mlt_properties_get_name( that, i );
-			mlt_properties_set( this, name, value );
+			mlt_properties_set( self, name, value );
 		}
 	}
 	return 0;
@@ -311,13 +311,13 @@ int mlt_properties_inherit( mlt_properties this, mlt_properties that )
 /** Pass all serializable properties that match a prefix to another properties object
  *
  * \public \memberof mlt_properties_s
- * \param this the properties to copy to
+ * \param self the properties to copy to
  * \param that The properties to copy from
  * \param prefix the property names to match (required)
  * \return false
  */
 
-int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *prefix )
+int mlt_properties_pass( mlt_properties self, mlt_properties that, const char *prefix )
 {
 	int count = mlt_properties_count( that );
 	int length = strlen( prefix );
@@ -329,7 +329,7 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *p
 		{
 			char *value = mlt_properties_get_value( that, i );
 			if ( value != NULL )
-				mlt_properties_set( this, name + length, value );
+				mlt_properties_set( self, name + length, value );
 		}
 	}
 	return 0;
@@ -338,14 +338,14 @@ int mlt_properties_pass( mlt_properties this, mlt_properties that, const char *p
 /** Locate a property by name.
  *
  * \private \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to lookup by name
  * \return the property or NULL for failure
  */
 
-static inline mlt_property mlt_properties_find( mlt_properties this, const char *name )
+static inline mlt_property mlt_properties_find( mlt_properties self, const char *name )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	mlt_property value = NULL;
 	int key = generate_hash( name );
 	int i = list->hash[ key ] - 1;
@@ -370,14 +370,14 @@ static inline mlt_property mlt_properties_find( mlt_properties this, const char 
 /** Add a new property.
  *
  * \private \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the name of the new property
  * \return the new property
  */
 
-static mlt_property mlt_properties_add( mlt_properties this, const char *name )
+static mlt_property mlt_properties_add( mlt_properties self, const char *name )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	int key = generate_hash( name );
 
 	// Check that we have space and resize if necessary
@@ -403,19 +403,19 @@ static mlt_property mlt_properties_add( mlt_properties this, const char *name )
 /** Fetch a property by name and add one if not found.
  *
  * \private \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to lookup or add
  * \return the property
  */
 
-static mlt_property mlt_properties_fetch( mlt_properties this, const char *name )
+static mlt_property mlt_properties_fetch( mlt_properties self, const char *name )
 {
 	// Try to find an existing property first
-	mlt_property property = mlt_properties_find( this, name );
+	mlt_property property = mlt_properties_find( self, name );
 
 	// If it wasn't found, create one
 	if ( property == NULL )
-		property = mlt_properties_add( this, name );
+		property = mlt_properties_add( self, name );
 
 	// Return the property
 	return property;
@@ -425,19 +425,19 @@ static mlt_property mlt_properties_fetch( mlt_properties this, const char *name 
  *
  * \public \memberof mlt_properties_s
  * \author Zach <zachary.drew@gmail.com>
- * \param this the properties to copy to
+ * \param self the properties to copy to
  * \param that the properties to copy from
  * \param name the name of the property to copy
  */
 
-void mlt_properties_pass_property( mlt_properties this, mlt_properties that, const char *name )
+void mlt_properties_pass_property( mlt_properties self, mlt_properties that, const char *name )
 {
 	// Make sure the source property isn't null.
 	mlt_property that_prop = mlt_properties_find( that, name );
 	if( that_prop == NULL )
 		return;
 
-	mlt_property_pass( mlt_properties_fetch( this, name ), that_prop );
+	mlt_property_pass( mlt_properties_fetch( self, name ), that_prop );
 }
 
 /** Copy all properties specified in a comma-separated list to another properties list.
@@ -445,14 +445,14 @@ void mlt_properties_pass_property( mlt_properties this, mlt_properties that, con
  * White space is also a delimiter.
  * \public \memberof mlt_properties_s
  * \author Zach <zachary.drew@gmail.com>
- * \param this the properties to copy to
+ * \param self the properties to copy to
  * \param that the properties to copy from
  * \param list a delimited list of property names
  * \return false
  */
 
 
-int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const char *list )
+int mlt_properties_pass_list( mlt_properties self, mlt_properties that, const char *list )
 {
 	char *props = strdup( list );
 	char *ptr = props;
@@ -468,7 +468,7 @@ int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const ch
 		else
 			ptr[count] = '\0';	// Make it a real string
 
-		mlt_properties_pass_property( this, that, ptr );
+		mlt_properties_pass_property( self, that, ptr );
 
 		ptr += count + 1;
 		ptr += strspn( ptr, delim );
@@ -484,18 +484,18 @@ int mlt_properties_pass_list( mlt_properties this, mlt_properties that, const ch
  *
  * This makes a copy of the string value you supply.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to set
  * \param value the property's new value
  * \return true if error
  */
 
-int mlt_properties_set( mlt_properties this, const char *name, const char *value )
+int mlt_properties_set( mlt_properties self, const char *name, const char *value )
 {
 	int error = 1;
 
 	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( this, name );
+	mlt_property property = mlt_properties_fetch( self, name );
 
 	// Set it if not NULL
 	if ( property == NULL )
@@ -505,12 +505,12 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 	else if ( value == NULL )
 	{
 		error = mlt_property_set_string( property, value );
-		mlt_properties_do_mirror( this, name );
+		mlt_properties_do_mirror( self, name );
 	}
 	else if ( *value != '@' )
 	{
 		error = mlt_property_set_string( property, value );
-		mlt_properties_do_mirror( this, name );
+		mlt_properties_do_mirror( self, name );
 	}
 	else if ( value[ 0 ] == '@' )
 	{
@@ -534,7 +534,7 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 			if ( isdigit( id[ 0 ] ) )
 				current = atof( id );
 			else
-				current = mlt_properties_get_double( this, id );
+				current = mlt_properties_get_double( self, id );
 
 			// Apply the operation
 			switch( op )
@@ -558,10 +558,10 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
 		}
 
 		error = mlt_property_set_double( property, total );
-		mlt_properties_do_mirror( this, name );
+		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( this, "property-changed", name, NULL );
+	mlt_events_fire( self, "property-changed", name, NULL );
 
 	return error;
 }
@@ -570,16 +570,16 @@ int mlt_properties_set( mlt_properties this, const char *name, const char *value
  *
  * This makes a copy of the string value you supply.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to set
  * \param value the string value to set or NULL to use the default
  * \param def the default string if value is NULL
  * \return true if error
  */
 
-int mlt_properties_set_or_default( mlt_properties this, const char *name, const char *value, const char *def )
+int mlt_properties_set_or_default( mlt_properties self, const char *name, const char *value, const char *def )
 {
-	return mlt_properties_set( this, name, value == NULL ? def : value );
+	return mlt_properties_set( self, name, value == NULL ? def : value );
 }
 
 /** Get a string value by name.
@@ -587,14 +587,14 @@ int mlt_properties_set_or_default( mlt_properties this, const char *name, const 
  * Do not free the returned string. It's lifetime is controlled by the property
  * and this properties object.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to get
  * \return the property's string value or NULL if it does not exist
  */
 
-char *mlt_properties_get( mlt_properties this, const char *name )
+char *mlt_properties_get( mlt_properties self, const char *name )
 {
-	mlt_property value = mlt_properties_find( this, name );
+	mlt_property value = mlt_properties_find( self, name );
 	return value == NULL ? NULL : mlt_property_get_string( value );
 }
 
@@ -602,14 +602,14 @@ char *mlt_properties_get( mlt_properties this, const char *name )
  *
  * Do not free the returned string.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param index the numeric index of the property
  * \return the name of the property or NULL if index is out of range
  */
 
-char *mlt_properties_get_name( mlt_properties this, int index )
+char *mlt_properties_get_name( mlt_properties self, int index )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	if ( index >= 0 && index < list->count )
 		return list->name[ index ];
 	return NULL;
@@ -619,14 +619,14 @@ char *mlt_properties_get_name( mlt_properties this, int index )
  *
  * Do not free the returned string.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param index the numeric index of the property
  * \return the property value as a string or NULL if the index is out of range
  */
 
-char *mlt_properties_get_value( mlt_properties this, int index )
+char *mlt_properties_get_value( mlt_properties self, int index )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	if ( index >= 0 && index < list->count )
 		return mlt_property_get_string( list->value[ index ] );
 	return NULL;
@@ -637,14 +637,14 @@ char *mlt_properties_get_value( mlt_properties this, int index )
  * Do not free the returned pointer if you supplied a destructor function when you
  * set this property.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param index the numeric index of the property
  * \param[out] size the size of the binary data in bytes or NULL if the index is out of range
  */
 
-void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
+void *mlt_properties_get_data_at( mlt_properties self, int index, int *size )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	if ( index >= 0 && index < list->count )
 		return mlt_property_get_data( list->value[ index ], size );
 	return NULL;
@@ -653,25 +653,25 @@ void *mlt_properties_get_data_at( mlt_properties this, int index, int *size )
 /** Return the number of items in the list.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \return the number of property objects
  */
 
-int mlt_properties_count( mlt_properties this )
+int mlt_properties_count( mlt_properties self )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	return list->count;
 }
 
 /** Set a value by parsing a name=value string.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param namevalue a string containing name and value delimited by '='
  * \return true if there was an error
  */
 
-int mlt_properties_parse( mlt_properties this, const char *namevalue )
+int mlt_properties_parse( mlt_properties self, const char *namevalue )
 {
 	char *name = strdup( namevalue );
 	char *value = NULL;
@@ -699,7 +699,7 @@ int mlt_properties_parse( mlt_properties this, const char *namevalue )
 		value = strdup( "" );
 	}
 
-	error = mlt_properties_set( this, name, value );
+	error = mlt_properties_set( self, name, value );
 
 	free( name );
 	free( value );
@@ -710,41 +710,41 @@ int mlt_properties_parse( mlt_properties this, const char *namevalue )
 /** Get an integer associated to the name.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to get
  * \return The integer value, 0 if not found (which may also be a legitimate value)
  */
 
-int mlt_properties_get_int( mlt_properties this, const char *name )
+int mlt_properties_get_int( mlt_properties self, const char *name )
 {
-	mlt_property value = mlt_properties_find( this, name );
+	mlt_property value = mlt_properties_find( self, name );
 	return value == NULL ? 0 : mlt_property_get_int( value );
 }
 
 /** Set a property to an integer value.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to set
  * \param value the integer
  * \return true if error
  */
 
-int mlt_properties_set_int( mlt_properties this, const char *name, int value )
+int mlt_properties_set_int( mlt_properties self, const char *name, int value )
 {
 	int error = 1;
 
 	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( this, name );
+	mlt_property property = mlt_properties_fetch( self, name );
 
 	// Set it if not NULL
 	if ( property != NULL )
 	{
 		error = mlt_property_set_int( property, value );
-		mlt_properties_do_mirror( this, name );
+		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( this, "property-changed", name, NULL );
+	mlt_events_fire( self, "property-changed", name, NULL );
 
 	return error;
 }
@@ -752,41 +752,41 @@ int mlt_properties_set_int( mlt_properties this, const char *name, int value )
 /** Get a 64-bit integer associated to the name.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to get
  * \return the integer value, 0 if not found (which may also be a legitimate value)
  */
 
-int64_t mlt_properties_get_int64( mlt_properties this, const char *name )
+int64_t mlt_properties_get_int64( mlt_properties self, const char *name )
 {
-	mlt_property value = mlt_properties_find( this, name );
+	mlt_property value = mlt_properties_find( self, name );
 	return value == NULL ? 0 : mlt_property_get_int64( value );
 }
 
 /** Set a property to a 64-bit integer value.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to set
  * \param value the integer
  * \return true if error
  */
 
-int mlt_properties_set_int64( mlt_properties this, const char *name, int64_t value )
+int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t value )
 {
 	int error = 1;
 
 	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( this, name );
+	mlt_property property = mlt_properties_fetch( self, name );
 
 	// Set it if not NULL
 	if ( property != NULL )
 	{
 		error = mlt_property_set_int64( property, value );
-		mlt_properties_do_mirror( this, name );
+		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( this, "property-changed", name, NULL );
+	mlt_events_fire( self, "property-changed", name, NULL );
 
 	return error;
 }
@@ -794,41 +794,41 @@ int mlt_properties_set_int64( mlt_properties this, const char *name, int64_t val
 /** Get a floating point value associated to the name.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to get
  * \return the floating point, 0 if not found (which may also be a legitimate value)
  */
 
-double mlt_properties_get_double( mlt_properties this, const char *name )
+double mlt_properties_get_double( mlt_properties self, const char *name )
 {
-	mlt_property value = mlt_properties_find( this, name );
+	mlt_property value = mlt_properties_find( self, name );
 	return value == NULL ? 0 : mlt_property_get_double( value );
 }
 
 /** Set a property to a floating point value.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to set
  * \param value the floating point value
  * \return true if error
  */
 
-int mlt_properties_set_double( mlt_properties this, const char *name, double value )
+int mlt_properties_set_double( mlt_properties self, const char *name, double value )
 {
 	int error = 1;
 
 	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( this, name );
+	mlt_property property = mlt_properties_fetch( self, name );
 
 	// Set it if not NULL
 	if ( property != NULL )
 	{
 		error = mlt_property_set_double( property, value );
-		mlt_properties_do_mirror( this, name );
+		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( this, "property-changed", name, NULL );
+	mlt_events_fire( self, "property-changed", name, NULL );
 
 	return error;
 }
@@ -836,41 +836,41 @@ int mlt_properties_set_double( mlt_properties this, const char *name, double val
 /** Get a position value associated to the name.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to get
  * \return the position, 0 if not found (which may also be a legitimate value)
  */
 
-mlt_position mlt_properties_get_position( mlt_properties this, const char *name )
+mlt_position mlt_properties_get_position( mlt_properties self, const char *name )
 {
-	mlt_property value = mlt_properties_find( this, name );
+	mlt_property value = mlt_properties_find( self, name );
 	return value == NULL ? 0 : mlt_property_get_position( value );
 }
 
 /** Set a property to a position value.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to get
  * \param value the position
  * \return true if error
  */
 
-int mlt_properties_set_position( mlt_properties this, const char *name, mlt_position value )
+int mlt_properties_set_position( mlt_properties self, const char *name, mlt_position value )
 {
 	int error = 1;
 
 	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( this, name );
+	mlt_property property = mlt_properties_fetch( self, name );
 
 	// Set it if not NULL
 	if ( property != NULL )
 	{
 		error = mlt_property_set_position( property, value );
-		mlt_properties_do_mirror( this, name );
+		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( this, "property-changed", name, NULL );
+	mlt_events_fire( self, "property-changed", name, NULL );
 
 	return error;
 }
@@ -880,21 +880,21 @@ int mlt_properties_set_position( mlt_properties this, const char *name, mlt_posi
  * Do not free the returned pointer if you supplied a destructor function
  * when you set this property.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to get
  * \param[out] length The size of the binary data in bytes, if available (often it is not, you should know)
  */
 
-void *mlt_properties_get_data( mlt_properties this, const char *name, int *length )
+void *mlt_properties_get_data( mlt_properties self, const char *name, int *length )
 {
-	mlt_property value = mlt_properties_find( this, name );
+	mlt_property value = mlt_properties_find( self, name );
 	return value == NULL ? NULL : mlt_property_get_data( value, length );
 }
 
 /** Store binary data as a property.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param name the property to set
  * \param value an opaque pointer to binary data
  * \param length the size of the binary data in bytes (optional)
@@ -903,18 +903,18 @@ void *mlt_properties_get_data( mlt_properties this, const char *name, int *lengt
  * \return true if error
  */
 
-int mlt_properties_set_data( mlt_properties this, const char *name, void *value, int length, mlt_destructor destroy, mlt_serialiser serialise )
+int mlt_properties_set_data( mlt_properties self, const char *name, void *value, int length, mlt_destructor destroy, mlt_serialiser serialise )
 {
 	int error = 1;
 
 	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( this, name );
+	mlt_property property = mlt_properties_fetch( self, name );
 
 	// Set it if not NULL
 	if ( property != NULL )
 		error = mlt_property_set_data( property, value, length, destroy, serialise );
 
-	mlt_events_fire( this, "property-changed", name, NULL );
+	mlt_events_fire( self, "property-changed", name, NULL );
 
 	return error;
 }
@@ -922,19 +922,19 @@ int mlt_properties_set_data( mlt_properties this, const char *name, void *value,
 /** Rename a property.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param source the property to rename
  * \param dest the new name
  * \return true if the name is already in use
  */
 
-int mlt_properties_rename( mlt_properties this, const char *source, const char *dest )
+int mlt_properties_rename( mlt_properties self, const char *source, const char *dest )
 {
-	mlt_property value = mlt_properties_find( this, dest );
+	mlt_property value = mlt_properties_find( self, dest );
 
 	if ( value == NULL )
 	{
-		property_list *list = this->local;
+		property_list *list = self->local;
 		int i = 0;
 
 		// Locate the item
@@ -956,41 +956,41 @@ int mlt_properties_rename( mlt_properties this, const char *source, const char *
 /** Dump the properties to a file handle.
  *
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param output a file handle
  */
 
-void mlt_properties_dump( mlt_properties this, FILE *output )
+void mlt_properties_dump( mlt_properties self, FILE *output )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	int i = 0;
 	for ( i = 0; i < list->count; i ++ )
-		if ( mlt_properties_get( this, list->name[ i ] ) != NULL )
-			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
+		if ( mlt_properties_get( self, list->name[ i ] ) != NULL )
+			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( self, list->name[ i ] ) );
 }
 
 /** Output the properties to a file handle.
  *
  * This version includes reference counts and does not put each property on a new line.
  * \public \memberof mlt_properties_s
- * \param this a properties pointer
+ * \param self a properties pointer
  * \param title a string to preface the output
  * \param output a file handle
  */
-void mlt_properties_debug( mlt_properties this, const char *title, FILE *output )
+void mlt_properties_debug( mlt_properties self, const char *title, FILE *output )
 {
 	if ( output == NULL ) output = stderr;
 	fprintf( output, "%s: ", title );
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		property_list *list = this->local;
+		property_list *list = self->local;
 		int i = 0;
 		fprintf( output, "[ ref=%d", list->ref_count );
 		for ( i = 0; i < list->count; i ++ )
-			if ( mlt_properties_get( this, list->name[ i ] ) != NULL )
-				fprintf( output, ", %s=%s", list->name[ i ], mlt_properties_get( this, list->name[ i ] ) );
+			if ( mlt_properties_get( self, list->name[ i ] ) != NULL )
+				fprintf( output, ", %s=%s", list->name[ i ], mlt_properties_get( self, list->name[ i ] ) );
 			else
-				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_data( this, list->name[ i ], NULL ) );
+				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_data( self, list->name[ i ], NULL ) );
 		fprintf( output, " ]" );
 	}
 	fprintf( output, "\n" );
@@ -1000,18 +1000,18 @@ void mlt_properties_debug( mlt_properties this, const char *title, FILE *output 
  *
  * This uses the dump format - one line per property.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param filename the name of a file to create or overwrite
  * \return true if there was an error
  */
 
-int mlt_properties_save( mlt_properties this, const char *filename )
+int mlt_properties_save( mlt_properties self, const char *filename )
 {
 	int error = 1;
 	FILE *f = fopen( filename, "w" );
 	if ( f != NULL )
 	{
-		mlt_properties_dump( this, f );
+		mlt_properties_dump( self, f );
 		fclose( f );
 		error = 0;
 	}
@@ -1066,14 +1066,14 @@ static int mlt_fnmatch( const char *wild, const char *file )
 /** Compare the string or serialized value of two properties.
  *
  * \private \memberof mlt_properties_s
- * \param this a property
+ * \param self a property
  * \param that a property
- * \return < 0 if 'this' less than 'that', 0 if equal, or > 0 if 'this' is greater than 'that'
+ * \return < 0 if \p self less than \p that, 0 if equal, or > 0 if \p self is greater than \p that
  */
 
-static int mlt_compare( const void *this, const void *that )
+static int mlt_compare( const void *self, const void *that )
 {
-	return strcmp( mlt_property_get_string( *( const mlt_property * )this ), mlt_property_get_string( *( const mlt_property * )that ) );
+	return strcmp( mlt_property_get_string( *( const mlt_property * )self ), mlt_property_get_string( *( const mlt_property * )that ) );
 }
 
 /** Get the contents of a directory.
@@ -1082,14 +1082,14 @@ static int mlt_compare( const void *this, const void *that )
  * Entries in the list have a numeric name (running from 0 to count - 1). Only values change
  * position if sort is enabled. Designed to be posix compatible (linux, os/x, mingw etc).
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param dirname the name of the directory
  * \param pattern a wildcard pattern to filter the directory listing
  * \param sort Do you want to sort the directory listing?
  * \return the number of items in the directory listing
  */
 
-int mlt_properties_dir_list( mlt_properties this, const char *dirname, const char *pattern, int sort )
+int mlt_properties_dir_list( mlt_properties self, const char *dirname, const char *pattern, int sort )
 {
 	DIR *dir = opendir( dirname );
 
@@ -1100,50 +1100,50 @@ int mlt_properties_dir_list( mlt_properties this, const char *dirname, const cha
 		char fullname[ 1024 ];
 		while( de != NULL )
 		{
-			sprintf( key, "%d", mlt_properties_count( this ) );
+			sprintf( key, "%d", mlt_properties_count( self ) );
 			snprintf( fullname, 1024, "%s/%s", dirname, de->d_name );
 			if ( pattern == NULL )
-				mlt_properties_set( this, key, fullname );
+				mlt_properties_set( self, key, fullname );
 			else if ( de->d_name[ 0 ] != '.' && mlt_fnmatch( pattern, de->d_name ) )
-				mlt_properties_set( this, key, fullname );
+				mlt_properties_set( self, key, fullname );
 			de = readdir( dir );
 		}
 
 		closedir( dir );
 	}
 
-	if ( sort && mlt_properties_count( this ) )
+	if ( sort && mlt_properties_count( self ) )
 	{
-		property_list *list = this->local;
-		qsort( list->value, mlt_properties_count( this ), sizeof( mlt_property ), mlt_compare );
+		property_list *list = self->local;
+		qsort( list->value, mlt_properties_count( self ), sizeof( mlt_property ), mlt_compare );
 	}
 
-	return mlt_properties_count( this );
+	return mlt_properties_count( self );
 }
 
 /** Close a properties object.
  *
  * Deallocates the properties object and everything it contains.
  * \public \memberof mlt_properties_s
- * \param this a properties object
+ * \param self a properties object
  */
 
-void mlt_properties_close( mlt_properties this )
+void mlt_properties_close( mlt_properties self )
 {
-	if ( this != NULL && mlt_properties_dec_ref( this ) <= 0 )
+	if ( self != NULL && mlt_properties_dec_ref( self ) <= 0 )
 	{
-		if ( this->close != NULL )
+		if ( self->close != NULL )
 		{
-			this->close( this->close_object );
+			self->close( self->close_object );
 		}
 		else
 		{
-			property_list *list = this->local;
+			property_list *list = self->local;
 			int index = 0;
 
 #if _MLT_PROPERTY_CHECKS_ == 1
 			// Show debug info
-			mlt_properties_debug( this, "Closing", stderr );
+			mlt_properties_debug( self, "Closing", stderr );
 #endif
 
 #ifdef _MLT_PROPERTY_CHECKS_
@@ -1167,9 +1167,9 @@ void mlt_properties_close( mlt_properties this )
 			free( list->value );
 			free( list );
 
-			// Free this now if this has no child
-			if ( this->child == NULL )
-				free( this );
+			// Free self now if self has no child
+			if ( self->child == NULL )
+				free( self );
 		}
 	}
 }
@@ -1480,9 +1480,9 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 mlt_properties mlt_properties_parse_yaml( const char *filename )
 {
 	// Construct a standalone properties object
-	mlt_properties this = mlt_properties_new( );
+	mlt_properties self = mlt_properties_new( );
 
-	if ( this )
+	if ( self )
 	{
 		// Open the file
 		FILE *file = fopen( filename, "r" );
@@ -1497,7 +1497,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 			// Parser context
 			yaml_parser context = calloc( 1, sizeof( struct yaml_parser_context ) );
 			context->stack = mlt_deque_init();
-			mlt_deque_push_front( context->stack, this );
+			mlt_deque_push_front( context->stack, self );
 
 			// Read each string from the file
 			while( fgets( temp, 1024, file ) )
@@ -1525,7 +1525,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 	}
 
 	// Return the pointer
-	return this;
+	return self;
 }
 
 /*
@@ -1647,15 +1647,15 @@ static void output_yaml_block_literal( strbuf output, const char *value, int ind
 /** Recursively serialize a properties list into a string buffer as YAML Tiny.
  *
  * \private \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \param output a string buffer to hold the serialized YAML Tiny
  * \param indent the number of spaces to indent (for recursion, initialize to 0)
- * \param is_parent_sequence Is 'this' properties list really just a sequence (for recursion, initialize to 0)?
+ * \param is_parent_sequence Is this properties list really just a sequence (for recursion, initialize to 0)?
  */
 
-static void serialise_yaml( mlt_properties this, strbuf output, int indent, int is_parent_sequence )
+static void serialise_yaml( mlt_properties self, strbuf output, int indent, int is_parent_sequence )
 {
-	property_list *list = this->local;
+	property_list *list = self->local;
 	int i = 0;
 
 	for ( i = 0; i < list->count; i ++ )
@@ -1664,7 +1664,7 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 		// Unfortunately, we do not have run time type identification.
 		mlt_properties child = mlt_property_get_data( list->value[ i ], NULL );
 
-		if ( mlt_properties_is_sequence( this ) )
+		if ( mlt_properties_is_sequence( self ) )
 		{
 			// Ignore hidden/non-serialisable items
 			if ( list->name[ i ][ 0 ] != '_' )
@@ -1674,7 +1674,7 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 				strbuf_printf( output, "- " );
 
 				// If the value can be represented as a string
-				const char *value = mlt_properties_get( this, list->name[ i ] );
+				const char *value = mlt_properties_get( self, list->name[ i ] );
 				if ( value && strcmp( value, "" ) )
 				{
 					// Determine if this is an unfolded block literal
@@ -1696,7 +1696,7 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
 		else
 		{
 			// Assume this is a normal map-oriented properties list
-			const char *value = mlt_properties_get( this, list->name[ i ] );
+			const char *value = mlt_properties_get( self, list->name[ i ] );
 
 			// Ignore hidden/non-serialisable items
 			// If the value can be represented as a string
@@ -1738,15 +1738,15 @@ static void serialise_yaml( mlt_properties this, strbuf output, int indent, int 
  * This operates on properties containing properties as a hierarchical data
  * structure.
  * \public \memberof mlt_properties_s
- * \param this a properties list
+ * \param self a properties list
  * \return a string containing YAML Tiny that represents the properties list
  */
 
-char *mlt_properties_serialise_yaml( mlt_properties this )
+char *mlt_properties_serialise_yaml( mlt_properties self )
 {
 	strbuf b = strbuf_new();
 	strbuf_printf( b, "---\n" );
-	serialise_yaml( this, b, 0, 0 );
+	serialise_yaml( self, b, 0, 0 );
 	strbuf_printf( b, "...\n" );
 	char *ret = b->string;
 	strbuf_close( b );

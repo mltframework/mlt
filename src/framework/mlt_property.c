@@ -76,82 +76,82 @@ struct mlt_property_s
 
 mlt_property mlt_property_init( )
 {
-	mlt_property this = malloc( sizeof( struct mlt_property_s ) );
-	if ( this != NULL )
+	mlt_property self = malloc( sizeof( struct mlt_property_s ) );
+	if ( self != NULL )
 	{
-		this->types = 0;
-		this->prop_int = 0;
-		this->prop_position = 0;
-		this->prop_double = 0;
-		this->prop_int64 = 0;
-		this->prop_string = NULL;
-		this->data = NULL;
-		this->length = 0;
-		this->destructor = NULL;
-		this->serialiser = NULL;
+		self->types = 0;
+		self->prop_int = 0;
+		self->prop_position = 0;
+		self->prop_double = 0;
+		self->prop_int64 = 0;
+		self->prop_string = NULL;
+		self->data = NULL;
+		self->length = 0;
+		self->destructor = NULL;
+		self->serialiser = NULL;
 	}
-	return this;
+	return self;
 }
 
 /** Clear (0/null) a property.
  *
  * Frees up any associated resources in the process.
  * \private \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  */
 
-static inline void mlt_property_clear( mlt_property this )
+static inline void mlt_property_clear( mlt_property self )
 {
 	// Special case data handling
-	if ( this->types & mlt_prop_data && this->destructor != NULL )
-		this->destructor( this->data );
+	if ( self->types & mlt_prop_data && self->destructor != NULL )
+		self->destructor( self->data );
 
 	// Special case string handling
-	if ( this->types & mlt_prop_string )
-		free( this->prop_string );
+	if ( self->types & mlt_prop_string )
+		free( self->prop_string );
 
 	// Wipe stuff
-	this->types = 0;
-	this->prop_int = 0;
-	this->prop_position = 0;
-	this->prop_double = 0;
-	this->prop_int64 = 0;
-	this->prop_string = NULL;
-	this->data = NULL;
-	this->length = 0;
-	this->destructor = NULL;
-	this->serialiser = NULL;
+	self->types = 0;
+	self->prop_int = 0;
+	self->prop_position = 0;
+	self->prop_double = 0;
+	self->prop_int64 = 0;
+	self->prop_string = NULL;
+	self->data = NULL;
+	self->length = 0;
+	self->destructor = NULL;
+	self->serialiser = NULL;
 }
 
 /** Set the property to an integer value.
  *
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \param value an integer
  * \return false
  */
 
-int mlt_property_set_int( mlt_property this, int value )
+int mlt_property_set_int( mlt_property self, int value )
 {
-	mlt_property_clear( this );
-	this->types = mlt_prop_int;
-	this->prop_int = value;
+	mlt_property_clear( self );
+	self->types = mlt_prop_int;
+	self->prop_int = value;
 	return 0;
 }
 
 /** Set the property to a floating point value.
  *
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \param value a double precision floating point value
  * \return false
  */
 
-int mlt_property_set_double( mlt_property this, double value )
+int mlt_property_set_double( mlt_property self, double value )
 {
-	mlt_property_clear( this );
-	this->types = mlt_prop_double;
-	this->prop_double = value;
+	mlt_property_clear( self );
+	self->types = mlt_prop_double;
+	self->prop_double = value;
 	return 0;
 }
 
@@ -159,16 +159,16 @@ int mlt_property_set_double( mlt_property this, double value )
  *
  * Position is a relative time value in frame units.
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \param value a position value
  * \return false
  */
 
-int mlt_property_set_position( mlt_property this, mlt_position value )
+int mlt_property_set_position( mlt_property self, mlt_position value )
 {
-	mlt_property_clear( this );
-	this->types = mlt_prop_position;
-	this->prop_position = value;
+	mlt_property_clear( self );
+	self->types = mlt_prop_position;
+	self->prop_position = value;
 	return 0;
 }
 
@@ -177,40 +177,40 @@ int mlt_property_set_position( mlt_property this, mlt_position value )
  * This makes a copy of the string you supply so you do not need to track
  * a new reference to it.
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \param value the string to copy to the property
  * \return true if it failed
  */
 
-int mlt_property_set_string( mlt_property this, const char *value )
+int mlt_property_set_string( mlt_property self, const char *value )
 {
-	if ( value != this->prop_string )
+	if ( value != self->prop_string )
 	{
-		mlt_property_clear( this );
-		this->types = mlt_prop_string;
+		mlt_property_clear( self );
+		self->types = mlt_prop_string;
 		if ( value != NULL )
-			this->prop_string = strdup( value );
+			self->prop_string = strdup( value );
 	}
 	else
 	{
-		this->types = mlt_prop_string;
+		self->types = mlt_prop_string;
 	}
-	return this->prop_string == NULL;
+	return self->prop_string == NULL;
 }
 
 /** Set the property to a 64-bit integer value.
  *
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \param value a 64-bit integer
  * \return false
  */
 
-int mlt_property_set_int64( mlt_property this, int64_t value )
+int mlt_property_set_int64( mlt_property self, int64_t value )
 {
-	mlt_property_clear( this );
-	this->types = mlt_prop_int64;
-	this->prop_int64 = value;
+	mlt_property_clear( self );
+	self->types = mlt_prop_int64;
+	self->prop_int64 = value;
 	return 0;
 }
 
@@ -221,7 +221,7 @@ int mlt_property_set_int64( mlt_property this, int64_t value )
  * the lifetime of the data. Otherwise, pass NULL for the destructor
  * function and control the lifetime yourself.
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \param value an opaque pointer
  * \param length the number of bytes pointed to by value (optional)
  * \param destructor a function to use to destroy this binary data (optional, assuming you manage the resource)
@@ -229,16 +229,16 @@ int mlt_property_set_int64( mlt_property this, int64_t value )
  * \return false
  */
 
-int mlt_property_set_data( mlt_property this, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser )
+int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser )
 {
-	if ( this->data == value )
-		this->destructor = NULL;
-	mlt_property_clear( this );
-	this->types = mlt_prop_data;
-	this->data = value;
-	this->length = length;
-	this->destructor = destructor;
-	this->serialiser = serialiser;
+	if ( self->data == value )
+		self->destructor = NULL;
+	mlt_property_clear( self );
+	self->types = mlt_prop_data;
+	self->data = value;
+	self->length = length;
+	self->destructor = destructor;
+	self->serialiser = serialiser;
 	return 0;
 }
 
@@ -285,44 +285,44 @@ static inline int mlt_property_atoi( const char *value )
 /** Get the property as an integer.
  *
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \return an integer value
  */
 
-int mlt_property_get_int( mlt_property this )
+int mlt_property_get_int( mlt_property self )
 {
-	if ( this->types & mlt_prop_int )
-		return this->prop_int;
-	else if ( this->types & mlt_prop_double )
-		return ( int )this->prop_double;
-	else if ( this->types & mlt_prop_position )
-		return ( int )this->prop_position;
-	else if ( this->types & mlt_prop_int64 )
-		return ( int )this->prop_int64;
-	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
-		return mlt_property_atoi( this->prop_string );
+	if ( self->types & mlt_prop_int )
+		return self->prop_int;
+	else if ( self->types & mlt_prop_double )
+		return ( int )self->prop_double;
+	else if ( self->types & mlt_prop_position )
+		return ( int )self->prop_position;
+	else if ( self->types & mlt_prop_int64 )
+		return ( int )self->prop_int64;
+	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
+		return mlt_property_atoi( self->prop_string );
 	return 0;
 }
 
 /** Get the property as a floating point.
  *
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \return a floating point value
  */
 
-double mlt_property_get_double( mlt_property this )
+double mlt_property_get_double( mlt_property self )
 {
-	if ( this->types & mlt_prop_double )
-		return this->prop_double;
-	else if ( this->types & mlt_prop_int )
-		return ( double )this->prop_int;
-	else if ( this->types & mlt_prop_position )
-		return ( double )this->prop_position;
-	else if ( this->types & mlt_prop_int64 )
-		return ( double )this->prop_int64;
-	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
-		return atof( this->prop_string );
+	if ( self->types & mlt_prop_double )
+		return self->prop_double;
+	else if ( self->types & mlt_prop_int )
+		return ( double )self->prop_int;
+	else if ( self->types & mlt_prop_position )
+		return ( double )self->prop_position;
+	else if ( self->types & mlt_prop_int64 )
+		return ( double )self->prop_int64;
+	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
+		return atof( self->prop_string );
 	return 0;
 }
 
@@ -330,22 +330,22 @@ double mlt_property_get_double( mlt_property this )
  *
  * A position is an offset time in terms of frame units.
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \return the position in frames
  */
 
-mlt_position mlt_property_get_position( mlt_property this )
+mlt_position mlt_property_get_position( mlt_property self )
 {
-	if ( this->types & mlt_prop_position )
-		return this->prop_position;
-	else if ( this->types & mlt_prop_int )
-		return ( mlt_position )this->prop_int;
-	else if ( this->types & mlt_prop_double )
-		return ( mlt_position )this->prop_double;
-	else if ( this->types & mlt_prop_int64 )
-		return ( mlt_position )this->prop_int64;
-	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
-		return ( mlt_position )atol( this->prop_string );
+	if ( self->types & mlt_prop_position )
+		return self->prop_position;
+	else if ( self->types & mlt_prop_int )
+		return ( mlt_position )self->prop_int;
+	else if ( self->types & mlt_prop_double )
+		return ( mlt_position )self->prop_double;
+	else if ( self->types & mlt_prop_int64 )
+		return ( mlt_position )self->prop_int64;
+	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
+		return ( mlt_position )atol( self->prop_string );
 	return 0;
 }
 
@@ -370,22 +370,22 @@ static inline int64_t mlt_property_atoll( const char *value )
 /** Get the property as a signed integer.
  *
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \return a 64-bit integer
  */
 
-int64_t mlt_property_get_int64( mlt_property this )
+int64_t mlt_property_get_int64( mlt_property self )
 {
-	if ( this->types & mlt_prop_int64 )
-		return this->prop_int64;
-	else if ( this->types & mlt_prop_int )
-		return ( int64_t )this->prop_int;
-	else if ( this->types & mlt_prop_double )
-		return ( int64_t )this->prop_double;
-	else if ( this->types & mlt_prop_position )
-		return ( int64_t )this->prop_position;
-	else if ( ( this->types & mlt_prop_string ) && this->prop_string )
-		return mlt_property_atoll( this->prop_string );
+	if ( self->types & mlt_prop_int64 )
+		return self->prop_int64;
+	else if ( self->types & mlt_prop_int )
+		return ( int64_t )self->prop_int;
+	else if ( self->types & mlt_prop_double )
+		return ( int64_t )self->prop_double;
+	else if ( self->types & mlt_prop_position )
+		return ( int64_t )self->prop_position;
+	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
+		return mlt_property_atoll( self->prop_string );
 	return 0;
 }
 
@@ -396,48 +396,48 @@ int64_t mlt_property_get_int64( mlt_property this )
  * This tries its hardest to convert the property to string including using
  * a serialization function for binary data, if supplied.
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \return a string representation of the property or NULL if failed
  */
 
-char *mlt_property_get_string( mlt_property this )
+char *mlt_property_get_string( mlt_property self )
 {
 	// Construct a string if need be
-	if ( ! ( this->types & mlt_prop_string ) )
+	if ( ! ( self->types & mlt_prop_string ) )
 	{
-		if ( this->types & mlt_prop_int )
+		if ( self->types & mlt_prop_int )
 		{
-			this->types |= mlt_prop_string;
-			this->prop_string = malloc( 32 );
-			sprintf( this->prop_string, "%d", this->prop_int );
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+			sprintf( self->prop_string, "%d", self->prop_int );
 		}
-		else if ( this->types & mlt_prop_double )
+		else if ( self->types & mlt_prop_double )
 		{
-			this->types |= mlt_prop_string;
-			this->prop_string = malloc( 32 );
-			sprintf( this->prop_string, "%f", this->prop_double );
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+			sprintf( self->prop_string, "%f", self->prop_double );
 		}
-		else if ( this->types & mlt_prop_position )
+		else if ( self->types & mlt_prop_position )
 		{
-			this->types |= mlt_prop_string;
-			this->prop_string = malloc( 32 );
-			sprintf( this->prop_string, "%d", (int)this->prop_position ); /* I don't know if this is wanted. -Zach */
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+			sprintf( self->prop_string, "%d", (int)self->prop_position ); /* I don't know if self is wanted. -Zach */
 		}
-		else if ( this->types & mlt_prop_int64 )
+		else if ( self->types & mlt_prop_int64 )
 		{
-			this->types |= mlt_prop_string;
-			this->prop_string = malloc( 32 );
-                        sprintf( this->prop_string, "%lld", (long long int)this->prop_int64 );
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+                        sprintf( self->prop_string, "%lld", (long long int)self->prop_int64 );
 		}
-		else if ( this->types & mlt_prop_data && this->serialiser != NULL )
+		else if ( self->types & mlt_prop_data && self->serialiser != NULL )
 		{
-			this->types |= mlt_prop_string;
-			this->prop_string = this->serialiser( this->data, this->length );
+			self->types |= mlt_prop_string;
+			self->prop_string = self->serialiser( self->data, self->length );
 		}
 	}
 
 	// Return the string (may be NULL)
-	return this->prop_string;
+	return self->prop_string;
 }
 
 /** Get the binary data from a property.
@@ -449,31 +449,31 @@ char *mlt_property_get_string( mlt_property this )
  * Therefore, only free the returned pointer if you did not supply a
  * destructor function.
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  * \param[out] length the size of the binary object in bytes (optional)
  * \return an opaque data pointer or NULL if not available
  */
 
-void *mlt_property_get_data( mlt_property this, int *length )
+void *mlt_property_get_data( mlt_property self, int *length )
 {
 	// Assign length if not NULL
 	if ( length != NULL )
-		*length = this->length;
+		*length = self->length;
 
 	// Return the data (note: there is no conversion here)
-	return this->data;
+	return self->data;
 }
 
 /** Destroy a property and free all related resources.
  *
  * \public \memberof mlt_property_s
- * \param this a property
+ * \param self a property
  */
 
-void mlt_property_close( mlt_property this )
+void mlt_property_close( mlt_property self )
 {
-	mlt_property_clear( this );
-	free( this );
+	mlt_property_clear( self );
+	free( self );
 }
 
 /** Copy a property.
@@ -482,31 +482,31 @@ void mlt_property_close( mlt_property this )
  * function was supplied when you set the Property.
  * \public \memberof mlt_property_s
  * \author Zach <zachary.drew@gmail.com>
- * \param this a property
+ * \param self a property
  * \param that another property
  */
-void mlt_property_pass( mlt_property this, mlt_property that )
+void mlt_property_pass( mlt_property self, mlt_property that )
 {
-	mlt_property_clear( this );
+	mlt_property_clear( self );
 
-	this->types = that->types;
+	self->types = that->types;
 
-	if ( this->types & mlt_prop_int64 )
-		this->prop_int64 = that->prop_int64;
-	else if ( this->types & mlt_prop_int )
-		this->prop_int = that->prop_int;
-	else if ( this->types & mlt_prop_double )
-		this->prop_double = that->prop_double;
-	else if ( this->types & mlt_prop_position )
-		this->prop_position = that->prop_position;
-	else if ( this->types & mlt_prop_string )
+	if ( self->types & mlt_prop_int64 )
+		self->prop_int64 = that->prop_int64;
+	else if ( self->types & mlt_prop_int )
+		self->prop_int = that->prop_int;
+	else if ( self->types & mlt_prop_double )
+		self->prop_double = that->prop_double;
+	else if ( self->types & mlt_prop_position )
+		self->prop_position = that->prop_position;
+	else if ( self->types & mlt_prop_string )
 	{
 		if ( that->prop_string != NULL )
-			this->prop_string = strdup( that->prop_string );
+			self->prop_string = strdup( that->prop_string );
 	}
-	else if ( this->types & mlt_prop_data && this->serialiser != NULL )
+	else if ( self->types & mlt_prop_data && self->serialiser != NULL )
 	{
-		this->types = mlt_prop_string;
-		this->prop_string = this->serialiser( this->data, this->length );
+		self->types = mlt_prop_string;
+		self->prop_string = self->serialiser( self->data, self->length );
 	}
 }

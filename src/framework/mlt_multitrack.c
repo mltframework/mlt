@@ -43,16 +43,16 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 mlt_multitrack mlt_multitrack_init( )
 {
 	// Allocate the multitrack object
-	mlt_multitrack this = calloc( sizeof( struct mlt_multitrack_s ), 1 );
+	mlt_multitrack self = calloc( sizeof( struct mlt_multitrack_s ), 1 );
 
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		mlt_producer producer = &this->parent;
-		if ( mlt_producer_init( producer, this ) == 0 )
+		mlt_producer producer = &self->parent;
+		if ( mlt_producer_init( producer, self ) == 0 )
 		{
-			mlt_properties properties = MLT_MULTITRACK_PROPERTIES( this );
+			mlt_properties properties = MLT_MULTITRACK_PROPERTIES( self );
 			producer->get_frame = producer_get_frame;
-			mlt_properties_set_data( properties, "multitrack", this, 0, NULL, NULL );
+			mlt_properties_set_data( properties, "multitrack", self, 0, NULL, NULL );
 			mlt_properties_set( properties, "log_id", "multitrack" );
 			mlt_properties_set( properties, "resource", "<multitrack>" );
 			mlt_properties_set_int( properties, "in", 0 );
@@ -62,81 +62,81 @@ mlt_multitrack mlt_multitrack_init( )
 		}
 		else
 		{
-			free( this );
-			this = NULL;
+			free( self );
+			self = NULL;
 		}
 	}
 
-	return this;
+	return self;
 }
 
 /** Get the producer associated to this multitrack.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  * \return the producer object
  * \see MLT_MULTITRACK_PRODUCER
  */
 
-mlt_producer mlt_multitrack_producer( mlt_multitrack this )
+mlt_producer mlt_multitrack_producer( mlt_multitrack self )
 {
-	return this != NULL ? &this->parent : NULL;
+	return self != NULL ? &self->parent : NULL;
 }
 
 /** Get the service associated this multitrack.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  * \return the service object
  * \see MLT_MULTITRACK_SERVICE
  */
 
-mlt_service mlt_multitrack_service( mlt_multitrack this )
+mlt_service mlt_multitrack_service( mlt_multitrack self )
 {
-	return MLT_MULTITRACK_SERVICE( this );
+	return MLT_MULTITRACK_SERVICE( self );
 }
 
 /** Get the properties associated this multitrack.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  * \return the multitrack's property list
  * \see MLT_MULTITRACK_PROPERTIES
  */
 
-mlt_properties mlt_multitrack_properties( mlt_multitrack this )
+mlt_properties mlt_multitrack_properties( mlt_multitrack self )
 {
-	return MLT_MULTITRACK_PROPERTIES( this );
+	return MLT_MULTITRACK_PROPERTIES( self );
 }
 
 /** Initialize position related information.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  */
 
-void mlt_multitrack_refresh( mlt_multitrack this )
+void mlt_multitrack_refresh( mlt_multitrack self )
 {
 	int i = 0;
 
 	// Obtain the properties of this multitrack
-	mlt_properties properties = MLT_MULTITRACK_PROPERTIES( this );
+	mlt_properties properties = MLT_MULTITRACK_PROPERTIES( self );
 
 	// We need to ensure that the multitrack reports the longest track as its length
 	mlt_position length = 0;
 
 	// Obtain stats on all connected services
-	for ( i = 0; i < this->count; i ++ )
+	for ( i = 0; i < self->count; i ++ )
 	{
 		// Get the producer from this index
-		mlt_track track = this->list[ i ];
+		mlt_track track = self->list[ i ];
 		mlt_producer producer = track->producer;
 
 		// If it's allocated then, update our stats
 		if ( producer != NULL )
 		{
 			// If we have more than 1 track, we must be in continue mode
-			if ( this->count > 1 )
+			if ( self->count > 1 )
 				mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "continue" );
 
 			// Determine the longest length
@@ -156,12 +156,12 @@ void mlt_multitrack_refresh( mlt_multitrack this )
  *
  * \private \memberof mlt_multitrack_s
  * \param producer a producer
- * \param this a multitrack
+ * \param self a multitrack
  */
 
-static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack this )
+static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack self )
 {
-	mlt_multitrack_refresh( this );
+	mlt_multitrack_refresh( self );
 }
 
 /** Connect a producer to a given track.
@@ -170,52 +170,52 @@ static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack this 
  * of playlist in clip point determination below.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  * \param producer the producer to connect to the multitrack producer
  * \param track the 0-based index of the track on which to connect the multitrack
  * \return true on error
  */
 
-int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int track )
+int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int track )
 {
 	// Connect to the producer to ourselves at the specified track
-	int result = mlt_service_connect_producer( MLT_MULTITRACK_SERVICE( this ), MLT_PRODUCER_SERVICE( producer ), track );
+	int result = mlt_service_connect_producer( MLT_MULTITRACK_SERVICE( self ), MLT_PRODUCER_SERVICE( producer ), track );
 
 	if ( result == 0 )
 	{
 		// Resize the producer list if need be
-		if ( track >= this->size )
+		if ( track >= self->size )
 		{
 			int i;
-			this->list = realloc( this->list, ( track + 10 ) * sizeof( mlt_track ) );
-			for ( i = this->size; i < track + 10; i ++ )
-				this->list[ i ] = NULL;
-			this->size = track + 10;
+			self->list = realloc( self->list, ( track + 10 ) * sizeof( mlt_track ) );
+			for ( i = self->size; i < track + 10; i ++ )
+				self->list[ i ] = NULL;
+			self->size = track + 10;
 		}
 
-		if ( this->list[ track ] != NULL )
+		if ( self->list[ track ] != NULL )
 		{
-			mlt_event_close( this->list[ track ]->event );
-			mlt_producer_close( this->list[ track ]->producer );
+			mlt_event_close( self->list[ track ]->event );
+			mlt_producer_close( self->list[ track ]->producer );
 		}
 		else
 		{
-			this->list[ track ] = malloc( sizeof( struct mlt_track_s ) );
+			self->list[ track ] = malloc( sizeof( struct mlt_track_s ) );
 		}
 
 		// Assign the track in our list here
-		this->list[ track ]->producer = producer;
-		this->list[ track ]->event = mlt_events_listen( MLT_PRODUCER_PROPERTIES( producer ), this,
+		self->list[ track ]->producer = producer;
+		self->list[ track ]->event = mlt_events_listen( MLT_PRODUCER_PROPERTIES( producer ), self,
 									 "producer-changed", ( mlt_listener )mlt_multitrack_listener );
 		mlt_properties_inc_ref( MLT_PRODUCER_PROPERTIES( producer ) );
-		mlt_event_inc_ref( this->list[ track ]->event );
+		mlt_event_inc_ref( self->list[ track ]->event );
 
 		// Increment the track count if need be
-		if ( track >= this->count )
-			this->count = track + 1;
+		if ( track >= self->count )
+			self->count = track + 1;
 
 		// Refresh our stats
-		mlt_multitrack_refresh( this );
+		mlt_multitrack_refresh( self );
 	}
 
 	return result;
@@ -224,29 +224,29 @@ int mlt_multitrack_connect( mlt_multitrack this, mlt_producer producer, int trac
 /** Get the number of tracks.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  * \return the number of tracks
  */
 
-int mlt_multitrack_count( mlt_multitrack this )
+int mlt_multitrack_count( mlt_multitrack self )
 {
-	return this->count;
+	return self->count;
 }
 
 /** Get an individual track as a producer.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  * \param track the 0-based index of the producer to get
  * \return the producer or NULL if not valid
  */
 
-mlt_producer mlt_multitrack_track( mlt_multitrack this, int track )
+mlt_producer mlt_multitrack_track( mlt_multitrack self, int track )
 {
 	mlt_producer producer = NULL;
 
-	if ( this->list != NULL && track < this->count )
-		producer = this->list[ track ]->producer;
+	if ( self->list != NULL && track < self->count )
+		producer = self->list[ track ]->producer;
 
 	return producer;
 }
@@ -306,13 +306,13 @@ static int add_unique( mlt_position *array, int size, mlt_position position )
  * </pre>
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  * \param whence from where to extract
  * \param index the 0-based index of which clip to extract
  * \return the position of clip \p index relative to \p whence
  */
 
-mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int index )
+mlt_position mlt_multitrack_clip( mlt_multitrack self, mlt_whence whence, int index )
 {
 	mlt_position position = 0;
 	int i = 0;
@@ -320,10 +320,10 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 	mlt_position *map = malloc( 1000 * sizeof( mlt_position ) );
 	int count = 0;
 
-	for ( i = 0; i < this->count; i ++ )
+	for ( i = 0; i < self->count; i ++ )
 	{
 		// Get the producer for this track
-		mlt_producer producer = this->list[ i ]->producer;
+		mlt_producer producer = self->list[ i ]->producer;
 
 		// If it's assigned and not a hidden track
 		if ( producer != NULL )
@@ -363,7 +363,7 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 			break;
 
 		case mlt_whence_relative_current:
-			position = mlt_producer_position( MLT_MULTITRACK_PRODUCER( this ) );
+			position = mlt_producer_position( MLT_MULTITRACK_PRODUCER( self ) );
 			for ( i = 0; i < count - 2; i ++ )
 				if ( position >= map[ i ] && position < map[ i + 1 ] )
 					break;
@@ -426,13 +426,13 @@ mlt_position mlt_multitrack_clip( mlt_multitrack this, mlt_whence whence, int in
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index )
 {
 	// Get the mutiltrack object
-	mlt_multitrack this = parent->child;
+	mlt_multitrack self = parent->child;
 
 	// Check if we have a track for this index
-	if ( index < this->count && this->list[ index ] != NULL )
+	if ( index < self->count && self->list[ index ] != NULL )
 	{
 		// Get the producer for this track
-		mlt_producer producer = this->list[ index ]->producer;
+		mlt_producer producer = self->list[ index ]->producer;
 
 		// Get the track hide property
 		int hide = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( producer ) ), "hide" );
@@ -467,7 +467,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		mlt_frame_set_position( *frame, mlt_producer_position( parent ) );
 
 		// Move on to the next frame
-		if ( index >= this->count )
+		if ( index >= self->count )
 		{
 			// Let tractor know if we've reached the end
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "last_track", 1 );
@@ -483,32 +483,32 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 /** Close this instance and free its resources.
  *
  * \public \memberof mlt_multitrack_s
- * \param this a multitrack
+ * \param self a multitrack
  */
 
-void mlt_multitrack_close( mlt_multitrack this )
+void mlt_multitrack_close( mlt_multitrack self )
 {
-	if ( this != NULL && mlt_properties_dec_ref( MLT_MULTITRACK_PROPERTIES( this ) ) <= 0 )
+	if ( self != NULL && mlt_properties_dec_ref( MLT_MULTITRACK_PROPERTIES( self ) ) <= 0 )
 	{
 		int i = 0;
-		for ( i = 0; i < this->count; i ++ )
+		for ( i = 0; i < self->count; i ++ )
 		{
-			if ( this->list[ i ] != NULL )
+			if ( self->list[ i ] != NULL )
 			{
-				mlt_event_close( this->list[ i ]->event );
-				mlt_producer_close( this->list[ i ]->producer );
-				free( this->list[ i ] );
+				mlt_event_close( self->list[ i ]->event );
+				mlt_producer_close( self->list[ i ]->producer );
+				free( self->list[ i ] );
 			}
 		}
 
 		// Close the producer
-		this->parent.close = NULL;
-		mlt_producer_close( &this->parent );
+		self->parent.close = NULL;
+		mlt_producer_close( &self->parent );
 
 		// Free the list
-		free( this->list );
+		free( self->list );
 
 		// Free the object
-		free( this );
+		free( self );
 	}
 }

@@ -41,15 +41,15 @@
 mlt_frame mlt_frame_init( mlt_service service )
 {
 	// Allocate a frame
-	mlt_frame this = calloc( sizeof( struct mlt_frame_s ), 1 );
+	mlt_frame self = calloc( sizeof( struct mlt_frame_s ), 1 );
 
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		mlt_profile profile = mlt_service_profile( service );
 
 		// Initialise the properties
-		mlt_properties properties = &this->parent;
-		mlt_properties_init( properties, this );
+		mlt_properties properties = &self->parent;
+		mlt_properties_init( properties, self );
 
 		// Set default properties on the frame
 		mlt_properties_set_position( properties, "_position", 0.0 );
@@ -63,236 +63,236 @@ mlt_frame mlt_frame_init( mlt_service service )
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
 
 		// Construct stacks for frames and methods
-		this->stack_image = mlt_deque_init( );
-		this->stack_audio = mlt_deque_init( );
-		this->stack_service = mlt_deque_init( );
+		self->stack_image = mlt_deque_init( );
+		self->stack_audio = mlt_deque_init( );
+		self->stack_service = mlt_deque_init( );
 	}
 
-	return this;
+	return self;
 }
 
 /** Get a frame's properties.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return the frame's properties or NULL if an invalid frame is supplied
  */
 
-mlt_properties mlt_frame_properties( mlt_frame this )
+mlt_properties mlt_frame_properties( mlt_frame self )
 {
-	return this != NULL ? &this->parent : NULL;
+	return self != NULL ? &self->parent : NULL;
 }
 
 /** Determine if the frame will produce a test card image.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return true (non-zero) if this will produce from a test card
  */
 
-int mlt_frame_is_test_card( mlt_frame this )
+int mlt_frame_is_test_card( mlt_frame self )
 {
-	return mlt_deque_count( this->stack_image ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_image" );
+	return mlt_deque_count( self->stack_image ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( self ), "test_image" );
 }
 
 /** Determine if the frame will produce audio from a test card.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return true (non-zero) if this will produce from a test card
  */
 
-int mlt_frame_is_test_audio( mlt_frame this )
+int mlt_frame_is_test_audio( mlt_frame self )
 {
-	return mlt_deque_count( this->stack_audio ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "test_audio" );
+	return mlt_deque_count( self->stack_audio ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( self ), "test_audio" );
 }
 
 /** Get the sample aspect ratio of the frame.
  *
  * \public \memberof  mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return the aspect ratio
  */
 
-double mlt_frame_get_aspect_ratio( mlt_frame this )
+double mlt_frame_get_aspect_ratio( mlt_frame self )
 {
-	return mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "aspect_ratio" );
+	return mlt_properties_get_double( MLT_FRAME_PROPERTIES( self ), "aspect_ratio" );
 }
 
 /** Set the sample aspect ratio of the frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param value the new image sample aspect ratio
  * \return true if error
  */
 
-int mlt_frame_set_aspect_ratio( mlt_frame this, double value )
+int mlt_frame_set_aspect_ratio( mlt_frame self, double value )
 {
-	return mlt_properties_set_double( MLT_FRAME_PROPERTIES( this ), "aspect_ratio", value );
+	return mlt_properties_set_double( MLT_FRAME_PROPERTIES( self ), "aspect_ratio", value );
 }
 
 /** Get the time position of this frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return the position
  */
 
-mlt_position mlt_frame_get_position( mlt_frame this )
+mlt_position mlt_frame_get_position( mlt_frame self )
 {
-	int pos = mlt_properties_get_position( MLT_FRAME_PROPERTIES( this ), "_position" );
+	int pos = mlt_properties_get_position( MLT_FRAME_PROPERTIES( self ), "_position" );
 	return pos < 0 ? 0 : pos;
 }
 
 /** Set the time position of this frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param value the position
  * \return true if error
  */
 
-int mlt_frame_set_position( mlt_frame this, mlt_position value )
+int mlt_frame_set_position( mlt_frame self, mlt_position value )
 {
-	return mlt_properties_set_position( MLT_FRAME_PROPERTIES( this ), "_position", value );
+	return mlt_properties_set_position( MLT_FRAME_PROPERTIES( self ), "_position", value );
 }
 
 /** Stack a get_image callback.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param the get_image callback
  * \return true if error
  */
 
-int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image )
+int mlt_frame_push_get_image( mlt_frame self, mlt_get_image get_image )
 {
-	return mlt_deque_push_back( this->stack_image, get_image );
+	return mlt_deque_push_back( self->stack_image, get_image );
 }
 
 /** Pop a get_image callback.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return the get_image callback
  */
 
-mlt_get_image mlt_frame_pop_get_image( mlt_frame this )
+mlt_get_image mlt_frame_pop_get_image( mlt_frame self )
 {
-	return mlt_deque_pop_back( this->stack_image );
+	return mlt_deque_pop_back( self->stack_image );
 }
 
 /** Push a frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
- * \param that the frame to push onto \p this
+ * \param self a frame
+ * \param that the frame to push onto \p self
  * \return true if error
  */
 
-int mlt_frame_push_frame( mlt_frame this, mlt_frame that )
+int mlt_frame_push_frame( mlt_frame self, mlt_frame that )
 {
-	return mlt_deque_push_back( this->stack_image, that );
+	return mlt_deque_push_back( self->stack_image, that );
 }
 
 /** Pop a frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return a frame that was previously pushed
  */
 
-mlt_frame mlt_frame_pop_frame( mlt_frame this )
+mlt_frame mlt_frame_pop_frame( mlt_frame self )
 {
-	return mlt_deque_pop_back( this->stack_image );
+	return mlt_deque_pop_back( self->stack_image );
 }
 
 /** Push a service.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param that an opaque pointer
  * \return true if error
  */
 
-int mlt_frame_push_service( mlt_frame this, void *that )
+int mlt_frame_push_service( mlt_frame self, void *that )
 {
-	return mlt_deque_push_back( this->stack_image, that );
+	return mlt_deque_push_back( self->stack_image, that );
 }
 
 /** Pop a service.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return an opaque pointer to something previously pushed
  */
 
-void *mlt_frame_pop_service( mlt_frame this )
+void *mlt_frame_pop_service( mlt_frame self )
 {
-	return mlt_deque_pop_back( this->stack_image );
+	return mlt_deque_pop_back( self->stack_image );
 }
 
 /** Push a number.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param that an integer
  * \return true if error
  */
 
-int mlt_frame_push_service_int( mlt_frame this, int that )
+int mlt_frame_push_service_int( mlt_frame self, int that )
 {
-	return mlt_deque_push_back_int( this->stack_image, that );
+	return mlt_deque_push_back_int( self->stack_image, that );
 }
 
 /** Pop a number.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return an integer that was previously pushed
  */
 
-int mlt_frame_pop_service_int( mlt_frame this )
+int mlt_frame_pop_service_int( mlt_frame self )
 {
-	return mlt_deque_pop_back_int( this->stack_image );
+	return mlt_deque_pop_back_int( self->stack_image );
 }
 
 /** Push an audio item on the stack.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param that an opaque pointer
  * \return true if error
  */
 
-int mlt_frame_push_audio( mlt_frame this, void *that )
+int mlt_frame_push_audio( mlt_frame self, void *that )
 {
-	return mlt_deque_push_back( this->stack_audio, that );
+	return mlt_deque_push_back( self->stack_audio, that );
 }
 
 /** Pop an audio item from the stack
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return an opaque pointer to something that was pushed onto the frame's audio stack
  */
 
-void *mlt_frame_pop_audio( mlt_frame this )
+void *mlt_frame_pop_audio( mlt_frame self )
 {
-	return mlt_deque_pop_back( this->stack_audio );
+	return mlt_deque_pop_back( self->stack_audio );
 }
 
 /** Return the service stack
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return the service stack
  */
 
-mlt_deque mlt_frame_service_stack( mlt_frame this )
+mlt_deque mlt_frame_service_stack( mlt_frame self )
 {
-	return this->stack_service;
+	return self->stack_service;
 }
 
 /** Replace image stack with the information provided.
@@ -314,24 +314,24 @@ mlt_deque mlt_frame_service_stack( mlt_frame this )
  * and the upper tracks should simply not be invited to stack...
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param image a new image
  * \param format the image format
  * \param width the width of the new image
  * \param height the height of the new image
  */
 
-void mlt_frame_replace_image( mlt_frame this, uint8_t *image, mlt_image_format format, int width, int height )
+void mlt_frame_replace_image( mlt_frame self, uint8_t *image, mlt_image_format format, int width, int height )
 {
 	// Remove all items from the stack
-	while( mlt_deque_pop_back( this->stack_image ) ) ;
+	while( mlt_deque_pop_back( self->stack_image ) ) ;
 
 	// Update the information
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "image", image, 0, NULL, NULL );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "width", width );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "height", height );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "format", format );
-	this->get_alpha_mask = NULL;
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "image", image, 0, NULL, NULL );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "width", width );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "height", height );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "format", format );
+	self->get_alpha_mask = NULL;
 }
 
 /** Get the short name for an image format.
@@ -365,7 +365,7 @@ const char * mlt_image_format_name( mlt_image_format format )
  * buffer, but you should always supply the desired image format.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param[out] buffer an image buffer
  * \param[in,out] format the image format
  * \param[in,out] width the horizontal size in pixels
@@ -375,10 +375,10 @@ const char * mlt_image_format_name( mlt_image_format format )
  * \todo Better describe the width and height as inputs.
  */
 
-int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-	mlt_get_image get_image = mlt_frame_pop_get_image( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
+	mlt_get_image get_image = mlt_frame_pop_get_image( self );
 	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
 	mlt_image_format requested_format = *format;
 	int error = 0;
@@ -386,19 +386,19 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 	if ( get_image )
 	{
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
-		error = get_image( this, buffer, format, width, height, writable );
+		error = get_image( self, buffer, format, width, height, writable );
 		if ( !error && *buffer )
 		{
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
-			if ( this->convert_image && *buffer )
-				this->convert_image( this, buffer, format, requested_format );
+			if ( self->convert_image && *buffer )
+				self->convert_image( self, buffer, format, requested_format );
 			mlt_properties_set_int( properties, "format", *format );
 		}
 		else
 		{
 			// Cause the image to be loaded from test card or fallback (white) below.
-			mlt_frame_get_image( this, buffer, format, width, height, writable );
+			mlt_frame_get_image( self, buffer, format, width, height, writable );
 		}
 	}
 	else if ( mlt_properties_get_data( properties, "image", NULL ) )
@@ -407,9 +407,9 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		*buffer = mlt_properties_get_data( properties, "image", NULL );
 		*width = mlt_properties_get_int( properties, "width" );
 		*height = mlt_properties_get_int( properties, "height" );
-		if ( this->convert_image && *buffer )
+		if ( self->convert_image && *buffer )
 		{
-			this->convert_image( this, buffer, format, requested_format );
+			self->convert_image( self, buffer, format, requested_format );
 			mlt_properties_set_int( properties, "format", *format );
 		}
 	}
@@ -433,7 +433,7 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 		else
 		{
 			mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
-			mlt_frame_get_image( this, buffer, format, width, height, writable );
+			mlt_frame_get_image( self, buffer, format, width, height, writable );
 		}
 	}
 	else
@@ -502,25 +502,25 @@ int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *for
 /** Get the alpha channel associated to the frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return the alpha channel
  */
 
-uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
+uint8_t *mlt_frame_get_alpha_mask( mlt_frame self )
 {
 	uint8_t *alpha = NULL;
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		if ( this->get_alpha_mask != NULL )
-			alpha = this->get_alpha_mask( this );
+		if ( self->get_alpha_mask != NULL )
+			alpha = self->get_alpha_mask( self );
 		if ( alpha == NULL )
-			alpha = mlt_properties_get_data( &this->parent, "alpha", NULL );
+			alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
 		if ( alpha == NULL )
 		{
-			int size = mlt_properties_get_int( &this->parent, "width" ) * mlt_properties_get_int( &this->parent, "height" );
+			int size = mlt_properties_get_int( &self->parent, "width" ) * mlt_properties_get_int( &self->parent, "height" );
 			alpha = mlt_pool_alloc( size );
 			memset( alpha, 255, size );
-			mlt_properties_set_data( &this->parent, "alpha", alpha, size, mlt_pool_release, NULL );
+			mlt_properties_set_data( &self->parent, "alpha", alpha, size, mlt_pool_release, NULL );
 		}
 	}
 	return alpha;
@@ -530,7 +530,7 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame this )
  *
  * You do not need to deallocate the returned string.
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param format an image format enum
  * \return a string for the name of the image format
  */
@@ -559,7 +559,7 @@ const char * mlt_audio_format_name( mlt_audio_format format )
  * You should use the \p mlt_sample_calculator to determine the number of samples you want.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param[out] buffer an audio buffer
  * \param[in,out] format the audio format
  * \param[in,out] frequency the sample rate
@@ -568,22 +568,22 @@ const char * mlt_audio_format_name( mlt_audio_format format )
  * \return true if error
  */
 
-int mlt_frame_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	mlt_get_audio get_audio = mlt_frame_pop_audio( this );
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_get_audio get_audio = mlt_frame_pop_audio( self );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	int hide = mlt_properties_get_int( properties, "test_audio" );
 	mlt_audio_format requested_format = *format;
 
 	if ( hide == 0 && get_audio != NULL )
 	{
-		get_audio( this, buffer, format, frequency, channels, samples );
+		get_audio( self, buffer, format, frequency, channels, samples );
 		mlt_properties_set_int( properties, "audio_frequency", *frequency );
 		mlt_properties_set_int( properties, "audio_channels", *channels );
 		mlt_properties_set_int( properties, "audio_samples", *samples );
 		mlt_properties_set_int( properties, "audio_format", *format );
-		if ( this->convert_audio )
-			this->convert_audio( this, buffer, format, requested_format );
+		if ( self->convert_audio )
+			self->convert_audio( self, buffer, format, requested_format );
 	}
 	else if ( mlt_properties_get_data( properties, "audio", NULL ) )
 	{
@@ -592,8 +592,8 @@ int mlt_frame_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format
 		*frequency = mlt_properties_get_int( properties, "audio_frequency" );
 		*channels = mlt_properties_get_int( properties, "audio_channels" );
 		*samples = mlt_properties_get_int( properties, "audio_samples" );
-		if ( this->convert_audio )
-			this->convert_audio( this, buffer, format, requested_format );
+		if ( self->convert_audio )
+			self->convert_audio( self, buffer, format, requested_format );
 	}
 	else
 	{
@@ -659,7 +659,7 @@ int mlt_frame_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format
 /** Set the audio on a frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param buffer an buffer containing audio samples
  * \param format the format of the audio in the \p buffer
  * \param size the total size of the buffer (optional)
@@ -667,10 +667,10 @@ int mlt_frame_get_audio( mlt_frame this, void **buffer, mlt_audio_format *format
  * \return true if error
  */
 
-int mlt_frame_set_audio( mlt_frame this, void *buffer, mlt_audio_format format, int size, mlt_destructor destructor )
+int mlt_frame_set_audio( mlt_frame self, void *buffer, mlt_audio_format format, int size, mlt_destructor destructor )
 {
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "audio_format", format );
-	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "audio", buffer, size, destructor, NULL );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "audio_format", format );
+	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "audio", buffer, size, destructor, NULL );
 }
 
 /** Get audio on a frame as a waveform image.
@@ -681,32 +681,32 @@ int mlt_frame_set_audio( mlt_frame this, void *buffer, mlt_audio_format format, 
  * value with \p mlt_pool_release.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \param w the width of the image
  * \param h the height of the image to create
  * \return a pointer to a new bitmap
  */
 
-unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
+unsigned char *mlt_frame_get_waveform( mlt_frame self, int w, int h )
 {
 	int16_t *pcm = NULL;
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_audio_format format = mlt_audio_s16;
 	int frequency = 16000;
 	int channels = 2;
-	mlt_producer producer = mlt_frame_get_original_producer( this );
+	mlt_producer producer = mlt_frame_get_original_producer( self );
 	double fps = mlt_producer_get_fps( mlt_producer_cut_parent( producer ) );
-	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
+	int samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( self ) );
 
 	// Increase audio resolution proportional to requested image size
 	while ( samples < w )
 	{
 		frequency += 16000;
-		samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( this ) );
+		samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( self ) );
 	}
 
 	// Get the pcm data
-	mlt_frame_get_audio( this, (void**)&pcm, &format, &frequency, &channels, &samples );
+	mlt_frame_get_audio( self, (void**)&pcm, &format, &frequency, &channels, &samples );
 
 	// Make an 8-bit buffer large enough to hold rendering
 	int size = w * h;
@@ -750,40 +750,40 @@ unsigned char *mlt_frame_get_waveform( mlt_frame this, int w, int h )
 	return bitmap;
 }
 
-/** Get the end service that produced this frame.
+/** Get the end service that produced self frame.
  *
  * This fetches the first producer of the frame and not any producers that
  * encapsulate it.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  * \return a producer
  */
 
-mlt_producer mlt_frame_get_original_producer( mlt_frame this )
+mlt_producer mlt_frame_get_original_producer( mlt_frame self )
 {
-	if ( this != NULL )
-		return mlt_properties_get_data( MLT_FRAME_PROPERTIES( this ), "_producer", NULL );
+	if ( self != NULL )
+		return mlt_properties_get_data( MLT_FRAME_PROPERTIES( self ), "_producer", NULL );
 	return NULL;
 }
 
 /** Destroy the frame.
  *
  * \public \memberof mlt_frame_s
- * \param this a frame
+ * \param self a frame
  */
 
-void mlt_frame_close( mlt_frame this )
+void mlt_frame_close( mlt_frame self )
 {
-	if ( this != NULL && mlt_properties_dec_ref( MLT_FRAME_PROPERTIES( this ) ) <= 0 )
+	if ( self != NULL && mlt_properties_dec_ref( MLT_FRAME_PROPERTIES( self ) ) <= 0 )
 	{
-		mlt_deque_close( this->stack_image );
-		mlt_deque_close( this->stack_audio );
-		while( mlt_deque_peek_back( this->stack_service ) )
-			mlt_service_close( mlt_deque_pop_back( this->stack_service ) );
-		mlt_deque_close( this->stack_service );
-		mlt_properties_close( &this->parent );
-		free( this );
+		mlt_deque_close( self->stack_image );
+		mlt_deque_close( self->stack_audio );
+		while( mlt_deque_peek_back( self->stack_service ) )
+			mlt_service_close( mlt_deque_pop_back( self->stack_service ) );
+		mlt_deque_close( self->stack_service );
+		mlt_properties_close( &self->parent );
+		free( self );
 	}
 }
 

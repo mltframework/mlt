@@ -57,26 +57,26 @@ struct mlt_field_s
 mlt_field mlt_field_init( )
 {
 	// Initialise the field
-	mlt_field this = calloc( sizeof( struct mlt_field_s ), 1 );
+	mlt_field self = calloc( sizeof( struct mlt_field_s ), 1 );
 
 	// Initialise it
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// Construct a multitrack
-		this->multitrack = mlt_multitrack_init( );
+		self->multitrack = mlt_multitrack_init( );
 
 		// Construct a tractor
-		this->tractor = mlt_tractor_init( );
+		self->tractor = mlt_tractor_init( );
 
 		// The first plant will be connected to the mulitrack
-		this->producer = MLT_MULTITRACK_SERVICE( this->multitrack );
+		self->producer = MLT_MULTITRACK_SERVICE( self->multitrack );
 
 		// Connect the tractor to the multitrack
-		mlt_tractor_connect( this->tractor, this->producer );
+		mlt_tractor_connect( self->tractor, self->producer );
 	}
 
-	// Return this
-	return this;
+	// Return self
+	return self;
 }
 
 /** Construct a field and initialize with supplied multitrack and tractor.
@@ -90,101 +90,101 @@ mlt_field mlt_field_init( )
 mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
 {
 	// Initialise the field
-	mlt_field this = calloc( sizeof( struct mlt_field_s ), 1 );
+	mlt_field self = calloc( sizeof( struct mlt_field_s ), 1 );
 
 	// Initialise it
-	if ( this != NULL )
+	if ( self != NULL )
 	{
 		// Construct a multitrack
-		this->multitrack = multitrack;
+		self->multitrack = multitrack;
 
 		// Construct a tractor
-		this->tractor = tractor;
+		self->tractor = tractor;
 
 		// The first plant will be connected to the mulitrack
-		this->producer = MLT_MULTITRACK_SERVICE( this->multitrack );
+		self->producer = MLT_MULTITRACK_SERVICE( self->multitrack );
 
 		// Connect the tractor to the multitrack
-		mlt_tractor_connect( this->tractor, this->producer );
+		mlt_tractor_connect( self->tractor, self->producer );
 	}
 
-	// Return this
-	return this;
+	// Return self
+	return self;
 }
 
 /** Get the service associated to this field.
  *
  * \public \memberof mlt_field_s
- * \param this a field
+ * \param self a field
  * \return the tractor as a service
  */
 
-mlt_service mlt_field_service( mlt_field this )
+mlt_service mlt_field_service( mlt_field self )
 {
-	return MLT_TRACTOR_SERVICE( this->tractor );
+	return MLT_TRACTOR_SERVICE( self->tractor );
 }
 
 /** Get the multitrack.
  *
  * \public \memberof mlt_field_s
- * \param this a field
+ * \param self a field
  * \return the multitrack
  */
 
-mlt_multitrack mlt_field_multitrack( mlt_field this )
+mlt_multitrack mlt_field_multitrack( mlt_field self )
 {
-	return this != NULL ? this->multitrack : NULL;
+	return self != NULL ? self->multitrack : NULL;
 }
 
 /** Get the tractor.
  *
  * \public \memberof mlt_field_s
- * \param this a field
+ * \param self a field
  * \return the tractor
  */
 
-mlt_tractor mlt_field_tractor( mlt_field this )
+mlt_tractor mlt_field_tractor( mlt_field self )
 {
-	return this != NULL ? this->tractor : NULL;
+	return self != NULL ? self->tractor : NULL;
 }
 
 /** Get the properties associated to this field.
  *
  * \public \memberof mlt_field_s
- * \param this a field
+ * \param self a field
  * \return a properties list
  */
 
-mlt_properties mlt_field_properties( mlt_field this )
+mlt_properties mlt_field_properties( mlt_field self )
 {
-	return MLT_SERVICE_PROPERTIES( mlt_field_service( this ) );
+	return MLT_SERVICE_PROPERTIES( mlt_field_service( self ) );
 }
 
 /** Plant a filter.
  *
  * \public \memberof mlt_field_s
- * \param this a field
+ * \param self a field
  * \param that a filter
  * \param track the track index
  * \return true if there was an error
  */
 
-int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track )
+int mlt_field_plant_filter( mlt_field self, mlt_filter that, int track )
 {
 	// Connect the filter to the last producer
-	int result = mlt_filter_connect( that, this->producer, track );
+	int result = mlt_filter_connect( that, self->producer, track );
 
 	// If sucessful, then we'll use this for connecting in the future
 	if ( result == 0 )
 	{
 		// This is now the new producer
-		this->producer = MLT_FILTER_SERVICE( that );
+		self->producer = MLT_FILTER_SERVICE( that );
 
 		// Reconnect tractor to new producer
-		mlt_tractor_connect( this->tractor, this->producer );
+		mlt_tractor_connect( self->tractor, self->producer );
 
 		// Fire an event
-		mlt_events_fire( mlt_field_properties( this ), "service-changed", NULL );
+		mlt_events_fire( mlt_field_properties( self ), "service-changed", NULL );
 	}
 
 	return result;
@@ -193,29 +193,29 @@ int mlt_field_plant_filter( mlt_field this, mlt_filter that, int track )
 /** Plant a transition.
  *
  * \public \memberof mlt_field_s
- * \param this a field
+ * \param self a field
  * \param that a transition
  * \param a_track input A's track index
  * \param b_track input B's track index
  * \return true if there was an error
  */
 
-int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track, int b_track )
+int mlt_field_plant_transition( mlt_field self, mlt_transition that, int a_track, int b_track )
 {
 	// Connect the transition to the last producer
-	int result = mlt_transition_connect( that, this->producer, a_track, b_track );
+	int result = mlt_transition_connect( that, self->producer, a_track, b_track );
 
-	// If sucessful, then we'll use this for connecting in the future
+	// If sucessful, then we'll use self for connecting in the future
 	if ( result == 0 )
 	{
 		// This is now the new producer
-		this->producer = MLT_TRANSITION_SERVICE( that );
+		self->producer = MLT_TRANSITION_SERVICE( that );
 
 		// Reconnect tractor to new producer
-		mlt_tractor_connect( this->tractor, this->producer );
+		mlt_tractor_connect( self->tractor, self->producer );
 
 		// Fire an event
-		mlt_events_fire( mlt_field_properties( this ), "service-changed", NULL );
+		mlt_events_fire( mlt_field_properties( self ), "service-changed", NULL );
 	}
 
 	return 0;
@@ -224,16 +224,16 @@ int mlt_field_plant_transition( mlt_field this, mlt_transition that, int a_track
 /** Close the field.
  *
  * \public \memberof mlt_field_s
- * \param this a field
+ * \param self a field
  */
 
-void mlt_field_close( mlt_field this )
+void mlt_field_close( mlt_field self )
 {
-	if ( this != NULL && mlt_properties_dec_ref( mlt_field_properties( this ) ) <= 0 )
+	if ( self != NULL && mlt_properties_dec_ref( mlt_field_properties( self ) ) <= 0 )
 	{
-		//mlt_tractor_close( this->tractor );
-		//mlt_multitrack_close( this->multitrack );
-		free( this );
+		//mlt_tractor_close( self->tractor );
+		//mlt_multitrack_close( self->multitrack );
+		free( self );
 	}
 }
 

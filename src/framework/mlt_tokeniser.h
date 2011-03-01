@@ -41,10 +41,10 @@ typedef struct
 */
 
 extern mlt_tokeniser mlt_tokeniser_init( );
-extern int mlt_tokeniser_parse_new( mlt_tokeniser self, char *text, const char *delimiter );
-extern char *mlt_tokeniser_get_input( mlt_tokeniser self );
-extern int mlt_tokeniser_count( mlt_tokeniser self );
-extern char *mlt_tokeniser_get_string( mlt_tokeniser self, int index );
-extern void mlt_tokeniser_close( mlt_tokeniser self );
+extern int mlt_tokeniser_parse_new( mlt_tokeniser tokeniser, char *text, const char *delimiter );
+extern char *mlt_tokeniser_get_input( mlt_tokeniser tokeniser );
+extern int mlt_tokeniser_count( mlt_tokeniser tokeniser );
+extern char *mlt_tokeniser_get_string( mlt_tokeniser tokeniser, int index );
+extern void mlt_tokeniser_close( mlt_tokeniser tokeniser );
 
 #endif

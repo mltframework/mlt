@@ -47,23 +47,23 @@ geometry_s, *geometry;
 // Create a new geometry structure
 mlt_geometry mlt_geometry_init( )
 {
-	mlt_geometry this = calloc( 1, sizeof( struct mlt_geometry_s ) );
-	if ( this != NULL )
+	mlt_geometry self = calloc( 1, sizeof( struct mlt_geometry_s ) );
+	if ( self != NULL )
 	{
-		this->local = calloc( 1, sizeof( geometry_s ) );
-		if ( this->local != NULL )
+		self->local = calloc( 1, sizeof( geometry_s ) );
+		if ( self->local != NULL )
 		{
-			geometry g = this->local;
+			geometry g = self->local;
 			g->nw = 720;
 			g->nh = 576;
 		}
 		else
 		{
-			free( this );
-			this = NULL;
+			free( self );
+			self = NULL;
 		}
 	}
-	return this;
+	return self;
 }
 
 /** A linear step
@@ -75,9 +75,9 @@ static inline double linearstep( double start, double end, double position, int 
 	return start + position * o;
 }
 
-static void mlt_geometry_virtual_refresh( mlt_geometry this )
+static void mlt_geometry_virtual_refresh( mlt_geometry self )
 {
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// Parse of all items to ensure unspecified keys are calculated correctly
 	if ( g->item != NULL )
@@ -150,9 +150,9 @@ static void mlt_geometry_virtual_refresh( mlt_geometry this )
 	}
 }
 
-static int mlt_geometry_drop( mlt_geometry this, geometry_item item )
+static int mlt_geometry_drop( mlt_geometry self, geometry_item item )
 {
-	geometry g = this->local;
+	geometry g = self->local;
 
 	if ( item == g->item )
 	{
@@ -188,19 +188,19 @@ static int mlt_geometry_drop( mlt_geometry this, geometry_item item )
 	return 0;
 }
 
-static void mlt_geometry_clean( mlt_geometry this )
+static void mlt_geometry_clean( mlt_geometry self )
 {
-	geometry g = this->local;
+	geometry g = self->local;
 	free( g->data );
 	g->data = NULL;
 	while( g->item )
-		mlt_geometry_drop( this, g->item );
+		mlt_geometry_drop( self, g->item );
 }
 
 // Parse the geometry specification for a given length and normalised width/height (-1 for default)
 // data is constructed as: [frame=]X,Y:WxH[:mix][;[frame=]X,Y:WxH[:mix]]*
 // and X, Y, W and H can have trailing % chars to indicate percentage of normalised size
-int mlt_geometry_parse( mlt_geometry this, char *data, int length, int nw, int nh )
+int mlt_geometry_parse( mlt_geometry self, char *data, int length, int nw, int nh )
 {
 	int i = 0;
 
@@ -208,10 +208,10 @@ int mlt_geometry_parse( mlt_geometry this, char *data, int length, int nw, int n
 	mlt_tokeniser tokens = mlt_tokeniser_init( );
 
 	// Get the local/private structure
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// Clean the existing geometry
-	mlt_geometry_clean( this );
+	mlt_geometry_clean( self );
 
 	// Update the info on the data
 	if ( length != -1 )
@@ -237,10 +237,10 @@ int mlt_geometry_parse( mlt_geometry this, char *data, int length, int nw, int n
 		memset( &item, 0, sizeof( struct mlt_geometry_item_s ) );
 
 		// Now parse the item
-		mlt_geometry_parse_item( this, &item, value );
+		mlt_geometry_parse_item( self, &item, value );
 
 		// Now insert into place
-		mlt_geometry_insert( this, &item );
+		mlt_geometry_insert( self, &item );
 	}
 
 	// Remove the tokeniser
@@ -251,42 +251,42 @@ int mlt_geometry_parse( mlt_geometry this, char *data, int length, int nw, int n
 }
 
 // Conditionally refresh in case of a change
-int mlt_geometry_refresh( mlt_geometry this, char *data, int length, int nw, int nh )
+int mlt_geometry_refresh( mlt_geometry self, char *data, int length, int nw, int nh )
 {
-	geometry g = this->local;
+	geometry g = self->local;
 	int changed = ( length != -1 && length != g->length );
 	changed = changed || ( nw != -1 && nw != g->nw );
 	changed = changed || ( nh != -1 && nh != g->nh );
 	changed = changed || ( data != NULL && ( g->data == NULL || strcmp( data, g->data ) ) );
 	if ( changed )
-		return mlt_geometry_parse( this, data, length, nw, nh );
+		return mlt_geometry_parse( self, data, length, nw, nh );
 	return -1;
 }
 
-int mlt_geometry_get_length( mlt_geometry this )
+int mlt_geometry_get_length( mlt_geometry self )
 {
 	// Get the local/private structure
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// return the length
 	return g->length;
 }
 
-void mlt_geometry_set_length( mlt_geometry this, int length )
+void mlt_geometry_set_length( mlt_geometry self, int length )
 {
 	// Get the local/private structure
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// set the length
 	g->length = length;
 }
 
-int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *value )
+int mlt_geometry_parse_item( mlt_geometry self, mlt_geometry_item item, char *value )
 {
 	int ret = 0;
 
 	// Get the local/private structure
-	geometry g = this->local;
+	geometry g = self->local;
 
 	if ( value != NULL && strcmp( value, "" ) )
 	{
@@ -309,9 +309,9 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 		if ( item->frame < 0 )
 			item->frame += g->length;
 
-		// Obtain the current value at this position - this allows new
+		// Obtain the current value at this position - self allows new
 		// frames to be created which don't specify all values
-		mlt_geometry_fetch( this, item, item->frame );
+		mlt_geometry_fetch( self, item, item->frame );
 
 		// Special case - when an empty string is specified, all values are fixed
 		// TODO: Check if this is logical - it's convenient, but it's also odd...
@@ -382,10 +382,10 @@ int mlt_geometry_parse_item( mlt_geometry this, mlt_geometry_item item, char *va
 }
 
 // Fetch a geometry item for an absolute position
-int mlt_geometry_fetch( mlt_geometry this, mlt_geometry_item item, float position )
+int mlt_geometry_fetch( mlt_geometry self, mlt_geometry_item item, float position )
 {
 	// Get the local geometry
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// Need to find the nearest key to the position specifed
 	geometry_item key = g->item;
@@ -446,15 +446,15 @@ int mlt_geometry_fetch( mlt_geometry this, mlt_geometry_item item, float positio
 }
 
 // Specify a geometry item at an absolute position
-int mlt_geometry_insert( mlt_geometry this, mlt_geometry_item item )
+int mlt_geometry_insert( mlt_geometry self, mlt_geometry_item item )
 {
 	// Get the local/private geometry structure
-	geometry g = this->local;
+	geometry g = self->local;
 
-	// Create a new local item (this may be removed if a key already exists at this position)
-	geometry_item new = calloc( 1, sizeof( struct geometry_item_s ) );
-	memcpy( &new->data, item, sizeof( struct mlt_geometry_item_s ) );
-	new->data.key = 1;
+	// Create a new local item (this may be removed if a key already exists at self position)
+	geometry_item gi = calloc( 1, sizeof( struct geometry_item_s ) );
+	memcpy( &gi->data, item, sizeof( struct mlt_geometry_item_s ) );
+	gi->data.key = 1;
 
 	// Determine if we need to insert or append to the list, or if it's a new list
 	if ( g->item != NULL )
@@ -469,31 +469,31 @@ int mlt_geometry_insert( mlt_geometry this, mlt_geometry_item item )
 		if ( item->frame < place->data.frame )
 		{
 			if ( place == g->item )
-				g->item = new;
+				g->item = gi;
 			if ( place->prev )
-				place->prev->next = new;
-			new->next = place;
-			new->prev = place->prev;
-			place->prev = new;
+				place->prev->next = gi;
+			gi->next = place;
+			gi->prev = place->prev;
+			place->prev = gi;
 		}
 		else if ( item->frame > place->data.frame )
 		{
 			if ( place->next )
-				place->next->prev = new;
-			new->next = place->next;
-			new->prev = place;
-			place->next = new;
+				place->next->prev = gi;
+			gi->next = place->next;
+			gi->prev = place;
+			place->next = gi;
 		}
 		else
 		{
-			memcpy( &place->data, &new->data, sizeof( struct mlt_geometry_item_s ) );
-			free( new );
+			memcpy( &place->data, &gi->data, sizeof( struct mlt_geometry_item_s ) );
+			free( gi );
 		}
 	}
 	else
 	{
 		// Set the first item
-		g->item = new;
+		g->item = gi;
 
 		// To ensure correct seeding, ensure all values are fixed
 		g->item->data.f[0] = 1;
@@ -504,19 +504,19 @@ int mlt_geometry_insert( mlt_geometry this, mlt_geometry_item item )
 	}
 
 	// Refresh all geometries
-	mlt_geometry_virtual_refresh( this );
+	mlt_geometry_virtual_refresh( self );
 
 	// TODO: Error checking
 	return 0;
 }
 
 // Remove the key at the specified position
-int mlt_geometry_remove( mlt_geometry this, int position )
+int mlt_geometry_remove( mlt_geometry self, int position )
 {
 	int ret = 1;
 
 	// Get the local/private geometry structure
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// Get the first item
 	geometry_item place = g->item;
@@ -525,19 +525,19 @@ int mlt_geometry_remove( mlt_geometry this, int position )
 		place = place->next;
 
 	if ( place != NULL && position == place->data.frame )
-		ret = mlt_geometry_drop( this, place );
+		ret = mlt_geometry_drop( self, place );
 
 	// Refresh all geometries
-	mlt_geometry_virtual_refresh( this );
+	mlt_geometry_virtual_refresh( self );
 
 	return ret;
 }
 
 // Get the key at the position or the next following
-int mlt_geometry_next_key( mlt_geometry this, mlt_geometry_item item, int position )
+int mlt_geometry_next_key( mlt_geometry self, mlt_geometry_item item, int position )
 {
 	// Get the local/private geometry structure
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// Get the first item
 	geometry_item place = g->item;
@@ -552,10 +552,10 @@ int mlt_geometry_next_key( mlt_geometry this, mlt_geometry_item item, int positi
 }
 
 // Get the key at the position or the previous key
-int mlt_geometry_prev_key( mlt_geometry this, mlt_geometry_item item, int position )
+int mlt_geometry_prev_key( mlt_geometry self, mlt_geometry_item item, int position )
 {
 	// Get the local/private geometry structure
-	geometry g = this->local;
+	geometry g = self->local;
 
 	// Get the first item
 	geometry_item place = g->item;
@@ -569,9 +569,9 @@ int mlt_geometry_prev_key( mlt_geometry this, mlt_geometry_item item, int positi
 	return place == NULL;
 }
 
-char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
+char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
 {
-	geometry g = this->local;
+	geometry g = self->local;
 	struct mlt_geometry_item_s item;
 	char *ret = malloc( 1000 );
 	int used = 0;
@@ -580,7 +580,7 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 	if ( in == -1 )
 		in = 0;
 	if ( out == -1 )
-		out = mlt_geometry_get_length( this );
+		out = mlt_geometry_get_length( self );
 
 	if ( ret != NULL )
 	{
@@ -597,7 +597,7 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 			// If it's the first frame, then it's not necessarily a key
 			if ( item.frame == in )
 			{
-				if ( mlt_geometry_fetch( this, &item, item.frame ) )
+				if ( mlt_geometry_fetch( self, &item, item.frame ) )
 					break;
 
 				// If the first key is larger than the current position
@@ -618,12 +618,12 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 			// Typically, we move from key to key
 			else if ( item.frame < out )
 			{
-				if ( mlt_geometry_next_key( this, &item, item.frame ) )
+				if ( mlt_geometry_next_key( self, &item, item.frame ) )
 					break;
 
 				// Special case - crop at the out point
 				if ( item.frame > out )
-					mlt_geometry_fetch( this, &item, out );
+					mlt_geometry_fetch( self, &item, out );
 			}
 			// We've handled the last key
 			else
@@ -673,10 +673,10 @@ char *mlt_geometry_serialise_cut( mlt_geometry this, int in, int out )
 }
 
 // Serialise the current geometry
-char *mlt_geometry_serialise( mlt_geometry this )
+char *mlt_geometry_serialise( mlt_geometry self )
 {
-	geometry g = this->local;
-	char *ret = mlt_geometry_serialise_cut( this, 0, g->length );
+	geometry g = self->local;
+	char *ret = mlt_geometry_serialise_cut( self, 0, g->length );
 	if ( ret )
 	{
 		free( g->data );
@@ -686,13 +686,13 @@ char *mlt_geometry_serialise( mlt_geometry this )
 }
 
 // Close the geometry
-void mlt_geometry_close( mlt_geometry this )
+void mlt_geometry_close( mlt_geometry self )
 {
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		mlt_geometry_clean( this );
-		free( this->local );
-		free( this );
+		mlt_geometry_clean( self );
+		free( self->local );
+		free( self );
 	}
 }
 

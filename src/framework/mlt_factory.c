@@ -57,28 +57,28 @@ static int unique_id = 0;
  *
  * \param listener
  * \param owner
- * \param this
+ * \param self
  * \param args
  */
 
-static void mlt_factory_create_request( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+static void mlt_factory_create_request( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
 {
 	if ( listener != NULL )
-		listener( owner, this, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service * )args[ 2 ] );
+		listener( owner, self, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service * )args[ 2 ] );
 }
 
 /** the -create-done event transmitter
  *
  * \param listener
  * \param owner
- * \param this
+ * \param self
  * \param args
  */
 
-static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
 {
 	if ( listener != NULL )
-		listener( owner, this, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service )args[ 2 ] );
+		listener( owner, self, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service )args[ 2 ] );
 }
 
 /** Construct the repository and factories.

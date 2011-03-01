@@ -67,60 +67,60 @@ struct mlt_event_struct
 	void *service;
 };
 
-/** Increment the reference count on this event.
+/** Increment the reference count on self event.
  *
  * \public \memberof mlt_event_struct
- * \param this an event
+ * \param self an event
  */
 
-void mlt_event_inc_ref( mlt_event this )
+void mlt_event_inc_ref( mlt_event self )
 {
-	if ( this != NULL )
-		this->ref_count ++;
+	if ( self != NULL )
+		self->ref_count ++;
 }
 
-/** Increment the block count on this event.
+/** Increment the block count on self event.
  *
  * \public \memberof mlt_event_struct
- * \param this an event
+ * \param self an event
  */
 
-void mlt_event_block( mlt_event this )
+void mlt_event_block( mlt_event self )
 {
-	if ( this != NULL && this->owner != NULL )
-		this->block_count ++;
+	if ( self != NULL && self->owner != NULL )
+		self->block_count ++;
 }
 
-/** Decrement the block count on this event.
+/** Decrement the block count on self event.
  *
  * \public \memberof mlt_event_struct
- * \param this an event
+ * \param self an event
  */
 
-void mlt_event_unblock( mlt_event this )
+void mlt_event_unblock( mlt_event self )
 {
-	if ( this != NULL && this->owner != NULL )
-		this->block_count --;
+	if ( self != NULL && self->owner != NULL )
+		self->block_count --;
 }
 
-/** Close this event.
+/** Close self event.
  *
  * \public \memberof mlt_event_struct
- * \param this an event
+ * \param self an event
  */
 
-void mlt_event_close( mlt_event this )
+void mlt_event_close( mlt_event self )
 {
-	if ( this != NULL )
+	if ( self != NULL )
 	{
-		if ( -- this->ref_count == 1 )
-			this->owner = NULL;
-		if ( this->ref_count <= 0 )
+		if ( -- self->ref_count == 1 )
+			self->owner = NULL;
+		if ( self->ref_count <= 0 )
 		{
 #ifdef _MLT_EVENT_CHECKS_
 			mlt_log( NULL, MLT_LOG_DEBUG, "Events created %d, destroyed %d\n", events_created, ++events_destroyed );
 #endif
-			free( this );
+			free( self );
 		}
 	}
 }
@@ -135,33 +135,33 @@ static void mlt_events_close( mlt_events );
 /** Initialise the events structure.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  */
 
-void mlt_events_init( mlt_properties this )
+void mlt_events_init( mlt_properties self )
 {
-	mlt_events events = mlt_events_fetch( this );
+	mlt_events events = mlt_events_fetch( self );
 	if ( events == NULL )
 	{
 		events = malloc( sizeof( struct mlt_events_struct ) );
 		events->list = mlt_properties_new( );
-		mlt_events_store( this, events );
+		mlt_events_store( self, events );
 	}
 }
 
 /** Register an event and transmitter.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param id the name of an event
  * \param transmitter the callback function to send an event message
  * \return true if there was an error
  */
 
-int mlt_events_register( mlt_properties this, const char *id, mlt_transmitter transmitter )
+int mlt_events_register( mlt_properties self, const char *id, mlt_transmitter transmitter )
 {
 	int error = 1;
-	mlt_events events = mlt_events_fetch( this );
+	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		mlt_properties list = events->list;
@@ -179,13 +179,13 @@ int mlt_events_register( mlt_properties this, const char *id, mlt_transmitter tr
  * This takes a variable number of arguments to supply to the listener.
 
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param id the name of an event
  */
 
-void mlt_events_fire( mlt_properties this, const char *id, ... )
+void mlt_events_fire( mlt_properties self, const char *id, ... )
 {
-	mlt_events events = mlt_events_fetch( this );
+	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		int i = 0;
@@ -224,17 +224,17 @@ void mlt_events_fire( mlt_properties this, const char *id, ... )
 /** Register a listener.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param service an opaque pointer
  * \param id the name of the event to listen for
  * \param listener the callback to receive an event message
  * \return
  */
 
-mlt_event mlt_events_listen( mlt_properties this, void *service, const char *id, mlt_listener listener )
+mlt_event mlt_events_listen( mlt_properties self, void *service, const char *id, mlt_listener listener )
 {
 	mlt_event event = NULL;
-	mlt_events events = mlt_events_fetch( this );
+	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		mlt_properties list = events->list;
@@ -287,13 +287,13 @@ mlt_event mlt_events_listen( mlt_properties this, void *service, const char *id,
 /** Block all events for a given service.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param service an opaque pointer
  */
 
-void mlt_events_block( mlt_properties this, void *service )
+void mlt_events_block( mlt_properties self, void *service )
 {
-	mlt_events events = mlt_events_fetch( this );
+	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		int i = 0, j = 0;
@@ -318,13 +318,13 @@ void mlt_events_block( mlt_properties this, void *service )
 /** Unblock all events for a given service.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param service an opaque pointer
  */
 
-void mlt_events_unblock( mlt_properties this, void *service )
+void mlt_events_unblock( mlt_properties self, void *service )
 {
-	mlt_events events = mlt_events_fetch( this );
+	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		int i = 0, j = 0;
@@ -349,13 +349,13 @@ void mlt_events_unblock( mlt_properties this, void *service )
 /** Disconnect all events for a given service.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param service an opaque pointer
  */
 
-void mlt_events_disconnect( mlt_properties this, void *service )
+void mlt_events_disconnect( mlt_properties self, void *service )
 {
-	mlt_events events = mlt_events_fetch( this );
+	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		int i = 0, j = 0;
@@ -391,11 +391,11 @@ condition_pair;
 /** The event listener callback for the wait functions.
  *
  * \private \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param pair a condition pair
  */
 
-static void mlt_events_listen_for( mlt_properties this, condition_pair *pair )
+static void mlt_events_listen_for( mlt_properties self, condition_pair *pair )
 {
 	pthread_mutex_lock( &pair->mutex );
 	if ( pair->done == 0 )
@@ -408,29 +408,29 @@ static void mlt_events_listen_for( mlt_properties this, condition_pair *pair )
 /** Prepare to wait for an event.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param id the name of the event to wait for
  * \return an event
  */
 
-mlt_event mlt_events_setup_wait_for( mlt_properties this, const char *id )
+mlt_event mlt_events_setup_wait_for( mlt_properties self, const char *id )
 {
 	condition_pair *pair = malloc( sizeof( condition_pair ) );
 	pair->done = 0;
 	pthread_cond_init( &pair->cond, NULL );
 	pthread_mutex_init( &pair->mutex, NULL );
 	pthread_mutex_lock( &pair->mutex );
-	return mlt_events_listen( this, pair, id, ( mlt_listener )mlt_events_listen_for );
+	return mlt_events_listen( self, pair, id, ( mlt_listener )mlt_events_listen_for );
 }
 
 /** Wait for an event.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param event an event
  */
 
-void mlt_events_wait_for( mlt_properties this, mlt_event event )
+void mlt_events_wait_for( mlt_properties self, mlt_event event )
 {
 	if ( event != NULL )
 	{
@@ -442,11 +442,11 @@ void mlt_events_wait_for( mlt_properties this, mlt_event event )
 /** Cleanup after waiting for an event.
  *
  * \public \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param event an event
  */
 
-void mlt_events_close_wait_for( mlt_properties this, mlt_event event )
+void mlt_events_close_wait_for( mlt_properties self, mlt_event event )
 {
 	if ( event != NULL )
 	{
@@ -462,29 +462,29 @@ void mlt_events_close_wait_for( mlt_properties this, mlt_event event )
 /** Fetch the events object.
  *
  * \private \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \return an events object
  */
 
-static mlt_events mlt_events_fetch( mlt_properties this )
+static mlt_events mlt_events_fetch( mlt_properties self )
 {
 	mlt_events events = NULL;
-	if ( this != NULL )
-		events = mlt_properties_get_data( this, "_events", NULL );
+	if ( self != NULL )
+		events = mlt_properties_get_data( self, "_events", NULL );
 	return events;
 }
 
 /** Store the events object.
  *
  * \private \memberof mlt_events_struct
- * \param this a properties list
+ * \param self a properties list
  * \param events an events object
  */
 
-static void mlt_events_store( mlt_properties this, mlt_events events )
+static void mlt_events_store( mlt_properties self, mlt_events events )
 {
-	if ( this != NULL && events != NULL )
-		mlt_properties_set_data( this, "_events", events, 0, ( mlt_destructor )mlt_events_close, NULL );
+	if ( self != NULL && events != NULL )
+		mlt_properties_set_data( self, "_events", events, 0, ( mlt_destructor )mlt_events_close, NULL );
 }
 
 /** Close the events object.

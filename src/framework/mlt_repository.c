@@ -63,12 +63,12 @@ mlt_repository mlt_repository_init( const char *directory )
 		return NULL;
 
 	// Construct the repository
-	mlt_repository this = calloc( sizeof( struct mlt_repository_s ), 1 );
-	mlt_properties_init( &this->parent, this );
-	this->consumers = mlt_properties_new();
-	this->filters = mlt_properties_new();
-	this->producers = mlt_properties_new();
-	this->transitions = mlt_properties_new();
+	mlt_repository self = calloc( sizeof( struct mlt_repository_s ), 1 );
+	mlt_properties_init( &self->parent, self );
+	self->consumers = mlt_properties_new();
+	self->filters = mlt_properties_new();
+	self->producers = mlt_properties_new();
+	self->transitions = mlt_properties_new();
 
 	// Get the directory list
 	mlt_properties dir = mlt_properties_new();
@@ -96,10 +96,10 @@ mlt_repository mlt_repository_init( const char *directory )
 			// Call the registration function
 			if ( symbol_ptr != NULL )
 			{
-				symbol_ptr( this );
+				symbol_ptr( self );
 
 				// Register the object file for closure
-				mlt_properties_set_data( &this->parent, object_name, object, 0, ( mlt_destructor )dlclose, NULL );
+				mlt_properties_set_data( &self->parent, object_name, object, 0, ( mlt_destructor )dlclose, NULL );
 			}
 			else
 			{
@@ -114,7 +114,7 @@ mlt_repository mlt_repository_init( const char *directory )
 
 	mlt_properties_close( dir );
 
-	return this;
+	return self;
 }
 
 /** Create a properties list for a service holding a function pointer to its constructor function.
@@ -136,28 +136,28 @@ static mlt_properties new_service( void *symbol )
  * Typically, this is invoked by a module within its mlt_register().
  *
  * \public \memberof mlt_repository_s
- * \param this a repository
+ * \param self a repository
  * \param service_type a service class
  * \param service the name of a service
  * \param symbol a pointer to a function to create the service
  */
 
-void mlt_repository_register( mlt_repository this, mlt_service_type service_type, const char *service, mlt_register_callback symbol )
+void mlt_repository_register( mlt_repository self, mlt_service_type service_type, const char *service, mlt_register_callback symbol )
 {
 	// Add the entry point to the corresponding service list
 	switch ( service_type )
 	{
 		case consumer_type:
-			mlt_properties_set_data( this->consumers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
+			mlt_properties_set_data( self->consumers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		case filter_type:
-			mlt_properties_set_data( this->filters, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
+			mlt_properties_set_data( self->filters, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		case producer_type:
-			mlt_properties_set_data( this->producers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
+			mlt_properties_set_data( self->producers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		case transition_type:
-			mlt_properties_set_data( this->transitions, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
+			mlt_properties_set_data( self->transitions, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		default:
 			break;
@@ -167,13 +167,13 @@ void mlt_repository_register( mlt_repository this, mlt_service_type service_type
 /** Get the repository properties for particular service class.
  *
  * \private \memberof mlt_repository_s
- * \param this a repository
+ * \param self a repository
  * \param type a service class
  * \param service the name of a service
  * \return a properties list or NULL if error
  */
 
-static mlt_properties get_service_properties( mlt_repository this, mlt_service_type type, const char *service )
+static mlt_properties get_service_properties( mlt_repository self, mlt_service_type type, const char *service )
 {
 	mlt_properties service_properties = NULL;
 
@@ -181,16 +181,16 @@ static mlt_properties get_service_properties( mlt_repository this, mlt_service_t
 	switch ( type )
 	{
 		case consumer_type:
-			service_properties = mlt_properties_get_data( this->consumers, service, NULL );
+			service_properties = mlt_properties_get_data( self->consumers, service, NULL );
 			break;
 		case filter_type:
-			service_properties = mlt_properties_get_data( this->filters, service, NULL );
+			service_properties = mlt_properties_get_data( self->filters, service, NULL );
 			break;
 		case producer_type:
-			service_properties = mlt_properties_get_data( this->producers, service, NULL );
+			service_properties = mlt_properties_get_data( self->producers, service, NULL );
 			break;
 		case transition_type:
-			service_properties = mlt_properties_get_data( this->transitions, service, NULL );
+			service_properties = mlt_properties_get_data( self->transitions, service, NULL );
 			break;
 		default:
 			break;
@@ -201,16 +201,16 @@ static mlt_properties get_service_properties( mlt_repository this, mlt_service_t
 /** Construct a new instance of a service.
  *
  * \public \memberof mlt_repository_s
- * \param this a repository
+ * \param self a repository
  * \param profile a \p mlt_profile to give the service
  * \param type a service class
  * \param service the name of the service
  * \param input an optional argument to the service constructor
  */
 
-void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_service_type type, const char *service, const void *input )
+void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, const void *input )
 {
-	mlt_properties properties = get_service_properties( this, type, service );
+	mlt_properties properties = get_service_properties( self, type, service );
 	if ( properties != NULL )
 	{
 		mlt_register_callback symbol_ptr = mlt_properties_get_data( properties, "symbol", NULL );
@@ -224,17 +224,17 @@ void *mlt_repository_create( mlt_repository this, mlt_profile profile, mlt_servi
 /** Destroy a repository and free its resources.
  *
  * \public \memberof mlt_repository_s
- * \param this a repository
+ * \param self a repository
  */
 
-void mlt_repository_close( mlt_repository this )
+void mlt_repository_close( mlt_repository self )
 {
-	mlt_properties_close( this->consumers );
-	mlt_properties_close( this->filters );
-	mlt_properties_close( this->producers );
-	mlt_properties_close( this->transitions );
-	mlt_properties_close( &this->parent );
-	free( this );
+	mlt_properties_close( self->consumers );
+	mlt_properties_close( self->filters );
+	mlt_properties_close( self->producers );
+	mlt_properties_close( self->transitions );
+	mlt_properties_close( &self->parent );
+	free( self );
 }
 
 /** Get the list of registered consumers.
