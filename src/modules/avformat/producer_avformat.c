@@ -628,17 +628,24 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			int audio_index = -1;
 			int video_index = -1;
 
+			// Find default audio and video streams
+			find_default_streams( properties, context, &audio_index, &video_index );
+
 			// Now set properties where we can (use default unknowns if required)
 			if ( context->duration != AV_NOPTS_VALUE )
 			{
 				// This isn't going to be accurate for all formats
 				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps - 1 );
+				
+				// Workaround some clips whose estimated duration cause problems:
+				// http://www.kdenlive.org/mantis/view.php?id=2003
+				char *comment = mlt_properties_get( properties, "meta.attr.comment.markup" );
+				if ( comment && strstr( comment, "KODAK" ) && strstr( comment, "Zx3" ) )
+					frames -= 2;
+				
 				mlt_properties_set_position( properties, "out", frames - 1 );
 				mlt_properties_set_position( properties, "length", frames );
 			}
-
-			// Find default audio and video streams
-			find_default_streams( properties, context, &audio_index, &video_index );
 
 			if ( context->start_time != AV_NOPTS_VALUE )
 				this->start_time = context->start_time;
