@@ -287,32 +287,32 @@ void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
 
 /**
  * Calculates points for the cubic Bézier curve defined by \param p1 and \param p2.
- * Points are calculated until the squared distanced between neighbour points is smaller than \param errorSquared.
+ * Points are calculated until the squared distanced between neighbour points is smaller than 2.
  * \param points Pointer to list of points. Will be allocted and filled with calculated points.
  * \param count Number of calculated points in \param points
  * \param size Allocated size of \param points (in elements not in bytes)
  */
-void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size, const double *errorSquared )
+void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size )
 {
     double errorSqr = SQR( p1.p.x - p2.p.x ) + SQR( p1.p.y - p2.p.y );
 
     if ( *size + 1 >= *count )
     {
-        *size += (int)sqrt( errorSqr / *errorSquared );
+        *size += (int)sqrt( errorSqr / 2 );
         *points = mlt_pool_realloc( *points, *size * sizeof ( struct PointF ) );
     }
     
     (*points)[(*count)++] = p1.p;
 
-    if ( errorSqr <= *errorSquared )
+    if ( errorSqr <= 2 )
         return;
 
     BPointF mid;
     deCasteljau( &p1, &p2, &mid );
 
-    curvePoints( p1, mid, points, count, size, errorSquared );
+    curvePoints( p1, mid, points, count, size );
 
-    curvePoints( mid, p2, points, count, size, errorSquared );
+    curvePoints( mid, p2, points, count, size );
 
     (*points)[*(count)++] = p2.p;
 }
@@ -350,15 +350,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
             bpoints[i].h2.y *= *height;
         }
 
-        int precision = mlt_properties_get_int( properties, "precision" );
-        double errorSqr = (double)SQR( precision );
         count = 0;
         size = 1;
         points = mlt_pool_alloc( size * sizeof( struct PointF ) );
         for ( i = 0; i < bcount; i++ )
         {
             j = (i + 1) % bcount;
-            curvePoints( bpoints[i], bpoints[j], &points, &count, &size, &errorSqr );
+            curvePoints( bpoints[i], bpoints[j], &points, &count, &size );
         }
 
         if ( count )
@@ -527,6 +525,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
     if ( splineIsDirty || root == NULL )
     {
+        // we need to (re-)parse
         char *spline = mlt_properties_get( properties, "spline" );
         root = cJSON_Parse( spline );
         mlt_properties_set_data( properties, "_spline_parsed", root, 0, (mlt_destructor)cJSON_Delete, NULL );
@@ -610,7 +609,6 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
     mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
     mlt_properties_set_int( frameProperties, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
     mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
-    mlt_properties_set_int( frameProperties, "precision", mlt_properties_get_int( properties, "precision" ) );
     mlt_properties_set_int( frameProperties, "feather", mlt_properties_get_int( properties, "feather" ) );
     mlt_properties_set_int( frameProperties, "feather_passes", mlt_properties_get_int( properties, "feather_passes" ) );
     mlt_frame_push_get_image( frame, filter_get_image );
@@ -630,7 +628,6 @@ mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, 
                 mlt_properties_set( properties, "mode", "alpha" );
                 mlt_properties_set( properties, "alpha_operation", "clear" );
                 mlt_properties_set_int( properties, "invert", 0 );
-                mlt_properties_set_int( properties, "precision", 1 );
                 mlt_properties_set_int( properties, "feather", 0 );
                 mlt_properties_set_int( properties, "feather_passes", 1 );
                 if ( arg != NULL )
