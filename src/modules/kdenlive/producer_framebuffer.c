@@ -138,6 +138,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		*height = mlt_properties_get_int( properties, "_output_height" );
 		*format = mlt_properties_get_int( properties, "_output_format" );
 
+		mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 		return 0;
 	}
 
@@ -169,7 +170,8 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 		int error = mlt_frame_get_image( first_frame, &first_image, format, width, height, writable );
 
 		if ( error != 0 ) {
-			fprintf(stderr, "first_image == NULL get image died\n");
+			mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "first_image == NULL get image died\n" );
+			mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 			return error;
 		}
 		output = mlt_pool_alloc( size );
