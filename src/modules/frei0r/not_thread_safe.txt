@@ -1,3 +1,7 @@
 facebl0r
 facedetect
 cluster
+squareblur
+primaries
+rgbparade
+scale0tilt
