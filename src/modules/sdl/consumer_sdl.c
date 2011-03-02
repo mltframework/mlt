@@ -818,7 +818,7 @@ static void *consumer_thread( void *arg )
 		}
 		else if ( terminated )
 		{
-			if ( mlt_deque_count( this->queue ) == 0 )
+			if ( init_video || mlt_deque_count( this->queue ) == 0 )
 				break;
 			else
 				nanosleep( &tm, NULL );
