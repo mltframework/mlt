@@ -117,11 +117,11 @@ struct producer_avformat_s
 typedef struct producer_avformat_s *producer_avformat;
 
 // Forward references.
-static int producer_open( producer_avformat this, mlt_profile profile, char *file );
-static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
+static int producer_open( producer_avformat self, mlt_profile profile, char *file );
+static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
-static void producer_set_up_video( producer_avformat this, mlt_frame frame );
+static void producer_set_up_video( producer_avformat self, mlt_frame frame );
 
 #ifdef VDPAU
 #include "vdpau.c"
@@ -170,12 +170,12 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 	{
 		// Construct the producer
 		mlt_producer producer = calloc( 1, sizeof( struct mlt_producer_s ) );
-		producer_avformat this = calloc( 1, sizeof( struct producer_avformat_s ) );
+		producer_avformat self = calloc( 1, sizeof( struct producer_avformat_s ) );
 
 		// Initialise it
-		if ( mlt_producer_init( producer, this ) == 0 )
+		if ( mlt_producer_init( producer, self ) == 0 )
 		{
-			this->parent = producer;
+			self->parent = producer;
 
 			// Get the properties
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -192,7 +192,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			if ( strcmp( service, "avformat-novalidate" ) )
 			{
 				// Open the file
-				if ( producer_open( this, profile, file ) != 0 )
+				if ( producer_open( self, profile, file ) != 0 )
 				{
 					// Clean up
 					mlt_producer_close( producer );
@@ -202,25 +202,25 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 				{
 					// Close the file to release resources for large playlists - reopen later as needed
 					avformat_lock();
-					if ( this->dummy_context )
-						av_close_input_file( this->dummy_context );
-					this->dummy_context = NULL;
-					if ( this->audio_format )
-						av_close_input_file( this->audio_format );
-					this->audio_format = NULL;
-					if ( this->video_format )
-						av_close_input_file( this->video_format );
-					this->video_format = NULL;
+					if ( self->dummy_context )
+						av_close_input_file( self->dummy_context );
+					self->dummy_context = NULL;
+					if ( self->audio_format )
+						av_close_input_file( self->audio_format );
+					self->audio_format = NULL;
+					if ( self->video_format )
+						av_close_input_file( self->video_format );
+					self->video_format = NULL;
 					avformat_unlock();
 	
 					// Default the user-selectable indices from the auto-detected indices
-					mlt_properties_set_int( properties, "audio_index",  this->audio_index );
-					mlt_properties_set_int( properties, "video_index",  this->video_index );
+					mlt_properties_set_int( properties, "audio_index",  self->audio_index );
+					mlt_properties_set_int( properties, "video_index",  self->video_index );
 					
 #ifdef VDPAU
 					mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
 #endif
-					mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
+					mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", self, 0, (mlt_destructor) producer_avformat_close );
 				}
 			}
 			else
@@ -228,7 +228,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 #ifdef VDPAU
 				mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
 #endif
-				mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
+				mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", self, 0, (mlt_destructor) producer_avformat_close );
 			}
 			return producer;
 		}
@@ -512,7 +512,7 @@ static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVC
 /** Open the file.
 */
 
-static int producer_open( producer_avformat this, mlt_profile profile, char *file )
+static int producer_open( producer_avformat self, mlt_profile profile, char *file )
 {
 	// Return an error code (0 == no error)
 	int error = 0;
@@ -521,7 +521,7 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 	AVFormatContext *context = NULL;
 
 	// Get the properties
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this->parent );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 
 	// We will treat everything with the producer fps
 	double fps = mlt_profile_fps( profile );
@@ -648,32 +648,32 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			}
 
 			if ( context->start_time != AV_NOPTS_VALUE )
-				this->start_time = context->start_time;
+				self->start_time = context->start_time;
 
 			// Check if we're seekable
 			// avdevices are typically AVFMT_NOFILE and not seekable
-			this->seekable = !format || !( format->flags & AVFMT_NOFILE );
+			self->seekable = !format || !( format->flags & AVFMT_NOFILE );
 			if ( context->pb )
 			{
 				// protocols can indicate if they support seeking
 				URLContext *uc = url_fileno( context->pb );
 				if ( uc )
-					this->seekable = !uc->is_streamed;
+					self->seekable = !uc->is_streamed;
 			}
-			if ( this->seekable )
+			if ( self->seekable )
 			{
-				this->seekable = av_seek_frame( context, -1, this->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
-				mlt_properties_set_int( properties, "seekable", this->seekable );
-				this->dummy_context = context;
+				self->seekable = av_seek_frame( context, -1, self->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
+				mlt_properties_set_int( properties, "seekable", self->seekable );
+				self->dummy_context = context;
 				av_open_input_file( &context, file, NULL, 0, NULL );
 				av_find_stream_info( context );
 			}
 
 			// Store selected audio and video indexes on properties
-			this->audio_index = audio_index;
-			this->video_index = video_index;
-			this->first_pts = -1;
-			this->last_position = POSITION_INITIAL;
+			self->audio_index = audio_index;
+			self->video_index = video_index;
+			self->first_pts = -1;
+			self->last_position = POSITION_INITIAL;
 
 			// Fetch the width, height and aspect ratio
 			if ( video_index != -1 )
@@ -715,24 +715,24 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 			if ( av == 0 && audio_index != -1 && video_index != -1 )
 			{
 				// We'll use the open one as our video_format
-				this->video_format = context;
+				self->video_format = context;
 
 				// And open again for our audio context
 				av_open_input_file( &context, file, NULL, 0, NULL );
 				av_find_stream_info( context );
 
 				// Audio context
-				this->audio_format = context;
+				self->audio_format = context;
 			}
 			else if ( av != 2 && video_index != -1 )
 			{
 				// We only have a video context
-				this->video_format = context;
+				self->video_format = context;
 			}
 			else if ( audio_index != -1 )
 			{
 				// We only have an audio context
-				this->audio_format = context;
+				self->audio_format = context;
 			}
 			else
 			{
@@ -751,17 +751,17 @@ static int producer_open( producer_avformat this, mlt_profile profile, char *fil
 /** Convert a frame position to a time code.
 */
 
-static double producer_time_of_frame( mlt_producer this, mlt_position position )
+static double producer_time_of_frame( mlt_producer producer, mlt_position position )
 {
-	return ( double )position / mlt_producer_get_fps( this );
+	return ( double )position / mlt_producer_get_fps( producer );
 }
 
 		// Collect information about all audio streams
 
-static void get_audio_streams_info( producer_avformat this )
+static void get_audio_streams_info( producer_avformat self )
 {
 	// Fetch the audio format context
-	AVFormatContext *context = this->audio_format;
+	AVFormatContext *context = self->audio_format;
 	int i;
 
 	for ( i = 0;
@@ -777,23 +777,23 @@ static void get_audio_streams_info( producer_avformat this )
 			avformat_lock( );
 			if ( codec && avcodec_open( codec_context, codec ) >= 0 )
 			{
-				this->audio_streams++;
-				this->audio_max_stream = i;
-				this->total_channels += codec_context->channels;
-				if ( codec_context->channels > this->max_channel )
-					this->max_channel = codec_context->channels;
-				if ( codec_context->sample_rate > this->max_frequency )
-					this->max_frequency = codec_context->sample_rate;
+				self->audio_streams++;
+				self->audio_max_stream = i;
+				self->total_channels += codec_context->channels;
+				if ( codec_context->channels > self->max_channel )
+					self->max_channel = codec_context->channels;
+				if ( codec_context->sample_rate > self->max_frequency )
+					self->max_frequency = codec_context->sample_rate;
 				avcodec_close( codec_context );
 			}
 			avformat_unlock( );
 		}
 	}
 	mlt_log_verbose( NULL, "[producer avformat] audio: total_streams %d max_stream %d total_channels %d max_channels %d\n",
-		this->audio_streams, this->audio_max_stream, this->total_channels, this->max_channel );
+		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
 	
 	// Other audio-specific initializations
-	this->resample_factor = 1.0;
+	self->resample_factor = 1.0;
 }
 
 static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
@@ -987,9 +987,9 @@ static int allocate_buffer( mlt_properties frame_properties, AVCodecContext *cod
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the producer
-	producer_avformat this = mlt_frame_pop_service( frame );
-	mlt_service_lock( MLT_PRODUCER_SERVICE(this->parent) );
-	mlt_producer producer = this->parent;
+	producer_avformat self = mlt_frame_pop_service( frame );
+	mlt_service_lock( MLT_PRODUCER_SERVICE(self->parent) );
+	mlt_producer producer = self->parent;
 
 	// Get the properties from the frame
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -1001,20 +1001,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Fetch the video format context
-	AVFormatContext *context = this->video_format;
+	AVFormatContext *context = self->video_format;
 
 	// Get the video stream
-	AVStream *stream = context->streams[ this->video_index ];
+	AVStream *stream = context->streams[ self->video_index ];
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
 
 	// Get the image cache
-	if ( ! this->image_cache && ! mlt_properties_get_int( properties, "noimagecache" ) )
-		this->image_cache = mlt_cache_init();
-	if ( this->image_cache )
+	if ( ! self->image_cache && ! mlt_properties_get_int( properties, "noimagecache" ) )
+		self->image_cache = mlt_cache_init();
+	if ( self->image_cache )
 	{
-		mlt_cache_item item = mlt_cache_get( this->image_cache, (void*) position );
+		mlt_cache_item item = mlt_cache_get( self->image_cache, (void*) position );
 		*buffer = mlt_cache_item_data( item, (int*) format );
 		if ( *buffer )
 		{
@@ -1047,8 +1047,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			}
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
 			mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
-			// this->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
-			this->got_picture = 1;
+			// self->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+			self->got_picture = 1;
 
 			goto exit_get_image;
 		}
@@ -1083,7 +1083,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				  strcmp( codec_context->codec->name, "mjpeg" ) &&
 				  strcmp( codec_context->codec->name, "rawvideo" );
 
-	int last_position = this->last_position;
+	int last_position = self->last_position;
 
 	// Turn on usage of new seek API and PTS for seeking
 	int use_new_seek = codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
@@ -1091,20 +1091,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		use_new_seek = mlt_properties_get_int( properties, "new_seek" );
 
 	// Seek if necessary
-	if ( position != this->video_expected || last_position < 0 )
+	if ( position != self->video_expected || last_position < 0 )
 	{
-		if ( this->av_frame && position + 1 == this->video_expected )
+		if ( self->av_frame && position + 1 == self->video_expected )
 		{
 			// We're paused - use last image
 			paused = 1;
 		}
-		else if ( !this->seekable && position > this->video_expected && ( position - this->video_expected ) < 250 )
+		else if ( !self->seekable && position > self->video_expected && ( position - self->video_expected ) < 250 )
 		{
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
-			ignore = ( int )( ( position - this->video_expected ) / fps * source_fps );
+			ignore = ( int )( ( position - self->video_expected ) / fps * source_fps );
 			codec_context->skip_loop_filter = AVDISCARD_NONREF;
 		}
-		else if ( this->seekable && ( position < this->video_expected || position - this->video_expected >= 12 || last_position < 0 ) )
+		else if ( self->seekable && ( position < self->video_expected || position - self->video_expected >= 12 || last_position < 0 ) )
 		{
 			if ( use_new_seek && last_position == POSITION_INITIAL )
 			{
@@ -1115,10 +1115,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				while ( ret >= 0 && toscan-- > 0 )
 				{
 					ret = av_read_frame( context, &pkt );
-					if ( ret >= 0 && ( pkt.flags & PKT_FLAG_KEY ) && pkt.stream_index == this->video_index )
+					if ( ret >= 0 && ( pkt.flags & PKT_FLAG_KEY ) && pkt.stream_index == self->video_index )
 					{
 						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "first_pts %lld dts %lld pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
-						this->first_pts = pkt.pts;
+						self->first_pts = pkt.pts;
 						toscan = 0;
 					}
 					av_free_packet( &pkt );
@@ -1134,8 +1134,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				timestamp = ( req_position - 0.1 / source_fps ) /
 					( av_q2d( stream->time_base ) * source_fps );
 				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %d pts %lld ", req_position, timestamp );
-				if ( this->first_pts > 0 )
-					timestamp += this->first_pts;
+				if ( self->first_pts > 0 )
+					timestamp += self->first_pts;
 				else if ( context->start_time != AV_NOPTS_VALUE )
 					timestamp += context->start_time;
 			}
@@ -1150,13 +1150,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( timestamp < 0 )
 				timestamp = 0;
 			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %lld position %d expected %d last_pos %d\n",
-				timestamp, position, this->video_expected, last_position );
+				timestamp, position, self->video_expected, last_position );
 
 			// Seek to the timestamp
 			if ( use_new_seek )
 			{
 				codec_context->skip_loop_filter = AVDISCARD_NONREF;
-				av_seek_frame( context, this->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
+				av_seek_frame( context, self->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
 			}
 			else if ( timestamp > 0 || last_position <= 0 )
 			{
@@ -1167,29 +1167,29 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				// Re-open video stream when rewinding to beginning from somewhere else.
 				// This is rather ugly, and I prefer not to do it this way, but ffmpeg is
 				// not reliably seeking to the first frame across formats.
-				if ( this->video_codec )
-					avcodec_close( this->video_codec );
-				this->video_codec = NULL;
-				if ( this->dummy_context )
-					av_close_input_file( this->dummy_context );
-				this->dummy_context = NULL;
-				if ( this->video_format )
-					av_close_input_file( this->video_format );
-				this->video_format = NULL;
+				if ( self->video_codec )
+					avcodec_close( self->video_codec );
+				self->video_codec = NULL;
+				if ( self->dummy_context )
+					av_close_input_file( self->dummy_context );
+				self->dummy_context = NULL;
+				if ( self->video_format )
+					av_close_input_file( self->video_format );
+				self->video_format = NULL;
 				avformat_unlock();
-				producer_set_up_video( this, frame );
-				if ( this->video_index < 0 )
+				producer_set_up_video( self, frame );
+				if ( self->video_index < 0 )
 					return 1;
 				avformat_lock();
-				context = this->video_format;
-				stream = context->streams[ this->video_index ];
+				context = self->video_format;
+				stream = context->streams[ self->video_index ];
 				codec_context = stream->codec;
 			}
 
 			// Remove the cached info relating to the previous position
-			this->current_position = POSITION_INVALID;
-			this->last_position = POSITION_INVALID;
-			av_freep( &this->av_frame );
+			self->current_position = POSITION_INVALID;
+			self->last_position = POSITION_INVALID;
+			av_freep( &self->av_frame );
 
 			if ( use_new_seek )
 			{
@@ -1200,10 +1200,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Duplicate the last image if necessary
-	if ( this->av_frame && this->av_frame->linesize[0] && this->got_picture && this->seekable
+	if ( self->av_frame && self->av_frame->linesize[0] && self->got_picture && self->seekable
 		 && ( paused
-			  || this->current_position == req_position
-			  || ( !use_new_seek && this->current_position > req_position ) ) )
+			  || self->current_position == req_position
+			  || ( !use_new_seek && self->current_position > req_position ) ) )
 	{
 		// Duplicate it
 		if ( ( image_size = allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) ) )
@@ -1212,22 +1212,22 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 				*height = 1080;
 #ifdef VDPAU
-			if ( this->vdpau && this->vdpau->buffer )
+			if ( self->vdpau && self->vdpau->buffer )
 			{
 				AVPicture picture;
-				picture.data[0] = this->vdpau->buffer;
-				picture.data[2] = this->vdpau->buffer + codec_context->width * codec_context->height;
-				picture.data[1] = this->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
+				picture.data[0] = self->vdpau->buffer;
+				picture.data[2] = self->vdpau->buffer + codec_context->width * codec_context->height;
+				picture.data[1] = self->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
 				convert_image( (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, this->colorspace );
+					PIX_FMT_YUV420P, format, *width, *height, self->colorspace );
 			}
 			else
 #endif
-			convert_image( this->av_frame, *buffer, codec_context->pix_fmt,
-				format, *width, *height, this->colorspace );
+			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
+				format, *width, *height, self->colorspace );
 		}
 		else
 			mlt_frame_get_image( frame, buffer, format, width, height, writable );
@@ -1242,8 +1242,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		av_init_packet( &pkt );
 
 		// Construct an AVFrame for YUV422 conversion
-		if ( !this->av_frame )
-			this->av_frame = avcodec_alloc_frame( );
+		if ( !self->av_frame )
+			self->av_frame = avcodec_alloc_frame( );
 
 		while( ret >= 0 && !got_picture )
 		{
@@ -1251,21 +1251,21 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			ret = av_read_frame( context, &pkt );
 
 			// We only deal with video from the selected video_index
-			if ( ret >= 0 && pkt.stream_index == this->video_index && pkt.size > 0 )
+			if ( ret >= 0 && pkt.stream_index == self->video_index && pkt.size > 0 )
 			{
 				// Determine time code of the packet
 				if ( use_new_seek )
 				{
 					int64_t pts = pkt.pts;
-					if ( this->first_pts > 0 )
-						pts -= this->first_pts;
+					if ( self->first_pts > 0 )
+						pts -= self->first_pts;
 					else if ( context->start_time != AV_NOPTS_VALUE )
 						pts -= context->start_time;
 					int_position = ( int )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 );
 					if ( pkt.pts == AV_NOPTS_VALUE )
 					{
-						this->invalid_pts_counter++;
-						if ( this->invalid_pts_counter > 20 )
+						self->invalid_pts_counter++;
+						if ( self->invalid_pts_counter > 20 )
 						{
 							mlt_log_panic( MLT_PRODUCER_SERVICE(producer), "\ainvalid PTS; DISABLING NEW_SEEK!\n" );
 							mlt_properties_set_int( properties, "new_seek", 0 );
@@ -1275,19 +1275,19 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 					{
-						this->invalid_pts_counter = 0;
+						self->invalid_pts_counter = 0;
 					}
 					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %llu req_pos %d cur_pos %d pkt_pos %d\n",
-						pkt.pts, req_position, this->current_position, int_position );
+						pkt.pts, req_position, self->current_position, int_position );
 				}
 				else
 				{
-					if ( this->seekable && pkt.dts != AV_NOPTS_VALUE )
+					if ( self->seekable && pkt.dts != AV_NOPTS_VALUE )
 					{
 						int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
 						if ( context->start_time != AV_NOPTS_VALUE )
 							int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
-						last_position = this->last_position;
+						last_position = self->last_position;
 						if ( int_position == last_position )
 							int_position = last_position + 1;
 					}
@@ -1296,7 +1296,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						int_position = req_position;
 					}
 					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d\n",
-						pkt.dts, req_position, this->current_position, int_position );
+						pkt.dts, req_position, self->current_position, int_position );
 					// Make a dumb assumption on streams that contain wild timestamps
 					if ( abs( req_position - int_position ) > 999 )
 					{
@@ -1304,30 +1304,30 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " WILD TIMESTAMP!" );
 					}
 				}
-				this->last_position = int_position;
+				self->last_position = int_position;
 
 				// Decode the image
 				if ( must_decode || int_position >= req_position )
 				{
 #ifdef VDPAU
-					if ( g_vdpau && this->vdpau )
+					if ( g_vdpau && self->vdpau )
 					{
-						if ( g_vdpau->producer != this )
+						if ( g_vdpau->producer != self )
 						{
 							vdpau_decoder_close();
-							vdpau_decoder_init( this );
+							vdpau_decoder_init( self );
 						}
-						if ( this->vdpau )
-							this->vdpau->is_decoded = 0;
+						if ( self->vdpau )
+							self->vdpau->is_decoded = 0;
 					}
 #endif
 					codec_context->reordered_opaque = pkt.pts;
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(26<<8)+0))
-					ret = avcodec_decode_video2( codec_context, this->av_frame, &got_picture, &pkt );
+					ret = avcodec_decode_video2( codec_context, self->av_frame, &got_picture, &pkt );
 #else
-					ret = avcodec_decode_video( codec_context, this->av_frame, &got_picture, pkt.data, pkt.size );
+					ret = avcodec_decode_video( codec_context, self->av_frame, &got_picture, pkt.data, pkt.size );
 #endif
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
 					if ( ret < 0 )
@@ -1346,13 +1346,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					if ( use_new_seek )
 					{
 						// Determine time code of the packet
-						int64_t pts = this->av_frame->reordered_opaque;
-						if ( this->first_pts > 0 )
-							pts -= this->first_pts;
+						int64_t pts = self->av_frame->reordered_opaque;
+						if ( self->first_pts > 0 )
+							pts -= self->first_pts;
 						else if ( context->start_time != AV_NOPTS_VALUE )
 							pts -= context->start_time;
 						int_position = ( int )( av_q2d( stream->time_base) * pts * source_fps + 0.1 );
-						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "got frame %d, key %d\n", int_position, this->av_frame->key_frame );
+						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "got frame %d, key %d\n", int_position, self->av_frame->key_frame );
 					}
 					// Handle ignore
 					if ( int_position < req_position )
@@ -1382,34 +1382,34 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 						*height = 1080;
 #ifdef VDPAU
-					if ( this->vdpau )
+					if ( self->vdpau )
 					{
-						if ( this->vdpau->is_decoded )
+						if ( self->vdpau->is_decoded )
 						{
-							struct vdpau_render_state *render = (struct vdpau_render_state*) this->av_frame->data[0];
+							struct vdpau_render_state *render = (struct vdpau_render_state*) self->av_frame->data[0];
 							void *planes[3];
 							uint32_t pitches[3];
 							VdpYCbCrFormat dest_format = VDP_YCBCR_FORMAT_YV12;
 							
-							if ( !this->vdpau->buffer )
-								this->vdpau->buffer = mlt_pool_alloc( codec_context->width * codec_context->height * 3 / 2 );
-							this->av_frame->data[0] = planes[0] = this->vdpau->buffer;
-							this->av_frame->data[2] = planes[1] = this->vdpau->buffer + codec_context->width * codec_context->height;
-							this->av_frame->data[1] = planes[2] = this->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
-							this->av_frame->linesize[0] = pitches[0] = codec_context->width;
-							this->av_frame->linesize[1] = pitches[1] = codec_context->width / 2;
-							this->av_frame->linesize[2] = pitches[2] = codec_context->width / 2;
+							if ( !self->vdpau->buffer )
+								self->vdpau->buffer = mlt_pool_alloc( codec_context->width * codec_context->height * 3 / 2 );
+							self->av_frame->data[0] = planes[0] = self->vdpau->buffer;
+							self->av_frame->data[2] = planes[1] = self->vdpau->buffer + codec_context->width * codec_context->height;
+							self->av_frame->data[1] = planes[2] = self->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
+							self->av_frame->linesize[0] = pitches[0] = codec_context->width;
+							self->av_frame->linesize[1] = pitches[1] = codec_context->width / 2;
+							self->av_frame->linesize[2] = pitches[2] = codec_context->width / 2;
 
 							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
 							if ( status == VDP_STATUS_OK )
 							{
-								convert_image( this->av_frame, *buffer, PIX_FMT_YUV420P,
-									format, *width, *height, this->colorspace );
+								convert_image( self->av_frame, *buffer, PIX_FMT_YUV420P,
+									format, *width, *height, self->colorspace );
 							}
 							else
 							{
 								mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU Error: %s\n", vdp_get_error_string( status ) );
-								this->vdpau->is_decoded = 0;
+								self->vdpau->is_decoded = 0;
 							}
 						}
 						else
@@ -1420,11 +1420,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 #endif
-					convert_image( this->av_frame, *buffer, codec_context->pix_fmt,
-						format, *width, *height, this->colorspace );
-					this->top_field_first |= this->av_frame->top_field_first;
-					this->current_position = int_position;
-					this->got_picture = 1;
+					convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
+						format, *width, *height, self->colorspace );
+					self->top_field_first |= self->av_frame->top_field_first;
+					self->current_position = int_position;
+					self->got_picture = 1;
 				}
 				else
 				{
@@ -1438,37 +1438,37 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	avformat_unlock();
 
-	if ( this->got_picture && image_size > 0 && this->image_cache )
+	if ( self->got_picture && image_size > 0 && self->image_cache )
 	{
 		// Copy buffer to image cache	
 		uint8_t *image = mlt_pool_alloc( image_size );
 		memcpy( image, *buffer, image_size );
-		mlt_cache_put( this->image_cache, (void*) position, image, *format, mlt_pool_release );
+		mlt_cache_put( self->image_cache, (void*) position, image, *format, mlt_pool_release );
 	}
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
-	this->video_expected = position + 1;
+	self->video_expected = position + 1;
 
 exit_get_image:
 	// Set the progressive flag
 	if ( mlt_properties_get( properties, "force_progressive" ) )
 		mlt_properties_set_int( frame_properties, "progressive", !!mlt_properties_get_int( properties, "force_progressive" ) );
-	else if ( this->av_frame )
-		mlt_properties_set_int( frame_properties, "progressive", !this->av_frame->interlaced_frame );
+	else if ( self->av_frame )
+		mlt_properties_set_int( frame_properties, "progressive", !self->av_frame->interlaced_frame );
 
 	// Set the field order property for this frame
 	if ( mlt_properties_get( properties, "force_tff" ) )
 		mlt_properties_set_int( frame_properties, "top_field_first", !!mlt_properties_get_int( properties, "force_tff" ) );
 	else
-		mlt_properties_set_int( frame_properties, "top_field_first", this->top_field_first );
+		mlt_properties_set_int( frame_properties, "top_field_first", self->top_field_first );
 
 	// Set immutable properties of the selected track's (or overridden) source attributes.
-	mlt_properties_set_int( properties, "meta.media.top_field_first", this->top_field_first );
+	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 
-	mlt_service_unlock( MLT_PRODUCER_SERVICE(this->parent) );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE(self->parent) );
 
-	return !this->got_picture;
+	return !self->got_picture;
 }
 
 /** Process properties as AVOptions and apply to AV context obj
@@ -1499,13 +1499,13 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 /** Initialize the video codec context.
  */
 
-static int video_codec_init( producer_avformat this, int index, mlt_properties properties )
+static int video_codec_init( producer_avformat self, int index, mlt_properties properties )
 {
 	// Initialise the codec if necessary
-	if ( !this->video_codec )
+	if ( !self->video_codec )
 	{
 		// Get the video stream
-		AVStream *stream = this->video_format->streams[ index ];
+		AVStream *stream = self->video_format->streams[ index ];
 
 		// Get codec context
 		AVCodecContext *codec_context = stream->codec;
@@ -1517,14 +1517,14 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		{
 			if ( ( codec = avcodec_find_decoder_by_name( "h264_vdpau" ) ) )
 			{
-				if ( vdpau_init( this ) )
+				if ( vdpau_init( self ) )
 				{
-					this->video_codec = codec_context;
-					if ( !vdpau_decoder_init( this ) )
+					self->video_codec = codec_context;
+					if ( !vdpau_decoder_init( self ) )
 						vdpau_decoder_close();
 				}
 			}
-			if ( !this->vdpau )
+			if ( !self->vdpau )
 				codec = avcodec_find_decoder( codec_context->codec_id );
 		}
 #endif
@@ -1544,12 +1544,12 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( codec && avcodec_open( codec_context, codec ) >= 0 )
 		{
 			// Now store the codec with its destructor
-			this->video_codec = codec_context;
+			self->video_codec = codec_context;
 		}
 		else
 		{
 			// Remember that we can't use this later
-			this->video_index = -1;
+			self->video_index = -1;
 		}
 		avformat_unlock( );
 
@@ -1557,15 +1557,15 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 
 		// Reset some image properties
-		mlt_properties_set_int( properties, "width", this->video_codec->width );
-		mlt_properties_set_int( properties, "height", this->video_codec->height );
+		mlt_properties_set_int( properties, "width", self->video_codec->width );
+		mlt_properties_set_int( properties, "height", self->video_codec->height );
 		// For DV, we'll just use the saved aspect ratio
 		if ( codec_context->codec_id != CODEC_ID_DVVIDEO )
-			get_aspect_ratio( properties, stream, this->video_codec, NULL );
+			get_aspect_ratio( properties, stream, self->video_codec, NULL );
 
 		// Determine the fps first from the codec
-		double source_fps = (double) this->video_codec->time_base.den /
-								   ( this->video_codec->time_base.num == 0 ? 1 : this->video_codec->time_base.num );
+		double source_fps = (double) self->video_codec->time_base.den /
+								   ( self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
 		
 		if ( mlt_properties_get( properties, "force_fps" ) )
 		{
@@ -1587,8 +1587,8 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 			source_fps = FFMIN( source_fps, muxer_fps );
 			if ( source_fps >= 1.0 && ( source_fps < muxer_fps || isnan( muxer_fps ) ) )
 			{
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", this->video_codec->time_base.den );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", this->video_codec->time_base.num == 0 ? 1 : this->video_codec->time_base.num );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", self->video_codec->time_base.den );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
 			}
 			else if ( muxer_fps > 0 )
 			{
@@ -1607,7 +1607,7 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 			}
 			else
 			{
-				source_fps = mlt_producer_get_fps( this->parent );
+				source_fps = mlt_producer_get_fps( self->parent );
 				AVRational frame_rate = av_d2q( source_fps, 255 );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
@@ -1618,51 +1618,51 @@ static int video_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( source_fps > 0 )
 			mlt_properties_set_double( properties, "source_fps", source_fps );
 		else
-			mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( this->parent ) );
+			mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( self->parent ) );
 
 		// Set the YUV colorspace from override or detect
-		this->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
+		self->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
 #if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)		
-		if ( ! this->colorspace )
+		if ( ! self->colorspace )
 		{
-			switch ( this->video_codec->colorspace )
+			switch ( self->video_codec->colorspace )
 			{
 			case AVCOL_SPC_SMPTE240M:
-				this->colorspace = 240;
+				self->colorspace = 240;
 				break;
 			case AVCOL_SPC_BT470BG:
 			case AVCOL_SPC_SMPTE170M:
-				this->colorspace = 601;
+				self->colorspace = 601;
 				break;
 			case AVCOL_SPC_BT709:
-				this->colorspace = 709;
+				self->colorspace = 709;
 				break;
 			default:
 				// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
-				this->colorspace = this->video_codec->width * this->video_codec->height > 750000 ? 709 : 601;
+				self->colorspace = self->video_codec->width * self->video_codec->height > 750000 ? 709 : 601;
 				break;
 			}
 		}
 #endif
 		// Let apps get chosen colorspace
-		mlt_properties_set_int( properties, "meta.media.colorspace", this->colorspace );
+		mlt_properties_set_int( properties, "meta.media.colorspace", self->colorspace );
 	}
-	return this->video_codec && this->video_index > -1;
+	return self->video_codec && self->video_index > -1;
 }
 
 /** Set up video handling.
 */
 
-static void producer_set_up_video( producer_avformat this, mlt_frame frame )
+static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 {
 	// Get the producer
-	mlt_producer producer = this->parent;
+	mlt_producer producer = self->parent;
 
 	// Get the properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Fetch the video format context
-	AVFormatContext *context = this->video_format;
+	AVFormatContext *context = self->video_format;
 
 	// Get the video_index
 	int index = mlt_properties_get_int( properties, "video_index" );
@@ -1671,19 +1671,19 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 	if ( !context && index > -1 )
 	{
 		mlt_events_block( properties, producer );
-		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
+		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
-		context = this->video_format;
-		if ( this->dummy_context )
+		context = self->video_format;
+		if ( self->dummy_context )
 		{
 			avformat_lock();
-			av_close_input_file( this->dummy_context );
+			av_close_input_file( self->dummy_context );
 			avformat_unlock();
 		}
-		this->dummy_context = NULL;
+		self->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
-		if ( this->audio_format )
-			get_audio_streams_info( this );
+		if ( self->audio_format )
+			get_audio_streams_info( self );
 
 		// Process properties as AVOptions
 		apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );
@@ -1706,24 +1706,24 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 	}
 
 	// Update the video properties if the index changed
-	if ( index != this->video_index )
+	if ( index != self->video_index )
 	{
 		// Reset the video properties if the index changed
-		this->video_index = index;
-		if ( this->video_codec )
+		self->video_index = index;
+		if ( self->video_codec )
 		{
 			avformat_lock();
-			avcodec_close( this->video_codec );
+			avcodec_close( self->video_codec );
 			avformat_unlock();
 		}
-		this->video_codec = NULL;
+		self->video_codec = NULL;
 	}
 
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the codec
-	if ( context && index > -1 && video_codec_init( this, index, properties ) )
+	if ( context && index > -1 && video_codec_init( self, index, properties ) )
 	{
 		// Set the frame properties
 		double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
@@ -1731,25 +1731,25 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 			force_aspect_ratio : mlt_properties_get_double( properties, "aspect_ratio" );
 
 		// Set the width and height
-		mlt_properties_set_int( frame_properties, "width", this->video_codec->width );
-		mlt_properties_set_int( frame_properties, "height", this->video_codec->height );
+		mlt_properties_set_int( frame_properties, "width", self->video_codec->width );
+		mlt_properties_set_int( frame_properties, "height", self->video_codec->height );
 		// real_width and real_height are deprecated in favor of meta.media.width and .height
-		mlt_properties_set_int( properties, "meta.media.width", this->video_codec->width );
-		mlt_properties_set_int( properties, "meta.media.height", this->video_codec->height );
-		mlt_properties_set_int( frame_properties, "real_width", this->video_codec->width );
-		mlt_properties_set_int( frame_properties, "real_height", this->video_codec->height );
+		mlt_properties_set_int( properties, "meta.media.width", self->video_codec->width );
+		mlt_properties_set_int( properties, "meta.media.height", self->video_codec->height );
+		mlt_properties_set_int( frame_properties, "real_width", self->video_codec->width );
+		mlt_properties_set_int( frame_properties, "real_height", self->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
-		mlt_properties_set_int( frame_properties, "colorspace", this->colorspace );
+		mlt_properties_set_int( frame_properties, "colorspace", self->colorspace );
 
 		// Workaround 1088 encodings missing cropping info.
-		if ( this->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+		if ( self->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 		{
 			mlt_properties_set_int( properties, "meta.media.height", 1080 );
 			mlt_properties_set_int( frame_properties, "real_height", 1080 );
 		}
 
 		// Add our image operation
-		mlt_frame_push_service( frame, this );
+		mlt_frame_push_service( frame, self );
 		mlt_frame_push_get_image( frame, producer_get_image );
 	}
 	else
@@ -1759,26 +1759,26 @@ static void producer_set_up_video( producer_avformat this, mlt_frame frame )
 	}
 }
 
-static int seek_audio( producer_avformat this, mlt_position position, double timecode, int *ignore )
+static int seek_audio( producer_avformat self, mlt_position position, double timecode, int *ignore )
 {
 	int paused = 0;
 
 	// Seek if necessary
-	if ( position != this->audio_expected )
+	if ( position != self->audio_expected )
 	{
-		if ( position + 1 == this->audio_expected )
+		if ( position + 1 == self->audio_expected )
 		{
 			// We're paused - silence required
 			paused = 1;
 		}
-		else if ( !this->seekable && position > this->audio_expected && ( position - this->audio_expected ) < 250 )
+		else if ( !self->seekable && position > self->audio_expected && ( position - self->audio_expected ) < 250 )
 		{
 			// Fast forward - seeking is inefficient for small distances - just ignore following frames
-			*ignore = position - this->audio_expected;
+			*ignore = position - self->audio_expected;
 		}
-		else if ( position < this->audio_expected || position - this->audio_expected >= 12 )
+		else if ( position < self->audio_expected || position - self->audio_expected >= 12 )
 		{
-			AVFormatContext *context = this->audio_format;
+			AVFormatContext *context = self->audio_format;
 			int64_t timestamp = ( int64_t )( timecode * AV_TIME_BASE + 0.5 );
 			if ( context->start_time != AV_NOPTS_VALUE )
 				timestamp += context->start_time;
@@ -1794,31 +1794,31 @@ static int seek_audio( producer_avformat this, mlt_position position, double tim
 			// Clear the usage in the audio buffer
 			int i = MAX_AUDIO_STREAMS + 1;
 			while ( --i )
-				this->audio_used[i - 1] = 0;
+				self->audio_used[i - 1] = 0;
 		}
 	}
 	return paused;
 }
 
-static int decode_audio( producer_avformat this, int *ignore, AVPacket pkt, int channels, int samples, double timecode, double fps )
+static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int channels, int samples, double timecode, double fps )
 {
 	// Fetch the audio_format
-	AVFormatContext *context = this->audio_format;
+	AVFormatContext *context = self->audio_format;
 
 	// Get the current stream index
 	int index = pkt.stream_index;
 
 	// Get codec context
-	AVCodecContext *codec_context = this->audio_codec[ index ];
+	AVCodecContext *codec_context = self->audio_codec[ index ];
 
 	// Obtain the resample context if it exists (not always needed)
-	ReSampleContext *resample = this->audio_resample[ index ];
+	ReSampleContext *resample = self->audio_resample[ index ];
 
 	// Obtain the audio buffers
-	int16_t *audio_buffer = this->audio_buffer[ index ];
-	int16_t *decode_buffer = this->decode_buffer[ index ];
+	int16_t *audio_buffer = self->audio_buffer[ index ];
+	int16_t *decode_buffer = self->decode_buffer[ index ];
 
-	int audio_used = this->audio_used[ index ];
+	int audio_used = self->audio_used[ index ];
 	uint8_t *ptr = pkt.data;
 	int len = pkt.size;
 	int ret = 0;
@@ -1837,7 +1837,7 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket pkt, int 
 #endif
 		if ( ret < 0 )
 		{
-			mlt_log_warning( MLT_PRODUCER_SERVICE(this->parent), "audio decoding error %d\n", ret );
+			mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "audio decoding error %d\n", ret );
 			break;
 		}
 
@@ -1849,13 +1849,13 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket pkt, int 
 		{
 			// Figure out how many samples will be needed after resampling
 			int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
-			int samples_needed = this->resample_factor * convert_samples + 1;
+			int samples_needed = self->resample_factor * convert_samples + 1;
 			
 			// Resize audio buffer to prevent overflow
-			if ( audio_used * channels + samples_needed > this->audio_buffer_size[ index ] )
+			if ( audio_used * channels + samples_needed > self->audio_buffer_size[ index ] )
 			{
-				this->audio_buffer_size[ index ] *= 2;
-				audio_buffer = this->audio_buffer[ index ] = mlt_pool_realloc( audio_buffer, this->audio_buffer_size[ index ] * sizeof(int16_t) );
+				self->audio_buffer_size[ index ] *= 2;
+				audio_buffer = self->audio_buffer[ index ] = mlt_pool_realloc( audio_buffer, self->audio_buffer_size[ index ] * sizeof(int16_t) );
 			}
 			if ( resample )
 			{
@@ -1893,18 +1893,18 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket pkt, int 
 		if ( context->start_time != AV_NOPTS_VALUE )
 			int_position -= ( int )( fps * context->start_time / AV_TIME_BASE + 0.5 );
 
-		if ( this->seekable && *ignore == 0 )
+		if ( self->seekable && *ignore == 0 )
 		{
 			if ( int_position < req_position )
 				// We are behind, so skip some
 				*ignore = 1;
 			else if ( int_position > req_position + 2 )
 				// We are ahead, so seek backwards some more
-				seek_audio( this, req_position, timecode - 1.0, ignore );
+				seek_audio( self, req_position, timecode - 1.0, ignore );
 		}
 	}
 
-	this->audio_used[ index ] = audio_used;
+	self->audio_used[ index ] = audio_used;
 
 	return ret;
 }
@@ -1915,79 +1915,79 @@ static int decode_audio( producer_avformat this, int *ignore, AVPacket pkt, int 
 static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the producer
-	producer_avformat this = mlt_frame_pop_audio( frame );
+	producer_avformat self = mlt_frame_pop_audio( frame );
 
-	mlt_service_lock( MLT_PRODUCER_SERVICE(this->parent) );
+	mlt_service_lock( MLT_PRODUCER_SERVICE(self->parent) );
 	
 	// Obtain the frame number of this frame
 	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), "avformat_position" );
 
 	// Calculate the real time code
-	double real_timecode = producer_time_of_frame( this->parent, position );
+	double real_timecode = producer_time_of_frame( self->parent, position );
 
 	// Get the producer fps
-	double fps = mlt_producer_get_fps( this->parent );
+	double fps = mlt_producer_get_fps( self->parent );
 
 	// Number of frames to ignore (for ffwd)
 	int ignore = 0;
 
 	// Flag for paused (silence)
-	int paused = seek_audio( this, position, real_timecode, &ignore );
+	int paused = seek_audio( self, position, real_timecode, &ignore );
 
 	// Fetch the audio_format
-	AVFormatContext *context = this->audio_format;
+	AVFormatContext *context = self->audio_format;
 	
 	// Determine the tracks to use
-	int index = this->audio_index;
-	int index_max = this->audio_index + 1;
-	if ( this->audio_index == INT_MAX )
+	int index = self->audio_index;
+	int index_max = self->audio_index + 1;
+	if ( self->audio_index == INT_MAX )
 	{
 		index = 0;
 		index_max = context->nb_streams;
-		*channels = this->total_channels;
-		*frequency = this->max_frequency;
+		*channels = self->total_channels;
+		*frequency = self->max_frequency;
 	}
 
 	// Initialize the resamplers and buffers
 	for ( ; index < index_max; index++ )
 	{
 		// Get codec context
-		AVCodecContext *codec_context = this->audio_codec[ index ];
+		AVCodecContext *codec_context = self->audio_codec[ index ];
 
-		if ( codec_context && !this->audio_buffer[ index ] )
+		if ( codec_context && !self->audio_buffer[ index ] )
 		{
 			// Check for resample and create if necessary
 			if ( codec_context->channels <= 2 )
 			{
 				// Determine by how much resampling will increase number of samples
-				double resample_factor = this->audio_index == INT_MAX ? 1 : (double) *channels / codec_context->channels;
+				double resample_factor = self->audio_index == INT_MAX ? 1 : (double) *channels / codec_context->channels;
 				resample_factor *= (double) *frequency / codec_context->sample_rate;
-				if ( resample_factor > this->resample_factor )
-					this->resample_factor = resample_factor;
+				if ( resample_factor > self->resample_factor )
+					self->resample_factor = resample_factor;
 				
 				// Create the resampler
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
-				this->audio_resample[ index ] = av_audio_resample_init(
-					this->audio_index == INT_MAX ? codec_context->channels : *channels,
+				self->audio_resample[ index ] = av_audio_resample_init(
+					self->audio_index == INT_MAX ? codec_context->channels : *channels,
 					codec_context->channels, *frequency, codec_context->sample_rate,
 					SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
 #else
-				this->audio_resample[ index ] = audio_resample_init(
-					this->audio_index == INT_MAX ? codec_context->channels : *channels,
+				self->audio_resample[ index ] = audio_resample_init(
+					self->audio_index == INT_MAX ? codec_context->channels : *channels,
 					codec_context->channels, *frequency, codec_context->sample_rate );
 #endif
 			}
 			else
 			{
-				codec_context->request_channels = this->audio_index == INT_MAX ? codec_context->channels : *channels;
+				codec_context->request_channels = self->audio_index == INT_MAX ? codec_context->channels : *channels;
 			}
 
 			// Check for audio buffer and create if necessary
-			this->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE;
-			this->audio_buffer[ index ] = mlt_pool_alloc( this->audio_buffer_size[ index ] * sizeof( int16_t ) );
+			self->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+			self->audio_buffer[ index ] = mlt_pool_alloc( self->audio_buffer_size[ index ] * sizeof( int16_t ) );
 
 			// Check for decoder buffer and create if necessary
-			this->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+			self->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
 		}
 	}
 
@@ -2003,13 +2003,13 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		// If not resampling, give consumer more than requested.
 		// It requested number samples based on requested frame rate.
 		// Do not clean this up with a samples *= ...!
-		if ( this->audio_index != INT_MAX && ! this->audio_resample[ this->audio_index ] )
-			*samples = *samples * this->audio_codec[ this->audio_index ]->sample_rate / *frequency;
+		if ( self->audio_index != INT_MAX && ! self->audio_resample[ self->audio_index ] )
+			*samples = *samples * self->audio_codec[ self->audio_index ]->sample_rate / *frequency;
 
 		while ( ret >= 0 && !got_audio )
 		{
 			// Check if the buffer already contains the samples required
-			if ( this->audio_index != INT_MAX && this->audio_used[ this->audio_index ] >= *samples && ignore == 0 )
+			if ( self->audio_index != INT_MAX && self->audio_used[ self->audio_index ] >= *samples && ignore == 0 )
 			{
 				got_audio = 1;
 				break;
@@ -2021,21 +2021,21 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			avformat_unlock();
 
 			// We only deal with audio from the selected audio index
-			if ( ret >= 0 && pkt.data && pkt.size > 0 && ( pkt.stream_index == this->audio_index ||
-				 ( this->audio_index == INT_MAX && context->streams[ pkt.stream_index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
+			if ( ret >= 0 && pkt.data && pkt.size > 0 && ( pkt.stream_index == self->audio_index ||
+				 ( self->audio_index == INT_MAX && context->streams[ pkt.stream_index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
 			{
-				int channels2 = this->audio_index == INT_MAX ? this->audio_codec[pkt.stream_index]->channels : *channels;
-				ret = decode_audio( this, &ignore, pkt, channels2, *samples, real_timecode, fps );
+				int channels2 = self->audio_index == INT_MAX ? self->audio_codec[pkt.stream_index]->channels : *channels;
+				ret = decode_audio( self, &ignore, pkt, channels2, *samples, real_timecode, fps );
 			}
 			av_free_packet( &pkt );
 
-			if ( this->audio_index == INT_MAX && ret >= 0 )
+			if ( self->audio_index == INT_MAX && ret >= 0 )
 			{
 				// Determine if there is enough audio for all streams
 				got_audio = 1;
 				for ( index = 0; index < context->nb_streams; index++ )
 				{
-					if ( this->audio_codec[ index ] && this->audio_used[ index ] < *samples )
+					if ( self->audio_codec[ index ] && self->audio_used[ index ] < *samples )
 						got_audio = 0;
 				}
 			}
@@ -2048,54 +2048,54 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 
 		// Interleave tracks if audio_index=all
-		if ( this->audio_index == INT_MAX )
+		if ( self->audio_index == INT_MAX )
 		{
 			int16_t *dest = *buffer;
 			int i;
 			for ( i = 0; i < *samples; i++ )
 			{
 				for ( index = 0; index < index_max; index++ )
-				if ( this->audio_codec[ index ] )
+				if ( self->audio_codec[ index ] )
 				{
-					int current_channels = this->audio_codec[ index ]->channels;
-					int16_t *src = this->audio_buffer[ index ] + i * current_channels;
+					int current_channels = self->audio_codec[ index ]->channels;
+					int16_t *src = self->audio_buffer[ index ] + i * current_channels;
 					memcpy( dest, src, current_channels * sizeof(int16_t) );
 					dest += current_channels;
 				}
 			}
 			for ( index = 0; index < index_max; index++ )
-			if ( this->audio_codec[ index ] && this->audio_used[ index ] >= *samples )
+			if ( self->audio_codec[ index ] && self->audio_used[ index ] >= *samples )
 			{
-				int current_channels = this->audio_codec[ index ]->channels;
-				int16_t *src = this->audio_buffer[ index ] + *samples * current_channels;
-				this->audio_used[index] -= *samples;
-				memmove( this->audio_buffer[ index ], src, this->audio_used[ index ] * current_channels * sizeof(int16_t) );
+				int current_channels = self->audio_codec[ index ]->channels;
+				int16_t *src = self->audio_buffer[ index ] + *samples * current_channels;
+				self->audio_used[index] -= *samples;
+				memmove( self->audio_buffer[ index ], src, self->audio_used[ index ] * current_channels * sizeof(int16_t) );
 			}
 		}
 		// Copy a single track to the output buffer
 		else
 		{
-			index = this->audio_index;
+			index = self->audio_index;
 
 			// Now handle the audio if we have enough
-			if ( this->audio_used[ index ] > 0 )
+			if ( self->audio_used[ index ] > 0 )
 			{
-				int16_t *src = this->audio_buffer[ index ];
-				*samples = this->audio_used[ index ] < *samples ? this->audio_used[ index ] : *samples;
+				int16_t *src = self->audio_buffer[ index ];
+				*samples = self->audio_used[ index ] < *samples ? self->audio_used[ index ] : *samples;
 				memcpy( *buffer, src, *samples * *channels * sizeof(int16_t) );
-				this->audio_used[ index ] -= *samples;
-				memmove( src, &src[ *samples * *channels ], this->audio_used[ index ] * *channels * sizeof(int16_t) );
+				self->audio_used[ index ] -= *samples;
+				memmove( src, &src[ *samples * *channels ], self->audio_used[ index ] * *channels * sizeof(int16_t) );
 			}
 			else
 			{
 				// Otherwise fill with silence
 				memset( *buffer, 0, *samples * *channels * sizeof(int16_t) );
 			}
-			if ( !this->audio_resample[ index ] )
+			if ( !self->audio_resample[ index ] )
 			{
 				// TODO: uncomment and remove following line when full multi-channel support is ready
 				// *channels = codec_context->channels;
-				*frequency = this->audio_codec[ index ]->sample_rate;
+				*frequency = self->audio_codec[ index ]->sample_rate;
 			}
 		}
 	}
@@ -2107,9 +2107,9 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	
 	// Regardless of speed (other than paused), we expect to get the next frame
 	if ( !paused )
-		this->audio_expected = position + 1;
+		self->audio_expected = position + 1;
 
-	mlt_service_unlock( MLT_PRODUCER_SERVICE(this->parent) );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE(self->parent) );
 
 	return 0;
 }
@@ -2117,13 +2117,13 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 /** Initialize the audio codec context.
 */
 
-static int audio_codec_init( producer_avformat this, int index, mlt_properties properties )
+static int audio_codec_init( producer_avformat self, int index, mlt_properties properties )
 {
 	// Initialise the codec if necessary
-	if ( !this->audio_codec[ index ] )
+	if ( !self->audio_codec[ index ] )
 	{
 		// Get codec context
-		AVCodecContext *codec_context = this->audio_format->streams[index]->codec;
+		AVCodecContext *codec_context = self->audio_format->streams[index]->codec;
 
 		// Find the codec
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
@@ -2133,36 +2133,36 @@ static int audio_codec_init( producer_avformat this, int index, mlt_properties p
 		if ( codec && avcodec_open( codec_context, codec ) >= 0 )
 		{
 			// Now store the codec with its destructor
-			if ( this->audio_codec[ index ] )
-				avcodec_close( this->audio_codec[ index ] );
-			this->audio_codec[ index ] = codec_context;
+			if ( self->audio_codec[ index ] )
+				avcodec_close( self->audio_codec[ index ] );
+			self->audio_codec[ index ] = codec_context;
 		}
 		else
 		{
-			// Remember that we can't use this later
-			this->audio_index = -1;
+			// Remember that we can't use self later
+			self->audio_index = -1;
 		}
 		avformat_unlock( );
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 	}
-	return this->audio_codec[ index ] && this->audio_index > -1;
+	return self->audio_codec[ index ] && self->audio_index > -1;
 }
 
 /** Set up audio handling.
 */
 
-static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
+static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 {
 	// Get the producer
-	mlt_producer producer = this->parent;
+	mlt_producer producer = self->parent;
 
 	// Get the properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Fetch the audio format context
-	AVFormatContext *context = this->audio_format;
+	AVFormatContext *context = self->audio_format;
 
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
@@ -2170,27 +2170,27 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	int index = mlt_properties_get_int( properties, "audio_index" );
 
 	// Handle all audio tracks
-	if ( this->audio_index > -1 &&
+	if ( self->audio_index > -1 &&
 	     mlt_properties_get( properties, "audio_index" ) &&
 	     !strcmp( mlt_properties_get( properties, "audio_index" ), "all" ) )
 		index = INT_MAX;
 
 	// Reopen the file if necessary
-	if ( !context && this->audio_index > -1 && index > -1 )
+	if ( !context && self->audio_index > -1 && index > -1 )
 	{
 		mlt_events_block( properties, producer );
-		producer_open( this, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
+		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
-		context = this->audio_format;
-		if ( this->dummy_context )
+		context = self->audio_format;
+		if ( self->dummy_context )
 		{
 			avformat_lock();
-			av_close_input_file( this->dummy_context );
+			av_close_input_file( self->dummy_context );
 			avformat_unlock();
 		}
-		this->dummy_context = NULL;
+		self->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
-		get_audio_streams_info( this );
+		get_audio_streams_info( self );
 	}
 
 	// Exception handling for audio_index
@@ -2204,50 +2204,50 @@ static void producer_set_up_audio( producer_avformat this, mlt_frame frame )
 	if ( context && index > -1 && index < INT_MAX &&
 		 context->streams[ index ]->codec->codec_type != CODEC_TYPE_AUDIO )
 	{
-		index = this->audio_index;
+		index = self->audio_index;
 		mlt_properties_set_int( properties, "audio_index", index );
 	}
 
 	// Update the audio properties if the index changed
-	if ( context && index > -1 && index != this->audio_index )
+	if ( context && index > -1 && index != self->audio_index )
 	{
-		if ( this->audio_codec[ this->audio_index ] )
+		if ( self->audio_codec[ self->audio_index ] )
 		{
 			avformat_lock();
-			avcodec_close( this->audio_codec[ this->audio_index ] );
+			avcodec_close( self->audio_codec[ self->audio_index ] );
 			avformat_unlock();
 		}
-		this->audio_codec[ this->audio_index ] = NULL;
+		self->audio_codec[ self->audio_index ] = NULL;
 	}
-	if ( this->audio_index != -1 )
-		this->audio_index = index;
+	if ( self->audio_index != -1 )
+		self->audio_index = index;
 	else
 		index = -1;
 
 	// Get the codec(s)
 	if ( context && index == INT_MAX )
 	{
-		mlt_properties_set_int( frame_properties, "frequency", this->max_frequency );
-		mlt_properties_set_int( frame_properties, "channels", this->total_channels );
+		mlt_properties_set_int( frame_properties, "frequency", self->max_frequency );
+		mlt_properties_set_int( frame_properties, "channels", self->total_channels );
 		for ( index = 0; index < context->nb_streams; index++ )
 		{
 			if ( context->streams[ index ]->codec->codec_type == CODEC_TYPE_AUDIO )
-				audio_codec_init( this, index, properties );
+				audio_codec_init( self, index, properties );
 		}
 	}
-	else if ( context && index > -1 && audio_codec_init( this, index, properties ) )
+	else if ( context && index > -1 && audio_codec_init( self, index, properties ) )
 	{
 		// Set the frame properties
 		if ( index < INT_MAX )
 		{
-			mlt_properties_set_int( frame_properties, "frequency", this->audio_codec[ index ]->sample_rate );
-			mlt_properties_set_int( frame_properties, "channels", this->audio_codec[ index ]->channels );
+			mlt_properties_set_int( frame_properties, "frequency", self->audio_codec[ index ]->sample_rate );
+			mlt_properties_set_int( frame_properties, "channels", self->audio_codec[ index ]->channels );
 		}
 	}
 	if ( context && index > -1 )
 	{
 		// Add our audio operation
-		mlt_frame_push_audio( frame, this );
+		mlt_frame_push_audio( frame, self );
 		mlt_frame_push_audio( frame, producer_get_audio );
 	}
 }
@@ -2260,15 +2260,15 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Access the private data
 	mlt_service service = MLT_PRODUCER_SERVICE( producer );
 	mlt_cache_item cache_item = mlt_service_cache_get( service, "producer_avformat" );
-	producer_avformat this = mlt_cache_item_data( cache_item, NULL );
+	producer_avformat self = mlt_cache_item_data( cache_item, NULL );
 
 	// If cache miss
-	if ( !this )
+	if ( !self )
 	{
-		this = calloc( 1, sizeof( struct producer_avformat_s ) );
-		producer->child = this;
-		this->parent = producer;
-		mlt_service_cache_put( service, "producer_avformat", this, 0, (mlt_destructor) producer_avformat_close );
+		self = calloc( 1, sizeof( struct producer_avformat_s ) );
+		producer->child = self;
+		self->parent = producer;
+		mlt_service_cache_put( service, "producer_avformat", self, 0, (mlt_destructor) producer_avformat_close );
 		cache_item = mlt_service_cache_get( service, "producer_avformat" );
 	}
 
@@ -2292,10 +2292,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", mlt_producer_frame( producer ) );
 	
 	// Set up the video
-	producer_set_up_video( this, *frame );
+	producer_set_up_video( self, *frame );
 
 	// Set up the audio
-	producer_set_up_audio( this, *frame );
+	producer_set_up_audio( self, *frame );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );
@@ -2303,37 +2303,37 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	return 0;
 }
 
-static void producer_avformat_close( producer_avformat this )
+static void producer_avformat_close( producer_avformat self )
 {
 	mlt_log_debug( NULL, "producer_avformat_close\n" );
 	// Close the file
-	av_free( this->av_frame );
+	av_free( self->av_frame );
 	avformat_lock();
 	int i;
 	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
 	{
-		if ( this->audio_resample[i] )
-			audio_resample_close( this->audio_resample[i] );
-		mlt_pool_release( this->audio_buffer[i] );
-		av_free( this->decode_buffer[i] );
-		if ( this->audio_codec[i] )
-			avcodec_close( this->audio_codec[i] );
+		if ( self->audio_resample[i] )
+			audio_resample_close( self->audio_resample[i] );
+		mlt_pool_release( self->audio_buffer[i] );
+		av_free( self->decode_buffer[i] );
+		if ( self->audio_codec[i] )
+			avcodec_close( self->audio_codec[i] );
 	}
-	if ( this->video_codec )
-		avcodec_close( this->video_codec );
-	if ( this->dummy_context )
-		av_close_input_file( this->dummy_context );
-	if ( this->audio_format )
-		av_close_input_file( this->audio_format );
-	if ( this->video_format )
-		av_close_input_file( this->video_format );
+	if ( self->video_codec )
+		avcodec_close( self->video_codec );
+	if ( self->dummy_context )
+		av_close_input_file( self->dummy_context );
+	if ( self->audio_format )
+		av_close_input_file( self->audio_format );
+	if ( self->video_format )
+		av_close_input_file( self->video_format );
 	avformat_unlock();
 #ifdef VDPAU
-	vdpau_producer_close( this );
+	vdpau_producer_close( self );
 #endif
-	if ( this->image_cache )
-		mlt_cache_close( this->image_cache );
-	free( this );
+	if ( self->image_cache )
+		mlt_cache_close( self->image_cache );
+	free( self );
 }
 
 static void producer_close( mlt_producer parent )

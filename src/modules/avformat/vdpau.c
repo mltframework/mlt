@@ -47,11 +47,11 @@ struct
 
 static void vdpau_decoder_close();
 
-static int vdpau_init( producer_avformat this )
+static int vdpau_init( producer_avformat self )
 {
-	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "vdpau_init\n" );
+	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_init\n" );
 	int success = 0;
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this->parent );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 	Display *display = XOpenDisplay( NULL );
 	
 	if ( !display || mlt_properties_get_int( properties, "novdpau" )
@@ -73,7 +73,7 @@ static int vdpau_init( producer_avformat this )
 				int screen = mlt_properties_get_int( properties, "x11_screen" );
 				VdpDevice device;
 				
-				mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "X11 Display = %p\n", display );
+				mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "X11 Display = %p\n", display );
 				if ( VDP_STATUS_OK == create_device( display, screen, &device, &vdp_get_proc_address ) )
 				{
 					// Allocate the global VDPAU context
@@ -82,7 +82,7 @@ static int vdpau_init( producer_avformat this )
 					{
 						g_vdpau->device = device;
 						g_vdpau->decoder = VDP_INVALID_HANDLE;
-						g_vdpau->producer = this;
+						g_vdpau->producer = self;
 						vdp_get_proc_address( g_vdpau->device, VDP_FUNC_ID_GET_ERROR_STRING, (void**) &vdp_get_error_string );
 						vdp_get_proc_address( g_vdpau->device, VDP_FUNC_ID_GET_API_VERSION, (void**) &vdp_get_api_version );
 						vdp_get_proc_address( g_vdpau->device, VDP_FUNC_ID_GET_INFORMATION_STRING, (void**) &vdp_get_information_string );
@@ -98,22 +98,22 @@ static int vdpau_init( producer_avformat this )
 			}
 			if ( !success )
 			{
-				mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "VDPAU failed to initialize device\n" );
+				mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "VDPAU failed to initialize device\n" );
 				dlclose( object );
 			}
 		}
 		else
 		{
-			mlt_log( MLT_PRODUCER_SERVICE(this->parent), MLT_LOG_WARNING, "%s: failed to dlopen libvdpau.so\n  (%s)\n", __FUNCTION__, dlerror() );
+			mlt_log( MLT_PRODUCER_SERVICE(self->parent), MLT_LOG_WARNING, "%s: failed to dlopen libvdpau.so\n  (%s)\n", __FUNCTION__, dlerror() );
 		}
 	}
 	else
 	{
 		success = 1;
-		mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "VDPAU already initialized\n" );
+		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "VDPAU already initialized\n" );
 	}
 	
-	if ( g_vdpau && g_vdpau->producer != this )
+	if ( g_vdpau && g_vdpau->producer != self )
 		vdpau_decoder_close();
 	
 	return success;
@@ -127,12 +127,12 @@ static enum PixelFormat vdpau_get_format( struct AVCodecContext *s, const enum P
 static int vdpau_get_buffer( AVCodecContext *codec_context, AVFrame *frame )
 {
 	int error = 0;
-	producer_avformat this = codec_context->opaque;
-	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "vdpau_get_buffer\n" );
+	producer_avformat self = codec_context->opaque;
+	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_get_buffer\n" );
 	
-	if ( g_vdpau->producer == this && mlt_deque_count( this->vdpau->deque ) )
+	if ( g_vdpau->producer == self && mlt_deque_count( self->vdpau->deque ) )
 	{
-		struct vdpau_render_state *render = mlt_deque_pop_front( this->vdpau->deque );
+		struct vdpau_render_state *render = mlt_deque_pop_front( self->vdpau->deque );
 		
 		if ( render )
 		{
@@ -147,28 +147,28 @@ static int vdpau_get_buffer( AVCodecContext *codec_context, AVFrame *frame )
 			frame->reordered_opaque = codec_context->reordered_opaque;
 			if ( frame->reference )
 			{
-				frame->age = this->vdpau->ip_age[0];
-				this->vdpau->ip_age[0] = this->vdpau->ip_age[1] + 1;
-				this->vdpau->ip_age[1] = 1;
-				this->vdpau->b_age++;
+				frame->age = self->vdpau->ip_age[0];
+				self->vdpau->ip_age[0] = self->vdpau->ip_age[1] + 1;
+				self->vdpau->ip_age[1] = 1;
+				self->vdpau->b_age++;
 			}
 			else
 			{
-				frame->age = this->vdpau->b_age;
-				this->vdpau->ip_age[0] ++;
-				this->vdpau->ip_age[1] ++;
-				this->vdpau->b_age = 1;
+				frame->age = self->vdpau->b_age;
+				self->vdpau->ip_age[0] ++;
+				self->vdpau->ip_age[1] ++;
+				self->vdpau->b_age = 1;
 			}
 		}
 		else
 		{
-			mlt_log_warning( MLT_PRODUCER_SERVICE(this->parent), "VDPAU surface underrun\n" );
+			mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "VDPAU surface underrun\n" );
 			error = -1;
 		}
 	}
 	else
 	{
-		mlt_log_warning( MLT_PRODUCER_SERVICE(this->parent), "VDPAU surface underrun\n" );
+		mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "VDPAU surface underrun\n" );
 		error = -1;
 	}
 	
@@ -177,20 +177,20 @@ static int vdpau_get_buffer( AVCodecContext *codec_context, AVFrame *frame )
 
 static void vdpau_release_buffer( AVCodecContext *codec_context, AVFrame *frame )
 {
-	producer_avformat this = codec_context->opaque;
+	producer_avformat self = codec_context->opaque;
 	struct vdpau_render_state *render = (struct vdpau_render_state*) frame->data[0];
-	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "vdpau_release_buffer (%x)\n", render->surface );
+	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_release_buffer (%x)\n", render->surface );
 	int i;
 
 	render->state &= ~FF_VDPAU_STATE_USED_FOR_REFERENCE;
 	for ( i = 0; i < 4; i++ )
 		frame->data[i] = NULL;
-	mlt_deque_push_back( this->vdpau->deque, render );
+	mlt_deque_push_back( self->vdpau->deque, render );
 }
 
 static void vdpau_draw_horiz( AVCodecContext *codec_context, const AVFrame *frame, int offset[4], int y, int type, int height )
 {
-	producer_avformat this = codec_context->opaque;
+	producer_avformat self = codec_context->opaque;
 	struct vdpau_render_state *render = (struct vdpau_render_state*) frame->data[0];
 	VdpVideoSurface surface = render->surface;
 	VdpStatus status = vdp_decoder_render( g_vdpau->decoder, surface, (void*) &render->info,
@@ -198,104 +198,104 @@ static void vdpau_draw_horiz( AVCodecContext *codec_context, const AVFrame *fram
 	
 	if ( status != VDP_STATUS_OK )
 	{
-		this->vdpau->is_decoded = 0;
-		mlt_log_warning( MLT_PRODUCER_SERVICE(this->parent), "VDPAU failed to decode (%s)\n",
+		self->vdpau->is_decoded = 0;
+		mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "VDPAU failed to decode (%s)\n",
 			vdp_get_error_string( status ) );
 	}
 	else
 	{
-		this->vdpau->is_decoded = 1;
+		self->vdpau->is_decoded = 1;
 	}
 }
 
-static int vdpau_decoder_init( producer_avformat this )
+static int vdpau_decoder_init( producer_avformat self )
 {
-	mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "vdpau_decoder_init\n" );
+	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_decoder_init\n" );
 	int success = 1;
 	
-	this->video_codec->opaque = this;
-	this->video_codec->get_format = vdpau_get_format;
-	this->video_codec->get_buffer = vdpau_get_buffer;
-	this->video_codec->release_buffer = vdpau_release_buffer;
-	this->video_codec->draw_horiz_band = vdpau_draw_horiz;
-	this->video_codec->slice_flags = SLICE_FLAG_CODED_ORDER | SLICE_FLAG_ALLOW_FIELD;
-	this->video_codec->pix_fmt = PIX_FMT_VDPAU_H264;
+	self->video_codec->opaque = self;
+	self->video_codec->get_format = vdpau_get_format;
+	self->video_codec->get_buffer = vdpau_get_buffer;
+	self->video_codec->release_buffer = vdpau_release_buffer;
+	self->video_codec->draw_horiz_band = vdpau_draw_horiz;
+	self->video_codec->slice_flags = SLICE_FLAG_CODED_ORDER | SLICE_FLAG_ALLOW_FIELD;
+	self->video_codec->pix_fmt = PIX_FMT_VDPAU_H264;
 	
 	VdpDecoderProfile profile = VDP_DECODER_PROFILE_H264_HIGH;
-	uint32_t max_references = this->video_codec->refs;
+	uint32_t max_references = self->video_codec->refs;
 	pthread_mutex_lock( &mlt_sdl_mutex );
 	VdpStatus status = vdp_decoder_create( g_vdpau->device,
-		profile, this->video_codec->width, this->video_codec->height, max_references, &g_vdpau->decoder );
+		profile, self->video_codec->width, self->video_codec->height, max_references, &g_vdpau->decoder );
 	pthread_mutex_unlock( &mlt_sdl_mutex );
 	
 	if ( status == VDP_STATUS_OK )
 	{
-		if ( !this->vdpau )
+		if ( !self->vdpau )
 		{
-			int i, n = FFMIN( this->video_codec->refs + 2, MAX_VDPAU_SURFACES );
+			int i, n = FFMIN( self->video_codec->refs + 2, MAX_VDPAU_SURFACES );
 	
-			this->vdpau = calloc( 1, sizeof( *this->vdpau ) );
-			this->vdpau->deque = mlt_deque_init();
+			self->vdpau = calloc( 1, sizeof( *self->vdpau ) );
+			self->vdpau->deque = mlt_deque_init();
 			for ( i = 0; i < n; i++ )
 			{
 				if ( VDP_STATUS_OK == vdp_surface_create( g_vdpau->device, VDP_CHROMA_TYPE_420,
-					this->video_codec->width, this->video_codec->height, &this->vdpau->render_states[i].surface ) )
+					self->video_codec->width, self->video_codec->height, &self->vdpau->render_states[i].surface ) )
 				{
-					mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "successfully created VDPAU surface %x\n",
-						this->vdpau->render_states[i].surface );
-					mlt_deque_push_back( this->vdpau->deque, &this->vdpau->render_states[i] );
+					mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "successfully created VDPAU surface %x\n",
+						self->vdpau->render_states[i].surface );
+					mlt_deque_push_back( self->vdpau->deque, &self->vdpau->render_states[i] );
 				}
 				else
 				{
-					mlt_log_info( MLT_PRODUCER_SERVICE(this->parent), "failed to create VDPAU surface %dx%d\n",
-						this->video_codec->width, this->video_codec->height );
-					while ( mlt_deque_count( this->vdpau->deque ) )
+					mlt_log_info( MLT_PRODUCER_SERVICE(self->parent), "failed to create VDPAU surface %dx%d\n",
+						self->video_codec->width, self->video_codec->height );
+					while ( mlt_deque_count( self->vdpau->deque ) )
 					{
-						struct vdpau_render_state *render = mlt_deque_pop_front( this->vdpau->deque );
+						struct vdpau_render_state *render = mlt_deque_pop_front( self->vdpau->deque );
 						vdp_surface_destroy( render->surface );
 					}
-					mlt_deque_close( this->vdpau->deque );
-					free( this->vdpau );
-					this->vdpau = NULL;
+					mlt_deque_close( self->vdpau->deque );
+					free( self->vdpau );
+					self->vdpau = NULL;
 					vdp_decoder_destroy( g_vdpau->decoder );
 					g_vdpau->decoder = VDP_INVALID_HANDLE;
 					success = 0;
 					break;
 				}
 			}
-			this->vdpau->b_age = this->vdpau->ip_age[0] = this->vdpau->ip_age[1] = 256*256*256*64; // magic from Avidemux
+			self->vdpau->b_age = self->vdpau->ip_age[0] = self->vdpau->ip_age[1] = 256*256*256*64; // magic from Avidemux
 		}
-		g_vdpau->producer = this;
+		g_vdpau->producer = self;
 	}
 	else
 	{
 		success = 0;
 		g_vdpau->decoder = VDP_INVALID_HANDLE;
-		mlt_log_error( MLT_PRODUCER_SERVICE(this->parent), "VDPAU failed to initialize decoder (%s)\n",
+		mlt_log_error( MLT_PRODUCER_SERVICE(self->parent), "VDPAU failed to initialize decoder (%s)\n",
 			vdp_get_error_string( status ) );
 	}
 	
 	return success;
 }
 
-static void vdpau_producer_close( producer_avformat this )
+static void vdpau_producer_close( producer_avformat self )
 {
-	if ( this->vdpau )
+	if ( self->vdpau )
 	{
-		mlt_log_debug( MLT_PRODUCER_SERVICE(this->parent), "vdpau_producer_close\n" );
+		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_producer_close\n" );
 		int i;
 		for ( i = 0; i < MAX_VDPAU_SURFACES; i++ )
 		{
-			if ( this->vdpau->render_states[i].surface != VDP_INVALID_HANDLE )
-				vdp_surface_destroy( this->vdpau->render_states[i].surface );
-			this->vdpau->render_states[i].surface = VDP_INVALID_HANDLE;
+			if ( self->vdpau->render_states[i].surface != VDP_INVALID_HANDLE )
+				vdp_surface_destroy( self->vdpau->render_states[i].surface );
+			self->vdpau->render_states[i].surface = VDP_INVALID_HANDLE;
 		}
-		mlt_deque_close( this->vdpau->deque );
-		if ( this->vdpau->buffer )
-			mlt_pool_release( this->vdpau->buffer );
-		this->vdpau->buffer = NULL;
-		free( this->vdpau );
-		this->vdpau = NULL;
+		mlt_deque_close( self->vdpau->deque );
+		if ( self->vdpau->buffer )
+			mlt_pool_release( self->vdpau->buffer );
+		self->vdpau->buffer = NULL;
+		free( self->vdpau );
+		self->vdpau = NULL;
 	}
 }
 

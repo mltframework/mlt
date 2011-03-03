@@ -325,9 +325,9 @@ mlt_filter filter_avcolour_space_init( void *arg )
 	return NULL;
 #endif
 #endif
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
-		this->process = filter_process;
-	return this;
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
+		filter->process = filter_process;
+	return filter;
 }
 

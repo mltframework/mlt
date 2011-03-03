@@ -63,10 +63,10 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 	return value;
 }
 
-static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight )
+static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Get the properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the requested interpolation method
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
@@ -159,7 +159,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 		if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
 		{
 			// Create the context and output image
-			uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 			if ( alpha )
 			{
 				avformat = PIX_FMT_GRAY8;
@@ -173,7 +173,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 				sws_freeContext( context );
 	
 				// Set it back on the frame
-				mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
+				mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
 			}
 		}
 	
@@ -202,13 +202,13 @@ mlt_filter filter_swscale_init( mlt_profile profile, void *arg )
 	}		
 
 	// Create a new scaler
-	mlt_filter this = mlt_factory_filter( profile, "rescale", NULL );
+	mlt_filter filter = mlt_factory_filter( profile, "rescale", NULL );
 	
 	// If successful, then initialise it
-	if ( this != NULL )
+	if ( filter != NULL )
 	{
 		// Get the properties
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 		// Set the inerpolation
 		mlt_properties_set( properties, "interpolation", "bilinear" );
@@ -217,5 +217,5 @@ mlt_filter filter_swscale_init( mlt_profile profile, void *arg )
 		mlt_properties_set_data( properties, "method", filter_scale, 0, NULL, NULL );
 	}
 
-	return this;
+	return filter;
 }

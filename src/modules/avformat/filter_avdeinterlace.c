@@ -297,21 +297,21 @@ static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
 /** Do it :-).
 */
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
-	int deinterlace = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "consumer_deinterlace" );
+	int deinterlace = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace" );
 
 	// Determine if we need a writable version or not
 	if ( deinterlace && !writable )
-		 writable = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" );
+		 writable = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" );
 
 	// Get the input image
 	*format = mlt_image_yuv422;
-	error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	// Check that we want progressive and we aren't already progressive
-	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL && !mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "progressive" ) )
+	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL && !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" ) )
 	{
 		// Create a picture
 		AVPicture *output = mlt_pool_alloc( sizeof( AVPicture ) );
@@ -324,7 +324,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		mlt_pool_release( output );
 
 		// Make sure that others know the frame is deinterlaced
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "progressive", 1 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "progressive", 1 );
 	}
 
 	return error;
@@ -333,7 +333,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 /** Deinterlace filter processing - this should be lazy evaluation here...
 */
 
-static mlt_frame deinterlace_process( mlt_filter this, mlt_frame frame )
+static mlt_frame deinterlace_process( mlt_filter filter, mlt_frame frame )
 {
 	// Push the get_image method on to the stack
 	mlt_frame_push_get_image( frame, filter_get_image );
@@ -346,9 +346,9 @@ static mlt_frame deinterlace_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_avdeinterlace_init( void *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
-		this->process = deinterlace_process;
-	return this;
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
+		filter->process = deinterlace_process;
+	return filter;
 }
 

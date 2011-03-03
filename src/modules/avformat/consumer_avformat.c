@@ -75,82 +75,82 @@ typedef struct
 
 sample_fifo sample_fifo_init( int frequency, int channels )
 {
-	sample_fifo this = calloc( 1, sizeof( sample_fifo_s ) );
-	this->frequency = frequency;
-	this->channels = channels;
-	return this;
+	sample_fifo fifo = calloc( 1, sizeof( sample_fifo_s ) );
+	fifo->frequency = frequency;
+	fifo->channels = channels;
+	return fifo;
 }
 
 // sample_fifo_clear and check are temporarily aborted (not working as intended)
 
-void sample_fifo_clear( sample_fifo this, double time )
+void sample_fifo_clear( sample_fifo fifo, double time )
 {
-	int words = ( float )( time - this->time ) * this->frequency * this->channels;
-	if ( ( int )( ( float )time * 100 ) < ( int )( ( float )this->time * 100 ) && this->used > words && words > 0 )
+	int words = ( float )( time - fifo->time ) * fifo->frequency * fifo->channels;
+	if ( ( int )( ( float )time * 100 ) < ( int )( ( float )fifo->time * 100 ) && fifo->used > words && words > 0 )
 	{
-		memmove( this->buffer, &this->buffer[ words ], ( this->used - words ) * sizeof( int16_t ) );
-		this->used -= words;
-		this->time = time;
+		memmove( fifo->buffer, &fifo->buffer[ words ], ( fifo->used - words ) * sizeof( int16_t ) );
+		fifo->used -= words;
+		fifo->time = time;
 	}
-	else if ( ( int )( ( float )time * 100 ) != ( int )( ( float )this->time * 100 ) )
+	else if ( ( int )( ( float )time * 100 ) != ( int )( ( float )fifo->time * 100 ) )
 	{
-		this->used = 0;
-		this->time = time;
-	}
-}
-
-void sample_fifo_check( sample_fifo this, double time )
-{
-	if ( this->used == 0 )
-	{
-		if ( ( int )( ( float )time * 100 ) < ( int )( ( float )this->time * 100 ) )
-			this->time = time;
+		fifo->used = 0;
+		fifo->time = time;
 	}
 }
 
-void sample_fifo_append( sample_fifo this, int16_t *samples, int count )
+void sample_fifo_check( sample_fifo fifo, double time )
 {
-	if ( ( this->size - this->used ) < count )
+	if ( fifo->used == 0 )
 	{
-		this->size += count * 5;
-		this->buffer = realloc( this->buffer, this->size * sizeof( int16_t ) );
+		if ( ( int )( ( float )time * 100 ) < ( int )( ( float )fifo->time * 100 ) )
+			fifo->time = time;
+	}
+}
+
+void sample_fifo_append( sample_fifo fifo, int16_t *samples, int count )
+{
+	if ( ( fifo->size - fifo->used ) < count )
+	{
+		fifo->size += count * 5;
+		fifo->buffer = realloc( fifo->buffer, fifo->size * sizeof( int16_t ) );
 	}
 
-	memcpy( &this->buffer[ this->used ], samples, count * sizeof( int16_t ) );
-	this->used += count;
+	memcpy( &fifo->buffer[ fifo->used ], samples, count * sizeof( int16_t ) );
+	fifo->used += count;
 }
 
-int sample_fifo_used( sample_fifo this )
+int sample_fifo_used( sample_fifo fifo )
 {
-	return this->used;
+	return fifo->used;
 }
 
-int sample_fifo_fetch( sample_fifo this, int16_t *samples, int count )
+int sample_fifo_fetch( sample_fifo fifo, int16_t *samples, int count )
 {
-	if ( count > this->used )
-		count = this->used;
+	if ( count > fifo->used )
+		count = fifo->used;
 
-	memcpy( samples, this->buffer, count * sizeof( int16_t ) );
-	this->used -= count;
-	memmove( this->buffer, &this->buffer[ count ], this->used * sizeof( int16_t ) );
+	memcpy( samples, fifo->buffer, count * sizeof( int16_t ) );
+	fifo->used -= count;
+	memmove( fifo->buffer, &fifo->buffer[ count ], fifo->used * sizeof( int16_t ) );
 
-	this->time += ( double )count / this->channels / this->frequency;
+	fifo->time += ( double )count / fifo->channels / fifo->frequency;
 
 	return count;
 }
 
-void sample_fifo_close( sample_fifo this )
+void sample_fifo_close( sample_fifo fifo )
 {
-	free( this->buffer );
-	free( this );
+	free( fifo->buffer );
+	free( fifo );
 }
 
 // Forward references.
-static int consumer_start( mlt_consumer this );
-static int consumer_stop( mlt_consumer this );
-static int consumer_is_stopped( mlt_consumer this );
+static int consumer_start( mlt_consumer consumer );
+static int consumer_stop( mlt_consumer consumer );
+static int consumer_is_stopped( mlt_consumer consumer );
 static void *consumer_thread( void *arg );
-static void consumer_close( mlt_consumer this );
+static void consumer_close( mlt_consumer consumer );
 
 /** Initialise the consumer.
 */
@@ -158,16 +158,16 @@ static void consumer_close( mlt_consumer this );
 mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 {
 	// Allocate the consumer
-	mlt_consumer this = mlt_consumer_new( profile );
+	mlt_consumer consumer = mlt_consumer_new( profile );
 
 	// If memory allocated and initialises without error
-	if ( this != NULL )
+	if ( consumer != NULL )
 	{
 		// Get properties from the consumer
-		mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 		// Assign close callback
-		this->close = consumer_close;
+		consumer->close = consumer_close;
 
 		// Interpret the argument
 		if ( arg != NULL )
@@ -195,24 +195,24 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		mlt_properties_set_int( properties, "prefill", 1 );
 
 		// Set up start/stop/terminated callbacks
-		this->start = consumer_start;
-		this->stop = consumer_stop;
-		this->is_stopped = consumer_is_stopped;
+		consumer->start = consumer_start;
+		consumer->stop = consumer_stop;
+		consumer->is_stopped = consumer_is_stopped;
 		
 		mlt_events_register( properties, "consumer-fatal-error", NULL );
 	}
 
-	// Return this
-	return this;
+	// Return consumer
+	return consumer;
 }
 
 /** Start the consumer.
 */
 
-static int consumer_start( mlt_consumer this )
+static int consumer_start( mlt_consumer consumer )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 	int error = 0;
 
 	// Report information about available muxers and codecs as YAML Tiny
@@ -300,7 +300,7 @@ static int consumer_start( mlt_consumer this )
 			}
 			else
 			{
-				mlt_log_warning( MLT_CONSUMER_SERVICE( this ), "Invalid size property %s - ignoring.\n", size );
+				mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "Invalid size property %s - ignoring.\n", size );
 			}
 		}
 		
@@ -312,7 +312,7 @@ static int consumer_start( mlt_consumer this )
 
 		// We need to set these on the profile as well because the s property is
 		// an alias to mlt properties that correspond to profile settings.
-		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
 		if ( profile )
 		{
 			profile->width = width;
@@ -347,7 +347,7 @@ static int consumer_start( mlt_consumer this )
 		mlt_properties_set_int( properties, "running", 1 );
 
 		// Create the thread
-		pthread_create( thread, NULL, consumer_thread, this );
+		pthread_create( thread, NULL, consumer_thread, consumer );
 	}
 	return error;
 }
@@ -355,10 +355,10 @@ static int consumer_start( mlt_consumer this )
 /** Stop the consumer.
 */
 
-static int consumer_stop( mlt_consumer this )
+static int consumer_stop( mlt_consumer consumer )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Check that we're running
 	if ( mlt_properties_get_int( properties, "running" ) )
@@ -379,10 +379,10 @@ static int consumer_stop( mlt_consumer this )
 /** Determine if the consumer is stopped.
 */
 
-static int consumer_is_stopped( mlt_consumer this )
+static int consumer_is_stopped( mlt_consumer consumer )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 	return !mlt_properties_get_int( properties, "running" );
 }
 
@@ -411,10 +411,10 @@ static void apply_properties( void *obj, mlt_properties properties, int flags, i
 /** Add an audio output stream
 */
 
-static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int codec_id, int channels )
+static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, int codec_id, int channels )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Create a new stream
 	AVStream *st = av_new_stream( oc, oc->nb_streams );
@@ -481,7 +481,7 @@ static AVStream *add_audio_stream( mlt_consumer this, AVFormatContext *oc, int c
 	}
 	else
 	{
-		mlt_log_error( MLT_CONSUMER_SERVICE( this ), "Could not allocate a stream for audio\n" );
+		mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not allocate a stream for audio\n" );
 	}
 
 	return st;
@@ -554,10 +554,10 @@ static void close_audio( AVFormatContext *oc, AVStream *st )
 /** Add a video output stream 
 */
 
-static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int codec_id )
+static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, int codec_id )
 {
  	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Create a new stream
 	AVStream *st = av_new_stream( oc, oc->nb_streams );
@@ -661,7 +661,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			// for mlt properties that correspond to profile settings
 			mlt_properties_set_int( properties, "display_aspect_num", rational.num );
 			mlt_properties_set_int( properties, "display_aspect_den", rational.den );
-			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( this ) );
+			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
 			if ( profile )
 			{
 				profile->display_aspect_num = rational.num;
@@ -731,7 +731,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 			int start, end, q;
 			int e = sscanf( rc_override, "%d,%d,%d", &start, &end, &q );
 			if ( e != 3 )
-				mlt_log_warning( MLT_CONSUMER_SERVICE( this ), "Error parsing rc_override\n" );
+				mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "Error parsing rc_override\n" );
 			c->rc_override = av_realloc( c->rc_override, sizeof( RcOverride ) * ( i + 1 ) );
 			c->rc_override[i].start_frame = start;
 			c->rc_override[i].end_frame = end;
@@ -793,7 +793,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 					fseek( f, 0, SEEK_SET );
 					logbuffer = av_malloc( size + 1 );
 					if ( !logbuffer )
-						mlt_log_fatal( MLT_CONSUMER_SERVICE( this ), "Could not allocate log buffer\n" );
+						mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ), "Could not allocate log buffer\n" );
 					else
 					{
 						size = fread( logbuffer, 1, size, f );
@@ -808,7 +808,7 @@ static AVStream *add_video_stream( mlt_consumer this, AVFormatContext *oc, int c
 	}
 	else
 	{
-		mlt_log_error( MLT_CONSUMER_SERVICE( this ), "Could not allocate a stream for video\n" );
+		mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not allocate a stream for video\n" );
 	}
  
 	return st;
@@ -893,10 +893,10 @@ static inline long time_difference( struct timeval *time1 )
 static void *consumer_thread( void *arg )
 {
 	// Map the argument to the object
-	mlt_consumer this = arg;
+	mlt_consumer consumer = arg;
 
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Get the terminate on pause property
 	int terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
@@ -1036,7 +1036,7 @@ static void *consumer_thread( void *arg )
 		if ( p != NULL )
 			audio_codec_id = p->id;
 		else
-			mlt_log_warning( MLT_CONSUMER_SERVICE( this ), "audio codec %s unrecognised - ignoring\n", acodec );
+			mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "audio codec %s unrecognised - ignoring\n", acodec );
 	}
 
 	// Check for video codec overides
@@ -1048,7 +1048,7 @@ static void *consumer_thread( void *arg )
 		if ( p != NULL )
 			video_codec_id = p->id;
 		else
-			mlt_log_warning( MLT_CONSUMER_SERVICE( this ), "video codec %s unrecognised - ignoring\n", vcodec );
+			mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "video codec %s unrecognised - ignoring\n", vcodec );
 	}
 
 	// Write metadata
@@ -1104,7 +1104,7 @@ static void *consumer_thread( void *arg )
 
 	// Add audio and video streams
 	if ( video_codec_id != CODEC_ID_NONE )
-		video_st = add_video_stream( this, oc, video_codec_id );
+		video_st = add_video_stream( consumer, oc, video_codec_id );
 	if ( audio_codec_id != CODEC_ID_NONE )
 	{
 		int is_multi = 0;
@@ -1119,13 +1119,13 @@ static void *consumer_thread( void *arg )
 			{
 				is_multi = 1;
 				total_channels += j;
-				audio_st[i] = add_audio_stream( this, oc, audio_codec_id, j );
+				audio_st[i] = add_audio_stream( consumer, oc, audio_codec_id, j );
 			}
 		}
 		// single track
 		if ( !is_multi )
 		{
-			audio_st[0] = add_audio_stream( this, oc, audio_codec_id, channels );
+			audio_st[0] = add_audio_stream( consumer, oc, audio_codec_id, channels );
 			total_channels = channels;
 		}
 	}
@@ -1160,7 +1160,7 @@ static void *consumer_thread( void *arg )
 		{
 			if ( url_fopen( &oc->pb, filename, URL_WRONLY ) < 0 ) 
 			{
-				mlt_log_error( MLT_CONSUMER_SERVICE( this ), "Could not open '%s'\n", filename );
+				mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not open '%s'\n", filename );
 				mlt_properties_set_int( properties, "running", 0 );
 			}
 		}
@@ -1171,7 +1171,7 @@ static void *consumer_thread( void *arg )
 	}
 	else
 	{
-		mlt_log_error( MLT_CONSUMER_SERVICE( this ), "Invalid output format parameters\n" );
+		mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Invalid output format parameters\n" );
 		mlt_properties_set_int( properties, "running", 0 );
 	}
 
@@ -1190,7 +1190,7 @@ static void *consumer_thread( void *arg )
 	while( mlt_properties_get_int( properties, "running" ) &&
 	       ( !terminated || ( video_st && mlt_deque_count( queue ) ) ) )
 	{
-		frame = mlt_consumer_rt_frame( this );
+		frame = mlt_consumer_rt_frame( consumer );
 
 		// Check that we have a frame to work with
 		if ( frame != NULL )
@@ -1355,7 +1355,7 @@ static void *consumer_thread( void *arg )
 						if ( codec->coded_frame && codec->coded_frame->pts != AV_NOPTS_VALUE )
 						{
 							pkt.pts = av_rescale_q( codec->coded_frame->pts, codec->time_base, stream->time_base );
-							mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "audio stream %d pkt pts %lld frame pts %lld",
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio stream %d pkt pts %lld frame pts %lld",
 								stream->index, pkt.pts, codec->coded_frame->pts );
 						}
 						pkt.flags |= PKT_FLAG_KEY;
@@ -1366,13 +1366,13 @@ static void *consumer_thread( void *arg )
 						{
 							if ( av_interleaved_write_frame( oc, &pkt ) )
 							{
-								mlt_log_fatal( MLT_CONSUMER_SERVICE( this ), "error writing audio frame\n" );
+								mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ), "error writing audio frame\n" );
 								mlt_events_fire( properties, "consumer-fatal-error", NULL );
 								goto on_fatal_error;
 							}
 						}
 
-						mlt_log_debug( MLT_CONSUMER_SERVICE( this ), " frame_size %d\n", codec->frame_size );
+						mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), " frame_size %d\n", codec->frame_size );
 						if ( i == 0 )
 						{
 							audio_pts = (double)stream->pts.val * av_q2d( stream->time_base );
@@ -1498,7 +1498,7 @@ static void *consumer_thread( void *arg )
 
 							if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 								pkt.pts= av_rescale_q( c->coded_frame->pts, c->time_base, video_st->time_base );
-							mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "video pkt pts %lld frame pts %lld", pkt.pts, c->coded_frame->pts );
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "video pkt pts %lld frame pts %lld", pkt.pts, c->coded_frame->pts );
 							if( c->coded_frame && c->coded_frame->key_frame )
 								pkt.flags |= PKT_FLAG_KEY;
 							pkt.stream_index= video_st->index;
@@ -1507,7 +1507,7 @@ static void *consumer_thread( void *arg )
 
 							// write the compressed frame in the media file
 							ret = av_interleaved_write_frame(oc, &pkt);
-							mlt_log_debug( MLT_CONSUMER_SERVICE( this ), " frame_size %d\n", c->frame_size );
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), " frame_size %d\n", c->frame_size );
 							video_pts = (double)video_st->pts.val * av_q2d( video_st->time_base );
 							
 							// Dual pass logging
@@ -1516,13 +1516,13 @@ static void *consumer_thread( void *arg )
 	 					} 
 						else if ( out_size < 0 )
 						{
-							mlt_log_warning( MLT_CONSUMER_SERVICE( this ), "error with video encode %d\n", frame_count );
+							mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "error with video encode %d\n", frame_count );
 						}
  					}
  					frame_count++;
 					if ( ret )
 					{
-						mlt_log_fatal( MLT_CONSUMER_SERVICE( this ), "error writing video frame\n" );
+						mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ), "error writing video frame\n" );
 						mlt_events_fire( properties, "consumer-fatal-error", NULL );
 						goto on_fatal_error;
 					}
@@ -1534,10 +1534,10 @@ static void *consumer_thread( void *arg )
 				}
 			}
 			if ( audio_st[0] )
-				mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "audio pts %lld (%f) ", audio_st[0]->pts.val, audio_pts );
+				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio pts %lld (%f) ", audio_st[0]->pts.val, audio_pts );
 			if ( video_st )
-				mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "video pts %lld (%f) ", video_st->pts.val, video_pts );
-			mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "\n" );
+				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "video pts %lld (%f) ", video_st->pts.val, video_pts );
+			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "\n" );
 		}
 
 		if ( real_time_output == 1 && frames % 2 == 0 )
@@ -1577,7 +1577,7 @@ static void *consumer_thread( void *arg )
 			}
 			if ( pkt.size <= 0 )
 				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, NULL );
-			mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "flushing audio size %d\n", pkt.size );
+			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing audio size %d\n", pkt.size );
 			if ( pkt.size <= 0 )
 				break;
 
@@ -1589,7 +1589,7 @@ static void *consumer_thread( void *arg )
 			pkt.data = audio_outbuf;
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				mlt_log_fatal( MLT_CONSUMER_SERVICE( this ), "error writing flushed audio frame\n" );
+				mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ), "error writing flushed audio frame\n" );
 				mlt_events_fire( properties, "consumer-fatal-error", NULL );
 				goto on_fatal_error;
 			}
@@ -1604,7 +1604,7 @@ static void *consumer_thread( void *arg )
 
 			// Encode the image
 			pkt.size = avcodec_encode_video( c, video_outbuf, video_outbuf_size, NULL );
-			mlt_log_debug( MLT_CONSUMER_SERVICE( this ), "flushing video size %d\n", pkt.size );
+			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing video size %d\n", pkt.size );
 			if ( pkt.size <= 0 )
 				break;
 
@@ -1618,7 +1618,7 @@ static void *consumer_thread( void *arg )
 			// write the compressed frame in the media file
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				mlt_log_fatal( MLT_CONSUMER_SERVICE(this), "error writing flushed video frame\n" );
+				mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "error writing flushed video frame\n" );
 				mlt_events_fire( properties, "consumer-fatal-error", NULL );
 				goto on_fatal_error;
 			}
@@ -1667,7 +1667,7 @@ on_fatal_error:
 	// Just in case we terminated on pause
 	mlt_properties_set_int( properties, "running", 0 );
 
-	mlt_consumer_stopped( this );
+	mlt_consumer_stopped( consumer );
 	mlt_properties_close( frame_meta_properties );
 
 	if ( mlt_properties_get_int( properties, "pass" ) > 1 )
@@ -1703,14 +1703,14 @@ on_fatal_error:
 /** Close the consumer.
 */
 
-static void consumer_close( mlt_consumer this )
+static void consumer_close( mlt_consumer consumer )
 {
 	// Stop the consumer
-	mlt_consumer_stop( this );
+	mlt_consumer_stop( consumer );
 
 	// Close the parent
-	mlt_consumer_close( this );
+	mlt_consumer_close( consumer );
 
 	// Free the memory
-	free( this );
+	free( consumer );
 }
