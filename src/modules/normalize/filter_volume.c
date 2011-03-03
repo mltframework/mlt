@@ -175,8 +175,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the frame's filter instance properties
-	char *name = mlt_properties_get( filter_props, "_unique_id" );
-	mlt_properties instance_props = mlt_properties_get_data( properties, name, NULL );
+	mlt_properties instance_props = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE( this ) );
 
 	// Get the parameters
 	double gain = mlt_properties_get_double( instance_props, "gain" );
@@ -296,10 +295,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
-	mlt_properties instance_props = mlt_properties_new();
-	char *name = mlt_properties_get( filter_props, "_unique_id" );
-
-	mlt_properties_set_data( properties, name, instance_props, 0, (mlt_destructor) mlt_properties_close, NULL );
+	mlt_properties instance_props = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE( this ) );
 
 	double gain = 1.0; // no adjustment
 
