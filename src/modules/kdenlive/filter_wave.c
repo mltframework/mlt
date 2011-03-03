@@ -60,25 +60,28 @@ static void DoWave(uint8_t *src, int src_w, int src_h, uint8_t *dst, mlt_positio
 	}
 }
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	mlt_properties unique = mlt_frame_pop_service( frame );
+	mlt_position position = mlt_frame_get_position( frame );
+
 	// Get the image
 	*format = mlt_image_yuv422;
-	int error = mlt_frame_get_image( this, image, format, width, height, 0 );
-	mlt_position position = mlt_frame_get_position( this );
+	int error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 )
 	{
-		double factor = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "wave" );
-		int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "speed" );
-		int deformX = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "deformX" );
-		int deformY = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "deformY" );
+		double factor = mlt_properties_get_int( unique, "wave" );
+		int speed = mlt_properties_get_int( unique, "speed" );
+		int deformX = mlt_properties_get_int( unique, "deformX" );
+		int deformY = mlt_properties_get_int( unique, "deformY" );
 		if (factor != 0) {
-			int image_size = *width * (*height + 1) * 2;
-			*image = mlt_pool_alloc (image_size);
-			DoWave(*image, *width, (*height + 1), *image, position, speed, factor, deformX, deformY);
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "image", *image, image_size, mlt_pool_release, NULL );
+			int image_size = *width * (*height) * 2;
+			uint8_t *dst = mlt_pool_alloc (image_size);
+			DoWave(*image, *width, (*height), dst, position, speed, factor, deformX, deformY);
+			*image = dst;
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "image", *image, image_size, mlt_pool_release, NULL );
 		}
 	}
 
@@ -88,31 +91,33 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	// Get the starting wave level
-	double wave = mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "start" );
-	int speed = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "speed" );
-	int deformX = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "deformX" );
-	int deformY = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "deformY" );
+	double wave = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "start" );
+	int speed = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "speed" );
+	int deformX = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "deformX" );
+	int deformY = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "deformY" );
 
 	// If there is an end adjust gain to the range
-	if ( mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "end" ) != NULL )
+	if ( mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "end" ) != NULL )
 	{
 		// Determine the time position of this frame in the transition duration
-		mlt_position in = mlt_filter_get_in( this );
-		mlt_position out = mlt_filter_get_out( this );
+		mlt_position in = mlt_filter_get_in( filter );
+		mlt_position out = mlt_filter_get_out( filter );
 		mlt_position time = mlt_frame_get_position( frame );
 		double position = ( double )( time - in ) / ( double )( out - in + 1 );
-		double end = fabs( mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "end" ) );
+		double end = fabs( mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "end" ) );
 		wave += ( end - wave ) * position;
 	}
 
 	// Push the frame filter
-	mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), "wave", wave );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "speed", speed );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "deformX", deformX );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "deformY", deformY );
+	mlt_properties unique = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE( filter ) );
+	mlt_properties_set_double( unique, "wave", wave );
+	mlt_properties_set_int( unique, "speed", speed );
+	mlt_properties_set_int( unique, "deformX", deformX );
+	mlt_properties_set_int( unique, "deformY", deformY );
+	mlt_frame_push_service( frame, unique );
 	mlt_frame_push_get_image( frame, filter_get_image );
 
 	return frame;
@@ -123,16 +128,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter )
 	{
-		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "start", arg == NULL ? "10" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "speed", arg == NULL ? "5" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "deformX", arg == NULL ? "1" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "deformY", arg == NULL ? "1" : arg);
-		}
-	return this;
+		filter->process = filter_process;
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "start", arg == NULL ? "10" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "speed", arg == NULL ? "5" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "deformX", arg == NULL ? "1" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "deformY", arg == NULL ? "1" : arg);
+	}
+	return filter;
 }
 
 
