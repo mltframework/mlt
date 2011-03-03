@@ -127,6 +127,7 @@ extern void *mlt_frame_pop_audio( mlt_frame self );
 extern mlt_deque mlt_frame_service_stack( mlt_frame self );
 extern mlt_producer mlt_frame_get_original_producer( mlt_frame self );
 extern void mlt_frame_close( mlt_frame self );
+extern mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service );
 
 /* convenience functions */
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );

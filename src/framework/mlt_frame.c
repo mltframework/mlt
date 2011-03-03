@@ -855,3 +855,35 @@ void mlt_frame_write_ppm( mlt_frame frame )
 		fclose( file );
 	}
 }
+
+/** Get or create a properties object unique to this service instance.
+ *
+ * Use this function to hold a service's processing parameters for this
+ * particular frame. Set the parameters in the service's process function.
+ * Then, get the parameters in the function it pushes to the frame's audio
+ * or image stack. This makes the service more parallel by reducing race
+ * conditions and less sensitive to multiple instances (by not setting a
+ * non-unique property on the frame). Creation and destruction of the
+ * properties object is handled automatically.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param service a service
+ * \return a properties object
+ */
+
+mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service )
+{
+	mlt_properties frame_props = MLT_FRAME_PROPERTIES( self );
+	mlt_properties service_props = MLT_SERVICE_PROPERTIES( service );
+	char *unique = mlt_properties_get( service_props, "_unique_id" );
+	mlt_properties instance_props = mlt_properties_get_data( frame_props, unique, NULL );
+	
+	if ( !instance_props )
+	{
+		instance_props = mlt_properties_new();
+		mlt_properties_set_data( frame_props, unique, instance_props, 0, (mlt_destructor) mlt_properties_close, NULL );
+	}
+
+	return instance_props;
+}
