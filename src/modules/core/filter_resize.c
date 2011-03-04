@@ -147,7 +147,7 @@ static uint8_t *frame_resize_image( mlt_frame this, int owidth, int oheight, int
 	int iheight = mlt_properties_get_int( properties, "height" );
 
 	// If width and height are correct, don't do anything
-	if ( iwidth != owidth || iheight != oheight )
+	if ( iwidth < owidth || iheight < oheight )
 	{
 		uint8_t alpha_value = mlt_properties_get_int( properties, "resize_alpha" );
 
