@@ -1157,8 +1157,8 @@ void mlt_properties_close( mlt_properties self )
 			// Clean up names and values
 			for ( index = list->count - 1; index >= 0; index -- )
 			{
-				free( list->name[ index ] );
 				mlt_property_close( list->value[ index ] );
+				free( list->name[ index ] );
 			}
 
 			// Clear up the list
