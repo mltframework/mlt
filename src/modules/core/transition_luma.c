@@ -509,9 +509,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if ( mix >= 1.0 )
 		mix -= floor( mix );
 
-	mix = reverse || invert ? 1 - mix : mix;
-	frame_delta *= reverse || invert ? -1.0 : 1.0;
-
 	// Ensure we get scaling on the b_frame
 	if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( b_props, "rescale.interp" ), "none" ) )
 		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
@@ -523,12 +520,21 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mix = mlt_properties_get_double( properties, "fixed" );
 
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
+	{
+		reverse = invert ? !reverse : reverse;
+		mix = reverse ? 1 - mix : mix;
+		frame_delta *= reverse ? -1.0 : 1.0;
 		// Composite the frames using a luma map
 		luma_composite( !invert ? a_frame : b_frame, !invert ? b_frame : a_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
 			luma_softness, progressive ? -1 : top_field_first, width, height );
+	}
 	else
+	{
+		mix = ( reverse || invert ) ? 1 - mix : mix;
+		invert = 0;
 		// Dissolve the frames using the time offset for mix value
 		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
+	}
 	
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
