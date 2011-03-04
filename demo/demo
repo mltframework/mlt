@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export MLT_PROFILE=dv_pal
+
 function show_consumers( )
 {
 	awk -F '\t' '{ printf( "%d. %s\n", ++ i, $1 ); }' < consumers.ini
