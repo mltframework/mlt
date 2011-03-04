@@ -382,14 +382,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Correct width/height if not specified
 	if ( luma_width == 0 || luma_height == 0 )
 	{
-		luma_width = mlt_properties_get_int( a_props, "width" );
-		luma_height = mlt_properties_get_int( a_props, "height" );
+		luma_width = *width;
+		luma_height = *height;
 	}
 		
-	if ( resource != current_resource )
+	if ( resource && ( !current_resource || strcmp( resource, current_resource ) ) )
 	{
 		char temp[ 512 ];
 		char *extension = strrchr( resource, '.' );
+		char *orig_resource = resource;
 
 		if ( strchr( resource, '%' ) )
 		{
@@ -418,7 +419,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Set the transition properties
 				mlt_properties_set_int( properties, "width", luma_width );
 				mlt_properties_set_int( properties, "height", luma_height );
-				mlt_properties_set( properties, "_resource", resource );
+				mlt_properties_set( properties, "_resource", orig_resource );
 				mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
 			}
 		}
@@ -469,7 +470,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					// Set the transition properties
 					mlt_properties_set_int( properties, "width", luma_width );
 					mlt_properties_set_int( properties, "height", luma_height );
-					mlt_properties_set( properties, "_resource", resource);
+					mlt_properties_set( properties, "_resource", orig_resource);
 					mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
 
 					// Cleanup the luma frame
