@@ -44,7 +44,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 		interp = PIXOPS_INTERP_NEAREST;
 	else if ( strcmp( interps, "tiles" ) == 0 )
 		interp = PIXOPS_INTERP_TILES;
-	else if ( strcmp( interps, "hyper" ) == 0 )
+	else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "bicubic" ) == 0 )
 		interp = PIXOPS_INTERP_HYPER;
 
 	// Carry out the rescaling
