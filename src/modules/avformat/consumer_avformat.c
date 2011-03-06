@@ -487,7 +487,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, i
 	return st;
 }
 
-static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size )
+static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size, const char *codec_name )
 {
 	// We will return the audio input size from here
 	int audio_input_frame_size = 0;
@@ -496,7 +496,7 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size 
 	AVCodecContext *c = st->codec;
 
 	// Find the encoder
-	AVCodec *codec = avcodec_find_encoder( c->codec_id );
+	AVCodec *codec = avcodec_find_encoder_by_name( codec_name );
 
 	avformat_lock();
 	
@@ -1034,7 +1034,14 @@ static void *consumer_thread( void *arg )
 	{
 		AVCodec *p = avcodec_find_encoder_by_name( acodec );
 		if ( p != NULL )
+		{
 			audio_codec_id = p->id;
+			if ( audio_codec_id == CODEC_ID_AC3 && avcodec_find_encoder_by_name( "ac3_fixed" ) )
+			{
+				mlt_properties_set( properties, "_acodec", "ac3_fixed" );
+				acodec = mlt_properties_get( properties, "_acodec" );
+			}
+		}
 		else
 			mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "audio codec %s unrecognised - ignoring\n", acodec );
 	}
@@ -1150,7 +1157,7 @@ static void *consumer_thread( void *arg )
 			video_st = NULL;
 		for ( i = 0; i < MAX_AUDIO_STREAMS && audio_st[i]; i++ )
 		{
-			audio_input_frame_size = open_audio( oc, audio_st[i], audio_outbuf_size );
+			audio_input_frame_size = open_audio( oc, audio_st[i], audio_outbuf_size, acodec );
 			if ( !audio_input_frame_size )
 				audio_st[i] = NULL;
 		}
