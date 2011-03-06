@@ -264,9 +264,14 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 
 #ifdef USE_QT4
 		// Note - the original qimage is already safe and ready for destruction
+		if ( qimage->depth() == 1 )
+		{
+			QImage temp = qimage->convertToFormat( QImage::Format_RGB32 );
+			delete qimage;
+			qimage = new QImage( temp );
+		}
 		QImage scaled = interp == 0 ? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
-		QImage temp;
 		self->has_alpha = scaled.hasAlphaChannel();
 #endif
 
