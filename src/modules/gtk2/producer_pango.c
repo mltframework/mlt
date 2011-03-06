@@ -435,7 +435,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			interp = GDK_INTERP_NEAREST;
 		else if ( strcmp( interps, "tiles" ) == 0 )
 			interp = GDK_INTERP_TILES;
-		else if ( strcmp( interps, "hyper" ) == 0 )
+		else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "bicubic" ) == 0 )
 			interp = GDK_INTERP_HYPER;
 
 // fprintf(stderr,"%s: scaling from %dx%d to %dx%d\n", __FILE__, this->width, this->height, width, height);

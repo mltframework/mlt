@@ -375,7 +375,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 			interp = GDK_INTERP_NEAREST;
 		else if ( strcmp( interps, "tiles" ) == 0 )
 			interp = GDK_INTERP_TILES;
-		else if ( strcmp( interps, "hyper" ) == 0 )
+		else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "bicubic" ) == 0 )
 			interp = GDK_INTERP_HYPER;
 
 		// Note - the original pixbuf is already safe and ready for destruction
