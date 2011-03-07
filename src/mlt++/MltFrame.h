@@ -30,6 +30,7 @@ namespace Mlt
 {
 	class Properties;
 	class Producer;
+	class Service;
 
 	class MLTPP_DECLSPEC Frame : public Properties
 	{
@@ -46,6 +47,9 @@ namespace Mlt
 			void *get_audio( mlt_audio_format &format, int &frequency, int &channels, int &samples );
 			unsigned char *get_waveform( int w, int h );
 			Producer *get_original_producer( );
+			mlt_properties get_unique_properties( Service &service );
+			int set_image( uint8_t *image, int size, mlt_destructor destroy );
+			int set_alpha( uint8_t *alpha, int size, mlt_destructor destroy );
 	};
 }
 

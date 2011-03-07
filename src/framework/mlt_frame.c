@@ -295,6 +295,36 @@ mlt_deque mlt_frame_service_stack( mlt_frame self )
 	return self->stack_service;
 }
 
+/** Set a new image on the frame.
+  *
+  * \public \memberof mlt_frame_s
+  * \param self a frame
+  * \param image a pointer to the raw image data
+  * \param size the size of the image data in bytes (optional)
+  * \param destroy a function to deallocate \p image when the frame is closed (optional)
+  * \return true if error
+  */
+
+int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_destructor destroy )
+{
+	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "image", image, size, destroy, NULL );
+}
+
+/** Set a new alpha channel on the frame.
+  *
+  * \public \memberof mlt_frame_s
+  * \param self a frame
+  * \param alpha a pointer to the alpha channel
+  * \param size the size of the alpha channel in bytes (optional)
+  * \param destroy a function to deallocate \p alpha when the frame is closed (optional)
+  * \return true if error
+  */
+
+int mlt_frame_set_alpha( mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy )
+{
+	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "alpha", alpha, size, destroy, NULL );
+}
+
 /** Replace image stack with the information provided.
  *
  * This might prove to be unreliable and restrictive - the idea is that a transition

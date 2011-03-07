@@ -89,3 +89,18 @@ Producer *Frame::get_original_producer( )
 {
 	return new Producer( mlt_frame_get_original_producer( get_frame( ) ) );
 }
+
+mlt_properties Frame::get_unique_properties( Service &service )
+{
+	return mlt_frame_unique_properties( get_frame(), service.get_service() );
+}
+
+int Frame::set_image( uint8_t *image, int size, mlt_destructor destroy )
+{
+	return mlt_frame_set_image( get_frame(), image, size, destroy );
+}
+
+int Frame::set_alpha( uint8_t *alpha, int size, mlt_destructor destroy )
+{
+	return mlt_frame_set_alpha( get_frame(), alpha, size, destroy );
+}
