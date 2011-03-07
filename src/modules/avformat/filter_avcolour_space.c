@@ -246,7 +246,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 /* TODO: The below is not working because swscale does not have
  * adjustable coefficients yet for RGB->YUV */
-
+#if 0
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
@@ -282,6 +282,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	
 	return error;
 }
+#endif
 
 /** Filter processing.
 */
