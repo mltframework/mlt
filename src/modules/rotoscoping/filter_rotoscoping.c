@@ -319,16 +319,16 @@ void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size
 
 /** Do it :-).
 */
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-    mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+    mlt_properties unique = mlt_frame_pop_service( frame );
 
-    int mode = mlt_properties_get_int( properties, "mode" );
+    int mode = mlt_properties_get_int( unique, "mode" );
 
     // Get the image
     if ( mode == MODE_RGB )
         *format = mlt_image_rgb24;
-    int error = mlt_frame_get_image( this, image, format, width, height, writable );
+    int error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
     // Only process if we have no error and a valid colour space
     if ( !error )
@@ -336,7 +336,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
         BPointF *bpoints;
         struct PointF *points;
         int bcount, length, count, size, i, j;
-        bpoints = mlt_properties_get_data( properties, "points", &length );
+        bpoints = mlt_properties_get_data( unique, "points", &length );
         bcount = length / sizeof( BPointF );
 
         for ( i = 0; i < bcount; i++ )
@@ -361,31 +361,21 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
         if ( count )
         {
-            uint8_t *map = mlt_pool_alloc( *width * *height );
-            int invert = mlt_properties_get_int( properties, "invert" );
+            length = *width * *height;
+            uint8_t *map = mlt_pool_alloc( length );
+            int invert = mlt_properties_get_int( unique, "invert" );
             fillMap( points, count, *width, *height, invert, map );
 
-            int feather = mlt_properties_get_int( properties, "feather" );
-            if ( feather )
-                blur( map, *width, *height, feather, mlt_properties_get_int( properties, "feather_passes" ) );
+            int feather = mlt_properties_get_int( unique, "feather" );
+            if ( feather && mode != MODE_RGB )
+                blur( map, *width, *height, feather, mlt_properties_get_int( unique, "feather_passes" ) );
 
-            double bpp = 4;
-            if ( mode != MODE_ALPHA )
-            {
-                if ( *format == mlt_image_rgb24 )
-                    bpp = 3;
-                else if ( *format == mlt_image_yuv422 )
-                    bpp = 2;
-                else if ( *format == mlt_image_yuv420p )
-                    bpp = 3 / 2.;
-            }
+            int bpp;
+            size = mlt_image_format_size( *format, *width, *height, &bpp );
+            uint8_t *p = *image;
+            uint8_t *q = *image + size;
 
             i = 0;
-            length = *width * *height;
-
-            uint8_t *p = *image;
-            uint8_t *q = *image + (int)( length * bpp );
-
             uint8_t *alpha;
 
             switch ( mode )
@@ -408,7 +398,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                         while ( p != q )
                         {
                             p[0] = p[1] = p[2] = map[i++];
-                            p += (int)bpp;
+                            p += bpp;
                         }
                         break;
                     case mlt_image_yuv422:
@@ -432,7 +422,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                 {
                 case mlt_image_rgb24a:
                 case mlt_image_opengl:
-                    switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
+                    switch ( mlt_properties_get_int( unique, "alpha_operation" ) )
                     {
                     case ALPHA_CLEAR:
                         while ( p != q )
@@ -476,8 +466,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
                     }
                     break;
                 default:
-                    alpha = mlt_frame_get_alpha_mask( this );
-                    switch ( mlt_properties_get_int( properties, "alpha_operation" ) )
+                    alpha = mlt_frame_get_alpha_mask( frame );
+                    switch ( mlt_properties_get_int( unique, "alpha_operation" ) )
                     {
                     case ALPHA_CLEAR:
                         memcpy( alpha, map, length );
@@ -515,10 +505,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 /** Filter processing.
 */
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-    mlt_properties properties = MLT_FILTER_PROPERTIES( this );
-    mlt_properties frameProperties = MLT_FRAME_PROPERTIES( frame );
+    mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
     int splineIsDirty = mlt_properties_get_int( properties, "_spline_is_dirty" );
     char *modeStr = mlt_properties_get( properties, "mode" );
     cJSON *root = mlt_properties_get_data( properties, "_spline_parsed", NULL );
@@ -605,12 +594,14 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
         return frame;
     }
 
-    mlt_properties_set_data( frameProperties, "points", points, count * sizeof( BPointF ), (mlt_destructor)mlt_pool_release, NULL );
-    mlt_properties_set_int( frameProperties, "mode", stringValue( modeStr, MODESTR, 3 ) );
-    mlt_properties_set_int( frameProperties, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
-    mlt_properties_set_int( frameProperties, "invert", mlt_properties_get_int( properties, "invert" ) );
-    mlt_properties_set_int( frameProperties, "feather", mlt_properties_get_int( properties, "feather" ) );
-    mlt_properties_set_int( frameProperties, "feather_passes", mlt_properties_get_int( properties, "feather_passes" ) );
+    mlt_properties unique = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE( filter ) );
+    mlt_properties_set_data( unique, "points", points, count * sizeof( BPointF ), (mlt_destructor)mlt_pool_release, NULL );
+    mlt_properties_set_int( unique, "mode", stringValue( modeStr, MODESTR, 3 ) );
+    mlt_properties_set_int( unique, "alpha_operation", stringValue( mlt_properties_get( properties, "alpha_operation" ), ALPHAOPERATIONSTR, 5 ) );
+    mlt_properties_set_int( unique, "invert", mlt_properties_get_int( properties, "invert" ) );
+    mlt_properties_set_int( unique, "feather", mlt_properties_get_int( properties, "feather" ) );
+    mlt_properties_set_int( unique, "feather_passes", mlt_properties_get_int( properties, "feather_passes" ) );
+    mlt_frame_push_service( frame, unique );
     mlt_frame_push_get_image( frame, filter_get_image );
 
     return frame;
@@ -620,20 +611,20 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 */
 mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-        mlt_filter this = mlt_filter_new( );
-        if ( this != NULL )
+        mlt_filter filter = mlt_filter_new( );
+        if ( filter )
         {
-                this->process = filter_process;
-                mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+                filter->process = filter_process;
+                mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
                 mlt_properties_set( properties, "mode", "alpha" );
                 mlt_properties_set( properties, "alpha_operation", "clear" );
                 mlt_properties_set_int( properties, "invert", 0 );
                 mlt_properties_set_int( properties, "feather", 0 );
                 mlt_properties_set_int( properties, "feather_passes", 1 );
-                if ( arg != NULL )
+                if ( arg )
                     mlt_properties_set( properties, "spline", arg );
 
-                mlt_events_listen( properties, this, "property-changed", (mlt_listener)rotoPropertyChanged );
+                mlt_events_listen( properties, filter, "property-changed", (mlt_listener)rotoPropertyChanged );
         }
-        return this;
+        return filter;
 }
