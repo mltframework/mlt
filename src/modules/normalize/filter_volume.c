@@ -171,9 +171,6 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	// Get the properties from the filter
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
 
-	// Get the properties of the a frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Get the frame's filter instance properties
 	mlt_properties instance_props = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE( this ) );
 
