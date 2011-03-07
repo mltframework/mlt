@@ -63,13 +63,8 @@ static mlt_geometry transition_parse_keys( mlt_transition this, const char *name
 	// Try to fetch it first
 	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
 
-	// Get the in and out position
-	int always_active = mlt_properties_get_int( properties, "always_active" );
-	mlt_position in = mlt_transition_get_in( this );
-	mlt_position out = !always_active ? mlt_transition_get_out( this ) : -1;
-
 	// Determine length and obtain cycle
-	int length = out - in + 1;
+	mlt_position length = mlt_transition_get_length( this );
 	double cycle = mlt_properties_get_double( properties, "cycle" );
 
 	// Allow a geometry repeat cycle

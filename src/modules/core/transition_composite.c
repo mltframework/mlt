@@ -98,10 +98,8 @@ static mlt_geometry transition_parse_keys( mlt_transition this, int normalised_w
 	// Create an empty geometries object
 	mlt_geometry geometry = mlt_geometry_init( );
 
-	// Get the in and out position
-	mlt_position in = mlt_transition_get_in( this );
-	mlt_position out = mlt_transition_get_out( this );
-	int length = out - in + 1;
+	// Get the duration
+	mlt_position length = mlt_transition_get_length( this );
 	double cycle = mlt_properties_get_double( properties, "cycle" );
 
 	// Get the new style geometry string
@@ -882,9 +880,7 @@ static void crop_calculate( mlt_transition this, mlt_properties properties, stru
 		if ( !crop )
 		{
 			crop = mlt_geometry_init();
-			mlt_position in = mlt_transition_get_in( this );
-			mlt_position out = mlt_transition_get_out( this );
-			int length = out - in + 1;
+			mlt_position length = mlt_transition_get_length( this );
 			double cycle = mlt_properties_get_double( properties, "cycle" );
 
 			// Allow a geometry repeat cycle
@@ -952,7 +948,7 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 		}
 		else
 		{
-			int length = mlt_transition_get_out( this ) - mlt_transition_get_in( this ) + 1;
+			mlt_position length = mlt_transition_get_length( this );
 			double cycle = mlt_properties_get_double( properties, "cycle" );
 			if ( cycle > 1 )
 				length = cycle;
