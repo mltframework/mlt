@@ -40,13 +40,12 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	if ( channels_out == -1 )
 		channels_out = *channels;
-	size = *samples * channels_out;
+	size = mlt_audio_format_size( *format, *samples, channels_out );
 
 	switch ( *format )
 	{
 		case mlt_audio_s16:
 		{
-			size *= sizeof( int16_t );
 			int16_t *new_buffer = mlt_pool_alloc( size );
 			for ( i = 0; i < *samples; i++ )
 			{
@@ -61,7 +60,6 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		}
 		case mlt_audio_s32:
 		{
-			size *= sizeof( int32_t );
 			int32_t *new_buffer = mlt_pool_alloc( size );
 			for ( i = 0; i < *samples; i++ )
 			{
@@ -76,7 +74,6 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		}
 		case mlt_audio_float:
 		{
-			size *= sizeof( float );
 			float *new_buffer = mlt_pool_alloc( size );
 			for ( i = 0; i < *samples; i++ )
 			{
