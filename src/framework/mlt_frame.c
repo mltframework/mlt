@@ -385,6 +385,40 @@ const char * mlt_image_format_name( mlt_image_format format )
 	return "invalid";
 }
 
+/** Get the number of bytes needed for an image.
+  *
+  * \public \memberof mlt_frame_s
+  * \param format the image format
+  * \param width width of the image in pixels
+  * \param height height of the image in pixels
+  * \param[out] bpp the number of bytes per pixel (optional)
+  * \return the number of bytes
+  */
+int mlt_image_format_size( mlt_image_format format, int width, int height, int *bpp )
+{
+	height += 1;
+	switch ( format )
+	{
+		case mlt_image_none:
+			if ( bpp ) *bpp = 0;
+			return 0;
+		case mlt_image_rgb24:
+			if ( bpp ) *bpp = 3;
+			return width * height * 3;
+		case mlt_image_opengl:
+		case mlt_image_rgb24a:
+			if ( bpp ) *bpp = 4;
+			return width * height * 4;
+		case mlt_image_yuv422:
+			if ( bpp ) *bpp = 2;
+			return width * height * 2;
+		case mlt_image_yuv420p:
+			if ( bpp ) *bpp = 3 / 2;
+			return width * height * 3 / 2;
+	}
+	return 0;
+}
+
 /** Get the image associated to the frame.
  *
  * You should express the desired format, width, and height as inputs. As long

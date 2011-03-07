@@ -135,6 +135,7 @@ extern mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service s
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
 extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
 extern const char * mlt_image_format_name( mlt_image_format format );
+extern int mlt_image_format_size( mlt_image_format format, int width, int height, int *bpp );
 extern const char * mlt_audio_format_name( mlt_audio_format format );
 extern void mlt_frame_write_ppm( mlt_frame frame );
 
