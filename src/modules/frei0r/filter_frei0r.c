@@ -33,7 +33,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( error == 0 && *image )
 	{
-		mlt_position length = mlt_filter_get_out( filter ) - mlt_filter_get_in( filter ) + 1;
+		mlt_position length = mlt_filter_get_length( filter );
 		mlt_position time = mlt_properties_get_position( properties, "_filter_position" );
 		double position = ( double )( time ) / ( double )( length );
 		
