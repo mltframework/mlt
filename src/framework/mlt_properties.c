@@ -898,7 +898,7 @@ void *mlt_properties_get_data( mlt_properties self, const char *name, int *lengt
  * \param name the property to set
  * \param value an opaque pointer to binary data
  * \param length the size of the binary data in bytes (optional)
- * \param destroy a function to dellacate the binary data when the property is closed (optional)
+ * \param destroy a function to deallocate the binary data when the property is closed (optional)
  * \param serialise a function that can serialize the binary data as text (optional)
  * \return true if error
  */
