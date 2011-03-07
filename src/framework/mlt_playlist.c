@@ -161,7 +161,7 @@ static int mlt_playlist_virtual_refresh( mlt_playlist self )
 		mlt_producer producer = self->list[ i ]->producer;
 		if ( producer )
 		{
-			int current_length = mlt_producer_get_out( producer ) - mlt_producer_get_in( producer ) + 1;
+			int current_length = mlt_producer_get_playtime( producer );
 
 			// Check if the length of the producer has changed
 			if ( self->list[ i ]->frame_in != mlt_producer_get_in( producer ) ||
@@ -314,7 +314,7 @@ static int mlt_playlist_virtual_append( mlt_playlist self, mlt_producer source, 
 		self->list[ self->count ]->frame_out = out;
 		self->list[ self->count ]->frame_count = out - in + 1;
 		self->list[ self->count ]->repeat = 1;
-		self->list[ self->count ]->producer_length = mlt_producer_get_out( producer ) - mlt_producer_get_in( producer ) + 1;
+		self->list[ self->count ]->producer_length = mlt_producer_get_playtime( producer );
 		self->list[ self->count ]->event = mlt_events_listen( parent, self, "producer-changed", ( mlt_listener )mlt_playlist_listener );
 		mlt_event_inc_ref( self->list[ self->count ]->event );
 		mlt_properties_set( properties, "eof", "pause" );
