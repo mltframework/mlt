@@ -106,6 +106,11 @@ int Filter::get_out( )
 	return mlt_filter_get_out( get_filter( ) );
 }
 
+int Filter::get_length( )
+{
+	return mlt_filter_get_length( get_filter( ) );
+}
+
 int Filter::get_track( )
 {
 	return mlt_filter_get_track( get_filter( ) );

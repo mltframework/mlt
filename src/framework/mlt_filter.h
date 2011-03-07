@@ -64,6 +64,7 @@ extern void mlt_filter_set_in_and_out( mlt_filter self, mlt_position in, mlt_pos
 extern int mlt_filter_get_track( mlt_filter self );
 extern mlt_position mlt_filter_get_in( mlt_filter self );
 extern mlt_position mlt_filter_get_out( mlt_filter self );
+extern mlt_position mlt_filter_get_length( mlt_filter self );
 extern void mlt_filter_close( mlt_filter );
 
 #endif
