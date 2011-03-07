@@ -190,6 +190,21 @@ mlt_position mlt_transition_get_out( mlt_transition self )
 	return mlt_properties_get_position( MLT_TRANSITION_PROPERTIES( self ), "out" );
 }
 
+/** Get the duration.
+ *
+ * \public \memberof mlt_transition_s
+ * \param self a transition
+ * \return the duration or zero if unlimited
+ */
+
+mlt_position mlt_transition_get_length( mlt_transition self )
+{
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( &self->parent );
+	mlt_position in = mlt_properties_get_position( properties, "in" );
+	mlt_position out = mlt_properties_get_position( properties, "out" );
+	return ( out > 0 ) ? ( out - in + 1 ) : 0;
+}
+
 /** Process the frame.
  *
  * If we have no process method (unlikely), we simply return the a_frame unmolested.

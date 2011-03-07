@@ -49,6 +49,7 @@ namespace Mlt
 			int get_b_track( );
 			int get_in( );
 			int get_out( );
+			int get_length( );
 	};
 }
 

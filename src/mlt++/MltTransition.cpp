@@ -116,3 +116,8 @@ int Transition::get_out( )
 {
 	return mlt_transition_get_out( get_transition() );
 }
+
+int Transition::get_length( )
+{
+	return mlt_transition_get_length( get_transition( ) );
+}
