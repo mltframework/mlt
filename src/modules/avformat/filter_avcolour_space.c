@@ -190,7 +190,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 							}
 							while ( --n > 0 );
 				}
-				mlt_properties_set_data( properties, "alpha", alpha, len, mlt_pool_release, NULL );
+				mlt_frame_set_alpha( frame, alpha, len, mlt_pool_release );
 				frame->get_alpha_mask = NULL;
 			}
 		}
@@ -208,7 +208,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		av_convert_image( output, *image, out_fmt, in_fmt, width, height, colorspace, force_full_luma );
 		*image = output;
 		*format = output_format;
-		mlt_properties_set_data( properties, "image", output, size, mlt_pool_release, NULL );
+		mlt_frame_set_image( frame, output, size, mlt_pool_release );
 		mlt_properties_set_int( properties, "format", output_format );
 
 		if ( output_format == mlt_image_rgb24a || output_format == mlt_image_opengl )

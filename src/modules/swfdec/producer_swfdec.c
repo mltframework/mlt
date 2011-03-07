@@ -125,7 +125,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 	*format = mlt_image_rgb24a;
 
 	*buffer = mlt_pool_alloc( *width * ( *height + 1 ) * 4 );
-	mlt_properties_set_data( properties, "image", *buffer, *width * ( *height + 1 ) * 4, (mlt_destructor) mlt_pool_release, NULL );
+	mlt_frame_set_image( frame, *buffer, *width * ( *height + 1 ) * 4, mlt_pool_release );
 
 	// Seek
 	mlt_position pos = mlt_properties_get_position( properties, "swfdec.position" );

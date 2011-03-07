@@ -43,9 +43,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*buffer = mlt_pool_alloc( size );
 
 	// Update the frame
-	mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
-	mlt_properties_set_int( properties, "width", *width );
-	mlt_properties_set_int( properties, "height", *height );
+	mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
 
 	*format = mlt_image_rgb24a;
 	if ( *buffer != NULL )

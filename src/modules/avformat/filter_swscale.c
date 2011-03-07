@@ -146,9 +146,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 		sws_freeContext( context );
 	
 		// Now update the frame
-		mlt_properties_set_data( properties, "image", output.data[0], owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "width", owidth );
-		mlt_properties_set_int( properties, "height", oheight );
+		mlt_frame_set_image( frame, output.data[0], owidth * ( oheight + 1 ) * bpp, mlt_pool_release );
 	
 		// Return the output
 		*image = output.data[0];
@@ -173,7 +171,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 				sws_freeContext( context );
 	
 				// Set it back on the frame
-				mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "alpha", output.data[0], owidth * oheight, mlt_pool_release, NULL );
+				mlt_frame_set_alpha( frame, output.data[0], owidth * oheight, mlt_pool_release );
 			}
 		}
 	

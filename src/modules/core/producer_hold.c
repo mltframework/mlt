@@ -119,12 +119,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image = mlt_pool_alloc( size );
 		memcpy( image, *buffer, size );
 		*buffer = image;
-		mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
+		mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
 	}
 	else
 	{
 		// Pass the current image as is
-		mlt_properties_set_data( properties, "image", *buffer, size, NULL, NULL );
+		mlt_frame_set_image( frame, *buffer, size, NULL );
 	}
 
 	// Make sure that no further scaling is done
@@ -171,7 +171,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		{
 			// Temporary fix - ensure that we aren't seen as a test frame
 			int8_t *image = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", NULL );
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( *frame ), "image", image, 0, NULL, NULL );
+			mlt_frame_set_image( *frame, image, 0, NULL );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_image", 0 );
 		}
 

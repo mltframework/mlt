@@ -179,7 +179,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
 		memcpy( image_copy, this->current_image, image_size );
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
 		// We're going to pass the copy on
 		*buffer = image_copy;
 		*format = this->has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;

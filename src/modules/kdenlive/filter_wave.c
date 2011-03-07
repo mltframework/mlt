@@ -81,7 +81,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			uint8_t *dst = mlt_pool_alloc (image_size);
 			DoWave(*image, *width, (*height), dst, position, speed, factor, deformX, deformY);
 			*image = dst;
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "image", *image, image_size, mlt_pool_release, NULL );
+			mlt_frame_set_image( frame, *image, image_size, mlt_pool_release );
 		}
 	}
 

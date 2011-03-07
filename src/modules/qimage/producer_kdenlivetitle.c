@@ -60,9 +60,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 	
-	/* Allocate the image */
-	int size = *width * ( *height ) * 4;
-
 	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
 
 	/* Allocate the image */
@@ -86,12 +83,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
 		memcpy( image_copy, this->current_image, image_size );
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
 		// We're going to pass the copy on
 		*buffer = image_copy;		
-		
-		/* Update the frame */
-		mlt_properties_set_data( properties, "image", *buffer, size, mlt_pool_release, NULL );
 
 		mlt_log_debug( MLT_PRODUCER_SERVICE( &this->parent ), "width:%d height:%d %s\n", *width, *height, mlt_image_format_name( *format ) );
 	}

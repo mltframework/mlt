@@ -107,7 +107,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_log_debug( MLT_FILTER_SERVICE(filter), "copying frame %d\n", modulo_pos );
 			mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 			memcpy( dst, src, size );
-			mlt_properties_set_data( b_props, "image", dst, size, mlt_pool_release, NULL );
+			mlt_frame_set_image( b_frame, dst, size, mlt_pool_release );
 			mlt_properties_set_int( b_props, "width", *width );
 			mlt_properties_set_int( b_props, "height", *height );
 			mlt_properties_set_int( b_props, "format", *format );

@@ -247,7 +247,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				uint8_t *new_image = mlt_pool_alloc( image_size );
 
 				deinterlace_yuv( new_image, image, *width * 2, *height, method );
-				mlt_properties_set_data( properties, "image", new_image, image_size, mlt_pool_release, NULL );
+				mlt_frame_set_image( this, new_image, image_size, mlt_pool_release );
 				*image = new_image;
 			}
 		}

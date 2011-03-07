@@ -485,7 +485,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		memcpy( *buffer, gdk_pixbuf_get_pixels( this->pixbuf ), image_size );
 
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", *buffer, image_size, mlt_pool_release, NULL );
+		mlt_frame_set_image( frame, *buffer, image_size, mlt_pool_release );
 		*format = mlt_image_rgb24a;
 	}
 	else

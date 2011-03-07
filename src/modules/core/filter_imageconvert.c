@@ -343,9 +343,9 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 
 			if ( !( error = converter( *buffer, image, alpha, width, height ) ) )
 			{
-				mlt_properties_set_data( properties, "image", image, size, mlt_pool_release, NULL );
+				mlt_frame_set_image( frame, image, size, mlt_pool_release );
 				if ( alpha && ( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) )
-					mlt_properties_set_data( properties, "alpha", alpha, alpha_size, mlt_pool_release, NULL );
+					mlt_frame_set_alpha( frame, alpha, alpha_size, mlt_pool_release );
 				*buffer = image;
 				*format = requested_format;
 			}

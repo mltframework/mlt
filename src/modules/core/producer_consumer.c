@@ -52,7 +52,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	// Update the frame
 	mlt_properties properties = mlt_frame_properties( frame );
-	mlt_properties_set_data( properties, "image", new_image, size, mlt_pool_release, NULL );
+	mlt_frame_set_image( frame, new_image, size, mlt_pool_release );
 	memcpy( new_image, *image, size );
 	mlt_properties_set( properties, "progressive", mlt_properties_get( MLT_FRAME_PROPERTIES(nested_frame), "progressive" ) );
 	*image = new_image;
@@ -63,7 +63,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	{
 		new_image = mlt_pool_alloc( size );
 		memcpy( new_image, alpha, size );
-		mlt_properties_set_data( properties, "alpha", new_image, size, mlt_pool_release, NULL );
+		mlt_frame_set_alpha( frame, new_image, size, mlt_pool_release );
 	}
 
 	return result;

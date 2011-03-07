@@ -1048,7 +1048,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	dest = mlt_pool_alloc( w * h * 2 );
 
 	// Assign to the new frame
-	mlt_properties_set_data( b_props, "image", dest, w * h * 2, mlt_pool_release, NULL );
+	mlt_frame_set_image( b_frame, dest, w * h * 2, mlt_pool_release );
 	mlt_properties_set_int( b_props, "width", w );
 	mlt_properties_set_int( b_props, "height", h );
 	mlt_properties_set_int( b_props, "format", format );

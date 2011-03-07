@@ -1062,7 +1062,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 					// Do first and last lines.
 					uint8_t *final = mlt_pool_alloc( image_size );
 					cx->finalp = final;
-					mlt_properties_set_data( frame_properties, "image", final, image_size, (mlt_destructor)mlt_pool_release, NULL );
+					mlt_frame_set_image( frame, final, image_size, mlt_pool_release );
 					dstpn = cx->dstp + cx->dpitch;
 					for ( cx->x = 0; cx->x < cx->w; cx->x++ )
 					{

@@ -99,7 +99,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	  	uint8_t *image_copy = mlt_pool_alloc( size );
 		memcpy( image_copy, buffer, size );
 		*image = image_copy;
-		mlt_properties_set_data( props, "image", *image, size, ( mlt_destructor ) mlt_pool_release, NULL );
+		mlt_frame_set_image( this, *image, size, mlt_pool_release );
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 		return error;

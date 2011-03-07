@@ -41,9 +41,6 @@ typedef int ( *image_scaler )( mlt_frame this, uint8_t **image, mlt_image_format
 
 static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight )
 {
-	// Get the properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
-
 	// Create the output image
 	uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
 
@@ -106,11 +103,9 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	}
  
 	// Now update the frame
-	mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor ) mlt_pool_release, NULL );
-	mlt_properties_set_int( properties, "width", owidth );
-	mlt_properties_set_int( properties, "height", oheight );
-
+	mlt_frame_set_image( this, output, owidth * ( oheight + 1 ) * 2, mlt_pool_release );
 	*image = output;
+
 	return 0;
 }
 
@@ -139,7 +134,7 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
 		}
 
 		// Set it back on the frame
-		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", output, owidth * oheight, mlt_pool_release, NULL );
+		mlt_frame_set_alpha( this, output, owidth * oheight, mlt_pool_release );
 	}
 }
 

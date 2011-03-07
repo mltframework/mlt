@@ -129,10 +129,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			crop( *image, output, bpp, *width, *height, left, right, top, bottom );
 
 			// Now update the frame
+			mlt_frame_set_image( this, output, owidth * ( oheight + 1 ) * bpp, mlt_pool_release );
 			*image = output;
-			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_int( properties, "width", owidth );
-			mlt_properties_set_int( properties, "height", oheight );
 		}
 
 		// We should resize the alpha too
@@ -145,7 +143,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			if ( newalpha )
 			{
 				crop( alpha, newalpha, 1, *width, *height, left, right, top, bottom );
-				mlt_properties_set_data( properties, "alpha", newalpha, owidth * oheight, ( mlt_destructor )mlt_pool_release, NULL );
+				mlt_frame_set_alpha( this, newalpha, owidth * oheight, mlt_pool_release );
 				this->get_alpha_mask = NULL;
 			}
 		}

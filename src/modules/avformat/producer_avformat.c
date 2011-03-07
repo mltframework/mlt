@@ -941,7 +941,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 /** Allocate the image buffer and set it on the frame.
 */
 
-static int allocate_buffer( mlt_properties frame_properties, AVCodecContext *codec_context, uint8_t **buffer, mlt_image_format *format, int *width, int *height )
+static int allocate_buffer( mlt_frame frame, AVCodecContext *codec_context, uint8_t **buffer, mlt_image_format *format, int *width, int *height )
 {
 	int size = 0;
 
@@ -974,7 +974,7 @@ static int allocate_buffer( mlt_properties frame_properties, AVCodecContext *cod
 	// Construct the output image
 	*buffer = mlt_pool_alloc( size );
 	if ( *buffer )
-		mlt_properties_set_data( frame_properties, "image", *buffer, size, mlt_pool_release, NULL );
+		mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
 	else
 		size = 0;
 
@@ -1046,7 +1046,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					break;
 			}
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
-			mlt_properties_set_data( frame_properties, "image", *buffer, size, NULL, NULL );
+			mlt_frame_set_image( frame, *buffer, size, NULL );
 			// self->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 			self->got_picture = 1;
 
@@ -1206,7 +1206,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			  || ( !use_new_seek && self->current_position > req_position ) ) )
 	{
 		// Duplicate it
-		if ( ( image_size = allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) ) )
+		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
 		{
 			// Workaround 1088 encodings missing cropping info.
 			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )

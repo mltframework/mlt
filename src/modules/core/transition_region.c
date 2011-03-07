@@ -123,11 +123,11 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 			*p ++ = ( int )( ( ( *image ++ - 16 ) * 299 ) / 255 );
 			image ++;
 		}
-		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", alpha, region_width * region_height, mlt_pool_release, NULL );
+		mlt_frame_set_alpha( this, alpha, region_width * region_height, mlt_pool_release );
 	}
 	else
 	{
-		mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "alpha", alpha, region_width * region_height, NULL, NULL );
+		mlt_frame_set_alpha( this, alpha, region_width * region_height, NULL );
 	}
 
 	this->get_alpha_mask = NULL;

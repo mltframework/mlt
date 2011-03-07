@@ -32,7 +32,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int size = *width * *height * 2;
 	*format = mlt_image_yuv422;
 	*image = mlt_pool_alloc( size );
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES(this), "image", *image, size, mlt_pool_release, NULL );
+	mlt_frame_set_image( this, *image, size, mlt_pool_release );
 	uint8_t *wave = mlt_frame_get_waveform( this, *width, *height );
 	if ( wave )
 	{

@@ -80,9 +80,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 		SDL_FreeSurface( converted );
 
 	// Update the frame
-	mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
-	mlt_properties_set_int( properties, "width", *width );
-	mlt_properties_set_int( properties, "height", *height );
+	mlt_frame_set_image( frame, *image, image_size, mlt_pool_release );
 
 	return 0;
 }

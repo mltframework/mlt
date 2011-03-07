@@ -443,7 +443,7 @@ static void refresh_image( producer_pixbuf this, mlt_frame frame, int width, int
 		mlt_properties_set_int( cached_props, "height", this->height );
 		mlt_properties_set_int( cached_props, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
 		mlt_properties_set_int( cached_props, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
-		mlt_properties_set_data( cached_props, "image", this->image, this->width * ( this->alpha ? 4 : 3 ) * this->height, mlt_pool_release, NULL );
+		mlt_frame_set_image( cached, this->image, this->width * ( this->alpha ? 4 : 3 ) * this->height, mlt_pool_release );
 		mlt_properties_set_int( cached_props, "alpha", this->alpha );
 		mlt_properties_set_data( cache, image_key, cached, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
@@ -482,7 +482,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
 		memcpy( image_copy, this->image, image_size );
 		// Now update properties so we free the copy after
-		mlt_properties_set_data( properties, "image", image_copy, image_size, mlt_pool_release, NULL );
+		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
 		// We're going to pass the copy on
 		*buffer = image_copy;
 		*format = this->alpha ? mlt_image_rgb24a : mlt_image_rgb24;

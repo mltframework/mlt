@@ -326,7 +326,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 		uint8_t *image = mlt_pool_alloc( *width * ( *height + 1 ) * 2 );
 
 		// Pass to properties for clean up
-		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_frame_set_image( this, image, *width * ( *height + 1 ) * 2, mlt_pool_release );
 
 		// Decode the image
 		pitches[ 0 ] = *width * 2;
@@ -343,7 +343,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 		uint8_t *image = mlt_pool_alloc( *width * ( *height + 1 ) * 3 );
 
 		// Pass to properties for clean up
-		mlt_properties_set_data( properties, "image", image, *width * ( *height + 1 ) * 3, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_frame_set_image( this, image, *width * ( *height + 1 ) * 3, mlt_pool_release );
 
 		// Decode the frame
 		pitches[ 0 ] = 720 * 3;

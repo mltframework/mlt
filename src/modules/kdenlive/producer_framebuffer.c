@@ -132,7 +132,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 
 		// Set the output image
 		*image = image_copy;
-		mlt_properties_set_data( frame_properties, "image", image_copy, size, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_frame_set_image( this, image_copy, size, mlt_pool_release );
 
 		*width = mlt_properties_get_int( properties, "_output_width" );
 		*height = mlt_properties_get_int( properties, "_output_height" );
@@ -191,7 +191,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 
 	// Set the output image
 	*image = image_copy;
-	mlt_properties_set_data( frame_properties, "image", *image, size, ( mlt_destructor )mlt_pool_release, NULL );
+	mlt_frame_set_image( this, *image, size, mlt_pool_release );
 
 	return 0;
 }

@@ -261,7 +261,7 @@ static int slowmotion_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 	}
 
 	*image = output;
-	mlt_properties_set_data( frame_properties, "image", output, size, NULL, NULL );
+	mlt_frame_set_image( this, output, size, NULL );
 
 	// Make sure that no further scaling is done
 	mlt_properties_set( frame_properties, "rescale.interps", "none" );

@@ -214,7 +214,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		fread( image, width * height * 3, 1, video );
 
 		// Pass the data on the frame properties
-		mlt_properties_set_data( properties, "image", image, width * ( height + 1 ) * 3, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_frame_set_image( *frame, image, width * ( height + 1 ) * 3, mlt_pool_release );
 		mlt_properties_set_int( properties, "width", width );
 		mlt_properties_set_int( properties, "height", height );
 		mlt_properties_set_int( properties, "has_image", 1 );

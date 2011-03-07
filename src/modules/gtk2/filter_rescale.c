@@ -62,9 +62,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 		yuv422_scale_simple( output, owidth, oheight, ostride, *image, iwidth, iheight, istride, interp );
 		
 		// Now update the frame
-		mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * 2, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "width", owidth );
-		mlt_properties_set_int( properties, "height", oheight );
+		mlt_frame_set_image( this, output, owidth * ( oheight + 1 ) * 2, mlt_pool_release );
 
 		// Return the output
 		*image = output;
@@ -109,9 +107,7 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 			g_object_unref( scaled );
 
 			// Now update the frame
-			mlt_properties_set_data( properties, "image", output, owidth * ( oheight + 1 ) * bpp, ( mlt_destructor )mlt_pool_release, NULL );
-			mlt_properties_set_int( properties, "width", owidth );
-			mlt_properties_set_int( properties, "height", oheight );
+			mlt_frame_set_image( this, output, owidth * ( oheight + 1 ) * bpp, mlt_pool_release );
 	
 			// Return the output
 			*image = output;

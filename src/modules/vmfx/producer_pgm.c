@@ -161,7 +161,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	uint8_t *image = mlt_pool_alloc( size * 2 );
 	uint8_t *source = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES( producer ), "image", NULL );
 
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES( this ), "image", image, size * 2, mlt_pool_release, NULL );
+	mlt_frame_set_image( this, image, size * 2, mlt_pool_release );
 
 	*width = real_width;
 	*height = real_height;

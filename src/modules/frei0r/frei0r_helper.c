@@ -155,7 +155,7 @@ int process_frei0r_item( mlt_service service, double position, mlt_properties pr
 		rgba_bgra((uint8_t*) dest, (uint8_t*) result, *width, *height);
 	}
 	*image = (uint8_t*) result;
-	mlt_properties_set_data(MLT_FRAME_PROPERTIES(this), "image", result, video_area * sizeof(uint32_t), mlt_pool_release, NULL);
+	mlt_frame_set_image(this, (uint8_t*) result, video_area * sizeof(uint32_t), mlt_pool_release);
 	if (extra)
 		mlt_pool_release(extra);
 
