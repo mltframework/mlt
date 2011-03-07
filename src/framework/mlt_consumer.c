@@ -924,7 +924,7 @@ static void consumer_read_ahead_start( mlt_consumer self )
 static void consumer_work_start( mlt_consumer self )
 {
 	int n = abs( self->real_time );
-	pthread_t *thread = calloc( 1, sizeof( pthread_t ) );
+	pthread_t *thread = calloc( 1, sizeof( pthread_t ) * n );
 
 	// We're running now
 	self->ahead = 1;
@@ -966,9 +966,10 @@ static void consumer_work_start( mlt_consumer self )
 
 		while ( n-- )
 		{
-			if ( pthread_create( thread, &thread_attributes, consumer_read_ahead_thread, self ) < 0 )
-				if ( pthread_create( thread, NULL, consumer_read_ahead_thread, self ) == 0 )
+			if ( pthread_create( thread, &thread_attributes, consumer_worker_thread, self ) < 0 )
+				if ( pthread_create( thread, NULL, consumer_worker_thread, self ) == 0 )
 					mlt_deque_push_back( self->worker_threads, thread );
+			thread++;
 		}
 		pthread_attr_destroy( &thread_attributes );
 	}
@@ -979,6 +980,7 @@ static void consumer_work_start( mlt_consumer self )
 		{
 			if ( pthread_create( thread, NULL, consumer_worker_thread, self ) == 0 )
 				mlt_deque_push_back( self->worker_threads, thread );
+			thread++;
 		}
 	}
 	self->started = 1;
@@ -1058,8 +1060,14 @@ static void consumer_work_stop( mlt_consumer self )
 
 		// Join the threads
 		pthread_t *thread;
-		while ( ( thread = mlt_deque_pop_front( self->worker_threads ) ) )
+		while ( ( thread = mlt_deque_pop_back( self->worker_threads ) ) )
 			pthread_join( *thread, NULL );
+
+		// Deallocate the array of threads
+		if ( thread )
+			free( thread );
+
+		// Indicate that worker threads no longer running
 		self->started = 0;
 
 		// Destroy the mutexes
