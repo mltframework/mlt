@@ -65,9 +65,6 @@ mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type type, co
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
-	// Obtain properties of frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Calculate the size of the image
 	int size = *width * *height * 2;
 

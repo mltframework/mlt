@@ -293,7 +293,6 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
 	mlt_properties instance_props = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE( this ) );
 
