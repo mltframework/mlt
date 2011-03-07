@@ -269,23 +269,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		// Get the requested scale operation
 		char *op = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "scale" );
 		int bpp;
-
-		switch ( *format )
-		{
-			case mlt_image_yuv422:
-				bpp = 2;
-				break;
-			case mlt_image_rgb24:
-				bpp = 3;
-				break;
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-				bpp = 4;
-				break;
-			default:
-				// XXX: we only know how to resize packed formats
-				return 1;
-		}
+		int size = mlt_image_format_size( *format, owidth, oheight, &bpp );
 
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
@@ -297,12 +281,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		     mlt_properties_get_int( properties, "progressive" ) == 0 )
 		{
 			// Get the input image, width and height
-			int size = owidth * oheight * bpp;
 			uint8_t *new_image = mlt_pool_alloc( size );
 			mlt_frame_set_image( this, new_image, size, mlt_pool_release );
 			uint8_t *ptr = new_image + owidth * bpp;
 			memcpy( new_image, *image, owidth * bpp );
-			memcpy( ptr, *image, size - owidth * bpp );
+			memcpy( ptr, *image, owidth * ( oheight - 1 ) * bpp );
 			*image = new_image;
 			
 			// Set the normalised field order

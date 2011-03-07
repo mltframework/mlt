@@ -130,23 +130,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		int i = *width * *height + 1;
 		int bpp;
 
-		switch ( *format )
-		{
-			case mlt_image_rgb24:
-				bpp = 3;
-				break;
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-				bpp = 4;
-				break;
-			default:
-				bpp = 2;
-				*format = mlt_image_yuv422;
-				break;
-		}
-
 		// Allocate the image
-		size = *width * *height * bpp;
+		size = mlt_image_format_size( *format, *width, *height, &bpp );
 		uint8_t *p = image = mlt_pool_alloc( size );
 
 		// Update the producer

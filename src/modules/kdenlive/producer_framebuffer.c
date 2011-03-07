@@ -85,26 +85,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 	// Determine output buffer size
 	*width = mlt_properties_get_int( frame_properties, "width" );
 	*height = mlt_properties_get_int( frame_properties, "height" );
-	
-	int size;
-	switch ( *format )
-	{
-		case mlt_image_yuv420p:
-			size = *width * 3 * ( *height + 1 ) / 2;
-			break;
-		case mlt_image_rgb24:
-			size = *width * ( *height + 1 ) * 3;
-			break;
-		case mlt_image_rgb24a:
-		case mlt_image_opengl:
-			size = *width * ( *height + 1 ) * 4;
-			break;
-		default:
-			*format = mlt_image_yuv422;
-			size = *width * ( *height + 1 ) * 2;
-			break;
-	}
-	
+	int size = mlt_image_format_size( *format, *width, *height, NULL );
 
 	// Get output buffer
 	int buffersize = 0;

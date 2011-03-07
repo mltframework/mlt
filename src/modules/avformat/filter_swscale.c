@@ -95,19 +95,19 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 
 	// Determine the bytes per pixel
 	int bpp;
+	mlt_image_format_size( *format, 0, 0, &bpp );
+
+	// Set swscale flags to get good quality
 	switch ( *format )
 	{
 		case mlt_image_yuv422:
-			bpp = 2;
 			interp |= SWS_FULL_CHR_H_INP;
 			break;
 		case mlt_image_rgb24:
-			bpp = 3;
 			interp |= SWS_FULL_CHR_H_INT;
 			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
-			bpp = 4;
 			interp |= SWS_FULL_CHR_H_INT;
 			break;
 		default:

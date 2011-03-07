@@ -953,23 +953,8 @@ static int allocate_buffer( mlt_frame frame, AVCodecContext *codec_context, uint
 
 	if ( codec_context->pix_fmt == PIX_FMT_RGB32 )
 		size = *width * ( *height + 1 ) * 4;
-	else switch ( *format )
-	{
-		case mlt_image_yuv420p:
-			size = *width * 3 * ( *height + 1 ) / 2;
-			break;
-		case mlt_image_rgb24:
-			size = *width * ( *height + 1 ) * 3;
-			break;
-		case mlt_image_rgb24a:
-		case mlt_image_opengl:
-			size = *width * ( *height + 1 ) * 4;
-			break;
-		default:
-			*format = mlt_image_yuv422;
-			size = *width * ( *height + 1 ) * 2;
-			break;
-	}
+	else
+		size = mlt_image_format_size( *format, *width, *height, NULL );
 
 	// Construct the output image
 	*buffer = mlt_pool_alloc( size );
@@ -1027,24 +1012,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				*height = 1080;
 
 			// Cache hit
-			int size;
-			switch ( *format )
-			{
-				case mlt_image_yuv420p:
-					size = *width * 3 * ( *height + 1 ) / 2;
-					break;
-				case mlt_image_rgb24:
-					size = *width * ( *height + 1 ) * 3;
-					break;
-				case mlt_image_rgb24a:
-				case mlt_image_opengl:
-					size = *width * ( *height + 1 ) * 4;
-					break;
-				default:
-					*format = mlt_image_yuv422;
-					size = *width * ( *height + 1 ) * 2;
-					break;
-			}
+			int size = mlt_image_format_size( *format, *width, *height, NULL );
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
 			mlt_frame_set_image( frame, *buffer, size, NULL );
 			// self->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
@@ -1376,7 +1344,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Now handle the picture if we have one
 			if ( got_picture )
 			{
-				if ( ( image_size = allocate_buffer( frame_properties, codec_context, buffer, format, width, height ) ) )
+				if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
 				{
 					// Workaround 1088 encodings missing cropping info.
 					if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )

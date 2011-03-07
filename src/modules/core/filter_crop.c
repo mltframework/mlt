@@ -94,22 +94,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	
 		mlt_log_debug( NULL, "[filter crop] %s %dx%d -> %dx%d\n", mlt_image_format_name(*format),
 				 *width, *height, owidth, oheight);
-		switch ( *format )
-		{
-			case mlt_image_yuv422:
-				bpp = 2;
-				break;
-			case mlt_image_rgb24:
-				bpp = 3;
-				break;
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-				bpp = 4;
-				break;
-			default:
-				// XXX: we only know how to crop packed formats
-				return 1;
-		}
 
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
@@ -122,14 +106,15 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_int( properties, "top_field_first", !mlt_properties_get_int( properties, "top_field_first" ) );
 		
 		// Create the output image
-		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * bpp );
+		int size = mlt_image_format_size( *format, owidth, oheight, &bpp );
+		uint8_t *output = mlt_pool_alloc( size );
 		if ( output )
 		{
 			// Call the generic resize
 			crop( *image, output, bpp, *width, *height, left, right, top, bottom );
 
 			// Now update the frame
-			mlt_frame_set_image( this, output, owidth * ( oheight + 1 ) * bpp, mlt_pool_release );
+			mlt_frame_set_image( this, output, size, mlt_pool_release );
 			*image = output;
 		}
 

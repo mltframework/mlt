@@ -76,27 +76,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		uint8_t *buffer = NULL;
 		int error = mlt_frame_get_image( freeze_frame, &buffer, format, width, height, 1 );
 
-		int size = 0;
-		switch ( *format )
-		{
-			case mlt_image_yuv420p:
-				size = *width * 3 * ( *height + 1 ) / 2;
-				break;
-			case mlt_image_rgb24:
-				size = *width * ( *height + 1 ) * 3;
-				break;
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-				size = *width * ( *height + 1 ) * 4;
-				break;
-			default:
-				*format = mlt_image_yuv422;
-				size = *width * ( *height + 1 ) * 2;
-				break;
-		}
-
 		// Copy it to current frame
-	  	uint8_t *image_copy = mlt_pool_alloc( size );
+		int size = mlt_image_format_size( *format, *width, *height, NULL );
+		uint8_t *image_copy = mlt_pool_alloc( size );
 		memcpy( image_copy, buffer, size );
 		*image = image_copy;
 		mlt_frame_set_image( this, *image, size, mlt_pool_release );
