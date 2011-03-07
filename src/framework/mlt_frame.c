@@ -594,8 +594,7 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame self )
  *
  * You do not need to deallocate the returned string.
  * \public \memberof mlt_frame_s
- * \param self a frame
- * \param format an image format enum
+ * \param format an audio format enum
  * \return a string for the name of the image format
  */
 
@@ -609,6 +608,27 @@ const char * mlt_audio_format_name( mlt_audio_format format )
 		case mlt_audio_float:  return "float";
 	}
 	return "invalid";
+}
+
+/** Get the amount of bytes needed for a block of audio.
+  *
+  * \public \memberof mlt_frame_s
+  * \param format an audio format enum
+  * \param samples the number of samples per channel
+  * \param channels the number of channels
+  * \return the number of bytes
+  */
+
+int mlt_audio_format_size( mlt_audio_format format, int samples, int channels )
+{
+	switch ( format )
+	{
+		case mlt_audio_none:   return 0;
+		case mlt_audio_s16:    return samples * channels * sizeof( int16_t );
+		case mlt_audio_s32:    return samples * channels * sizeof( int32_t );
+		case mlt_audio_float:  return samples * channels * sizeof( float );
+	}
+	return 0;
 }
 
 /** Get the audio associated to the frame.
