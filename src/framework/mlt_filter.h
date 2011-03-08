@@ -65,6 +65,7 @@ extern int mlt_filter_get_track( mlt_filter self );
 extern mlt_position mlt_filter_get_in( mlt_filter self );
 extern mlt_position mlt_filter_get_out( mlt_filter self );
 extern mlt_position mlt_filter_get_length( mlt_filter self );
+extern double mlt_filter_get_progress( mlt_filter self, mlt_frame frame );
 extern void mlt_filter_close( mlt_filter );
 
 #endif

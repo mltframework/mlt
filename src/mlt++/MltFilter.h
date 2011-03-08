@@ -31,6 +31,7 @@ namespace Mlt
 {
 	class Service;
 	class Profile;
+	class Frame;
 
 	class MLTPP_DECLSPEC Filter : public Service
 	{
@@ -50,6 +51,7 @@ namespace Mlt
 			int get_out( );
 			int get_length( );
 			int get_track( );
+			double get_progress( Frame &frame );
 	};
 }
 
