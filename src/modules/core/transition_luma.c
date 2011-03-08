@@ -29,25 +29,6 @@
 #include <string.h>
 #include <math.h>
 
-/** Calculate the field delta for this frame - position between two frames.
-*/
-
-static float delta_calculate( mlt_transition this, mlt_frame frame )
-{
-	// Get the in and out position
-	mlt_position in = mlt_transition_get_in( this );
-	mlt_position out = mlt_transition_get_out( this );
-
-	// Get the position of the frame
-	mlt_position position = mlt_frame_get_position( frame );
-
-	// Now do the calcs
-	float x = ( float )( position - in ) / ( float )( out - in + 1 );
-	float y = ( float )( position + 1 - in ) / ( float )( out - in + 1 );
-
-	return ( y - x ) / 2.0;
-}
-
 static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, int width, int height )
 {
 	int ret = 0;
@@ -468,7 +449,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Arbitrary composite defaults
 	float mix = mlt_transition_get_progress( transition, a_frame );
-	float frame_delta = delta_calculate( transition, a_frame );
+	float frame_delta = mlt_transition_get_progress_delta( transition, a_frame );
 	float luma_softness = mlt_properties_get_double( properties, "softness" );
 	int progressive = 
 			mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||

@@ -185,20 +185,6 @@ static int position_calculate( mlt_transition this, mlt_position position )
 /** Calculate the field delta for this frame - position between two frames.
 */
 
-static inline double delta_calculate( mlt_transition this, mlt_frame frame, mlt_position position )
-{
-	// Get the in and out position
-	mlt_position in = mlt_transition_get_in( this );
-	mlt_position out = mlt_transition_get_out( this );
-	double length = out - in + 1;
-
-	// Now do the calcs
-	double x = ( double )( position - in ) / length;
-	double y = ( double )( position + 1 - in ) / length;
-
-	return length * ( y - x ) / 2.0;
-}
-
 static int get_value( mlt_properties properties, const char *preferred, const char *fallback )
 {
 	int value = mlt_properties_get_int( properties, preferred );
@@ -1130,7 +1116,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		struct geometry_s result;
 
 		// Calculate the position
-		double delta = delta_calculate( this, a_frame, position );
+		double delta = mlt_transition_get_progress_delta( this, a_frame );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
