@@ -126,3 +126,8 @@ double Transition::get_progress( Frame &frame )
 {
 	return mlt_transition_get_progress( get_transition( ), frame.get_frame( ) );
 }
+
+double Transition::get_progress_delta( Frame &frame )
+{
+	return mlt_transition_get_progress_delta( get_transition( ), frame.get_frame( ) );
+}

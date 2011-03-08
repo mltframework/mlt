@@ -227,6 +227,31 @@ double mlt_transition_get_progress( mlt_transition self, mlt_frame frame )
 	return progress;
 }
 
+/** Get the second field incremental progress.
+ *
+ * \public \memberof mlt_transition_s
+ * \param self a transition
+ * \param frame a frame
+ * \return the progress increment in the range 0.0 to 1.0
+ */
+
+double mlt_transition_get_progress_delta( mlt_transition self, mlt_frame frame )
+{
+	double progress = 0;
+	mlt_position out = mlt_transition_get_out( self );
+
+	if ( out != 0 )
+	{
+		mlt_position in = mlt_transition_get_in( self );
+		mlt_position position = mlt_frame_get_position( frame );
+		double length = out - in + 1;
+		double x = ( double ) ( position - in ) / length;
+		double y = ( double ) ( position + 1 - in ) / length;
+		progress = length * ( y - x ) / 2.0;
+	}
+	return progress;
+}
+
 /** Process the frame.
  *
  * If we have no process method (unlikely), we simply return the a_frame unmolested.

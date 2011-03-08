@@ -52,6 +52,7 @@ namespace Mlt
 			int get_out( );
 			int get_length( );
 			double get_progress( Frame &frame );
+			double get_progress_delta( Frame &frame );
 	};
 }
 
