@@ -205,6 +205,28 @@ mlt_position mlt_transition_get_length( mlt_transition self )
 	return ( out > 0 ) ? ( out - in + 1 ) : 0;
 }
 
+/** Get the relative position of a frame.
+ *
+ * \public \memberof mlt_transition_s
+ * \param self a transition
+ * \param frame a frame
+ * \return the progress in the range 0.0 to 1.0
+ */
+
+double mlt_transition_get_progress( mlt_transition self, mlt_frame frame )
+{
+	double progress = 0;
+	mlt_position out = mlt_transition_get_out( self );
+
+	if ( out != 0 )
+	{
+		mlt_position in = mlt_transition_get_in( self );
+		mlt_position position = mlt_frame_get_position( frame );
+		progress = ( double ) ( position - in ) / ( double ) ( out - in + 1 );
+	}
+	return progress;
+}
+
 /** Process the frame.
  *
  * If we have no process method (unlikely), we simply return the a_frame unmolested.
