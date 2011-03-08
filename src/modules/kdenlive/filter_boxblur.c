@@ -122,12 +122,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	if ( mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "end" ) != NULL )
 	{
 		// Determine the time position of this frame in the transition duration
-		mlt_position in = mlt_filter_get_in( this );
-		mlt_position out = mlt_filter_get_out( this );
-		mlt_position time = mlt_frame_get_position( frame );
-		double position = (double) ( time - in ) / ( out - in + 1.0 );
 		double end = (double) mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "end" );
-		blur += ( end - blur ) * position;
+		blur += ( end - blur ) * mlt_filter_get_progress( this, frame );
 	}
 
 	// Push the frame filter

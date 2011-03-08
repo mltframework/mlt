@@ -38,10 +38,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int h = *height;
 		int w = *width;
 		
-		mlt_position in = mlt_filter_get_in( filter );
-		mlt_position out = mlt_filter_get_out( filter );
-		mlt_position time = mlt_frame_get_position( this );
-		double position = ( double )( time - in ) / ( double )( out - in + 1 );
+		double position = mlt_filter_get_progress( filter, this );
 		srand(position*10000);
 		
 		int noise = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "noise" );

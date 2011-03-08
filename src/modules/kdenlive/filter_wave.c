@@ -103,12 +103,8 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	if ( mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "end" ) != NULL )
 	{
 		// Determine the time position of this frame in the transition duration
-		mlt_position in = mlt_filter_get_in( filter );
-		mlt_position out = mlt_filter_get_out( filter );
-		mlt_position time = mlt_frame_get_position( frame );
-		double position = ( double )( time - in ) / ( double )( out - in + 1 );
 		double end = fabs( mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "end" ) );
-		wave += ( end - wave ) * position;
+		wave += ( end - wave ) * mlt_filter_get_progress( filter, frame );
 	}
 
 	// Push the frame filter
