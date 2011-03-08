@@ -384,14 +384,16 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Assign the current position to the name
 	mlt_position position =  mlt_properties_get_position( a_props, name );
-	
-	mlt_properties props = mlt_properties_get_data( b_props, "_producer", NULL );
-	int always_active = mlt_properties_get_int( properties, "always_active" );
 
-	mlt_position in = !always_active ? mlt_properties_get_position( properties, "in" ) : mlt_properties_get_int( props, "in" );
-	mlt_position out = !always_active ? mlt_properties_get_position( properties, "out" ) : mlt_properties_get_int( props, "out" );
 	int mirror = mlt_properties_get_position( properties, "mirror" );
-	int length = out - in + 1;
+	int length = mlt_transition_get_length( this );
+	if ( mlt_properties_get_int( properties, "always_active" ) )
+	{
+		mlt_properties props = mlt_properties_get_data( b_props, "_producer", NULL );
+		mlt_position in = mlt_properties_get_int( props, "in" );
+		mlt_position out = mlt_properties_get_int( props, "out" );
+		length = out - in + 1;
+	}
 
 	// Obtain the normalised width and height from the a_frame
 	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
