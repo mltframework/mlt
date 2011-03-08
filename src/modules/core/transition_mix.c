@@ -214,12 +214,13 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	{
 		// Determine the time position of this frame in the transition duration
 		mlt_properties props = mlt_properties_get_data( MLT_FRAME_PROPERTIES( b_frame ), "_producer", NULL );
-		int always_active = mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "always_active" );
-		mlt_position in = !always_active ? mlt_transition_get_in( this ) : mlt_properties_get_int( props, "in" );
-		mlt_position out = !always_active ? mlt_transition_get_out( this ) : mlt_properties_get_int( props, "out" );
+		mlt_position in = mlt_properties_get_int( props, "in" );
+		mlt_position out = mlt_properties_get_int( props, "out" );
 		int length = mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "length" );
-		mlt_position time = !always_active ? mlt_frame_get_position( b_frame ) : mlt_properties_get_int( props, "_frame" );
-		double mix = ( double )( time - in ) / ( double )( out - in + 1 );
+		mlt_position time = mlt_properties_get_int( props, "_frame" );
+		double mix = mlt_transition_get_progress( this, b_frame );
+		if ( mlt_properties_get_int(  properties, "always_active" ) )
+			mix = ( double ) ( time - in ) / ( double ) ( out - in + 1 );
 
 		// TODO: Check the logic here - shouldn't we be computing current and next mixing levels in all cases?
 		if ( length == 0 )

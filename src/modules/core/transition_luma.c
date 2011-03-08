@@ -29,23 +29,6 @@
 #include <string.h>
 #include <math.h>
 
-/** Calculate the position for this frame.
-*/
-
-static float position_calculate( mlt_transition this, mlt_frame frame )
-{
-	// Get the in and out position
-	mlt_position in = mlt_transition_get_in( this );
-	mlt_position out = mlt_transition_get_out( this );
-
-	// Get the position of the frame
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
-	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name );
-
-	// Now do the calcs
-	return ( float )( position - in ) / ( float )( out - in + 1 );
-}
-
 /** Calculate the field delta for this frame - position between two frames.
 */
 
@@ -484,7 +467,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 
 	// Arbitrary composite defaults
-	float mix = position_calculate( transition, a_frame );
+	float mix = mlt_transition_get_progress( transition, a_frame );
 	float frame_delta = delta_calculate( transition, a_frame );
 	float luma_softness = mlt_properties_get_double( properties, "softness" );
 	int progressive = 
