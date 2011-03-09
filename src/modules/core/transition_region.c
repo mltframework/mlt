@@ -264,9 +264,6 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		}
 	}
 
-	// Get the image
-	error = mlt_frame_get_image( frame, image, format, width, height, 1 );
-
 	// Only continue if we have both filter and composite
 	if ( composite != NULL )
 	{
@@ -292,9 +289,6 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			char *name = mlt_properties_get( properties, "_unique_id" );
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
-
-		// Set the position of the b_frame
-		mlt_frame_set_position( b_frame, position );
 
 		// Make sure the filter is in the correct position
 		while ( filter != NULL )
