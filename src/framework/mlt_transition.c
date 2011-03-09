@@ -206,6 +206,23 @@ mlt_position mlt_transition_get_length( mlt_transition self )
 	return ( out > 0 ) ? ( out - in + 1 ) : 0;
 }
 
+/** Get the position within the transition.
+ *
+ * The position is relative to the in point.
+ *
+ * \public \memberof mlt_transition_s
+ * \param self a transition
+ * \param frame a frame
+ * \return the position
+ */
+
+mlt_position mlt_transition_get_position( mlt_transition self, mlt_frame frame )
+{
+	mlt_position in = mlt_transition_get_in( self );
+	mlt_position position = mlt_frame_get_position( frame );
+	return position - in;
+}
+
 /** Get the percent complete.
  *
  * \public \memberof mlt_transition_s

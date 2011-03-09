@@ -74,6 +74,7 @@ extern int mlt_transition_get_b_track( mlt_transition self );
 extern mlt_position mlt_transition_get_in( mlt_transition self );
 extern mlt_position mlt_transition_get_out( mlt_transition self );
 extern mlt_position mlt_transition_get_length( mlt_transition self );
+extern mlt_position mlt_transition_get_position( mlt_transition self, mlt_frame frame );
 extern double mlt_transition_get_progress( mlt_transition self, mlt_frame frame );
 extern double mlt_transition_get_progress_delta( mlt_transition self, mlt_frame frame );
 extern mlt_frame mlt_transition_process( mlt_transition self, mlt_frame a_frame, mlt_frame b_frame );
