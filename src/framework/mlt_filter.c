@@ -23,6 +23,7 @@
 
 #include "mlt_filter.h"
 #include "mlt_frame.h"
+#include "mlt_producer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -240,11 +241,21 @@ mlt_position mlt_filter_get_position( mlt_filter self, mlt_frame frame )
 double mlt_filter_get_progress( mlt_filter self, mlt_frame frame )
 {
 	double progress = 0;
+	mlt_position in = mlt_filter_get_in( self );
 	mlt_position out = mlt_filter_get_out( self );
 
+	if ( out == 0 )
+	{
+		// If always active, use the frame's producer
+		mlt_producer producer = mlt_frame_get_original_producer( frame );
+		if ( producer )
+		{
+			in = mlt_producer_get_in( producer );
+			out = mlt_producer_get_out( producer );
+		}
+	}
 	if ( out != 0 )
 	{
-		mlt_position in = mlt_filter_get_in( self );
 		mlt_position position = mlt_filter_get_position( self, frame );
 		progress = ( double ) position / ( double ) ( out - in + 1 );
 	}
