@@ -48,11 +48,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*format = mlt_image_rgb24a;
 	if ( *buffer != NULL )
 	{
-		mlt_position in = mlt_producer_get_in( producer );
-		mlt_position out = mlt_producer_get_out( producer );
-		mlt_position time = mlt_frame_get_position( frame );
-		double position = ( double )( time - in ) / ( double )( out - in + 1 );
-		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, producer_props, frame, buffer, width, height );
+		double position = mlt_frame_get_position( frame );
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
+		double time = position / mlt_profile_fps( profile );
+		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, time, producer_props, frame, buffer, width, height );
 	}
 
     return 0;

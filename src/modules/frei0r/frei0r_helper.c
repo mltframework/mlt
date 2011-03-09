@@ -45,7 +45,7 @@ static void rgba_bgra( uint8_t *src, uint8_t* dst, int width, int height )
 	}	
 }
 
-int process_frei0r_item( mlt_service service, double position, mlt_properties prop, mlt_frame this, uint8_t **image, int *width, int *height )
+int process_frei0r_item( mlt_service service, double position, double time, mlt_properties prop, mlt_frame this, uint8_t **image, int *width, int *height )
 {
 	int i=0;
 	f0r_instance_t ( *f0r_construct ) ( unsigned int , unsigned int ) =  mlt_properties_get_data(  prop , "f0r_construct" ,NULL);
@@ -143,11 +143,11 @@ int process_frei0r_item( mlt_service service, double position, mlt_properties pr
 		}
 	}
 	if (type==producer_type) {
-		f0r_update (inst, position, NULL, dest );
+		f0r_update (inst, time, NULL, dest );
 	} else if (type==filter_type) {
-		f0r_update ( inst, position, source[0], dest );
+		f0r_update ( inst, time, source[0], dest );
 	} else if (type==transition_type && f0r_update2 ){
-		f0r_update2 ( inst, position, source[0], source[1], NULL, dest );
+		f0r_update2 ( inst, time, source[0], source[1], NULL, dest );
 	}
 	if ( not_thread_safe )
 		mlt_service_unlock( service );

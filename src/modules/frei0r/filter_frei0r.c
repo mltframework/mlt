@@ -33,11 +33,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( error == 0 && *image )
 	{
-		mlt_position length = mlt_filter_get_length( filter );
-		mlt_position time = mlt_properties_get_position( properties, "_filter_position" );
-		double position = ( double )( time ) / ( double )( length );
-		
-		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, properties, this, image, width, height );
+		double position = mlt_filter_get_position( filter, this );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+		double time = position / mlt_profile_fps( profile );
+		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, time, properties, this, image, width, height );
 	}
 
 	return error;
@@ -47,9 +46,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	mlt_frame_push_service( frame, this );
-	// Determine the time position of this frame
-	mlt_properties_set_position( MLT_FILTER_PROPERTIES( this ), "_filter_position", mlt_frame_get_position( frame ) -  mlt_filter_get_in( this ) );
-	
 	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }

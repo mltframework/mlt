@@ -50,15 +50,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame_get_image( a_frame, &images[0], format, width, height, 0 );
 	mlt_frame_get_image( b_frame, &images[1], format, width, height, 0 );
 	
-	mlt_position in = mlt_transition_get_in( transition );
-	mlt_position out = mlt_transition_get_out( transition );
-
-	// Get the position of the frame
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( transition ), "_unique_id" );
-	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( a_frame ), name );
-
-	float pos=( float )( position - in ) / ( float )( out - in + 1 );
-	process_frei0r_item( MLT_TRANSITION_SERVICE(transition), pos, properties, !invert ? a_frame : b_frame, images, width, height );
+	double position = mlt_transition_get_position( transition, a_frame );
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
+	double time = position / mlt_profile_fps( profile );
+	process_frei0r_item( MLT_TRANSITION_SERVICE(transition), position, time, properties, !invert ? a_frame : b_frame, images, width, height );
 	
 	*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
         *height = mlt_properties_get_int( !invert ? a_props : b_props, "height" );
@@ -68,8 +63,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( transition ), "_unique_id" );
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_frame_get_position( a_frame ) );
 	mlt_frame_push_service( a_frame, transition );
 	mlt_frame_push_frame( a_frame, b_frame );
 	mlt_frame_push_get_image( a_frame, transition_get_image );
