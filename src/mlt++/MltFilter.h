@@ -51,6 +51,7 @@ namespace Mlt
 			int get_out( );
 			int get_length( );
 			int get_track( );
+			int get_position( Frame &frame );
 			double get_progress( Frame &frame );
 	};
 }

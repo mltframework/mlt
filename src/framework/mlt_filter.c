@@ -202,7 +202,34 @@ mlt_position mlt_filter_get_length( mlt_filter self )
 	return ( out > 0 ) ? ( out - in + 1 ) : 0;
 }
 
-/** Get the relative position of a frame.
+/** Get the position within the filter.
+ *
+ * The position is relative to the in point.
+ * This will only be valid once mlt_filter_process is called.
+ *
+ * \public \memberof mlt_filter_s
+ * \param self a filter
+ * \param frame a frame
+ * \return the position
+ */
+
+mlt_position mlt_filter_get_position( mlt_filter self, mlt_frame frame )
+{
+	mlt_properties properties = MLT_FILTER_PROPERTIES( self );
+	mlt_position in = mlt_properties_get_position( properties, "in" );
+	const char *unique_id = mlt_properties_get( properties, "_unique_id" );
+	char name[20];
+
+	// Make the properties key from unique id
+	strcpy( name, "pos." );
+	strcat( name, unique_id );
+
+	return mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name ) - in;
+}
+
+/** Get the percent complete.
+ *
+ * This will only be valid once mlt_filter_process is called.
  *
  * \public \memberof mlt_filter_s
  * \param self a filter
@@ -218,13 +245,17 @@ double mlt_filter_get_progress( mlt_filter self, mlt_frame frame )
 	if ( out != 0 )
 	{
 		mlt_position in = mlt_filter_get_in( self );
-		mlt_position position = mlt_frame_get_position( frame );
-		progress = ( double ) ( position - in ) / ( double ) ( out - in + 1 );
+		mlt_position position = mlt_filter_get_position( self, frame );
+		progress = ( double ) position / ( double ) ( out - in + 1 );
 	}
 	return progress;
 }
 
 /** Process the frame.
+ *
+ * When fetching the frame position in a subclass process method, the frame's
+ * position is relative to the filter's producer - not the filter's in point
+ * or timeline.
  *
  * \public \memberof mlt_filter_s
  * \param self a filter
@@ -235,7 +266,19 @@ double mlt_filter_get_progress( mlt_filter self, mlt_frame frame )
 
 mlt_frame mlt_filter_process( mlt_filter self, mlt_frame frame )
 {
-	int disable = mlt_properties_get_int( MLT_FILTER_PROPERTIES( self ), "disable" );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( self );
+	int disable = mlt_properties_get_int( properties, "disable" );
+	const char *unique_id = mlt_properties_get( properties, "_unique_id" );
+	mlt_position position = mlt_frame_get_position( frame );
+	char name[20];
+
+	// Make the properties key from unique id
+	strcpy( name, "pos." );
+	strcat( name, unique_id );
+
+	// Save the position on the frame
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( frame ), name, position );
+
 	if ( disable || self->process == NULL )
 		return frame;
 	else

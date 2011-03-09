@@ -116,6 +116,11 @@ int Filter::get_track( )
 	return mlt_filter_get_track( get_filter( ) );
 }
 
+int Filter::get_position( Frame &frame )
+{
+	return mlt_filter_get_position( get_filter( ), frame.get_frame( ) );
+}
+
 double Filter::get_progress( Frame &frame )
 {
 	return mlt_filter_get_progress( get_filter( ), frame.get_frame( ) );
