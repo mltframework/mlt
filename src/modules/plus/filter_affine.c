@@ -66,8 +66,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		if ( producer != NULL && transition != NULL )
 		{
-			char *name = mlt_properties_get( properties, "_unique_id" );
-			mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( this ), name );
+			mlt_position position = mlt_filter_get_position( filter, this );
 			mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
 			mlt_position in = mlt_filter_get_in( filter );
 			mlt_position out = mlt_filter_get_out( filter );
@@ -77,12 +76,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( producer ), "length", out - in + 1 );
 				mlt_producer_set_in_and_out( producer, in, out );
 			}
-			mlt_producer_seek( producer, position - in );
+			mlt_producer_seek( producer, in + position );
 			mlt_frame_set_position( this, position );
 			mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), properties, "producer." );
 			mlt_properties_pass( MLT_TRANSITION_PROPERTIES( transition ), properties, "transition." );
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &a_frame, 0 );
-			mlt_frame_set_position( a_frame, position );
+			mlt_frame_set_position( a_frame, in + position );
 //			mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame ), "distort", 1 );
 
 			// Special case - aspect_ratio = 0
@@ -122,15 +121,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	// Get the properties of the frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
-	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" );
-
-	// Assign the current position to the name
-	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) );
-
 	// Push the frame filter
 	mlt_frame_push_service( frame, this );
 	mlt_frame_push_get_image( frame, filter_get_image );
@@ -147,7 +137,7 @@ mlt_filter filter_affine_init( mlt_profile profile, mlt_service_type type, const
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "background", "colour:black" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "background", arg ? arg : "colour:black" );
 	}
 	return this;
 }

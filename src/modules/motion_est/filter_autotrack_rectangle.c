@@ -120,7 +120,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
 	// Get the frame position
-	mlt_position position = mlt_frame_get_position( frame );
+	mlt_position position = mlt_filter_get_position( filter, frame );
 
 	// Get the new image
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
@@ -215,7 +215,7 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
 	// Get the frame position
-	mlt_position position = mlt_frame_get_position( frame );
+	mlt_position position = mlt_filter_get_position( filter, frame );
 	
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 

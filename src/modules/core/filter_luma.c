@@ -46,8 +46,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	int out = mlt_properties_get_int( properties, "period" );
 	int cycle = mlt_properties_get_int( properties, "cycle" );
 	int duration = mlt_properties_get_int( properties, "duration" );
-	char *name = mlt_properties_get( properties, "_unique_id" );
-	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES(this), name );
+	mlt_position position = mlt_filter_get_position( filter, this );
 
 	out = out? out + 1 : 25;
 	if ( cycle )
@@ -124,12 +123,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" );
-
-	// Assign the current position to the name
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( frame ), name, mlt_frame_get_position( frame ) );
-
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, this );
 

@@ -782,7 +782,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	{
 		// Put the current image into the image cache, keyed on position
 		size_t image_size = (*width * *height) << 1;
-		mlt_position pos = mlt_frame_get_position( frame );
+		mlt_position pos = mlt_filter_get_position( filter, frame );
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
 		memcpy( image_copy, *image, image_size );
 		char key[20];

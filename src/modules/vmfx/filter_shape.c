@@ -114,7 +114,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	double alpha_mix = 0.0;
 
 	// Calculate the position and length
-	int position = mlt_frame_get_position( frame ) - mlt_filter_get_in( this );
+	int position = mlt_filter_get_position( this, frame );
 	int in = mlt_filter_get_in( this );
 	int out = mlt_filter_get_out( this );
 	int length;

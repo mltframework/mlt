@@ -128,11 +128,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// We will get the 'b frame' from the producer
 		mlt_frame b_frame = NULL;
 
-		// Get the unique id of the filter (used to reacquire the producer position)
-		char *name = mlt_properties_get( properties, "_unique_id" );
-
 		// Get the original producer position
-		mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name );
+		mlt_position position = mlt_filter_get_position( this, frame );
 
 		// Make sure the producer is in the correct position
 		mlt_producer_seek( producer, position );
@@ -230,14 +227,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	// Get the properties of the frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
-	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" );
-
 	// Assign the frame out point to the filter (just in case we need it later)
 	mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "_out", mlt_properties_get_int( properties, "out" ) );
-
-	// Assign the current position to the name
-	mlt_properties_set_position( properties, name, mlt_frame_get_position( frame ) - mlt_filter_get_in( this ) );
 
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, this );
