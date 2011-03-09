@@ -517,12 +517,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 static mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
-	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( transition ), "_unique_id" );
-
-	// Assign the current position to the name
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( a_frame ), name, mlt_frame_get_position( a_frame ) );
-
 	// Push the transition on to the frame
 	mlt_frame_push_service( a_frame, transition );
 
