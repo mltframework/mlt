@@ -249,11 +249,21 @@ double mlt_transition_get_progress( mlt_transition self, mlt_frame frame )
 double mlt_transition_get_progress_delta( mlt_transition self, mlt_frame frame )
 {
 	double progress = 0;
+	mlt_position in = mlt_transition_get_in( self );
 	mlt_position out = mlt_transition_get_out( self );
 
+	if ( out == 0 )
+	{
+		// If always active, use the frame's producer
+		mlt_producer producer = mlt_frame_get_original_producer( frame );
+		if ( producer )
+		{
+			in = mlt_producer_get_in( producer );
+			out = mlt_producer_get_out( producer );
+		}
+	}
 	if ( out != 0 )
 	{
-		mlt_position in = mlt_transition_get_in( self );
 		mlt_position position = mlt_frame_get_position( frame );
 		double length = out - in + 1;
 		double x = ( double ) ( position - in ) / length;
