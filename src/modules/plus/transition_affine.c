@@ -379,11 +379,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int b_width;
 	int b_height;
 
-	// Get the unique name to retrieve the frame position
-	char *name = mlt_properties_get( properties, "_unique_id" );
-
-	// Assign the current position to the name
-	mlt_position position =  mlt_properties_get_position( a_props, name );
+	// Assign the current position
+	mlt_position position =  mlt_transition_get_position( this, a_frame );
 
 	int mirror = mlt_properties_get_position( properties, "mirror" );
 	int length = mlt_transition_get_length( this );
@@ -552,13 +549,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 static mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
-	// Get a unique name to store the frame position
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( transition ), "_unique_id" );
-
-	// Assign the current position to the name
-	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
-	mlt_properties_set_position( a_props, name, mlt_frame_get_position( a_frame ) - mlt_transition_get_in( transition ) );
-
 	// Push the transition on to the frame
 	mlt_frame_push_service( a_frame, transition );
 
