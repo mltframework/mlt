@@ -496,7 +496,11 @@ static int open_audio( AVFormatContext *oc, AVStream *st, int audio_outbuf_size,
 	AVCodecContext *c = st->codec;
 
 	// Find the encoder
-	AVCodec *codec = avcodec_find_encoder_by_name( codec_name );
+	AVCodec *codec;
+	if ( codec_name )
+		codec = avcodec_find_encoder_by_name( codec_name );
+	else
+		codec = avcodec_find_encoder( c->codec_id );
 
 	avformat_lock();
 	
@@ -1157,7 +1161,8 @@ static void *consumer_thread( void *arg )
 			video_st = NULL;
 		for ( i = 0; i < MAX_AUDIO_STREAMS && audio_st[i]; i++ )
 		{
-			audio_input_frame_size = open_audio( oc, audio_st[i], audio_outbuf_size, acodec );
+			audio_input_frame_size = open_audio( oc, audio_st[i], audio_outbuf_size,
+				audio_codec_id == CODEC_ID_AC3 ? acodec : NULL );
 			if ( !audio_input_frame_size )
 				audio_st[i] = NULL;
 		}
