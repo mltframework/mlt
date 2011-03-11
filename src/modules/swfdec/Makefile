@@ -3,16 +3,11 @@ CFLAGS += -I../..
 LDFLAGS += -L../../framework -lmlt -lm
 
 include ../../../config.mak
+include config.mak
 
 TARGET = ../libmltswfdec$(LIBSUF)
 
 OBJS = producer_swfdec.o
-
-CFLAGS += `pkg-config --cflags swfdec-0.8 2>/dev/null`
-CFLAGS += `pkg-config --cflags swfdec-0.9 2>/dev/null`
-
-LDFLAGS += `pkg-config --libs swfdec-0.8 2>/dev/null`
-LDFLAGS += `pkg-config --libs swfdec-0.9 2>/dev/null`
 
 ifeq ($(targetos), MinGW)
 LDFLAGS += -enable-auto-import -lz
