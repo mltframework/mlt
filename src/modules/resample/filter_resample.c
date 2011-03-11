@@ -27,7 +27,9 @@
 #include <samplerate.h>
 #include <string.h>
 
-#define BUFFER_LEN 20480
+// BUFFER_LEN is based on a maximum of 96KHz, 5 fps, 8 channels
+// TODO: dynamically allocate larger buffer size
+#define BUFFER_LEN ((96000/5) * 8 * sizeof(float))
 #define RESAMPLE_TYPE SRC_SINC_FASTEST
 
 /** Get the audio.
