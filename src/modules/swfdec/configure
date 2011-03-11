@@ -19,9 +19,10 @@ then
 			pkg-config swfdec-0.7 2> /dev/null
 			disable_swfdec=$?
 			if [ "$disable_swfdec" = "0" ]
+			then
 				echo "CFLAGS += $(pkg-config --cflags swfdec-0.7)" >> config.mak
 				echo "LDFLAGS += $(pkg-config --libs swfdec-0.7)" >> config.mak
-			then
+			else
 				echo "- swfdec not found: disabling"
 				touch ../disable-swfdec
 				exit 0
