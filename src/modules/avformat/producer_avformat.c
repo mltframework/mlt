@@ -1913,7 +1913,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		index = 0;
 		index_max = context->nb_streams;
 		*channels = self->total_channels;
-		*frequency = self->max_frequency;
+		*samples = *samples * FFMAX( self->max_frequency, *frequency ) / *frequency;
+		*frequency = FFMAX( self->max_frequency, *frequency );
 	}
 
 	// Initialize the resamplers and buffers
