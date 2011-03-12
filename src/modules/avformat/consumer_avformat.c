@@ -846,13 +846,17 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 	return picture;
 }
 	
-static int open_video(AVFormatContext *oc, AVStream *st)
+static int open_video(AVFormatContext *oc, AVStream *st, const char *codec_name)
 {
 	// Get the codec
 	AVCodecContext *video_enc = st->codec;
 
 	// find the video encoder
-	AVCodec *codec = avcodec_find_encoder( video_enc->codec_id );
+	AVCodec *codec;
+	if ( codec_name )
+		codec = avcodec_find_encoder_by_name( codec_name );
+	else
+		codec = avcodec_find_encoder( video_enc->codec_id );
 
 	if( codec && codec->pix_fmts )
 	{
@@ -1157,12 +1161,12 @@ static void *consumer_thread( void *arg )
 		}
 		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM, 0 );
 
-		if ( video_st && !open_video( oc, video_st ) )
+		if ( video_st && !open_video( oc, video_st, vcodec? vcodec : NULL ) )
 			video_st = NULL;
 		for ( i = 0; i < MAX_AUDIO_STREAMS && audio_st[i]; i++ )
 		{
 			audio_input_frame_size = open_audio( oc, audio_st[i], audio_outbuf_size,
-				audio_codec_id == CODEC_ID_AC3 ? acodec : NULL );
+				acodec? acodec : NULL );
 			if ( !audio_input_frame_size )
 				audio_st[i] = NULL;
 		}
