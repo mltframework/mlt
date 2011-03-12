@@ -371,9 +371,14 @@ void mlt_factory_close( )
 	if ( mlt_directory != NULL )
 	{
 		mlt_properties_close( event_object );
+		event_object = NULL;
 		mlt_properties_close( global_properties );
+		global_properties = NULL;
 		if ( repository )
+		{
 			mlt_repository_close( repository );
+			repository = NULL;
+		}
 		free( mlt_directory );
 		mlt_directory = NULL;
 		mlt_pool_close( );
