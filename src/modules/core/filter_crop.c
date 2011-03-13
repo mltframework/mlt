@@ -159,7 +159,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		int bottom = mlt_properties_get_int( filter_props, "bottom" );
 		int width  = mlt_properties_get_int( frame_props, "real_width" );
 		int height = mlt_properties_get_int( frame_props, "real_height" );
+		int use_profile = mlt_properties_get_int( filter_props, "use_profile" );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
 
+		if ( use_profile )
+		{
+			top = top * height / profile->height;
+			bottom = bottom * height / profile->height;
+			left = left * width / profile->width;
+			right = right * width / profile->width;
+		}
 		if ( mlt_properties_get_int( filter_props, "center" ) )
 		{
 			double aspect_ratio = mlt_frame_get_aspect_ratio( frame );
@@ -174,6 +183,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 				left = right = ( width - rint( output_ar * height / aspect_ratio ) ) / 2;
 				if ( abs(bias) > left )
 					bias = bias < 0 ? -left : left;
+				else if ( use_profile )
+					bias = bias * width / profile->width;
 				left -= bias;
 				right += bias;
 			}
@@ -182,6 +193,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 				top = bottom = ( height - rint( aspect_ratio * width / output_ar ) ) / 2;
 				if ( abs(bias) > top )
 					bias = bias < 0 ? -top : top;
+				else if ( use_profile )
+					bias = bias * height / profile->height;
 				top -= bias;
 				bottom += bias;
 			}
