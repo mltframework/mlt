@@ -93,7 +93,7 @@ build_config()
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		FreeBSD)
-		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
+		[ "$(uname -m)" = "amd64" -o "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
 		echo "CFLAGS+=-fPIC -pthread"
