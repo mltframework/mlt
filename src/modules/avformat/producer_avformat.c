@@ -270,7 +270,8 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
 				double ffmpeg_fps = av_q2d( context->streams[ i ]->avg_frame_rate );
-				if (ffmpeg_fps == 0) ffmpeg_fps = av_q2d( context->streams[ i ]->r_frame_rate );
+				if ( isnan( ffmpeg_fps ) || ffmpeg_fps == 0 )
+					ffmpeg_fps = av_q2d( context->streams[ i ]->r_frame_rate );
 				mlt_properties_set_double( meta_media, key, ffmpeg_fps );
 #else
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->r_frame_rate ) );
@@ -1547,7 +1548,8 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			// If the muxer reports a frame rate different than the codec
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
 			double muxer_fps = av_q2d( stream->avg_frame_rate );
-			if ( muxer_fps == 0 ) muxer_fps = av_q2d( stream->r_frame_rate );
+			if ( isnan( muxer_fps ) || muxer_fps == 0 )
+				muxer_fps = av_q2d( stream->r_frame_rate );
 #else
 			double muxer_fps = av_q2d( stream->r_frame_rate );
 #endif
