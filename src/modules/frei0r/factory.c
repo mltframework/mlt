@@ -189,7 +189,6 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 		  const uint32_t* inframe2,const uint32_t* inframe3, uint32_t* outframe);
 
 	if ( ( f0r_construct = dlsym(handle, "f0r_construct") ) &&
-				(f0r_update = dlsym(handle,"f0r_update") ) &&
 				(f0r_destruct = dlsym(handle,"f0r_destruct") ) &&
 				(f0r_get_plugin_info = dlsym(handle,"f0r_get_plugin_info") ) &&
 				(f0r_get_param_info = dlsym(handle,"f0r_get_param_info") ) &&
@@ -199,6 +198,7 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 				(f0r_deinit= dlsym(handle,"f0r_deinit" ) )
 		){
 
+		f0r_update=dlsym(handle,"f0r_update");
 		f0r_update2=dlsym(handle,"f0r_update2");
 
 		f0r_plugin_info_t info;
