@@ -122,6 +122,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
 static void producer_set_up_video( producer_avformat self, mlt_frame frame );
+static void producer_set_up_audio( producer_avformat self, mlt_frame frame );
 
 #ifdef VDPAU
 #include "vdpau.c"
@@ -1146,9 +1147,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					av_close_input_file( self->video_format );
 				self->video_format = NULL;
 				avformat_unlock();
+				int audio_index = self->audio_index;
 				producer_set_up_video( self, frame );
 				if ( self->video_index < 0 )
 					return 1;
+				self->audio_index = audio_index;
 				avformat_lock();
 				context = self->video_format;
 				stream = context->streams[ self->video_index ];
@@ -1652,7 +1655,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		}
 		self->dummy_context = NULL;
 		mlt_events_unblock( properties, producer );
-		if ( self->audio_format )
+		if ( self->audio_format && !self->audio_streams )
 			get_audio_streams_info( self );
 
 		// Process properties as AVOptions
