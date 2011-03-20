@@ -28,6 +28,7 @@
 
 #include <glib.h>
 #include <ladspa.h>
+#include <pthread.h>
 #include <jack/jack.h>
 
 #include "process.h"

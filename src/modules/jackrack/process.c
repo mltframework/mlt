@@ -23,6 +23,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <pthread.h>
 #include <jack/jack.h>
 #include <glib.h>
 #include <stdio.h>
