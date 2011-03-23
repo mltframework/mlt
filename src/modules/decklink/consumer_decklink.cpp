@@ -98,6 +98,8 @@ private:
 	int                         m_channels;
 	uint32_t                    m_maxAudioBuffer;
 	mlt_deque                   m_videoFrameQ;
+	mlt_frame                   m_frame;
+	unsigned                    m_dropped;
 		
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -218,6 +220,8 @@ public:
 		m_preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
 		m_count = 0;
 		m_deckLinkOutput->BeginAudioPreroll();
+		m_frame = 0;
+		m_dropped = 0;
 		
 		return true;
 	}
@@ -258,6 +262,7 @@ public:
 		}
 		m_videoFrame = 0;
 		if ( m_fifo ) sample_fifo_close( m_fifo );
+		mlt_frame_close( m_frame );
 	}
 	
 	void createFrame()
@@ -345,29 +350,33 @@ public:
 			}
 		}
 		
-		// Get the video
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "rendered") )
 		{
-			mlt_image_format format = mlt_image_yuv422;
-			uint8_t* image = 0;
-			uint8_t* buffer = 0;
-
-			if ( !mlt_frame_get_image( frame, &image, &format, &m_width, &m_height, 0 ) )
-			{
-				m_videoFrame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
-				m_videoFrame->GetBytes( (void**) &buffer );
-				if ( m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
-					// convert lower field first to top field first
-					swab( image, buffer + m_width * 2, m_width * ( m_height - 1 ) * 2 );
-				else
-					swab( image, buffer, m_width * m_height * 2 );
-				m_deckLinkOutput->ScheduleVideoFrame( m_videoFrame, m_count * m_duration, m_duration, m_timescale );
-				mlt_deque_push_front( m_videoFrameQ, m_videoFrame );
-			}
+			// Close the previous frame and use the new one
+			mlt_frame_close( m_frame );
+			m_frame = frame;
 		}
 		else
 		{
-			mlt_log_verbose( &m_consumer, "dropped video frame\n" );
+			// Reuse the last frame
+			mlt_log_verbose( &m_consumer, "dropped video frame %u\n", ++m_dropped );
+		}
+
+		// Get the video
+		mlt_image_format format = mlt_image_yuv422;
+		uint8_t* image = 0;
+		uint8_t* buffer = 0;
+		if ( !mlt_frame_get_image( m_frame, &image, &format, &m_width, &m_height, 0 ) )
+		{
+			m_videoFrame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
+			m_videoFrame->GetBytes( (void**) &buffer );
+			if ( m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
+				// convert lower field first to top field first
+				swab( image, buffer + m_width * 2, m_width * ( m_height - 1 ) * 2 );
+			else
+				swab( image, buffer, m_width * m_height * 2 );
+			m_deckLinkOutput->ScheduleVideoFrame( m_videoFrame, m_count * m_duration, m_duration, m_timescale );
+			mlt_deque_push_front( m_videoFrameQ, m_videoFrame );
 		}
 		++m_count;
 
@@ -472,7 +481,6 @@ static void *run( void *arg )
 			
 			// Close the frame
 			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
-			mlt_frame_close( frame );
 		}
 	}
 
