@@ -358,6 +358,8 @@ public:
 		}
 		else
 		{
+			if ( !m_frame )
+				m_frame = frame;
 			// Reuse the last frame
 			mlt_log_verbose( &m_consumer, "dropped video frame %u\n", ++m_dropped );
 		}

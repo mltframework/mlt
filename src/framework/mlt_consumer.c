@@ -1184,7 +1184,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	// Adapt the worker process head to the runtime conditions.
 	if ( self->real_time > 0 )
 	{
-		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "rendered" ) )
+		if ( frame && mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "rendered" ) )
 		{
 			self->consecutive_dropped = 0;
 			if ( self->process_head > size && self->consecutive_rendered >= self->process_head )
