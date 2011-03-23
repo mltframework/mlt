@@ -480,8 +480,6 @@ static void *run( void *arg )
 			decklink->render( frame );
 			if ( !decklink->isBuffering() )
 				decklink->wait();
-			
-			// Close the frame
 			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 		}
 	}
