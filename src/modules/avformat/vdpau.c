@@ -130,7 +130,7 @@ static int vdpau_get_buffer( AVCodecContext *codec_context, AVFrame *frame )
 	producer_avformat self = codec_context->opaque;
 	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_get_buffer\n" );
 	
-	if ( g_vdpau->producer == self && mlt_deque_count( self->vdpau->deque ) )
+	if ( g_vdpau->producer == self && self->vdpau && mlt_deque_count( self->vdpau->deque ) )
 	{
 		struct vdpau_render_state *render = mlt_deque_pop_front( self->vdpau->deque );
 		
@@ -178,33 +178,39 @@ static int vdpau_get_buffer( AVCodecContext *codec_context, AVFrame *frame )
 static void vdpau_release_buffer( AVCodecContext *codec_context, AVFrame *frame )
 {
 	producer_avformat self = codec_context->opaque;
-	struct vdpau_render_state *render = (struct vdpau_render_state*) frame->data[0];
-	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_release_buffer (%x)\n", render->surface );
-	int i;
+	if ( self->vdpau )
+	{
+		struct vdpau_render_state *render = (struct vdpau_render_state*) frame->data[0];
+		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_release_buffer (%x)\n", render->surface );
+		int i;
 
-	render->state &= ~FF_VDPAU_STATE_USED_FOR_REFERENCE;
-	for ( i = 0; i < 4; i++ )
-		frame->data[i] = NULL;
-	mlt_deque_push_back( self->vdpau->deque, render );
+		render->state &= ~FF_VDPAU_STATE_USED_FOR_REFERENCE;
+		for ( i = 0; i < 4; i++ )
+			frame->data[i] = NULL;
+		mlt_deque_push_back( self->vdpau->deque, render );
+	}
 }
 
 static void vdpau_draw_horiz( AVCodecContext *codec_context, const AVFrame *frame, int offset[4], int y, int type, int height )
 {
 	producer_avformat self = codec_context->opaque;
-	struct vdpau_render_state *render = (struct vdpau_render_state*) frame->data[0];
-	VdpVideoSurface surface = render->surface;
-	VdpStatus status = vdp_decoder_render( g_vdpau->decoder, surface, (void*) &render->info,
-		render->bitstream_buffers_used, render->bitstream_buffers );
-	
-	if ( status != VDP_STATUS_OK )
+	if ( self->vdpau )
 	{
-		self->vdpau->is_decoded = 0;
-		mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "VDPAU failed to decode (%s)\n",
-			vdp_get_error_string( status ) );
-	}
-	else
-	{
-		self->vdpau->is_decoded = 1;
+		struct vdpau_render_state *render = (struct vdpau_render_state*) frame->data[0];
+		VdpVideoSurface surface = render->surface;
+		VdpStatus status = vdp_decoder_render( g_vdpau->decoder, surface, (void*) &render->info,
+			render->bitstream_buffers_used, render->bitstream_buffers );
+
+		if ( status != VDP_STATUS_OK )
+		{
+			self->vdpau->is_decoded = 0;
+			mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "VDPAU failed to decode (%s)\n",
+				vdp_get_error_string( status ) );
+		}
+		else
+		{
+			self->vdpau->is_decoded = 1;
+		}
 	}
 }
 
