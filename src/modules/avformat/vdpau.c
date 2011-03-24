@@ -263,7 +263,8 @@ static int vdpau_decoder_init( producer_avformat self )
 					break;
 				}
 			}
-			self->vdpau->b_age = self->vdpau->ip_age[0] = self->vdpau->ip_age[1] = 256*256*256*64; // magic from Avidemux
+			if ( self->vdpau )
+				self->vdpau->b_age = self->vdpau->ip_age[0] = self->vdpau->ip_age[1] = 256*256*256*64; // magic from Avidemux
 		}
 		g_vdpau->producer = self;
 	}
