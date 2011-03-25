@@ -5,7 +5,7 @@ then
 
 	if [ "$targetos" = "Darwin" ] || [ "$targetos" = "MinGW" ]
 	then
-		echo "- does not build on Darwin or Windows: disabling"
+		echo "- does not build on OS X or Windows: disabling"
 		touch ../disable-kino
 		exit 0
 	fi

@@ -5,24 +5,27 @@ then
 	cat << EOF
 Linsys options:
 
-  --enable-linsys         - Enable the Linsys SDI module (disabled by default)
   --linsys-with-jpeg      - Enable the option to export JPEGs (disabled by default)
 
 EOF
 
 else
-	export enable=
+	if [ "$targetos" = "Darwin" ] || [ "$targetos" = "MinGW" ]
+	then
+		echo "- does not build on OS X or Windows: disabling"
+		touch ../disable-linsys
+		exit 0
+	fi
+
 	touch config.mak
 
 	for i in "$@"
 	do
 		case $i in
-			--enable-linsys )	enable=1 ;;
 			--linsys-with-jpeg )	echo "WITH_JPEG=1" > config.mak ;;
 		esac
 	done
 
-	[ "$enable" != "1" ] && touch ../disable-linsys
 	exit 0
 fi
 
