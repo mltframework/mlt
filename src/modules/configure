@@ -19,7 +19,7 @@ for i in *
 do
 	if [ -d $i -a \( "$help" = "1" -o ! -f disable-$i \) ]
 	then
-		if [ "$gpl" = "true" -o ! -f $i/gpl ]
+		if [ "$gpl" = "true" -o ! -f $i/gpl -o "$help" = "1" ]
 		then
 			[ -f $i/Makefile -a "$help" = "0" ] && echo "Configuring modules/$i:"
 			if [ -x $i/configure ]
