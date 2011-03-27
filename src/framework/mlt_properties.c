@@ -348,8 +348,10 @@ static inline mlt_property mlt_properties_find( mlt_properties self, const char 
 	property_list *list = self->local;
 	mlt_property value = NULL;
 	int key = generate_hash( name );
-	int i = list->hash[ key ] - 1;
 
+	mlt_properties_lock( self );
+
+	int i = list->hash[ key ] - 1;
 	if ( i >= 0 )
 	{
 		// Check if we're hashed
@@ -363,6 +365,7 @@ static inline mlt_property mlt_properties_find( mlt_properties self, const char 
 			if ( name[ 0 ] == list->name[ i ][ 0 ] && !strcmp( list->name[ i ], name ) )
 				value = list->value[ i ];
 	}
+	mlt_properties_unlock( self );
 
 	return value;
 }
@@ -379,6 +382,9 @@ static mlt_property mlt_properties_add( mlt_properties self, const char *name )
 {
 	property_list *list = self->local;
 	int key = generate_hash( name );
+	mlt_property result;
+
+	mlt_properties_lock( self );
 
 	// Check that we have space and resize if necessary
 	if ( list->count == list->size )
@@ -397,7 +403,11 @@ static mlt_property mlt_properties_add( mlt_properties self, const char *name )
 		list->hash[ key ] = list->count + 1;
 
 	// Return and increment count accordingly
-	return list->value[ list->count ++ ];
+	result = list->value[ list->count ++ ];
+
+	mlt_properties_unlock( self );
+
+	return result;
 }
 
 /** Fetch a property by name and add one if not found.
@@ -938,6 +948,7 @@ int mlt_properties_rename( mlt_properties self, const char *source, const char *
 		int i = 0;
 
 		// Locate the item
+		mlt_properties_lock( self );
 		for ( i = 0; i < list->count; i ++ )
 		{
 			if ( !strcmp( list->name[ i ], source ) )
@@ -948,6 +959,7 @@ int mlt_properties_rename( mlt_properties self, const char *source, const char *
 				break;
 			}
 		}
+		mlt_properties_unlock( self );
 	}
 
 	return value != NULL;
@@ -1115,7 +1127,9 @@ int mlt_properties_dir_list( mlt_properties self, const char *dirname, const cha
 	if ( sort && mlt_properties_count( self ) )
 	{
 		property_list *list = self->local;
+		mlt_properties_lock( self );
 		qsort( list->value, mlt_properties_count( self ), sizeof( mlt_property ), mlt_compare );
+		mlt_properties_unlock( self );
 	}
 
 	return mlt_properties_count( self );
@@ -1751,4 +1765,28 @@ char *mlt_properties_serialise_yaml( mlt_properties self )
 	char *ret = b->string;
 	strbuf_close( b );
 	return ret;
+}
+
+/** Protect a properties list against concurrent access.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ */
+
+void mlt_properties_lock( mlt_properties self )
+{
+	if ( self )
+		pthread_mutex_lock( &( ( property_list* )( self->local ) )->mutex );
+}
+
+/** End protecting a properties list against concurrent access.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ */
+
+void mlt_properties_unlock( mlt_properties self )
+{
+	if ( self )
+		pthread_mutex_unlock( &( ( property_list* )( self->local ) )->mutex );
 }

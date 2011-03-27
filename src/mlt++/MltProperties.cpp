@@ -82,6 +82,16 @@ int Properties::ref_count( )
 	return mlt_properties_ref_count( get_properties( ) );
 }
 
+void Properties::lock( )
+{
+	mlt_properties_lock( get_properties( ) );
+}
+
+void Properties::unlock( )
+{
+	mlt_properties_unlock( get_properties( ) );
+}
+
 void Properties::block( void *object )
 {
 	mlt_events_block( get_properties( ), object != NULL ? object : get_properties( ) );

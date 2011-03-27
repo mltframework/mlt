@@ -979,12 +979,14 @@ int mlt_playlist_split( mlt_playlist self, int clip, mlt_position position )
 				mlt_producer split = mlt_producer_cut( entry->producer, in + position + 1, out );
 				mlt_properties split_properties = MLT_PRODUCER_PROPERTIES( split );
 				mlt_playlist_insert( self, split, clip + 1, 0, -1 );
+				mlt_properties_lock( entry_properties );
 				for ( i = 0; i < mlt_properties_count( entry_properties ); i ++ )
 				{
 					char *name = mlt_properties_get_name( entry_properties, i );
 					if ( name != NULL && !strncmp( name, "meta.", 5 ) )
 						mlt_properties_set( split_properties, name, mlt_properties_get_value( entry_properties, i ) );
 				}
+				mlt_properties_unlock( entry_properties );
 				mlt_producer_close( split );
 			}
 			else

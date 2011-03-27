@@ -3,7 +3,7 @@
  * \brief Properties class declaration
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2011 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  * \author Dan Dennedy <dan@dennedy.org>
  *
@@ -83,5 +83,7 @@ extern void mlt_properties_close( mlt_properties self );
 extern int mlt_properties_is_sequence( mlt_properties self );
 extern mlt_properties mlt_properties_parse_yaml( const char *file );
 extern char *mlt_properties_serialise_yaml( mlt_properties self );
+extern void mlt_properties_lock( mlt_properties self );
+extern void mlt_properties_unlock( mlt_properties self );
 
 #endif

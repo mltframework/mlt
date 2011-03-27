@@ -49,6 +49,8 @@ namespace Mlt
 			int inc_ref( );
 			int dec_ref( );
 			int ref_count( );
+			void lock( );
+			void unlock( );
 			void block( void *object = NULL );
 			void unblock( void *object = NULL );
 			void fire_event( const char *event );
