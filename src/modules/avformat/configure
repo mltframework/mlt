@@ -24,7 +24,7 @@ FFmpeg/avformat options:
   --avformat-no-codecs    - Disable the producer and consumer to avoid the FFmpeg codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
   --avformat-no-devices   - Disable support for libavdevice
-  --avformat-no-vdpau     - Disable support for NVIDIA VDPAU
+  --avformat-vdpau        - Enable support for NVIDIA VDPAU
 
   NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.6.1" ] && echo $svn_rev || echo SVN-r$svn_rev).
 
@@ -65,7 +65,7 @@ else
 	export codecs=true
 	export filters=true
 	export devices=true
-	export vdpau=true
+	export vdpau=false
 	pkg-config x11 > /dev/null 2>&1
 	export x11=$?
 
@@ -86,6 +86,7 @@ else
 			--avformat-no-filters )	filters=false ;;
 			--avformat-no-devices )	devices=false ;;
 			--avformat-no-vdpau )   vdpau=false ;;
+			--avformat-vdpau )      vdpau=true ;;
 		esac
 	done
 
