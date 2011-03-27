@@ -1575,7 +1575,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		for ( i = mlt_properties_count( properties ) - 1; i >= 1; i -- )
 		{
 			char *name = mlt_properties_get_name( properties, i );
-			if ( mlt_properties_get_data( properties, name, NULL ) == service )
+			if ( mlt_properties_get_data_at( properties, i, NULL ) == service )
 			{
 				mlt_properties_set_data( properties, name, service, 0, NULL, NULL );
 				break;

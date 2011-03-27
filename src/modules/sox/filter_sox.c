@@ -245,7 +245,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				if ( !strncmp( name, "effect", 6 ) )
 				{
 					// Get the effect specification
-					char *value = mlt_properties_get( filter_properties, name );
+					char *value = mlt_properties_get_value( filter_properties, j );
 	
 					// Create an instance
 					if ( create_effect( filter, value, count, i, *frequency ) == 0 )
