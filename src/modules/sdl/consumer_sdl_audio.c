@@ -467,7 +467,7 @@ static void *consumer_thread( void *arg )
 	int duration = 0;
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
-	int last_position = -1;
+//	int last_position = -1;
 	this->refresh_count = 0;
 
 	// Loop until told not to
@@ -536,20 +536,23 @@ static void *consumer_thread( void *arg )
 				pthread_mutex_unlock( &this->refresh_mutex );
 			}
 			else
+			{
 				mlt_frame_close( frame );
+				frame = NULL;
+			}
 
 			// Optimisation to reduce latency
-			if ( speed == 1.0 )
+			if ( frame && speed == 1.0 )
 			{
                 // TODO: disabled due to misbehavior on parallel-consumer
 //				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
 //					mlt_consumer_purge( consumer );
-				last_position = mlt_frame_get_position( frame );
+//				last_position = mlt_frame_get_position( frame );
 			}
 			else
 			{
 				mlt_consumer_purge( consumer );
-				last_position = -1;
+//				last_position = -1;
 			}
 		}
 	}
