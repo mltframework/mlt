@@ -1120,8 +1120,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
-		int width_b = *width;
-		int height_b = *height;
+		int width_b = *width > 0 ? *width : mlt_properties_get_int( a_props, "normalised_width" );
+		int height_b = *height > 0 ? *height : mlt_properties_get_int( a_props, "normalised_height" );
 	
 		// Vars for alphas
 		uint8_t *alpha_a = NULL;
