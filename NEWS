@@ -1,7 +1,41 @@
 MLT Release Notes
 -----------------
 
-Version 0.6.2
+Version 0.7.0 - March 27, 2011
+
+This is a major new release due to signficant additions to API, framework,
+and build.
+
+Build
+ * Added support for Windows via MinGW.
+ * Enabled linsys module by default.
+ * Disabled VDPAU by default and added --avformat-vdpau to enable it.
+ * Added support for swfdec 0.7.
+
+Framework:
+ * Added parallelism to mlt_consumer when 'real_time' > 1 or < -1.
+ * Added mlt_deque_insert() and mlt_deque_peek().
+ * Added mlt_profile parameter to mlt_producer_new().
+ * Let transitions with no out point run forever.
+ * Added mlt_frame_unique_properties().
+ * Added mlt_frame_set_image() and mlt_frame_set_alpha().
+ * Added mlt_image_format_size() and mlt_audio_format_size().
+ * Added mlt_filter_get_length() and mlt_transition_get_length().
+ * Added mlt_filter_get_progress(), mlt_transition_get_progress(),
+   and mlt_transition_get_progress_delta().
+ * Added mlt_filter_get_position() and mlt_transition_get_position().
+ * Added mlt_properties_lock() and mlt_properties_unlock().
+
+Modules
+ * Added rotoscoping filter.
+ * Improve libavdevice support (V4L2, ALSA, libdc1394).
+ * Added support for new FFmpeg metadata API.
+ * Various fixes, refactoring, and improvements.
+
+The recommended version of FFmpeg for use with this release is 0.6.1.
+
+
+Version 0.6.2 - January 23, 2011
 
 This is just a minor release to address a few things prior to introducing
 major changes from other branches.
@@ -16,7 +50,7 @@ major changes from other branches.
 The recommended version of FFmpeg for use with this release is 0.6.1.
 
 
-Version 0.6.0
+Version 0.6.0 - January 1, 2011
 
 The recommended version of FFmpeg for use with this release is 0.6.1.
 There were quite a few enhancements and changes including a minor interface
@@ -53,7 +87,7 @@ Modules
    based rendering available only explicitly.
 
 
-Version 0.5.10
+Version 0.5.10 - September 13, 2010
 
 This is a quick followup to the 0.5.8 release to address an issue I want to
 address immediately. I noticed an extra unconditional colorspace conversion
@@ -61,7 +95,7 @@ to and from RGB was added for all YCbCr (YUV) video sources. In addition, I
 have enabled the avcolor_space filter on OS X since it works now.
 
 
-Version 0.5.8
+Version 0.5.8 - September 12, 2010
 
 The recommended version of FFmpeg for use with this release is 0.6.
 This is a maintenance release to address some bugs that appeared
@@ -77,7 +111,7 @@ thus far in the 0.5.x series. Beyond that is a few enhancements:
 * Added support for inline images in kdenlivetitler.
 
 
-Version 0.5.6
+Version 0.5.6 - June 20, 2010
 
 The recommended version of FFmpeg for use with this release is 0.6.
 This is a maintenance release to address some bugs that appeared
@@ -88,7 +122,7 @@ this far in the 0.5.x series. Beyond that it a few enhancements:
 * Added interlaced field rendering to kdenlivetitle producer.
 
 
-Version 0.5.4
+Version 0.5.4 - April 19, 2010
 
 The recommended version of FFmpeg for use with this release is SVN r21322.
 This is another maintenance release to address some bugs that appeared
@@ -99,7 +133,7 @@ very specific users will see:
 * Linsys SDI consumer now configures itself from MLT profile.
 
 
-Version 0.5.2
+Version 0.5.2 - March 10, 2010
 
 The recommended version of FFmpeg for use with this release is SVN r21322.
 This is a minor maintenance release, but it is interesting because it now
@@ -115,7 +149,7 @@ things:
 * Fixed compiling yadif for non-sse2 builds
 
 
-Version 0.5.0
+Version 0.5.0 - February 15, 2010
 
 The recommended version of FFmpeg for use with this release is SVN r21322.
 This is an enhancement release, confined mainly to the modules rather than
@@ -164,14 +198,14 @@ profiles:
 * change descriptions from using Hz to fps
 
 
-Version 0.4.10
+Version 0.4.10 - December 8, 2009
 
 The recommended version of FFmpeg for use with this release is SVN r19873.
 This is "hotfix" for the 0.4.8 release that fixes a couple of regression
 bugs introduced just before the release.
 
 
-Version 0.4.8
+Version 0.4.8 - December 7, 2009
 
 The recommended version of FFmpeg for use with this release is SVN r19873.
 This is mainly a maintenance release. Besides bug fixes here are other
@@ -190,7 +224,7 @@ modules:
 * qimage/kdenlivetitle: add typewriter effect
 
 
-Version 0.4.6
+Version 0.4.6 - October 7, 2009
 
 The recommended version of FFmpeg for use with this release is SVN r19873.
 This release is an enhancement release along with numerous build, A/V synch,
@@ -227,7 +261,7 @@ framework:
   - added mlt_audio_float
 
 
-Version 0.4.4
+Version 0.4.4 - June 30, 2009
 
 The recommended version of FFmpeg for use with this release is 0.5.0.
 This release is a minor maintenance update to the 0.4.2 - just build and
@@ -244,14 +278,14 @@ bug fixes.
 * added Lua binding via SWIG
 
 
-Version 0.4.2
+Version 0.4.2 - May 30, 2009
 
 The recommended version of FFmpeg for use with this release is 0.5.0.
 This release is a minor maintenance update to the 0.4.0 - just build and
 bug fixes.
 
 
-Version 0.4.0
+Version 0.4.0 - May 17, 2009
 
 The recommended version of FFmpeg for use with this release is 0.5.0.
 
@@ -270,7 +304,7 @@ avformat producer improvements:
 * improve seeking performance of DNxHD and HuffYUV
 
 
-Version 0.3.8
+Version 0.3.8 - April 15, 2009
 
 The recommended version of FFmpeg for use with this release is SVN r17923.
 
@@ -292,7 +326,7 @@ modules:
 * sdl: added window_background color property
 
 
-Version 0.3.6
+Version 0.3.6 - February 2, 2009
 
 The recommended version of FFmpeg for use with this release is SVN r16849.
 
@@ -311,7 +345,7 @@ avformat module:
   f-list[[,]acodec-list][[,]vcodec-list]
 
 
-Version 0.3.4
+Version 0.3.4 - December 29, 2008
 
 The recommended version of FFmpeg for use with this release is SVN r16313.
 
@@ -336,7 +370,7 @@ misc:
 * improved build for OS X and x86-64 and improved handling of mmx/sse
 
 
-Version 0.3.2
+Version 0.3.2 - November 10, 2008
 
 In addition to bug fixes detailed in the ChangeLog, here is a list of
 enhancements.
@@ -360,7 +394,7 @@ inigo:
 * removed realtime process scheduling
 
 
-Version 0.3.0
+Version 0.3.0 - August 5, 2008
 
 framework:
 * fix bugs with introduction of mlt_profile in v0.2.4
@@ -400,7 +434,7 @@ inigo:
 * added -profile option and support for progress=1 for kdenlive
 
 
-Version 0.2.4
+Version 0.2.4 - August 4, 2007
 
 * framework: new extensible profiles system to replace MLT_NORMALISATION
 * module avformat: interlaced coding support for ffmpeg/libavcodec
@@ -410,7 +444,7 @@ Version 0.2.4
 * numerous bugfixes
 
 
-Version 0.2.3
+Version 0.2.3 - April 9, 2007
 
 * Addition of kdenlive module
 * Support for ffmpeg from subversion
@@ -418,25 +452,25 @@ Version 0.2.3
 * Copyright and license cleanup
 
 
-Version 0.2.2
+Version 0.2.2 - May 27, 2006
 
 * Prepared specifically for the kdenlive 0.3 release.
 * Contains some patches to support rgb24a output for the gdk-pixbuf and qimage
   producers as well as some minor bugfixes.
 
 
-Version 0.2.1
+Version 0.2.1 - December 5, 2005
 
 * Many improvements since initial releases due to development of Shotcut and
   Jahshaka editing interfaces.
 
 
-Version 0.1.1
+Version 0.1.1 - June 9, 2004
 
 * Minor modifications and bug fixes from the previous release. Better
   ffmpeg/avformat integration and more reliable playback.
 
 
-Version 0.1.0
+Version 0.1.0 - May 6, 2004
 
 * First official release
