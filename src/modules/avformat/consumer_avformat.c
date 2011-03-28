@@ -1051,7 +1051,10 @@ static void *consumer_thread( void *arg )
 			}
 		}
 		else
+		{
+			audio_codec_id = CODEC_ID_NONE;
 			mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "audio codec %s unrecognised - ignoring\n", acodec );
+		}
 	}
 
 	// Check for video codec overides
@@ -1061,9 +1064,14 @@ static void *consumer_thread( void *arg )
 	{
 		AVCodec *p = avcodec_find_encoder_by_name( vcodec );
 		if ( p != NULL )
+		{
 			video_codec_id = p->id;
+		}
 		else
+		{
+			video_codec_id = CODEC_ID_NONE;
 			mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "video codec %s unrecognised - ignoring\n", vcodec );
+		}
 	}
 
 	// Write metadata
