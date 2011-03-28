@@ -145,6 +145,23 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 	if ( argv )
 	for ( i = 0; argv[ i ] != NULL; i ++ )
 	{
+		if ( argv[ i + 1 ] == NULL && (
+			!strcmp( argv[ i ], "-attach" ) ||
+			!strcmp( argv[ i ], "-attach-cut" ) ||
+			!strcmp( argv[ i ], "-attach-track" ) ||
+			!strcmp( argv[ i ], "-attach-clip" ) ||
+			!strcmp( argv[ i ], "-repeat" ) ||
+			!strcmp( argv[ i ], "-split" ) ||
+			!strcmp( argv[ i ], "-join" ) ||
+			!strcmp( argv[ i ], "-mixer" ) ||
+			!strcmp( argv[ i ], "-mix" ) ||
+			!strcmp( argv[ i ], "-filter" ) ||
+			!strcmp( argv[ i ], "-transition" ) ||
+			!strcmp( argv[ i ], "-blank" ) ) )
+		{
+			fprintf( stderr, "Argument missing for %s.\n", argv[ i ] );
+			break;
+		}
 		if ( !strcmp( argv[ i ], "-group" ) )
 		{
 			if ( mlt_properties_count( group ) != 0 )
