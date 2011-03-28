@@ -1476,8 +1476,10 @@ exit_get_image:
 		mlt_properties_set_int( frame_properties, "top_field_first", self->top_field_first );
 
 	// Set immutable properties of the selected track's (or overridden) source attributes.
+	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 
 	return !self->got_picture;
 }
