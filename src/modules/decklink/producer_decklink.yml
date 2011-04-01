@@ -23,6 +23,7 @@ bugs:
   - It is incompatible with the yadif deinterlacer.
   - Transport controls such as seeking has no affect.
   - External deck control is not implemented.
+  - Only 8-bit Y'CbCr is supported at this time.
 parameters:
   - identifier: argument
     title: Card
@@ -32,6 +33,7 @@ parameters:
     mutable: no
     default: 0
     minimum: 0
+    widget: spinner
 
   - identifier: resource
     title: Card
@@ -47,9 +49,10 @@ parameters:
     default: 2
     minimum: 2
     maximum: 16
+    widget: spinner
 
   - identifier: buffer
-    title: Max Frames to Buffer
+    title: Maximum Buffer
     description: >
       There is a queue of frames between this plugin and its consumer.
       If the consumer has a little, intermittent delay then it reduces the
@@ -62,3 +65,5 @@ parameters:
     mutable: no
     default: 25
     minimum: 0
+    unit: frames
+    widget: spinner

@@ -1,0 +1,64 @@
+schema_version: 0.1
+type: consumer
+identifier: decklink
+title: Blackmagic Design DeckLink Output
+version: 2
+copyright: Copyright (C) 2011 Daniel R. Dennedy
+license: LGPL
+language: en
+creator: Dan Dennedy
+tags:
+  - Audio
+  - Video
+description: >
+  Output audio and video using Blackmagic Design DeckLink SDI or Intensity
+  HDMI cards.
+notes: >
+  Please ensure that you use a MLT profile that is compatible with a broadcast
+  standard which the card you are using supports.
+bugs:
+  - Only internal keying is supported at this time.
+  - Only 8-bit Y'CbCr or RGBA (key) is supported at this time.
+parameters:
+  - identifier: argument
+    title: Card
+    type: integer
+    readonly: no
+    required: no
+    mutable: no
+    default: 0
+    minimum: 0
+    widget: spinner
+
+  - identifier: preroll
+    title: Pre-roll Count
+    type: integer
+    readonly: no
+    required: no
+    mutable: no
+    default: 3
+    minimum: 2
+    unit: frames
+    widget: spinner
+
+  - identifier: keyer
+    title: Enable Keyer
+    type: integer
+    readonly: no
+    required: no
+    mutable: no
+    default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+
+  - identifier: keyer_level
+    title: Key Opacity
+    type: float
+    readonly: no
+    required: no
+    mutable: no
+    minimum: 0
+    maximum: 1
+    default: 1
+    widget: slider
