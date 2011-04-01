@@ -1,0 +1,64 @@
+schema_version: 0.1
+type: producer
+identifier: decklink
+title: Blackmagic Design DeckLink Capture
+version: 1
+copyright: Copytight (C) 2011 Daniel R. Dennedy
+license: LGPL
+language: en
+creator: Dan Dennedy
+tags:
+  - Audio
+  - Video
+description: >
+  Capture video and audio using Blackmagic Design DeckLink SDI or Intensity
+  HDMI cards.
+notes: >
+  Please ensure that you use a MLT profile that is compatible with a broadcast
+  standard which the card you are using supports. If you must use an interlaced
+  profile but wish to deinterlace or scale the input, then you must use the
+  consumer producer, e.g.:
+  melt -profile square_pal consumer:decklink: profile=dv_pal
+bugs:
+  - It is incompatible with the yadif deinterlacer.
+  - Transport controls such as seeking has no affect.
+  - External deck control is not implemented.
+parameters:
+  - identifier: argument
+    title: Card
+    type: integer
+    readonly: no
+    required: no
+    mutable: no
+    default: 0
+    minimum: 0
+
+  - identifier: resource
+    title: Card
+    type: integer
+    readonly: yes
+
+  - identifier: channels
+    title: Audio Channels
+    type: integer
+    readonly: no
+    required: no
+    mutable: no
+    default: 2
+    minimum: 2
+    maximum: 16
+
+  - identifier: buffer
+    title: Max Frames to Buffer
+    description: >
+      There is a queue of frames between this plugin and its consumer.
+      If the consumer has a little, intermittent delay then it reduces the
+      risk of dropping a frame. However, this provides a maximum number of
+      frames that can be buffered to prevent consuming memory unbounded in
+      the case of frequent or sustained delays.
+    type: integer
+    readonly: no
+    required: no
+    mutable: no
+    default: 25
+    minimum: 0
