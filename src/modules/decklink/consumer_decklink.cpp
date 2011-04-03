@@ -23,9 +23,10 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <limits.h>
 #include "DeckLinkAPI.h"
 
-const unsigned PREROLL_MINIMUM = 3;
+static const unsigned PREROLL_MINIMUM = 3;
 
 typedef struct
 {
@@ -81,7 +82,6 @@ private:
 	mlt_consumer_s              m_consumer;
 	IDeckLink*                  m_deckLink;
 	IDeckLinkOutput*            m_deckLinkOutput;
-	IDeckLinkMutableVideoFrame* m_videoFrame;
 	IDeckLinkDisplayMode*       m_displayMode;
 	pthread_mutex_t             m_mutex;
 	pthread_cond_t              m_condition;
@@ -100,10 +100,13 @@ private:
 	mlt_deque                   m_videoFrameQ;
 	mlt_frame                   m_frame;
 	unsigned                    m_dropped;
-		
+	bool                        m_isAudio;
+	bool                        m_isKeyer;
+	IDeckLinkKeyer*             m_deckLinkKeyer;
+
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
-		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( &m_consumer ) );
+		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( getConsumer() ) );
 		IDeckLinkDisplayModeIterator* iter;
 		IDeckLinkDisplayMode* mode;
 		IDeckLinkDisplayMode* result = 0;
@@ -117,7 +120,7 @@ private:
 				mode->GetFrameRate( &m_duration, &m_timescale );
 				m_fps = (double) m_timescale / m_duration;
 				int p = mode->GetFieldDominance() == bmdProgressiveFrame;
-				mlt_log_verbose( &m_consumer, "BMD mode %dx%d %.3f fps prog %d\n", m_width, m_height, m_fps, p );
+				mlt_log_verbose( getConsumer(), "BMD mode %dx%d %.3f fps prog %d\n", m_width, m_height, m_fps, p );
 				
 				if ( m_width == profile->width && m_height == profile->height && p == profile->progressive
 					 && m_fps == mlt_profile_fps( profile ) )
@@ -136,12 +139,18 @@ public:
 	
 	~DeckLinkConsumer()
 	{
+		if ( m_deckLinkKeyer )
+			m_deckLinkKeyer->Release();
 		if ( m_deckLinkOutput )
 			m_deckLinkOutput->Release();
 		if ( m_deckLink )
 			m_deckLink->Release();
 		if ( m_videoFrameQ )
+		{
 			mlt_deque_close( m_videoFrameQ );
+			pthread_mutex_destroy( &m_mutex );
+			pthread_cond_destroy( &m_condition );
+		}
 	}
 	
 	bool open( unsigned card = 0 )
@@ -151,7 +160,7 @@ public:
 		
 		if ( !deckLinkIterator )
 		{
-			mlt_log_verbose( NULL, "The DeckLink drivers not installed.\n" );
+			mlt_log_error( getConsumer(), "The DeckLink drivers not installed.\n" );
 			return false;
 		}
 		
@@ -159,22 +168,33 @@ public:
 		do {
 			if ( deckLinkIterator->Next( &m_deckLink ) != S_OK )
 			{
-				mlt_log_verbose( NULL, "DeckLink card not found\n" );
+				mlt_log_error( getConsumer(), "DeckLink card not found\n" );
 				deckLinkIterator->Release();
 				return false;
 			}
 		} while ( ++i <= card );
+		deckLinkIterator->Release();
 		
 		// Obtain the audio/video output interface (IDeckLinkOutput)
 		if ( m_deckLink->QueryInterface( IID_IDeckLinkOutput, (void**)&m_deckLinkOutput ) != S_OK )
 		{
-			mlt_log_verbose( NULL, "No DeckLink cards support output\n" );
+			mlt_log_error( getConsumer(), "No DeckLink cards support output\n" );
 			m_deckLink->Release();
 			m_deckLink = 0;
-			deckLinkIterator->Release();
 			return false;
 		}
 		
+		// Get the keyer interface
+		if ( m_deckLink->QueryInterface( IID_IDeckLinkKeyer, (void**) &m_deckLinkKeyer ) != S_OK )
+		{
+			mlt_log_error( getConsumer(), "Failed to get keyer\n" );
+			m_deckLinkOutput->Release();
+			m_deckLinkOutput = 0;
+			m_deckLink->Release();
+			m_deckLink = 0;
+			return false;
+		}
+
 		// Provide this class as a delegate to the audio and video output interfaces
 		m_deckLinkOutput->SetScheduledFrameCompletionCallback( this );
 		m_deckLinkOutput->SetAudioCallback( this );
@@ -189,39 +209,64 @@ public:
 	
 	bool start( unsigned preroll )
 	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+
+		// Initialize members
+		m_count = 0;
+		m_frame = 0;
+		m_dropped = 0;
+		m_isPrerolling = true;
+		m_prerollCounter = 0;
+		m_preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
+		m_channels = mlt_properties_get_int( properties, "channels" );
+		m_isAudio = !mlt_properties_get_int( properties, "audio_off" );
+
 		m_displayMode = getDisplayMode();
 		if ( !m_displayMode )
 		{
-			mlt_log_error( &m_consumer, "Profile is not compatible with decklink.\n" );
+			mlt_log_error( getConsumer(), "Profile is not compatible with decklink.\n" );
 			return false;
 		}
 		
+		// Set the keyer
+		if ( ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
+		{
+			bool external = false;
+			double level = mlt_properties_get_double( properties, "keyer_level" );
+
+			if ( m_deckLinkKeyer->Enable( external ) != S_OK )
+				mlt_log_error( getConsumer(), "Failed to enable keyer\n" );
+			m_deckLinkKeyer->SetLevel( level <= 1 ? ( level > 0 ? 255 * level : 255 ) : 255 );
+			m_preroll = 0;
+			m_isAudio = false;
+		}
+		else
+		{
+			m_deckLinkKeyer->Disable();
+		}
+
 		// Set the video output mode
 		if ( S_OK != m_deckLinkOutput->EnableVideoOutput( m_displayMode->GetDisplayMode(), bmdVideoOutputFlagDefault) )
 		{
-			mlt_log_error( &m_consumer, "Failed to enable video output\n" );
+			mlt_log_error( getConsumer(), "Failed to enable video output\n" );
 			return false;
 		}
-		
+
 		// Set the audio output mode
-		m_channels = 2;
+		if ( !m_isAudio )
+		{
+			m_deckLinkOutput->DisableAudioOutput();
+			return true;
+		}
 		if ( S_OK != m_deckLinkOutput->EnableAudioOutput( bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
 			m_channels, bmdAudioOutputStreamContinuous ) )
 		{
-			mlt_log_error( &m_consumer, "Failed to enable audio output\n" );
+			mlt_log_error( getConsumer(), "Failed to enable audio output\n" );
 			stop();
 			return false;
 		}
 		m_fifo = sample_fifo_init();
-		
-		// Preroll
-		m_isPrerolling = true;
-		m_prerollCounter = 0;
-		m_preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
-		m_count = 0;
 		m_deckLinkOutput->BeginAudioPreroll();
-		m_frame = 0;
-		m_dropped = 0;
 		
 		return true;
 	}
@@ -257,95 +302,167 @@ public:
 		}
 		while ( mlt_deque_count( m_videoFrameQ ) )
 		{
-			m_videoFrame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
-			m_videoFrame->Release();
+			IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
+			frame->Release();
 		}
-		m_videoFrame = 0;
 		if ( m_fifo ) sample_fifo_close( m_fifo );
 		mlt_frame_close( m_frame );
 	}
-	
-	void createFrame()
+
+	void renderAudio( mlt_frame frame )
 	{
-		m_videoFrame = 0;
+		mlt_audio_format format = mlt_audio_s16;
+		int frequency = bmdAudioSampleRate48kHz;
+		int samples = mlt_sample_calculator( m_fps, frequency, m_count );
+		int16_t *pcm = 0;
+
+		if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_channels, &samples ) )
+		{
+			int count = samples;
+
+			if ( !m_isPrerolling )
+			{
+				uint32_t audioCount = 0;
+				uint32_t videoCount = 0;
+
+				// Check for resync
+				m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &audioCount );
+				m_deckLinkOutput->GetBufferedVideoFrameCount( &videoCount );
+
+				// Underflow typically occurs during non-normal speed playback.
+				if ( audioCount < 1 || videoCount < 1 )
+				{
+					// Upon switching to normal playback, buffer some frames faster than realtime.
+					mlt_log_info( getConsumer(), "buffer underrun: audio buf %u video buf %u frames\n", audioCount, videoCount );
+					m_prerollCounter = 0;
+				}
+
+				// While rebuffering
+				if ( isBuffering() )
+				{
+					// Only append audio to reach the ideal level and not overbuffer.
+					int ideal = ( m_preroll - 1 ) * bmdAudioSampleRate48kHz / m_fps;
+					int actual = m_fifo->used / m_channels + audioCount;
+					int diff = ideal / 2 - actual;
+					count = diff < 0 ? 0 : diff < count ? diff : count;
+				}
+			}
+			if ( count > 0 )
+				sample_fifo_append( m_fifo, pcm, count * m_channels );
+		}
+	}
+
+	bool createFrame()
+	{
+		BMDPixelFormat format = m_isKeyer? bmdFormat8BitARGB : bmdFormat8BitYUV;
+		IDeckLinkMutableVideoFrame* frame = 0;
+		uint8_t *buffer = 0;
+		int stride = m_width * ( m_isKeyer? 4 : 2 );
+
 		// Generate a DeckLink video frame
 		if ( S_OK != m_deckLinkOutput->CreateVideoFrame( m_width, m_height,
-			m_width * 2, bmdFormat8BitYUV, bmdFrameFlagDefault, &m_videoFrame ) )
+			stride, format, bmdFrameFlagDefault, &frame ) )
 		{
-			mlt_log_verbose( &m_consumer, "Failed to create video frame\n" );
+			mlt_log_verbose( getConsumer(), "Failed to create video frame\n" );
 			stop();
-			return;
+			return false;
 		}
 		
 		// Make the first line black for field order correction.
-		uint8_t *buffer = 0;
-		if ( S_OK == m_videoFrame->GetBytes( (void**) &buffer ) && buffer )
+		if ( S_OK == frame->GetBytes( (void**) &buffer ) && buffer )
 		{
-			for ( int i = 0; i < m_width; i++ )
+			if ( m_isKeyer )
+			{
+				memset( buffer, 0, stride );
+			}
+			else for ( int i = 0; i < m_width; i++ )
 			{
 				*buffer++ = 128;
 				*buffer++ = 16;
 			}
 		}
-		mlt_log_debug( &m_consumer, "created video frame\n" );
-		mlt_deque_push_back( m_videoFrameQ, m_videoFrame );
+		mlt_log_debug( getConsumer(), "created video frame\n" );
+		mlt_deque_push_back( m_videoFrameQ, frame );
+
+		return true;
+	}
+
+	void renderVideo()
+	{
+		mlt_image_format format = m_isKeyer? mlt_image_rgb24a : mlt_image_yuv422;
+		uint8_t* image = 0;
+
+		if ( !mlt_frame_get_image( m_frame, &image, &format, &m_width, &m_height, 0 ) )
+		{
+			IDeckLinkMutableVideoFrame* decklinkFrame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
+			uint8_t* buffer = 0;
+			int stride = m_width * ( m_isKeyer? 4 : 2 );
+
+			decklinkFrame->GetBytes( (void**) &buffer );
+			if ( buffer )
+			{
+				int progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( m_frame ), "progressive" );
+
+				if ( !m_isKeyer )
+				{
+					// Normal non-keyer playout - needs byte swapping
+					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
+						// convert lower field first to top field first
+						swab( image, buffer + stride, stride * ( m_height - 1 ) );
+					else
+						swab( image, buffer, stride * m_height );
+				}
+				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( m_frame ), "test_image" ) )
+				{
+					// Normal keyer output
+					int y = m_height + 1;
+					uint32_t* s = (uint32_t*) image;
+					uint32_t* d = (uint32_t*) buffer;
+
+					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
+					{
+						// Correct field order
+						m_height--;
+						d += stride;
+					}
+
+					// Need to relocate alpha channel RGBA => ARGB
+					while ( --y )
+					{
+						int x = m_width + 1;
+						while ( --x )
+						{
+							*d++ = ( *s << 8 ) | ( *s >> 24 );
+							s++;
+						}
+					}
+				}
+				else
+				{
+					// Keying blank frames - nullify alpha
+					memset( buffer, 0, stride * m_height );
+				}
+				m_deckLinkOutput->ScheduleVideoFrame( decklinkFrame, m_count * m_duration, m_duration, m_timescale );
+			}
+			mlt_deque_push_front( m_videoFrameQ, decklinkFrame );
+		}
 	}
 
 	HRESULT render( mlt_frame frame )
 	{
 		HRESULT result = S_OK;
-		// Get the audio		
+
+		// Get the audio
 		double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame), "_speed" );
-		if ( speed == 1.0 )
-		{
-			mlt_audio_format format = mlt_audio_s16;
-			int frequency = bmdAudioSampleRate48kHz;
-			int samples = mlt_sample_calculator( m_fps, frequency, m_count );
-			int16_t *pcm = 0;
-			
-			if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_channels, &samples ) )
-			{
-				int count = samples;
-				
-				if ( !m_isPrerolling )
-				{
-					uint32_t audioCount = 0;
-					uint32_t videoCount = 0;
-					
-					// Check for resync
-					m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &audioCount );
-					m_deckLinkOutput->GetBufferedVideoFrameCount( &videoCount );
-					
-					// Underflow typically occurs during non-normal speed playback.
-					if ( audioCount < 1 || videoCount < 1 )
-					{
-						// Upon switching to normal playback, buffer some frames faster than realtime.
-						mlt_log_info( &m_consumer, "buffer underrun: audio buf %u video buf %u frames\n", audioCount, videoCount );
-						m_prerollCounter = 0;
-					}
-					
-					// While rebuffering
-					if ( isBuffering() )
-					{
-						// Only append audio to reach the ideal level and not overbuffer.
-						int ideal = ( m_preroll - 1 ) * bmdAudioSampleRate48kHz / m_fps;
-						int actual = m_fifo->used / m_channels + audioCount;
-						int diff = ideal / 2 - actual;
-						count = diff < 0 ? 0 : diff < count ? diff : count;
-					}
-				}
-				if ( count > 0 )
-					sample_fifo_append( m_fifo, pcm, count * m_channels );
-			}
-		}
+		if ( m_isAudio && speed == 1.0 )
+			renderAudio( frame );
 		
 		// Create video frames while pre-rolling
 		if ( m_isPrerolling )
 		{
-			createFrame();
-			if ( !m_videoFrame )
+			if ( !createFrame() )
 			{
-				mlt_log_error( &m_consumer, "failed to create video frame\n" );
+				mlt_log_error( getConsumer(), "failed to create video frame\n" );
 				return S_FALSE;
 			}
 		}
@@ -361,32 +478,19 @@ public:
 			if ( !m_frame )
 				m_frame = frame;
 			// Reuse the last frame
-			mlt_log_verbose( &m_consumer, "dropped video frame %u\n", ++m_dropped );
+			mlt_log_verbose( getConsumer(), "dropped video frame %u\n", ++m_dropped );
 		}
 
 		// Get the video
-		mlt_image_format format = mlt_image_yuv422;
-		uint8_t* image = 0;
-		uint8_t* buffer = 0;
-		if ( !mlt_frame_get_image( m_frame, &image, &format, &m_width, &m_height, 0 ) )
-		{
-			m_videoFrame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_videoFrameQ );
-			m_videoFrame->GetBytes( (void**) &buffer );
-			if ( m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
-				// convert lower field first to top field first
-				swab( image, buffer + m_width * 2, m_width * ( m_height - 1 ) * 2 );
-			else
-				swab( image, buffer, m_width * m_height * 2 );
-			m_deckLinkOutput->ScheduleVideoFrame( m_videoFrame, m_count * m_duration, m_duration, m_timescale );
-			mlt_deque_push_front( m_videoFrameQ, m_videoFrame );
-		}
+		renderVideo();
 		++m_count;
 
 		// Check for end of pre-roll
 		if ( ++m_prerollCounter > m_preroll && m_isPrerolling )
 		{
 			// Start audio and video output
-			m_deckLinkOutput->EndAudioPreroll();
+			if ( m_isAudio )
+				m_deckLinkOutput->EndAudioPreroll();
 			m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
 			m_isPrerolling = false;
 		}
@@ -416,7 +520,7 @@ public:
 
 	virtual HRESULT STDMETHODCALLTYPE ScheduledPlaybackHasStopped()
 	{
-		return mlt_consumer_is_stopped( &m_consumer ) ? S_FALSE : S_OK;
+		return mlt_consumer_is_stopped( getConsumer() ) ? S_FALSE : S_OK;
 	}
 	
 	virtual HRESULT STDMETHODCALLTYPE RenderAudioSamples( bool preroll )
@@ -468,15 +572,12 @@ static void *run( void *arg )
 	while ( !terminated && mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
-		frame = mlt_consumer_rt_frame( consumer );
-
-		// Check for termination
-		if ( terminate_on_pause && frame )
-			terminated = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0.0;
-
-		// Check that we have a frame to work with
-		if ( frame )
+		if ( ( frame = mlt_consumer_rt_frame( consumer ) ) )
 		{
+			// Check for termination
+			if ( terminate_on_pause )
+				terminated = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0.0;
+
 			decklink->render( frame );
 			if ( !decklink->isBuffering() )
 				decklink->wait();
@@ -606,10 +707,33 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 	return consumer;
 }
 
+extern mlt_producer producer_decklink_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	const char *service_type = NULL;
+	switch ( type )
+	{
+		case consumer_type:
+			service_type = "consumer";
+			break;
+		case producer_type:
+			service_type = "producer";
+			break;
+		default:
+			return NULL;
+	}
+	snprintf( file, PATH_MAX, "%s/decklink/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, id );
+	return mlt_properties_parse_yaml( file );
+}
 
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "decklink", consumer_decklink_init );
+	MLT_REGISTER( producer_type, "decklink", producer_decklink_init );
+	MLT_REGISTER_METADATA( consumer_type, "decklink", metadata, NULL );
+	MLT_REGISTER_METADATA( producer_type, "decklink", metadata, NULL );
 }
 
 } // extern C
