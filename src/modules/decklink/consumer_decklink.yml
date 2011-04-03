@@ -33,6 +33,11 @@ parameters:
   - identifier: preroll
     title: Pre-roll Count
     type: integer
+    description: >
+      This controls the amount of buffering in the DeckLink driver/library.
+      Increase this if you get video tearing or choppy audio. However, as
+      you increase the amount, you increase the risk of audio and video
+      becoming out of synchronization.
     readonly: no
     required: no
     mutable: no
@@ -44,6 +49,13 @@ parameters:
   - identifier: keyer
     title: Enable Keyer
     type: integer
+    description: >
+      Keying is the process of compositing MLT output over a live SDI input.
+      The alpha channel of the MLT video controls the transparent areas, and
+      the keyer supports alpha-blending. You can not control the compositing
+      rectangle. Rather, the entire MLT output overlays the entire video
+      input. Therefore, you must use MLT's compositing services to control
+      the size and position.
     readonly: no
     required: no
     mutable: no
@@ -55,6 +67,11 @@ parameters:
   - identifier: keyer_level
     title: Key Opacity
     type: float
+    description: >
+      This controls the level of blending between the key and the input video.
+      1 is fully opaque and something near 0 is transparent. However, absolute
+      0 is considered as "not supplied" and also fully opaque. 0.5 is an
+      evenly balanced blending of the key and input video.
     readonly: no
     required: no
     mutable: no
