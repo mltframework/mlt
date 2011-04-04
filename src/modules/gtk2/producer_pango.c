@@ -207,7 +207,10 @@ mlt_producer producer_pango_init( const char *filename )
 			}
 			else
 			{
-				mlt_properties_set( properties, "markup", "" );
+				producer->close = NULL;
+				mlt_producer_close( producer );
+				producer = NULL;
+				free( this );
 			}
 		}
 
