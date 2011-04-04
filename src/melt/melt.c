@@ -324,6 +324,9 @@ static void show_usage( char *program_name )
 "  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
 "  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
 "  -query \"profiles\" | \"profile\"=id         List profiles, show info about one\n"
+"  -query \"formats\"                         List audio/video formats\n"
+"  -query \"audio_codecs\"                    List audio codecs\n"
+"  -query \"video_codecs\"                    List video codecs\n"
 "  -serialise [filename]                    Write the commands to a text file\n"
 "  -silent                                  Do not display position/transport\n"
 "  -split relative-frame                    Split the last cut into two cuts\n"
@@ -464,6 +467,51 @@ static void query_profile( const char *id )
 	mlt_properties_close( profiles );
 }
 
+static void query_formats( )
+{
+	mlt_consumer consumer = mlt_factory_consumer( NULL, "avformat", NULL );
+	if ( consumer )
+	{
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "f", "list" );
+		mlt_consumer_start( consumer );
+		mlt_consumer_close( consumer );
+	}
+	else
+	{
+		fprintf( stderr, "# No formats - failed to load avformat consumer\n" );
+	}
+}
+
+static void query_acodecs( )
+{
+	mlt_consumer consumer = mlt_factory_consumer( NULL, "avformat", NULL );
+	if ( consumer )
+	{
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "acodec", "list" );
+		mlt_consumer_start( consumer );
+		mlt_consumer_close( consumer );
+	}
+	else
+	{
+		fprintf( stderr, "# No audio codecs - failed to load avformat consumer\n" );
+	}
+}
+
+static void query_vcodecs( )
+{
+	mlt_consumer consumer = mlt_factory_consumer( NULL, "avformat", NULL );
+	if ( consumer )
+	{
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "vcodec", "list" );
+		mlt_consumer_start( consumer );
+		mlt_consumer_close( consumer );
+	}
+	else
+	{
+		fprintf( stderr, "# No video codecs - failed to load avformat consumer\n" );
+	}
+}
+
 static void on_fatal_error( mlt_properties owner, mlt_consumer consumer )
 {
 	mlt_consumer_stop( consumer );
@@ -531,7 +579,13 @@ int main( int argc, char **argv )
 					query_services( repo, transition_type );
 				else if ( !strcmp( pname, "profiles" ) || !strcmp( pname, "profile" ) )
 					query_profiles();
-				
+				else if ( !strncmp( pname, "format", 6 ) )
+					query_formats();
+				else if ( !strncmp( pname, "acodec", 6 ) || !strcmp( pname, "audio_codecs" ) )
+					query_acodecs();
+				else if ( !strncmp( pname, "vcodec", 6 ) || !strcmp( pname, "video_codecs" ) )
+					query_vcodecs();
+
 				else if ( !strncmp( pname, "consumer=", 9 ) )
 					query_metadata( repo, consumer_type, "consumer", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "filter=", 7 ) )
