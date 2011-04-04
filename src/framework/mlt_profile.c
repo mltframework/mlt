@@ -334,3 +334,48 @@ mlt_profile mlt_profile_clone( mlt_profile profile )
 	}
 	return clone;
 }
+
+
+/** Get the list of profiles.
+ *
+ * The caller MUST free the returned properties object!
+ * Each entry in the list is keyed on its name, and its value is another
+ * properties object that contains the attributes of the profile.
+ * \public \memberof mlt_profile_s
+ * \return a list of profiles
+ */
+
+mlt_properties mlt_profile_list( )
+{
+	const char *prefix = getenv( "MLT_PROFILES_PATH" );
+	mlt_properties properties = mlt_properties_new();
+	mlt_properties dir = mlt_properties_new();
+	int sort = 1;
+	const char *wildcard = NULL;
+	int i;
+
+	// Load from $prefix/share/mlt/profiles if no env var
+	if ( prefix == NULL )
+		prefix = PREFIX;
+
+	mlt_properties_dir_list( dir, prefix, wildcard, sort );
+
+	for ( i = 0; i < mlt_properties_count( dir ); i++ )
+	{
+		char *filename = mlt_properties_get_value( dir, i );
+		char *profile_name = basename( filename );
+		if ( profile_name[0] != '.' && strcmp( profile_name, "Makefile" ) &&
+		     profile_name[ strlen( profile_name ) - 1 ] != '~' )
+		{
+			mlt_properties profile = mlt_properties_load( filename );
+			if ( profile )
+			{
+				mlt_properties_set_data( properties, profile_name, profile, 0,
+					(mlt_destructor) mlt_properties_close, NULL );
+			}
+		}
+	}
+	mlt_properties_close( dir );
+
+	return properties;
+}
