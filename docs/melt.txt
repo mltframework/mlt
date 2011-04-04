@@ -2,7 +2,8 @@ Melt Documentation
 
 Copyright (C) 2004-2009 Ushodaya Enterprised Limited
 Author: Charles Yates <charles.yates@pandora.be>
-Last Revision: 2009-05-08
+Author: Dan Dennedy <dan@dennedy.org>
+Last Revision: 2011-04-03
 
 
 MELT
@@ -46,6 +47,10 @@ Usage:
       -query "filters" | "filter"=id           List filters or show info about one
       -query "producers" | "producer"=id       List producers or show info about one
       -query "transitions" | "transition"=id   List transitions or show info about one
+      -query "profiles" | "profile"=id         List profiles or show info about one
+      -query "formats"                         List audio/video formats
+      -query "audio_codecs"                    List audio codecs
+      -query "video_codecs"                    List video codecs
       -serialise [filename]                    Write the commands to a text file
       -silent                                  Do not display position/transport help
       -split relative-frame                    Split the last cut into two cuts

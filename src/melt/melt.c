@@ -323,6 +323,10 @@ static void show_usage( char *program_name )
 "  -query \"filters\" | \"filter\"=id           List filters or show info about one\n"
 "  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
 "  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
+"  -query \"profiles\" | \"profile\"=id         List profiles, show info about one\n"
+"  -query \"formats\"                         List audio/video formats\n"
+"  -query \"audio_codecs\"                    List audio codecs\n"
+"  -query \"video_codecs\"                    List video codecs\n"
 "  -serialise [filename]                    Write the commands to a text file\n"
 "  -silent                                  Do not display position/transport\n"
 "  -split relative-frame                    Split the last cut into two cuts\n"
@@ -432,6 +436,82 @@ static void query_services( mlt_repository repo, mlt_service_type type )
 	fprintf( stderr, "...\n" );
 }
 
+static void query_profiles()
+{
+	mlt_properties profiles = mlt_profile_list();
+	fprintf( stderr, "---\nprofiles:\n" );
+	if ( profiles )
+	{
+		int j;
+		for ( j = 0; j < mlt_properties_count( profiles ); j++ )
+			fprintf( stderr, "  - %s\n", mlt_properties_get_name( profiles, j ) );
+	}
+	fprintf( stderr, "...\n" );
+	mlt_properties_close( profiles );
+}
+
+static void query_profile( const char *id )
+{
+	mlt_properties profiles = mlt_profile_list();
+	mlt_properties profile = mlt_properties_get_data( profiles, id, NULL );
+	if ( profile )
+	{
+		char *s = mlt_properties_serialise_yaml( profile );
+		fprintf( stderr, "%s", s );
+		free( s );
+	}
+	else
+	{
+		fprintf( stderr, "# No metadata for profile \"%s\"\n", id );
+	}
+	mlt_properties_close( profiles );
+}
+
+static void query_formats( )
+{
+	mlt_consumer consumer = mlt_factory_consumer( NULL, "avformat", NULL );
+	if ( consumer )
+	{
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "f", "list" );
+		mlt_consumer_start( consumer );
+		mlt_consumer_close( consumer );
+	}
+	else
+	{
+		fprintf( stderr, "# No formats - failed to load avformat consumer\n" );
+	}
+}
+
+static void query_acodecs( )
+{
+	mlt_consumer consumer = mlt_factory_consumer( NULL, "avformat", NULL );
+	if ( consumer )
+	{
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "acodec", "list" );
+		mlt_consumer_start( consumer );
+		mlt_consumer_close( consumer );
+	}
+	else
+	{
+		fprintf( stderr, "# No audio codecs - failed to load avformat consumer\n" );
+	}
+}
+
+static void query_vcodecs( )
+{
+	mlt_consumer consumer = mlt_factory_consumer( NULL, "avformat", NULL );
+	if ( consumer )
+	{
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "vcodec", "list" );
+		mlt_consumer_start( consumer );
+		mlt_consumer_close( consumer );
+	}
+	else
+	{
+		fprintf( stderr, "# No video codecs - failed to load avformat consumer\n" );
+	}
+}
+
 static void on_fatal_error( mlt_properties owner, mlt_consumer consumer )
 {
 	mlt_consumer_stop( consumer );
@@ -497,7 +577,15 @@ int main( int argc, char **argv )
 					query_services( repo, producer_type );
 				else if ( !strcmp( pname, "transitions" ) || !strcmp( pname, "transition" ) )
 					query_services( repo, transition_type );
-				
+				else if ( !strcmp( pname, "profiles" ) || !strcmp( pname, "profile" ) )
+					query_profiles();
+				else if ( !strncmp( pname, "format", 6 ) )
+					query_formats();
+				else if ( !strncmp( pname, "acodec", 6 ) || !strcmp( pname, "audio_codecs" ) )
+					query_acodecs();
+				else if ( !strncmp( pname, "vcodec", 6 ) || !strcmp( pname, "video_codecs" ) )
+					query_vcodecs();
+
 				else if ( !strncmp( pname, "consumer=", 9 ) )
 					query_metadata( repo, consumer_type, "consumer", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "filter=", 7 ) )
@@ -506,6 +594,8 @@ int main( int argc, char **argv )
 					query_metadata( repo, producer_type, "producer", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "transition=", 11 ) )
 					query_metadata( repo, transition_type, "transition", strchr( pname, '=' ) + 1 );
+				else if ( !strncmp( pname, "profile=", 8 ) )
+					query_profile( strchr( pname, '=' ) + 1 );
 				else
 					goto query_all;
 			}

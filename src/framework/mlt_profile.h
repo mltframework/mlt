@@ -55,4 +55,5 @@ extern double mlt_profile_sar( mlt_profile profile );
 extern double mlt_profile_dar( mlt_profile profile );
 extern void mlt_profile_close( mlt_profile profile );
 extern mlt_profile mlt_profile_clone( mlt_profile profile );
+extern mlt_properties mlt_profile_list( );
 #endif
