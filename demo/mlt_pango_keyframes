@@ -1,0 +1,4 @@
+melt \
+color:#03CF0 \
+-filter watermark:pango_keyframes.mpl composite.halign=c composite.valign=m \
+$*

@@ -215,3 +215,14 @@ Ticker tape
 	the compositor when viewed on an analog monitor using a DV or BlueFish444
 	consumer. The demo also shows the potientional for using and extending the
 	existing set of services for a full blown news ticker implementation.
+
+Pango Keyframed Markup
+
+	You can create timed text and subtitles using a .mpl file, which is a
+	properties format file. A properties file contains key=value pairs on
+	separate lines. For .mpl the key is a frame number and the value is
+	Pango Markup Language. A tilde is interpreted as a new line. This
+	example also demonstrates using the watermark and the alignment
+	properties of its encapsulated composite transition where halign
+	is the horizontal, valign is the vertical, c is for center, and m
+	is for middle.
