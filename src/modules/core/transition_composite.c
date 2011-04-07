@@ -983,8 +983,8 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 
 	// Get the image and dimensions
 	uint8_t *image = NULL;
-	int width = mlt_properties_get_int( a_props, "normalised_width" );
-	int height = mlt_properties_get_int( a_props, "normalised_height" );
+	int width = mlt_properties_get_int( a_props, "width" );
+	int height = mlt_properties_get_int( a_props, "height" );
 	mlt_image_format format = mlt_image_yuv422;
 
 	mlt_frame_get_image( a_frame, &image, &format, &width, &height, 0 );
