@@ -264,6 +264,9 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		}
 	}
 
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "width", *width );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "height", *height );
+
 	// Only continue if we have both filter and composite
 	if ( composite != NULL )
 	{
