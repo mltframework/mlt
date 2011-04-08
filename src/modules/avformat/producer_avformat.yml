@@ -1,9 +1,9 @@
 schema_version: 0.1
-type: producer # consumer, filter, producer, or transition
+type: producer
 identifier: avformat
 title: FFmpeg Reader
-version: 0.2.5
-copyright: Copyright (C) 2003-2008 Ushodaya Enterprises Limited
+version: 1
+copyright: Copyright (C) 2003-2011 Ushodaya Enterprises Limited
 license: LGPL
 language: en
 url: http://www.ffmpeg.org/
@@ -11,52 +11,21 @@ creator: Charles Yates
 contributor:
   - Dan Dennedy
 tags:
-  - Audio # this may produce audio
-  - Video # this may produce video
+  - Audio
+  - Video
 description: Read an audio and/or video file using FFmpeg
-icon:
-  filename: avformat/producer.png # relative to $MLT_DATA/modules/
-  content-type: image/png
-  content-encoding: base64 # could also be hex or none if inline SVG
-  content: |
-    iVBORw0KGgoAAAANSUhEUgAAABgAAAAPCAYAAAD+pA/bAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
-    WXMAAAsSAAALEgHS3X78AAAAB3RJTUUH1gsBEgMLZIL+swAAAB10RVh0Q29tbWVudABDcmVhdGVk
-    IHdpdGggVGhlIEdJTVDvZCVuAAAEgUlEQVQ4y2VUSWwbZRT+5p/xP4v3eIntceLEThOylKgkB070
-    UAUOCNFDFYkIVeqBijMHQKiCAwLEDbVIPVQCUalFQggph6pUoWKRWoS6RCGJ04biOG7sOI638TJe
-    xjM/FwwRfKf3vve99+kd3uNubNxgVb0Km2W7Tbt06fQLpwv4G8u3k6/88nvJcXYhnJ+dGfsRR/Dl
-    8tqpfKkZJ736d++cf6nU53Nra0utTOarVrMpdCj9XFhJr2C1sQq1pZ6ac8zNAljpi7ezzc+e5Lvx
-    je29H8rlyk8DA14GAOl05tT1n6tf39uqBM69GFgAsNjvaezsvKVfuyZkKxXIi4tvknn/PCQi4cA4
-    QMQf+aIv3Nvbm0sVTGe9zfDg8eGxUrk83689eFQcyhStQLluYG+/NNfny6VSsLW5Ge3pOjSHAy2e
-    /4TwjP84KAfBKRzW99f59G7aAQCVav20SZQAtdlQbfGxteTuNACkd/dsguR8W9NNiKKEVFbjisUi
-    BQAtnz8rFAq+LgAWDjN/IpEkk97JzYQjAdkhI2fkwtVG9X0AWN+pwTA5iJSH1qEoaMZC8tFjfv3J
-    IckcdiYNk0GUZVRbXKipt5YAoP7wYZDXNKHOGKR4fCs+NbVGBpwDt3zw3VEUBbqo437qvjuXy7kr
-    HbtqWQzUJgC8Ar2Dpe1UXpgZC763W+RAOAaR2tAxRTmV3kvsJJPjSrf7umEYqAoC1NnZVCAY3CLD
-    6nBpfnC+4hJc4B08DGqc1xr1l5126RzAIHAWqCjjj1wb8eHQq9uZ6nS9a4PAmaACD8bLWN16itrG
-    hoJ8Ptw2TVjRKAZjsWUAIABACHk3RmOQ7BIyegbpg/1oqWGBoAc0U5BFAt20o1CqXSk26YLZM8Aa
-    u5AEAwKV4XQNLHpGRq5zpRJ0QuCdmUGpUPgGAAQAoKBPJ5wTyDfzKLMyGMGntRZAmIHxMA/TTnDA
-    e3FvM+siXhfMdgXjIQbmUpCvMjTa7fFG5imUdhtNSYIcCCxHx8Y6/2zgUTwNq2Nd8FIvYAHFch1d
-    RmHjuhhVfdnjI1LPYVeQaw3gsMZAmYYTk+oT1SdBkiSU6z3U6k30AHR9PrhU9WYoHP7XYHR41Jpw
-    TxSDQhAuzgXLtIMQG0RioFwuX3IrwiWPnUByDsKyGPxKB5S3Phj0UkgiRdMQ0FYcqBECFgj8GY7F
-    7vZvg/QDl+S66mg5fg2IATDBC45jkPgOJhODLa8dN4d8BJQKYN06RgfF/eNTibRpWVcdsg2MV1An
-    FJrbDfXEiWxEVdf/ZxCPxVvTnmkjqgzB4p0gMGGnPUyMjUANupNusXNHpDxYt4wR1XtrKBq9a3W0
-    B047hSg7ofUIxMlJePz+K0d/FjmahLyh146rzyUNw0Jby8LGWvckSbwcjUayx1RpzWZWELR3jZln
-    Eh8CwDFVgcLr4HpNVDtMi588ecEbCHx7dKZwNBkODed+W318Zipk3Rx1iTG9GbwYiUQMAAj53Zef
-    H2u/Ua16L4ZCgykA8A94vn/W1DdH3dK0wIdXwkNDH+E/+Avfv/E5LPIz8wAAAABJRU5ErkJggg==
-
-notes: Implementation or additional usage notes go here.
-bugs: # this can be just for documentation, or the tool may disclose it to help user avoid pitfalls
+bugs:
   - Audio sync discrepancy with some content.
   - Not all libavformat supported formats are seekable.
   - >
     Seeking is not always accurate. Sometimes it doesn't seek to I-frames so you
     may get junk for a few frames.
   - >
-    Fails to play beyond first frame of video of sources with PTS not starting
-    at 0 (video4linux).
+    More than 2 channels of audio more than 16 bits is not supported.
 
 parameters:
   - identifier: argument # 'argument' is a reserved name for a value supplied to the factory
-    title: File  # the title can be used as a label for the widget
+    title: File/URI
     type: string
     description: |
       A file name specification or URL in the form:
@@ -73,19 +42,21 @@ parameters:
     widget: fileopen # could provide a button to use a file-open dialog 
 
   - identifier: audio_index # the name is the mlt_properties name
-    title: Audio Index
+    title: Audio index
     type: integer
-    # the description can be used in a tool tip
-    description: Choose the index of audio stream to use (-1 is off)
+    description: >
+      Choose the index of audio stream to use (-1 is off).
+      When this value is equal to the maximum size of a 32-bit signed integer
+      or the string "all" then all audio tracks are coalesced into a bundle of
+      channels on one audio track.
     readonly: no
     mutable: no
     minimum: -1
-    # when maximum not specified, the scalar limit is used
     default: 0
     widget: spinner
 
   - identifier: video_index
-    title: Video Index
+    title: Video index
     type: integer
     description: Choose the index of video stream to use (-1 is off)
     readonly: no
@@ -95,8 +66,8 @@ parameters:
     widget: spinner
 
   - identifier: in
-    title: In Point
-    type: time # time is not implemented, but it will correspond to the mlt_position replacement
+    title: In point
+    type: time
     description: Set the start time offset to use within the clip
     readonly: no
     mutable: no
@@ -105,7 +76,7 @@ parameters:
     widget: timecode # this is a special form of time value/code entry (e.g. see Kino)
 
   - identifier: out
-    title: Out Point
+    title: Out point
     type: time
     description: Set the ending time offset to use within the clip
     readonly: no
@@ -114,7 +85,7 @@ parameters:
     widget: timecode # as opposed to time, which could be confused for a wallclock-style time widget
 
   - identifier: threads
-    title: Decoding Threads
+    title: Decoding threads
     type: integer
     description: Choose the number of threads to use in the decoder(s)
     readonly: no
@@ -126,7 +97,7 @@ parameters:
     unit: threads # the unit is a label that appears after the widget
 
   - identifier: force_aspect_ratio
-    title: Sample Aspect Ratio
+    title: Sample aspect ratio
     type: float
     description: Optionally override a (mis)detected aspect ratio
     readonly: no
@@ -136,13 +107,13 @@ parameters:
     # no default property means it should be blank in the UI and not applied unless provided
 
   - identifier: resource
-    title: File
+    title: File/URI
     type: string
     description: file or protocol specification
     readonly: yes
 
   - identifier: source_fps
-    title: Frame Rate
+    title: Frame rate
     type: float
     scale: 2 # scale is the number of digits to display after the decimal point
     description: the framerate of the resource
@@ -150,8 +121,7 @@ parameters:
     unit: frames/second
 
   - identifier: aspect_ratio
-    title: Sample Aspect Ratio
-    type: float
+    title: Sample aspect ratio
     description: >
       The sample aspect ratio of the resource.
       This is determined on every frame read.
@@ -161,11 +131,77 @@ parameters:
     title: Duration
     type: time
     description: duration
-    readonly: yes
     widget: timecode
 
   - identifier: seekable
-    title: Supports Seek
-    type: integer
+    title: Supports seeking
     description: if the resource can seek
     readonly: yes
+
+  - identifier: adjust_length
+    title: Adjust length
+    type: time
+    description: Adjust the detected length.
+
+  - identifier: width
+    title: Width
+    type: integer
+    unit: pixels
+    readonly: yes
+
+  - identifier: height
+    title: Height
+    type: integer
+    unit: pixels
+    readonly: yes
+
+  - identifier: noimagecache
+    title: Disable image caching
+    type: integer
+    minimum: 0
+    maximum: 0
+    default: 0
+    widget: checkbox
+
+  - identifier: new_seek
+    title: Use new seeking
+    description: >
+      When this is not provided (recommended), it is enabled only for H.264 in
+      MPEG-2 Transport Streams.
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+
+  - identifier: force_progressive
+    title: Force progressive
+    description: When provided, this overrides the detection of progressive video.
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+
+  - identifier: force_tff
+    title: Force top field first
+    description: When provided, this overrides the detected field order of interlaced video.
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+
+  - identifier: force_fps
+    title: Force frame rate
+    description: When provided, this attempts to override the detected frame rate of the video.
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+
+  - identifer: force_colorspace
+    title: Force colorspace
+    description: When provided, this overrides the detected colorspace of the video (Y'CbCr only).
+    type: integer
+    values:
+      - 240 # SMPTE 240M
+      - 601 # ITU-R BT.601
+      - 709 # ITU-R BT.709

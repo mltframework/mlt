@@ -1,0 +1,383 @@
+schema_version: 0.1
+type: consumer
+identifier: avformat
+title: FFmpeg Output
+version: 1
+copyright: Copyright (C) 2003-2011 Ushodaya Enterprises Limited
+license: LGPL
+language: en
+url: http://www.ffmpeg.org/
+creator: Charles Yates
+contributor:
+  - Dan Dennedy
+tags:
+  - Audio
+  - Video
+description: Write or stream audio and/or video using FFmpeg
+parameters:
+  - identifier: argument
+    title: File/URI
+    type: string
+    required: yes
+    widget: filesave
+
+  - identifier: target
+    title: File/URI
+    type: string
+    description: This is not the same thing as the ffmpeg -target option!
+    readonly: yes
+
+  - identifier: profile
+    title: Profile
+    type: string
+    description: >
+      Choose a MLT basic video settings preset.
+      This overrides a profile that may have been set elsewhere.
+
+# These override the profile
+  - identifier: width
+    title: Width
+    type: integer
+    minimum: 0
+    unit: pixels
+  - identifier: height
+    title: Height
+    type: integer
+    minimum: 0
+    unit: pixels
+  - identifier: display_aspect_num
+    title: Display aspect ratio numerator
+    type: integer
+    minimum: 0
+  - identifier: display_aspect_den
+    title: Display aspect ratio denominator
+    type: integer
+    minimum: 0
+  - identifier: display_ratio
+    title: Display aspect ratio
+    readonly: yes
+  - identifier: sample_aspect_num
+    title: Sample aspect ratio numerator
+    type: integer
+    minimum: 0
+  - identifier: sample_aspect_den
+    title: Sample aspect ratio denominator
+    type: integer
+    minimum: 1
+  - identifier: aspect_ratio
+    title: Sample aspect ratio
+    readonly: yes
+  - identifier: progressive
+    title: Progressive
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+  - identifier: colorspace
+    title: Colorspace
+    type: integer
+    description: Set the video colorspace (Y'CbCr only).
+    values:
+      - 240 # SMPTE 240M
+      - 601 # ITU-R BT.601
+      - 709 # ITU-R BT.709
+  - identifier: frame_rate_num
+    title: Frame rate numerator
+    type: integer
+    minimum: 0
+    unit: frames/second
+  - identifier: frame_rate_den
+    title: Frame rate denominator
+    type: integer
+    minimum: 1
+    unit: frames/second
+  - identifier: fps
+    title: Frame rate
+    readonly: yes
+    unit: frames/second
+
+# These are common to all consumers.
+  - identifier: deinterlace_method
+    title: Deinterlacer
+    type: string
+    default: yadif
+    values:
+      - greedy
+      - linearblend
+      - onefield
+      - yadif
+      - yadif-nospatial
+  - identifier: rescale
+    title: Image scaler
+    type: string
+    description: Set the pixel interpolation mode.
+    values:
+      - nearest
+      - bilinear
+      - bicubic
+      - bicublin
+      - gauss
+      - sinc
+      - lanczos
+      - spline
+  - identifier: frequency
+    title: Audio sample rate
+    type: integer
+    minimum: 0
+    maximum: 256000
+    default: 48000
+    unit: Hz
+  - identifier: channels
+    title: Audio channels
+    type: integer
+    minimum: 1
+    maximum: 16
+    default: 2
+  - identifier: channels.0
+    title: Channels on track 1
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+  - identifier: channels.1
+    title: Channels on track 2
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+  - identifier: channels.2
+    title: Channels on track 3
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+  - identifier: channels.3
+    title: Channels on track 4
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+  - identifier: channels.4
+    title: Channels on track 5
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+  - identifier: channels.5
+    title: Channels on track 6
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+  - identifier: channels.6
+    title: Channels on track 7
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+  - identifier: channels.7
+    title: Channels on track 8
+    type: integer
+    description: Used to map a bundle of channels to multi-track audio.
+    minimum: 0
+    maximum: 16
+    default: 0
+
+# These are common to all consumers and affect runtime behavior
+  - identifier: terminate_on_pause
+    title: File output
+    type: integer
+    description: Disable this for streaming.
+    minimum: 0
+    maximum: 1
+    default: 1
+    widget: checkbox
+  - identifier: real_time
+    title: Drop frames
+    type: integer
+    description: >
+      Set the number of processing threads and enable frame-dropping (positive)
+      or disable frame-dropping (negative).
+    default: -1
+    widget: spinner
+    unit: threads
+  - identifier: prefill
+    title: Pre-roll
+    type: integer
+    description: Set the number of frames to buffer before starting actual output.
+    minimum: 1
+    default: 1
+    unit: frames
+  - identifier: buffer
+    title: Buffer
+    type: integer
+    description: >
+      Set the maximum number of frames to buffer - process ahead of the output
+      position.
+    minimum: 1
+    default: 25
+    unit: frames
+
+# These are ffmpeg-compatible aliases to MLT properties
+  - identifier: s
+    title: Size
+    type: string
+    description: >
+      This is a ffmpeg-compatible equivalent to the MLT profile and width and height parameters.
+    format: WxH
+    unit: pixels
+  - identifier: aspect
+    title: Aspect ratio
+    type: string
+    description: >
+      This is a ffmpeg-compatible equivalent to the MLT profile and other aspect ratio parameters.
+    format: numerator:denominator
+  - identifier: deinterlace
+    title: Deinterlace
+    type: integer
+    description: >
+      This is a ffmpeg-compatible equivalent to the MLT profile and progressive parameter.
+    minimum: 0
+    maximum: 1
+  - identifier: r
+    title: Frame rate
+    type: float
+    description: >
+      This is a ffmpeg-compatible equivalent to the MLT profile and frame rate parameters.
+    minimum: 5.0
+  - identifier: ac
+    title: Audio channels
+    type: integer
+    description: >
+      This is a ffmpeg-compatible equivalent to the channels parameter.
+    minimum: 1
+    maximum: 16
+    default: 2
+  - identifier: ar
+    title: Audio sample rate
+    type: integer
+    description: >
+      This is a ffmpeg-compatible equivalent to the frequency parameter.
+    minimum: 0
+    maximum: 256000
+    default: 48000
+    unit: Hz
+
+# These are other non-AVOption parameters specific to FFmpeg.
+  - identifier: threads
+    title: Encoding threads
+    type: integer
+    minimum: 0
+    maximum: 16
+    default: 1
+    widget: spinner
+    unit: threads
+  - identifier: aq
+    title: Audio quality
+    type: integer
+    description: The meaning depends upon the codec.
+  - identifier: dc
+    title: Intra DC precision
+    type: integer
+    default: 8
+  - identifier: muxdelay
+    title: Muxer delay
+    type: float
+    description: Set the maximum demux-decode delay.
+    default: 0.7
+    unit: seconds
+  - identifier: muxpreload
+    title: Muxer preload
+    type: float
+    description: Set the initial demux-decode delay.
+    default: 0.5
+    unit: seconds
+  - identifier: f
+    title: Format
+    type: string
+    description: Use "list" to see the list of formats.
+    default: mpeg
+  - identifier: acodec
+    title: Audio codec
+    description: Use "list" to see the list of audio codecs.
+    default: mp2
+  - identifier: vcodec
+    title: Video codec
+    description: Use "list" to see the list of video codecs.
+    default: mpeg2video
+  - identifier: atag
+    title: Audio FourCC
+    type: string
+  - identifier: apre
+    title: Audio codec preset
+    type: string
+  - identifier: vpre
+    title: Video codec preset
+    type: string
+  - identifier: fpre
+    title: Format preset
+    type: string
+  - identifier: alang
+    title: Audio language
+    type: string
+    description: Set the 3-character ISO 639 language code of the current audio stream.
+  - identifier: pix_fmt
+    title: Pixel format
+    type: string
+    description: >
+      See 'ffmpeg -pix_fmt list' to see a list of values.
+      Normally, this is not required, but some codecs support multiple pixel
+      formats, especially chroma bit-depth.
+  - identifier: qscale
+    title: Video quantizer
+    type: float
+    description: Set a fixed video quantizer scale for constant quality VBR output.
+  - identifier: vtag
+    title: Video FourCC
+    type: string
+  - identifier: rc_override
+    title: Rate control
+    type: string
+    format: start_frame,end_frame,qscale/...
+    description: This is an override for specific intervals.
+  - identifier: pass
+    title: Pass
+    type: integer
+    description: Select the pass number for two-pass encoding.
+    minimum: 1
+    maximum: 2
+  - identifier: passlogfile
+    title: Two-pass log file
+    type: string
+  - identifier: b
+    title: Video bitrate
+    type: string
+    unit: bits/second
+    description: >
+      Normally this is an integer, but you can append a K suffix for convenience.
+    minimum: 0
+  - identifier: ab
+    title: Audio bitrate
+    type: string
+    unit: bits/second
+    description: >
+      Normally this is an integer, but you can append a K suffix for convenience.
+  - identifier: an
+    title: Disable audio
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+  - identifier: vn
+    title: Disable video
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox

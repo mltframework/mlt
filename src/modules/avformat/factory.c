@@ -21,6 +21,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
+#include <float.h>
 
 #include <framework/mlt.h>
 
@@ -33,6 +34,7 @@ extern mlt_producer producer_avformat_init( mlt_profile profile, const char *ser
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
+#include <libavcodec/opt.h>
 #ifdef AVDEVICE
 #include <libavdevice/avdevice.h>
 #endif
@@ -129,10 +131,124 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 	return NULL;
 }
 
+static void add_parameters( mlt_properties params, void *object, int req_flags, const char *unit )
+{
+	const AVOption *opt = NULL;
+
+	// For each AVOption on the AVClass object
+	while ( ( opt = av_next_option( object, opt ) ) )
+	{
+		// If matches flags and not a binary option (not supported by Mlt)
+		if ( !( opt->flags & req_flags ) || ( opt->type == FF_OPT_TYPE_BINARY ) )
+            continue;
+
+		// Ignore constants (keyword values)
+		if ( !unit && opt->type == FF_OPT_TYPE_CONST )
+			continue;
+		// When processing a groups of options (unit)...
+		// ...ignore non-constants
+		else if ( unit && opt->type != FF_OPT_TYPE_CONST )
+			continue;
+		// ...ignore constants not in this group
+		else if ( unit && opt->type == FF_OPT_TYPE_CONST && strcmp( unit, opt->unit ) )
+			continue;
+		// ..add constants to the 'values' sequence
+		else if ( unit && opt->type == FF_OPT_TYPE_CONST )
+		{
+			char key[20];
+			snprintf( key, 20, "%d", mlt_properties_count( params ) );
+			mlt_properties_set( params, key, opt->name );
+			continue;
+		}
+
+		// Create a map for this option.
+		mlt_properties p = mlt_properties_new();
+		char key[20];
+		snprintf( key, 20, "%d", mlt_properties_count( params ) );
+		// Add the map to the 'parameters' sequence.
+		mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
+
+		// Add the parameter metadata for this AVOption.
+		mlt_properties_set( p, "identifier", opt->name );
+		mlt_properties_set( p, "description", opt->help );
+        switch ( opt->type )
+		{
+		case FF_OPT_TYPE_FLAGS:
+			mlt_properties_set( p, "type", "string" );
+			mlt_properties_set( p, "format", "flags" );
+			break;
+		case FF_OPT_TYPE_INT:
+			if ( !opt->unit )
+			{
+				mlt_properties_set( p, "type", "integer" );
+				if ( opt->min != INT_MIN )
+					mlt_properties_set_int( p, "minimum", (int) opt->min );
+				if ( opt->max != INT_MAX )
+					mlt_properties_set_int( p, "maximum", (int) opt->max );
+				mlt_properties_set_int( p, "default", (int) opt->default_val );
+			}
+			else
+			{
+				mlt_properties_set( p, "type", "string" );
+				mlt_properties_set( p, "format", "integer or keyword" );
+			}
+			break;
+		case FF_OPT_TYPE_INT64:
+			mlt_properties_set( p, "type", "integer" );
+			mlt_properties_set( p, "format", "64-bit" );
+			if ( opt->min != INT64_MIN )
+				mlt_properties_set_int64( p, "minimum", (int64_t) opt->min );
+			if ( opt->max != INT64_MAX )
+			mlt_properties_set_int64( p, "maximum", (int64_t) opt->max );
+			break;
+		case FF_OPT_TYPE_FLOAT:
+			mlt_properties_set( p, "type", "float" );
+			if ( opt->min != FLT_MIN && opt->min != -340282346638528859811704183484516925440.0 )
+				mlt_properties_set_double( p, "minimum", opt->min );
+			if ( opt->max != FLT_MAX )
+				mlt_properties_set_double( p, "maximum", opt->max );
+			break;
+		case FF_OPT_TYPE_DOUBLE:
+			mlt_properties_set( p, "type", "float" );
+			mlt_properties_set( p, "format", "double" );
+			if ( opt->min != DBL_MIN )
+				mlt_properties_set_double( p, "minimum", opt->min );
+			if ( opt->max != DBL_MAX )
+				mlt_properties_set_double( p, "maximum", opt->max );
+			break;
+		case FF_OPT_TYPE_STRING:
+			mlt_properties_set( p, "type", "string" );
+			break;
+		case FF_OPT_TYPE_RATIONAL:
+			mlt_properties_set( p, "type", "string" );
+			mlt_properties_set( p, "format", "numerator:denominator" );
+			break;
+		case FF_OPT_TYPE_CONST:
+		default:
+			mlt_properties_set( p, "type", "integer" );
+			mlt_properties_set( p, "format", "constant" );
+			break;
+        }
+		// If the option belongs to a group (unit) and is not a constant (keyword value)
+		if ( opt->unit && opt->type != FF_OPT_TYPE_CONST )
+		{
+			// Create a 'values' sequence.
+			mlt_properties values = mlt_properties_new();
+			mlt_properties_set_data( p, "values", values, 0, (mlt_destructor) mlt_properties_close, NULL );
+
+			// Recurse to add constants in this group to the 'values' sequence.
+			add_parameters( values, object, req_flags, opt->unit );
+		}
+	}
+}
+
 static mlt_properties avformat_metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
 	const char *service_type = NULL;
+	mlt_properties result = NULL;
+
+	// Convert the service type to a string.
 	switch ( type )
 	{
 		case consumer_type:
@@ -150,8 +266,24 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 		default:
 			return NULL;
 	}
+	// Load the yaml file
 	snprintf( file, PATH_MAX, "%s/avformat/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, id );
-	return mlt_properties_parse_yaml( file );
+	result = mlt_properties_parse_yaml( file );
+	if ( result && ( type == consumer_type || type == producer_type ) )
+	{
+		// Annotate the yaml properties with AVOptions.
+		mlt_properties params = (mlt_properties) mlt_properties_get_data( result, "parameters", NULL );
+		AVFormatContext *avformat = avformat_alloc_context();
+		AVCodecContext *avcodec = avcodec_alloc_context();
+		int flags = ( type == consumer_type )? AV_OPT_FLAG_ENCODING_PARAM : AV_OPT_FLAG_DECODING_PARAM;
+
+		add_parameters( params, avformat, flags, NULL );
+		add_parameters( params, avcodec, flags, NULL );
+
+		av_free( avformat );
+		av_free( avcodec );
+	}
+	return result;
 }
 
 MLT_REPOSITORY
@@ -160,6 +292,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( consumer_type, "avformat", create_service );
 	MLT_REGISTER( producer_type, "avformat", create_service );
 	MLT_REGISTER( producer_type, "avformat-novalidate", create_service );
+	MLT_REGISTER_METADATA( consumer_type, "avformat", avformat_metadata, NULL );
 	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
 #endif
 #ifdef FILTERS
