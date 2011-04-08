@@ -71,6 +71,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties_set_data( properties, "freeze_frame", freeze_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 			mlt_properties_set_position( properties, "_frame", pos );
 		}
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 		// Get frozen image
 		uint8_t *buffer = NULL;
@@ -82,7 +83,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		memcpy( image_copy, buffer, size );
 		*image = image_copy;
 		mlt_frame_set_image( this, *image, size, mlt_pool_release );
-		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 		return error;
 	}
