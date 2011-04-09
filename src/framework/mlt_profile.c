@@ -347,6 +347,7 @@ mlt_profile mlt_profile_clone( mlt_profile profile )
 
 mlt_properties mlt_profile_list( )
 {
+	char *filename = NULL;
 	const char *prefix = getenv( "MLT_PROFILES_PATH" );
 	mlt_properties properties = mlt_properties_new();
 	mlt_properties dir = mlt_properties_new();
@@ -356,7 +357,15 @@ mlt_properties mlt_profile_list( )
 
 	// Load from $prefix/share/mlt/profiles if no env var
 	if ( prefix == NULL )
+	{
 		prefix = PREFIX;
+		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + 2 );
+		strcpy( filename, prefix );
+		if ( filename[ strlen( filename ) - 1 ] != '/' )
+			filename[ strlen( filename ) ] = '/';
+		strcat( filename, PROFILES_DIR );
+		prefix = filename;
+	}
 
 	mlt_properties_dir_list( dir, prefix, wildcard, sort );
 
@@ -376,6 +385,8 @@ mlt_properties mlt_profile_list( )
 		}
 	}
 	mlt_properties_close( dir );
+	if ( filename )
+		free( filename );
 
 	return properties;
 }
