@@ -120,3 +120,8 @@ double Profile::dar() const
 {
 	return mlt_profile_dar( instance );
 }
+
+Properties* Profile::list()
+{
+	return new Properties( mlt_profile_list() );
+}

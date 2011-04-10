@@ -57,6 +57,7 @@ namespace Mlt
 			int display_aspect_num() const;
 			int display_aspect_den() const;
 			double dar() const;
+			static Properties* list();
 	};
 }
 

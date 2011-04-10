@@ -338,7 +338,7 @@ mlt_profile mlt_profile_clone( mlt_profile profile )
 
 /** Get the list of profiles.
  *
- * The caller MUST free the returned properties object!
+ * The caller MUST close the returned properties object!
  * Each entry in the list is keyed on its name, and its value is another
  * properties object that contains the attributes of the profile.
  * \public \memberof mlt_profile_s

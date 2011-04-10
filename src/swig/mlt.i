@@ -60,6 +60,7 @@ namespace Mlt {
 %newobject Repository::transitions( );
 %newobject Repository::metadata( mlt_service_type, const char * );
 %newobject Repository::languages( );
+%newobject Profile::list();
 }
 
 /** Classes to wrap.
