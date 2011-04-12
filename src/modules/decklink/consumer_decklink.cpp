@@ -185,14 +185,24 @@ public:
 		}
 		
 		// Get the keyer interface
-		if ( m_deckLink->QueryInterface( IID_IDeckLinkKeyer, (void**) &m_deckLinkKeyer ) != S_OK )
+		IDeckLinkAttributes *deckLinkAttributes = 0;
+		m_deckLinkKeyer = 0;
+		if ( m_deckLink->QueryInterface( IID_IDeckLinkAttributes, (void**) &deckLinkAttributes ) == S_OK )
 		{
-			mlt_log_error( getConsumer(), "Failed to get keyer\n" );
-			m_deckLinkOutput->Release();
-			m_deckLinkOutput = 0;
-			m_deckLink->Release();
-			m_deckLink = 0;
-			return false;
+			bool flag = false;
+			if ( deckLinkAttributes->GetFlag( BMDDeckLinkSupportsInternalKeying, &flag ) == S_OK && flag )
+			{
+				if ( m_deckLink->QueryInterface( IID_IDeckLinkKeyer, (void**) &m_deckLinkKeyer ) != S_OK )
+				{
+					mlt_log_error( getConsumer(), "Failed to get keyer\n" );
+					m_deckLinkOutput->Release();
+					m_deckLinkOutput = 0;
+					m_deckLink->Release();
+					m_deckLink = 0;
+					return false;
+				}
+			}
+			deckLinkAttributes->Release();
 		}
 
 		// Provide this class as a delegate to the audio and video output interfaces
@@ -229,7 +239,7 @@ public:
 		}
 		
 		// Set the keyer
-		if ( ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
+		if ( m_deckLinkKeyer && ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
 		{
 			bool external = false;
 			double level = mlt_properties_get_double( properties, "keyer_level" );
@@ -240,7 +250,7 @@ public:
 			m_preroll = 0;
 			m_isAudio = false;
 		}
-		else
+		else if ( m_deckLinkKeyer )
 		{
 			m_deckLinkKeyer->Disable();
 		}
