@@ -186,7 +186,7 @@ else
 			echo "LDFLAGS+=$(pkg-config --libs-only-L libavdevice)" >> config.mak
 		fi
 		avcodec_version=$(pkg-config --modversion libavcodec)
-		if [ "$swscale" != "" ] || ( [ $(echo $avcodec_version | cut -d. -f1) -ge 52 ] && [ $(echo $avcodec_version | cut -d. -f2) -ge 21 ] )
+		if [ "$swscale" != "" ] || [ $(echo $avcodec_version | cut -d. -f1) -gt 52 ] || ( [ $(echo $avcodec_version | cut -d. -f1) -ge 52 ] && [ $(echo $avcodec_version | cut -d. -f2) -ge 21 ] )
 		then
 			echo "CFLAGS+=$(pkg-config --cflags libswscale)" >> config.mak
 			echo "LDFLAGS+=$(pkg-config --libs-only-L libswscale)" >> config.mak
