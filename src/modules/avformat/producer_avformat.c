@@ -871,7 +871,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 {
 #if defined(SWSCALE) && (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	int *coefficients;
-	const int *new_coefficients = coefficients;
+	const int *new_coefficients;
 	int full_range;
 	int brightness, contrast, saturation;
 
@@ -894,6 +894,9 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 			break;
 		case 709:
 			new_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+			break;
+		default:
+			new_coefficients = coefficients;
 			break;
 		}
 		sws_setColorspaceDetails( context, new_coefficients, full_range, new_coefficients, full_range,
