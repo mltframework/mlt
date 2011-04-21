@@ -34,8 +34,10 @@
 #ifdef SWSCALE
 #  include <libswscale/swscale.h>
 #endif
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-#  include "audioconvert.h"
+#if LIBAVCODEC_VERSION_MAJOR > 52
+#include <libavutil/samplefmt.h>
+#elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
+const char *avcodec_get_sample_fmt_name(int sample_fmt);
 #endif
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
