@@ -868,6 +868,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 {
 #if defined(SWSCALE) && (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	int *coefficients;
+	const int *new_coefficients = coefficients;
 	int full_range;
 	int brightness, contrast, saturation;
 
@@ -883,16 +884,16 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 		case 470:
 		case 601:
 		case 624:
-			coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+			new_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
 			break;
 		case 240:
-			coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+			new_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
 			break;
 		case 709:
-			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+			new_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
 			break;
 		}
-		sws_setColorspaceDetails( context, coefficients, full_range, coefficients, full_range,
+		sws_setColorspaceDetails( context, new_coefficients, full_range, new_coefficients, full_range,
 			brightness, contrast, saturation );
 	}
 #endif
@@ -920,7 +921,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
 		set_luma_transfer( context, colorspace, full_range );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
@@ -936,7 +937,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
 		set_luma_transfer( context, colorspace, full_range );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
@@ -947,7 +948,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
 		set_luma_transfer( context, colorspace, full_range );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
@@ -958,7 +959,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
 		set_luma_transfer( context, colorspace, full_range );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
@@ -969,7 +970,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
 		set_luma_transfer( context, colorspace, full_range );
-		sws_scale( context, frame->data, frame->linesize, 0, height,
+		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
@@ -1152,7 +1153,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					ret = av_read_frame( context, &pkt );
 					if ( ret >= 0 && ( pkt.flags & PKT_FLAG_KEY ) && pkt.stream_index == self->video_index )
 					{
-						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "first_pts %lld dts %lld pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
+						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
 						self->first_pts = pkt.pts;
 						toscan = 0;
 					}
@@ -1168,7 +1169,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				timestamp = ( req_position - 0.1 / source_fps ) /
 					( av_q2d( stream->time_base ) * source_fps );
-				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %d pts %lld ", req_position, timestamp );
+				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %d pts %"PRId64" ", req_position, timestamp );
 				if ( self->first_pts > 0 )
 					timestamp += self->first_pts;
 				else if ( context->start_time != AV_NOPTS_VALUE )
@@ -1184,7 +1185,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				timestamp -= AV_TIME_BASE;
 			if ( timestamp < 0 )
 				timestamp = 0;
-			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %lld position %d expected %d last_pos %d\n",
+			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %"PRId64" position %d expected %d last_pos %d\n",
 				timestamp, position, self->video_expected, last_position );
 
 			// Seek to the timestamp
@@ -1299,7 +1300,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						self->invalid_pts_counter = 0;
 					}
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %llu req_pos %d cur_pos %d pkt_pos %d\n",
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %"PRId64" req_pos %d cur_pos %d pkt_pos %d\n",
 						pkt.pts, req_position, self->current_position, int_position );
 				}
 				else
@@ -1317,7 +1318,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						int_position = req_position;
 					}
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %llu req_pos %d cur_pos %d pkt_pos %d\n",
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %"PRId64" req_pos %d cur_pos %d pkt_pos %d\n",
 						pkt.dts, req_position, self->current_position, int_position );
 					// Make a dumb assumption on streams that contain wild timestamps
 					if ( abs( req_position - int_position ) > 999 )

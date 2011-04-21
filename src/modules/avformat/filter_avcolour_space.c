@@ -77,6 +77,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 {
 #if defined(SWSCALE) && (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	int *coefficients;
+	const int *new_coefficients = coefficients;
 	int full_range;
 	int brightness, contrast, saturation;
 
@@ -92,16 +93,16 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 		case 470:
 		case 601:
 		case 624:
-			coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+			new_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
 			break;
 		case 240:
-			coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+			new_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
 			break;
 		case 709:
-			coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+			new_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
 			break;
 		}
-		sws_setColorspaceDetails( context, coefficients, full_range, coefficients, full_range,
+		sws_setColorspaceDetails( context, new_coefficients, full_range, new_coefficients, full_range,
 			brightness, contrast, saturation );
 	}
 #endif
@@ -133,7 +134,7 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 	struct SwsContext *context = sws_getContext( width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
 	set_luma_transfer( context, colorspace, use_full_range );
-	sws_scale( context, input.data, input.linesize, 0, height,
+	sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, height,
 		output.data, output.linesize);
 	sws_freeContext( context );
 #else

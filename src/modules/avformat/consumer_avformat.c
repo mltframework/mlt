@@ -1392,7 +1392,7 @@ static void *consumer_thread( void *arg )
 						if ( codec->coded_frame && codec->coded_frame->pts != AV_NOPTS_VALUE )
 						{
 							pkt.pts = av_rescale_q( codec->coded_frame->pts, codec->time_base, stream->time_base );
-							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio stream %d pkt pts %lld frame pts %lld",
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio stream %d pkt pts %"PRId64" frame pts %"PRId64,
 								stream->index, pkt.pts, codec->coded_frame->pts );
 						}
 						pkt.flags |= PKT_FLAG_KEY;
@@ -1463,7 +1463,7 @@ static void *consumer_thread( void *arg )
 #endif
 						struct SwsContext *context = sws_getContext( width, height, PIX_FMT_YUYV422,
 							width, height, video_st->codec->pix_fmt, flags, NULL, NULL, NULL);
-						sws_scale( context, input->data, input->linesize, 0, height,
+						sws_scale( context, (const uint8_t* const*) input->data, input->linesize, 0, height,
 							output->data, output->linesize);
 						sws_freeContext( context );
 #else
@@ -1535,7 +1535,7 @@ static void *consumer_thread( void *arg )
 
 							if ( c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE )
 								pkt.pts= av_rescale_q( c->coded_frame->pts, c->time_base, video_st->time_base );
-							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "video pkt pts %lld frame pts %lld", pkt.pts, c->coded_frame->pts );
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "video pkt pts %"PRId64" frame pts %"PRId64, pkt.pts, c->coded_frame->pts );
 							if( c->coded_frame && c->coded_frame->key_frame )
 								pkt.flags |= PKT_FLAG_KEY;
 							pkt.stream_index= video_st->index;
@@ -1571,9 +1571,9 @@ static void *consumer_thread( void *arg )
 				}
 			}
 			if ( audio_st[0] )
-				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio pts %lld (%f) ", audio_st[0]->pts.val, audio_pts );
+				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio pts %"PRId64" (%f) ", audio_st[0]->pts.val, audio_pts );
 			if ( video_st )
-				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "video pts %lld (%f) ", video_st->pts.val, video_pts );
+				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "video pts %"PRId64" (%f) ", video_st->pts.val, video_pts );
 			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "\n" );
 		}
 

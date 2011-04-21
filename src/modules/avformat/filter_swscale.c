@@ -142,7 +142,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 	if ( context )
 	{
 		// Perform the scaling
-		sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
+		sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, iheight, output.data, output.linesize);
 		sws_freeContext( context );
 	
 		// Now update the frame
@@ -167,7 +167,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 				avpicture_fill( &output, outbuf, avformat, owidth, oheight );
 	
 				// Perform the scaling
-				sws_scale( context, input.data, input.linesize, 0, iheight, output.data, output.linesize);
+				sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, iheight, output.data, output.linesize);
 				sws_freeContext( context );
 	
 				// Set it back on the frame
