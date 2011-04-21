@@ -34,9 +34,13 @@ extern mlt_producer producer_avformat_init( mlt_profile profile, const char *ser
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
-#include <libavcodec/opt.h>
 #ifdef AVDEVICE
 #include <libavdevice/avdevice.h>
+#endif
+#if LIBAVCODEC_VERSION_MAJOR > 52
+#include <libavutil/opt.h>
+#else
+#include <libavcodec/opt.h>
 #endif
 
 // A static flag used to determine if avformat has been initialised

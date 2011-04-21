@@ -40,7 +40,6 @@
 #ifdef SWSCALE
 #include <libswscale/swscale.h>
 #endif
-#include <libavcodec/opt.h>
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
 #include <libavutil/pixdesc.h>
 #endif
@@ -51,9 +50,12 @@
 #endif
 
 #if LIBAVCODEC_VERSION_MAJOR > 52
+#include <libavutil/opt.h>
 #define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
 #define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
 #define PKT_FLAG_KEY AV_PKT_FLAG_KEY
+#else
+#include <libavcodec/opt.h>
 #endif
 
 #define MAX_AUDIO_STREAMS (8)
