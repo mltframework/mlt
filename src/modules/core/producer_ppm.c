@@ -163,7 +163,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 		
 	// Read it
 	if ( pipe != NULL )
-		fread( *buffer, size, 1, pipe );
+		size = fread( *buffer, size, 1, pipe );
 	else
 		memset( *buffer, 0, size );
 
@@ -178,10 +178,10 @@ static int read_ppm_header( FILE *video, int *width, int *height )
 	int count = 0;
 	{
 		char temp[ 132 ];
-		fgets( temp, 132, video );
-		fgets( temp, 132, video );
+		char *ignore = fgets( temp, 132, video );
+		ignore = fgets( temp, 132, video );
 		count += sscanf( temp, "%d %d", width, height );
-		fgets( temp, 132, video );
+		ignore = fgets( temp, 132, video );
 	}
 	return count;
 }
@@ -211,7 +211,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		uint8_t *image = mlt_pool_alloc( width * ( height + 1 ) * 3 );
 		
 		// Read it
-		fread( image, width * height * 3, 1, video );
+		size_t ignore;
+		ignore = fread( image, width * height * 3, 1, video );
 
 		// Pass the data on the frame properties
 		mlt_frame_set_image( *frame, image, width * ( height + 1 ) * 3, mlt_pool_release );
