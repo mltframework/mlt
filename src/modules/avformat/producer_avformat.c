@@ -56,6 +56,12 @@
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
+#if LIBAVCODEC_VERSION_MAJOR > 52
+#define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
+#define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
+#define PKT_FLAG_KEY AV_PKT_FLAG_KEY
+#endif
+
 #define POSITION_INITIAL (-2)
 #define POSITION_INVALID (-1)
 
@@ -1547,10 +1553,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
 		if ( thread_count > 1 )
-		{
-			avcodec_thread_init( codec_context, thread_count );
 			codec_context->thread_count = thread_count;
-		}
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...
 		avformat_lock( );

@@ -50,6 +50,12 @@
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
+#if LIBAVCODEC_VERSION_MAJOR > 52
+#define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
+#define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
+#define PKT_FLAG_KEY AV_PKT_FLAG_KEY
+#endif
+
 #define MAX_AUDIO_STREAMS (8)
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
 #define AUDIO_BUFFER_SIZE (1024 * 42)
@@ -437,7 +443,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, i
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
 		if ( thread_count > 1 )
-			avcodec_thread_init( c, thread_count );		
+			c->thread_count = thread_count;
 #endif
 	
 		if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
@@ -477,7 +483,12 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, i
 		c->channels = channels;
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(43<<8)+0)
+			av_metadata_set2( &oc->metadata, "language", mlt_properties_get( properties, "alang" ), 0 );
+#else
+
 			strncpy( st->language, mlt_properties_get( properties, "alang" ), sizeof( st->language ) );
+#endif
 	}
 	else
 	{
@@ -582,7 +593,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, i
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
 		if ( thread_count > 1 )
-			avcodec_thread_init( c, thread_count );		
+			c->thread_count = thread_count;
 	
 		// Process properties as AVOptions
 		char *vpre = mlt_properties_get( properties, "vpre" );
