@@ -170,7 +170,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		else
 		{
 			// Temporary fix - ensure that we aren't seen as a test frame
-			int8_t *image = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", NULL );
+			uint8_t *image = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", NULL );
 			mlt_frame_set_image( *frame, image, 0, NULL );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_image", 0 );
 		}

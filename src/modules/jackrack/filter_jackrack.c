@@ -194,7 +194,7 @@ static int jack_process (jack_nframes_t frames, void * data)
 		// Do not start returning audio until we have sent first mlt frame
 		if ( sync && i == 0 && frame_size > 0 )
 			total_size += ring_size;
-		mlt_log_debug( MLT_FILTER_SERVICE(filter), "sync %d frame_size %d ring_size %d jack_size %d\n", sync, frame_size, ring_size, jack_size );
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "sync %d frame_size %d ring_size %zu jack_size %zu\n", sync, frame_size, ring_size, jack_size );
 		
 		if ( ! sync || ( frame_size > 0  && total_size >= frame_size ) )
 		{
