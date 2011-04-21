@@ -2352,7 +2352,7 @@ static char * itoa(uint64_t i) {
 		return strdup("0");
 
 	char * mystring = (char *) malloc(50);
-	sprintf(mystring, "%llui", i);
+	sprintf(mystring, "%"PRIu64, i);
 
 	return mystring;
 }

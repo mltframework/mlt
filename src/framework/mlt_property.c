@@ -421,13 +421,13 @@ char *mlt_property_get_string( mlt_property self )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = malloc( 32 );
-			sprintf( self->prop_string, "%d", (int)self->prop_position ); /* I don't know if self is wanted. -Zach */
+			sprintf( self->prop_string, "%d", (int)self->prop_position );
 		}
 		else if ( self->types & mlt_prop_int64 )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = malloc( 32 );
-                        sprintf( self->prop_string, "%lld", (long long int)self->prop_int64 );
+			sprintf( self->prop_string, "%"PRId64, self->prop_int64 );
 		}
 		else if ( self->types & mlt_prop_data && self->serialiser != NULL )
 		{
