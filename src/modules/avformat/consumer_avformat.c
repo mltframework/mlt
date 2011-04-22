@@ -1195,7 +1195,11 @@ static void *consumer_thread( void *arg )
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
 		{
-			if ( url_fopen( &oc->pb, filename, URL_WRONLY ) < 0 ) 
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+			if ( avio_open( &oc->pb, filename, AVIO_FLAG_WRITE ) < 0 )
+#else
+			if ( url_fopen( &oc->pb, filename, URL_WRONLY ) < 0 )
+#endif
 			{
 				mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not open '%s'\n", filename );
 				mlt_properties_set_int( properties, "running", 0 );
@@ -1682,7 +1686,9 @@ on_fatal_error:
 
 	// Close the output file
 	if ( !( fmt->flags & AVFMT_NOFILE ) )
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(0<<8)+0)
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+		avio_close( oc->pb );
+#elif LIBAVFORMAT_VERSION_INT >= ((52<<16)+(0<<8)+0)
 		url_fclose( oc->pb );
 #else
 		url_fclose( &oc->pb );

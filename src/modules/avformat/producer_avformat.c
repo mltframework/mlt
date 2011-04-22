@@ -561,7 +561,11 @@ static int producer_open( producer_avformat self, mlt_profile profile, char *fil
 	int av = 0;
 
 	// Only if there is not a protocol specification that avformat can handle
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+	if ( mrl && !avio_check( file, 0 ) )
+#else
 	if ( mrl && !url_exist( file ) )
+#endif
 	{
 		// 'file' becomes format abbreviation
 		mrl[0] = 0;
@@ -678,9 +682,13 @@ static int producer_open( producer_avformat self, mlt_profile profile, char *fil
 			if ( context->pb )
 			{
 				// protocols can indicate if they support seeking
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+				self->seekable = context->pb->seekable;
+#else
 				URLContext *uc = url_fileno( context->pb );
 				if ( uc )
 					self->seekable = !uc->is_streamed;
+#endif
 			}
 			if ( self->seekable )
 			{
