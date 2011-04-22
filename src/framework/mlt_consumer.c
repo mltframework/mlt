@@ -648,21 +648,24 @@ static void *consumer_read_ahead_thread( void *arg )
 	// Get the first frame
 	frame = mlt_consumer_get_frame( self );
 
-	// Get the image of the first frame
-	if ( !video_off )
+	if ( frame )
 	{
-		mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
-		mlt_frame_get_image( frame, &image, &self->format, &width, &height, 0 );
-	}
+		// Get the image of the first frame
+		if ( !video_off )
+		{
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
+			mlt_frame_get_image( frame, &image, &self->format, &width, &height, 0 );
+		}
 
-	if ( !audio_off )
-	{
-		samples = mlt_sample_calculator( fps, frequency, counter++ );
-		mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
-	}
+		if ( !audio_off )
+		{
+			samples = mlt_sample_calculator( fps, frequency, counter++ );
+			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
+		}
 
-	// Mark as rendered
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+		// Mark as rendered
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+	}
 
 	// Get the starting time (can ignore the times above)
 	gettimeofday( &ante, NULL );
