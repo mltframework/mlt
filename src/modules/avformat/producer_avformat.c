@@ -1883,7 +1883,11 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		if ( data_size > 0 )
 		{
 			// Figure out how many samples will be needed after resampling
+#if LIBAVCODEC_VERSION_MAJOR > 52
+			int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_fmt( codec_context->sample_fmt ) / 8 );
+#else
 			int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
+#endif
 			int samples_needed = self->resample_factor * convert_samples + 1;
 			
 			// Resize audio buffer to prevent overflow
