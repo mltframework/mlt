@@ -1276,6 +1276,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		int decode_errors = 0;
 		int got_picture = 0;
 
+		self->got_picture = 0;
 		av_init_packet( &pkt );
 
 		// Construct an AVFrame for YUV422 conversion
@@ -1479,6 +1480,37 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image = mlt_pool_alloc( image_size );
 		memcpy( image, *buffer, image_size );
 		mlt_cache_put( self->image_cache, (void*) position, image, *format, mlt_pool_release );
+	}
+	// Try to duplicate last image if there was a decoding failure
+	else if ( !self->got_picture && self->av_frame && self->av_frame->linesize[0] )
+	{
+		// Duplicate it
+		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
+		{
+			// Workaround 1088 encodings missing cropping info.
+			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+				*height = 1080;
+#ifdef VDPAU
+			if ( self->vdpau && self->vdpau->buffer )
+			{
+				AVPicture picture;
+				picture.data[0] = self->vdpau->buffer;
+				picture.data[2] = self->vdpau->buffer + codec_context->width * codec_context->height;
+				picture.data[1] = self->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
+				picture.linesize[0] = codec_context->width;
+				picture.linesize[1] = codec_context->width / 2;
+				picture.linesize[2] = codec_context->width / 2;
+				convert_image( (AVFrame*) &picture, *buffer,
+					PIX_FMT_YUV420P, format, *width, *height, self->colorspace );
+			}
+			else
+#endif
+			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
+				format, *width, *height, self->colorspace );
+			self->got_picture = 1;
+		}
+		else
+			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
