@@ -135,7 +135,7 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 	return NULL;
 }
 
-static void add_parameters( mlt_properties params, void *object, int req_flags, const char *unit )
+static void add_parameters( mlt_properties params, void *object, int req_flags, const char *unit, const char *subclass )
 {
 	const AVOption *opt = NULL;
 
@@ -174,7 +174,19 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 
 		// Add the parameter metadata for this AVOption.
 		mlt_properties_set( p, "identifier", opt->name );
-		mlt_properties_set( p, "description", opt->help );
+		if ( subclass )
+		{
+			char *s = malloc( strlen( opt->help ) + strlen( subclass ) + 4 );
+			strcpy( s, opt->help );
+			strcat( s, " (" );
+			strcat( s, subclass );
+			strcat( s, ")" );
+			mlt_properties_set( p, "description", s );
+		}
+		else
+			mlt_properties_set( p, "description", opt->help );
+
+
         switch ( opt->type )
 		{
 		case FF_OPT_TYPE_FLAGS:
@@ -189,7 +201,9 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 					mlt_properties_set_int( p, "minimum", (int) opt->min );
 				if ( opt->max != INT_MAX )
 					mlt_properties_set_int( p, "maximum", (int) opt->max );
-				mlt_properties_set_int( p, "default", (int) opt->default_val );
+#if LIBAVUTIL_VERSION_MAJOR > 50
+				mlt_properties_set_int( p, "default", (int) opt->default_val.dbl );
+#endif
 			}
 			else
 			{
@@ -204,6 +218,9 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 				mlt_properties_set_int64( p, "minimum", (int64_t) opt->min );
 			if ( opt->max != INT64_MAX )
 			mlt_properties_set_int64( p, "maximum", (int64_t) opt->max );
+#if LIBAVUTIL_VERSION_MAJOR > 50
+			mlt_properties_set_int64( p, "default", (int64_t) opt->default_val.dbl );
+#endif
 			break;
 		case FF_OPT_TYPE_FLOAT:
 			mlt_properties_set( p, "type", "float" );
@@ -211,6 +228,9 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 				mlt_properties_set_double( p, "minimum", opt->min );
 			if ( opt->max != FLT_MAX )
 				mlt_properties_set_double( p, "maximum", opt->max );
+#if LIBAVUTIL_VERSION_MAJOR > 50
+			mlt_properties_set_double( p, "default", opt->default_val.dbl );
+#endif
 			break;
 		case FF_OPT_TYPE_DOUBLE:
 			mlt_properties_set( p, "type", "float" );
@@ -219,9 +239,15 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 				mlt_properties_set_double( p, "minimum", opt->min );
 			if ( opt->max != DBL_MAX )
 				mlt_properties_set_double( p, "maximum", opt->max );
+#if LIBAVUTIL_VERSION_MAJOR > 50
+			mlt_properties_set_double( p, "default", opt->default_val.dbl );
+#endif
 			break;
 		case FF_OPT_TYPE_STRING:
 			mlt_properties_set( p, "type", "string" );
+#if LIBAVUTIL_VERSION_MAJOR > 50
+			mlt_properties_set( p, "default", opt->default_val.str );
+#endif
 			break;
 		case FF_OPT_TYPE_RATIONAL:
 			mlt_properties_set( p, "type", "string" );
@@ -238,10 +264,13 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 		{
 			// Create a 'values' sequence.
 			mlt_properties values = mlt_properties_new();
-			mlt_properties_set_data( p, "values", values, 0, (mlt_destructor) mlt_properties_close, NULL );
 
 			// Recurse to add constants in this group to the 'values' sequence.
-			add_parameters( values, object, req_flags, opt->unit );
+			add_parameters( values, object, req_flags, opt->unit, NULL );
+			if ( mlt_properties_count( values ) )
+				mlt_properties_set_data( p, "values", values, 0, (mlt_destructor) mlt_properties_close, NULL );
+			else
+				mlt_properties_close( values );
 		}
 	}
 }
@@ -281,8 +310,22 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 		AVCodecContext *avcodec = avcodec_alloc_context();
 		int flags = ( type == consumer_type )? AV_OPT_FLAG_ENCODING_PARAM : AV_OPT_FLAG_DECODING_PARAM;
 
-		add_parameters( params, avformat, flags, NULL );
-		add_parameters( params, avcodec, flags, NULL );
+		add_parameters( params, avformat, flags, NULL, NULL );
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+		avformat_init();
+		AVOutputFormat *f = NULL;
+		while ( ( f = av_oformat_next( f ) ) )
+			if ( f->priv_class )
+				add_parameters( params, &f->priv_class, flags, NULL, f->name );
+#endif
+
+		add_parameters( params, avcodec, flags, NULL, NULL );
+#if LIBAVCODEC_VERSION_MAJOR > 52
+		AVCodec *c = NULL;
+		while ( ( c = av_codec_next( c ) ) )
+			if ( c->priv_class )
+				add_parameters( params, &c->priv_class, flags, NULL, c->name );
+#endif
 
 		av_free( avformat );
 		av_free( avcodec );

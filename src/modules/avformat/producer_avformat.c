@@ -815,6 +815,10 @@ void reopen_video( producer_avformat self, mlt_producer producer, mlt_properties
 	}
 	mlt_events_unblock( properties, producer );
 	apply_properties( self->video_format, properties, AV_OPT_FLAG_DECODING_PARAM );
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+	if ( self->video_format->iformat && self->video_format->iformat->priv_class && self->video_format->priv_data )
+		apply_properties( self->video_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
+#endif
 
 	self->audio_index = audio_index;
 	if ( self->video_format && video_index > -1 )
@@ -1624,6 +1628,10 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+#if LIBAVCODEC_VERSION_MAJOR > 52
+		if ( codec->priv_class && codec_context->priv_data )
+			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+#endif
 
 		// Reset some image properties
 		mlt_properties_set_int( properties, "width", self->video_codec->width );
@@ -1755,7 +1763,13 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 
 		// Process properties as AVOptions
 		if ( context )
+		{
 			apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+			if ( context->iformat && context->iformat->priv_class && context->priv_data )
+				apply_properties( context->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
+#endif
+		}
 	}
 
 	// Exception handling for video_index
@@ -2214,6 +2228,10 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+#if LIBAVCODEC_VERSION_MAJOR > 52
+		if ( codec && codec->priv_class && codec_context->priv_data )
+			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+#endif
 	}
 	return self->audio_codec[ index ] && self->audio_index > -1;
 }
