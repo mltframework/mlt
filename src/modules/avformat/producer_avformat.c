@@ -1280,7 +1280,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		int decode_errors = 0;
 		int got_picture = 0;
 
-		self->got_picture = 0;
 		av_init_packet( &pkt );
 
 		// Construct an AVFrame for YUV422 conversion
@@ -1451,13 +1450,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							else
 							{
 								mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU Error: %s\n", vdp_get_error_string( status ) );
-								self->vdpau->is_decoded = 0;
+								image_size = self->vdpau->is_decoded = 0;
 							}
 						}
 						else
 						{
 							mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU error in VdpDecoderRender\n" );
-							got_picture = 0;
+							image_size = got_picture = 0;
 						}
 					}
 					else
@@ -1486,7 +1485,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_cache_put( self->image_cache, (void*) position, image, *format, mlt_pool_release );
 	}
 	// Try to duplicate last image if there was a decoding failure
-	else if ( !self->got_picture && self->av_frame && self->av_frame->linesize[0] )
+	else if ( !image_size && self->av_frame && self->av_frame->linesize[0] )
 	{
 		// Duplicate it
 		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
