@@ -2107,7 +2107,14 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				}
 			}
 		}
-		
+
+		// Set some additional return values
+		if ( self->audio_index != INT_MAX && !self->audio_resample[ self->audio_index ] )
+		{
+			*channels  = self->audio_codec[ self->audio_index ]->channels;
+			*frequency = self->audio_codec[ self->audio_index ]->sample_rate;
+		}
+
 		// Allocate and set the frame's audio buffer
 		int size = *samples * *channels * sizeof(int16_t);
 		*buffer = mlt_pool_alloc( size );
@@ -2157,12 +2164,6 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			{
 				// Otherwise fill with silence
 				memset( *buffer, 0, *samples * *channels * sizeof(int16_t) );
-			}
-			if ( !self->audio_resample[ index ] )
-			{
-				// TODO: uncomment and remove following line when full multi-channel support is ready
-				// *channels = codec_context->channels;
-				*frequency = self->audio_codec[ index ]->sample_rate;
 			}
 		}
 	}
