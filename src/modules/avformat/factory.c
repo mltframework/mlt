@@ -182,6 +182,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			strcat( s, subclass );
 			strcat( s, ")" );
 			mlt_properties_set( p, "description", s );
+			free( s );
 		}
 		else
 			mlt_properties_set( p, "description", opt->help );
