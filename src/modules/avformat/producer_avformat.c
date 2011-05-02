@@ -1890,6 +1890,15 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 	return paused;
 }
 
+static int sample_bytes( AVCodecContext *context )
+{
+#if LIBAVCODEC_VERSION_MAJOR > 52
+	return av_get_bits_per_sample_fmt( context->sample_fmt ) / 8;
+#else
+	return av_get_bits_per_sample_format( context->sample_fmt ) / 8;
+#endif
+}
+
 static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int channels, int samples, double timecode, double fps )
 {
 	// Fetch the audio_format
@@ -1915,7 +1924,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	while ( ptr && ret >= 0 && len > 0 )
 	{
-		int data_size = sizeof( int16_t ) * AVCODEC_MAX_AUDIO_FRAME_SIZE;
+		int sizeof_sample = sample_bytes( codec_context );
+		int sample_size_factor = sizeof_sample / sizeof(int16_t);
+		int data_size = sizeof_sample * AVCODEC_MAX_AUDIO_FRAME_SIZE;
 
 		// Decode the audio
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(26<<8)+0))
@@ -1938,30 +1949,26 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		if ( data_size > 0 )
 		{
 			// Figure out how many samples will be needed after resampling
-#if LIBAVCODEC_VERSION_MAJOR > 52
-			int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_fmt( codec_context->sample_fmt ) / 8 );
-#else
-			int convert_samples = data_size / codec_context->channels / ( av_get_bits_per_sample_format( codec_context->sample_fmt ) / 8 );
-#endif
+			int convert_samples = data_size / codec_context->channels / sizeof_sample;
 			int samples_needed = self->resample_factor * convert_samples + 1;
 			
 			// Resize audio buffer to prevent overflow
-			if ( audio_used * channels + samples_needed > self->audio_buffer_size[ index ] )
+			if ( ( audio_used + samples_needed ) * channels > self->audio_buffer_size[ index ] )
 			{
 				self->audio_buffer_size[ index ] *= 2;
-				audio_buffer = self->audio_buffer[ index ] = mlt_pool_realloc( audio_buffer, self->audio_buffer_size[ index ] * sizeof(int16_t) );
+				audio_buffer = self->audio_buffer[ index ] = mlt_pool_realloc( audio_buffer, self->audio_buffer_size[ index ] * sizeof_sample );
 			}
 			if ( resample )
 			{
 				// Copy to audio buffer while resampling
 				int16_t *source = decode_buffer;
-				int16_t *dest = &audio_buffer[ audio_used * channels ];
+				int16_t *dest = &audio_buffer[ audio_used * channels * sample_size_factor ];
 				audio_used += audio_resample( resample, dest, source, convert_samples );
 			}
 			else
 			{
 				// Straight copy to audio buffer
-				memcpy( &audio_buffer[ audio_used * codec_context->channels ], decode_buffer, data_size );
+				memcpy( &audio_buffer[ audio_used * codec_context->channels * sample_size_factor ], decode_buffer, data_size );
 				audio_used += convert_samples;
 			}
 
@@ -1970,8 +1977,8 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			{
 				*ignore -= 1;
 				audio_used -= samples;
-				memmove( audio_buffer, &audio_buffer[ samples * (resample? channels : codec_context->channels) ],
-				         audio_used * sizeof( int16_t ) );
+				memmove( audio_buffer, &audio_buffer[ samples * (resample? channels : codec_context->channels) * sample_size_factor ],
+						 audio_used * sizeof_sample );
 			}
 		}
 	}
@@ -2027,6 +2034,9 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 	// Fetch the audio_format
 	AVFormatContext *context = self->audio_format;
+
+	int sizeof_sample = sizeof( int16_t );
+	int sample_size_factor = 1;
 	
 	// Determine the tracks to use
 	int index = self->audio_index;
@@ -2072,21 +2082,23 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			else
 			{
 				codec_context->request_channels = self->audio_index == INT_MAX ? codec_context->channels : *channels;
+				sizeof_sample = sample_bytes( codec_context );
+				sample_size_factor = sizeof_sample / sizeof(int16_t);
 			}
 
 			// Check for audio buffer and create if necessary
 			self->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE;
-			self->audio_buffer[ index ] = mlt_pool_alloc( self->audio_buffer_size[ index ] * sizeof( int16_t ) );
+			self->audio_buffer[ index ] = mlt_pool_alloc( self->audio_buffer_size[ index ] * sizeof_sample );
 
 			// Check for decoder buffer and create if necessary
-			self->decode_buffer[ index ] = av_malloc( AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t ) );
+			self->decode_buffer[ index ] = av_malloc( self->audio_buffer_size[ index ] * sizeof_sample );
 		}
 	}
 
 	// Get the audio if required
 	if ( !paused )
 	{
-		int ret = 0;
+		int ret	= 0;
 		int got_audio = 0;
 		AVPacket pkt;
 
@@ -2134,14 +2146,29 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		// Set some additional return values
 		if ( self->audio_index != INT_MAX && !self->audio_resample[ self->audio_index ] )
 		{
-			*channels  = self->audio_codec[ self->audio_index ]->channels;
+			*channels = self->audio_codec[ self->audio_index ]->channels;
 			*frequency = self->audio_codec[ self->audio_index ]->sample_rate;
+			index = self->audio_index;
+			*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32
+				: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_float
+				: mlt_audio_s16;
+		}
+		else if ( self->audio_index == INT_MAX )
+		{
+			// This only works if all audio tracks have the same sample format.
+			for ( index = 0; index < index_max; index++ )
+				if ( self->audio_codec[ index ] )
+				{
+					*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32
+						: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_float
+						: mlt_audio_s16;
+					break;
+				}
 		}
 
 		// Allocate and set the frame's audio buffer
-		int size = *samples * *channels * sizeof(int16_t);
+		int size = mlt_audio_format_size( *format, *samples, *channels );
 		*buffer = mlt_pool_alloc( size );
-		*format = mlt_audio_s16;
 		mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 
 		// Interleave tracks if audio_index=all
@@ -2155,18 +2182,18 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				if ( self->audio_codec[ index ] )
 				{
 					int current_channels = self->audio_codec[ index ]->channels;
-					int16_t *src = self->audio_buffer[ index ] + i * current_channels;
-					memcpy( dest, src, current_channels * sizeof(int16_t) );
-					dest += current_channels;
+					int16_t *src = self->audio_buffer[ index ] + i * current_channels * sample_size_factor;
+					memcpy( dest, src, current_channels * sizeof_sample );
+					dest += current_channels * sample_size_factor;
 				}
 			}
 			for ( index = 0; index < index_max; index++ )
 			if ( self->audio_codec[ index ] && self->audio_used[ index ] >= *samples )
 			{
 				int current_channels = self->audio_codec[ index ]->channels;
-				int16_t *src = self->audio_buffer[ index ] + *samples * current_channels;
+				int16_t *src = self->audio_buffer[ index ] + *samples * current_channels * sample_size_factor;
 				self->audio_used[index] -= *samples;
-				memmove( self->audio_buffer[ index ], src, self->audio_used[ index ] * current_channels * sizeof(int16_t) );
+				memmove( self->audio_buffer[ index ], src, self->audio_used[ index ] * current_channels * sizeof_sample );
 			}
 		}
 		// Copy a single track to the output buffer
@@ -2179,14 +2206,14 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			{
 				int16_t *src = self->audio_buffer[ index ];
 				*samples = self->audio_used[ index ] < *samples ? self->audio_used[ index ] : *samples;
-				memcpy( *buffer, src, *samples * *channels * sizeof(int16_t) );
+				memcpy( *buffer, src, size );
 				self->audio_used[ index ] -= *samples;
-				memmove( src, &src[ *samples * *channels ], self->audio_used[ index ] * *channels * sizeof(int16_t) );
+				memmove( src, &src[ *samples * *channels * sample_size_factor ], self->audio_used[ index ] * *channels * sizeof_sample );
 			}
 			else
 			{
 				// Otherwise fill with silence
-				memset( *buffer, 0, *samples * *channels * sizeof(int16_t) );
+				memset( *buffer, 0, *samples * *channels * sizeof_sample );
 			}
 		}
 	}
