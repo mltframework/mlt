@@ -33,9 +33,6 @@
 
 static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// Get the properties of the frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Get the filter service
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 
@@ -54,9 +51,6 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Used to return number of channels in the source
 	int channels_avail = *channels;
 
-	// Loop variable
-	int i;
-
 	// If no resample frequency is specified, default to requested value
 	if ( output_rate == 0 )
 		output_rate = *frequency;
@@ -68,9 +62,9 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Duplicate channels as necessary
 	if ( channels_avail < *channels )
 	{
-		int size = *channels * *samples * sizeof( int16_t );
+		int size = mlt_audio_format_size( *format, *samples, *channels );
 		int16_t *new_buffer = mlt_pool_alloc( size );
-		int j, k = 0;
+		int i, j, k;
 		
 		// Duplicate the existing channels
 		for ( i = 0; i < *samples; i++ )
@@ -83,26 +77,26 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		}
 		
 		// Update the audio buffer now - destroys the old
-		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
-		
+		mlt_frame_set_audio( frame, new_buffer, *format, size, mlt_pool_release );
+
 		*buffer = new_buffer;
 	}
-	else if ( channels_avail == 6 && *channels == 2 )
+	else if ( channels_avail > *channels )
 	{
-		// Nasty hack for ac3 5.1 audio - may be a cause of failure?
-		int size = *channels * *samples * sizeof( int16_t );
+		int size = mlt_audio_format_size( *format, *samples, *channels );
 		int16_t *new_buffer = mlt_pool_alloc( size );
+		int i, j;
 		
 		// Drop all but the first *channels
 		for ( i = 0; i < *samples; i++ )
 		{
-			new_buffer[ ( i * *channels ) + 0 ] = ((int16_t*)(*buffer))[ ( i * channels_avail ) + 2 ];
-			new_buffer[ ( i * *channels ) + 1 ] = ((int16_t*)(*buffer))[ ( i * channels_avail ) + 3 ];
+			for ( j = 0; j < *channels; j++ )
+				new_buffer[ ( i * *channels ) + j ] = ((int16_t*)(*buffer))[ ( i * channels_avail ) + j ];
 		}
 
 		// Update the audio buffer now - destroys the old
-		mlt_properties_set_data( properties, "audio", new_buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
-		
+		mlt_frame_set_audio( frame, new_buffer, *format, size, mlt_pool_release );
+
 		*buffer = new_buffer;
 	}
 
