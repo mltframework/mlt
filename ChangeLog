@@ -1,4 +1,186 @@
+2011-05-01  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 0.7.2
+
+  * NEWS: Add release notes for v0.7.2.
+
+  * src/modules/avformat/filter_avresample.c,
+  src/modules/resample/filter_resample.c: Finish work to normalize channel
+  count.  Also, refactor the audio resamplers to use mlt_audio_format_size()
+  and mlt_frame_set_audio(). Currently, there are no controls over which
+  channels to drop or duplicate.
+
+  * src/framework/mlt_tractor.c, src/modules/core/producer_consumer.c,
+  src/modules/core/producer_noise.c, src/modules/core/producer_ppm.c: Refactor
+  to mlt_frame_set_audio().
+
+  * src/melt/melt.c: Let 'Q' stop melt as well.
+
+  * src/modules/feeds/NTSC/data_fx.properties,
+  src/modules/feeds/PAL/data_fx.properties: Fix alpha on color of some
+  data-feed properties.
+
+  * src/modules/avformat/factory.c: Free temp string.
+
+  * src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/producer_avformat.c: Add support for new codec- and
+  muxer-specific AVOptions.
+
+2011-04-30  Dan Dennedy <dan@dennedy.org>
+
+  * setenv: DYLD_LIBRARY_PATH not needed for me on OS X.
+
+  * src/modules/avformat/producer_avformat.c: Fix sample rate and channel count
+  from avformat producer.  If unable to resample or the decoder does not give
+  the requested channel count, then we should return the actual values so
+  downstream components can do the correct thing if they can. A good example of
+  this is 6 channel AAC when the consumer requests 2 channels. Unlike the AC-3
+  decoder, the AAC decoder can not downmix. So, we were returning audio pcm
+  containing 6 channels but with a channel count of 2.
+
+2011-04-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Try to duplicate last image if
+  decoding fails.
+
+2011-04-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c: Fix intermitent crash in mlt_consumer
+  consumer_read_ahead_thread.
+
+  * src/modules/avformat/producer_avformat.c: Use new
+  av_get_bits_per_sample_fmt() in avformat producer.
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Use new avio functions in avformat
+  module.
+
+2011-04-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_audio.c: Fix deadlock in sdl_audio appearing
+  in kdenlive.
+
+  * src/modules/core/producer_ppm.c: Fix compile warns in producer_ppm.c.
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: Fix regression initializing
+  coefficients.
+
+  * src/modules/avformat/producer_avformat.c: Use newer
+  av_get_sample_fmt_name() if available.
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c: Fix avformat compile warns on const
+  and 64-bit string formatting.
+
+  * src/modules/core/producer_hold.c, src/modules/jackrack/filter_jackrack.c:
+  Fix couple compile warns.
+
+  * src/framework/mlt_property.c, src/framework/mlt_types.h,
+  src/modules/linsys/sdi_generator.c: Fix some compile warnings about
+  string-formatting 64bit.
+
+  * src/modules/avformat/audioconvert.h,
+  src/modules/avformat/producer_avformat.c: Drop private audioconvert.h for
+  public samplefmt.h.
+
+2011-04-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/producer_avformat.c: More libavcodec v53 changes
+  required.
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Fix avformat build with libavcodec
+  v53.
+
+  * src/modules/avformat/configure: Fix detect swscale on libavcodec major
+  version bump.
+
+2011-04-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_colour.c: Fix corruption in color producer
+  (3288984)
+
+2011-04-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp: Fix decklink consumer on
+  devices without keyer.
+
+2011-04-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_profile.c, src/mlt++/MltProfile.cpp,
+  src/mlt++/MltProfile.h, src/swig/mlt.i: Add Mlt::Profile.list().
+
+  * src/framework/mlt_profile.c: Fix mlt_profile_list when MLT_PROFILES_PATH
+  not set.
+
+2011-04-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/filter_freeze.c: Fix deadlock in freeze filter. 
+  Reported by Andrew Wason.
+
+2011-04-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.yml, src/modules/avformat/factory.c,
+  src/modules/avformat/producer_avformat.yml: Add avformat consumer metadata. 
+  Improve avformat producer metadata. Significantly extend each with AVOptions.
+
+2011-04-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_region.c: Better fix to the region regression
+  (3277867).  This one works with bug report test case, timecode overlay in
+  Kdenlive Render, and Region transition in Kdenlive.
+
+  * src/modules/core/transition_composite.c: Fix regression on region
+  transition (3277867).
+
+2011-04-04  Dan Dennedy <dan@dennedy.org>
+
+  * demo/README, demo/demo.ini, demo/mlt_pango_keyframes,
+  demo/pango_keyframes.mpl: Add mlt_pango_keyframes demo.
+
+  * src/modules/gtk2/producer_pango.c: Make pango file on invalid file
+  (3272537).
+
+2011-04-03  Dan Dennedy <dan@dennedy.org>
+
+  * docs/melt.1, docs/melt.txt, src/melt/melt.c: Add -query formats and codecs
+  to melt.
+
+  * docs/melt.1, docs/melt.txt, src/melt/melt.c: Add -query profile to melt.
+
+  * src/framework/mlt_profile.c, src/framework/mlt_profile.h: Add
+  mlt_profile_list().
+
+  * src/modules/decklink/consumer_decklink.yml: Add parameter descriptions.
+
+2011-04-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp: Add keyer support to decklink
+  consumer.
+
+2011-03-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.yml,
+  src/modules/decklink/producer_decklink.yml: Add metadata for decklink
+  consumer.
+
+  * src/modules/decklink/Makefile, src/modules/decklink/producer_decklink.cpp,
+  src/modules/decklink/producer_decklink.yml: Add decklink producer.
+
 2011-03-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Fail gracefully on unsupported
+  codec (3251438).
+
+  * configure, src/modules/core/transition_composite.c: Fix regression in
+  region filter (3251260).
+
+  * ChangeLog: Update ChangeLog for v0.7.0.
 
   * Doxyfile, configure, src/framework/mlt_version.h: Set version to 0.7.0
 
