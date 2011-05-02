@@ -76,7 +76,7 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 	int size = mlt_audio_format_size( *format, *samples, *channels );
 	int16_t *new_buffer = mlt_pool_alloc( size );
 
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "audio", new_buffer, size, mlt_pool_release, NULL );
+	mlt_frame_set_audio( frame, new_buffer, *format, size, mlt_pool_release );
 	memcpy( new_buffer, *buffer, size );
 	*buffer = new_buffer;
 

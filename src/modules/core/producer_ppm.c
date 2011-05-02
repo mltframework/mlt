@@ -168,7 +168,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 		memset( *buffer, 0, size );
 
 	// Pass the data on the frame properties
-	mlt_properties_set_data( properties, "audio", *buffer, size, free, NULL );
+	mlt_frame_set_audio( this, *buffer, *format, size, free );
 
 	return 0;
 }

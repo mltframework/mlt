@@ -295,7 +295,7 @@ static int producer_get_audio( mlt_frame self, void **buffer, mlt_audio_format *
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_frame frame = mlt_frame_pop_audio( self );
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
-	mlt_properties_set_data( properties, "audio", *buffer, 0, NULL, NULL );
+	mlt_frame_set_audio( self, *buffer, *format, mlt_audio_format_size( *format, *samples, *channels ), NULL );
 	mlt_properties_set_int( properties, "frequency", *frequency );
 	mlt_properties_set_int( properties, "channels", *channels );
 	return 0;

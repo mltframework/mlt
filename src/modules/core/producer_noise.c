@@ -100,9 +100,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// Get the frame properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	int size = 0;
 
 	// Correct the returns if necessary
@@ -125,7 +122,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	}
 
 	// Set the buffer for destruction
-	mlt_properties_set_data( properties, "audio", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+	mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
 
 	return 0;
 }
