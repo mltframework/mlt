@@ -50,6 +50,7 @@ static void transport_action( mlt_producer producer, char *value )
 		switch( value[ 0 ] )
 		{
 			case 'q':
+			case 'Q':
 				mlt_properties_set_int( properties, "done", 1 );
 				break;
 			case '0':
