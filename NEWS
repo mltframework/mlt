@@ -1,6 +1,29 @@
 MLT Release Notes
 -----------------
 
+Version 0.7.2 - May 1, 2011
+
+This is a minor release to fix a few things between the 0.7.0 release
+and the release of Kdenlive 0.8. I recommend Kdenlive v0.8 users to
+upgrade to this version of Mlt. Beyond that there are some exciting
+additions to the Blackmagic Design DeckLink plugin!
+
+Framework
+ * Added mlt_profile_list().
+
+Modules
+ * Added decklink producer (i.e. capture, live encoding).
+ * Added keyer output for decklink consumer.
+ * Added AVOptions to the avformat service metadata.
+ * Added support for new major API versions (53) of FFmpeg.
+
+Melt
+ * Added '-query profile' option.
+ * Added '-query formats', '-query audio_codecs' and '-query video_codecs'.
+
+The recommended version of FFmpeg for use with this release is 0.6.1.
+
+
 Version 0.7.0 - March 27, 2011
 
 This is a major new release due to signficant additions to API, framework,
