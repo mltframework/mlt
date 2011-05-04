@@ -309,6 +309,47 @@ mlt_frame mlt_transition_process( mlt_transition self, mlt_frame a_frame, mlt_fr
 		return self->process( self, a_frame, b_frame );
 }
 
+static int get_image_a( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+{
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
+
+	// All transitions get scaling
+	const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+	if ( !rescale || !strcmp( rescale, "none" ) )
+		mlt_properties_set( a_props, "rescale.interp", "nearest" );
+
+	// Ensure sane aspect ratio
+	if ( mlt_properties_get_double( a_props, "aspect_ratio" ) == 0.0 )
+		mlt_properties_set_double( a_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+
+	return mlt_frame_get_image( a_frame, image, format, width, height, writable );
+}
+
+static int get_image_b( mlt_frame b_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+{
+	mlt_frame a_frame = mlt_frame_pop_frame( b_frame );
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
+	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
+
+	// Set scaling from A frame if not already provided.
+	if ( !mlt_properties_get( b_props, "rescale.interp" ) )
+	{
+		const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+		if ( !rescale || !strcmp( rescale, "none" ) )
+			rescale = "nearest";
+		mlt_properties_set( b_props, "rescale.interp", rescale );
+	}
+
+	// Ensure sane aspect ratio
+	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
+		mlt_properties_set_double( b_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+
+	mlt_properties_pass_list( b_props, a_props,
+		"consumer_deinterlace, deinterlace_method, consumer_aspect_ratio" );
+
+	return mlt_frame_get_image( b_frame, image, format, width, height, writable );
+}
+
 /** Get a frame from a transition.
 
 	The logic is complex here. A transition is typically applied to frames on the a and
@@ -436,6 +477,11 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			int b_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide" );
 			if ( !( a_hide & type ) && !( b_hide & type ) )
 			{
+				// Add hooks for pre-processing frames
+				mlt_frame_push_get_image( a_frame_ptr, get_image_a );
+				mlt_frame_push_frame( b_frame_ptr, a_frame_ptr );
+				mlt_frame_push_get_image( b_frame_ptr, get_image_b );
+
 				// Process the transition
 				*frame = mlt_transition_process( self, a_frame_ptr, b_frame_ptr );
 
