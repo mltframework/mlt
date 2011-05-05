@@ -1929,7 +1929,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 		// Decode the audio
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(26<<8)+0))
-		ret = avcodec_decode_audio3( codec_context, decode_buffer, &data_size, &pkt );
+		ret = avcodec_decode_audio3( codec_context, (int16_t*) decode_buffer, &data_size, &pkt );
 #elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(29<<8)+0))
 		ret = avcodec_decode_audio2( codec_context, decode_buffer, &data_size, ptr, len );
 #else
@@ -1962,7 +1962,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				// Copy to audio buffer while resampling
 				uint8_t *source = decode_buffer;
 				uint8_t *dest = &audio_buffer[ audio_used * channels * sizeof_sample ];
-				audio_used += audio_resample( resample, dest, source, convert_samples );
+				audio_used += audio_resample( resample, (short*) dest, (short*) source, convert_samples );
 			}
 			else
 			{
