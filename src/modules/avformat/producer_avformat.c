@@ -1088,8 +1088,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( self->image_cache )
 	{
 		mlt_cache_item item = mlt_cache_get( self->image_cache, (void*) position );
-		*buffer = mlt_cache_item_data( item, (int*) format );
-		if ( *buffer )
+		uint8_t *original = mlt_cache_item_data( item, (int*) format );
+		if ( original )
 		{
 			// Set the resolution
 			*width = codec_context->width;
@@ -1101,9 +1101,19 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 			// Cache hit
 			int size = mlt_image_format_size( *format, *width, *height, NULL );
-			mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
-			mlt_frame_set_image( frame, *buffer, size, NULL );
-			// self->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+			if ( writable )
+			{
+				*buffer = mlt_pool_alloc( size );
+				mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
+				memcpy( *buffer, original, size );
+				mlt_cache_item_close( item );
+			}
+			else
+			{
+				*buffer = original;
+				mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
+				mlt_frame_set_image( frame, *buffer, size, NULL );
+			}
 			self->got_picture = 1;
 
 			goto exit_get_image;
