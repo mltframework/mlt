@@ -1924,7 +1924,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	while ( ptr && ret >= 0 && len > 0 )
 	{
-		int sizeof_sample = sample_bytes( codec_context );
+		int sizeof_sample = resample? sizeof( int16_t ) : sample_bytes( codec_context );
 		int data_size = self->audio_buffer_size[ index ];
 
 		// Decode the audio
@@ -1948,7 +1948,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		if ( data_size > 0 )
 		{
 			// Figure out how many samples will be needed after resampling
-			int convert_samples = data_size / codec_context->channels / sizeof_sample;
+			int convert_samples = data_size / codec_context->channels / sample_bytes( codec_context );
 			int samples_needed = self->resample_factor * convert_samples;
 
 			// Resize audio buffer to prevent overflow
@@ -2084,7 +2084,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			}
 
 			// Check for audio buffer and create if necessary
-			self->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+			self->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof_sample;
 			self->audio_buffer[ index ] = mlt_pool_alloc( self->audio_buffer_size[ index ] );
 
 			// Check for decoder buffer and create if necessary
@@ -2141,6 +2141,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		}
 
 		// Set some additional return values
+		*format = mlt_audio_s16;
 		if ( self->audio_index != INT_MAX && !self->audio_resample[ self->audio_index ] )
 		{
 			index = self->audio_index;
@@ -2154,7 +2155,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		{
 			// This only works if all audio tracks have the same sample format.
 			for ( index = 0; index < index_max; index++ )
-				if ( self->audio_codec[ index ] )
+				if ( self->audio_codec[ index ] && !self->audio_resample[ index ] )
 				{
 					*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32
 						: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_float
