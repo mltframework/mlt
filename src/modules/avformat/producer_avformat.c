@@ -2149,9 +2149,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			index = self->audio_index;
 			*channels = self->audio_codec[ index ]->channels;
 			*frequency = self->audio_codec[ index ]->sample_rate;
-			*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32
-				: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_float
+			*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32le
+				: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_f32le
 				: mlt_audio_s16;
+			sizeof_sample = sample_bytes( self->audio_codec[ index ] );
 		}
 		else if ( self->audio_index == INT_MAX )
 		{
@@ -2159,9 +2160,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			for ( index = 0; index < index_max; index++ )
 				if ( self->audio_codec[ index ] && !self->audio_resample[ index ] )
 				{
-					*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32
-						: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_float
+					*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32le
+						: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_f32le
 						: mlt_audio_s16;
+					sizeof_sample = sample_bytes( self->audio_codec[ index ] );
 					break;
 				}
 		}
@@ -2206,9 +2208,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			{
 				uint8_t *src = self->audio_buffer[ index ];
 				*samples = self->audio_used[ index ] < *samples ? self->audio_used[ index ] : *samples;
-				memcpy( *buffer, src, *samples * *channels * sizeof_sample );
+				size = *samples * *channels * sizeof_sample;
+				memcpy( *buffer, src, size );
 				self->audio_used[ index ] -= *samples;
-				memmove( src, &src[ *samples * *channels * sizeof_sample ], self->audio_used[ index ] * *channels * sizeof_sample );
+				memmove( src, src + size, self->audio_used[ index ] * *channels * sizeof_sample );
 			}
 			else
 			{
