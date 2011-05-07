@@ -59,6 +59,14 @@ typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format 
  * (no speed factor applied, only available when \em _need_previous_next is set on the producer)
  * \properties \em colorspace the standard for luma coefficients
  * \properties \em force_full_luma luma range handling, set to -1 for pass-through, 1 for full range, 0 for scaling
+ * \properties \em audio_frequency the sample rate of the audio
+ * \properties \em audio_channels the number of audio channels
+ * \properties \em audio_samples the number of audio samples
+ * \properties \em audio_format the mlt_audio_format for the audio on this frame
+ * \properties \em format the mlt_image_format of the image on this frame
+ * \properties \em width the horizontal resolution of the image
+ * \properties \em height the vertical resolution of the image
+ * \properties \em aspect_ratio the sample aspect ratio of the image
  */
 
 struct mlt_frame_s
