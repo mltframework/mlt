@@ -500,8 +500,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 				dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
 	
 
-		mlt_properties_set_int( properties, "frequency", dv_decoder->audio->frequency );
-		mlt_properties_set_int( properties, "channels", dv_decoder->audio->num_channels );
+		mlt_properties_set_int( properties, "audio_frequency", dv_decoder->audio->frequency );
+		mlt_properties_set_int( properties, "audio_channels", dv_decoder->audio->num_channels );
 
 		// Register audio callback
 		if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "audio_index" ) > 0 )

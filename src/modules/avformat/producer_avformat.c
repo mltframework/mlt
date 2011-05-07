@@ -2351,8 +2351,8 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	// Get the codec(s)
 	if ( context && index == INT_MAX )
 	{
-		mlt_properties_set_int( frame_properties, "frequency", self->max_frequency );
-		mlt_properties_set_int( frame_properties, "channels", self->total_channels );
+		mlt_properties_set_int( frame_properties, "audio_frequency", self->max_frequency );
+		mlt_properties_set_int( frame_properties, "audio_channels", self->total_channels );
 		for ( index = 0; index < context->nb_streams; index++ )
 		{
 			if ( context->streams[ index ]->codec->codec_type == CODEC_TYPE_AUDIO )

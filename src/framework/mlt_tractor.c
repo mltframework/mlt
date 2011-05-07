@@ -296,8 +296,9 @@ static int producer_get_audio( mlt_frame self, void **buffer, mlt_audio_format *
 	mlt_frame frame = mlt_frame_pop_audio( self );
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	mlt_frame_set_audio( self, *buffer, *format, mlt_audio_format_size( *format, *samples, *channels ), NULL );
-	mlt_properties_set_int( properties, "frequency", *frequency );
-	mlt_properties_set_int( properties, "channels", *channels );
+	mlt_properties_set_int( properties, "audio_frequency", *frequency );
+	mlt_properties_set_int( properties, "audio_channels", *channels );
+	mlt_properties_set_int( properties, "audio_samples", *samples );
 	return 0;
 }
 
