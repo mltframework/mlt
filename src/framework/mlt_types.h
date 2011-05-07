@@ -52,7 +52,9 @@ typedef enum
 	mlt_audio_pcm = 1, /**< \deprecated signed 16-bit interleaved PCM */
 	mlt_audio_s16 = 1, /**< signed 16-bit interleaved PCM */
 	mlt_audio_s32,     /**< signed 32-bit non-interleaved PCM */
-	mlt_audio_float    /**< 32-bit non-interleaved floating point */
+	mlt_audio_float,   /**< 32-bit non-interleaved floating point */
+	mlt_audio_s32le,   /**< signed 32-bit interleaved PCM, may only used by producers */
+	mlt_audio_f32le    /**< 32-bit interleaved floating point, may only be used by producers */
 }
 mlt_audio_format;
 

@@ -605,7 +605,9 @@ const char * mlt_audio_format_name( mlt_audio_format format )
 		case mlt_audio_none:   return "none";
 		case mlt_audio_s16:    return "s16";
 		case mlt_audio_s32:    return "s32";
+		case mlt_audio_s32le:  return "s32le";
 		case mlt_audio_float:  return "float";
+		case mlt_audio_f32le:  return "f32le";
 	}
 	return "invalid";
 }
@@ -625,7 +627,9 @@ int mlt_audio_format_size( mlt_audio_format format, int samples, int channels )
 	{
 		case mlt_audio_none:   return 0;
 		case mlt_audio_s16:    return samples * channels * sizeof( int16_t );
+		case mlt_audio_s32le:
 		case mlt_audio_s32:    return samples * channels * sizeof( int32_t );
+		case mlt_audio_f32le:
 		case mlt_audio_float:  return samples * channels * sizeof( float );
 	}
 	return 0;
@@ -704,6 +708,8 @@ int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format
 				break;
 			case mlt_audio_float:
 				size = *samples * *channels * sizeof( float );
+				break;
+			default:
 				break;
 		}
 		if ( size )
