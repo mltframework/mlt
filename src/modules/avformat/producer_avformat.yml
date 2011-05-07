@@ -138,11 +138,6 @@ parameters:
     description: if the resource can seek
     readonly: yes
 
-  - identifier: adjust_length
-    title: Adjust length
-    type: time
-    description: Adjust the detected length.
-
   - identifier: width
     title: Width
     type: integer

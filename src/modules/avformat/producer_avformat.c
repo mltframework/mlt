@@ -661,14 +661,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, char *fil
 			if ( context->duration != AV_NOPTS_VALUE )
 			{
 				// This isn't going to be accurate for all formats
-				// Workaround some clips whose estimated duration cause problems:
-				// http://www.kdenlive.org/mantis/view.php?id=2003
-				int adjust = -3;
-				if ( mlt_properties_get( properties, "adjust_length" ) )
-					adjust = mlt_properties_get_int( properties, "adjust_length" );
-				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps + adjust );
-				if  ( mlt_properties_get_position( properties, "force_length" ) > 0 )
-					frames = mlt_properties_get_position( properties, "force_length" );
+				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps );
 				mlt_properties_set_position( properties, "out", frames - 1 );
 				mlt_properties_set_position( properties, "length", frames );
 			}
