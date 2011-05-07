@@ -426,12 +426,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
 
 	// Suppress padding and aspect normalization.
-	char *interps = mlt_properties_get( b_props, "rescale.interp" );
+	char *interps = mlt_properties_get( a_props, "rescale.interp" );
 	if ( interps )
 		interps = strdup( interps );
 	mlt_properties_set( b_props, "rescale.interp", "none" );
-	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
-		mlt_properties_set_double( b_props, "aspect_ratio", consumer_ar );
 
 	// This is not a field-aware transform.
 	mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );

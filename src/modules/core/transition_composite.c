@@ -750,6 +750,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
 	uint8_t resize_alpha = mlt_properties_get_int( b_props, "resize_alpha" );
+	double consumer_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(this) ) );
 
 	// Do not scale if we are cropping - the compositing rectangle can crop the b image
 	// TODO: Use the animatable w and h of the crop geometry to scale independently of crop rectangle
@@ -758,7 +759,6 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
-		double consumer_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
 		double background_ar = mlt_properties_get_double( b_props, "output_ratio" );
 		double output_ar = background_ar != 0.0 ? background_ar : consumer_ar;
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
@@ -775,7 +775,6 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
-		double consumer_ar = mlt_properties_get_double( b_props, "consumer_aspect_ratio" );
 		double background_ar = mlt_properties_get_double( b_props, "output_ratio" );
 		double output_ar = background_ar != 0.0 ? background_ar : consumer_ar;
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
@@ -1131,13 +1130,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		uint8_t *alpha_a = NULL;
 		uint8_t *alpha_b = NULL;
 
-		// Composites always need scaling... defaulting to lowest
-		const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
-		if ( rescale == NULL || !strcmp( rescale, "none" ) )
-			rescale = "nearest";
-		mlt_properties_set( a_props, "rescale.interp", rescale );
-		mlt_properties_set( b_props, "rescale.interp", rescale );
-
 		// Do the calculation
 		// NB: Locks needed here since the properties are being modified
 		int invert = mlt_properties_get_int( properties, "invert" );
@@ -1145,11 +1137,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		composite_calculate( this, &result, invert ? b_frame : a_frame, position );
 		mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
 
-		// Since we are the consumer of the b_frame, we must pass along these
-		// consumer properties from the a_frame
-		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) || mlt_properties_get_int( properties, "deinterlace" ) );
-		mlt_properties_set( b_props, "consumer_deinterlace_method", mlt_properties_get( a_props, "consumer_deinterlace_method" ) );
-		mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+		// Manual option to deinterlace
+		if ( mlt_properties_get_int( properties, "deinterlace" ) )
+		{
+			mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
+			mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
+		}
 
 		// TODO: Dangerous/temporary optimisation - if nothing to do, then do nothing
 		if ( mlt_properties_get_int( properties, "no_alpha" ) && 

@@ -45,7 +45,6 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 
 	if ( mlt_properties_get( &this->parent, "distort" ) )
 		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &this->parent, "distort" ) );
-	mlt_properties_set_int( &that->parent, "consumer_deinterlace", mlt_properties_get_int( &this->parent, "consumer_deinterlace" ) );
 	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 );
 	alpha_dst = mlt_frame_get_alpha_mask( this );
 	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
@@ -103,7 +102,6 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 
 	if ( mlt_properties_get( &a_frame->parent, "distort" ) )
 		mlt_properties_set( &b_frame->parent, "distort", mlt_properties_get( &a_frame->parent, "distort" ) );
-	mlt_properties_set_int( &b_frame->parent, "consumer_deinterlace", mlt_properties_get_int( &a_frame->parent, "consumer_deinterlace" ) );
 	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 );
 	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 );
 
@@ -459,27 +457,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int reverse = mlt_properties_get_int( properties, "reverse" );
 	int invert = mlt_properties_get_int( properties, "invert" );
 
-	if ( mlt_properties_get( a_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( a_props, "rescale.interp" ), "none" ) )
-		mlt_properties_set( a_props, "rescale.interp", "nearest" );
-
-	// Since we are the consumer of the b_frame, we must pass along this
-	// consumer property from the a_frame
-	if ( mlt_properties_get_double( a_props, "aspect_ratio" ) == 0.0 )
-		mlt_properties_set_double( a_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
-		mlt_properties_set_double( b_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-	mlt_properties_set_double( b_props, "consumer_aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
-
 	// Honour the reverse here
 	if ( mix >= 1.0 )
 		mix -= floor( mix );
-
-	// Ensure we get scaling on the b_frame
-	if ( mlt_properties_get( b_props, "rescale.interp" ) == NULL || !strcmp( mlt_properties_get( b_props, "rescale.interp" ), "none" ) )
-		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
-	
-	if ( invert )
-		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace") );
 
 	if ( mlt_properties_get( properties, "fixed" ) )
 		mix = mlt_properties_get_double( properties, "fixed" );
