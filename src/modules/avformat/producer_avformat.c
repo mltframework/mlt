@@ -2207,11 +2207,15 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			if ( self->audio_used[ index ] > 0 )
 			{
 				uint8_t *src = self->audio_buffer[ index ];
-				*samples = self->audio_used[ index ] < *samples ? self->audio_used[ index ] : *samples;
-				size = *samples * *channels * sizeof_sample;
-				memcpy( *buffer, src, size );
-				self->audio_used[ index ] -= *samples;
-				memmove( src, src + size, self->audio_used[ index ] * *channels * sizeof_sample );
+				// copy samples from audio_buffer
+				size = self->audio_used[ index ] < *samples ? self->audio_used[ index ] : *samples;
+				memcpy( *buffer, src, size * *channels * sizeof_sample );
+				// supply the remaining requested samples as silence
+				if ( *samples > self->audio_used[ index ] )
+					memset( *buffer + size * *channels * sizeof_sample, 0, ( *samples - self->audio_used[ index ] ) * *channels * sizeof_sample );
+				// reposition the samples within audio_buffer
+				self->audio_used[ index ] -= size;
+				memmove( src, src + size * *channels * sizeof_sample, self->audio_used[ index ] * *channels * sizeof_sample );
 			}
 			else
 			{
