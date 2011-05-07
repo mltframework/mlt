@@ -22,6 +22,7 @@
 #include <string.h>
 
 extern mlt_consumer consumer_null_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_audiochannels_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_audioconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_audiowave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_brightness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -56,6 +57,7 @@ extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "null", consumer_null_init );
+	MLT_REGISTER( filter_type, "audiochannels", filter_audiochannels_init );
 	MLT_REGISTER( filter_type, "audioconvert", filter_audioconvert_init );
 	MLT_REGISTER( filter_type, "audiowave", filter_audiowave_init );
 	MLT_REGISTER( filter_type, "brightness", filter_brightness_init );

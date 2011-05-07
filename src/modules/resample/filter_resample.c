@@ -45,66 +45,19 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 	// Get the resample information
 	int output_rate = mlt_properties_get_int( filter_properties, "frequency" );
-	int error = 0;
-
-	// Used to return number of channels in the source
-	int channels_avail = *channels;
 
 	// If no resample frequency is specified, default to requested value
 	if ( output_rate == 0 )
 		output_rate = *frequency;
 
 	// Get the producer's audio
-	mlt_frame_get_audio( frame, buffer, format, frequency, &channels_avail, samples );
-
-	if ( channels_avail < *channels )
-	{
-		int size = mlt_audio_format_size( *format, *samples, *channels );
-		int16_t *new_buffer = mlt_pool_alloc( size );
-		int sample_size_factor = mlt_audio_format_size( *format, 1, 1 ) / sizeof( *new_buffer );
-		int i, j, k;
-
-		// Duplicate the existing channels
-		for ( i = 0; i < *samples; i++ )
-		{
-			for ( j = 0; j < *channels; j++ )
-			{
-				new_buffer[ ( ( i * *channels ) + j ) * sample_size_factor ]
-					= ((int16_t*)(*buffer))[ ( ( i * channels_avail ) + k ) * sample_size_factor ];
-				k = ( k + 1 ) % channels_avail;
-			}
-		}
-
-		// Update the audio buffer now - destroys the old
-		mlt_frame_set_audio( frame, new_buffer, *format, size, mlt_pool_release );
-
-		*buffer = new_buffer;
-	}
-	else if ( channels_avail > *channels )
-	{
-		int size = mlt_audio_format_size( *format, *samples, *channels );
-		int16_t *new_buffer = mlt_pool_alloc( size );
-		int sample_size_factor = mlt_audio_format_size( *format, 1, 1 ) / sizeof( *new_buffer );
-		int i, j;
-
-		// Drop all but the first *channels
-		for ( i = 0; i < *samples; i++ )
-		{
-			for ( j = 0; j < *channels; j++ )
-				new_buffer[ ( ( i * *channels ) + j ) * sample_size_factor ]
-					= ((int16_t*)(*buffer))[ ( ( i * channels_avail ) + j ) * sample_size_factor ];
-		}
-
-		// Update the audio buffer now - destroys the old
-		mlt_frame_set_audio( frame, new_buffer, *format, size, mlt_pool_release );
-
-		*buffer = new_buffer;
-	}
+	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	if ( error ) return error;
 
 	// Return now if no work to do
 	if ( output_rate != *frequency )
 	{
-		mlt_log_verbose( MLT_FILTER_SERVICE(filter), "channels %d samples %d frequency %d -> %d\n",
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "channels %d samples %d frequency %d -> %d\n",
 			*channels, *samples, *frequency, output_rate );
 
 		// Do not convert to float unless we need to change the rate
