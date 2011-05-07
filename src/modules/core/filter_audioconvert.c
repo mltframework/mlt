@@ -157,6 +157,126 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				break;
 			}
 			break;
+		case mlt_audio_s32le:
+			switch ( requested_format )
+			{
+			case mlt_audio_s16:
+			{
+				int16_t *buffer = mlt_pool_alloc( size );
+				int16_t *p = buffer;
+				int32_t *q = (int32_t*) *audio;
+				int i = samples * channels + 1;
+				while ( --i )
+					*p++ = *q++ >> 16;
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_s32:
+			{
+				int32_t *buffer = mlt_pool_alloc( size );
+				int32_t *p = buffer;
+				int c;
+				for ( c = 0; c < channels; c++ )
+				{
+					int32_t *q = (int32_t*) *audio + c;
+					int i = samples + 1;
+					while ( --i )
+					{
+						*p++ = *q;
+						q += channels;
+					}
+				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_float:
+			{
+				float *buffer = mlt_pool_alloc( size );
+				float *p = buffer;
+				int c;
+				for ( c = 0; c < channels; c++ )
+				{
+					int32_t *q = (int32_t*) *audio + c;
+					int i = samples + 1;
+					while ( --i )
+					{
+						*p++ = (float)( *q ) / 2147483648.0;
+						q += channels;
+					}
+				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			default:
+				break;
+			}
+			break;
+		case mlt_audio_f32le:
+			switch ( requested_format )
+			{
+			case mlt_audio_s16:
+			{
+				int16_t *buffer = mlt_pool_alloc( size );
+				int16_t *p = buffer;
+				float *q = (float*) *audio;
+				int i = samples * channels + 1;
+				while ( --i )
+				{
+					float f = *q++;
+					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+					*p++ = 32767 * f;
+				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_float:
+			{
+				float *buffer = mlt_pool_alloc( size );
+				float *p = buffer;
+				int c;
+				for ( c = 0; c < channels; c++ )
+				{
+					float *q = (float*) *audio + c;
+					int i = samples + 1;
+					while ( --i )
+					{
+						*p++ = *q;
+						q += channels;
+					}
+				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_s32:
+			{
+				int32_t *buffer = mlt_pool_alloc( size );
+				int32_t *p = buffer;
+				int c;
+				for ( c = 0; c < channels; c++ )
+				{
+					float *q = (float*) *audio + c;
+					int i = samples + 1;
+					while ( --i )
+					{
+						float f = *q;
+						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+						*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
+						q += channels;
+					}
+				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			default:
+				break;
+			}
+			break;
 		default:
 			break;
 		}
