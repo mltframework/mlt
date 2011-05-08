@@ -20,6 +20,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,6 +62,9 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	{
 		// Will store number of samples created
 		int used = 0;
+
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "channels %d samples %d frequency %d -> %d\n",
+			*channels, *samples, *frequency, output_rate );
 
 		// Do not convert to s16 unless we need to change the rate
 		if ( *format != mlt_audio_s16 )
