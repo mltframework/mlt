@@ -18,12 +18,89 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <string.h>
 #include <framework/mlt.h>
 
+#include <string.h>
+#include <limits.h>
+#ifdef SOX14
+#include <sox.h>
+#endif
+
 extern mlt_filter filter_sox_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	const char *service_type = NULL;
+	mlt_properties result = NULL;
+
+	// Convert the service type to a string.
+	switch ( type )
+	{
+		case consumer_type:
+			service_type = "consumer";
+			break;
+		case filter_type:
+			service_type = "filter";
+			break;
+		case producer_type:
+			service_type = "producer";
+			break;
+		case transition_type:
+			service_type = "transition";
+			break;
+		default:
+			return NULL;
+	}
+	// Load the yaml file
+	snprintf( file, PATH_MAX, "%s/sox/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, "sox" );
+	result = mlt_properties_parse_yaml( file );
+
+#ifdef SOX14
+	if ( result && ( type == filter_type ) )
+	{
+		// Annotate the yaml properties with sox effect usage.
+		mlt_properties params = mlt_properties_get_data( result, "parameters", NULL );
+		const sox_effect_handler_t *e;
+		int i;
+
+		for ( i = 0; sox_effect_fns[i]; i++ )
+		{
+			e = sox_effect_fns[i]();
+			if ( e && e->name && !strcmp( e->name, id + 4 ) )
+			{
+				mlt_properties p = mlt_properties_get_data( params, "0", NULL );
+
+				mlt_properties_set( result, "identifier", e->name );
+				mlt_properties_set( result, "title", e->name );
+				mlt_properties_set( p, "type", "string" );
+				mlt_properties_set( p, "title", "Options" );
+				if ( e->usage )
+					mlt_properties_set( p, "format", e->usage );
+			}
+		}
+	}
+#endif
+	return result;
+}
 
 MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "sox", filter_sox_init );
+	MLT_REGISTER_METADATA( filter_type, "sox", metadata, NULL );
+#ifdef SOX14
+	int i;
+	const sox_effect_handler_t *e;
+	char name[64] = "sox.";
+	for ( i = 0; sox_effect_fns[i]; i++ )
+	{
+		e = sox_effect_fns[i]();
+		if ( e && e->name && !( e->flags & SOX_EFF_DEPRECATED ) && !( e->flags & SOX_EFF_INTERNAL ) )
+		{
+			strcpy( name + 4, e->name );
+			MLT_REGISTER( filter_type, name, filter_sox_init );
+			MLT_REGISTER_METADATA( filter_type, name, metadata, NULL );
+		}
+	}
+#endif
 }

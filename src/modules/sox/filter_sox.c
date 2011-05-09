@@ -413,7 +413,19 @@ mlt_filter filter_sox_init( mlt_profile profile, mlt_service_type type, const ch
 		
 		this->process = filter_process;
 		
-		if ( arg != NULL )
+		if ( !strncmp( id, "sox.", 4 ) )
+		{
+			char *s = malloc( strlen( id ) + ( arg? strlen( arg ) + 2 : 1 ) );
+			strcpy( s, id + 4 );
+			if ( arg )
+			{
+				strcat( s, " " );
+				strcat( s, arg );
+			}
+			mlt_properties_set( properties, "effect", s );
+			free( s );
+		}
+		else if ( arg )
 			mlt_properties_set( properties, "effect", arg );
 		mlt_properties_set_data( properties, "input_buffer", input_buffer, BUFFER_LEN, mlt_pool_release, NULL );
 		mlt_properties_set_data( properties, "output_buffer", output_buffer, BUFFER_LEN, mlt_pool_release, NULL );
