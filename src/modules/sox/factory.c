@@ -95,7 +95,11 @@ MLT_REPOSITORY
 	for ( i = 0; sox_effect_fns[i]; i++ )
 	{
 		e = sox_effect_fns[i]();
-		if ( e && e->name && !( e->flags & SOX_EFF_DEPRECATED ) && !( e->flags & SOX_EFF_INTERNAL ) )
+		if ( e && e->name && !( e->flags & SOX_EFF_DEPRECATED )
+#if (SOX_LIB_VERSION_CODE >= SOX_LIB_VERSION(14,3,0))
+			&& !( e->flags & SOX_EFF_INTERNAL )
+#endif
+			)
 		{
 			strcpy( name + 4, e->name );
 			MLT_REGISTER( filter_type, name, filter_sox_init );
