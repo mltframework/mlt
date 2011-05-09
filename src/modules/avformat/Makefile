@@ -87,6 +87,7 @@ install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
 	install -d "$(DESTDIR)$(datadir)/mlt/avformat"
 	install -m 644 producer_avformat.yml "$(DESTDIR)$(datadir)/mlt/avformat"
+	install -m 644 consumer_avformat.yml "$(DESTDIR)$(datadir)/mlt/avformat"
 
 uninstall:
 	rm "$(DESTDIR)$(libdir)/mlt/libmltavformat$(LIBSUF)" 2> /dev/null || true
