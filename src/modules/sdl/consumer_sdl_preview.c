@@ -90,7 +90,6 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 		// Create child consumers
 		this->play = mlt_factory_consumer( profile, "sdl", arg );
 		this->still = mlt_factory_consumer( profile, "sdl_still", arg );
-		mlt_properties_set( properties, "real_time", "0" );
 		mlt_properties_set( properties, "rescale", "nearest" );
 		mlt_properties_set( properties, "deinterlace_method", "onefield" );
 		mlt_properties_set_int( properties, "prefill", 1 );
