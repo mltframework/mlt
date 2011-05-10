@@ -2,9 +2,9 @@
 
 if [ "$help" != "1" ]
 then
-	if [ "$targetos" = "Darwin" ] || [ "$targetos" = "MinGW" ]
+	if [ "$targetos" = "MinGW" ]
 	then
-		echo "- does not build on OS X or Windows: disabling"
+		echo "- does not build on Windows: disabling"
 		touch ../disable-decklink
 		exit 0
 	fi
