@@ -730,7 +730,7 @@ static void *consumer_read_ahead_thread( void *arg )
 			skip_next = 0;
 
 			// If we've reached an unacceptable level, reset everything
-			if ( skipped > fps * 2 )
+			if ( skipped > 5 )
 			{
 				skipped = 0;
 				time_frame = 0;
