@@ -31,29 +31,10 @@ extern mlt_filter filter_sox_init( mlt_profile profile, mlt_service_type type, c
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
-	const char *service_type = NULL;
 	mlt_properties result = NULL;
 
-	// Convert the service type to a string.
-	switch ( type )
-	{
-		case consumer_type:
-			service_type = "consumer";
-			break;
-		case filter_type:
-			service_type = "filter";
-			break;
-		case producer_type:
-			service_type = "producer";
-			break;
-		case transition_type:
-			service_type = "transition";
-			break;
-		default:
-			return NULL;
-	}
 	// Load the yaml file
-	snprintf( file, PATH_MAX, "%s/sox/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, "sox" );
+	snprintf( file, PATH_MAX, "%s/sox/filter_%s.yml", mlt_environment( "MLT_DATA" ), "sox" );
 	result = mlt_properties_parse_yaml( file );
 
 #ifdef SOX14
@@ -77,6 +58,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 				mlt_properties_set( p, "title", "Options" );
 				if ( e->usage )
 					mlt_properties_set( p, "format", e->usage );
+				break;
 			}
 		}
 	}
