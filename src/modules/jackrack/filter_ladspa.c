@@ -20,6 +20,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,17 +41,53 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 	if ( !resource && mlt_properties_get( properties, "src" ) )
 		resource = mlt_properties_get( properties, "src" );
 
-	// Propogate these for the Jack processing callback
-	mlt_properties_set_int( properties, "channels", channels );
-
 	// Start JackRack
-	if ( resource )
+	if ( resource || mlt_properties_get_int64( properties, "_pluginid" ) )
 	{
 		// Create JackRack without Jack client name so that it only uses LADSPA
 		jackrack = jack_rack_new( NULL, channels );
 		mlt_properties_set_data( properties, "jackrack", jackrack, 0,
 			(mlt_destructor) jack_rack_destroy, NULL );
-		jack_rack_open_file( jackrack, resource );
+
+		if ( resource )
+			// Load JACK Rack XML file
+			jack_rack_open_file( jackrack, resource );
+		else if ( mlt_properties_get_int64( properties, "_pluginid" ) )
+		{
+			// Load one LADSPA plugin by its UniqueID
+			unsigned long id = mlt_properties_get_int64( properties, "_pluginid" );
+			plugin_desc_t *desc = plugin_mgr_get_any_desc( jackrack->plugin_mgr, id );
+			plugin_t *plugin;
+			if ( desc && ( plugin = jack_rack_instantiate_plugin( jackrack, desc ) ) )
+			{
+				// TODO: move this into get_audio when keyframing is ready
+				LADSPA_Data value;
+				int index, c;
+
+				plugin->enabled = TRUE;
+				for ( index = 0; index < desc->control_port_count; index++ )
+				{
+					// Apply the control port values
+					char key[20];
+					value = plugin_desc_get_default_control_value( desc, index, sample_rate );
+					snprintf( key, sizeof(key), "%d", index );
+					if ( mlt_properties_get( properties, key ) )
+						value = mlt_properties_get_double( properties, key );
+					for ( c = 0; c < plugin->copies; c++ )
+						plugin->holders[c].control_memory[index] = value;
+				}
+				plugin->wet_dry_enabled = mlt_properties_get( properties, "wetness" ) != NULL;
+				if ( plugin->wet_dry_enabled )
+				{
+					value = mlt_properties_get_double( properties, "wetness" );
+					for ( c = 0; c < channels; c++ )
+						plugin->wet_dry_values[c] = value;
+				}
+				process_add_plugin( jackrack->procinfo, plugin );
+			}
+			else
+				mlt_log_error( properties, "failed to load plugin %lu\n", id );
+		}
 	}
 	return jackrack;
 }
@@ -125,6 +162,8 @@ mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		this->process = filter_process;
 		mlt_properties_set( properties, "resource", arg );
+		if ( !strncmp( id, "ladspa.", 7 ) )
+			mlt_properties_set( properties, "_pluginid", id + 7 );
 	}
 	return this;
 }

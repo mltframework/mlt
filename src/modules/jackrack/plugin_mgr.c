@@ -82,8 +82,8 @@ plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * file
   dl_handle = dlopen (filename, RTLD_NOW|RTLD_GLOBAL);
   if (!dl_handle)
     {
-      fprintf (stderr, "%s: error opening shared object file '%s': %s\n",
-               __FUNCTION__, filename, dlerror());
+//      fprintf (stderr, "%s: error opening shared object file '%s': %s\n",
+//               __FUNCTION__, filename, dlerror());
       return;
     }
   
