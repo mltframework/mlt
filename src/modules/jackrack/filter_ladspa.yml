@@ -1,0 +1,28 @@
+schema_version: 0.1
+type: filter
+identifier: ladspa
+title: LADSPA
+version: 1
+copyright: Copyright (C) 2004-2011 Ushodaya Enterprises Limited
+license: GPLv2
+language: en
+url: http://www.ladspa.org/
+creator: Dan Dennedy
+tags:
+  - Audio
+description: Process audio using LADSPA plugins.
+notes: >
+  Automatically adapts to the number of channels and sampling rate of the consumer.
+bugs:
+  - Some effects have a temporal side-effect that may not work well.
+
+parameters:
+  - identifier: argument
+    title: JACK Rack XML file
+    type: string
+    description: >
+      Runs a JACK Rack project to process audio through a stack of
+      LADSPA filters without using JACK.
+  - identifier: resource
+    title: JACK Rack XML file
+    type: string
