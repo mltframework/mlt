@@ -37,6 +37,7 @@
 #include "lock_free_fifo.h"
 #include "plugin.h"
 #include "jack_rack.h"
+#include "framework/mlt_log.h"
 
 #ifndef _
 #define _(x) x
@@ -94,14 +95,14 @@ int get_jack_buffers (process_info_t * procinfo, jack_nframes_t frames) {
       procinfo->jack_input_buffers[channel] = jack_port_get_buffer (procinfo->jack_input_ports[channel], frames);
       if (!procinfo->jack_input_buffers[channel])
         {
-          fprintf (stderr, "%s: no jack buffer for input port %ld\n", __FUNCTION__, channel);
+          mlt_log_verbose( NULL, "%s: no jack buffer for input port %ld\n", __FUNCTION__, channel);
           return 1;
         }
 
       procinfo->jack_output_buffers[channel] = jack_port_get_buffer (procinfo->jack_output_ports[channel], frames);
       if (!procinfo->jack_output_buffers[channel])
         {
-          fprintf (stderr, "%s: no jack buffer for output port %ld\n", __FUNCTION__, channel);
+          mlt_log_verbose( NULL, "%s: no jack buffer for output port %ld\n", __FUNCTION__, channel);
           return 1;
         }
     }
@@ -299,7 +300,7 @@ int process_ladspa (process_info_t * procinfo, jack_nframes_t frames,
   
   if (!procinfo)
     {
-      fprintf (stderr, "%s: no process_info from jack!\n", __FUNCTION__);
+      mlt_log_error( NULL, "%s: no process_info from jack!\n", __FUNCTION__);
       return 1;
     }
   
@@ -313,14 +314,14 @@ int process_ladspa (process_info_t * procinfo, jack_nframes_t frames,
       procinfo->jack_input_buffers[channel] = inputs[channel];
       if (!procinfo->jack_input_buffers[channel])
         {
-          fprintf (stderr, "%s: no jack buffer for input port %ld\n", __FUNCTION__, channel);
+          mlt_log_verbose( NULL, "%s: no jack buffer for input port %ld\n", __FUNCTION__, channel);
           return 1;
         }
 
       procinfo->jack_output_buffers[channel] = outputs[channel];
       if (!procinfo->jack_output_buffers[channel])
         {
-          fprintf (stderr, "%s: no jack buffer for output port %ld\n", __FUNCTION__, channel);
+          mlt_log_verbose( NULL, "%s: no jack buffer for output port %ld\n", __FUNCTION__, channel);
           return 1;
         }
     }
@@ -340,7 +341,7 @@ int process_jack (jack_nframes_t frames, void * data) {
   
   if (!procinfo)
     {
-      fprintf (stderr, "%s: no process_info from jack!\n", __FUNCTION__);
+      mlt_log_error( NULL, "%s: no process_info from jack!\n", __FUNCTION__);
       return 1;
     }
   
@@ -355,7 +356,7 @@ int process_jack (jack_nframes_t frames, void * data) {
   err = get_jack_buffers (procinfo, frames);
   if (err)
     {
-      fprintf(stderr, "%s: failed to get jack ports, not processing\n", __FUNCTION__);
+      mlt_log_warning( NULL, "%s: failed to get jack ports, not processing\n", __FUNCTION__);
       return 0;
     }
   
@@ -375,17 +376,17 @@ int process_jack (jack_nframes_t frames, void * data) {
 static int
 process_info_connect_jack (process_info_t * procinfo)
 {
-  printf (_("Connecting to JACK server with client name '%s'\n"), procinfo->jack_client_name);
+  mlt_log_info( NULL, _("Connecting to JACK server with client name '%s'\n"), procinfo->jack_client_name);
 
   procinfo->jack_client = jack_client_new (procinfo->jack_client_name);
 
   if (!procinfo->jack_client)
     {
-      fprintf (stderr, "%s: could not create jack client; is the jackd server running?\n", __FUNCTION__);
+      mlt_log_warning( NULL, "%s: could not create jack client; is the jackd server running?\n", __FUNCTION__);
       return 1;
     }
 
-  printf (_("Connected to JACK server\n"));
+  mlt_log_verbose( NULL, _("Connected to JACK server\n"));
 
   jack_set_process_callback (procinfo->jack_client, process_jack, procinfo);
   jack_on_shutdown (procinfo->jack_client, jack_shutdown_cb, procinfo);
@@ -419,17 +420,17 @@ process_info_connect_port (process_info_t * procinfo,
         
       full_port_name = g_strdup_printf ("%s:%s", procinfo->jack_client_name, port_name);
 
-      printf (_("Connecting ports '%s' and '%s'\n"), full_port_name, jack_ports[jack_port_index]);
+      mlt_log_debug( NULL, _("Connecting ports '%s' and '%s'\n"), full_port_name, jack_ports[jack_port_index]);
 
       err = jack_connect (procinfo->jack_client,
                           in ? jack_ports[jack_port_index] : full_port_name,
                           in ? full_port_name : jack_ports[jack_port_index]);
 
       if (err)
-        fprintf (stderr, "%s: error connecting ports '%s' and '%s'\n",
+        mlt_log_warning( NULL, "%s: error connecting ports '%s' and '%s'\n",
                  __FUNCTION__, full_port_name, jack_ports[jack_port_index]);
       else
-        printf (_("Connected ports '%s' and '%s'\n"), full_port_name, jack_ports[jack_port_index]);
+        mlt_log_info( NULL, _("Connected ports '%s' and '%s'\n"), full_port_name, jack_ports[jack_port_index]);
       
       free (full_port_name);
     }
@@ -472,7 +473,7 @@ process_info_set_port_count (process_info_t * procinfo,
       {
         port_name = g_strdup_printf ("%s_%ld", in ? "in" : "out", i + 1);
        
-        //printf (_("Creating %s port %s\n"), in ? "input" : "output", port_name);
+        //mlt_log_debug( NULL, _("Creating %s port %s\n"), in ? "input" : "output", port_name);
         
         port_ptr = (in ? &procinfo->jack_input_ports[i]
                        : &procinfo->jack_output_ports[i]);
@@ -485,12 +486,12 @@ process_info_set_port_count (process_info_t * procinfo,
         
         if (!*port_ptr)
           {
-            fprintf (stderr, "%s: could not register port '%s'; aborting\n",
+            mlt_log_error( NULL, "%s: could not register port '%s'; aborting\n",
                      __FUNCTION__, port_name);
             return 1;
           }
 
-        //printf (_("Created %s port %s\n"), in ? "input" : "output", port_name);
+        //mlt_log_debug( NULL, _("Created %s port %s\n"), in ? "input" : "output", port_name);
         
         if ((in && connect_inputs) || (!in && connect_outputs))
           process_info_connect_port (procinfo, in, i, port_name);

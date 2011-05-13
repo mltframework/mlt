@@ -34,6 +34,7 @@
 #include "plugin.h"
 #include "jack_rack.h"
 #include "process.h"
+#include "framework/mlt_log.h"
 
 #define CONTROL_FIFO_SIZE   128
 
@@ -292,7 +293,7 @@ plugin_open_plugin (plugin_desc_t * desc,
   dl_handle = dlopen (desc->object_file, RTLD_NOW|RTLD_GLOBAL);
   if (!dl_handle)
     {
-      fprintf (stderr, "%s: error opening shared object file '%s': %s\n",
+      mlt_log_warning( NULL, "%s: error opening shared object file '%s': %s\n",
                __FUNCTION__, desc->object_file, dlerror());
       return 1;
     }
@@ -307,7 +308,7 @@ plugin_open_plugin (plugin_desc_t * desc,
   dlerr = dlerror();
   if (dlerr)
     {
-      fprintf (stderr, "%s: error finding descriptor symbol in object file '%s': %s\n",
+      mlt_log_warning( NULL, "%s: error finding descriptor symbol in object file '%s': %s\n",
                __FUNCTION__, desc->object_file, dlerr);
       dlclose (dl_handle);
       return 1;
@@ -404,7 +405,7 @@ plugin_create_aux_ports (plugin_t * plugin, guint copy, jack_rack_t * jack_rack)
       
       if (!holder->aux_ports[i])
         {
-          fprintf (stderr, "Could not register jack port '%s'; aborting\n", port_name);
+          mlt_log_panic( NULL, "Could not register jack port '%s'; aborting\n", port_name);
           abort ();
         }
     }
@@ -563,7 +564,7 @@ plugin_destroy (plugin_t * plugin)
                                           plugin->holders[i].aux_ports[j]);
           
               if (err)
-                fprintf (stderr, "%s: could not unregister jack port\n", __FUNCTION__);
+                mlt_log_warning( NULL, "%s: could not unregister jack port\n", __FUNCTION__);
             }
        
           g_free (plugin->holders[i].aux_ports);
@@ -585,7 +586,7 @@ plugin_destroy (plugin_t * plugin)
   err = dlclose (plugin->dl_handle);
   if (err)
     {
-      fprintf (stderr, "%s: error closing shared object '%s': %s\n",
+      mlt_log_warning( NULL, "%s: error closing shared object '%s': %s\n",
                __FUNCTION__, plugin->desc->object_file, dlerror ());
     }
    

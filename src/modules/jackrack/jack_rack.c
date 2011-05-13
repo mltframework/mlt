@@ -35,6 +35,7 @@
 #include "jack_rack.h"
 #include "lock_free_fifo.h"
 #include "plugin_settings.h"
+#include "framework/mlt_log.h"
 
 #ifndef _
 #define _(x) x
@@ -79,7 +80,7 @@ jack_rack_instantiate_plugin (jack_rack_t * jack_rack, plugin_desc_t * desc)
   
   /* check whether or not the plugin is RT capable and confirm with the user if it isn't */
   if (!LADSPA_IS_HARD_RT_CAPABLE(desc->properties)) {
-    fprintf (stderr, "Plugin not RT capable. The plugin '%s' does not describe itself as being capable of real-time operation. You may experience drop outs or jack may even kick us out if you use it.\n",
+    mlt_log_info( NULL, "Plugin not RT capable. The plugin '%s' does not describe itself as being capable of real-time operation. You may experience drop outs or jack may even kick us out if you use it.\n",
                desc->name);
   }
 
@@ -87,7 +88,7 @@ jack_rack_instantiate_plugin (jack_rack_t * jack_rack, plugin_desc_t * desc)
   plugin = plugin_new (desc, jack_rack);
 
   if (!plugin) {
-   fprintf (stderr, "Error loading file plugin '%s' from file '%s'\n",
+   mlt_log_error( NULL, "Error loading file plugin '%s' from file '%s'\n",
                desc->name, desc->object_file);
   }
   
@@ -139,7 +140,7 @@ jack_rack_add_plugin (jack_rack_t * jack_rack, plugin_t * plugin)
       {
         value = settings_get_control_value (saved_plugin->settings, copy, control);
         plugin->holders[copy].control_memory[control] = value;
-//printf("setting control value %s (%d) = %f\n", saved_plugin->settings->desc->port_names[control], copy, value);
+//mlt_log_debug( NULL, "setting control value %s (%d) = %f\n", saved_plugin->settings->desc->port_names[control], copy, value);
 //        lff_write (plugin->holders[copy].ui_control_fifos + control, &value);
       }
   if (plugin->wet_dry_enabled)
@@ -147,7 +148,7 @@ jack_rack_add_plugin (jack_rack_t * jack_rack, plugin_t * plugin)
       {
         value = settings_get_wet_dry_value (saved_plugin->settings, channel);
         plugin->wet_dry_values[channel] = value;
-//printf("setting wet/dry value %d = %f\n", channel, value);
+//mlt_log_debug( NULL, "setting wet/dry value %d = %f\n", channel, value);
 //        lff_write (plugin->wet_dry_fifos + channel, &value);
       }
 }
@@ -180,7 +181,7 @@ saved_rack_parse_plugin (jack_rack_t * jack_rack, saved_rack_t * saved_rack, sav
           desc = plugin_mgr_get_any_desc (jack_rack->plugin_mgr, num);
           if (!desc)
             {
-              fprintf (stderr, _("The file '%s' contains an unknown plugin with ID '%ld'; skipping\n"), filename, num);
+              mlt_log_verbose( NULL, _("The file '%s' contains an unknown plugin with ID '%ld'; skipping\n"), filename, num);
               return;
             }
           
@@ -333,13 +334,13 @@ jack_rack_open_file (jack_rack_t * jack_rack, const char * filename)
   doc = xmlParseFile (filename);
   if (!doc)
     {
-      fprintf (stderr, _("Could not parse file '%s'\n"), filename);
+      mlt_log_error( NULL, _("Could not parse file '%s'\n"), filename);
       return 1;
     }
   
   if (xmlStrcmp ( ((xmlDtdPtr)doc->children)->name, _x("jackrack")) != 0)
     {
-      fprintf (stderr, _("The file '%s' is not a JACK Rack settings file\n"), filename);
+      mlt_log_error( NULL, _("The file '%s' is not a JACK Rack settings file\n"), filename);
       return 1;
     }
   
