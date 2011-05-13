@@ -26,6 +26,7 @@
 #include "mlt_property.h"
 #include "mlt_deque.h"
 #include "mlt_log.h"
+#include "mlt_factory.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +36,8 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <dirent.h>
-
+#include <sys/stat.h>
+#include <errno.h>
 
 /** \brief private implementation of the property list */
 
@@ -116,12 +118,54 @@ mlt_properties mlt_properties_new( )
 	return self;
 }
 
+static int load_properties( mlt_properties self, const char *filename )
+{
+	// Open the file
+	FILE *file = fopen( filename, "r" );
+
+	// Load contents of file
+	if ( file != NULL )
+	{
+		// Temp string
+		char temp[ 1024 ];
+		char last[ 1024 ] = "";
+
+		// Read each string from the file
+		while( fgets( temp, 1024, file ) )
+		{
+			// Chomp the string
+			temp[ strlen( temp ) - 1 ] = '\0';
+
+			// Check if the line starts with a .
+			if ( temp[ 0 ] == '.' )
+			{
+				char temp2[ 1024 ];
+				sprintf( temp2, "%s%s", last, temp );
+				strcpy( temp, temp2 );
+			}
+			else if ( strchr( temp, '=' ) )
+			{
+				strcpy( last, temp );
+				*( strchr( last, '=' ) ) = '\0';
+			}
+
+			// Parse and set the property
+			if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
+				mlt_properties_parse( self, temp );
+		}
+
+		// Close the file
+		fclose( file );
+	}
+	return file? 0 : errno;
+}
+
 /** Create a properties object by reading a .properties text file.
  *
  * Free the properties object with mlt_properties_close().
  * \deprecated Please start using mlt_properties_parse_yaml().
  * \public \memberof mlt_properties_s
- * \param filename a string contain the absolute file name
+ * \param filename the absolute file name
  * \return a new properties object
  */
 
@@ -131,48 +175,81 @@ mlt_properties mlt_properties_load( const char *filename )
 	mlt_properties self = mlt_properties_new( );
 
 	if ( self != NULL )
-	{
-		// Open the file
-		FILE *file = fopen( filename, "r" );
-
-		// Load contents of file
-		if ( file != NULL )
-		{
-			// Temp string
-			char temp[ 1024 ];
-			char last[ 1024 ] = "";
-
-			// Read each string from the file
-			while( fgets( temp, 1024, file ) )
-			{
-				// Chomp the string
-				temp[ strlen( temp ) - 1 ] = '\0';
-
-				// Check if the line starts with a .
-				if ( temp[ 0 ] == '.' )
-				{
-					char temp2[ 1024 ];
-					sprintf( temp2, "%s%s", last, temp );
-					strcpy( temp, temp2 );
-				}
-				else if ( strchr( temp, '=' ) )
-				{
-					strcpy( last, temp );
-					*( strchr( last, '=' ) ) = '\0';
-				}
-
-				// Parse and set the property
-				if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
-					mlt_properties_parse( self, temp );
-			}
-
-			// Close the file
-			fclose( file );
-		}
-	}
+		load_properties( self, filename );
 
 	// Return the pointer
 	return self;
+}
+
+/** Set properties from a preset.
+ *
+ * Presets are typically installed to $prefix/share/mlt/presets/{type}/{service}/[{profile}/]{name}.
+ * For example, "/usr/share/mlt/presets/consumer/avformat/dv_ntsc_wide/DVD"
+ * could be an encoding preset for a widescreen NTSC DVD Video.
+ * Do not specify the type and service in the preset name parameter; these are
+ * inferred automatically from the service to which you are applying the preset.
+ * Using the example above and assuming you are calling this function on the
+ * avformat consumer, the name passed to the function should simply be DVD.
+ * Note that the profile portion of the path is optional, but a profile-specific
+ * preset with the same name as a more generic one is given a higher priority.
+ * \todo Look in a user-specific location - somewhere in the home directory.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the name of a preset in a well-known location or the explicit path
+ * \return true if error
+ */
+
+int mlt_properties_preset( mlt_properties self, const char *name )
+{
+	struct stat stat_buff;
+
+	// validate input
+	if ( !( self && name && strlen( name ) ) )
+		return 1;
+
+	// See if name is an explicit file
+	if ( ! stat( name, &stat_buff ) )
+	{
+		return load_properties( self, name );
+	}
+	else
+	{
+		// Look for profile-specific preset before a generic one.
+		char *data          = getenv( "MLT_PRESETS_PATH" );
+		const char *type    = mlt_properties_get( self, "mlt_type" );
+		const char *service = mlt_properties_get( self, "mlt_service" );
+		const char *profile = mlt_environment( "MLT_PROFILE" );
+		int error = 0;
+
+		if ( data )
+		{
+			data = strdup( data );
+		}
+		else
+		{
+			data = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + 9 );
+			strcpy( data, mlt_environment( "MLT_DATA" ) );
+			strcat( data, "/presets" );
+		}
+		if ( data && type && service )
+		{
+			char *path = malloc( 5 + strlen(name) + strlen(data) + strlen(type) + strlen(service) + ( profile? strlen(profile) : 0 ) );
+			sprintf( path, "%s/%s/%s/%s/%s", data, type, service, profile, name );
+			if ( load_properties( self, path ) )
+			{
+				sprintf( path, "%s/%s/%s/%s", data, type, service, name );
+				error = load_properties( self, path );
+			}
+			free( path );
+		}
+		else
+		{
+			error = 1;
+		}
+		free( data );
+		return error;
+	}
 }
 
 /** Generate a hash key.
@@ -492,6 +569,11 @@ int mlt_properties_pass_list( mlt_properties self, mlt_properties that, const ch
 
 /** Set a property to a string.
  *
+ * The property name "properties" is reserved to load the preset in \p value.
+ * When the value begins with '@' then it is interpreted as a very simple math
+ * expression containing only the +, -, *, and / operators.
+ * The event "property-changed" is fired after the property has been set.
+ *
  * This makes a copy of the string value you supply.
  * \public \memberof mlt_properties_s
  * \param self a properties list
@@ -521,6 +603,8 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 	{
 		error = mlt_property_set_string( property, value );
 		mlt_properties_do_mirror( self, name );
+		if ( !strcmp( name, "properties" ) )
+			mlt_properties_preset( self, value );
 	}
 	else if ( value[ 0 ] == '@' )
 	{

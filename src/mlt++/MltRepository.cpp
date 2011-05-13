@@ -84,3 +84,8 @@ Properties *Repository::languages( ) const
 {
 	return new Properties( mlt_repository_languages( instance ) );
 }
+
+Properties *Repository::presets( )
+{
+	return new Properties( mlt_repository_presets( ) );
+}

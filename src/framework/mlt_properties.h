@@ -48,6 +48,7 @@ struct mlt_properties_s
 extern int mlt_properties_init( mlt_properties, void *child );
 extern mlt_properties mlt_properties_new( );
 extern mlt_properties mlt_properties_load( const char *file );
+extern int mlt_properties_preset( mlt_properties self, const char *name );
 extern int mlt_properties_inc_ref( mlt_properties self );
 extern int mlt_properties_dec_ref( mlt_properties self );
 extern int mlt_properties_ref_count( mlt_properties self );

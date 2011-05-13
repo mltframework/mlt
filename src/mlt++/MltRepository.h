@@ -52,6 +52,7 @@ namespace Mlt
 			void register_metadata( mlt_service_type type, const char *service, mlt_metadata_callback, void *callback_data );
 			Properties *metadata( mlt_service_type type, const char *service ) const;
 			Properties *languages( ) const;
+			static Properties *presets();
 	};
 }
 

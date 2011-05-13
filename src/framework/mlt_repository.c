@@ -26,11 +26,14 @@
 #include "mlt_properties.h"
 #include "mlt_tokeniser.h"
 #include "mlt_log.h"
+#include "mlt_factory.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <string.h>
+#include <limits.h>
+#include <dirent.h>
 
 /** \brief Repository class
  *
@@ -425,4 +428,72 @@ mlt_properties mlt_repository_languages( mlt_repository self )
 	}
 	mlt_properties_set_data( &self->parent, "languages", languages, 0, ( mlt_destructor )mlt_properties_close, NULL );
 	return languages;
+}
+
+static void list_presets( mlt_properties properties, const char *path, const char *dirname )
+{
+	DIR *dir = opendir( dirname );
+
+	if ( dir )
+	{
+		struct dirent *de = readdir( dir );
+		char fullname[ PATH_MAX ];
+
+		while ( de != NULL )
+		{
+			if ( de->d_name[0] != '.' && de->d_name[strlen( de->d_name ) - 1] != '~' )
+			{
+				snprintf( fullname, sizeof(fullname), "%s/%s", dirname, de->d_name );
+				if ( de->d_type & DT_DIR )
+				{
+					// recurse into subdirectories
+					char sub[ PATH_MAX ];
+					if ( path )
+						snprintf( sub, sizeof(sub), "%s/%s", path, de->d_name );
+					else
+						strncpy( sub, de->d_name, sizeof(sub) );
+					list_presets( properties, sub, fullname );
+				}
+				else
+				{
+					// load the preset
+					mlt_properties preset = mlt_properties_load( fullname );
+					if ( preset && mlt_properties_count( preset ) )
+					{
+						snprintf( fullname, 1024, "%s/%s", path, de->d_name );
+						mlt_properties_set_data( properties, fullname, preset, 0, (mlt_destructor) mlt_properties_close, NULL );
+					}
+				}
+			}
+			de = readdir( dir );
+		}
+		closedir( dir );
+	}
+}
+
+/** Get the list of presets.
+ *
+ * \public \memberof mlt_repository_s
+ * \return a properties list of all the presets
+ */
+
+mlt_properties mlt_repository_presets( )
+{
+	mlt_properties result = mlt_properties_new();
+	char *path = getenv( "MLT_PRESETS_PATH" );
+
+	if ( path )
+	{
+		path = strdup( path );
+	}
+	else
+	{
+		path = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + 9 );
+		strcpy( path, mlt_environment( "MLT_DATA" ) );
+		strcat( path, "/presets" );
+	}
+	list_presets( result, NULL, path );
+	free( path );
+
+	return result;
 }

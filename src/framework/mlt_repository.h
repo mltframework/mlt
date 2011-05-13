@@ -66,6 +66,7 @@ extern mlt_properties mlt_repository_transitions( mlt_repository self );
 extern void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_metadata_callback, void *callback_data );
 extern mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type type, const char *service );
 extern mlt_properties mlt_repository_languages( mlt_repository self );
+extern mlt_properties mlt_repository_presets( );
 
 #endif
 

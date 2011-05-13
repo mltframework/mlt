@@ -325,6 +325,7 @@ static void show_usage( char *program_name )
 "  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
 "  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
 "  -query \"profiles\" | \"profile\"=id         List profiles, show info about one\n"
+"  -query \"presets\" | \"preset\"=id           List presets, show info about one\n"
 "  -query \"formats\"                         List audio/video formats\n"
 "  -query \"audio_codecs\"                    List audio codecs\n"
 "  -query \"video_codecs\"                    List video codecs\n"
@@ -468,6 +469,37 @@ static void query_profile( const char *id )
 	mlt_properties_close( profiles );
 }
 
+static void query_presets()
+{
+	mlt_properties presets = mlt_repository_presets();
+	fprintf( stderr, "---\npresets:\n" );
+	if ( presets )
+	{
+		int j;
+		for ( j = 0; j < mlt_properties_count( presets ); j++ )
+			fprintf( stderr, "  - %s\n", mlt_properties_get_name( presets, j ) );
+	}
+	fprintf( stderr, "...\n" );
+	mlt_properties_close( presets );
+}
+
+static void query_preset( const char *id )
+{
+	mlt_properties presets = mlt_repository_presets();
+	mlt_properties preset = mlt_properties_get_data( presets, id, NULL );
+	if ( preset )
+	{
+		char *s = mlt_properties_serialise_yaml( preset );
+		fprintf( stderr, "%s", s );
+		free( s );
+	}
+	else
+	{
+		fprintf( stderr, "# No metadata for preset \"%s\"\n", id );
+	}
+	mlt_properties_close( presets );
+}
+
 static void query_formats( )
 {
 	mlt_consumer consumer = mlt_factory_consumer( NULL, "avformat", NULL );
@@ -580,6 +612,8 @@ int main( int argc, char **argv )
 					query_services( repo, transition_type );
 				else if ( !strcmp( pname, "profiles" ) || !strcmp( pname, "profile" ) )
 					query_profiles();
+				else if ( !strcmp( pname, "presets" ) || !strcmp( pname, "preset" ) )
+					query_presets();
 				else if ( !strncmp( pname, "format", 6 ) )
 					query_formats();
 				else if ( !strncmp( pname, "acodec", 6 ) || !strcmp( pname, "audio_codecs" ) )
@@ -597,6 +631,8 @@ int main( int argc, char **argv )
 					query_metadata( repo, transition_type, "transition", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "profile=", 8 ) )
 					query_profile( strchr( pname, '=' ) + 1 );
+				else if ( !strncmp( pname, "preset=", 7 ) )
+					query_preset( strchr( pname, '=' ) + 1 );
 				else
 					goto query_all;
 			}

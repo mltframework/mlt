@@ -4,6 +4,7 @@
 export MLT_REPOSITORY=`pwd`/src/modules
 export MLT_DATA=`pwd`/src/modules
 export MLT_PROFILES_PATH=`pwd`/profiles
+export MLT_PRESETS_PATH=`pwd`/presets
 
 export LD_LIBRARY_PATH=\
 `pwd`/src/framework:\

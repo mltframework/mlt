@@ -93,6 +93,7 @@ namespace Mlt
 			bool is_sequence( );
 			static Properties *parse_yaml( const char *file );
 			char *serialise_yaml( );
+			int preset( const char *name );
 	};
 }
 

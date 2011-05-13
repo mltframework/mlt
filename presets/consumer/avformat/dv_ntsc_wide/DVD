@@ -1,0 +1,15 @@
+f=dvd
+vcodec=mpeg2video
+acodec=ac3
+b=6000k
+maxrate=9000k
+minrate=0
+bufsize=1835008
+packetsize=2048
+muxrate=10080000
+ab=192k
+ar=48000
+g=18
+me_range=63
+trellis=1
+

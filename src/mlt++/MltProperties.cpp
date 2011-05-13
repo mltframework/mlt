@@ -316,3 +316,9 @@ char *Properties::serialise_yaml( )
 {
 	return mlt_properties_serialise_yaml( get_properties( ) );
 }
+
+int Properties::preset( const char *name )
+{
+	return mlt_properties_preset( get_properties(), name );
+}
+

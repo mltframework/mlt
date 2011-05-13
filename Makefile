@@ -35,10 +35,8 @@ install:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		$(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
-	done; \
-# 	if test -z "$(DESTDIR)"; then \
-# 	  /sbin/ldconfig -n "$(DESTDIR)$(libdir)" 2> /dev/null || true; \
-# 	fi
+	done
+	cp -R presets "$(DESTDIR)$(prefix)/share/mlt"
 
 uninstall:
 	rm -f "$(DESTDIR)$(bindir)"/mlt-config
