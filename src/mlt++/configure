@@ -10,7 +10,7 @@ case $targetos in
 		echo "CXXFLAGS+=-D__DARWIN__ -Wall -fPIC"
 		echo "LIBFLAGS=-dynamiclib -single_module"
 		;;
-	Linux|FreeBSD|NetBSD)
+	Linux|FreeBSD|NetBSD|GNU/kFreeBSD)
 		echo LIBSUF=.so
 		echo "CXXFLAGS+=-Wall $WARNINGS -fPIC -DPIC"
 		echo "LIBFLAGS=-shared"

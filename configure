@@ -82,7 +82,7 @@ build_config()
 		echo "SHFLAGS=-dynamiclib"
 		echo "LDFLAGS+=`sdl-config --libs`"
 		;;
-		Linux)
+		Linux|GNU/kFreeBSD)
 		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
