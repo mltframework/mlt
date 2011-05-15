@@ -354,7 +354,7 @@ mlt_position mlt_producer_frame( mlt_producer self )
  * \public \memberof mlt_producer_s
  * \param self a producer
  * \param speed the new speed as a relative factor (1.0 = normal)
- * \return
+ * \return true if error
  */
 
 int mlt_producer_set_speed( mlt_producer self, double speed )
