@@ -389,6 +389,7 @@ static void show_usage( char *program_name )
 "  -filter filter[:arg] [name=value]*       Add a filter to the current track\n"
 "  -group [name=value]*                     Apply properties repeatedly\n"
 "  -help                                    Show this message\n"
+"  -jack                                    Enable JACK transport synchronization\n"
 "  -join clips                              Join multiple clips into one cut\n"
 "  -mix length                              Add a mix between the last two cuts\n"
 "  -mixer transition                        Add a transition to the mix\n"
