@@ -198,11 +198,10 @@ static int consumer_start( mlt_consumer parent )
 		mlt_properties_set_int( still, "progressive", progressive );
 
 		mlt_properties_pass_list( play, properties,
-			"deinterlace_method,resize,rescale,width,height,aspect_ratio,display_ratio,volume,real_time,buffer,prefill" );
+			"deinterlace_method,resize,rescale,width,height,aspect_ratio,display_ratio,preview_off,preview_format,window_background"
+			",volume,real_time,buffer,prefill,audio_off,frequency" );
 		mlt_properties_pass_list( still, properties,
-			"deinterlace_method,resize,rescale,width,height,aspect_ratio,display_ratio" );
-		mlt_properties_pass_list( play, properties, "preview_off,preview_format,window_background" );
-		mlt_properties_pass_list( still, properties, "preview_off,preview_format,window_background" );
+			"deinterlace_method,resize,rescale,width,height,aspect_ratio,display_ratio,preview_off,preview_format,window_background" );
 
 		mlt_properties_pass( play, properties, "play." );
 		mlt_properties_pass( still, properties, "still." );
