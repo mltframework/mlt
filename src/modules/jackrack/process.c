@@ -378,7 +378,7 @@ process_info_connect_jack (process_info_t * procinfo)
 {
   mlt_log_info( NULL, _("Connecting to JACK server with client name '%s'\n"), procinfo->jack_client_name);
 
-  procinfo->jack_client = jack_client_new (procinfo->jack_client_name);
+  procinfo->jack_client = jack_client_open (procinfo->jack_client_name, JackNullOption, NULL);
 
   if (!procinfo->jack_client)
     {

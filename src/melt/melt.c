@@ -42,6 +42,8 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
 	mlt_consumer consumer = mlt_properties_get_data( properties, "transport_consumer", NULL );
+	mlt_properties jack = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES( consumer ), "jack_filter", NULL );
+	mlt_position position = mlt_producer_position( producer );
 
 	mlt_properties_set_int( properties, "stats_off", 1 );
 
@@ -52,10 +54,14 @@ static void transport_action( mlt_producer producer, char *value )
 			case 'q':
 			case 'Q':
 				mlt_properties_set_int( properties, "done", 1 );
+				mlt_events_fire( jack, "jack-stop", NULL );
 				break;
 			case '0':
+				position = 0;
 				mlt_producer_set_speed( producer, 1 );
-				mlt_producer_seek( producer, 0 );
+				mlt_producer_seek( producer, position );
+				mlt_consumer_purge( consumer );
+				mlt_events_fire( jack, "jack-seek", &position, NULL );
 				break;
 			case '1':
 				mlt_producer_set_speed( producer, -10 );
@@ -71,10 +77,15 @@ static void transport_action( mlt_producer producer, char *value )
 				break;
 			case '5':
 				mlt_producer_set_speed( producer, 0 );
+				mlt_consumer_purge( consumer );
+				mlt_events_fire( jack, "jack-stop", NULL );
 				break;
 			case '6':
 			case ' ':
-				mlt_producer_set_speed( producer, 1 );
+				if ( !jack || mlt_producer_get_speed( producer ) != 0 )
+					mlt_producer_set_speed( producer, 1 );
+				mlt_consumer_purge( consumer );
+				mlt_events_fire( jack, "jack-start", NULL );
 				break;
 			case '7':
 				mlt_producer_set_speed( producer, 2 );
@@ -93,11 +104,11 @@ static void transport_action( mlt_producer producer, char *value )
 					fprintf( stderr, "\n" );
 					for ( i = 0; 1; i ++ )
 					{
-						mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_start, i );
-						if ( time == last )
+						position = mlt_multitrack_clip( multitrack, mlt_whence_relative_start, i );
+						if ( position == last )
 							break;
-						last = time;
-						fprintf( stderr, "%d: %d\n", i, (int)time );
+						last = position;
+						fprintf( stderr, "%d: %d\n", i, (int)position );
 					}
 				}
 				break;
@@ -105,54 +116,74 @@ static void transport_action( mlt_producer producer, char *value )
 			case 'g':
 				if ( multitrack != NULL )
 				{
-					mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 0 );
-					mlt_producer_seek( producer, time );
+					position = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 0 );
+					mlt_producer_seek( producer, position );
+					mlt_consumer_purge( consumer );
+					mlt_events_fire( jack, "jack-seek", &position, NULL );
 				}
 				break;
 			case 'H':
 				if ( producer != NULL )
 				{
-					mlt_position position = mlt_producer_position( producer );
-					mlt_producer_seek( producer, position - ( mlt_producer_get_fps( producer ) * 60 ) );
+					position -= mlt_producer_get_fps( producer ) * 60;
+					mlt_consumer_purge( consumer );
+					mlt_producer_seek( producer, position );
+					mlt_events_fire( jack, "jack-seek", &position, NULL );
 				}
 				break;
 			case 'h':
 				if ( producer != NULL )
 				{
-					mlt_position position = mlt_producer_position( producer );
+					position--;
 					mlt_producer_set_speed( producer, 0 );
-					mlt_producer_seek( producer, position - 1 );
+					mlt_consumer_purge( consumer );
+					mlt_producer_seek( producer, position );
+					mlt_events_fire( jack, "jack-stop", NULL );
+					mlt_events_fire( jack, "jack-seek", &position, NULL );
 				}
 				break;
 			case 'j':
 				if ( multitrack != NULL )
 				{
-					mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 1 );
-					mlt_producer_seek( producer, time );
+					position = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 1 );
+					mlt_consumer_purge( consumer );
+					mlt_producer_seek( producer, position );
+					mlt_events_fire( jack, "jack-seek", &position, NULL );
 				}
 				break;
 			case 'k':
 				if ( multitrack != NULL )
 				{
-					mlt_position time = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, -1 );
-					mlt_producer_seek( producer, time );
+					position = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, -1 );
+					mlt_consumer_purge( consumer );
+					mlt_producer_seek( producer, position );
+					mlt_events_fire( jack, "jack-seek", &position, NULL );
 				}
 				break;
 			case 'l':
 				if ( producer != NULL )
 				{
-					mlt_position position = mlt_producer_position( producer );
+					position++;
+					mlt_consumer_purge( consumer );
 					if ( mlt_producer_get_speed( producer ) != 0 )
+					{
 						mlt_producer_set_speed( producer, 0 );
+						mlt_events_fire( jack, "jack-stop", NULL );
+					}
 					else
-						mlt_producer_seek( producer, position + 1 );
+					{
+						mlt_producer_seek( producer, position );
+						mlt_events_fire( jack, "jack-seek", &position, NULL );
+					}
 				}
 				break;
 			case 'L':
 				if ( producer != NULL )
 				{
-					mlt_position position = mlt_producer_position( producer );
-					mlt_producer_seek( producer, position + ( mlt_producer_get_fps( producer ) * 60 ) );
+					position += mlt_producer_get_fps( producer ) * 60;
+					mlt_consumer_purge( consumer );
+					mlt_producer_seek( producer, position );
+					mlt_events_fire( jack, "jack-seek", &position, NULL );
 				}
 				break;
 		}
@@ -161,6 +192,53 @@ static void transport_action( mlt_producer producer, char *value )
 	}
 
 	mlt_properties_set_int( properties, "stats_off", 0 );
+}
+
+static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_position *position )
+{
+	mlt_producer producer = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "transport_producer", NULL );
+	if ( producer )
+	{
+		if ( mlt_producer_get_speed( producer ) != 0 )
+		{
+			mlt_properties jack = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES( consumer ), "jack_filter", NULL );
+			mlt_events_fire( jack, "jack-stop", NULL );
+		}
+		else
+		{
+			mlt_producer_set_speed( producer, 1 );
+			mlt_consumer_purge( consumer );
+			mlt_producer_seek( producer, *position );
+			mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
+		}
+	}
+}
+
+static void on_jack_stopped( mlt_properties owner, mlt_consumer consumer, mlt_position *position )
+{
+	mlt_producer producer = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "transport_producer", NULL );
+	if ( producer )
+	{
+		mlt_producer_set_speed( producer, 0 );
+		mlt_consumer_purge( consumer );
+		mlt_producer_seek( producer, *position );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
+	}
+}
+
+static void setup_jack_transport( mlt_consumer consumer, mlt_profile profile )
+{
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+	mlt_filter jack = mlt_factory_filter( profile, "jackrack", NULL );
+	mlt_properties jack_properties = MLT_FILTER_PROPERTIES(jack);
+
+	mlt_service_attach( MLT_CONSUMER_SERVICE(consumer), jack );
+	mlt_properties_set_int( properties, "audio_off", 1 );
+	mlt_properties_set_data( properties, "jack_filter", jack, 0, (mlt_destructor) mlt_filter_close, NULL );
+//	mlt_properties_set( jack_properties, "out_1", "system:playback_1" );
+//	mlt_properties_set( jack_properties, "out_2", "system:playback_2" );
+	mlt_events_listen( jack_properties, consumer, "jack-started", (mlt_listener) on_jack_started );
+	mlt_events_listen( jack_properties, consumer, "jack-stopped", (mlt_listener) on_jack_stopped );
 }
 
 static mlt_consumer create_consumer( mlt_profile profile, char *id )
@@ -736,7 +814,11 @@ query_all:
 		// Parse the arguments
 		for ( i = 1; i < argc; i ++ )
 		{
-			if ( !strcmp( argv[ i ], "-serialise" ) )
+			if ( !strcmp( argv[ i ], "-jack" ) )
+			{
+				setup_jack_transport( consumer, profile );
+			}
+			else if ( !strcmp( argv[ i ], "-serialise" ) )
 			{
 				if ( store != stdout )
 					i ++;
