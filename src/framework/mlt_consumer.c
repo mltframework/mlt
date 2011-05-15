@@ -641,6 +641,9 @@ static void *consumer_read_ahead_thread( void *arg )
 	int64_t time_frame = 0;
 	int64_t time_process = 0;
 	int skip_next = 0;
+	mlt_position pos = 0;
+	mlt_position start_pos = 0;
+	mlt_position last_pos = 0;
 
 	if ( preview_off && preview_format != 0 )
 		self->format = preview_format;
@@ -665,6 +668,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 		// Mark as rendered
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+		last_pos = start_pos = pos = mlt_frame_get_position( frame );
 	}
 
 	// Get the starting time (can ignore the times above)
@@ -694,6 +698,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		// If there's no frame, we're probably stopped...
 		if ( frame == NULL )
 			continue;
+		pos = mlt_frame_get_position( frame );
 
 		// Increment the count
 		count ++;
@@ -710,6 +715,7 @@ static void *consumer_read_ahead_thread( void *arg )
 			time_wait = 0;
 			count = 1;
 			skip_next = 0;
+			start_pos = pos;
 		}
 
 		// Get the image
@@ -722,6 +728,7 @@ static void *consumer_read_ahead_thread( void *arg )
 				mlt_frame_get_image( frame, &image, &self->format, &width, &height, 0 );
 			}
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+			skipped = 0;
 		}
 		else
 		{
@@ -730,7 +737,7 @@ static void *consumer_read_ahead_thread( void *arg )
 			skip_next = 0;
 
 			// If we've reached an unacceptable level, reset everything
-			if ( skipped > 5 )
+			if ( skipped > fps * 2 )
 			{
 				skipped = 0;
 				time_frame = 0;
@@ -751,7 +758,19 @@ static void *consumer_read_ahead_thread( void *arg )
 		time_process += time_difference( &ante );
 
 		// Determine if the next frame should be skipped
-		if ( mlt_deque_count( self->queue ) <= 5 )
+		if ( pos != last_pos + 1 )
+			start_pos = pos;
+		last_pos = pos;
+		if ( pos - start_pos <= buffer/5 )
+		{
+			// Do not skip the first 20% of buffer at start, resuming, or seeking
+			skipped = 0;
+			time_frame = 0;
+			time_process = 0;
+			time_wait = 0;
+			count = 1;
+		}
+		if ( mlt_deque_count( self->queue ) <= buffer/5 )
 		{
 			int frame_duration = mlt_properties_get_int( properties, "frame_duration" );
 			if ( ( ( time_wait + time_frame + time_process ) / count ) > frame_duration )
