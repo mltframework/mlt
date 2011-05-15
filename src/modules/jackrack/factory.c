@@ -32,6 +32,8 @@
 extern mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
+plugin_mgr_t *g_mgr = NULL;
+
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
@@ -42,8 +44,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 	if ( !strncmp( id, "ladspa.", 7 ) )
 	{
 		// Annotate the yaml properties with ladspa control port info.
-		plugin_mgr_t *mgr = plugin_mgr_new();
-		plugin_desc_t *desc = plugin_mgr_get_any_desc( mgr, strtol( id + 7, NULL, 10 ) );
+		plugin_desc_t *desc = plugin_mgr_get_any_desc( g_mgr, strtol( id + 7, NULL, 10 ) );
 
 		if ( desc )
 		{
@@ -115,7 +116,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 			mlt_properties_set_double( p, "minimum", 0 );
 			mlt_properties_set_double( p, "maximum", 1 );
 		}
-		plugin_mgr_destroy( mgr );
 	}
 
 	return result;
@@ -123,10 +123,10 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	plugin_mgr_t *mgr = plugin_mgr_new();
 	GSList *list;
+	g_mgr = plugin_mgr_new();
 
-	for ( list = mgr->all_plugins; list; list = g_slist_next( list ) )
+	for ( list = g_mgr->all_plugins; list; list = g_slist_next( list ) )
 	{
 		plugin_desc_t *desc = (plugin_desc_t *) list->data;
 		char *s = malloc( strlen( "ladpsa." ) + 21 );
@@ -135,7 +135,7 @@ MLT_REPOSITORY
 		MLT_REGISTER( filter_type, s, filter_ladspa_init );
 		MLT_REGISTER_METADATA( filter_type, s, metadata, NULL );
 	}
-	plugin_mgr_destroy( mgr );
+	mlt_factory_register_for_clean_up( g_mgr, (mlt_destructor) plugin_mgr_destroy );
 
 	MLT_REGISTER( filter_type, "jackrack", filter_jackrack_init );
 	MLT_REGISTER_METADATA( filter_type, "jackrack", metadata, NULL );
