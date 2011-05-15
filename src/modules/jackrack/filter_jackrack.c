@@ -59,7 +59,7 @@ static int jack_sync( jack_transport_state_t state, jack_position_t *jack_pos, v
 	mlt_position position = mlt_profile_fps( profile ) * jack_pos->frame / jack_pos->frame_rate + 0.5;
 	int result = 1;
 
-	mlt_log_verbose( MLT_FILTER_SERVICE(filter), "%s frame %u rate %u pos %d last_pos %d\n",
+	mlt_log_debug( MLT_FILTER_SERVICE(filter), "%s frame %u rate %u pos %d last_pos %d\n",
 		JACKSTATE(state), jack_pos->frame, jack_pos->frame_rate, position,
 		mlt_properties_get_position( properties, "_last_pos" ) );
 	if ( state == JackTransportStopped )
