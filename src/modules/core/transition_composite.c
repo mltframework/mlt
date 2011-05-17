@@ -1141,7 +1141,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( mlt_properties_get_int( properties, "deinterlace" ) )
 		{
 			mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
-			mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
+			mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 		}
 
 		// TODO: Dangerous/temporary optimisation - if nothing to do, then do nothing
