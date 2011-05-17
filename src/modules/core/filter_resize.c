@@ -20,6 +20,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -193,6 +194,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	// Retrieve the aspect ratio
 	double aspect_ratio = mlt_deque_pop_back_double( MLT_FRAME_IMAGE_STACK( this ) );
+	double consumer_aspect = mlt_profile_sar( mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
 
 	// Correct Width/height if necessary
 	if ( *width == 0 || *height == 0 )
@@ -207,7 +209,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	// Check for the special case - no aspect ratio means no problem :-)
 	if ( aspect_ratio == 0.0 )
-		aspect_ratio = mlt_properties_get_double( properties, "consumer_aspect_ratio" );
+		aspect_ratio = consumer_aspect;
 
 	// Reset the aspect ratio
 	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
@@ -229,7 +231,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		if ( real_height == 0 )
 			real_height = mlt_properties_get_int( properties, "height" );
 		double input_ar = aspect_ratio * real_width / real_height;
-		double output_ar = mlt_properties_get_double( properties, "consumer_aspect_ratio" ) * owidth / oheight;
+		double output_ar = consumer_aspect * owidth / oheight;
 		
 // 		fprintf( stderr, "real %dx%d normalised %dx%d output %dx%d sar %f in-dar %f out-dar %f\n",
 // 		real_width, real_height, normalised_width, normalised_height, owidth, oheight, aspect_ratio, input_ar, output_ar);
@@ -250,7 +252,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		oheight = rint( scaled_height * oheight / normalised_height );
 
 		// Tell frame we have conformed the aspect to the consumer
-		mlt_frame_set_aspect_ratio( this, mlt_properties_get_double( properties, "consumer_aspect_ratio" ) );
+		mlt_frame_set_aspect_ratio( this, consumer_aspect );
 	}
 
 	mlt_properties_set_int( properties, "distort", 0 );
