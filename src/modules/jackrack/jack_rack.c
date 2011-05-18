@@ -43,6 +43,8 @@
 #define _x (const xmlChar*)
 #define _s (const char*)
 
+extern plugin_mgr_t *g_jackrack_plugin_mgr;
+
 jack_rack_t *
 jack_rack_new (const char * client_name, unsigned long channels)
 {
@@ -56,7 +58,7 @@ jack_rack_new (const char * client_name, unsigned long channels)
     g_free (rack);
     return NULL;
   }
-  rack->plugin_mgr = plugin_mgr_new ();
+  rack->plugin_mgr = g_jackrack_plugin_mgr;
   plugin_mgr_set_plugins (rack->plugin_mgr, channels);
 
   return rack;
