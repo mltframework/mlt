@@ -69,7 +69,8 @@ void
 jack_rack_destroy (jack_rack_t * jack_rack)
 {
   process_quit (jack_rack->procinfo);
-  plugin_mgr_destroy (jack_rack->plugin_mgr);
+  // plugin_mgr is shared and global now, so we do not destroy it with each instance
+//  plugin_mgr_destroy (jack_rack->plugin_mgr);
   process_info_destroy (jack_rack->procinfo);
   g_slist_free (jack_rack->saved_plugins);
   g_free (jack_rack);
