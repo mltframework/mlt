@@ -562,7 +562,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, char *fil
 
 	// Only if there is not a protocol specification that avformat can handle
 #if LIBAVFORMAT_VERSION_MAJOR > 52
-	if ( mrl && !avio_check( file, 0 ) )
+	if ( mrl && avio_check( file, 0 ) < 0 )
 #else
 	if ( mrl && !url_exist( file ) )
 #endif
