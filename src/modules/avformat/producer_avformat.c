@@ -2461,6 +2461,9 @@ static void producer_avformat_close( producer_avformat self )
 
 static void producer_close( mlt_producer parent )
 {
+	// Remove this instance from the cache
+	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
+
 	// Close the parent
 	parent->close = NULL;
 	mlt_producer_close( parent );
