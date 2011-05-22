@@ -70,8 +70,14 @@ build_config()
 
 		[ "$arch" != "" ] && echo "TARGETARCH=-march=$arch"
 		[ "$cpu" != "" ] && echo "TARGETCPU=-mcpu=$cpu"
-		[ "$optimisations" = "true" ] &&
-			echo "OPTIMISATIONS=-O2 -pipe -fomit-frame-pointer"
+		if [ "$optimisations" = "true" ]
+		then
+			echo "OPTIMISATIONS=-O2 -pipe"
+			# Since gcc 4.6, this optimization enabled with -O1 causes filter_line_sse2 to crash.
+			echo "OPTIMISATIONS+=-fno-tree-dominator-opts"
+			# Since gcc 4.6, this optimization enabled with -O2 causes filter_line_sse2 to crash.
+			echo "OPTIMISATIONS+=-fno-tree-pre"
+		fi
 
 		echo "CFLAGS+=-Wall -DPIC \$(TARGETARCH) \$(TARGETCPU) \$(OPTIMISATIONS) \$(MMX_FLAGS) \$(SSE_FLAGS) \$(SSE2_FLAGS) \$(DEBUG_FLAGS) \$(LARGE_FILE)"
 
