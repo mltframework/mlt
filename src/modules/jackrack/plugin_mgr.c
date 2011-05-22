@@ -40,7 +40,7 @@
 #include "plugin_mgr.h"
 #include "plugin_desc.h"
 #include "framework/mlt_log.h"
-
+#include "framework/mlt_factory.h"
 
 static gboolean
 plugin_is_valid (const LADSPA_Descriptor * descriptor)
@@ -176,6 +176,7 @@ plugin_mgr_get_dir_plugins (plugin_mgr_t * plugin_mgr, const char * dir)
       struct stat info;
 
       if (strcmp (dir_entry->d_name, ".") == 0 ||
+          mlt_properties_get (plugin_mgr->blacklist, dir_entry->d_name) ||
           strcmp (dir_entry->d_name, "..") == 0)
         continue;
   
@@ -241,12 +242,15 @@ plugin_mgr_t *
 plugin_mgr_new ()
 {
   plugin_mgr_t * pm;
-  
+  char dirname[PATH_MAX];
+
   pm = g_malloc (sizeof (plugin_mgr_t));
   pm->all_plugins = NULL;  
   pm->plugins = NULL;
   pm->plugin_count = 0;
-  
+
+  snprintf (dirname, PATH_MAX, "%s/jackrack/blacklist.txt", mlt_environment ("MLT_DATA"));
+  pm->blacklist = mlt_properties_load (dirname);
   plugin_mgr_get_path_plugins (pm);
   
   if (!pm->all_plugins)

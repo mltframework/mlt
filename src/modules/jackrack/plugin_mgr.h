@@ -29,6 +29,7 @@
 #include <glib.h>
 
 #include "plugin_desc.h"
+#include "framework/mlt_properties.h"
 
 typedef struct _plugin_mgr plugin_mgr_t;
 
@@ -38,6 +39,7 @@ struct _plugin_mgr
 
   GSList * plugins;
   unsigned long plugin_count;
+  mlt_properties blacklist;
 };
 
 struct _ui;

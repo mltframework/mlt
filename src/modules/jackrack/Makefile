@@ -47,6 +47,7 @@ install: all
 	install -d "$(DESTDIR)$(datadir)/mlt/jackrack"
 	install -m 644 filter_jackrack.yml "$(DESTDIR)$(datadir)/mlt/jackrack"
 	install -m 644 filter_ladspa.yml "$(DESTDIR)$(datadir)/mlt/jackrack"
+	install -m 644 blacklist.txt "$(DESTDIR)$(datadir)/mlt/jackrack"
 
 uninstall:
 	rm "$(DESTDIR)$(libdir)/mlt/libmltjackrack$(LIBSUF)" 2> /dev/null || true
