@@ -391,6 +391,9 @@ int mlt_consumer_connect( mlt_consumer self, mlt_service producer )
 
 int mlt_consumer_start( mlt_consumer self )
 {
+	if ( !mlt_consumer_is_stopped( self ) )
+		return 0;
+
 	// Stop listening to the property-changed event
 	mlt_event_block( self->event_listener );
 
