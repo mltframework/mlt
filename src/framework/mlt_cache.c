@@ -265,33 +265,6 @@ void mlt_cache_purge( mlt_cache cache, void *object )
 		}
 		cache->count = j;
 		cache->current = alt;
-
-		// Remove the object's data from the active list regardless of refcount
-		char key[19];
-		sprintf( key, "%p", object );
-		mlt_cache_item item = mlt_properties_get_data( cache->active, key, NULL );
-		if ( item && item->destructor )
-		{
-			item->destructor( item->data );
-			item->data = NULL;
-			item->destructor = NULL;
-			mlt_properties_set_data( cache->active, key, NULL, 0, NULL, NULL );
-		}
-
-		// Remove the object's items from the garbage collection regardless of refcount
-		i = mlt_properties_count( cache->garbage );
-		while ( i-- )
-		{
-			item = mlt_properties_get_data_at( cache->garbage, i, NULL );
-			if ( object == item->object && item->destructor )
-			{
-				sprintf( key, "%p", item->data );
-				item->destructor( item->data );
-				item->data = NULL;
-				item->destructor = NULL;
-				mlt_properties_set_data( cache->garbage, key, NULL, 0, NULL, NULL );
-			}
-		}
 	}
 	pthread_mutex_unlock( &cache->mutex );
 }
