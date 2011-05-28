@@ -35,6 +35,7 @@ private:
 	pthread_mutex_t  m_mutex;
 	pthread_cond_t   m_condition;
 	bool             m_started;
+	int              m_dropped;
 
 	BMDDisplayMode getDisplayMode( mlt_profile profile )
 	{
@@ -112,6 +113,7 @@ public:
 			pthread_cond_init( &m_condition, NULL );
 			m_queue = mlt_deque_init();
 			m_started = false;
+			m_dropped = 0;
 		}
 		catch ( const char *error )
 		{
@@ -151,6 +153,8 @@ public:
 				throw "Failed to enable audio capture.";
 
 			// Start capture
+			m_dropped = 0;
+			mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "dropped", m_dropped );
 			m_started = m_decklinkInput->StartStreams() == S_OK;
 			if ( !m_started )
 				throw "Failed to start capture.";
@@ -307,7 +311,11 @@ public:
 				pthread_cond_broadcast( &m_condition );
 			}
 			else
+			{
 				mlt_frame_close( frame );
+				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "dropped", ++m_dropped );
+				mlt_log_warning( getProducer(), "frame dropped %d\n", m_dropped );
+			}
 			pthread_mutex_unlock( &m_mutex );
 		}
 
