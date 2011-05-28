@@ -62,6 +62,16 @@ namespace Mlt {
 %newobject Repository::languages( );
 %newobject Profile::list();
 %newobject Repository::presets();
+
+#if defined(SWIGPYTHON)
+%feature("shadow") Frame::get_waveform(int, int) %{
+    def get_waveform(*args): return _mlt.frame_get_waveform(*args)
+%}
+%feature("shadow") Frame::get_image(mlt_image_format&, int&, int&) %{
+    def get_image(*args): return _mlt.frame_get_image(*args)
+%}
+#endif
+
 }
 
 /** Classes to wrap.
@@ -169,6 +179,15 @@ binary_data frame_get_waveform( Mlt::Frame &frame, int w, int h )
 	return result;
 }
 
+binary_data frame_get_image( Mlt::Frame &frame, mlt_image_format format, int w, int h )
+{
+	binary_data result = {
+		mlt_image_format_size( format, w, h, NULL ),
+		(char*) frame.get_image( format, w, h )
+	};
+	return result;
+}
+
 %}
 
 %typemap(out) binary_data {
@@ -176,5 +195,6 @@ binary_data frame_get_waveform( Mlt::Frame &frame, int w, int h )
 }
 
 binary_data frame_get_waveform(Mlt::Frame&, int, int);
+binary_data frame_get_image(Mlt::Frame&, mlt_image_format, int, int);
 
 #endif
