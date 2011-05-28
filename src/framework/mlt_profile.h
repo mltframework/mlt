@@ -56,4 +56,5 @@ extern double mlt_profile_dar( mlt_profile profile );
 extern void mlt_profile_close( mlt_profile profile );
 extern mlt_profile mlt_profile_clone( mlt_profile profile );
 extern mlt_properties mlt_profile_list( );
+extern void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer );
 #endif

@@ -31,6 +31,7 @@
 namespace Mlt
 {
 	class Properties;
+	class Producer;
 
 	class MLTPP_DECLSPEC Profile
 	{
@@ -58,6 +59,14 @@ namespace Mlt
 			int display_aspect_den() const;
 			double dar() const;
 			static Properties* list();
+			void from_producer( Producer &producer );
+			void set_width( int width );
+			void set_height( int height );
+			void set_sample_aspect( int numerator, int denominator );
+			void set_progressive( int progressive );
+			void set_colorspace( int colorspace );
+			void set_frame_rate( int numerator, int denominator );
+			void set_explicit( int boolean );
 	};
 }
 
