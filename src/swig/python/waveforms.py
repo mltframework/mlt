@@ -9,6 +9,6 @@ prod = mlt.Producer(profile, 'test.wav')
 size = (320, 240)
 for i in range(0, prod.get_length()):
   frm = prod.get_frame()
-  wav = mlt.frame_get_waveform(frm, size[0], size[1])
+  wav = frm.get_waveform(size[0], size[1])
   img = Image.fromstring('L', size, wav)
   img.save('test-%04d.pgm' % (i))
