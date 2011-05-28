@@ -24,7 +24,7 @@ then
 	g++ -fPIC -D_GNU_SOURCE -c -rdynamic -pthread -I../.. -I$PYTHON_INCLUDE mlt_wrap.cxx || exit $?
 
 	# Create the module
-	g++ -shared mlt_wrap.o -L../../mlt++ -lmlt++ -L../../framework -lmlt $(python-config --libs) -o _mlt.so || exit $?
+	g++ -shared mlt_wrap.o -L../../mlt++ -lmlt++ -L../../framework -lmlt $(python-config --ldflags) -o _mlt.so || exit $?
 else
 	echo Python not installed.
 	exit 1
