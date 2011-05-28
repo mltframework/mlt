@@ -306,6 +306,8 @@ public:
 				mlt_deque_push_back( m_queue, frame );
 				pthread_cond_broadcast( &m_condition );
 			}
+			else
+				mlt_frame_close( frame );
 			pthread_mutex_unlock( &m_mutex );
 		}
 
