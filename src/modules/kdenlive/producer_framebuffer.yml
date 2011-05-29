@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: producer
+identifier: framebuffer
+title: Speed
+version: 1
+copyright: Jean-Baptiste Mardelle
+creator: Jean-Baptiste Mardelle
+license: LGPLv2.1
+language: en
+tags:
+  - Video
