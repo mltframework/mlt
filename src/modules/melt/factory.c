@@ -19,13 +19,24 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include <framework/mlt.h>
 
 extern mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/melt/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( producer_type, "melt", producer_melt_init );
 	MLT_REGISTER( producer_type, "melt_file", producer_melt_file_init );
+
+	MLT_REGISTER_METADATA( producer_type, "melt", metadata, "producer_melt.yml" );
+	MLT_REGISTER_METADATA( producer_type, "melt_file", metadata, "producer_melt_file.yml" );
 }
