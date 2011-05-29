@@ -1,0 +1,13 @@
+schema_version: 0.1
+type: filter
+identifier: burningtv
+title: BurningTV
+version: 1
+copyright: FUKUCHI Kentaro, Stephane Fillod
+creator: FUKUCHI Kentaro, Stephane Fillod
+contributor:
+  - Jan Sorensen
+license: GPLv2
+language: en
+tags:
+  - Video

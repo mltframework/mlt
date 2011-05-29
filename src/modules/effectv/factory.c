@@ -19,11 +19,22 @@
 
 #include <framework/mlt.h>
 #include <string.h>
+#include <limits.h>
 
 extern mlt_filter filter_burn_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/effectv/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
 
 MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "BurningTV", filter_burn_init );
 	MLT_REGISTER( filter_type, "burningtv", filter_burn_init );
+
+	MLT_REGISTER_METADATA( filter_type, "BurningTV", metadata, "filter_burningtv.yml" );
+	MLT_REGISTER_METADATA( filter_type, "burningtv", metadata, "filter_burningtv.yml" );
 }
