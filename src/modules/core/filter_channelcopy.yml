@@ -1,0 +1,39 @@
+schema_version: 0.1
+type: filter
+identifier: channelcopy
+title: Copy Channels
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+description: Copy one audio channel to another.
+tags:
+  - Audio
+parameters:
+  - identifier: argument
+    title: To
+    type: integer
+    minimum: 0
+    maximum: 15
+    default: 1
+  - identifier: to
+    title: To
+    type: integer
+    minimum: 0
+    maximum: 15
+    default: 1
+  - identifer: from
+    title: From
+    type: integer
+    minimum: 0
+    maximum: 15
+    default: 0
+  - identifier: swap
+    title: Swap
+    description: Swap the two channels instead of duplicating the source channel.
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox

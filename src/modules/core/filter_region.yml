@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: filter
+identifier: region
+title: Regionalize
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: CHarles Yates
+license: LGPLv2.1
+language: en
+tags:
+  - Video

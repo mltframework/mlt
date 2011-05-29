@@ -1,0 +1,17 @@
+schema_version: 0.1
+type: filter
+identifier: audiowave
+title: Audio Waveform
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+description: Generate audio waveforms.
+tags:
+  - Video
+bugs:
+  - >
+    This does not work alone on audio-only clips. It must have video to overwrite.
+    A workaround is to apply this to a multitrack with a color generator.
+  - The quality of the waveforms is not so good especially for high definition video.

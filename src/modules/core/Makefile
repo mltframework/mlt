@@ -69,10 +69,11 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(prefix)/share/mlt/core"
+	install -d "$(DESTDIR)$(datadir)/mlt/core"
 	install -m 644 data_fx.properties "$(DESTDIR)$(datadir)/mlt/core"
 	install -m 644 loader.dict "$(DESTDIR)$(datadir)/mlt/core"
 	install -m 644 loader.ini "$(DESTDIR)$(datadir)/mlt/core"
+	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/core"
 
 ifneq ($(wildcard .depend),)
 include .depend

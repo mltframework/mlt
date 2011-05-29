@@ -1,0 +1,76 @@
+schema_version: 0.1
+type: filter
+identifier: crop
+title: Crop
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+description: Remove pixels from the edges of the video.
+tags:
+  - Video
+notes: >
+  This filter is meant to be included as a normalizing filter attached
+  automatically by the loader so that cropping occurs early in the processing
+  stack and can request the full resolution of the source image. Then, a
+  second instance of the filter may be applied to set the parameters of the
+  crop operation.
+parameters:
+  - identifier: argument
+    title: Active
+    description: Whether to do the processing (1) or simply set the parameters.
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+  - identifier: left
+    title: Left
+    type: integer
+    minimum: 0
+    default: 0
+    unit: pixels
+  - identifier: right
+    title: Right
+    type: integer
+    minimum: 0
+    default: 0
+    unit: pixels
+  - identifier: top
+    title: Top
+    type: integer
+    minimum: 0
+    default: 0
+    unit: pixels
+  - identifier: bottom
+    title: Bottom
+    type: integer
+    minimum: 0
+    default: 0
+    unit: pixels
+  - identifier: center
+    title: Center crop
+    description: Whether to automatically crop whatever is needed to fill the output frame and prevent padding.
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
+  - identifier: center_bias
+    title: Center balance
+    description: When center crop is enabled, offset the center point.
+    type: integer
+    minimum: 0
+    default: 0
+    unit: pixels
+  - identifier: use_profile
+    title: Use profile resolution
+    description: >
+      This is useful for proxy editing. Normally all crop values are expressed in terms
+      of pixels of the source footage, but this option makes them relative to the
+      profile resolution.
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox

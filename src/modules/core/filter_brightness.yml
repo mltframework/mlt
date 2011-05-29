@@ -1,0 +1,31 @@
+schema_version: 0.1
+type: filter
+identifier: brightness
+title: Brightness
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+description: Adjust the brightness value of the image.
+tags:
+  - Video
+parameters:
+  - identifier: argument
+    title: Start level
+    type: float
+    minimum: 0.0
+    maximum: 15.0
+    default: 1.0
+  - identifier: start
+    title: Start level
+    type: float
+    minimum: 0.0
+    maximum: 15.0
+    default: 1.0
+  - identifier: end
+    title: End level
+    type: float
+    minimum: 0.0
+    maximum: 15.0
+    default: 1.0
