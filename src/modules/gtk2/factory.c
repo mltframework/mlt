@@ -73,10 +73,21 @@ void *create_service( mlt_profile profile, mlt_service_type type, const char *id
 	return NULL;
 }
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/gtk2/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "gtk2_preview", create_service );
 	MLT_REGISTER( filter_type, "gtkrescale", create_service );
 	MLT_REGISTER( producer_type, "pango", create_service );
 	MLT_REGISTER( producer_type, "pixbuf", create_service );
+
+	MLT_REGISTER_METADATA( consumer_type, "gtk2_preview", metadata, "consumer_gtk2_preview.yml" );
+	MLT_REGISTER_METADATA( producer_type, "pango", metadata, "producer_pango.yml" );
+	MLT_REGISTER_METADATA( producer_type, "pixbuf", metadata, "producer_pixbuf.yml" );
 }

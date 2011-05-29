@@ -76,6 +76,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -d "$(DESTDIR)$(datadir)/mlt/gtk2"
+	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/gtk2"
 
 ifneq ($(wildcard .depend),)
 include .depend
