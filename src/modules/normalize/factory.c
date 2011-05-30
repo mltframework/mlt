@@ -19,11 +19,20 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include <framework/mlt.h>
 
 extern mlt_filter filter_volume_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/normalize/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "volume", filter_volume_init );
+	MLT_REGISTER_METADATA( filter_type, "volume", metadata, "filter_volume.yml" );
 }

@@ -27,6 +27,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -d "$(DESTDIR)$(datadir)/mlt/normalize"
+	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/normalize"
 
 ifneq ($(wildcard .depend),)
 include .depend

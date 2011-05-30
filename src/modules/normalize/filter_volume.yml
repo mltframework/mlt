@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: filter
+identifier: volume
+title: Volume
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Denneedy
+license: GPLv2
+language: en
+tags:
+  - Audio
