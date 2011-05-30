@@ -254,12 +254,9 @@ plugin_mgr_new ()
   plugin_mgr_get_path_plugins (pm);
   
   if (!pm->all_plugins)
-    {
-      mlt_log_warning( NULL, "No LADSPA plugins were found!\n\nCheck your LADSPA_PATH environment variable.\n");
-      abort ();
-    }
-  
-  pm->all_plugins = g_slist_sort (pm->all_plugins, plugin_mgr_sort);
+    mlt_log_warning( NULL, "No LADSPA plugins were found!\n\nCheck your LADSPA_PATH environment variable.\n");
+  else
+    pm->all_plugins = g_slist_sort (pm->all_plugins, plugin_mgr_sort);
   
   return pm;
 }

@@ -406,7 +406,6 @@ plugin_create_aux_ports (plugin_t * plugin, guint copy, jack_rack_t * jack_rack)
       if (!holder->aux_ports[i])
         {
           mlt_log_panic( NULL, "Could not register jack port '%s'; aborting\n", port_name);
-          abort ();
         }
     }
   
