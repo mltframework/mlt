@@ -19,13 +19,23 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include <framework/mlt.h>
 
 extern mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/qimage/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( producer_type, "qimage", producer_qimage_init );
 	MLT_REGISTER( producer_type, "kdenlivetitle", producer_kdenlivetitle_init );
+	MLT_REGISTER_METADATA( producer_type, "qimage", metadata, "producer_qimage.yml" );
+	MLT_REGISTER_METADATA( producer_type, "kdenlivetitle", metadata, "producer_kdenlivetitle.yml" );
 }

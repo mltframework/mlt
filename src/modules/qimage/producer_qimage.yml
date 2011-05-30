@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: producer
+identifier: qimage
+title: QImage
+version: 1
+copyright: Visual Media ?
+creator: Charles Yates
+license: GPLv2
+language: en
+tags:
+  - Video

@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: producer
+identifier: kdenlivetitle
+title: Kdenlive Titler
+version: 1
+copyright: Marco Gittler, Jean-Baptiste Mardelle
+creator: Marco Gittler, Jean-Baptiste Mardelle
+license: LGPLv2.1
+language: en
+tags:
+  - Video
