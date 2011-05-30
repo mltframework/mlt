@@ -32,6 +32,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -d "$(DESTDIR)$(datadir)/mlt/motion_est"
+	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/motion_est"
 
 test: $(TARGET)
 	~/mlt-devel/mlt/src/melt/melt -filter motion_est -filter vismv -filter benchmark -consumer sdl rescale=none real_time=0 audio_off=1 silent=1 /media/cdrecorder/BBC.The.Private.Life.Of.Plants.Pt5.Living.Together.DivX505.AC3.www.MVGroup.org.uk.avi in=50000

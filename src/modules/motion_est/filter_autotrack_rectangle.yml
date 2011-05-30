@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: filter
+identifier: autotrack_rectangle
+title: Autotrack Rectangle
+version: 1
+copyright: Zachary Drew
+creator: Zachary Drew
+license: GPLv2
+language: en
+tags:
+  - Video
