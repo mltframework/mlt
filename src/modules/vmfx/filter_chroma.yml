@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: filter
+identifier: chroma
+title: Chroma Key
+version: 1
+copyright: Visual Media FX ?
+creator: Charles Yates
+license: LGPLv2.1
+language: en
+tags:
+  - Video

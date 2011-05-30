@@ -1,11 +1,11 @@
 schema_version: 0.1
 type: filter
 identifier: mono
-title: Threshold
+title: Mixdown
 version: 1
 copyright: Ushodaya Enterprises Limited
 creator: Dan Dennedy
 license: LGPLv2.1
 language: en
 tags:
-  - Video
+  - Audio

@@ -31,6 +31,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -d "$(DESTDIR)$(datadir)/mlt/vmfx"
+	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/vmfx"
 
 ifneq ($(wildcard .depend),)
 include .depend

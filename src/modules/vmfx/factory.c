@@ -19,6 +19,7 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include <framework/mlt.h>
 
 extern mlt_filter filter_chroma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -27,6 +28,13 @@ extern mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, 
 extern mlt_filter filter_shape_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/vmfx/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "chroma", filter_chroma_init );
@@ -34,4 +42,10 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "threshold", filter_mono_init );
 	MLT_REGISTER( filter_type, "shape", filter_shape_init );
 	MLT_REGISTER( producer_type, "pgm", producer_pgm_init );
+
+	MLT_REGISTER_METADATA( filter_type, "chroma", metadata, "filter_chroma.yml" );
+	MLT_REGISTER_METADATA( filter_type, "chroma_hold", metadata, "filter_chroma_hold.yml" );
+	MLT_REGISTER_METADATA( filter_type, "threshold", metadata, "filter_mono.yml" );
+	MLT_REGISTER_METADATA( filter_type, "shape", metadata, "filter_shape.yml" );
+	MLT_REGISTER_METADATA( producer_type, "pgm", metadata, "producer_pgm.yml" );
 }
