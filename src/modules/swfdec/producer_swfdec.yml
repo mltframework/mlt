@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: producer
+identifier: swfdec
+title: Flash
+version: 1
+copyright: Dan Dennedy
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Video

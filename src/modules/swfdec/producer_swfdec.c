@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <limits.h>
 
 typedef struct
 {
@@ -270,8 +271,16 @@ mlt_producer producer_swfdec_init( mlt_profile profile, mlt_service_type type, c
 	return producer;
 }
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/swfdec/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	swfdec_init();
 	MLT_REGISTER( producer_type, "swfdec", producer_swfdec_init );
+	MLT_REGISTER_METADATA( producer_type, "swfdec", metadata, "producer_swfdec.yml" );
 }
