@@ -19,14 +19,26 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include <framework/mlt.h>
 
 extern mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/xml/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
 
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "xml", consumer_xml_init );
 	MLT_REGISTER( producer_type, "xml", producer_xml_init );
 	MLT_REGISTER( producer_type, "xml-string", producer_xml_init );
+
+	MLT_REGISTER_METADATA( consumer_type, "xml", metadata, "consumer_xml.yml" );
+	MLT_REGISTER_METADATA( producer_type, "xml", metadata, "producer_xml.yml" );
+	MLT_REGISTER_METADATA( producer_type, "xml-string", metadata, "producer_xml-string.yml" );
 }

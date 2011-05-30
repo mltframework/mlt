@@ -34,6 +34,7 @@ install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
 	install -d "$(DESTDIR)$(datadir)/mlt/xml"
 	install -m 644 mlt-xml.dtd "$(DESTDIR)$(datadir)/mlt/xml"
+	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/xml"
 
 ifneq ($(wildcard .depend),)
 include .depend
