@@ -1,0 +1,12 @@
+schema_version: 0.1
+type: consumer
+identifier: sdi
+title: Linear Systems SDI
+version: 1
+copyright: Broadcasting Center Europe S.A.
+creator: Thomas Kurpick
+license: GPLv2
+language: en
+tags:
+  - Audio
+  - Video
