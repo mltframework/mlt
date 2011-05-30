@@ -1,11 +1,11 @@
 schema_version: 0.1
 type: producer
-identifier: qimage
-title: Qt QImage
+identifier: sdl_image
+title: SDL Image
 version: 1
-copyright: Visual Media ?
+copyright: Visual Media FX ?
 creator: Charles Yates
-license: GPLv2
+license: LGPLv2.1
 language: en
 tags:
   - Video

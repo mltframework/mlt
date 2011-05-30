@@ -19,6 +19,7 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include <framework/mlt.h>
 
 extern mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -30,6 +31,13 @@ extern mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_
 extern mlt_producer producer_sdl_image_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #endif
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/sdl/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "sdl", consumer_sdl_init );
@@ -38,5 +46,11 @@ MLT_REPOSITORY
 	MLT_REGISTER( consumer_type, "sdl_still", consumer_sdl_still_init );
 #ifdef WITH_SDL_IMAGE
 	MLT_REGISTER( producer_type, "sdl_image", producer_sdl_image_init );
+	MLT_REGISTER_METADATA( producer_type, "sdl_image", metadata, "consumer_sdl_image.yml" );
 #endif
+
+	MLT_REGISTER_METADATA( consumer_type, "sdl", metadata, "consumer_sdl.yml" );
+	MLT_REGISTER_METADATA( consumer_type, "sdl_audio", metadata, "consumer_sdl_audio.yml" );
+	MLT_REGISTER_METADATA( consumer_type, "sdl_preview", metadata, "consumer_sdl_preview.yml" );
+	MLT_REGISTER_METADATA( consumer_type, "sdl_still", metadata, "consumer_sdl_still.yml" );
 }

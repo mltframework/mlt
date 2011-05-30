@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: consumer
+identifier: sdl_audio
+title: SDL Audio Only
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Audio

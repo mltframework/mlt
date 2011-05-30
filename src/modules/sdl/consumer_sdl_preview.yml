@@ -1,0 +1,12 @@
+schema_version: 0.1
+type: consumer
+identifier: sdl
+title: SDL
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Charles Yates
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+  - Video
