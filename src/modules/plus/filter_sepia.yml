@@ -1,0 +1,11 @@
+schema_version: 0.1
+type: filter
+identifier: sepia
+title: Sepia
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Charles Yates
+license: LGPLv2.1
+language: en
+tags:
+  - Video
