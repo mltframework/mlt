@@ -348,7 +348,7 @@ public:
 				}
 
 				// While rebuffering
-				if ( isBuffering() )
+				if ( videoCount == 0 && isBuffering() )
 				{
 					// Only append audio to reach the ideal level and not overbuffer.
 					int ideal = ( m_preroll - 1 ) * bmdAudioSampleRate48kHz / m_fps;
