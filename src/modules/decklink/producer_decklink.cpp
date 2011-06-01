@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include "DeckLinkAPI.h"
 
 class DeckLinkProducer
@@ -383,15 +384,19 @@ mlt_producer producer_decklink_init( mlt_profile profile, mlt_service_type type,
 		if ( decklink->open( profile, arg? atoi( arg ) : 0 ) )
 		{
 			producer = decklink->getProducer();
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 			// Set callbacks
 			producer->close = (mlt_destructor) producer_close;
 			producer->get_frame = get_frame;
 
 			// Set properties
-			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "resource", arg );
-			mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "channels", 2 );
-			mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "buffer", 25 );
+			mlt_properties_set( properties, "resource", arg? arg : "0" );
+			mlt_properties_set_int( properties, "channels", 2 );
+			mlt_properties_set_int( properties, "buffer", 25 );
+			mlt_properties_set_int( properties, "length", INT_MAX );
+			mlt_properties_set_int( properties, "out", INT_MAX - 1 );
+			mlt_properties_set( properties, "eof", "loop" );
 
 			// Start immediately
 			if ( !decklink->start( profile ) )
