@@ -433,7 +433,8 @@ public:
 					{
 						// Correct field order
 						m_height--;
-						d += stride;
+						y--;
+						d += m_width;
 					}
 
 					// Need to relocate alpha channel RGBA => ARGB
