@@ -33,7 +33,7 @@ clean:
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
 	install -d "$(DESTDIR)$(datadir)/mlt/decklink"
-	install -m 644 producer_decklink.yml "$(DESTDIR)$(datadir)/mlt/decklink"
+	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/decklink"
 
 uninstall:
 	rm "$(DESTDIR)$(libdir)/mlt/libmltdecklink$(LIBSUF)" 2> /dev/null || true
