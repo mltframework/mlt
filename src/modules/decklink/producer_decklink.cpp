@@ -23,6 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/time.h>
 #include "DeckLinkAPI.h"
 
 class DeckLinkProducer
@@ -193,30 +194,43 @@ public:
 	mlt_frame getFrame()
 	{
 		mlt_frame frame = NULL;
+		struct timeval now;
+		struct timespec tm;
 
 		// Wait if queue is empty
 		pthread_mutex_lock( &m_mutex );
 		while ( mlt_deque_count( m_queue ) < 1 )
-			pthread_cond_wait( &m_condition, &m_mutex );
+		{
+			// Wait up to twice frame duration
+			gettimeofday( &now, NULL );
+			tm.tv_sec = now.tv_sec;
+			now.tv_usec += 2000000 / mlt_producer_get_fps( getProducer() );
+			tm.tv_nsec = now.tv_usec * 1000;
+			if ( pthread_cond_timedwait( &m_condition, &m_mutex, &tm ) )
+				// Stop waiting if error (timed out)
+				break;
+		}
 
 		// Get the first frame from the queue
 		frame = ( mlt_frame ) mlt_deque_pop_front( m_queue );
 		pthread_mutex_unlock( &m_mutex );
 
 		// Set frame timestamp and properties
-		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( getProducer() ) );
-		mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-		mlt_properties_set_int( properties, "progressive", profile->progressive );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
-		mlt_properties_set_int( properties, "width", profile->width );
-		mlt_properties_set_int( properties, "real_width", profile->width );
-		mlt_properties_set_int( properties, "height", profile->height );
-		mlt_properties_set_int( properties, "real_height", profile->height );
-		mlt_properties_set_int( properties, "format", mlt_image_yuv422 );
-		mlt_properties_set_int( properties, "audio_frequency", 48000 );
-		mlt_properties_set_int( properties, "audio_channels",
-			mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "channels" ) );
-
+		if ( frame )
+		{
+			mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( getProducer() ) );
+			mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+			mlt_properties_set_int( properties, "progressive", profile->progressive );
+			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
+			mlt_properties_set_int( properties, "width", profile->width );
+			mlt_properties_set_int( properties, "real_width", profile->width );
+			mlt_properties_set_int( properties, "height", profile->height );
+			mlt_properties_set_int( properties, "real_height", profile->height );
+			mlt_properties_set_int( properties, "format", mlt_image_yuv422 );
+			mlt_properties_set_int( properties, "audio_frequency", 48000 );
+			mlt_properties_set_int( properties, "audio_channels",
+				mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "channels" ) );
+		}
 		return frame;
 	}
 
@@ -348,6 +362,8 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 
 	// Get the next frame from the decklink object
 	*frame = decklink->getFrame();
+	if ( !*frame )
+		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Calculate the next timecode
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
