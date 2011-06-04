@@ -129,6 +129,7 @@ struct producer_avformat_s
 typedef struct producer_avformat_s *producer_avformat;
 
 // Forward references.
+static int list_components( char* file );
 static int producer_open( producer_avformat self, mlt_profile profile, char *file );
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static void producer_avformat_close( producer_avformat );
@@ -147,45 +148,17 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 mlt_producer producer_avformat_init( mlt_profile profile, const char *service, char *file )
 {
-	int skip = 0;
+	if ( list_components( file ) )
+		return NULL;
 
-	// Report information about available demuxers and codecs as YAML Tiny
-	if ( file && strstr( file, "f-list" ) )
-	{
-		fprintf( stderr, "---\nformats:\n" );
-		AVInputFormat *format = NULL;
-		while ( ( format = av_iformat_next( format ) ) )
-			fprintf( stderr, "  - %s\n", format->name );
-		fprintf( stderr, "...\n" );
-		skip = 1;
-	}
-	if ( file && strstr( file, "acodec-list" ) )
-	{
-		fprintf( stderr, "---\naudio_codecs:\n" );
-		AVCodec *codec = NULL;
-		while ( ( codec = av_codec_next( codec ) ) )
-			if ( codec->decode && codec->type == CODEC_TYPE_AUDIO )
-				fprintf( stderr, "  - %s\n", codec->name );
-		fprintf( stderr, "...\n" );
-		skip = 1;
-	}
-	if ( file && strstr( file, "vcodec-list" ) )
-	{
-		fprintf( stderr, "---\nvideo_codecs:\n" );
-		AVCodec *codec = NULL;
-		while ( ( codec = av_codec_next( codec ) ) )
-			if ( codec->decode && codec->type == CODEC_TYPE_VIDEO )
-				fprintf( stderr, "  - %s\n", codec->name );
-		fprintf( stderr, "...\n" );
-		skip = 1;
-	}
+	mlt_producer producer = NULL;
 
 	// Check that we have a non-NULL argument
-	if ( !skip && file )
+	if ( file )
 	{
 		// Construct the producer
-		mlt_producer producer = calloc( 1, sizeof( struct mlt_producer_s ) );
 		producer_avformat self = calloc( 1, sizeof( struct producer_avformat_s ) );
+		producer = calloc( 1, sizeof( struct mlt_producer_s ) );
 
 		// Initialise it
 		if ( mlt_producer_init( producer, self ) == 0 )
@@ -231,24 +204,56 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 					// Default the user-selectable indices from the auto-detected indices
 					mlt_properties_set_int( properties, "audio_index",  self->audio_index );
 					mlt_properties_set_int( properties, "video_index",  self->video_index );
-					
-#ifdef VDPAU
-					mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
-#endif
-					mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", self, 0, (mlt_destructor) producer_avformat_close );
 				}
 			}
-			else
+			if ( producer )
 			{
 #ifdef VDPAU
 				mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
 #endif
 				mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", self, 0, (mlt_destructor) producer_avformat_close );
 			}
-			return producer;
 		}
 	}
-	return NULL;
+	return producer;
+}
+
+int list_components( char* file )
+{
+	int skip = 0;
+
+	// Report information about available demuxers and codecs as YAML Tiny
+	if ( file && strstr( file, "f-list" ) )
+	{
+		fprintf( stderr, "---\nformats:\n" );
+		AVInputFormat *format = NULL;
+		while ( ( format = av_iformat_next( format ) ) )
+			fprintf( stderr, "  - %s\n", format->name );
+		fprintf( stderr, "...\n" );
+		skip = 1;
+	}
+	if ( file && strstr( file, "acodec-list" ) )
+	{
+		fprintf( stderr, "---\naudio_codecs:\n" );
+		AVCodec *codec = NULL;
+		while ( ( codec = av_codec_next( codec ) ) )
+			if ( codec->decode && codec->type == CODEC_TYPE_AUDIO )
+				fprintf( stderr, "  - %s\n", codec->name );
+		fprintf( stderr, "...\n" );
+		skip = 1;
+	}
+	if ( file && strstr( file, "vcodec-list" ) )
+	{
+		fprintf( stderr, "---\nvideo_codecs:\n" );
+		AVCodec *codec = NULL;
+		while ( ( codec = av_codec_next( codec ) ) )
+			if ( codec->decode && codec->type == CODEC_TYPE_VIDEO )
+				fprintf( stderr, "  - %s\n", codec->name );
+		fprintf( stderr, "...\n" );
+		skip = 1;
+	}
+
+	return skip;
 }
 
 /** Find the default streams.
