@@ -55,14 +55,14 @@ parameters:
       the keyer supports alpha-blending. You can not control the compositing
       rectangle. Rather, the entire MLT output overlays the entire video
       input. Therefore, you must use MLT's compositing services to control
-      the size and position.
+      the size and position. The value 1 enables the internal keyer, the
+      value 2 enables the external keyer, and the value 0 disables it.
     readonly: no
     required: no
     mutable: no
     default: 0
     minimum: 0
-    maximum: 1
-    widget: checkbox
+    maximum: 2
 
   - identifier: keyer_level
     title: Key Opacity

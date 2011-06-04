@@ -101,7 +101,7 @@ private:
 	mlt_frame                   m_frame;
 	unsigned                    m_dropped;
 	bool                        m_isAudio;
-	bool                        m_isKeyer;
+	int                         m_isKeyer;
 	IDeckLinkKeyer*             m_deckLinkKeyer;
 
 	IDeckLinkDisplayMode* getDisplayMode()
@@ -241,11 +241,12 @@ public:
 		// Set the keyer
 		if ( m_deckLinkKeyer && ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
 		{
-			bool external = false;
+			bool external = (m_isKeyer == 2);
 			double level = mlt_properties_get_double( properties, "keyer_level" );
 
 			if ( m_deckLinkKeyer->Enable( external ) != S_OK )
-				mlt_log_error( getConsumer(), "Failed to enable keyer\n" );
+				mlt_log_error( getConsumer(), "Failed to enable %s keyer\n",
+					external ? "external" : "internal" );
 			m_deckLinkKeyer->SetLevel( level <= 1 ? ( level > 0 ? 255 * level : 255 ) : 255 );
 			m_preroll = 0;
 			m_isAudio = false;
