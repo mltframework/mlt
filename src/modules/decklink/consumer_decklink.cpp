@@ -248,8 +248,6 @@ public:
 				mlt_log_error( getConsumer(), "Failed to enable %s keyer\n",
 					external ? "external" : "internal" );
 			m_deckLinkKeyer->SetLevel( level <= 1 ? ( level > 0 ? 255 * level : 255 ) : 255 );
-			m_preroll = 0;
-			m_isAudio = false;
 		}
 		else if ( m_deckLinkKeyer )
 		{
