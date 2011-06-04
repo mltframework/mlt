@@ -710,6 +710,7 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 			consumer->start = start;
 			consumer->stop = stop;
 			consumer->is_stopped = is_stopped;
+			mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "deinterlace_method", "onefield" );
 		}
 	}
 
