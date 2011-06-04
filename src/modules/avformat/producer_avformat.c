@@ -130,7 +130,7 @@ typedef struct producer_avformat_s *producer_avformat;
 
 // Forward references.
 static int list_components( char* file );
-static int producer_open( producer_avformat self, mlt_profile profile, char *file );
+static int producer_open( producer_avformat self, mlt_profile profile, const char *URL );
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
@@ -176,7 +176,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 
 			// Register our get_frame implementation
 			producer->get_frame = producer_get_frame;
-			
+
 			if ( strcmp( service, "avformat-novalidate" ) )
 			{
 				// Open the file
@@ -200,7 +200,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 						av_close_input_file( self->video_format );
 					self->video_format = NULL;
 					avformat_unlock();
-	
+
 					// Default the user-selectable indices from the auto-detected indices
 					mlt_properties_set_int( properties, "audio_index",  self->audio_index );
 					mlt_properties_set_int( properties, "video_index",  self->video_index );
@@ -259,11 +259,17 @@ int list_components( char* file )
 /** Find the default streams.
 */
 
-static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatContext *context, int *audio_index, int *video_index )
+static mlt_properties find_default_streams( producer_avformat self )
 {
 	int i;
 	char key[200];
 	AVMetadataTag *tag = NULL;
+	AVFormatContext *context = self->video_format;
+	mlt_properties meta_media = MLT_PRODUCER_PROPERTIES( self->parent );
+
+	// Default to the first audio and video streams found
+	self->audio_index = -1;
+	self->video_index = -1;
 
 	mlt_properties_set_int( meta_media, "meta.media.nb_streams", context->nb_streams );
 
@@ -284,8 +290,9 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 		switch( codec_context->codec_type )
 		{
 			case CODEC_TYPE_VIDEO:
-				if ( *video_index < 0 )
-					*video_index = i;
+				// Use first video stream
+				if ( self->video_index < 0 )
+					self->video_index = i;
 				mlt_properties_set( meta_media, key, "video" );
 				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
@@ -330,8 +337,9 @@ static mlt_properties find_default_streams( mlt_properties meta_media, AVFormatC
 #endif
 				break;
 			case CODEC_TYPE_AUDIO:
-				if ( *audio_index < 0 )
-					*audio_index = i;
+				// Use first audio stream
+				if ( self->audio_index < 0 )
+					self->audio_index = i;
 				mlt_properties_set( meta_media, key, "audio" );
 #if LIBAVCODEC_VERSION_MAJOR > 52
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
@@ -533,22 +541,198 @@ static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVC
 	return aspect_ratio;
 }
 
-/** Open the file.
-*/
-
-static int producer_open( producer_avformat self, mlt_profile profile, char *file )
+static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **format, AVFormatParameters **parameters )
 {
-	// Return an error code (0 == no error)
-	int error = 0;
+	if ( !URL ) return NULL;
 
-	// Context for avformat
-	AVFormatContext *context = NULL;
+	char *result = NULL;
+	char *protocol = strdup( URL );
+	char *url = strchr( protocol, ':' );
+
+	// Only if there is not a protocol specification that avformat can handle
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+	if ( url && avio_check( URL, 0 ) < 0 )
+#else
+	if ( url && !url_exist( URL ) )
+#endif
+	{
+		// Truncate protocol string
+		url[0] = 0;
+
+		// Lookup the format
+		*format = av_find_input_format( protocol );
+
+		// Eat the format designator
+		result = ++url;
+
+		if ( *format )
+		{
+			// Allocate params
+			AVFormatParameters *params = *parameters = calloc( 1, sizeof( AVFormatParameters ) );
+
+			// These are required by video4linux2 (defaults)
+			params->width = profile->width;
+			params->height = profile->height;
+			params->time_base= (AVRational){ profile->frame_rate_den, profile->frame_rate_num };
+			params->channels = 2;
+			params->sample_rate = 48000;
+
+			// Parse out params
+			url = strchr( url, '?' );
+			while ( url )
+			{
+				url[0] = 0;
+				char *name = strdup( ++url );
+				char *value = strchr( name, ':' );
+				if ( value )
+				{
+					value[0] = 0;
+					value++;
+					char *t = strchr( value, '&' );
+					if ( t )
+						t[0] = 0;
+					if ( !strcmp( name, "frame_rate" ) )
+						params->time_base.den = atoi( value );
+					else if ( !strcmp( name, "frame_rate_base" ) )
+						params->time_base.num = atoi( value );
+					else if ( !strcmp( name, "sample_rate" ) )
+						params->sample_rate = atoi( value );
+					else if ( !strcmp( name, "channel" ) )
+						params->channel = atoi( value );
+					else if ( !strcmp( name, "channels" ) )
+						params->channels = atoi( value );
+#if (LIBAVUTIL_VERSION_INT > ((50<<16)+(7<<8)+0))
+					else if ( !strcmp( name, "pix_fmt" ) )
+						params->pix_fmt = av_get_pix_fmt( value );
+#endif
+					else if ( !strcmp( name, "width" ) )
+						params->width = atoi( value );
+					else if ( !strcmp( name, "height" ) )
+						params->height = atoi( value );
+					else if ( !strcmp( name, "standard" ) )
+						params->standard = strdup( value );
+				}
+				free( name );
+				url = strchr( url, '&' );
+			}
+		}
+	}
+	free( protocol );
+	return result ? strdup( result ) : strdup( URL );
+}
+
+static int get_basic_info( producer_avformat self, mlt_profile profile, const char *filename )
+{
+	int error = 0;
 
 	// Get the properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 
-	// We will treat everything with the producer fps
+	AVFormatContext *format = self->video_format;
+
+	// We will treat everything with the producer fps.
+	// TODO: make this more flexible.
 	double fps = mlt_profile_fps( profile );
+
+	// Get the duration
+	if ( !mlt_properties_get_int( properties, "_length_computed" ) )
+	{
+		// The _length_computed flag prevents overwriting explicity set length/out/eof properties
+		// when producer_open is called after initial call when restoring or reseting the producer.
+		if ( format->duration != AV_NOPTS_VALUE )
+		{
+			// This isn't going to be accurate for all formats
+			mlt_position frames = ( mlt_position )( ( ( double )format->duration / ( double )AV_TIME_BASE ) * fps );
+			mlt_properties_set_position( properties, "out", frames - 1 );
+			mlt_properties_set_position( properties, "length", frames );
+			mlt_properties_set_int( properties, "_length_computed", 1 );
+		}
+		else
+		{
+			// Set live sources to run forever
+			mlt_properties_set_position( properties, "length", INT_MAX );
+			mlt_properties_set_position( properties, "out", INT_MAX - 1 );
+			mlt_properties_set( properties, "eof", "loop" );
+			mlt_properties_set_int( properties, "_length_computed", 1 );
+		}
+	}
+
+	if ( format->start_time != AV_NOPTS_VALUE )
+		self->start_time = format->start_time;
+
+	// Check if we're seekable
+	// avdevices are typically AVFMT_NOFILE and not seekable
+	self->seekable = !format->iformat || !( format->iformat->flags & AVFMT_NOFILE );
+	if ( format->pb )
+	{
+		// protocols can indicate if they support seeking
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+		self->seekable = context->pb->seekable;
+#else
+		URLContext *uc = url_fileno( format->pb );
+		if ( uc )
+			self->seekable = !uc->is_streamed;
+#endif
+	}
+	if ( self->seekable )
+	{
+		// Do a more rigourous test of seekable on a disposable context
+		self->seekable = av_seek_frame( format, -1, self->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
+		mlt_properties_set_int( properties, "seekable", self->seekable );
+		self->dummy_context = format;
+		av_open_input_file( &self->video_format, filename, NULL, 0, NULL );
+		format = self->video_format;
+		av_find_stream_info( format );
+	}
+
+	// Fetch the width, height and aspect ratio
+	if ( self->video_index != -1 )
+	{
+		AVCodecContext *codec_context = format->streams[ self->video_index ]->codec;
+		mlt_properties_set_int( properties, "width", codec_context->width );
+		mlt_properties_set_int( properties, "height", codec_context->height );
+
+		if ( codec_context->codec_id == CODEC_ID_DVVIDEO )
+		{
+			// Fetch the first frame of DV so we can read it directly
+			AVPacket pkt;
+			int ret = 0;
+			while ( ret >= 0 )
+			{
+				ret = av_read_frame( format, &pkt );
+				if ( ret >= 0 && pkt.stream_index == self->video_index && pkt.size > 0 )
+				{
+					get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context, &pkt );
+					break;
+				}
+			}
+		}
+		else
+		{
+			get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context, NULL );
+		}
+
+#ifdef SWSCALE
+		// Verify that we can convert this to YUV 4:2:2
+		// TODO: we can now also return RGB and RGBA and quite possibly more in the future.
+		struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
+			codec_context->width, codec_context->height, PIX_FMT_YUYV422, SWS_BILINEAR, NULL, NULL, NULL);
+		if ( context )
+			sws_freeContext( context );
+		else
+			error = 1;
+#endif
+	}
+	return error;
+}
+
+/** Open the file.
+*/
+
+static int producer_open( producer_avformat self, mlt_profile profile, const char *URL )
+{
+	// Return an error code (0 == no error)
+	int error = 0;
 
 	// Lock the service
 	pthread_mutex_init( &self->audio_mutex, NULL );
@@ -556,219 +740,63 @@ static int producer_open( producer_avformat self, mlt_profile profile, char *fil
 	pthread_mutex_lock( &self->audio_mutex );
 	pthread_mutex_lock( &self->video_mutex );
 
-	// If "MRL", then create AVInputFormat
+	// Parse URL
 	AVInputFormat *format = NULL;
 	AVFormatParameters *params = NULL;
-	char *standard = NULL;
-	char *mrl = strchr( file, ':' );
-
-	// AV option (0 = both, 1 = video, 2 = audio)
-	int av = 0;
-
-	// Only if there is not a protocol specification that avformat can handle
-#if LIBAVFORMAT_VERSION_MAJOR > 52
-	if ( mrl && avio_check( file, 0 ) < 0 )
-#else
-	if ( mrl && !url_exist( file ) )
-#endif
-	{
-		// 'file' becomes format abbreviation
-		mrl[0] = 0;
-
-		// Lookup the format
-		format = av_find_input_format( file );
-
-		// Eat the format designator
-		file = ++mrl;
-
-		if ( format )
-		{
-			// Allocate params
-			params = calloc( sizeof( AVFormatParameters ), 1 );
-
-			// These are required by video4linux (defaults)
-			params->width = 640;
-			params->height = 480;
-			params->time_base= (AVRational){1,25};
-			params->channels = 2;
-			params->sample_rate = 48000;
-		}
-
-		// Parse out params
-		mrl = strchr( file, '?' );
-		while ( mrl )
-		{
-			mrl[0] = 0;
-			char *name = strdup( ++mrl );
-			char *value = strchr( name, ':' );
-			if ( value )
-			{
-				value[0] = 0;
-				value++;
-				char *t = strchr( value, '&' );
-				if ( t )
-					t[0] = 0;
-				if ( !strcmp( name, "frame_rate" ) )
-					params->time_base.den = atoi( value );
-				else if ( !strcmp( name, "frame_rate_base" ) )
-					params->time_base.num = atoi( value );
-				else if ( !strcmp( name, "sample_rate" ) )
-					params->sample_rate = atoi( value );
-				else if ( !strcmp( name, "channel" ) )
-					params->channel = atoi( value );
-				else if ( !strcmp( name, "channels" ) )
-					params->channels = atoi( value );
-#if (LIBAVUTIL_VERSION_INT > ((50<<16)+(7<<8)+0))
-				else if ( !strcmp( name, "pix_fmt" ) )
-					params->pix_fmt = av_get_pix_fmt( value );
-#endif
-				else if ( !strcmp( name, "width" ) )
-					params->width = atoi( value );
-				else if ( !strcmp( name, "height" ) )
-					params->height = atoi( value );
-				else if ( !strcmp( name, "standard" ) )
-				{
-					standard = strdup( value );
-					params->standard = standard;
-				}
-				else if ( !strcmp( name, "av" ) )
-					av = atoi( value );
-			}
-			free( name );
-			mrl = strchr( mrl, '&' );
-		}
-	}
+	char *filename = parse_url( profile, URL, &format, &params );
 
 	// Now attempt to open the file
-	error = av_open_input_file( &context, file, format, 0, params ) < 0;
+	error = av_open_input_file( &self->video_format, filename, format, 0, params ) < 0;
 
 	// Cleanup AVFormatParameters
-	free( standard );
-	free( params );
+	if ( params )
+	{
+		if ( params->standard )
+			free( (void*) params->standard );
+		free( params );
+	}
 
 	// If successful, then try to get additional info
 	if ( !error )
 	{
 		// Get the stream info
-		error = av_find_stream_info( context ) < 0;
+		error = av_find_stream_info( self->video_format ) < 0;
 
 		// Continue if no error
 		if ( !error )
 		{
-			// We will default to the first audio and video streams found
-			int audio_index = -1;
-			int video_index = -1;
-
 			// Find default audio and video streams
-			find_default_streams( properties, context, &audio_index, &video_index );
+			find_default_streams( self );
+			error = get_basic_info( self, profile, filename );
 
-			// Now set properties where we can (use default unknowns if required)
-			if ( context->duration != AV_NOPTS_VALUE )
-			{
-				// This isn't going to be accurate for all formats
-				mlt_position frames = ( mlt_position )( ( ( double )context->duration / ( double )AV_TIME_BASE ) * fps );
-				mlt_properties_set_position( properties, "out", frames - 1 );
-				mlt_properties_set_position( properties, "length", frames );
-			}
-
-			if ( context->start_time != AV_NOPTS_VALUE )
-				self->start_time = context->start_time;
-
-			// Check if we're seekable
-			// avdevices are typically AVFMT_NOFILE and not seekable
-			self->seekable = !format || !( format->flags & AVFMT_NOFILE );
-			if ( context->pb )
-			{
-				// protocols can indicate if they support seeking
-#if LIBAVFORMAT_VERSION_MAJOR > 52
-				self->seekable = context->pb->seekable;
-#else
-				URLContext *uc = url_fileno( context->pb );
-				if ( uc )
-					self->seekable = !uc->is_streamed;
-#endif
-			}
-			if ( self->seekable )
-			{
-				self->seekable = av_seek_frame( context, -1, self->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
-				mlt_properties_set_int( properties, "seekable", self->seekable );
-				self->dummy_context = context;
-				av_open_input_file( &context, file, NULL, 0, NULL );
-				av_find_stream_info( context );
-			}
-
-			// Store selected audio and video indexes on properties
-			self->audio_index = audio_index;
-			self->video_index = video_index;
+			// Initialize position info
 			self->first_pts = -1;
 			self->last_position = POSITION_INITIAL;
 
-			// Fetch the width, height and aspect ratio
-			if ( video_index != -1 )
+			// We're going to cheat here - for seekable A/V files, we will have separate contexts
+			// to support independent seeking of audio from video.
+			// TODO: Is this really necessary?
+			if ( self->audio_index != -1 && self->video_index != -1 )
 			{
-				AVCodecContext *codec_context = context->streams[ video_index ]->codec;
-				mlt_properties_set_int( properties, "width", codec_context->width );
-				mlt_properties_set_int( properties, "height", codec_context->height );
-
-				if ( codec_context->codec_id == CODEC_ID_DVVIDEO )
-				{
-					// Fetch the first frame of DV so we can read it directly
-					AVPacket pkt;
-					int ret = 0;
-					while ( ret >= 0 )
-					{
-						ret = av_read_frame( context, &pkt );
-						if ( ret >= 0 && pkt.stream_index == video_index && pkt.size > 0 )
-						{
-							get_aspect_ratio( properties, context->streams[ video_index ], codec_context, &pkt );
-							break;
-						}
-					}
-				}
-				else
-				{
-					get_aspect_ratio( properties, context->streams[ video_index ], codec_context, NULL );
-				}
-#ifdef SWSCALE
-				struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
-					codec_context->width, codec_context->height, PIX_FMT_YUYV422, SWS_BILINEAR, NULL, NULL, NULL);
-				if ( context )
-					sws_freeContext( context );
-				else
-					error = 1;
-#endif
-			}
-
-			// We're going to cheat here - for a/v files, we will have two contexts (reasoning will be clear later)
-			if ( av == 0 && audio_index != -1 && video_index != -1 )
-			{
-				// We'll use the open one as our video_format
-				self->video_format = context;
-
 				// And open again for our audio context
-				av_open_input_file( &context, file, NULL, 0, NULL );
-				av_find_stream_info( context );
-
-				// Audio context
-				self->audio_format = context;
+				av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
+				av_find_stream_info( self->audio_format );
 			}
-			else if ( av != 2 && video_index != -1 )
-			{
-				// We only have a video context
-				self->video_format = context;
-			}
-			else if ( audio_index != -1 )
+			else if ( self->audio_index != -1 )
 			{
 				// We only have an audio context
-				self->audio_format = context;
+				self->audio_format = self->video_format;
+				self->video_format = NULL;
 			}
-			else
+			else if ( self->video_index == -1 )
 			{
 				// Something has gone wrong
 				error = -1;
 			}
 		}
 	}
+	if ( filename )
+		free( filename );
 
 	// Unlock the service
 	pthread_mutex_unlock( &self->audio_mutex );
