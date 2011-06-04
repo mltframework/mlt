@@ -805,8 +805,9 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	return error;
 }
 
-void reopen_video( producer_avformat self, mlt_producer producer, mlt_properties properties )
+static void reopen_video( producer_avformat self, mlt_producer producer )
 {
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 	pthread_mutex_lock( &self->audio_mutex );
 
@@ -855,6 +856,122 @@ void reopen_video( producer_avformat self, mlt_producer producer, mlt_properties
 
 	pthread_mutex_unlock( &self->audio_mutex );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+}
+
+static int seek_video( producer_avformat self, mlt_position position,
+	int req_position, int must_decode, int use_new_seek, int *ignore )
+{
+	mlt_producer producer = self->parent;
+	int paused = 0;
+
+	if ( position != self->video_expected || self->last_position < 0 )
+	{
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
+
+		// Fetch the video format context
+		AVFormatContext *context = self->video_format;
+
+		// Get the video stream
+		AVStream *stream = context->streams[ self->video_index ];
+
+		// Get codec context
+		AVCodecContext *codec_context = stream->codec;
+
+		// We may want to use the source fps if available
+		double source_fps = mlt_properties_get_double( properties, "meta.media.frame_rate_num" ) /
+			mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
+
+		if ( self->av_frame && position + 1 == self->video_expected )
+		{
+			// We're paused - use last image
+			paused = 1;
+		}
+		else if ( !self->seekable && position > self->video_expected && ( position - self->video_expected ) < 250 )
+		{
+			// Fast forward - seeking is inefficient for small distances - just ignore following frames
+			*ignore = ( int )( ( position - self->video_expected ) / mlt_producer_get_fps( producer ) * source_fps );
+			codec_context->skip_loop_filter = AVDISCARD_NONREF;
+		}
+		else if ( self->seekable && ( position < self->video_expected || position - self->video_expected >= 12 || self->last_position < 0 ) )
+		{
+			if ( use_new_seek && self->last_position == POSITION_INITIAL )
+			{
+				// find first key frame
+				int ret = 0;
+				int toscan = 100;
+				AVPacket pkt;
+
+				while ( ret >= 0 && toscan-- > 0 )
+				{
+					ret = av_read_frame( context, &pkt );
+					if ( ret >= 0 && ( pkt.flags & PKT_FLAG_KEY ) && pkt.stream_index == self->video_index )
+					{
+						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
+						self->first_pts = pkt.pts;
+						toscan = 0;
+					}
+					av_free_packet( &pkt );
+				}
+				// Rewind
+				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
+			}
+
+			// Calculate the timestamp for the requested frame
+			int64_t timestamp;
+			if ( use_new_seek )
+			{
+				timestamp = ( req_position - 0.1 / source_fps ) /
+					( av_q2d( stream->time_base ) * source_fps );
+				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %d pts %"PRId64" ", req_position, timestamp );
+				if ( self->first_pts > 0 )
+					timestamp += self->first_pts;
+				else if ( context->start_time != AV_NOPTS_VALUE )
+					timestamp += context->start_time;
+			}
+			else
+			{
+				timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE + 0.5 );
+				if ( context->start_time != AV_NOPTS_VALUE )
+					timestamp += context->start_time;
+			}
+			if ( must_decode )
+				timestamp -= AV_TIME_BASE;
+			if ( timestamp < 0 )
+				timestamp = 0;
+			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %"PRId64" position %d expected %d last_pos %d\n",
+				timestamp, position, self->video_expected, self->last_position );
+
+			// Seek to the timestamp
+			if ( use_new_seek )
+			{
+				codec_context->skip_loop_filter = AVDISCARD_NONREF;
+				av_seek_frame( context, self->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
+			}
+			else if ( req_position > 0 || self->last_position <= 0 )
+			{
+				av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD );
+			}
+			else
+			{
+				// Re-open video stream when rewinding to beginning from somewhere else.
+				// This is rather ugly, and I prefer not to do it this way, but ffmpeg is
+				// not reliably seeking to the first frame across formats.
+				reopen_video( self, producer );
+			}
+
+			// Remove the cached info relating to the previous position
+			self->current_position = POSITION_INVALID;
+			self->last_position = POSITION_INVALID;
+			av_freep( &self->av_frame );
+
+			if ( use_new_seek )
+			{
+				// flush any pictures still in decode buffer
+				avcodec_flush_buffers( codec_context );
+			}
+		}
+	}
+	return paused;
 }
 
 /** Convert a frame position to a time code.
@@ -1151,19 +1268,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Packet
 	AVPacket pkt;
 
-	// Special case pause handling flag
-	int paused = 0;
-
 	// Special case ffwd handling
 	int ignore = 0;
 
 	// We may want to use the source fps if available
 	double source_fps = mlt_properties_get_double( properties, "meta.media.frame_rate_num" ) /
 		mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
-	double fps = mlt_producer_get_fps( producer );
 
 	// This is the physical frame position in the source
-	int req_position = ( int )( position / fps * source_fps + 0.5 );
+	int req_position = ( int )( position / mlt_producer_get_fps( producer ) * source_fps + 0.5 );
 
 	// Determines if we have to decode all frames in a sequence
 	// Temporary hack to improve intra frame only
@@ -1173,108 +1286,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				  strcmp( codec_context->codec->name, "mjpeg" ) &&
 				  strcmp( codec_context->codec->name, "rawvideo" );
 
-	int last_position = self->last_position;
-
 	// Turn on usage of new seek API and PTS for seeking
 	int use_new_seek = codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
 	if ( mlt_properties_get( properties, "new_seek" ) )
 		use_new_seek = mlt_properties_get_int( properties, "new_seek" );
 
 	// Seek if necessary
-	if ( position != self->video_expected || last_position < 0 )
-	{
-		if ( self->av_frame && position + 1 == self->video_expected )
-		{
-			// We're paused - use last image
-			paused = 1;
-		}
-		else if ( !self->seekable && position > self->video_expected && ( position - self->video_expected ) < 250 )
-		{
-			// Fast forward - seeking is inefficient for small distances - just ignore following frames
-			ignore = ( int )( ( position - self->video_expected ) / fps * source_fps );
-			codec_context->skip_loop_filter = AVDISCARD_NONREF;
-		}
-		else if ( self->seekable && ( position < self->video_expected || position - self->video_expected >= 12 || last_position < 0 ) )
-		{
-			if ( use_new_seek && last_position == POSITION_INITIAL )
-			{
-				// find first key frame
-				int ret = 0;
-				int toscan = 100;
+	int paused = seek_video( self, position, req_position, must_decode, use_new_seek, &ignore );
 
-				while ( ret >= 0 && toscan-- > 0 )
-				{
-					ret = av_read_frame( context, &pkt );
-					if ( ret >= 0 && ( pkt.flags & PKT_FLAG_KEY ) && pkt.stream_index == self->video_index )
-					{
-						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
-						self->first_pts = pkt.pts;
-						toscan = 0;
-					}
-					av_free_packet( &pkt );
-				}
-				// Rewind
-				av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
-			}
-
-			// Calculate the timestamp for the requested frame
-			int64_t timestamp;
-			if ( use_new_seek )
-			{
-				timestamp = ( req_position - 0.1 / source_fps ) /
-					( av_q2d( stream->time_base ) * source_fps );
-				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %d pts %"PRId64" ", req_position, timestamp );
-				if ( self->first_pts > 0 )
-					timestamp += self->first_pts;
-				else if ( context->start_time != AV_NOPTS_VALUE )
-					timestamp += context->start_time;
-			}
-			else
-			{
-				timestamp = ( int64_t )( ( double )req_position / source_fps * AV_TIME_BASE + 0.5 );
-				if ( context->start_time != AV_NOPTS_VALUE )
-					timestamp += context->start_time;
-			}
-			if ( must_decode )
-				timestamp -= AV_TIME_BASE;
-			if ( timestamp < 0 )
-				timestamp = 0;
-			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %"PRId64" position %d expected %d last_pos %d\n",
-				timestamp, position, self->video_expected, last_position );
-
-			// Seek to the timestamp
-			if ( use_new_seek )
-			{
-				codec_context->skip_loop_filter = AVDISCARD_NONREF;
-				av_seek_frame( context, self->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
-			}
-			else if ( req_position > 0 || last_position <= 0 )
-			{
-				av_seek_frame( context, -1, timestamp, AVSEEK_FLAG_BACKWARD );
-			}
-			else
-			{
-				// Re-open video stream when rewinding to beginning from somewhere else.
-				// This is rather ugly, and I prefer not to do it this way, but ffmpeg is
-				// not reliably seeking to the first frame across formats.
-				reopen_video( self, producer, properties );
-				context = self->video_format;
-				stream = context->streams[ self->video_index ];
-				codec_context = stream->codec;
-			}
-
-			// Remove the cached info relating to the previous position
-			self->current_position = POSITION_INVALID;
-			self->last_position = POSITION_INVALID;
-			av_freep( &self->av_frame );
-
-			if ( use_new_seek )
-			{
-				// flush any pictures still in decode buffer
-				avcodec_flush_buffers( codec_context );
-			}
-		}
-	}
+	// Seek might have reopened the file
+	context = self->video_format;
+	stream = context->streams[ self->video_index ];
+	codec_context = stream->codec;
 
 	// Duplicate the last image if necessary
 	if ( self->av_frame && self->av_frame->linesize[0] && self->got_picture && self->seekable
@@ -1364,9 +1387,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
 						if ( context->start_time != AV_NOPTS_VALUE )
 							int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
-						last_position = self->last_position;
-						if ( int_position == last_position )
-							int_position = last_position + 1;
+						if ( int_position == self->last_position )
+							int_position = self->last_position + 1;
 					}
 					else
 					{
