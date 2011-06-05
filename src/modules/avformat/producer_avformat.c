@@ -749,6 +749,9 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	char *filename = parse_url( profile, URL, &format, &params );
 
 	// Now attempt to open the file or device with filename
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+	self->video_format->flags |= AVFMT_FLAG_PRIV_OPT;
+#endif
 	error = av_open_input_file( &self->video_format, filename, format, 0, &params ) < 0;
 	if ( error )
 		// If the URL is a network stream URL, then we probably need to open with full URL
@@ -759,6 +762,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 #if LIBAVFORMAT_VERSION_MAJOR > 52
 	if ( self->video_format->iformat && self->video_format->iformat->priv_class && self->video_format->priv_data )
 		apply_properties( self->video_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
+	av_demuxer_open( self->video_format, &params );
 #endif
 
 	// Cleanup AVFormatParameters
