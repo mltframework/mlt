@@ -201,14 +201,13 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 						av_close_input_file( self->video_format );
 					self->video_format = NULL;
 					avformat_unlock();
-
-					// Default the user-selectable indices from the auto-detected indices
-					mlt_properties_set_int( properties, "audio_index",  self->audio_index );
-					mlt_properties_set_int( properties, "video_index",  self->video_index );
 				}
 			}
 			if ( producer )
 			{
+				// Default the user-selectable indices from the auto-detected indices
+				mlt_properties_set_int( properties, "audio_index",  self->audio_index );
+				mlt_properties_set_int( properties, "video_index",  self->video_index );
 #ifdef VDPAU
 				mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
 #endif
