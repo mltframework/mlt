@@ -542,7 +542,7 @@ static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVC
 	return aspect_ratio;
 }
 
-static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **format, AVFormatParameters **parameters )
+static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **format, AVFormatParameters *params )
 {
 	if ( !URL ) return NULL;
 
@@ -569,9 +569,6 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 
 		if ( *format )
 		{
-			// Allocate params
-			AVFormatParameters *params = *parameters = calloc( 1, sizeof( AVFormatParameters ) );
-
 			// These are required by video4linux2 (defaults)
 			params->width = profile->width;
 			params->height = profile->height;
@@ -747,14 +744,15 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 
 	// Parse URL
 	AVInputFormat *format = NULL;
-	AVFormatParameters *params = NULL;
+	AVFormatParameters params;
+	memset( &params, 0, sizeof(params) );
 	char *filename = parse_url( profile, URL, &format, &params );
 
 	// Now attempt to open the file or device with filename
-	error = av_open_input_file( &self->video_format, filename, format, 0, params ) < 0;
+	error = av_open_input_file( &self->video_format, filename, format, 0, &params ) < 0;
 	if ( error )
 		// If the URL is a network stream URL, then we probably need to open with full URL
-		error = av_open_input_file( &self->video_format, URL, format, 0, params ) < 0;
+		error = av_open_input_file( &self->video_format, URL, format, 0, &params ) < 0;
 
 	// Set MLT properties onto video AVFormatContext
 	apply_properties( self->video_format, properties, AV_OPT_FLAG_DECODING_PARAM );
@@ -764,12 +762,8 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 #endif
 
 	// Cleanup AVFormatParameters
-	if ( params )
-	{
-		if ( params->standard )
-			free( (void*) params->standard );
-		free( params );
-	}
+	if ( params.standard )
+		free( (void*) params.standard );
 
 	// If successful, then try to get additional info
 	if ( !error )
