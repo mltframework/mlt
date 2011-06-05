@@ -111,6 +111,9 @@ struct producer_avformat_s
 	int colorspace;
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
+	mlt_deque apackets;
+	mlt_deque vpackets;
+	pthread_mutex_t packets_mutex;
 #ifdef VDPAU
 	struct
 	{
@@ -186,7 +189,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 					mlt_producer_close( producer );
 					producer = NULL;
 				}
-				else
+				else if ( self->seekable )
 				{
 					// Close the file to release resources for large playlists - reopen later as needed
 					avformat_lock();
@@ -737,6 +740,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	// Lock the service
 	pthread_mutex_init( &self->audio_mutex, NULL );
 	pthread_mutex_init( &self->video_mutex, NULL );
+	pthread_mutex_init( &self->packets_mutex, NULL );
 	pthread_mutex_lock( &self->audio_mutex );
 	pthread_mutex_lock( &self->video_mutex );
 
@@ -745,8 +749,11 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	AVFormatParameters *params = NULL;
 	char *filename = parse_url( profile, URL, &format, &params );
 
-	// Now attempt to open the file
+	// Now attempt to open the file or device with filename
 	error = av_open_input_file( &self->video_format, filename, format, 0, params ) < 0;
+	if ( error )
+		// If the URL is a network stream URL, then we probably need to open with full URL
+		error = av_open_input_file( &self->video_format, URL, format, 0, params ) < 0;
 
 	// Cleanup AVFormatParameters
 	if ( params )
@@ -778,9 +785,16 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 			// TODO: Is this really necessary?
 			if ( self->audio_index != -1 && self->video_index != -1 )
 			{
-				// And open again for our audio context
-				av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
-				av_find_stream_info( self->audio_format );
+				if ( self->seekable )
+				{
+					// And open again for our audio context
+					av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
+					av_find_stream_info( self->audio_format );
+				}
+				else
+				{
+					self->audio_format = self->video_format;
+				}
 			}
 			else if ( self->audio_index != -1 )
 			{
@@ -797,6 +811,11 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	}
 	if ( filename )
 		free( filename );
+	if ( !error )
+	{
+		self->apackets = mlt_deque_init();
+		self->vpackets = mlt_deque_init();
+	}
 
 	// Unlock the service
 	pthread_mutex_unlock( &self->audio_mutex );
@@ -864,7 +883,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 	mlt_producer producer = self->parent;
 	int paused = 0;
 
-	if ( position != self->video_expected || self->last_position < 0 )
+	if ( self->seekable && ( position != self->video_expected || self->last_position < 0 ) )
 	{
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
@@ -1348,7 +1367,27 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		while( ret >= 0 && !got_picture )
 		{
 			// Read a packet
-			ret = av_read_frame( context, &pkt );
+			pthread_mutex_lock( &self->packets_mutex );
+			if ( mlt_deque_count( self->vpackets ) )
+			{
+				AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->vpackets );
+				pkt = *tmp;
+				free( tmp );
+			}
+			else
+			{
+				ret = av_read_frame( context, &pkt );
+				if ( ret >= 0 && !self->seekable && pkt.stream_index == self->audio_index )
+				{
+					if ( !av_dup_packet( &pkt ) )
+					{
+						AVPacket *tmp = malloc( sizeof(AVPacket) );
+						*tmp = pkt;
+						mlt_deque_push_back( self->apackets, tmp );
+					}
+				}
+			}
+			pthread_mutex_unlock( &self->packets_mutex );
 
 			// We only deal with video from the selected video_index
 			if ( ret >= 0 && pkt.stream_index == self->video_index && pkt.size > 0 )
@@ -1530,7 +1569,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					got_picture = 0;
 				}
 			}
-			if ( ret >= 0 )
+			if ( self->seekable || pkt.stream_index != self->audio_index )
 				av_free_packet( &pkt );
 		}
 	}
@@ -1904,7 +1943,7 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 	int paused = 0;
 
 	// Seek if necessary
-	if ( position != self->audio_expected )
+	if ( self->seekable && position != self->audio_expected )
 	{
 		if ( position + 1 == self->audio_expected )
 		{
@@ -2165,7 +2204,27 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			}
 
 			// Read a packet
-			ret = av_read_frame( context, &pkt );
+			pthread_mutex_lock( &self->packets_mutex );
+			if ( mlt_deque_count( self->apackets ) )
+			{
+				AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->apackets );
+				pkt = *tmp;
+				free( tmp );
+			}
+			else
+			{
+				ret = av_read_frame( context, &pkt );
+				if ( ret >= 0 && !self->seekable && pkt.stream_index == self->video_index )
+				{
+					if ( !av_dup_packet( &pkt ) )
+					{
+						AVPacket *tmp = malloc( sizeof(AVPacket) );
+						*tmp = pkt;
+						mlt_deque_push_back( self->vpackets, tmp );
+					}
+				}
+			}
+			pthread_mutex_unlock( &self->packets_mutex );
 
 			// We only deal with audio from the selected audio index
 			index = pkt.stream_index;
@@ -2176,7 +2235,9 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 					self->audio_codec[index]->channels : *channels;
 				ret = decode_audio( self, &ignore, pkt, channels2, *samples, real_timecode, fps );
 			}
-			av_free_packet( &pkt );
+
+			if ( self->seekable || index != self->video_index )
+				av_free_packet( &pkt );
 
 			if ( self->audio_index == INT_MAX && ret >= 0 )
 			{
@@ -2482,7 +2543,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_avformat_close( producer_avformat self )
 {
 	mlt_log_debug( NULL, "producer_avformat_close\n" );
-	// Close the file
+
+	// Cleanup av contexts
 	av_free( self->av_frame );
 	avformat_lock();
 	int i;
@@ -2497,9 +2559,10 @@ static void producer_avformat_close( producer_avformat self )
 	}
 	if ( self->video_codec )
 		avcodec_close( self->video_codec );
+	// Close the file
 	if ( self->dummy_context )
 		av_close_input_file( self->dummy_context );
-	if ( self->audio_format )
+	if ( self->seekable && self->audio_format )
 		av_close_input_file( self->audio_format );
 	if ( self->video_format )
 		av_close_input_file( self->video_format );
@@ -2509,8 +2572,25 @@ static void producer_avformat_close( producer_avformat self )
 #endif
 	if ( self->image_cache )
 		mlt_cache_close( self->image_cache );
+
+	// Cleanup the mutexes
 	pthread_mutex_destroy( &self->audio_mutex );
 	pthread_mutex_destroy( &self->video_mutex );
+	pthread_mutex_destroy( &self->packets_mutex );
+
+	// Cleanup the packet queues
+	AVPacket *pkt;
+	while ( ( pkt = mlt_deque_pop_back( self->apackets ) ) )
+	{
+		av_free_packet( pkt );
+		free( pkt );
+	}
+	while ( ( pkt = mlt_deque_pop_back( self->vpackets ) ) )
+	{
+		av_free_packet( pkt );
+		free( pkt );
+	}
+
 	free( self );
 }
 
