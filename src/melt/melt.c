@@ -376,7 +376,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 
 static void show_usage( char *program_name )
 {
-	fprintf( stderr,
+	fprintf( stdout,
 "Usage: %s [options] [producer [name=value]* ]+\n"
 "Options:\n"
 "  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
@@ -428,12 +428,12 @@ static void query_metadata( mlt_repository repo, mlt_service_type type, const ch
 	if ( metadata )
 	{
 		char *s = mlt_properties_serialise_yaml( metadata );
-		fprintf( stderr, "%s", s );
+		fprintf( stdout, "%s", s );
 		free( s );
 	}
 	else
 	{
-		fprintf( stderr, "# No metadata for %s \"%s\"\n", typestr, id );
+		fprintf( stdout, "# No metadata for %s \"%s\"\n", typestr, id );
 	}
 }
 
@@ -462,27 +462,27 @@ static void query_services( mlt_repository repo, mlt_service_type type )
 		default:
 			return;
 	}
-	fprintf( stderr, "---\n%s:\n", typestr );
+	fprintf( stdout, "---\n%s:\n", typestr );
 	if ( services )
 	{
 		int j;
 		for ( j = 0; j < mlt_properties_count( services ); j++ )
-			fprintf( stderr, "  - %s\n", mlt_properties_get_name( services, j ) );
+			fprintf( stdout, "  - %s\n", mlt_properties_get_name( services, j ) );
 	}
-	fprintf( stderr, "...\n" );
+	fprintf( stdout, "...\n" );
 }
 
 static void query_profiles()
 {
 	mlt_properties profiles = mlt_profile_list();
-	fprintf( stderr, "---\nprofiles:\n" );
+	fprintf( stdout, "---\nprofiles:\n" );
 	if ( profiles )
 	{
 		int j;
 		for ( j = 0; j < mlt_properties_count( profiles ); j++ )
-			fprintf( stderr, "  - %s\n", mlt_properties_get_name( profiles, j ) );
+			fprintf( stdout, "  - %s\n", mlt_properties_get_name( profiles, j ) );
 	}
-	fprintf( stderr, "...\n" );
+	fprintf( stdout, "...\n" );
 	mlt_properties_close( profiles );
 }
 
@@ -493,12 +493,12 @@ static void query_profile( const char *id )
 	if ( profile )
 	{
 		char *s = mlt_properties_serialise_yaml( profile );
-		fprintf( stderr, "%s", s );
+		fprintf( stdout, "%s", s );
 		free( s );
 	}
 	else
 	{
-		fprintf( stderr, "# No metadata for profile \"%s\"\n", id );
+		fprintf( stdout, "# No metadata for profile \"%s\"\n", id );
 	}
 	mlt_properties_close( profiles );
 }
@@ -506,14 +506,14 @@ static void query_profile( const char *id )
 static void query_presets()
 {
 	mlt_properties presets = mlt_repository_presets();
-	fprintf( stderr, "---\npresets:\n" );
+	fprintf( stdout, "---\npresets:\n" );
 	if ( presets )
 	{
 		int j;
 		for ( j = 0; j < mlt_properties_count( presets ); j++ )
-			fprintf( stderr, "  - %s\n", mlt_properties_get_name( presets, j ) );
+			fprintf( stdout, "  - %s\n", mlt_properties_get_name( presets, j ) );
 	}
-	fprintf( stderr, "...\n" );
+	fprintf( stdout, "...\n" );
 	mlt_properties_close( presets );
 }
 
@@ -524,12 +524,12 @@ static void query_preset( const char *id )
 	if ( preset )
 	{
 		char *s = mlt_properties_serialise_yaml( preset );
-		fprintf( stderr, "%s", s );
+		fprintf( stdout, "%s", s );
 		free( s );
 	}
 	else
 	{
-		fprintf( stderr, "# No metadata for preset \"%s\"\n", id );
+		fprintf( stdout, "# No metadata for preset \"%s\"\n", id );
 	}
 	mlt_properties_close( presets );
 }
@@ -545,7 +545,7 @@ static void query_formats( )
 	}
 	else
 	{
-		fprintf( stderr, "# No formats - failed to load avformat consumer\n" );
+		fprintf( stdout, "# No formats - failed to load avformat consumer\n" );
 	}
 }
 
@@ -560,7 +560,7 @@ static void query_acodecs( )
 	}
 	else
 	{
-		fprintf( stderr, "# No audio codecs - failed to load avformat consumer\n" );
+		fprintf( stdout, "# No audio codecs - failed to load avformat consumer\n" );
 	}
 }
 
@@ -575,7 +575,7 @@ static void query_vcodecs( )
 	}
 	else
 	{
-		fprintf( stderr, "# No video codecs - failed to load avformat consumer\n" );
+		fprintf( stdout, "# No video codecs - failed to load avformat consumer\n" );
 	}
 }
 
@@ -677,7 +677,7 @@ query_all:
 				query_services( repo, filter_type );
 				query_services( repo, producer_type );
 				query_services( repo, transition_type );
-				fprintf( stderr, "# You can query the metadata for a specific service using:\n"
+				fprintf( stdout, "# You can query the metadata for a specific service using:\n"
 					"# -query <type>=<identifer>\n"
 					"# where <type> is one of: consumer, filter, producer, or transition.\n" );
 			}
@@ -693,7 +693,7 @@ query_all:
 		}
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
-			fprintf( stderr, "MLT %s " VERSION "\n"
+			fprintf( stdout, "MLT %s " VERSION "\n"
 				"Copyright (C) 2002-2011 Ushodaya Enterprises Limited\n"
 				"<http://www.mltframework.org/>\n"
 				"This is free software; see the source for copying conditions.  There is NO\n"
