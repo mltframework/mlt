@@ -548,7 +548,7 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 {
 	if ( !URL ) return NULL;
 
-	char *result = NULL;
+	const char *result = URL;
 	char *protocol = strdup( URL );
 	char *url = strchr( protocol, ':' );
 
@@ -561,6 +561,7 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	{
 		// Truncate protocol string
 		url[0] = 0;
+		mlt_log_debug( NULL, "%s: protocol=%s resource=%s\n", __FUNCTION__, protocol, url + 1 );
 
 		// Lookup the format
 		*format = av_find_input_format( protocol );
@@ -621,7 +622,7 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 		}
 	}
 	free( protocol );
-	return result ? strdup( result ) : strdup( URL );
+	return strdup( result );
 }
 
 static int get_basic_info( producer_avformat self, mlt_profile profile, const char *filename )
