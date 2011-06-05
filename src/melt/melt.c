@@ -28,6 +28,7 @@
 #include <sched.h>
 #include <libgen.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include <framework/mlt.h>
 
@@ -625,7 +626,7 @@ int main( int argc, char **argv )
 			if ( pname && pname[0] != '-' )
 				profile = mlt_profile_init( pname );
 		}
-		else if ( !strcmp( argv[ i ], "-progress" ) )
+		else if ( !strcmp( argv[ i ], "-progress" ) || !isatty( STDIN_FILENO ) )
 		{
 			is_progress = 1;
 		}
