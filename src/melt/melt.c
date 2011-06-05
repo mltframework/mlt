@@ -625,8 +625,7 @@ int main( int argc, char **argv )
 			if ( pname && pname[0] != '-' )
 				profile = mlt_profile_init( pname );
 		}
-		else if ( !strcmp( argv[ i ], "-progress" ) ||
-			!strcmp( argv[i], "pipe:" ) || strstr( argv[i], ":pipe:" ) )
+		else if ( !strcmp( argv[ i ], "-progress" ) )
 		{
 			is_progress = 1;
 		}
