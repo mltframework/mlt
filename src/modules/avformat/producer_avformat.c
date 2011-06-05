@@ -141,6 +141,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame );
 static void producer_set_up_audio( producer_avformat self, mlt_frame frame );
 static void apply_properties( void *obj, mlt_properties properties, int flags );
 static int video_codec_init( producer_avformat self, int index, mlt_properties properties );
+static void get_audio_streams_info( producer_avformat self );
 
 #ifdef VDPAU
 #include "vdpau.c"
@@ -193,9 +194,6 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 				{
 					// Close the file to release resources for large playlists - reopen later as needed
 					avformat_lock();
-					if ( self->dummy_context )
-						av_close_input_file( self->dummy_context );
-					self->dummy_context = NULL;
 					if ( self->audio_format )
 						av_close_input_file( self->audio_format );
 					self->audio_format = NULL;
@@ -737,11 +735,13 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 {
 	// Return an error code (0 == no error)
 	int error = 0;
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 
 	// Lock the service
 	pthread_mutex_init( &self->audio_mutex, NULL );
 	pthread_mutex_init( &self->video_mutex, NULL );
 	pthread_mutex_init( &self->packets_mutex, NULL );
+	mlt_events_block( properties, self->parent );
 	pthread_mutex_lock( &self->audio_mutex );
 	pthread_mutex_lock( &self->video_mutex );
 
@@ -755,6 +755,13 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	if ( error )
 		// If the URL is a network stream URL, then we probably need to open with full URL
 		error = av_open_input_file( &self->video_format, URL, format, 0, params ) < 0;
+
+	// Set MLT properties onto video AVFormatContext
+	apply_properties( self->video_format, properties, AV_OPT_FLAG_DECODING_PARAM );
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+	if ( self->video_format->iformat && self->video_format->iformat->priv_class && self->video_format->priv_data )
+		apply_properties( self->video_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
+#endif
 
 	// Cleanup AVFormatParameters
 	if ( params )
@@ -790,6 +797,11 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 				{
 					// And open again for our audio context
 					av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
+					apply_properties( self->audio_format, properties, AV_OPT_FLAG_DECODING_PARAM );
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+					if ( self->audio_format->iformat && self->audio_format->iformat->priv_class && self->audio_format->priv_data )
+						apply_properties( self->audio_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
+#endif
 					av_find_stream_info( self->audio_format );
 				}
 				else
@@ -808,6 +820,8 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 				// Something has gone wrong
 				error = -1;
 			}
+			if ( self->audio_format && !self->audio_streams )
+				get_audio_streams_info( self );
 		}
 	}
 	if ( filename )
@@ -818,9 +832,16 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 		self->vpackets = mlt_deque_init();
 	}
 
+	if ( self->dummy_context )
+	{
+		av_close_input_file( self->dummy_context );
+		self->dummy_context = NULL;
+	}
+
 	// Unlock the service
 	pthread_mutex_unlock( &self->audio_mutex );
 	pthread_mutex_unlock( &self->video_mutex );
+	mlt_events_unblock( properties, self->parent );
 
 	return error;
 }
@@ -848,24 +869,12 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 	int audio_index = self->audio_index;
 	int video_index = self->video_index;
 
-	mlt_events_block( properties, producer );
 	pthread_mutex_unlock( &self->audio_mutex );
 	pthread_mutex_unlock( &self->video_mutex );
 	producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 		mlt_properties_get( properties, "resource" ) );
 	pthread_mutex_lock( &self->video_mutex );
 	pthread_mutex_lock( &self->audio_mutex );
-	if ( self->dummy_context )
-	{
-		av_close_input_file( self->dummy_context );
-		self->dummy_context = NULL;
-	}
-	mlt_events_unblock( properties, producer );
-	apply_properties( self->video_format, properties, AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR > 52
-	if ( self->video_format->iformat && self->video_format->iformat->priv_class && self->video_format->priv_data )
-		apply_properties( self->video_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
-#endif
 
 	self->audio_index = audio_index;
 	if ( self->video_format && video_index > -1 )
@@ -1845,28 +1854,9 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	// Reopen the file if necessary
 	if ( !context && index > -1 )
 	{
-		mlt_events_block( properties, producer );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = self->video_format;
-		if ( self->dummy_context )
-		{
-			av_close_input_file( self->dummy_context );
-			self->dummy_context = NULL;
-		}
-		mlt_events_unblock( properties, producer );
-		if ( self->audio_format && !self->audio_streams )
-			get_audio_streams_info( self );
-
-		// Process properties as AVOptions
-		if ( context )
-		{
-			apply_properties( context, properties, AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR > 52
-			if ( context->iformat && context->iformat->priv_class && context->priv_data )
-				apply_properties( context->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
-#endif
-		}
 	}
 
 	// Exception handling for video_index
@@ -2417,18 +2407,9 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	// Reopen the file if necessary
 	if ( !context && self->audio_index > -1 && index > -1 )
 	{
-		mlt_events_block( properties, producer );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ) );
 		context = self->audio_format;
-		if ( self->dummy_context )
-		{
-			av_close_input_file( self->dummy_context );
-			self->dummy_context = NULL;
-		}
-		mlt_events_unblock( properties, producer );
-		if ( self->audio_format )
-			get_audio_streams_info( self );
 	}
 
 	// Exception handling for audio_index
