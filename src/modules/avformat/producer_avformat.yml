@@ -25,7 +25,7 @@ bugs:
 
 parameters:
   - identifier: argument # 'argument' is a reserved name for a value supplied to the factory
-    title: File/URI
+    title: File/URL
     type: string
     description: |
       A file name specification or URL in the form:
@@ -107,7 +107,7 @@ parameters:
     # no default property means it should be blank in the UI and not applied unless provided
 
   - identifier: resource
-    title: File/URI
+    title: File/URL
     type: string
     description: file or protocol specification
     readonly: yes

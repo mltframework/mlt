@@ -16,13 +16,13 @@ tags:
 description: Write or stream audio and/or video using FFmpeg
 parameters:
   - identifier: argument
-    title: File/URI
+    title: File/URL
     type: string
     required: yes
     widget: filesave
 
   - identifier: target
-    title: File/URI
+    title: File/URL
     type: string
     description: This is not the same thing as the ffmpeg -target option!
     readonly: yes
