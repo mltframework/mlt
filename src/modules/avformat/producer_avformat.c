@@ -665,7 +665,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	{
 		// protocols can indicate if they support seeking
 #if LIBAVFORMAT_VERSION_MAJOR > 52
-		self->seekable = context->pb->seekable;
+		self->seekable = format->pb->seekable;
 #else
 		URLContext *uc = url_fileno( format->pb );
 		if ( uc )
