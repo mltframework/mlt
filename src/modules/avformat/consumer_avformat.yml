@@ -27,14 +27,14 @@ parameters:
     description: This is not the same thing as the ffmpeg -target option!
     readonly: yes
 
-  - identifier: profile
-    title: Profile
+  - identifier: mlt_profile
+    title: MLT Profile
     type: string
     description: >
       Choose a MLT basic video settings preset.
       This overrides a profile that may have been set elsewhere.
 
-# These override the profile
+# These override the MLT profile
   - identifier: width
     title: Width
     type: integer

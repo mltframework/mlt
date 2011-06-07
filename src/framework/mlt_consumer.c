@@ -154,7 +154,7 @@ static void apply_profile_properties( mlt_consumer self, mlt_profile profile, ml
 
 static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, char *name )
 {
-	if ( !strcmp( name, "profile" ) )
+	if ( !strcmp( name, "mlt_profile" ) )
 	{
 		// Get the properies
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
