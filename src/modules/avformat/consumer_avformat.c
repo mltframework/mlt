@@ -936,6 +936,8 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 
 void close_video(AVFormatContext *oc, AVStream *st)
 {
+	// TODO: remove this hack when we figure out cause
+	return;
 	if ( st && st->codec )
 	{
 		avformat_lock();
