@@ -132,7 +132,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set( properties, "encoding", "UTF-8" );
 		mlt_properties_set_int( properties, "weight", PANGO_WEIGHT_NORMAL );
 
-		if ( filename == NULL )
+		if ( filename == NULL || ( filename && !strcmp( filename, "" ) ) )
 		{
 			mlt_properties_set( properties, "markup", "" );
 		}
