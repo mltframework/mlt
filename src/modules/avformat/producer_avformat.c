@@ -1312,7 +1312,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				  strcmp( codec_context->codec->name, "rawvideo" );
 
 	// Turn on usage of new seek API and PTS for seeking
-	int use_new_seek = codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
+	int use_new_seek = self->seekable &&
+		codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
 	if ( mlt_properties_get( properties, "new_seek" ) )
 		use_new_seek = mlt_properties_get_int( properties, "new_seek" );
 
