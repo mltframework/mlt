@@ -626,7 +626,7 @@ int main( int argc, char **argv )
 			if ( pname && pname[0] != '-' )
 				profile = mlt_profile_init( pname );
 		}
-		else if ( !strcmp( argv[ i ], "-progress" ) || !isatty( STDIN_FILENO ) )
+		else if ( !strcmp( argv[ i ], "-progress" ) )
 		{
 			is_progress = 1;
 		}
@@ -706,6 +706,8 @@ query_all:
 			mlt_log_set_level( MLT_LOG_DEBUG );
 		}
 	}
+	if ( !is_silent && !isatty( STDIN_FILENO ) )
+		is_progress = 1;
 
 	// Create profile if not set explicitly
 	if ( getenv( "MLT_PROFILE" ) )
