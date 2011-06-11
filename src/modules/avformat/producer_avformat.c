@@ -2105,10 +2105,15 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	double fps = mlt_producer_get_fps( self->parent );
 
 	// Number of frames to ignore (for ffwd)
-	int ignore = 0;
+	int ignore[ MAX_AUDIO_STREAMS ] = { 0 };
 
 	// Flag for paused (silence)
-	int paused = seek_audio( self, position, real_timecode, &ignore );
+	int paused = seek_audio( self, position, real_timecode, &ignore[0] );
+
+	// Initialize ignore for all streams from the seek return value
+	int i = MAX_AUDIO_STREAMS;
+	while ( i-- )
+		ignore[i] = ignore[0];
 
 	// Fetch the audio_format
 	AVFormatContext *context = self->audio_format;
@@ -2189,10 +2194,22 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		while ( ret >= 0 && !got_audio )
 		{
 			// Check if the buffer already contains the samples required
-			if ( self->audio_index != INT_MAX && self->audio_used[ self->audio_index ] >= *samples && ignore == 0 )
+			if ( self->audio_index != INT_MAX &&
+				 self->audio_used[ self->audio_index ] >= *samples &&
+				 ignore[ self->audio_index ] == 0 )
 			{
 				got_audio = 1;
 				break;
+			}
+			else if ( self->audio_index == INT_MAX )
+			{
+				// Check if there is enough audio for all streams
+				got_audio = 1;
+				for ( index = 0; got_audio && index < context->nb_streams; index++ )
+					if ( ( self->audio_codec[ index ] && self->audio_used[ index ] < *samples ) || ignore[ index ] )
+						got_audio = 0;
+				if ( got_audio )
+					break;
 			}
 
 			// Read a packet
@@ -2225,22 +2242,12 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			{
 				int channels2 = ( self->audio_index == INT_MAX || !self->audio_resample[index] ) ?
 					self->audio_codec[index]->channels : *channels;
-				ret = decode_audio( self, &ignore, pkt, channels2, *samples, real_timecode, fps );
+				ret = decode_audio( self, &ignore[index], pkt, channels2, *samples, real_timecode, fps );
 			}
 
 			if ( self->seekable || index != self->video_index )
 				av_free_packet( &pkt );
 
-			if ( self->audio_index == INT_MAX && ret >= 0 )
-			{
-				// Determine if there is enough audio for all streams
-				got_audio = 1;
-				for ( index = 0; index < context->nb_streams; index++ )
-				{
-					if ( self->audio_codec[ index ] && self->audio_used[ index ] < *samples )
-						got_audio = 0;
-				}
-			}
 		}
 
 		// Set some additional return values
