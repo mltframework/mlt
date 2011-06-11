@@ -94,6 +94,7 @@ struct producer_avformat_s
 	int last_position;
 	int seekable;
 	int current_position;
+	mlt_position nonseek_position;
 	int got_picture;
 	int top_field_first;
 	uint8_t *audio_buffer[ MAX_AUDIO_STREAMS ];
@@ -1327,7 +1328,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	codec_context = stream->codec;
 
 	// Duplicate the last image if necessary
-	if ( self->av_frame && self->av_frame->linesize[0] && self->got_picture && self->seekable
+	if ( self->av_frame && self->av_frame->linesize[0] && self->got_picture
 		 && ( paused
 			  || self->current_position == req_position
 			  || ( !use_new_seek && self->current_position > req_position ) ) )
@@ -1429,17 +1430,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				}
 				else
 				{
-					if ( self->seekable && pkt.dts != AV_NOPTS_VALUE )
+					if ( pkt.dts != AV_NOPTS_VALUE )
 					{
 						int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
 						if ( context->start_time != AV_NOPTS_VALUE )
 							int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
 						if ( int_position == self->last_position )
 							int_position = self->last_position + 1;
-					}
-					else
-					{
-						int_position = req_position;
 					}
 					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %"PRId64" req_pos %d cur_pos %d pkt_pos %d\n",
 						pkt.dts, req_position, self->current_position, int_position );
@@ -2067,7 +2064,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		if ( context->start_time != AV_NOPTS_VALUE )
 			int_position -= ( int )( fps * context->start_time / AV_TIME_BASE + 0.5 );
 
-		if ( self->seekable && *ignore == 0 )
+		if ( *ignore == 0 )
 		{
 			if ( int_position < req_position )
 				// We are behind, so skip some
@@ -2517,7 +2514,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 	// Set the position of this producer
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", mlt_producer_frame( producer ) );
+	mlt_position position = self->seekable ? mlt_producer_frame( producer ) : self->nonseek_position++;
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", position );
 	
 	// Set up the video
 	producer_set_up_video( self, *frame );
