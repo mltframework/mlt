@@ -615,8 +615,9 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			}
 		}
 	}
+	result = strdup( result );
 	free( protocol );
-	return strdup( result );
+	return result;
 }
 
 static int get_basic_info( producer_avformat self, mlt_profile profile, const char *filename )
@@ -768,13 +769,13 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 		free( (void*) params.standard );
 
 	// If successful, then try to get additional info
-	if ( !error )
+	if ( !error && self->video_format )
 	{
 		// Get the stream info
 		error = av_find_stream_info( self->video_format ) < 0;
 
 		// Continue if no error
-		if ( !error )
+		if ( !error && self->video_format )
 		{
 			// Find default audio and video streams
 			find_default_streams( self );
