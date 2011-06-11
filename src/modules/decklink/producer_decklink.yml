@@ -28,9 +28,6 @@ parameters:
   - identifier: argument
     title: Card
     type: integer
-    readonly: no
-    required: no
-    mutable: no
     default: 0
     minimum: 0
     widget: spinner
@@ -41,18 +38,15 @@ parameters:
     readonly: yes
 
   - identifier: channels
-    title: Audio Channels
+    title: Audio channels
     type: integer
-    readonly: no
-    required: no
-    mutable: no
     default: 2
     minimum: 2
     maximum: 16
     widget: spinner
 
   - identifier: buffer
-    title: Maximum Buffer
+    title: Maximum buffer
     description: >
       There is a queue of frames between this plugin and its consumer.
       If the consumer has a little, intermittent delay then it reduces the
@@ -60,9 +54,15 @@ parameters:
       frames that can be buffered to prevent consuming memory unbounded in
       the case of frequent or sustained delays.
     type: integer
-    readonly: no
-    required: no
-    mutable: no
+    default: 25
+    minimum: 0
+    unit: frames
+    widget: spinner
+
+  - identifier: prefill
+    title: Initial buffer
+    description: Initially fill the buffer with a number of frames.
+    type: integer
     default: 25
     minimum: 0
     unit: frames

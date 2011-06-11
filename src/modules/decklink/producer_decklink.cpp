@@ -38,6 +38,7 @@ private:
 	pthread_cond_t   m_condition;
 	bool             m_started;
 	int              m_dropped;
+	bool             m_isBuffering;
 
 	BMDDisplayMode getDisplayMode( mlt_profile profile )
 	{
@@ -116,6 +117,7 @@ public:
 			m_queue = mlt_deque_init();
 			m_started = false;
 			m_dropped = 0;
+			m_isBuffering = true;
 		}
 		catch ( const char *error )
 		{
@@ -196,6 +198,30 @@ public:
 		mlt_frame frame = NULL;
 		struct timeval now;
 		struct timespec tm;
+		double fps = mlt_producer_get_fps( getProducer() );
+
+		// Allow the buffer to fill to the requested initial buffer level.
+		if ( m_isBuffering )
+		{
+			int prefill = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "prefill" );
+			int buffer = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "buffer" );
+
+			m_isBuffering = false;
+			prefill = prefill > buffer ? buffer : prefill;
+			pthread_mutex_lock( &m_mutex );
+			while ( mlt_deque_count( m_queue ) < prefill )
+			{
+				// Wait up to buffer/fps seconds
+				gettimeofday( &now, NULL );
+				long usec = now.tv_sec * 1000000 + now.tv_usec;
+				usec += 1000000 * buffer / fps;
+				tm.tv_sec = usec / 1000000;
+				tm.tv_nsec = (usec % 1000000) * 1000;
+				if ( pthread_cond_timedwait( &m_condition, &m_mutex, &tm ) )
+					break;
+			}
+			pthread_mutex_unlock( &m_mutex );
+		}
 
 		// Wait if queue is empty
 		pthread_mutex_lock( &m_mutex );
@@ -204,7 +230,7 @@ public:
 			// Wait up to twice frame duration
 			gettimeofday( &now, NULL );
 			tm.tv_sec = now.tv_sec;
-			now.tv_usec += 2000000 / mlt_producer_get_fps( getProducer() );
+			now.tv_usec += 2000000 / fps;
 			tm.tv_nsec = now.tv_usec * 1000;
 			if ( pthread_cond_timedwait( &m_condition, &m_mutex, &tm ) )
 				// Stop waiting if error (timed out)
@@ -410,6 +436,9 @@ mlt_producer producer_decklink_init( mlt_profile profile, mlt_service_type type,
 			mlt_properties_set( properties, "resource", arg? arg : "0" );
 			mlt_properties_set_int( properties, "channels", 2 );
 			mlt_properties_set_int( properties, "buffer", 25 );
+			mlt_properties_set_int( properties, "prefill", 25 );
+
+			// These properties effectively make it infinite.
 			mlt_properties_set_int( properties, "length", INT_MAX );
 			mlt_properties_set_int( properties, "out", INT_MAX - 1 );
 			mlt_properties_set( properties, "eof", "loop" );
