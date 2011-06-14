@@ -229,9 +229,10 @@ public:
 		{
 			// Wait up to twice frame duration
 			gettimeofday( &now, NULL );
-			tm.tv_sec = now.tv_sec;
-			now.tv_usec += 2000000 / fps;
-			tm.tv_nsec = now.tv_usec * 1000;
+			long usec = now.tv_sec * 1000000 + now.tv_usec;
+			usec += 2000000 / fps;
+			tm.tv_sec = usec / 1000000;
+			tm.tv_nsec = (usec % 1000000) * 1000;
 			if ( pthread_cond_timedwait( &m_condition, &m_mutex, &tm ) )
 				// Stop waiting if error (timed out)
 				break;
