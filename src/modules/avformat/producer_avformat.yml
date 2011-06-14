@@ -200,3 +200,13 @@ parameters:
       - 240 # SMPTE 240M
       - 601 # ITU-R BT.601
       - 709 # ITU-R BT.709
+
+  - identifier: video_delay
+    title: Video delay
+    description: >
+      Manually adjust A/V synchronization.
+      A negative value advances the video instead of delaying it.
+    type: float
+    default: 0
+    unit: seconds
+    widget: timecode

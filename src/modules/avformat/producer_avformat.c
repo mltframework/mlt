@@ -1432,7 +1432,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					if ( pkt.dts != AV_NOPTS_VALUE )
 					{
-						int_position = ( int )( av_q2d( stream->time_base ) * pkt.dts * source_fps + 0.5 );
+						double delay = mlt_properties_get_double( properties, "video_delay" );
+						int_position = ( int )( ( av_q2d( stream->time_base ) * pkt.dts + delay ) * source_fps + 0.5 );
 						if ( context->start_time != AV_NOPTS_VALUE )
 							int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
 						if ( int_position == self->last_position )
