@@ -39,6 +39,8 @@ private:
 	bool             m_started;
 	int              m_dropped;
 	bool             m_isBuffering;
+	int              m_topFieldFirst;
+	int              m_colorspace;
 
 	BMDDisplayMode getDisplayMode( mlt_profile profile )
 	{
@@ -57,9 +59,12 @@ private:
 				mode->GetFrameRate( &duration, &timescale );
 				double fps = (double) timescale / duration;
 				int p = mode->GetFieldDominance() == bmdProgressiveFrame;
-				mlt_log_verbose( getProducer(), "BMD mode %dx%d %.3f fps prog %d\n", width, height, fps, p );
+				m_topFieldFirst = mode->GetFieldDominance() == bmdUpperFieldFirst;
+				m_colorspace = ( mode->GetFlags() & bmdDisplayModeColorspaceRec709 ) ? 709 : 601;
+				mlt_log_verbose( getProducer(), "BMD mode %dx%d %.3f fps prog %d tff %d\n", width, height, fps, p, m_topFieldFirst );
 
-				if ( width == profile->width && height == profile->height && p == profile->progressive
+				if ( width == profile->width && p == profile->progressive
+					 && ( height == profile->height || ( height == 486 && profile->height == 480 ) )
 					 && fps == mlt_profile_fps( profile ) )
 					result = mode->GetDisplayMode();
 			}
@@ -143,9 +148,20 @@ public:
 			if ( displayMode == bmdDisplayModeNotSupported )
 				throw "Profile is not compatible with decklink.";
 
+			// Determine if supports input format detection
+			bool doesDetectFormat = false;
+			IDeckLinkAttributes *decklinkAttributes = 0;
+			if ( m_decklink->QueryInterface( IID_IDeckLinkAttributes, (void**) &decklinkAttributes ) == S_OK )
+			{
+				if ( decklinkAttributes->GetFlag( BMDDeckLinkSupportsInputFormatDetection, &doesDetectFormat ) != S_OK )
+					doesDetectFormat = false;
+				decklinkAttributes->Release();
+			}
+			mlt_log_verbose( getProducer(), "%s format detection\n", doesDetectFormat ? "supports" : "does not support" );
+
 			// Enable video capture
 			BMDPixelFormat pixelFormat = bmdFormat8BitYUV;
-			BMDVideoInputFlags flags = bmdVideoInputFlagDefault;
+			BMDVideoInputFlags flags = doesDetectFormat ? bmdVideoInputEnableFormatDetection : bmdVideoInputFlagDefault;
 			if ( S_OK != m_decklinkInput->EnableVideoInput( displayMode, pixelFormat, flags ) )
 				throw "Failed to enable video capture.";
 
@@ -248,12 +264,22 @@ public:
 			mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( getProducer() ) );
 			mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 			mlt_properties_set_int( properties, "progressive", profile->progressive );
+			mlt_properties_set_int( properties, "meta.media.progressive", profile->progressive );
+			mlt_properties_set_int( properties, "top_field_first", m_topFieldFirst );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", profile->sample_aspect_num );
+			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", profile->sample_aspect_den );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_num", profile->frame_rate_num );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_den", profile->frame_rate_den );
 			mlt_properties_set_int( properties, "width", profile->width );
 			mlt_properties_set_int( properties, "real_width", profile->width );
+			mlt_properties_set_int( properties, "meta.media.width", profile->width );
 			mlt_properties_set_int( properties, "height", profile->height );
 			mlt_properties_set_int( properties, "real_height", profile->height );
+			mlt_properties_set_int( properties, "meta.media.height", profile->height );
 			mlt_properties_set_int( properties, "format", mlt_image_yuv422 );
+			mlt_properties_set_int( properties, "colorspace", m_colorspace );
+			mlt_properties_set_int( properties, "meta.media.colorspace", m_colorspace );
 			mlt_properties_set_int( properties, "audio_frequency", 48000 );
 			mlt_properties_set_int( properties, "audio_channels",
 				mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "channels" ) );
@@ -369,6 +395,57 @@ public:
 			IDeckLinkDisplayMode* mode,
 			BMDDetectedVideoInputFormatFlags flags )
 	{
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( getProducer() ) );
+		if ( events & bmdVideoInputDisplayModeChanged )
+		{
+			BMDTimeValue duration;
+			BMDTimeScale timescale;
+			mode->GetFrameRate( &duration, &timescale );
+			profile->width = mode->GetWidth();
+			profile->height = mode->GetHeight();
+			profile->height = profile->height == 486 ? 480 : profile->height;
+			profile->frame_rate_num = timescale;
+			profile->frame_rate_den = duration;
+			if ( profile->width == 720 )
+			{
+				if ( profile->height == 576 )
+				{
+					profile->sample_aspect_num = 16;
+					profile->sample_aspect_den = 15;
+				}
+				else
+				{
+					profile->sample_aspect_num = 8;
+					profile->sample_aspect_den = 9;
+				}
+				profile->display_aspect_num = 4;
+				profile->display_aspect_den = 3;
+			}
+			else
+			{
+				profile->sample_aspect_num = 1;
+				profile->sample_aspect_den = 1;
+				profile->display_aspect_num = 16;
+				profile->display_aspect_den = 9;
+			}
+			free( profile->description );
+			profile->description = strdup( "decklink" );
+			mlt_log_verbose( getProducer(), "format changed %dx%d %.3f fps\n",
+				profile->width, profile->height, (double) profile->frame_rate_num / profile->frame_rate_den );
+		}
+		if ( events & bmdVideoInputFieldDominanceChanged )
+		{
+			profile->progressive = mode->GetFieldDominance() == bmdProgressiveFrame;
+			m_topFieldFirst = mode->GetFieldDominance() == bmdUpperFieldFirst;
+			mlt_log_verbose( getProducer(), "field dominance changed prog %d tff %d\n",
+				profile->progressive, m_topFieldFirst );
+		}
+		if ( events & bmdVideoInputColorspaceChanged )
+		{
+			profile->colorspace = m_colorspace =
+				( mode->GetFlags() & bmdDisplayModeColorspaceRec709 ) ? 709 : 601;
+			mlt_log_verbose( getProducer(), "colorspace changed %d\n", profile->colorspace );
+		}
 		return S_OK;
 	}
 };
