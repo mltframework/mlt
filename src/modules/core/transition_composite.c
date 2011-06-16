@@ -1120,6 +1120,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Calculate the position
 		double delta = mlt_transition_get_progress_delta( this, a_frame );
+		mlt_position length = mlt_transition_get_length( this );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
@@ -1233,7 +1234,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
 				// Assume lower field (0) first
-				double field_position = position + field * delta;
+				double field_position = position + field * delta * length;
 				
 				// Do the calculation if we need to
 				// NB: Locks needed here since the properties are being modified

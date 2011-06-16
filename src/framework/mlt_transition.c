@@ -285,7 +285,7 @@ double mlt_transition_get_progress_delta( mlt_transition self, mlt_frame frame )
 		double length = out - in + 1;
 		double x = ( double ) ( position - in ) / length;
 		double y = ( double ) ( position + 1 - in ) / length;
-		progress = length * ( y - x ) / 2.0;
+		progress = ( y - x ) / 2.0;
 	}
 	return progress;
 }
