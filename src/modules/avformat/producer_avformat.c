@@ -1409,7 +1409,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						pts -= self->first_pts;
 					else if ( context->start_time != AV_NOPTS_VALUE )
 						pts -= context->start_time;
-					int_position = ( int )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 );
+					int_position = ( int64_t )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 ) & 0x7fffffff;
 					if ( pkt.pts == AV_NOPTS_VALUE )
 					{
 						self->invalid_pts_counter++;
@@ -1433,9 +1433,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					if ( pkt.dts != AV_NOPTS_VALUE )
 					{
 						double delay = mlt_properties_get_double( properties, "video_delay" );
-						int_position = ( int )( ( av_q2d( stream->time_base ) * pkt.dts + delay ) * source_fps + 0.5 );
+						int_position = ( int64_t )( ( av_q2d( stream->time_base ) * pkt.dts + delay ) * source_fps + 0.5 ) & 0x7fffffff;
 						if ( context->start_time != AV_NOPTS_VALUE )
-							int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
+							int_position -= ( int64_t )( context->start_time * source_fps / AV_TIME_BASE + 0.5 ) & 0x7fffffff;
 						if ( int_position == self->last_position )
 							int_position = self->last_position + 1;
 					}
@@ -1495,7 +1495,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							pts -= self->first_pts;
 						else if ( context->start_time != AV_NOPTS_VALUE )
 							pts -= context->start_time;
-						int_position = ( int )( av_q2d( stream->time_base) * pts * source_fps + 0.1 );
+						int_position = ( int64_t )( av_q2d( stream->time_base) * pts * source_fps + 0.1 ) & 0x7fffffff;
 						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "got frame %d, key %d\n", int_position, self->av_frame->key_frame );
 					}
 					// Handle ignore
@@ -2061,9 +2061,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	{
 		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt.pts;
 		int req_position = ( int )( timecode * fps + 0.5 );
-		int int_position = ( int )( current_pts * fps + 0.5 );
+		int int_position = ( int64_t )( current_pts * fps + 0.5 ) & 0x7fffffff;
 		if ( context->start_time != AV_NOPTS_VALUE )
-			int_position -= ( int )( fps * context->start_time / AV_TIME_BASE + 0.5 );
+			int_position -= ( int64_t )( fps * context->start_time / AV_TIME_BASE + 0.5 ) & 0x7fffffff;
 
 		if ( *ignore == 0 )
 		{
