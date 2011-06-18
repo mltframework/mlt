@@ -37,11 +37,6 @@ OBJS += consumer_sdl_osx.o
 SRCS += consumer_sdl_osx.m consumer_sdl_osx.h
 endif
 
-ifeq ($(targetos), MinGW)
-OBJS += ../../win32/win32.o
-SRCS += ../../win32/win32.c
-endif
-
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)

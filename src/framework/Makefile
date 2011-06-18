@@ -73,6 +73,11 @@ INCS = mlt_consumer.h \
 
 SRCS := $(OBJS:.o=.c)
 
+ifeq ($(targetos), MinGW)
+OBJS += ../win32/win32.o
+SRCS += ../win32/win32.c
+endif
+
 CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\"" -DLIBDIR="\"$(libdir)\""
 
 LDFLAGS += $(LIBDL) -lpthread

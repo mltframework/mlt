@@ -49,11 +49,6 @@ endif
 
 SRCS := $(OBJS:.o=.c)
 
-ifeq ($(targetos), MinGW)
-OBJS += ../../win32/win32.o
-SRCS += ../../win32/win32.c
-endif
-
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS) $(ASM_OBJS)
