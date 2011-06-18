@@ -34,6 +34,7 @@
 #include <string.h>
 #include <limits.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 /** \brief Repository class
  *
@@ -443,8 +444,11 @@ static void list_presets( mlt_properties properties, const char *path, const cha
 		{
 			if ( de->d_name[0] != '.' && de->d_name[strlen( de->d_name ) - 1] != '~' )
 			{
+				struct stat info;
+
 				snprintf( fullname, sizeof(fullname), "%s/%s", dirname, de->d_name );
-				if ( de->d_type & DT_DIR )
+				stat( fullname, &info );
+				if ( S_ISDIR( info.st_mode ) )
 				{
 					// recurse into subdirectories
 					char sub[ PATH_MAX ];
