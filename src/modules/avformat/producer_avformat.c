@@ -572,7 +572,8 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			// These are required by video4linux2 (defaults)
 			params->width = profile->width;
 			params->height = profile->height;
-			params->time_base= (AVRational){ profile->frame_rate_den, profile->frame_rate_num };
+			if ( !strstr( URL, "&frame_rate" ) )
+				params->time_base = (AVRational){ profile->frame_rate_den, profile->frame_rate_num };
 			params->channels = 2;
 			params->sample_rate = 48000;
 
