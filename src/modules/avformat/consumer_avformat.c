@@ -1793,6 +1793,9 @@ on_fatal_error:
 		remove( "x264_2pass.log.temp" );
 	}
 
+	while ( ( frame = mlt_deque_pop_back( queue ) ) )
+		mlt_frame_close( frame );
+
 	return NULL;
 }
 
