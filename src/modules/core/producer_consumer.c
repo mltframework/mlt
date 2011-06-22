@@ -30,7 +30,6 @@ struct context_s {
 	mlt_producer producer;
 	mlt_consumer consumer;
 	mlt_profile profile;
-	int is_close_profile;
 };
 typedef struct context_s *context; 
 
@@ -100,13 +99,11 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		if ( profile_name )
 		{
 			cx->profile = mlt_profile_init( profile_name );
-			cx->is_close_profile = 1;
 			cx->profile->is_explicit = 1;
 		}
 		else
 		{
-			cx->profile = profile;
-			cx->is_close_profile = 0;
+			cx->profile = mlt_profile_clone( profile );
 			cx->profile->is_explicit = 0;
 		}
 
@@ -195,8 +192,7 @@ static void producer_close( mlt_producer this )
 		mlt_consumer_stop( cx->consumer );
 		mlt_consumer_close( cx->consumer );
 		mlt_producer_close( cx->producer );
-		if ( cx->is_close_profile )
-			mlt_profile_close( cx->profile );
+		mlt_profile_close( cx->profile );
 	}
 	
 	this->close = NULL;
