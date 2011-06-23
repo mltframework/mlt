@@ -1,0 +1,3 @@
+pix_fmt=yuv420p
+vcodec=dvvideo
+acodec=pcm_s16le
