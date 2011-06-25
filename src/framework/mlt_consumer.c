@@ -645,6 +645,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	mlt_position pos = 0;
 	mlt_position start_pos = 0;
 	mlt_position last_pos = 0;
+	int frame_duration = mlt_properties_get_int( properties, "frame_duration" );
 
 	if ( preview_off && preview_format != 0 )
 		self->format = preview_format;
@@ -749,8 +750,22 @@ static void *consumer_read_ahead_thread( void *arg )
 			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 		}
 
-		// Accumulate the cost for processing this frame
-		time_process += time_difference( &ante );
+		// Get the time to process this frame
+		int64_t time_current = time_difference( &ante );
+
+		// If the current time is not suddenly some large amount
+		if ( time_current < time_process / count * 20 || !time_process || count < 5 )
+		{
+			// Accumulate the cost for processing this frame
+			time_process += time_current;
+		}
+		else
+		{
+			mlt_log_debug( self, "current %"PRId64" threshold %"PRId64" count %d\n",
+				time_current, (int64_t) (time_process / count * 20), count );
+			// Ignore the cost of this frame's time
+			count--;
+		}
 
 		// Determine if we started, resumed, or seeked
 		if ( pos != last_pos + 1 )
@@ -758,7 +773,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		last_pos = pos;
 
 		// Do not skip the first 20% of buffer at start, resume, or seek
-		if ( pos - start_pos <= buffer/5 )
+		if ( pos - start_pos <= buffer / 5 + 1 )
 		{
 			// Reset cost tracker
 			time_process = 0;
@@ -769,10 +784,9 @@ static void *consumer_read_ahead_thread( void *arg )
 		skip_next = 0;
 
 		// Only consider skipping if the buffer level is low (or really small)
-		if ( mlt_deque_count( self->queue ) <= buffer/5 )
+		if ( mlt_deque_count( self->queue ) <= buffer / 5 + 1 )
 		{
 			// Skip next frame if average cost exceeds frame duration.
-			int frame_duration = mlt_properties_get_int( properties, "frame_duration" );
 			if ( time_process / count > frame_duration )
 				skip_next = 1;
 			if ( skip_next )
