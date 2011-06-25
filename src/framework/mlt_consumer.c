@@ -450,7 +450,7 @@ int mlt_consumer_start( mlt_consumer self )
 
 	// For worker threads implementation, buffer must be at least # threads
 	if ( abs( self->real_time ) > 1 && mlt_properties_get_int( properties, "buffer" ) <= abs( self->real_time ) )
-		mlt_properties_set_int( properties, "buffer", abs( self->real_time ) + 1 );
+		mlt_properties_set_int( properties, "_buffer", abs( self->real_time ) + 1 );
 
 	// Start the service
 	if ( self->start != NULL )
@@ -1153,10 +1153,12 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	// Frame to return
 	mlt_frame frame = NULL;
 
-	int size = abs( self->real_time );
-	int buffer = mlt_properties_get_int( properties, "buffer" );
+	double fps = mlt_properties_get_double( properties, "fps" );
+	int threads = abs( self->real_time );
+	int buffer = mlt_properties_get_int( properties, "_buffer" );
+	buffer = buffer > 0 ? buffer : mlt_properties_get_int( properties, "buffer" );
 	// This is a heuristic to determine a suitable minimum buffer size for the number of threads.
-	int headroom = 2 + size * size;
+	int headroom = 2 + threads * threads;
 	buffer = buffer < headroom ? headroom : buffer;
 
 	// Start worker threads if not already started.
@@ -1188,11 +1190,11 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 			pthread_cond_wait( &self->done_cond, &self->done_mutex );
 			pthread_mutex_unlock( &self->done_mutex );
 		}
-		self->process_head = size;
+		self->process_head = threads;
 	}
 
 //	mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "size %d done count %d work count %d process_head %d\n",
-//		size, first_unprocessed_frame( self ), mlt_deque_count( self->queue ), self->process_head );
+//		threads, first_unprocessed_frame( self ), mlt_deque_count( self->queue ), self->process_head );
 
 	// Feed the work queue
 	while ( self->ahead && mlt_deque_count( self->queue ) < buffer )
@@ -1207,8 +1209,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	}
 
 	// Wait if not realtime.
-	while( self->ahead && self->real_time < 0 &&
-	       ! mlt_properties_get_int( MLT_FRAME_PROPERTIES( MLT_FRAME( mlt_deque_peek_front( self->queue ) ) ), "rendered" ) )
+	while ( self->ahead && self->real_time < 0 &&
+		! mlt_properties_get_int( MLT_FRAME_PROPERTIES( MLT_FRAME( mlt_deque_peek_front( self->queue ) ) ), "rendered" ) )
 	{
 		pthread_mutex_lock( &self->done_mutex );
 		pthread_cond_wait( &self->done_cond, &self->done_mutex );
@@ -1226,7 +1228,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 		if ( frame && mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "rendered" ) )
 		{
 			self->consecutive_dropped = 0;
-			if ( self->process_head > size && self->consecutive_rendered >= self->process_head )
+			if ( self->process_head > threads && self->consecutive_rendered >= self->process_head )
 				self->process_head--;
 			else
 				self->consecutive_rendered++;
@@ -1234,13 +1236,37 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 		else
 		{
 			self->consecutive_rendered = 0;
-			if ( self->process_head < buffer - size && self->consecutive_dropped > size )
+			if ( self->process_head < buffer - threads && self->consecutive_dropped > threads )
 				self->process_head++;
 			else
 				self->consecutive_dropped++;
 		}
 //		mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "dropped %d rendered %d process_head %d\n",
 //			self->consecutive_dropped, self->consecutive_rendered, self->process_head );
+
+		// Check for too many consecutively dropped frames
+		if ( self->consecutive_dropped > fps )
+		{
+			int orig_buffer = mlt_properties_get_int( properties, "buffer" );
+			int prefill = mlt_properties_get_int( properties, "prefill" );
+			mlt_log_verbose( self, "too many frames dropped - " );
+
+			// If using a default low-latency buffer level (SDL) and below the limit
+			if ( ( orig_buffer == 1 || prefill == 1 ) && buffer < (threads + 1) * 10 )
+			{
+				// Auto-scale the buffer to compensate
+				mlt_log_verbose( self, "increasing buffer to %d\n", buffer + threads );
+				mlt_properties_set_int( properties, "_buffer", buffer + threads );
+				self->consecutive_dropped = fps / 2;
+			}
+			else
+			{
+				// Tell the consumer to render it
+				mlt_log_verbose( self, "forcing next frame\n" );
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+				self->consecutive_dropped = 0;
+			}
+		}
 	}
 	
 	return frame;
