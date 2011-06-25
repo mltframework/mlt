@@ -638,10 +638,8 @@ static void *consumer_read_ahead_thread( void *arg )
 	struct timeval ante;
 
 	// Average time for get_frame and get_image
-	int count = 1;
+	int count = 0;
 	int skipped = 0;
-	int64_t time_wait = 0;
-	int64_t time_frame = 0;
 	int64_t time_process = 0;
 	int skip_next = 0;
 	mlt_position pos = 0;
@@ -680,10 +678,6 @@ static void *consumer_read_ahead_thread( void *arg )
 	// Continue to read ahead
 	while ( self->ahead )
 	{
-		// Fetch width/height again
-		width = mlt_properties_get_int( properties, "width" );
-		height = mlt_properties_get_int( properties, "height" );
-
 		// Put the current frame into the queue
 		pthread_mutex_lock( &self->queue_mutex );
 		while( self->ahead && mlt_deque_count( self->queue ) >= buffer )
@@ -692,61 +686,59 @@ static void *consumer_read_ahead_thread( void *arg )
 		pthread_cond_broadcast( &self->queue_cond );
 		pthread_mutex_unlock( &self->queue_mutex );
 
-		time_wait += time_difference( &ante );
-
 		// Get the next frame
 		frame = mlt_consumer_get_frame( self );
-		time_frame += time_difference( &ante );
 
 		// If there's no frame, we're probably stopped...
 		if ( frame == NULL )
 			continue;
 		pos = mlt_frame_get_position( frame );
 
-		// Increment the count
+		// Increment the counter used for averaging processing cost
 		count ++;
 
-		// All non normal playback frames should be shown
+		// All non-normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
 		{
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
 #endif
-			skipped = 0;
-			time_frame = 0;
-			time_process = 0;
-			time_wait = 0;
-			count = 1;
-			skip_next = 0;
+			// Indicate seeking or trick-play
 			start_pos = pos;
 		}
 
-		// Get the image
+		// If skip flag not set or frame-dropping disabled
 		if ( !skip_next || self->real_time == -1 )
 		{
-			// Get the image, mark as rendered and time it
 			if ( !video_off )
 			{
+				// Reset width/height - could have been changed by previous mlt_frame_get_image
+				width = mlt_properties_get_int( properties, "width" );
+				height = mlt_properties_get_int( properties, "height" );
+
+				// Get the image
 				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
 				mlt_frame_get_image( frame, &image, &self->format, &width, &height, 0 );
 			}
+
+			// Indicate the rendered image is available.
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+
+			// Reset consecutively-skipped counter
 			skipped = 0;
 		}
-		else
+		else // Skip image processing
 		{
-			// Increment the number of sequentially skipped frames
-			skipped ++;
-			skip_next = 0;
+			// Increment the number of consecutively-skipped frames
+			skipped++;
 
-			// If we've reached an unacceptable level, reset everything
-			if ( skipped > fps * 2 )
+			// If too many (1 sec) consecutively-skipped frames
+			if ( skipped > fps )
 			{
-				skipped = 0;
-				time_frame = 0;
+				// Reset cost tracker
 				time_process = 0;
-				time_wait = 0;
 				count = 1;
+				mlt_log_verbose( self, "too many frames dropped - forcing next frame\n" );
 			}
 		}
 
@@ -757,27 +749,35 @@ static void *consumer_read_ahead_thread( void *arg )
 			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
 		}
 
-		// Increment the time take for self frame
+		// Accumulate the cost for processing this frame
 		time_process += time_difference( &ante );
 
-		// Determine if the next frame should be skipped
+		// Determine if we started, resumed, or seeked
 		if ( pos != last_pos + 1 )
 			start_pos = pos;
 		last_pos = pos;
+
+		// Do not skip the first 20% of buffer at start, resume, or seek
 		if ( pos - start_pos <= buffer/5 )
 		{
-			// Do not skip the first 20% of buffer at start, resuming, or seeking
-			skipped = 0;
-			time_frame = 0;
+			// Reset cost tracker
 			time_process = 0;
-			time_wait = 0;
 			count = 1;
 		}
+
+		// Reset skip flag
+		skip_next = 0;
+
+		// Only consider skipping if the buffer level is low (or really small)
 		if ( mlt_deque_count( self->queue ) <= buffer/5 )
 		{
+			// Skip next frame if average cost exceeds frame duration.
 			int frame_duration = mlt_properties_get_int( properties, "frame_duration" );
-			if ( ( ( time_wait + time_frame + time_process ) / count ) > frame_duration )
+			if ( time_process / count > frame_duration )
 				skip_next = 1;
+			if ( skip_next )
+				mlt_log_debug( self, "avg usec %"PRId64" (%"PRId64"/%d) duration %d\n",
+					time_process/count, time_process, count, frame_duration);
 		}
 	}
 
