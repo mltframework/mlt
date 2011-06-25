@@ -91,9 +91,9 @@ struct producer_avformat_s
 	int video_index;
 	double start_time;
 	int first_pts;
-	int last_position;
+	int64_t last_position;
 	int seekable;
-	int current_position;
+	int64_t current_position;
 	mlt_position nonseek_position;
 	int got_picture;
 	int top_field_first;
@@ -887,7 +887,7 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 }
 
 static int seek_video( producer_avformat self, mlt_position position,
-	int req_position, int must_decode, int use_new_seek, int *ignore )
+	int64_t req_position, int must_decode, int use_new_seek, int *ignore )
 {
 	mlt_producer producer = self->parent;
 	int paused = 0;
@@ -950,7 +950,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 			{
 				timestamp = ( req_position - 0.1 / source_fps ) /
 					( av_q2d( stream->time_base ) * source_fps );
-				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %d pts %"PRId64" ", req_position, timestamp );
+				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %"PRId64" pts %"PRId64" ", req_position, timestamp );
 				if ( self->first_pts > 0 )
 					timestamp += self->first_pts;
 				else if ( context->start_time != AV_NOPTS_VALUE )
@@ -966,7 +966,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 				timestamp -= AV_TIME_BASE;
 			if ( timestamp < 0 )
 				timestamp = 0;
-			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %"PRId64" position %d expected %d last_pos %d\n",
+			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %"PRId64" position %d expected %d last_pos %"PRId64"\n",
 				timestamp, position, self->video_expected, self->last_position );
 
 			// Seek to the timestamp
@@ -1304,7 +1304,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
 
 	// This is the physical frame position in the source
-	int req_position = ( int )( position / mlt_producer_get_fps( producer ) * source_fps + 0.5 );
+	int64_t req_position = ( int64_t )( position / mlt_producer_get_fps( producer ) * source_fps + 0.5 );
 
 	// Determines if we have to decode all frames in a sequence
 	// Temporary hack to improve intra frame only
@@ -1364,7 +1364,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	else
 	{
 		int ret = 0;
-		int int_position = 0;
+		int64_t int_position = 0;
 		int decode_errors = 0;
 		int got_picture = 0;
 
@@ -1410,7 +1410,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						pts -= self->first_pts;
 					else if ( context->start_time != AV_NOPTS_VALUE )
 						pts -= context->start_time;
-					int_position = ( int )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 );
+					int_position = ( int64_t )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 );
 					if ( pkt.pts == AV_NOPTS_VALUE )
 					{
 						self->invalid_pts_counter++;
@@ -1426,7 +1426,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						self->invalid_pts_counter = 0;
 					}
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %"PRId64" req_pos %d cur_pos %d pkt_pos %d\n",
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.pts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
 						pkt.pts, req_position, self->current_position, int_position );
 				}
 				else
@@ -1434,13 +1434,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					if ( pkt.dts != AV_NOPTS_VALUE )
 					{
 						double delay = mlt_properties_get_double( properties, "video_delay" );
-						int_position = ( int )( ( av_q2d( stream->time_base ) * pkt.dts + delay ) * source_fps + 0.5 );
+						int_position = ( int64_t )( ( av_q2d( stream->time_base ) * pkt.dts + delay ) * source_fps + 0.5 );
 						if ( context->start_time != AV_NOPTS_VALUE )
-							int_position -= ( int )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
+							int_position -= ( int64_t )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
 						if ( int_position == self->last_position )
 							int_position = self->last_position + 1;
 					}
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %"PRId64" req_pos %d cur_pos %d pkt_pos %d\n",
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pkt.dts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
 						pkt.dts, req_position, self->current_position, int_position );
 					// Make a dumb assumption on streams that contain wild timestamps
 					if ( abs( req_position - int_position ) > 999 )
@@ -1496,8 +1496,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							pts -= self->first_pts;
 						else if ( context->start_time != AV_NOPTS_VALUE )
 							pts -= context->start_time;
-						int_position = ( int )( av_q2d( stream->time_base) * pts * source_fps + 0.1 );
-						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "got frame %d, key %d\n", int_position, self->av_frame->key_frame );
+						int_position = ( int64_t )( av_q2d( stream->time_base) * pts * source_fps + 0.1 );
+						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "got frame %"PRId64", key %d\n", int_position, self->av_frame->key_frame );
 					}
 					// Handle ignore
 					if ( int_position < req_position )
@@ -2061,10 +2061,10 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	if ( pkt.pts >= 0 )
 	{
 		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt.pts;
-		int req_position = ( int )( timecode * fps + 0.5 );
-		int int_position = ( int )( current_pts * fps + 0.5 );
+		int64_t req_position = ( int64_t )( timecode * fps + 0.5 );
+		int64_t int_position = ( int64_t )( current_pts * fps + 0.5 );
 		if ( context->start_time != AV_NOPTS_VALUE )
-			int_position -= ( int )( fps * context->start_time / AV_TIME_BASE + 0.5 );
+			int_position -= ( int64_t )( fps * context->start_time / AV_TIME_BASE + 0.5 );
 
 		if ( *ignore == 0 )
 		{
