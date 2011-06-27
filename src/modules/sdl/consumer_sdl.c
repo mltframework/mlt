@@ -180,11 +180,31 @@ int consumer_start( mlt_consumer parent )
 		int display_off = video_off | preview_off;
 		int audio_off = mlt_properties_get_int( properties, "audio_off" );
 		int sdl_started = mlt_properties_get_int( properties, "sdl_started" );
+		char *output_display = mlt_properties_get( properties, "output_display" );
+		char *window_id = mlt_properties_get( properties, "window_id" );
+		char *audio_driver = mlt_properties_get( properties, "audio_driver" );
+		char *video_driver = mlt_properties_get( properties, "video_driver" );
+		char *audio_device = mlt_properties_get( properties, "audio_device" );
 
 		consumer_stop( parent );
 
 		this->running = 1;
 		this->joined = 0;
+
+		if ( output_display != NULL )
+			setenv( "DISPLAY", output_display, 1 );
+
+		if ( window_id != NULL )
+			setenv( "SDL_WINDOWID", window_id, 1 );
+
+		if ( video_driver != NULL )
+			setenv( "SDL_VIDEODRIVER", video_driver, 1 );
+
+		if ( audio_driver != NULL )
+			setenv( "SDL_AUDIODRIVER", audio_driver, 1 );
+
+		if ( audio_device != NULL )
+			setenv( "AUDIODEV", audio_device, 1 );
 
 		if ( ! mlt_properties_get_int( this->properties, "_arg_size" ) )
 		{
