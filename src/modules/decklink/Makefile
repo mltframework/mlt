@@ -7,8 +7,14 @@ include ../../../config.mak
 TARGET = ../libmltdecklink$(LIBSUF)
 
 OBJS = consumer_decklink.o \
-	producer_decklink.o \
-	DeckLinkAPIDispatch.o
+	producer_decklink.o
+
+ifeq ($(targetos), MinGW)
+OBJS += DeckLinkAPI_i.o
+LDFLAGS += -lole32
+else
+OBJS += DeckLinkAPIDispatch.o
+endif
 
 SRCS := $(OBJS:.o=.cpp)
 

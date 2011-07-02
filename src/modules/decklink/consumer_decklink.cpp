@@ -24,7 +24,12 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <limits.h>
+#ifdef WIN32
+#include <objbase.h>
+#include "DeckLinkAPI_h.h"
+#else
 #include "DeckLinkAPI.h"
+#endif
 
 static const unsigned PREROLL_MINIMUM = 3;
 
@@ -93,14 +98,30 @@ public:
 	
 	bool open( unsigned card = 0 )
 	{
-		IDeckLinkIterator* deckLinkIterator = CreateDeckLinkIteratorInstance();
 		unsigned i = 0;
+#ifdef WIN32
+		IDeckLinkIterator* deckLinkIterator = NULL;
+		HRESULT result =  CoInitialize( NULL );
+		if ( FAILED( result ) )
+		{
+			mlt_log_error( getConsumer(), "COM initialization failed\n" );
+			return false;
+		}
+		result = CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &deckLinkIterator );
+		if ( FAILED( result ) )
+		{
+			mlt_log_error( getConsumer(), "The DeckLink drivers not installed.\n" );
+			return false;
+		}
+#else
+		IDeckLinkIterator* deckLinkIterator = CreateDeckLinkIteratorInstance();
 		
 		if ( !deckLinkIterator )
 		{
 			mlt_log_error( getConsumer(), "The DeckLink drivers not installed.\n" );
 			return false;
 		}
+#endif
 		
 		// Connect to the Nth DeckLink instance
 		do {
@@ -127,7 +148,11 @@ public:
 		m_deckLinkKeyer = 0;
 		if ( m_deckLink->QueryInterface( IID_IDeckLinkAttributes, (void**) &deckLinkAttributes ) == S_OK )
 		{
+#ifdef WIN32
+			BOOL flag = FALSE;
+#else
 			bool flag = false;
+#endif
 			if ( deckLinkAttributes->GetFlag( BMDDeckLinkSupportsInternalKeying, &flag ) == S_OK && flag )
 			{
 				if ( m_deckLink->QueryInterface( IID_IDeckLinkKeyer, (void**) &m_deckLinkKeyer ) != S_OK )
@@ -256,10 +281,14 @@ public:
 		{
 			uint32_t written = 0;
 
+#ifdef WIN32
+			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, m_count * frequency / m_fps, frequency, (unsigned long*) &written );
+#else
 			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, m_count * frequency / m_fps, frequency, &written );
+#endif
 
-			if ( written != samples )
-				mlt_log_verbose( getConsumer(), "renderAudio: samples=%d, written=%d\n", samples, written );
+			if ( written != (uint32_t) samples )
+				mlt_log_verbose( getConsumer(), "renderAudio: samples=%d, written=%u\n", samples, written );
 		}
 	}
 
@@ -325,9 +354,9 @@ public:
 					// Normal non-keyer playout - needs byte swapping
 					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
 						// convert lower field first to top field first
-						swab( image, buffer + stride, stride * ( m_height - 1 ) );
+						swab( (char*) image, (char*) buffer + stride, stride * ( m_height - 1 ) );
 					else
-						swab( image, buffer, stride * m_height );
+						swab( (char*) image, (char*) buffer, stride * m_height );
 				}
 				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "test_image" ) )
 				{

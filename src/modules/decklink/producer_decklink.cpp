@@ -24,7 +24,12 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/time.h>
+#ifdef WIN32
+#include <objbase.h>
+#include "DeckLinkAPI_h.h"
+#else
 #include "DeckLinkAPI.h"
+#endif
 
 class DeckLinkProducer
 	: public IDeckLinkInputCallback
@@ -46,7 +51,7 @@ private:
 	{
 		IDeckLinkDisplayModeIterator* iter;
 		IDeckLinkDisplayMode* mode;
-		BMDDisplayMode result = bmdDisplayModeNotSupported;
+		BMDDisplayMode result = (BMDDisplayMode) bmdDisplayModeNotSupported;
 
 		if ( m_decklinkInput->GetDisplayModeIterator( &iter ) == S_OK )
 		{
@@ -95,11 +100,21 @@ public:
 
 	bool open( mlt_profile profile, unsigned card =  0 )
 	{
-		IDeckLinkIterator* decklinkIterator = CreateDeckLinkIteratorInstance();
+		IDeckLinkIterator* decklinkIterator = NULL;
 		try
 		{
+#ifdef WIN32
+			HRESULT result =  CoInitialize( NULL );
+			if ( FAILED( result ) )
+				throw "COM initialization failed";
+			result = CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &decklinkIterator );
+			if ( FAILED( result ) )
+				throw "The DeckLink drivers are not installed.";
+#else
+			decklinkIterator = CreateDeckLinkIteratorInstance();
 			if ( !decklinkIterator )
 				throw "The DeckLink drivers are not installed.";
+#endif
 
 			// Connect to the Nth DeckLink instance
 			unsigned i = 0;
@@ -145,11 +160,15 @@ public:
 
 			// Get the display mode
 			BMDDisplayMode displayMode = getDisplayMode( profile );
-			if ( displayMode == bmdDisplayModeNotSupported )
+			if ( displayMode == (BMDDisplayMode) bmdDisplayModeNotSupported )
 				throw "Profile is not compatible with decklink.";
 
 			// Determine if supports input format detection
+#ifdef WIN32
+			BOOL doesDetectFormat = FALSE;
+#else
 			bool doesDetectFormat = false;
+#endif
 			IDeckLinkAttributes *decklinkAttributes = 0;
 			if ( m_decklink->QueryInterface( IID_IDeckLinkAttributes, (void**) &decklinkAttributes ) == S_OK )
 			{
@@ -318,7 +337,7 @@ public:
 				video->GetBytes( &buffer );
 				if ( image && buffer )
 				{
-					swab( buffer, image, size );
+					swab( (char*) buffer, (char*) image, size );
 					mlt_frame_set_image( frame, (uint8_t*) image, size, mlt_pool_release );
 				}
 				else if ( image )
