@@ -134,7 +134,7 @@ typedef struct producer_avformat_s *producer_avformat;
 
 // Forward references.
 static int list_components( char* file );
-static int producer_open( producer_avformat self, mlt_profile profile, const char *URL );
+static int producer_open( producer_avformat self, mlt_profile profile, const char *URL, int take_lock );
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
@@ -185,7 +185,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			if ( strcmp( service, "avformat-novalidate" ) )
 			{
 				// Open the file
-				if ( producer_open( self, profile, file ) != 0 )
+				if ( producer_open( self, profile, file, 1 ) != 0 )
 				{
 					// Clean up
 					mlt_producer_close( producer );
@@ -730,19 +730,22 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 /** Open the file.
 */
 
-static int producer_open( producer_avformat self, mlt_profile profile, const char *URL )
+static int producer_open( producer_avformat self, mlt_profile profile, const char *URL, int take_lock )
 {
 	// Return an error code (0 == no error)
 	int error = 0;
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 
 	// Lock the service
-	pthread_mutex_init( &self->audio_mutex, NULL );
-	pthread_mutex_init( &self->video_mutex, NULL );
-	pthread_mutex_init( &self->packets_mutex, NULL );
+	if ( take_lock )
+	{
+		pthread_mutex_init( &self->audio_mutex, NULL );
+		pthread_mutex_init( &self->video_mutex, NULL );
+		pthread_mutex_init( &self->packets_mutex, NULL );
+		pthread_mutex_lock( &self->audio_mutex );
+		pthread_mutex_lock( &self->video_mutex );
+	}
 	mlt_events_block( properties, self->parent );
-	pthread_mutex_lock( &self->audio_mutex );
-	pthread_mutex_lock( &self->video_mutex );
 
 	// Parse URL
 	AVInputFormat *format = NULL;
@@ -838,8 +841,11 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	}
 
 	// Unlock the service
-	pthread_mutex_unlock( &self->audio_mutex );
-	pthread_mutex_unlock( &self->video_mutex );
+	if ( take_lock )
+	{
+		pthread_mutex_unlock( &self->audio_mutex );
+		pthread_mutex_unlock( &self->video_mutex );
+	}
 	mlt_events_unblock( properties, self->parent );
 
 	return error;
@@ -868,12 +874,8 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 	int audio_index = self->audio_index;
 	int video_index = self->video_index;
 
-	pthread_mutex_unlock( &self->audio_mutex );
-	pthread_mutex_unlock( &self->video_mutex );
 	producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-		mlt_properties_get( properties, "resource" ) );
-	pthread_mutex_lock( &self->video_mutex );
-	pthread_mutex_lock( &self->audio_mutex );
+		mlt_properties_get( properties, "resource" ), 0 );
 
 	self->audio_index = audio_index;
 	if ( self->video_format && video_index > -1 )
@@ -1852,7 +1854,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	if ( !context && index > -1 )
 	{
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "resource" ) );
+			mlt_properties_get( properties, "resource" ), 1 );
 		context = self->video_format;
 	}
 
@@ -2416,7 +2418,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	if ( !context && self->audio_index > -1 && index > -1 )
 	{
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "resource" ) );
+			mlt_properties_get( properties, "resource" ), 1 );
 		context = self->audio_format;
 	}
 
