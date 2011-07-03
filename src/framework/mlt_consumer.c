@@ -1209,8 +1209,9 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	}
 
 	// Wait if not realtime.
+	mlt_frame head_frame = MLT_FRAME( mlt_deque_peek_front( self->queue ) );
 	while ( self->ahead && self->real_time < 0 &&
-		! mlt_properties_get_int( MLT_FRAME_PROPERTIES( MLT_FRAME( mlt_deque_peek_front( self->queue ) ) ), "rendered" ) )
+		!( head_frame && mlt_properties_get_int( MLT_FRAME_PROPERTIES( head_frame ), "rendered" ) ) )
 	{
 		pthread_mutex_lock( &self->done_mutex );
 		pthread_cond_wait( &self->done_cond, &self->done_mutex );
