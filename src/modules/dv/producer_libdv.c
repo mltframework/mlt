@@ -225,6 +225,8 @@ static int producer_collect_info( producer_libdv this, mlt_profile profile )
 		// If it looks like a valid frame, the get stats
 		if ( valid )
 		{
+			double aspect_ratio;
+
 			// Get the properties
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
 
@@ -262,8 +264,21 @@ static int producer_collect_info( producer_libdv this, mlt_profile profile )
 
 			// Parse the header for meta info
 			dv_parse_header( dv_decoder, dv_data );
-			mlt_properties_set_double( properties, "aspect_ratio", 
-				dv_format_wide( dv_decoder ) ? ( this->is_pal ? 118.0/81.0 : 40.0/33.0 ) : ( this->is_pal ? 59.0/54.0 : 10.0/11.0 ) );
+			if ( this->is_pal )
+			{
+				if ( dv_format_wide( dv_decoder ) )
+					aspect_ratio = 64.0 / 45.0;
+				else
+					aspect_ratio = 16.0 / 15.0;
+			}
+			else
+			{
+				if ( dv_format_wide( dv_decoder ) )
+					aspect_ratio = 32.0 / 27.0;
+				else
+					aspect_ratio = 8 / 9;
+			}
+			mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio);
 			mlt_properties_set_double( properties, "source_fps", this->is_pal ? 25 : ( 30000.0 / 1001.0 ) );
 			mlt_properties_set_int( properties, "meta.media.nb_streams", 2 );
 			mlt_properties_set_int( properties, "video_index", 0 );
