@@ -939,7 +939,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 					ret = av_read_frame( context, &pkt );
 					if ( ret >= 0 && ( pkt.flags & PKT_FLAG_KEY ) && pkt.stream_index == self->video_index )
 					{
-						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
+						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n", pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
 						self->first_pts = pkt.pts;
 						toscan = 0;
 					}
@@ -955,7 +955,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 			{
 				timestamp = ( req_position - 0.1 / source_fps ) /
 					( av_q2d( stream->time_base ) * source_fps );
-				mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "pos %"PRId64" pts %"PRId64" ", req_position, timestamp );
+				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "pos %"PRId64" pts %"PRId64"\n", req_position, timestamp );
 				if ( self->first_pts > 0 )
 					timestamp += self->first_pts;
 				else if ( context->start_time != AV_NOPTS_VALUE )
