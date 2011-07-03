@@ -790,40 +790,43 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 			self->first_pts = -1;
 			self->last_position = POSITION_INITIAL;
 
-			// We're going to cheat here - for seekable A/V files, we will have separate contexts
-			// to support independent seeking of audio from video.
-			// TODO: Is this really necessary?
-			if ( self->audio_index != -1 && self->video_index != -1 )
+			if ( !self->audio_format )
 			{
-				if ( self->seekable )
+				// We're going to cheat here - for seekable A/V files, we will have separate contexts
+				// to support independent seeking of audio from video.
+				// TODO: Is this really necessary?
+				if ( self->audio_index != -1 && self->video_index != -1 )
 				{
-					// And open again for our audio context
-					av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
-					apply_properties( self->audio_format, properties, AV_OPT_FLAG_DECODING_PARAM );
+					if ( self->seekable )
+					{
+						// And open again for our audio context
+						av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
+						apply_properties( self->audio_format, properties, AV_OPT_FLAG_DECODING_PARAM );
 #if LIBAVFORMAT_VERSION_MAJOR > 52
-					if ( self->audio_format->iformat && self->audio_format->iformat->priv_class && self->audio_format->priv_data )
-						apply_properties( self->audio_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
+						if ( self->audio_format->iformat && self->audio_format->iformat->priv_class && self->audio_format->priv_data )
+							apply_properties( self->audio_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
 #endif
-					av_find_stream_info( self->audio_format );
+						av_find_stream_info( self->audio_format );
+					}
+					else
+					{
+						self->audio_format = self->video_format;
+					}
 				}
-				else
+				else if ( self->audio_index != -1 )
 				{
+					// We only have an audio context
 					self->audio_format = self->video_format;
+					self->video_format = NULL;
 				}
+				else if ( self->video_index == -1 )
+				{
+					// Something has gone wrong
+					error = -1;
+				}
+				if ( self->audio_format && !self->audio_streams )
+					get_audio_streams_info( self );
 			}
-			else if ( self->audio_index != -1 )
-			{
-				// We only have an audio context
-				self->audio_format = self->video_format;
-				self->video_format = NULL;
-			}
-			else if ( self->video_index == -1 )
-			{
-				// Something has gone wrong
-				error = -1;
-			}
-			if ( self->audio_format && !self->audio_streams )
-				get_audio_streams_info( self );
 		}
 	}
 	if ( filename )
