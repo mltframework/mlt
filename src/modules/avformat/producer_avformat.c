@@ -583,7 +583,10 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			{
 				url[0] = 0;
 				char *name = strdup( ++url );
-				char *value = strchr( name, ':' );
+				char *value = strchr( name, '=' );
+				if ( !value )
+					// Also accept : as delimiter for backwards compatibility.
+					value = strchr( name, ':' );
 				if ( value )
 				{
 					value[0] = 0;

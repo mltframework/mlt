@@ -404,7 +404,10 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 					mlt_properties_set_int( properties, "hide", 2 );
 			}
 		}
-		else if ( strchr( argv[ i ], '=' ) && strstr( argv[ i ], "<?xml" ) != argv[ i ] )
+		else if ( strchr( argv[ i ], '=' ) && strstr( argv[ i ], "<?xml" ) != argv[ i ] &&
+			// Prevent interpreting URL with parameters as a property.
+			// This does not support property names containing a colon.
+			( !strchr( argv[ i ], ':' ) || strchr( argv[ i ], ':' ) > strchr( argv[ i ], '=' ) ) )
 		{
 			mlt_properties_parse( properties, argv[ i ] );
 		}
