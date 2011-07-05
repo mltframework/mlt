@@ -316,10 +316,20 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 		add_parameters( params, avformat, flags, NULL, NULL );
 #if LIBAVFORMAT_VERSION_MAJOR > 52
 		avformat_init();
-		AVOutputFormat *f = NULL;
-		while ( ( f = av_oformat_next( f ) ) )
-			if ( f->priv_class )
-				add_parameters( params, &f->priv_class, flags, NULL, f->name );
+		if ( type == producer_type )
+		{
+			AVInputFormat *f = NULL;
+			while ( ( f = av_iformat_next( f ) ) )
+				if ( f->priv_class )
+					add_parameters( params, &f->priv_class, flags, NULL, f->name );
+		}
+		else
+		{
+			AVOutputFormat *f = NULL;
+			while ( ( f = av_oformat_next( f ) ) )
+				if ( f->priv_class )
+					add_parameters( params, &f->priv_class, flags, NULL, f->name );
+		}
 #endif
 
 		add_parameters( params, avcodec, flags, NULL, NULL );
