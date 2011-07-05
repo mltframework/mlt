@@ -397,10 +397,12 @@ static int consumer_is_stopped( mlt_consumer consumer )
 /** Process properties as AVOptions and apply to AV context obj
 */
 
-static void apply_properties( void *obj, mlt_properties properties, int flags, int alloc )
+static void apply_properties( void *obj, mlt_properties properties, int flags )
 {
 	int i;
 	int count = mlt_properties_count( properties );
+	int alloc = 1;
+
 	for ( i = 0; i < count; i++ )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
@@ -468,10 +470,10 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, i
 		if ( apre )
 		{
 			mlt_properties p = mlt_properties_load( apre );
-			apply_properties( c, p, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			apply_properties( c, p, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 			mlt_properties_close( p );
 		}
-		apply_properties( c, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 0 );
+		apply_properties( c, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 
 		int audio_qscale = mlt_properties_get_int( properties, "aq" );
         if ( audio_qscale > QSCALE_NONE )
@@ -530,10 +532,10 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 		if ( apre )
 		{
 			mlt_properties p = mlt_properties_load( apre );
-			apply_properties( c->priv_data, p, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			apply_properties( c->priv_data, p, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 			mlt_properties_close( p );
 		}
-		apply_properties( c->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 0 );
+		apply_properties( c->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 	}
 #endif
 
@@ -648,12 +650,12 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, i
 				mlt_properties_debug( p, vpre, stderr );			
 			}
 #endif
-			apply_properties( c, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			apply_properties( c, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 			mlt_properties_close( p );
 		}
 		int colorspace = mlt_properties_get_int( properties, "colorspace" );
 		mlt_properties_set( properties, "colorspace", NULL );
-		apply_properties( c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 0 );
+		apply_properties( c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 		mlt_properties_set_int( properties, "colorspace", colorspace );
 
 		// Set options controlled by MLT
@@ -907,10 +909,10 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 		if ( vpre )
 		{
 			mlt_properties p = mlt_properties_load( vpre );
-			apply_properties( video_enc->priv_data, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			apply_properties( video_enc->priv_data, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 			mlt_properties_close( p );
 		}
-		apply_properties( video_enc->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM, 0 );
+		apply_properties( video_enc->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 	}
 #endif
 
@@ -1220,17 +1222,17 @@ static void *consumer_thread( void *arg )
 		if ( fpre )
 		{
 			mlt_properties p = mlt_properties_load( fpre );
-			apply_properties( oc, p, AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			apply_properties( oc, p, AV_OPT_FLAG_ENCODING_PARAM );
 #if LIBAVFORMAT_VERSION_MAJOR > 52
 			if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
-				apply_properties( oc->priv_data, p, AV_OPT_FLAG_ENCODING_PARAM, 1 );
+				apply_properties( oc->priv_data, p, AV_OPT_FLAG_ENCODING_PARAM );
 #endif
 			mlt_properties_close( p );
 		}
-		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM, 0 );
+		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM );
 #if LIBAVFORMAT_VERSION_MAJOR > 52
 		if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
-			apply_properties( oc->priv_data, properties, AV_OPT_FLAG_ENCODING_PARAM, 1 );
+			apply_properties( oc->priv_data, properties, AV_OPT_FLAG_ENCODING_PARAM );
 #endif
 
 		if ( video_st && !open_video( properties, oc, video_st, vcodec? vcodec : NULL ) )
