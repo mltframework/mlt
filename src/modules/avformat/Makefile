@@ -48,34 +48,20 @@ CFLAGS += -DAVDEVICE
 LDFLAGS += -lavdevice$(AVFORMAT_SUFFIX)
 endif
 
-ifdef LOCAL_FFMPEG
-LOCAL_FFMPEG_OBJS = ffmpeg/libavformat/libavformat$(AVFORMAT_SUFFIX) \
-                    ffmpeg/libavcodec/libavcodec$(AVFORMAT_SUFFIX) \
-                    ffmpeg/libavutil/libavutil$(AVFORMAT_SUFFIX)
-endif
-
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)
 
-$(LOCAL_FFMPEG_OBJS):
-	if [ $(LOCAL_FFMPEG) ] ; then \
-		$(MAKE) -C ffmpeg ffmpeg ; \
-	fi
-
-$(TARGET): $(OBJS) $(LOCAL_FFMPEG_OBJS)
+$(TARGET): $(OBJS)
 	$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
-	#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg dep ; fi
 	$(CC) -MM $(CFLAGS) $^ 1>.depend
 
 distclean:	clean
 	rm -f .depend
-	if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg distclean ; fi
 
 clean:	
-	#if [ $(LOCAL_FFMPEG) ] ; then $(MAKE) -C ffmpeg clean ; fi
 	rm -f $(OBJS) ../libmltffmpeg$(LIBSUF) ../libmltavformat$(LIBSUF)
 
 install: all

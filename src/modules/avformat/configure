@@ -3,30 +3,26 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-svn_rev="0.6.1"
+rec_ver="0.7"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
-[ "$odd_version" -eq "1" ] && svn_rev="HEAD"
+[ "$odd_version" -eq "1" ] && rec_ver="HEAD"
 
 if [ "$help" = "1" ]
 then
 	cat << EOF
 FFmpeg/avformat options:
 
-  --avformat-svn          - Obtain FFmpeg from its Subversion repository
-  --avformat-svn-version  - Specify a particular revision for --avformat-svn
-  --avformat-svn-extra    - Add extra configure options for --avformat-svn
-  --avformat-shared=path  - Link against a shared installation of FFmpeg (default)
-  --avformat-static=path  - Link against a static FFmpeg development tree
-  --avformat-ldextra=libs - Provide additional libs to link with
-  --avformat-suffix=suff  - Specify a custom suffix for a shared build of FFmpeg
-  --avformat-swscale      - Use libswcale instead of img_convert
-  --avformat-no-codecs    - Disable the producer and consumer to avoid the FFmpeg codecs
+  --avformat-shared=path  - Link against a shared installation of libavformat (default)
+  --avformat-static=path  - Link against a static build of libavformat
+  --avformat-swscale      - Use libswcale instead of img_convert (with --avformat-static)
+  --avformat-suffix=suff  - Specify a custom suffix
+  --avformat-no-codecs    - Disable the producer and consumer to avoid the codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
   --avformat-no-devices   - Disable support for libavdevice
   --avformat-vdpau        - Enable support for NVIDIA VDPAU
 
-  NOTE: The recommended version of FFmpeg is $([ "$svn_rev" = "0.6.1" ] && echo $svn_rev || echo SVN-r$svn_rev).
+  NOTE: The recommended version of FFmpeg or libav is $rec_ver.
 
 EOF
 
@@ -58,8 +54,6 @@ else
 	export static_ffmpeg=
 	export shared_ffmpeg=$(pkg-config --variable=prefix libavformat)
 	export extra_libs=
-	export svn_ffmpeg=
-	export svn_ffmpeg_extra=
 	export avformat_suffix=
 	export swscale=
 	export codecs=true
@@ -74,11 +68,6 @@ else
 		case $i in
 			--avformat-static=* )	static_ffmpeg="${i#--avformat-static=}" ;;
 			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
-			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
-			--avformat-svn )		svn_ffmpeg=true ;;
-			--avformat-svn-extra=* ) svn_ffmpeg_extra="${i#--avformat-svn-extra=}" ;;
-			--avformat-svn-version=* )	svn_rev="${i#--avformat-svn-version=}" ;;
-			--avformat-cvs )		svn_ffmpeg=true ;;
 			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
 			--avformat-swscale )	swscale=true ;;
 			--avformat-swscaler )	swscale=true ;;
@@ -90,53 +79,7 @@ else
 		esac
 	done
 
-	if [ "$svn_ffmpeg" != "" ]
-	then
-		if [ "$gpl" = "true" ]	
-		then
-			enable_gpl="--enable-gpl"
-			[ "$swscale" != "" ] && [ "$svn_rev" = "0.5" ] &&
-				enable_swscale="--enable-swscale"
-		fi
-		if [ ! -d "ffmpeg" ]
-		then
-			echo
-			echo "Checking out ffmpeg/avformat revision $svn_rev - no password required"
-			echo
-			if [ "$svn_rev" = "0.6.1" ] || [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
-			then
-				svn checkout svn://svn.mplayerhq.hu/ffmpeg/branches/$svn_rev ffmpeg
-			else
-				svn checkout -r $svn_rev svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
-			fi
-		fi
-		[ "$devices" = "false" ] && disable_devices="--disable-devices"
-		[ -d "ffmpeg" ] && ( cd ffmpeg ; ./configure $enable_gpl $disable_devices $enable_swscale $svn_ffmpeg_extra --extra-cflags=-fPIC )
-		#[ ! -f "ffmpeg/ffmpeg.patch" ] && ( cd ffmpeg ; cp ../ffmpeg.patch . ; patch -p0 < ffmpeg.patch )
-		echo "CFLAGS+=-DAVDATADIR=\\\"${prefix}/share/ffmpeg/\\\"" >> config.mak
-		echo "CFLAGS+=-I`pwd`/ffmpeg" >> config.mak
-		echo "LDFLAGS+=-L`pwd`/ffmpeg/libavformat -L`pwd`/ffmpeg/libavcodec -L`pwd`/ffmpeg/libavutil" >> config.mak
-		if [ "$swscale" != "" ] || [ "$svn_rev" = "HEAD" ] || [ "$svn_rev" = "0.6.1" ] || [ "$svn_rev" = "0.6" ] || [ "$svn_rev" = "0.5" ]
-		then
-			echo "LDFLAGS+=-L`pwd`/ffmpeg/libswscale" >> config.mak
-			echo "SWSCALE=1" >> config.mak
-		fi
-		if [ "$devices" = "true" ]
-		then
-			echo "LDFLAGS+=-L`pwd`/ffmpeg/libavdevice" >> config.mak
-		fi
-		[ $targetos = "Darwin" ] &&
-			echo "LDFLAGS+=-single_module" >> config.mak
-		echo "LOCAL_FFMPEG=1" >> config.mak
-		echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
-		extra_libs="$extra_libs -lm -lz -lbz2"
-		
-		if [ "$vdpau" = "true" ]
-		then
-			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | gcc -I"`pwd`/ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
-			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
-		fi
-	elif [ "$static_ffmpeg" != "" ]
+	if [ "$static_ffmpeg" != "" ]
 	then 
 		if [ -d "$static_ffmpeg" ]
 		then
@@ -199,8 +142,7 @@ else
 			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 		fi
 	else
-		echo "avformat: No build environment found. "
-		echo "          Try configuring mlt with --avformat-svn."
+		echo "- libavformat not found: disabling"
 		touch ../disable-avformat
 		exit 0
 	fi
