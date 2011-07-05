@@ -15,6 +15,7 @@ FFmpeg/avformat options:
 
   --avformat-shared=path  - Link against a shared installation of libavformat (default)
   --avformat-static=path  - Link against a static build of libavformat
+  --avformat-ldextra=libs - Provide additional libs to link with
   --avformat-swscale      - Use libswcale instead of img_convert (with --avformat-static)
   --avformat-suffix=suff  - Specify a custom suffix
   --avformat-no-codecs    - Disable the producer and consumer to avoid the codecs
@@ -68,6 +69,7 @@ else
 		case $i in
 			--avformat-static=* )	static_ffmpeg="${i#--avformat-static=}" ;;
 			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
+			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
 			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
 			--avformat-swscale )	swscale=true ;;
 			--avformat-swscaler )	swscale=true ;;
