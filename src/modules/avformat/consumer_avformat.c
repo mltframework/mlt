@@ -641,7 +641,8 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, i
 					
 					mlt_properties_close( p );
 					p = mlt_properties_load( path );
-					mlt_properties_debug( p, path, stderr );
+					if ( mlt_properties_count( p ) > 0 )
+						mlt_properties_debug( p, path, stderr );
 					free( path );	
 				}
 			}
