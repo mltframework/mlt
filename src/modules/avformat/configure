@@ -3,10 +3,11 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-rec_ver="0.7"
+ffmpeg_ver="0.8"
+libav_ver="0.7"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
-[ "$odd_version" -eq "1" ] && rec_ver="HEAD"
+[ "$odd_version" -eq "1" ] && ffmpeg_ver="HEAD" && libav_ver="HEAD"
 
 if [ "$help" = "1" ]
 then
@@ -23,7 +24,7 @@ FFmpeg/avformat options:
   --avformat-no-devices   - Disable support for libavdevice
   --avformat-vdpau        - Enable support for NVIDIA VDPAU
 
-  NOTE: The recommended version of FFmpeg or libav is $rec_ver.
+  NOTE: The recommended version of FFmpeg is $ffmpeg_ver or libav $libav_ver.
 
 EOF
 
