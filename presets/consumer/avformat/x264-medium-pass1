@@ -10,3 +10,4 @@ refs=1
 trellis=0
 flags2=+bpyramid-mixed_refs+wpred-dct8x8+fastpskip
 pass=1
+an=1
