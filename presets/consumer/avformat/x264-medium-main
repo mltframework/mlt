@@ -1,0 +1,5 @@
+vcodec=libx264
+threads=0
+vpre=medium
+preset=medium
+flags2=-dct8x8

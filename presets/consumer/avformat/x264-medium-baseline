@@ -1,0 +1,8 @@
+vcodec=libx264
+threads=0
+vpre=medium
+preset=medium
+coder=0
+bf=0
+flags2=-wpred-dct8x8
+wpredp=0

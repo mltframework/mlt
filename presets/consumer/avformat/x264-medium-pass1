@@ -1,0 +1,11 @@
+vcodec=libx264
+threads=0
+vpre=medium
+preset=medium
+partitions=-parti8x8-parti4x4-partp8x8-partb8x8
+me_method=dia
+subq=2
+refs=1
+trellis=0
+flags2=+bpyramid-mixed_refs+wpred-dct8x8+fastpskip
+pass=1
