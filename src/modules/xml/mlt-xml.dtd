@@ -3,6 +3,12 @@
 <!-- MLT XML DTD v0.2.0 -->
 
 <!ELEMENT mlt (profile | producer | playlist | tractor | multitrack)+ >
+<!ATTLIST mlt
+    LC_NUMERIC CDATA    #IMPLIED
+    root       CDATA    #IMPLIED
+    profile    CDATA    #IMPLIED
+    title      CDATA    #IMPLIED
+>
 <!ELEMENT profile EMPTY >
 <!ATTLIST profile
     name               CDATA    #IMPLIED

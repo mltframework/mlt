@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <locale.h>
 
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
@@ -1176,8 +1177,15 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_start_property( context, name, atts );
 	else if ( xmlStrcmp( name, _x("westley") ) == 0 || xmlStrcmp( name, _x("mlt") ) == 0 )
+	{
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
-			mlt_properties_set( context->producer_map, ( const char * )atts[ 0 ], ( const char * )atts[ 1 ] );
+		{
+			if ( xmlStrcmp( atts[0], _x("LC_NUMERIC") ) )
+				mlt_properties_set( context->producer_map, _s( atts[0] ), _s(atts[1] ) );
+			else
+				setlocale( LC_NUMERIC, _s( atts[1] ) );
+		}
+	}
 }
 
 static void on_end_element( void *ctx, const xmlChar *name )
