@@ -122,11 +122,11 @@ mlt_filter filter_vignette_init( mlt_profile profile, mlt_service_type type, con
 		*/
 		
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "smooth", "0.8" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "radius", "0.5" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "x", "0.5" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "y", "0.5" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "opacity", "0.0" );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "smooth", 0.8 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "radius", 0.5 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "x", 0.5 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "y", 0.5 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "opacity", 0.0 );
 
 		//mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "end", "" );
 

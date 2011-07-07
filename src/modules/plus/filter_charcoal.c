@@ -165,10 +165,10 @@ mlt_filter filter_charcoal_init( mlt_profile profile, mlt_service_type type, con
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "x_scatter", "1" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "y_scatter", "1" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "scale", "1.5" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "mix", "0" );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "x_scatter", 1 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "y_scatter", 1 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "scale", 1.5 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "mix", 0.0 );
 	}
 	return this;
 }
