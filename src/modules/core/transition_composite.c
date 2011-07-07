@@ -1321,7 +1321,7 @@ mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type 
 		this->process = composite_process;
 		
 		// Default starting motion and zoom
-		mlt_properties_set( properties, "start", arg != NULL ? arg : "0,0:100%x100%" );
+		mlt_properties_set( properties, "start", arg != NULL ? arg : "0/0:100%x100%" );
 		
 		// Default factory
 		mlt_properties_set( properties, "factory", mlt_environment( "MLT_PRODUCER" ) );

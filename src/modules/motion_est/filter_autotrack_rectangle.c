@@ -189,7 +189,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Because filter_obscure needs to be rewritten to use mlt_geometry
 		char geom[100];
-		sprintf( geom, "%d,%d:%dx%d", (int)boundry.x, (int)boundry.y, (int)boundry.w, (int)boundry.h );
+		sprintf( geom, "%d/%d:%dx%d", (int)boundry.x, (int)boundry.y, (int)boundry.w, (int)boundry.h );
 		mlt_properties_set( MLT_FILTER_PROPERTIES( obscure ), "start", geom );
 		mlt_properties_set( MLT_FILTER_PROPERTIES( obscure ), "end", geom );
 	}
@@ -331,7 +331,7 @@ mlt_filter filter_autotrack_rectangle_init( mlt_profile profile, mlt_service_typ
 		if( arg != NULL ) 
 			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", arg );
 		else
-			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", "100,100:100x100" );
+			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", "100/100:100x100" );
 
 		// create an instance of the motion_est and obscure filter
 		mlt_filter motion_est = mlt_factory_filter( profile, "motion_est", NULL );

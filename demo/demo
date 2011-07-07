@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export MLT_PROFILE=dv_pal
+export LC_NUMERIC=C
 
 function show_consumers( )
 {
@@ -90,7 +91,7 @@ do
 			if [ "$MLT_CONSUMER" == "xml:" ]
 			then	export XML_CONSUMER="xml:$demo.mlt"
 					bash $demo -consumer $XML_CONSUMER
-					melt +$demo.txt out=100 $demo.mlt $demo.mlt -filter watermark:watermark1.png composite.fill=1 composite.geometry=85%,5%:10%x10%
+					melt +$demo.txt out=100 $demo.mlt $demo.mlt -filter watermark:watermark1.png composite.fill=1 composite.geometry=85%/5%:10%x10%
 			elif [ "$MLT_CONSUMER" == "xml" ]
 			then	bash $demo -consumer $MLT_CONSUMER | less
 			else	bash $demo -consumer $MLT_CONSUMER

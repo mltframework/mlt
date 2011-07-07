@@ -282,7 +282,7 @@ mlt_filter filter_obscure_init( mlt_profile profile, mlt_service_type type, cons
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 		this->process = filter_process;
-		mlt_properties_set( properties, "start", arg != NULL ? arg : "0%,0%:100%x100%" );
+		mlt_properties_set( properties, "start", arg != NULL ? arg : "0%/0%:100%x100%" );
 		mlt_properties_set( properties, "end", "" );
 	}
 	return this;

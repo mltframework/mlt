@@ -46,7 +46,7 @@ mlt_producer create_tracks( int argc, char **argv )
 	mlt_tractor tractor = mlt_field_tractor( field );
 
 	// Obtain a composite transition
-	mlt_transition transition = mlt_factory_transition( "composite", "10%,10%:15%x15%" );
+	mlt_transition transition = mlt_factory_transition( "composite", "10%/10%:15%x15%" );
 
 	// Create track 0
 	mlt_producer track0 = create_playlist( argc, argv );

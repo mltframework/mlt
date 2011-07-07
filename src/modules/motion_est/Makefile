@@ -43,7 +43,7 @@ hist: $(TARGET)
 
 
 test2: $(TARGET)
-	melt colour:black -filter watermark:"+mello.txt" composite.geometry="0,0:10%x10%;99=90%,90%" composite.out=99 -filter crop_detect -filter motion_est -filter vismv
+	melt colour:black -filter watermark:"+mello.txt" composite.geometry="0/0:10%x10%;99=90%/90%" composite.out=99 -filter crop_detect -filter motion_est -filter vismv
 
 realtime: $(TARGET)
 	~/mlt-devel/mlt/src/melt/melt -filter motion_est -filter vismv -consumer sdl rescale=none /media/cdrecorder/BBC.The.Private.Life.Of.Plants.Pt5.Living.Together.DivX505.AC3.www.MVGroup.org.uk.avi in=30000

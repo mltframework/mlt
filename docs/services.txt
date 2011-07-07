@@ -828,9 +828,9 @@ Filters
 	        
 	    Initialisation Properties
 	    
-	        string start - in the format X,Y:WxH[:PWxPY]
+	        string start - in the format X/Y:WxH[:PWxPY]
 	                     - PWxPY is the size of the averaging region in pixels.
-	        string end - in the format X,Y:WxH[:PWxPY]
+	        string end - in the format X/Y:WxH[:PWxPY]
 	        int in - in point
 	        int out - out point
 
@@ -1135,14 +1135,14 @@ Transitions
 
 		Deprecated Properties
 
-	        string start - a geometry specification as X,Y:WxH[!][:mix]
+	        string start - a geometry specification as X/Y:WxH[!][:mix]
 	                     - X, Y, W, H are assumed to pixel units unless they
 	                       have the suffix '%'
 	                     - '!' is a shortcut to specify distort, see below.
 	                     - mix is always a 2 digit percentage, defaults to 100.
-	                     - default is "85%,5%:10%x10%"
+	                     - default is "85%/5%:10%x10%"
 	        string end - the ending size and position.
-	        string key[F] - X,Y:WxH[:mix] - set a key frame for geometry between
+	        string key[F] - X/Y:WxH[:mix] - set a key frame for geometry between
 	                        the in and out. F is a frame number and can be
 	                        negative to make it relative to the out point.
 

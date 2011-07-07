@@ -198,8 +198,9 @@ static void mlt_geometry_clean( mlt_geometry self )
 }
 
 // Parse the geometry specification for a given length and normalised width/height (-1 for default)
-// data is constructed as: [frame=]X,Y:WxH[:mix][;[frame=]X,Y:WxH[:mix]]*
+// data is constructed as: [frame=]X/Y:WxH[:mix][!][;[frame=]X/Y:WxH[:mix][!]]*
 // and X, Y, W and H can have trailing % chars to indicate percentage of normalised size
+// Append a pair's value with ! to enable distort.
 int mlt_geometry_parse( mlt_geometry self, char *data, int length, int nw, int nh )
 {
 	int i = 0;
@@ -636,7 +637,7 @@ char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
 
 			if ( item.f[0] ) 
 				sprintf( temp + strlen( temp ), "%.0f", item.x );
-			strcat( temp, "," );
+			strcat( temp, "/" );
 			if ( item.f[1] ) 
 				sprintf( temp + strlen( temp ), "%.0f", item.y );
 			strcat( temp, ":" );

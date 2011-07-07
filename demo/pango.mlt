@@ -11,8 +11,8 @@
     <property name="fgcolour">0xffffddff</property>
     <property name="bgcolour">0x8c101080</property>
     <property name="pad">8</property>
-    <property name="text"><![CDATA[Ê¾úlÉäºÉÒ qàö»ÉÉ<
-HíÉà~ÉÒ+àeôÒ`ò­÷ +y«ÉKÉ §ÉÉWð~É]]></property>
+    <property name="text"><![CDATA[Ê¾úlÉäºÉÒ q� ö»ÉÉ<
+HíÉ� ~ÉÒ+� eôÒ`ò­÷ +y«ÉKÉ §ÉÉWð~É]]></property>
   </producer>
   <tractor>
     <multitrack>
@@ -23,10 +23,10 @@ HíÉà~ÉÒ+àeôÒ`ò­÷ +y«ÉKÉ §ÉÉWð~É]]></property>
       <property name="mlt_service">composite</property>
       <property name="a_track">1</property>
       <property name="b_track">0</property>
-      <property name="start">-70%,65%:100%x35%:0</property>
-      <property name="key[25]">0,65%:100%x35%:100</property>
-      <property name="key[125]">0,65%:100%x35%:100</property>
-      <property name="end">0,65%:100%x35%:0</property>
+      <property name="start">-70%/65%:100%x35%:0</property>
+      <property name="key[25]">0/65%:100%x35%:100</property>
+      <property name="key[125]">0/65%:100%x35%:100</property>
+      <property name="end">0/65%:100%x35%:0</property>
       <property name="halign">centre</property>
       <property name="valign">centre</property>
     </transition>

@@ -27,7 +27,7 @@ melt \
 	a_track=2 \
 	b_track=1 \
 -transition \
-	composite:0%,80%:100%x20% \
+	composite:0%/80%:100%x20% \
 	distort=1 \
 	in=100 \
 	out=299 \

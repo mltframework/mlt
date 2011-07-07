@@ -68,7 +68,7 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 		sprintf( key, "%s.", name );
 
 		// Just in case, let's assume that the filter here has a composite
-		//mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "composite.geometry", "0%,0%:100%x100%" );
+		//mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "composite.geometry", "0%/0%:100%x100%" );
 		//mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "composite.fill", 1 );
 
 		// Pass all the key properties on the filter down
