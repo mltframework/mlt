@@ -9,17 +9,17 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
-description: |
+description: >
   A title generator that uses the Pango international text layout and Freetype2 
   font renderer.
-notes: |
+notes: >
   Supplying a filename with extension ".txt" causes the loader producer to load 
   with pango. If the filename begins with "+" the pango producer interprets the 
   filename as pango text. This is a shortcut to embed titles in melt commands. 
   For MLT XML, it is recommended that you embed the title text in the property 
   value.
   
-  Pango has builtin scaling. It will rescale the originally rendered title to 
+  Pango has builtin scaling. It will rescale the originally rendered title to
   whatever the consumer requests. Therefore, it will lose its aspect ratio if 
   so requested, and it is up to the consumer to request a proper width and 
   height that maintains the image aspect.
@@ -36,7 +36,7 @@ parameters:
     readonly: no
     required: yes
     mutable: no
-    widget: fileopen # could provide a button to use a file-open dialog 
+    widget: fileopen
     
   - identifier: in
     title: In point
@@ -70,25 +70,25 @@ parameters:
     widget: textbox
     
   - identifier: fgcolour
-    title: Foreground Colour
+    title: Foreground color
     type: string
     description: an RGBA colour specification of the text (i.e. 0xrrggbbaa)
     readonly: no
     mutable: yes
-    widget: colorpicker
+    widget: color
     
   - identifier: bgcolour
-    title: Background Colour
+    title: Background color
     type: string
     description: an RGBA colour of the background rectangle (i.e. 0xrrggbbaa)
     readonly: no
     mutable: yes
-    widget: colorpicker
+    widget: color
     
   - identifier: align
-    title: Paragraph Alignment
+    title: Paragraph alignment
     type: string
-    description: |
+    description: >
       left, centre, right (also, numbers 0, 1 and 2 can be used respectively)
     readonly: no
     mutable: yes
@@ -97,7 +97,7 @@ parameters:
   - identifier: pad
     title: Padding
     type: integer
-    description: |
+    description: >
       The number of pixels to pad the background rectangle beyond edges of text.
     readonly: no
     default: 0
@@ -124,7 +124,7 @@ parameters:
     widget: combobox
     
   - identifier: weight
-    title: Font Weight
+    title: Font weight
     type: integer
     description: The weight of the font.
     default: 400
@@ -135,7 +135,7 @@ parameters:
   - identifier: encoding
     title: Encoding
     type: string
-    description: |
+    description: >
       The text encoding type of the input if not UTF-8.
       See 'iconv --list' for a list of possible inputs.
     default: UTF-8
@@ -150,13 +150,13 @@ parameters:
     readonly: yes
 
   - identifier: real_width
-    title: Real Width
+    title: Real width
     type: integer
     description: The original, unscaled width of the rendered title.
     readonly: yes
     
   - identifier: real_height
-    title: Real Height
+    title: Real height
     type: integer
     description: The original, unscaled height of the rendered title.
     readonly: yes

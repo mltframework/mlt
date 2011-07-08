@@ -10,7 +10,7 @@ language: en
 tags:
   - Video
 description: Overlay text or images onto the video
-notes: |
+notes: >
   The watermark filter combines a frame producer and a composite transition to 
   overlay the specified text or image onto the video.
 
@@ -30,22 +30,22 @@ notes: |
   
 parameters:
   - identifier: argument
-    title: File or Text
+    title: File/URL
     type: string
-    description: A pango or pixbuf producer file name.
+    description: The file to overlay.
     required: no
     readonly: no
     default: unset
     widget: fileopen
 
   - identifier: resource
-    title: File or Text
+    title: File/URL
     type: string
-    description: see argument  
+    description: The file to overlay.
     required: no
     readonly: no
     default: unset
-    widget: fileopen or text
+    widget: fileopen
 
   - identifier: distort
     title: Allow distorted scaling
@@ -55,23 +55,36 @@ parameters:
     maximum: 1
     widget: checkbox
     
-  - identifier: producer
-    title: Pango or Pixbuf producer
-    type: producer
+  - identifier: producer.*
+    title: Producer
     description: |
-      A pango or pixbuf producer (as appropriate for the file name).
-      Properties may be set on the producer to control its behavior.
+      Properties may be set on the encapsulated producer.
       e.g.: producer.align=centre
       See "pango" and "pixbuf" producers for details.
     readonly: no
 
-  - identifier: composite
-    title: Composite Transition
-    type: transition
+  - identifier: composite.*
+    title: Composite
     description: |
-      The transition that combines the images from the pango or pixbuf producer 
-      with the images from the track.
-      Properties may be set on the composite to control its behavior.
+      Properties may be set on the encapsulated composite.
       e.g.: composite.valign=c
       See "composite" transition for details.
     readonly: no
+
+  - identifier: reverse
+    title: Reverse
+    type: integer
+    description: Overlay the video to which the filter is applied atop the supplied file.
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
+
+  - identifier: deinterlace
+    description: Force the supplied file to be be deinterlaced if it is interlaced.
+    type: integer
+    description:
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox

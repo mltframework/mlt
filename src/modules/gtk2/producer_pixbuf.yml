@@ -9,9 +9,9 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
-description: |
+description: >
   A still graphics to video generator using gdk-pixbuf
-notes: |
+notes: >
   Pixbuf has builtin scaling. It will rescale the originally rendered title to 
   whatever the consumer requests. Therefore, it will lose its aspect ratio if 
   so requested, and it is up to the consumer to request a proper width and 
@@ -21,25 +21,24 @@ parameters:
   - identifier: argument
     title: File
     type: string
-    description:
-      - >
+    description: >
         The name of a graphics file loadable by a gdk-pixbuf loader. 
-        See /usr/lib/gdk-pixbuf/loaders
-        definitely png, jpeg, tiff, pnm, and xpm
-      - >
+        See /usr/lib/gdk-pixbuf/loaders.
+        Definitely png, jpeg, tiff, pnm, and xpm will work.
+        
         If "%" in filename, the filename is used with sprintf generate a 
         filename from a counter for multi-file/flipbook animation. The file 
         sequence ends when numeric discontinuity >100.
-      - >
+        
         If filename contains "/.all.", suffix with an extension to load all 
         pictures with matching extension from a directory.
-      - >
+        
         If filename contains the string "<svg", then pixbuf tries to load the 
         filename as inline SVG XML, which is convenient for melt commands.
     readonly: no
     required: yes
     mutable: no
-    widget: fileopen # could provide a button to use a file-open dialog 
+    widget: fileopen
     
   - identifier: in
     title: In point
@@ -70,7 +69,7 @@ parameters:
     widget: spinner
     
   - identifier: ttl
-    title: Time To Live
+    title: Time-to-live
     type: integer
     description: How long (in frames) to repeat each picture in file sequences.
     readonly: no
@@ -86,15 +85,15 @@ parameters:
     readonly: yes
     
   - identifier: real_width
-    title: Real Width
+    title: Real width
     type: integer
-    description: The original, unscaled width of the rendered title.
+    description: The original, unscaled width of the rendered image.
     readonly: yes
     
   - identifier: real_height
-    title: Real Height
+    title: Real height
     type: integer
-    description: The original, unscaled height of the rendered title.
+    description: The original, unscaled height of the rendered image.
     readonly: yes
     
   - identifier: width
@@ -108,3 +107,19 @@ parameters:
     type: integer
     description: The last requested scaled image height.
     readonly: yes
+
+  - identifier: force_reload
+    type: integer
+    description: >
+      Reload the file instead of using its cached image. This property
+      automatically resets itself once it has been set 1 and processed.
+    minimum: 0
+    maximum: 1
+    mutable: yes
+
+  - identifier: disable_exif
+    title: Disable auto-rotation
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox

@@ -14,19 +14,9 @@ description: |
   Construct a service network from an XML description. See docs/mlt-xml.txt.
 parameters:
   - identifier: argument
-    title: URL
+    title: File
     type: string
-    description: |
-      An XML text file containing MLT XML
-      Since MLT XML files can be parameterised, the URL syntax is:
-      {file-name}[?{param-name}{'='|':'}{param-value}[&{param-name}{'='|':'}{param-value}...]]
-      A colon is allowed instead of an equal sign to pacify melt, who tokenises 
-      anything with an equal sign as a property setting. Also, when running 
-      melt from the shell, beware of the '?' and shell filename expansion. You 
-      can surround the URL with single quotations to prevent expansion. 
-      Finally, the loader will fail to match the filename when you use 
-      parameters, so preface the url with 'xml:' to force the loader to load 
-      with the xml service.
+    description: An XML text file containing MLT XML.
     readonly: no
     required: yes
     mutable: no
@@ -35,5 +25,4 @@ parameters:
   - identifier: resource
     title: Resource
     type: string
-    description: File location. See "argument" above.
     readonly: yes

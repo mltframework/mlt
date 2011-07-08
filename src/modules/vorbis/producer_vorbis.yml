@@ -24,7 +24,6 @@ parameters:
   - identifier: resource
     title: Resource
     type: string
-    description: File location. See "argument" above.
     readonly: yes
     
   - identifier: in
@@ -45,9 +44,3 @@ parameters:
     minimum: 0
     mutable: no
     widget: timecode
-    
-  - identifier: fps
-    title: Frame Rate
-    type: double
-    description: The output frame rate of the producer
-    readonly: yes

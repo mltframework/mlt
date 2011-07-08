@@ -31,12 +31,6 @@ parameters:
     mutable: no
     widget: timecode
     
-  - identifier: fps
-    title: Frame Rate
-    type: double
-    description: The output frame rate of the producer
-    readonly: yes
-    
   - identifier: aspect_ratio
     title: Aspect Ratio
     type: double

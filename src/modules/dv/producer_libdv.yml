@@ -13,12 +13,10 @@ tags:
 description: A libdv based decoder for video and audio.
 parameters:
   - identifier: argument
-    title: Filename
-    description: The name of a .dv file.
+    title: File
     type: string
     required: yes
     readonly: no
-    default: <null>
     widget: fileopen
     
   - identifier: in
@@ -43,15 +41,8 @@ parameters:
   - identifier: resource
     title: Resource
     type: string
-    description: The location of the file
     readonly: yes
 
-  - identifier: fps
-    title: Frame Rate
-    type: double
-    description: The output frame rate of the producer
-    readonly: yes
-    
   - identifier: length
     title: Length
     type: time
@@ -66,3 +57,4 @@ parameters:
     readonly: no
     mutable: yes
     widget: combobox
+    default: best
