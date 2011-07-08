@@ -9,3 +9,166 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: |
+  A title generator that uses the Pango international text layout and Freetype2 
+  font renderer.
+notes: |
+  Supplying a filename with extension ".txt" causes the loader producer to load 
+  with pango. If the filename begins with "+" the pango producer interprets the 
+  filename as pango text. This is a shortcut to embed titles in melt commands. 
+  For MLT XML, it is recommended that you embed the title text in the property 
+  value.
+  
+  Pango has builtin scaling. It will rescale the originally rendered title to 
+  whatever the consumer requests. Therefore, it will lose its aspect ratio if 
+  so requested, and it is up to the consumer to request a proper width and 
+  height that maintains the image aspect.
+
+parameters:
+  - identifier: argument
+    title: File
+    type: string
+    description: |
+      A text file containing Pango markup, see:
+      http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+      requires xml-like encoding special chars from:
+      <, >, &   -to-   &lt;, &gt;, &amp;
+    readonly: no
+    required: yes
+    mutable: no
+    widget: fileopen # could provide a button to use a file-open dialog 
+    
+  - identifier: in
+    title: In point
+    type: time
+    description: Set the start time offset to use within the clip
+    readonly: no
+    mutable: no
+    minimum: 0
+    default: 0
+    widget: timecode
+
+  - identifier: out
+    title: Out point
+    type: time
+    description: Set the ending time offset to use within the clip
+    readonly: no
+    minimum: 0
+    mutable: no
+    widget: timecode
+    
+  - identifier: markup
+    title: Markup
+    type: string
+    description: |
+      A string containing Pango markup see:
+      http://developer.gnome.org/doc/API/2.0/pango/PangoMarkupFormat.html
+      requires xml-like encoding special chars from:
+      <, >, &   -to-   &lt;, &gt;, &amp;
+    readonly: no
+    mutable: yes
+    widget: textbox
+    
+  - identifier: fgcolour
+    title: Foreground Colour
+    type: string
+    description: an RGBA colour specification of the text (i.e. 0xrrggbbaa)
+    readonly: no
+    mutable: yes
+    widget: colorpicker
+    
+  - identifier: bgcolour
+    title: Background Colour
+    type: string
+    description: an RGBA colour of the background rectangle (i.e. 0xrrggbbaa)
+    readonly: no
+    mutable: yes
+    widget: colorpicker
+    
+  - identifier: align
+    title: Paragraph Alignment
+    type: string
+    description: |
+      left, centre, right (also, numbers 0, 1 and 2 can be used respectively)
+    readonly: no
+    mutable: yes
+    widget: combobox
+
+  - identifier: pad
+    title: Padding
+    type: integer
+    description: |
+      The number of pixels to pad the background rectangle beyond edges of text.
+    readonly: no
+    default: 0
+    mutable: yes
+    widget: spinner
+    
+  - identifier: text
+    title: Text
+    type: string
+    description: |
+      A non-markup string in UTF-8 encoding 
+      (can contain markup chars un-encoded)
+    readonly: no
+    mutable: yes
+    widget: textbox
+
+  - identifier: font
+    title: Font
+    type: string
+    description: The default typeface to use when not using markup.
+    default: "Sans 48". FreeType2 renders at 72 dpi.
+    readonly: no
+    mutable: yes
+    widget: combobox
+    
+  - identifier: weight
+    title: Font Weight
+    type: integer
+    description: The weight of the font.
+    default: 400
+    readonly: no
+    mutable: yes
+    widget: spinner
+    
+  - identifier: encoding
+    title: Encoding
+    type: string
+    description: |
+      The text encoding type of the input if not UTF-8.
+      See 'iconv --list' for a list of possible inputs.
+    default: UTF-8
+    readonly: no
+    mutable: yes
+    widget: combobox
+    
+  - identifier: resource
+    title: Resource
+    type: string
+    description: The text/markup file or "pango" if no file.
+    readonly: yes
+
+  - identifier: real_width
+    title: Real Width
+    type: integer
+    description: The original, unscaled width of the rendered title.
+    readonly: yes
+    
+  - identifier: real_height
+    title: Real Height
+    type: integer
+    description: The original, unscaled height of the rendered title.
+    readonly: yes
+
+  - identifier: width
+    title: Width
+    type: integer
+    description: The last requested scaled image width.
+    readonly: yes
+    
+  - identifier: height
+    title: Height
+    type: integer
+    description: The last requested scaled image height.
+    readonly: yes

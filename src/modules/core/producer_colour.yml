@@ -9,3 +9,18 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: A simple color generator.
+parameters:
+  - identifier: argument
+    title: Color value
+    description: |
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue.
+    type: string
+    required: no
+    readonly: no
+    default: black
+    widget: textbox
+    
+    

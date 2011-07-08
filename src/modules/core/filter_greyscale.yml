@@ -9,3 +9,4 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: Convert colour image to greyscale

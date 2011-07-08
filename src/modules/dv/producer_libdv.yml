@@ -10,3 +10,59 @@ language: en
 tags:
   - Audio
   - Video
+description: A libdv based decoder for video and audio.
+parameters:
+  - identifier: argument
+    title: Filename
+    description: The name of a .dv file.
+    type: string
+    required: yes
+    readonly: no
+    default: <null>
+    widget: fileopen
+    
+  - identifier: in
+    title: In point
+    type: time
+    description: Set the start time offset to use within the clip
+    readonly: no
+    mutable: no
+    minimum: 0
+    default: 0
+    widget: timecode
+
+  - identifier: out
+    title: Out point
+    type: time
+    description: Set the ending time offset to use within the clip
+    readonly: no
+    minimum: 0
+    mutable: no
+    widget: timecode
+    
+  - identifier: resource
+    title: Resource
+    type: string
+    description: The location of the file
+    readonly: yes
+
+  - identifier: fps
+    title: Frame Rate
+    type: double
+    description: The output frame rate of the producer
+    readonly: yes
+    
+  - identifier: length
+    title: Length
+    type: time
+    description: The duration of the file (in frames)
+    readonly: yes
+    widget: timecode
+    
+  - identifier: quality
+    title: Quality
+    type: string
+    description: One of "best," "fast" or anything else chooses medium.
+    readonly: no
+    mutable: yes
+    widget: combobox

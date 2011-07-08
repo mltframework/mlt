@@ -9,3 +9,45 @@ license: LGPLv2.1
 language: en
 tags:
   - Audio
+description: |
+  OGG Vorbis file reader.
+parameters:
+  - identifier: argument
+    title: File
+    type: string
+    description: File to use (only .ogg supported at the moment)
+    readonly: no
+    required: yes
+    mutable: no
+    widget: fileopen
+    
+  - identifier: resource
+    title: Resource
+    type: string
+    description: File location. See "argument" above.
+    readonly: yes
+    
+  - identifier: in
+    title: In point
+    type: time
+    description: Set the start time offset to use within the clip
+    readonly: no
+    mutable: no
+    minimum: 0
+    default: 0
+    widget: timecode
+    
+  - identifier: out
+    title: Out point
+    type: time
+    description: Set the ending time offset to use within the clip
+    readonly: no
+    minimum: 0
+    mutable: no
+    widget: timecode
+    
+  - identifier: fps
+    title: Frame Rate
+    type: double
+    description: The output frame rate of the producer
+    readonly: yes

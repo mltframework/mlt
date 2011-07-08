@@ -9,3 +9,25 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: |
+  Applies a luma transition between the current and next frames. Useful for 
+  transitions from a slideshow created using producer pixbuf.
+parameters:
+  - identifier: argument
+    title: File
+    type: string
+    description: The luma map file to be used for the transition
+  - identifier: period
+    title: Period
+    type: integer
+    description: >
+      How long to wait between success iterations of the transition. For best 
+      results set this to a multiple of ttl used in pixbuf.
+    mutable: yes
+    default: 24
+  - identifier: luma.*
+    title: Luma Properties
+    description: >
+      All properties beginning with "luma." are passed to the encapsulated luma 
+      transition. For example, luma.out controls the duration of the wipe.
+    mutable: yes

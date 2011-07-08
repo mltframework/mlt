@@ -9,3 +9,16 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: Adjust image luma using a non-linear power-law curve.
+parameters:
+  - identifier: argument
+    title: Gamma
+    type: double
+    description: The exponential factor of the power-law curve
+    default: 1.0
+  - identifier: gamma
+    title: Gamma
+    type: double
+    description: See "argument"
+    mutable: yes
+    default: 1.0

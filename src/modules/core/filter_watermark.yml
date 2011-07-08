@@ -9,3 +9,69 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: Overlay text or images onto the video
+notes: |
+  The watermark filter combines a frame producer and a composite transition to 
+  overlay the specified text or image onto the video.
+
+  Supplying a filename with extension ".txt" causes the loader to load a pango 
+  producer. Supplying a file name with an extension supported by gtk-pixbuf
+  causes the loader to load a pixbuf producer. See the pango and pixbuf 
+  producers for details.
+  
+  Note: If the filename begins with "+" the pango producer interprets the 
+  filename as pango text.
+  
+  Text Example:
+  melt colour:red -filter watermark:"+First Line~Second Line.txt" composite.progressive=1 producer.align=centre composite.valign=c composite.halign=c
+  
+  Image Example:
+  melt clip.dv -filter watermark:logo.png
+  
+parameters:
+  - identifier: argument
+    title: File or Text
+    type: string
+    description: A pango or pixbuf producer file name.
+    required: no
+    readonly: no
+    default: unset
+    widget: fileopen
+
+  - identifier: resource
+    title: File or Text
+    type: string
+    description: see argument  
+    required: no
+    readonly: no
+    default: unset
+    widget: fileopen or text
+
+  - identifier: distort
+    title: Allow distorted scaling
+    type: integer
+    default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+    
+  - identifier: producer
+    title: Pango or Pixbuf producer
+    type: producer
+    description: |
+      A pango or pixbuf producer (as appropriate for the file name).
+      Properties may be set on the producer to control its behavior.
+      e.g.: producer.align=centre
+      See "pango" and "pixbuf" producers for details.
+    readonly: no
+
+  - identifier: composite
+    title: Composite Transition
+    type: transition
+    description: |
+      The transition that combines the images from the pango or pixbuf producer 
+      with the images from the track.
+      Properties may be set on the composite to control its behavior.
+      e.g.: composite.valign=c
+      See "composite" transition for details.
+    readonly: no
