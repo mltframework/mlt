@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <locale.h>
 #include <libxml/tree.h>
 
 #define ID_SIZE 128
@@ -634,6 +635,9 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	char tmpstr[ 32 ];
 
 	xmlDocSetRootElement( doc, root );
+
+	// Indicate the numeric locale
+	xmlNewProp( root, _x("LC_NUMERIC"), _x( setlocale( LC_NUMERIC, NULL ) ) );
 
 	// If we have root, then deal with it now
 	if ( mlt_properties_get( properties, "root" ) != NULL )
