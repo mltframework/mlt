@@ -5,6 +5,9 @@ mapping:
   "schema_version": # This should match the version comment above
     type: float
     required: yes
+  "LC_NUMERIC": # If not provided LC_NUMERIC=C is used, not the system's locale.
+    type: str
+    required: no
   "type": # A service type
     type: str
     required: yes

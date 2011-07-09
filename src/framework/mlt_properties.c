@@ -1468,6 +1468,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		if ( strcmp( ptr, "" ) == 0 )
 		{
 			mlt_properties child = mlt_properties_new();
+			mlt_properties_set_lcnumeric( child, mlt_properties_get_lcnumeric( properties ) );
 			mlt_properties_set_data( properties, name, child, 0,
 				( mlt_destructor )mlt_properties_close, NULL );
 			mlt_deque_push_front( context->stack, child );
@@ -1482,6 +1483,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			mlt_properties child = mlt_properties_new();
 			char key[20];
 
+			mlt_properties_set_lcnumeric( child, mlt_properties_get_lcnumeric( properties ) );
 			snprintf( key, sizeof(key), "%d", context->index++ );
 			mlt_properties_set_data( properties, key, child, 0,
 				( mlt_destructor )mlt_properties_close, NULL );
@@ -1620,6 +1622,9 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 
 	error = mlt_properties_set( properties, name, value );
 
+	if ( !strcmp( name, "LC_NUMERIC" ) )
+		mlt_properties_set_lcnumeric( properties, value );
+
 	free( name_ );
 	free( value );
 
@@ -1649,6 +1654,9 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 			// Temp string
 			char temp[ 1024 ];
 			char *ptemp = &temp[ 0 ];
+
+			// Default to LC_NUMERIC = C
+			mlt_properties_set_lcnumeric( self, "C" );
 
 			// Parser context
 			yaml_parser context = calloc( 1, sizeof( struct yaml_parser_context ) );
