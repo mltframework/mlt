@@ -95,6 +95,7 @@ namespace Mlt
 			char *serialise_yaml( );
 			int preset( const char *name );
 			int set_lcnumeric( const char *locale );
+			const char *get_lcnumeric( );
 	};
 }
 

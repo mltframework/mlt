@@ -326,3 +326,8 @@ int Properties::set_lcnumeric( const char *locale )
 {
 	return mlt_properties_set_lcnumeric( get_properties(), locale );
 }
+
+const char *Properties::get_lcnumeric( )
+{
+	return mlt_properties_get_lcnumeric( get_properties() );
+}

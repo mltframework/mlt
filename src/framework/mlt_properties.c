@@ -147,6 +147,29 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 	return error;
 }
 
+/** Get the numeric locale for this properties object.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \return the locale name if this properties has a specific locale it is using, NULL otherwise
+ */
+
+const char* mlt_properties_get_lcnumeric( mlt_properties self )
+{
+	property_list *list = self->local;
+	const char *result = NULL;
+
+	if ( list->locale )
+	{
+#ifdef querylocale
+		result = querylocale( LC_NUMERIC, list->locale );
+#else
+		result = list->locale->__names[ LC_NUMERIC ];
+#endif
+	}
+	return result;
+}
+
 static int load_properties( mlt_properties self, const char *filename )
 {
 	// Open the file
