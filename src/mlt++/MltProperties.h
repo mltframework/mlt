@@ -94,6 +94,7 @@ namespace Mlt
 			static Properties *parse_yaml( const char *file );
 			char *serialise_yaml( );
 			int preset( const char *name );
+			int set_lcnumeric( const char *locale );
 	};
 }
 
