@@ -54,7 +54,7 @@ static inline float parse_value( char **ptr, int normalisation, char delim, floa
 		{
 			if ( *end == '%' )
 				value = ( value / 100.0 ) * normalisation;
-			while ( *end == delim || *end == '%' )
+			while ( *end == delim || *end == '%' || ( delim == ',' && *end == '/' ) )
 				end ++;
 		}
 		*ptr = end;
