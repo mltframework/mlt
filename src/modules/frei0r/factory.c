@@ -29,6 +29,7 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 
 
 #ifdef WIN32
@@ -111,10 +112,11 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 
 	f0r_init();
 	plginfo(&info);
-	snprintf ( string, sizeof(string) , "%d.%d" , info.major_version , info.minor_version );
-	mlt_properties_set ( metadata, "schema_version" , "0.1" );
+	snprintf ( string, sizeof(string) , "%d" , info.minor_version );
+	mlt_properties_set_double ( metadata, "schema_version" , 0.1 );
 	mlt_properties_set ( metadata, "title" , info.name );
-	mlt_properties_set ( metadata, "version", string );
+	mlt_properties_set_double ( metadata, "version",
+		info.major_version +  info.minor_version / pow( 10, strlen( string ) ) );
 	mlt_properties_set ( metadata, "identifier" , service_name );
 	mlt_properties_set ( metadata, "description" , info.explanation );
 	mlt_properties_set ( metadata, "creator" , info.author );
