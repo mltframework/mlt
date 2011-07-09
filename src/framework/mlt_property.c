@@ -21,11 +21,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// For strtod_l
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "mlt_property.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 
 
 /** Bit pattern used internally to indicated representations available.
@@ -326,6 +332,31 @@ double mlt_property_get_double( mlt_property self )
 	return 0;
 }
 
+/** Get the property (with locale) as a floating point.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param locale the locale to use for this conversion
+ * \return a floating point value
+ */
+
+double mlt_property_get_double_l( mlt_property self, locale_t locale )
+{
+	if ( self->types & mlt_prop_double )
+		return self->prop_double;
+	else if ( self->types & mlt_prop_int )
+		return ( double )self->prop_int;
+	else if ( self->types & mlt_prop_position )
+		return ( double )self->prop_position;
+	else if ( self->types & mlt_prop_int64 )
+		return ( double )self->prop_int64;
+	else if ( locale && ( self->types & mlt_prop_string ) && self->prop_string )
+		return strtod_l( self->prop_string, NULL, locale );
+	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
+		return strtod( self->prop_string, NULL );
+	return 0;
+}
+
 /** Get the property as a position.
  *
  * A position is an offset time in terms of frame units.
@@ -434,6 +465,76 @@ char *mlt_property_get_string( mlt_property self )
 			self->types |= mlt_prop_string;
 			self->prop_string = self->serialiser( self->data, self->length );
 		}
+	}
+
+	// Return the string (may be NULL)
+	return self->prop_string;
+}
+
+/** Get the property as a string (with locale).
+ *
+ * The caller is not responsible for deallocating the returned string!
+ * The string is deallocated when the Property is closed.
+ * This tries its hardest to convert the property to string including using
+ * a serialization function for binary data, if supplied.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param locale the locale to use for this conversion
+ * \return a string representation of the property or NULL if failed
+ */
+
+char *mlt_property_get_string_l( mlt_property self, locale_t locale )
+{
+	// Optimization for no locale
+	if ( !locale )
+		return mlt_property_get_string( self );
+
+	// Construct a string if need be
+	if ( ! ( self->types & mlt_prop_string ) )
+	{
+		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
+		// Save the current locale
+#ifdef querylocale
+		const char *localename = querylocale( LC_NUMERIC, locale );
+#else
+		const char *localename = locale->__names[ LC_NUMERIC ];
+#endif
+		const char *orig_localename = setlocale( LC_NUMERIC, NULL );
+
+		// Set the new locale
+		setlocale( LC_NUMERIC, localename );
+
+		if ( self->types & mlt_prop_int )
+		{
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+			sprintf( self->prop_string, "%d", self->prop_int );
+		}
+		else if ( self->types & mlt_prop_double )
+		{
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+			sprintf( self->prop_string, "%f", self->prop_double );
+		}
+		else if ( self->types & mlt_prop_position )
+		{
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+			sprintf( self->prop_string, "%d", (int)self->prop_position );
+		}
+		else if ( self->types & mlt_prop_int64 )
+		{
+			self->types |= mlt_prop_string;
+			self->prop_string = malloc( 32 );
+			sprintf( self->prop_string, "%"PRId64, self->prop_int64 );
+		}
+		else if ( self->types & mlt_prop_data && self->serialiser != NULL )
+		{
+			self->types |= mlt_prop_string;
+			self->prop_string = self->serialiser( self->data, self->length );
+		}
+		// Restore the current locale
+		setlocale( LC_NUMERIC, orig_localename );
 	}
 
 	// Return the string (may be NULL)

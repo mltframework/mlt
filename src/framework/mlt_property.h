@@ -25,6 +25,7 @@
 #define _MLT_PROPERTY_H_
 
 #include "mlt_types.h"
+#include <xlocale.h>
 
 extern mlt_property mlt_property_init( );
 extern int mlt_property_set_int( mlt_property self, int value );
@@ -35,9 +36,11 @@ extern int mlt_property_set_string( mlt_property self, const char *value );
 extern int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destructor destructor, mlt_serialiser serialiser );
 extern int mlt_property_get_int( mlt_property self );
 extern double mlt_property_get_double( mlt_property self );
+extern double mlt_property_get_double_l( mlt_property self, locale_t );
 extern mlt_position mlt_property_get_position( mlt_property self );
 extern int64_t mlt_property_get_int64( mlt_property self );
 extern char *mlt_property_get_string( mlt_property self );
+extern char *mlt_property_get_string_l( mlt_property self, locale_t );
 extern void *mlt_property_get_data( mlt_property self, int *length );
 extern void mlt_property_close( mlt_property self );
 

@@ -47,6 +47,7 @@ struct mlt_properties_s
 
 extern int mlt_properties_init( mlt_properties, void *child );
 extern mlt_properties mlt_properties_new( );
+extern int mlt_properties_set_lcnumeric( mlt_properties, const char *locale );
 extern mlt_properties mlt_properties_load( const char *file );
 extern int mlt_properties_preset( mlt_properties self, const char *name );
 extern int mlt_properties_inc_ref( mlt_properties self );

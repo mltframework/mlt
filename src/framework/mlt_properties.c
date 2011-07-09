@@ -38,6 +38,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <locale.h>
 
 /** \brief private implementation of the property list */
 
@@ -51,6 +52,7 @@ typedef struct
 	mlt_properties mirror;
 	int ref_count;
 	pthread_mutex_t mutex;
+	locale_t locale;
 }
 property_list;
 
@@ -116,6 +118,33 @@ mlt_properties mlt_properties_new( )
 
 	// Return the pointer
 	return self;
+}
+
+/** Set the numeric locale used for string/double conversions.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param locale the locale name
+ * \return true if error
+ */
+
+int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
+{
+	int error = 0;
+
+	if ( self && locale )
+	{
+		property_list *list = self->local;
+
+		if ( list->locale )
+			freelocale( list->locale );
+		list->locale = newlocale( LC_NUMERIC, locale, NULL );
+		error = list->locale == NULL;
+	}
+	else
+		error = 1;
+
+	return error;
 }
 
 static int load_properties( mlt_properties self, const char *filename )
@@ -689,7 +718,8 @@ int mlt_properties_set_or_default( mlt_properties self, const char *name, const 
 char *mlt_properties_get( mlt_properties self, const char *name )
 {
 	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? NULL : mlt_property_get_string( value );
+	property_list *list = self->local;
+	return value == NULL ? NULL : mlt_property_get_string_l( value, list->locale );
 }
 
 /** Get a property name by index.
@@ -722,7 +752,7 @@ char *mlt_properties_get_value( mlt_properties self, int index )
 {
 	property_list *list = self->local;
 	if ( index >= 0 && index < list->count )
-		return mlt_property_get_string( list->value[ index ] );
+		return mlt_property_get_string_l( list->value[ index ], list->locale );
 	return NULL;
 }
 
@@ -896,7 +926,8 @@ int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t val
 double mlt_properties_get_double( mlt_properties self, const char *name )
 {
 	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_get_double( value );
+	property_list *list = self->local;
+	return value == NULL ? 0 : mlt_property_get_double_l( value, list->locale );
 }
 
 /** Set a property to a floating point value.
@@ -1169,7 +1200,7 @@ static int mlt_fnmatch( const char *wild, const char *file )
 
 static int mlt_compare( const void *self, const void *that )
 {
-	return strcmp( mlt_property_get_string( *( const mlt_property * )self ), mlt_property_get_string( *( const mlt_property * )that ) );
+    return strcmp( mlt_property_get_string( *( const mlt_property * )self ), mlt_property_get_string( *( const mlt_property * )that ) );
 }
 
 /** Get the contents of a directory.
@@ -1258,6 +1289,10 @@ void mlt_properties_close( mlt_properties self )
 				mlt_property_close( list->value[ index ] );
 				free( list->name[ index ] );
 			}
+
+			// Cleanup locale
+			if ( list->locale )
+				freelocale( list->locale );
 
 			// Clear up the list
 			pthread_mutex_destroy( &list->mutex );
