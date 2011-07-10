@@ -199,7 +199,7 @@ static int consumer_start( mlt_consumer parent )
 
 		mlt_properties_pass_list( play, properties,
 			"deinterlace_method,resize,rescale,width,height,aspect_ratio,display_ratio,preview_off,preview_format,window_background"
-			",volume,real_time,buffer,prefill,audio_off,frequency" );
+			",volume,real_time,buffer,prefill,audio_off,frequency,drop_max" );
 		mlt_properties_pass_list( still, properties,
 			"deinterlace_method,resize,rescale,width,height,aspect_ratio,display_ratio,preview_off,preview_format,window_background" );
 

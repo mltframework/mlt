@@ -40,6 +40,9 @@
  * filters, defaults to "bilinear"
  * \properties \em buffer the number of frames to use in the asynchronous
  * render thread, defaults to 25
+ * \properties \em prefill the number of frames to render before commencing
+ * output when real_time <> 0, defaults to the size of buffer
+ * \properties \em drop_max the maximum number of consecutively dropped frames, defaults to 5
  * \properties \em frequency the audio sample rate to use in Hertz, defaults to 48000
  * \properties \em channels the number of audio channels to use, defaults to 2
  * \properties \em real_time the asynchronous behavior: 1 (default) for asynchronous

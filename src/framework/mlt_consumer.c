@@ -86,6 +86,7 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 
 		// Default read ahead buffer size
 		mlt_properties_set_int( properties, "buffer", 25 );
+		mlt_properties_set_int( properties, "drop_max", 5 );
 
 		// Default audio frequency and channels
 		mlt_properties_set_int( properties, "frequency", 48000 );
@@ -646,6 +647,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	mlt_position start_pos = 0;
 	mlt_position last_pos = 0;
 	int frame_duration = mlt_properties_get_int( properties, "frame_duration" );
+	int drop_max = mlt_properties_get_int( properties, "drop_max" );
 
 	if ( preview_off && preview_format != 0 )
 		self->format = preview_format;
@@ -734,7 +736,7 @@ static void *consumer_read_ahead_thread( void *arg )
 			skipped++;
 
 			// If too many (1 sec) consecutively-skipped frames
-			if ( skipped > fps )
+			if ( skipped > drop_max )
 			{
 				// Reset cost tracker
 				time_process = 0;
@@ -1246,7 +1248,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 //			self->consecutive_dropped, self->consecutive_rendered, self->process_head );
 
 		// Check for too many consecutively dropped frames
-		if ( self->consecutive_dropped > fps )
+		if ( self->consecutive_dropped > mlt_properties_get_int( properties, "drop_max" ) )
 		{
 			int orig_buffer = mlt_properties_get_int( properties, "buffer" );
 			int prefill = mlt_properties_get_int( properties, "prefill" );
