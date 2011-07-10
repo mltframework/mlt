@@ -234,8 +234,10 @@ static int mlt_playlist_virtual_append( mlt_playlist self, mlt_producer source, 
 	// If we have a cut, then use the in/out points from the cut
 	if ( mlt_producer_is_blank( source )  )
 	{
+		mlt_position length = out - in + 1;
+
 		// Make sure the blank is long enough to accomodate the length specified
-		if ( out - in + 1 > mlt_producer_get_length( &self->blank ) )
+		if ( length > mlt_producer_get_length( &self->blank ) )
 		{
 			mlt_properties blank_props = MLT_PRODUCER_PROPERTIES( &self->blank );
 			mlt_events_block( blank_props, blank_props );
@@ -259,6 +261,10 @@ static int mlt_playlist_virtual_append( mlt_playlist self, mlt_producer source, 
 		}
 
 		properties = MLT_PRODUCER_PROPERTIES( producer );
+
+		// Make sure this cut of blank is long enough
+		if ( length > mlt_producer_get_length( producer ) )
+			mlt_properties_set_int( properties, "length", length );
 	}
 	else if ( mlt_producer_is_cut( source ) )
 	{
@@ -920,14 +926,18 @@ int mlt_playlist_resize_clip( mlt_playlist self, int clip, mlt_position in, mlt_
 
 		if ( mlt_producer_is_blank( producer ) )
 		{
-			// Make sure the blank is long enough to accomodate the length specified
-			if ( out - in + 1 > mlt_producer_get_length( &self->blank ) )
+			mlt_position length = out - in + 1;
+
+			// Make sure the parent blank is long enough to accomodate the length specified
+			if ( length > mlt_producer_get_length( &self->blank ) )
 			{
 				mlt_properties blank_props = MLT_PRODUCER_PROPERTIES( &self->blank );
-				mlt_properties_set_int( blank_props, "length", out - in + 1 );
-				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "length", out - in + 1 );
+				mlt_properties_set_int( blank_props, "length", length );
 				mlt_producer_set_in_and_out( &self->blank, 0, out - in );
 			}
+			// Make sure this cut of blank is long enough
+			if ( length > mlt_producer_get_length( producer ) )
+				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "length", length );
 		}
 
 		if ( in < 0 )
