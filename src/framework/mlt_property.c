@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
+#include <pthread.h>
 
 
 /** Bit pattern used internally to indicated representations available.
@@ -74,6 +75,8 @@ struct mlt_property_s
 	int length;
 	mlt_destructor destructor;
 	mlt_serialiser serialiser;
+
+	pthread_mutex_t mutex;
 };
 
 /** Construct a property and initialize it
@@ -95,6 +98,7 @@ mlt_property mlt_property_init( )
 		self->length = 0;
 		self->destructor = NULL;
 		self->serialiser = NULL;
+		pthread_mutex_init( &self->mutex, NULL );
 	}
 	return self;
 }
@@ -499,6 +503,10 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 #else
 		const char *localename = locale->__names[ LC_NUMERIC ];
 #endif
+		// Protect damaging the global locale from a temporary locale on another thread.
+		pthread_mutex_lock( &self->mutex );
+
+		// Get the current locale
 		const char *orig_localename = setlocale( LC_NUMERIC, NULL );
 
 		// Set the new locale
@@ -535,6 +543,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		}
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
+		pthread_mutex_unlock( &self->mutex );
 	}
 
 	// Return the string (may be NULL)
@@ -574,6 +583,7 @@ void *mlt_property_get_data( mlt_property self, int *length )
 void mlt_property_close( mlt_property self )
 {
 	mlt_property_clear( self );
+	pthread_mutex_destroy( &self->mutex );
 	free( self );
 }
 
