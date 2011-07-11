@@ -161,10 +161,12 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 
 	if ( list->locale )
 	{
-#ifdef querylocale
+#if defined(__DARWIN__)
 		result = querylocale( LC_NUMERIC, list->locale );
-#else
+#elif defined(__linux__)
 		result = list->locale->__names[ LC_NUMERIC ];
+#else
+		// TODO: not yet sure what to do on other platforms
 #endif
 	}
 	return result;

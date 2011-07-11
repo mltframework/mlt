@@ -498,10 +498,13 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 	{
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
-#ifdef querylocale
+#if defined(__DARWIN__)
 		const char *localename = querylocale( LC_NUMERIC, locale );
-#else
+#elif defined(__linux__)
 		const char *localename = locale->__names[ LC_NUMERIC ];
+#else
+		// TODO: not yet sure what to do on other platforms
+		const char *localename = "";
 #endif
 		// Protect damaging the global locale from a temporary locale on another thread.
 		pthread_mutex_lock( &self->mutex );
