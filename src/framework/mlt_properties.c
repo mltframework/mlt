@@ -1908,9 +1908,12 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 
 char *mlt_properties_serialise_yaml( mlt_properties self )
 {
+	const char *lc_numeric = mlt_properties_get_lcnumeric( self );
 	strbuf b = strbuf_new();
 	strbuf_printf( b, "---\n" );
+	mlt_properties_set_lcnumeric( self, "C" );
 	serialise_yaml( self, b, 0, 0 );
+	mlt_properties_set_lcnumeric( self, lc_numeric );
 	strbuf_printf( b, "...\n" );
 	char *ret = b->string;
 	strbuf_close( b );
