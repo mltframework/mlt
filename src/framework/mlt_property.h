@@ -25,7 +25,12 @@
 #define _MLT_PROPERTY_H_
 
 #include "mlt_types.h"
+
+#if defined(__linux__) || defined(__DARWIN__)
 #include <xlocale.h>
+#else
+typedef void* locale_t;
+#endif
 
 extern mlt_property mlt_property_init( );
 extern int mlt_property_set_int( mlt_property self, int value );

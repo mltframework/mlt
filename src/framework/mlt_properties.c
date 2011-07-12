@@ -136,9 +136,11 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 	{
 		property_list *list = self->local;
 
+#if defined(__linux__) || defined(__DARWIN__)
 		if ( list->locale )
 			freelocale( list->locale );
 		list->locale = newlocale( LC_NUMERIC, locale, NULL );
+#endif
 		error = list->locale == NULL;
 	}
 	else
@@ -1315,9 +1317,11 @@ void mlt_properties_close( mlt_properties self )
 				free( list->name[ index ] );
 			}
 
+#if defined(__linux__) || defined(__DARWIN__)
 			// Cleanup locale
 			if ( list->locale )
 				freelocale( list->locale );
+#endif
 
 			// Clear up the list
 			pthread_mutex_destroy( &list->mutex );
