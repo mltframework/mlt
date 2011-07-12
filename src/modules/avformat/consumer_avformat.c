@@ -50,6 +50,7 @@
 #endif
 
 #if LIBAVCODEC_VERSION_MAJOR >= 53
+#include <libavformat/avio.h>
 #include <libavutil/opt.h>
 #define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
 #define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
@@ -962,6 +963,21 @@ static inline long time_difference( struct timeval *time1 )
 	return time2.tv_sec * 1000000 + time2.tv_usec - time1->tv_sec * 1000000 - time1->tv_usec;
 }
 
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+static int mlt_write(void *h, uint8_t *buf, int size)
+{
+	mlt_properties properties = (mlt_properties) h;
+	mlt_events_fire( properties, "avformat-write", buf, size, NULL );
+	return 0;
+}
+
+static void write_transmitter( mlt_listener listener, mlt_properties owner, mlt_service service, void **args )
+{
+	listener( owner, service, (uint8_t*) args[0], (int) args[1] );
+}
+#endif
+
+
 /** The main thread - the argument is simply the consumer.
 */
 
@@ -1265,6 +1281,30 @@ static void *consumer_thread( void *arg )
 				audio_st[i] = NULL;
 		}
 
+#if LIBAVFORMAT_VERSION_MAJOR > 52
+		// Setup custom I/O if redirecting
+		if ( mlt_properties_get_int( properties, "redirect" ) )
+		{
+			int buffer_size = 32768;
+			unsigned char *buffer = av_malloc( buffer_size );
+			AVIOContext* io = avio_alloc_context( buffer, buffer_size, 1, properties, NULL, mlt_write, NULL );
+
+			if ( buffer && io )
+			{
+				oc->pb = io;
+				oc->flags |= AVFMT_FLAG_CUSTOM_IO;
+				mlt_properties_set_data( properties, "avio_buffer", buffer, buffer_size, av_free, NULL );
+				mlt_properties_set_data( properties, "avio_context", io, 0, av_free, NULL );
+				mlt_events_register( properties, "avformat-write", (mlt_transmitter) write_transmitter );
+			}
+			else
+			{
+				av_free( buffer );
+				mlt_log_error( MLT_CONSUMER_SERVICE(consumer), "failed to setup output redirection\n" );
+			}
+		}
+		else
+#endif
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
 		{
@@ -1759,13 +1799,16 @@ on_fatal_error:
 
 	// Close the output file
 	if ( !( fmt->flags & AVFMT_NOFILE ) )
+	{
 #if LIBAVFORMAT_VERSION_MAJOR >= 53
-		avio_close( oc->pb );
+		if ( !mlt_properties_get_int( properties, "redirect" ) )
+			avio_close( oc->pb );
 #elif LIBAVFORMAT_VERSION_MAJOR >= 52
 		url_fclose( oc->pb );
 #else
 		url_fclose( &oc->pb );
 #endif
+	}
 
 	// Clean up input and output frames
 	if ( output )
