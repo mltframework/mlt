@@ -2523,15 +2523,15 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
-	// Set the position of this producer
-	mlt_position position = self->seekable ? mlt_producer_frame( producer ) : self->nonseek_position++;
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", position );
-	
 	// Set up the video
 	producer_set_up_video( self, *frame );
 
 	// Set up the audio
 	producer_set_up_audio( self, *frame );
+
+	// Set the position of this producer
+	mlt_position position = self->seekable ? mlt_producer_frame( producer ) : self->nonseek_position++;
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", position );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );
