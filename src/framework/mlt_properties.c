@@ -139,7 +139,7 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 #if defined(__linux__) || defined(__DARWIN__)
 		if ( list->locale )
 			freelocale( list->locale );
-		list->locale = newlocale( LC_NUMERIC, locale, NULL );
+		list->locale = newlocale( LC_NUMERIC_MASK, locale, NULL );
 #endif
 		error = list->locale == NULL;
 	}
@@ -151,6 +151,7 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 
 /** Get the numeric locale for this properties object.
  *
+ * Do not free the result.
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \return the locale name if this properties has a specific locale it is using, NULL otherwise
