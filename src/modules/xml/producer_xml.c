@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <locale.h>
 
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
@@ -84,6 +83,7 @@ struct deserialise_context_s
 	mlt_properties params;
 	mlt_profile profile;
 	int pass;
+	char *lc_numeric;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -354,6 +354,7 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_tractor_close );
+	mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( service ), context->lc_numeric );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
@@ -401,6 +402,7 @@ static void on_start_multitrack( deserialise_context context, const xmlChar *nam
 		tractor = mlt_tractor_new( );
 		parent = MLT_TRACTOR_SERVICE( tractor );
 		track_service( context->destructors, parent, (mlt_destructor) mlt_tractor_close );
+		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( parent ), context->lc_numeric );
 		type = mlt_tractor_type;
 
 		// Flag it as a synthesised tractor for clean up later
@@ -589,6 +591,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
+		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( producer ), context->lc_numeric );
 
 		// Propogate the properties
 		qualify_property( context, properties, "resource" );
@@ -919,6 +922,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		mlt_properties filter_props = MLT_SERVICE_PROPERTIES( filter );
 
 		track_service( context->destructors, filter, (mlt_destructor) mlt_filter_close );
+		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( filter ), context->lc_numeric );
 
 		// Propogate the properties
 		qualify_property( context, properties, "resource" );
@@ -995,6 +999,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 		mlt_properties effect_props = MLT_SERVICE_PROPERTIES( effect );
 
 		track_service( context->destructors, effect, (mlt_destructor) mlt_transition_close );
+		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( effect ), context->lc_numeric );
 
 		// Propogate the properties
 		qualify_property( context, properties, "resource" );
@@ -1182,8 +1187,8 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		{
 			if ( xmlStrcmp( atts[0], _x("LC_NUMERIC") ) )
 				mlt_properties_set( context->producer_map, _s( atts[0] ), _s(atts[1] ) );
-			else
-				setlocale( LC_NUMERIC, _s( atts[1] ) );
+			else if ( !context->lc_numeric )
+				context->lc_numeric = strdup( _s( atts[1] ) );
 		}
 	}
 }
@@ -1628,6 +1633,8 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	if ( context->params != NULL )
 		mlt_properties_close( context->params );
 	mlt_properties_close( context->destructors );
+	if ( context->lc_numeric )
+		free( context->lc_numeric );
 	free( context );
 	free( filename );
 
