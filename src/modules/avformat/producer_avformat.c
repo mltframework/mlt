@@ -2055,10 +2055,10 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			}
 
 			// Handle ignore
-			while ( *ignore && audio_used > samples )
+			while ( *ignore && audio_used )
 			{
 				*ignore -= 1;
-				audio_used -= samples;
+				audio_used -= audio_used > samples ? samples : audio_used;
 				memmove( audio_buffer, &audio_buffer[ samples * (resample? channels : codec_context->channels) * sizeof_sample ],
 						 audio_used * sizeof_sample );
 			}
@@ -2076,9 +2076,10 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 		if ( *ignore == 0 )
 		{
+			fprintf(stderr, "int_pos %lld req_pos %lld\n", int_position, req_position);
 			if ( int_position < req_position )
 				// We are behind, so skip some
-				*ignore = 1;
+				*ignore = req_position - int_position;
 
 			// We use nb_streams in this test because the tolerance is dependent
 			// on the interleaving of all streams esp. when there is more than
