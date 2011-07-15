@@ -2076,7 +2076,6 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 		if ( *ignore == 0 )
 		{
-			fprintf(stderr, "int_pos %lld req_pos %lld\n", int_position, req_position);
 			if ( int_position < req_position )
 				// We are behind, so skip some
 				*ignore = req_position - int_position;
