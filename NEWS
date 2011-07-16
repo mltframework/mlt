@@ -1,6 +1,50 @@
 MLT Release Notes
 -----------------
 
+Version 0.7.4 - July 16, 2011
+
+This is a bugfix and minor enhancement release.
+
+Framework
+ * Important: change consumer property profile to mlt_profile.
+ * Improve frame-dropping and drop_max property to mlt_consumer.
+ * Added support for presets for any service through special property named
+   "properties"
+ * Added mlt_profile_from_producer() for auto-profile.
+ * Added mlt_properties_set_lcnumeric() and mlt_properties_get_lcnumeric().
+ * Added LC_NUMERIC to YAML Tiny metadata schema and parser.
+
+Modules
+ * Added support for more than 2 channels of greater than 16-bit audio.
+ * Added discrete filters for each SoX effect.
+ * Added discrete filters for each LADSPA audio plugin.
+ * Added automatic service metadata for SoX and LADSPA plugins.
+ * Added at least basic metadata for nearly every service.
+ * Added support for decklink on Windows (tested) and Mac OS X (untested).
+ * Added support for JACK transport synchronization.
+ * Added blacklist.txt to jackrack plugin (contains dssi-vst).
+ * Rewrite of decklink consumer.
+ * Added support for live network, multi-stream device, and pipe/fifo sources
+   in avformat producer.
+ * Added LC_NUMERIC attribute to root XML element.
+
+Melt
+ * Added '-query presets' option.
+ * Added -jack option for transport synchronization.
+ * Send -help and -query output to stdout to make it convenient for pagers.
+
+Other
+ * Added mlt.Frame.get_image() for Python.
+ * Removed configure option --avformat-svn.
+ * Fixes for locales that use comma for decimal point.
+ * Added presets for DVD, DV, x264, and WebM encoding.
+
+Since FFmpeg forked and there were a few releases, there is no recommended
+version at this time. With that said, there were changes to accomodate the
+API changes with some moderate testing of the 0.6, 0.7, and 0.8 series
+releases of both FFmpeg and Libav.
+
+
 Version 0.7.2 - May 1, 2011
 
 This is a minor release to fix a few things between the 0.7.0 release
