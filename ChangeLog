@@ -1,4 +1,753 @@
+2011-07-16  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, docs/melt.txt,
+  src/framework/mlt_version.h: Set version to 0.7.4
+
+  * NEWS: Add release notes for v0.7.4
+
+  * src/modules/jackrack/factory.c, src/modules/jackrack/plugin_desc.c,
+  src/modules/jackrack/plugin_desc.h: Properly represent LADSPA plugin author.
+
+2011-07-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Cleanup fprintf left in last
+  commmit
+
+  * src/modules/avformat/producer_avformat.c: Fix audio glitch on seek
+  (3362840).
+
+2011-07-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/producer_xml.c: Load XML with LC_NUMERIC without changing
+  global locale.  Uses mlt_properties_set_lcnumeric() instead of setlocale().
+  This is only known to work on Linux.
+
+  * src/framework/mlt_properties.c: Use correct constant for
+  mlt_properties_set_lcnumeric().
+
+2011-07-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix regression seeking to in
+  point on seekable.
+
+2011-07-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_property.c,
+  src/framework/mlt_property.h: Fix build on new locale stuff when not Linux or
+  OS X.
+
+2011-07-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_property.c: Fix build for
+  querylocale() on OS X.
+
+  * presets/consumer/avformat/webm, presets/consumer/avformat/webm-pass1,
+  presets/consumer/avformat/webm-pass2: Fix webm preset.
+
+  * src/framework/mlt_properties.c: Ensure serialized yaml is LC_NUMERIC=C. 
+  This is needed to ensure consistency. The metadata is read as string data and
+  converted to numbers on demand. This is why loading defaults to C locale -
+  since they were authored with that in mind. However, some plugins dynamically
+  generate metadata and may set values with int or double. Therefore, we need
+  to make it all output consistently, and for now that means C.
+
+  * src/framework/mlt_property.c: Protect locale hack with a mutex to ensure
+  consistency.
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h,
+  src/modules/sdl/consumer_sdl_preview.c: Make maximum consecutive-dropped
+  frames configurable.  Defaults to old value of 5 that seems more preferable
+  for video editing.
+
+  * src/framework/mlt_playlist.c: Fix playlist corruption with long blanks
+  (kdenlive-2219).
+
+  * src/modules/gtk2/producer_pango.c: Add a workaround in pango for old
+  kdenlive countdowns.
+
+2011-07-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/feeds/NTSC/data_fx.properties,
+  src/modules/feeds/NTSC/etv.properties,
+  src/modules/feeds/NTSC/obscure.properties,
+  src/modules/feeds/PAL/border.properties,
+  src/modules/feeds/PAL/data_fx.properties,
+  src/modules/feeds/PAL/etv.properties: Convert , to / delimiter in data_show
+  templates.
+
+  * src/framework/metaschema.yaml, src/framework/mlt_properties.c: Add
+  LC_NUMERIC handling to YAML Tiny parser.
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h: Add
+  mlt_properties_get_lcnumeric and Properties::get_lcnumeric
+
+  * src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h: Add
+  Properties::set_lcnumeric().
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h: Add
+  mlt_properties_set_lcnumeric, mlt_property_get_double_l, and
+  mlt_property_get_string_l.  Locale-specific variants of key properties
+  functions.
+
+  * src/modules/core/filter_obscure.c: Let obscure accept / as a coordinate
+  delimiter.
+
+  * src/modules/frei0r/factory.c: Make frei0r version metadata support locale. 
+  Patch by j-b-m
+
+2011-07-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_data_show.yml, src/modules/core/filter_gamma.yml,
+  src/modules/core/filter_greyscale.yml, src/modules/core/filter_luma.yml,
+  src/modules/core/filter_watermark.yml, src/modules/core/producer_colour.yml,
+  src/modules/core/producer_noise.yml, src/modules/dv/producer_libdv.yml,
+  src/modules/gtk2/producer_pango.yml, src/modules/gtk2/producer_pixbuf.yml,
+  src/modules/vorbis/producer_vorbis.yml, src/modules/xml/producer_xml.yml:
+  Convert services.txt to metadata YAML (WIP).  Patch by Brian Matherly.
+
+2011-07-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/mlt-xml.dtd,
+  src/modules/xml/producer_xml.c: Add LC_NUMERIC to MLT XML.  This does not
+  permit one to mix locales within a MLT process! In other words, you can not
+  load a document in a locale using one decimal separator and then filter with
+  a double property using a different separator.
+
+  * src/modules/oldfilm/filter_vignette.c, src/modules/plus/filter_charcoal.c:
+  Fix some default numeric property values in some locales.  Strings with a
+  period for decimal separator do not convert correctly in locales that use
+  comma for the decimal separator.
+
+  * demo/README, demo/demo, demo/mlt_bouncy, demo/mlt_bouncy_ball,
+  demo/mlt_composite_transition, demo/mlt_my_name_is, demo/mlt_news,
+  demo/mlt_obscure, demo/mlt_push, demo/mlt_slideshow2,
+  demo/mlt_slideshow_black, demo/mlt_squeeze, demo/mlt_squeeze_box,
+  demo/mlt_swf_variables, demo/mlt_ticker, demo/mlt_title_over_gfx,
+  demo/mlt_titleshadow_watermark, demo/mlt_voiceover, demo/mlt_watermark,
+  demo/pango.mlt, docs/framework.txt, docs/services.txt,
+  src/framework/mlt_geometry.c, src/modules/core/filter_obscure.c,
+  src/modules/core/transition_composite.c,
+  src/modules/core/transition_region.c, src/modules/motion_est/Makefile,
+  .../motion_est/filter_autotrack_rectangle.c,
+  src/modules/plus/transition_affine.c, src/tests/hello.c: Use '/' for
+  coordinate delimiter instead of period.  Period is a decimal separator in
+  some locales.
+
+  * demo/consumers.ini, demo/demo.ini: Fix usage of cut in demo script for some
+  platforms (OSX).
+
+2011-07-05  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/webm, presets/consumer/avformat/webm-pass1,
+  presets/consumer/avformat/webm-pass2: Add some WebM presets.
+
+2011-07-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/configure: Cleanup display of recommended versions.
+
+  * presets/consumer/avformat/x264-medium-pass1: Skip audio output with first
+  pass.
+
+  * presets/consumer/avformat/x264-medium-pass1: Add new FFmpeg fastfirstpass
+  option.
+
+  * src/modules/avformat/consumer_avformat.c: Suppress confusing message when
+  vpre does not exist.
+
+  * presets/consumer/avformat/x264-medium-baseline,
+  presets/consumer/avformat/x264-medium-main: Fix profile-based x264 presets
+  for FFmpeg v0.8+.
+
+  * src/modules/avformat/consumer_avformat.c: Fix crash in consumer on FFmpeg
+  v0.8 and later.
+
+  * src/modules/avformat/configure: Revert removal of --avformat-ldextra.
+
+  * src/modules/avformat/factory.c: Fix metadata for avformat
+  demuxer/device-specific options.
+
+  * presets/consumer/avformat/x264-medium,
+  presets/consumer/avformat/x264-medium-baseline,
+  presets/consumer/avformat/x264-medium-main,
+  presets/consumer/avformat/x264-medium-pass1: Add some x264-medium presets.
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure: Dropping
+  support for --avformat-svn.  Subversion is no longer used, FFmpeg and libav
+  have forked, and now there are the build scripts.
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml, src/modules/melt/producer_melt.c:
+  Support standard query syntax on avformat URL.
+
+  * reconfigure: Add convenient reconfigure script.
+
+2011-07-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Change some verbose messages with
+  new_seek to debug.
+
+  * src/modules/avformat/producer_avformat.c: Fix file descriptor leak in
+  reopen_video().
+
+  * src/modules/avformat/producer_avformat.c: Fix race condition by adding
+  take_lock to producer_open().
+
+  * src/framework/mlt_consumer.c: Add check for null frame.
+
+  * src/modules/dv/producer_libdv.c: Make libdv sample aspect ratio consistent
+  with profiles.  Patch by: Maksym Veremeyenko
+
+2011-07-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/DeckLinkAPI_h.h,
+  src/modules/decklink/DeckLinkAPI_i.cpp, src/modules/decklink/Makefile,
+  src/modules/decklink/configure, src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: Add Windows support for DeckLink.
+
+2011-06-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl.c: Make it easier to embed sdl in Windows
+  applications.
+
+2011-06-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c: Add handling for heavy frame-dropping with
+  real_time>1.
+
+  * src/framework/mlt_consumer.c: Improve reliability of real_time=1
+  frame-dropping.
+
+  * src/framework/mlt_consumer.c: Simplify and comment real_time=1
+  frame-dropping.
+
+2011-06-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Use int64_t for req_position and
+  int_position.
+
+2011-06-22  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/dv_ntsc/DV,
+  presets/consumer/avformat/dv_ntsc/DVCPRO50,
+  presets/consumer/avformat/dv_ntsc_wide/DV,
+  presets/consumer/avformat/dv_ntsc_wide/DVCPRO50,
+  presets/consumer/avformat/dv_pal/DV,
+  presets/consumer/avformat/dv_pal/DVCPRO50,
+  presets/consumer/avformat/dv_pal_wide/DV,
+  presets/consumer/avformat/dv_pal_wide/DVCPRO50: Add DV and DVCPRO50 encode
+  presets.
+
+2011-06-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Make sure avformat consumer
+  closes all mlt_frames.
+
+  * src/modules/avformat/producer_avformat.c: Fix regression on avdevice.  When
+  using non-integer profile frame rate, supplying frame_rate on URL, and not
+  supplying frame_rate_base on URL.
+
+  * src/modules/core/producer_consumer.c: Fix xml producer overwriting explicit
+  profile.
+
+2011-06-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/Makefile, src/framework/mlt_types.h, src/melt/Makefile,
+  src/modules/avformat/Makefile, src/modules/gtk2/Makefile,
+  src/modules/sdl/Makefile, src/win32/fnmatch.c: Cleanup Win32 build.
+
+  * src/framework/mlt_repository.c: Win32 compile fix.
+
+2011-06-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_transition.c, src/modules/core/transition_composite.c:
+  Fix regression in field rendering luma transition.  Due to refactoring
+  composite and luma into mlt_transition_get_progress_delta().
+
+  * src/modules/avformat/producer_avformat.c: Fix int64_t to int overflow
+  problem.
+
+2011-06-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/producer_decklink.cpp: Support decklink video input
+  format detection.  This makes it work with auto-producer. After calling
+  mlt_profile_from_producer(), you must close the decklink producer and re-open
+  it with the updated profile. Also, this adds support for top_field_first and
+  colorspace indication.
+
+2011-06-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/producer_decklink.cpp: Fix waiting for frame in
+  decklink producer.
+
+  * profiles/sdi_486i_5994: Fix aspect ratio of sdi_486i_5994.
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Add video_delay to avformat
+  producer.
+
+2011-06-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Provide A/V sync for non-seekable
+  sources.
+
+  * src/melt/melt.c: Fix melt -silent with pipe input.
+
+  * src/modules/decklink/producer_decklink.cpp,
+  src/modules/decklink/producer_decklink.yml: Add prefill property to decklink
+  producer.
+
+  * src/modules/avformat/producer_avformat.c: Fix bug in avformat URL parsing. 
+  Especially reproducible on file: URLs.
+
+  * src/modules/avformat/producer_avformat.c: Fix sync of multiple audio
+  streams with audio_index=all.
+
+2011-06-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix infinite loop with
+  audio_index=all on sample provided by BCE.
+
+  * src/modules/decklink/consumer_decklink.cpp: Rework decklink consumer to use
+  timestamped audio packet.  Patches supplied by Maksym Veremeyenko.
+
+2011-06-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Disable new_seek on h264/ts from
+  non-seekable source (udp, pipe).
+
+2011-06-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pango.c: Fix pango producer from loading with
+  empty string arg.
+
+2011-06-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Temporary fix for new crash when
+  closing codec.
+
+  * src/modules/avformat/consumer_avformat.c: Fix setting codec-specific
+  options for avcodec v53.
+
+  * src/modules/avformat/factory.c: Fix crash generating avformat metadata.
+
+  * src/framework/mlt_consumer.c, src/modules/avformat/consumer_avformat.yml:
+  Change consumer 'profile' property to 'mlt_profile'  libavcodec uses the
+  profile property for aac and libx264.
+
+2011-06-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Drop usage of av_demuxer_open()
+  in avformat v53.  It is causing problems and need more stability after the
+  raft of changes.
+
+  * src/modules/avformat/producer_avformat.c: Fix regressions on libavformat
+  v53 and failing on invalid file.
+
+  * src/modules/avformat/consumer_avformat.yml,
+  src/modules/avformat/producer_avformat.yml: Change URI to URL in avformat
+  yaml.
+
+  * src/modules/avformat/producer_avformat.c: Fix compilation error on
+  libavformat v53.
+
+  * src/melt/melt.c, src/modules/avformat/consumer_avformat.c: Send melt -query
+  and -help to stdout.  Nice for use with pager or grep, awk, etc.
+
+  * src/melt/melt.c: Do not open terminal on stdin if not a tty.
+
+  * src/melt/melt.c: Have melt detect 'pipe:' and disable reading stdin on
+  terminal.
+
+  * src/modules/avformat/producer_avformat.c: Fix setting default streams on
+  non-seekable streams.
+
+  * src/modules/avformat/producer_avformat.c: Fix setting demuxer private
+  options libavformat for v53+.
+
+  * src/modules/avformat/producer_avformat.c: Tidy code dealing with
+  AVFormatParameters.
+
+  * src/modules/avformat/producer_avformat.c: Refactor common code around
+  producer_open into producer_open.
+
+  * src/modules/avformat/producer_avformat.c: minor cleanup in return handling
+  in parse_url
+
+2011-06-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Use a single AVFormatContext for
+  non-seekable sources.  This provides better support for reading from network
+  streams such as rtsp, rtmp, udp, and hopefully pipe.
+
+  * src/modules/avformat/producer_avformat.c: Refactor avformat get_image()
+  into new seek_video().
+
+  * src/modules/avformat/producer_avformat.c: refactor avformat producer_open
+
+  * src/modules/avformat/producer_avformat.c: cleanup producer_avformat_init
+
+  * src/modules/decklink/consumer_decklink.cpp: Default decklink consumer to
+  onefield deinterlace method.
+
+  * src/modules/decklink/consumer_decklink.cpp: Fix decklink keyer playout
+  speed (3311056).
+
+2011-06-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/consumer_decklink.yml: Enable external keyer on decklink
+  consumer.  Patch supplied by Maksym Veremeyenko.
+
+2011-06-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/producer_decklink.cpp: Fix deadlock on no signal in
+  decklink producer.
+
+  * src/modules/decklink/consumer_decklink.cpp: Fix crash in decklink with
+  keyer and interlaced clips (3310104).
+
+  * src/modules/decklink/Makefile: Install consumer_decklink.yml.
+
+2011-05-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/producer_decklink.cpp: Let decklink run forever.  Also
+  fix setting resource property.
+
+2011-05-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp: Fix decklink choppy playback
+  (3308341).  This would occur after several pause and play cycles.
+
+  * src/modules/rotoscoping/filter_rotoscoping.yml: Make rotoscoping filter
+  metadata valid yaml.
+
+  * src/modules/linsys/Makefile, src/modules/linsys/consumer_sdi.yml,
+  src/modules/linsys/factory.c: Add service metadata to linsys module (WIP).
+
+  * src/modules/xml/Makefile, src/modules/xml/consumer_xml.yml,
+  src/modules/xml/factory.c, src/modules/xml/producer_xml-string.yml,
+  src/modules/xml/producer_xml.yml: Add service metadata to xml module (WIP).
+
+  * src/modules/vorbis/Makefile, src/modules/vorbis/factory.c,
+  src/modules/vorbis/producer_vorbis.yml: Add service metadata to vorbis module
+  (WIP).
+
+  * src/modules/core/filter_mono.yml, src/modules/vmfx/Makefile,
+  src/modules/vmfx/factory.c, src/modules/vmfx/filter_chroma.yml,
+  src/modules/vmfx/filter_chroma_hold.yml, src/modules/vmfx/filter_mono.yml,
+  src/modules/vmfx/filter_shape.yml, src/modules/vmfx/producer_pgm.yml: Add
+  service metadata to vmfx module (WIP).
+
+  * src/modules/jackrack/plugin.c, src/modules/jackrack/plugin_mgr.c,
+  src/modules/jackrack/plugin_settings.c: Remove aborts in jackrack module.
+
+2011-05-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/swfdec/Makefile, src/modules/swfdec/producer_swfdec.c,
+  src/modules/swfdec/producer_swfdec.yml: Add service metadata to swfdec module
+  (WIP).
+
+  * src/modules/qimage/producer_qimage.yml, src/modules/sdl/Makefile,
+  src/modules/sdl/consumer_sdl.yml, src/modules/sdl/consumer_sdl_audio.yml,
+  src/modules/sdl/consumer_sdl_preview.yml,
+  src/modules/sdl/consumer_sdl_still.yml, src/modules/sdl/factory.c,
+  src/modules/sdl/producer_sdl_image.yml: Add service metadata for SDL module
+  (WIP).
+
+  * src/modules/plus/transition_affine.yml, src/modules/qimage/Makefile,
+  src/modules/qimage/factory.c, src/modules/qimage/producer_kdenlivetitle.yml,
+  src/modules/qimage/producer_qimage.yml: Add service metadata for qimage
+  module (WIP).
+
+  * src/modules/plus/Makefile, src/modules/plus/factory.c,
+  src/modules/plus/filter_affine.yml, src/modules/plus/filter_charcoal.yml,
+  src/modules/plus/filter_invert.yml, src/modules/plus/filter_sepia.yml,
+  src/modules/plus/transition_affine.yml: Add service metadata to plus module
+  (WIP).
+
+  * src/modules/normalize/Makefile, src/modules/normalize/factory.c,
+  src/modules/normalize/filter_volume.yml: Add service metadata to normalize
+  module (WIP).
+
+  * src/modules/motion_est/Makefile, src/modules/motion_est/factory.c,
+  .../motion_est/filter_autotrack_rectangle.yml,
+  src/modules/motion_est/filter_motion_est.yml,
+  src/modules/motion_est/filter_vismv.yml,
+  src/modules/motion_est/producer_slowmotion.yml: Add service metadata to
+  motion_est module (WIP).
+
+  * src/modules/melt/Makefile, src/modules/melt/factory.c,
+  src/modules/melt/producer_melt.yml, src/modules/melt/producer_melt_file.yml:
+  Add service metadata for melt module (WIP).
+
+  * src/modules/kdenlive/Makefile, src/modules/kdenlive/factory.c,
+  src/modules/kdenlive/filter_boxblur.yml,
+  src/modules/kdenlive/filter_freeze.yml, src/modules/kdenlive/filter_wave.yml,
+  src/modules/kdenlive/producer_framebuffer.yml: Add service metadata for
+  kdenlive module (WIP).
+
+  * src/modules/gtk2/Makefile, src/modules/gtk2/consumer_gtk2_preview.yml,
+  src/modules/gtk2/factory.c, src/modules/gtk2/producer_pango.yml,
+  src/modules/gtk2/producer_pixbuf.yml: Add service metadata for gtk2 module
+  (WIP).
+
+  * src/modules/effectv/Makefile, src/modules/effectv/factory.c,
+  src/modules/effectv/filter_burningtv.yml: Add service metadata for effectv
+  module (WIP).
+
+  * src/modules/dv/Makefile, src/modules/dv/consumer_libdv.yml,
+  src/modules/dv/factory.c, src/modules/dv/producer_libdv.yml: Add service
+  metdata for dv module (WIP).
+
+  * src/swig/ruby/metadata.rb: Add ruby script to generate wiki text files.
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/filter_audiowave.yml,
+  src/modules/core/filter_brightness.yml,
+  src/modules/core/filter_channelcopy.yml, src/modules/core/filter_crop.yml,
+  src/modules/core/filter_data_show.yml, src/modules/core/filter_gamma.yml,
+  src/modules/core/filter_greyscale.yml, src/modules/core/filter_luma.yml,
+  src/modules/core/filter_mirror.yml, src/modules/core/filter_mono.yml,
+  src/modules/core/filter_obscure.yml, src/modules/core/filter_region.yml,
+  src/modules/core/filter_transition.yml,
+  src/modules/core/filter_watermark.yml, src/modules/core/producer_colour.yml,
+  src/modules/core/producer_consumer.yml, src/modules/core/producer_hold.yml,
+  src/modules/core/producer_noise.yml,
+  src/modules/core/transition_composite.yml,
+  src/modules/core/transition_luma.yml, src/modules/core/transition_mix.yml,
+  src/modules/core/transition_region.yml: Add service metadata for core module
+  (WIP).
+
+2011-05-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/producer_decklink.cpp: Report dropped frames.
+
+  * src/modules/decklink/producer_decklink.cpp: Fix memory leak in decklink
+  producer.
+
+  * src/swig/python/getimage.py, src/swig/python/waveforms.py: Convert Python
+  examples to new frame method.
+
+  * src/swig/python/build: Fix python binding for OS X
+
+  * src/swig/mlt.i: Add mlt.Frame.get_image for Python.
+
+  * src/melt/melt.c: Refactor melt to mlt_profile_from_producer.
+
+  * src/framework/mlt_profile.c, src/framework/mlt_profile.h,
+  src/mlt++/MltProfile.cpp, src/mlt++/MltProfile.h: Add
+  mlt_profile_from_producer().  This new function contains the auto-profile
+  feature. Plus setters for Mlt::Profile.
+
+2011-05-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_cache.c: Do not immediately destroy all cache items on
+  purge.  This is behaving badly with the addition of mlt_service_cache_purge
+  in the avformat producer because there were frames in consumer buffers
+  holding references to cache items calling mlt_cache_item_close on
+  destruction.
+
+2011-05-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c: Prevent multiple starts on mlt_consumer.
+
+2011-05-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix full closure of avformat on
+  explicit close.  JBM wrote: Creating a video4linux producer like (simplified
+  code):  producer = new Mlt::Producer(*profile, "video4linux2:/dev/video0");
+  consumer->connect(*producer); consumer->start();  It works fine. But when I
+  want to stop the capture, there is no way to stop the video4linux producer.
+  Deleting the producer and the consumer still leaves the video4linux device
+  open.  After a few hours of struggling, I figured out that some stuff was
+  kept in the cache. Adding :  mlt_service_cache_purge(
+  MLT_PRODUCER_SERVICE(parent) );  to producer_close (as already done for the
+  qimage producer for example) fixes the issue.
+
+  * src/modules/avformat/producer_avformat.c: Fix regression in
+  protocol/avdevice handling.
+
+  * src/modules/jackrack/Makefile, src/modules/jackrack/blacklist.txt,
+  src/modules/jackrack/plugin_mgr.c, src/modules/jackrack/plugin_mgr.h: Add
+  blacklist for ladspa filters.  Initially includes dssi-vst since that is
+  unstable on AV Linux 5.
+
+  * configure: Fix segfault in yadif with gcc 4.6 -O1 or -O2.
+
+2011-05-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/jack_rack.c: Do not destroy shared plugin_mgr when
+  closing instance.
+
+  * src/modules/jackrack/factory.c, src/modules/jackrack/jack_rack.c: Let all
+  instances of ladspa share single plugin_mgr.
+
+2011-05-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_resize.c: Fix regression getting consumer
+  aspect_ratio.
+
+  * src/modules/feeds/PAL/data_fx.properties: Fix background color on default
+  PAL data_show.
+
+  * src/modules/core/transition_composite.c: Fix manual deinterlace on B in
+  composite.
+
+2011-05-15  Dan Dennedy <dan@dennedy.org>
+
+  * docs/melt.1, src/melt/melt.c: Document -jack option.
+
+  * docs/melt.1: Add -query preset to man page.
+
+  * src/modules/jackrack/filter_jackrack.c: Change a log item to debug.
+
+  * src/melt/melt.c, src/modules/jackrack/filter_jackrack.c,
+  src/modules/jackrack/process.c: Add first draft of JACK transport sync.
+
+  * src/framework/mlt_consumer.c: Improve frame-dropping for real_time=1.  Uses
+  thresholds relative to fps and buffer levels. Properly drops more frames to
+  keep audio continuous. Does not drop first several frames to prevent chopping
+  playback.
+
+  * src/modules/sdl/consumer_sdl_preview.c: Add audio_off and frequency to
+  properties passed to sdl consumer.
+
+  * src/framework/mlt_producer.c: Fix dox error.
+
+2011-05-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/factory.c: Fix big slowdown enumerating all metadata
+  for ladspa plugins.
+
+  * configure, src/mlt++/configure: Fix build on Debian GNU/kFreeBSD.
+
+2011-05-12  Dan Dennedy <dan@dennedy.org>
+
+  * Makefile, presets/consumer/avformat/dv_ntsc/DVD,
+  presets/consumer/avformat/dv_ntsc_wide/DVD,
+  presets/consumer/avformat/dv_pal/DVD,
+  presets/consumer/avformat/dv_pal_wide/DVD, setenv,
+  src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_repository.c, src/framework/mlt_repository.h,
+  src/melt/melt.c, src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h,
+  src/mlt++/MltRepository.cpp, src/mlt++/MltRepository.h, src/swig/mlt.i:
+  Presets!  Put property setters in a file and apply them to a service using
+  properties=filename. Alternatively, apply a supplied preset using
+  properties=preset. For example, melt ... -consumer avformat:my.vob
+  properties=DVD.
+
+  * src/modules/jackrack/jack_rack.c, src/modules/jackrack/plugin.c,
+  src/modules/jackrack/plugin_mgr.c, src/modules/jackrack/process.c: Convert
+  jackrack printfs to mlt_log (3301094).
+
+2011-05-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/Makefile, src/modules/jackrack/factory.c,
+  src/modules/jackrack/filter_jackrack.yml,
+  src/modules/jackrack/filter_ladspa.yml: Add service metadata for jackrack,
+  ladspa, and ladspa.id.
+
+  * src/modules/jackrack/filter_ladspa.c, src/modules/jackrack/plugin_mgr.c:
+  Add support for ladspa.id variants.  This is much more convenient to use
+  without having to compose the JACK Rack XML. Also, we will be able to add
+  future support for property animation (automation), which JACK Rack lacks.
+  However, it does still support loading and processing JACK Rack files.
+
+  * src/modules/sox/factory.c: Simplify sox metadata generator.
+
+2011-05-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/configure: Allow decklink to build on OS X.
+
+  * src/modules/sdl/consumer_sdl_preview.c: sdl_preview should default to
+  real_time=1
+
+  * src/framework/mlt_consumer.c: Revert change to max consecutive dropped
+  frames.  At least until a better heuristic is determined.
+
+2011-05-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sox/factory.c: Add version check for SOX_EFF_INTERNAL.
+
+  * src/modules/sox/Makefile, src/modules/sox/factory.c,
+  src/modules/sox/filter_sox.c, src/modules/sox/filter_sox.yml: Add support for
+  sox.effect variants.  The legacy forms of 'sox:"effect options"' and 'sox
+  effect="name options"' still work. The new forms allows them all to be
+  enumerated by Mlt apps, e.g.: melt -query filter. Also, this registers
+  metadata for both the generic 'sox' filter and all of the new 'sox.effect'
+  ones including their usage help!
+
+  * src/modules/avformat/Makefile: Install consumer_avformat.yml
+
+  * src/modules/avformat/filter_avresample.c, src/modules/core/loader.ini: Fix
+  inadvertent reording of resample filters.  And add debug log to avresample.
+
+2011-05-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Pad the last audio frame with
+  silence.  Instead of returning fewer samples than requested.
+
+  * src/framework/mlt_frame.h: Document the frame audio and image properties.
+
+  * src/framework/mlt_tractor.c, src/modules/avformat/producer_avformat.c,
+  src/modules/dv/producer_libdv.c, src/modules/vorbis/producer_vorbis.c: Make
+  the frame audio properties consistent.
+
+  * src/modules/avformat/producer_avformat.c: Fix avformat producer to use new
+  mlt audio formats.
+
+  * src/modules/core/filter_audioconvert.c: Add conversion routines for new
+  audio formats.  These only doing conversion _from_ the new types
+  mlt_audio_s32le and mlt_audio_f32le. There are no plans at the moment for
+  conversion into them, but it is certainly not out of the question.
+
+  * src/framework/mlt_frame.c, src/framework/mlt_types.h: Add mlt_audio_s32le
+  and mlt_audio_f32le audio formats.
+
+  * src/modules/avformat/filter_avresample.c, src/modules/core/Makefile,
+  src/modules/core/factory.c, src/modules/core/filter_audiochannels.c,
+  src/modules/core/loader.ini, src/modules/resample/filter_resample.c: Add
+  audiochannels normalization filter.  Refactors code from the resamplers into
+  a new filter to be more manageable. Eventually, we can add options on what to
+  do when adding/removing channels.
+
+2011-05-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Fix channel count for resizing
+  decoded audio buffer when not resampling.
+
+  * src/modules/avformat/producer_avformat.c: Fix regressions in audio
+  decoding.
+
+  * src/modules/avformat/producer_avformat.c: Cleanup compile warnings.
+
+  * src/modules/avformat/producer_avformat.c: Simplify audio pointer and sample
+  size code.
+
 2011-05-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: WIP to get >16-bit multi-channel
+  audio working.  Seems close, but something is wrong.
+
+2011-05-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: Copy cached image if writable
+  copy requested.
+
+2011-05-03  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_transition.c: Ensure transition B frames get
+  some consumer properties.  Also, ensure both A and B frames have sane scaling
+  and aspect ratio values. This addresses an issue where composite and region
+  were not getting the correct deinterlace method impacting performance. In
+  addition, it factors out some common code (best practice) from various
+  transitions moving it into the framework.
+
+2011-05-01  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: Update ChangeLog for v0.7.2
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
   to 0.7.2
