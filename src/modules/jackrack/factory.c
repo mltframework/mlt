@@ -55,6 +55,8 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 			mlt_properties_set( result, "identifier", id );
 			mlt_properties_set( result, "title", desc->name );
+			mlt_properties_set( result, "creator", desc->maker ? desc->maker : "unknown" );
+			mlt_properties_set( result, "description", "LADSPA plugin" );
 			mlt_properties_set_data( result, "parameters", params, 0, (mlt_destructor) mlt_properties_close, NULL );
 			for ( i = 0; i < desc->control_port_count; i++ )
 			{

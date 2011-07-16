@@ -56,6 +56,7 @@ plugin_desc_init (plugin_desc_t * pd)
   pd->object_file      = NULL;
   pd->id               = 0;
   pd->name             = NULL;
+  pd->maker            = NULL;
   pd->properties       = 0;
   pd->channels         = 0;
   pd->port_count       = 0;
@@ -88,6 +89,7 @@ plugin_desc_free (plugin_desc_t * pd)
 {
   plugin_desc_set_object_file (pd, NULL);
   plugin_desc_set_name        (pd, NULL);
+  plugin_desc_set_maker       (pd, NULL);
   plugin_desc_free_ports      (pd);
 }
 
@@ -112,6 +114,7 @@ plugin_desc_new_with_descriptor (const char * object_file,
   plugin_desc_set_index       (pd, index);
   plugin_desc_set_id          (pd, descriptor->UniqueID);
   plugin_desc_set_name        (pd, descriptor->Name);
+  plugin_desc_set_maker       (pd, descriptor->Maker);
   plugin_desc_set_properties  (pd, descriptor->Properties);
   plugin_desc_set_ports       (pd,
                                descriptor->PortCount,
@@ -154,6 +157,12 @@ void
 plugin_desc_set_name        (plugin_desc_t * pd, const char * name)
 {
   set_string_property (pd->name, name);
+}
+
+void
+plugin_desc_set_maker       (plugin_desc_t * pd, const char * maker)
+{
+  set_string_property (pd->maker, maker);
 }
 
 void

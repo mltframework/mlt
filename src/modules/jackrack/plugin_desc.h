@@ -37,6 +37,7 @@ struct _plugin_desc
   unsigned long            index;
   unsigned long            id;
   char *                   name;
+  char *                   maker;
   LADSPA_Properties        properties;
   gboolean                 rt;
   
@@ -69,6 +70,7 @@ void plugin_desc_set_object_file (plugin_desc_t * pd, const char * object_file);
 void plugin_desc_set_index       (plugin_desc_t * pd, unsigned long index);
 void plugin_desc_set_id          (plugin_desc_t * pd, unsigned long id);
 void plugin_desc_set_name        (plugin_desc_t * pd, const char * name);
+void plugin_desc_set_maker       (plugin_desc_t * pd, const char * maker);
 void plugin_desc_set_properties  (plugin_desc_t * pd, LADSPA_Properties properties);
 
 struct _plugin * plugin_desc_instantiate (plugin_desc_t * pd);
