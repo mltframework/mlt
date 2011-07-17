@@ -37,16 +37,7 @@ parameters:
     readonly: no
     default: unset
     widget: fileopen
-
-  - identifier: resource
-    title: File/URL
-    type: string
-    description: The file to overlay.
-    required: no
-    readonly: no
-    default: unset
-    widget: fileopen
-
+    
   - identifier: distort
     title: Allow distorted scaling
     type: integer

@@ -64,9 +64,6 @@ parameters:
     title: Sample aspect ratio denominator
     type: integer
     minimum: 1
-  - identifier: aspect_ratio
-    title: Sample aspect ratio
-    readonly: yes
   - identifier: progressive
     title: Progressive
     type: integer

@@ -19,37 +19,6 @@ parameters:
     readonly: no
     widget: fileopen
     
-  - identifier: in
-    title: In point
-    type: time
-    description: Set the start time offset to use within the clip
-    readonly: no
-    mutable: no
-    minimum: 0
-    default: 0
-    widget: timecode
-
-  - identifier: out
-    title: Out point
-    type: time
-    description: Set the ending time offset to use within the clip
-    readonly: no
-    minimum: 0
-    mutable: no
-    widget: timecode
-    
-  - identifier: resource
-    title: Resource
-    type: string
-    readonly: yes
-
-  - identifier: length
-    title: Length
-    type: time
-    description: The duration of the file (in frames)
-    readonly: yes
-    widget: timecode
-    
   - identifier: quality
     title: Quality
     type: string

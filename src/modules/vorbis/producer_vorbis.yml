@@ -20,27 +20,3 @@ parameters:
     required: yes
     mutable: no
     widget: fileopen
-    
-  - identifier: resource
-    title: Resource
-    type: string
-    readonly: yes
-    
-  - identifier: in
-    title: In point
-    type: time
-    description: Set the start time offset to use within the clip
-    readonly: no
-    mutable: no
-    minimum: 0
-    default: 0
-    widget: timecode
-    
-  - identifier: out
-    title: Out point
-    type: time
-    description: Set the ending time offset to use within the clip
-    readonly: no
-    minimum: 0
-    mutable: no
-    widget: timecode
