@@ -23,6 +23,3 @@ parameters:
     description: >
       Runs a JACK Rack project to process audio through a stack of
       LADSPA filters without using JACK.
-  - identifier: resource
-    title: JACK Rack XML file
-    type: string
