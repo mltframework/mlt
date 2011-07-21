@@ -66,7 +66,7 @@
  * \properties \em display_ratio the video frame aspect ratio as floating point (read only)
  * \properties \em display_aspect_num the numerator of the video frame aspect ratio, overrides \p mlt_profile_s
  * \properties \em display_aspect_den the denominator of the video frame aspect ratio, overrides \p mlt_profile_s
- *
+ * \properties \em priority the OS scheduling priority for the render threads when real_time is not 0.
  */
 
 struct mlt_consumer_s
