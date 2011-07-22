@@ -280,11 +280,12 @@ public:
 		if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_channels, &samples ) )
 		{
 			uint32_t written = 0;
+			BMDTimeValue streamTime = m_count * frequency * m_duration / m_timescale;
 
 #ifdef WIN32
-			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, m_count * frequency / m_fps, frequency, (unsigned long*) &written );
+			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, (unsigned long*) &written );
 #else
-			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, m_count * frequency / m_fps, frequency, &written );
+			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, &written );
 #endif
 
 			if ( written != (uint32_t) samples )
