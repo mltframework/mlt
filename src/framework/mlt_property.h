@@ -26,7 +26,7 @@
 
 #include "mlt_types.h"
 
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__DARWIN__)
 #include <xlocale.h>
 #else
 typedef void* locale_t;

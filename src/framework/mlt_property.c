@@ -354,7 +354,7 @@ double mlt_property_get_double_l( mlt_property self, locale_t locale )
 		return ( double )self->prop_position;
 	else if ( self->types & mlt_prop_int64 )
 		return ( double )self->prop_int64;
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__DARWIN__)
 	else if ( locale && ( self->types & mlt_prop_string ) && self->prop_string )
 		return strtod_l( self->prop_string, NULL, locale );
 #endif
@@ -502,7 +502,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		// Save the current locale
 #if defined(__DARWIN__)
 		const char *localename = querylocale( LC_NUMERIC, locale );
-#elif defined(__linux__)
+#elif defined(__GLIBC__)
 		const char *localename = locale->__names[ LC_NUMERIC ];
 #else
 		// TODO: not yet sure what to do on other platforms
