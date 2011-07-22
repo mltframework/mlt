@@ -37,7 +37,7 @@ extern mlt_producer producer_avformat_init( mlt_profile profile, const char *ser
 #ifdef AVDEVICE
 #include <libavdevice/avdevice.h>
 #endif
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 #include <libavutil/opt.h>
 #else
 #include <libavcodec/opt.h>
@@ -314,7 +314,7 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 		int flags = ( type == consumer_type )? AV_OPT_FLAG_ENCODING_PARAM : AV_OPT_FLAG_DECODING_PARAM;
 
 		add_parameters( params, avformat, flags, NULL, NULL );
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 		avformat_init();
 		if ( type == producer_type )
 		{
@@ -333,7 +333,7 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 #endif
 
 		add_parameters( params, avcodec, flags, NULL, NULL );
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 		AVCodec *c = NULL;
 		while ( ( c = av_codec_next( c ) ) )
 			if ( c->priv_class )

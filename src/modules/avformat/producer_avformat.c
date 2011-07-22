@@ -34,7 +34,7 @@
 #ifdef SWSCALE
 #  include <libswscale/swscale.h>
 #endif
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 #include <libavutil/samplefmt.h>
 #elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
 const char *avcodec_get_sample_fmt_name(int sample_fmt);
@@ -57,7 +57,7 @@ const char *avcodec_get_sample_fmt_name(int sample_fmt);
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 #include <libavutil/opt.h>
 #define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
 #define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
@@ -342,7 +342,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 				if ( self->audio_index < 0 )
 					self->audio_index = i;
 				mlt_properties_set( meta_media, key, "audio" );
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
 				mlt_properties_set( meta_media, key, av_get_sample_fmt_name( codec_context->sample_fmt ) );
 #elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
@@ -551,7 +551,7 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	char *url = strchr( protocol, ':' );
 
 	// Only if there is not a protocol specification that avformat can handle
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 	if ( url && avio_check( URL, 0 ) < 0 )
 #else
 	if ( url && !url_exist( URL ) )
@@ -670,7 +670,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	if ( format->pb )
 	{
 		// protocols can indicate if they support seeking
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 		self->seekable = format->pb->seekable;
 #else
 		URLContext *uc = url_fileno( format->pb );
@@ -766,7 +766,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	if ( !error && self->video_format )
 	{
 		apply_properties( self->video_format, properties, AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 		if ( self->video_format->iformat && self->video_format->iformat->priv_class && self->video_format->priv_data )
 			apply_properties( self->video_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
 #endif
@@ -805,7 +805,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 						// And open again for our audio context
 						av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
 						apply_properties( self->audio_format, properties, AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 						if ( self->audio_format->iformat && self->audio_format->iformat->priv_class && self->audio_format->priv_data )
 							apply_properties( self->audio_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
 #endif
@@ -1739,7 +1739,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 		if ( codec->priv_class && codec_context->priv_data )
 			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 #endif
@@ -1975,7 +1975,7 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 
 static int sample_bytes( AVCodecContext *context )
 {
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 	return av_get_bits_per_sample_fmt( context->sample_fmt ) / 8;
 #else
 	return av_get_bits_per_sample_format( context->sample_fmt ) / 8;
@@ -2387,7 +2387,7 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 		if ( codec && codec->priv_class && codec_context->priv_data )
 			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 #endif
