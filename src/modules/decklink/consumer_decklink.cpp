@@ -54,6 +54,7 @@ private:
 	int                         m_isKeyer;
 	IDeckLinkKeyer*             m_deckLinkKeyer;
 	bool                        m_terminate_on_pause;
+	uint32_t                    m_preroll;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -233,6 +234,8 @@ public:
 			return false;
 		}
 
+		m_preroll = preroll;
+
 		// preroll frames
 		for( i = 0; i < preroll; i++ )
 			ScheduleNextFrame( true );
@@ -281,7 +284,12 @@ public:
 		{
 			uint32_t written = 0;
 			BMDTimeValue streamTime = m_count * frequency * m_duration / m_timescale;
-
+			m_deckLinkOutput->GetBufferedAudioSampleFrameCount(&written);
+			if ( written > (m_preroll + 1) * samples )
+			{
+				mlt_log_verbose( getConsumer(), "renderAudio: will flush %d audiosamples\n", written);
+				m_deckLinkOutput->FlushBufferedAudioSamples();
+			};
 #ifdef WIN32
 			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, (unsigned long*) &written );
 #else
