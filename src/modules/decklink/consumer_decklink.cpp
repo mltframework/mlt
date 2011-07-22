@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define __STDC_FORMAT_MACROS  /* see inttypes.h */
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,6 +56,7 @@ private:
 	IDeckLinkKeyer*             m_deckLinkKeyer;
 	bool                        m_terminate_on_pause;
 	uint32_t                    m_preroll;
+	uint32_t                    m_acnt;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -437,6 +439,16 @@ public:
 	
 	virtual HRESULT STDMETHODCALLTYPE ScheduledFrameCompleted( IDeckLinkVideoFrame* completedFrame, BMDOutputFrameCompletionResult completed )
 	{
+		uint32_t cnt;
+		m_deckLinkOutput->GetBufferedAudioSampleFrameCount(&cnt);
+		if(cnt != m_acnt)
+		{
+			mlt_log_verbose( getConsumer(),
+				"ScheduledFrameCompleted: GetBufferedAudioSampleFrameCount %u -> %u, m_count=%"PRIu64"\n",
+				m_acnt, cnt, m_count );
+			m_acnt = cnt;
+		};
+
 		// When a video frame has been released by the API, schedule another video frame to be output
 
 		// ignore handler if frame was flushed
