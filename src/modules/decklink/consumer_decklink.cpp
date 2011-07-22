@@ -444,6 +444,11 @@ public:
 			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDisplayedLate == completed\n");
 			m_count++;
 		}
+		if(bmdOutputFrameDropped == completed)
+		{
+			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDropped == completed\n");
+			m_count++;
+		}
 
 		return S_OK;
 	}
