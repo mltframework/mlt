@@ -436,7 +436,11 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		AVCodecContext *c = st->codec;
 
 		// Establish defaults from AVOptions
+#if LIBAVCODEC_VERSION_MAJOR >= 53
+		avcodec_get_context_defaults3( c, codec );
+#else
 		avcodec_get_context_defaults2( c, CODEC_TYPE_AUDIO );
+#endif
 
 		c->codec_id = codec->id;
 		c->codec_type = CODEC_TYPE_AUDIO;
@@ -609,7 +613,11 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		AVCodecContext *c = st->codec;
 
 		// Establish defaults from AVOptions
+#if LIBAVCODEC_VERSION_MAJOR >= 53
+		avcodec_get_context_defaults3( c, codec );
+#else
 		avcodec_get_context_defaults2( c, CODEC_TYPE_VIDEO );
+#endif
 
 		c->codec_id = codec->id;
 		c->codec_type = CODEC_TYPE_VIDEO;
@@ -1109,6 +1117,7 @@ static void *consumer_thread( void *arg )
 			{
 				mlt_properties_set( properties, "_acodec", "ac3_fixed" );
 				acodec = mlt_properties_get( properties, "_acodec" );
+				audio_codec = avcodec_find_encoder_by_name( acodec );
 			}
 		}
 		else
