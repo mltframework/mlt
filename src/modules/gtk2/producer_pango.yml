@@ -38,25 +38,6 @@ parameters:
     mutable: no
     widget: fileopen
     
-  - identifier: in
-    title: In point
-    type: time
-    description: Set the start time offset to use within the clip
-    readonly: no
-    mutable: no
-    minimum: 0
-    default: 0
-    widget: timecode
-
-  - identifier: out
-    title: Out point
-    type: time
-    description: Set the ending time offset to use within the clip
-    readonly: no
-    minimum: 0
-    mutable: no
-    widget: timecode
-    
   - identifier: markup
     title: Markup
     type: string
@@ -142,12 +123,6 @@ parameters:
     readonly: no
     mutable: yes
     widget: combobox
-    
-  - identifier: resource
-    title: Resource
-    type: string
-    description: The text/markup file or "pango" if no file.
-    readonly: yes
 
   - identifier: real_width
     title: Real width

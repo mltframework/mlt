@@ -10,3 +10,58 @@ language: en
 tags:
   - Audio
   - Video
+description: >
+   Simple DirectMedia Layer audio and video output module.
+parameters:
+  - identifier: argument
+    title: Video Standard
+    type: string
+    description: >
+       "PAL" (default), "NTSC", or "WxH"
+    required: yes
+  - identifier: buffer
+    title: Buffer
+    type: integer
+    description: >
+      Set the maximum number of frames to buffer - process ahead of the output
+      position.
+    minimum: 1
+    default: 25
+    unit: frames
+  - identifier: rescale
+    title: Image scaler
+    type: string
+    description: >
+       A rescale method, see the Filters/rescale.
+       
+       Hint: "none" works very good with SDL output.
+  - identifier: volume
+    title: Volume
+    type: double
+    description: Audio level factor.
+    mutable: yes
+  - identifier: video_off
+    title: Video off
+    type: integer
+    description: If 1, disable video output
+    mutable: yes
+  - identifier: audio_off
+    title: Audio off
+    type: integer
+    description: If 1, disable audio output
+    mutable: yes
+  - identifier: progressive
+    title: Progressive
+    type: integer
+    description: indicates whether to use progressive or field-based rendering.
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+    widget: checkbox
+  - identifier: audio_buffer
+    title: Audio buffer
+    type: integer
+    description: Size of the sdl audio buffer.
+    mutable: yes
+    default: 1024

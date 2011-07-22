@@ -21,8 +21,3 @@ parameters:
     required: yes
     mutable: no
     widget: fileopen
-    
-  - identifier: resource
-    title: Resource
-    type: string
-    readonly: yes

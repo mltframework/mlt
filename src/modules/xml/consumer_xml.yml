@@ -10,3 +10,20 @@ language: en
 tags:
   - Audio
   - Video
+description: >
+  Serialise the service network to XML. See docs/mlt-xml.txt for more 
+  information.
+bugs: >
+   Untested arbitrary nesting of multitracks and playlists. Property "id" is 
+   generated as service type followed by number if no property named "id" 
+   exists, but it fails to guarantee uniqueness.
+parameters:
+  - identifier: argument
+    title: File
+    type: string
+    description: The name of a file in which to store the XML.
+    readonly: no
+    required: yes
+    mutable: no
+    default: stdout
+    widget: fileopen

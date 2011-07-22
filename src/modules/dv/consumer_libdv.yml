@@ -10,3 +10,46 @@ language: en
 tags:
   - Audio
   - Video
+description: >
+   DV consumer using libdv.
+parameters:
+  - identifier: argument
+    title: File
+    type: string
+    description: >
+       The filename to write to.
+       
+       e.g. /dev/dv1394
+    required: yes
+    widget: filesave
+  - identifier: buffer
+    title: Buffer
+    type: integer
+    description: >
+      Set the maximum number of frames to buffer - process ahead of the output
+      position.
+    minimum: 1
+    default: 25
+    unit: frames
+  - identifier: rescale
+    title: Image scaler
+    type: string
+    description: Set the pixel interpolation mode.
+    values:
+      - nearest
+      - bilinear
+      - bicubic
+      - bicublin
+      - gauss
+      - sinc
+      - lanczos
+      - spline
+  - identifier: progressive
+    title: Progressive
+    type: integer
+    description: indicates whether to use progressive or field-based rendering.
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+    widget: checkbox

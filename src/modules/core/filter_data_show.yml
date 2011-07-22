@@ -41,14 +41,6 @@ parameters:
     default: data_fx.properties
     widget: fileopen
 
-  - identifier: resource
-    title: Feed Properties File
-    type: string
-    required: no
-    readonly: yes
-    default: data_fx.properties
-    widget: fileopen
-
   - identifier: dynamic
     title: Dynamic
     type: integer

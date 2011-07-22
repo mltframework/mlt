@@ -9,3 +9,70 @@ license: GPLv2
 language: en
 tags:
   - Audio
+description: >
+   Adjust an audio stream's volume level. This filter is based on the 
+   'normalize' utility
+parameters:
+  - identifier: argument
+    title: Gain
+    type: string
+    description: >
+       The gain may be indicated as a floating point value of the gain 
+       adjustment.
+       
+       The gain may also be indicated as a numeric value with the suffix "dB" 
+       to adjust in terms of decibels.
+       
+       The gain may also be set to "normalise" to normalise the volume to the 
+       target amplitude -12dBFS.
+  - identifier: window
+    title: Window
+    type: integer
+    description: >
+       The number of video frames over which to smooth normalisation.
+    default: 75
+    mutable: yes
+  - identifier: normalise
+    title: Normalise
+    type: string
+    description: >
+       Normalise the volume to the specified amplitude.
+       
+       The normalization may be indicated as a floating point value of the 
+       relative volume
+       
+       The normalisation may also be indicated as a numeric value with the 
+       suffix "dB" to set the amplitude in decibels.
+    default: -12dBFS
+    mutable: yes
+  - identifier: limiter
+    title: Limiter
+    type: string
+    description: >
+       Limit all samples above the specified amplitude.
+       
+       The limiting may be indicated as a floating point value of the 
+       relative volume
+       
+       The limiting may also be indicated as a numeric value with the suffix 
+       "dB" to set the limiting amplitude in decibels.
+    default: -6dBFS
+    mutable: yes
+  - identifier: max_gain
+    title: Max gain
+    type: double
+    description: >
+       A floating point or decibel value of the maximum gain that can be 
+       applied during normalisation.
+    default: 20dB
+    mutable: yes
+  - identifier: end
+    title: End gain
+    type: string
+    description: >
+       A gain value just like the Gain property. This causes the gain to be 
+       interpolated from 'gain' to 'end' over the duration.
+    mutable: yes
+
+
+

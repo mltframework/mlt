@@ -9,3 +9,11 @@ license: LGPLv2.1
 language: en
 tags:
   - Audio
+description: >
+   Mix all channels of audio into a mono signal and output it as N channels.
+parameters:
+  - identifier: argument
+    title: channels
+    type: integer
+    description: the number of output channels (default 2)
+ 

@@ -9,3 +9,15 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: >
+  Provides various mirror and image reversing effects.
+parameters:
+  - identifier: argument
+    title: File
+    type: string
+    description: one of: horizontal, vertical, diagonal, xdiagonal, flip, flop
+  - identifier: reverse
+    title: Reverse
+    type: integer
+    mutable: no
+    default: 0

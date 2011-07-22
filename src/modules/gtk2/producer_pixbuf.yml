@@ -40,25 +40,6 @@ parameters:
     mutable: no
     widget: fileopen
     
-  - identifier: in
-    title: In point
-    type: time
-    description: Set the start time offset to use within the clip
-    readonly: no
-    mutable: no
-    minimum: 0
-    default: 0
-    widget: timecode
-
-  - identifier: out
-    title: Out point
-    type: time
-    description: Set the ending time offset to use within the clip
-    readonly: no
-    minimum: 0
-    mutable: no
-    widget: timecode
-    
   - identifier: begin
     title: Begin
     type: integer
@@ -77,12 +58,6 @@ parameters:
     minimum: 0
     mutable: yes
     widget: spinner
-    
-  - identifier: resource
-    title: Resource
-    type: string
-    description: File location. See "argument" above.
-    readonly: yes
     
   - identifier: real_width
     title: Real width

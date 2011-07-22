@@ -32,11 +32,6 @@ parameters:
     minimum: 0
     widget: spinner
 
-  - identifier: resource
-    title: Card
-    type: integer
-    readonly: yes
-
   - identifier: channels
     title: Audio channels
     type: integer

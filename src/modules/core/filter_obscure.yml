@@ -9,3 +9,18 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: >
+   Obscuring filter.
+parameters:
+  - identifier: argument
+    title: Start
+    type: string
+    description: >
+       The starting rectangle is given in the format X/Y:WxH[:PWxPY] where 
+       PWxPY is the size of the averaging region in pixels.
+  - identifier: end
+    title: End
+    type: string
+    description: >
+       The ending rectangle is given in the format X/Y:WxH[:PWxPY] where 
+       PWxPY is the size of the averaging region in pixels.

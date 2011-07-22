@@ -64,25 +64,6 @@ parameters:
     default: 0
     widget: spinner
 
-  - identifier: in
-    title: In point
-    type: time
-    description: Set the start time offset to use within the clip
-    readonly: no
-    mutable: no
-    minimum: 0
-    default: 0
-    widget: timecode # this is a special form of time value/code entry (e.g. see Kino)
-
-  - identifier: out
-    title: Out point
-    type: time
-    description: Set the ending time offset to use within the clip
-    readonly: no
-    minimum: 0
-    mutable: no
-    widget: timecode # as opposed to time, which could be confused for a wallclock-style time widget
-
   - identifier: threads
     title: Decoding threads
     type: integer
@@ -105,12 +86,6 @@ parameters:
     maximum: 9.999 # just a suggestion
     # no default property means it should be blank in the UI and not applied unless provided
 
-  - identifier: resource
-    title: File/URL
-    type: string
-    description: file or protocol specification
-    readonly: yes
-
   - identifier: source_fps
     title: Frame rate
     type: float
@@ -118,19 +93,6 @@ parameters:
     description: the framerate of the resource
     readonly: yes
     unit: frames/second
-
-  - identifier: aspect_ratio
-    title: Sample aspect ratio
-    description: >
-      The sample aspect ratio of the resource.
-      This is determined on every frame read.
-    readonly: yes
-
-  - identifier: length
-    title: Duration
-    type: time
-    description: duration
-    widget: timecode
 
   - identifier: seekable
     title: Supports seeking
