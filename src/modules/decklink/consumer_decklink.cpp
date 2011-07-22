@@ -202,7 +202,7 @@ public:
 		// Set the keyer
 		if ( m_deckLinkKeyer && ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
 		{
-			bool external = (m_isKeyer == 2);
+			bool external = ( m_isKeyer == 2 );
 			double level = mlt_properties_get_double( properties, "keyer_level" );
 
 			if ( m_deckLinkKeyer->Enable( external ) != S_OK )
@@ -216,7 +216,7 @@ public:
 		}
 
 		// Set the video output mode
-		if ( S_OK != m_deckLinkOutput->EnableVideoOutput( m_displayMode->GetDisplayMode(), bmdVideoOutputFlagDefault) )
+		if ( S_OK != m_deckLinkOutput->EnableVideoOutput( m_displayMode->GetDisplayMode(), bmdVideoOutputFlagDefault ) )
 		{
 			mlt_log_error( getConsumer(), "Failed to enable video output\n" );
 			return false;
@@ -286,10 +286,10 @@ public:
 		{
 			uint32_t written = 0;
 			BMDTimeValue streamTime = m_count * frequency * m_duration / m_timescale;
-			m_deckLinkOutput->GetBufferedAudioSampleFrameCount(&written);
+			m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &written );
 			if ( written > (m_preroll + 1) * samples )
 			{
-				mlt_log_verbose( getConsumer(), "renderAudio: will flush %d audiosamples\n", written);
+				mlt_log_verbose( getConsumer(), "renderAudio: will flush %d audiosamples\n", written );
 				m_deckLinkOutput->FlushBufferedAudioSamples();
 			};
 #ifdef WIN32
@@ -440,33 +440,33 @@ public:
 	virtual HRESULT STDMETHODCALLTYPE ScheduledFrameCompleted( IDeckLinkVideoFrame* completedFrame, BMDOutputFrameCompletionResult completed )
 	{
 		uint32_t cnt;
-		m_deckLinkOutput->GetBufferedAudioSampleFrameCount(&cnt);
-		if(cnt != m_acnt)
+		m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &cnt );
+		if ( cnt != m_acnt )
 		{
 			mlt_log_verbose( getConsumer(),
 				"ScheduledFrameCompleted: GetBufferedAudioSampleFrameCount %u -> %u, m_count=%"PRIu64"\n",
 				m_acnt, cnt, m_count );
 			m_acnt = cnt;
-		};
+		}
 
 		// When a video frame has been released by the API, schedule another video frame to be output
 
 		// ignore handler if frame was flushed
-		if(bmdOutputFrameFlushed == completed)
+		if ( bmdOutputFrameFlushed == completed )
 			return S_OK;
 
 		// schedule next frame
-		ScheduleNextFrame(false);
+		ScheduleNextFrame( false );
 
 		// step forward frames counter if underrun
-		if(bmdOutputFrameDisplayedLate == completed)
+		if ( bmdOutputFrameDisplayedLate == completed )
 		{
-			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDisplayedLate == completed\n");
+			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDisplayedLate == completed\n" );
 			m_count++;
 		}
-		if(bmdOutputFrameDropped == completed)
+		if ( bmdOutputFrameDropped == completed )
 		{
-			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDropped == completed\n");
+			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDropped == completed\n" );
 			m_count++;
 		}
 
@@ -479,7 +479,7 @@ public:
 	}
 	
 
-	void ScheduleNextFrame(bool preroll)
+	void ScheduleNextFrame( bool preroll )
 	{
 		// get the consumer
 		mlt_consumer consumer = getConsumer();
@@ -500,8 +500,8 @@ public:
 				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 				// terminate on pause
-				if (m_terminate_on_pause &&
-					mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0.0)
+				if ( m_terminate_on_pause &&
+					mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" ) == 0.0 )
 					stop();
 
 				mlt_frame_close( frame );
