@@ -49,7 +49,7 @@
 #define PIX_FMT_YUYV422 PIX_FMT_YUV422
 #endif
 
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 #include <libavutil/opt.h>
 #define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
 #define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
@@ -522,7 +522,7 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	else
 		codec = avcodec_find_encoder( c->codec_id );
 
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
 	{
@@ -904,7 +904,7 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 	else
 		codec = avcodec_find_encoder( video_enc->codec_id );
 
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
 	{
@@ -1243,14 +1243,14 @@ static void *consumer_thread( void *arg )
 		{
 			mlt_properties p = mlt_properties_load( fpre );
 			apply_properties( oc, p, AV_OPT_FLAG_ENCODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 			if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
 				apply_properties( oc->priv_data, p, AV_OPT_FLAG_ENCODING_PARAM );
 #endif
 			mlt_properties_close( p );
 		}
 		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 		if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
 			apply_properties( oc->priv_data, properties, AV_OPT_FLAG_ENCODING_PARAM );
 #endif
@@ -1268,7 +1268,7 @@ static void *consumer_thread( void *arg )
 		// Open the output file, if needed
 		if ( !( fmt->flags & AVFMT_NOFILE ) ) 
 		{
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 			if ( avio_open( &oc->pb, filename, AVIO_FLAG_WRITE ) < 0 )
 #else
 			if ( url_fopen( &oc->pb, filename, URL_WRONLY ) < 0 )
@@ -1759,9 +1759,9 @@ on_fatal_error:
 
 	// Close the output file
 	if ( !( fmt->flags & AVFMT_NOFILE ) )
-#if LIBAVFORMAT_VERSION_MAJOR > 52
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
 		avio_close( oc->pb );
-#elif LIBAVFORMAT_VERSION_INT >= ((52<<16)+(0<<8)+0)
+#elif LIBAVFORMAT_VERSION_MAJOR >= 52
 		url_fclose( oc->pb );
 #else
 		url_fclose( &oc->pb );
