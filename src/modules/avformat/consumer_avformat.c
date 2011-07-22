@@ -422,7 +422,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 /** Add an audio output stream
 */
 
-static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, int codec_id, int channels )
+static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec, int channels )
 {
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -438,7 +438,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, i
 		// Establish defaults from AVOptions
 		avcodec_get_context_defaults2( c, CODEC_TYPE_AUDIO );
 
-		c->codec_id = codec_id;
+		c->codec_id = codec->id;
 		c->codec_type = CODEC_TYPE_AUDIO;
 		c->sample_fmt = SAMPLE_FMT_S16;
 
@@ -595,7 +595,7 @@ static void close_audio( AVFormatContext *oc, AVStream *st )
 /** Add a video output stream 
 */
 
-static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, int codec_id )
+static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec )
 {
  	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -611,7 +611,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, i
 		// Establish defaults from AVOptions
 		avcodec_get_context_defaults2( c, CODEC_TYPE_VIDEO );
 
-		c->codec_id = codec_id;
+		c->codec_id = codec->id;
 		c->codec_type = CODEC_TYPE_VIDEO;
 		
 		// Setup multi-threading
@@ -802,7 +802,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, i
 			c->flags |= CODEC_FLAG_PASS1;
 		else if ( i == 2 )
 			c->flags |= CODEC_FLAG_PASS2;
-		if ( codec_id != CODEC_ID_H264 && ( c->flags & ( CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2 ) ) )
+		if ( codec->id != CODEC_ID_H264 && ( c->flags & ( CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2 ) ) )
 		{
 			char logfilename[1024];
 			FILE *f;
@@ -1048,6 +1048,8 @@ static void *consumer_thread( void *arg )
 	char *format = mlt_properties_get( properties, "f" );
 	char *vcodec = mlt_properties_get( properties, "vcodec" );
 	char *acodec = mlt_properties_get( properties, "acodec" );
+	AVCodec *audio_codec = NULL;
+	AVCodec *video_codec = NULL;
 	
 	// Used to store and override codec ids
 	int audio_codec_id;
@@ -1099,10 +1101,10 @@ static void *consumer_thread( void *arg )
 		audio_codec_id = CODEC_ID_NONE;
 	else if ( acodec )
 	{
-		AVCodec *p = avcodec_find_encoder_by_name( acodec );
-		if ( p != NULL )
+		audio_codec = avcodec_find_encoder_by_name( acodec );
+		if ( audio_codec )
 		{
-			audio_codec_id = p->id;
+			audio_codec_id = audio_codec->id;
 			if ( audio_codec_id == CODEC_ID_AC3 && avcodec_find_encoder_by_name( "ac3_fixed" ) )
 			{
 				mlt_properties_set( properties, "_acodec", "ac3_fixed" );
@@ -1115,22 +1117,30 @@ static void *consumer_thread( void *arg )
 			mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "audio codec %s unrecognised - ignoring\n", acodec );
 		}
 	}
+	else
+	{
+		audio_codec = avcodec_find_encoder( audio_codec_id );
+	}
 
 	// Check for video codec overides
 	if ( ( vcodec && strcmp( vcodec, "none" ) == 0 ) || mlt_properties_get_int( properties, "vn" ) )
 		video_codec_id = CODEC_ID_NONE;
 	else if ( vcodec )
 	{
-		AVCodec *p = avcodec_find_encoder_by_name( vcodec );
-		if ( p != NULL )
+		video_codec = avcodec_find_encoder_by_name( vcodec );
+		if ( video_codec )
 		{
-			video_codec_id = p->id;
+			video_codec_id = video_codec->id;
 		}
 		else
 		{
 			video_codec_id = CODEC_ID_NONE;
 			mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "video codec %s unrecognised - ignoring\n", vcodec );
 		}
+	}
+	else
+	{
+		video_codec = avcodec_find_encoder( video_codec_id );
 	}
 
 	// Write metadata
@@ -1186,7 +1196,7 @@ static void *consumer_thread( void *arg )
 
 	// Add audio and video streams
 	if ( video_codec_id != CODEC_ID_NONE )
-		video_st = add_video_stream( consumer, oc, video_codec_id );
+		video_st = add_video_stream( consumer, oc, video_codec );
 	if ( audio_codec_id != CODEC_ID_NONE )
 	{
 		int is_multi = 0;
@@ -1201,13 +1211,13 @@ static void *consumer_thread( void *arg )
 			{
 				is_multi = 1;
 				total_channels += j;
-				audio_st[i] = add_audio_stream( consumer, oc, audio_codec_id, j );
+				audio_st[i] = add_audio_stream( consumer, oc, audio_codec, j );
 			}
 		}
 		// single track
 		if ( !is_multi )
 		{
-			audio_st[0] = add_audio_stream( consumer, oc, audio_codec_id, channels );
+			audio_st[0] = add_audio_stream( consumer, oc, audio_codec, channels );
 			total_channels = channels;
 		}
 	}
