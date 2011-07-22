@@ -16,11 +16,11 @@ parameters:
     title: Start
     type: string
     description: >
-       The starting rectangle is given in the format X/Y:WxH[:PWxPY] where 
-       PWxPY is the size of the averaging region in pixels.
+      The starting rectangle is given in the format X/Y:WxH[:PWxPY] where
+      PWxPY is the size of the averaging region in pixels.
   - identifier: end
     title: End
     type: string
     description: >
-       The ending rectangle is given in the format X/Y:WxH[:PWxPY] where 
-       PWxPY is the size of the averaging region in pixels.
+      The ending rectangle is given in the format X/Y:WxH[:PWxPY] where
+      PWxPY is the size of the averaging region in pixels.

@@ -10,41 +10,42 @@ language: en
 tags:
   - Video
 description: >
-   A generic dissolve and wipe transition processor.
+  A generic dissolve and wipe transition processor.
    
-   "luma" gets its name from how it uses a grayscale "map" file. As the luma 
-   value varies over time, a threshold filter is applied to the map to 
-   determine what parts of frame A vs. frame B to show. It reads PGM files up 
-   to 16 bits! Alternatively, it can use the first frame from any producer that 
-   outputs yuv, but it will be limited to the luma gamut of 220 values. This 
-   performs field-based rendering unless the A frame property "progressive" or 
-   "consumer_progressive" or the transition property "progressive" is set to 1.
-bugs: Assumes lower field first output.
+  "luma" gets its name from how it uses a grayscale "map" file. As the luma
+  value varies over time, a threshold filter is applied to the map to
+  determine what parts of frame A vs. frame B to show. It reads PGM files up
+  to 16 bits! Alternatively, it can use the first frame from any producer that
+  outputs yuv, but it will be limited to the luma gamut of 220 values. This
+  performs field-based rendering unless the A frame property "progressive" or
+  "consumer_progressive" or the transition property "progressive" is set to 1.
+bugs:
+  - Assumes lower field first output.
 parameters:
   - identifier: argument
     title: Luma map file
     type: string
     description: >
-       Either PGM or any other producable video. If not supplied, a dissolve.
+      Either PGM or any other producable video. If not supplied, performs a dissolve.
   - identifier: factory
     title: Factory
     type: string
     description: >
-       The name of a factory service used as a non-PGM producer loader.
-    default: 'loader'
+      The name of a factory service used as a non-PGM producer loader.
+    default: loader
   - identifier: softness
     title: Softness
-    type: double
+    type: float
     mutable: yes
     description: >
-       Only when using a luma map, how soft to make the edges between A and B. 
-       0.0 = no softness. 1.0 = too soft.
+      Only when using a luma map, how soft to make the edges between A and B.
+      0.0 = no softness. 1.0 = too soft.
   - identifier: reverse
     title: Reverse
     type: int
     mutable: yes
     description: >
-       Reverse the direction of the transition.
+      Reverse the direction of the transition.
     default: 0
   - identifier: producer.*
     title: Producer

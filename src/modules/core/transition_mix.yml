@@ -9,27 +9,31 @@ license: LGPLv2.1
 language: en
 tags:
   - Audio
-description: An two stream audio mixer.
-bugs: Samples from the longer of the two frames are discarded.
+description: Mix two audio tracks.
+bugs:
+  - Samples from the longer of the two frames are discarded.
 parameters:
   - identifier: start
     title: Start
-    type: double
+    type: float
     mutable: yes
     description: >
-       The mix level to apply to the second frame. Any negative value causes an 
-       automatic crossfade from 0 to 1.
+      The mix level to apply to the second frame. Any negative value causes an
+      automatic crossfade from 0 to 1.
   - identifier: end
     title: End
-    type: double
+    type: float
     mutable: yes
     description: >
-       The ending value of the mix level. Mix level will be interpolated from 
-       start to end over the in-out range.
+      The ending value of the mix level. Mix level will be interpolated from
+      start to end over the in-out range.
   - identifier: reverse
     title: Reverse
     type: integer
     mutable: yes
     description: >
-       Set to 1 to reverse the direction of the mix.
+      Set to 1 to reverse the direction of the mix.
     default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox
