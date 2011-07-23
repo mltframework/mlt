@@ -31,9 +31,16 @@
 #ifdef WIN32
 #include <windows.h>
 /** the default subdirectory of the libdir for holding modules (plugins) */
-#define PREFIX_LIB "lib\\mlt"
+#define PREFIX_LIB "\\lib\\mlt"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
-#define PREFIX_DATA "share\\mlt"
+#define PREFIX_DATA "\\share\\mlt"
+#elif defined(__DARWIN__) && defined(RELOCATABLE)
+#include <mach-o/dyld.h>
+#include <libgen.h>
+/** the default subdirectory of the libdir for holding modules (plugins) */
+#define PREFIX_LIB "/lib/mlt"
+/** the default subdirectory of the install prefix for holding module (plugin) data */
+#define PREFIX_DATA "/share/mlt"
 #else
 /** the default subdirectory of the libdir for holding modules (plugins) */
 #define PREFIX_LIB LIBDIR "/mlt"
@@ -133,8 +140,31 @@ mlt_repository mlt_factory_init( const char *directory )
 			directory = PREFIX_LIB;
 
 		// Store the prefix for later retrieval
+#if defined(WIN32)
+		LPTSTR path[1024];
+		DWORD size = sizeof( path );
+		GetModuleFileName( NULL, path, &size );
+#elif defined(__DARWIN__)  && defined(RELOCATABLE)
+		char path[1024];
+		uint32_t size = sizeof( path );
+		_NSGetExecutablePath( path, &size );
+#else
 		mlt_directory = strdup( directory );
-
+#endif
+#if defined(WIN32) || (defined(__DARWIN__) && defined(RELOCATABLE))
+		if ( global_properties && !getenv( "MLT_DATA" ) )
+		{
+			mlt_directory = calloc( 1, size + strlen( PREFIX_DATA ) + 1 );
+			strcpy( mlt_directory, dirname( path ) );
+			strcat( mlt_directory, PREFIX_DATA );
+			mlt_properties_set( global_properties, "MLT_DATA", mlt_directory );
+			free( mlt_directory );
+		}
+		mlt_directory = calloc( 1, size + strlen( directory ) + 1 );
+		strcpy( mlt_directory, dirname( path ) );
+		strcat( mlt_directory, directory );
+#endif
+		
 		// Initialise the pool
 		mlt_pool_init( );
 
@@ -151,7 +181,7 @@ mlt_repository mlt_factory_init( const char *directory )
 		mlt_events_register( event_object, "consumer-create-done", ( mlt_transmitter )mlt_factory_create_done );
 
 		// Create the repository of services
-		repository = mlt_repository_init( directory );
+		repository = mlt_repository_init( mlt_directory );
 
 		// Force a clean up when app closes
 		atexit( mlt_factory_close );
