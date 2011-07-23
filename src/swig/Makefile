@@ -26,3 +26,5 @@ distclean: clean
 depend:
 
 install:
+
+uninstall:
