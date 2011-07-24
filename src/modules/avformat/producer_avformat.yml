@@ -153,7 +153,7 @@ parameters:
     maximum: 1
     widget: checkbox
 
-  - identifer: force_colorspace
+  - identifier: force_colorspace
     title: Force colorspace
     description: When provided, this overrides the detected colorspace of the video (Y'CbCr only).
     type: integer

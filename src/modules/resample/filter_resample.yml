@@ -1,0 +1,29 @@
+schema_version: 0.1
+type: filter
+identifier: resample
+title: Resample
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy <dan@dennedy.org>
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+  - Hidden
+description: >
+  Adjust an audio stream's sampling rate, and duplicate channels if producer 
+  provides less than consumer requested.
+  
+  This filter is automatically invoked by the loader producer for the sake of 
+  normalisation over inputs and with the consumer.
+bugs:
+  - >
+    Assumes 2 channels during libsamplerate initialisation. Untested with >2 
+    channels.
+parameters:
+  - identifier: argument
+    title: Frequency
+    type: integer
+    description: The target sample rate.
+    required: no
+    readonly: no

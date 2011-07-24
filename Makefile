@@ -51,3 +51,9 @@ uninstall:
 
 dist:
 	git archive --format=tar --prefix=mlt-$(version)/ v$(version) | gzip >mlt-$(version).tar.gz
+
+validate-yml:
+	for file in `find ./ -type f -name \*.yml`; do \
+		echo "validate: $$file"; \
+		kwalify -f src/framework/metaschema.yaml $$file; \
+	done

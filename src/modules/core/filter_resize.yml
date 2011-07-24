@@ -1,0 +1,33 @@
+schema_version: 0.1
+type: filter
+identifier: resize
+title: Resize
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Charles Yates <charles.yates@pandora.be>
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Hidden
+description: >
+  Image scaling and padding and field order adjustment.
+notes: >
+  Normally resize is used to pad the producer's output to what the consumer has 
+  requested after an upstream rescale filter first scales the image to maximise 
+  usage of the image area. This filter also adjusts the field order to lower 
+  field first if the frame property "top_field_first" has been set to 1. 
+  Therefore, when done, it sets the top_field_first to 0. This filter is 
+  automatically invoked by the loader as part of image sample aspect ratio 
+  normalisation.
+bugs:
+  - Assumes lower field first output.
+parameters:
+  - identifier: argument
+    title: Scale
+    type: string
+    description: The scaling method.
+    values:
+      - affine
+    required: no
+    readonly: no

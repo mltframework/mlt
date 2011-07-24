@@ -9,3 +9,129 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: >
+  A key-framable alpha-channel compositor for two frames.
+notes: >
+  Performs dissolves and luma wipes in addition to alpha compositing.
+  
+  By default, the aspect ratio of the B frame is respected and the size 
+  portion of the geometry specification simply defines a bounding rectangle.
+  
+  This performs field-based rendering unless the A frame property 
+  "progressive" or "consumer_progressive" or the transition property 
+  "progressive" is set to 1.
+bugs:
+  - Assumes lower field first during field rendering.
+parameters:
+  - identifier: factory
+    title: Factory
+    type: string
+    description: >
+      The name of a factory service used as a non-PGM producer loader.
+    default: loader
+  - identifier: geometry
+    title: Geometry
+    type: geometry
+    description: > 
+      Key frame specification. This is a ";" delimited form of the deprecated 
+      start, key[n], end properties.
+    mutable: yes
+  - identifier: progressive
+    title: Progressive
+    description: > 
+      Enable or disable field-based rendering.
+    type: integer
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
+  - identifier: distort
+    title: Allow distorted scaling
+    description: >
+      When set, causes the B frame image to fill the WxH completely with no 
+      regard to B's aspect ratio.
+    type: integer
+    default: 0
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
+  - identifier: halign
+    title: Horizontal alignment
+    description: >
+      When not distorting, set the horizontal alignment of B within the 
+      geometry rectangle.
+    type: string
+    default: left
+    values:
+      - left
+      - centre
+      - right
+    mutable: yes
+    widget: combo
+  - identifier: valign
+    title: Vertical alignment
+    description: >
+      When not distorting, set the vertical alignment of B within the 
+      geometry rectangle.
+    type: string
+    default: top
+    values:
+      - top
+      - middle
+      - bottom
+    mutable: yes
+    widget: combo
+  - identifier: luma
+    title: Luma map
+    description: >
+      The luma map file name. If not supplied, a dissolve.
+    type: string
+    default: unset
+    mutable: yes
+    widget: fileopen
+  - identifier: softness
+    title: Softness
+    description: >
+      Only when using a luma map, how soft to make the edges between A and B.
+    type: float
+    default: 0.0
+    minimum: 0.0
+    maximum: 1.0
+    mutable: yes
+  - identifier: luma.*
+    title: Luma producer
+    description: >
+      Properties may be set on the encapsulated producer. Any property starting 
+      with "luma." is passed to the non-PGM luma producer.
+    readonly: no
+    mutable: yes
+  - identifier: start
+    title: Start geometry
+    description: >
+      A geometry specification as X/Y:WxH[!][:mix]
+      
+      X, Y, W, H are assumed to pixel units unless they have the suffix '%'.
+      
+      '!' is a shortcut to specify distort.
+      
+      Mix is always a 2 digit percentage, defaults to 100.
+    type: geometry
+    default: "85%/5%:10%x10%"
+    readonly: no
+    mutable: yes
+  - identifier: end
+    title: End geometry
+    description: >
+      X/Y:WxH[:mix] - The end geometry specification (see "start").
+    type: geometry
+    readonly: no
+    mutable: yes
+  - identifier: key[F]
+    title: Key frame geometry
+    description: >
+      X/Y:WxH[:mix] - set a key frame for geometry between the in and out. F is 
+      a frame number and can be negative to make it relative to the out point.
+    type: geometry
+    readonly: no
+    mutable: yes

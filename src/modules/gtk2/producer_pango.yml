@@ -73,7 +73,7 @@ parameters:
       left, centre, right (also, numbers 0, 1 and 2 can be used respectively)
     readonly: no
     mutable: yes
-    widget: combobox
+    widget: combo
 
   - identifier: pad
     title: Padding
@@ -98,11 +98,13 @@ parameters:
   - identifier: font
     title: Font
     type: string
-    description: The default typeface to use when not using markup.
-    default: "Sans 48". FreeType2 renders at 72 dpi.
+    description: >
+      The default typeface to use when not using markup. 
+      FreeType2 renders at 72 dpi.
+    default: Sans 48
     readonly: no
     mutable: yes
-    widget: combobox
+    widget: combo
     
   - identifier: weight
     title: Font weight
@@ -122,7 +124,7 @@ parameters:
     default: UTF-8
     readonly: no
     mutable: yes
-    widget: combobox
+    widget: combo
 
   - identifier: real_width
     title: Real width

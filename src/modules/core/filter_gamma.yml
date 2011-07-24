@@ -13,12 +13,12 @@ description: Adjust image luma using a non-linear power-law curve.
 parameters:
   - identifier: argument
     title: Gamma
-    type: double
+    type: float
     description: The exponential factor of the power-law curve
     default: 1.0
   - identifier: gamma
     title: Gamma
-    type: double
+    type: float
     description: See "argument"
     mutable: yes
     default: 1.0

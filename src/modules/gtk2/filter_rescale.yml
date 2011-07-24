@@ -1,0 +1,36 @@
+schema_version: 0.1
+type: filter
+identifier: gtkrescale
+title: Gtk Rescale
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy <dan@dennedy.org>
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Hidden
+description: >
+  Scale the producer video frame size to match the consumer. This filter is 
+  designed for use as a normaliser for the loader producer.
+notes: >
+  If a property "consumer_aspect_ratio" exists on the frame, then rescaler 
+  normalises the producer's aspect ratio and maximises the size of the frame, 
+  but may not produce the consumer's requested dimension. Therefore, this 
+  option works best in conjunction with the resize filter. This behavior can be 
+  disabled by another service by either removing the property, setting it to 
+  zero, or setting frame property "distort" to 1.
+parameters:
+  - identifier: argument
+    title: Interpolation
+    type: string
+    description: The rescaling method.
+    values:
+      - nearest (lowest quality, fastest)
+      - tiles
+      - bilinear (good quality, moderate speed)
+      - hyper (best quality, slowest)
+    required: no
+    readonly: no
+    default: bilinear
+    widget: combo

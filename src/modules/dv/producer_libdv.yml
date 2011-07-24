@@ -25,5 +25,5 @@ parameters:
     description: One of "best," "fast" or anything else chooses medium.
     readonly: no
     mutable: yes
-    widget: combobox
+    widget: combo
     default: best

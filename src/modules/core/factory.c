@@ -58,28 +58,7 @@ extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
-	const char *service_type = NULL;
-	switch ( type )
-	{
-		case filter_type:
-			service_type = "filter";
-			break;
-		case producer_type:
-			service_type = "producer";
-			break;
-		case transition_type:
-			service_type = "transition";
-			break;
-		default:
-			return NULL;
-	}
-	if ( !strcmp( id, "grayscale" ) )
-		id = "greyscale";
-	else if ( !strcmp( id, "color" ) )
-		id = "colour";
-	else if ( !strcmp( id, "channelswap" ) )
-		id = "channelcopy";
-	snprintf( file, PATH_MAX, "%s/core/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, id );
+	snprintf( file, PATH_MAX, "%s/core/%s", mlt_environment( "MLT_DATA" ), (char*) data );
 	return mlt_properties_parse_yaml( file );
 }
 
@@ -122,29 +101,32 @@ MLT_REPOSITORY
 	MLT_REGISTER( transition_type, "mix", transition_mix_init );
 	MLT_REGISTER( transition_type, "region", transition_region_init );
 
-	MLT_REGISTER_METADATA( filter_type, "audiowave", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "brightness", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "channelcopy", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "channelswap", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "crop", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "data_show", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "gamma", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "greyscale", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "grayscale", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "luma", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "mirror", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "mono", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "obscure", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "region", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "transition", metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "watermark", metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "colour", metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "color", metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "consumer", metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "hold", metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "noise", metadata, NULL );
-	MLT_REGISTER_METADATA( transition_type, "composite", metadata, NULL );
-	MLT_REGISTER_METADATA( transition_type, "luma", metadata, NULL );
-	MLT_REGISTER_METADATA( transition_type, "mix", metadata, NULL );
-	MLT_REGISTER_METADATA( transition_type, "region", metadata, NULL );
+	MLT_REGISTER_METADATA( filter_type, "audiowave", metadata, "filter_audiowave.yml" );
+	MLT_REGISTER_METADATA( filter_type, "brightness", metadata, "filter_brightness.yml" );
+	MLT_REGISTER_METADATA( filter_type, "channelcopy", metadata, "filter_channelcopy.yml" );
+	MLT_REGISTER_METADATA( filter_type, "channelswap", metadata, "filter_channelcopy.yml" );
+	MLT_REGISTER_METADATA( filter_type, "crop", metadata, "filter_crop.yml" );
+	MLT_REGISTER_METADATA( filter_type, "data_show", metadata, "filter_data_show.yml" );
+	MLT_REGISTER_METADATA( filter_type, "gamma", metadata, "filter_gamma.yml" );
+	MLT_REGISTER_METADATA( filter_type, "greyscale", metadata, "filter_greyscale.yml" );
+	MLT_REGISTER_METADATA( filter_type, "grayscale", metadata, "filter_greyscale.yml" );
+	MLT_REGISTER_METADATA( filter_type, "luma", metadata, "filter_luma.yml" );
+	MLT_REGISTER_METADATA( filter_type, "mirror", metadata, "filter_mirror.yml" );
+	MLT_REGISTER_METADATA( filter_type, "mono", metadata, "filter_mono.yml" );
+	MLT_REGISTER_METADATA( filter_type, "obscure", metadata, "filter_obscure.yml" );
+	MLT_REGISTER_METADATA( filter_type, "region", metadata, "filter_region.yml" );
+	MLT_REGISTER_METADATA( filter_type, "rescale", metadata, "filter_rescale.yml" );
+	MLT_REGISTER_METADATA( filter_type, "resize", metadata, "filter_resize.yml" );
+	MLT_REGISTER_METADATA( filter_type, "transition", metadata, "filter_transition.yml" );
+	MLT_REGISTER_METADATA( filter_type, "watermark", metadata, "filter_watermark.yml" );
+	MLT_REGISTER_METADATA( producer_type, "colour", metadata, "producer_colour.yml" );
+	MLT_REGISTER_METADATA( producer_type, "color", metadata, "producer_colour.yml" );
+	MLT_REGISTER_METADATA( producer_type, "consumer", metadata, "producer_consumer.yml" );
+	MLT_REGISTER_METADATA( producer_type, "loader", metadata, "producer_loader.yml" );
+	MLT_REGISTER_METADATA( producer_type, "hold", metadata, "producer_hold.yml" );
+	MLT_REGISTER_METADATA( producer_type, "noise", metadata, "producer_noise.yml" );
+	MLT_REGISTER_METADATA( transition_type, "composite", metadata, "transition_composite.yml" );
+	MLT_REGISTER_METADATA( transition_type, "luma", metadata, "transition_luma.yml" );
+	MLT_REGISTER_METADATA( transition_type, "mix", metadata, "transition_mix.yml" );
+	MLT_REGISTER_METADATA( transition_type, "region", metadata, "transition_region.yml" );
 }

@@ -42,7 +42,7 @@ parameters:
       0.0 = no softness. 1.0 = too soft.
   - identifier: reverse
     title: Reverse
-    type: int
+    type: integer
     mutable: yes
     description: >
       Reverse the direction of the transition.

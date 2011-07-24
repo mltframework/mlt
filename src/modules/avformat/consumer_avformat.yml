@@ -37,7 +37,7 @@ parameters:
       This option allows other services to encapsulate the avformat consumer and
       do something different (not already available in a protocol) with its
       output by listening to the avformat-write event.
-    type; integer
+    type: integer
     minimum: 0
     maximum: 1
     default: 0

@@ -25,7 +25,7 @@ parameters:
       results set this to a multiple of ttl used in pixbuf.
     mutable: yes
     default: 25
-  - identifer: duration
+  - identifier: duration
     title: Duration
     type: integer
     description: The length of the transition.

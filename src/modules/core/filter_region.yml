@@ -12,7 +12,8 @@ tags:
 description: >
   Apply one or more filters to a region of the video image. The region can be
   shaped as well using the alpha channel of another producer.
-bugs: "circle" is unpredictable in the absence of the librsvg pixbuf loader.
+bugs:
+  - Circle is unpredictable in the absence of the librsvg pixbuf loader.
 parameters:
   - identifier: argument
     title: File
@@ -24,5 +25,5 @@ parameters:
   - identifier: region.*
     title: Region
     description: >
-      Properties may be set on the encapsulated region transition.See "region"
+      Properties may be set on the encapsulated region transition. See "region"
       transition for details.

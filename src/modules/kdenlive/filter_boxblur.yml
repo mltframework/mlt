@@ -1,6 +1,6 @@
 schema_version: 0.1
 type: filter
-identifier:boxblur
+identifier: boxblur
 title: Box Blur
 version: 1
 copyright: Leny Grisel, Jean-Baptiste Mardelle

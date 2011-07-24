@@ -88,6 +88,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "pixbuf", create_service );
 
 	MLT_REGISTER_METADATA( consumer_type, "gtk2_preview", metadata, "consumer_gtk2_preview.yml" );
+	MLT_REGISTER_METADATA( filter_type, "gtkrescale", metadata, "filter_rescale.yml" );
 	MLT_REGISTER_METADATA( producer_type, "pango", metadata, "producer_pango.yml" );
 	MLT_REGISTER_METADATA( producer_type, "pixbuf", metadata, "producer_pixbuf.yml" );
 }
