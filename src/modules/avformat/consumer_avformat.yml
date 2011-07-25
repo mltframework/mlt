@@ -20,19 +20,28 @@ parameters:
     type: string
     required: yes
     widget: filesave
-
   - identifier: target
     title: File/URL
     type: string
     description: This is not the same thing as the ffmpeg -target option!
     readonly: yes
-
   - identifier: mlt_profile
     title: MLT Profile
     type: string
     description: >
       Choose a MLT basic video settings preset.
       This overrides a profile that may have been set elsewhere.
+  - identifier: redirect
+    title: Redirect I/O
+    description: >
+      This option allows other services to encapsulate the avformat consumer and
+      do something different (not already available in a protocol) with its
+      output by listening to the avformat-write event.
+    type; integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
 
 # These override the MLT profile
   - identifier: width
