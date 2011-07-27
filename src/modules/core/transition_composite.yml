@@ -109,7 +109,7 @@ parameters:
   - identifier: start
     title: Start geometry
     description: >
-      A geometry specification as X/Y:WxH[!][:mix]
+      (deprecated) A geometry specification as X/Y:WxH[!][:mix]
       
       X, Y, W, H are assumed to pixel units unless they have the suffix '%'.
       
@@ -123,15 +123,16 @@ parameters:
   - identifier: end
     title: End geometry
     description: >
-      X/Y:WxH[:mix] - The end geometry specification (see "start").
+      (deprecated) X/Y:WxH[:mix] - The end geometry specification (see "start").
     type: geometry
     readonly: no
     mutable: yes
   - identifier: key[F]
     title: Key frame geometry
     description: >
-      X/Y:WxH[:mix] - set a key frame for geometry between the in and out. F is 
-      a frame number and can be negative to make it relative to the out point.
+      (deprecated) X/Y:WxH[:mix] - set a key frame for geometry between the in 
+      and out. F is a frame number and can be negative to make it relative to 
+      the out point.
     type: geometry
     readonly: no
     mutable: yes
