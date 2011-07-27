@@ -437,6 +437,31 @@ static void query_metadata( mlt_repository repo, mlt_service_type type, const ch
 	}
 }
 
+static int is_service_hidden(mlt_repository repo, mlt_service_type type, const char *service_name )
+{
+	mlt_properties metadata = NULL;
+	mlt_properties tags = NULL;
+	metadata = mlt_repository_metadata(repo, type, service_name);
+
+	if( metadata )
+	{
+		tags = mlt_properties_get_data( metadata, "tags", NULL );
+		if( tags )
+		{
+			int k;
+			for ( k = 0; k < mlt_properties_count( tags ); k++ )
+			{
+				const char* value = mlt_properties_get_value(tags, k);
+				if( !strcmp("Hidden", value) )
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 static void query_services( mlt_repository repo, mlt_service_type type )
 {
 	mlt_properties services = NULL;
@@ -467,7 +492,11 @@ static void query_services( mlt_repository repo, mlt_service_type type )
 	{
 		int j;
 		for ( j = 0; j < mlt_properties_count( services ); j++ )
-			fprintf( stdout, "  - %s\n", mlt_properties_get_name( services, j ) );
+		{
+			const char* service_name = mlt_properties_get_name( services, j );
+			if( !is_service_hidden(repo, type, service_name ) )
+				fprintf( stdout, "  - %s\n", service_name );
+		}
 	}
 	fprintf( stdout, "...\n" );
 }
