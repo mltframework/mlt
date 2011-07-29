@@ -57,6 +57,7 @@ private:
 	bool                        m_terminate_on_pause;
 	uint32_t                    m_preroll;
 	uint32_t                    m_acnt;
+	bool                        m_reprio;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -237,6 +238,7 @@ public:
 		}
 
 		m_preroll = preroll;
+		m_reprio = false;
 
 		// preroll frames
 		for( i = 0; i < preroll; i++ )
@@ -439,6 +441,43 @@ public:
 	
 	virtual HRESULT STDMETHODCALLTYPE ScheduledFrameCompleted( IDeckLinkVideoFrame* completedFrame, BMDOutputFrameCompletionResult completed )
 	{
+		if( !m_reprio )
+		{
+			mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+
+			if ( mlt_properties_get( properties, "priority" ) )
+			{
+				int r;
+				pthread_t thread;
+				pthread_attr_t tattr;
+				struct sched_param param;
+
+				pthread_attr_init(&tattr);
+				pthread_attr_setschedpolicy(&tattr, SCHED_FIFO);
+
+				if ( !strcmp( "max", mlt_properties_get( properties, "priority" ) ) )
+					param.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+				else if ( !strcmp( "min", mlt_properties_get( properties, "priority" ) ) )
+					param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
+				else
+					param.sched_priority = mlt_properties_get_int( properties, "priority" );
+
+				pthread_attr_setschedparam(&tattr, &param);
+
+				thread = pthread_self();
+
+				r = pthread_setschedparam(thread, SCHED_FIFO, &param);
+				if( r )
+					mlt_log_verbose( getConsumer(),
+						"ScheduledFrameCompleted: pthread_setschedparam retured %d\n", r);
+				else
+					mlt_log_verbose( getConsumer(),
+						"ScheduledFrameCompleted: param.sched_priority=%d\n", param.sched_priority);
+			};
+
+			m_reprio = true;
+		};
+
 		uint32_t cnt;
 		m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &cnt );
 		if ( cnt != m_acnt )
