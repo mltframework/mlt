@@ -1244,6 +1244,7 @@ static void *consumer_thread( void *arg )
 			total_channels = channels;
 		}
 	}
+	mlt_properties_set_int( properties, "channels", total_channels );
 
 	// Set the parameters (even though we have none...)
 	if ( av_set_parameters(oc, NULL) >= 0 ) 
@@ -1362,6 +1363,7 @@ static void *consumer_thread( void *arg )
 			if ( !terminated && audio_st[0] )
 			{
 				samples = mlt_sample_calculator( fps, frequency, count ++ );
+				channels = total_channels;
 				mlt_frame_get_audio( frame, (void**) &pcm, &aud_fmt, &frequency, &channels, &samples );
 
 				// Save the audio channel remap properties for later
