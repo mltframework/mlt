@@ -15,7 +15,8 @@ OBJS = factory.o \
 	   plugin_settings.o \
 	   process.o \
 	   filter_jackrack.o \
-	   filter_ladspa.o
+	   filter_ladspa.o \
+	   consumer_jack.o
 
 CFLAGS += `pkg-config --cflags jack`
 CFLAGS += `pkg-config --cflags libxml-2.0`
