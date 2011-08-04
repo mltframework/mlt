@@ -27,13 +27,17 @@
 #include <limits.h>
 #include <float.h>
 
+
+extern mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
+#ifdef GPL
 #include "plugin_mgr.h"
 
 extern mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 plugin_mgr_t *g_jackrack_plugin_mgr = NULL;
+#endif
 
 static mlt_properties metadata( mlt_service_type type, const char *id, char *data )
 {
@@ -42,6 +46,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 			  mlt_environment( "MLT_DATA" ), strncmp( id, "ladspa.", 7 ) ? data : "ladspa" );
 	mlt_properties result = mlt_properties_parse_yaml( file );
 
+#ifdef GPL
 	if ( !strncmp( id, "ladspa.", 7 ) )
 	{
 		// Annotate the yaml properties with ladspa control port info.
@@ -120,12 +125,14 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 			mlt_properties_set_double( p, "maximum", 1 );
 		}
 	}
+#endif
 
 	return result;
 }
 
 MLT_REPOSITORY
 {
+#ifdef GPL
 	GSList *list;
 	g_jackrack_plugin_mgr = plugin_mgr_new();
 
@@ -144,6 +151,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "jackrack", metadata, "filter_jackrack.yml" );
 	MLT_REGISTER( filter_type, "ladspa", filter_ladspa_init );
 	MLT_REGISTER_METADATA( filter_type, "ladspa", metadata, "filter_ladspa.yml" );
+#endif
 	MLT_REGISTER( consumer_type, "jack", consumer_jack_init );
 	MLT_REGISTER_METADATA( consumer_type, "jack", metadata, "consumer_jack.yml" );
 }
