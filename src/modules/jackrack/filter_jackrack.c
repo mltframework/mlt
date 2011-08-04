@@ -453,6 +453,12 @@ mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, con
 			mlt_events_listen( properties, this, "jack-seek", (mlt_listener) on_jack_seek );
 			mlt_properties_set_position( properties, "_jack_seek", -1 );
 		}
+		else
+		{
+			mlt_log_error( NULL, "Failed to connect to JACK server\n" );
+			mlt_filter_close( this );
+			this = NULL;
+		}
 	}
 	return this;
 }
