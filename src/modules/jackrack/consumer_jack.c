@@ -110,6 +110,9 @@ mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type type, con
 			// Set frequency from JACK
 			mlt_properties_set_int( properties, "frequency", (int) jack_get_sample_rate( self->jack ) );
 
+			// Set default volume
+			mlt_properties_set_double( properties, "volume", 1.0 );
+
 			// Ensure we don't join on a non-running object
 			self->joined = 1;
 
@@ -312,6 +315,15 @@ static int consumer_play_audio( consumer_jack self, mlt_frame frame, int init_au
 	{
 		int i;
 		size_t mlt_size = samples * sizeof(float);
+		float volume = mlt_properties_get_double( properties, "volume" );
+
+		if ( volume != 1.0 )
+		{
+			float *p = buffer;
+			i = samples * channels + 1;
+			while (--i)
+				*p++ *= volume;
+		}
 
 		// Write into output ringbuffer
 		for ( i = 0; i < channels; i++ )
