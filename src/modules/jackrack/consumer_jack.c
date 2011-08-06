@@ -248,6 +248,7 @@ static void initialise_jack_ports( consumer_jack self )
 	int i;
 	char mlt_name[20], con_name[30];
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
+	const char **ports = NULL;
 
 	// Propogate these for the Jack processing callback
 	int channels = mlt_properties_get_int( properties, "channels" );
@@ -276,11 +277,19 @@ static void initialise_jack_ports( consumer_jack self )
 		if ( mlt_properties_get( properties, con_name ) )
 			snprintf( con_name, sizeof( con_name ), "%s", mlt_properties_get( properties, con_name ) );
 		else
-			snprintf( con_name, sizeof( con_name ), "system:playback_%d", i + 1);
-
+		{
+			if ( !ports )
+				ports = jack_get_ports( self->jack, NULL, NULL, JackPortIsPhysical | JackPortIsInput );
+			if ( ports )
+				strcpy( con_name, ports[i] );
+			else
+				snprintf( con_name, sizeof( con_name ), "system:playback_%d", i + 1);
+		}
 		mlt_log_verbose( NULL, "JACK connect %s to %s\n", mlt_name, con_name );
 		jack_connect( self->jack, mlt_name, con_name );
 	}
+	if ( ports )
+		jack_free( ports );
 }
 
 static int consumer_play_audio( consumer_jack self, mlt_frame frame, int init_audio, int *duration )
