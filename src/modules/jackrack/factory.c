@@ -43,7 +43,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 {
 	char file[ PATH_MAX ];
 	snprintf( file, PATH_MAX, "%s/jackrack/%s",
-			  mlt_environment( "MLT_DATA" ), strncmp( id, "ladspa.", 7 ) ? data : "ladspa" );
+			  mlt_environment( "MLT_DATA" ), strncmp( id, "ladspa.", 7 ) ? data : "filter_ladspa.yml" );
 	mlt_properties result = mlt_properties_parse_yaml( file );
 
 #ifdef GPL
