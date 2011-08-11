@@ -27,8 +27,6 @@ MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "videostab", filter_videostab_init );
 	
-	MLT_REGISTER_METADATA( filter_type, "videostab", oldfilm_metadata, NULL );
-	
 }
 
 

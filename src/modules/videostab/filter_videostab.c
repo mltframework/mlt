@@ -1,5 +1,5 @@
 /*
- * filter_imagestab.c -- grain filter
+ * filter_imagestab.c -- video stabilization with code from http://vstab.sourceforge.net/
  * Copyright (c) 2011 Marco Gittler <g.marco@freenet.de>
  *
  * This library is free software; you can redistribute it and/or
@@ -49,6 +49,7 @@ int load_or_generate_pos_y(mlt_frame this,int  *h,int *w,int tfs, int fps2){
 	int i=0;
 	mlt_producer producer = mlt_frame_get_original_producer(this);
 	mlt_properties prod_props= MLT_PRODUCER_PROPERTIES ( producer );
+	//mlt_properties_debug(prod_prosp,"prod",NULL);
 	mlt_image_format format = mlt_image_rgb24;
 	for (i=0;i< mlt_properties_get_int( prod_props, "length" );i++){
 		mlt_producer_seek(producer,i);
