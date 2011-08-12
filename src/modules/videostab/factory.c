@@ -23,9 +23,17 @@
 
 extern mlt_filter filter_videostab_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
+static mlt_properties videostab_metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/videostab/filter_%s.yml", mlt_environment( "MLT_DATA" ), id );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "videostab", filter_videostab_init );
+	MLT_REGISTER_METADATA( filter_type, "videostab", videostab_metadata, NULL );
 	
 }
 

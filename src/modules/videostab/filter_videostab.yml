@@ -1,0 +1,29 @@
+schema_version: 0.1
+type: filter
+identifier: videostab
+title: Videostab
+copyright: Copyright (C) 2011 Marco Gittler
+version: 0.1
+license: GPL
+language: en
+url: http://vstab.sourceforge.net/ 
+creator: Marco Gittler <g.marco@freenet.de>
+tags:
+  - Video
+description: Stabilize Video (for wiggly video)
+
+bugs:
+  - not yet known
+
+parameters:
+  - identifier: shutterangle
+    title: Shutterangle
+    type: integer
+    description: Angle that Images could be maximum rotated  
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 180
+    default: 0
+    mutable: yes
+    widget: spinner
