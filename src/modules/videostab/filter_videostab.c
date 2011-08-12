@@ -149,10 +149,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		in=mlt_properties_get_int( pro, "in" );
 		out=mlt_properties_get_int( pro, "out" );
 		length=mlt_properties_get_int( pro, "length" );
-		mlt_log_verbose(filter,"deshaing for in=%d out=%d length=%d\n",in,out,length);
+		mlt_log_verbose(filter,"deshaking for in=%d out=%d length=%d\n",in,out,length);
 		if (!initialized){
-			tfs = length;// mv_in.header->TotalFrames;
-			fps =  mlt_profile_fps( profile ); //1000000 / 20000;//mv_in.header->MicroSecPerFrame;
+			tfs = length;
+			fps =  mlt_profile_fps( profile );
 
 			pos_h = (vc *)malloc(tfs * sizeof(vc));
 
