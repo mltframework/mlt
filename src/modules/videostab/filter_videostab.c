@@ -124,28 +124,27 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( !error && *image )
 	{
 		videostab self = filter->child;
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
-		mlt_position pos = mlt_filter_get_position( filter, frame );
-		int opt_shutter_angle = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "shutterangle" );
-		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-		int length = mlt_producer_get_playtime( producer );
+		int length = mlt_filter_get_length2( filter, frame );
 		int h = *height;
 		int w = *width;
 
 		if (!self->initialized)
 		{
-			int fps =  mlt_profile_fps( profile );
-			self->pos_h = (vc *)malloc(length * sizeof(vc));
-			self->pos_y = (vc *)malloc(h * sizeof(vc));
-			self->rs = rs_init(w, h);
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
+			double fps =  mlt_profile_fps( profile );
+			self->pos_h = (vc*) malloc( length * sizeof(vc) );
+			self->pos_y = (vc*) malloc( h * sizeof(vc) );
+			self->rs = rs_init( w, h );
 			self->initialized = 1;
-			load_or_generate_pos_h( self, frame, h, w, length, fps/2 );
+			load_or_generate_pos_h( self, frame, h, w, length, fps / 2.0 );
 		}
 		if (self->initialized)
 		{
+			float shutter_angle = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame) , "shutterangle" );
+			float pos = mlt_filter_get_position( filter, frame );
 			int i;
 			for (i = 0; i < h; i ++)
-				self->pos_y[i] = interp( self->pos_h, length, pos + (i - h / 2.0) * opt_shutter_angle / (h * 360.0) );
+				self->pos_y[i] = interp( self->pos_h, length, pos + (i - h / 2.0) * shutter_angle / (h * 360.0) );
 			rs_resample( self->rs, *image, self->pos_y );
 		}
 	}
