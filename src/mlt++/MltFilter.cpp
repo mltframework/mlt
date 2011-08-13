@@ -111,6 +111,11 @@ int Filter::get_length( )
 	return mlt_filter_get_length( get_filter( ) );
 }
 
+int Filter::get_length2( Frame &frame )
+{
+	return mlt_filter_get_length2( get_filter( ), frame.get_frame() );
+}
+
 int Filter::get_track( )
 {
 	return mlt_filter_get_track( get_filter( ) );

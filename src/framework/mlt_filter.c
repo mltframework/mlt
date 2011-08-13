@@ -203,6 +203,37 @@ mlt_position mlt_filter_get_length( mlt_filter self )
 	return ( out > 0 ) ? ( out - in + 1 ) : 0;
 }
 
+/** Get the duration.
+ *
+ * This version works with filters with no explicit in and out by getting the
+ * length of the frame's producer.
+ *
+ * \public \memberof mlt_filter_s
+ * \param self a filter
+ * \param frame a frame from which to get its producer
+ * \return the duration or zero if unlimited
+ */
+
+mlt_position mlt_filter_get_length2( mlt_filter self, mlt_frame frame )
+{
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( &self->parent );
+	mlt_position in = mlt_properties_get_position( properties, "in" );
+	mlt_position out = mlt_properties_get_position( properties, "out" );
+
+	if ( out == 0 && frame )
+	{
+		// If always active, use the frame's producer
+		mlt_producer producer = mlt_frame_get_original_producer( frame );
+		if ( producer )
+		{
+			producer = mlt_producer_cut_parent( producer );
+			in = mlt_producer_get_in( producer );
+			out = mlt_producer_get_out( producer );
+		}
+	}
+	return ( out > 0 ) ? ( out - in + 1 ) : 0;
+}
+
 /** Get the position within the filter.
  *
  * The position is relative to the in point.
@@ -240,26 +271,9 @@ mlt_position mlt_filter_get_position( mlt_filter self, mlt_frame frame )
 
 double mlt_filter_get_progress( mlt_filter self, mlt_frame frame )
 {
-	double progress = 0;
-	mlt_position in = mlt_filter_get_in( self );
-	mlt_position out = mlt_filter_get_out( self );
-
-	if ( out == 0 )
-	{
-		// If always active, use the frame's producer
-		mlt_producer producer = mlt_frame_get_original_producer( frame );
-		if ( producer )
-		{
-			in = mlt_producer_get_in( producer );
-			out = mlt_producer_get_out( producer );
-		}
-	}
-	if ( out != 0 )
-	{
-		mlt_position position = mlt_filter_get_position( self, frame );
-		progress = ( double ) position / ( double ) ( out - in + 1 );
-	}
-	return progress;
+	double position = mlt_filter_get_position( self, frame );
+	double length = mlt_filter_get_length2( self, frame );
+	return position / length;
 }
 
 /** Process the frame.
