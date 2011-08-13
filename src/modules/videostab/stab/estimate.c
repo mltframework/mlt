@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-//#include <values.h>
+#include <values.h>
 
 #include "estimate.h"
 #include "vector.h"
