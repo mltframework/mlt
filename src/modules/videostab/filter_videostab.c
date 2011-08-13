@@ -26,8 +26,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/stat.h>
-#define MIN(a,b) (a<b?a:b)
-#define MAX(a,b) (a>b?a:b)
 
 #include "stab/vector.h"
 #include "stab/utils.h"
@@ -86,10 +84,10 @@ int save_vc_to_file(videostab self, const char* filename ,vc* pos,int length){
 	return 0;
 }
 
-int load_or_generate_pos_h(videostab self, mlt_frame this,int  *h,int *w,int tfs, int fps){
+int load_or_generate_pos_h(videostab self, mlt_frame frame,int  *h,int *w,int tfs, int fps){
 	int i=0;
 	char shakefile[2048];
-	mlt_producer producer = mlt_frame_get_original_producer(this) ;
+	mlt_producer producer = mlt_frame_get_original_producer(frame) ;
 	mlt_properties prod_props= MLT_PRODUCER_PROPERTIES ( producer );
 
 	mlt_producer parent_prod;
@@ -102,7 +100,7 @@ int load_or_generate_pos_h(videostab self, mlt_frame this,int  *h,int *w,int tfs
 	sprintf(shakefile,"%s%s", mlt_properties_get (MLT_PRODUCER_PROPERTIES(parent_prod), "resource"),".deshake");
 	if (!load_vc_from_file( self, shakefile, self->pos_h, tfs)){
 
-		mlt_log_verbose(this,"calculating deshake, please wait\n");
+		mlt_log_verbose(frame,"calculating deshake, please wait\n");
 		mlt_image_format format = mlt_image_rgb24;
 		vc* pos_i = (vc *)malloc(tfs * sizeof(vc));
 		es_ctx *es1=es_init(*w,*h);
@@ -123,20 +121,20 @@ int load_or_generate_pos_h(videostab self, mlt_frame this,int  *h,int *w,int tfs
 	return 0;
 }
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 
-	mlt_filter filter = mlt_frame_pop_service( this );
+	mlt_filter filter = mlt_frame_pop_service( frame );
 	videostab self = filter->child;
 	*format = mlt_image_rgb24;
-	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	int in,out,length;
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
-	mlt_producer producer = mlt_frame_get_original_producer(this);
+	mlt_producer producer = mlt_frame_get_original_producer(frame);
 
 	mlt_properties prod_props= MLT_PRODUCER_PROPERTIES ( producer );
-	mlt_position pos = mlt_filter_get_position( filter, this );
-	int opt_shutter_angle=mlt_properties_get_int ( MLT_FRAME_PROPERTIES (this) , "shutterangle") ;
+	mlt_position pos = mlt_filter_get_position( filter, frame );
+	int opt_shutter_angle=mlt_properties_get_int ( MLT_FRAME_PROPERTIES (frame) , "shutterangle") ;
 
 
 	if ( error == 0 && *image )
@@ -144,7 +142,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int h = *height;
 		int w = *width;
 
-		//double position = mlt_filter_get_progress( filter, this );
+		//double position = mlt_filter_get_progress( filter, frame );
 
 		mlt_properties pro=prod_props;
 		in=mlt_properties_get_int( pro, "in" );
@@ -160,7 +158,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			self->rs = rs_init(w, h);
 			self->initialized=1;
 
-						load_or_generate_pos_h(self, this,&h,&w,length,fps/2);
+						load_or_generate_pos_h(self, frame,&h,&w,length,fps/2);
 
 		}
 		if (self->initialized>=1){
@@ -176,9 +174,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	return error;
 }
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }
