@@ -84,92 +84,70 @@ int save_vc_to_file(videostab self, const char* filename ,vc* pos,int length){
 	return 0;
 }
 
-int load_or_generate_pos_h(videostab self, mlt_frame frame,int  *h,int *w,int tfs, int fps){
-	int i=0;
+int load_or_generate_pos_h( videostab self, mlt_frame frame, int h, int w, int tfs, int fps )
+{
+	int i = 0;
 	char shakefile[2048];
 	mlt_producer producer = mlt_frame_get_original_producer(frame) ;
-	mlt_properties prod_props= MLT_PRODUCER_PROPERTIES ( producer );
 
-	mlt_producer parent_prod;
-	if (mlt_properties_get_int(prod_props,"_cut") == 1 ){
-		parent_prod=mlt_producer_cut_parent( producer);
-	}else{
-		// had no such case, but the is a fallback
-		parent_prod = producer;
-	}
-	sprintf(shakefile,"%s%s", mlt_properties_get (MLT_PRODUCER_PROPERTIES(parent_prod), "resource"),".deshake");
-	if (!load_vc_from_file( self, shakefile, self->pos_h, tfs)){
-
-		mlt_log_verbose(frame,"calculating deshake, please wait\n");
+	producer = mlt_producer_cut_parent( producer );
+	sprintf( shakefile,"%s%s", mlt_properties_get( MLT_PRODUCER_PROPERTIES(producer), "resource" ), ".deshake" );
+	if ( !load_vc_from_file( self, shakefile, self->pos_h, tfs ) )
+	{
+		mlt_log_verbose( frame,"calculating deshake, please wait\n" );
 		mlt_image_format format = mlt_image_rgb24;
-		vc* pos_i = (vc *)malloc(tfs * sizeof(vc));
-		es_ctx *es1=es_init(*w,*h);
-		for (i=0;i< tfs;i++){
-			mlt_producer_seek(producer,i);
+		vc* pos_i = (vc *) malloc( tfs * sizeof(vc) );
+		es_ctx *es1 = es_init( w, h );
+		for ( i = 0; i < tfs; i++ )
+		{
+			mlt_producer_seek( producer, i );
 			mlt_frame frame;
-			mlt_service_get_frame( mlt_producer_service(producer), &frame, 0 );
-			uint8_t *buffer= NULL;
-						int error = mlt_frame_get_image( frame, &buffer, &format, w, h, 1 );
-
-			pos_i[i] = vc_add( i > 0 ? pos_i[i - 1] : vc_set(0.0, 0.0), es_estimate(es1, buffer));
+			mlt_service_get_frame( MLT_PRODUCER_SERVICE(producer), &frame, 0 );
+			uint8_t *buffer = NULL;
+			if ( !mlt_frame_get_image( frame, &buffer, &format, &w, &h, 1 ) )
+				pos_i[i] = vc_add( i > 0 ? pos_i[i - 1] : vc_set(0.0, 0.0), es_estimate( es1, buffer ) );
 		} 
-				hipass(pos_i, self->pos_h, tfs, fps);
-		free (pos_i);
-		free(es1);
-		save_vc_to_file( self, shakefile, self->pos_h,tfs);
+		hipass( pos_i, self->pos_h, tfs, fps );
+		free( pos_i );
+		free( es1 );
+		save_vc_to_file( self, shakefile, self->pos_h, tfs );
 	}
 	return 0;
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-
 	mlt_filter filter = mlt_frame_pop_service( frame );
-	videostab self = filter->child;
 	*format = mlt_image_rgb24;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
-	int in,out,length;
-	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
-	mlt_producer producer = mlt_frame_get_original_producer(frame);
 
-	mlt_properties prod_props= MLT_PRODUCER_PROPERTIES ( producer );
-	mlt_position pos = mlt_filter_get_position( filter, frame );
-	int opt_shutter_angle=mlt_properties_get_int ( MLT_FRAME_PROPERTIES (frame) , "shutterangle") ;
-
-
-	if ( error == 0 && *image )
+	if ( !error && *image )
 	{
+		videostab self = filter->child;
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
+		mlt_position pos = mlt_filter_get_position( filter, frame );
+		int opt_shutter_angle = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "shutterangle" );
+		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+		int length = mlt_producer_get_playtime( producer );
 		int h = *height;
 		int w = *width;
 
-		//double position = mlt_filter_get_progress( filter, frame );
-
-		mlt_properties pro=prod_props;
-		in=mlt_properties_get_int( pro, "in" );
-		out=mlt_properties_get_int( pro, "out" );
-		length=mlt_properties_get_int( pro, "length" );
-		mlt_log_verbose(filter,"deshaking for in=%d out=%d length=%d\n",in,out,length);
-		if (!self->initialized){
-						int fps =  mlt_profile_fps( profile );
-
-						self->pos_h = (vc *)malloc(length * sizeof(vc));
-
+		if (!self->initialized)
+		{
+			int fps =  mlt_profile_fps( profile );
+			self->pos_h = (vc *)malloc(length * sizeof(vc));
 			self->pos_y = (vc *)malloc(h * sizeof(vc));
 			self->rs = rs_init(w, h);
-			self->initialized=1;
-
-						load_or_generate_pos_h(self, frame,&h,&w,length,fps/2);
-
+			self->initialized = 1;
+			load_or_generate_pos_h( self, frame, h, w, length, fps/2 );
 		}
-		if (self->initialized>=1){
-					int i;
-			for (i = 0; i < h; i ++) {
-				self->pos_y[i] = interp( self->pos_h, length, pos + (i - h / 2.0) * opt_shutter_angle / (h * 360.0));
-			}
+		if (self->initialized)
+		{
+			int i;
+			for (i = 0; i < h; i ++)
+				self->pos_y[i] = interp( self->pos_h, length, pos + (i - h / 2.0) * opt_shutter_angle / (h * 360.0) );
 			rs_resample( self->rs, *image, self->pos_y );
-			self->initialized=2;
 		}
-
 	}
 	return error;
 }
