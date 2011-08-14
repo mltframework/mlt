@@ -136,10 +136,13 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 #ifdef SWSCALE
 	struct SwsContext *context = sws_getContext( width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
-	set_luma_transfer( context, colorspace, use_full_range );
-	sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, height,
-		output.data, output.linesize);
-	sws_freeContext( context );
+	if ( context )
+	{
+		set_luma_transfer( context, colorspace, use_full_range );
+		sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, height,
+			output.data, output.linesize);
+		sws_freeContext( context );
+	}
 #else
 	img_convert( &output, out_fmt, &input, in_fmt, width, height );
 #endif
