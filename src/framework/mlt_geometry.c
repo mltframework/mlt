@@ -191,7 +191,8 @@ static int mlt_geometry_drop( mlt_geometry self, geometry_item item )
 static void mlt_geometry_clean( mlt_geometry self )
 {
 	geometry g = self->local;
-	free( g->data );
+	if ( g->data )
+		free( g->data );
 	g->data = NULL;
 	while( g->item )
 		mlt_geometry_drop( self, g->item );
@@ -570,6 +571,9 @@ int mlt_geometry_prev_key( mlt_geometry self, mlt_geometry_item item, int positi
 	return place == NULL;
 }
 
+#define ISINT(x) ( (x) == (int) (x) )
+#define PICKFMT(x) ( ISINT(x) ? "%.0f" : "%f" )
+
 char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
 {
 	geometry g = self->local;
@@ -635,19 +639,24 @@ char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
 			if ( item.frame - in != 0 )
 				sprintf( temp, "%d=", item.frame - in );
 
-			if ( item.f[0] ) 
-				sprintf( temp + strlen( temp ), "%.0f", item.x );
-			strcat( temp, "/" );
-			if ( item.f[1] ) 
-				sprintf( temp + strlen( temp ), "%.0f", item.y );
-			strcat( temp, ":" );
-			if ( item.f[2] ) 
-				sprintf( temp + strlen( temp ), "%.0f", item.w );
-			strcat( temp, "x" );
-			if ( item.f[3] ) 
-				sprintf( temp + strlen( temp ), "%.0f", item.h );
-			if ( item.f[4] ) 
-				sprintf( temp + strlen( temp ), ":%.0f", item.mix );
+			if ( item.f[0] )
+				sprintf( temp + strlen( temp ), PICKFMT( item.x ), item.x );
+			if ( item.f[1] ) {
+				strcat( temp, "/" );
+				sprintf( temp + strlen( temp ), PICKFMT( item.y ), item.y );
+			}
+			if ( item.f[2] ) {
+				strcat( temp, ":" );
+				sprintf( temp + strlen( temp ), PICKFMT( item.w ), item.w );
+			}
+			if ( item.f[3] ) {
+				strcat( temp, "x" );
+				sprintf( temp + strlen( temp ), PICKFMT( item.h ), item.h );
+			}
+			if ( item.f[4] ) {
+				strcat( temp, ":" );
+				sprintf( temp + strlen( temp ), PICKFMT( item.mix ), item.mix );
+			}
 
 			if ( used + strlen( temp ) > size )
 			{
@@ -680,7 +689,8 @@ char *mlt_geometry_serialise( mlt_geometry self )
 	char *ret = mlt_geometry_serialise_cut( self, 0, g->length );
 	if ( ret )
 	{
-		free( g->data );
+		if ( g->data )
+			free( g->data );
 		g->data = ret;
 	}
 	return ret;
