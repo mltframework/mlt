@@ -66,6 +66,11 @@ int Geometry::remove( int position )
 	return mlt_geometry_remove( geometry, position );
 }
 
+void Geometry::interpolate( )
+{
+	mlt_geometry_interpolate( geometry );
+}
+
 // Get the key at the position or the next following
 int Geometry::next_key( GeometryItem &item, int position )
 {

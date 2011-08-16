@@ -65,6 +65,7 @@ namespace Mlt
 			int insert( GeometryItem *item );
 			// Remove the key at the specified position
 			int remove( int position );
+			void interpolate( );
 			// Get the key at the position or the next following
 			int next_key( GeometryItem &item, int position );
 			int next_key( GeometryItem *item, int position );

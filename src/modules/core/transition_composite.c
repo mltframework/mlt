@@ -156,6 +156,7 @@ static mlt_geometry transition_parse_keys( mlt_transition this, int normalised_w
 		item.frame = -1;
 		if ( mlt_geometry_parse_item( geometry, &item, mlt_properties_get( properties, "end" ) ) == 0 )
 			mlt_geometry_insert( geometry, &item );
+		mlt_geometry_interpolate( geometry );
 	}
 	
 	return geometry;

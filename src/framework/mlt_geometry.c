@@ -75,7 +75,7 @@ static inline double linearstep( double start, double end, double position, int 
 	return start + position * o;
 }
 
-static void mlt_geometry_virtual_refresh( mlt_geometry self )
+void mlt_geometry_interpolate( mlt_geometry self )
 {
 	geometry g = self->local;
 
@@ -244,6 +244,7 @@ int mlt_geometry_parse( mlt_geometry self, char *data, int length, int nw, int n
 		// Now insert into place
 		mlt_geometry_insert( self, &item );
 	}
+	mlt_geometry_interpolate( self );
 
 	// Remove the tokeniser
 	mlt_tokeniser_close( tokens );
@@ -505,9 +506,6 @@ int mlt_geometry_insert( mlt_geometry self, mlt_geometry_item item )
 		g->item->data.f[4] = 1;
 	}
 
-	// Refresh all geometries
-	mlt_geometry_virtual_refresh( self );
-
 	// TODO: Error checking
 	return 0;
 }
@@ -528,9 +526,6 @@ int mlt_geometry_remove( mlt_geometry self, int position )
 
 	if ( place != NULL && position == place->data.frame )
 		ret = mlt_geometry_drop( self, place );
-
-	// Refresh all geometries
-	mlt_geometry_virtual_refresh( self );
 
 	return ret;
 }
@@ -571,7 +566,7 @@ int mlt_geometry_prev_key( mlt_geometry self, mlt_geometry_item item, int positi
 	return place == NULL;
 }
 
-#define ISINT(x) ( (x) == (int) (x) )
+#define ISINT(x) ( (x) == (int64_t) (x) )
 #define PICKFMT(x) ( ISINT(x) ? "%.0f" : "%f" )
 
 char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
@@ -658,7 +653,7 @@ char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
 				sprintf( temp + strlen( temp ), PICKFMT( item.mix ), item.mix );
 			}
 
-			if ( used + strlen( temp ) > size )
+			if ( used + strlen( temp ) + 2 > size ) // +2 for ';' and NULL
 			{
 				size += 1000;
 				ret = realloc( ret, size );

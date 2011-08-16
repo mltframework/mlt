@@ -174,6 +174,7 @@ mlt_producer producer_pango_init( const char *filename )
 				item.frame = atoi( name );
 				mlt_geometry_insert( key_frames, &item );
 			}
+			mlt_geometry_interpolate( key_frames );
 		}
 		else
 		{

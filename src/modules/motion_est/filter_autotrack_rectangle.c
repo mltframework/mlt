@@ -171,6 +171,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		boundry.f[3] = 1;
 		boundry.f[4] = 1;
 		mlt_geometry_insert(geometry, &boundry);
+		mlt_geometry_interpolate(geometry);
 	}
 
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
@@ -234,6 +235,7 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 		item.mix = 100;
 
 		mlt_geometry_insert( geom, &item );
+		mlt_geometry_interpolate( geom );
 		mlt_properties_set_data( filter_properties, "filter_geometry", geom, 0, (mlt_destructor)mlt_geometry_close, (mlt_serialiser)mlt_geometry_serialise );
 		geometry = mlt_properties_get_data(filter_properties, "filter_geometry", NULL);
 	}

@@ -60,6 +60,8 @@ extern int mlt_geometry_fetch( mlt_geometry self, mlt_geometry_item item, float 
 extern int mlt_geometry_insert( mlt_geometry self, mlt_geometry_item item );
 /* Remove the key at the specified position */
 extern int mlt_geometry_remove( mlt_geometry self, int position );
+/* Typically, re-interpolate after a series of insertions or removals. */
+extern void mlt_geometry_interpolate( mlt_geometry self );
 /* Get the key at the position or the next following */
 extern int mlt_geometry_next_key( mlt_geometry self, mlt_geometry_item item, int position );
 extern int mlt_geometry_prev_key( mlt_geometry self, mlt_geometry_item item, int position );
