@@ -3,6 +3,9 @@ type: filter
 identifier: videostab
 title: Videostab
 copyright: Copyright (C) 2011 Marco Gittler
+creator: Marco Gittler <<g.marco@freenet.de>
+contributor:
+  - Dan Dennedy <dan@dennedy.org>
 version: 0.1
 license: GPL
 language: en
@@ -11,9 +14,12 @@ creator: Marco Gittler <g.marco@freenet.de>
 tags:
   - Video
 description: Stabilize Video (for wiggly video)
-
-bugs:
-  - not yet known
+notes: >
+  This filter requires two passes. The first pass performs analysis and stores
+  the result in the vectors property. The second pass applies the vectors to
+  the image.
+  To use with melt, use 'melt ... -consumer xml:output.mlt all=1' for the
+  first pass. For the second pass, use output.mlt as the input.
 
 parameters:
   - identifier: shutterangle
@@ -27,3 +33,10 @@ parameters:
     default: 0
     mutable: yes
     widget: spinner
+  - identifier: vectors
+    title: Vectors
+    type: geometry
+    description: >
+      A set of X/Y coordinates by which to adjust the image.
+      When this is not supplied, the filter computes the vectors and stores
+      them in this property when the last frame has been processed.

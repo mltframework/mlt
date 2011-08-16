@@ -21,11 +21,13 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
 #include <framework/mlt_producer.h>
+#include <framework/mlt_geometry.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #include "stab/vector.h"
 #include "stab/utils.h"
@@ -36,83 +38,69 @@
 typedef struct {
 	mlt_filter parent;
 	int initialized;
+	es_ctx *es;
+	vc *pos_i;
 	vc *pos_h;
 	vc *pos_y;
 	rs_ctx *rs;
 } *videostab;
 
-int load_vc_from_file(videostab self, const char* filename ,vc* pos,int maxlength){
+static void serialize_vectors( videostab self, mlt_position length )
+{
+	mlt_geometry g = mlt_geometry_init();
 
-	struct stat stat_buff;
-	stat (filename,&stat_buff);
-	if (S_ISREG(stat_buff.st_mode) ){ 
-		//load file
-		mlt_log_verbose(NULL,"loading file %s\n",filename);
-		FILE *infile;
-		infile=fopen(filename,"r");
-		if (infile){
-					int i;
-			for (i=0;i< maxlength;i++){
-				float x,y;
-				fscanf(infile,"%f%f",&x,&y);
-				self->pos_h[i].x=x;
-				self->pos_h[i].y=y;
-				//pos_h[i]=vc_set(x,y);
-			}
-			fclose(infile);
-			return 1;
+	if ( g )
+	{
+		struct mlt_geometry_item_s item;
+		mlt_position i;
+
+		// Initialize geometry item
+		item.key = item.f[0] = item.f[1] = 1;
+		item.f[2] = item.f[3] = item.f[4] = 0;
+
+		for ( i = 0; i < length; i++ )
+		{
+			// Set the geometry item
+			item.frame = i;
+			item.x = self->pos_h[i].x;
+			item.y = self->pos_h[i].y;
+
+			// Add the geometry item
+			mlt_geometry_insert( g, &item );
+		}
+
+		// Put the analysis results in a property
+		mlt_geometry_set_length( g, length );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( self->parent ), "vectors", mlt_geometry_serialise( g ) );
+		mlt_geometry_close( g );
+	}
+}
+
+static void deserialize_vectors( videostab self, char *vectors, mlt_position length )
+{
+	mlt_geometry g = mlt_geometry_init();
+
+	// Parse the property as a geometry
+	if ( !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
+	{
+		struct mlt_geometry_item_s item;
+		int i;
+
+		// Copy the geometry items to a vc array for interp()
+		for ( i = 0; i < length; i++ )
+		{
+			mlt_geometry_fetch( g, &item, i );
+			self->pos_h[i].x = item.x;
+			self->pos_h[i].y = item.y;
 		}
 	}
-	return 0;
-}
-
-int save_vc_to_file(videostab self, const char* filename ,vc* pos,int length){
-
-	FILE *outfile;
-	int i=0;
-	outfile=fopen(filename,"w+");
-	if (!outfile){
-		mlt_log_error(NULL,"could not save shakefile %s\n",filename);
-		return -1;
-	}
-	for (i=0;i< length ;i++){
-		fprintf(outfile,"%f %f\n",pos[i].x,pos[i].y);
-		//mlt_log_verbose(NULL,"writing %d/%d %f %f\n",i,length,pos[i].x,pos[i].y);
-	}
-
-	fclose(outfile);
-	return 0;
-}
-
-int load_or_generate_pos_h( videostab self, mlt_frame frame, int h, int w, int tfs, int fps )
-{
-	int i = 0;
-	char shakefile[2048];
-	mlt_producer producer = mlt_frame_get_original_producer(frame) ;
-
-	producer = mlt_producer_cut_parent( producer );
-	sprintf( shakefile,"%s%s", mlt_properties_get( MLT_PRODUCER_PROPERTIES(producer), "resource" ), ".deshake" );
-	if ( !load_vc_from_file( self, shakefile, self->pos_h, tfs ) )
+	else
 	{
-		mlt_log_verbose( frame,"calculating deshake, please wait\n" );
-		mlt_image_format format = mlt_image_rgb24;
-		vc* pos_i = (vc *) malloc( tfs * sizeof(vc) );
-		es_ctx *es1 = es_init( w, h );
-		for ( i = 0; i < tfs; i++ )
-		{
-			mlt_producer_seek( producer, i );
-			mlt_frame frame;
-			mlt_service_get_frame( MLT_PRODUCER_SERVICE(producer), &frame, 0 );
-			uint8_t *buffer = NULL;
-			if ( !mlt_frame_get_image( frame, &buffer, &format, &w, &h, 1 ) )
-				pos_i[i] = vc_add( i > 0 ? pos_i[i - 1] : vc_set(0.0, 0.0), es_estimate( es1, buffer ) );
-		} 
-		hipass( pos_i, self->pos_h, tfs, fps );
-		free( pos_i );
-		free( es1 );
-		save_vc_to_file( self, shakefile, self->pos_h, tfs );
+		mlt_log_warning( MLT_FILTER_SERVICE(self->parent), "failed to parse vectors\n" );
 	}
-	return 0;
+
+	// We are done with this mlt_geometry
+	if ( g ) mlt_geometry_close( g );
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
@@ -124,29 +112,62 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( !error && *image )
 	{
 		videostab self = filter->child;
-		int length = mlt_filter_get_length2( filter, frame );
+		mlt_position length = mlt_filter_get_length2( filter, frame );
 		int h = *height;
 		int w = *width;
 
-		if (!self->initialized)
+		// Service locks are for concurrency control
+		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+		if ( !self->initialized )
 		{
-			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
-			double fps =  mlt_profile_fps( profile );
+			// Initialize our context
+			self->initialized = 1;
+			self->es = es_init( w, h );
+			self->pos_i = (vc*) malloc( length * sizeof(vc) );
 			self->pos_h = (vc*) malloc( length * sizeof(vc) );
 			self->pos_y = (vc*) malloc( h * sizeof(vc) );
 			self->rs = rs_init( w, h );
-			self->initialized = 1;
-			load_or_generate_pos_h( self, frame, h, w, length, fps / 2.0 );
 		}
-		if (self->initialized)
+		char *vectors = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "vectors" );
+		if ( !vectors )
 		{
-			float shutter_angle = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame) , "shutterangle" );
-			float pos = mlt_filter_get_position( filter, frame );
-			int i;
-			for (i = 0; i < h; i ++)
-				self->pos_y[i] = interp( self->pos_h, length, pos + (i - h / 2.0) * shutter_angle / (h * 360.0) );
-			rs_resample( self->rs, *image, self->pos_y );
+			// Analyse
+			mlt_position pos = mlt_filter_get_position( filter, frame );
+			self->pos_i[pos] = vc_add( pos == 0 ? vc_zero() : self->pos_i[pos - 1], es_estimate( self->es, *image ) );
+
+			// On last frame
+			if ( pos == length - 1 )
+			{
+				mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
+				double fps =  mlt_profile_fps( profile );
+
+				// Filter and store the results
+				hipass( self->pos_i, self->pos_h, length, fps );
+				serialize_vectors( self, length );
+			}
 		}
+		if ( vectors )
+		{
+			// Apply
+			if ( self->initialized != 2 )
+			{
+				// Load analysis results from property
+				self->initialized = 2;
+				deserialize_vectors( self, vectors, length );
+			}
+			if ( self->initialized == 2 )
+			{
+				// Stabilize
+				float shutter_angle = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame) , "shutterangle" );
+				float pos = mlt_filter_get_position( filter, frame );
+				int i;
+
+				for (i = 0; i < h; i ++)
+					self->pos_y[i] = interp( self->pos_h, length, pos + (i - h / 2.0) * shutter_angle / (h * 360.0) );
+				rs_resample( self->rs, *image, self->pos_y );
+			}
+		}
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
 	return error;
 }
@@ -160,15 +181,16 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 void filter_close( mlt_filter parent )
 {
-	mlt_service service = MLT_FILTER_SERVICE( parent );
 	videostab self = parent->child;
-	if ( self->pos_h ) free(self->pos_h);
-	if ( self->pos_y ) free(self->pos_y);
-	if ( self->rs ) rs_free(self->rs);
+	if ( self->es ) es_free( self->es );
+	if ( self->pos_i ) free( self->pos_i );
+	if ( self->pos_h ) free( self->pos_h );
+	if ( self->pos_y ) free( self->pos_y );
+	if ( self->rs ) rs_free( self->rs );
 	free_lanc_kernels();
-	service->close = NULL;
-	mlt_service_close( service );
 	free( self );
+	parent->close = NULL;
+	parent->child = NULL;
 }
 
 mlt_filter filter_videostab_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
@@ -180,6 +202,7 @@ mlt_filter filter_videostab_init( mlt_profile profile, mlt_service_type type, co
 		parent->child = self;
 		parent->close = filter_close;
 		parent->process = filter_process;
+		self->parent = parent;
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shutterangle", "0" ); // 0 - 180 , default 0
 		prepare_lanc_kernels();
 		return parent;
