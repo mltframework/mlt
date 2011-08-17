@@ -46,6 +46,7 @@ struct serialise_context_s
 	mlt_properties hide_map;
 	char *root;
 	char *store;
+	int no_meta;
 };
 typedef struct serialise_context_s* serialise_context;
 
@@ -189,14 +190,15 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 		if ( name != NULL &&
 			 name[ 0 ] != '_' &&
 			 mlt_properties_get_value( properties, i ) != NULL &&
-			 strcmp( name, "mlt" ) != 0 &&
-			 strcmp( name, "in" ) != 0 &&
-			 strcmp( name, "out" ) != 0 && 
-			 strcmp( name, "id" ) != 0 && 
-			 strcmp( name, "title" ) != 0 && 
-			 strcmp( name, "root" ) != 0 && 
-			 strcmp( name, "width" ) != 0 &&
-			 strcmp( name, "height" ) != 0 )
+			 ( !context->no_meta || strncmp( name, "meta.", 5 ) ) &&
+			 strcmp( name, "mlt" ) &&
+			 strcmp( name, "in" ) &&
+			 strcmp( name, "out" ) &&
+			 strcmp( name, "id" ) &&
+			 strcmp( name, "title" ) &&
+			 strcmp( name, "root" ) &&
+			 strcmp( name, "width" ) &&
+			 strcmp( name, "height" ) )
 		{
 			char *value = mlt_properties_get_value( properties, i );
 			int rootlen = strlen( context->root );
@@ -345,7 +347,8 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 				xmlNewProp( track, _x("in"), _x(mlt_properties_get( properties, "in" )) );
 				xmlNewProp( track, _x("out"), _x(mlt_properties_get( properties, "out" )) );
 				serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, context->store );
-				serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, "meta." );
+				if ( !context->no_meta )
+					serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, "meta." );
 				serialise_service_filters( context, MLT_PRODUCER_SERVICE( producer ), track );
 			}
 			
@@ -398,7 +401,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 
 		// Store application specific properties
 		serialise_store_properties( context, properties, child, context->store );
-		serialise_store_properties( context, properties, child, "meta." );
+		if ( !context->no_meta )
+			serialise_store_properties( context, properties, child, "meta." );
 
 		// Add producer to the map
 		mlt_properties_set_int( context->hide_map, id, mlt_properties_get_int( properties, "hide" ) );
@@ -436,7 +440,8 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					if ( mlt_producer_is_cut( info.cut ) )
 					{
 						serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( info.cut ), entry, context->store );
-						serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( info.cut ), entry, "meta." );
+						if ( !context->no_meta )
+							serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( info.cut ), entry, "meta." );
 						serialise_service_filters( context, MLT_PRODUCER_SERVICE( info.cut ), entry );
 					}
 				}
@@ -482,7 +487,8 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 
 		// Store application specific properties
 		serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, context->store );
-		serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, "meta." );
+		if ( !context->no_meta )
+			serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, "meta." );
 
 		// Recurse on connected producer
 		serialise_service( context, mlt_service_producer( service ), child );
@@ -659,6 +665,7 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 
 	// Assign the additional 'storage' pattern for properties
 	context->store = mlt_properties_get( MLT_CONSUMER_PROPERTIES( consumer ), "store" );
+	context->no_meta = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "no_meta" );
 
 	// Assign a title property
 	if ( mlt_properties_get( properties, "title" ) != NULL )

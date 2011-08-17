@@ -52,7 +52,17 @@ parameters:
   - identifier: root
     title: Base path
     type: string
-    description:
+    description: >
       If a file name in the XML is relative, but not relative to the current
       XML file's directory, then you can set the directory to which it is
       relative here.
+
+  - identifier: no_meta
+    title: Exclude meta properties
+    type: integer
+    description: >
+      Set this to disable the output of properties with the prefix "meta."
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
