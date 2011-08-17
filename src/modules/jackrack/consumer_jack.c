@@ -29,6 +29,8 @@
 
 #define BUFFER_LEN (204800 * 6)
 
+pthread_mutex_t g_activate_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /** This classes definition.
 */
 
@@ -258,7 +260,9 @@ static void initialise_jack_ports( consumer_jack self )
 	self->ports = mlt_pool_alloc( sizeof(jack_port_t *) * channels );
 
 	// Start Jack processing - required before registering ports
+	pthread_mutex_lock( &g_activate_mutex );
 	jack_activate( self->jack );
+	pthread_mutex_unlock( &g_activate_mutex );
 	self->playing = 1;
 
 	// Register Jack ports

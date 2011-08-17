@@ -43,6 +43,8 @@
 #define _(x) x
 #endif
 
+extern pthread_mutex_t g_activate_mutex;
+
 #define USEC_PER_SEC         1000000
 #define MSEC_PER_SEC         1000
 #define TIME_RUN_SKIP_COUNT  5
@@ -571,7 +573,9 @@ process_info_new (const char * client_name, unsigned long rack_channels,
   buffer_size = jack_get_sample_rate (procinfo->jack_client);
   
   jack_set_process_callback (procinfo->jack_client, process_jack, procinfo);
+  pthread_mutex_lock( &g_activate_mutex );
   jack_on_shutdown (procinfo->jack_client, jack_shutdown_cb, procinfo);
+  pthread_mutex_unlock( &g_activate_mutex );
   
   jack_activate (procinfo->jack_client);
 
