@@ -28,6 +28,7 @@ parameters:
     mutable: no
     default: stdout
     widget: fileopen
+
   - identifier: all
     title: Process all frames
     type: integer
@@ -41,3 +42,17 @@ parameters:
     minimum: 0
     maximum: 1
     default: 0
+
+  - identifier: title
+    title: Title
+    type: string
+    description: >
+      You can give the composition a friendly name that some applications may use.
+
+  - identifier: root
+    title: Base path
+    type: string
+    description:
+      If a file name in the XML is relative, but not relative to the current
+      XML file's directory, then you can set the directory to which it is
+      relative here.
