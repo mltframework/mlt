@@ -22,6 +22,7 @@
 #include <limits.h>
 
 extern mlt_filter filter_videostab_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties videostab_metadata( mlt_service_type type, const char *id, void *data )
 {
@@ -34,6 +35,8 @@ MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "videostab", filter_videostab_init );
 	MLT_REGISTER_METADATA( filter_type, "videostab", videostab_metadata, NULL );
+	MLT_REGISTER( filter_type, "videostab2", filter_videostab2_init );
+	MLT_REGISTER_METADATA( filter_type, "videostab2", videostab_metadata, NULL );
 	
 }
 

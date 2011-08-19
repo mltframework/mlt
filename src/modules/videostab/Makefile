@@ -1,13 +1,14 @@
-CFLAGS += -I../..
+CFLAGS += -I../.. -fasm-blocks
 
-LDFLAGS += -L../../framework -lmlt -lm
+LDFLAGS += -L../../framework -lmlt -lm -mmmx  -msse  -msse2
 
 include ../../../config.mak
 
 TARGET = ../libmltvideostab$(LIBSUF)
 
 OBJS = factory.o \
-	   filter_videostab.o \
+	   filter_videostab.o filter_videostab2.o \
+	   stabilize.o transform.o transform_image.o tlist.o\
 		stab/klt/convolve.o           stab/klt/klt.o                stab/klt/pyramid.o            stab/klt/trackFeatures.o \
 		stab/klt/error.o              stab/klt/klt_util.o           stab/klt/selectGoodFeatures.o \
 		stab/estimate.o    stab/resample.o stab/utils.o    stab/vector.o
