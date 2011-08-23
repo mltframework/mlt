@@ -89,6 +89,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	};
 
 	snprintf( file, PATH_MAX, "%s/frei0r/%s_%s.yml", mlt_environment( "MLT_DATA" ), servicetype, service_name );
+	memset(&stat_buff, 0, sizeof(stat_buff));
 	stat(file,&stat_buff);
 
 	if (S_ISREG(stat_buff.st_mode)){
