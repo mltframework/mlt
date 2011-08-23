@@ -38,7 +38,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 	result = mlt_properties_parse_yaml( file );
 
 #ifdef SOX14
-	if ( result && ( type == filter_type ) )
+	if ( result && ( type == filter_type ) && strcmp( id, "sox" ) )
 	{
 		// Annotate the yaml properties with sox effect usage.
 		mlt_properties params = mlt_properties_get_data( result, "parameters", NULL );
