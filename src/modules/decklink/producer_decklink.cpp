@@ -352,6 +352,22 @@ public:
 				mlt_frame_close( frame );
 				frame = 0;
 			}
+
+			// Get timecode
+			IDeckLinkTimecode* timecode = 0;
+			if ( video->GetTimecode( bmdTimecodeVITC, &timecode ) == S_OK && timecode )
+			{
+				const char* timecodeString = 0;
+
+				if ( timecode->GetString( &timecodeString ) == S_OK )
+				{
+					mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.markup", timecodeString );
+					mlt_log_verbose( getProducer(), "timecode %s\n", timecodeString );
+				}
+				if ( timecodeString )
+					free( (void*) timecodeString );
+				timecode->Release();
+			}
 		}
 		else
 		{
