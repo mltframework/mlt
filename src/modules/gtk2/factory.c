@@ -34,6 +34,7 @@ extern mlt_consumer consumer_gtk2_preview_init( mlt_profile profile, void *widge
 
 #ifdef USE_PANGO
 extern mlt_producer producer_pango_init( const char *filename );
+extern mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #endif
 
 static void initialise( )
@@ -58,6 +59,8 @@ void *create_service( mlt_profile profile, mlt_service_type type, const char *id
 #ifdef USE_PANGO
 	if ( !strcmp( id, "pango" ) )
 		return producer_pango_init( arg );
+	if ( !strcmp( id, "dynamictext" ) )
+		return filter_dynamictext_init( profile, type, id, arg );
 #endif
 
 #ifdef USE_PIXBUF
@@ -82,11 +85,13 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
+	MLT_REGISTER( filter_type, "dynamictext", create_service );
 	MLT_REGISTER( consumer_type, "gtk2_preview", create_service );
 	MLT_REGISTER( filter_type, "gtkrescale", create_service );
 	MLT_REGISTER( producer_type, "pango", create_service );
 	MLT_REGISTER( producer_type, "pixbuf", create_service );
 
+	MLT_REGISTER_METADATA( filter_type, "dynamictext", metadata, "filter_dynamictext.yml" );
 	MLT_REGISTER_METADATA( consumer_type, "gtk2_preview", metadata, "consumer_gtk2_preview.yml" );
 	MLT_REGISTER_METADATA( filter_type, "gtkrescale", metadata, "filter_rescale.yml" );
 	MLT_REGISTER_METADATA( producer_type, "pango", metadata, "producer_pango.yml" );

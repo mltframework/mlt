@@ -1,0 +1,72 @@
+schema_version: 0.1
+type: filter
+identifier: dynamictext
+title: Dynamic text
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Brian Matherly
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: Overlay dynamic text onto the video
+notes: >
+  The dynamic text filter will search for keywords in the text to be overlayed
+  and will replace those keywords on a frame-by-frame basis.
+  
+parameters:
+  - identifier: argument
+    title: Dynamic text
+    type: string
+    description: |
+      The text to overlay. May include keywords enclosed in "#". 
+      Keywords include:
+        * #timecode# - timecode of the frame (based on framerate and position)
+        * #frame#    - frame number of the frame
+        * #filedate# - modification date of the file
+      Keywords may also be any frame property (e.g. #meta.media.0.codec.frame_rate#)
+      The # may be escaped with "\".
+    required: yes
+    readonly: no
+    default: > #trick to escape "#" character
+      #timecode#
+    widget: text
+  - identifier: geometry
+    title: Geometry
+    type: geometry
+    description: A set of X/Y coordinates by which to adjust the text.
+    default: 0%/0%:100%x100%:100
+  - identifier: font
+    title: Font
+    type: string
+    description: The typeface to use
+    default: Sans 48
+    readonly: no
+    mutable: yes
+    widget: font
+  - identifier: weight
+    title: Font weight
+    type: integer
+    description: The weight of the font.
+    minimum: 100
+    maximum: 900
+    default: 400
+    readonly: no
+    mutable: yes
+    widget: spinner
+  - identifier: fgcolour
+    title: Foreground color
+    type: string
+    description: an RGBA colour specification of the text (i.e. 0xrrggbbaa)
+    default: 0x000000ff
+    readonly: no
+    mutable: yes
+    widget: color
+  - identifier: bgcolour
+    title: Background color
+    type: string
+    description: an RGBA colour of the background rectangle (i.e. 0xrrggbbaa)
+    default: 0x00000020
+    readonly: no
+    mutable: yes
+    widget: color

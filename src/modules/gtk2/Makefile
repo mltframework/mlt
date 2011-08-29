@@ -34,6 +34,7 @@ endif
 
 ifdef USE_PANGO
 OBJS += producer_pango.o
+OBJS += filter_dynamictext.o
 CFLAGS += `pkg-config pangoft2 --cflags`
 LDFLAGS += `pkg-config pangoft2 --libs`
 ifeq ($(targetos),Darwin)
