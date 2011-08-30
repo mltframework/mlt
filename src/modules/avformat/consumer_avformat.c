@@ -851,7 +851,6 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 						fclose( f );
 						logbuffer[size] = '\0';
 						c->stats_in = logbuffer;
-						mlt_properties_set_data( properties, "_logbuffer", logbuffer, 0, ( mlt_destructor )av_free, NULL );
 					}
 				}
 			}
@@ -951,6 +950,7 @@ void close_video(AVFormatContext *oc, AVStream *st)
 	if ( st && st->codec )
 	{
 		avformat_lock();
+		av_freep( &st->codec->stats_in );
 		avcodec_close(st->codec);
 		avformat_unlock();
 	}
