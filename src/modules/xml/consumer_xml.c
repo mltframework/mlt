@@ -652,6 +652,9 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	// Indicate the numeric locale
 	xmlNewProp( root, _x("LC_NUMERIC"), _x( setlocale( LC_NUMERIC, NULL ) ) );
 
+	// Indicate the version
+	xmlNewProp( root, _x("version"), _x( mlt_version_get_string() ) );
+
 	// If we have root, then deal with it now
 	if ( mlt_properties_get( properties, "root" ) != NULL )
 	{

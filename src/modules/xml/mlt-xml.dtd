@@ -5,6 +5,7 @@
 <!ELEMENT mlt (profile | producer | playlist | tractor | multitrack)+ >
 <!ATTLIST mlt
     LC_NUMERIC CDATA    #IMPLIED
+    version    CDATA    #IMPLIED
     root       CDATA    #IMPLIED
     profile    CDATA    #IMPLIED
     title      CDATA    #IMPLIED
