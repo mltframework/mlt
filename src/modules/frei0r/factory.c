@@ -209,6 +209,7 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 
 		void* ret=NULL;
 		mlt_properties properties=NULL;
+		char minor[12];
 
 		if (type == producer_type && info.plugin_type == F0R_PLUGIN_TYPE_SOURCE ){
 			mlt_producer this = mlt_producer_new( profile );
@@ -269,6 +270,9 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 		mlt_properties_set_data(properties, "f0r_set_param_value", f0r_set_param_value , sizeof(void*),NULL,NULL);
 		mlt_properties_set_data(properties, "f0r_get_param_value", f0r_get_param_value , sizeof(void*),NULL,NULL);
 
+		// Let frei0r plugin version be serialized using same format as metadata
+		snprintf( minor, sizeof( minor ), "%d", info.minor_version );
+		mlt_properties_set_double( properties, "version", info.major_version +  info.minor_version / pow( 10, strlen( minor ) ) );
 
 		return ret;
 	}else{
