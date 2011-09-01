@@ -197,7 +197,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		
 	if( mlt_properties_get_int( filter_properties, "collect" ) == 1 )
 	{
-		printf( "%d,%d,%d,%d\n", (int)boundry.x, (int)boundry.y, (int)boundry.w, (int)boundry.h );
+		fprintf( stderr, "%d,%d,%d,%d\n", (int)boundry.x, (int)boundry.y, (int)boundry.w, (int)boundry.h );
 		fflush( stdout );
 	}
 

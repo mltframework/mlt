@@ -272,7 +272,7 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 
 		return ret;
 	}else{
-		printf("some was wrong\n");
+		mlt_log_error( NULL, "frei0r plugin \"%s\" is missing a function\n", name );
 		dlerror();
 	}
 	return NULL;
