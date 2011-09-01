@@ -61,6 +61,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 				break;
 			}
 		}
+		mlt_properties_set( result, "version", sox_version() );
 	}
 #endif
 	return result;

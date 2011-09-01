@@ -430,6 +430,7 @@ mlt_filter filter_sox_init( mlt_profile profile, mlt_service_type type, const ch
 		mlt_properties_set_data( properties, "input_buffer", input_buffer, BUFFER_LEN, mlt_pool_release, NULL );
 		mlt_properties_set_data( properties, "output_buffer", output_buffer, BUFFER_LEN, mlt_pool_release, NULL );
 		mlt_properties_set_int( properties, "window", 75 );
+		mlt_properties_set( properties, "version", sox_version() );
 	}
 	return this;
 }
