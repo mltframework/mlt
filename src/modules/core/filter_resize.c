@@ -272,13 +272,14 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		char *op = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "scale" );
 		int bpp;
 		int size = mlt_image_format_size( *format, owidth, oheight, &bpp );
+		int tff = mlt_properties_get_int( properties, "consumer_tff" );
 
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
 			mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( properties, "meta.top_field_first" ) );
 
 		// Correct field order if needed
-		if ( mlt_properties_get_int( properties, "top_field_first" ) == 1 &&
+		if ( mlt_properties_get_int( properties, "top_field_first" ) != tff &&
 		     mlt_properties_get( properties, "progressive" ) &&
 		     mlt_properties_get_int( properties, "progressive" ) == 0 )
 		{
@@ -291,8 +292,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			*image = new_image;
 			
 			// Set the normalised field order
-			mlt_properties_set_int( properties, "top_field_first", 0 );
-			mlt_properties_set_int( properties, "meta.top_field_first", 0 );
+			mlt_properties_set_int( properties, "top_field_first", tff );
+			mlt_properties_set_int( properties, "meta.top_field_first", tff );
 		}
 
 		if ( !strcmp( op, "affine" ) )

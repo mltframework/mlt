@@ -345,7 +345,7 @@ static int get_image_b( mlt_frame b_frame, uint8_t **image, mlt_image_format *fo
 		mlt_properties_set_double( b_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
 	mlt_properties_pass_list( b_props, a_props,
-		"consumer_deinterlace, deinterlace_method, consumer_aspect_ratio" );
+		"consumer_deinterlace, deinterlace_method, consumer_aspect_ratio, consumer_tff" );
 
 	return mlt_frame_get_image( b_frame, image, format, width, height, writable );
 }

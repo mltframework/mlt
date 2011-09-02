@@ -272,6 +272,7 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
 	mlt_properties_set_int( frame_properties, "normalised_width", mlt_properties_get_int( properties, "normalised_width" ) );
 	mlt_properties_set_int( frame_properties, "normalised_height", mlt_properties_get_int( properties, "normalised_height" ) );
+	mlt_properties_set_int( frame_properties, "consumer_tff", mlt_properties_get_int( properties, "consumer_tff" ) );
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_frame_set_image( self, *buffer, 0, NULL );
 	mlt_properties_set_int( properties, "width", *width );
@@ -282,6 +283,7 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( properties, "distort", mlt_properties_get_int( frame_properties, "distort" ) );
 	mlt_properties_set_int( properties, "colorspace", mlt_properties_get_int( frame_properties, "colorspace" ) );
 	mlt_properties_set_int( properties, "force_full_luma", mlt_properties_get_int( frame_properties, "force_full_luma" ) );
+	mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( frame_properties, "top_field_first" ) );
 	data = mlt_frame_get_alpha_mask( frame );
 	mlt_properties_get_data( frame_properties, "alpha", &size );
 	mlt_frame_set_alpha( self, data, size, NULL );
