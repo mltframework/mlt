@@ -131,7 +131,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			self->initialized = 1;
 			self->width=w;
 			self->height=h;
-			self->framesize=w*h* mlt_image_format_size ( *format, w,h , 0);
+			self->framesize=w*h* 3;//( mlt_image_format_size ( *format, w,h , 0) ; // 3/2 =1 too small
+			printf("framesize = %d %d %d\n",mlt_image_format_size ( *format, w,h , 0) , w*h*3, w*h*3/2);
 			stabilize_configure(self);
 		/*	self->es = es_init( w, h );
 			self->pos_i = (vc*) malloc( length * sizeof(vc) );
