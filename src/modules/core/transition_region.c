@@ -282,7 +282,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		// Index to hold the count
 		int i = 0;
 
-		// We will get the 'b frame' from the composite only if it's NULL
+		// We will get the 'b frame' from the composite only if it's NULL (region filter)
 		if ( b_frame == NULL )
 		{
 			// Copy the region
@@ -291,6 +291,13 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			// Ensure a destructor
 			char *name = mlt_properties_get( properties, "_unique_id" );
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+		}
+
+		// filter_only prevents copying the alpha channel of the shape to the output frame
+		// by compositing filtered frame over itself
+		if ( mlt_properties_get_int( properties, "filter_only" ) )
+		{
+			frame = composite_copy_region( composite, b_frame, position );
 		}
 
 		// Make sure the filter is in the correct position

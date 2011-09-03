@@ -43,3 +43,10 @@ parameters:
       
       See "composite" transition for details.
     readonly: no
+  - identifier: filter_only
+    title: Use region for filtering only
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
