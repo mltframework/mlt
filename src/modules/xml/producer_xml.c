@@ -881,8 +881,8 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 			}
 
 			// Set the size of the producer_avformat cache to the number of tracks.
-			if ( multitrack->count > mlt_service_cache_get_size( MLT_MULTITRACK_SERVICE(multitrack), "producer_avformat" ) )
-				mlt_service_cache_set_size( MLT_MULTITRACK_SERVICE(multitrack), "producer_avformat", multitrack->count + 2 );
+			if ( mlt_multitrack_count( multitrack ) > mlt_service_cache_get_size( MLT_MULTITRACK_SERVICE(multitrack), "producer_avformat" ) )
+				mlt_service_cache_set_size( MLT_MULTITRACK_SERVICE(multitrack), "producer_avformat", mlt_multitrack_count( multitrack ) + 2 );
 		}
 
 		if ( parent != NULL )

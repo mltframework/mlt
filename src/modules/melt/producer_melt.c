@@ -450,8 +450,8 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 	}
 
 	// Set the size of the producer_avformat cache to the number of tracks.
-	if ( track > mlt_service_cache_get_size( MLT_PLAYLIST_SERVICE( playlist ), "producer_avformat" ) )
-		mlt_service_cache_set_size( MLT_PLAYLIST_SERVICE( playlist ), "producer_avformat", track + 2 );
+	if ( mlt_multitrack_count( multitrack ) > mlt_service_cache_get_size( MLT_PLAYLIST_SERVICE( playlist ), "producer_avformat" ) )
+		mlt_service_cache_set_size( MLT_PLAYLIST_SERVICE( playlist ), "producer_avformat", mlt_multitrack_count( multitrack ) + 2 );
 
 	// Connect last producer to playlist
 	if ( producer != NULL && !mlt_producer_is_cut( producer ) )
