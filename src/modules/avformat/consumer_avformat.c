@@ -891,7 +891,7 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 
 	return picture;
 }
-	
+
 static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream *st, const char *codec_name )
 {
 	// Get the codec
@@ -1217,6 +1217,18 @@ static void *consumer_thread( void *arg )
 	oc->oformat = fmt;
 	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
 
+	// Get a frame now, so we can set some AVOptions from properties.
+	frame = mlt_consumer_rt_frame( consumer );
+
+	// Set the timecode from the MLT metadata if available.
+	const char *timecode = mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "meta.attr.vitc.markup" );
+	if ( timecode && strcmp( timecode, "" ) )
+	{
+		mlt_properties_set( properties, "timecode", timecode );
+		if ( strchr( timecode, ';' ) )
+			mlt_properties_set_int( properties, "drop_frame_timecode", 1 );
+	}
+
 	// Add audio and video streams
 	if ( video_codec_id != CODEC_ID_NONE )
 		video_st = add_video_stream( consumer, oc, video_codec );
@@ -1345,7 +1357,8 @@ static void *consumer_thread( void *arg )
 	while( mlt_properties_get_int( properties, "running" ) &&
 	       ( !terminated || ( video_st && mlt_deque_count( queue ) ) ) )
 	{
-		frame = mlt_consumer_rt_frame( consumer );
+		if ( !frame )
+			frame = mlt_consumer_rt_frame( consumer );
 
 		// Check that we have a frame to work with
 		if ( frame != NULL )
@@ -1393,6 +1406,7 @@ static void *consumer_thread( void *arg )
 				mlt_deque_push_back( queue, frame );
 			else
 				mlt_frame_close( frame );
+			frame = NULL;
 		}
 
 		// While we have stuff to process, process...
@@ -1683,6 +1697,7 @@ static void *consumer_thread( void *arg )
 						goto on_fatal_error;
 					}
 					mlt_frame_close( frame );
+					frame = NULL;
 				}
 				else
 				{
