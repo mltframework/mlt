@@ -879,6 +879,10 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 				else if ( strcmp( hide_s, "both" ) == 0 )
 					mlt_properties_set_int( producer_props, "hide", 3 );
 			}
+
+			// Set the size of the producer_avformat cache to the number of tracks.
+			if ( multitrack->count > mlt_service_cache_get_size( MLT_MULTITRACK_SERVICE(multitrack), "producer_avformat" ) )
+				mlt_service_cache_set_size( MLT_MULTITRACK_SERVICE(multitrack), "producer_avformat", multitrack->count + 2 );
 		}
 
 		if ( parent != NULL )
