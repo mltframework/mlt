@@ -778,3 +778,20 @@ void mlt_service_cache_set_size( mlt_service self, const char *name, int size )
 	if ( cache )
 		mlt_cache_set_size( cache, size );
 }
+
+/** Get the current maximum size of the named cache.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param name a name for the object that is unique to the service class, but not to the instance
+ * \return the current maximum number of items to cache or zero if there is an error
+ */
+
+int mlt_service_cache_get_size( mlt_service self, const char *name )
+{
+	mlt_cache cache = get_cache( self, name );
+	if ( cache )
+		return mlt_cache_get_size( cache );
+	else
+		return 0;
+}
