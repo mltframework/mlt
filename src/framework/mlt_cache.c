@@ -215,6 +215,18 @@ void mlt_cache_set_size( mlt_cache cache, int size )
 		cache->size = size;
 }
 
+/** Get the numer of possible cache items.
+ *
+ * \public \memberof mlt_cache_s
+ * \param cache the cache to check
+ * \return the current maximum size of the cache
+ */
+
+int mlt_cache_get_size( mlt_cache cache )
+{
+    return cache->size;
+}
+
 /** Destroy a cache.
  *
  * \public \memberof mlt_cache_s
