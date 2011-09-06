@@ -212,7 +212,13 @@ int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int trac
 
 		// Increment the track count if need be
 		if ( track >= self->count )
+		{
 			self->count = track + 1;
+
+			// TODO: Move this into producer_avformat.c when mlt_events broadcasting is available.
+			if ( self->count > mlt_service_cache_get_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat" ) )
+				mlt_service_cache_set_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat", self->count + 1 );
+		}
 
 		// Refresh our stats
 		mlt_multitrack_refresh( self );
