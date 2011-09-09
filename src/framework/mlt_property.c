@@ -512,7 +512,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		pthread_mutex_lock( &self->mutex );
 
 		// Get the current locale
-		const char *orig_localename = setlocale( LC_NUMERIC, NULL );
+		char *orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
 
 		// Set the new locale
 		setlocale( LC_NUMERIC, localename );
@@ -548,6 +548,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		}
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
+		free( orig_localename );
 		pthread_mutex_unlock( &self->mutex );
 	}
 
