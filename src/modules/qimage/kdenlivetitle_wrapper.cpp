@@ -76,26 +76,6 @@ virtual void paint( QPainter *painter,
 };
 
 
-QString rectTransform( QString s, QTransform t )
-{
-	QStringList l = s.split( ',' );
-	return QString::number(l.at(0).toDouble() * t.m11()) + ',' + QString::number(l.at(1).toDouble() * t.m22()) + ',' + QString::number(l.at(2).toDouble() * t.m11()) + ',' + QString::number(l.at(3).toDouble() * t.m22());
-}
-
-QString colorToString( const QColor& c )
-{
-	QString ret = "%1,%2,%3,%4";
-	ret = ret.arg( c.red() ).arg( c.green() ).arg( c.blue() ).arg( c.alpha() );
-	return ret;
-}
-
-QString rectFToString( const QRectF& c )
-{
-	QString ret = "%1,%2,%3,%4";
-	ret = ret.arg( c.top() ).arg( c.left() ).arg( c.width() ).arg( c.height() );
-	return ret;
-}
-
 QRectF stringToRect( const QString & s )
 {
 
@@ -142,9 +122,15 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	QString replacementText = QString::fromUtf8(templateText);
 	doc.setContent(data);
 	QDomElement title = doc.documentElement();
-	
+
 	// Check for invalid title
 	if ( title.isNull() || title.tagName() != "kdenlivetitle" ) return;
+	
+	// Check title locale
+	if ( title.hasAttribute( "LC_NUMERIC" ) ) {
+	    QString locale = title.attribute( "LC_NUMERIC" );
+	    QLocale::setDefault( locale );
+	}
 	
         int originalWidth;
         int originalHeight;
@@ -167,29 +153,32 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	mlt_properties_set_int( producer_props, "_original_width", originalWidth );
 	mlt_properties_set_int( producer_props, "_original_height", originalHeight );
 
+	QDomNode node;
 	QDomNodeList items = title.elementsByTagName("item");
         for ( int i = 0; i < items.count(); i++ )
 	{
 		QGraphicsItem *gitem = NULL;
-		int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
+		node = items.item( i );
+		QDomNamedNodeMap nodeAttributes = node.attributes();
+		int zValue = nodeAttributes.namedItem( "z-index" ).nodeValue().toInt();
 		if ( zValue > -1000 )
 		{
-			if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsTextItem" )
+			if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsTextItem" )
 			{
-				QDomNamedNodeMap txtProperties = items.item( i ).namedItem( "content" ).attributes();
+				QDomNamedNodeMap txtProperties = node.namedItem( "content" ).attributes();
 				QFont font( txtProperties.namedItem( "font" ).nodeValue() );
-					QDomNode node = txtProperties.namedItem( "font-bold" );
-				if ( !node.isNull() )
+				QDomNode propsNode = txtProperties.namedItem( "font-bold" );
+				if ( !propsNode.isNull() )
 				{
-				// Old: Bold/Not bold.
-					font.setBold( node.nodeValue().toInt() );
+					// Old: Bold/Not bold.
+					font.setBold( propsNode.nodeValue().toInt() );
 				}
 				else
 				{
 					// New: Font weight (QFont::)
 					font.setWeight( txtProperties.namedItem( "font-weight" ).nodeValue().toInt() );
 				}
-					font.setItalic( txtProperties.namedItem( "font-italic" ).nodeValue().toInt() );
+				font.setItalic( txtProperties.namedItem( "font-italic" ).nodeValue().toInt() );
 				font.setUnderline( txtProperties.namedItem( "font-underline" ).nodeValue().toInt() );
 				// Older Kdenlive version did not store pixel size but point size
 				if ( txtProperties.namedItem( "font-pixel-size" ).isNull() )
@@ -201,7 +190,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				else
 					font.setPixelSize( txtProperties.namedItem( "font-pixel-size" ).nodeValue().toInt() );
 				QColor col( stringToColor( txtProperties.namedItem( "font-color" ).nodeValue() ) );
-				QString text = items.item( i ).namedItem( "content" ).firstChild().nodeValue();
+				QString text = node.namedItem( "content" ).firstChild().nodeValue();
 				if ( !replacementText.isEmpty() )
 				{
 					text = text.replace( "%s", replacementText );
@@ -248,18 +237,18 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				}
 					gitem = txt;
 			}
-			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
+			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
 			{
-				QString rect = items.item( i ).namedItem( "content" ).attributes().namedItem( "rect" ).nodeValue();
-				QString br_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "brushcolor" ).nodeValue();
-				QString pen_str = items.item( i ).namedItem( "content" ).attributes().namedItem( "pencolor" ).nodeValue();
-				double penwidth = items.item( i ).namedItem( "content" ).attributes().namedItem( "penwidth") .nodeValue().toDouble();
+				QString rect = node.namedItem( "content" ).attributes().namedItem( "rect" ).nodeValue();
+				QString br_str = node.namedItem( "content" ).attributes().namedItem( "brushcolor" ).nodeValue();
+				QString pen_str = node.namedItem( "content" ).attributes().namedItem( "pencolor" ).nodeValue();
+				double penwidth = node.namedItem( "content" ).attributes().namedItem( "penwidth") .nodeValue().toDouble();
 				QGraphicsRectItem *rec = scene->addRect( stringToRect( rect ), QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin ), QBrush( stringToColor( br_str ) ) );
 				gitem = rec;
 			}
-			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
+			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
 			{
-				const QString url = items.item( i ).namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
+				const QString url = node.namedItem( "content" ).attributes().namedItem( "url" ).nodeValue();
 				const QString base64 = items.item(i).namedItem("content").attributes().namedItem("base64").nodeValue();
 				QImage img;
 				if (base64.isEmpty()){
@@ -271,7 +260,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				scene->addItem( rec );
 				gitem = rec;
 			}
-			else if ( items.item( i ).attributes().namedItem( "type" ).nodeValue() == "QGraphicsSvgItem" )
+			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsSvgItem" )
 			{
 				QString url = items.item(i).namedItem("content").attributes().namedItem("url").nodeValue();
 				QString base64 = items.item(i).namedItem("content").attributes().namedItem("base64").nodeValue();
@@ -292,11 +281,11 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 		//pos and transform
 		if ( gitem )
 		{
-			QPointF p( items.item( i ).namedItem( "position" ).attributes().namedItem( "x" ).nodeValue().toDouble(),
-			           items.item( i ).namedItem( "position" ).attributes().namedItem( "y" ).nodeValue().toDouble() );
+			QPointF p( node.namedItem( "position" ).attributes().namedItem( "x" ).nodeValue().toDouble(),
+			           node.namedItem( "position" ).attributes().namedItem( "y" ).nodeValue().toDouble() );
 			gitem->setPos( p );
-			gitem->setTransform( stringToTransform( items.item( i ).namedItem( "position" ).firstChild().firstChild().nodeValue() ) );
-			int zValue = items.item( i ).attributes().namedItem( "z-index" ).nodeValue().toInt();
+			gitem->setTransform( stringToTransform( node.namedItem( "position" ).firstChild().firstChild().nodeValue() ) );
+			int zValue = nodeAttributes.namedItem( "z-index" ).nodeValue().toInt();
 			gitem->setZValue( zValue );
 
 #if QT_VERSION >= 0x040600
@@ -406,9 +395,9 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 						return;
 					}
 #endif
-					app = new QApplication( argc, argv );
-					//fix to let the decimal point for every locale be: "."
-					setlocale(LC_NUMERIC,"POSIX");
+					app = new QApplication( argc, argv );				
+					const char *localename = mlt_properties_get_lcnumeric( MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) ) );
+					QLocale::setDefault( QLocale( localename ) );
 				}
 			}
 			scene = new QGraphicsScene();
