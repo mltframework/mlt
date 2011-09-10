@@ -46,8 +46,10 @@ extern mlt_filter filter_transition_init( mlt_profile profile, mlt_service_type 
 extern mlt_filter filter_watermark_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_colour_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 extern mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #include "transition_composite.h"
@@ -92,8 +94,10 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "color", producer_colour_init );
 	MLT_REGISTER( producer_type, "colour", producer_colour_init );
 	MLT_REGISTER( producer_type, "consumer", producer_consumer_init );
-	MLT_REGISTER( producer_type, "loader", producer_loader_init );
 	MLT_REGISTER( producer_type, "hold", producer_hold_init );
+	MLT_REGISTER( producer_type, "loader", producer_loader_init );
+	MLT_REGISTER( producer_type, "melt", producer_melt_init );
+	MLT_REGISTER( producer_type, "melt_file", producer_melt_file_init );
 	MLT_REGISTER( producer_type, "noise", producer_noise_init );
 	MLT_REGISTER( producer_type, "ppm", producer_ppm_init );
 	MLT_REGISTER( transition_type, "composite", transition_composite_init );
@@ -122,8 +126,10 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( producer_type, "colour", metadata, "producer_colour.yml" );
 	MLT_REGISTER_METADATA( producer_type, "color", metadata, "producer_colour.yml" );
 	MLT_REGISTER_METADATA( producer_type, "consumer", metadata, "producer_consumer.yml" );
-	MLT_REGISTER_METADATA( producer_type, "loader", metadata, "producer_loader.yml" );
 	MLT_REGISTER_METADATA( producer_type, "hold", metadata, "producer_hold.yml" );
+	MLT_REGISTER_METADATA( producer_type, "loader", metadata, "producer_loader.yml" );
+	MLT_REGISTER_METADATA( producer_type, "melt", metadata, "producer_melt.yml" );
+	MLT_REGISTER_METADATA( producer_type, "melt_file", metadata, "producer_melt_file.yml" );
 	MLT_REGISTER_METADATA( producer_type, "noise", metadata, "producer_noise.yml" );
 	MLT_REGISTER_METADATA( transition_type, "composite", metadata, "transition_composite.yml" );
 	MLT_REGISTER_METADATA( transition_type, "luma", metadata, "transition_luma.yml" );

@@ -11,6 +11,7 @@ OBJS = factory.o \
 	   producer_consumer.o \
 	   producer_hold.o \
 	   producer_loader.o \
+	   producer_melt.o \
 	   producer_noise.o \
 	   producer_ppm.o \
 	   filter_audiochannels.o \
