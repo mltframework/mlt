@@ -235,6 +235,10 @@ int mlt_geometry_parse( mlt_geometry self, char *data, int length, int nw, int n
 		struct mlt_geometry_item_s item;
 		char *value = mlt_tokeniser_get_string( tokens, i );
 
+		// If no data in keyframe, drop it (trailing semicolon)
+		if ( value == NULL || !strcmp( value, "" ) )
+			continue;
+
 		// Set item to 0
 		memset( &item, 0, sizeof( struct mlt_geometry_item_s ) );
 
