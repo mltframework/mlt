@@ -46,20 +46,20 @@ static void serialize_vectors( StabData* self, mlt_position length )
 		item.key = item.f[0] = item.f[1] = 1;
 		item.f[2] = item.f[3] = item.f[4] = 1;
 
-		tlist* dat=self->transs;
+		tlist* transform_data =self->transs;
 		for ( i = 0; i < length; i++ )
 		{
 			// Set the geometry item
 			item.frame = i;
-			if (dat && dat->data){
-				Transform* t=dat->data;
-				item.x=t->x;
-				item.y=t->y;
-				item.w=t->alpha;
-				item.h=t->zoom;
-				/*item.x = self->pos_h[i].x;
-				item.y = self->pos_h[i].y;*/
-				dat=dat->next;
+			if (transform_data){
+				if ( transform_data->data){
+					Transform* t=transform_data->data;
+					item.x=t->x;
+					item.y=t->y;
+					item.w=t->alpha;
+					item.h=t->zoom;
+					transform_data=transform_data->next;
+				}
 			}
 			// Add the geometry item
 			mlt_geometry_insert( g, &item );
@@ -222,7 +222,6 @@ mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, c
 		parent->close = filter_close;
 		parent->process = filter_process;
 		self->parent = parent;
-		stabilize_init(self);
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shutterangle", "0" ); // 0 - 180 , default 0
 		//prepare_lanc_kernels();
 		return parent;
