@@ -1,6 +1,6 @@
-CFLAGS += -I../.. -fasm-blocks
+CFLAGS += -I../.. 
 
-LDFLAGS += -L../../framework -lmlt -lm -mmmx  -msse  -msse2
+LDFLAGS += -L../../framework -lmlt -lm 
 
 include ../../../config.mak
 
