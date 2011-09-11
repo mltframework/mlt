@@ -52,6 +52,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <framework/mlt_types.h>
+#include <framework/mlt_log.h>
 
 
 void addTrans(StabData* sd, Transform sl)
@@ -76,11 +77,11 @@ int initFields(StabData* sd)
     // make sure that the remaining rows have the same length
     sd->field_num  = rows*cols;
     sd->field_rows = rows;
-    printf("field setup: rows: %i cols: %i Total: %i fields", 
+    mlt_log_warning (NULL,"field setup: rows: %i cols: %i Total: %i fields", 
                 rows, cols, sd->field_num);
 
     if (!(sd->fields = malloc(sizeof(Field) * sd->field_num))) {
-        printf( "malloc failed!\n");
+        mlt_log_error ( NULL,  "malloc failed!\n");
         return 0;
     } else {
         int i, j;
@@ -259,7 +260,6 @@ double contrastSubImg(unsigned char* const I, const Field* field,
 */
 Transform calcShiftRGBSimple(StabData* sd)
 {
-	printf("calc shoft rgb simple\n");
     int x = 0, y = 0;
     int i, j;
     double minerror = 1e20;  
@@ -286,7 +286,6 @@ Transform calcShiftRGBSimple(StabData* sd)
 */
 Transform calcShiftYUVSimple(StabData* sd)
 {
-	printf("calc shoft yuv\n");
     int x = 0, y = 0;
     int i, j;
     unsigned char *Y_c, *Y_p;// , *Cb, *Cr;
@@ -414,18 +413,18 @@ Transform calcFieldTransYUV(StabData* sd, const Field* field, int fieldnum)
     }
 #ifdef STABVERBOSE 
     fclose(f); 
-    printf( "Minerror: %f\n", minerror);
+    mlt_log_warning ( "Minerror: %f\n", minerror);
 #endif
 
     if (!sd->allowmax && fabs(t.x) == sd->maxshift) {
 #ifdef STABVERBOSE 
-        printf( "maximal x shift ");
+        mlt_log_warning ( "maximal x shift ");
 #endif
         t.x = 0;
     }
     if (!sd->allowmax && fabs(t.y) == sd->maxshift) {
 #ifdef STABVERBOSE 
-        printf("maximal y shift ");
+        mlt_log_warning ("maximal y shift ");
 #endif
         t.y = 0;
     }
@@ -823,20 +822,20 @@ int stabilize_configure(StabData* instance
     sd->shakiness = MIN(10,MAX(1,sd->shakiness));
     sd->accuracy  = MAX(sd->shakiness,MIN(15,MAX(1,sd->accuracy)));
     if (1) {
-        printf( "Image Stabilization Settings:\n");
-        printf( "     shakiness = %d\n", sd->shakiness);
-        printf( "      accuracy = %d\n", sd->accuracy);
-        printf( "      stepsize = %d\n", sd->stepsize);
-        printf( "          algo = %d\n", sd->algo);
-        printf("   mincontrast = %f\n", sd->contrast_threshold);
-        printf( "          show = %d\n", sd->show);
+        mlt_log_warning (NULL, "Image Stabilization Settings:\n");
+        mlt_log_warning (NULL, "     shakiness = %d\n", sd->shakiness);
+        mlt_log_warning (NULL, "      accuracy = %d\n", sd->accuracy);
+        mlt_log_warning (NULL, "      stepsize = %d\n", sd->stepsize);
+        mlt_log_warning (NULL, "          algo = %d\n", sd->algo);
+        mlt_log_warning (NULL, "   mincontrast = %f\n", sd->contrast_threshold);
+        mlt_log_warning (NULL, "          show = %d\n", sd->show);
     }
 
     // shift and size: shakiness 1: height/40; 10: height/4
     sd->maxshift    = MIN(sd->width, sd->height)*sd->shakiness/40;
     sd->field_size   = MIN(sd->width, sd->height)*sd->shakiness/40;
   
-    printf( "Fieldsize: %i, Maximal translation: %i pixel\n", 
+    mlt_log_warning ( NULL,  "Fieldsize: %i, Maximal translation: %i pixel\n", 
                 sd->field_size, sd->maxshift);
     if (sd->algo==1) {        
         // initialize measurement fields. field_num is set here.
@@ -844,7 +843,7 @@ int stabilize_configure(StabData* instance
             return -1;
         }
         sd->maxfields = (sd->accuracy) * sd->field_num / 15;
-        printf( "Number of used measurement fields: %i out of %i\n",
+        mlt_log_warning ( NULL, "Number of used measurement fields: %i out of %i\n",
                     sd->maxfields, sd->field_num);
     }
     if (sd->show){
@@ -889,7 +888,7 @@ int stabilize_filter_video(StabData* instance,
                 addTrans(sd, calcTransFields(sd, calcFieldTransYUV,
                                              contrastSubImgYUV));
         } else {
-            printf("unsupported Codec: %i\n",
+            mlt_log_warning (NULL,"unsupported Codec: %i\n",
                         pixelformat);
             return 0;
         }
@@ -931,6 +930,8 @@ int stabilize_stop(StabData* instance)
 	// and all transforms
 	tc_list_foreach(sd->transs, stabilize_dump_trans, &ID);
 */
+	/* FOR DEBUG ONLY
+	
 	tlist* transf=sd->transs;
 	int num=0;
 	while (transf ){
@@ -939,6 +940,7 @@ int stabilize_stop(StabData* instance)
 		printf("%d %f %f %f %f %d\n",num++,t->x,t->y,t->alpha,t->zoom,t->extra);
 		transf=transf->next;
 	}
+	*/
     //tc_list_del(sd->transs, 1 );
     if (sd->prev) {
         free(sd->prev);

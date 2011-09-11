@@ -26,6 +26,8 @@
 #include "transform_image.h"
 #include <string.h>
 #include <stdlib.h>
+#include <framework/mlt_log.h>
+
 #define MAX (a,b) (((a)>(b)?(a):(b)))
 #define MIN (a,b) (((a)<(b)?(a):(b)))
 #define CLAMP(a,x,y) MIN( MAX( (a),(x) ,y))
@@ -438,7 +440,7 @@ int preprocess_transforms(TransformData* td)
     if (td->trans_len < 1)
         return 0;
     if (0) {
-        printf("Preprocess transforms:");
+        mlt_log_warning(NULL,"Preprocess transforms:");
     }
     if (td->smoothing>0) {
         /* smoothing */
@@ -490,10 +492,10 @@ int preprocess_transforms(TransformData* td)
             ts[i] = sub_transforms(&ts[i], &avg2);
 
             if (0 /*verbose*/ ) {
-                printf("s_sum: %5lf %5lf %5lf, ts: %5lf, %5lf, %5lf\n", 
+                mlt_log_warning(NULL,"s_sum: %5lf %5lf %5lf, ts: %5lf, %5lf, %5lf\n", 
                            s_sum.x, s_sum.y, s_sum.alpha, 
                            ts[i].x, ts[i].y, ts[i].alpha);
-                printf( 
+                mlt_log_warning(NULL, 
                            "  avg: %5lf, %5lf, %5lf avg2: %5lf, %5lf, %5lf", 
                            avg.x, avg.y, avg.alpha, 
                            avg2.x, avg2.y, avg2.alpha);      
@@ -515,7 +517,7 @@ int preprocess_transforms(TransformData* td)
         Transform t = ts[0];
         for (i = 1; i < td->trans_len; i++) {
             if (0/*verbose*/ ) {
-                printf( "shift: %5lf   %5lf   %lf \n", 
+                mlt_log_warning(NULL, "shift: %5lf   %5lf   %lf \n", 
                            t.x, t.y, t.alpha *180/M_PI);
             }
             ts[i] = add_transforms(&ts[i], &t); 
@@ -544,7 +546,7 @@ int preprocess_transforms(TransformData* td)
         // the zoom value only for y
         double zy = 2*TC_MAX(max_t.y,fabs(min_t.y))/td->height_src;
         td->zoom += 100* TC_MAX(zx,zy); // use maximum
-        printf("Final zoom: %lf\n", td->zoom);
+        mlt_log_warning(NULL,"Final zoom: %lf\n", td->zoom);
     }
         
     /* apply global zoom */
@@ -601,7 +603,7 @@ int transform_configure(TransformData *self,int width,int height, mlt_image_form
     td->framesize_src = width*height*(pixelformat==mlt_image_rgb24 ? 3 : (3.0/2.0));    
     td->src = malloc(td->framesize_src); /* FIXME */
     if (td->src == NULL) {
-        printf("tc_malloc failed\n");
+        mlt_log_error(NULL,"tc_malloc failed\n");
         return -1;
     }
   
@@ -638,23 +640,23 @@ int transform_configure(TransformData *self,int width,int height, mlt_image_form
 	
     td->interpoltype = TC_MIN(td->interpoltype,4);
     if (0) {
-        printf( "Image Transformation/Stabilization Settings:\n");
-        printf( "    input     = %s\n", td->input);
-        printf( "    smoothing = %d\n", td->smoothing);
-        printf( "    maxshift  = %d\n", td->maxshift);
-        printf( "    maxangle  = %f\n", td->maxangle);
-        printf( "    crop      = %s\n", 
+        mlt_log_warning(NULL, "Image Transformation/Stabilization Settings:\n");
+        mlt_log_warning(NULL, "    input     = %s\n", td->input);
+        mlt_log_warning(NULL, "    smoothing = %d\n", td->smoothing);
+        mlt_log_warning(NULL, "    maxshift  = %d\n", td->maxshift);
+        mlt_log_warning(NULL, "    maxangle  = %f\n", td->maxangle);
+        mlt_log_warning(NULL, "    crop      = %s\n", 
                         td->crop ? "Black" : "Keep");
-        printf( "    relative  = %s\n", 
+        mlt_log_warning(NULL, "    relative  = %s\n", 
                     td->relative ? "True": "False");
-        printf( "    invert    = %s\n", 
+        mlt_log_warning(NULL, "    invert    = %s\n", 
                     td->invert ? "True" : "False");
-        printf( "    zoom      = %f\n", td->zoom);
-        printf( "    optzoom   = %s\n", 
+        mlt_log_warning(NULL, "    zoom      = %f\n", td->zoom);
+        mlt_log_warning(NULL, "    optzoom   = %s\n", 
                     td->optzoom ? "On" : "Off");
-        printf( "    interpol  = %s\n", 
+        mlt_log_warning(NULL, "    interpol  = %s\n", 
                     interpoltypes[td->interpoltype]);
-        printf( "    sharpen   = %f\n", td->sharpen);
+        mlt_log_warning(NULL, "    sharpen   = %f\n", td->sharpen);
     }
   
     if (td->maxshift > td->width_dest/2
@@ -663,7 +665,7 @@ int transform_configure(TransformData *self,int width,int height, mlt_image_form
         td->maxshift = td->height_dest/2;
   
     if (!preprocess_transforms(td)) {
-        printf("error while preprocessing transforms!");
+        mlt_log_error(NULL,"error while preprocessing transforms!");
         return -1;            
     }  
 
@@ -695,7 +697,7 @@ int transform_filter_video(TransformData *self,
     if (td->current_trans >= td->trans_len) {        
         td->current_trans = td->trans_len-1;
         if(!td->warned_transform_end)
-            printf("not enough transforms found, use last transformation!\n");
+            mlt_log_warning(NULL,"not enough transforms found, use last transformation!\n");
         td->warned_transform_end = 1;        
     }
   
@@ -704,7 +706,7 @@ int transform_filter_video(TransformData *self,
     } else if (pixelformat == mlt_image_yuv420p) {
         transformYUV(td);
     } else {
-        printf("unsupported Codec: %i\n", pixelformat);
+        mlt_log_error(NULL,"unsupported Codec: %i\n", pixelformat);
         return 1;
     }
     td->current_trans++;
