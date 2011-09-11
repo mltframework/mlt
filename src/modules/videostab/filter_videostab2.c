@@ -167,7 +167,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			TransformData* tf=mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "_transformdata", NULL);
 			if (!tf){
 				tf=mlt_pool_alloc(sizeof(TransformData));
-				mlt_properties_set_data( MLT_FILTER_PROPERTIES(filter), "_transformdata", tf, 0, ( mlt_destructor )mlt_properties_close, NULL );
+				mlt_properties_set_data( MLT_FILTER_PROPERTIES(filter), "_transformdata", tf, 0, ( mlt_destructor )mlt_pool_release, NULL );
 			}
 			if ( self->initialized != 2 )
 			{
