@@ -87,8 +87,6 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 		for ( i = 0; i < length; i++ )
 		{
 			mlt_geometry_fetch( g, &item, i );
-			/*self->pos_h[i].x = item.x;
-			self->pos_h[i].y = item.y;*/
 			Transform t;
 			t.x=item.x;
 			t.y=item.y;
@@ -101,7 +99,7 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 	}
 	else
 	{
-		//mlt_log_warning( MLT_FILTER_SERVICE(self->parent), "failed to parse vectors\n" );
+		mlt_log_warning( MLT_FILTER_SERVICE(self->parent), "failed to parse vectors\n" );
 	}
 
 	// We are done with this mlt_geometry
@@ -133,30 +131,18 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			self->height=h;
 			self->framesize=w*h* 3;//( mlt_image_format_size ( *format, w,h , 0) ; // 3/2 =1 too small
 			stabilize_configure(self);
-		/*	self->es = es_init( w, h );
-			self->pos_i = (vc*) malloc( length * sizeof(vc) );
-			self->pos_h = (vc*) malloc( length * sizeof(vc) );
-			self->pos_y = (vc*) malloc( h * sizeof(vc) );
-			self->rs = rs_init( w, h );
-			*/
 		}
 		char *vectors = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "vectors" );
 		if ( !vectors )
 		{
 			// Analyse
 			mlt_position pos = mlt_filter_get_position( filter, frame );
-			//self->pos_i[pos] = vc_add( pos == 0 ? vc_zero() : self->pos_i[pos - 1], es_estimate( self->es, *image ) );
 			stabilize_filter_video ( self, *image, (*format==mlt_image_rgb24?0:1) );
 
 
 			// On last frame
 			if ( pos == length - 1 )
 			{
-				//mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
-				//double fps =  mlt_profile_fps( profile );
-
-				// Filter and store the results
-				//hipass( self->pos_i, self->pos_h, length, fps );
 				serialize_vectors( self, length );
 			}
 		}
@@ -199,12 +185,6 @@ static void filter_close( mlt_filter parent )
 {
 	StabData* self = parent->child;
 	stabilize_stop(self);
-	/*if ( self->es ) es_free( self->es );
-	if ( self->pos_i ) free( self->pos_i );
-	if ( self->pos_h ) free( self->pos_h );
-	if ( self->pos_y ) free( self->pos_y );
-	if ( self->rs ) rs_free( self->rs );
-	free_lanc_kernels();*/
 	free( self );
 	parent->close = NULL;
 	parent->child = NULL;
@@ -221,7 +201,6 @@ mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, c
 		parent->process = filter_process;
 		self->parent = parent;
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shutterangle", "0" ); // 0 - 180 , default 0
-		//prepare_lanc_kernels();
 		return parent;
 	}
 	return NULL;
