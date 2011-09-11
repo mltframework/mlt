@@ -202,6 +202,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	st_sample_t *output_buffer = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
 	int i; // channel
 	int count = mlt_properties_get_int( filter_properties, "_effect_count" );
+	int analysis = !strcmp( mlt_properties_get( filter_properties, "effect" ), "analysis" );
 
 	// Get the producer's audio
 	*format = mlt_audio_s32;
@@ -257,7 +258,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			mlt_properties_set_int( filter_properties, "_effect_count", count );
 			
 		}
-		if ( *samples > 0 && count > 0 )
+		if ( *samples > 0 && ( count > 0 || analysis ) )
 		{
 			input_buffer = (st_sample_t*) *buffer + i * *samples;
 			st_sample_t *p = input_buffer;
@@ -267,6 +268,64 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			char *normalise = mlt_properties_get( filter_properties, "normalise" );
 			double normalised_gain = 1.0;
 			
+			if ( analysis )
+			{
+				// Run analysis to compute a gain level to normalize the audio across entire filter duration
+				double max_power = mlt_properties_get_double( filter_properties, "_max_power" );
+				double peak = mlt_properties_get_double( filter_properties, "_max_peak" );
+				double use_peak = mlt_properties_get_int( filter_properties, "use_peak" );
+				double power = 0;
+				int n = *samples + 1;
+
+				// Compute power level of samples in this channel of this frame
+				while ( --n )
+				{
+					double s = fabs( *p++ );
+					// Track peak
+					if ( s > peak )
+					{
+						peak = s;
+						mlt_properties_set_double( filter_properties, "_max_peak", peak );
+					}
+					power += s * s;
+				}
+				power /= *samples;
+				// Track maximum power
+				if ( power > max_power )
+				{
+					max_power = power;
+					mlt_properties_set_double( filter_properties, "_max_power", max_power );
+				}
+
+				// Complete analysis the last channel of the last frame.
+				if ( i + 1 == *channels && mlt_filter_get_position( filter, frame ) + 1
+					 == mlt_filter_get_length2( filter, frame ) )
+				{
+					double rms = sqrt( max_power / ST_SSIZE_MIN / ST_SSIZE_MIN );
+					char effect[32];
+
+					// Convert RMS or peak to gain
+					if ( use_peak )
+						normalised_gain = ST_SSIZE_MIN / -peak;
+					else
+						normalised_gain = AMPLITUDE_NORM / rms;
+
+					// Set properties for serialization
+					snprintf( effect, sizeof(effect), "vol %f", normalised_gain );
+					effect[31] = 0;
+					mlt_properties_set( filter_properties, "effect", effect );
+					mlt_properties_set( filter_properties, "analyze", NULL );
+
+					// Show output comparable to normalize --no-adjust --fractions
+					mlt_properties_set_double( filter_properties, "level", rms );
+					mlt_properties_set_double( filter_properties, "gain", normalised_gain );
+					mlt_properties_set_double( filter_properties, "peak", -peak / ST_SSIZE_MIN );
+				}
+
+				// restore some variables
+				p = input_buffer;
+			}
+
 			if ( normalise )
 			{
 				int window = mlt_properties_get_int( filter_properties, "window" );
