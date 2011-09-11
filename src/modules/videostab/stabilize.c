@@ -794,15 +794,15 @@ int stabilize_configure(StabData* instance
     sd->transs = 0;
     
     // Options
-    sd->stepsize   = 6;
+    // done in filter : sd->stepsize   = 6;
     sd->allowmax   = 0;
-    sd->algo = 1;
+    // done in filter :sd->algo = 1;
 //    sd->field_num   = 64;
-    sd->accuracy    = 4;
-    sd->shakiness   = 4;
+    // done in filter : sd->accuracy    = 4;
+    // done in filter : sd->shakiness   = 4;
     sd->field_size  = MIN(sd->width, sd->height)/12;
-    sd->show        = 0;
-    sd->contrast_threshold = 0.3; 
+    // done in filter : sd->show        = 0;
+    // done in filter : sd->contrast_threshold = 0.3; 
     sd->maxanglevariation = 1;
     
     /*if (options != NULL) {            

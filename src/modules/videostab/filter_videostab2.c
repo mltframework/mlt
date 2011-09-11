@@ -130,6 +130,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			self->width=w;
 			self->height=h;
 			self->framesize=w*h* 3;//( mlt_image_format_size ( *format, w,h , 0) ; // 3/2 =1 too small
+			self->shakiness = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "shakiness" );
+			self->accuracy = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "accuracy" );
+			self->stepsize = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "stepsize" );
+			self->algo = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "algo" );
+			self->show = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "show" );
+			self->contrast_threshold = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame) , "mincontrast" );
 			stabilize_configure(self);
 		}
 		char *vectors = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "vectors" );
@@ -200,7 +206,12 @@ mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, c
 		parent->close = filter_close;
 		parent->process = filter_process;
 		self->parent = parent;
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shutterangle", "0" ); // 0 - 180 , default 0
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shakiness", "4" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "accuracy", "4" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "stepsize", "6" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "algo", "1" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "mincontrast", "0.3" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "show", "0" ); 
 		return parent;
 	}
 	return NULL;
