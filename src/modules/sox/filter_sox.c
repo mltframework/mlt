@@ -278,7 +278,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			
 			// Compute final rms amplitude
 			rms = sqrt( rms / *samples / ST_SSIZE_MIN / ST_SSIZE_MIN );
-			
+
 			if ( normalise )
 			{
 				int window = mlt_properties_get_int( filter_properties, "window" );
@@ -437,20 +437,3 @@ mlt_filter filter_sox_init( mlt_profile profile, mlt_service_type type, const ch
 
 // What to do when a libst internal failure occurs
 void cleanup(void){}
-
-// Is there a build problem with my sox-devel package?
-#ifndef gsm_create
-void gsm_create(void){}
-#endif
-#ifndef gsm_decode
-void gsm_decode(void){}
-#endif
-#ifndef gdm_encode
-void gsm_encode(void){}
-#endif
-#ifndef gsm_destroy
-void gsm_destroy(void){}
-#endif
-#ifndef gsm_option
-void gsm_option(void){}
-#endif
