@@ -54,6 +54,8 @@
 #include <libgen.h>
 #include <stdio.h>
 #include "tlist.h"
+#include <framework/mlt_types.h>
+
 /* if defined we are very verbose and generate files to analyse
  * this is really just for debugging and development */
 // #define STABVERBOSE
@@ -80,7 +82,7 @@ typedef struct _stab_data {
     short hasSeenOneFrame; // true if we have a valid previous frame
 
     int width, height;
-	int pixelformat;
+	mlt_image_format pixelformat;
 
     /* list of transforms*/
     //TCList* transs;
@@ -181,6 +183,6 @@ int stabilize_init(StabData* instance);
 int stabilize_configure(StabData* instance);
 int stabilize_stop(StabData* instance);
 
-int stabilize_filter_video(StabData* instance, unsigned char *frame,int imageformat);
+int stabilize_filter_video(StabData* instance, unsigned char *frame,mlt_image_format imageformat);
 
 

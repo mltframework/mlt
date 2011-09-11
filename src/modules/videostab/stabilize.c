@@ -51,6 +51,7 @@
 #include "stabilize.h"  
 #include <stdlib.h>
 #include <string.h>
+#include <framework/mlt_types.h>
 
 
 void addTrans(StabData* sd, Transform sl)
@@ -669,7 +670,7 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
 /** draws the field scanning area */
 void drawFieldScanArea(StabData* sd, const Field* field, const Transform* t)
 {
-    if (!sd->pixelformat == 1) {
+    if (!sd->pixelformat == mlt_image_yuv420p) {
 		printf("kein format\n");
         return;
 	}
@@ -680,7 +681,7 @@ void drawFieldScanArea(StabData* sd, const Field* field, const Transform* t)
 /** draws the field */
 void drawField(StabData* sd, const Field* field, const Transform* t)
 {
-    if (!sd->pixelformat == 1){
+    if (!sd->pixelformat == mlt_image_yuv420p){
 		printf("kein format\n");
         return;
 	}
@@ -691,7 +692,7 @@ void drawField(StabData* sd, const Field* field, const Transform* t)
 /** draws the transform data of this field */
 void drawFieldTrans(StabData* sd, const Field* field, const Transform* t)
 {
-    if (!sd->pixelformat == 1){
+    if (!sd->pixelformat == mlt_image_yuv420p){
 		printf("kein format\n");
         return;
 	}
@@ -866,7 +867,7 @@ int stabilize_configure(StabData* instance
  */
 
 int stabilize_filter_video(StabData* instance, 
-                                  unsigned char *frame,int pixelformat)
+                                  unsigned char *frame,mlt_image_format pixelformat)
 {
     StabData *sd = instance;
  	sd->pixelformat=pixelformat; 
@@ -875,13 +876,13 @@ int stabilize_filter_video(StabData* instance,
         memcpy(sd->currcopy, frame, sd->framesize);
     if (sd->hasSeenOneFrame) {
         sd->curr = frame;
-        if (pixelformat == 0) {
+        if (pixelformat == mlt_image_rgb24) {
             if (sd->algo == 0)
                 addTrans(sd, calcShiftRGBSimple(sd));
             else if (sd->algo == 1)
                 addTrans(sd, calcTransFields(sd, calcFieldTransRGB,
                          contrastSubImgRGB));
-        } else if (pixelformat == 1) {
+        } else if (pixelformat == mlt_image_yuv420p ) {
             if (sd->algo == 0)
                 addTrans(sd, calcShiftYUVSimple(sd));
             else if (sd->algo == 1)

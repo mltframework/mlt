@@ -137,7 +137,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			// Analyse
 			mlt_position pos = mlt_filter_get_position( filter, frame );
-			stabilize_filter_video ( self, *image, (*format==mlt_image_rgb24?0:1) );
+			stabilize_filter_video ( self, *image, *format );
 
 
 			// On last frame
@@ -158,7 +158,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			{
 				// Load analysis results from property
 				self->initialized = 2;
-				transform_configure(tf,w,h,(*format==mlt_image_rgb24?0:1) ,*image, deserialize_vectors(  vectors, length ),length);
+				transform_configure(tf,w,h,*format ,*image, deserialize_vectors(  vectors, length ),length);
 				
 			}
 			if ( self->initialized == 2 )
@@ -166,7 +166,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				// Stabilize
 				float pos = mlt_filter_get_position( filter, frame );
 				tf->current_trans=pos;
-				transform_filter_video(tf, *image,(*format==mlt_image_rgb24?0:1));
+				transform_filter_video(tf, *image, *format );
 			}
 		}
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );

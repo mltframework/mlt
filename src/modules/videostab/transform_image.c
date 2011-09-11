@@ -588,7 +588,7 @@ static int transform_init(TCModuleInstance *self, uint32_t features)
  * transform_configure:  Configure this instance of the module.  See
  * tcmodule-data.h for function details.
  */
-int transform_configure(TransformData *self,int width,int height, int pixelformat, unsigned char* image ,Transform* tx,int trans_len) 
+int transform_configure(TransformData *self,int width,int height, mlt_image_format  pixelformat, unsigned char* image ,Transform* tx,int trans_len) 
 {
     TransformData *td = self;
 
@@ -598,7 +598,7 @@ int transform_configure(TransformData *self,int width,int height, int pixelforma
      *  MAX_PLANES * sizeof(char) * 2 * td->vob->im_v_height * 2;    
      */
 	// rgb24 = w*h*3 , yuv420p = w* h* 3/2
-    td->framesize_src = width*height*(pixelformat==0?3:(3.0/2.0));    
+    td->framesize_src = width*height*(pixelformat==mlt_image_rgb24 ? 3 : (3.0/2.0));    
     td->src = malloc(td->framesize_src); /* FIXME */
     if (td->src == NULL) {
         printf("tc_malloc failed\n");
@@ -685,7 +685,7 @@ int transform_configure(TransformData *self,int width,int height, int pixelforma
  * See tcmodule-data.h for function details.
  */
 int transform_filter_video(TransformData *self, 
-                                  unsigned char *frame,int pixelformat) 
+                                  unsigned char *frame,mlt_image_format pixelformat) 
 {
     TransformData *td = self;
   
@@ -699,9 +699,9 @@ int transform_filter_video(TransformData *self,
         td->warned_transform_end = 1;        
     }
   
-    if (pixelformat == 0) {
+    if (pixelformat == mlt_image_rgb24 ) {
         transformRGB(td);
-    } else if (pixelformat == 1) {
+    } else if (pixelformat == mlt_image_yuv420p) {
         transformYUV(td);
     } else {
         printf("unsupported Codec: %i\n", pixelformat);

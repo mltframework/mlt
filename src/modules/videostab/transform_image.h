@@ -29,6 +29,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "tlist.h"
+#include <framework/mlt_types.h>
 
 #define DEFAULT_TRANS_FILE_NAME     "transforms.dat"
 
@@ -120,7 +121,7 @@ int preprocess_transforms(TransformData* td);
 */
 /** interpolateBiLinBorder: bi-linear interpolation function that also works at the border.
     This is used by many other interpolation methods at and outsize the border, see interpolate */
-int transform_configure(TransformData *self,int width,int height, int pixelformat, unsigned char* image,Transform* tx,int trans_len) ;
+int transform_configure(TransformData *self,int width,int height, mlt_image_format pixelformat, unsigned char* image,Transform* tx,int trans_len) ;
 
 int transform_filter_video(TransformData *self,       
-		                                  unsigned char *frame,int pixelformat);
+		                                  unsigned char *frame,mlt_image_format pixelformat);
