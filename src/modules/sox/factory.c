@@ -34,7 +34,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 	mlt_properties result = NULL;
 
 	// Load the yaml file
-	snprintf( file, PATH_MAX, "%s/sox/filter_%s.yml", mlt_environment( "MLT_DATA" ), "sox" );
+	snprintf( file, PATH_MAX, "%s/sox/filter_%s.yml", mlt_environment( "MLT_DATA" ), strcmp( id, "sox" ) ? "sox_effect" : "sox" );
 	result = mlt_properties_parse_yaml( file );
 
 #ifdef SOX14
@@ -61,7 +61,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 				break;
 			}
 		}
-		mlt_properties_set( result, "version", sox_version() );
 	}
 #endif
 	return result;

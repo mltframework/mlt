@@ -1,8 +1,8 @@
 schema_version: 0.1
 type: filter
 identifier: sox
-title: sox
-version: 1
+title: SoX
+version: 2
 copyright: Copyright (C) 2003-2011 Ushodaya Enterprises Limited
 license: LGPL
 language: en
@@ -20,3 +20,63 @@ parameters:
     title: Effect name and options
     type: string
     format: effect [options]
+    description: >
+      If the effect name is "analysis" then it does not run any effect.
+      Instead, it analyzes the audio to determine a normalized gain level.
+      The results are put into the level, peak, and gain properties as well
+      as this effect property as the parameter to the vol effect.
+
+  - identifier: level
+    title; Signal power level (RMS)
+    type: double
+    readonly: yes
+
+  - identifier: peak
+    title: Peak signal level
+    type: double
+    readonly: yes
+
+  - identifier: gain
+    title: Gain to normalize
+    type: double
+    readonly: yes
+
+  - identifier: use_peak
+    title: Use peak
+    description: >
+      Use peak signal level instead of RMS (root mean square) power level to
+      compute gain for normalization.
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
+
+  - identifier: normalise
+    title: Dynamic normalization
+    description: >
+      This computes the gain for normalization dynamically per frame, but it
+      uses a sliding smoothing window to prevent the gain from fluctuating wildly.
+      Currently, this must be used in combination with some SoX effect.
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
+
+  - identifier: window
+    title: Smoothing window size
+    type: integer
+    minimum: 0
+    default: 75
+    unit: frames
+    widget: spinner
+
+  - identifier: max_gain
+    title: Maximum gain
+    description: >
+      With dynamic normalization, this puts a maximum limit on the amount of gain.
+    type: float
+    minimum: 0
+    maximum: 20
+    default: 10
