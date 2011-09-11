@@ -99,7 +99,7 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 	}
 	else
 	{
-		mlt_log_warning( MLT_FILTER_SERVICE(self->parent), "failed to parse vectors\n" );
+		//mlt_log_warning( NULL, "failed to parse vectors\n" );
 	}
 
 	// We are done with this mlt_geometry
