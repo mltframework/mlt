@@ -263,30 +263,27 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			st_sample_t *p = input_buffer;
 			st_size_t isamp = *samples;
 			st_size_t osamp = *samples;
-			double rms = 0;
 			int j = *samples + 1;
 			char *normalise = mlt_properties_get( filter_properties, "normalise" );
 			double normalised_gain = 1.0;
-			
-			// Convert from interleaved
-			while( --j )
-			{
-				// Compute rms amplitude while we are accessing each sample
-				rms += ( double )*p * ( double )*p;
-				p ++;
-			}
 			
 			if ( normalise )
 			{
 				int window = mlt_properties_get_int( filter_properties, "window" );
 				double *smooth_buffer = mlt_properties_get_data( filter_properties, "smooth_buffer", NULL );
 				double max_gain = mlt_properties_get_double( filter_properties, "max_gain" );
-				
+				double rms = 0;
+
 				// Default the maximum gain factor to 20dBFS
 				if ( max_gain == 0 )
 					max_gain = 10.0;
 				
-				// Compute final rms amplitude
+				// Compute rms amplitude
+				while( --j )
+				{
+					rms += ( double )*p * ( double )*p;
+					p ++;
+				}
 				rms = sqrt( rms / *samples / ST_SSIZE_MIN / ST_SSIZE_MIN );
 
 				// The smoothing buffer prevents radical shifts in the gain level
