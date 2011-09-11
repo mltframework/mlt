@@ -276,9 +276,6 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				p ++;
 			}
 			
-			// Compute final rms amplitude
-			rms = sqrt( rms / *samples / ST_SSIZE_MIN / ST_SSIZE_MIN );
-
 			if ( normalise )
 			{
 				int window = mlt_properties_get_int( filter_properties, "window" );
@@ -289,6 +286,9 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				if ( max_gain == 0 )
 					max_gain = 10.0;
 				
+				// Compute final rms amplitude
+				rms = sqrt( rms / *samples / ST_SSIZE_MIN / ST_SSIZE_MIN );
+
 				// The smoothing buffer prevents radical shifts in the gain level
 				if ( window > 0 && smooth_buffer != NULL )
 				{
