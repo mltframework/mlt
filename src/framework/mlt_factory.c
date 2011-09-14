@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -102,6 +103,9 @@ static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner
 
 mlt_repository mlt_factory_init( const char *directory )
 {
+	// Load the system locales
+	setlocale( LC_ALL, "" );
+
 	if ( ! global_properties )
 		global_properties = mlt_properties_new( );
 
