@@ -28,23 +28,23 @@
 #include <assert.h>
 
 // Forward references.
-static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
+static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 
 /** Image stack(able) method
 */
 
-static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 
 	// Get the filter object and properties
-	mlt_producer producer = mlt_frame_pop_service( this );
-	int index = ( int )mlt_frame_pop_service( this );
+	mlt_producer producer = mlt_frame_pop_service( frame );
+	int index = ( int )mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Frame properties objects
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_frame first_frame = mlt_properties_get_data( properties, "first_frame", NULL );
 
 	// Get producer parameters
@@ -113,7 +113,7 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 
 		// Set the output image
 		*image = image_copy;
-		mlt_frame_set_image( this, image_copy, size, mlt_pool_release );
+		mlt_frame_set_image( frame, image_copy, size, mlt_pool_release );
 
 		*width = mlt_properties_get_int( properties, "_output_width" );
 		*height = mlt_properties_get_int( properties, "_output_height" );
@@ -172,23 +172,23 @@ static int framebuffer_get_image( mlt_frame this, uint8_t **image, mlt_image_for
 
 	// Set the output image
 	*image = image_copy;
-	mlt_frame_set_image( this, *image, size, mlt_pool_release );
+	mlt_frame_set_image( frame, *image, size, mlt_pool_release );
 
 	return 0;
 }
 
-static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
+static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Construct a new frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 	if( frame != NULL )
 	{
 		// Stack the producer and producer's get image
 		mlt_frame_push_service( *frame, (void*) index );
-		mlt_frame_push_service( *frame, this );
+		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_service( *frame, framebuffer_get_image );
 
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 		mlt_properties frame_properties = MLT_FRAME_PROPERTIES(*frame);
 		
 		double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
@@ -196,7 +196,7 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_properties_set_double( frame_properties, "aspect_ratio", force_aspect_ratio );
                 
 		// Give the returned frame temporal identity
-		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
+		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 		mlt_properties_set_int( frame_properties, "real_width", mlt_properties_get_int( properties, "width" ) );
 		mlt_properties_set_int( frame_properties, "real_height", mlt_properties_get_int( properties, "height" ) );
@@ -210,9 +210,9 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	if ( !arg ) return NULL;
-	mlt_producer this = NULL;
-	this = calloc( 1, sizeof( struct mlt_producer_s ) );
-	mlt_producer_init( this, NULL );
+	mlt_producer producer = NULL;
+	producer = calloc( 1, sizeof( struct mlt_producer_s ) );
+	mlt_producer_init( producer, NULL );
 
 	// Wrap loader
 	mlt_producer real_producer;
@@ -251,10 +251,10 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 
 	if (speed == 0.0) speed = 1.0;
 
-	if ( this != NULL && real_producer != NULL)
+	if ( producer != NULL && real_producer != NULL)
 	{
 		// Get the properties of this producer
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 		mlt_properties_set( properties, "resource", arg);
 
@@ -275,23 +275,23 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 			double real_length = ( (double)  mlt_producer_get_length( real_producer ) ) / speed;
 			mlt_properties_set_position( properties, "length", real_length );
 		}
-		mlt_properties_set_position( properties, "out", mlt_producer_get_length( this ) - 1 );
+		mlt_properties_set_position( properties, "out", mlt_producer_get_length( producer ) - 1 );
 
 		// Since we control the seeking, prevent it from seeking on its own
 		mlt_producer_set_speed( real_producer, 0 );
-		mlt_producer_set_speed( this, speed );
+		mlt_producer_set_speed( producer, speed );
 
 		// Override the get_frame method
-		this->get_frame = producer_get_frame;
+		producer->get_frame = producer_get_frame;
 	}
 	else
 	{
-		if ( this )
-			mlt_producer_close( this );
+		if ( producer )
+			mlt_producer_close( producer );
 		if ( real_producer )
 			mlt_producer_close( real_producer );
 
-		this = NULL;
+		producer = NULL;
 	}
-	return this;
+	return producer;
 }
