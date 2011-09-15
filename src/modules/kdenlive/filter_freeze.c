@@ -52,7 +52,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if (do_freeze == 1) {
 		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 		freeze_frame = mlt_properties_get_data( properties, "freeze_frame", NULL );
-		if ( freeze_frame == NULL || mlt_properties_get_position( properties, "_frame" ) != pos )
+		if ( !freeze_frame || mlt_properties_get_position( properties, "_frame" ) != pos )
 		{
 			// freeze_frame has not been fetched yet or is not useful, so fetch it and cache it.
 			mlt_producer producer = mlt_frame_get_original_producer(frame);
@@ -83,6 +83,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		memcpy( image_copy, buffer, size );
 		*image = image_copy;
 		mlt_frame_set_image( frame, *image, size, mlt_pool_release );
+
+                uint8_t *alpha_buffer = mlt_frame_get_alpha_mask( freeze_frame );
+                int alphasize = *width * *height;
+                uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
+                memcpy( alpha_copy, alpha_buffer, alphasize );
+                mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
 
 		return error;
 	}
@@ -121,7 +127,7 @@ mlt_filter filter_freeze_init( mlt_profile profile, mlt_service_type type, const
 		// If freeze_after = 1, only frames after the "frame" value will be frozen
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "freeze_after", "0" );
 
-		// If freeze_before = 1, only frames after the "frame" value will be frozen
+		// If freeze_before = 1, only frames before the "frame" value will be frozen
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "freeze_before", "0" );
 	}
 	return filter;
