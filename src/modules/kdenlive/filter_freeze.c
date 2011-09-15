@@ -27,18 +27,18 @@
 #include <stdio.h>
 #include <string.h>
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the image
-	mlt_filter filter = mlt_frame_pop_service( this );
+	mlt_filter filter = mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_properties props = MLT_FRAME_PROPERTIES( this );
+	mlt_properties props = MLT_FRAME_PROPERTIES( frame );
 
 	mlt_frame freeze_frame = NULL;;
 	int freeze_before = mlt_properties_get_int( properties, "freeze_before" );
 	int freeze_after = mlt_properties_get_int( properties, "freeze_after" );
 	mlt_position pos = mlt_properties_get_position( properties, "frame" );
-	mlt_position currentpos = mlt_filter_get_position( filter, this );
+	mlt_position currentpos = mlt_filter_get_position( filter, frame );
 
 	int do_freeze = 0;
 	if (freeze_before == 0 && freeze_after == 0) {
@@ -55,7 +55,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		if ( freeze_frame == NULL || mlt_properties_get_position( properties, "_frame" ) != pos )
 		{
 			// freeze_frame has not been fetched yet or is not useful, so fetch it and cache it.
-			mlt_producer producer = mlt_frame_get_original_producer(this);
+			mlt_producer producer = mlt_frame_get_original_producer(frame);
 			mlt_producer_seek( producer, pos );
 
 			// Get the frame
@@ -64,7 +64,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_properties freeze_properties = MLT_FRAME_PROPERTIES( freeze_frame );
 			mlt_properties_set_double( freeze_properties, "consumer_aspect_ratio", mlt_properties_get_double( props, "consumer_aspect_ratio" ) );
 			mlt_properties_set( freeze_properties, "rescale.interp", mlt_properties_get( props, "rescale.interp" ) );
-			mlt_properties_set_double( freeze_properties, "aspect_ratio", mlt_frame_get_aspect_ratio( this ) );
+			mlt_properties_set_double( freeze_properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
 			mlt_properties_set_int( freeze_properties, "progressive", mlt_properties_get_int( props, "progressive" ) );
 			mlt_properties_set_int( freeze_properties, "consumer_deinterlace", mlt_properties_get_int( props, "consumer_deinterlace" ) || mlt_properties_get_int( properties, "deinterlace" ) );
 			mlt_properties_set_double( freeze_properties, "output_ratio", mlt_properties_get_double( props, "output_ratio" ) );
@@ -82,23 +82,23 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		uint8_t *image_copy = mlt_pool_alloc( size );
 		memcpy( image_copy, buffer, size );
 		*image = image_copy;
-		mlt_frame_set_image( this, *image, size, mlt_pool_release );
+		mlt_frame_set_image( frame, *image, size, mlt_pool_release );
 
 		return error;
 	}
 
-	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	return error;
 }
 
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 
 	// Push the filter on to the stack
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 
 	// Push the frame filter
 	mlt_frame_push_get_image( frame, filter_get_image );
@@ -111,20 +111,20 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_freeze_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		this->process = filter_process;
+		filter->process = filter_process;
 		// Set the frame which will be chosen for freeze
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "frame", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "frame", "0" );
 
 		// If freeze_after = 1, only frames after the "frame" value will be frozen
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "freeze_after", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "freeze_after", "0" );
 
 		// If freeze_before = 1, only frames after the "frame" value will be frozen
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "freeze_before", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "freeze_before", "0" );
 	}
-	return this;
+	return filter;
 }
 
 
