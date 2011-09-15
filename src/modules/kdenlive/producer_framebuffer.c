@@ -89,8 +89,10 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	// Get output buffer
 	int buffersize = 0;
+        int alphasize = *width * *height;
 	uint8_t *output = mlt_properties_get_data( properties, "output_buffer", &buffersize );
-	if( buffersize == 0 || buffersize != size)
+        uint8_t *output_alpha = mlt_properties_get_data( properties, "output_alpha", NULL );
+	if( buffersize == 0 || buffersize != size )
 	{
 		// invalidate cached frame
 		first_position = -1;
@@ -106,14 +108,17 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		first_frame = NULL;
 	}
 
-	if (output != NULL && first_position != -1) {
+	if ( output && first_position != -1 ) {
 		// Using the cached frame
 	  	uint8_t *image_copy = mlt_pool_alloc( size );
 		memcpy( image_copy, output, size );
+                uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
+                memcpy( alpha_copy, output_alpha, alphasize );
 
 		// Set the output image
 		*image = image_copy;
 		mlt_frame_set_image( frame, image_copy, size, mlt_pool_release );
+                mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
 
 		*width = mlt_properties_get_int( properties, "_output_width" );
 		*height = mlt_properties_get_int( properties, "_output_height" );
@@ -143,7 +148,8 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	// Which frames are buffered?
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
-	if( first_image == NULL )
+        uint8_t *first_alpha = mlt_properties_get_data( first_frame_properties, "alpha", NULL );
+	if ( !first_image )
 	{
 		mlt_properties_set_double( first_frame_properties, "consumer_aspect_ratio", mlt_properties_get_double( frame_properties, "consumer_aspect_ratio" ) );
 		mlt_properties_set( first_frame_properties, "rescale.interp", mlt_properties_get( frame_properties, "rescale.interp" ) );
@@ -164,15 +170,29 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		mlt_properties_set_int( properties, "_output_format", *format );
 	
 	}
+
+	if ( !first_alpha )
+        {
+                alphasize = *width * *height;
+                first_alpha = mlt_frame_get_alpha_mask( first_frame );
+                output_alpha = mlt_pool_alloc( alphasize );
+                memcpy( output_alpha, first_alpha, alphasize );
+                mlt_properties_set_data( properties, "output_alpha", output_alpha, alphasize, mlt_pool_release, NULL ); 
+        }
+
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Create a copy
 	uint8_t *image_copy = mlt_pool_alloc( size );
 	memcpy( image_copy, first_image, size );
+        uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
+        memcpy( alpha_copy, first_alpha, alphasize );
 
 	// Set the output image
 	*image = image_copy;
 	mlt_frame_set_image( frame, *image, size, mlt_pool_release );
+
+	mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
 
 	return 0;
 }
