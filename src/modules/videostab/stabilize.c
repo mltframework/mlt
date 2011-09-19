@@ -670,7 +670,7 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
 void drawFieldScanArea(StabData* sd, const Field* field, const Transform* t)
 {
     if (!sd->pixelformat == mlt_image_yuv420p) {
-		printf("kein format\n");
+		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
     drawBox(sd->curr, sd->width, sd->height, 1, field->x, field->y, 
@@ -681,7 +681,7 @@ void drawFieldScanArea(StabData* sd, const Field* field, const Transform* t)
 void drawField(StabData* sd, const Field* field, const Transform* t)
 {
     if (!sd->pixelformat == mlt_image_yuv420p){
-		printf("kein format\n");
+		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
     drawBox(sd->curr, sd->width, sd->height, 1, field->x, field->y, 
@@ -692,7 +692,7 @@ void drawField(StabData* sd, const Field* field, const Transform* t)
 void drawFieldTrans(StabData* sd, const Field* field, const Transform* t)
 {
     if (!sd->pixelformat == mlt_image_yuv420p){
-		printf("kein format\n");
+		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
     drawBox(sd->curr, sd->width, sd->height, 1, 
