@@ -156,6 +156,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			// Apply
 			TransformData* tf=mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "_transformdata", NULL);
+			char *interps = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "rescale.interp" );
+
 			if (!tf){
 				tf=mlt_pool_alloc(sizeof(TransformData));
 				mlt_properties_set_data( MLT_FILTER_PROPERTIES(filter), "_transformdata", tf, 0, ( mlt_destructor )mlt_pool_release, NULL );
@@ -164,6 +166,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			{
 				// Load analysis results from property
 				self->initialized = 2;
+
+				int interp = 2;
+				if ( strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
+					interp = 0;
+				else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
+					interp = 1;
+				else if ( strcmp( interps, "bilinear" ) == 0 )
+					interp = 2;
+				else if ( strcmp( interps, "bicubic" ) == 0 )
+					interp = 3;
+				else if ( strcmp( interps, "bicublin" ) == 0 )
+					interp = 4;
+
 				transform_configure(tf,w,h,*format ,*image, deserialize_vectors(  vectors, length ),length);
 				
 			}

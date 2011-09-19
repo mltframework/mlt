@@ -635,11 +635,11 @@ int transform_configure(TransformData *self,int width,int height, mlt_image_form
 
     td->zoom    = 0;
     td->optzoom = 1;
-    td->interpoltype = 2; // bi-linear
+    // set from  filter td->interpoltype = 2; // bi-linear
     td->sharpen = 0.8;
 	
     td->interpoltype = TC_MIN(td->interpoltype,4);
-    if (0) {
+    if (1) {
         mlt_log_warning(NULL, "Image Transformation/Stabilization Settings:\n");
         mlt_log_warning(NULL, "    input     = %s\n", td->input);
         mlt_log_warning(NULL, "    smoothing = %d\n", td->smoothing);
