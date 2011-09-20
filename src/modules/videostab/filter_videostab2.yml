@@ -92,4 +92,103 @@ parameters:
     default: 0
     mutable: yes
     widget: spinner
+  - identifier: smoothing
+    title: Smoothing
+    type: int
+    description: numver of frames for lowpass filtering
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 100
+    default: 10
+    mutable: yes
+    widget: spinner
+  - identifier: maxshift
+    title: Maxshift
+    type: integer
+    description: max number of pixels to shift
+    readonly: no
+    required: no
+    minimum: -1
+    maximum: 1000
+    default: -1
+    mutable: yes
+    widget: spinner
+  - identifier: maxangle
+    title: Maxangle
+    type: float
+    description: max anglen to rotate (in rad)
+    readonly: no
+    required: no
+    minimum: -1
+    maximum: 1000
+    default: -1
+    mutable: yes
+    widget: spinner
+  - identifier: crop
+    title: Crop
+    type: integer
+    description: 0 = keep border, 1 = black background
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+    widget: spinner
+  - identifier: invert
+    title: Invert
+    type: integer
+    description: Invert transform
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+    widget: spinner
+  - identifier: relative
+    title: Relative Transform
+    type: integer
+    description: 0 = absolute transform, 1= relative
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 1
+    mutable: yes
+    widget: spinner
+  - identifier: zoom
+    title: Zoom
+    type: integer
+    description: additional zoom during transform
+    readonly: no
+    required: no
+    minimum: -500
+    maximum: 500
+    default: 0
+    mutable: yes
+    widget: spinner
+  - identifier: optzoom
+    title: Optimal Zoom
+    type: integer
+    description: use optimal zoom (calulated from transforms)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 1
+    mutable: yes
+    widget: spinner
+  - identifier: sharpen
+    title: Sharpen Image
+    type: float
+    description: sharpen transformed image
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 10
+    default: 0.8
+    mutable: yes
+    widget: spinner
 
