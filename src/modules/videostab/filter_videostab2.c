@@ -178,7 +178,18 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					interp = 3;
 				else if ( strcmp( interps, "bicublin" ) == 0 )
 					interp = 4;
+
 				tf->interpoltype = interp;
+				tf->smoothing = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "smoothing" ); 
+				tf->maxshift = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxshift" ); 
+				tf->maxangle = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxangle" ); 
+				tf->crop = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "crop" ); 
+				tf->invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "invert" ); 
+				tf->relative = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "relative" ); 
+				tf->zoom = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "zoom" ); 
+				tf->optzoom = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "optzoom" ); 
+				tf->sharpen = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter), "sharpen" ); 
+
 				transform_configure(tf,w,h,*format ,*image, deserialize_vectors(  vectors, length ),length);
 				
 			}
@@ -221,12 +232,24 @@ mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, c
 		parent->close = filter_close;
 		parent->process = filter_process;
 		self->parent = parent;
+		//properties for stabilize
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shakiness", "4" ); 
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "accuracy", "4" ); 
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "stepsize", "6" ); 
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "algo", "1" ); 
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "mincontrast", "0.3" ); 
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "show", "0" ); 
+		
+		//properties for transform
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "smoothing", "10" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "maxshift", "-1" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "maxangle", "-1" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "crop", "0" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "invert", "0" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "relative", "1" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "zoom", "0" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "optzoom", "1" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "sharpen", "0.8" ); 
 		return parent;
 	}
 	return NULL;

@@ -75,9 +75,6 @@ typedef struct {
     int interpoltype; // type of interpolation: 0->Zero,1->Lin,2->BiLin,3->Sqr
     double sharpen;   // amount of sharpening
 
-    char input[0124];
-    FILE* f;
-
     char conf_str[1024];
 } TransformData;
 
