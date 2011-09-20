@@ -129,13 +129,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			self->initialized = 1;
 			self->width=w;
 			self->height=h;
-			self->framesize=w*h* 3;//( mlt_image_format_size ( *format, w,h , 0) ; // 3/2 =1 too small
-			self->shakiness = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "shakiness" );
-			self->accuracy = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "accuracy" );
-			self->stepsize = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "stepsize" );
-			self->algo = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "algo" );
-			self->show = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame) , "show" );
-			self->contrast_threshold = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame) , "mincontrast" );
+			self->framesize=w*h* 3/2;//( mlt_image_format_size ( *format, w,h , 0) ; // 3/2 =1 too small
+			self->shakiness = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "shakiness" );
+			self->accuracy = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "accuracy" );
+			self->stepsize = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "stepsize" );
+			self->algo = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "algo" );
+			self->show = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "show" );
+			self->contrast_threshold = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter) , "mincontrast" );
 			stabilize_configure(self);
 		}
 		char *vectors = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "vectors" );
@@ -178,7 +178,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					interp = 3;
 				else if ( strcmp( interps, "bicublin" ) == 0 )
 					interp = 4;
-
+				tf->interpoltype = interp;
 				transform_configure(tf,w,h,*format ,*image, deserialize_vectors(  vectors, length ),length);
 				
 			}
