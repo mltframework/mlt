@@ -409,7 +409,13 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		const char *opt_name = mlt_properties_get_name( properties, i );
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
 
-		if ( opt != NULL )
+		// If option not found, see if it was prefixed with a or v (-vb)
+		if ( !opt && (
+			opt_name[0] == 'v' && ( flags & AV_OPT_FLAG_VIDEO_PARAM ) ||
+			opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) )
+			opt = av_find_opt( obj, ++opt_name, NULL, flags, flags );
+		// Apply option if found
+		if ( opt )
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
 			av_set_string3( obj, opt_name, mlt_properties_get_value( properties, i), alloc, NULL );
 #elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)

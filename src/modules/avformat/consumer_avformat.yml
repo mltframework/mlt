@@ -2,7 +2,7 @@ schema_version: 0.1
 type: consumer
 identifier: avformat
 title: FFmpeg Output
-version: 1
+version: 2
 copyright: Copyright (C) 2003-2011 Ushodaya Enterprises Limited
 license: LGPL
 language: en
@@ -362,7 +362,7 @@ parameters:
   - identifier: passlogfile
     title: Two-pass log file
     type: string
-  - identifier: b
+  - identifier: vb
     title: Video bitrate
     type: string
     unit: bits/second
