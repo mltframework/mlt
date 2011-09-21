@@ -1,5 +1,5 @@
 f=mov
 vcodec=dnxhd
-b=185M
+vb=185M
 threads=2
 acodec=pcm_s16le

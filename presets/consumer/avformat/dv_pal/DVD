@@ -1,7 +1,7 @@
 f=dvd
 vcodec=mpeg2video
 acodec=ac3
-b=5000k
+vb=5000k
 maxrate=8000k
 minrate=0
 bufsize=1835008
@@ -12,4 +12,3 @@ ar=48000
 g=15
 me_range=63
 trellis=1
-
