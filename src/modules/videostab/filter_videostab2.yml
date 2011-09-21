@@ -95,7 +95,7 @@ parameters:
   - identifier: smoothing
     title: Smoothing
     type: int
-    description: numver of frames for lowpass filtering
+    description: number of frames for lowpass filtering ( ( num * 2 + 1) frames )
     readonly: no
     required: no
     minimum: 0
