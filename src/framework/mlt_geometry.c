@@ -570,9 +570,6 @@ int mlt_geometry_prev_key( mlt_geometry self, mlt_geometry_item item, int positi
 	return place == NULL;
 }
 
-#define ISINT(x) ( (x) == (int64_t) (x) )
-#define PICKFMT(x) ( ISINT(x) ? "%.0f" : "%f" )
-
 char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
 {
 	geometry g = self->local;
@@ -639,22 +636,22 @@ char *mlt_geometry_serialise_cut( mlt_geometry self, int in, int out )
 				sprintf( temp, "%d=", item.frame - in );
 
 			if ( item.f[0] )
-				sprintf( temp + strlen( temp ), PICKFMT( item.x ), item.x );
+				sprintf( temp + strlen( temp ), "%g", item.x );
 			if ( item.f[1] ) {
 				strcat( temp, "/" );
-				sprintf( temp + strlen( temp ), PICKFMT( item.y ), item.y );
+				sprintf( temp + strlen( temp ), "%g", item.y );
 			}
 			if ( item.f[2] ) {
 				strcat( temp, ":" );
-				sprintf( temp + strlen( temp ), PICKFMT( item.w ), item.w );
+				sprintf( temp + strlen( temp ), "%g", item.w );
 			}
 			if ( item.f[3] ) {
 				strcat( temp, "x" );
-				sprintf( temp + strlen( temp ), PICKFMT( item.h ), item.h );
+				sprintf( temp + strlen( temp ), "%g", item.h );
 			}
 			if ( item.f[4] ) {
 				strcat( temp, ":" );
-				sprintf( temp + strlen( temp ), PICKFMT( item.mix ), item.mix );
+				sprintf( temp + strlen( temp ), "%g", item.mix );
 			}
 
 			if ( used + strlen( temp ) + 2 > size ) // +2 for ';' and NULL
