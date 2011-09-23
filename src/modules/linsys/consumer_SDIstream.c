@@ -410,7 +410,7 @@ static void *consumer_thread(void *arg) {
 
 	// Tell the framework how we want our audio and video
 	int frequency = this->audio_format.sample_rate;
-	int channels = 0;
+	int channels = mlt_properties_get_int(	MLT_CONSUMER_PROPERTIES(consumer), "channels" );
 	int samples;
 
 	// set number of audio channels, linsys vidport model 193 is limited to 8 channels (4AES frames)
