@@ -41,7 +41,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		// Duplicate the existing channels
 		if ( *format == mlt_audio_s16 )
 		{
-			int i, j, k;
+			int i, j, k = 0;
 			for ( i = 0; i < *samples; i++ )
 			{
 				for ( j = 0; j < *channels; j++ )
