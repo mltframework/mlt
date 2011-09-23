@@ -36,6 +36,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+/** the default subdirectory of the datadir for holding presets */
+#define PRESETS_DIR "/presets"
+
 /** \brief Repository class
  *
  * The Repository is a collection of plugin modules and their services and service metadata.
@@ -494,7 +497,9 @@ mlt_properties mlt_repository_presets( )
 	{
 		path = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + 9 );
 		strcpy( path, mlt_environment( "MLT_DATA" ) );
-		strcat( path, "/presets" );
+		if ( path[ strlen( path ) - 1 ] != '/' )
+			path[ strlen( path ) ] = '/';
+		strcat( path, PRESETS_DIR );
 	}
 	list_presets( result, NULL, path );
 	free( path );

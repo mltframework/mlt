@@ -28,8 +28,8 @@
 #include <libgen.h>
 
 
-/** the default subdirectory of the prefix for holding profiles */
-#define PROFILES_DIR "/share/mlt/profiles/"
+/** the default subdirectory of the datadir for holding profiles */
+#define PROFILES_DIR "/profiles"
 
 /** Load a profile from the system folder.
  *
@@ -356,7 +356,7 @@ mlt_properties mlt_profile_list( )
 	// Load from $prefix/share/mlt/profiles if no env var
 	if ( prefix == NULL )
 	{
-		prefix = PREFIX;
+		prefix = mlt_environment( "MLT_DATA" );
 		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + 2 );
 		strcpy( filename, prefix );
 		if ( filename[ strlen( filename ) - 1 ] != '/' )
