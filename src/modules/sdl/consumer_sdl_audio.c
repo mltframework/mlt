@@ -206,8 +206,7 @@ int consumer_stop( mlt_consumer parent )
 		pthread_cond_broadcast( &this->audio_cond );
 		pthread_mutex_unlock( &this->audio_mutex );
 
-		if ( this->playing )
-			SDL_QuitSubSystem( SDL_INIT_AUDIO );
+		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 	}
 
 	return 0;
