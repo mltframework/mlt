@@ -18,7 +18,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#if !defined(__DARWIN__)
 #include <values.h>
+#endif
 
 #include "estimate.h"
 #include "vector.h"
