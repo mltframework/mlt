@@ -215,8 +215,9 @@ public:
 
 	void stop()
 	{
-		if ( m_started )
+		if ( !m_started )
 			return;
+		m_started = false;
 
 		// Release the wait in getFrame
 		pthread_mutex_lock( &m_mutex );
@@ -230,8 +231,6 @@ public:
 		while ( mlt_frame frame = (mlt_frame) mlt_deque_pop_back( m_queue ) )
 			mlt_frame_close( frame );
 		pthread_mutex_unlock( &m_mutex );
-
-		m_started = false;
 	}
 
 	mlt_frame getFrame()
