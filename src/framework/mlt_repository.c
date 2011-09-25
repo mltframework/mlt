@@ -495,10 +495,8 @@ mlt_properties mlt_repository_presets( )
 	}
 	else
 	{
-		path = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + 9 );
+		path = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + strlen( PRESETS_DIR ) + 1 );
 		strcpy( path, mlt_environment( "MLT_DATA" ) );
-		if ( path[ strlen( path ) - 1 ] != '/' )
-			path[ strlen( path ) ] = '/';
 		strcat( path, PRESETS_DIR );
 	}
 	list_presets( result, NULL, path );

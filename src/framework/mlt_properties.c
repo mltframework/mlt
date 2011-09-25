@@ -40,6 +40,8 @@
 #include <errno.h>
 #include <locale.h>
 
+#define PRESETS_DIR "/presets"
+
 /** \brief private implementation of the property list */
 
 typedef struct
@@ -285,9 +287,9 @@ int mlt_properties_preset( mlt_properties self, const char *name )
 		}
 		else
 		{
-			data = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + 9 );
+			data = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + strlen( PRESETS_DIR ) + 1 );
 			strcpy( data, mlt_environment( "MLT_DATA" ) );
-			strcat( data, "/presets" );
+			strcat( data, PRESETS_DIR );
 		}
 		if ( data && type && service )
 		{
