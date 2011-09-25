@@ -53,10 +53,10 @@ static mlt_profile mlt_profile_select( const char *name )
 	{
 		filename = calloc( 1, strlen( name ) + 1 );
 	}
-	// Load from $prefix/share/mlt/profiles
+	// Load from $datadir/mlt/profiles
 	else if ( prefix == NULL )
 	{
-		prefix = PREFIX;
+		prefix = DATADIR;
 		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 2 );
 		strcpy( filename, prefix );
 		if ( filename[ strlen( filename ) - 1 ] != '/' )
@@ -353,7 +353,7 @@ mlt_properties mlt_profile_list( )
 	const char *wildcard = NULL;
 	int i;
 
-	// Load from $prefix/share/mlt/profiles if no env var
+	// Load from $datadir/mlt/profiles if no env var
 	if ( prefix == NULL )
 	{
 		prefix = mlt_environment( "MLT_DATA" );
