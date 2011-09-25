@@ -216,7 +216,7 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
 #ifdef WIN32
     ladspa_path = g_strdup ("lib\\ladspa");
 #else
-    ladspa_path = g_strdup ("/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
+    ladspa_path = g_strdup ("lib/ladspa:/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
 #endif
   
   dir = strtok (ladspa_path, ":");
