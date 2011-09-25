@@ -286,12 +286,16 @@ public:
 
 		if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_channels, &samples ) )
 		{
+#ifdef WIN32
+			unsigned long written = 0;
+#else
 			uint32_t written = 0;
+#endif
 			BMDTimeValue streamTime = m_count * frequency * m_duration / m_timescale;
 			m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &written );
 			if ( written > (m_preroll + 1) * samples )
 			{
-				mlt_log_verbose( getConsumer(), "renderAudio: will flush %d audiosamples\n", written );
+				mlt_log_verbose( getConsumer(), "renderAudio: will flush %lu audiosamples\n", written );
 				m_deckLinkOutput->FlushBufferedAudioSamples();
 			};
 #ifdef WIN32
@@ -301,7 +305,7 @@ public:
 #endif
 
 			if ( written != (uint32_t) samples )
-				mlt_log_verbose( getConsumer(), "renderAudio: samples=%d, written=%u\n", samples, written );
+				mlt_log_verbose( getConsumer(), "renderAudio: samples=%d, written=%lu\n", samples, written );
 		}
 	}
 
@@ -478,12 +482,16 @@ public:
 			m_reprio = true;
 		};
 
+#ifdef WIN32
+		unsigned long cnt;
+#else
 		uint32_t cnt;
+#endif
 		m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &cnt );
 		if ( cnt != m_acnt )
 		{
 			mlt_log_verbose( getConsumer(),
-				"ScheduledFrameCompleted: GetBufferedAudioSampleFrameCount %u -> %u, m_count=%"PRIu64"\n",
+				"ScheduledFrameCompleted: GetBufferedAudioSampleFrameCount %u -> %lu, m_count=%"PRIu64"\n",
 				m_acnt, cnt, m_count );
 			m_acnt = cnt;
 		}

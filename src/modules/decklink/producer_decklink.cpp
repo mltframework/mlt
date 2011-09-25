@@ -392,7 +392,11 @@ public:
 			{
 				const char* timecodeString = 0;
 
+#ifdef WIN32
+				if ( timecode->GetString( (BSTR*) &timecodeString ) == S_OK )
+#else
 				if ( timecode->GetString( &timecodeString ) == S_OK )
+#endif
 				{
 					mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.markup", timecodeString );
 					mlt_log_debug( getProducer(), "timecode %s\n", timecodeString );
