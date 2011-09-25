@@ -34,7 +34,7 @@
 
 #ifdef WIN32
 #define LIBSUF ".dll"
-#define FREI0R_PLUGIN_PATH "lib\\frei0r-1"
+#define FREI0R_PLUGIN_PATH "\\..\\..\\lib\\frei0r-1"
 #else
 #define LIBSUF ".so"
 #define FREI0R_PLUGIN_PATH "lib/frei0r-1:/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/.frei0r-1/lib"
@@ -49,6 +49,18 @@ extern int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 extern void producer_close( mlt_producer this );
 extern void transition_close( mlt_transition this );
 extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame );
+
+static char* get_frei0r_path()
+{
+#ifdef WIN32
+	char *dirname = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + strlen( FREI0R_PLUGIN_PATH ) + 1 );
+	strcpy( dirname, mlt_environment( "MLT_DATA" ) );
+	strcat( dirname, FREI0R_PLUGIN_PATH );
+	return dirname;
+#else
+	return strdup( GET_FREI0R_PATH );
+#endif
+}
 
 static void check_thread_safe( mlt_properties properties, const char *name )
 {
@@ -285,9 +297,10 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, const char *id, void *arg){
 
 	mlt_tokeniser tokeniser = mlt_tokeniser_init ( );
+	char *frei0r_path = get_frei0r_path();
 	int dircount=mlt_tokeniser_parse_new (
 		tokeniser,
-		GET_FREI0R_PATH,
+		frei0r_path,
 		 ":"
 	);
 	void* ret=NULL;
@@ -326,6 +339,7 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 		free( myid );
 	}
 	mlt_tokeniser_close ( tokeniser );
+	free( frei0r_path );
 	return ret;
 }
 
@@ -334,9 +348,10 @@ MLT_REPOSITORY
 {
 	int i=0;
 	mlt_tokeniser tokeniser = mlt_tokeniser_init ( );
+	char *frei0r_path = get_frei0r_path();
 	int dircount=mlt_tokeniser_parse_new (
 		tokeniser ,
-		GET_FREI0R_PATH,
+		frei0r_path,
 		":"
 	);
 	char dirname[PATH_MAX];
@@ -411,4 +426,5 @@ MLT_REPOSITORY
 	}
 	mlt_tokeniser_close ( tokeniser );
 	mlt_properties_close( blacklist );
+	free( frei0r_path );
 }
