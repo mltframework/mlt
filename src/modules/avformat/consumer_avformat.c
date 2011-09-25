@@ -411,8 +411,8 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 
 		// If option not found, see if it was prefixed with a or v (-vb)
 		if ( !opt && (
-			opt_name[0] == 'v' && ( flags & AV_OPT_FLAG_VIDEO_PARAM ) ||
-			opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) )
+			( opt_name[0] == 'v' && ( flags & AV_OPT_FLAG_VIDEO_PARAM ) ) ||
+			( opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) ) )
 			opt = av_find_opt( obj, ++opt_name, NULL, flags, flags );
 		// Apply option if found
 		if ( opt )
