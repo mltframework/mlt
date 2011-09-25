@@ -26,6 +26,10 @@
 #include "vector.h"
 #include "utils.h"
 
+#if !defined(MAXFLOAT)
+#define MAXFLOAT HUGE_VAL
+#endif
+
 es_ctx *es_init(int nc, int nr) {
 
     es_ctx *es = (es_ctx *)malloc(sizeof(es_ctx));
