@@ -78,7 +78,7 @@ OBJS += ../win32/win32.o
 SRCS += ../win32/win32.c
 endif
 
-CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\"" -DLIBDIR="\"$(libdir)\"" -DDATADIR="\"$(datadir)\""
+CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\"" -DLIBDIR="\"$(libdir)\"" -DMLTDATADIR="\"$(datadir)\""
 
 LDFLAGS += $(LIBDL) -lpthread
 

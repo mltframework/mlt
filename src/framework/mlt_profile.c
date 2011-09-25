@@ -56,7 +56,7 @@ static mlt_profile mlt_profile_select( const char *name )
 	// Load from $datadir/mlt/profiles
 	else if ( prefix == NULL )
 	{
-		prefix = DATADIR;
+		prefix = MLTDATADIR;
 		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 1 );
 		strcpy( filename, prefix );
 		strcat( filename, PROFILES_DIR );

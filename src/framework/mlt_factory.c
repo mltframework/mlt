@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
+#include <libgen.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -36,7 +37,6 @@
 #define PREFIX_DATA "\\share\\mlt"
 #elif defined(__DARWIN__) && defined(RELOCATABLE)
 #include <mach-o/dyld.h>
-#include <libgen.h>
 /** the default subdirectory of the libdir for holding modules (plugins) */
 #define PREFIX_LIB "/lib/mlt"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
@@ -45,7 +45,7 @@
 /** the default subdirectory of the libdir for holding modules (plugins) */
 #define PREFIX_LIB LIBDIR "/mlt"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
-#define PREFIX_DATA DATADIR "/mlt"
+#define PREFIX_DATA MLTDATADIR "/mlt"
 #endif
 
 /** holds the full path to the modules directory - initialized and retained for the entire session */
@@ -141,9 +141,9 @@ mlt_repository mlt_factory_init( const char *directory )
 
 		// Store the prefix for later retrieval
 #if defined(WIN32)
-		LPTSTR path[1024];
+		char path[1024];
 		DWORD size = sizeof( path );
-		GetModuleFileName( NULL, path, &size );
+		GetModuleFileName( NULL, path, size );
 #elif defined(__DARWIN__)  && defined(RELOCATABLE)
 		char path[1024];
 		uint32_t size = sizeof( path );
@@ -152,17 +152,20 @@ mlt_repository mlt_factory_init( const char *directory )
 		mlt_directory = strdup( directory );
 #endif
 #if defined(WIN32) || (defined(__DARWIN__) && defined(RELOCATABLE))
+		char *path2 = strdup( path );
+		char *exedir = dirname( path2 );
 		if ( global_properties && !getenv( "MLT_DATA" ) )
 		{
 			mlt_directory = calloc( 1, size + strlen( PREFIX_DATA ) + 1 );
-			strcpy( mlt_directory, dirname( path ) );
+			strcpy( mlt_directory, exedir );
 			strcat( mlt_directory, PREFIX_DATA );
 			mlt_properties_set( global_properties, "MLT_DATA", mlt_directory );
 			free( mlt_directory );
 		}
 		mlt_directory = calloc( 1, size + strlen( directory ) + 1 );
-		strcpy( mlt_directory, dirname( path ) );
+		strcpy( mlt_directory, exedir );
 		strcat( mlt_directory, directory );
+		free( path2 );
 #endif
 		
 		// Initialise the pool
