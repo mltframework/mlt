@@ -241,20 +241,11 @@ static void set_string( char **string, const char *value, const char *fallback )
 	}
 }
 
-rgba_color parse_color( char *color )
+rgba_color parse_color( char *color, unsigned int color_int )
 {
 	rgba_color result = { 0xff, 0xff, 0xff, 0xff };
 
-	if ( !strncmp( color, "0x", 2 ) )
-	{
-		unsigned int temp = 0;
-		sscanf( color + 2, "%x", &temp );
-		result.r = ( temp >> 24 ) & 0xff;
-		result.g = ( temp >> 16 ) & 0xff;
-		result.b = ( temp >> 8 ) & 0xff;
-		result.a = ( temp ) & 0xff;
-	}
-	else if ( !strcmp( color, "red" ) )
+	if ( !strcmp( color, "red" ) )
 	{
 		result.r = 0xff;
 		result.g = 0x00;
@@ -272,14 +263,12 @@ rgba_color parse_color( char *color )
 		result.g = 0x00;
 		result.b = 0xff;
 	}
-	else
+	else if ( strcmp( color, "white" ) )
 	{
-		unsigned int temp = 0;
-		sscanf( color, "%d", &temp );
-		result.r = ( temp >> 24 ) & 0xff;
-		result.g = ( temp >> 16 ) & 0xff;
-		result.b = ( temp >> 8 ) & 0xff;
-		result.a = ( temp ) & 0xff;
+		result.r = ( color_int >> 24 ) & 0xff;
+		result.g = ( color_int >> 16 ) & 0xff;
+		result.b = ( color_int >> 8 ) & 0xff;
+		result.a = ( color_int ) & 0xff;
 	}
 
 	return result;
@@ -383,8 +372,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 	if ( pixbuf == NULL && property_changed )
 	{
-		rgba_color fgcolor = parse_color( this->fgcolor );
-		rgba_color bgcolor = parse_color( this->bgcolor );
+		rgba_color fgcolor = parse_color( this->fgcolor, mlt_properties_get_int( producer_props, "fgcolour" ) );
+		rgba_color bgcolor = parse_color( this->bgcolor, mlt_properties_get_int( producer_props, "bgcolour" ) );
 
 		if ( this->pixbuf )
 			g_object_unref( this->pixbuf );

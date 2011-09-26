@@ -57,7 +57,10 @@ parameters:
   - identifier: fgcolour
     title: Foreground color
     type: string
-    description: an RGBA colour specification of the text (i.e. 0xrrggbbaa)
+    description: >
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
     default: 0x000000ff
     readonly: no
     mutable: yes
@@ -65,7 +68,10 @@ parameters:
   - identifier: bgcolour
     title: Background color
     type: string
-    description: an RGBA colour of the background rectangle (i.e. 0xrrggbbaa)
+    description: >
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
     default: 0x00000020
     readonly: no
     mutable: yes
