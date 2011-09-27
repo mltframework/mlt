@@ -29,7 +29,7 @@
 
 
 /** the default subdirectory of the datadir for holding profiles */
-#define PROFILES_DIR "/profiles"
+#define PROFILES_DIR "/profiles/"
 
 /** Load a profile from the system folder.
  *
@@ -56,7 +56,7 @@ static mlt_profile mlt_profile_select( const char *name )
 	// Load from $datadir/mlt/profiles
 	else if ( prefix == NULL )
 	{
-		prefix = MLTDATADIR;
+		prefix = mlt_environment( "MLT_DATA" );
 		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 1 );
 		strcpy( filename, prefix );
 		strcat( filename, PROFILES_DIR );
