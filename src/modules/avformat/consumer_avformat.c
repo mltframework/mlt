@@ -634,8 +634,12 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
 		if ( thread_count > 1 )
+#if LIBAVCODEC_VERSION_MAJOR >= 53
 			c->thread_count = thread_count;
-	
+#else
+			avcodec_thread_init( c, thread_count );
+#endif
+
 		// Process properties as AVOptions
 		char *vpre = mlt_properties_get( properties, "vpre" );
 		if ( vpre )
