@@ -842,7 +842,9 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 
 	if ( self->dummy_context )
 	{
+		avformat_lock();
 		av_close_input_file( self->dummy_context );
+		avformat_unlock();
 		self->dummy_context = NULL;
 	}
 
@@ -863,12 +865,9 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 	pthread_mutex_lock( &self->audio_mutex );
 
+	avformat_lock();
 	if ( self->video_codec )
-	{
-		avformat_lock();
 		avcodec_close( self->video_codec );
-		avformat_unlock();
-	}
 	self->video_codec = NULL;
 	if ( self->dummy_context )
 		av_close_input_file( self->dummy_context );
@@ -876,6 +875,7 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 	if ( self->video_format )
 		av_close_input_file( self->video_format );
 	self->video_format = NULL;
+	avformat_unlock();
 
 	int audio_index = self->audio_index;
 	int video_index = self->video_index;
