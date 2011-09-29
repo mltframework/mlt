@@ -1316,11 +1316,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Determines if we have to decode all frames in a sequence
 	// Temporary hack to improve intra frame only
-	int must_decode = strcmp( codec_context->codec->name, "dnxhd" ) &&
+	int must_decode = !( codec_context->codec && codec_context->codec->name ) || (
+				  strcmp( codec_context->codec->name, "dnxhd" ) &&
 				  strcmp( codec_context->codec->name, "dvvideo" ) &&
 				  strcmp( codec_context->codec->name, "huffyuv" ) &&
 				  strcmp( codec_context->codec->name, "mjpeg" ) &&
-				  strcmp( codec_context->codec->name, "rawvideo" );
+				  strcmp( codec_context->codec->name, "rawvideo" ) );
 
 	// Turn on usage of new seek API and PTS for seeking
 	int use_new_seek = self->seekable &&
