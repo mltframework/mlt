@@ -1886,13 +1886,11 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	{
 		// Reset the video properties if the index changed
 		self->video_index = index;
+		avformat_lock();
 		if ( self->video_codec )
-		{
-			avformat_lock();
 			avcodec_close( self->video_codec );
-			avformat_unlock();
-		}
 		self->video_codec = NULL;
+		avformat_unlock();
 	}
 
 	// Get the frame properties
@@ -2447,13 +2445,11 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	// Update the audio properties if the index changed
 	if ( context && index > -1 && index != self->audio_index )
 	{
+		avformat_lock();
 		if ( self->audio_codec[ self->audio_index ] )
-		{
-			avformat_lock();
 			avcodec_close( self->audio_codec[ self->audio_index ] );
-			avformat_unlock();
-		}
 		self->audio_codec[ self->audio_index ] = NULL;
+		avformat_unlock();
 	}
 	if ( self->audio_index != -1 )
 		self->audio_index = index;
