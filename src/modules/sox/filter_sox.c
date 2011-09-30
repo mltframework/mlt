@@ -202,7 +202,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	st_sample_t *output_buffer = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
 	int i; // channel
 	int count = mlt_properties_get_int( filter_properties, "_effect_count" );
-	int analysis = !strcmp( mlt_properties_get( filter_properties, "effect" ), "analysis" );
+	int analysis = mlt_properties_get( filter_properties, "effect" ) && !strcmp( mlt_properties_get( filter_properties, "effect" ), "analysis" );
 
 	// Get the producer's audio
 	*format = mlt_audio_s32;
