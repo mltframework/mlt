@@ -470,5 +470,13 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 	if ( title != NULL )
 		mlt_properties_set( props, "title", strchr( title, '/' ) ? strrchr( title, '/' ) + 1 : title );
 
+	// If the last producer has a consumer property connect it tractor
+	if ( producer )
+	{
+		mlt_consumer consumer = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES(producer), "consumer", NULL );
+		if ( consumer )
+			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE(prod) );
+	}
+
 	return prod;
 }

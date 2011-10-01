@@ -780,6 +780,18 @@ query_all:
 		// The producer or auto-profile could have changed the profile.
 		load_consumer( &consumer, profile, argc, argv );
 
+		// See if producer has consumer already attached
+		if ( !store && !consumer )
+		{
+			consumer = MLT_CONSUMER( mlt_service_consumer( MLT_PRODUCER_SERVICE( melt ) ) );
+			if ( consumer )
+			{
+				mlt_properties_inc_ref( MLT_CONSUMER_PROPERTIES(consumer) ); // because we explicitly close it
+				mlt_properties_set_data( MLT_CONSUMER_PROPERTIES(consumer),
+					"transport_callback", transport_action, 0, NULL, NULL );
+			}
+		}
+
 		// If we have no consumer, default to sdl
 		if ( store == NULL && consumer == NULL )
 			consumer = create_consumer( profile, NULL );
@@ -864,6 +876,10 @@ query_all:
 	{
 		show_usage( argv[0] );
 	}
+
+	// Disconnect producer from consumer to prevent ref cycles from closing services
+	if ( consumer )
+		mlt_consumer_connect( consumer, NULL );
 
 	// Close the producer
 	if ( melt != NULL )

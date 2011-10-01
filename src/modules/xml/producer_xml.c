@@ -60,6 +60,7 @@ enum service_type
 	mlt_dummy_filter_type,
 	mlt_dummy_transition_type,
 	mlt_dummy_producer_type,
+	mlt_dummy_consumer_type
 };
 
 struct deserialise_context_s
@@ -84,6 +85,7 @@ struct deserialise_context_s
 	mlt_profile profile;
 	int pass;
 	char *lc_numeric;
+	mlt_consumer consumer;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -1049,6 +1051,56 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 	}
 }
 
+static void on_start_consumer( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+{
+	if ( context->pass == 1 )
+	{
+		mlt_consumer consumer = mlt_consumer_new( context->profile );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+
+		mlt_properties_set_lcnumeric( properties, context->lc_numeric );
+		context_push_service( context, MLT_CONSUMER_SERVICE(consumer), mlt_dummy_consumer_type );
+
+		// Set the properties from attributes
+		for ( ; atts != NULL && *atts != NULL; atts += 2 )
+			mlt_properties_set( properties, (const char*) atts[0], (const char*) atts[1] );
+	}
+}
+
+static void on_end_consumer( deserialise_context context, const xmlChar *name )
+{
+	if ( context->pass == 1 )
+	{
+		// Get the consumer from the stack
+		enum service_type type;
+		mlt_service service = context_pop_service( context, &type );
+
+		if ( service && type == mlt_dummy_consumer_type )
+		{
+			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+			qualify_property( context, properties, "resource" );
+			char *resource = mlt_properties_get( properties, "resource" );
+
+			// Instantiate the consumer
+			context->consumer = mlt_factory_consumer( context->profile, mlt_properties_get( properties, "mlt_service" ), resource );
+			if ( context->consumer )
+			{
+				// Track this consumer
+				track_service( context->destructors, MLT_CONSUMER_SERVICE(context->consumer), (mlt_destructor) mlt_consumer_close );
+				mlt_properties_set_lcnumeric( MLT_CONSUMER_PROPERTIES(context->consumer), context->lc_numeric );
+
+				// Propogate the properties
+				qualify_property( context, properties, "target" );
+
+				// Inherit the properties
+				mlt_properties_inherit( MLT_CONSUMER_PROPERTIES(context->consumer), properties );
+			}
+			// Close the dummy
+			mlt_service_close( service );
+		}
+	}
+}
+
 static void on_start_property( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
 	enum service_type type;
@@ -1181,6 +1233,8 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_transition( context, name, atts );
 	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_start_property( context, name, atts );
+	else if ( xmlStrcmp( name, _x("consumer") ) == 0 )
+		on_start_consumer( context, name, atts );
 	else if ( xmlStrcmp( name, _x("westley") ) == 0 || xmlStrcmp( name, _x("mlt") ) == 0 )
 	{
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
@@ -1219,6 +1273,8 @@ static void on_end_element( void *ctx, const xmlChar *name )
 		on_end_filter( context, name );
 	else if ( xmlStrcmp( name, _x("transition") ) == 0 )
 		on_end_transition( context, name );
+	else if ( xmlStrcmp( name, _x("consumer") ) == 0 )
+		on_end_consumer( context, name );
 
 	context->branch[ context->depth ] = 0;
 	context->depth --;
@@ -1621,6 +1677,11 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 			mlt_properties_set( properties, "_xml", "was here" );
 			mlt_properties_set_int( properties, "_mlt_service_hidden", 1 );
 		}
+
+		// Make consumer available
+		mlt_properties_inc_ref( MLT_CONSUMER_PROPERTIES( context->consumer ) );
+		mlt_properties_set_data( properties, "consumer", context->consumer, 0,
+			(mlt_destructor) mlt_consumer_close, NULL );
 	}
 	else
 	{

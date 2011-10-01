@@ -2,7 +2,7 @@
 
 <!-- MLT XML DTD v0.2.0 -->
 
-<!ELEMENT mlt (profile | producer | playlist | tractor | multitrack)+ >
+<!ELEMENT mlt (profile | producer | playlist | tractor | multitrack | consumer)+ >
 <!ATTLIST mlt
     LC_NUMERIC CDATA    #IMPLIED
     version    CDATA    #IMPLIED
@@ -82,4 +82,9 @@
 <!ELEMENT track (producer | playlist | tractor | multitrack | filter | transition)* >
 <!ATTLIST track
     producer IDREF    #IMPLIED
+>
+<!ELEMENT consumer (property)* >
+<!ATTLIST consumer
+    id       ID       #IMPLIED
+    mlt_service  CDATA    #IMPLIED
 >
