@@ -10,8 +10,14 @@ MLT FRAMEWORK README
 	effects.
 
 	This document provides a quick reference for the minimal configuration,
-	build and installation of MLT. See the docs directory for usage and
-	development details.
+	build and installation of MLT. 
+
+	See the docs directory for usage details.
+
+	See the website for development details:
+		http://www.mltframework.org/twiki/bin/view/MLT/Documentation
+		http://www.mltframework.org/twiki/bin/view/MLT/Contributing
+		http://www.mltframework.org/twiki/bin/view/MLT/ToDo
 
 
 Configuration
