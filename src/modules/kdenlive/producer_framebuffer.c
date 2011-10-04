@@ -52,6 +52,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 	int freeze = mlt_properties_get_int( properties, "freeze" );
 	int freeze_after = mlt_properties_get_int( properties, "freeze_after" );
 	int freeze_before = mlt_properties_get_int( properties, "freeze_before" );
+	int in = mlt_properties_get_position( properties, "in" );
 
 	// Determine the position
 	mlt_position first_position = (first_frame != NULL) ? mlt_frame_get_position( first_frame ) : -1;
@@ -60,7 +61,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 	if ( !freeze || freeze_after || freeze_before )
 	{
 		double prod_speed = mlt_properties_get_double( properties, "_speed" );
-		double actual_position = prod_speed * (double) mlt_producer_position( producer );
+		double actual_position = in + prod_speed * (double) mlt_producer_position( producer );
 
 		if ( mlt_properties_get_int( properties, "reverse" ) )
 			actual_position = mlt_producer_get_playtime( producer ) - actual_position;
