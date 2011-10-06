@@ -2079,10 +2079,10 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				// We are behind, so skip some
 				*ignore = req_position - int_position;
 
-			// We use nb_streams in this test because the tolerance is dependent
+			// We use total_channels in this test because the tolerance is dependent
 			// on the interleaving of all streams esp. when there is more than
 			// one audio stream.
-			else if ( int_position > req_position + context->nb_streams )
+			else if ( int_position > req_position + self->total_channels )
 				// We are ahead, so seek backwards some more
 				seek_audio( self, req_position, timecode - 1.0, ignore );
 		}
