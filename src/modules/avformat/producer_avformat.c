@@ -2552,9 +2552,11 @@ static void producer_avformat_close( producer_avformat self )
 		av_free( self->decode_buffer[i] );
 		if ( self->audio_codec[i] )
 			avcodec_close( self->audio_codec[i] );
+		self->audio_codec[i] = NULL;
 	}
 	if ( self->video_codec )
 		avcodec_close( self->video_codec );
+	self->video_codec = NULL;
 	// Close the file
 	if ( self->dummy_context )
 		av_close_input_file( self->dummy_context );
