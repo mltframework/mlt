@@ -2065,7 +2065,8 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	}
 
 	// If we're behind, ignore this packet
-	if ( pkt.pts >= 0 )
+	// Skip this on non-seekable, audio-only inputs.
+	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) )
 	{
 		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt.pts;
 		int64_t req_position = ( int64_t )( timecode * fps + 0.5 );
@@ -2073,7 +2074,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		if ( context->start_time != AV_NOPTS_VALUE )
 			int_position -= ( int64_t )( fps * context->start_time / AV_TIME_BASE + 0.5 );
 
-		if ( *ignore == 0 )
+		if ( *ignore == 0 && int_position > 0 )
 		{
 			if ( int_position < req_position )
 				// We are behind, so skip some
