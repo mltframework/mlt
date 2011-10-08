@@ -29,6 +29,59 @@
 
 #define MAX_TEXT_LEN 512
 
+/** Get the next token and indicate whether it is enclosed in "# #".
+*/
+static int get_next_token(char* str, int* pos, char* token, int* is_keyword)
+{
+	int token_pos = 0;
+	int str_len = strlen(str);
+
+	if( (*pos) >= str_len || str[*pos] == '\0' )
+	{
+		return 0;
+	}
+
+	if( str[*pos] == '#' )
+	{
+		*is_keyword = 1;
+		(*pos)++;
+	}
+	else
+	{
+		*is_keyword = 0;
+	}
+
+	while( *pos < str_len && token_pos < MAX_TEXT_LEN - 1)
+	{
+		if( str[*pos] == '\\' && str[(*pos) + 1] == '#' )
+		{
+			// Escape Sequence - "#" preceeded by "\" - copy the # into the token.
+			token[token_pos] = '#';
+			token_pos++;
+			(*pos)++; // skip "\"
+			(*pos)++; // skip "#"
+		}
+		else if( str[*pos] == '#' )
+		{
+			if( *is_keyword )
+			{
+				// Found the end of the keyword
+				(*pos)++;
+			}
+			break;
+		}
+		else
+		{
+			token[token_pos] = str[*pos];
+			token_pos++;
+			(*pos)++;
+		}
+	}
+
+	token[token_pos] = '\0';
+
+	return 1;
+}
 
 static void get_timecode_str( mlt_filter filter, mlt_frame frame, char* text )
 {
@@ -76,37 +129,21 @@ static void get_filedate_str( mlt_filter filter, mlt_frame frame, char* text )
 	}
 }
 
+
 /** Perform substitution for keywords that are enclosed in "# #".
 */
 
 static void substitute_keywords(mlt_filter filter, char* result, char* value, mlt_frame frame)
 {
-	char value_copy[MAX_TEXT_LEN] = "";
-	char* keyword = NULL;
-	int ct = 0;
-	int fromStart = 0;
+	char keyword[MAX_TEXT_LEN] = "";
+	int pos = 0;
+	int is_keyword = 0;
 
-	// Need to copy the value because strtok will modify it.
-	strncpy(value_copy, value, 512);
-	keyword = strtok( value_copy, "#" );
-	fromStart = ( value_copy[0] == '#' ) ? 1 : 0;
-
-	while ( keyword )
+	while ( get_next_token(value, &pos, keyword, &is_keyword) )
 	{
-		if ( ct % 2 == fromStart )
+		if(!is_keyword)
 		{
-			// backslash in front of # suppresses substitution
-			if ( keyword[ strlen( keyword ) -1 ] == '\\' )
-			{
-				// keep characters except backslash
-				strncat( result, keyword, strlen( keyword ) -1 );
-				strcat( result, "#" );
-				ct++;
-			}
-			else
-			{
-				strcat( result, keyword );
-			}
+			strncat( result, keyword, MAX_TEXT_LEN - strlen(result) - 1 );
 		}
 		else if ( !strcmp( keyword, "timecode" ) )
 		{
@@ -137,8 +174,6 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 				strncat( result, frame_value, MAX_TEXT_LEN - strlen(result) - 1 );
 			}
 		}
-		keyword = strtok( NULL, "#" );
-		ct++;
 	}
 }
 
@@ -153,7 +188,7 @@ static void apply_filter(mlt_filter filter, mlt_frame frame )
 	if ( dynamic_text )
 	{
 		// Apply keyword substitution before passing the text to the filter.
-		char result[512] = "";
+		char result[MAX_TEXT_LEN] = "";
 		substitute_keywords( filter, result, dynamic_text, frame );
 		mlt_properties_set( watermark_properties, "producer.markup", (char*) result );
 	}
