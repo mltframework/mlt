@@ -354,8 +354,9 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 					int current_position = mlt_producer_position( producer );
 					if ( current_position > last_position )
 					{
-						fprintf( stderr, "Current Frame: %10d, percentage: %10d\r",
-							current_position, 100 * current_position / total_length );
+						fprintf( stderr, "Current Frame: %10d, percentage: %10d%c",
+							current_position, 100 * current_position / total_length,
+							progress == 2 ? '\n' : '\r' );
 						last_position = current_position;
 					}
 				}
@@ -658,6 +659,10 @@ int main( int argc, char **argv )
 		else if ( !strcmp( argv[ i ], "-progress" ) )
 		{
 			is_progress = 1;
+		}
+		else if ( !strcmp( argv[ i ], "-progress2" ) )
+		{
+			is_progress = 2;
 		}
 		// Look for the query option
 		else if ( !strcmp( argv[ i ], "-query" ) )
