@@ -27,18 +27,18 @@ parameters:
       as this effect property as the parameter to the vol effect.
 
   - identifier: level
-    title; Signal power level (RMS)
-    type: double
+    title: Signal power level (RMS)
+    type: float
     readonly: yes
 
   - identifier: peak
     title: Peak signal level
-    type: double
+    type: float
     readonly: yes
 
   - identifier: gain
     title: Gain to normalize
-    type: double
+    type: float
     readonly: yes
 
   - identifier: use_peak

@@ -63,7 +63,7 @@ parameters:
     unit: frames
     widget: spinner
 
-  - identifer: vanc
+  - identifier: vanc
     title: Vertical ancillary capture
     description: >
       Captures vertical ancillary data as image data and places it at the top
