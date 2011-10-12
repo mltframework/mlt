@@ -49,8 +49,10 @@ struct producer_pango_s
 	GdkPixbuf *pixbuf;
 	char *fgcolor;
 	char *bgcolor;
+	char *olcolor;
 	int   align;
 	int   pad;
+	int   outline;
 	char *markup;
 	char *text;
 	char *font;
@@ -68,7 +70,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
-	rgba_color fg, rgba_color bg, int pad, int align, int weight, int size );
+		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, int weight, int size, int outline );
+static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg );
+static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg, rgba_color ol, int outline );
 
 /** Return nonzero if the two strings are equal, ignoring case, up to
     the first n characters.
@@ -125,8 +129,10 @@ mlt_producer producer_pango_init( const char *filename )
 		// Set the default properties
 		mlt_properties_set( properties, "fgcolour", "0xffffffff" );
 		mlt_properties_set( properties, "bgcolour", "0x00000000" );
+		mlt_properties_set( properties, "olcolour", "0x00000000" );
 		mlt_properties_set_int( properties, "align", pango_align_left );
 		mlt_properties_set_int( properties, "pad", 0 );
+		mlt_properties_set_int( properties, "outline", 0 );
 		mlt_properties_set( properties, "text", "" );
 		mlt_properties_set( properties, "font", "Sans 48" );
 		mlt_properties_set( properties, "encoding", "UTF-8" );
@@ -324,8 +330,10 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Get producer properties
 	char *fg = mlt_properties_get( producer_props, "fgcolour" );
 	char *bg = mlt_properties_get( producer_props, "bgcolour" );
+	char *ol = mlt_properties_get( producer_props, "olcolour" );
 	int align = alignment_parse( mlt_properties_get( producer_props, "align" ) );
 	int pad = mlt_properties_get_int( producer_props, "pad" );
+	int outline = mlt_properties_get_int( producer_props, "outline" );
 	char *markup = mlt_properties_get( producer_props, "markup" );
 	char *text = mlt_properties_get( producer_props, "text" );
 	char *font = mlt_properties_get( producer_props, "font" );
@@ -353,7 +361,9 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		property_changed = ( align != this->align );
 		property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
 		property_changed = property_changed || ( this->bgcolor == NULL || ( bg && strcmp( bg, this->bgcolor ) ) );
+		property_changed = property_changed || ( this->olcolor == NULL || ( ol && strcmp( bg, this->olcolor ) ) );
 		property_changed = property_changed || ( pad != this->pad );
+		property_changed = property_changed || ( outline != this->outline );
 		property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
 		property_changed = property_changed || ( text && this->text && strcmp( text, this->text ) );
 		property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
@@ -362,8 +372,10 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		// Save the properties for next comparison
 		this->align = align;
 		this->pad = pad;
+		this->outline = outline;
 		set_string( &this->fgcolor, fg, "0xffffffff" );
 		set_string( &this->bgcolor, bg, "0x00000000" );
+		set_string( &this->olcolor, ol, "0x00000000" );
 		set_string( &this->markup, markup, NULL );
 		set_string( &this->text, text, NULL );
 		set_string( &this->font, font, "Sans 48" );
@@ -374,6 +386,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	{
 		rgba_color fgcolor = parse_color( this->fgcolor, mlt_properties_get_int( producer_props, "fgcolour" ) );
 		rgba_color bgcolor = parse_color( this->bgcolor, mlt_properties_get_int( producer_props, "bgcolour" ) );
+		rgba_color olcolor = parse_color( this->olcolor, mlt_properties_get_int( producer_props, "olcolour" ) );
 
 		if ( this->pixbuf )
 			g_object_unref( this->pixbuf );
@@ -395,7 +408,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 		
 		// Render the title
-		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, pad, align, weight, size );
+		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, weight, size, outline );
 
 		if ( pixbuf != NULL )
 		{
@@ -537,6 +550,7 @@ static void producer_close( mlt_producer parent )
 		g_object_unref( this->pixbuf );
 	free( this->fgcolor );
 	free( this->bgcolor );
+	free( this->olcolor );
 	free( this->markup );
 	free( this->text );
 	free( this->font );
@@ -564,18 +578,13 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, int pad, int align, int weight, int size )
+static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, int weight, int size, int outline )
 {
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
 	PangoLayout *layout = pango_layout_new( context );
-	int w, h, x;
-	int i, j;
+	int w, h;
 	GdkPixbuf *pixbuf = NULL;
 	FT_Bitmap bitmap;
-	uint8_t *src = NULL;
-	uint8_t* dest = NULL;
-	uint8_t *d, *s, a;
-	int stride;
 	PangoFontDescription *desc = pango_font_description_from_string( font );
 
 	pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
@@ -619,13 +628,11 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 		pango_layout_get_pixel_size( layout, &w, &h );
 	}
 
-        if ( pad == 0 )
-            pad = 1;
+	if ( pad == 0 )
+		pad = 1;
 
 	pixbuf = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE /* has alpha */, 8, w + 2 * pad, h + 2 * pad );
 	pango_draw_background( pixbuf, bg );
-
-	stride = gdk_pixbuf_get_rowstride( pixbuf );
 
 	bitmap.width     = w;
 	bitmap.pitch     = 32 * ( ( w + 31 ) / 31 );
@@ -638,10 +645,32 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 
 	pango_ft2_render_layout( &bitmap, layout, 0, 0 );
 
-	src = bitmap.buffer;
-	x = ( gdk_pixbuf_get_width( pixbuf ) - w - 2 * pad ) * align / 2 + pad;
-	dest = gdk_pixbuf_get_pixels( pixbuf ) + 4 * x + pad * stride;
-	j = h;
+	if ( outline )
+	{
+		fill_pixbuf_with_outline( pixbuf, &bitmap, w, h, pad, align, fg, bg, ol, outline );
+	}
+	else
+	{
+		fill_pixbuf( pixbuf, &bitmap, w, h, pad, align, fg, bg );
+	}
+
+	mlt_pool_release( bitmap.buffer );
+	pango_font_description_free( desc );
+	g_object_unref( layout );
+	g_object_unref( context );
+
+	return pixbuf;
+}
+
+static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg )
+{
+	int stride = gdk_pixbuf_get_rowstride( pixbuf );
+	uint8_t* src = bitmap->buffer;
+	int x = ( gdk_pixbuf_get_width( pixbuf ) - w - 2 * pad ) * align / 2 + pad;
+	uint8_t* dest = gdk_pixbuf_get_pixels( pixbuf ) + 4 * x + pad * stride;
+	int j = h;
+	int i = 0;
+	uint8_t *d, *s, a;
 
 	while( j -- )
 	{
@@ -657,12 +686,131 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 			*d++ = ( a * fg.a + ( 255 - a ) * bg.a ) >> 8;
 		}
 		dest += stride;
-		src += bitmap.pitch;
+		src += bitmap->pitch;
 	}
-	mlt_pool_release( bitmap.buffer );
-	pango_font_description_free( desc );
-	g_object_unref( layout );
-	g_object_unref( context );
+}
 
-	return pixbuf;
+static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg, rgba_color ol, int outline )
+{
+	int stride = gdk_pixbuf_get_rowstride( pixbuf );
+	int x = ( gdk_pixbuf_get_width( pixbuf ) - w - 2 * pad ) * align / 2 + pad;
+	uint8_t* dest = gdk_pixbuf_get_pixels( pixbuf ) + 4 * x + pad * stride;
+	int j ,i;
+	uint8_t *d = NULL;
+	float a_ol = 0;
+	float a_fg = 0;
+
+	for ( j = 0; j < h; j++ )
+	{
+		d = dest;
+		for ( i = 0; i < w; i++ )
+		{
+#define geta(x, y) (float) bitmap->buffer[ (y) * bitmap->pitch + (x) ] / 255.0
+
+			a_ol = geta(i, j);
+			// One pixel fake circle
+			if ( i > 0 )
+				a_ol = MAX( a_ol, geta(i - 1, j) );
+			if ( i < w - 1 )
+				a_ol = MAX( a_ol, geta(i + 1, j) );
+			if ( j > 0 )
+				a_ol = MAX( a_ol, geta(i, j - 1) );
+			if ( j < h - 1 )
+				a_ol = MAX( a_ol, geta(i, j + 1) );
+			if ( outline >= 2 ) {
+				// Two pixels fake circle
+				if ( i > 1 ) {
+					a_ol = MAX( a_ol, geta(i - 2, j) );
+					if ( j > 0 )
+						a_ol = MAX( a_ol, geta(i - 2, j - 1) );
+					if ( j < h - 1 )
+						a_ol = MAX( a_ol, geta(i - 2, j + 1) );
+				}
+				if ( i > 0 ) {
+					if ( j > 0 )
+						a_ol = MAX( a_ol, geta(i - 1, j - 1) );
+					if ( j > 1 )
+						a_ol = MAX( a_ol, geta(i - 1, j - 2) );
+					if ( j < h - 1 )
+						a_ol = MAX( a_ol, geta(i - 1, j + 1) );
+					if ( j < h - 2 )
+						a_ol = MAX( a_ol, geta(i - 1, j + 2) );
+				}
+				if ( j > 1 )
+					a_ol = MAX( a_ol, geta(i, j - 2) );
+				if ( j < h - 2 )
+					a_ol = MAX( a_ol, geta(i, j + 2) );
+				if ( i < w - 1 ) {
+					if ( j > 0 )
+						a_ol = MAX( a_ol, geta(i + 1, j - 1) );
+					if ( j > 1 )
+						a_ol = MAX( a_ol, geta(i + 1, j - 2) );
+					if ( j < h - 1 )
+						a_ol = MAX( a_ol, geta(i + 1, j + 1) );
+					if ( j < h - 2 )
+						a_ol = MAX( a_ol, geta(i + 1, j + 2) );
+				}
+				if ( i < w - 2 ) {
+					a_ol = MAX( a_ol, geta(i + 2, j) );
+					if ( j > 0 )
+						a_ol = MAX( a_ol, geta(i + 2, j - 1) );
+					if ( j < h - 1 )
+						a_ol = MAX( a_ol, geta(i + 2, j + 1) );
+				}
+			}
+			if ( outline >= 3 ) {
+				// Three pixels fake circle
+				if ( i > 2 ) {
+					a_ol = MAX( a_ol, geta(i - 3, j) );
+					if ( j > 0 )
+						a_ol = MAX( a_ol, geta(i - 3, j - 1) );
+					if ( j < h - 1 )
+						a_ol = MAX( a_ol, geta(i - 3, j + 1) );
+				}
+				if ( i > 1 ) {
+					if ( j > 1 )
+						a_ol = MAX( a_ol, geta(i - 2, j - 2) );
+					if ( j < h - 2 )
+						a_ol = MAX( a_ol, geta(i - 2, j + 2) );
+				}
+				if ( i > 0 ) {
+					if ( j > 2 )
+						a_ol = MAX( a_ol, geta(i - 1, j - 3) );
+					if ( j < h - 3 )
+						a_ol = MAX( a_ol, geta(i - 1, j + 3) );
+				}
+				if ( j > 2 )
+					a_ol = MAX( a_ol, geta(i, j - 3) );
+				if ( j < h - 3 )
+					a_ol = MAX( a_ol, geta(i, j + 3) );
+				if ( i < w - 1 ) {
+					if ( j > 2 )
+						a_ol = MAX( a_ol, geta(i + 1, j - 3) );
+					if ( j < h - 3 )
+						a_ol = MAX( a_ol, geta(i + 1, j + 3) );
+				}
+				if ( i < w - 2 ) {
+					if ( j > 1 )
+						a_ol = MAX( a_ol, geta(i + 2, j - 2) );
+					if ( j < h - 2 )
+						a_ol = MAX( a_ol, geta(i + 2, j + 2) );
+				}
+				if ( i < w - 3 ) {
+					a_ol = MAX( a_ol, geta(i + 3, j) );
+					if ( j > 0 )
+						a_ol = MAX( a_ol, geta(i + 3, j - 1) );
+					if ( j < h - 1 )
+						a_ol = MAX( a_ol, geta(i + 3, j + 1) );
+				}
+			}
+
+			a_fg = ( float ) bitmap->buffer[ j * bitmap->pitch + i ] / 255.0;
+
+			*d++ = ( int ) ( a_fg * fg.r + ( 1 - a_fg ) * ( a_ol * ol.r + ( 1 - a_ol ) * bg.r ) );
+			*d++ = ( int ) ( a_fg * fg.g + ( 1 - a_fg ) * ( a_ol * ol.g + ( 1 - a_ol ) * bg.g ) );
+			*d++ = ( int ) ( a_fg * fg.b + ( 1 - a_fg ) * ( a_ol * ol.b + ( 1 - a_ol ) * bg.b ) );
+			*d++ = ( int ) ( a_fg * fg.a + ( 1 - a_fg ) * ( a_ol * ol.a + ( 1 - a_ol ) * bg.a ) );
+		}
+		dest += stride;
+	}
 }

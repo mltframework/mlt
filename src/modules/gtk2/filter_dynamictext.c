@@ -195,12 +195,17 @@ static void apply_filter(mlt_filter filter, mlt_frame frame )
 
 	// Pass the properties to the watermark filter composite transition
 	mlt_properties_set( watermark_properties, "composite.geometry", mlt_properties_get( my_properties, "geometry" ) );
+	mlt_properties_set( watermark_properties, "composite.halign", mlt_properties_get( my_properties, "halign" ) );
+	mlt_properties_set( watermark_properties, "composite.valign", mlt_properties_get( my_properties, "valign" ) );
 
 	// Pass the properties to the watermark filter pango producer
 	mlt_properties_set( watermark_properties, "producer.font", mlt_properties_get( my_properties, "font" ) );
 	mlt_properties_set( watermark_properties, "producer.weight", mlt_properties_get( my_properties, "weight" ) );
 	mlt_properties_set( watermark_properties, "producer.fgcolour", mlt_properties_get( my_properties, "fgcolour" ) );
 	mlt_properties_set( watermark_properties, "producer.bgcolour", mlt_properties_get( my_properties, "bgcolour" ) );
+	mlt_properties_set( watermark_properties, "producer.olcolour", mlt_properties_get( my_properties, "olcolour" ) );
+	mlt_properties_set( watermark_properties, "producer.pad", mlt_properties_get( my_properties, "pad" ) );
+	mlt_properties_set( watermark_properties, "producer.outline", mlt_properties_get( my_properties, "outline" ) );
 
 	// Process the filter
 	mlt_filter_process( watermark, frame );
@@ -265,6 +270,11 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		mlt_properties_set( properties, "weight", "400" );
 		mlt_properties_set( properties, "fgcolour", "0x000000ff" );
 		mlt_properties_set( properties, "bgcolour", "0x00000020" );
+		mlt_properties_set( properties, "olcolour", "0x00000000" );
+		mlt_properties_set( properties, "pad", "0" );
+		mlt_properties_set( properties, "halign", "left" );
+		mlt_properties_set( properties, "valign", "top" );
+		mlt_properties_set( properties, "outline", "0" );
 
 		// Specify the processing method
 		filter->process = filter_process;

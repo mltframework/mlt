@@ -76,3 +76,57 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+  - identifier: olcolour
+    title: Outline color
+    type: string
+    description: >
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+  - identifier: outline
+    title: Outline Width
+    type: string
+    description: >
+      The width of the outline in pixels.
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 3
+    mutable: yes
+    widget: spinner
+  - identifier: pad
+    title: Padding
+    type: integer
+    description: >
+      The number of pixels to pad the background rectangle beyond edges of text.
+    readonly: no
+    default: 0
+    mutable: yes
+    widget: spinner
+  - identifier: halign
+    title: Horizontal alignment
+    description: >
+      Set the horizontal alignment within the geometry rectangle.
+    type: string
+    default: left
+    values:
+      - left
+      - centre
+      - right
+    mutable: yes
+    widget: combo
+  - identifier: valign
+    title: Vertical alignment
+    description: >
+      Set the vertical alignment within the geometry rectangle.
+    type: string
+    default: top
+    values:
+      - top
+      - middle
+      - bottom
+    mutable: yes
+    widget: combo
