@@ -2066,7 +2066,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	// If we're behind, ignore this packet
 	// Skip this on non-seekable, audio-only inputs.
-	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) )
+	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
 	{
 		double current_pts = av_q2d( context->streams[ index ]->time_base ) * pkt.pts;
 		int64_t req_position = ( int64_t )( timecode * fps + 0.5 );
@@ -2074,16 +2074,12 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		if ( context->start_time != AV_NOPTS_VALUE )
 			int_position -= ( int64_t )( fps * context->start_time / AV_TIME_BASE + 0.5 );
 
-		if ( *ignore == 0 && int_position > 0 )
+		if ( int_position > 0 )
 		{
 			if ( int_position < req_position )
 				// We are behind, so skip some
 				*ignore = req_position - int_position;
-
-			// We use total_channels in this test because the tolerance is dependent
-			// on the interleaving of all streams esp. when there is more than
-			// one audio stream.
-			else if ( int_position > req_position + self->total_channels )
+			else if ( self->audio_index != INT_MAX && int_position > req_position + 2 )
 				// We are ahead, so seek backwards some more
 				seek_audio( self, req_position, timecode - 1.0, ignore );
 		}
