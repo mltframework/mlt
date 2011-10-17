@@ -56,6 +56,9 @@ struct producer_pango_s
 	char *markup;
 	char *text;
 	char *font;
+	char *family;
+	int   size;
+	int   style;
 	int   weight;
 };
 
@@ -70,7 +73,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
-		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, int weight, int size, int outline );
+		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline );
 static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg );
 static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg, rgba_color ol, int outline );
 
@@ -90,7 +93,7 @@ int strncaseeq(const char *s1, const char *s2, size_t n)
 /** Parse the alignment property.
 */
 
-static int alignment_parse( char* align )
+static int parse_alignment( char* align )
 {
 	int ret = pango_align_left;
 
@@ -102,6 +105,17 @@ static int alignment_parse( char* align )
 	else if ( align[ 0 ] == 'r' )
 		ret = pango_align_right;
 
+	return ret;
+}
+
+/** Parse the style property.
+*/
+
+static int parse_style( char* style )
+{
+	int ret = PANGO_STYLE_NORMAL;
+	if( !strncmp(style, "italic", 6) )
+		ret = PANGO_STYLE_ITALIC;
 	return ret;
 }
 
@@ -134,7 +148,10 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set_int( properties, "pad", 0 );
 		mlt_properties_set_int( properties, "outline", 0 );
 		mlt_properties_set( properties, "text", "" );
-		mlt_properties_set( properties, "font", "Sans 48" );
+		mlt_properties_set( properties, "font", NULL );
+		mlt_properties_set( properties, "family", "Sans" );
+		mlt_properties_set_int( properties, "size", 48 );
+		mlt_properties_set( properties, "style", "normal" );
 		mlt_properties_set( properties, "encoding", "UTF-8" );
 		mlt_properties_set_int( properties, "weight", PANGO_WEIGHT_NORMAL );
 
@@ -331,12 +348,14 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	char *fg = mlt_properties_get( producer_props, "fgcolour" );
 	char *bg = mlt_properties_get( producer_props, "bgcolour" );
 	char *ol = mlt_properties_get( producer_props, "olcolour" );
-	int align = alignment_parse( mlt_properties_get( producer_props, "align" ) );
+	int align = parse_alignment( mlt_properties_get( producer_props, "align" ) );
 	int pad = mlt_properties_get_int( producer_props, "pad" );
 	int outline = mlt_properties_get_int( producer_props, "outline" );
 	char *markup = mlt_properties_get( producer_props, "markup" );
 	char *text = mlt_properties_get( producer_props, "text" );
 	char *font = mlt_properties_get( producer_props, "font" );
+	char *family = mlt_properties_get( producer_props, "family" );
+	int style = parse_style( mlt_properties_get( producer_props, "style" ) );
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
 	int weight = mlt_properties_get_int( producer_props, "weight" );
 	int size = mlt_properties_get_int( producer_props, "size" );
@@ -361,13 +380,16 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		property_changed = ( align != this->align );
 		property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
 		property_changed = property_changed || ( this->bgcolor == NULL || ( bg && strcmp( bg, this->bgcolor ) ) );
-		property_changed = property_changed || ( this->olcolor == NULL || ( ol && strcmp( bg, this->olcolor ) ) );
+		property_changed = property_changed || ( this->olcolor == NULL || ( ol && strcmp( ol, this->olcolor ) ) );
 		property_changed = property_changed || ( pad != this->pad );
 		property_changed = property_changed || ( outline != this->outline );
 		property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
 		property_changed = property_changed || ( text && this->text && strcmp( text, this->text ) );
 		property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
+		property_changed = property_changed || ( family && this->family && strcmp( family, this->family ) );
 		property_changed = property_changed || ( weight != this->weight );
+		property_changed = property_changed || ( style != this->style );
+		property_changed = property_changed || ( size != this->size );
 
 		// Save the properties for next comparison
 		this->align = align;
@@ -378,8 +400,11 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		set_string( &this->olcolor, ol, "0x00000000" );
 		set_string( &this->markup, markup, NULL );
 		set_string( &this->text, text, NULL );
-		set_string( &this->font, font, "Sans 48" );
+		set_string( &this->font, font, NULL );
+		set_string( &this->family, family, "Sans" );
 		this->weight = weight;
+		this->style = style;
+		this->size = size;
 	}
 
 	if ( pixbuf == NULL && property_changed )
@@ -408,7 +433,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 		
 		// Render the title
-		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, weight, size, outline );
+		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family, style, weight, size, outline );
 
 		if ( pixbuf != NULL )
 		{
@@ -554,6 +579,7 @@ static void producer_close( mlt_producer parent )
 	free( this->markup );
 	free( this->text );
 	free( this->font );
+	free( this->family );
 	parent->close = NULL;
 	mlt_producer_close( parent );
 	free( this );
@@ -578,22 +604,32 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, int weight, int size, int outline )
+static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline )
 {
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
 	PangoLayout *layout = pango_layout_new( context );
 	int w, h;
 	GdkPixbuf *pixbuf = NULL;
 	FT_Bitmap bitmap;
-	PangoFontDescription *desc = pango_font_description_from_string( font );
+	PangoFontDescription *desc = NULL;
 
-	pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
-	pango_layout_set_width( layout, -1 ); // set wrapping constraints
+	if( font )
+	{
+		// Support for deprecated "font" property.
+		desc = pango_font_description_from_string( font );
+		pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
+	}
+	else
+	{
+		desc = pango_font_description_from_string( family );
+		pango_font_description_set_size( desc, PANGO_SCALE * size );
+		pango_font_description_set_style( desc, (PangoStyle) style );
+	}
+
 	pango_font_description_set_weight( desc, ( PangoWeight ) weight  );
-	if ( size != 0 )
-		pango_font_description_set_absolute_size( desc, PANGO_SCALE * size );
+
+	pango_layout_set_width( layout, -1 ); // set wrapping constraints
 	pango_layout_set_font_description( layout, desc );
-//	pango_layout_set_spacing( layout, space );
 	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
 	if ( markup != NULL && strcmp( markup, "" ) != 0 )
 	{
@@ -614,19 +650,6 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 		pango_layout_set_text( layout, "  ", 2 );
 	}
 	pango_layout_get_pixel_size( layout, &w, &h );
-
-	// Interpret size property as an absolute pixel height and compensate for
-	// freetype's "interpretation" of our absolute size request. This gives
-	// precise control over compositing and better quality by reducing scaling
-	// artifacts with composite geometries that constrain the dimensions.
-	// If you do not want this, then put the size in the font property or in
-	// the pango markup.
-	if ( size != 0 )
-	{
-		pango_font_description_set_absolute_size( desc, PANGO_SCALE * size * size/h );
-		pango_layout_set_font_description( layout, desc );
-		pango_layout_get_pixel_size( layout, &w, &h );
-	}
 
 	if ( pad == 0 )
 		pad = 1;

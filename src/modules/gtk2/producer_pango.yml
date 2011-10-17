@@ -2,7 +2,7 @@ schema_version: 0.1
 type: producer
 identifier: pango
 title: Pango
-version: 1
+version: 2
 copyright: Ushodaya Enterprises Limited
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -126,12 +126,46 @@ parameters:
     widget: textbox
 
   - identifier: font
+    deprecated: yes
     title: Font
     type: string
     description: >
       The default typeface to use when not using markup. 
       FreeType2 renders at 72 dpi.
-    default: Sans 48
+      This property is deprecated. Use family, size and style instead.
+    readonly: no
+    mutable: yes
+    widget: combo
+    
+  - identifier: family
+    title: Font family
+    type: string
+    description: >
+      The default typeface to use when not using markup. 
+    default: Sans
+    readonly: no
+    mutable: yes
+    widget: combo
+    
+  - identifier: size
+    title: Font size
+    type: integer
+    description: >
+      The size in pixels of the font to use when not using markup. 
+    default: 48
+    readonly: no
+    mutable: yes
+    widget: spinner
+    
+  - identifier: style
+    title: Font style
+    type: string
+    description: >
+      The style of the font to use when not using markup.
+    values:
+      - normal
+      - italic
+    default: normal
     readonly: no
     mutable: yes
     widget: combo
@@ -140,6 +174,8 @@ parameters:
     title: Font weight
     type: integer
     description: The weight of the font.
+    minimum: 100
+    maximum: 1000
     default: 400
     readonly: no
     mutable: yes

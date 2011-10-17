@@ -33,7 +33,9 @@ int main( int argc, char **argv )
 	mlt_playlist pl2 = mlt_playlist_init();
 	mlt_producer title = mlt_factory_producer( "pango", NULL ); //"<span font_desc=\"Sans Bold 36\">Mutton <span font_desc=\"Luxi Serif Bold Oblique 36\">Lettuce</span> Tomato</span>" );
 	mlt_playlist_append( pl2, title );
-	mlt_properties_set( mlt_producer_properties( title ), "font", "Sans Bold 36" );
+	mlt_properties_set( mlt_producer_properties( title ), "family", "Sans" );
+	mlt_properties_set( mlt_producer_properties( title ), "size", "36" );
+	mlt_properties_set( mlt_producer_properties( title ), "weight", "700" );
 	mlt_properties_set( mlt_producer_properties( title ), "text", text );
 	mlt_properties_set_int( mlt_producer_properties( title ), "bgcolor", 0x0000007f );
 	mlt_properties_set_int( mlt_producer_properties( title ), "pad", 8 );
