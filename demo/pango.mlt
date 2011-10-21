@@ -6,13 +6,14 @@
   <producer id="title">
     <property name="mlt_service">pango</property>
     <property name="resource">+.txt</property>
-    <property name="font">GJ-TTAvantika 36</property>
+    <property name="family">GJ-TTAvantika</property>
+    <property name="size">36</property>
     <property name="align">1</property>
     <property name="fgcolour">0xffffddff</property>
     <property name="bgcolour">0x8c101080</property>
     <property name="pad">8</property>
-    <property name="text"><![CDATA[Ê¾úlÉäºÉÒ q� ö»ÉÉ<
-HíÉ� ~ÉÒ+� eôÒ`ò­÷ +y«ÉKÉ §ÉÉWð~É]]></property>
+    <property name="text"><![CDATA[Ê¾úlÉäºÉÒ q� ö»ÉÉ<
+HíÉ� ~ÉÒ+� eôÒ`ò­÷ +y«ÉKÉ §ÉÉWð~É]]></property>
   </producer>
   <tractor>
     <multitrack>

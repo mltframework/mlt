@@ -36,20 +36,30 @@ parameters:
     type: geometry
     description: A set of X/Y coordinates by which to adjust the text.
     default: 0%/0%:100%x100%:100
-  - identifier: font
-    title: Font
+  - identifier: family
+    title: Font family
     type: string
-    description: The typeface to use
-    default: Sans 48
+    description: >
+      The typeface of the font.
+    default: Sans
     readonly: no
     mutable: yes
-    widget: font
+    widget: combo
+  - identifier: size
+    title: Font size
+    type: integer
+    description: >
+      The size in pixels of the font. 
+    default: 48
+    readonly: no
+    mutable: yes
+    widget: spinner
   - identifier: weight
     title: Font weight
     type: integer
     description: The weight of the font.
     minimum: 100
-    maximum: 900
+    maximum: 1000
     default: 400
     readonly: no
     mutable: yes

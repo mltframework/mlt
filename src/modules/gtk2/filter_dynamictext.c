@@ -199,7 +199,8 @@ static void apply_filter(mlt_filter filter, mlt_frame frame )
 	mlt_properties_set( watermark_properties, "composite.valign", mlt_properties_get( my_properties, "valign" ) );
 
 	// Pass the properties to the watermark filter pango producer
-	mlt_properties_set( watermark_properties, "producer.font", mlt_properties_get( my_properties, "font" ) );
+	mlt_properties_set( watermark_properties, "producer.family", mlt_properties_get( my_properties, "family" ) );
+	mlt_properties_set( watermark_properties, "producer.size", mlt_properties_get( my_properties, "size" ) );
 	mlt_properties_set( watermark_properties, "producer.weight", mlt_properties_get( my_properties, "weight" ) );
 	mlt_properties_set( watermark_properties, "producer.fgcolour", mlt_properties_get( my_properties, "fgcolour" ) );
 	mlt_properties_set( watermark_properties, "producer.bgcolour", mlt_properties_get( my_properties, "bgcolour" ) );
@@ -266,7 +267,8 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		// Assign default values
 		mlt_properties_set( properties, "argument", arg ? arg: "#timecode#" );
 		mlt_properties_set( properties, "geometry", "0%/0%:100%x100%:100" );
-		mlt_properties_set( properties, "font", "Sans 48" );
+		mlt_properties_set( properties, "family", "Sans" );
+		mlt_properties_set( properties, "size", "48" );
 		mlt_properties_set( properties, "weight", "400" );
 		mlt_properties_set( properties, "fgcolour", "0x000000ff" );
 		mlt_properties_set( properties, "bgcolour", "0x00000020" );
