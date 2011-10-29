@@ -1324,6 +1324,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		codec_context->codec_id == CODEC_ID_H264 && !strcmp( context->iformat->name, "mpegts" );
 	if ( mlt_properties_get( properties, "new_seek" ) )
 		use_new_seek = mlt_properties_get_int( properties, "new_seek" );
+	double delay = mlt_properties_get_double( properties, "video_delay" );
 
 	// Seek if necessary
 	int paused = seek_video( self, position, req_position, must_decode, use_new_seek, &ignore );
@@ -1415,7 +1416,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						pts -= self->first_pts;
 					else if ( context->start_time != AV_NOPTS_VALUE )
 						pts -= context->start_time;
-					int_position = ( int64_t )( av_q2d( stream->time_base ) * pts * source_fps + 0.1 );
+					int_position = ( int64_t )( ( av_q2d( stream->time_base ) * pts + delay ) * source_fps + 0.1 );
 					if ( pkt.pts == AV_NOPTS_VALUE )
 					{
 						self->invalid_pts_counter++;
@@ -1438,7 +1439,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					if ( pkt.dts != AV_NOPTS_VALUE )
 					{
-						double delay = mlt_properties_get_double( properties, "video_delay" );
 						int_position = ( int64_t )( ( av_q2d( stream->time_base ) * pkt.dts + delay ) * source_fps + 0.5 );
 						if ( context->start_time != AV_NOPTS_VALUE )
 							int_position -= ( int64_t )( context->start_time * source_fps / AV_TIME_BASE + 0.5 );
