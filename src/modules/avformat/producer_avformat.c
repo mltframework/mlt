@@ -89,7 +89,6 @@ struct producer_avformat_s
 	mlt_position video_expected;
 	int audio_index;
 	int video_index;
-	double start_time;
 	int first_pts;
 	int64_t last_position;
 	int seekable;
@@ -661,9 +660,6 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 		}
 	}
 
-	if ( format->start_time != AV_NOPTS_VALUE )
-		self->start_time = format->start_time;
-
 	// Check if we're seekable
 	// avdevices are typically AVFMT_NOFILE and not seekable
 	self->seekable = !format->iformat || !( format->iformat->flags & AVFMT_NOFILE );
@@ -681,7 +677,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	if ( self->seekable )
 	{
 		// Do a more rigourous test of seekable on a disposable context
-		self->seekable = av_seek_frame( format, -1, self->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
+		self->seekable = av_seek_frame( format, -1, format->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 		mlt_properties_set_int( properties, "seekable", self->seekable );
 		self->dummy_context = format;
 		av_open_input_file( &self->video_format, filename, NULL, 0, NULL );
