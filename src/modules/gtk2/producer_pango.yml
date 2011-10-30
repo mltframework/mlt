@@ -126,7 +126,6 @@ parameters:
     widget: textbox
 
   - identifier: font
-    deprecated: yes
     title: Font
     type: string
     description: >
