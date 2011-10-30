@@ -170,7 +170,11 @@ public:
 			// Get the display mode
 			BMDDisplayMode displayMode = getDisplayMode( profile, m_vancLines );
 			if ( displayMode == (BMDDisplayMode) bmdDisplayModeNotSupported )
+			{
+				mlt_log_info( getProducer(), "profile = %dx%d %f fps %s\n", profile->width, profile->height,
+							  mlt_profile_fps( profile ), profile->progressive? "progressive" : "interlace" );
 				throw "Profile is not compatible with decklink.";
+			}
 
 			// Determine if supports input format detection
 #ifdef WIN32
