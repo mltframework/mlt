@@ -2571,15 +2571,25 @@ static void producer_avformat_close( producer_avformat self )
 
 	// Cleanup the packet queues
 	AVPacket *pkt;
-	while ( ( pkt = mlt_deque_pop_back( self->apackets ) ) )
+	if ( self->apackets )
 	{
-		av_free_packet( pkt );
-		free( pkt );
+		while ( ( pkt = mlt_deque_pop_back( self->apackets ) ) )
+		{
+			av_free_packet( pkt );
+			free( pkt );
+		}
+		mlt_deque_close( self->apackets );
+		self->apackets = NULL;
 	}
-	while ( ( pkt = mlt_deque_pop_back( self->vpackets ) ) )
+	if ( self->vpackets )
 	{
-		av_free_packet( pkt );
-		free( pkt );
+		while ( ( pkt = mlt_deque_pop_back( self->vpackets ) ) )
+		{
+			av_free_packet( pkt );
+			free( pkt );
+		}
+		mlt_deque_close( self->vpackets );
+		self->vpackets = NULL;
 	}
 
 	free( self );
