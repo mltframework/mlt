@@ -107,14 +107,23 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 			cx->profile->is_explicit = 0;
 		}
 
-		// For now, we must conform the nested network's frame rate to the parent network's
-		// framerate.
-		cx->profile->frame_rate_num = profile->frame_rate_num;
-		cx->profile->frame_rate_den = profile->frame_rate_den;
+		if ( ! mlt_properties_get_int( properties, "autoprofile" ) )
+		{
+			// For now, we must conform the nested network's frame rate to the parent network's
+			// framerate.
+			cx->profile->frame_rate_num = profile->frame_rate_num;
+			cx->profile->frame_rate_den = profile->frame_rate_den;
+		}
 
 		// Encapsulate a real producer for the resource
 		cx->producer = mlt_factory_producer( cx->profile, NULL,
 			mlt_properties_get( properties, "resource" ) );
+		if ( mlt_properties_get_int( properties, "autoprofile" ) )
+		{
+			mlt_profile_from_producer( cx->profile, cx->producer );
+			mlt_producer_close( cx->producer );
+			cx->producer = mlt_factory_producer( cx->profile, NULL,	mlt_properties_get( properties, "resource" ) );
+		}
 		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( cx->producer ),
 			"out, length" );
 

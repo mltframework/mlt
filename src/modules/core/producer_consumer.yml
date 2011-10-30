@@ -10,3 +10,25 @@ language: en
 tags:
   - Audio
   - Video
+parameters:
+  - identifier: argument
+    title: File/URL
+    type: string
+    description: A file name, URL, or producer name.
+    required: yes
+
+  - identifier: profile
+    title: Profile
+    type: string
+    description: >
+      The name of a MLT profile with which to load the resource. This defaults
+      to the composition's profile, but could be overridden by the profile
+      in MLT XML.
+
+  - identifier: autoprofile
+    title: Auto-profile
+    type: integer
+    description: Generate a new, custom profile from the encapsulated resource.
+    minimum: 0
+    maximum: 1
+    default: 0
