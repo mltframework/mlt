@@ -1,6 +1,29 @@
 MLT Release Notes
 -----------------
 
+Version 0.7.6 - October 31, 2011
+
+This is a bugfix and minor enhancement release.
+
+ * Improved support for v53 of libavcodec/libavformat (0.7 and 0.8 releases)
+ * Major DeckLink consumer improvements
+ * Much more metadata
+ * Added audio-only JACK consumer
+ * Added video stabilization filters
+ * Added dual pass audio normalization to sox filter
+ * Added VITC and VANC capture to DeckLink producer
+ * Added support for writing timecode tracks
+ * Added MLT, frei0r, and SoX version to xml serialization
+ * Added D-10, XDCAM, DNxHD, and Sony-PSP encoding presets
+ * Can now use rotoscoping for masking filters
+ * Added dynamictext filter makes burned-in timecode and similar easier
+ * Added support for consumer element in MLT XML
+ * Added outlining, padding, and alignment to pango filter
+
+Special thanks go to contributors Maksym Veremeyenko, Brian Matherly, and
+Marco Gittler.
+
+
 Version 0.7.4 - July 16, 2011
 
 This is a bugfix and minor enhancement release.
