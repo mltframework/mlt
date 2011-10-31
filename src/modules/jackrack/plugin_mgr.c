@@ -83,7 +83,7 @@ plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * file
   dl_handle = dlopen (filename, RTLD_NOW|RTLD_GLOBAL);
   if (!dl_handle)
     {
-      mlt_log_warning( NULL, "%s: error opening shared object file '%s': %s\n",
+      mlt_log_info( NULL, "%s: error opening shared object file '%s': %s\n",
                __FUNCTION__, filename, dlerror());
       return;
     }
@@ -97,7 +97,7 @@ plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * file
   
   dlerr = dlerror();
   if (dlerr) {
-    mlt_log_warning( NULL, "%s: error finding ladspa_descriptor symbol in object file '%s': %s\n",
+    mlt_log_info( NULL, "%s: error finding ladspa_descriptor symbol in object file '%s': %s\n",
              __FUNCTION__, filename, dlerr);
     dlclose (dl_handle);
     return;
