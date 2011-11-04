@@ -65,6 +65,8 @@ static int vdpau_init( producer_avformat self )
 
 		if ( !object )
 			object = dlopen( "/usr/lib/libvdpau.so", flags );
+		if ( !object )
+			object = dlopen( "/usr/local/lib/libvdpau.so", flags );
 		if ( object )
 		{
 			VdpDeviceCreateX11 *create_device = dlsym( object, "vdp_device_create_x11" );
