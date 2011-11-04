@@ -145,7 +145,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		mlt_properties_set_data( properties, "first_frame", first_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 	}
 	mlt_properties first_frame_properties = MLT_FRAME_PROPERTIES( first_frame );
-	
+
 
 	// Which frames are buffered?
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
@@ -211,6 +211,25 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 		mlt_properties frame_properties = MLT_FRAME_PROPERTIES(*frame);
+
+		// Get frame from the real producer
+		mlt_frame first_frame = mlt_properties_get_data( properties, "first_frame", NULL );
+
+		if ( first_frame == NULL )
+		{
+		    // Get the frame to cache from the real producer
+		    mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
+
+		    // Seek the producer to the correct place
+		    mlt_producer_seek( real_producer, mlt_producer_position( producer ) );
+
+		    // Get the frame
+		    mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
+		    // Cache the frame
+		    mlt_properties_set_data( properties, "first_frame", first_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+		}
+
+		mlt_properties_inherit( frame_properties, MLT_FRAME_PROPERTIES(first_frame) );
 		
 		double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
 		if ( force_aspect_ratio <= 0.0 ) force_aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
