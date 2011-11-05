@@ -28,8 +28,12 @@
 #endif
 
 #include <inttypes.h>
-
+#include <limits.h>
 #include "mlt_pool.h"
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 /** The set of supported image formats */
 
