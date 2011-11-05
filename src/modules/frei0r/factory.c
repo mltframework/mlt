@@ -32,12 +32,15 @@
 #include <math.h>
 
 
-#ifdef WIN32
+#if defined(WIN32)
 #define LIBSUF ".dll"
-#define FREI0R_PLUGIN_PATH "\\..\\..\\lib\\frei0r-1"
+#define FREI0R_PLUGIN_PATH "\\lib\\frei0r-1"
+#elif defined(__DARWIN__) && defined(RELOCATABLE)
+#define LIBSUF ".so"
+#define FREI0R_PLUGIN_PATH "/lib/frei0r-1"
 #else
 #define LIBSUF ".so"
-#define FREI0R_PLUGIN_PATH "lib/frei0r-1:/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/.frei0r-1/lib"
+#define FREI0R_PLUGIN_PATH "/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/.frei0r-1/lib"
 #endif
 
 #define GET_FREI0R_PATH (getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH)
@@ -53,8 +56,13 @@ extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 static char* get_frei0r_path()
 {
 #ifdef WIN32
-	char *dirname = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + strlen( FREI0R_PLUGIN_PATH ) + 1 );
-	strcpy( dirname, mlt_environment( "MLT_DATA" ) );
+	char *dirname = malloc( strlen( mlt_environment( "MLT_APPDIR" ) ) + strlen( FREI0R_PLUGIN_PATH ) + 1 );
+	strcpy( dirname, mlt_environment( "MLT_APPDIR" ) );
+	strcat( dirname, FREI0R_PLUGIN_PATH );
+	return dirname;
+#elif defined(__DARWIN__) && defined(RELOCATABLE)
+	char *dirname = malloc( strlen( mlt_environment( "MLT_APPDIR" ) ) + strlen( FREI0R_PLUGIN_PATH ) + 1 );
+	strcpy( dirname, mlt_environment( "MLT_APPDIR" ) );
 	strcat( dirname, FREI0R_PLUGIN_PATH );
 	return dirname;
 #else

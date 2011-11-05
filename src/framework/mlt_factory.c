@@ -124,8 +124,22 @@ mlt_repository mlt_factory_init( const char *directory )
 		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
-
 		mlt_properties_set_or_default( global_properties, "MLT_DATA", getenv( "MLT_DATA" ), PREFIX_DATA );
+#if defined(WIN32)
+		char path[1024];
+		DWORD size = sizeof( path );
+		GetModuleFileName( NULL, path, size );
+#elif defined(__DARWIN__)  && defined(RELOCATABLE)
+		char path[1024];
+		uint32_t size = sizeof( path );
+		_NSGetExecutablePath( path, &size );
+#endif
+#if defined(WIN32) || (defined(__DARWIN__) && defined(RELOCATABLE))
+		char *path2 = strdup( path );
+		char *appdir = dirname( path2 );
+		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
+		free( path2 );
+#endif
 	}
 
 	// Only initialise once
@@ -140,20 +154,9 @@ mlt_repository mlt_factory_init( const char *directory )
 			directory = PREFIX_LIB;
 
 		// Store the prefix for later retrieval
-#if defined(WIN32)
-		char path[1024];
-		DWORD size = sizeof( path );
-		GetModuleFileName( NULL, path, size );
-#elif defined(__DARWIN__)  && defined(RELOCATABLE)
-		char path[1024];
-		uint32_t size = sizeof( path );
-		_NSGetExecutablePath( path, &size );
-#else
-		mlt_directory = strdup( directory );
-#endif
 #if defined(WIN32) || (defined(__DARWIN__) && defined(RELOCATABLE))
-		char *path2 = strdup( path );
-		char *exedir = dirname( path2 );
+		char *exedir = mlt_environment( "MLT_APPDIR" );
+		size_t size = strlen( exedir );
 		if ( global_properties && !getenv( "MLT_DATA" ) )
 		{
 			mlt_directory = calloc( 1, size + strlen( PREFIX_DATA ) + 1 );
@@ -165,7 +168,8 @@ mlt_repository mlt_factory_init( const char *directory )
 		mlt_directory = calloc( 1, size + strlen( directory ) + 1 );
 		strcpy( mlt_directory, exedir );
 		strcat( mlt_directory, directory );
-		free( path2 );
+#else
+		mlt_directory = strdup( directory );
 #endif
 		
 		// Initialise the pool

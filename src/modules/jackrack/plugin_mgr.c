@@ -212,16 +212,22 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
   char * ladspa_path, * dir;
   
   ladspa_path = g_strdup (getenv ("LADSPA_PATH"));
-  if (!ladspa_path)
 #ifdef WIN32
+  if (!ladspa_path)
   {
-    ladspa_path = malloc (strlen (mlt_environment("MLT_DATA")) + strlen ("\\..\\..\\lib\\ladspa") + 1);
-    strcpy (ladspa_path, mlt_environment("MLT_DATA"));
-    strcat (ladspa_path, "\\..\\..\\lib\\ladspa");
-    printf("LADSPA_PATH=%s\n", ladspa_path);
+    ladspa_path = malloc (strlen (mlt_environment("MLT_APPDIR")) + strlen ("\\lib\\ladspa") + 1);
+    strcpy (ladspa_path, mlt_environment("MLT_APPDIR"));
+    strcat (ladspa_path, "\\lib\\ladspa");
+  }
+#elif defined(__DARWIN__) && defined(RELOCATABLE)
+  {
+    ladspa_path = malloc( strlen (mlt_environment ("MLT_APPDIR")) + strlen ("/lib/ladspa") + 1 );
+    strcpy (ladspa_path,  mlt_environment ("MLT_APPDIR"));
+    strcat (ladspa_path, "/lib/ladspa" );
   }
 #else
-    ladspa_path = g_strdup ("lib/ladspa:/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
+  if (!ladspa_path)
+    ladspa_path = g_strdup ("/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
 #endif
   
   dir = strtok (ladspa_path, ":");
