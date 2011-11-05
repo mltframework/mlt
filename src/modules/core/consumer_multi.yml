@@ -1,0 +1,21 @@
+schema_version: 0.1
+type: consumer
+identifier: multi
+title: Multiple outputs
+version: 1
+copyright: Copyright (C) 2011 Ushodaya Enterprises Limited
+license: LGPL
+language: en
+creator: Dan Dennedy
+tags:
+  - Audio
+  - Video
+description: Use multiple consumers with the same producer.
+parameters:
+  - identifier: argument
+    title: Number of consumers
+    type: integer
+    required: yes
+    widget: spinner
+    minimum: 0
+    default: 1

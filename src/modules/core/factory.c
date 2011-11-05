@@ -22,6 +22,7 @@
 #include <string.h>
 #include <limits.h>
 
+extern mlt_consumer consumer_multi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_consumer consumer_null_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_audiochannels_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_audioconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -66,6 +67,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
+	MLT_REGISTER( consumer_type, "multi", consumer_multi_init );
 	MLT_REGISTER( consumer_type, "null", consumer_null_init );
 	MLT_REGISTER( filter_type, "audiochannels", filter_audiochannels_init );
 	MLT_REGISTER( filter_type, "audioconvert", filter_audioconvert_init );
@@ -105,6 +107,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( transition_type, "mix", transition_mix_init );
 	MLT_REGISTER( transition_type, "region", transition_region_init );
 
+	MLT_REGISTER_METADATA( consumer_type, "multi", metadata, "consumer_multi.yml" );
 	MLT_REGISTER_METADATA( filter_type, "audiowave", metadata, "filter_audiowave.yml" );
 	MLT_REGISTER_METADATA( filter_type, "brightness", metadata, "filter_brightness.yml" );
 	MLT_REGISTER_METADATA( filter_type, "channelcopy", metadata, "filter_channelcopy.yml" );
