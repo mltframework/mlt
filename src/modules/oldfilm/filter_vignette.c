@@ -62,6 +62,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		cx = geometry_to_float ( mlt_properties_get( filter_props , "x" ) , pos ) * *width;
 		cy = geometry_to_float ( mlt_properties_get( filter_props , "y" ) , pos ) * *height;
 		opac = geometry_to_float ( mlt_properties_get( filter_props , "opacity" ) , pos );
+		int mode = mlt_properties_get_int( filter_props , "mode" );
+
 		int video_width = *width;
 		int video_height = *height;
 		
@@ -69,7 +71,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int w2=cx,h2=cy;
 		double delta=1.0;
 		double max_opac=opac;
-
 		for (y=0;y<video_height;y++){
 			int h2_pow2=pow(y-h2,2.0);
 			for (x=0;x<video_width;x++){
@@ -79,23 +80,21 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				if (radius-smooth>dx){  //center, make not darker
 					continue;
 				}
-				else if (radius+smooth<=dx){//max dark after smooth area
+				else if (radius+smooth<dx){//max dark after smooth area
 					delta=0.0;
 				}else{
-					//double sigx=5.0-10.0*(double)(dx-radius+smooth)/(2.0*smooth);//smooth >10 inner area, <-10 in dark area
-					//delta=pow2[((int)((sigx+10.0)*SIGMOD_STEPS/20.0))];//sigmoidal
-					delta = ((double)(radius+smooth-dx)/(2.0*smooth));//linear
+					// linear pos from of opacity (from 0 to 1)
+					delta=(double)(radius+smooth-dx)/(2.0*smooth);
+					if (mode==1){
+						//make cos for smoother non linear fade
+						delta = (double)pow(cos(((1.0-delta)*3.14159/2.0)),3.0);
+					}
 				}
 				delta=MAX(max_opac,delta);
 				*pix=(double)(*pix)*delta;
 				*(pix+1)=((double)(*(pix+1)-127.0)*delta)+127.0;
 			}
 		}
-		// short a, short b, short c, short d
-		// a= gray val pix 1
-		// b: +=blue, -=yellow
-		// c: =gray pix 2
-		// d: +=red,-=green
 	}
 	
 	return error;
@@ -127,6 +126,7 @@ mlt_filter filter_vignette_init( mlt_profile profile, mlt_service_type type, con
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "x", 0.5 );
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "y", 0.5 );
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "opacity", 0.0 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "mode", 0 );
 
 		//mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "end", "" );
 
