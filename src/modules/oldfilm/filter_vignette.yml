@@ -71,3 +71,14 @@ parameters:
     minimum: 0.0
     maximum: 1.0
     default: 0.0
+  - identifier: mode
+    title: Mode
+    type: integer
+    description:  Use linear (0) or cosinus (1) mode to fade from opac to black
+    readonly: no
+    required: yes
+    mutable: no
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
