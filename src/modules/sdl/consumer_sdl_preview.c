@@ -343,7 +343,7 @@ static void *consumer_thread( void *arg )
 			if ( speed != 1 )
 			{
 				mlt_producer producer = MLT_PRODUCER( mlt_service_get_producer( MLT_CONSUMER_SERVICE( consumer ) ) );
-				mlt_position duration = mlt_producer_get_playtime( producer );
+				mlt_position duration = producer? mlt_producer_get_playtime( producer ) : -1;
 				int pause = 0;
 
 #ifndef SKIP_WAIT_EOS
