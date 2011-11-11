@@ -187,7 +187,10 @@ static void foreach_consumer_init( mlt_consumer consumer )
 
 		if ( properties )
 			mlt_properties_close( properties );
-		properties = mlt_properties_load( resource );
+		if ( resource )
+			properties = mlt_properties_load( resource );
+		else
+			properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 		do {
 			snprintf( key, sizeof(key), "%d", index );
@@ -212,7 +215,8 @@ static void foreach_consumer_init( mlt_consumer consumer )
 				mlt_properties_close( p );
 			}
 		} while ( s );
-		mlt_properties_close( properties );
+		if ( resource )
+			mlt_properties_close( properties );
 	}
 }
 
