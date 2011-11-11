@@ -278,11 +278,6 @@ public:
 		mlt_properties_set_int( properties, "running", 0 );
 		mlt_consumer_stopped( getConsumer() );
 
-		// release decklink frame
-		if ( m_decklinkFrame )
-			m_decklinkFrame->Release();
-		m_decklinkFrame = NULL;
-
 		// Stop the audio and video output streams immediately
 		if ( m_deckLinkOutput )
 		{
@@ -290,6 +285,11 @@ public:
 			m_deckLinkOutput->DisableAudioOutput();
 			m_deckLinkOutput->DisableVideoOutput();
 		}
+
+		// release decklink frame
+		if ( m_decklinkFrame )
+			m_decklinkFrame->Release();
+		m_decklinkFrame = NULL;
 
 		if ( m_prerollThread )
 			pthread_join( m_prerollThread, NULL );
