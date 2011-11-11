@@ -711,7 +711,7 @@ mlt_filter mlt_producer_filter( mlt_producer self, int index )
 	return mlt_service_filter( MLT_PRODUCER_SERVICE( self ), index );
 }
 
-/** Clone self producer.
+/** Clone a producer.
  *
  * \private \memberof mlt_producer_s
  * \param self a producer
