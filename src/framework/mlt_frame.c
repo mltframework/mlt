@@ -977,3 +977,37 @@ mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service 
 
 	return instance_props;
 }
+
+/** Make a copy of a frame.
+ *
+ * This does not copy the get_image/get_audio processing stacks or any
+ * data properties other than the audio and image.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self the frame to clone
+ * \return a almost-complete copy of the frame
+ * \todo copy the processing deques
+ */
+
+mlt_frame mlt_frame_clone( mlt_frame self )
+{
+	mlt_frame new_frame = mlt_frame_init( NULL );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
+	mlt_properties new_props = MLT_FRAME_PROPERTIES( new_frame );
+	void *data;
+	int size;
+
+	// This frame takes a reference on the original frame since the data is a shallow copy.
+	mlt_properties_inc_ref( properties );
+	mlt_properties_set_data( new_props, "_cloned_frame", self, 0,
+		(mlt_destructor) mlt_frame_close, NULL );
+
+	// Copy properties
+	mlt_properties_inherit( new_props, properties );
+	data = mlt_properties_get_data( properties, "audio", &size );
+	mlt_properties_set_data( new_props, "audio", data, size, NULL, NULL );
+	data = mlt_properties_get_data( properties, "image", &size );
+	mlt_properties_set_data( new_props, "image", data, size, NULL, NULL );
+
+	return new_frame;
+}
