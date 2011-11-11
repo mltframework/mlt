@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <limits.h>
+#include <pthread.h>
 #ifdef WIN32
 #include <objbase.h>
 #include "DeckLinkAPI_h.h"
@@ -58,6 +59,7 @@ private:
 	uint32_t                    m_preroll;
 	uint32_t                    m_acnt;
 	bool                        m_reprio;
+	pthread_t                   m_prerollThread;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -178,10 +180,28 @@ public:
 		
 		return true;
 	}
-	
+
+
+	void* preroll_thread()
+	{
+		// preroll frames
+		for ( unsigned i = 0; i < m_preroll; i++ )
+			ScheduleNextFrame( true );
+
+		// start scheduled playback
+		m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
+
+		return 0;
+	}
+
+	static void* preroll_thread_proxy( void* arg )
+	{
+		DeckLinkConsumer* self = static_cast< DeckLinkConsumer* >( arg );
+		return self->preroll_thread();
+	}
+
 	bool start( unsigned preroll )
 	{
-		unsigned i;
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
 
 		// Initialize members
@@ -241,12 +261,8 @@ public:
 		m_preroll = preroll;
 		m_reprio = false;
 
-		// preroll frames
-		for( i = 0; i < preroll; i++ )
-			ScheduleNextFrame( true );
-
-		// start scheduled playback
-		m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
+		// Do preroll in thread to ensure asynchronicity of mlt_consumer_start().
+		pthread_create( &m_prerollThread, NULL, preroll_thread_proxy, this );
 
 		// Set the running state
 		mlt_properties_set_int( properties, "running", 1 );
@@ -274,6 +290,10 @@ public:
 			m_deckLinkOutput->DisableAudioOutput();
 			m_deckLinkOutput->DisableVideoOutput();
 		}
+
+		if ( m_prerollThread )
+			pthread_join( m_prerollThread, NULL );
+		m_prerollThread = 0;
 
 		return true;
 	}
