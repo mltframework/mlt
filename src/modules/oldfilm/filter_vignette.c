@@ -80,7 +80,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				if (radius-smooth>dx){  //center, make not darker
 					continue;
 				}
-				else if (radius+smooth<dx){//max dark after smooth area
+				else if (radius+smooth<=dx){//max dark after smooth area
 					delta=0.0;
 				}else{
 					// linear pos from of opacity (from 0 to 1)
