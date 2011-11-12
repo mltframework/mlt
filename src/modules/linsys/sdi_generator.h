@@ -29,6 +29,7 @@
 #define CHROMA_SET 2
 #define BLACK_SET 3
 #define BLACK 4
+#define GREEN 5
 
 // defines for SD SDI with blanking
 #define ANCILLARY_DATA_SAMPLES 280
@@ -228,7 +229,15 @@ static const struct source_format FMT_720p2398 = { .lines_per_frame = 750, .acti
 static const struct source_format FMT_576i50 = { .lines_per_frame = 625, .active_lines_per_frame = 576, .samples_per_line = 2*864 /*1728*/,
 		.active_samples_per_line = 2*720 /* 720xY, 360xCb, 360xCr */, .interlaced = 1 };
 
-// SD NTSC
+// SD NTSC; 486 video lines
+static const struct source_format FMT_486i5994 = { .lines_per_frame = 525, .active_lines_per_frame = 486, .samples_per_line = 2*858 /*1716*/,
+		.active_samples_per_line = 2*720 /* 720xY, 360xCb, 360xCr */, .interlaced = 1 };
+
+// SD NTSC; 480 video lines, 6 lines opt. video data
+/**
+ * sames as FMT_486i5994 but the first 6 lines will be filled with SDI-BLACK
+ * or can be used for opt. video data (s.SMPTE)
+ */
 static const struct source_format FMT_480i5994 = { .lines_per_frame = 525, .active_lines_per_frame = 486, .samples_per_line = 2*858 /*1716*/,
 		.active_samples_per_line = 2*720 /* 720xY, 360xCb, 360xCr */, .interlaced = 1 };
 

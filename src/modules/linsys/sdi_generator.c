@@ -119,8 +119,8 @@
  * System No.	System nomenclature		Form of scanning	Frame rate				Embedded Audio			MLT profile		Linsys board support (model)
  * SD PAL		720 × 576/50/I			interlaced			25 HZ					8 x AES (16 channels)	dv_pal			180,145,159,107
  * SD PAL		720 × 576/50/I			interlaced			25 HZ					4 x AES (8 channels)	dv_pal			193
- * SD NTSC		720 × 480/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	8 x AES (16 channels)	sdi_486i_5994	TODO:180,145,159,107
- * SD NTSC		720 × 480/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	4 x AES (8 channels)	sdi_486i_5994	193
+ * SD NTSC		720 × 486/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	8 x AES (16 channels)	sdi_486i_5994	TODO:180,145,159,107
+ * SD NTSC		720 × 486/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	4 x AES (8 channels)	sdi_486i_5994	193
  *
  **/
 
@@ -131,7 +131,8 @@
  * @param *device_audio: file or SDIAUDIOTX device
  * @param blanking: true or false (if false the consumer write only active video data without any VANH or HANC)
  */
-static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, mlt_profile myProfile, const struct audio_format * audio_format) {
+static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, mlt_profile myProfile,
+		const struct audio_format * audio_format) {
 
 	// set device file
 	device_file_video = device_video;
@@ -146,12 +147,12 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	//pack = pack_v210;
 
 	// check format
-	if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30 && myProfile->frame_rate_den == 1 && myProfile->progressive
-			== 0) {
+	if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30 && myProfile->frame_rate_den == 1
+			&& myProfile->progressive == 0) {
 		info.fmt = &FMT_1080i60;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080I_60HZ;
-	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
-			&& myProfile->progressive == 0) {
+	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 0) {
 		info.fmt = &FMT_1080i5994;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080I_59_94HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
@@ -162,8 +163,8 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p30;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_30HZ;
-	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
-			&& myProfile->progressive == 1) {
+	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p2997;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_29_97HZ;
 	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
@@ -174,16 +175,16 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p24;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_24HZ;
-	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 24000 && myProfile->frame_rate_den == 1001
-			&& myProfile->progressive == 1) {
+	} else if (myProfile->width == 1920 && myProfile->height == 1080 && myProfile->frame_rate_num == 24000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 1) {
 		info.fmt = &FMT_1080p2398;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_274M_1080P_23_98HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 60 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p60;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_60HZ;
-	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 60000 && myProfile->frame_rate_den == 1001
-			&& myProfile->progressive == 1) {
+	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 60000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 1) {
 		info.fmt = &FMT_720p5994;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_59_94HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 50 && myProfile->frame_rate_den == 1
@@ -194,8 +195,8 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p30;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_30HZ;
-	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
-			&& myProfile->progressive == 1) {
+	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 1) {
 		info.fmt = &FMT_720p2997;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_29_97HZ;
 	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
@@ -206,16 +207,20 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 			&& myProfile->progressive == 1) {
 		info.fmt = &FMT_720p24;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_24HZ;
-	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 24000 && myProfile->frame_rate_den == 1001
-			&& myProfile->progressive == 1) {
+	} else if (myProfile->width == 1280 && myProfile->height == 720 && myProfile->frame_rate_num == 24000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 1) {
 		info.fmt = &FMT_720p2398;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_296M_720P_23_98HZ;
 	} else if (myProfile->width == 720 && myProfile->height == 576 && myProfile->frame_rate_num == 25 && myProfile->frame_rate_den == 1
 			&& myProfile->progressive == 0) {
 		info.fmt = &FMT_576i50;
 		sdi_frame_mode = SDIVIDEO_CTL_BT_601_576I_50HZ;
-	} else if (myProfile->width == 720 && myProfile->height == 480 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den == 1001
-			&& myProfile->progressive == 0) {
+	} else if (myProfile->width == 720 && myProfile->height == 486 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 0) {
+		info.fmt = &FMT_486i5994;
+		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_125M_486I_59_94HZ;
+	} else if (myProfile->width == 720 && myProfile->height == 480 && myProfile->frame_rate_num == 30000 && myProfile->frame_rate_den
+			== 1001 && myProfile->progressive == 0) {
 		info.fmt = &FMT_480i5994;
 		sdi_frame_mode = SDIVIDEO_CTL_SMPTE_125M_486I_59_94HZ;
 	} else {
@@ -224,8 +229,8 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 		sdi_frame_mode = SDIVIDEO_CTL_BT_601_576I_50HZ;
 	}
 
-	printf("Consumer use format: %s\nProfile: %i %i %i %i %i\n", myProfile->description, myProfile->width, myProfile->height, myProfile->frame_rate_num,
-			myProfile->frame_rate_den, myProfile->progressive);
+	printf("Consumer use format: %s\nProfile: %i %i %i %i %i\n", myProfile->description, myProfile->width, myProfile->height,
+			myProfile->frame_rate_num, myProfile->frame_rate_den, myProfile->progressive);
 
 	// Check if the format supports own blanking (note: model 193 supports currently only active video at the video device file)
 	if (info.blanking && info.fmt != &FMT_576i50) {
@@ -302,7 +307,7 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	line_buffer = (uint16_t*) calloc(info.fmt->samples_per_line, sizeof(uint16_t));
 
 	// calculate and set buffer for the complete SDI frame
-	if (info.fmt != &FMT_576i50 && info.fmt != &FMT_480i5994) {
+	if (info.fmt != &FMT_576i50 && info.fmt != &FMT_486i5994) {
 		if (info.blanking) {
 			if (pack == pack_v210) {
 				samples = (info.fmt->samples_per_line / 96 * 48) + ((info.fmt->samples_per_line % 96) ? 48 : 0);
@@ -414,7 +419,9 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 
 				// Buffer size
 				// audio buffer per frame (Bytes) = sample rate / frame rate * ( sample size / 1Byte ) x channels
-				value = itoa(audio_format->sample_rate / (myProfile->frame_rate_num / myProfile->frame_rate_den) * sample_size / 8 * audio_format->channels );
+				value = itoa(
+						audio_format->sample_rate / (myProfile->frame_rate_num / myProfile->frame_rate_den) * sample_size / 8
+								* audio_format->channels);
 				setSDIAudioProperties(SETTING_BUFFER_SIZE_AUDIO, value, device_audio);
 				free(value);
 
@@ -459,8 +466,8 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
  * @param audio_streams: number of audio streams which have content in aBuffer (available 0-8)
  * @return current DBN (data block number of SDI frame)
  **/
-static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES], const struct audio_format * audio_format, int audio_streams,
-		int my_DBN) {
+static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES], const struct audio_format * audio_format,
+		int audio_streams, int my_DBN) {
 
 	// Pointer to the start of data. This is used to fill data line by line
 	uint8_t *p = data;
@@ -512,8 +519,8 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 		info.xyz = &FIELD_1_ACTIVE;
 		int f1counter = 1; // only odd lines
 		for (i = 23; i <= 310; i++) {
-			create_SD_SDI_Line(line_buffer, &info, FIELD_1, ACTIVE_VIDEO, vBuffer, aBuffer, i, f1counter, getDBN(my_DBN++), AudioGroupCounter,
-					getNumberOfAudioGroups2Write(i), audio_streams);
+			create_SD_SDI_Line(line_buffer, &info, FIELD_1, ACTIVE_VIDEO, vBuffer, aBuffer, i, f1counter, getDBN(my_DBN++),
+					AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 			AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 			p = pack10(p, line_buffer, info.fmt->samples_per_line);
 			f1counter += 2;
@@ -585,8 +592,8 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 		int f2counter = 2; // only even Lines
 		for (i = 336; i <= 623; i++) {
 
-			create_SD_SDI_Line(line_buffer, &info, FIELD_2, ACTIVE_VIDEO, vBuffer, aBuffer, i, f2counter, getDBN(my_DBN++), AudioGroupCounter,
-					getNumberOfAudioGroups2Write(i), audio_streams);
+			create_SD_SDI_Line(line_buffer, &info, FIELD_2, ACTIVE_VIDEO, vBuffer, aBuffer, i, f2counter, getDBN(my_DBN++),
+					AudioGroupCounter, getNumberOfAudioGroups2Write(i), audio_streams);
 			AudioGroupCounter += getNumberOfAudioGroups2Write(i);
 			p = pack10(p, line_buffer, info.fmt->samples_per_line);
 			f2counter += 2;
@@ -736,7 +743,22 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 
 				/**
 				 *  Generate an SDI NTSC frame
+				 *
+				 *
+				 *   16 lines	VERT_BLANKING	FIELD_1_VERT_BLANKING
+				 *    1 lines	VERT_BLANKING	FIELD_1_ACTIVE
+				 *    3 lines	ACTIVE_VIDEO	FIELD_1_ACTIVE			(opt. video data)
+				 *  240 lines	ACTIVE_VIDEO	FIELD_1_ACTIVE
+				 *    2 lines	VERT_BLANKING	FIELD_1_VERT_BLANKING
+				 *
+				 *    8 lines	VERT_BLANKING	FIELD_2_VERT_BLANKING
+				 *    9 lines	VERT_BLANKING	FIELD_2_VERT_BLANKING
+				 *    3 lines	ACTIVE_VIDEO	FIELD_2_ACTIVE			(opt. video data)
+				 *  240 lines	ACTIVE_VIDEO	FIELD_2_ACTIVE
+				 *    4 lines	VERT_BLANKING	FIELD_2_VERT_BLANKING
+				 *
 				 **/
+
 				elements = info.fmt->active_samples_per_line;
 
 				active_video_line = 1;
@@ -755,29 +777,42 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 				}
 
 				info.xyz = &FIELD_1_ACTIVE;
-				// 3 lines opt. video data
-				for (info.ln = 17; info.ln <= 19; info.ln++) {
-					mkline(line_buffer, &info, BLACK);
-					p = pack(p, line_buffer, elements);
-				}
-				for (info.ln = 20; info.ln <= 259; info.ln++) {
-					create_HD_SDI_Line(line_buffer, &info, active_video_line, ACTIVE_VIDEO, vBuffer);
-					p = pack(p, line_buffer, elements);
-					active_video_line += 2;
+
+				// 480 or 486 lines
+				if (info.fmt == &FMT_480i5994) {
+					// 3 lines opt. video data
+					for (info.ln = 17; info.ln <= 19; info.ln++) {
+						mkline(line_buffer, &info, BLACK);
+						p = pack(p, line_buffer, elements);
+					}
+					// 240 lines
+					for (info.ln = 20; info.ln <= 259; info.ln++) {
+						create_HD_SDI_Line(line_buffer, &info, active_video_line, ACTIVE_VIDEO, vBuffer);
+						p = pack(p, line_buffer, elements);
+						active_video_line += 2;
+					}
+				} else {
+					// 243 lines
+					for (info.ln = 17; info.ln <= 259; info.ln++) {
+						create_HD_SDI_Line(line_buffer, &info, active_video_line, ACTIVE_VIDEO, vBuffer);
+						p = pack(p, line_buffer, elements);
+						active_video_line += 2;
+					}
 				}
 				if (info.blanking) {
+					// 2 lines vertical data
 					info.xyz = &FIELD_1_VERT_BLANKING;
 					for (info.ln = 260; info.ln <= 261; info.ln++) {
 						create_HD_SDI_Line(line_buffer, &info, 0, VERT_BLANKING, vBuffer);
 						p = pack(p, line_buffer, elements);
 					}
+					// 8 lines vertical data
 					info.xyz = &FIELD_2_VERT_BLANKING;
-					// 7 lines vertical data
 					for (info.ln = 262; info.ln <= 269; info.ln++) {
 						create_HD_SDI_Line(line_buffer, &info, 0, VERT_BLANKING, vBuffer);
 						p = pack(p, line_buffer, elements);
 					}
-					// 9 lines opt. video data ?? // TODO have a look to SMPTE
+					// 9 lines
 					for (info.ln = 270; info.ln <= 278; info.ln++) {
 						create_HD_SDI_Line(line_buffer, &info, 0, VERT_BLANKING, vBuffer);
 						p = pack(p, line_buffer, elements);
@@ -786,17 +821,30 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 				}
 
 				active_video_line = 0;
-				// 3 lines opt. video data
-				info.xyz = &FIELD_2_ACTIVE;
-				for (info.ln = 279; info.ln <= 281; info.ln++) {
-					mkline(line_buffer, &info, BLACK);
-					p = pack(p, line_buffer, elements);
+
+				// 480 or 486 lines
+				if (info.fmt == &FMT_480i5994) {
+					// 3 lines opt. video data
+					info.xyz = &FIELD_2_ACTIVE;
+					for (info.ln = 279; info.ln <= 281; info.ln++) {
+						mkline(line_buffer, &info, BLACK);
+						p = pack(p, line_buffer, elements);
+					}
+					// 240 lines
+					for (info.ln = 282; info.ln <= 521; info.ln++) {
+						create_HD_SDI_Line(line_buffer, &info, active_video_line, ACTIVE_VIDEO, vBuffer);
+						p = pack(p, line_buffer, elements);
+						active_video_line += 2;
+					}
+				} else {
+					// 243 lines
+					for (info.ln = 279; info.ln <= 521; info.ln++) {
+						create_HD_SDI_Line(line_buffer, &info, active_video_line, ACTIVE_VIDEO, vBuffer);
+						p = pack(p, line_buffer, elements);
+						active_video_line += 2;
+					}
 				}
-				for (info.ln = 282; info.ln <= 521; info.ln++) {
-					create_HD_SDI_Line(line_buffer, &info, active_video_line, ACTIVE_VIDEO, vBuffer);
-					p = pack(p, line_buffer, elements);
-					active_video_line += 2;
-				}
+				// 4 lines vertical data
 				if (info.blanking) {
 					info.xyz = &FIELD_2_VERT_BLANKING;
 					for (info.ln = 522; info.ln <= 525; info.ln++) {
@@ -971,8 +1019,8 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 				// n = number of channels per stream
 				written_bytes = 0;
 				while (written_bytes < bytes_total) {
-					written_bytes += write(fh_sdi_audio, (uint8_t *) aBuffer[stream_number] + sample_number * bytes_total + written_bytes, bytes_total
-							- written_bytes);
+					written_bytes += write(fh_sdi_audio, (uint8_t *) aBuffer[stream_number] + sample_number * bytes_total + written_bytes,
+							bytes_total - written_bytes);
 				}
 				sum_written_bytes += written_bytes;
 				sum_written_bytes_a += written_bytes;
@@ -982,13 +1030,14 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 
 			// write pseudo tracks
 			// now fill rest of audio tracks(AES frames) with NULL or copy of first track
-			while (stream_number < audio_format->channels/2) {
+			while (stream_number < audio_format->channels / 2) {
 
 				// write for every stream n samples
 				// n = number of channels per stream
 				written_bytes = 0;
 				while (written_bytes < bytes_total) {
-					written_bytes += write(fh_sdi_audio, (uint8_t *) aBuffer[0] + sample_number * bytes_total + written_bytes, bytes_total - written_bytes);
+					written_bytes += write(fh_sdi_audio, (uint8_t *) aBuffer[0] + sample_number * bytes_total + written_bytes,
+							bytes_total - written_bytes);
 				}
 				sum_written_bytes += written_bytes;
 				sum_written_bytes_b += written_bytes;
@@ -1040,8 +1089,8 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
  * @param audio_streams: number of audio streams to integrate
  */
 static inline int create_SD_SDI_Line(uint16_t *buf, const struct line_info *info, int field, int active, uint8_t *video_buffer,
-		int16_t audio_buffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES], int linenumber_sdiframe, int active_video_line, int my_DBN, int16_t AudioGroupCounter,
-		int16_t AudioGroups2Write, int audio_streams) {
+		int16_t audio_buffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES], int linenumber_sdiframe, int active_video_line, int my_DBN,
+		int16_t AudioGroupCounter, int16_t AudioGroups2Write, int audio_streams) {
 
 	// write line with TRS(EAV) ANC(audio) TRS(SAV) activeVideo(CbY1CrY2)
 	//					*************************************************************************
@@ -1201,7 +1250,8 @@ static inline int create_SD_SDI_Line(uint16_t *buf, const struct line_info *info
  *
  * Returns a negative error code on failure and zero on success.
  **/
-static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info, uint16_t active_video_line, unsigned int active, uint8_t *video_buffer) {
+static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info, uint16_t active_video_line, unsigned int active,
+		uint8_t *video_buffer) {
 	uint16_t *p = buf, *endp, ln;
 	uint16_t samples = info->blanking ? info->fmt->samples_per_line : info->fmt->active_samples_per_line;
 
@@ -1340,8 +1390,8 @@ static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info
 	return 0;
 }
 
-static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DBN, int16_t *audio_buffer_A, int16_t *audio_buffer_B, int16_t AudioGroupCounter,
-		int16_t AudioGroups2Write) {
+static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DBN, int16_t *audio_buffer_A, int16_t *audio_buffer_B,
+		int16_t AudioGroupCounter, int16_t AudioGroups2Write) {
 
 	/**
 	 * ANC Ancillary Data (vgl. SMPTE 291-M page 6 )
@@ -1410,20 +1460,21 @@ static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DB
 
 		// 1 DC 	(Data Counter)
 		// number of UDW = AudioGroups2Write x 2AESFrames x 2channesl x 3words(X,X+1,X+2)
-		buffer = AudioGroups2Write * 2* 2* 3 ; parity_counter= 0;
+		buffer = AudioGroups2Write * 2 * 2 * 3;
+		parity_counter = 0;
 		// count binary ones for parity
-		for (i=0; i<8; i++) {
+		for (i = 0; i < 8; i++) {
 			if (buffer & (1 << i))
-			parity_counter++;
+				parity_counter++;
 		}
-		if ((parity_counter%2)==0) { //else leave the 0
-			buffer+= 512; // 10 0000 0000 // set bit8 = even parity bit and bit9 = !bit8
+		if ((parity_counter % 2) == 0) { //else leave the 0
+			buffer += 512; // 10 0000 0000 // set bit8 = even parity bit and bit9 = !bit8
 		} else {
-			buffer+= 256; // 01 0000 0000 // set bit8 = even parity bit and bit9 = !bit8
+			buffer += 256; // 01 0000 0000 // set bit8 = even parity bit and bit9 = !bit8
 		}
 		*p++ = buffer;
 
-		int16_t sample_number=0;
+		int16_t sample_number = 0;
 		int16_t counter = 0;
 		// write subframes:
 		// = n x 1 AudioGroup
@@ -1431,33 +1482,29 @@ static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DB
 		// = n x 2 x 2samples
 		// = 4 samples
 		// = 4 x 3words
-		while (counter < AudioGroups2Write*2) { /* 4:3 */
+		while (counter < AudioGroups2Write * 2) { /* 4:3 */
 
 			// write one Audio Group with 4 x AES subframes
 			// ( samples for ch01,ch02,ch03,ch04 or ch05,ch06,ch07,ch08 or ch09,ch10,ch11,ch12 or ch13,ch14,ch15,ch16)
 			// and use audio_buffer_A(stereo) and audio_buffer_B(stereo)
 			// `pack_AES_subframe()` write 3 ANC words (3*10bit), also 1 sample
 
-			sample_number=(AudioGroupCounter*2)+ counter;
-			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 1),
-					getZBit(sample_number/2), 0, &audio_buffer_A[sample_number]); // left
-			p+=3; // step 3 words
+			sample_number = (AudioGroupCounter * 2) + counter;
+			pack_AES_subframe(p, getChannelStatusBit(sample_number / 2, 1), getZBit(sample_number / 2), 0, &audio_buffer_A[sample_number]); // left
+			p += 3; // step 3 words
 
-			sample_number=(AudioGroupCounter*2)+ counter+1;
-			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 2),
-					getZBit(sample_number/2), 1, &audio_buffer_A[sample_number]); // right
-			p+=3;
+			sample_number = (AudioGroupCounter * 2) + counter + 1;
+			pack_AES_subframe(p, getChannelStatusBit(sample_number / 2, 2), getZBit(sample_number / 2), 1, &audio_buffer_A[sample_number]); // right
+			p += 3;
 
-			sample_number=(AudioGroupCounter*2)+ counter;
-			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 3),
-					getZBit(sample_number/2), 2, &audio_buffer_B[sample_number]); // left
-			p+=3;
+			sample_number = (AudioGroupCounter * 2) + counter;
+			pack_AES_subframe(p, getChannelStatusBit(sample_number / 2, 3), getZBit(sample_number / 2), 2, &audio_buffer_B[sample_number]); // left
+			p += 3;
 
-			sample_number=(AudioGroupCounter*2)+ counter+1;
-			pack_AES_subframe(p, getChannelStatusBit(sample_number/2, 4),
-					getZBit(sample_number/2), 3, &audio_buffer_B[sample_number]); // right
-			p+=3;
-			counter+=2;
+			sample_number = (AudioGroupCounter * 2) + counter + 1;
+			pack_AES_subframe(p, getChannelStatusBit(sample_number / 2, 4), getZBit(sample_number / 2), 3, &audio_buffer_B[sample_number]); // right
+			p += 3;
+			counter += 2;
 		}
 
 		// 1 CS		(Checksum from DID - UDW)
@@ -1467,7 +1514,7 @@ static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DB
 		// rest until end of `ANCILLARY_DATA_SAMPLES` will be fill in a loop after call this function
 		*p++ = 0x040;
 	}
-	return p-pp;
+	return p - pp;
 }
 
 // calculate checksumm of ANC (SMPTE 272-M 15.3 Checksum (CS))
@@ -1874,12 +1921,20 @@ static int mkline(unsigned short int *buf, const struct line_info *info, unsigne
 			*p++ = 0x040;
 		}
 		break;
-	case BLACK:
+	case BLACK: /* black line (filler for FMT_480i5994 ) */
 		while (p < (buf + samples)) {
 			*p++ = 0x200;
 			*p++ = 0x040;
 			*p++ = 0x200;
 			*p++ = 0x040;
+		}
+		break;
+	case GREEN: /* green line for test purpose */
+		while (p < (buf + samples)) {
+			*p++ = 289;
+			*p++ = 450;
+			*p++ = 231;
+			*p++ = 450;
 		}
 		break;
 	case MAIN_SET:

@@ -122,8 +122,8 @@
  * System No.	System nomenclature		Form of scanning	Frame rate				Embedded Audio			MLT profile		Linsys board support (model)
  * SD PAL		720 × 576/50/I			interlaced			25 HZ					8 x AES (16 channels)	dv_pal			180,145,159,107
  * SD PAL		720 × 576/50/I			interlaced			25 HZ					4 x AES (8 channels)	dv_pal			193
- * SD NTSC		720 × 480/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	8 x AES (16 channels)	sdi_486i_5994	TODO:180,145,159,107
- * SD NTSC		720 × 480/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	4 x AES (8 channels)	sdi_486i_5994	193
+ * SD NTSC		720 × 486/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	8 x AES (16 channels)	sdi_486i_5994	TODO:180,145,159,107
+ * SD NTSC		720 × 486/59.94/I		interlaced			30000/1001 ~ 29.97 HZ	4 x AES (8 channels)	sdi_486i_5994	193
  *
  **/
 
@@ -182,7 +182,7 @@ struct consumer_SDIstream_s {
 	// our audio channel pair for this frame
 	int16_t audio_buffer[MAX_AUDIO_STREAMS][MAX_AUDIO_SAMPLES]; // The SDI audio channel pairs for this frame
 
-	char *video_fmt_name; // 1080i25, 1080p25, 576i50, 480i2997, ...
+	char *video_fmt_name; // 1080i25, 1080p25, 576i50, 486i2997, ...
 
 };
 
