@@ -1790,6 +1790,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #endif
 				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
+				source_fps = av_q2d( frame_rate );
 			}
 			else
 			{
