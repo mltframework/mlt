@@ -149,7 +149,8 @@ static mlt_consumer generate_consumer( mlt_consumer consumer, mlt_properties pro
 		mlt_properties_set_int( nested_props, "put_mode", 1 );
 		mlt_properties_pass_list( nested_props, properties, "terminate_on_pause" );
 		mlt_properties_set( props, "consumer", NULL );
-		mlt_properties_set( props, "mlt_profile", NULL );
+		// set mlt_profile before other properties to facilitate presets
+		mlt_properties_pass_list( nested_props, props, "mlt_profile" );
 		mlt_properties_inherit( nested_props, props );
 
 		attach_normalisers( profile, MLT_CONSUMER_SERVICE(nested) );
@@ -168,6 +169,7 @@ static void foreach_consumer_init( mlt_consumer consumer )
 
 	if ( properties && mlt_properties_get_data( properties, "0", NULL ) )
 	{
+		// YAML file supplied
 		mlt_properties p = NULL;
 		char key[20];
 		int index = 0;
@@ -181,6 +183,7 @@ static void foreach_consumer_init( mlt_consumer consumer )
 	}
 	else
 	{
+		// properties file supplied or properties on this consumer
 		const char *s = NULL;
 		char key[20];
 		int index = 0;
