@@ -631,7 +631,7 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 		self->prop_double = that->prop_double;
 	else if ( self->types & mlt_prop_position )
 		self->prop_position = that->prop_position;
-	else if ( self->types & mlt_prop_string )
+	if ( self->types & mlt_prop_string )
 	{
 		if ( that->prop_string != NULL )
 			self->prop_string = strdup( that->prop_string );
