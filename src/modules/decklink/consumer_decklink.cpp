@@ -510,7 +510,7 @@ public:
 				r = pthread_setschedparam(thread, SCHED_FIFO, &param);
 				if( r )
 					mlt_log_verbose( getConsumer(),
-						"ScheduledFrameCompleted: pthread_setschedparam retured %d\n", r);
+						"ScheduledFrameCompleted: pthread_setschedparam returned %d\n", r);
 				else
 					mlt_log_verbose( getConsumer(),
 						"ScheduledFrameCompleted: param.sched_priority=%d\n", param.sched_priority);
@@ -527,7 +527,7 @@ public:
 		m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &cnt );
 		if ( cnt != m_acnt )
 		{
-			mlt_log_verbose( getConsumer(),
+			mlt_log_debug( getConsumer(),
 				"ScheduledFrameCompleted: GetBufferedAudioSampleFrameCount %u -> %lu, m_count=%"PRIu64"\n",
 				m_acnt, cnt, m_count );
 			m_acnt = cnt;
