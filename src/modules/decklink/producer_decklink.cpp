@@ -246,25 +246,6 @@ public:
 		pthread_mutex_unlock( &m_mutex );
 	}
 
-	mlt_frame cloneFrame( mlt_frame frame )
-	{
-		mlt_frame new_frame = mlt_frame_init( NULL );
-		mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-		mlt_properties new_props = MLT_FRAME_PROPERTIES( new_frame );
-		void *data;
-		void *copy;
-		int size;
-
-		mlt_properties_inherit( new_props, properties );
-		mlt_properties_set_int( new_props, "audio_samples", 0 );
-		data = mlt_properties_get_data( properties, "image", &size );
-		copy = mlt_pool_alloc( size );
-		memcpy( copy, data, size );
-		mlt_properties_set_data( new_props, "image", copy, size, mlt_pool_release, NULL );
-
-		return new_frame;
-	}
-
 	mlt_frame getFrame()
 	{
 		mlt_frame frame = NULL;
@@ -300,7 +281,7 @@ public:
 		if ( cached )
 		{
 			// Copy cached frame instead of pulling from queue
-			frame = cloneFrame( (mlt_frame) mlt_cache_item_data( cached, NULL ) );
+			frame = mlt_frame_clone( (mlt_frame) mlt_cache_item_data( cached, NULL ), 0 );
 			mlt_cache_item_close( cached );
 		}
 		else
@@ -324,7 +305,7 @@ public:
 
 			// add to cache
 			if ( frame )
-				mlt_cache_put( m_cache, (void*) position, cloneFrame( frame ), 0,
+				mlt_cache_put( m_cache, (void*) position, mlt_frame_clone( frame, 1 ), 0,
 					(mlt_destructor) mlt_frame_close );
 		}
 
