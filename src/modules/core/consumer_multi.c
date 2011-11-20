@@ -166,13 +166,27 @@ static void foreach_consumer_init( mlt_consumer consumer )
 {
 	const char *resource = mlt_properties_get( MLT_CONSUMER_PROPERTIES(consumer), "resource" );
 	mlt_properties properties = mlt_properties_parse_yaml( resource );
+	char key[20];
+	int index = 0;
 
-	if ( properties && mlt_properties_get_data( properties, "0", NULL ) )
+	if ( mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "0", NULL ) )
+	{
+		// Properties set directly by application
+		mlt_properties p;
+
+		if ( properties )
+			mlt_properties_close( properties );
+		properties = MLT_CONSUMER_PROPERTIES(consumer);
+		do {
+			snprintf( key, sizeof(key), "%d", index );
+			if ( ( p = mlt_properties_get_data( properties, key, NULL ) ) )
+				generate_consumer( consumer, p, index++ );
+		} while ( p );
+	}
+	else if ( properties && mlt_properties_get_data( properties, "0", NULL ) )
 	{
 		// YAML file supplied
-		mlt_properties p = NULL;
-		char key[20];
-		int index = 0;
+		mlt_properties p;
 
 		do {
 			snprintf( key, sizeof(key), "%d", index );
@@ -184,9 +198,7 @@ static void foreach_consumer_init( mlt_consumer consumer )
 	else
 	{
 		// properties file supplied or properties on this consumer
-		const char *s = NULL;
-		char key[20];
-		int index = 0;
+		const char *s;
 
 		if ( properties )
 			mlt_properties_close( properties );
