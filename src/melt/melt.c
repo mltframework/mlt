@@ -279,17 +279,28 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( *consumer );
 		for ( i = 1; i < argc; i ++ )
 		{
-			if ( !strcmp( argv[ i ], "-consumer" ) )
+			if ( !strcmp( argv[ i ], "-consumer" ) && argv[ i + 1 ])
 			{
 				// Create a properties object for each sub-consumer
 				mlt_properties new_props = mlt_properties_new();
 				snprintf( key, sizeof(key), "%d", k++ );
 				mlt_properties_set_data( properties, key, new_props, 0,
 					(mlt_destructor) mlt_properties_close, NULL );
-				mlt_properties_set( new_props, "mlt_service", argv[ ++i ] );
-				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
+				if ( strchr( argv[i + 1], ':' ) )
+				{
+					char *temp = strdup( argv[++i] );
+					char *service = temp;
+					char *target = strchr( temp, ':' );
+					*target++ = 0;
+					mlt_properties_set( new_props, "mlt_service", service );
+					mlt_properties_set( new_props, "target", target );
+				}
+				else
+				{
+					mlt_properties_set( new_props, "mlt_service", argv[ ++i ] );
+				}
+				while ( argv[ i + 1 ] && strchr( argv[ i + 1 ], '=' ) )
 					mlt_properties_parse( new_props, argv[ ++ i ] );
-				mlt_properties_dump( new_props, stderr );
 			}
 		}
 	}
@@ -303,7 +314,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 			if ( *consumer )
 			{
 				mlt_properties properties = MLT_CONSUMER_PROPERTIES( *consumer );
-				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
+				while ( argv[ i + 1 ] != NULL && strchr( argv[ i + 1 ], '=' ) )
 					mlt_properties_parse( properties, argv[ ++ i ] );
 			}
 		}
