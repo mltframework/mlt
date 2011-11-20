@@ -267,7 +267,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 	for ( i = 1; i < argc; i ++ )
 		multi += !strcmp( argv[ i ], "-consumer" );
 
-	if ( multi )
+	if ( multi > 1 )
 	{
 		// If there is more than one -consumer use the 'multi' consumer.
 		int k = 0;
