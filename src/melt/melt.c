@@ -262,7 +262,38 @@ static mlt_consumer create_consumer( mlt_profile profile, char *id )
 static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc, char **argv )
 {
 	int i;
+	int multi = 0;
+
 	for ( i = 1; i < argc; i ++ )
+		multi += !strcmp( argv[ i ], "-consumer" );
+
+	if ( multi )
+	{
+		// If there is more than one -consumer use the 'multi' consumer.
+		int k = 0;
+		char key[20];
+
+		if ( *consumer )
+			mlt_consumer_close( *consumer );
+		*consumer = create_consumer( profile, "multi" );
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( *consumer );
+		for ( i = 1; i < argc; i ++ )
+		{
+			if ( !strcmp( argv[ i ], "-consumer" ) )
+			{
+				// Create a properties object for each sub-consumer
+				mlt_properties new_props = mlt_properties_new();
+				snprintf( key, sizeof(key), "%d", k++ );
+				mlt_properties_set_data( properties, key, new_props, 0,
+					(mlt_destructor) mlt_properties_close, NULL );
+				mlt_properties_set( new_props, "consumer", argv[ ++i ] );
+				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
+					mlt_properties_parse( new_props, argv[ ++ i ] );
+				mlt_properties_dump( new_props, stderr );
+			}
+		}
+	}
+	else for ( i = 1; i < argc; i ++ )
 	{
 		if ( !strcmp( argv[ i ], "-consumer" ) )
 		{
