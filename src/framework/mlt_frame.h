@@ -138,7 +138,7 @@ extern mlt_deque mlt_frame_service_stack( mlt_frame self );
 extern mlt_producer mlt_frame_get_original_producer( mlt_frame self );
 extern void mlt_frame_close( mlt_frame self );
 extern mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service );
-extern mlt_frame mlt_frame_clone( mlt_frame self );
+extern mlt_frame mlt_frame_clone( mlt_frame self, int is_deep );
 
 /* convenience functions */
 extern int mlt_sample_calculator( float fps, int frequency, int64_t position );

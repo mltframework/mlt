@@ -985,11 +985,13 @@ mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service 
  *
  * \public \memberof mlt_frame_s
  * \param self the frame to clone
+ * \param is_deep a boolean to indicate whether to make a deep copy of the audio
+ * and video data chunks or to make a shallow copy by pointing to the supplied frame
  * \return a almost-complete copy of the frame
  * \todo copy the processing deques
  */
 
-mlt_frame mlt_frame_clone( mlt_frame self )
+mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 {
 	mlt_frame new_frame = mlt_frame_init( NULL );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
@@ -997,17 +999,31 @@ mlt_frame mlt_frame_clone( mlt_frame self )
 	void *data;
 	int size;
 
-	// This frame takes a reference on the original frame since the data is a shallow copy.
-	mlt_properties_inc_ref( properties );
-	mlt_properties_set_data( new_props, "_cloned_frame", self, 0,
-		(mlt_destructor) mlt_frame_close, NULL );
-
-	// Copy properties
 	mlt_properties_inherit( new_props, properties );
-	data = mlt_properties_get_data( properties, "audio", &size );
-	mlt_properties_set_data( new_props, "audio", data, size, NULL, NULL );
-	data = mlt_properties_get_data( properties, "image", &size );
-	mlt_properties_set_data( new_props, "image", data, size, NULL, NULL );
+	if ( is_deep )
+	{
+		data = mlt_properties_get_data( properties, "audio", &size );
+		void *copy = mlt_pool_alloc( size );
+		memcpy( copy, data, size );
+		mlt_properties_set_data( new_props, "audio", copy, size, mlt_pool_release, NULL );
+		data = mlt_properties_get_data( properties, "image", &size );
+		copy = mlt_pool_alloc( size );
+		memcpy( copy, data, size );
+		mlt_properties_set_data( new_props, "image", copy, size, mlt_pool_release, NULL );
+	}
+	else
+	{
+		// This frame takes a reference on the original frame since the data is a shallow copy.
+		mlt_properties_inc_ref( properties );
+		mlt_properties_set_data( new_props, "_cloned_frame", self, 0,
+			(mlt_destructor) mlt_frame_close, NULL );
+
+		// Copy properties
+		data = mlt_properties_get_data( properties, "audio", &size );
+		mlt_properties_set_data( new_props, "audio", data, size, NULL, NULL );
+		data = mlt_properties_get_data( properties, "image", &size );
+		mlt_properties_set_data( new_props, "image", data, size, NULL, NULL );
+	}
 
 	return new_frame;
 }

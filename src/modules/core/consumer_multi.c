@@ -261,7 +261,7 @@ static void foreach_consumer_put( mlt_consumer consumer, mlt_frame frame )
 	do {
 		snprintf( key, sizeof(key), "%d.consumer", index++ );
 		nested = mlt_properties_get_data( properties, key, NULL );
-		if ( nested ) mlt_consumer_put_frame( nested, mlt_frame_clone( frame ) );
+		if ( nested ) mlt_consumer_put_frame( nested, mlt_frame_clone( frame, 0 ) );
 	} while ( nested );
 }
 
