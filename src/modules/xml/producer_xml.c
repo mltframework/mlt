@@ -86,6 +86,8 @@ struct deserialise_context_s
 	int pass;
 	char *lc_numeric;
 	mlt_consumer consumer;
+	int multi_consumer;
+	int consumer_count;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -1079,24 +1081,47 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 		{
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 			qualify_property( context, properties, "resource" );
+			qualify_property( context, properties, "target" );
 			char *resource = mlt_properties_get( properties, "resource" );
 
-			// Instantiate the consumer
-			context->consumer = mlt_factory_consumer( context->profile, mlt_properties_get( properties, "mlt_service" ), resource );
-			if ( context->consumer )
+			if ( context->multi_consumer > 1 )
 			{
-				// Track this consumer
-				track_service( context->destructors, MLT_CONSUMER_SERVICE(context->consumer), (mlt_destructor) mlt_consumer_close );
-				mlt_properties_set_lcnumeric( MLT_CONSUMER_PROPERTIES(context->consumer), context->lc_numeric );
-
-				// Propogate the properties
-				qualify_property( context, properties, "target" );
-
-				// Inherit the properties
-				mlt_properties_inherit( MLT_CONSUMER_PROPERTIES(context->consumer), properties );
+				// Instantiate the multi consumer
+				if ( !context->consumer )
+				{
+					context->consumer = mlt_factory_consumer( context->profile, "multi", NULL );
+					if ( context->consumer )
+					{
+						// Track this consumer
+						track_service( context->destructors, MLT_CONSUMER_SERVICE(context->consumer), (mlt_destructor) mlt_consumer_close );
+						mlt_properties_set_lcnumeric( MLT_CONSUMER_PROPERTIES(context->consumer), context->lc_numeric );
+					}
+				}
+				if ( context->consumer )
+				{
+					// Set this service instance on multi consumer
+					char key[20];
+					snprintf( key, sizeof(key), "%d", context->consumer_count++ );
+					mlt_properties_set_data( MLT_CONSUMER_PROPERTIES(context->consumer), key, service, 0,
+						(mlt_destructor) mlt_service_close, NULL );
+				}
 			}
-			// Close the dummy
-			mlt_service_close( service );
+			else
+			{
+				// Instantiate the consumer
+				context->consumer = mlt_factory_consumer( context->profile, mlt_properties_get( properties, "mlt_service" ), resource );
+				if ( context->consumer )
+				{
+					// Track this consumer
+					track_service( context->destructors, MLT_CONSUMER_SERVICE(context->consumer), (mlt_destructor) mlt_consumer_close );
+					mlt_properties_set_lcnumeric( MLT_CONSUMER_PROPERTIES(context->consumer), context->lc_numeric );
+
+					// Inherit the properties
+					mlt_properties_inherit( MLT_CONSUMER_PROPERTIES(context->consumer), properties );
+				}
+				// Close the dummy
+				mlt_service_close( service );
+			}
 		}
 	}
 }
@@ -1186,6 +1211,8 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		     xmlStrcmp( name, _x("profile") ) == 0 ||
 		     xmlStrcmp( name, _x("profileinfo") ) == 0 )
 			on_start_profile( context, name, atts );
+		if ( xmlStrcmp( name, _x("consumer") ) == 0 )
+			context->multi_consumer++;
 		return;
 	}
 	context->branch[ context->depth ] ++;
