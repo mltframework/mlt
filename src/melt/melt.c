@@ -286,7 +286,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 				snprintf( key, sizeof(key), "%d", k++ );
 				mlt_properties_set_data( properties, key, new_props, 0,
 					(mlt_destructor) mlt_properties_close, NULL );
-				mlt_properties_set( new_props, "consumer", argv[ ++i ] );
+				mlt_properties_set( new_props, "mlt_service", argv[ ++i ] );
 				while ( argv[ i + 1 ] != NULL && strstr( argv[ i + 1 ], "=" ) )
 					mlt_properties_parse( new_props, argv[ ++ i ] );
 				mlt_properties_dump( new_props, stderr );

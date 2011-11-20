@@ -133,7 +133,7 @@ static mlt_consumer generate_consumer( mlt_consumer consumer, mlt_properties pro
 		profile = mlt_profile_init( mlt_properties_get( props, "mlt_profile" ) );
 	if ( !profile )
 		profile = mlt_profile_clone( mlt_service_profile( MLT_CONSUMER_SERVICE(consumer) ) );
-	mlt_consumer nested = create_consumer( profile, mlt_properties_get( props, "consumer" ) );
+	mlt_consumer nested = create_consumer( profile, mlt_properties_get( props, "mlt_service" ) );
 
 	if ( nested )
 	{
@@ -215,7 +215,7 @@ static void foreach_consumer_init( mlt_consumer consumer )
 				int i, count;
 
 				if ( !p ) break;
-				mlt_properties_set( p, "consumer", mlt_properties_get( properties, key ) );
+				mlt_properties_set( p, "mlt_service", mlt_properties_get( properties, key ) );
 				snprintf( key, sizeof(key), "%d.", index );
 
 				count = mlt_properties_count( properties );
