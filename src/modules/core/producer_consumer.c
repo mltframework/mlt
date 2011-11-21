@@ -113,6 +113,8 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		mlt_properties_set_data( properties, "context", cx, 0, mlt_pool_release, NULL );
 		cx->this = this;
 		char *profile_name = mlt_properties_get( properties, "profile" );
+		if ( !profile_name )
+			profile_name = mlt_properties_get( properties, "mlt_profile" );
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( this ) );
 
 		if ( profile_name )
