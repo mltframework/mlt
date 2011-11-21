@@ -2,7 +2,8 @@
  *  filter_stabilize.c
  *
  *  Copyright (C) Georg Martius - June 2007
- *   georg dot martius at web dot de  
+ *   georg dot martius at web dot de
+ *  mlt adaption by Marco Gittler marco at gitma dot de 2011
  *
  *  This file is part of transcode, a video stream processing tool
  *      
@@ -53,7 +54,9 @@
 #include <string.h>
 #include <framework/mlt_types.h>
 #include <framework/mlt_log.h>
-
+#ifdef USE_SSE2
+#include <emmintrin.h>
+#endif
 
 void addTrans(StabData* sd, Transform sl)
 {
@@ -77,7 +80,7 @@ int initFields(StabData* sd)
     // make sure that the remaining rows have the same length
     sd->field_num  = rows*cols;
     sd->field_rows = rows;
-    mlt_log_warning (NULL,"field setup: rows: %i cols: %i Total: %i fields", 
+    mlt_log_debug (NULL,"field setup: rows: %i cols: %i Total: %i fields", 
                 rows, cols, sd->field_num);
 
     if (!(sd->fields = malloc(sizeof(Field) * sd->field_num))) {
@@ -143,15 +146,31 @@ double compareImg(unsigned char* I1, unsigned char* I2,
         } else {
             p2 -= d_x * bytesPerPixel; 
         }
-        // TODO: use some mmx or sse stuff here
-        for (j = 0; j < effectWidth * bytesPerPixel; j++) {
-            /* debugging code continued */
+#ifdef USE_SSE2
+		__m128i A,B,C,D,E;
+		for (j = 0; j < effectWidth * bytesPerPixel - 16; j++) {
+#else
+		for (j = 0; j < effectWidth * bytesPerPixel; j++) {
+#endif 
             /* fwrite(p1,1,1,pic1);fwrite(p1,1,1,pic1);fwrite(p1,1,1,pic1);
                fwrite(p2,1,1,pic2);fwrite(p2,1,1,pic2);fwrite(p2,1,1,pic2); 
              */
+#ifdef USE_SSE2
+			A= _mm_loadu_si128((__m128i*)p1); //load unaligned data
+			B= _mm_loadu_si128((__m128i*)p2);
+			C= _mm_sad_epu8(A, B);//diff per 8 bit pixel stored in 2 64 byte values
+			D = _mm_srli_si128(C, 8); // shift first 64 byte value to align at the same as C
+			E = _mm_add_epi32(C, D); // add the 2 values (sum of all diffs)
+			sum+= _mm_cvtsi128_si32(E); //convert _m128i to int
+			
+            p1+=16;
+            p2+=16;     
+			j+=15;
+#else
             sum += abs((int)*p1 - (int)*p2);
             p1++;
             p2++;      
+#endif
         }
     }
     /*  fclose(pic1);
@@ -178,30 +197,37 @@ double compareSubImg(unsigned char* const I1, unsigned char* const I2,
     unsigned char* p1 = NULL;
     unsigned char* p2 = NULL;
     int s2 = field->size / 2;
-    double sum = 0;
+    double sum=0.0;
 
     p1=I1 + ((field->x - s2) + (field->y - s2)*width)*bytesPerPixel;
+
     p2=I2 + ((field->x - s2 + d_x) + (field->y - s2 + d_y)*width)*bytesPerPixel;
     // TODO: use some mmx or sse stuff here
+#ifdef USE_SSE2
+	__m128i A,B,C,D,E;
+#endif 
     for (j = 0; j < field->size; j++){
-		
-        for (k = 0; k < field->size * bytesPerPixel; k++) {
-#if HAVE_MMX
-#error "wo"
+#ifdef USE_SSE2
+			for (k = 0; k < (field->size * bytesPerPixel) - 16 ; k++) {
+				A= _mm_loadu_si128((__m128i*)p1); //load unaligned data
+				B= _mm_loadu_si128((__m128i*)p2);
+				C= _mm_sad_epu8(A, B);//abd diff stored in 2 64 byte values
+				D = _mm_srli_si128(C, 8); // shift value 8 byte right
+				E = _mm_add_epi32(C, D); // add the 2 values (sum of all diffs)
+				sum+= _mm_cvtsi128_si32(E); //convert _m128i to int
+			
+            p1+=16;
+            p2+=16;     
+			k+=15;
 #else
+			for (k = 0; k < (field->size * bytesPerPixel); k++) {
             sum += abs((int)*p1 - (int)*p2);
-			/*asm {
-				push edx
-
-				pop edx
-				emms
-			}*/
-#endif
             p1++;
             p2++;     
+#endif
         }
-        p1 += (width - field->size) * bytesPerPixel;
-        p2 += (width - field->size) * bytesPerPixel;
+        p1 += ((width - field->size) * bytesPerPixel);
+        p2 += ((width - field->size) * bytesPerPixel);
     }
     return sum/((double) field->size *field->size* bytesPerPixel);
 }
@@ -234,14 +260,52 @@ double contrastSubImgRGB(StabData* sd, const Field* field){
 double contrastSubImg(unsigned char* const I, const Field* field, 
                      int width, int height, int bytesPerPixel)
 {
+#if USE_SSE2
+    int k, j;
+    int s2 = field->size / 2;
+    __m128i mini = _mm_set_epi64(_mm_set1_pi8(255), _mm_set1_pi8(255));
+	__m128i maxi = _mm_set_epi64(_mm_set1_pi8(0)  , _mm_set1_pi8(0));
+    unsigned char* p = I + ((field->x - s2) + (field->y - s2)*width)*bytesPerPixel;
+	__m128i A;
+    for (j = 0; j < field->size; j++){
+        for (k = 0; k < (field->size * bytesPerPixel)-16 ; k++) {
+			A= _mm_loadu_si128((__m128i*)p); //load unaligned data
+
+			maxi = _mm_max_epu8(A,maxi);
+			mini = _mm_min_epu8(A,mini);
+            p+=16;
+			k+=15;
+        }
+        p += (width - field->size) * bytesPerPixel;
+    }
+	int max=0;
+	union {
+		__m128i m;
+		uint8_t t[16];
+	} m;
+	m.m=maxi;
+	for (j=0;j<16;j++) {
+		if (m.t[j] >max)
+			max=m.t[j];
+	}
+	int min=255;
+	m.m=mini;
+	for (j=0;j<16;j++) {
+		if (m.t[j] <min)
+			min=m.t[j];
+	}
+	//printf("max=%d  min=%d\n", max,min);
+    return (max-min)/(max+min+0.1); // +0.1 to avoid division by 0
+#else
+
     int k, j;
     unsigned char* p = NULL;
     int s2 = field->size / 2;
     unsigned char mini = 255;
     unsigned char maxi = 0;
-
     p = I + ((field->x - s2) + (field->y - s2)*width)*bytesPerPixel;
     // TODO: use some mmx or sse stuff here
+
     for (j = 0; j < field->size; j++){
         for (k = 0; k < field->size * bytesPerPixel; k++) {
             mini = (mini < *p) ? mini : *p;
@@ -251,6 +315,7 @@ double contrastSubImg(unsigned char* const I, const Field* field,
         p += (width - field->size) * bytesPerPixel;
     }
     return (maxi-mini)/(maxi+mini+0.1); // +0.1 to avoid division by 0
+#endif
 }
 
 /** tries to register current frame onto previous frame.
@@ -413,18 +478,18 @@ Transform calcFieldTransYUV(StabData* sd, const Field* field, int fieldnum)
     }
 #ifdef STABVERBOSE 
     fclose(f); 
-    mlt_log_warning ( "Minerror: %f\n", minerror);
+    mlt_log_debug ( "Minerror: %f\n", minerror);
 #endif
 
     if (!sd->allowmax && fabs(t.x) == sd->maxshift) {
 #ifdef STABVERBOSE 
-        mlt_log_warning ( "maximal x shift ");
+        mlt_log_debug ( "maximal x shift ");
 #endif
         t.x = 0;
     }
     if (!sd->allowmax && fabs(t.y) == sd->maxshift) {
 #ifdef STABVERBOSE 
-        mlt_log_warning ("maximal y shift ");
+        mlt_log_debug ("maximal y shift ");
 #endif
         t.y = 0;
     }
@@ -724,21 +789,7 @@ struct iterdata {
     FILE *f;
     int  counter;
 };
-#if 0
-static int stabilize_dump_trans(tlist*item, void *userdata)
-{
-    struct iterdata *ID = userdata;
 
-    if (item->data) {
-        Transform* t = (Transform*) item->data;
-        fprintf(ID->f, "%i %6.4lf %6.4lf %8.5lf %6.4lf %i\n",
-                ID->counter, t->x, t->y, t->alpha, t->zoom, t->extra);
-        ID->counter++;
-    }
-    return 0; /* never give up */
-}
-
-#endif
 /*************************************************************************/
 
 /* Module interface routines and data. */
@@ -757,12 +808,6 @@ int stabilize_init(StabData* instance)
     if (!instance) {
         return -1;
     }
-
-	//stab->vob=pixelfmt;
-    /**** Initialise private data structure */
-
-    //self->userdata = sd;
-
     return 0;
 }
 
@@ -785,57 +830,32 @@ int stabilize_configure(StabData* instance
         return -1;
     }
     sd->currcopy = 0;
-
-    /*sd->width  = sd->vob->ex_v_width;
-    sd->height = sd->vob->ex_v_height;
-*/
     sd->hasSeenOneFrame = 0;
     sd->transs = 0;
-    
-    // Options
-    // done in filter : sd->stepsize   = 6;
     sd->allowmax   = 0;
-    // done in filter :sd->algo = 1;
-//    sd->field_num   = 64;
-    // done in filter : sd->accuracy    = 4;
-    // done in filter : sd->shakiness   = 4;
     sd->field_size  = MIN(sd->width, sd->height)/12;
-    // done in filter : sd->show        = 0;
-    // done in filter : sd->contrast_threshold = 0.3; 
     sd->maxanglevariation = 1;
     
-    /*if (options != NULL) {            
-        // for some reason this plugin is called in the old fashion 
-        //  (not with inspect). Anyway we support both ways of getting help.
-        if(optstr_lookup(options, "help")) {
-            printf(stabilize_help);
-            return -2;
-        }
-
-        optstr_get(options, "shakiness",  "%d", &sd->shakiness);
-        optstr_get(options, "accuracy",   "%d", &sd->accuracy);
-        optstr_get(options, "stepsize",   "%d", &sd->stepsize);
-        optstr_get(options, "algo",       "%d", &sd->algo);
-        optstr_get(options, "mincontrast","%lf",&sd->contrast_threshold);
-        optstr_get(options, "show",       "%d", &sd->show);
-    }*/
     sd->shakiness = MIN(10,MAX(1,sd->shakiness));
     sd->accuracy  = MAX(sd->shakiness,MIN(15,MAX(1,sd->accuracy)));
     if (1) {
-        mlt_log_warning (NULL, "Image Stabilization Settings:\n");
-        mlt_log_warning (NULL, "     shakiness = %d\n", sd->shakiness);
-        mlt_log_warning (NULL, "      accuracy = %d\n", sd->accuracy);
-        mlt_log_warning (NULL, "      stepsize = %d\n", sd->stepsize);
-        mlt_log_warning (NULL, "          algo = %d\n", sd->algo);
-        mlt_log_warning (NULL, "   mincontrast = %f\n", sd->contrast_threshold);
-        mlt_log_warning (NULL, "          show = %d\n", sd->show);
+        mlt_log_debug (NULL, "Image Stabilization Settings:\n");
+        mlt_log_debug (NULL, "     shakiness = %d\n", sd->shakiness);
+        mlt_log_debug (NULL, "      accuracy = %d\n", sd->accuracy);
+        mlt_log_debug (NULL, "      stepsize = %d\n", sd->stepsize);
+        mlt_log_debug (NULL, "          algo = %d\n", sd->algo);
+        mlt_log_debug (NULL, "   mincontrast = %f\n", sd->contrast_threshold);
+        mlt_log_debug (NULL, "          show = %d\n", sd->show);
     }
 
+#ifndef USE_SSE2
+	mlt_log_info(NULL,"No SSE2 support enabled, this will slow down a lot\n");
+#endif
     // shift and size: shakiness 1: height/40; 10: height/4
     sd->maxshift    = MIN(sd->width, sd->height)*sd->shakiness/40;
     sd->field_size   = MIN(sd->width, sd->height)*sd->shakiness/40;
   
-    mlt_log_warning ( NULL,  "Fieldsize: %i, Maximal translation: %i pixel\n", 
+    mlt_log_debug ( NULL,  "Fieldsize: %i, Maximal translation: %i pixel\n", 
                 sd->field_size, sd->maxshift);
     if (sd->algo==1) {        
         // initialize measurement fields. field_num is set here.
@@ -843,7 +863,7 @@ int stabilize_configure(StabData* instance
             return -1;
         }
         sd->maxfields = (sd->accuracy) * sd->field_num / 15;
-        mlt_log_warning ( NULL, "Number of used measurement fields: %i out of %i\n",
+        mlt_log_debug ( NULL, "Number of used measurement fields: %i out of %i\n",
                     sd->maxfields, sd->field_num);
     }
     if (sd->show){
@@ -914,34 +934,6 @@ int stabilize_filter_video(StabData* instance,
 int stabilize_stop(StabData* instance)
 {
     StabData *sd = instance;
-
-    // print transs
-	/*struct iterdata ID;
-	ID.counter = 0;
-	ID.f       = sd->f;
-	// write parameters as comments to file 
-	fprintf(sd->f, "#      accuracy = %d\n", sd->accuracy);
-	fprintf(sd->f, "#     shakiness = %d\n", sd->shakiness);
-	fprintf(sd->f, "#      stepsize = %d\n", sd->stepsize);
-	fprintf(sd->f, "#          algo = %d\n", sd->algo);
-	fprintf(sd->f, "#   mincontrast = %f\n", sd->contrast_threshold);
-	// write header line
-	fprintf(sd->f, "# Transforms\n#C FrameNr x y alpha zoom extra\n");
-	// and all transforms
-	tc_list_foreach(sd->transs, stabilize_dump_trans, &ID);
-*/
-	/* FOR DEBUG ONLY
-	
-	tlist* transf=sd->transs;
-	int num=0;
-	while (transf ){
-		Transform* t=transf->data;
-		if (t)
-		printf("%d %f %f %f %f %d\n",num++,t->x,t->y,t->alpha,t->zoom,t->extra);
-		transf=transf->next;
-	}
-	*/
-    //tc_list_del(sd->transs, 1 );
     if (sd->prev) {
         free(sd->prev);
         sd->prev = NULL;
