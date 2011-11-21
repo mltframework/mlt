@@ -245,7 +245,14 @@ static void foreach_consumer_start( mlt_consumer consumer )
 	do {
 		snprintf( key, sizeof(key), "%d.consumer", index++ );
 		nested = mlt_properties_get_data( properties, key, NULL );
-		if ( nested ) mlt_consumer_start( nested );
+		if ( nested )
+		{
+			mlt_properties nested_props = MLT_CONSUMER_PROPERTIES(nested);
+			mlt_properties_set_position( nested_props, "_multi_position", 0 );
+			mlt_properties_set_data( nested_props, "_multi_audio", NULL, 0, NULL, NULL );
+			mlt_properties_set_int( nested_props, "_multi_samples", 0 );
+			mlt_consumer_start( nested );
+		}
 	} while ( nested );
 }
 
@@ -273,7 +280,88 @@ static void foreach_consumer_put( mlt_consumer consumer, mlt_frame frame )
 	do {
 		snprintf( key, sizeof(key), "%d.consumer", index++ );
 		nested = mlt_properties_get_data( properties, key, NULL );
-		if ( nested ) mlt_consumer_put_frame( nested, mlt_frame_clone( frame, 0 ) );
+		if ( nested )
+		{
+			mlt_properties nested_props = MLT_CONSUMER_PROPERTIES(nested);
+			double self_fps = mlt_properties_get_double( properties, "fps" );
+			double nested_fps = mlt_properties_get_double( nested_props, "fps" );
+			mlt_position nested_pos = mlt_properties_get_position( nested_props, "_multi_position" );
+			mlt_position self_pos = mlt_frame_get_position( frame );
+			double self_time = self_pos / self_fps;
+			double nested_time = nested_pos / nested_fps;
+
+			// get the audio for the current frame
+			uint8_t *buffer = NULL;
+			mlt_audio_format format = mlt_audio_s16;
+			int channels = mlt_properties_get_int( properties, "channels" );
+			int frequency = mlt_properties_get_int( properties, "frequency" );
+			int current_samples = mlt_sample_calculator( self_fps, frequency, self_pos );
+			mlt_frame_get_audio( frame, (void**) &buffer, &format, &frequency, &channels, &current_samples );
+			int current_size = mlt_audio_format_size( format, current_samples, channels );
+
+			// get any leftover audio
+			int prev_size = 0;
+			uint8_t *prev_buffer = mlt_properties_get_data( nested_props, "_multi_audio", &prev_size );
+			uint8_t *new_buffer = NULL;
+			if ( prev_size > 0 )
+			{
+				new_buffer = mlt_pool_alloc( prev_size + current_size );
+				memcpy( new_buffer, prev_buffer, prev_size );
+				memcpy( new_buffer + prev_size, buffer, current_size );
+				buffer = new_buffer;
+			}
+			current_size += prev_size;
+			current_samples += mlt_properties_get_int( nested_props, "_multi_samples" );
+
+			while ( nested_time <= self_time )
+			{
+				// put ideal number of samples into cloned frame
+				mlt_frame clone_frame = mlt_frame_clone( frame, 0 );
+				int nested_samples = mlt_sample_calculator( nested_fps, frequency, nested_pos );
+				// -10 is an optimization to avoid tiny amounts of leftover samples
+				nested_samples = nested_samples > current_samples - 10 ? current_samples : nested_samples;
+				int nested_size = mlt_audio_format_size( format, nested_samples, channels );
+				if ( nested_size > 0 )
+				{
+					prev_buffer = mlt_pool_alloc( nested_size );
+					memcpy( prev_buffer, buffer, nested_size );
+				}
+				else
+				{
+					prev_buffer = NULL;
+					nested_size = 0;
+				}
+				mlt_frame_set_audio( clone_frame, prev_buffer, format, nested_size, mlt_pool_release );
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES(clone_frame), "audio_samples", nested_samples );
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES(clone_frame), "audio_frequency", frequency );
+				mlt_properties_set_int( MLT_FRAME_PROPERTIES(clone_frame), "audio_channels", channels );
+
+				// chomp the audio
+				current_samples -= nested_samples;
+				current_size -= nested_size;
+				buffer += nested_size;
+
+				// send frame to nested consumer
+				mlt_consumer_put_frame( nested, clone_frame );
+				mlt_properties_set_position( nested_props, "_multi_position", ++nested_pos );
+				nested_time = nested_pos / nested_fps;
+			}
+
+			// save any remaining audio
+			if ( current_size > 0 )
+			{
+				prev_buffer = mlt_pool_alloc( current_size );
+				memcpy( prev_buffer, buffer, current_size );
+			}
+			else
+			{
+				prev_buffer = NULL;
+				current_size = 0;
+			}
+			mlt_pool_release( new_buffer );
+			mlt_properties_set_data( nested_props, "_multi_audio", prev_buffer, current_size, mlt_pool_release, NULL );
+			mlt_properties_set_int( nested_props, "_multi_samples", current_samples );
+		}
 	} while ( nested );
 }
 
@@ -381,18 +469,19 @@ static void *consumer_thread( void *arg )
 		// Check that we have a frame to work with
 		if ( frame && !terminated && !is_stopped( consumer ) )
 		{
-			if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered" ) )
+			if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered" ) )
+			{
+				if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "_speed" ) == 0 )
+					foreach_consumer_refresh( consumer );
+				foreach_consumer_put( consumer, frame );
+				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			}
+			else
 			{
 				int dropped = mlt_properties_get_int( properties, "_dropped" );
-				mlt_frame_close( frame );
 				mlt_log_info( MLT_CONSUMER_SERVICE(consumer), "dropped frame %d\n", ++dropped );
 				mlt_properties_set_int( properties, "_dropped", dropped );
-				continue;
 			}
-			if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "_speed" ) == 0 )
-				foreach_consumer_refresh( consumer );
-			foreach_consumer_put( consumer, frame );
-			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 			mlt_frame_close( frame );
 		}
 		else
