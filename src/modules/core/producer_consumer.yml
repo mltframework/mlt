@@ -2,7 +2,7 @@ schema_version: 0.1
 type: producer
 identifier: consumer
 title: Consumer as Producer
-version: 1
+version: 2
 copyright: Ushodaya Enterprises Limited
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -23,7 +23,7 @@ parameters:
     description: >
       The name of a MLT profile with which to load the resource. This defaults
       to the composition's profile, but could be overridden by the profile
-      in MLT XML.
+      in MLT XML. Also, the value "auto" triggers profile detection.
 
   - identifier: autoprofile
     title: Auto-profile
