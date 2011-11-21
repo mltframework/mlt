@@ -285,10 +285,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		{
 			// Get the input image, width and height
 			uint8_t *new_image = mlt_pool_alloc( size );
-			mlt_frame_set_image( this, new_image, size, mlt_pool_release );
 			uint8_t *ptr = new_image + owidth * bpp;
 			memcpy( new_image, *image, owidth * bpp );
 			memcpy( ptr, *image, owidth * ( oheight - 1 ) * bpp );
+			mlt_frame_set_image( this, new_image, size, mlt_pool_release );
 			*image = new_image;
 			
 			// Set the normalised field order
