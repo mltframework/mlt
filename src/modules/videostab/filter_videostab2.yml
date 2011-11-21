@@ -94,7 +94,7 @@ parameters:
     widget: spinner
   - identifier: smoothing
     title: Smoothing
-    type: int
+    type: integer
     description: number of frames for lowpass filtering ( ( num * 2 + 1) frames )
     readonly: no
     required: no
