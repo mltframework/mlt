@@ -440,7 +440,7 @@ int preprocess_transforms(TransformData* td)
     if (td->trans_len < 1)
         return 0;
     if (0) {
-        mlt_log_warning(NULL,"Preprocess transforms:");
+        mlt_log_debug(NULL,"Preprocess transforms:");
     }
     if (td->smoothing>0) {
         /* smoothing */
@@ -546,7 +546,7 @@ int preprocess_transforms(TransformData* td)
         // the zoom value only for y
         double zy = 2*TC_MAX(max_t.y,fabs(min_t.y))/td->height_src;
         td->zoom += 100* TC_MAX(zx,zy); // use maximum
-        mlt_log_warning(NULL,"Final zoom: %lf\n", td->zoom);
+        mlt_log_debug(NULL,"Final zoom: %lf\n", td->zoom);
     }
         
     /* apply global zoom */
@@ -640,22 +640,22 @@ int transform_configure(TransformData *self,int width,int height, mlt_image_form
 	
     td->interpoltype = TC_MIN(td->interpoltype,4);
     if (1) {
-        mlt_log_warning(NULL, "Image Transformation/Stabilization Settings:\n");
-        mlt_log_warning(NULL, "    smoothing = %d\n", td->smoothing);
-        mlt_log_warning(NULL, "    maxshift  = %d\n", td->maxshift);
-        mlt_log_warning(NULL, "    maxangle  = %f\n", td->maxangle);
-        mlt_log_warning(NULL, "    crop      = %s\n", 
+        mlt_log_debug(NULL, "Image Transformation/Stabilization Settings:\n");
+        mlt_log_debug(NULL, "    smoothing = %d\n", td->smoothing);
+        mlt_log_debug(NULL, "    maxshift  = %d\n", td->maxshift);
+        mlt_log_debug(NULL, "    maxangle  = %f\n", td->maxangle);
+        mlt_log_debug(NULL, "    crop      = %s\n", 
                         td->crop ? "Black" : "Keep");
-        mlt_log_warning(NULL, "    relative  = %s\n", 
+        mlt_log_debug(NULL, "    relative  = %s\n", 
                     td->relative ? "True": "False");
-        mlt_log_warning(NULL, "    invert    = %s\n", 
+        mlt_log_debug(NULL, "    invert    = %s\n", 
                     td->invert ? "True" : "False");
-        mlt_log_warning(NULL, "    zoom      = %f\n", td->zoom);
-        mlt_log_warning(NULL, "    optzoom   = %s\n", 
+        mlt_log_debug(NULL, "    zoom      = %f\n", td->zoom);
+        mlt_log_debug(NULL, "    optzoom   = %s\n", 
                     td->optzoom ? "On" : "Off");
-        mlt_log_warning(NULL, "    interpol  = %s\n", 
+        mlt_log_debug(NULL, "    interpol  = %s\n", 
                     interpoltypes[td->interpoltype]);
-        mlt_log_warning(NULL, "    sharpen   = %f\n", td->sharpen);
+        mlt_log_debug(NULL, "    sharpen   = %f\n", td->sharpen);
     }
   
     if (td->maxshift > td->width_dest/2
