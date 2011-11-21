@@ -11,11 +11,27 @@ tags:
   - Audio
   - Video
 description: Use multiple consumers with the same producer.
+notes: |
+  There are a few ways of defining each of the outputs and their properties.
+  One form is a flat set of properties on this consumer that follows the pattern:
+  <N>=<service> [<N>.<property>=<value>]*
+  For example, 0=sdl 0.rescale=bilinear 1=avformat 1.target=foo.dv ...
+  To change the profile for a particular output set the property "mlt_profile."
+  You can put these into a MLT properties file and supply that to this consumer.
+
+  Another way is to create a separate properties list for each output and set
+  that on the consumer with a numeric name starting with zero:
+  <N>=<mlt_properties object> ...
+  In this format, to specify the service, use the property name "mlt_service"
+  and, again, to specify the profile, use "mlt_profile."
+  You can put these into a YAML Tiny file and supply that to this consumer.
+  This is also the recommended way for applications to interact with this
+  consumer, which is how melt and the XML producer support multiple consumers.
+
 parameters:
   - identifier: argument
-    title: Number of consumers
-    type: integer
-    required: yes
-    widget: spinner
-    minimum: 0
-    default: 1
+    title: File
+    type: string
+    description: >
+      A properties or YAML file specifying multiple consumers and their properties.
+    required: no
