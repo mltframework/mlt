@@ -996,20 +996,34 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 	mlt_frame new_frame = mlt_frame_init( NULL );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_properties new_props = MLT_FRAME_PROPERTIES( new_frame );
-	void *data;
+	void *data, *copy;
 	int size;
 
 	mlt_properties_inherit( new_props, properties );
 	if ( is_deep )
 	{
 		data = mlt_properties_get_data( properties, "audio", &size );
-		void *copy = mlt_pool_alloc( size );
-		memcpy( copy, data, size );
-		mlt_properties_set_data( new_props, "audio", copy, size, mlt_pool_release, NULL );
+		if ( data )
+		{
+			if ( !size )
+				size = mlt_audio_format_size( mlt_properties_get_int( properties, "audio_format" ),
+					mlt_properties_get_int( properties, "audio_samples" ),
+					mlt_properties_get_int( properties, "audio_channels" ) );
+			copy = mlt_pool_alloc( size );
+			memcpy( copy, data, size );
+			mlt_properties_set_data( new_props, "audio", copy, size, mlt_pool_release, NULL );
+		}
 		data = mlt_properties_get_data( properties, "image", &size );
-		copy = mlt_pool_alloc( size );
-		memcpy( copy, data, size );
-		mlt_properties_set_data( new_props, "image", copy, size, mlt_pool_release, NULL );
+		if ( data )
+		{
+			if ( ! size )
+				size = mlt_image_format_size( mlt_properties_get_int( properties, "format" ),
+					mlt_properties_get_int( properties, "width" ),
+					mlt_properties_get_int( properties, "height" ), NULL );
+			copy = mlt_pool_alloc( size );
+			memcpy( copy, data, size );
+			mlt_properties_set_data( new_props, "image", copy, size, mlt_pool_release, NULL );
+		}
 	}
 	else
 	{
