@@ -48,6 +48,7 @@ mlt_consumer consumer_multi_init( mlt_profile profile, mlt_service_type type, co
 		consumer->is_stopped = is_stopped;
 
 		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "resource", arg );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer), "real_time", -1 );
 	}
 
 	return consumer;
