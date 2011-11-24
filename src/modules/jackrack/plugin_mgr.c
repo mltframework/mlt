@@ -106,7 +106,7 @@ plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * file
 #ifdef __DARWIN__
   if (!get_descriptor (0)) {
     void (*constructor)(void) = dlsym (dl_handle, "_init");
-    constructor();
+    if (constructor) constructor();
   }
 #endif
 
