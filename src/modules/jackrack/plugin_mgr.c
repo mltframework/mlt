@@ -103,6 +103,13 @@ plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * file
     return;
   }
   
+#ifdef __DARWIN__
+  if (!get_descriptor (0)) {
+    void (*constructor)(void) = dlsym (dl_handle, "_init");
+    constructor();
+  }
+#endif
+
   plugin_index = 0;
   while ( (descriptor = get_descriptor (plugin_index)) )
     {
