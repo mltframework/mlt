@@ -273,6 +273,7 @@ public:
 	bool stop()
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+		bool wasRunning = !!mlt_properties_get_int( properties, "running" );
 
 		// set running state is 0
 		mlt_properties_set_int( properties, "running", 0 );
@@ -291,9 +292,8 @@ public:
 			m_decklinkFrame->Release();
 		m_decklinkFrame = NULL;
 
-		if ( m_prerollThread )
+		if ( wasRunning )
 			pthread_join( m_prerollThread, NULL );
-		m_prerollThread = 0;
 
 		return true;
 	}
