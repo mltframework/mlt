@@ -41,14 +41,21 @@ mlt_consumer consumer_multi_init( mlt_profile profile, mlt_service_type type, co
 
 	if ( consumer )
 	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
+
+		// Set defaults
+		mlt_properties_set( properties, "resource", arg );
+		mlt_properties_set_int( properties, "real_time", -1 );
+		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
+
+		// Init state
+		mlt_properties_set_int( properties, "joined", 1 );
+
 		// Assign callbacks
 		consumer->close = consumer_close;
 		consumer->start = start;
 		consumer->stop = stop;
 		consumer->is_stopped = is_stopped;
-
-		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "resource", arg );
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer), "real_time", -1 );
 	}
 
 	return consumer;
@@ -396,6 +403,7 @@ static int start( mlt_consumer consumer )
 
 		// Set the running state
 		mlt_properties_set_int( properties, "running", 1 );
+		mlt_properties_set_int( properties, "joined", 0 );
 
 		// Construct and start nested consumers
 		if ( !mlt_properties_get_data( properties, "0.consumer", NULL ) )
@@ -414,7 +422,7 @@ static int start( mlt_consumer consumer )
 static int stop( mlt_consumer consumer )
 {
 	// Check that we're running
-	if ( !is_stopped( consumer ) )
+	if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES(consumer), "joined" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		pthread_t *thread = mlt_properties_get_data( properties, "thread", NULL );
@@ -428,6 +436,7 @@ static int stop( mlt_consumer consumer )
 			foreach_consumer_refresh( consumer );
 			pthread_join( *thread, NULL );
 		}
+		mlt_properties_set_int( properties, "joined", 1 );
 
 		// Stop nested consumers
 		foreach_consumer_stop( consumer );
@@ -488,13 +497,11 @@ static void *consumer_thread( void *arg )
 		else
 		{
 			if ( frame ) mlt_frame_close( frame );
-			foreach_consumer_put( consumer, NULL );
 			terminated = 1;
 		}
 	}
 
 	// Indicate that the consumer is stopped
-	mlt_properties_set_int( properties, "running", 0 );
 	mlt_consumer_stopped( consumer );
 
 	return NULL;
@@ -506,6 +513,7 @@ static void *consumer_thread( void *arg )
 static void consumer_close( mlt_consumer consumer )
 {
 	mlt_consumer_stop( consumer );
+
 	// Close the parent
 	mlt_consumer_close( consumer );
 	free( consumer );
