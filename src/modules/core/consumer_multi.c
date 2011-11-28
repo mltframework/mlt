@@ -62,13 +62,15 @@ mlt_consumer consumer_multi_init( mlt_profile profile, mlt_service_type type, co
 	return consumer;
 }
 
-static mlt_consumer create_consumer( mlt_profile profile, char *id )
+static mlt_consumer create_consumer( mlt_profile profile, char *id, char *arg )
 {
 	char *myid = id ? strdup( id ) : NULL;
-	char *arg = myid ? strchr( myid, ':' ) : NULL;
-	if ( arg != NULL )
-		*arg ++ = '\0';
-	mlt_consumer consumer = mlt_factory_consumer( profile, myid, arg );
+	char *myarg = ( myid && !arg ) ? strchr( myid, ':' ) : NULL;
+	if ( myarg )
+		*myarg ++ = '\0';
+	else
+		myarg = arg;
+	mlt_consumer consumer = mlt_factory_consumer( profile, myid, myarg );
 	if ( myid )
 		free( myid );
 	return consumer;
@@ -142,7 +144,8 @@ static mlt_consumer generate_consumer( mlt_consumer consumer, mlt_properties pro
 		profile = mlt_profile_init( mlt_properties_get( props, "mlt_profile" ) );
 	if ( !profile )
 		profile = mlt_profile_clone( mlt_service_profile( MLT_CONSUMER_SERVICE(consumer) ) );
-	mlt_consumer nested = create_consumer( profile, mlt_properties_get( props, "mlt_service" ) );
+	mlt_consumer nested = create_consumer( profile, mlt_properties_get( props, "mlt_service" ),
+		mlt_properties_get( props, "target" ) );
 
 	if ( nested )
 	{
