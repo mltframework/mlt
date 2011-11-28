@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 // Forward references
 static int start( mlt_consumer consumer );
@@ -379,11 +380,27 @@ static void foreach_consumer_stop( mlt_consumer consumer )
 	mlt_consumer nested = NULL;
 	char key[30];
 	int index = 0;
+	struct timespec tm = { 0, 1000 * 1000 };
 
 	do {
 		snprintf( key, sizeof(key), "%d.consumer", index++ );
 		nested = mlt_properties_get_data( properties, key, NULL );
-		if ( nested ) mlt_consumer_stop( nested );
+		if ( nested )
+		{
+			// Let consumer with terminate_on_pause stop on their own
+			if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES(nested), "terminate_on_pause" ) )
+			{
+				// Send additional dummy frame to unlatch nested consumer's threads
+				mlt_consumer_put_frame( nested, mlt_frame_init( MLT_CONSUMER_SERVICE(consumer) ) );
+				// wait for stop
+				while ( !mlt_consumer_is_stopped( nested ) )
+					nanosleep( &tm, NULL );
+			}
+			else
+			{
+				mlt_consumer_stop( nested );
+			}
+		}
 	} while ( nested );
 }
 
@@ -496,7 +513,14 @@ static void *consumer_thread( void *arg )
 		}
 		else
 		{
-			if ( frame ) mlt_frame_close( frame );
+			if ( frame && terminated )
+			{
+				// Send this termination frame to nested consumers for their cancellation
+				foreach_consumer_put( consumer, frame );
+				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			}
+			if ( frame )
+				mlt_frame_close( frame );
 			terminated = 1;
 		}
 	}
