@@ -126,6 +126,9 @@ struct producer_avformat_s
 		int ip_age[2];
 		int is_decoded;
 		uint8_t *buffer;
+
+		VdpDevice device;
+		VdpDecoder decoder;
 	} *vdpau;
 #endif
 };
@@ -1460,15 +1463,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				if ( must_decode || int_position >= req_position )
 				{
 #ifdef VDPAU
-					if ( g_vdpau && self->vdpau )
+					if ( self->vdpau )
 					{
-						if ( g_vdpau->producer != self )
+						if ( self->vdpau->decoder == VDP_INVALID_HANDLE )
 						{
-							vdpau_decoder_close();
 							vdpau_decoder_init( self );
 						}
-						if ( self->vdpau )
-							self->vdpau->is_decoded = 0;
+						self->vdpau->is_decoded = 0;
 					}
 #endif
 					codec_context->reordered_opaque = pkt.pts;
@@ -1703,7 +1704,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 				{
 					self->video_codec = codec_context;
 					if ( !vdpau_decoder_init( self ) )
-						vdpau_decoder_close();
+						vdpau_fini( self );
 				}
 			}
 			if ( !self->vdpau )

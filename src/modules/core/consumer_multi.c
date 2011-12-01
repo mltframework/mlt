@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 // Forward references
 static int start( mlt_consumer consumer );
@@ -41,26 +42,35 @@ mlt_consumer consumer_multi_init( mlt_profile profile, mlt_service_type type, co
 
 	if ( consumer )
 	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
+
+		// Set defaults
+		mlt_properties_set( properties, "resource", arg );
+		mlt_properties_set_int( properties, "real_time", -1 );
+		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
+
+		// Init state
+		mlt_properties_set_int( properties, "joined", 1 );
+
 		// Assign callbacks
 		consumer->close = consumer_close;
 		consumer->start = start;
 		consumer->stop = stop;
 		consumer->is_stopped = is_stopped;
-
-		mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "resource", arg );
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer), "real_time", -1 );
 	}
 
 	return consumer;
 }
 
-static mlt_consumer create_consumer( mlt_profile profile, char *id )
+static mlt_consumer create_consumer( mlt_profile profile, char *id, char *arg )
 {
 	char *myid = id ? strdup( id ) : NULL;
-	char *arg = myid ? strchr( myid, ':' ) : NULL;
-	if ( arg != NULL )
-		*arg ++ = '\0';
-	mlt_consumer consumer = mlt_factory_consumer( profile, myid, arg );
+	char *myarg = ( myid && !arg ) ? strchr( myid, ':' ) : NULL;
+	if ( myarg )
+		*myarg ++ = '\0';
+	else
+		myarg = arg;
+	mlt_consumer consumer = mlt_factory_consumer( profile, myid, myarg );
 	if ( myid )
 		free( myid );
 	return consumer;
@@ -134,7 +144,8 @@ static mlt_consumer generate_consumer( mlt_consumer consumer, mlt_properties pro
 		profile = mlt_profile_init( mlt_properties_get( props, "mlt_profile" ) );
 	if ( !profile )
 		profile = mlt_profile_clone( mlt_service_profile( MLT_CONSUMER_SERVICE(consumer) ) );
-	mlt_consumer nested = create_consumer( profile, mlt_properties_get( props, "mlt_service" ) );
+	mlt_consumer nested = create_consumer( profile, mlt_properties_get( props, "mlt_service" ),
+		mlt_properties_get( props, "target" ) );
 
 	if ( nested )
 	{
@@ -372,11 +383,27 @@ static void foreach_consumer_stop( mlt_consumer consumer )
 	mlt_consumer nested = NULL;
 	char key[30];
 	int index = 0;
+	struct timespec tm = { 0, 1000 * 1000 };
 
 	do {
 		snprintf( key, sizeof(key), "%d.consumer", index++ );
 		nested = mlt_properties_get_data( properties, key, NULL );
-		if ( nested ) mlt_consumer_stop( nested );
+		if ( nested )
+		{
+			// Let consumer with terminate_on_pause stop on their own
+			if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES(nested), "terminate_on_pause" ) )
+			{
+				// Send additional dummy frame to unlatch nested consumer's threads
+				mlt_consumer_put_frame( nested, mlt_frame_init( MLT_CONSUMER_SERVICE(consumer) ) );
+				// wait for stop
+				while ( !mlt_consumer_is_stopped( nested ) )
+					nanosleep( &tm, NULL );
+			}
+			else
+			{
+				mlt_consumer_stop( nested );
+			}
+		}
 	} while ( nested );
 }
 
@@ -396,6 +423,7 @@ static int start( mlt_consumer consumer )
 
 		// Set the running state
 		mlt_properties_set_int( properties, "running", 1 );
+		mlt_properties_set_int( properties, "joined", 0 );
 
 		// Construct and start nested consumers
 		if ( !mlt_properties_get_data( properties, "0.consumer", NULL ) )
@@ -414,7 +442,7 @@ static int start( mlt_consumer consumer )
 static int stop( mlt_consumer consumer )
 {
 	// Check that we're running
-	if ( !is_stopped( consumer ) )
+	if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES(consumer), "joined" ) )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		pthread_t *thread = mlt_properties_get_data( properties, "thread", NULL );
@@ -428,6 +456,7 @@ static int stop( mlt_consumer consumer )
 			foreach_consumer_refresh( consumer );
 			pthread_join( *thread, NULL );
 		}
+		mlt_properties_set_int( properties, "joined", 1 );
 
 		// Stop nested consumers
 		foreach_consumer_stop( consumer );
@@ -487,14 +516,19 @@ static void *consumer_thread( void *arg )
 		}
 		else
 		{
-			if ( frame ) mlt_frame_close( frame );
-			foreach_consumer_put( consumer, NULL );
+			if ( frame && terminated )
+			{
+				// Send this termination frame to nested consumers for their cancellation
+				foreach_consumer_put( consumer, frame );
+				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			}
+			if ( frame )
+				mlt_frame_close( frame );
 			terminated = 1;
 		}
 	}
 
 	// Indicate that the consumer is stopped
-	mlt_properties_set_int( properties, "running", 0 );
 	mlt_consumer_stopped( consumer );
 
 	return NULL;
@@ -506,6 +540,7 @@ static void *consumer_thread( void *arg )
 static void consumer_close( mlt_consumer consumer )
 {
 	mlt_consumer_stop( consumer );
+
 	// Close the parent
 	mlt_consumer_close( consumer );
 	free( consumer );
