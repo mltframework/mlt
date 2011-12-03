@@ -3551,6 +3551,10 @@ static const char* getAsioErrorString( ASIOError result )
 #define WAVE_FORMAT_96S08 0x00020000 /* 96 kHz, Stereo, 8-bit */
 #define WAVE_FORMAT_96M16 0x00040000 /* 96 kHz, Mono, 16-bit */
 #define WAVE_FORMAT_96S16 0x00080000 /* 96 kHz, Stereo, 16-bit */
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL 0
 #endif
 
 #define MINIMUM_DEVICE_BUFFER_SIZE 32768
