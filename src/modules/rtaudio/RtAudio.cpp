@@ -5503,8 +5503,8 @@ bool RtApiAlsa :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   snd_ctl_t *chandle;
 
   if ( options && options->flags & RTAUDIO_ALSA_USE_DEFAULT )
-//    snprintf(name, sizeof(name), "%s", "default");
-    snprintf(name, sizeof(name), "%s", "dmix:0,0");
+    snprintf(name, sizeof(name), "%s", "default");
+//    snprintf(name, sizeof(name), "%s", "dmix:0,0");
   else {
     // Count cards and devices
     card = -1;
