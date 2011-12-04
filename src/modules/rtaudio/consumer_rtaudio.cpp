@@ -392,7 +392,6 @@ public:
 		static int counter = 0;
 		int samples = mlt_sample_calculator( mlt_properties_get_double( properties, "fps" ), frequency, counter++ );
 		int16_t *pcm;
-		int bytes;
 
 		mlt_frame_get_audio( frame, (void**) &pcm, &afmt, &frequency, &channels, &samples );
 		*duration = ( ( samples * 1000 ) / frequency );
@@ -400,7 +399,6 @@ public:
 		if ( mlt_properties_get_int( properties, "audio_off" ) )
 		{
 			playing = 1;
-			init_audio = 1;
 			return init_audio;
 		}
 
@@ -425,6 +423,7 @@ public:
 					frequency, &bufferFrames, &rtaudio_callback, this, &options );
 				rt.startStream();
 				init_audio = 0;
+				playing = 1;
 			}
 			catch ( RtError& e ) {
 				mlt_log_error( getConsumer(), "%s\n", e.getMessage().c_str() );
@@ -435,7 +434,7 @@ public:
 		if ( init_audio == 0 )
 		{
 			mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-			bytes = ( samples * channels * 2 );
+			size_t bytes = ( samples * channels * 2 );
 			pthread_mutex_lock( &audio_mutex );
 			while ( running && bytes > ( sizeof( audio_buffer) - audio_avail ) )
 				pthread_cond_wait( &audio_cond, &audio_mutex );
@@ -449,10 +448,6 @@ public:
 			}
 			pthread_cond_broadcast( &audio_cond );
 			pthread_mutex_unlock( &audio_mutex );
-		}
-		else
-		{
-			playing = 1;
 		}
 
 		return init_audio;
