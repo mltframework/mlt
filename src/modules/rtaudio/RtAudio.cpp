@@ -397,9 +397,7 @@ unsigned int RtApi :: getStreamSampleRate( void )
 // implementation.
 struct CoreHandle {
   AudioDeviceID id[2];    // device ids
-#if defined( MAC_OS_X_VERSION_10_5 ) && ( MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5 )
   AudioDeviceIOProcID procId[2];
-#endif
   UInt32 iStream[2];      // device stream index (or first if using multiple)
   UInt32 nStreams[2];     // number of streams to use
   bool xrun[2];
@@ -414,7 +412,6 @@ struct CoreHandle {
 
 RtApiCore:: RtApiCore()
 {
-#if defined( AVAILABLE_MAC_OS_X_VERSION_10_6_AND_LATER )
   // This is a largely undocumented but absolutely necessary
   // requirement starting with OS-X 10.6.  If not called, queries and
   // updates to various audio device properties are not handled
@@ -428,7 +425,6 @@ RtApiCore:: RtApiCore()
     errorText_ = "RtApiCore::RtApiCore: error setting run loop property!";
     error( RtError::WARNING );
   }
-#endif
 }
 
 RtApiCore :: ~RtApiCore()
@@ -1245,12 +1241,7 @@ bool RtApiCore :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     // Only one callback procedure per device.
     stream_.mode = DUPLEX;
   else {
-#if defined( MAC_OS_X_VERSION_10_5 ) && ( MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5 )
     result = AudioDeviceCreateIOProcID( id, callbackHandler, (void *) &stream_.callbackInfo, &handle->procId[mode] );
-#else
-    // deprecated in favor of AudioDeviceCreateIOProcID()
-    result = AudioDeviceAddIOProc( id, callbackHandler, (void *) &stream_.callbackInfo );
-#endif
     if ( result != noErr ) {
       errorStream_ << "RtApiCore::probeDeviceOpen: system error setting callback for device (" << device << ").";
       errorText_ = errorStream_.str();
@@ -1301,24 +1292,14 @@ void RtApiCore :: closeStream( void )
   CoreHandle *handle = (CoreHandle *) stream_.apiHandle;
   if ( stream_.mode == OUTPUT || stream_.mode == DUPLEX ) {
     if ( stream_.state == STREAM_RUNNING )
-      AudioDeviceStop( handle->id[0], callbackHandler );
-#if defined( MAC_OS_X_VERSION_10_5 ) && ( MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5 )
+      AudioDeviceStop( handle->id[0], handle->procId[0] );
     AudioDeviceDestroyIOProcID( handle->id[0], handle->procId[0] );
-#else
-    // deprecated in favor of AudioDeviceDestroyIOProcID()
-    AudioDeviceRemoveIOProc( handle->id[0], callbackHandler );
-#endif
   }
 
   if ( stream_.mode == INPUT || ( stream_.mode == DUPLEX && stream_.device[0] != stream_.device[1] ) ) {
     if ( stream_.state == STREAM_RUNNING )
-      AudioDeviceStop( handle->id[1], callbackHandler );
-#if defined( MAC_OS_X_VERSION_10_5 ) && ( MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5 )
+      AudioDeviceStop( handle->id[1], handle->procId[1] );
     AudioDeviceDestroyIOProcID( handle->id[1], handle->procId[1] );
-#else
-    // deprecated in favor of AudioDeviceDestroyIOProcID()
-    AudioDeviceRemoveIOProc( handle->id[1], callbackHandler );
-#endif
   }
 
   for ( int i=0; i<2; i++ ) {
@@ -1357,7 +1338,7 @@ void RtApiCore :: startStream( void )
   CoreHandle *handle = (CoreHandle *) stream_.apiHandle;
   if ( stream_.mode == OUTPUT || stream_.mode == DUPLEX ) {
 
-    result = AudioDeviceStart( handle->id[0], callbackHandler );
+    result = AudioDeviceStart( handle->id[0], handle->procId[0] );
     if ( result != noErr ) {
       errorStream_ << "RtApiCore::startStream: system error (" << getErrorCode( result ) << ") starting callback procedure on device (" << stream_.device[0] << ").";
       errorText_ = errorStream_.str();
@@ -1368,7 +1349,7 @@ void RtApiCore :: startStream( void )
   if ( stream_.mode == INPUT ||
        ( stream_.mode == DUPLEX && stream_.device[0] != stream_.device[1] ) ) {
 
-    result = AudioDeviceStart( handle->id[1], callbackHandler );
+    result = AudioDeviceStart( handle->id[1], handle->procId[1] );
     if ( result != noErr ) {
       errorStream_ << "RtApiCore::startStream: system error starting input callback procedure on device (" << stream_.device[1] << ").";
       errorText_ = errorStream_.str();
