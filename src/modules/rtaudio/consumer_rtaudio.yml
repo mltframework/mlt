@@ -1,0 +1,44 @@
+schema_version: 0.1
+type: consumer
+identifier: rtaudio
+title: RtAudio
+description: >
+  RtAudio provides native, realtime audio output across Linux,
+  Macintosh OS X, Windows, and some BSD operating systems.
+url: http://www.music.mcgill.ca/~gary/rtaudio/
+version: 1
+copyright: Dan Dennedy
+creator: Dan Dennedy
+creator: Gary P. Scavone
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+parameters:
+  - identifier: resource
+    title: Device
+    description: An optional device name, number, or ID to use.
+    type: string
+    required: no
+
+  - identifier: audio_buffer
+    title: Audio buffer
+    type: integer
+    minimum: 256
+    maximum: 8192
+    default: 1024
+    unit: samples
+
+  - identifier: volume
+    title: Volume
+    type: float
+    minimum: 0.0
+    default: 1.0
+    mutable: yes
+
+  - identifier: refresh
+    description: >
+      Applications should set this to update the video frame when paused.
+    type: integer
+    minimum: 0
+    maximum: 1
