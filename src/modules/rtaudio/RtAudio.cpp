@@ -265,14 +265,14 @@ void RtApi :: openStream( RtAudio::StreamParameters *oParams,
   if ( oChannels > 0 ) {
 
     result = probeDeviceOpen( oParams->deviceId, OUTPUT, oChannels, oParams->firstChannel,
-                              sampleRate, format, bufferFrames, options );
+                              sampleRate, format, bufferFrames, options, oParams->deviceName );
     if ( result == false ) error( RtError::SYSTEM_ERROR );
   }
 
   if ( iChannels > 0 ) {
 
     result = probeDeviceOpen( iParams->deviceId, INPUT, iChannels, iParams->firstChannel,
-                              sampleRate, format, bufferFrames, options );
+                              sampleRate, format, bufferFrames, options, iParams->deviceName );
     if ( result == false ) {
       if ( oChannels > 0 ) closeStream();
       error( RtError::SYSTEM_ERROR );
@@ -307,7 +307,7 @@ void RtApi :: closeStream( void )
 bool RtApi :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
                                unsigned int firstChannel, unsigned int sampleRate,
                                RtAudioFormat format, unsigned int *bufferSize,
-                               RtAudio::StreamOptions *options )
+                               RtAudio::StreamOptions *options, const std::string &deviceName )
 {
   // MUST be implemented in subclasses!
   return FAILURE;
@@ -772,7 +772,7 @@ OSStatus rateListener( AudioObjectID inDevice,
 bool RtApiCore :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
                                    unsigned int firstChannel, unsigned int sampleRate,
                                    RtAudioFormat format, unsigned int *bufferSize,
-                                   RtAudio::StreamOptions *options )
+                                   RtAudio::StreamOptions *options, const std::string &deviceName )
 {
   // Get device ID
   unsigned int nDevices = getDeviceCount();
@@ -1986,7 +1986,7 @@ int jackXrun( void *infoPointer )
 bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
                                    unsigned int firstChannel, unsigned int sampleRate,
                                    RtAudioFormat format, unsigned int *bufferSize,
-                                   RtAudio::StreamOptions *options )
+                                   RtAudio::StreamOptions *options, const std::string &aDeviceName )
 {
   JackHandle *handle = (JackHandle *) stream_.apiHandle;
 
@@ -2010,31 +2010,33 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     client = handle->client;
   }
 
+  std::string deviceName = aDeviceName;
   const char **ports;
-  std::string port, previousPort, deviceName;
-  unsigned int nPorts = 0, nDevices = 0;
-  ports = jack_get_ports( client, NULL, NULL, 0 );
-  if ( ports ) {
-    // Parse the port names up to the first colon (:).
-    size_t iColon = 0;
-    do {
-      port = (char *) ports[ nPorts ];
-      iColon = port.find(":");
-      if ( iColon != std::string::npos ) {
-        port = port.substr( 0, iColon );
-        if ( port != previousPort ) {
-          if ( nDevices == device ) deviceName = port;
-          nDevices++;
-          previousPort = port;
-        }
+  if ( deviceName.size() == 0 ) {
+      std::string port, previousPort, deviceName;
+      unsigned int nPorts = 0, nDevices = 0;
+      ports = jack_get_ports( client, NULL, NULL, 0 );
+      if ( ports ) {
+        // Parse the port names up to the first colon (:).
+        size_t iColon = 0;
+        do {
+          port = (char *) ports[ nPorts ];
+          iColon = port.find(":");
+          if ( iColon != std::string::npos ) {
+            port = port.substr( 0, iColon );
+            if ( port != previousPort ) {
+              if ( nDevices == device ) deviceName = port;
+              nDevices++;
+              previousPort = port;
+            }
+          }
+        } while ( ports[++nPorts] );
+        free( ports );
       }
-    } while ( ports[++nPorts] );
-    free( ports );
-  }
-
-  if ( device >= nDevices ) {
-    errorText_ = "RtApiJack::probeDeviceOpen: device ID is invalid!";
-    return FAILURE;
+      if ( device >= nDevices ) {
+        errorText_ = "RtApiJack::probeDeviceOpen: device ID is invalid!";
+        return FAILURE;
+      }
   }
 
   // Count the available ports containing the client name as device
@@ -2730,7 +2732,7 @@ void RtApiAsio :: saveDeviceInfo( void )
 bool RtApiAsio :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
                                    unsigned int firstChannel, unsigned int sampleRate,
                                    RtAudioFormat format, unsigned int *bufferSize,
-                                   RtAudio::StreamOptions *options )
+                                   RtAudio::StreamOptions *options, const std::string &deviceName )
 {
   // For ASIO, a duplex stream MUST use the same driver.
   if ( mode == INPUT && stream_.mode == OUTPUT && stream_.device[0] != device ) {
@@ -3832,7 +3834,7 @@ RtAudio::DeviceInfo RtApiDs :: getDeviceInfo( unsigned int device )
 bool RtApiDs :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
                                  unsigned int firstChannel, unsigned int sampleRate,
                                  RtAudioFormat format, unsigned int *bufferSize,
-                                 RtAudio::StreamOptions *options )
+                                 RtAudio::StreamOptions *options, const std::string &deviceName )
 {
   if ( channels + firstChannel > 2 ) {
     errorText_ = "RtApiDs::probeDeviceOpen: DirectSound does not support more than 2 channels per device.";
@@ -5468,7 +5470,7 @@ void RtApiAlsa :: saveDeviceInfo( void )
 bool RtApiAlsa :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
                                    unsigned int firstChannel, unsigned int sampleRate,
                                    RtAudioFormat format, unsigned int *bufferSize,
-                                   RtAudio::StreamOptions *options )
+                                   RtAudio::StreamOptions *options, const std::string &deviceName )
 
 {
 #if defined(__RTAUDIO_DEBUG__)
@@ -5485,7 +5487,8 @@ bool RtApiAlsa :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
 
   if ( options && options->flags & RTAUDIO_ALSA_USE_DEFAULT )
     snprintf(name, sizeof(name), "%s", "default");
-//    snprintf(name, sizeof(name), "%s", "dmix:0,0");
+  else if ( deviceName.size() > 0 )
+    snprintf(name, sizeof(name), "%s", deviceName.c_str());
   else {
     // Count cards and devices
     card = -1;
@@ -6530,7 +6533,7 @@ RtAudio::DeviceInfo RtApiOss :: getDeviceInfo( unsigned int device )
 bool RtApiOss :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels,
                                   unsigned int firstChannel, unsigned int sampleRate,
                                   RtAudioFormat format, unsigned int *bufferSize,
-                                  RtAudio::StreamOptions *options )
+                                  RtAudio::StreamOptions *options, const std::string &deviceName )
 {
   int mixerfd = open( "/dev/mixer", O_RDWR, 0 );
   if ( mixerfd == -1 ) {

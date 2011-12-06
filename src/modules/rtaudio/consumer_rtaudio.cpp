@@ -88,13 +88,10 @@ public:
 			return false;
 		}
 
-		if ( !arg || !strcmp( arg, "" ) )
-		{
 #ifndef __LINUX_ALSA__
-			device_id = rt.getDefaultOutputDevice();
+		device_id = rt.getDefaultOutputDevice();
 #endif
-		}
-		else if ( strcmp( arg, "default" ) )
+		if ( arg && strcmp( arg, "" ) && strcmp( arg, "default" ) )
 		{
 			// Get device ID by name
 			unsigned int n = rt.getDeviceCount();
@@ -112,7 +109,7 @@ public:
 					break;
 				}
 			}
-			// Name selection failed, treat arg as numeric
+			// Name selection failed, try arg as numeric
 			if ( i == n )
 				device_id = (int) strtol( arg, NULL, 0 );
 		}
@@ -141,6 +138,9 @@ public:
 
 		// Default audio buffer
 		mlt_properties_set_int( properties, "audio_buffer", 1024 );
+
+		// Set the resource to the device name arg
+		mlt_properties_set( properties, "resource", arg );
 
 		// Ensure we don't join on a non-running object
 		joined = 1;
@@ -409,14 +409,15 @@ public:
 			parameters.nChannels = channels;
 			parameters.firstChannel = 0;
 			RtAudio::StreamOptions options;
-#ifdef __LINUX_ALSA__
+			unsigned int bufferFrames = mlt_properties_get_int( properties, "audio_buffer" );
+
 			if ( device_id == -1 )
 			{
 				options.flags = RTAUDIO_ALSA_USE_DEFAULT;
 				parameters.deviceId = 0;
 			}
-#endif
-			unsigned int bufferFrames = mlt_properties_get_int( properties, "audio_buffer" );
+			if ( mlt_properties_get( properties, "resource" ) )
+				parameters.deviceName = mlt_properties_get( properties, "resource" );
 
 			try {
 				rt.openStream( &parameters, NULL, RTAUDIO_SINT16,

@@ -241,6 +241,7 @@ class RtAudio
     unsigned int deviceId;     /*!< Device index (0 to getDeviceCount() - 1). */
     unsigned int nChannels;    /*!< Number of channels. */
     unsigned int firstChannel; /*!< First channel index on device (default = 0). */
+    std::string  deviceName;   /*!< Device name to use instead of using deviceId (ALSA, JACK). */
 
     // Default constructor.
     StreamParameters()
@@ -673,7 +674,7 @@ protected:
   virtual bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                                 unsigned int firstChannel, unsigned int sampleRate,
                                 RtAudioFormat format, unsigned int *bufferSize,
-                                RtAudio::StreamOptions *options );
+                                RtAudio::StreamOptions *options, const std::string &deviceName );
 
   //! A protected function used to increment the stream time.
   void tickStreamTime( void );
@@ -764,7 +765,7 @@ public:
   bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                         unsigned int firstChannel, unsigned int sampleRate,
                         RtAudioFormat format, unsigned int *bufferSize,
-                        RtAudio::StreamOptions *options );
+                        RtAudio::StreamOptions *options, const std::string &deviceName );
   static const char* getErrorCode( OSStatus code );
 };
 
@@ -798,7 +799,7 @@ public:
   bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                         unsigned int firstChannel, unsigned int sampleRate,
                         RtAudioFormat format, unsigned int *bufferSize,
-                        RtAudio::StreamOptions *options );
+                        RtAudio::StreamOptions *options, const std::string &deviceName );
 };
 
 #endif
@@ -834,7 +835,7 @@ public:
   bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                         unsigned int firstChannel, unsigned int sampleRate,
                         RtAudioFormat format, unsigned int *bufferSize,
-                        RtAudio::StreamOptions *options );
+                        RtAudio::StreamOptions *options, const std::string &deviceName );
 };
 
 #endif
@@ -872,7 +873,7 @@ public:
   bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                         unsigned int firstChannel, unsigned int sampleRate,
                         RtAudioFormat format, unsigned int *bufferSize,
-                        RtAudio::StreamOptions *options );
+                        RtAudio::StreamOptions *options, const std::string &deviceName );
 };
 
 #endif
@@ -906,7 +907,7 @@ public:
   bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                         unsigned int firstChannel, unsigned int sampleRate,
                         RtAudioFormat format, unsigned int *bufferSize,
-                        RtAudio::StreamOptions *options );
+                        RtAudio::StreamOptions *options, const std::string &deviceName );
 };
 
 #endif
@@ -938,7 +939,7 @@ public:
   bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                         unsigned int firstChannel, unsigned int sampleRate,
                         RtAudioFormat format, unsigned int *bufferSize,
-                        RtAudio::StreamOptions *options );
+                        RtAudio::StreamOptions *options, const std::string &deviceName );
 };
 
 #endif
@@ -963,7 +964,8 @@ public:
   bool probeDeviceOpen( unsigned int device, StreamMode mode, unsigned int channels, 
                         unsigned int firstChannel, unsigned int sampleRate,
                         RtAudioFormat format, unsigned int *bufferSize,
-                        RtAudio::StreamOptions *options ) { return false; };
+                        RtAudio::StreamOptions *options, const std::string &deviceName )
+    { return false; };
 };
 
 #endif
