@@ -27,16 +27,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-/** Swapbytes inline.
-*/
-
-static inline void swap_bytes( uint8_t *upper, uint8_t *lower )
-{
-	uint8_t t = *lower;
-	*lower = *upper;
-	*upper = t;
-}
-
 static uint8_t *resize_alpha( uint8_t *input, int owidth, int oheight, int iwidth, int iheight, uint8_t alpha_value )
 {
 	uint8_t *output = NULL;
@@ -268,48 +258,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 	if ( error == 0 && *image )
 	{
-		// Get the requested scale operation
-		char *op = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "scale" );
 		int bpp;
-		int size = mlt_image_format_size( *format, owidth, oheight, &bpp );
-		int tff = mlt_properties_get_int( properties, "consumer_tff" );
-
-		// Provides a manual override for misreported field order
-		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
-			mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( properties, "meta.top_field_first" ) );
-
-		// Correct field order if needed
-		if ( mlt_properties_get_int( properties, "top_field_first" ) != tff &&
-		     mlt_properties_get( properties, "progressive" ) &&
-		     mlt_properties_get_int( properties, "progressive" ) == 0 )
-		{
-			// Get the input image, width and height
-			uint8_t *new_image = mlt_pool_alloc( size );
-			uint8_t *ptr = new_image + owidth * bpp;
-			memcpy( new_image, *image, owidth * bpp );
-			memcpy( ptr, *image, owidth * ( oheight - 1 ) * bpp );
-			mlt_frame_set_image( this, new_image, size, mlt_pool_release );
-			*image = new_image;
-			
-			// Set the normalised field order
-			mlt_properties_set_int( properties, "top_field_first", tff );
-			mlt_properties_set_int( properties, "meta.top_field_first", tff );
-		}
-
-		if ( !strcmp( op, "affine" ) )
-		{
-			// TODO: Determine where this is needed and find a different way
-			// *image = mlt_frame_rescale_image( this, *width, *height, bpp );
-		}
-		else if ( strcmp( op, "none" ) != 0 )
-		{
-			*image = frame_resize_image( this, *width, *height, bpp );
-		}
-		else
-		{
-			*width = owidth;
-			*height = oheight;
-		}
+		mlt_image_format_size( *format, owidth, oheight, &bpp );
+		*image = frame_resize_image( this, *width, *height, bpp );
 	}
 
 	return error;
@@ -341,7 +292,6 @@ mlt_filter filter_resize_init( mlt_profile profile, mlt_service_type type, const
 	if ( mlt_filter_init( this, this ) == 0 )
 	{
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "scale", arg == NULL ? "off" : arg );
 	}
 	return this;
 }

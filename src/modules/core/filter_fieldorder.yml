@@ -1,0 +1,23 @@
+schema_version: 0.1
+type: filter
+identifier: fieldorder
+title: Field order
+description: Correct the field order of interlaced video.
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy <dan@dennedy.org>
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Hidden
+notes: >
+  This filter is automatically invoked by the loader as part of image
+  normalisation.
+parameters:
+  - identifier: argument
+    title: Scale
+    type: string
+    description: The scaling method.
+    required: no
+    readonly: no

@@ -22,6 +22,7 @@ OBJS = factory.o \
 	   filter_crop.o \
 	   filter_data_feed.o \
 	   filter_data_show.o \
+	   filter_fieldorder.o \
 	   filter_gamma.o \
 	   filter_greyscale.o \
 	   filter_imageconvert.o \
