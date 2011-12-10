@@ -30,28 +30,70 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	// Get the properties from the frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
+	// Get the input image, width and height
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 	if ( !error && *image )
 	{
-		int bpp;
-		int size = mlt_image_format_size( *format, *width, *height, &bpp );
 		int tff = mlt_properties_get_int( properties, "consumer_tff" );
 
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
 			mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( properties, "meta.top_field_first" ) );
+		mlt_log_debug( NULL, "TFF in %d out %d\n", mlt_properties_get_int( properties, "top_field_first" ), tff );
+
+		if ( mlt_properties_get_int( properties, "meta.swap_fields" ) &&
+			mlt_properties_get( properties, "progressive" ) &&
+			mlt_properties_get_int( properties, "progressive" ) == 0 )
+		{
+			// We only work with non-planar formats
+			if ( *format == mlt_image_yuv420p )
+			{
+				*format = mlt_image_yuv422;
+				mlt_frame_get_image( frame, image, format, width, height, writable );
+			}
+
+			// Make a new image
+			int bpp;
+			int size = mlt_image_format_size( *format, *width, *height, &bpp );
+			uint8_t *new_image = mlt_pool_alloc( size );
+			int stride = *width * bpp;
+			int i = *height + 1;
+			uint8_t *src = *image;
+
+			// Set the new image
+			mlt_frame_set_image( frame, new_image, size, mlt_pool_release );
+			*image = new_image;
+
+			while ( --i )
+			{
+				memcpy( new_image, src + stride * !(i % 2), stride );
+				new_image += stride;
+				src += stride * (i % 2) * 2;
+			}
+		}
 
 		// Correct field order if needed
 		if ( mlt_properties_get_int( properties, "top_field_first" ) != tff &&
 		     mlt_properties_get( properties, "progressive" ) &&
 		     mlt_properties_get_int( properties, "progressive" ) == 0 )
 		{
-			// Get the input image, width and height
+			// We only work with non-planar formats
+			if ( *format == mlt_image_yuv420p )
+			{
+				*format = mlt_image_yuv422;
+				mlt_frame_get_image( frame, image, format, width, height, writable );
+			}
+
+			// Shift the entire image down by one line
+			int bpp;
+			int size = mlt_image_format_size( *format, *width, *height, &bpp );
 			uint8_t *new_image = mlt_pool_alloc( size );
 			uint8_t *ptr = new_image + *width * bpp;
 			memcpy( new_image, *image, *width * bpp );
 			memcpy( ptr, *image, *width * ( *height - 1 ) * bpp );
+
+			// Set the new image
 			mlt_frame_set_image( frame, new_image, size, mlt_pool_release );
 			*image = new_image;
 
