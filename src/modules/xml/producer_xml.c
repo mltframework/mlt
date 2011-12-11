@@ -584,14 +584,19 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		}
 
 		// Just in case the plugin requested doesn't exist...
-		if ( producer == NULL && resource != NULL )
+		if ( !producer && resource )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, resource ) );
-	
-		if ( producer == NULL )
+		if ( !producer )
+			fprintf( stderr, "failed to load producer \"%s\"\n", resource );
+		if ( !producer )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "+INVALID.txt" ) );
-
-		if ( producer == NULL )
+		if ( !producer )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "colour:red" ) );
+		if ( !producer )
+		{
+			mlt_service_close( service );
+			return;
+		}
 
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
@@ -922,8 +927,18 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 
 	if ( service != NULL && type == mlt_dummy_filter_type )
 	{
-		mlt_service filter = MLT_SERVICE( mlt_factory_filter( context->profile, mlt_properties_get( properties, "mlt_service" ), NULL ) );
+		char *id = mlt_properties_get( properties, "mlt_service" );
+		mlt_service filter = MLT_SERVICE( mlt_factory_filter( context->profile, id, NULL ) );
 		mlt_properties filter_props = MLT_SERVICE_PROPERTIES( filter );
+
+		if ( !filter )
+		{
+			fprintf( stderr, "failed to load filter \"%s\"\n", id );
+			if ( parent )
+				context_push_service( context, parent, parent_type );
+			mlt_service_close( service );
+			return;
+		}
 
 		track_service( context->destructors, filter, (mlt_destructor) mlt_filter_close );
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( filter ), context->lc_numeric );
@@ -1002,6 +1017,14 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 		mlt_service effect = MLT_SERVICE( mlt_factory_transition( context->profile, id, NULL ) );
 		mlt_properties effect_props = MLT_SERVICE_PROPERTIES( effect );
 
+		if ( !effect )
+		{
+			fprintf( stderr, "failed to load transition \"%s\"\n", id );
+			if ( parent )
+				context_push_service( context, parent, parent_type );
+			mlt_service_close( service );
+			return;
+		}
 		track_service( context->destructors, effect, (mlt_destructor) mlt_transition_close );
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( effect ), context->lc_numeric );
 
@@ -1024,10 +1047,10 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 				mlt_field field = mlt_tractor_field( MLT_TRACTOR( parent ) );
 				if ( mlt_properties_get_int( properties, "a_track" ) == mlt_properties_get_int( properties, "b_track" ) )
 					mlt_properties_set_int( properties, "b_track", mlt_properties_get_int( properties, "a_track" ) + 1 );
-				mlt_field_plant_transition( field, MLT_TRANSITION( effect ), 
+				mlt_field_plant_transition( field, MLT_TRANSITION( effect ),
 											mlt_properties_get_int( properties, "a_track" ),
 											mlt_properties_get_int( properties, "b_track" ) );
-				mlt_transition_set_in_and_out( MLT_TRANSITION( effect ), 
+				mlt_transition_set_in_and_out( MLT_TRANSITION( effect ),
 										   mlt_properties_get_int( properties, "in" ),
 										   mlt_properties_get_int( properties, "out" ) );
 			}
