@@ -100,6 +100,8 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 
 		// Hmm - default all consumers to yuv422 :-/
 		self->format = mlt_image_yuv422;
+		mlt_properties_set( properties, "mlt_image_format", mlt_image_format_name( self->format ) );
+		mlt_properties_set( properties, "mlt_audio_format", mlt_audio_format_name( mlt_audio_s16 ) );
 
 		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
 		mlt_events_register( properties, "consumer-frame-render", ( mlt_transmitter )mlt_consumer_frame_render );
@@ -453,6 +455,22 @@ int mlt_consumer_start( mlt_consumer self )
 	if ( abs( self->real_time ) > 1 && mlt_properties_get_int( properties, "buffer" ) <= abs( self->real_time ) )
 		mlt_properties_set_int( properties, "_buffer", abs( self->real_time ) + 1 );
 
+	// Get the image format to use for rendering threads
+	const char* format = mlt_properties_get( properties, "mlt_image_format" );
+	if ( format )
+	{
+		if ( !strcmp( format, "rgb24" ) )
+			self->format = mlt_image_rgb24;
+		else if ( !strcmp( format, "rgb24a" ) )
+			self->format = mlt_image_rgb24a;
+		else if ( !strcmp( format, "yuv420p" ) )
+			self->format = mlt_image_yuv420p;
+		else if ( !strcmp( format, "none" ) )
+			self->format = mlt_image_none;
+		else
+			self->format = mlt_image_yuv422;
+	}
+
 	// Start the service
 	if ( self->start != NULL )
 		return self->start( self );
@@ -619,6 +637,20 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Get the audio settings
 	mlt_audio_format afmt = mlt_audio_s16;
+	const char *format = mlt_properties_get( properties, "mlt_audio_format" );
+	if ( format )
+	{
+		if ( !strcmp( format, "none" ) )
+			afmt = mlt_audio_none;
+		else if ( !strcmp( format, "s32" ) )
+			afmt = mlt_audio_s32;
+		else if ( !strcmp( format, "s32le" ) )
+			afmt = mlt_audio_s32le;
+		else if ( !strcmp( format, "float" ) )
+			afmt = mlt_audio_float;
+		else if ( !strcmp( format, "f32le" ) )
+			afmt = mlt_audio_f32le;
+	}
 	int counter = 0;
 	double fps = mlt_properties_get_double( properties, "fps" );
 	int channels = mlt_properties_get_int( properties, "channels" );
