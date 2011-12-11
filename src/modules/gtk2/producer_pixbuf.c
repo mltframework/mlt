@@ -472,6 +472,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get width and height (may have changed during the refresh)
 	*width = this->width;
 	*height = this->height;
+	*format = this->alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of the pixbuf producer...
@@ -485,7 +486,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
 		// We're going to pass the copy on
 		*buffer = image_copy;
-		*format = this->alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 		mlt_log_debug( MLT_PRODUCER_SERVICE( &this->parent ), "%dx%d (%s)\n",
 			this->width, this->height, mlt_image_format_name( *format ) );
 	}

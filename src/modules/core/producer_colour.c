@@ -125,6 +125,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	rgba_color color = parse_color( now, mlt_properties_get_int( producer_props, "resource" ) );
 
+	// Choose suitable out values if nothing specific requested
+	if ( *format == mlt_image_none )
+		*format = mlt_image_rgb24a;
+	if ( *width <= 0 )
+		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
+	if ( *height <= 0 )
+		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
+
 	// See if we need to regenerate
 	if ( strcmp( now, then ) || *width != current_width || *height != current_height || *format != current_format )
 	{
@@ -181,8 +189,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				*p ++ = color.b;
 			}
 			break;
-		case mlt_image_rgb24a:
-		case mlt_image_opengl:
+		default:
 			while ( --i )
 			{
 				*p ++ = color.r;
@@ -190,8 +197,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				*p ++ = color.b;
 				*p ++ = color.a;
 			}
-			break;
-		default:
 			break;
 		}
 	}

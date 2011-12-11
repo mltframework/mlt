@@ -508,6 +508,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get width and height
 	*width = this->width;
 	*height = this->height;
+	*format = mlt_image_rgb24a;
 
 	// Always clone here to allow 'animated' text
 	if ( this->pixbuf )
@@ -519,7 +520,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		// Now update properties so we free the copy after
 		mlt_frame_set_image( frame, *buffer, image_size, mlt_pool_release );
-		*format = mlt_image_rgb24a;
 	}
 	else
 	{

@@ -335,7 +335,7 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	*height = dv_data[ 3 ] & 0x80 ? 576 : 480;
 
 	// Extract an image of the format requested
-	if ( *format == mlt_image_yuv422 || *format == mlt_image_yuv420p )
+	if ( *format != mlt_image_rgb24 )
 	{
 		// Allocate an image
 		uint8_t *image = mlt_pool_alloc( *width * ( *height + 1 ) * 2 );

@@ -36,6 +36,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
+	// Choose suitable out values if nothing specific requested
+	if ( *width <= 0 )
+		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
+	if ( *height <= 0 )
+		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
+
 	// Allocate the image
 	int size = *width * ( *height + 1 ) * 4;
 
