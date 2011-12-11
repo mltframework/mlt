@@ -91,6 +91,24 @@ struct deserialise_context_s
 };
 typedef struct deserialise_context_s *deserialise_context;
 
+/** Trim the leading and trailing whitespace from a string in-place.
+*/
+static char* trim( char *s )
+{
+	int n;
+	if ( s && ( n = strlen( s ) ) )
+	{
+		int i = 0;
+		while ( i < n && isspace( s[i] ) ) i++;
+		while ( --n && isspace( s[n] ) );
+		n = n - i + 1;
+		if ( n > 0 )
+			memmove( s, s + i, n );
+		s[ n ] = 0;
+	}
+	return s;
+}
+
 /** Convert the numerical current branch address to a dot-delimited string.
 */
 static char *serialise_branch( deserialise_context context, char *s )
@@ -555,19 +573,19 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		mlt_service producer = NULL;
 
 		qualify_property( context, properties, "resource" );
-		char *resource = mlt_properties_get( properties, "resource" );
+		char *resource = trim( mlt_properties_get( properties, "resource" ) );
 
 		// Let Kino-SMIL src be a synonym for resource
 		if ( resource == NULL )
 		{
 			qualify_property( context, properties, "src" );
-			resource = mlt_properties_get( properties, "src" );
+			resource = trim( mlt_properties_get( properties, "src" ) );
 		}
 
 		// Instantiate the producer
 		if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
 		{
-			char *service_name = mlt_properties_get( properties, "mlt_service" );
+			char *service_name = trim( mlt_properties_get( properties, "mlt_service" ) );
 			if ( resource )
 			{
 				char *temp = calloc( 1, strlen( service_name ) + strlen( resource ) + 2 );
@@ -669,7 +687,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 					// Get the parent properties
 					properties = MLT_SERVICE_PROPERTIES( parent );
 				
-					char *resource = mlt_properties_get( properties, "resource" );
+					char *resource = trim( mlt_properties_get( properties, "resource" ) );
 				
 					// Put the parent producer back
 					context_push_service( context, parent, type );
@@ -927,7 +945,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 
 	if ( service != NULL && type == mlt_dummy_filter_type )
 	{
-		char *id = mlt_properties_get( properties, "mlt_service" );
+		char *id = trim( mlt_properties_get( properties, "mlt_service" ) );
 		mlt_service filter = MLT_SERVICE( mlt_factory_filter( context->profile, id, NULL ) );
 		mlt_properties filter_props = MLT_SERVICE_PROPERTIES( filter );
 
@@ -1013,7 +1031,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 
 	if ( service != NULL && type == mlt_dummy_transition_type )
 	{
-		char *id = mlt_properties_get( properties, "mlt_service" );
+		char *id = trim( mlt_properties_get( properties, "mlt_service" ) );
 		mlt_service effect = MLT_SERVICE( mlt_factory_transition( context->profile, id, NULL ) );
 		mlt_properties effect_props = MLT_SERVICE_PROPERTIES( effect );
 
@@ -1105,7 +1123,7 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 			qualify_property( context, properties, "resource" );
 			qualify_property( context, properties, "target" );
-			char *resource = mlt_properties_get( properties, "resource" );
+			char *resource = trim( mlt_properties_get( properties, "resource" ) );
 
 			if ( context->multi_consumer > 1 )
 			{
@@ -1132,7 +1150,8 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 			else
 			{
 				// Instantiate the consumer
-				context->consumer = mlt_factory_consumer( context->profile, mlt_properties_get( properties, "mlt_service" ), resource );
+				char *id = trim( mlt_properties_get( properties, "mlt_service" ) );
+				context->consumer = mlt_factory_consumer( context->profile, id, resource );
 				if ( context->consumer )
 				{
 					// Track this consumer
