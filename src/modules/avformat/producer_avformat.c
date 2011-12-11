@@ -1095,7 +1095,33 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 #endif
 }
 
-static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
+static mlt_image_format pick_format( enum PixelFormat pix_fmt )
+{
+	switch ( pix_fmt )
+	{
+	case PIX_FMT_ARGB:
+	case PIX_FMT_RGBA:
+	case PIX_FMT_ABGR:
+	case PIX_FMT_BGRA:
+		return mlt_image_rgb24a;
+	case PIX_FMT_YUV420P:
+	case PIX_FMT_YUVJ420P:
+	case PIX_FMT_YUVA420P:
+		return mlt_image_yuv420p;
+	case PIX_FMT_RGB24:
+	case PIX_FMT_BGR24:
+	case PIX_FMT_GRAY8:
+	case PIX_FMT_MONOWHITE:
+	case PIX_FMT_MONOBLACK:
+	case PIX_FMT_RGB8:
+	case PIX_FMT_BGR8:
+		return mlt_image_rgb24;
+	default:
+		return mlt_image_yuv422;
+	}
+}
+
+static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, int colorspace )
 {
 #ifdef SWSCALE
@@ -1109,19 +1135,7 @@ static inline void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	flags |= SWS_CPU_CAPS_MMX2;
 #endif
 
-	if ( pix_fmt == PIX_FMT_RGB32 )
-	{
-		*format = mlt_image_rgb24a;
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_RGBA, flags, NULL, NULL, NULL);
-		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		set_luma_transfer( context, colorspace, full_range );
-		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			output.data, output.linesize);
-		sws_freeContext( context );
-	}
-	else if ( *format == mlt_image_yuv420p )
+	if ( *format == mlt_image_yuv420p )
 	{
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
 			width, height, PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
@@ -1212,16 +1226,9 @@ static int allocate_buffer( mlt_frame frame, AVCodecContext *codec_context, uint
 
 	if ( codec_context->width == 0 || codec_context->height == 0 )
 		return size;
-
 	*width = codec_context->width;
 	*height = codec_context->height;
-
-	if ( codec_context->pix_fmt == PIX_FMT_RGB32 )
-		size = *width * ( *height + 1 ) * 4;
-	else
-		size = mlt_image_format_size( *format, *width, *height, NULL );
-
-	// Construct the output image
+	size = mlt_image_format_size( *format, *width, *height, NULL );
 	*buffer = mlt_pool_alloc( size );
 	if ( *buffer )
 		mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
@@ -1336,6 +1343,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	context = self->video_format;
 	stream = context->streams[ self->video_index ];
 	codec_context = stream->codec;
+
+	if ( *format == mlt_image_none ||
+			codec_context->pix_fmt == PIX_FMT_ARGB ||
+			codec_context->pix_fmt == PIX_FMT_RGBA ||
+			codec_context->pix_fmt == PIX_FMT_ABGR ||
+			codec_context->pix_fmt == PIX_FMT_BGRA )
+		*format = pick_format( codec_context->pix_fmt );
 
 	// Duplicate the last image if necessary
 	if ( self->av_frame && self->av_frame->linesize[0] && self->got_picture
