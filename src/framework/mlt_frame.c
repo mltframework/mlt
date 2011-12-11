@@ -455,7 +455,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 		{
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
-			if ( self->convert_image && *buffer )
+			if ( self->convert_image && *buffer && requested_format != mlt_image_none )
 				self->convert_image( self, buffer, format, requested_format );
 			mlt_properties_set_int( properties, "format", *format );
 		}
@@ -471,7 +471,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 		*buffer = mlt_properties_get_data( properties, "image", NULL );
 		*width = mlt_properties_get_int( properties, "width" );
 		*height = mlt_properties_get_int( properties, "height" );
-		if ( self->convert_image && *buffer )
+		if ( self->convert_image && *buffer && requested_format != mlt_image_none )
 		{
 			self->convert_image( self, buffer, format, requested_format );
 			mlt_properties_set_int( properties, "format", *format );
@@ -670,7 +670,7 @@ int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format
 		mlt_properties_set_int( properties, "audio_channels", *channels );
 		mlt_properties_set_int( properties, "audio_samples", *samples );
 		mlt_properties_set_int( properties, "audio_format", *format );
-		if ( self->convert_audio )
+		if ( self->convert_audio && *buffer && requested_format != mlt_audio_none )
 			self->convert_audio( self, buffer, format, requested_format );
 	}
 	else if ( mlt_properties_get_data( properties, "audio", NULL ) )
@@ -680,7 +680,7 @@ int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format
 		*frequency = mlt_properties_get_int( properties, "audio_frequency" );
 		*channels = mlt_properties_get_int( properties, "audio_channels" );
 		*samples = mlt_properties_get_int( properties, "audio_samples" );
-		if ( self->convert_audio )
+		if ( self->convert_audio && *buffer && requested_format != mlt_audio_none )
 			self->convert_audio( self, buffer, format, requested_format );
 	}
 	else
