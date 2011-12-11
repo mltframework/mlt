@@ -93,15 +93,15 @@ typedef struct deserialise_context_s *deserialise_context;
 
 /** Convert the numerical current branch address to a dot-delimited string.
 */
-static char *serialise_branch( deserialise_context this, char *s )
+static char *serialise_branch( deserialise_context context, char *s )
 {
 	int i;
 	
 	s[0] = 0;
-	for ( i = 0; i < this->depth; i++ )
+	for ( i = 0; i < context->depth; i++ )
 	{
 		int len = strlen( s );
-		snprintf( s + len, BRANCH_SIG_LEN - len, "%d.", this->branch[ i ] );
+		snprintf( s + len, BRANCH_SIG_LEN - len, "%d.", context->branch[ i ] );
 	}
 	return s;
 }
@@ -109,19 +109,19 @@ static char *serialise_branch( deserialise_context this, char *s )
 /** Push a service.
 */
 
-static int context_push_service( deserialise_context this, mlt_service that, enum service_type type )
+static int context_push_service( deserialise_context context, mlt_service that, enum service_type type )
 {
-	int ret = this->stack_service_size >= STACK_SIZE - 1;
+	int ret = context->stack_service_size >= STACK_SIZE - 1;
 	if ( ret == 0 )
 	{
-		this->stack_service[ this->stack_service_size ] = that;
-		this->stack_types[ this->stack_service_size++ ] = type;
+		context->stack_service[ context->stack_service_size ] = that;
+		context->stack_types[ context->stack_service_size++ ] = type;
 		
 		// Record the tree branch on which this service lives
 		if ( that != NULL && mlt_properties_get( MLT_SERVICE_PROPERTIES( that ), "_xml_branch" ) == NULL )
 		{
 			char s[ BRANCH_SIG_LEN ];
-			mlt_properties_set( MLT_SERVICE_PROPERTIES( that ), "_xml_branch", serialise_branch( this, s ) );
+			mlt_properties_set( MLT_SERVICE_PROPERTIES( that ), "_xml_branch", serialise_branch( context, s ) );
 		}
 	}
 	return ret;
@@ -130,16 +130,16 @@ static int context_push_service( deserialise_context this, mlt_service that, enu
 /** Pop a service.
 */
 
-static mlt_service context_pop_service( deserialise_context this, enum service_type *type )
+static mlt_service context_pop_service( deserialise_context context, enum service_type *type )
 {
 	mlt_service result = NULL;
 	
 	*type = invalid_type;
-	if ( this->stack_service_size > 0 )
+	if ( context->stack_service_size > 0 )
 	{
-		result = this->stack_service[ -- this->stack_service_size ];
+		result = context->stack_service[ -- context->stack_service_size ];
 		if ( type != NULL )
-			*type = this->stack_types[ this->stack_service_size ];
+			*type = context->stack_types[ context->stack_service_size ];
 	}
 	return result;
 }
@@ -147,22 +147,22 @@ static mlt_service context_pop_service( deserialise_context this, enum service_t
 /** Push a node.
 */
 
-static int context_push_node( deserialise_context this, xmlNodePtr node )
+static int context_push_node( deserialise_context context, xmlNodePtr node )
 {
-	int ret = this->stack_node_size >= STACK_SIZE - 1;
+	int ret = context->stack_node_size >= STACK_SIZE - 1;
 	if ( ret == 0 )
-		this->stack_node[ this->stack_node_size ++ ] = node;
+		context->stack_node[ context->stack_node_size ++ ] = node;
 	return ret;
 }
 
 /** Pop a node.
 */
 
-static xmlNodePtr context_pop_node( deserialise_context this )
+static xmlNodePtr context_pop_node( deserialise_context context )
 {
 	xmlNodePtr result = NULL;
-	if ( this->stack_node_size > 0 )
-		result = this->stack_node[ -- this->stack_node_size ];
+	if ( context->stack_node_size > 0 )
+		result = context->stack_node[ -- context->stack_node_size ];
 	return result;
 }
 
@@ -282,7 +282,7 @@ static int add_producer( deserialise_context context, mlt_service service, mlt_p
 /** Attach filters defined on that to this.
 */
 
-static void attach_filters( mlt_service this, mlt_service that )
+static void attach_filters( mlt_service service, mlt_service that )
 {
 	if ( that != NULL )
 	{
@@ -290,7 +290,7 @@ static void attach_filters( mlt_service this, mlt_service that )
 		mlt_filter filter = NULL;
 		for ( i = 0; ( filter = mlt_service_filter( that, i ) ) != NULL; i ++ )
 		{
-			mlt_service_attach( this, filter );
+			mlt_service_attach( service, filter );
 			attach_filters( MLT_FILTER_SERVICE( filter ), MLT_FILTER_SERVICE( filter ) );
 		}
 	}
