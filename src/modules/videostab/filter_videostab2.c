@@ -110,8 +110,9 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter filter = mlt_frame_pop_service( frame );
-	//*format = mlt_image_rgb24;
-	*format = mlt_image_yuv420p;
+	if (*format != mlt_image_yuv420p){
+		return 1;
+	}
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "consumer_deinterlace", 1 );
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
