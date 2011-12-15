@@ -226,6 +226,7 @@ mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type,
 
 	// Encapsulate the real producer
 	mlt_profile temp_profile = mlt_profile_clone( profile );
+	temp_profile->is_explicit = 0;
 	mlt_producer real_producer = mlt_factory_producer( temp_profile, NULL, arg );
 
 	if ( this && real_producer )
