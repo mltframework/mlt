@@ -6,25 +6,25 @@
  *  mlt adaption by Marco Gittler marco at gitma dot de 2011
  *
  *  This file is part of transcode, a video stream processing tool
- *      
+ *
  *  transcode is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *   
+ *
  *  transcode is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *   
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with GNU Make; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
 
 /* Typical call:
- *  transcode -V -J stabilize=shakiness=5:show=1,preview 
+ *  transcode -V -J stabilize=shakiness=5:show=1,preview
  *         -i inp.mpeg -y null,null -o dummy
  *  all parameters are optional
 */
@@ -49,7 +49,7 @@
     TC_MODULE_FLAG_RECONFIGURABLE | TC_MODULE_FLAG_DELAY
 #define MAX(a,b)         ((a < b) ?  (b) : (a))
 #define MIN(a,b)         ((a < b) ?  (a) : (b))
-#include "stabilize.h"  
+#include "stabilize.h"
 #include <stdlib.h>
 #include <string.h>
 #include <framework/mlt_types.h>
@@ -69,7 +69,7 @@ void addTrans(StabData* sd, Transform sl)
 
 
 /** initialise measurement fields on the frame.
-    The size of the fields and the maxshift is used to 
+    The size of the fields and the maxshift is used to
     calculate an optimal distribution in the frame.
 */
 int initFields(StabData* sd)
@@ -80,7 +80,7 @@ int initFields(StabData* sd)
     // make sure that the remaining rows have the same length
     sd->field_num  = rows*cols;
     sd->field_rows = rows;
-    mlt_log_debug (NULL,"field setup: rows: %i cols: %i Total: %i fields", 
+    mlt_log_debug (NULL,"field setup: rows: %i cols: %i Total: %i fields",
                 rows, cols, sd->field_num);
 
     if (!(sd->fields = malloc(sizeof(Field) * sd->field_num))) {
@@ -112,13 +112,13 @@ int initFields(StabData* sd)
    \param d_x shift in x direction
    \param d_y shift in y direction
 */
-double compareImg(unsigned char* I1, unsigned char* I2, 
+double compareImg(unsigned char* I1, unsigned char* I2,
                   int width, int height,  int bytesPerPixel, int d_x, int d_y)
 {
     int i, j;
     unsigned char* p1 = NULL;
     unsigned char* p2 = NULL;
-    long int sum = 0;  
+    long int sum = 0;
     int effectWidth = width - abs(d_x);
     int effectHeight = height - abs(d_y);
 
@@ -134,26 +134,26 @@ double compareImg(unsigned char* I1, unsigned char* I2,
     for (i = 0; i < effectHeight; i++) {
         p1 = I1;
         p2 = I2;
-        if (d_y > 0 ){ 
+        if (d_y > 0 ){
             p1 += (i + d_y) * width * bytesPerPixel;
             p2 += i * width * bytesPerPixel;
         } else {
             p1 += i * width * bytesPerPixel;
             p2 += (i - d_y) * width * bytesPerPixel;
         }
-        if (d_x > 0) { 
+        if (d_x > 0) {
             p1 += d_x * bytesPerPixel;
         } else {
-            p2 -= d_x * bytesPerPixel; 
+            p2 -= d_x * bytesPerPixel;
         }
 #ifdef USE_SSE2
 		__m128i A,B,C,D,E;
 		for (j = 0; j < effectWidth * bytesPerPixel - 16; j++) {
 #else
 		for (j = 0; j < effectWidth * bytesPerPixel; j++) {
-#endif 
+#endif
             /* fwrite(p1,1,1,pic1);fwrite(p1,1,1,pic1);fwrite(p1,1,1,pic1);
-               fwrite(p2,1,1,pic2);fwrite(p2,1,1,pic2);fwrite(p2,1,1,pic2); 
+               fwrite(p2,1,1,pic2);fwrite(p2,1,1,pic2);fwrite(p2,1,1,pic2);
              */
 #ifdef USE_SSE2
 			A= _mm_loadu_si128((__m128i*)p1); //load unaligned data
@@ -162,35 +162,35 @@ double compareImg(unsigned char* I1, unsigned char* I2,
 			D = _mm_srli_si128(C, 8); // shift first 64 byte value to align at the same as C
 			E = _mm_add_epi32(C, D); // add the 2 values (sum of all diffs)
 			sum+= _mm_cvtsi128_si32(E); //convert _m128i to int
-			
+
             p1+=16;
-            p2+=16;     
+            p2+=16;
 			j+=15;
 #else
             sum += abs((int)*p1 - (int)*p2);
             p1++;
-            p2++;      
+            p2++;
 #endif
         }
     }
     /*  fclose(pic1);
-        fclose(pic2); 
+        fclose(pic2);
      */
     return sum/((double) effectWidth * effectHeight * bytesPerPixel);
 }
 
 /**
-   compares a small part of two given images 
+   compares a small part of two given images
    and returns the average absolute difference.
-   Field center, size and shift have to be choosen, 
+   Field center, size and shift have to be choosen,
    so that no clipping is required
-     
-   \param field Field specifies position(center) and size of subimage 
+
+   \param field Field specifies position(center) and size of subimage
    \param d_x shift in x direction
-   \param d_y shift in y direction   
+   \param d_y shift in y direction
 */
-double compareSubImg(unsigned char* const I1, unsigned char* const I2, 
-                     const Field* field, 
+double compareSubImg(unsigned char* const I1, unsigned char* const I2,
+                     const Field* field,
                      int width, int height, int bytesPerPixel, int d_x, int d_y)
 {
     int k, j;
@@ -205,7 +205,7 @@ double compareSubImg(unsigned char* const I1, unsigned char* const I2,
     // TODO: use some mmx or sse stuff here
 #ifdef USE_SSE2
 	__m128i A,B,C,D,E;
-#endif 
+#endif
     for (j = 0; j < field->size; j++){
 #ifdef USE_SSE2
 			for (k = 0; k < (field->size * bytesPerPixel) - 16 ; k++) {
@@ -215,15 +215,15 @@ double compareSubImg(unsigned char* const I1, unsigned char* const I2,
 				D = _mm_srli_si128(C, 8); // shift value 8 byte right
 				E = _mm_add_epi32(C, D); // add the 2 values (sum of all diffs)
 				sum+= _mm_cvtsi128_si32(E); //convert _m128i to int
-			
+
             p1+=16;
-            p2+=16;     
+            p2+=16;
 			k+=15;
 #else
 			for (k = 0; k < (field->size * bytesPerPixel); k++) {
             sum += abs((int)*p1 - (int)*p2);
             p1++;
-            p2++;     
+            p2++;
 #endif
         }
         p1 += ((width - field->size) * bytesPerPixel);
@@ -237,27 +237,27 @@ double contrastSubImgYUV(StabData* sd, const Field* field){
     return contrastSubImg(sd->curr,field,sd->width,sd->height,1);
 }
 
-/** 
-    \see contrastSubImg three times called with bytesPerPixel=3 
-    for all channels   
+/**
+    \see contrastSubImg three times called with bytesPerPixel=3
+    for all channels
  */
 double contrastSubImgRGB(StabData* sd, const Field* field){
     unsigned char* const I = sd->curr;
-    return (  contrastSubImg(I,  field,sd->width,sd->height,3) 
+    return (  contrastSubImg(I,  field,sd->width,sd->height,3)
             + contrastSubImg(I+1,field,sd->width,sd->height,3)
             + contrastSubImg(I+2,field,sd->width,sd->height,3))/3;
 }
 
 /**
    calculates Michelson-contrast in the given small part of the given image
-     
-   \param I pointer to framebuffer 
-   \param field Field specifies position(center) and size of subimage 
+
+   \param I pointer to framebuffer
+   \param field Field specifies position(center) and size of subimage
    \param width width of frame
    \param height height of frame
    \param bytesPerPixel calc contrast for only for first channel
 */
-double contrastSubImg(unsigned char* const I, const Field* field, 
+double contrastSubImg(unsigned char* const I, const Field* field,
                      int width, int height, int bytesPerPixel)
 {
 #if USE_SSE2
@@ -327,23 +327,23 @@ Transform calcShiftRGBSimple(StabData* sd)
 {
     int x = 0, y = 0;
     int i, j;
-    double minerror = 1e20;  
+    double minerror = 1e20;
     for (i = -sd->maxshift; i <= sd->maxshift; i++) {
         for (j = -sd->maxshift; j <= sd->maxshift; j++) {
-            double error = compareImg(sd->curr, sd->prev, 
+            double error = compareImg(sd->curr, sd->prev,
                                       sd->width, sd->height, 3, i, j);
             if (error < minerror) {
                 minerror = error;
                 x = i;
                 y = j;
-           }	
+           }
         }
-    } 
+    }
     return new_transform(x, y, 0, 0, 0);
 }
 
 
-/** tries to register current frame onto previous frame. 
+/** tries to register current frame onto previous frame.
     (only the luminance is used)
     This is the most simple algorithm:
     shift images to all possible positions and calc summed error
@@ -363,17 +363,17 @@ Transform calcShiftYUVSimple(StabData* sd)
 #endif
 
     // we only use the luminance part of the image
-    Y_c  = sd->curr;  
+    Y_c  = sd->curr;
     //  Cb_c = sd->curr + sd->width*sd->height;
     //Cr_c = sd->curr + 5*sd->width*sd->height/4;
-    Y_p  = sd->prev;  
+    Y_p  = sd->prev;
     //Cb_p = sd->prev + sd->width*sd->height;
     //Cr_p = sd->prev + 5*sd->width*sd->height/4;
 
-    double minerror = 1e20;  
+    double minerror = 1e20;
     for (i = -sd->maxshift; i <= sd->maxshift; i++) {
         for (j = -sd->maxshift; j <= sd->maxshift; j++) {
-            double error = compareImg(Y_c, Y_p, 
+            double error = compareImg(Y_c, Y_p,
                                       sd->width, sd->height, 1, i, j);
 #ifdef STABVERBOSE
             fprintf(f, "%i %i %f\n", i, j, error);
@@ -382,9 +382,9 @@ Transform calcShiftYUVSimple(StabData* sd)
                 minerror = error;
                 x = i;
                 y = j;
-            }	
+            }
         }
-    }  
+    }
 #ifdef STABVERBOSE
     fclose(f);
     tc_log_msg(MOD_NAME, "Minerror: %f\n", minerror);
@@ -394,23 +394,23 @@ Transform calcShiftYUVSimple(StabData* sd)
 
 
 
-/* calculates rotation angle for the given transform and 
+/* calculates rotation angle for the given transform and
  * field with respect to the given center-point
  */
-double calcAngle(StabData* sd, Field* field, Transform* t, 
+double calcAngle(StabData* sd, Field* field, Transform* t,
                  int center_x, int center_y)
 {
-    // we better ignore fields that are to close to the rotation center 
+    // we better ignore fields that are to close to the rotation center
     if (abs(field->x - center_x) + abs(field->y - center_y) < sd->maxshift) {
         return 0;
     } else {
-        // double r = sqrt(field->x*field->x + field->y*field->y);   
+        // double r = sqrt(field->x*field->x + field->y*field->y);
         double a1 = atan2(field->y - center_y, field->x - center_x);
-        double a2 = atan2(field->y - center_y + t->y, 
+        double a2 = atan2(field->y - center_y + t->y,
                           field->x - center_x + t->x);
         double diff = a2 - a1;
-        return (diff>M_PI) ? diff - 2*M_PI 
-            : ( (diff<-M_PI) ? diff + 2*M_PI : diff);    
+        return (diff>M_PI) ? diff - 2*M_PI
+            : ( (diff<-M_PI) ? diff + 2*M_PI : diff);
     }
 }
 
@@ -432,28 +432,28 @@ Transform calcFieldTransYUV(StabData* sd, const Field* field, int fieldnum)
 /*         return t; */
 /*     } */
 #ifdef STABVERBOSE
-    // printf("%i %i %f\n", sd->t, fieldnum, contr);    
+    // printf("%i %i %f\n", sd->t, fieldnum, contr);
     FILE *f = NULL;
     char buffer[32];
     snprintf(buffer, sizeof(buffer), "f%04i_%02i.dat", sd->t, fieldnum);
     f = fopen(buffer, "w");
     fprintf(f, "# splot \"%s\"\n", buffer);
-#endif    
+#endif
 
-    double minerror = 1e10;  
+    double minerror = 1e10;
     double error = 1e10;
     for (i = -sd->maxshift; i <= sd->maxshift; i += sd->stepsize) {
         for (j = -sd->maxshift; j <= sd->maxshift; j += sd->stepsize) {
-            error = compareSubImg(Y_c, Y_p, field, 
+            error = compareSubImg(Y_c, Y_p, field,
                                          sd->width, sd->height, 1, i, j);
 #ifdef STABVERBOSE
             fprintf(f, "%i %i %f\n", i, j, error);
-#endif 
+#endif
             if (error < minerror) {
                 minerror = error;
                 t.x = i;
                 t.y = j;
-            }	
+            }
         }
     }
 
@@ -461,34 +461,34 @@ Transform calcFieldTransYUV(StabData* sd, const Field* field, int fieldnum)
         int r = sd->stepsize - 1;
         for (i = t.x - r; i <= t.x + r; i += 1) {
             for (j = -t.y - r; j <= t.y + r; j += 1) {
-                if (i == t.x && j == t.y) 
+                if (i == t.x && j == t.y)
                     continue; //no need to check this since already done
-                error = compareSubImg(Y_c, Y_p, field, 
+                error = compareSubImg(Y_c, Y_p, field,
                                       sd->width, sd->height, 1, i, j);
 #ifdef STABVERBOSE
                 fprintf(f, "%i %i %f\n", i, j, error);
-#endif 	
+#endif
                 if (error < minerror){
                     minerror = error;
                     t.x = i;
                     t.y = j;
-                }	
+                }
             }
         }
     }
-#ifdef STABVERBOSE 
-    fclose(f); 
+#ifdef STABVERBOSE
+    fclose(f);
     mlt_log_debug ( "Minerror: %f\n", minerror);
 #endif
 
     if (!sd->allowmax && fabs(t.x) == sd->maxshift) {
-#ifdef STABVERBOSE 
+#ifdef STABVERBOSE
         mlt_log_debug ( "maximal x shift ");
 #endif
         t.x = 0;
     }
     if (!sd->allowmax && fabs(t.y) == sd->maxshift) {
-#ifdef STABVERBOSE 
+#ifdef STABVERBOSE
         mlt_log_debug ("maximal y shift ");
 #endif
         t.y = 0;
@@ -496,7 +496,7 @@ Transform calcFieldTransYUV(StabData* sd, const Field* field, int fieldnum)
     return t;
 }
 
-/* calculates the optimal transformation for one field in RGB 
+/* calculates the optimal transformation for one field in RGB
  *   slower than the YUV version because it uses all three color channels
  */
 Transform calcFieldTransRGB(StabData* sd, const Field* field, int fieldnum)
@@ -504,28 +504,28 @@ Transform calcFieldTransRGB(StabData* sd, const Field* field, int fieldnum)
     Transform t = null_transform();
     unsigned char *I_c = sd->curr, *I_p = sd->prev;
     int i, j;
-  
-    double minerror = 1e20;  
+
+    double minerror = 1e20;
     for (i = -sd->maxshift; i <= sd->maxshift; i += 2) {
-        for (j=-sd->maxshift; j <= sd->maxshift; j += 2) {      
-            double error = compareSubImg(I_c, I_p, field, 
+        for (j=-sd->maxshift; j <= sd->maxshift; j += 2) {
+            double error = compareSubImg(I_c, I_p, field,
                                          sd->width, sd->height, 3, i, j);
             if (error < minerror) {
                 minerror = error;
                 t.x = i;
                 t.y = j;
-            }	
+            }
         }
     }
     for (i = t.x - 1; i <= t.x + 1; i += 2) {
         for (j = -t.y - 1; j <= t.y + 1; j += 2) {
-            double error = compareSubImg(I_c, I_p, field, 
+            double error = compareSubImg(I_c, I_p, field,
                                          sd->width, sd->height, 3, i, j);
             if (error < minerror) {
                 minerror = error;
                 t.x = i;
                 t.y = j;
-            }	
+            }
         }
     }
     if (!sd->allowmax && fabs(t.x) == sd->maxshift) {
@@ -537,8 +537,8 @@ Transform calcFieldTransRGB(StabData* sd, const Field* field, int fieldnum)
     return t;
 }
 
-/* compares contrast_idx structures respect to the contrast 
-   (for sort function) 
+/* compares contrast_idx structures respect to the contrast
+   (for sort function)
 */
 int cmp_contrast_idx(const void *ci1, const void* ci2)
 {
@@ -556,7 +556,7 @@ tlist* selectfields(StabData* sd, contrastSubImgFunc contrastfunc)
     int i,j;
     tlist* goodflds = tlist_new(0);
     contrast_idx *ci = malloc(sizeof(contrast_idx) * sd->field_num);
-    
+
     // we split all fields into row+1 segments and take from each segment
     // the best fields
     int numsegms = (sd->field_rows+1);
@@ -565,12 +565,12 @@ tlist* selectfields(StabData* sd, contrastSubImgFunc contrastfunc)
     contrast_idx *ci_segms = malloc(sizeof(contrast_idx) * sd->field_num);
     int remaining   = 0;
     // calculate contrast for each field
-    for (i = 0; i < sd->field_num; i++) {        
+    for (i = 0; i < sd->field_num; i++) {
         ci[i].contrast = contrastfunc(sd, &sd->fields[i]);
         ci[i].index=i;
         if(ci[i].contrast < sd->contrast_threshold) ci[i].contrast = 0;
         // else printf("%i %lf\n", ci[i].index, ci[i].contrast);
-    }   
+    }
 
     memcpy(ci_segms, ci, sizeof(contrast_idx) * sd->field_num);
     // get best fields from each segment
@@ -581,33 +581,33 @@ tlist* selectfields(StabData* sd, contrastSubImgFunc contrastfunc)
         //printf("Segment: %i: %i-%i\n", i, startindex, endindex);
 
         // sort within segment
-        qsort(ci_segms+startindex, endindex-startindex, 
-              sizeof(contrast_idx), cmp_contrast_idx);        
+        qsort(ci_segms+startindex, endindex-startindex,
+              sizeof(contrast_idx), cmp_contrast_idx);
         // take maxfields/numsegms
         for(j=0; j<sd->maxfields/numsegms; j++){
             if(startindex+j >= endindex) continue;
-            // printf("%i %lf\n", ci_segms[startindex+j].index, 
+            // printf("%i %lf\n", ci_segms[startindex+j].index,
             //                    ci_segms[startindex+j].contrast);
-            if(ci_segms[startindex+j].contrast > 0){                
+            if(ci_segms[startindex+j].contrast > 0){
                tlist_append(goodflds, &ci[ci_segms[startindex+j].index],sizeof(contrast_idx));
                 // don't consider them in the later selection process
-                ci_segms[startindex+j].contrast=0; 
-            }                                                     
+                ci_segms[startindex+j].contrast=0;
+            }
         }
     }
     // check whether enough fields are selected
     // printf("Phase2: %i\n", tc_list_size(goodflds));
-    remaining = sd->maxfields - tlist_size(goodflds); 
+    remaining = sd->maxfields - tlist_size(goodflds);
     if(remaining > 0){
         // take the remaining from the leftovers
-        qsort(ci_segms, sd->field_num,                   
+        qsort(ci_segms, sd->field_num,
               sizeof(contrast_idx), cmp_contrast_idx);
         for(j=0; j < remaining; j++){
             if(ci_segms[j].contrast > 0){
-                tlist_append(goodflds, &ci_segms[j], sizeof(contrast_idx));                    
-            }                                                     
+                tlist_append(goodflds, &ci_segms[j], sizeof(contrast_idx));
+            }
         }
-    }     
+    }
     // printf("Ende: %i\n", tc_list_size(goodflds));
     free(ci);
     free(ci_segms);
@@ -616,11 +616,11 @@ tlist* selectfields(StabData* sd, contrastSubImgFunc contrastfunc)
 
 
 
-/* tries to register current frame onto previous frame. 
+/* tries to register current frame onto previous frame.
  *   Algorithm:
  *   check all fields for vertical and horizontal transformation
  *   use minimal difference of all possible positions
- *   discards fields with low contrast 
+ *   discards fields with low contrast
  *   select maxfields field according to their contrast
  *   calculate shift as cleaned mean of all remaining fields
  *   calculate rotation angle of each field in respect to center of fields
@@ -643,17 +643,17 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
     f = fopen(buffer, "w");
     fprintf(f, "# plot \"%s\" w l, \"\" every 2:1:0\n", buffer);
 #endif
-    
+
 
     tlist* goodflds = selectfields(sd, contrastfunc);
 
-    // use all "good" fields and calculate optimal match to previous frame 
+    // use all "good" fields and calculate optimal match to previous frame
     contrast_idx* f;
     while((f = (contrast_idx*)tlist_pop(goodflds,0) ) != 0){
         int i = f->index;
         t =  fieldfunc(sd, &sd->fields[i], i); // e.g. calcFieldTransYUV
 #ifdef STABVERBOSE
-        fprintf(f, "%i %i\n%f %f %i\n \n\n", sd->fields[i].x, sd->fields[i].y, 
+        fprintf(f, "%i %i\n%f %f %i\n \n\n", sd->fields[i].x, sd->fields[i].y,
                 sd->fields[i].x + t.x, sd->fields[i].y + t.y, t.extra);
 #endif
         if (t.extra != -1){ // ignore if extra == -1 (unused at the moment)
@@ -665,37 +665,37 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
     tlist_fini(goodflds);
 
     t = null_transform();
-    num_trans = index; // amount of transforms we actually have    
+    num_trans = index; // amount of transforms we actually have
     if (num_trans < 1) {
         printf( "too low contrast! No field remains.\n \
                     (no translations are detected in frame %i)", sd->t);
         return t;
     }
-        
+
     int center_x = 0;
     int center_y = 0;
     // calc center point of all remaining fields
     for (i = 0; i < num_trans; i++) {
         center_x += fs[i]->x;
-        center_y += fs[i]->y;            
-    } 
+        center_y += fs[i]->y;
+    }
     center_x /= num_trans;
-    center_y /= num_trans;        
-    
+    center_y /= num_trans;
+
     if (sd->show){ // draw fields and transforms into frame.
-        // this has to be done one after another to handle possible overlap 
+        // this has to be done one after another to handle possible overlap
         if (sd->show > 1) {
             for (i = 0; i < num_trans; i++)
-                drawFieldScanArea(sd, fs[i], &ts[i]);            
+                drawFieldScanArea(sd, fs[i], &ts[i]);
         }
         for (i = 0; i < num_trans; i++)
-            drawField(sd, fs[i], &ts[i]);            
+            drawField(sd, fs[i], &ts[i]);
         for (i = 0; i < num_trans; i++)
-            drawFieldTrans(sd, fs[i], &ts[i]);            
-    } 
+            drawFieldTrans(sd, fs[i], &ts[i]);
+    }
     /* median over all transforms
        t= median_xy_transform(ts, sd->field_num);*/
-    // cleaned mean    
+    // cleaned mean
     t = cleanmean_xy_transform(ts, num_trans);
 
     // substract avg
@@ -705,8 +705,8 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
     // figure out angle
     if (sd->field_num < 6) {
         // the angle calculation is inaccurate for 5 and less fields
-        t.alpha = 0; 
-    } else {      
+        t.alpha = 0;
+    } else {
         for (i = 0; i < num_trans; i++) {
             angles[i] = calcAngle(sd, fs[i], &ts[i], center_x, center_y);
         }
@@ -714,7 +714,7 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
         t.alpha = -cleanmean(angles, num_trans, &min, &max);
         if(max-min>sd->maxanglevariation){
             t.alpha=0;
-            printf( "too large variation in angle(%f)\n", 
+            printf( "too large variation in angle(%f)\n",
                         max-min);
         }
     }
@@ -723,8 +723,8 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
     double p_x = (center_x - sd->width/2);
     double p_y = (center_y - sd->height/2);
     t.x += (cos(t.alpha)-1)*p_x  - sin(t.alpha)*p_y;
-    t.y += sin(t.alpha)*p_x  + (cos(t.alpha)-1)*p_y;    
-    
+    t.y += sin(t.alpha)*p_x  + (cos(t.alpha)-1)*p_y;
+
 #ifdef STABVERBOSE
     fclose(f);
 #endif
@@ -738,8 +738,8 @@ void drawFieldScanArea(StabData* sd, const Field* field, const Transform* t)
 		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
-    drawBox(sd->curr, sd->width, sd->height, 1, field->x, field->y, 
-            field->size+2*sd->maxshift, field->size+2*sd->maxshift, 80);   
+    drawBox(sd->curr, sd->width, sd->height, 1, field->x, field->y,
+            field->size+2*sd->maxshift, field->size+2*sd->maxshift, 80);
 }
 
 /** draws the field */
@@ -749,7 +749,7 @@ void drawField(StabData* sd, const Field* field, const Transform* t)
 		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
-    drawBox(sd->curr, sd->width, sd->height, 1, field->x, field->y, 
+    drawBox(sd->curr, sd->width, sd->height, 1, field->x, field->y,
             field->size, field->size, t->extra == -1 ? 100 : 40);
 }
 
@@ -760,20 +760,20 @@ void drawFieldTrans(StabData* sd, const Field* field, const Transform* t)
 		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
-    drawBox(sd->curr, sd->width, sd->height, 1, 
+    drawBox(sd->curr, sd->width, sd->height, 1,
             field->x, field->y, 5, 5, 128);     // draw center
-    drawBox(sd->curr, sd->width, sd->height, 1, 
+    drawBox(sd->curr, sd->width, sd->height, 1,
             field->x + t->x, field->y + t->y, 8, 8, 250); // draw translation
 }
 
 /**
  * draws a box at the given position x,y (center) in the given color
-   (the same for all channels) 
+   (the same for all channels)
  */
-void drawBox(unsigned char* I, int width, int height, int bytesPerPixel, 
+void drawBox(unsigned char* I, int width, int height, int bytesPerPixel,
              int x, int y, int sizex, int sizey, unsigned char color){
-    
-    unsigned char* p = NULL;     
+
+    unsigned char* p = NULL;
     int j,k;
     p = I + ((x - sizex/2) + (y - sizey/2)*width)*bytesPerPixel;
     for (j = 0; j < sizey; j++){
@@ -803,8 +803,7 @@ struct iterdata {
 int stabilize_init(StabData* instance)
 {
 
-    instance = malloc(sizeof(StabData)); // allocation with zero values
-	memset(instance,sizeof(StabData),0);
+    instance = calloc(1,sizeof(StabData)); // allocation with zero values
     if (!instance) {
         return -1;
     }
@@ -821,11 +820,13 @@ int stabilize_configure(StabData* instance
                                /*TCModuleExtraData *xdata[]*/)
 {
     StabData *sd = instance;
-    /*    sd->framesize = sd->vob->im_v_width * MAX_PLANES * 
+    /*    sd->framesize = sd->vob->im_v_width * MAX_PLANES *
           sizeof(char) * 2 * sd->vob->im_v_height * 2;     */
     /*TODO sd->framesize = sd->vob->im_v_size;    */
-    sd->prev = calloc(1,sd->framesize);    
-    if (!sd->prev) {
+    sd->prev = calloc(1,sd->framesize);
+		sd->grayimage = calloc(1,sd->width*sd->height);
+
+    if (!sd->prev || !sd->grayimage) {
         printf( "malloc failed");
         return -1;
     }
@@ -835,7 +836,7 @@ int stabilize_configure(StabData* instance
     sd->allowmax   = 0;
     sd->field_size  = MIN(sd->width, sd->height)/12;
     sd->maxanglevariation = 1;
-    
+
     sd->shakiness = MIN(10,MAX(1,sd->shakiness));
     sd->accuracy  = MAX(sd->shakiness,MIN(15,MAX(1,sd->accuracy)));
     if (1) {
@@ -854,10 +855,10 @@ int stabilize_configure(StabData* instance
     // shift and size: shakiness 1: height/40; 10: height/4
     sd->maxshift    = MIN(sd->width, sd->height)*sd->shakiness/40;
     sd->field_size   = MIN(sd->width, sd->height)*sd->shakiness/40;
-  
-    mlt_log_debug ( NULL,  "Fieldsize: %i, Maximal translation: %i pixel\n", 
+
+    mlt_log_debug ( NULL,  "Fieldsize: %i, Maximal translation: %i pixel\n",
                 sd->field_size, sd->maxshift);
-    if (sd->algo==1) {        
+    if (sd->algo==1) {
         // initialize measurement fields. field_num is set here.
         if (!initFields(sd)) {
             return -1;
@@ -867,14 +868,13 @@ int stabilize_configure(StabData* instance
                     sd->maxfields, sd->field_num);
     }
     if (sd->show){
-        sd->currcopy = malloc(sd->framesize);
-		memset ( sd->currcopy, sd->framesize, 0 );
+        sd->currcopy = calloc(1,sd->framesize);
 	}
 
     /* load unsharp filter to smooth the frames. This allows larger stepsize.*/
     char unsharp_param[128];
     int masksize = MIN(13,sd->stepsize*1.8); // only works up to 13.
-    sprintf(unsharp_param,"luma=-1:luma_matrix=%ix%i:pre=1", 
+    sprintf(unsharp_param,"luma=-1:luma_matrix=%ix%i:pre=1",
             masksize, masksize);
     return 0;
 }
@@ -885,16 +885,27 @@ int stabilize_configure(StabData* instance
  * See tcmodule-data.h for function details.
  */
 
-int stabilize_filter_video(StabData* instance, 
+int stabilize_filter_video(StabData* instance,
                                   unsigned char *frame,mlt_image_format pixelformat)
 {
     StabData *sd = instance;
- 	sd->pixelformat=pixelformat; 
+    sd->pixelformat=pixelformat;
+		int l=sd->width*sd->height;
+		unsigned char* tmpgray=sd->grayimage;
+		if (pixelformat == mlt_image_yuv422){
+			while(l--){
+				*tmpgray++=*frame++;
+				frame++;
+			};
+		}
 
-    if(sd->show)  // save the buffer to restore at the end for prev
-        memcpy(sd->currcopy, frame, sd->framesize);
+    if(sd->show) { // save the buffer to restore at the end for prev
+			if (pixelformat == mlt_image_yuv420p){
+				memcpy(sd->currcopy, sd->grayimage, sd->framesize);
+			}
+		}
     if (sd->hasSeenOneFrame) {
-        sd->curr = frame;
+        sd->curr = sd->grayimage;
         if (pixelformat == mlt_image_rgb24) {
             if (sd->algo == 0)
                 addTrans(sd, calcShiftRGBSimple(sd));
@@ -902,6 +913,12 @@ int stabilize_filter_video(StabData* instance,
                 addTrans(sd, calcTransFields(sd, calcFieldTransRGB,
                          contrastSubImgRGB));
         } else if (pixelformat == mlt_image_yuv420p ) {
+            if (sd->algo == 0)
+                addTrans(sd, calcShiftYUVSimple(sd));
+            else if (sd->algo == 1)
+                addTrans(sd, calcTransFields(sd, calcFieldTransYUV,
+                                             contrastSubImgYUV));
+        } else if (pixelformat == mlt_image_yuv422 ) {
             if (sd->algo == 0)
                 addTrans(sd, calcShiftYUVSimple(sd));
             else if (sd->algo == 1)
@@ -916,9 +933,9 @@ int stabilize_filter_video(StabData* instance,
         sd->hasSeenOneFrame = 1;
         addTrans(sd, null_transform());
     }
-    
+
     if(!sd->show) { // copy current frame to prev for next frame comparison
-        memcpy(sd->prev, frame, sd->framesize);
+        memcpy(sd->prev, sd->grayimage, sd->framesize);
     } else { // use the copy because we changed the original frame
         memcpy(sd->prev, sd->currcopy, sd->framesize);
     }
@@ -938,6 +955,11 @@ int stabilize_stop(StabData* instance)
         free(sd->prev);
         sd->prev = NULL;
     }
+    if (sd->grayimage){
+			free(sd->grayimage);
+			sd->grayimage=NULL;
+
+		}
     return 0;
 }
 

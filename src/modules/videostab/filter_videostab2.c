@@ -32,11 +32,16 @@
 #include "stabilize.h"
 #include "transform_image.h"
 
+typedef struct {
+	StabData* stab;
+	TransformData* trans;
+	int initialized;
+	void* parent;
+} videostab2_data;
 
-static void serialize_vectors( StabData* self, mlt_position length )
+static void serialize_vectors( videostab2_data* self, mlt_position length )
 {
 	mlt_geometry g = mlt_geometry_init();
-
 	if ( g )
 	{
 		struct mlt_geometry_item_s item;
@@ -46,7 +51,7 @@ static void serialize_vectors( StabData* self, mlt_position length )
 		item.key = item.f[0] = item.f[1] = 1;
 		item.f[2] = item.f[3] = item.f[4] = 1;
 
-		tlist* transform_data =self->transs;
+		tlist* transform_data =self->stab->transs;
 		for ( i = 0; i < length; i++ )
 		{
 			// Set the geometry item
@@ -81,8 +86,7 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 	{
 		struct mlt_geometry_item_s item;
 		int i;
-		tx=malloc(sizeof(Transform)*length);
-		memset(tx,sizeof(Transform)*length,0);
+		tx=calloc(1,sizeof(Transform)*length);
 		// Copy the geometry items to a vc array for interp()
 		for ( i = 0; i < length; i++ )
 		{
@@ -95,7 +99,7 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 			t.extra=0;
 			tx[i]=t;
 		}
-		
+
 	}
 	else
 	{
@@ -110,98 +114,99 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter filter = mlt_frame_pop_service( frame );
-	if (*format != mlt_image_yuv420p){
-		return 1;
-	}
+	char *vectors = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "vectors" );
+	*format = mlt_image_yuv422;
+	if (vectors)
+		*format= mlt_image_rgb24;
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "consumer_deinterlace", 1 );
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	if ( !error && *image )
 	{
-		StabData* self = filter->child;
+		videostab2_data* data = filter->child;
+		if ( data==NULL ) { // big error, abort
+			return 1;
+		}
 		mlt_position length = mlt_filter_get_length2( filter, frame );
 		int h = *height;
 		int w = *width;
 
 		// Service locks are for concurrency control
 		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-		if ( !self->initialized )
-		{
-			// Initialize our context
-			self->initialized = 1;
-			self->width=w;
-			self->height=h;
-			self->framesize=w*h* 3/2;//( mlt_image_format_size ( *format, w,h , 0) ; // 3/2 =1 too small
-			self->shakiness = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "shakiness" );
-			self->accuracy = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "accuracy" );
-			self->stepsize = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "stepsize" );
-			self->algo = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "algo" );
-			self->show = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "show" );
-			self->contrast_threshold = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter) , "mincontrast" );
-			stabilize_configure(self);
+
+		if ( !vectors) {
+			if ( !data->initialized )
+			{
+				// Initialize our context
+				data->initialized = 1;
+				data->stab->width=w;
+				data->stab->height=h;
+				if (*format==mlt_image_yuv420p) data->stab->framesize=w*h* 3/2;//( mlt_image_format_size ( *format, w,h , 0) ; // 3/2 =1 too small
+				if (*format==mlt_image_yuv422) data->stab->framesize=w*h;
+				data->stab->shakiness = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "shakiness" );
+				data->stab->accuracy = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "accuracy" );
+				data->stab->stepsize = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "stepsize" );
+				data->stab->algo = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "algo" );
+				data->stab->show = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "show" );
+				data->stab->contrast_threshold = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter) , "mincontrast" );
+				stabilize_configure(data->stab);
+			}
+				// Analyse
+				mlt_position pos = mlt_filter_get_position( filter, frame );
+				stabilize_filter_video ( data->stab , *image, *format );
+
+				// On last frame
+				if ( pos == length - 1 )
+				{
+					serialize_vectors( data , length );
+				}
 		}
-		char *vectors = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "vectors" );
-		if ( !vectors )
+		else
 		{
-			// Analyse
-			mlt_position pos = mlt_filter_get_position( filter, frame );
-			stabilize_filter_video ( self, *image, *format );
-
-
-			// On last frame
-			if ( pos == length - 1 )
+			if ( data->initialized!=1  )
 			{
-				serialize_vectors( self, length );
-			}
+				char *interps = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "rescale.interp" );
+
+				if ( data->initialized != 2 )
+				{
+					// Load analysis results from property
+					data->initialized = 2;
+
+					int interp = 2;
+					if ( strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
+						interp = 0;
+					else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
+						interp = 1;
+					else if ( strcmp( interps, "bilinear" ) == 0 )
+						interp = 2;
+					else if ( strcmp( interps, "bicubic" ) == 0 )
+						interp = 3;
+					else if ( strcmp( interps, "bicublin" ) == 0 )
+						interp = 4;
+
+					data->trans->interpoltype = interp;
+					data->trans->smoothing = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "smoothing" );
+					data->trans->maxshift = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxshift" );
+					data->trans->maxangle = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxangle" );
+					data->trans->crop = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "crop" );
+					data->trans->invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "invert" );
+					data->trans->relative = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "relative" );
+					data->trans->zoom = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "zoom" );
+					data->trans->optzoom = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "optzoom" );
+					data->trans->sharpen = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter), "sharpen" );
+
+					transform_configure(data->trans,w,h,*format ,*image, deserialize_vectors(  vectors, length ),length);
+
+				}
+				if ( data->initialized == 2 )
+				{
+					// Stabilize
+					float pos = mlt_filter_get_position( filter, frame );
+					data->trans->current_trans=pos;
+					transform_filter_video(data->trans, *image, *format );
+
+				}
 		}
-		if ( vectors )
-		{
-			// Apply
-			TransformData* tf=mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "_transformdata", NULL);
-			char *interps = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "rescale.interp" );
-
-			if (!tf){
-				tf=mlt_pool_alloc(sizeof(TransformData));
-				mlt_properties_set_data( MLT_FILTER_PROPERTIES(filter), "_transformdata", tf, 0, ( mlt_destructor )mlt_pool_release, NULL );
-			}
-			if ( self->initialized != 2 )
-			{
-				// Load analysis results from property
-				self->initialized = 2;
-
-				int interp = 2;
-				if ( strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
-					interp = 0;
-				else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
-					interp = 1;
-				else if ( strcmp( interps, "bilinear" ) == 0 )
-					interp = 2;
-				else if ( strcmp( interps, "bicubic" ) == 0 )
-					interp = 3;
-				else if ( strcmp( interps, "bicublin" ) == 0 )
-					interp = 4;
-
-				tf->interpoltype = interp;
-				tf->smoothing = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "smoothing" ); 
-				tf->maxshift = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxshift" ); 
-				tf->maxangle = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxangle" ); 
-				tf->crop = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "crop" ); 
-				tf->invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "invert" ); 
-				tf->relative = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "relative" ); 
-				tf->zoom = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "zoom" ); 
-				tf->optzoom = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "optzoom" ); 
-				tf->sharpen = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter), "sharpen" ); 
-
-				transform_configure(tf,w,h,*format ,*image, deserialize_vectors(  vectors, length ),length);
-				
-			}
-			if ( self->initialized == 2 )
-			{
-				// Stabilize
-				float pos = mlt_filter_get_position( filter, frame );
-				tf->current_trans=pos;
-				transform_filter_video(tf, *image, *format );
-			}
 		}
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
@@ -217,41 +222,50 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 static void filter_close( mlt_filter parent )
 {
-	StabData* self = parent->child;
-	stabilize_stop(self);
-	free( self );
+	videostab2_data* data = parent->child;
+	if (data){
+		if (data->stab) stabilize_stop(data->stab);
+		if (data->trans){
+			if (data->trans->src) free(data->trans->src);
+			free (data->trans);
+		}
+		free( data );
+	}
 	parent->close = NULL;
 	parent->child = NULL;
 }
 
 mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	StabData* self = calloc( 1, sizeof(StabData) );
-	if ( self )
+	videostab2_data* data= calloc( 1, sizeof(videostab2_data));
+	data->stab = calloc( 1, sizeof(StabData) );
+	data->trans = calloc( 1, sizeof (TransformData) ) ;
+	if ( data )
 	{
 		mlt_filter parent = mlt_filter_new();
-		parent->child = self;
+
+		parent->child = data;
 		parent->close = filter_close;
 		parent->process = filter_process;
-		self->parent = parent;
+		data->parent = parent;
 		//properties for stabilize
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shakiness", "4" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "accuracy", "4" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "stepsize", "6" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "algo", "1" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "mincontrast", "0.3" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "show", "0" ); 
-		
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shakiness", "4" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "accuracy", "4" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "stepsize", "6" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "algo", "1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "mincontrast", "0.3" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "show", "0" );
+
 		//properties for transform
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "smoothing", "10" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "maxshift", "-1" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "maxangle", "-1" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "crop", "0" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "invert", "0" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "relative", "1" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "zoom", "0" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "optzoom", "1" ); 
-		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "sharpen", "0.8" ); 
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "smoothing", "10" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "maxshift", "-1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "maxangle", "-1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "crop", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "invert", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "relative", "1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "zoom", "0" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "optzoom", "1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "sharpen", "0.8" );
 		return parent;
 	}
 	return NULL;
