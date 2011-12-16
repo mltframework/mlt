@@ -79,6 +79,7 @@ typedef struct _stab_data {
     unsigned char* curr; // current frame buffer (only pointer)
     unsigned char* currcopy; // copy of the current frame needed for drawing
     unsigned char* prev; // frame buffer for last frame (copied)
+    unsigned char* grayimage; // frame buffer for last frame (copied)
     short hasSeenOneFrame; // true if we have a valid previous frame
 
     int width, height;
@@ -86,7 +87,6 @@ typedef struct _stab_data {
 
     /* list of transforms*/
     //TCList* transs;
-	void* parent;
     tlist* transs;
 
     Field* fields;
@@ -115,7 +115,6 @@ typedef struct _stab_data {
     int t;
 
     char conf_str[1024];
-	int initialized;
 } StabData;
 
 /* type for a function that calculates the transformation of a certain field 
