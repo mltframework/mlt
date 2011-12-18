@@ -112,6 +112,7 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	*samples = *samples <= 0 ? 1920 : *samples;
 	*channels = *channels <= 0 ? 2 : *channels;
 	*frequency = *frequency <= 0 ? 48000 : *frequency;
+	*format = mlt_audio_s16;
 
 	// Calculate the size of the buffer
 	size = *samples * *channels * sizeof( int16_t );
