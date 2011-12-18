@@ -80,7 +80,7 @@ plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * file
   int err;
   
   /* open the object file */
-  dl_handle = dlopen (filename, RTLD_NOW|RTLD_GLOBAL);
+  dl_handle = dlopen (filename, RTLD_LAZY);
   if (!dl_handle)
     {
       mlt_log_info( NULL, "%s: error opening shared object file '%s': %s\n",
