@@ -144,8 +144,9 @@ MLT_REPOSITORY
 		sprintf( s, "ladspa.%lu", desc->id );
 		MLT_REGISTER( filter_type, s, filter_ladspa_init );
 		MLT_REGISTER_METADATA( filter_type, s, metadata, NULL );
+		free( s );
 	}
-//	mlt_factory_register_for_clean_up( g_jackrack_plugin_mgr, (mlt_destructor) plugin_mgr_destroy );
+	mlt_factory_register_for_clean_up( g_jackrack_plugin_mgr, (mlt_destructor) plugin_mgr_destroy );
 
 	MLT_REGISTER( filter_type, "jackrack", filter_jackrack_init );
 	MLT_REGISTER_METADATA( filter_type, "jackrack", metadata, "filter_jackrack.yml" );
