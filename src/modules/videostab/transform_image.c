@@ -266,9 +266,9 @@ int transformRGB(TransformData* td)
                     + zcos_a * y_d1 + c_s_y -t.y;
                 for (z = 0; z < 3; z++) { // iterate over colors
                     unsigned char* dest = &D_2[(x + y * td->width_dest)*3+z];
-                    interpolateN(dest, myfloor(x_s), myfloor(y_s), D_1,
+                    interpolate(dest, myfloor(x_s), myfloor(y_s), D_1,
                                  td->width_src, td->height_src,
-                                 3, z, td->crop ? 16 : *dest);
+                                 td->crop ? 16 : *dest,3,z);
                 }
             }
         }
