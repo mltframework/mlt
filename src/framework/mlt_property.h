@@ -26,7 +26,11 @@
 
 #include "mlt_types.h"
 
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+
+#if defined(__GLIBC__) || defined(__DARWIN__) || (__FreeBSD_version >= 1000002)
 #include <xlocale.h>
 #else
 typedef void* locale_t;
