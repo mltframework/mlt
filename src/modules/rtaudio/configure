@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ "$help" != "1" ]
+then
+
+	if [ "$targetos" != "Darwin" ] && [ "$targetos" != "MinGW" ] && [ "$targetos" != "Linux" ]
+	then
+		echo "- only builds on Linux, OS X, or Windows: disabling"
+		touch ../disable-rtaudio
+		exit 0
+	fi
+fi

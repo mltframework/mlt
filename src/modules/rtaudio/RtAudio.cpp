@@ -6373,7 +6373,7 @@ extern "C" void *alsaCallbackHandler( void *ptr )
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "soundcard.h"
+#include <sys/soundcard.h>
 #include <errno.h>
 #include <math.h>
 
