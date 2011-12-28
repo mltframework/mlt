@@ -167,8 +167,8 @@ void interpolateLin(unsigned char *rv, float x, float y,
     int x_f = myfloor(x);
     int x_c = x_f+1;
     int y_n = myround(y);
-    float v1 = PIXELN(img, x_c, y_n, width, height, def, N, channel);
-    float v2 = PIXELN(img, x_f, y_n, width, height, def, N, channel);
+    float v1 = PIXELN(img, x_c, y_n, width, height, N, channel,def);
+    float v2 = PIXELN(img, x_f, y_n, width, height, N, channel,def);
     float s  = v1*(x - x_f) + v2*(x_c - x);
     *rv = (unsigned char)s;
 }
@@ -179,7 +179,7 @@ void interpolateZero(unsigned char *rv, float x, float y,
 {
     int x_n = myround(x);
     int y_n = myround(y);
-    *rv = (unsigned char) PIXELN(img, x_n, y_n, width, height, def,N,channel);
+    *rv = (unsigned char) PIXELN(img, x_n, y_n, width, height, N,channel,def);
 }
 
 
