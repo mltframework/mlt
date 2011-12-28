@@ -101,6 +101,9 @@ static void avformat_init( )
 #ifdef AVDEVICE
 		avdevice_register_all();
 #endif
+#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(13<<8))
+		avformat_network_init();
+#endif
 		mlt_factory_register_for_clean_up( NULL, avformat_destroy );
 		av_log_set_level( mlt_log_get_level() );
 	}
