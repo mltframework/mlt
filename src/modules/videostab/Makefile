@@ -1,6 +1,9 @@
-CFLAGS += -I../.. 
+CFLAGS += -I../..
+ifdef SSE2_FLAGS
+CFLAGS += -msse2
+endif
 
-LDFLAGS += -L../../framework -lmlt -lm 
+LDFLAGS += -L../../framework -lmlt -lm
 
 include ../../../config.mak
 
