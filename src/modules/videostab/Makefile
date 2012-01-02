@@ -1,3 +1,5 @@
+include ../../../config.mak
+
 CFLAGS += -I../..
 ifdef SSE2_FLAGS
 CFLAGS += -msse2
@@ -5,7 +7,6 @@ endif
 
 LDFLAGS += -L../../framework -lmlt -lm
 
-include ../../../config.mak
 
 TARGET = ../libmltvideostab$(LIBSUF)
 
