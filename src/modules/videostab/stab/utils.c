@@ -21,8 +21,6 @@
 
 #include "utils.h"
 
-int *lanc_kernels = NULL;
-
 float lanc(float x, float r) {
 
     float t = x * M_PI;
@@ -32,7 +30,7 @@ float lanc(float x, float r) {
 
     if (x <= -r || x >= r)
         return 0.0;
-        
+
     return r * sin(t) * sin(t / r) / (t * t);
 }
 
@@ -67,7 +65,7 @@ void lopass(vc *vi, vc *vo, int l, int r) {
         cw += ck[i] = hann(i, d - 1);
 
     for (i = 0; i < l; i ++) {
-    
+
         vc a = vc_zero();
 
         for (j = i - r; j <= i + r; j ++) {
@@ -79,7 +77,7 @@ void lopass(vc *vi, vc *vo, int l, int r) {
 
         vo[i] = vc_div(a, cw);
     }
-    
+
     free(ck);
 }
 
@@ -93,37 +91,38 @@ void hipass(vc *vi, vc *vo, int l, int r) {
         vo[i] = vc_sub(vi[i], vo[i]);
 }
 
-void prepare_lanc_kernels() {
+int* prepare_lanc_kernels() {
 
     int i, j;
 
-    lanc_kernels = (int *)malloc(256 * 8 * sizeof(int));
+    int* lanc_kernels = (int *)malloc(256 * 8 * sizeof(int));
 
     for (i = 0; i < 256; i ++)
         for (j = -3; j < 5; j ++)
             lanc_kernels[i * 8 + j + 3] = lanc(j - i / 256.0, 4) * 1024.0;
+    return lanc_kernels;
 }
 
-int *select_lanc_kernel(float x) {
+int *select_lanc_kernel(int* lanc_kernels,float x) {
 
     return lanc_kernels + (int)((x - floor(x)) * 256.0) * 8;
 }
 
-void free_lanc_kernels() {
+void free_lanc_kernels(int *lanc_kernels) {
 
     free(lanc_kernels);
 }
 
-vc interp(vc *vi, int l, float x) {
+vc interp(int* lanc_kernels, vc *vi, int l, float x) {
 
     vc a = vc_zero();
     int xd = floor(x);
-    int *lk = select_lanc_kernel(x);
+    int *lk = select_lanc_kernel(lanc_kernels,x);
 
     int i;
 
     for (i = -3; i < 5; i ++) {
-    
+
         int ic = clamp(xd + i, 0, l - 1);
 
         vc_mul_acc(&a, vi[ic], lk[i + 3]);

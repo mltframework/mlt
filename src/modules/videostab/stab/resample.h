@@ -12,7 +12,7 @@ typedef struct {
 
 rs_ctx *rs_init(int, int);
 
-void rs_resample(rs_ctx *, unsigned char *, vc *);
+void rs_resample(int*,rs_ctx *, unsigned char *, vc *);
 
 void rs_free(rs_ctx *);
 

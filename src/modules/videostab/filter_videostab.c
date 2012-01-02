@@ -38,6 +38,7 @@
 typedef struct {
 	mlt_filter parent;
 	int initialized;
+	int* lanc_kernels;
 	es_ctx *es;
 	vc *pos_i;
 	vc *pos_h;
@@ -162,8 +163,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				int i;
 
 				for (i = 0; i < h; i ++)
-					self->pos_y[i] = interp( self->pos_h, length, pos + (i - h / 2.0) * shutter_angle / (h * 360.0) );
-				rs_resample( self->rs, *image, self->pos_y );
+					self->pos_y[i] = interp( self->lanc_kernels,self->pos_h, length, pos + (i - h / 2.0) * shutter_angle / (h * 360.0) );
+				rs_resample( self->lanc_kernels,self->rs, *image, self->pos_y );
 			}
 		}
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
@@ -186,7 +187,7 @@ void filter_close( mlt_filter parent )
 	if ( self->pos_h ) free( self->pos_h );
 	if ( self->pos_y ) free( self->pos_y );
 	if ( self->rs ) rs_free( self->rs );
-	free_lanc_kernels();
+	if ( self->lanc_kernels) free_lanc_kernels(self->lanc_kernels);
 	free( self );
 	parent->close = NULL;
 	parent->child = NULL;
@@ -203,7 +204,7 @@ mlt_filter filter_videostab_init( mlt_profile profile, mlt_service_type type, co
 		parent->process = filter_process;
 		self->parent = parent;
 		mlt_properties_set( MLT_FILTER_PROPERTIES(parent), "shutterangle", "0" ); // 0 - 180 , default 0
-		prepare_lanc_kernels();
+		self->lanc_kernels=prepare_lanc_kernels();
 		return parent;
 	}
 	return NULL;

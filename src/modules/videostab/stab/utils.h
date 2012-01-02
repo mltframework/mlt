@@ -15,7 +15,6 @@
 #define FALSE 0
 #endif
 
-int *lanc_kernels;
 
 float lanc(float, float);
 float hann(float, float);
@@ -25,11 +24,11 @@ int clamp(int, int, int);
 void lopass(vc *, vc *, int, int);
 void hipass(vc *, vc *, int, int);
 
-void prepare_lanc_kernels();
-int *select_lanc_kernel(float);
-void free_lanc_kernels();
+int* prepare_lanc_kernels();
+int *select_lanc_kernel(int*,float);
+void free_lanc_kernels(int*);
 
-vc interp(vc *, int, float);
+vc interp(int*,vc *, int, float);
 
 #endif
 
