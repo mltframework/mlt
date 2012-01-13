@@ -1,6 +1,6 @@
 CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt -lpthread -lm
+LDFLAGS += -L../../framework -lmlt -lpthread
 
 include ../../../config.mak
 include config.mak
@@ -32,6 +32,7 @@ CFLAGS += `pkg-config --cflags glib-2.0`
 LDFLAGS += $(LIBDL)
 LDFLAGS += `pkg-config --libs libxml-2.0`
 LDFLAGS += `pkg-config --libs glib-2.0`
+LDFLAGS +- -lm
 
 YML_FILES = *.yml
 BLACKLIST = blacklist.txt
