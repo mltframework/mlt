@@ -32,7 +32,7 @@ CFLAGS += `pkg-config --cflags glib-2.0`
 LDFLAGS += $(LIBDL)
 LDFLAGS += `pkg-config --libs libxml-2.0`
 LDFLAGS += `pkg-config --libs glib-2.0`
-LDFLAGS +- -lm
+LDFLAGS += -lm
 
 YML_FILES = *.yml
 BLACKLIST = blacklist.txt
