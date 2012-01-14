@@ -202,6 +202,7 @@ Tractors:
 	    <entry producer="producer0" in="0" out="2999"/>
 	    <blank length="1000"/>
 	    <entry producer="producer0" in="3000" out="6999"/>
+	  </playlist>
 	  <playlist id="playlist1">
 	    <blank length="3000"/>
 	    <entry producer="producer1" in="0" out="999"/>
@@ -256,6 +257,7 @@ Tractors:
 	    <entry producer="producer0" in="0" out="2999"/>
 	    <blank length="1000"/>
 	    <entry producer="producer0" in="3000" out="6999"/>
+	  </playlist>
 	  <playlist id="playlist1">
 	    <blank length="3000"/>
 	    <entry producer="producer1" in="0" out="999"/>
