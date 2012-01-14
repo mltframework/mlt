@@ -439,7 +439,8 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 				backtrack = 1;
 			}
 
-			while ( argv[ i ] != NULL && strchr( argv[ i ], '=' ) )
+			while ( argv[ i ] != NULL && strchr( argv[ i ], '=' ) &&
+				( !strchr( argv[ i ], ':' ) || strchr( argv[ i ], ':' ) > strchr( argv[ i ], '=' ) ) )
 			{
 				i ++;
 				backtrack = 1;
