@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2012 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -143,7 +143,11 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 	const AVOption *opt = NULL;
 
 	// For each AVOption on the AVClass object
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(12<<8)+0)
+	while ( ( opt = av_opt_next( object, opt ) ) )
+#else
 	while ( ( opt = av_next_option( object, opt ) ) )
+#endif
 	{
 		// If matches flags and not a binary option (not supported by Mlt)
 		if ( !( opt->flags & req_flags ) || ( opt->type == FF_OPT_TYPE_BINARY ) )
@@ -313,7 +317,11 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 		// Annotate the yaml properties with AVOptions.
 		mlt_properties params = (mlt_properties) mlt_properties_get_data( result, "parameters", NULL );
 		AVFormatContext *avformat = avformat_alloc_context();
+#if LIBAVCODEC_VERSION_INT > ((53<<16)+(8<<8)+0)
+		AVCodecContext *avcodec = avcodec_alloc_context3( NULL );
+#else
 		AVCodecContext *avcodec = avcodec_alloc_context();
+#endif
 		int flags = ( type == consumer_type )? AV_OPT_FLAG_ENCODING_PARAM : AV_OPT_FLAG_DECODING_PARAM;
 
 		add_parameters( params, avformat, flags, NULL, NULL );

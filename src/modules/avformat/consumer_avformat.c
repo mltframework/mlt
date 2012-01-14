@@ -1,7 +1,8 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2012 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Author: Dan Dennedy <dan@dennedy.org>
  * Much code borrowed from ffmpeg.c: Copyright (c) 2000-2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
@@ -44,6 +45,7 @@
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
 #include <libavutil/pixdesc.h>
 #endif
+#include <libavutil/mathematics.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
 #define PIX_FMT_RGB32 PIX_FMT_RGBA32
@@ -402,21 +404,33 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 {
 	int i;
 	int count = mlt_properties_count( properties );
+#if LIBAVUTIL_VERSION_INT < ((51<<16)+(12<<8)+0)
 	int alloc = 1;
+#endif
 
 	for ( i = 0; i < count; i++ )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(7<<8)+0)
+		const AVOption *opt = av_opt_find( obj, opt_name, NULL, flags, flags );
+#else
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
+#endif
 
 		// If option not found, see if it was prefixed with a or v (-vb)
 		if ( !opt && (
 			( opt_name[0] == 'v' && ( flags & AV_OPT_FLAG_VIDEO_PARAM ) ) ||
 			( opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) ) )
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(7<<8)+0)
+			opt = av_opt_find( obj, ++opt_name, NULL, flags, flags );
+#else
 			opt = av_find_opt( obj, ++opt_name, NULL, flags, flags );
+#endif
 		// Apply option if found
 		if ( opt )
-#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(12<<8)+0)
+			av_opt_set( obj, opt_name, mlt_properties_get_value( properties, i), 0 );
+#elif LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
 			av_set_string3( obj, opt_name, mlt_properties_get_value( properties, i), alloc, NULL );
 #elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
 			av_set_string2( obj, opt_name, mlt_properties_get_value( properties, i), alloc );
@@ -435,7 +449,11 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Create a new stream
+#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(10<<8)+0)
+	AVStream *st = avformat_new_stream( oc, codec );
+#else
 	AVStream *st = av_new_stream( oc, oc->nb_streams );
+#endif
 
 	// If created, then initialise from properties
 	if ( st != NULL ) 
@@ -490,7 +508,10 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
         if ( audio_qscale > QSCALE_NONE )
 		{
 			c->flags |= CODEC_FLAG_QSCALE;
-			c->global_quality = st->quality = FF_QP2LAMBDA * audio_qscale;
+			c->global_quality = FF_QP2LAMBDA * audio_qscale;
+#if LIBAVFORMAT_VERSION_MAJOR < 53
+			st->quality = c->global_quality;
+#endif
 		}
 
 		// Set parameters controlled by MLT
@@ -500,7 +521,11 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(43<<8)+0)
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
+			av_dict_set( &oc->metadata, "language", mlt_properties_get( properties, "alang" ), 0 );
+#else
 			av_metadata_set2( &oc->metadata, "language", mlt_properties_get( properties, "alang" ), 0 );
+#endif
 #else
 
 			strncpy( st->language, mlt_properties_get( properties, "alang" ), sizeof( st->language ) );
@@ -553,7 +578,11 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	avformat_lock();
 	
 	// Continue if codec found and we can open it
-	if ( codec != NULL && avcodec_open( c, codec ) >= 0 )
+#if LIBAVCODEC_VERSION_INT >= ((53<<16)+(8<<8)+0)
+	if ( codec && avcodec_open2( c, codec, NULL ) >= 0 )
+#else
+	if ( codec && avcodec_open( c, codec ) >= 0 )
+#endif
 	{
 		// ugly hack for PCM codecs (will be removed ASAP with new PCM
 		// support to compute the input frame size in samples
@@ -612,7 +641,11 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Create a new stream
+#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(10<<8)+0)
+	AVStream *st = avformat_new_stream( oc, codec );
+#else
 	AVStream *st = av_new_stream( oc, oc->nb_streams );
+#endif
 
 	if ( st != NULL ) 
 	{
@@ -756,7 +789,10 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
 		{
 			c->flags |= CODEC_FLAG_QSCALE;
-			st->quality = FF_QP2LAMBDA * mlt_properties_get_double( properties, "qscale" );
+			c->global_quality = FF_QP2LAMBDA * mlt_properties_get_double( properties, "qscale" );
+#if LIBAVFORMAT_VERSION_MAJOR < 53
+			st->quality = c->global_quality;
+#endif
 		}
 
 		// Allow the user to override the video fourcc
@@ -949,7 +985,11 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 
 	// Open the codec safely
 	avformat_lock();
-	int result = codec != NULL && avcodec_open( video_enc, codec ) >= 0;
+#if LIBAVCODEC_VERSION_INT >= ((53<<16)+(8<<8)+0)
+	int result = codec && avcodec_open2( video_enc, codec, NULL ) >= 0;
+#else
+	int result = codec && avcodec_open( video_enc, codec ) >= 0;
+#endif
 	avformat_unlock();
 	
 	return result;
@@ -1190,7 +1230,11 @@ static void *consumer_thread( void *arg )
 				markup[0] = '\0';
 				if ( !strstr( key, ".stream." ) )
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(43<<8)+0)
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
+					av_dict_set( &oc->metadata, key, mlt_properties_get_value( properties, i ), 0 );
+#else
 					av_metadata_set2( &oc->metadata, key, mlt_properties_get_value( properties, i ), 0 );
+#endif
 #else
 					av_metadata_set( &oc->metadata, key, mlt_properties_get_value( properties, i ) );
 #endif
@@ -1269,9 +1313,16 @@ static void *consumer_thread( void *arg )
 	mlt_properties_set_int( properties, "channels", total_channels );
 
 	// Set the parameters (even though we have none...)
-	if ( av_set_parameters(oc, NULL) >= 0 ) 
+#if LIBAVFORMAT_VERSION_INT < ((53<<16)+(2<<8)+0)
+	if ( av_set_parameters(oc, NULL) >= 0 )
+#endif
 	{
+#if LIBAVFORMAT_VERSION_MAJOR >= 53
+		if ( mlt_properties_get( properties, "muxpreload" ) && ! mlt_properties_get( properties, "preload" ) )
+			mlt_properties_set_double( properties, "preload", mlt_properties_get_double( properties, "muxpreload" ) );
+#else
 		oc->preload = ( int )( mlt_properties_get_double( properties, "muxpreload" ) * AV_TIME_BASE );
+#endif
 		oc->max_delay= ( int )( mlt_properties_get_double( properties, "muxdelay" ) * AV_TIME_BASE );
 
 		// Process properties as AVOptions
@@ -1344,13 +1395,19 @@ static void *consumer_thread( void *arg )
 	
 		// Write the stream header.
 		if ( mlt_properties_get_int( properties, "running" ) )
+#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(2<<8)+0)
+			avformat_write_header( oc, NULL );
+#else
 			av_write_header( oc );
+#endif
 	}
+#if LIBAVFORMAT_VERSION_INT < ((53<<16)+(2<<8)+0)
 	else
 	{
 		mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Invalid output format parameters\n" );
 		mlt_properties_set_int( properties, "running", 0 );
 	}
+#endif
 
 	// Allocate picture
 	if ( video_st )
@@ -1660,7 +1717,7 @@ static void *consumer_thread( void *arg )
 					else 
 					{
 						// Set the quality
-						output->quality = video_st->quality;
+						output->quality = c->global_quality;
 
 						// Set frame interlace hints
 						output->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
