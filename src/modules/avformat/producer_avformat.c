@@ -851,7 +851,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	if ( !error && self->video_format )
 	{
 		apply_properties( self->video_format, properties, AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(110<<8)+0)
 		if ( self->video_format->iformat && self->video_format->iformat->priv_class && self->video_format->priv_data )
 			apply_properties( self->video_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
 #endif
@@ -905,6 +905,10 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 #else
 						av_open_input_file( &self->audio_format, filename, NULL, 0, NULL );
 						apply_properties( self->audio_format, properties, AV_OPT_FLAG_DECODING_PARAM );
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(110<<8)+0)
+                        if ( self->audio_format->iformat && self->audio_format->iformat->priv_class && self->audio_format->priv_data )
+                            apply_properties( self->audio_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
+#endif
 						av_find_stream_info( self->audio_format );
 #endif
 					}
@@ -1874,7 +1878,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVCODEC_VERSION_MAJOR >= 53
+#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(122<<8)+0)
 		if ( codec->priv_class && codec_context->priv_data )
 			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 #endif
@@ -2524,7 +2528,7 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVCODEC_VERSION_MAJOR >= 53
+#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(122<<8)+0)
 		if ( codec && codec->priv_class && codec_context->priv_data )
 			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 #endif

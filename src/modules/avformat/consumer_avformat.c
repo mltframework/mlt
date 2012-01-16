@@ -554,7 +554,7 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	else
 		codec = avcodec_find_encoder( c->codec_id );
 
-#if LIBAVCODEC_VERSION_MAJOR >= 53
+#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(122<<8)+0)
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
 	{
@@ -950,7 +950,7 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 	else
 		codec = avcodec_find_encoder( video_enc->codec_id );
 
-#if LIBAVCODEC_VERSION_MAJOR >= 53
+#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(122<<8)+0)
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
 	{
@@ -1331,14 +1331,14 @@ static void *consumer_thread( void *arg )
 		{
 			mlt_properties p = mlt_properties_load( fpre );
 			apply_properties( oc, p, AV_OPT_FLAG_ENCODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(110<<8)+0)
 			if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
 				apply_properties( oc->priv_data, p, AV_OPT_FLAG_ENCODING_PARAM );
 #endif
 			mlt_properties_close( p );
 		}
 		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM );
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(110<<8)+0)
 		if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
 			apply_properties( oc->priv_data, properties, AV_OPT_FLAG_ENCODING_PARAM );
 #endif
