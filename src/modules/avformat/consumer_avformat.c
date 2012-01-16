@@ -1275,13 +1275,16 @@ static void *consumer_thread( void *arg )
 	frame = mlt_consumer_rt_frame( consumer );
 
 	// Set the timecode from the MLT metadata if available.
-	const char *timecode = mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "meta.attr.vitc.markup" );
-	if ( timecode && strcmp( timecode, "" ) )
-	{
-		mlt_properties_set( properties, "timecode", timecode );
-		if ( strchr( timecode, ';' ) )
-			mlt_properties_set_int( properties, "drop_frame_timecode", 1 );
-	}
+    if ( frame )
+    {
+        const char *timecode = mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "meta.attr.vitc.markup" );
+        if ( timecode && strcmp( timecode, "" ) )
+        {
+            mlt_properties_set( properties, "timecode", timecode );
+            if ( strchr( timecode, ';' ) )
+                mlt_properties_set_int( properties, "drop_frame_timecode", 1 );
+        }
+    }
 
 	// Add audio and video streams
 	if ( video_codec_id != CODEC_ID_NONE )
