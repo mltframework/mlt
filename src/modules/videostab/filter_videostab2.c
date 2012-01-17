@@ -76,8 +76,8 @@ static void serialize_vectors( videostab2_data* self, mlt_position length )
 		mlt_geometry_close( g );
 	}
 }
-
-Transform* deserialize_vectors( char *vectors, mlt_position length )
+// scale zoom implements the factor that the vetcors must be scaled since the vector is calulated for real with, now we need it for (scaled)width
+Transform* deserialize_vectors( char *vectors, mlt_position length ,float scale_zoom )
 {
 	mlt_geometry g = mlt_geometry_init();
 	Transform* tx=NULL;
@@ -92,10 +92,10 @@ Transform* deserialize_vectors( char *vectors, mlt_position length )
 		{
 			mlt_geometry_fetch( g, &item, i );
 			Transform t;
-			t.x=item.x;
-			t.y=item.y;
+			t.x=scale_zoom*item.x;
+			t.y=scale_zoom*item.y;
 			t.alpha=item.w;
-			t.zoom=item.h;
+			t.zoom=scale_zoom*item.h;
 			t.extra=0;
 			tx[i]=t;
 		}
@@ -173,6 +173,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					data->initialized = 2;
 
 					int interp = 2;
+					float scale_zoom=1.0;
+					if (*width!=mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "real_width" ))
+						scale_zoom=(float)*width/(float)mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "real_width" );
 					if ( strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
 						interp = 0;
 					else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
@@ -195,7 +198,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					data->trans->optzoom = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "optzoom" );
 					data->trans->sharpen = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter), "sharpen" );
 
-					transform_configure(data->trans,w,h,*format ,*image, deserialize_vectors(  vectors, length ),length);
+					transform_configure(data->trans,w,h,*format ,*image, deserialize_vectors(  vectors, length , scale_zoom ),length);
 
 				}
 				if ( data->initialized == 2 )
