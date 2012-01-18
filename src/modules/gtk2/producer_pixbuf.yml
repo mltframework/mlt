@@ -98,3 +98,9 @@ parameters:
     minimum: 0
     maximum: 1
     widget: checkbox
+
+  - identifier: force_aspect_ratio
+    title: Sample aspect ratio
+    type: float
+    description: Optionally override a (mis)detected aspect ratio
+    mutable: yes

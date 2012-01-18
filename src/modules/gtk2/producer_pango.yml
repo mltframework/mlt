@@ -214,3 +214,9 @@ parameters:
     type: integer
     description: The last requested scaled image height.
     readonly: yes
+    
+  - identifier: force_aspect_ratio
+    title: Sample aspect ratio
+    type: float
+    description: Optionally override a (mis)detected aspect ratio
+    mutable: yes
