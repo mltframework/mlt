@@ -69,6 +69,31 @@ void av_free( void *ptr )
 }
 #endif
 
+static int avformat_lockmgr(void **mutex, enum AVLockOp op)
+{
+   pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
+
+   switch (op)
+   {
+   case AV_LOCK_CREATE:
+      *pmutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+       pthread_mutex_init(*pmutex, NULL);
+       break;
+   case AV_LOCK_OBTAIN:
+       pthread_mutex_lock(*pmutex);
+       break;
+   case AV_LOCK_RELEASE:
+       pthread_mutex_unlock(*pmutex);
+       break;
+   case AV_LOCK_DESTROY:
+       pthread_mutex_destroy(*pmutex);
+       free(*pmutex);
+       break;
+   }
+
+   return 0;
+}
+
 void avformat_destroy( void *ignore )
 {
 	// Clean up
@@ -97,6 +122,7 @@ static void avformat_init( )
 	{
 		avformat_initialised = 1;
 		pthread_mutex_init( &avformat_mutex, NULL );
+		av_lockmgr_register( &avformat_lockmgr );
 		av_register_all( );
 #ifdef AVDEVICE
 		avdevice_register_all();
