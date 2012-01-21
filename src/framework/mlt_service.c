@@ -521,6 +521,19 @@ static void mlt_service_filter_changed( mlt_service owner, mlt_service self )
 	mlt_events_fire( MLT_SERVICE_PROPERTIES( self ), "service-changed", NULL );
 }
 
+/** The property-changed event handler.
+ *
+ * \private \memberof mlt_service_s
+ * \param owner ignored
+ * \param self the service on which the "property-changed" event is fired
+ * \param name the name of the property that changed
+ */
+
+static void mlt_service_filter_property_changed( mlt_service owner, mlt_service self, char *name )
+{
+    mlt_events_fire( MLT_SERVICE_PROPERTIES( self ), "property-changed", name, NULL );
+}
+
 /** Attach a filter.
  *
  * \public \memberof mlt_service_s
@@ -559,7 +572,7 @@ int mlt_service_attach( mlt_service self, mlt_filter filter )
 				mlt_events_fire( properties, "service-changed", NULL );
 				mlt_events_fire( props, "service-changed", NULL );
 				mlt_events_listen( props, self, "service-changed", ( mlt_listener )mlt_service_filter_changed );
-				mlt_events_listen( props, self, "property-changed", ( mlt_listener )mlt_service_filter_changed );
+				mlt_events_listen( props, self, "property-changed", ( mlt_listener )mlt_service_filter_property_changed );
 			}
 			else
 			{
