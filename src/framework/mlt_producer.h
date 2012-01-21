@@ -36,7 +36,7 @@
  * service network - that could be through synthesis or reading a stream.
  *
  * \extends mlt_service
- * \event \em producer-changed
+ * \event \em producer-changed either service-changed was fired or the timing of the producer changed
  * \properties \em mlt_type the name of the service subclass, e.g. mlt_producer
  * \properties \em mlt_service the name of a producer subclass
  * \properties \em _position the current position of the play head, relative to the in point

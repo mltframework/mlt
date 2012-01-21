@@ -39,7 +39,7 @@
  * connections a "service network," which is similar to what DirectShow calls
  * a filter graph or what gstreamer calls an element pipeline.
  *
- * \event \em service-changed
+ * \event \em service-changed a filter was attached or detached or a transition was connected or disconnected
  * \event \em property-changed
  * \properties \em mlt_type identifies the subclass
  * \properties \em _mlt_service_hidden a flag that indicates whether to hide the mlt_service
