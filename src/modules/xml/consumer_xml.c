@@ -26,6 +26,9 @@
 #include <locale.h>
 #include <libxml/tree.h>
 #include <pthread.h>
+#ifdef FILTER_WCHAR
+#include <wchar.h>
+#endif
 
 #define ID_SIZE 128
 
@@ -58,6 +61,43 @@ static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer this );
 static void *consumer_thread( void *arg );
 static void serialise_service( serialise_context context, mlt_service service, xmlNode *node );
+
+#ifdef FILTER_WCHAR
+
+void* filter_restricted( const wchar_t *in )
+{
+	if ( !in ) return NULL;
+	wchar_t *out = calloc( 1, strlen( (const char*) in ) );
+	size_t i, j, n = wcslen( in );
+	for ( i = 0, j = 0; i < n; i++ )
+	{
+		wchar_t w = in[i];
+		if ( w == 0x9 || w == 0xA || w == 0xD ||
+				( w >= 0x20 && w <= 0xD7FF ) ||
+				( w >= 0xE000 && w <= 0xFFFD ) ||
+				( w >= 0x10000 && w <= 0x10FFFF ) )
+			out[ j++ ] = w;
+	}
+	return out;
+}
+
+#else
+
+void* filter_restricted( const char *in )
+{
+	if ( !in ) return NULL;
+	char *out = calloc( 1, strlen( in ) );
+	size_t i, j, n = strlen( in );
+	for ( i = 0, j = 0; i < n; i++ )
+	{
+		char c = in[i];
+		if ( c == 0x9 || c == 0xA || c == 0xD || ( c >= 0x20 && c <= 0xFF ) )
+			out[ j++ ] = c;
+	}
+	return out;
+}
+
+#endif
 
 typedef enum 
 {
@@ -200,12 +240,16 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "width" ) &&
 			 strcmp( name, "height" ) )
 		{
-			char *value = mlt_properties_get_value( properties, i );
-			int rootlen = strlen( context->root );
-			if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
-				value += rootlen + 1;
-			p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
-			xmlNewProp( p, _x("name"), _x(name) );
+			char *value = filter_restricted( mlt_properties_get_value( properties, i ) );
+			if ( value )
+			{
+				int rootlen = strlen( context->root );
+				if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
+					value += rootlen + 1;
+				p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
+				xmlNewProp( p, _x("name"), _x(name) );
+				free( value );
+			}
 		}
 	}
 }
@@ -221,14 +265,15 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 		char *name = mlt_properties_get_name( properties, i );
 		if ( !strncmp( name, store, strlen( store ) ) )
 		{
-			char *value = mlt_properties_get_value( properties, i );
-			if ( value != NULL )
+			char *value = filter_restricted( mlt_properties_get_value( properties, i ) );
+			if ( value )
 			{
 				int rootlen = strlen( context->root );
 				if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
 					value += rootlen + 1;
 				p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
+				free( value );
 			}
 		}
 	}
