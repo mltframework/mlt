@@ -75,9 +75,6 @@ const char *avcodec_get_sample_fmt_name(int sample_fmt);
 #define MAX_AUDIO_STREAMS (10)
 #define MAX_VDPAU_SURFACES (10)
 
-void avformat_lock( );
-void avformat_unlock( );
-
 struct producer_avformat_s
 {
 	mlt_producer parent;
@@ -117,6 +114,7 @@ struct producer_avformat_s
 	mlt_deque apackets;
 	mlt_deque vpackets;
 	pthread_mutex_t packets_mutex;
+	pthread_mutex_t open_mutex;
 #ifdef VDPAU
 	struct
 	{
@@ -199,7 +197,6 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 				else if ( self->seekable )
 				{
 					// Close the file to release resources for large playlists - reopen later as needed
-					avformat_lock();
 #if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(17<<8)+0)
 					if ( self->audio_format )
 						avformat_close_input( &self->audio_format );
@@ -213,7 +210,6 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 #endif
 					self->audio_format = NULL;
 					self->video_format = NULL;
-					avformat_unlock();
 				}
 			}
 			if ( producer )
@@ -819,6 +815,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 		pthread_mutex_init( &self->audio_mutex, NULL );
 		pthread_mutex_init( &self->video_mutex, NULL );
 		pthread_mutex_init( &self->packets_mutex, NULL );
+		pthread_mutex_init( &self->open_mutex, NULL );
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_mutex_lock( &self->video_mutex );
 	}
@@ -943,14 +940,14 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 
 	if ( self->dummy_context )
 	{
-		avformat_lock();
+		pthread_mutex_lock( &self->open_mutex );
 #if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(17<<8)+0)
 		avformat_close_input( &self->dummy_context );
 #else
 		av_close_input_file( self->dummy_context );
 #endif
-		avformat_unlock();
 		self->dummy_context = NULL;
+		pthread_mutex_unlock( &self->open_mutex );
 	}
 
 	// Unlock the service
@@ -969,8 +966,8 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 	pthread_mutex_lock( &self->audio_mutex );
+	pthread_mutex_lock( &self->open_mutex );
 
-	avformat_lock();
 	if ( self->video_codec )
 		avcodec_close( self->video_codec );
 	self->video_codec = NULL;
@@ -987,7 +984,7 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 #endif
 	self->dummy_context = NULL;
 	self->video_format = NULL;
-	avformat_unlock();
+	pthread_mutex_unlock( &self->open_mutex );
 
 	int audio_index = self->audio_index;
 	int video_index = self->video_index;
@@ -1148,7 +1145,7 @@ static void get_audio_streams_info( producer_avformat self )
 			AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
 
 			// If we don't have a codec and we can't initialise it, we can't do much more...
-			avformat_lock( );
+			pthread_mutex_lock( &self->open_mutex );
 #if LIBAVCODEC_VERSION_INT >= ((53<<16)+(8<<8)+0)
 			if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
 #else
@@ -1164,7 +1161,7 @@ static void get_audio_streams_info( producer_avformat self )
 					self->max_frequency = codec_context->sample_rate;
 				avcodec_close( codec_context );
 			}
-			avformat_unlock( );
+			pthread_mutex_unlock( &self->open_mutex );
 		}
 	}
 	mlt_log_verbose( NULL, "[producer avformat] audio: total_streams %d max_stream %d total_channels %d max_channels %d\n",
@@ -1857,7 +1854,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			codec_context->thread_count = thread_count;
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...
-		avformat_lock( );
+		pthread_mutex_lock( &self->open_mutex );
 #if LIBAVCODEC_VERSION_INT >= ((53<<16)+(8<<8)+0)
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
 #else
@@ -1871,10 +1868,10 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		{
 			// Remember that we can't use this later
 			self->video_index = -1;
-			avformat_unlock( );
+			pthread_mutex_unlock( &self->open_mutex );
 			return 0;
 		}
-		avformat_unlock( );
+		pthread_mutex_unlock( &self->open_mutex );
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
@@ -2025,11 +2022,11 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	{
 		// Reset the video properties if the index changed
 		self->video_index = index;
-		avformat_lock();
+		pthread_mutex_lock( &self->open_mutex );
 		if ( self->video_codec )
 			avcodec_close( self->video_codec );
 		self->video_codec = NULL;
-		avformat_unlock();
+		pthread_mutex_unlock( &self->open_mutex );
 	}
 
 	// Get the frame properties
@@ -2507,7 +2504,7 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...
-		avformat_lock( );
+		pthread_mutex_lock( &self->open_mutex );
 #if LIBAVCODEC_VERSION_INT >= ((53<<16)+(8<<8)+0)
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
 #else
@@ -2524,7 +2521,7 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 			// Remember that we can't use self later
 			self->audio_index = -1;
 		}
-		avformat_unlock( );
+		pthread_mutex_unlock( &self->open_mutex );
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
@@ -2587,11 +2584,11 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	// Update the audio properties if the index changed
 	if ( context && index > -1 && index != self->audio_index )
 	{
-		avformat_lock();
+		pthread_mutex_lock( &self->open_mutex );
 		if ( self->audio_codec[ self->audio_index ] )
 			avcodec_close( self->audio_codec[ self->audio_index ] );
 		self->audio_codec[ self->audio_index ] = NULL;
-		avformat_unlock();
+		pthread_mutex_unlock( &self->open_mutex );
 	}
 	if ( self->audio_index != -1 )
 		self->audio_index = index;
@@ -2684,7 +2681,7 @@ static void producer_avformat_close( producer_avformat self )
 
 	// Cleanup av contexts
 	av_free( self->av_frame );
-	avformat_lock();
+	pthread_mutex_lock( &self->open_mutex );
 	int i;
 	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
 	{
@@ -2715,7 +2712,7 @@ static void producer_avformat_close( producer_avformat self )
 	if ( self->video_format )
 		av_close_input_file( self->video_format );
 #endif
-	avformat_unlock();
+	pthread_mutex_unlock( &self->open_mutex );
 #ifdef VDPAU
 	vdpau_producer_close( self );
 #endif
@@ -2726,6 +2723,7 @@ static void producer_avformat_close( producer_avformat self )
 	pthread_mutex_destroy( &self->audio_mutex );
 	pthread_mutex_destroy( &self->video_mutex );
 	pthread_mutex_destroy( &self->packets_mutex );
+	pthread_mutex_destroy( &self->open_mutex );
 
 	// Cleanup the packet queues
 	AVPacket *pkt;

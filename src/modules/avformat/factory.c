@@ -46,29 +46,6 @@ extern mlt_producer producer_avformat_init( mlt_profile profile, const char *ser
 // A static flag used to determine if avformat has been initialised
 static int avformat_initialised = 0;
 
-// A locking mutex
-static pthread_mutex_t avformat_mutex;
-
-#if 0
-// These 3 functions should override the alloc functions in libavformat
-// but some formats or codecs seem to crash when used (wmv in particular)
-
-void *av_malloc( unsigned int size )
-{
-	return mlt_pool_alloc( size );
-}
-
-void *av_realloc( void *ptr, unsigned int size )
-{
-	return mlt_pool_realloc( ptr, size );
-}
-
-void av_free( void *ptr )
-{
-	return mlt_pool_release( ptr );
-}
-#endif
-
 static int avformat_lockmgr(void **mutex, enum AVLockOp op)
 {
    pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
@@ -94,34 +71,12 @@ static int avformat_lockmgr(void **mutex, enum AVLockOp op)
    return 0;
 }
 
-void avformat_destroy( void *ignore )
-{
-	// Clean up
-	// av_free_static( ); -XXX this is deprecated
-
-	// Destroy the mutex
-	pthread_mutex_destroy( &avformat_mutex );
-}
-
-void avformat_lock( )
-{
-	// Lock the mutex now
-	pthread_mutex_lock( &avformat_mutex );
-}
-
-void avformat_unlock( )
-{
-	// Unlock the mutex now
-	pthread_mutex_unlock( &avformat_mutex );
-}
-
 static void avformat_init( )
 {
 	// Initialise avformat if necessary
 	if ( avformat_initialised == 0 )
 	{
 		avformat_initialised = 1;
-		pthread_mutex_init( &avformat_mutex, NULL );
 		av_lockmgr_register( &avformat_lockmgr );
 		av_register_all( );
 #ifdef AVDEVICE
@@ -130,7 +85,6 @@ static void avformat_init( )
 #if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(13<<8))
 		avformat_network_init();
 #endif
-		mlt_factory_register_for_clean_up( NULL, avformat_destroy );
 		av_log_set_level( mlt_log_get_level() );
 	}
 }
