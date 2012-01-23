@@ -26,6 +26,7 @@
 #include <locale.h>
 #include <libxml/tree.h>
 #include <pthread.h>
+#define FILTER_WCHAR
 #ifdef FILTER_WCHAR
 #include <wchar.h>
 #endif
@@ -64,26 +65,39 @@ static void serialise_service( serialise_context context, mlt_service service, x
 
 #ifdef FILTER_WCHAR
 
-void* filter_restricted( const wchar_t *in )
+static void* filter_restricted( const char *in )
 {
 	if ( !in ) return NULL;
-	wchar_t *out = calloc( 1, strlen( (const char*) in ) );
-	size_t i, j, n = wcslen( in );
-	for ( i = 0, j = 0; i < n; i++ )
+	size_t n = strlen( in );
+	char *out = calloc( 1, n );
+	char *p = out;
+	mbstate_t mbs;
+	memset( &mbs, 0, sizeof(mbs) );
+	while ( *in )
 	{
-		wchar_t w = in[i];
+		wchar_t w;
+		size_t c = mbrtowc( &w, in, n, &mbs );
+		if ( c <= 0 ) break;
+		n -= c;
+		in += c;
 		if ( w == 0x9 || w == 0xA || w == 0xD ||
 				( w >= 0x20 && w <= 0xD7FF ) ||
 				( w >= 0xE000 && w <= 0xFFFD ) ||
 				( w >= 0x10000 && w <= 0x10FFFF ) )
-			out[ j++ ] = w;
+		{
+			mbstate_t ps;
+			memset( &ps, 0, sizeof(ps) );
+			c = wcrtomb( p, w, &ps );
+			if ( c > 0 )
+				p += c;
+		}
 	}
 	return out;
 }
 
 #else
 
-void* filter_restricted( const char *in )
+static void* filter_restricted( const char *in )
 {
 	if ( !in ) return NULL;
 	char *out = calloc( 1, strlen( in ) );
