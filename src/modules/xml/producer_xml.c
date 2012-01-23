@@ -1469,6 +1469,13 @@ static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	return e;
 }
 
+static void	on_error( void * ctx, const char * msg, ...)
+{
+	struct _xmlError* err_ptr = xmlCtxtGetLastError(ctx);
+	fprintf( stderr, "XML parse error: %s\trow: %d\tcol: %d\n",
+			 err_ptr->message, err_ptr->line, err_ptr->int2);
+}
+
 /** Convert a hexadecimal character to its value.
 */
 static int tohex( char p )
@@ -1607,9 +1614,6 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( context->destructors, "registered", 0 );
 
-	// Setup SAX callbacks
-	sax->startElement = on_start_element;
-
 	// Setup libxml2 SAX parsing
 	xmlInitParser(); 
 	xmlSubstituteEntitiesDefault( 1 );
@@ -1665,12 +1669,15 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	}
 
 	// Setup SAX callbacks
+	sax->startElement = on_start_element;
 	sax->endElement = on_end_element;
 	sax->characters = on_characters;
 	sax->cdataBlock = on_characters;
 	sax->internalSubset = on_internal_subset;
 	sax->entityDecl = on_entity_declaration;
 	sax->getEntity = on_get_entity;
+	sax->error = on_error;
+	sax->fatalError = on_error;
 
 	// Parse
 	xmlcontext->sax = sax;
