@@ -22,6 +22,7 @@
 //       when the returned producer is closed).
 
 #include <framework/mlt.h>
+#include <framework/mlt_log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -1469,6 +1470,28 @@ static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	return e;
 }
 
+static void	on_error( void * ctx, const char * msg, ...)
+{
+	struct _xmlError* err_ptr = xmlCtxtGetLastError(ctx);
+
+	switch( err_ptr->level )
+	{
+	case XML_ERR_WARNING:
+		mlt_log_warning( NULL, "XML parse warning: %s\trow: %d\tcol: %d\n",
+				         err_ptr->message, err_ptr->line, err_ptr->int2);
+		break;
+	case XML_ERR_ERROR:
+		mlt_log_error( NULL, "XML parse error: %s\trow: %d\tcol: %d\n",
+				       err_ptr->message, err_ptr->line, err_ptr->int2);
+		break;
+	default:
+	case XML_ERR_FATAL:
+		mlt_log_fatal( NULL, "XML parse fatal: %s\trow: %d\tcol: %d\n",
+				       err_ptr->message, err_ptr->line, err_ptr->int2);
+		break;
+	}
+}
+
 /** Convert a hexadecimal character to its value.
 */
 static int tohex( char p )
@@ -1607,8 +1630,11 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// We need to track the number of registered filters
 	mlt_properties_set_int( context->destructors, "registered", 0 );
 
-	// Setup SAX callbacks
+	// Setup SAX callbacks for first pass
 	sax->startElement = on_start_element;
+	sax->warning = on_error;
+	sax->error = on_error;
+	sax->fatalError = on_error;
 
 	// Setup libxml2 SAX parsing
 	xmlInitParser(); 
@@ -1636,6 +1662,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	xmlcontext->sax = sax;
 	xmlcontext->_private = ( void* )context;	
 	xmlParseDocument( xmlcontext );
+	well_formed = xmlcontext->wellFormed;
 	
 	// Cleanup after parsing
 	xmlcontext->sax = NULL;
@@ -1643,6 +1670,19 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	xmlFreeParserCtxt( xmlcontext );
 	context->stack_node_size = 0;
 	context->stack_service_size = 0;
+
+	// Bad xml - clean up and return NULL
+	if ( !well_formed )
+	{
+		mlt_properties_close( context->producer_map );
+		mlt_properties_close( context->destructors );
+		mlt_properties_close( context->params );
+		xmlFreeDoc( context->entity_doc );
+		free( context );
+		free( sax );
+		free( filename );
+		return NULL;
+	}
 
 	// Setup the second pass
 	context->pass ++;
@@ -1664,7 +1704,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		return NULL;
 	}
 
-	// Setup SAX callbacks
+	// Setup SAX callbacks for second pass
 	sax->endElement = on_end_element;
 	sax->characters = on_characters;
 	sax->cdataBlock = on_characters;
