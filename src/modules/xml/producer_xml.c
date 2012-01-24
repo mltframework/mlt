@@ -22,9 +22,9 @@
 //       when the returned producer is closed).
 
 #include <framework/mlt.h>
+#include <framework/mlt_log.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
 
@@ -274,7 +274,7 @@ static int add_producer( deserialise_context context, mlt_service service, mlt_p
 				break;
 			default:
 				result = 0;
-				fprintf( stderr, "Producer defined inside something that isn't a container\n" );
+				mlt_log_warning( container, "Producer defined inside something that isn't a container\n" );
 				break;
 		};
 
@@ -403,7 +403,7 @@ static void on_end_tractor( deserialise_context context, const xmlChar *name )
 	}
 	else
 	{
-		fprintf( stderr, "Invalid state for tractor\n" );
+		mlt_log_warning( tractor, "Invalid state for tractor\n" );
 	}
 }
 
@@ -446,7 +446,7 @@ static void on_start_multitrack( deserialise_context context, const xmlChar *nam
 	}
 	else
 	{
-		fprintf( stderr, "Invalid multitrack position\n" );
+		mlt_log_warning( parent, "Invalid multitrack position\n" );
 	}
 }
 
@@ -457,7 +457,7 @@ static void on_end_multitrack( deserialise_context context, const xmlChar *name 
 	mlt_service service = context_pop_service( context, &type );
 
 	if ( service == NULL || type != mlt_multitrack_type )
-		fprintf( stderr, "End multitrack in the wrong state...\n" );
+		mlt_log_warning( service, "End multitrack in the wrong state...\n" );
 }
 
 static void on_start_playlist( deserialise_context context, const xmlChar *name, const xmlChar **atts)
@@ -506,7 +506,7 @@ static void on_end_playlist( deserialise_context context, const xmlChar *name )
 	}
 	else
 	{
-		fprintf( stderr, "Invalid state of playlist end %d\n", type );
+		mlt_log_warning( service, "Invalid state of playlist end %d\n", type );
 	}
 }
 
@@ -605,7 +605,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		if ( !producer && resource )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, resource ) );
 		if ( !producer )
-			fprintf( stderr, "failed to load producer \"%s\"\n", resource );
+			mlt_log_warning( service, "failed to load producer \"%s\"\n", resource );
 		if ( !producer )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "+INVALID.txt" ) );
 		if ( !producer )
@@ -620,7 +620,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( producer ), context->lc_numeric );
 
-		// Propogate the properties
+		// Propagate the properties
 		qualify_property( context, properties, "resource" );
 		qualify_property( context, properties, "luma" );
 		qualify_property( context, properties, "luma.resource" );
@@ -746,7 +746,7 @@ static void on_start_blank( deserialise_context context, const xmlChar *name, co
 	}
 	else
 	{
-		fprintf( stderr, "blank without a playlist - a definite no no\n" );
+		mlt_log_warning( service, "blank without a playlist - a definite no no\n" );
 	}
 }
 
@@ -800,7 +800,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 		}
 		else
 		{
-			fprintf( stderr, "Entry not part of a playlist...\n" );
+			mlt_log_warning( parent, "Entry not part of a playlist...\n" );
 		}
 
 		context_push_service( context, parent, parent_type );
@@ -820,7 +820,7 @@ static void on_end_entry( deserialise_context context, const xmlChar *name )
 
 	if ( entry == NULL && entry_type != mlt_entry_type )
 	{
-		fprintf( stderr, "Invalid state at end of entry\n" );
+		mlt_log_warning( entry, "Invalid state at end of entry\n" );
 	}
 }
 
@@ -870,7 +870,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 		else if ( parent_type == mlt_multitrack_type )
 			multitrack = MLT_MULTITRACK( parent );
 		else
-			fprintf( stderr, "track contained in an invalid container\n" );
+			mlt_log_warning( track, "track contained in an invalid container\n" );
 
 		if ( multitrack != NULL )
 		{
@@ -915,7 +915,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 	}
 	else
 	{
-		fprintf( stderr, "Invalid state at end of track\n" );
+		mlt_log_warning( track, "Invalid state at end of track\n" );
 	}
 }
 
@@ -951,7 +951,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 
 		if ( !filter )
 		{
-			fprintf( stderr, "failed to load filter \"%s\"\n", id );
+			mlt_log_warning( service, "failed to load filter \"%s\"\n", id );
 			if ( parent )
 				context_push_service( context, parent, parent_type );
 			mlt_service_close( service );
@@ -993,7 +993,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		}
 		else
 		{
-			fprintf( stderr, "filter closed with invalid parent...\n" );
+			mlt_log_warning( service, "filter closed with invalid parent...\n" );
 		}
 
 		// Close the dummy filter service
@@ -1001,7 +1001,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 	}
 	else
 	{
-		fprintf( stderr, "Invalid top of stack on filter close\n" );
+		mlt_log_warning( service, "Invalid top of stack on filter close\n" );
 	}
 }
 
@@ -1037,7 +1037,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 
 		if ( !effect )
 		{
-			fprintf( stderr, "failed to load transition \"%s\"\n", id );
+			mlt_log_warning( service, "failed to load transition \"%s\"\n", id );
 			if ( parent )
 				context_push_service( context, parent, parent_type );
 			mlt_service_close( service );
@@ -1074,7 +1074,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 			}
 			else
 			{
-				fprintf( stderr, "Misplaced transition - ignoring\n" );
+				mlt_log_warning( service, "Misplaced transition - ignoring\n" );
 			}
 
 			// Put the parent back on the stack
@@ -1082,7 +1082,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 		}
 		else
 		{
-			fprintf( stderr, "transition closed with invalid parent...\n" );
+			mlt_log_warning( service, "transition closed with invalid parent...\n" );
 		}
 
 		// Close the dummy filter service
@@ -1090,7 +1090,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 	}
 	else
 	{
-		fprintf( stderr, "Invalid top of stack on transition close\n" );
+		mlt_log_warning( service, "Invalid top of stack on transition close\n" );
 	}
 }
 
@@ -1196,7 +1196,7 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 	}
 	else
 	{
-		fprintf( stderr, "Property without a service '%s'?\n", ( const char * )name );
+		mlt_log_warning( service, "Property without a service '%s'?\n", ( const char * )name );
 	}
 }
 
@@ -1237,7 +1237,7 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 	}
 	else
 	{
-		fprintf( stderr, "Property without a service '%s'??\n", (const char *)name );
+		mlt_log_warning( service, "Property without a service '%s'??\n", (const char *)name );
 	}
 }
 
@@ -1469,11 +1469,13 @@ static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	return e;
 }
 
+/** Handle error messages from the parser.
+*/
 static void	on_error( void * ctx, const char * msg, ...)
 {
 	struct _xmlError* err_ptr = xmlCtxtGetLastError(ctx);
-	fprintf( stderr, "XML parse error: %s\trow: %d\tcol: %d\n",
-			 err_ptr->message, err_ptr->line, err_ptr->int2);
+	mlt_log_error( NULL, "XML producer parse error: %s\trow: %d\tcol: %d\n",
+			       err_ptr->message, err_ptr->line, err_ptr->int2 );
 }
 
 /** Convert a hexadecimal character to its value.
