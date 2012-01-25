@@ -195,6 +195,9 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		mlt_properties_set_double( properties, "muxdelay", 0.7 );
 		mlt_properties_set_double( properties, "muxpreload", 0.5 );
 
+		// Some AVOption defaults we like
+		mlt_properties_set( properties, "strict", "experimental" );
+
 		// Ensure termination at end of the stream
 		mlt_properties_set_int( properties, "terminate_on_pause", 1 );
 		
