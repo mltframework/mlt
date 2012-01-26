@@ -1,6 +1,6 @@
 /*
  * filter_audioconvert.c -- convert from one audio format to another
- * Copyright (C) 2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2009-2012 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -81,6 +81,34 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				error = 0;
 				break;
 			}
+			case mlt_audio_s32le:
+			{
+				int32_t *buffer = mlt_pool_alloc( size );
+				int32_t *p = buffer;
+				int16_t *q = (int16_t*) *audio;
+				int i = samples * channels + 1;
+				while ( --i )
+					*p++ = (int32_t) *q++ << 16;
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_f32le:
+			{
+				float *buffer = mlt_pool_alloc( size );
+				float *p = buffer;
+				int16_t *q = (int16_t*) *audio;
+				int i = samples * channels + 1;
+				while ( --i )
+				{
+					float f = (float)( *q++ ) / 32768.0;
+					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+					*p++ = f;
+				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
 			default:
 				break;
 			}
@@ -109,6 +137,36 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				int i = samples * channels + 1;
 				while ( --i )
 					*p++ = (float)( *q++ ) / 2147483648.0;
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_s32le:
+			{
+				int32_t *buffer = mlt_pool_alloc( size );
+				int32_t *p = buffer;
+				int32_t *q = (int32_t*) *audio;
+				int s, c;
+				for ( s = 0; s < samples; s++ )
+					for ( c = 0; c < channels; c++ )
+						*p++ = *( q + c * samples + s );
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_f32le:
+			{
+				float *buffer = mlt_pool_alloc( size );
+				float *p = buffer;
+				int32_t *q = (int32_t*) *audio;
+				int s, c;
+				for ( s = 0; s < samples; s++ )
+					for ( c = 0; c < channels; c++ )
+					{
+						float f = (float)( *( q + c * samples + s ) ) / 2147483648.0;
+						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+						*p++ = f;
+					}
 				*audio = buffer;
 				error = 0;
 				break;
@@ -149,6 +207,36 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
 					*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
 				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_s32le:
+			{
+				int32_t *buffer = mlt_pool_alloc( size );
+				int32_t *p = buffer;
+				float *q = (float*) *audio;
+				int s, c;
+				for ( s = 0; s < samples; s++ )
+					for ( c = 0; c < channels; c++ )
+					{
+						float f = *( q + c * samples + s );
+						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+						*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
+					}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_f32le:
+			{
+				float *buffer = mlt_pool_alloc( size );
+				float *p = buffer;
+				float *q = (float*) *audio;
+				int s, c;
+				for ( s = 0; s < samples; s++ )
+					for ( c = 0; c < channels; c++ )
+						*p++ = *( q + c * samples + s );
 				*audio = buffer;
 				error = 0;
 				break;
@@ -206,6 +294,18 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 						q += channels;
 					}
 				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_f32le:
+			{
+				float *buffer = mlt_pool_alloc( size );
+				float *p = buffer;
+				int32_t *q = (int32_t*) *audio;
+				int i = samples * channels + 1;
+				while ( --i )
+					*p++ = (float)( *q++ ) / 2147483648.0;
 				*audio = buffer;
 				error = 0;
 				break;
@@ -268,6 +368,22 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 						*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
 						q += channels;
 					}
+				}
+				*audio = buffer;
+				error = 0;
+				break;
+			}
+			case mlt_audio_s32le:
+			{
+				int32_t *buffer = mlt_pool_alloc( size );
+				int32_t *p = buffer;
+				float *q = (float*) *audio;
+				int i = samples * channels + 1;
+				while ( --i )
+				{
+					float f = *q++;
+					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+					*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
 				}
 				*audio = buffer;
 				error = 0;
