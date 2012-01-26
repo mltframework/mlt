@@ -1,6 +1,6 @@
 /*
  * filter_mono.c -- mix all channels to a mono signal across n channels
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2012 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -52,6 +52,34 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				int16_t mixdown = 0;
 				for ( j = 0; j < *channels; j++ )
 					mixdown += ((int16_t*) *buffer)[ ( i * *channels ) + j ] / *channels;
+				for ( j = 0; j < channels_out; j++ )
+					new_buffer[ ( i * channels_out ) + j ] = mixdown;
+			}
+			*buffer = new_buffer;
+			break;
+		}
+		case mlt_audio_s32le:
+		{
+			int32_t *new_buffer = mlt_pool_alloc( size );
+			for ( i = 0; i < *samples; i++ )
+			{
+				int32_t mixdown = 0;
+				for ( j = 0; j < *channels; j++ )
+					mixdown += ((int32_t*) *buffer)[ ( i * *channels ) + j ] / *channels;
+				for ( j = 0; j < channels_out; j++ )
+					new_buffer[ ( i * channels_out ) + j ] = mixdown;
+			}
+			*buffer = new_buffer;
+			break;
+		}
+		case mlt_audio_f32le:
+		{
+			float *new_buffer = mlt_pool_alloc( size );
+			for ( i = 0; i < *samples; i++ )
+			{
+				float mixdown = 0;
+				for ( j = 0; j < *channels; j++ )
+					mixdown += ((float*) *buffer)[ ( i * *channels ) + j ] / *channels;
 				for ( j = 0; j < channels_out; j++ )
 					new_buffer[ ( i * channels_out ) + j ] = mixdown;
 			}

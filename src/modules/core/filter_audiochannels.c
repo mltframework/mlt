@@ -1,6 +1,6 @@
 /*
  * filter_audiochannels.c -- convert from one audio format to another
- * Copyright (C) 2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2009-2012 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -46,14 +46,27 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				for ( j = 0; j < *channels; j++ )
 				{
-					new_buffer[ ( i * *channels ) + j ]	= ((int16_t*)(*buffer))[ ( i * channels_avail ) + k ];
+					new_buffer[ ( i * *channels ) + j ] = ((int16_t*)(*buffer))[ ( i * channels_avail ) + k ];
+					k = ( k + 1 ) % channels_avail;
+				}
+			}
+		}
+		else if ( *format == mlt_audio_s32le || *format == mlt_audio_f32le )
+		{
+			int32_t *p = (int32_t*) new_buffer;
+			int i, j, k = 0;
+			for ( i = 0; i < *samples; i++ )
+			{
+				for ( j = 0; j < *channels; j++ )
+				{
+					p[ ( i * *channels ) + j ] = ((int32_t*)(*buffer))[ ( i * channels_avail ) + k ];
 					k = ( k + 1 ) % channels_avail;
 				}
 			}
 		}
 		else
 		{
-			// non-interleaved
+			// non-interleaved - s32 or float
 			int size_avail = mlt_audio_format_size( *format, *samples, channels_avail );
 			int32_t *p = (int32_t*) new_buffer;
 			int i = *channels / channels_avail;

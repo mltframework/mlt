@@ -1,6 +1,6 @@
 /*
  * filter_channelcopy.c -- copy one audio channel to another
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2012 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -84,6 +84,26 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				memcpy( t, f, *samples * sizeof(int32_t) );
 			}
+			break;
+		}
+		case mlt_audio_s32le:
+		case mlt_audio_f32le:
+		{
+			int32_t *f = (int32_t*) *buffer + from;
+			int32_t *t = (int32_t*) *buffer + to;
+			int32_t x;
+			int i;
+
+			if ( swap )
+				for ( i = 0; i < *samples; i++, f += *channels, t += *channels )
+				{
+					x = *t;
+					*t = *f;
+					*f = x;
+				}
+			else
+				for ( i = 0; i < *samples; i++, f += *channels, t += *channels )
+					*t = *f;
 			break;
 		}
 		case mlt_audio_float:
