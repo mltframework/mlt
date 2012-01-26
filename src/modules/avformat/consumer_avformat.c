@@ -45,6 +45,9 @@
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
 #include <libavutil/pixdesc.h>
 #endif
+#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
+#include <libavutil/samplefmt.h>
+#endif
 #include <libavutil/mathematics.h>
 
 #if LIBAVUTIL_VERSION_INT < (50<<16)
@@ -72,7 +75,7 @@
 
 typedef struct
 {
-	int16_t *buffer;
+	uint8_t *buffer;
 	int size;
 	int used;
 	double time;
@@ -89,42 +92,16 @@ sample_fifo sample_fifo_init( int frequency, int channels )
 	return fifo;
 }
 
-// sample_fifo_clear and check are temporarily aborted (not working as intended)
-
-void sample_fifo_clear( sample_fifo fifo, double time )
-{
-	int words = ( float )( time - fifo->time ) * fifo->frequency * fifo->channels;
-	if ( ( int )( ( float )time * 100 ) < ( int )( ( float )fifo->time * 100 ) && fifo->used > words && words > 0 )
-	{
-		memmove( fifo->buffer, &fifo->buffer[ words ], ( fifo->used - words ) * sizeof( int16_t ) );
-		fifo->used -= words;
-		fifo->time = time;
-	}
-	else if ( ( int )( ( float )time * 100 ) != ( int )( ( float )fifo->time * 100 ) )
-	{
-		fifo->used = 0;
-		fifo->time = time;
-	}
-}
-
-void sample_fifo_check( sample_fifo fifo, double time )
-{
-	if ( fifo->used == 0 )
-	{
-		if ( ( int )( ( float )time * 100 ) < ( int )( ( float )fifo->time * 100 ) )
-			fifo->time = time;
-	}
-}
-
-void sample_fifo_append( sample_fifo fifo, int16_t *samples, int count )
+// count is the number of samples multiplied by the number of bytes per sample
+void sample_fifo_append( sample_fifo fifo, uint8_t *samples, int count )
 {
 	if ( ( fifo->size - fifo->used ) < count )
 	{
 		fifo->size += count * 5;
-		fifo->buffer = realloc( fifo->buffer, fifo->size * sizeof( int16_t ) );
+		fifo->buffer = realloc( fifo->buffer, fifo->size );
 	}
 
-	memcpy( &fifo->buffer[ fifo->used ], samples, count * sizeof( int16_t ) );
+	memcpy( &fifo->buffer[ fifo->used ], samples, count );
 	fifo->used += count;
 }
 
@@ -133,14 +110,14 @@ int sample_fifo_used( sample_fifo fifo )
 	return fifo->used;
 }
 
-int sample_fifo_fetch( sample_fifo fifo, int16_t *samples, int count )
+int sample_fifo_fetch( sample_fifo fifo, uint8_t *samples, int count )
 {
 	if ( count > fifo->used )
 		count = fifo->used;
 
-	memcpy( samples, fifo->buffer, count * sizeof( int16_t ) );
+	memcpy( samples, fifo->buffer, count );
 	fifo->used -= count;
-	memmove( fifo->buffer, &fifo->buffer[ count ], fifo->used * sizeof( int16_t ) );
+	memmove( fifo->buffer, &fifo->buffer[ count ], fifo->used );
 
 	fifo->time += ( double )count / fifo->channels / fifo->frequency;
 
@@ -440,6 +417,73 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	}
 }
 
+static int get_mlt_audio_format( int av_sample_fmt )
+{
+	switch ( av_sample_fmt )
+	{
+	case AV_SAMPLE_FMT_S32:
+		return mlt_audio_s32le;
+	case AV_SAMPLE_FMT_FLT:
+		return mlt_audio_f32le;
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+	case AV_SAMPLE_FMT_S32P:
+		return mlt_audio_s32;
+	case AV_SAMPLE_FMT_FLTP:
+		return mlt_audio_float;
+#endif
+	default:
+		return mlt_audio_s16;
+	}
+}
+
+static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
+{
+	int sample_fmt = AV_SAMPLE_FMT_S16;
+	const char *format = mlt_properties_get( properties, "mlt_audio_format" );
+	const int *p = codec->sample_fmts;
+
+	// get default av_sample_fmt from mlt_audio_format
+	if ( format )
+	{
+		if ( !strcmp( format, "s32le" ) )
+			sample_fmt = AV_SAMPLE_FMT_S32;
+		else if ( !strcmp( format, "f32le" ) )
+			sample_fmt = AV_SAMPLE_FMT_FLT;
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+		else if ( !strcmp( format, "s32" ) )
+			sample_fmt = AV_SAMPLE_FMT_S32P;
+		else if ( !strcmp( format, "float" ) )
+			sample_fmt = AV_SAMPLE_FMT_FLTP;
+#endif
+	}
+	// check if codec supports our mlt_audio_format
+	for ( ; *p != -1; p++ )
+	{
+		if ( *p == sample_fmt )
+			return sample_fmt;
+	}
+	// no match - pick first one we support
+	for ( p = codec->sample_fmts; *p != -1; p++ )
+	{
+		switch (*p)
+		{
+		case AV_SAMPLE_FMT_S16:
+		case AV_SAMPLE_FMT_S32:
+		case AV_SAMPLE_FMT_FLT:
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+		case AV_SAMPLE_FMT_S32P:
+		case AV_SAMPLE_FMT_FLTP:
+#endif
+			return *p;
+		default:
+			break;
+		}
+	}
+	mlt_log_error( properties, "audio codec sample_fmt not compatible" );
+
+	return AV_SAMPLE_FMT_NONE;
+}
+
 /** Add an audio output stream
 */
 
@@ -469,7 +513,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 
 		c->codec_id = codec->id;
 		c->codec_type = CODEC_TYPE_AUDIO;
-		c->sample_fmt = SAMPLE_FMT_S16;
+		c->sample_fmt = pick_sample_fmt( properties, codec );
 
 #if 0 // disabled until some audio codecs are multi-threaded
 		// Setup multi-threading
@@ -1044,11 +1088,10 @@ static void *consumer_thread( void *arg )
 	int img_height = height;
 
 	// Get default audio properties
-	mlt_audio_format aud_fmt = mlt_audio_s16;
 	int channels = mlt_properties_get_int( properties, "channels" );
 	int total_channels = channels;
 	int frequency = mlt_properties_get_int( properties, "frequency" );
-	int16_t *pcm = NULL;
+	void *pcm = NULL;
 	int samples = 0;
 
 	// AVFormat audio buffer and frame size
@@ -1078,8 +1121,8 @@ static void *consumer_thread( void *arg )
 	mlt_image_format img_fmt = mlt_image_yuv422;
 
 	// For receiving audio samples back from the fifo
-	int16_t *audio_buf_1 = av_malloc( AUDIO_ENCODE_BUFFER_SIZE );
-	int16_t *audio_buf_2 = NULL;
+	uint8_t *audio_buf_1 = av_malloc( AUDIO_ENCODE_BUFFER_SIZE );
+	uint8_t *audio_buf_2 = NULL;
 	int count = 0;
 
 	// Allocate the context
@@ -1302,6 +1345,13 @@ static void *consumer_thread( void *arg )
 	}
 	mlt_properties_set_int( properties, "channels", total_channels );
 
+	// Audio format is determined when adding the audio stream
+	mlt_audio_format aud_fmt = mlt_audio_none;
+	if ( audio_st[0] )
+		aud_fmt = get_mlt_audio_format( audio_st[0]->codec->sample_fmt );
+	int sample_bytes = mlt_audio_format_size( aud_fmt, 1, 1 );
+	sample_bytes = sample_bytes ? sample_bytes : 1; // prevent divide by zero
+
 	// Set the parameters (even though we have none...)
 #if LIBAVFORMAT_VERSION_INT < ((53<<16)+(2<<8)+0)
 	if ( av_set_parameters(oc, NULL) >= 0 )
@@ -1434,7 +1484,7 @@ static void *consumer_thread( void *arg )
 			{
 				samples = mlt_sample_calculator( fps, frequency, count ++ );
 				channels = total_channels;
-				mlt_frame_get_audio( frame, (void**) &pcm, &aud_fmt, &frequency, &channels, &samples );
+				mlt_frame_get_audio( frame, &pcm, &aud_fmt, &frequency, &channels, &samples );
 
 				// Save the audio channel remap properties for later
 				mlt_properties_pass( frame_meta_properties, frame_properties, "meta.map.audio." );
@@ -1448,10 +1498,10 @@ static void *consumer_thread( void *arg )
 
 				// Silence if not normal forward speed
 				if ( mlt_properties_get_double( frame_properties, "_speed" ) != 1.0 )
-					memset( pcm, 0, samples * channels * 2 );
+					memset( pcm, 0, samples * channels * sample_bytes );
 
 				// Append the samples
-				sample_fifo_append( fifo, pcm, samples * channels );
+				sample_fifo_append( fifo, pcm, samples * channels * sample_bytes );
 				total_time += ( samples * 1000000 ) / frequency;
 
 				if ( !video_st )
@@ -1473,15 +1523,15 @@ static void *consumer_thread( void *arg )
 			if ( !video_st || ( video_st && audio_st[0] && audio_pts < video_pts ) )
 			{
 				// Write audio
-				if ( ( video_st && terminated ) || ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) )
+				if ( ( video_st && terminated ) || ( channels * audio_input_frame_size ) < sample_fifo_used( fifo ) / sample_bytes )
 				{
 					int j = 0; // channel offset into interleaved source buffer
-					int n = FFMIN( FFMIN( channels * audio_input_frame_size, sample_fifo_used( fifo ) ), AUDIO_ENCODE_BUFFER_SIZE );
+					int n = FFMIN( FFMIN( channels * audio_input_frame_size, sample_fifo_used( fifo ) / sample_bytes ), AUDIO_ENCODE_BUFFER_SIZE );
 
 					// Get the audio samples
 					if ( n > 0 )
 					{
-						sample_fifo_fetch( fifo, audio_buf_1, n );
+						sample_fifo_fetch( fifo, audio_buf_1, n * sample_bytes );
 					}
 					else if ( audio_codec_id == CODEC_ID_VORBIS && terminated )
 					{
@@ -1508,7 +1558,7 @@ static void *consumer_thread( void *arg )
 						// Optimized for single track and no channel remap
 						if ( !audio_st[1] && !mlt_properties_count( frame_meta_properties ) )
 						{
-							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, audio_buf_1 );
+							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, (short*) audio_buf_1 );
 						}
 						else
 						{
@@ -1557,14 +1607,14 @@ static void *consumer_thread( void *arg )
 									// Interleave the audio buffer with the # channels for this stream/mapping.
 									for ( k = 0; k < map_channels; k++, j++, source_offset++, dest_offset++ )
 									{
-										int16_t *src = audio_buf_1 + source_offset;
-										int16_t *dest = audio_buf_2 + dest_offset;
+										void *src = audio_buf_1 + source_offset * sample_bytes;
+										void *dest = audio_buf_2 + dest_offset * sample_bytes;
 										int s = samples + 1;
 
 										while ( --s ) {
-											*dest = *src;
-											dest += current_channels;
-											src += channels;
+											memcpy( dest, src, sample_bytes );
+											dest += current_channels * sample_bytes;
+											src += channels * sample_bytes;
 										}
 									}
 								}
@@ -1575,7 +1625,7 @@ static void *consumer_thread( void *arg )
 									dest_offset += current_channels;
 								}
 							}
-							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, audio_buf_2 );
+							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, (short*) audio_buf_2 );
 						}
 
 						// Write the compressed frame in the media file
@@ -1773,7 +1823,7 @@ static void *consumer_thread( void *arg )
 			long passed = time_difference( &ante );
 			if ( fifo != NULL )
 			{
-				long pending = ( ( ( long )sample_fifo_used( fifo ) * 1000 ) / frequency ) * 1000;
+				long pending = ( ( ( long )sample_fifo_used( fifo ) / sample_bytes * 1000 ) / frequency ) * 1000;
 				passed -= pending;
 			}
 			if ( passed < total_time )
@@ -1798,10 +1848,10 @@ static void *consumer_thread( void *arg )
 			pkt.size = 0;
 
 			if ( /*( c->capabilities & CODEC_CAP_SMALL_LAST_FRAME ) &&*/
-				( channels * audio_input_frame_size < sample_fifo_used( fifo ) ) )
+				( channels * audio_input_frame_size < sample_fifo_used( fifo ) / sample_bytes ) )
 			{
-				sample_fifo_fetch( fifo, audio_buf_1, channels * audio_input_frame_size );
-				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, audio_buf_1 );
+				sample_fifo_fetch( fifo, audio_buf_1, channels * audio_input_frame_size * sample_bytes );
+				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, (short*) audio_buf_1 );
 			}
 			if ( pkt.size <= 0 )
 				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, NULL );
