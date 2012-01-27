@@ -48,6 +48,7 @@
 #endif
 
 #include <cmath>
+#include <unistd.h>
 
 extern "C" {
 
