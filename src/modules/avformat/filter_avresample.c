@@ -29,7 +29,9 @@
 // ffmpeg Header files
 #include <libavformat/avformat.h>
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
-#include <libavutil/samplefmt.h>
+#  include <libavutil/samplefmt.h>
+#else
+#  define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
 #endif
 
 /** Get the audio.

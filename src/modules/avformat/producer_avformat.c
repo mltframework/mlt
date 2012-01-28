@@ -34,11 +34,18 @@
 #ifdef SWSCALE
 #  include <libswscale/swscale.h>
 #endif
+
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
-#include <libavutil/samplefmt.h>
-#elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
+#  include <libavutil/samplefmt.h>
+#else
+#  define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
+#  define AV_SAMPLE_FMT_S32 SAMPLE_FMT_S32
+#  define AV_SAMPLE_FMT_FLT SAMPLE_FMT_FLT
+#  if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
 const char *avcodec_get_sample_fmt_name(int sample_fmt);
+#  endif
 #endif
+
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
 #endif
