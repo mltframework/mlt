@@ -50,6 +50,7 @@
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
 #  include <libavutil/samplefmt.h>
 #else
+#  define AV_SAMPLE_FMT_NONE SAMPLE_FMT_NONE
 #  define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
 #  define AV_SAMPLE_FMT_S32 SAMPLE_FMT_S32
 #  define AV_SAMPLE_FMT_FLT SAMPLE_FMT_FLT
