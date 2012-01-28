@@ -265,7 +265,7 @@ int mlt_service_connect_producer( mlt_service self, mlt_service producer, int in
 
 /** Disconnect a service from its consumer.
  *
- * \public \memberof mlt_service_s
+ * \private \memberof mlt_service_s
  * \param self a service
  */
 
