@@ -28,6 +28,9 @@
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
+#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
+#include <libavutil/samplefmt.h>
+#endif
 
 /** Get the audio.
 */
@@ -79,7 +82,7 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			// Create the resampler
 #if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
 			resample = av_audio_resample_init( *channels, *channels, output_rate, *frequency,
-				SAMPLE_FMT_S16, SAMPLE_FMT_S16, 16, 10, 0, 0.8 );
+				AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16, 16, 10, 0, 0.8 );
 #else
 			resample = audio_resample_init( *channels, *channels, output_rate, *frequency );
 #endif

@@ -34,7 +34,7 @@
 #ifdef SWSCALE
 #  include <libswscale/swscale.h>
 #endif
-#if LIBAVCODEC_VERSION_MAJOR >= 53
+#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
 #include <libavutil/samplefmt.h>
 #elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
 const char *avcodec_get_sample_fmt_name(int sample_fmt);
@@ -2296,7 +2296,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				self->audio_resample[ index ] = av_audio_resample_init(
 					self->audio_index == INT_MAX ? codec_context->channels : *channels,
 					codec_context->channels, *frequency, codec_context->sample_rate,
-					SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
+					AV_SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
 #else
 				self->audio_resample[ index ] = audio_resample_init(
 					self->audio_index == INT_MAX ? codec_context->channels : *channels,
@@ -2399,8 +2399,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			index = self->audio_index;
 			*channels = self->audio_codec[ index ]->channels;
 			*frequency = self->audio_codec[ index ]->sample_rate;
-			*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32le
-				: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_f32le
+			*format = self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_S32 ? mlt_audio_s32le
+				: self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_FLT ? mlt_audio_f32le
 				: mlt_audio_s16;
 			sizeof_sample = sample_bytes( self->audio_codec[ index ] );
 		}
@@ -2410,8 +2410,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			for ( index = 0; index < index_max; index++ )
 				if ( self->audio_codec[ index ] && !self->audio_resample[ index ] )
 				{
-					*format = self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_S32 ? mlt_audio_s32le
-						: self->audio_codec[ index ]->sample_fmt == SAMPLE_FMT_FLT ? mlt_audio_f32le
+					*format = self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_S32 ? mlt_audio_s32le
+						: self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_FLT ? mlt_audio_f32le
 						: mlt_audio_s16;
 					sizeof_sample = sample_bytes( self->audio_codec[ index ] );
 					break;
