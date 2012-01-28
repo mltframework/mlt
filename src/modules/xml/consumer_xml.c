@@ -60,7 +60,7 @@ static int consumer_is_stopped( mlt_consumer this );
 static void *consumer_thread( void *arg );
 static void serialise_service( serialise_context context, mlt_service service, xmlNode *node );
 
-static void* filter_restricted( const char *in )
+static char* filter_restricted( const char *in )
 {
 	if ( !in ) return NULL;
 	size_t n = strlen( in );
@@ -235,9 +235,11 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			if ( value )
 			{
 				int rootlen = strlen( context->root );
+				// convert absolute path to relative
 				if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
-					value += rootlen + 1;
-				p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
+					p = xmlNewTextChild( node, NULL, _x("property"), _x(value + rootlen + 1 ) );
+				else
+					p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
 				free( value );
 			}
@@ -260,9 +262,11 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 			if ( value )
 			{
 				int rootlen = strlen( context->root );
+				// convert absolute path to relative
 				if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
-					value += rootlen + 1;
-				p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
+					p = xmlNewTextChild( node, NULL, _x("property"), _x(value + rootlen + 1) );
+				else
+					p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
 				free( value );
 			}
