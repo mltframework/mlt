@@ -394,7 +394,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	for ( i = 0; i < count; i++ )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
-#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(7<<8)+0)
+#if LIBAVUTIL_VERSION_INT > ((51<<16)+(7<<8)+0)
 		const AVOption *opt = av_opt_find( obj, opt_name, NULL, flags, flags );
 #else
 		const AVOption *opt = av_find_opt( obj, opt_name, NULL, flags, flags );
@@ -404,7 +404,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		if ( !opt && (
 			( opt_name[0] == 'v' && ( flags & AV_OPT_FLAG_VIDEO_PARAM ) ) ||
 			( opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) ) )
-#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(7<<8)+0)
+#if LIBAVUTIL_VERSION_INT > ((51<<16)+(7<<8)+0)
 			opt = av_opt_find( obj, ++opt_name, NULL, flags, flags );
 #else
 			opt = av_find_opt( obj, ++opt_name, NULL, flags, flags );
