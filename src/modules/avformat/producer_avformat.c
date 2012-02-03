@@ -365,7 +365,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 				if ( self->audio_index < 0 )
 					self->audio_index = i;
 				mlt_properties_set( meta_media, key, "audio" );
-#if LIBAVCODEC_VERSION_MAJOR >= 53
+#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
 				mlt_properties_set( meta_media, key, av_get_sample_fmt_name( codec_context->sample_fmt ) );
 #elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
