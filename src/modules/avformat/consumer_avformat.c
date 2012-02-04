@@ -1501,15 +1501,16 @@ static void *consumer_thread( void *arg )
 					fifo = sample_fifo_init( frequency, channels );
 					mlt_properties_set_data( properties, "sample_fifo", fifo, 0, ( mlt_destructor )sample_fifo_close, NULL );
 				}
+				if ( pcm )
+				{
+					// Silence if not normal forward speed
+					if ( mlt_properties_get_double( frame_properties, "_speed" ) != 1.0 )
+						memset( pcm, 0, samples * channels * sample_bytes );
 
-				// Silence if not normal forward speed
-				if ( mlt_properties_get_double( frame_properties, "_speed" ) != 1.0 )
-					memset( pcm, 0, samples * channels * sample_bytes );
-
-				// Append the samples
-				sample_fifo_append( fifo, pcm, samples * channels * sample_bytes );
-				total_time += ( samples * 1000000 ) / frequency;
-
+					// Append the samples
+					sample_fifo_append( fifo, pcm, samples * channels * sample_bytes );
+					total_time += ( samples * 1000000 ) / frequency;
+				}
 				if ( !video_st )
 					mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 			}
