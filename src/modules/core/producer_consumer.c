@@ -141,6 +141,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 
 		// Since we control the seeking, prevent it from seeking on its own
 		mlt_producer_set_speed( cx->producer, 0 );
+		cx->audio_position = -1;
 
 		// We will encapsulate a consumer
 		cx->consumer = mlt_consumer_new( cx->profile );
