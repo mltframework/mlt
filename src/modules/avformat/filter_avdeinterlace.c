@@ -31,7 +31,7 @@
 #include "mmx.h"
 #else
 #define MAX_NEG_CROP 1024
-extern uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP];
+static uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP] = {0,};
 #endif
 
 #ifdef USE_MMX
@@ -346,6 +346,17 @@ static mlt_frame deinterlace_process( mlt_filter filter, mlt_frame frame )
 
 mlt_filter filter_avdeinterlace_init( void *arg )
 {
+#ifndef USE_MMX
+	if ( ff_cropTbl[MAX_NEG_CROP + 1] == 0 )
+	{
+		int i;
+		for(i=0;i<256;i++) ff_cropTbl[i + MAX_NEG_CROP] = i;
+		for(i=0;i<MAX_NEG_CROP;i++) {
+			ff_cropTbl[i] = 0;
+			ff_cropTbl[i + MAX_NEG_CROP + 256] = 255;
+		}
+	}
+#endif
 	mlt_filter filter = mlt_filter_new( );
 	if ( filter != NULL )
 		filter->process = deinterlace_process;
