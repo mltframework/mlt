@@ -1247,7 +1247,7 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 {
 #ifdef SWSCALE
 	int full_range = -1;
-	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
+	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
 
 #ifdef USE_MMX
 	flags |= SWS_CPU_CAPS_MMX;

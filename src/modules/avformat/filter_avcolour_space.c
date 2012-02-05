@@ -117,7 +117,7 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 	AVPicture input;
 	AVPicture output;
 #ifdef SWSCALE
-	int flags = SWS_BILINEAR | SWS_ACCURATE_RND;
+	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
 
 	if ( out_fmt == PIX_FMT_YUYV422 )
 		flags |= SWS_FULL_CHR_H_INP;

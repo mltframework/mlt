@@ -1701,7 +1701,7 @@ static void *consumer_thread( void *arg )
 
 						// Do the colour space conversion
 #ifdef SWSCALE
-						int flags = SWS_BILINEAR;
+						int flags = SWS_BICUBIC;
 #ifdef USE_MMX
 						flags |= SWS_CPU_CAPS_MMX;
 #endif
