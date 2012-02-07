@@ -1216,6 +1216,10 @@ static void *consumer_thread( void *arg )
 				acodec = mlt_properties_get( properties, "_acodec" );
 				audio_codec = avcodec_find_encoder_by_name( acodec );
 			}
+			else if ( !strcmp( acodec, "aac" ) )
+			{
+				mlt_properties_set( properties, "astrict", "experimental" );
+			}
 		}
 		else
 		{
