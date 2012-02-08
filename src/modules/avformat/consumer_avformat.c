@@ -334,11 +334,11 @@ static int consumer_start( mlt_consumer consumer )
 		// Assign the thread to properties
 		mlt_properties_set_data( properties, "thread", thread, sizeof( pthread_t ), free, NULL );
 
-		// Set the running state
-		mlt_properties_set_int( properties, "running", 1 );
-
 		// Create the thread
 		pthread_create( thread, NULL, consumer_thread, consumer );
+
+		// Set the running state
+		mlt_properties_set_int( properties, "running", 1 );
 	}
 	return error;
 }
@@ -1855,7 +1855,7 @@ static void *consumer_thread( void *arg )
 			av_init_packet( &pkt );
 			pkt.size = 0;
 
-			if ( /*( c->capabilities & CODEC_CAP_SMALL_LAST_FRAME ) &&*/
+			if ( fifo &&
 				( channels * audio_input_frame_size < sample_fifo_used( fifo ) / sample_bytes ) )
 			{
 				sample_fifo_fetch( fifo, audio_buf_1, channels * audio_input_frame_size * sample_bytes );
@@ -1917,7 +1917,8 @@ static void *consumer_thread( void *arg )
 on_fatal_error:
 	
 	// Write the trailer, if any
-	av_write_trailer( oc );
+	if ( frames )
+		av_write_trailer( oc );
 
 	// close each codec
 	if ( video_st )
@@ -1930,13 +1931,13 @@ on_fatal_error:
 		av_freep( &oc->streams[i] );
 
 	// Close the output file
-	if ( !( fmt->flags & AVFMT_NOFILE ) )
+	if ( !( fmt->flags & AVFMT_NOFILE ) &&
+		!mlt_properties_get_int( properties, "redirect" ) )
 	{
 #if LIBAVFORMAT_VERSION_MAJOR >= 53
-		if ( !mlt_properties_get_int( properties, "redirect" ) )
-			avio_close( oc->pb );
+		if ( oc->pb  ) avio_close( oc->pb );
 #elif LIBAVFORMAT_VERSION_MAJOR >= 52
-		url_fclose( oc->pb );
+		if ( oc->pb  ) url_fclose( oc->pb );
 #else
 		url_fclose( &oc->pb );
 #endif
