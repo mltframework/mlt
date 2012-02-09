@@ -40,4 +40,5 @@ MLT_REPOSITORY
 	MLT_REGISTER( transition_type, "vqm", transition_vqm_init );
 	MLT_REGISTER_METADATA( producer_type, "qimage", metadata, "producer_qimage.yml" );
 	MLT_REGISTER_METADATA( producer_type, "kdenlivetitle", metadata, "producer_kdenlivetitle.yml" );
+	MLT_REGISTER_METADATA( transition_type, "vqm", metadata, "transition_vqm.yml" );
 }

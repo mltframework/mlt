@@ -1,0 +1,28 @@
+schema_version: 0.1
+type: transition
+identifier: vqm
+title: Video Quality Measurement
+version: 1
+copyright: Dan Dennedy
+creator: Dan Dennedy
+license: GPLv3
+language: en
+description: >
+  This performs the PSNR and SSIM video quality measurements by comparing the
+  B frames to the reference frame A.
+  It outputs the numbers to stdout in space-delimited format for easy
+  by another tool.
+  The bottom half of the B frame is placed below the top half of the A frame
+  for visual comparison.
+tags:
+  - Video
+parameters:
+  - identifier: render
+    title: Render
+    description: >
+      Render a line between top and bottom halves and the values atop the video.
+    type: integer
+    default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox

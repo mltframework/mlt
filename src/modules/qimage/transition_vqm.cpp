@@ -22,6 +22,9 @@
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
+#include <QtGui>
+
+static QApplication *app = 0;
 
 static double calc_psnr( const uint8_t *a, const uint8_t *b, int size, int bpp )
 {
@@ -117,8 +120,97 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			mlt_frame_get_position( a_frame ), psnr[0], psnr[1], psnr[2],
 			ssim[0], ssim[1], ssim[2] );
 
+	// copy the B frame to the bottom of the A frame for comparison
 	window_size = mlt_image_format_size( *format, *width, *height, NULL ) / 2;
 	memcpy( *image + window_size, b_image + window_size, window_size );
+
+	if ( !mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( transition ), "render" ) )
+		return 0;
+
+	// get RGBA image for Qt drawing
+	*format = mlt_image_rgb24a;
+	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
+
+	// convert mlt image to qimage
+	QImage img( *width, *height, QImage::Format_ARGB32 );
+	int y = *height + 1;
+	uint8_t *src = *image;
+	while ( --y )
+	{
+		QRgb *dst = (QRgb*) img.scanLine( *height - y );
+		int x = *width + 1;
+		while ( --x )
+		{
+			*dst++ = qRgba( src[0], src[1], src[2], 255 );
+			src += 4;
+		}
+	}
+
+	// create QApplication, if needed
+	if ( !app )
+	{
+		if ( qApp )
+		{
+			app = qApp;
+		}
+		else
+		{
+			int argc = 1;
+			char* argv[] = { strdup( "unknown" ) };
+
+			app = new QApplication( argc, argv );
+			const char *localename = mlt_properties_get_lcnumeric( MLT_TRANSITION_PROPERTIES(transition) );
+			QLocale::setDefault( QLocale( localename ) );
+			free( argv[0] );
+		}
+	}
+
+	// setup Qt drawing
+	QPainter painter;
+	painter.begin( &img );
+	painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
+
+	// draw some stuff with Qt
+	QPalette palette;
+	QFont font;
+	QString s;
+	font.setBold( true );
+	font.setPointSize( 30 );
+	painter.setPen( QColor("black") );
+	painter.drawLine( 0, *height/2 + 1, *width, *height/2 );
+	painter.setPen( QColor("white") );
+	painter.drawLine( 0, *height/2 - 1, *width, *height/2 );
+	painter.setFont( font );
+	s.sprintf( "Frame: %05d\nPSNR:   %05.2f (Y) %05.2f (Cb) %05.2f (Cr)\nSSIM:    %5.3f (Y) %5.3f (Cb) %5.3f (Cr)",
+			  mlt_frame_get_position( a_frame ), psnr[0], psnr[1], psnr[2],
+			  ssim[0], ssim[1], ssim[2] );
+	painter.setPen( QColor("black") );
+	painter.drawText( 52, *height - 300 * font.pointSize() / 72 + 2, *width, *height, NULL, s );
+	painter.setPen( QColor("white") );
+	painter.drawText( 50, *height - 300 * font.pointSize() / 72, *width, *height, NULL, s );
+
+	// finish Qt drawing
+	painter.end();
+	window_size = mlt_image_format_size( *format, *width, *height, NULL );
+	uint8_t *dst = (uint8_t *) mlt_pool_alloc( window_size );
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES(a_frame), "image", dst, window_size, mlt_pool_release, NULL );
+	*image = dst;
+
+	// convert qimage to mlt
+	y = *height + 1;
+	while ( --y )
+	{
+		QRgb *src = (QRgb*) img.scanLine( *height - y );
+		int x = *width + 1;
+		while ( --x )
+		{
+			*dst++ = qRed( *src );
+			*dst++ = qGreen( *src );
+			*dst++ = qBlue( *src );
+			*dst++ = qAlpha( *src );
+			src++;
+		}
+	}
 
 	return 0;
 }
