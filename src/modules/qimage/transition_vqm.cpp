@@ -101,6 +101,7 @@ static double calc_ssim( const uint8_t *a, const uint8_t *b, int width, int heig
 static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( a_frame );
 	mlt_transition transition = MLT_TRANSITION( mlt_frame_pop_service( a_frame ) );
 	uint8_t *b_image;
 	int window_size = mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( transition ), "window_size" );
@@ -116,6 +117,12 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	ssim[0] = calc_ssim( *image, b_image, *width, *height, window_size, 2 );
 	ssim[1] = calc_ssim( *image + 1, b_image + 1, *width / 2, *height, window_size, 4 );
 	ssim[2] = calc_ssim( *image + 3, b_image + 3, *width / 2, *height, window_size, 4 );
+	mlt_properties_set_double( properties, "meta.vqm.psnr.y", psnr[0] );
+	mlt_properties_set_double( properties, "meta.vqm.psnr.cb", psnr[1] );
+	mlt_properties_set_double( properties, "meta.vqm.psnr.cr", psnr[2] );
+	mlt_properties_set_double( properties, "meta.vqm.ssim.y", ssim[0] );
+	mlt_properties_set_double( properties, "meta.vqm.ssim.cb", ssim[1] );
+	mlt_properties_set_double( properties, "meta.vqm.ssim.cr", ssim[2] );
 	printf( "%05d %05.2f %05.2f %05.2f %5.3f %5.3f %5.3f\n",
 			mlt_frame_get_position( a_frame ), psnr[0], psnr[1], psnr[2],
 			ssim[0], ssim[1], ssim[2] );
