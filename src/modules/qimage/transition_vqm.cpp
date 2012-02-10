@@ -185,9 +185,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			  mlt_frame_get_position( a_frame ), psnr[0], psnr[1], psnr[2],
 			  ssim[0], ssim[1], ssim[2] );
 	painter.setPen( QColor("black") );
-	painter.drawText( 52, *height - 300 * font.pointSize() / 72 + 2, *width, *height, NULL, s );
+	painter.drawText( 52, *height - 300 * font.pointSize() / 72 + 2, *width, *height, 0, s );
 	painter.setPen( QColor("white") );
-	painter.drawText( 50, *height - 300 * font.pointSize() / 72, *width, *height, NULL, s );
+	painter.drawText( 50, *height - 300 * font.pointSize() / 72, *width, *height, 0, s );
 
 	// finish Qt drawing
 	painter.end();
