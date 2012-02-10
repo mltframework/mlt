@@ -72,7 +72,7 @@ static char* filter_restricted( const char *in )
 	{
 		wchar_t w;
 		size_t c = mbrtowc( &w, in, n, &mbs );
-		if ( c <= 0 ) break;
+		if ( c <= 0 || c > n ) break;
 		n -= c;
 		in += c;
 		if ( w == 0x9 || w == 0xA || w == 0xD ||
