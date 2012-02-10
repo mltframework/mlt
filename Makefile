@@ -55,5 +55,5 @@ dist:
 validate-yml:
 	for file in `find ./ -type f -name \*.yml`; do \
 		echo "validate: $$file"; \
-		kwalify -f src/framework/metaschema.yaml $$file; \
+		kwalify -f src/framework/metaschema.yaml $$file || exit 1; \
 	done
