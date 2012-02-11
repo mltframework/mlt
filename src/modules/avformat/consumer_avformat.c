@@ -350,18 +350,18 @@ static int consumer_stop( mlt_consumer consumer )
 {
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+	pthread_t *thread = mlt_properties_get_data( properties, "thread", NULL );
 
 	// Check that we're running
-	if ( mlt_properties_get_int( properties, "running" ) )
+	if ( thread )
 	{
-		// Get the thread
-		pthread_t *thread = mlt_properties_get_data( properties, "thread", NULL );
-
 		// Stop the thread
 		mlt_properties_set_int( properties, "running", 0 );
 
 		// Wait for termination
 		pthread_join( *thread, NULL );
+
+		mlt_properties_set( properties, "thread", NULL );
 	}
 
 	return 0;
@@ -1436,7 +1436,8 @@ static void *consumer_thread( void *arg )
 #endif
 			{
 				mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not open '%s'\n", filename );
-				mlt_properties_set_int( properties, "running", 0 );
+				mlt_events_fire( properties, "consumer-fatal-error", NULL );
+				goto on_fatal_error;
 			}
 		}
 	
@@ -1452,7 +1453,8 @@ static void *consumer_thread( void *arg )
 	else
 	{
 		mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Invalid output format parameters\n" );
-		mlt_properties_set_int( properties, "running", 0 );
+		mlt_events_fire( properties, "consumer-fatal-error", NULL );
+		goto on_fatal_error;
 	}
 #endif
 
@@ -1462,7 +1464,10 @@ static void *consumer_thread( void *arg )
 
 	// Last check - need at least one stream
 	if ( !audio_st[0] && !video_st )
-		mlt_properties_set_int( properties, "running", 0 );
+	{
+		mlt_events_fire( properties, "consumer-fatal-error", NULL );
+		goto on_fatal_error;
+	}
 
 	// Get the starting time (can ignore the times above)
 	gettimeofday( &ante, NULL );
@@ -1957,8 +1962,6 @@ on_fatal_error:
 	av_free( oc );
 
 	// Just in case we terminated on pause
-	mlt_properties_set_int( properties, "running", 0 );
-
 	mlt_consumer_stopped( consumer );
 	mlt_properties_close( frame_meta_properties );
 
