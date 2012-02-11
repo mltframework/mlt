@@ -202,6 +202,7 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 
 	// Attach filters if we have a producer and it isn't already xml'd :-)
 	if ( producer && strcmp( id, "abnormal" ) &&
+		strncmp( arg, "abnormal:", 9 ) &&
 		mlt_properties_get( properties, "xml" ) == NULL &&
 		mlt_properties_get( properties, "_xml" ) == NULL &&
 		mlt_properties_get( properties, "loader_normalised" ) == NULL )
