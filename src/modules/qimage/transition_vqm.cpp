@@ -22,7 +22,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
-#include <QtGui>
+#include <QtGui/QtGui>
 
 static QApplication *app = 0;
 
