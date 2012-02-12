@@ -95,6 +95,11 @@ mlt_properties Frame::get_unique_properties( Service &service )
 	return mlt_frame_unique_properties( get_frame(), service.get_service() );
 }
 
+int64_t Frame::get_position( )
+{
+	return mlt_frame_get_position( get_frame() );
+}
+
 int Frame::set_image( uint8_t *image, int size, mlt_destructor destroy )
 {
 	return mlt_frame_set_image( get_frame(), image, size, destroy );
