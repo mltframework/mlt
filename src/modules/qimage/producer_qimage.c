@@ -33,19 +33,19 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static void load_filenames( producer_qimage this, mlt_properties producer_properties );
+static void load_filenames( producer_qimage self, mlt_properties producer_properties );
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
 mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
-	producer_qimage this = calloc( sizeof( struct producer_qimage_s ), 1 );
-	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	producer_qimage self = calloc( sizeof( struct producer_qimage_s ), 1 );
+	if ( self != NULL && mlt_producer_init( &self->parent, self ) == 0 )
 	{
-		mlt_producer producer = &this->parent;
+		mlt_producer producer = &self->parent;
 
 		// Get the properties interface
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
 	
 		// Callback registration
 #ifdef USE_KDE
@@ -62,42 +62,42 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 		
 		// Validate the resource
 		if ( filename )
-			load_filenames( this, properties );
-		if ( this->count )
+			load_filenames( self, properties );
+		if ( self->count )
 		{
 			mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 			if ( frame )
 			{
 				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-				mlt_properties_set_data( frame_properties, "producer_qimage", this, 0, NULL, NULL );
+				mlt_properties_set_data( frame_properties, "producer_qimage", self, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 				mlt_properties_set_position( frame_properties, "qimage_position", mlt_producer_position( producer ) );
-				refresh_qimage( this, frame, 0, 0 );
+				refresh_qimage( self, frame, 0, 0 );
 				mlt_frame_close( frame );
 			}
 		}
-		if ( this->current_width == 0 )
+		if ( self->current_width == 0 )
 		{
 			producer_close( producer );
 			producer = NULL;
 		}
 		if ( producer )
-			pthread_mutex_init( &this->mutex, NULL );
+			pthread_mutex_init( &self->mutex, NULL );
 		return producer;
 	}
-	free( this );
+	free( self );
 	return NULL;
 }
 
-static void load_filenames( producer_qimage this, mlt_properties producer_properties )
+static void load_filenames( producer_qimage self, mlt_properties producer_properties )
 {
 	char *filename = mlt_properties_get( producer_properties, "resource" );
-	this->filenames = mlt_properties_new( );
+	self->filenames = mlt_properties_new( );
 
 	// Read xml string
 	if ( strstr( filename, "<svg" ) )
 	{
-		make_tempfile( this, filename );
+		make_tempfile( self, filename );
 	}
 	// Obtain filenames
 	else if ( strchr( filename, '%' ) != NULL )
@@ -116,7 +116,7 @@ static void load_filenames( producer_qimage this, mlt_properties producer_proper
 			if ( stat( full, &buf ) == 0 )
 			{
 				sprintf( key, "%d", keyvalue ++ );
-				mlt_properties_set( this->filenames, key, full );
+				mlt_properties_set( self->filenames, key, full );
 				gap = 0;
 			}
 			else
@@ -124,7 +124,7 @@ static void load_filenames( producer_qimage this, mlt_properties producer_proper
 				gap ++;
 			}
 		}
-		if ( mlt_properties_count( this->filenames ) > 0 )
+		if ( mlt_properties_count( self->filenames ) > 0 )
 			mlt_properties_set_int( producer_properties, "ttl", 1 );
 	}
 	else if ( strstr( filename, "/.all." ) != NULL )
@@ -136,16 +136,16 @@ static void load_filenames( producer_qimage this, mlt_properties producer_proper
 		*( strstr( dir_name, "/.all." ) + 1 ) = '\0';
 		sprintf( wildcard, "*%s", extension );
 
-		mlt_properties_dir_list( this->filenames, dir_name, wildcard, 1 );
+		mlt_properties_dir_list( self->filenames, dir_name, wildcard, 1 );
 
 		free( dir_name );
 	}
 	else
 	{
-		mlt_properties_set( this->filenames, "0", filename );
+		mlt_properties_set( self->filenames, "0", filename );
 	}
 
-	this->count = mlt_properties_count( this->filenames );
+	self->count = mlt_properties_count( self->filenames );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
@@ -156,35 +156,35 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the producer for this frame
-	producer_qimage this = mlt_properties_get_data( properties, "producer_qimage", NULL );
+	producer_qimage self = mlt_properties_get_data( properties, "producer_qimage", NULL );
 
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
-	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
+	mlt_service_lock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	// Refresh the image
-	refresh_qimage( this, frame, *width, *height );
+	refresh_qimage( self, frame, *width, *height );
 
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
-	*format = this->has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+	*format = self->has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of the qimage producer...
-	if ( this->current_image )
+	if ( self->current_image )
 	{
 		// Clone the image and the alpha
-		int image_size = this->current_width * ( this->current_height + 1 ) * ( this->has_alpha ? 4 :3 );
+		int image_size = self->current_width * ( self->current_height + 1 ) * ( self->has_alpha ? 4 :3 );
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
-		memcpy( image_copy, this->current_image, image_size );
+		memcpy( image_copy, self->current_image, image_size );
 		// Now update properties so we free the copy after
 		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
 		// We're going to pass the copy on
 		*buffer = image_copy;
-		mlt_log_debug( MLT_PRODUCER_SERVICE( &this->parent ), "%dx%d (%s)\n", 
-			this->current_width, this->current_height, mlt_image_format_name( *format ) );
+		mlt_log_debug( MLT_PRODUCER_SERVICE( &self->parent ), "%dx%d (%s)\n",
+			self->current_width, self->current_height, mlt_image_format_name( *format ) );
 	}
 	else
 	{
@@ -192,9 +192,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Release references and locks
-	pthread_mutex_unlock( &this->mutex );
-	mlt_cache_item_close( this->image_cache );
-	mlt_service_unlock( MLT_PRODUCER_SERVICE( &this->parent ) );
+	pthread_mutex_unlock( &self->mutex );
+	mlt_cache_item_close( self->image_cache );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	return error;
 }
@@ -202,24 +202,24 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Get the real structure for this producer
-	producer_qimage this = producer->child;
+	producer_qimage self = producer->child;
 
 	// Fetch the producers properties
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	if ( this->filenames == NULL && mlt_properties_get( producer_properties, "resource" ) != NULL )
-		load_filenames( this, producer_properties );
+	if ( self->filenames == NULL && mlt_properties_get( producer_properties, "resource" ) != NULL )
+		load_filenames( self, producer_properties );
 
 	// Generate a frame
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
-	if ( *frame != NULL && this->count > 0 )
+	if ( *frame != NULL && self->count > 0 )
 	{
 		// Obtain properties of frame and producer
 		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 		// Set the producer on the frame properties
-		mlt_properties_set_data( properties, "producer_qimage", this, 0, NULL, NULL );
+		mlt_properties_set_data( properties, "producer_qimage", self, 0, NULL, NULL );
 
 		// Update timecode on the frame we're creating
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
@@ -228,7 +228,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_position( properties, "qimage_position", mlt_producer_position( producer ) );
 
 		// Refresh the image
-		refresh_qimage( this, *frame, 0, 0 );
+		refresh_qimage( self, *frame, 0, 0 );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
@@ -250,11 +250,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_close( mlt_producer parent )
 {
-	producer_qimage this = parent->child;
-	pthread_mutex_destroy( &this->mutex );
+	producer_qimage self = parent->child;
+	pthread_mutex_destroy( &self->mutex );
 	parent->close = NULL;
 	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
 	mlt_producer_close( parent );
-	mlt_properties_close( this->filenames );
-	free( this );
+	mlt_properties_close( self->filenames );
+	free( self );
 }
