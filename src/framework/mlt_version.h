@@ -2,7 +2,7 @@
  * \file mlt_version.h
  * \brief contains version information
  *
- * Copyright (C) 2010 Ushodaya Enterprises Limited
+ * Copyright (C) 2010-2012 Ushodaya Enterprises Limited
  * \author Jonathan Thomas <Jonathan.Oomph@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@
 
 #define LIBMLT_VERSION_MAJOR    0
 #define LIBMLT_VERSION_MINOR    7
-#define LIBMLT_VERSION_REVISION 7
+#define LIBMLT_VERSION_REVISION 8
 #define LIBMLT_VERSION_INT      ((LIBMLT_VERSION_MAJOR<<16)+(LIBMLT_VERSION_MINOR<<8)+LIBMLT_VERSION_REVISION)
 #define LIBMLT_VERSION          STRINGIZE(LIBMLT_VERSION_MAJOR.LIBMLT_VERSION_MINOR.LIBMLT_VERSION_REVISION)
 
