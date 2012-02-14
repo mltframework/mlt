@@ -1,4 +1,617 @@
+2012-02-13  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h,
+  src/melt/melt.c: set version to 0.7.8
+
+  * NEWS: add release notes for v0.7.8
+
+2012-02-12  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/avformat/consumer_avformat.c: Detect video codecs that use the
+  new libavcodec "encode2" method.
+
+2012-02-12  Dan Dennedy <dan@dennedy.org>
+
+  * Makefile, src/modules/core/loader.dict,
+  src/modules/sdl/producer_sdl_image.yml: deprecate sdl_image
+
+  * src/modules/qimage/producer_qimage.c: rename this to self
+
+  * src/modules/gtk2/producer_pixbuf.c: rename this to self
+
+  * src/mlt++/MltFrame.cpp, src/mlt++/MltFrame.h: make Frame::get_position()
+  retrun type consistent
+
+2012-02-12  Simon A. Eugster <simon.eu@gmail.com>
+
+  * src/mlt++/MltFrame.cpp, src/mlt++/MltFrame.h: Add get_position to
+  Mlt::Frame
+
+2012-02-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/transition_vqm.cpp: fix transition vqm build on mingw32
+
+  * src/modules/core/producer_loader.c: support non-explicit abnormal producer
+  usage  Non-explicit means the factory was not supplied with a specific
+  service ID but rather an "abnormal:" prefix to the resource value.
+
+2012-01-27  Ryan Rix <ry@n.rix.si>
+
+  * src/modules/qimage/qimage_wrapper.cpp: Patch to build with GCC 4.7  Built
+  and tested downstream in RPMFusion. This addresses some changes in how GCC
+  4.7 no longer uses unistd by default to keep the global namespace sane.
+
+2012-02-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: Ensure thread cleanup upon stop
+  when an error occurs.  Also, use event consumer-fatal-error to let melt fail
+  with proper exit status.
+
+2012-02-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c: fix possible mem corruption in
+  filter_restricted()
+
+  * src/modules/qimage/transition_vqm.cpp: scale size and position of rendered
+  text with resolution
+
+  * src/modules/qimage/transition_vqm.cpp: add vqm metrics to frame properties
+
+  * src/modules/qimage/transition_vqm.cpp: fix build warning in vqm
+
+  * src/modules/swfdec/configure: fix swfdec/configure appending to config.mak
+
+2012-02-09  Brian Matherly <pez4brian@yahoo.com>
+
+  * Makefile: Exit make with error if any yml validation fails.
+
+2012-02-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/factory.c, src/modules/qimage/transition_vqm.cpp,
+  src/modules/qimage/transition_vqm.yml: add rendering to vqm and yaml service
+  metadata
+
+2012-02-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/Makefile, src/modules/qimage/factory.c,
+  src/modules/qimage/transition_vqm.cpp: add vqm transition
+
+2012-02-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: fix race condition stopping
+  avformat consumer  Reported-by: Maksym Veremeyenko
+
+2012-02-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: only automatically set
+  strict=experimental when acodec=aac (3485119)
+
+2012-02-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: fix color problem with libav
+  (3483629)
+
+2012-02-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avdeinterlace.c: fix crash on private symbol
+  when mmx disabled on libav 0.8 (3483629)
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: fix AVOption processing on ffmpeg
+  0.8
+
+  * src/modules/avformat/consumer_avformat.c: add null pointer check on return
+  from mlt_frame_get_audio
+
+  * src/modules/core/producer_consumer.c: initialize audio_position so first
+  call to get_audio works
+
+2012-02-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: fix getting sample_fmt name
+  crashing on some versions  when av_get_sample_fmt_name exists but not
+  avcodec_get_sample_fmt_name
+
+2012-01-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: fix AVOption processing on libav
+  0.7.3  Patch for consumer by j-b-m and extended to producer by me.
+
+2012-01-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: fix build on ffmpeg 0.6
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/producer_avformat.c: fix SAMPLE_FMT support for v0.6 and
+  less of libav/ffmpeg
+
+  * src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/producer_avformat.c: convert all SAMPLE_FMT_16 to
+  AV_SAMPLE_FMT_16
+
+  * src/modules/xml/consumer_xml.c: fix invalid free when making absolute path
+  relative  Patch by j-b-m and reformatted by me.
+
+  * src/modules/xml/consumer_xml.c: fix string allocation length
+
+  * src/framework/mlt_service.c: correct documentation of
+  mlt_service_disconnect
+
+2012-01-22  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/xml/producer_xml.c: Print useful information for xml parse
+  errors and warnings.  Skip second pass if first pass fails.
+
+2012-01-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: increase sample format support to
+  audio encoding  This also fixes the latest aac encoder, which accepts
+  interleaved float input only.
+
+  * src/modules/core/filter_audiochannels.c,
+  src/modules/core/filter_channelcopy.c, src/modules/core/filter_mono.c: add
+  s32le and f32le format to core audio filters
+
+  * src/framework/mlt_types.h, src/modules/core/filter_audioconvert.c: add
+  support for converting between all audio sample formats
+
+2012-01-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: default to strict=experimental
+  for painless aac encoding
+
+2012-01-23  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/xml/producer_xml.c: Convert producer_xml.c to use
+  mlt_log_warning()
+
+2012-01-22  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/xml/producer_xml.c: Print useful information for xml parse
+  errors.
+
+2012-01-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c: remove old 8-bit only version of xml char
+  filter
+
+2012-01-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c: switch to working wchar version of xml char
+  filter  I want to ensure this works on more platforms before removing the
+  non-
+
+  * src/modules/xml/consumer_xml.c: quick fix for xml containing bad characters
+   Per the XML standard only the following characters are permitted: Char    
+    ::=      #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] |
+  [#x10000-#x10FFFF]  /* any Unicode character, excluding the surrogate
+  blocks, FFFE, and FFFF. */  This fix does not properly handle the ranges for
+  multi-byte characters, but it does remove the invalid single-byte "control
+  characters."
+
+2012-01-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/producer_avformat.c: remove global avformat mutex  and
+  add a local one to the producer for open/close coherency
+
+2012-01-17  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab2.c: fixed bug when resizing in
+  consumer
+
+2012-01-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_producer.h, src/framework/mlt_service.h: update doc on
+  service-change and producer-changed events
+
+  * src/framework/mlt_service.c: fix property-changed becoming a
+  service-changed event (kdenlive-2468)
+
+2012-01-19  j-b-m <jb@kdenlive.org>
+
+  * src/modules/kdenlive/filter_freeze.c: fix freeze filter not retrieving
+  image of frame not within in-out
+
+2012-01-18  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/avformat/factory.c: Add use of av_lockmgr_register in addition
+  to the existing mutex for avformat services.
+
+2012-01-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pango.yml, src/modules/gtk2/producer_pixbuf.yml:
+  document force_aspect_ratio on pango and pixbuf producers
+
+2012-01-14  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/gtk2/producer_pango.c: fix pango's producer force_aspect_ratio
+  property handling
+
+  * docs/mlt-xml.txt: fix tag closing
+
+2012-01-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: fix segfault accessing possible
+  null frame  (only when real_time > 0?)  Patch-by: Maksym Veremeyenko
+
+2012-01-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: enable codec- and format-specific
+  options for v0.7 releases of ffmpeg  (but not libav, which uses v53 of
+  libavformat and libavcodec in its 0.7 releases)
+
+2012-01-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/producer_avformat.c: drop deprecated APIs of
+  libavformat/codec v53
+
+  * src/modules/core/producer_melt.c: fix melt parsing URL with query string 
+  when not followed by -consumer, -profile, or -serialise
+
+2012-01-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/Makefile: fix typo in previous fix for jackrack on
+  Fedora 16 (3468312)
+
+  * src/modules/jackrack/Makefile: fix segfault loading jackrack on Fedora 16
+  (3468312)
+
+2012-01-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/videostab/Makefile: fix videostab sse2 build cont'd
+
+2012-01-02  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab.c,
+  src/modules/videostab/stab/resample.c, src/modules/videostab/stab/resample.h,
+  src/modules/videostab/stab/utils.c, src/modules/videostab/stab/utils.h: do
+  not use lanc_kernels as global var. moved to filter struct
+
+2012-01-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/videostab/Makefile: fix videostab build with sse2
+
+2011-12-28  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/transform_image.c: fixed wrong parameter order
+
+2011-12-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/factory.c: call avformat_network_init()
+
+2011-12-22  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/transform_image.c: use interpolation type from filter
+  also in rgb
+
+  * src/modules/videostab/filter_videostab.c: fixed wrong image format
+
+2011-12-16  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab2.c,
+  src/modules/videostab/stabilize.c, src/modules/videostab/stabilize.h,
+  src/modules/videostab/transform_image.c,
+  src/modules/videostab/transform_image.h: use calloc insteadt of malloc/memset
+  use struct for instance data small cleanup use PIX(n) dont use instable
+  yuv420 use stabilize on grayimage (converted from yuv422)
+
+2011-11-21  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/videostab/stabilize.c, src/modules/videostab/transform_image.c:
+  sse2 updates
+
+2011-12-16  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab.c: image format error fix
+
+2011-12-15  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab2.c: fixed bug, resulting in crash at
+  end and wrong first image
+
+2011-12-22  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/transform_image.c: use interpolation type from filter
+  also in rgb
+
+2011-12-21  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/mlt++/configure: add configure support for GNU Hurd  Patches
+  provided by Patrick Matthäi.
+
+  * src/modules/rtaudio/RtAudio.cpp, src/modules/rtaudio/configure: only build
+  rtaudio for Linux, Windows, or OS X
+
+  * src/framework/Makefile, src/framework/configure,
+  src/framework/mlt_property.h: add support for xlocale.h on FreeBSD  with
+  assistance from Gleb Smirnoff
+
+2011-12-22  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab.c: fixed wrong image format
+
+2011-12-16  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab2.c,
+  src/modules/videostab/stabilize.c, src/modules/videostab/stabilize.h,
+  src/modules/videostab/transform_image.c,
+  src/modules/videostab/transform_image.h: use calloc insteadt of malloc/memset
+  use struct for instance data small cleanup use PIX(n) dont use instable
+  yuv420 use stabilize on grayimage (converted from yuv422)
+
+2011-12-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/factory.c: fix memory leaks in jackrack/ladspa
+  registration
+
+  * src/modules/jackrack/plugin_mgr.c: fix crash at process exit on ladspa
+  plugins (3458967)
+
+  * src/modules/core/producer_noise.c: fix producer noise indicating its audio
+  format
+
+2011-11-21  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/videostab/stabilize.c, src/modules/videostab/transform_image.c:
+  sse2 updates
+
+2011-12-16  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab.c: image format error fix
+
+2011-12-15  gmarco <g.marco@freenet.de>
+
+  * src/modules/videostab/filter_videostab2.c: fixed bug, resulting in crash at
+  end and wrong first image
+
+2011-12-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_consumer.c: fix infinite loop regression with
+  consumer producer on xml (3458967)
+
+2011-12-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/producer_xml.c: add trimming whitespace to some xml values
+  (debian-651604)
+
+  * src/modules/xml/producer_xml.c: stop using this for a variable name
+
+  * src/modules/xml/producer_xml.c: fix crash when fail to load filter or
+  transition (debian-651604)
+
+2011-12-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_colour.c, src/modules/core/producer_noise.c,
+  src/modules/dv/producer_libdv.c, src/modules/frei0r/producer_frei0r.c,
+  src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pixbuf.c,
+  src/modules/qimage/producer_qimage.c, src/modules/sdl/producer_sdl_image.c:
+  add mlt_image_none support to producers
+
+  * src/modules/avformat/producer_avformat.c: if requested image format is
+  none, pick the most suitable mlt format
+
+  * src/framework/mlt_frame.c: do not try to convert image or audio if
+  requested format is none
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h: add consumer
+  properties mlt_image_format and mlt_audio_format
+
+2011-12-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_fieldorder.c,
+  src/modules/core/filter_fieldorder.yml: add meta.swap_fields to the
+  fieldorder filter
+
+2011-12-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/filter_fieldorder.c, src/modules/core/filter_fieldorder.yml,
+  src/modules/core/filter_resize.c, src/modules/core/filter_resize.yml,
+  src/modules/core/loader.ini: refactor field order correction into new filter
+
+2011-12-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/rtaudio/consumer_rtaudio.yml: add metadata yaml for rtaudio
+  consumer
+
+  * src/modules/rtaudio/RtAudio.cpp, src/modules/rtaudio/RtAudio.h,
+  src/modules/rtaudio/consumer_rtaudio.cpp: improve selecting rtaudio device by
+  name
+
+2011-12-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/rtaudio/RtAudio.cpp: fix multiple rtaudio consumers on OSX
+
+  * src/modules/rtaudio/consumer_rtaudio.cpp: fix setting playing member var in
+  rtaudio
+
+2011-12-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/rtaudio/RtAudio.cpp: revert ALSA default PCM
+
+  * src/modules/rtaudio/RtAudio.cpp: fix rtaudio on mingw
+
+2011-11-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/rtaudio/Makefile, src/modules/rtaudio/RtAudio.cpp,
+  src/modules/rtaudio/RtAudio.h, src/modules/rtaudio/RtError.h,
+  src/modules/rtaudio/consumer_rtaudio.cpp: add rtaudio consumer
+
+  * src/modules/core/consumer_multi.c: support consumers that use constructor
+  arg instead of target property
+
+  * src/modules/core/consumer_multi.c: drain nested consumers of multi consumer
+
+  * src/modules/core/consumer_multi.c: fix stopping in multi consumer
+
+2011-11-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c, src/modules/avformat/vdpau.c: fix
+  VDPAU state issues  Patch by Christophe Thommeret
+
+2011-11-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp: fix decklink compile on mingw
+
+2011-11-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/plugin_mgr.c: fix attempt to construct LADSPA plugin
+  with no _init.
+
+  * src/modules/jackrack/plugin_mgr.c: fix loading LADSPA plugins with broken
+  constructor
+
+2011-11-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_factory.c, src/modules/frei0r/factory.c,
+  src/modules/jackrack/plugin_mgr.c: fix frei0r and ladspa loading for
+  relocatable builds
+
+2011-11-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/consumer_multi.c: default multi consumer to real_time=-1 
+  This defaults command line and XML usage most suitable for use with avformat
+  consumer. We still need a way to change multi consumer properties when using
+  more than one -consumer with melt.
+
+2011-11-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_consumer.c: let 'mlt_profile' be a synonym for
+  'profile'  to be consistent with consumer property name for setting profile
+
+  * src/modules/core/consumer_multi.yml: add YAML metadata for multi consumer
+
+  * src/modules/videostab/filter_videostab2.yml: fix parameter type on
+  videostab2 yaml
+
+  * src/modules/core/producer_consumer.yml: document profile=auto for producer
+  consumer
+
+  * src/modules/core/filter_resize.c: fix video glitch seen with multi consumer
+
+  * src/modules/core/consumer_multi.c: add framerate adaption to multi consumer
+
+  * src/framework/mlt_frame.c: make deep mlt_frame_clone more robust
+
+  * src/melt/melt.c: fix using a preset with multi consumer and avformat:file
+
+2011-11-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/producer_xml.c: add support for more than one consumer
+  element in xml
+
+  * src/melt/melt.c, src/modules/core/consumer_multi.c: change property
+  'consumer' to 'mlt_service' consistent with xml
+
+  * src/melt/melt.c: fix using multi consumer only when more than one -consumer
+  arg
+
+  * src/melt/melt.c: add support for multiple -consumer arguments
+
+  * src/modules/core/consumer_multi.c: add support for app-supplied properties
+  objects on multi consumer
+
+  * src/modules/decklink/producer_decklink.cpp: use mlt_frame_clone() instead
+  of local method
+
+  * src/framework/mlt_frame.c, src/framework/mlt_frame.h,
+  src/modules/core/consumer_multi.c: enhance mlt_frame_clone with a
+  deep/shallow parameter
+
+  * src/modules/decklink/producer_decklink.cpp: add caching to decklink
+  producer  Now it supports YADIF deinterlace and framerate conversion.
+
+2011-11-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_consumer.c: add framerate adaption to consumer
+  producer
+
+2011-11-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp: change a decklink log message
+  to debug level
+
+  * src/modules/core/consumer_multi.c: make sure nested consumer gets
+  mlt_profile before 'properties' preset
+
+  * src/framework/mlt_property.c: fix passing property that has both numeric
+  and string types
+
+  * src/modules/avformat/producer_avformat.c: fix possible source_fps
+  inconsistency
+
+2011-11-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/consumer_multi.c: use multi consumer properties if no
+  resource supplied
+
+  * src/modules/core/consumer_multi.c: implement multi consumer
+
+  * src/framework/mlt_producer.c: fix brief description of mlt_producer_clone()
+
+  * src/framework/mlt_frame.c, src/framework/mlt_frame.h: add mlt_frame_clone()
+
+  * src/modules/sdl/consumer_sdl_preview.c: fix crash in sdl_preview with multi
+  consumer
+
+  * src/modules/decklink/consumer_decklink.cpp: fix crash in decklink
+  mlt_consumer_stop()
+
+  * src/modules/decklink/consumer_decklink.cpp: Make decklink
+  mlt_consumer_start more asynchronous.  This puts preroll into a thread to
+  make it more asynchronous - a problem noticed with multi consumer.
+
+2011-11-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/Makefile, src/modules/core/consumer_multi.c,
+  src/modules/core/consumer_multi.yml, src/modules/core/factory.c: add multi
+  consumer (non-functional)
+
+2011-11-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp: improve support for 480 line
+  NTSC in decklink consumer
+
+  * profiles/sdi_486i_5994, profiles/sdi_486p_2398,
+  src/modules/linsys/consumer_SDIstream.c, src/modules/linsys/sdi_generator.c,
+  src/modules/linsys/sdi_generator.h: improve support for 486 line NTSC in
+  linsys sdi consumer
+
+2011-11-11  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/oldfilm/filter_vignette.c: avoid segfault when smooth=0
+
+2011-11-09  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/oldfilm/filter_vignette.yml: added description for vignette
+  change
+
+  * src/modules/oldfilm/filter_vignette.c: use linear or cos for blending
+
+2011-11-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_types.h: fix PATH_MAX undefined
+
+2011-11-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/producer_framebuffer.c: Fix framebuffer producer
+  aspect ratio (kdenlive-2372)
+
+  * configure, src/framework/mlt_version.h: set interim version 0.7.7
+
+  * src/modules/avformat/vdpau.c, src/modules/videostab/stab/estimate.c: build
+  fixes for FreeBSD  patches by Alberto Villa
+
 2011-10-31  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: update changelog for v0.7.6
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: set version
   to 0.7.6
