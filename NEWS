@@ -1,6 +1,20 @@
 MLT Release Notes
 -----------------
 
+Version 0.7.8 - February 13, 2012
+
+This is a bugfix and minor enhancement release.
+
+* Improved support for v53 of libavcodec/libavformat
+* Added "multi" consumer - multiple, simultanous outputs
+* Added framerate adaption to "consumer" producer and "multi" consumer
+* Can now use YADIF deinterlacer with decklink producer
+* Added "rtaudio" consumer for native audio support on multiple platforms
+* Added ability to request image format closest to source (mlt_image_none)
+* Added more audio formats
+* Added vqm (video quality measurement) transition
+
+
 Version 0.7.6 - October 31, 2011
 
 This is a bugfix and minor enhancement release.
