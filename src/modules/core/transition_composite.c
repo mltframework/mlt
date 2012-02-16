@@ -365,13 +365,28 @@ static inline uint8_t sample_mix( uint8_t dest, uint8_t src, int mix )
 
 /** Composite a source line over a destination line
 */
+#if defined(USE_SSE) && defined(ARCH_X86_64)
+#include "composite_line_yuv_sse2_simple.c"
+#endif
 
 static void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step )
 {
-	register int j;
+	register int j = 0;
 	register int mix;
 
-	for ( j = 0; j < width; j ++ )
+#if defined(USE_SSE) && defined(ARCH_X86_64)
+	if ( !luma && width > 7 )
+	{
+		composite_line_yuv_sse2_simple(dest, src, width, alpha_b, alpha_a, weight);
+		j = width - width % 8;
+		dest += j * 2;
+		src += j * 2;
+		alpha_a += j;
+		alpha_b += j;
+	}
+#endif
+
+	for ( ; j < width; j ++ )
 	{
 		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++, step );
 		*dest = sample_mix( *dest, *src++, mix );
