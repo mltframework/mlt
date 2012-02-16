@@ -1023,6 +1023,17 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 			copy = mlt_pool_alloc( size );
 			memcpy( copy, data, size );
 			mlt_properties_set_data( new_props, "image", copy, size, mlt_pool_release, NULL );
+
+			data = mlt_properties_get_data( properties, "alpha", &size );
+			if ( data )
+			{
+				if ( ! size )
+					size = mlt_properties_get_int( properties, "width" ) *
+						mlt_properties_get_int( properties, "height" );
+				copy = mlt_pool_alloc( size );
+				memcpy( copy, data, size );
+				mlt_properties_set_data( new_props, "alpha", copy, size, mlt_pool_release, NULL );
+			};
 		}
 	}
 	else
@@ -1037,6 +1048,8 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 		mlt_properties_set_data( new_props, "audio", data, size, NULL, NULL );
 		data = mlt_properties_get_data( properties, "image", &size );
 		mlt_properties_set_data( new_props, "image", data, size, NULL, NULL );
+		data = mlt_properties_get_data( properties, "alpha", &size );
+		mlt_properties_set_data( new_props, "alpha", data, size, NULL, NULL );
 	}
 
 	return new_frame;
