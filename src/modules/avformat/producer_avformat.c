@@ -115,6 +115,7 @@ struct producer_avformat_s
 	unsigned int invalid_pts_counter;
 	double resample_factor;
 	mlt_cache image_cache;
+	mlt_cache alpha_cache;
 	int colorspace;
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
@@ -1243,7 +1244,7 @@ static mlt_image_format pick_format( enum PixelFormat pix_fmt )
 }
 
 static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
-	mlt_image_format *format, int width, int height, int colorspace )
+	mlt_image_format *format, int width, int height, int colorspace, uint8_t **alpha )
 {
 #ifdef SWSCALE
 	int full_range = -1;
@@ -1255,6 +1256,21 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 #ifdef USE_SSE
 	flags |= SWS_CPU_CAPS_MMX2;
 #endif
+
+	// extract alpha from planar formats
+	if ( ( pix_fmt == PIX_FMT_YUVA420P || pix_fmt == PIX_FMT_YUVA444P ) &&
+		*format != mlt_image_rgb24a && *format != mlt_image_opengl &&
+		frame->data[3] && frame->linesize[3] )
+	{
+		int i;
+		uint8_t *src, *dst;
+
+		dst = *alpha = mlt_pool_alloc( width * height );
+		src = frame->data[3];
+
+		for ( i = 0; i < height; dst += width, src += frame->linesize[3], i++ )
+			memcpy( dst, src, FFMIN( width, frame->linesize[3] ) );
+	}
 
 	if ( *format == mlt_image_yuv420p )
 	{
@@ -1388,9 +1404,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
 
+	uint8_t *alpha = NULL;
+
 	// Get the image cache
 	if ( ! self->image_cache && ! mlt_properties_get_int( properties, "noimagecache" ) )
+	{
 		self->image_cache = mlt_cache_init();
+		self->alpha_cache = mlt_cache_init();
+	}
 	if ( self->image_cache )
 	{
 		mlt_cache_item item = mlt_cache_get( self->image_cache, (void*) position );
@@ -1421,6 +1442,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				mlt_frame_set_image( frame, *buffer, size, NULL );
 			}
 			self->got_picture = 1;
+
+			// check for alpha
+			item = mlt_cache_get( self->alpha_cache, (void*) position );
+			original = mlt_cache_item_data( item, &size );
+			if ( original )
+			{
+				alpha = mlt_pool_alloc( size );
+				memcpy( alpha, original, size );
+				mlt_cache_item_close( item );
+			}
 
 			goto exit_get_image;
 		}
@@ -1464,7 +1495,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	context = self->video_format;
 	stream = context->streams[ self->video_index ];
 	codec_context = stream->codec;
-
 	if ( *format == mlt_image_none ||
 			codec_context->pix_fmt == PIX_FMT_ARGB ||
 			codec_context->pix_fmt == PIX_FMT_RGBA ||
@@ -1495,12 +1525,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
 				convert_image( (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, self->colorspace );
+					PIX_FMT_YUV420P, format, *width, *height, self->colorspace, &alpha );
 			}
 			else
 #endif
 			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
-				format, *width, *height, self->colorspace );
+				format, *width, *height, self->colorspace, &alpha );
 		}
 		else
 			mlt_frame_get_image( frame, buffer, format, width, height, writable );
@@ -1690,7 +1720,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							if ( status == VDP_STATUS_OK )
 							{
 								convert_image( self->av_frame, *buffer, PIX_FMT_YUV420P,
-									format, *width, *height, self->colorspace );
+									format, *width, *height, self->colorspace, &alpha );
 							}
 							else
 							{
@@ -1707,7 +1737,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					else
 #endif
 					convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
-						format, *width, *height, self->colorspace );
+						format, *width, *height, self->colorspace, &alpha );
 					self->top_field_first |= self->av_frame->top_field_first;
 					self->current_position = int_position;
 					self->got_picture = 1;
@@ -1728,6 +1758,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		uint8_t *image = mlt_pool_alloc( image_size );
 		memcpy( image, *buffer, image_size );
 		mlt_cache_put( self->image_cache, (void*) position, image, *format, mlt_pool_release );
+		if ( alpha )
+		{
+			int alpha_size = (*width) * (*height);
+			image = mlt_pool_alloc( alpha_size );
+			memcpy( image, alpha, alpha_size );
+			mlt_cache_put( self->alpha_cache, (void*) position, image, alpha_size, mlt_pool_release );
+		}
 	}
 	// Try to duplicate last image if there was a decoding failure
 	else if ( !image_size && self->av_frame && self->av_frame->linesize[0] )
@@ -1749,12 +1786,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
 				convert_image( (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, self->colorspace );
+					PIX_FMT_YUV420P, format, *width, *height, self->colorspace, &alpha );
 			}
 			else
 #endif
 			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
-				format, *width, *height, self->colorspace );
+				format, *width, *height, self->colorspace, &alpha );
 			self->got_picture = 1;
 		}
 		else
@@ -1785,6 +1822,10 @@ exit_get_image:
 	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+
+	// set alpha
+	if ( alpha )
+		mlt_frame_set_alpha( frame, alpha, (*width) * (*height), mlt_pool_release );
 
 	return !self->got_picture;
 }
@@ -2725,6 +2766,8 @@ static void producer_avformat_close( producer_avformat self )
 #endif
 	if ( self->image_cache )
 		mlt_cache_close( self->image_cache );
+	if ( self->alpha_cache )
+		mlt_cache_close( self->alpha_cache );
 
 	// Cleanup the mutexes
 	pthread_mutex_destroy( &self->audio_mutex );
