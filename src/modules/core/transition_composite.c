@@ -460,8 +460,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int stride_src = geometry.sw * bpp;
 	int stride_dest = width_dest * bpp;
 	int i_softness = ( 1 << 16 ) * softness;
-	int weight = ( ( 1 << 16 ) - 1 ) * geometry.item.mix / 100;
-	uint32_t luma_step = ( ( 1 << 16 ) - 1 ) * geometry.item.mix / 100 * ( 1.0 + softness );
+	int weight = ( ( ( 1 << 16 ) - 1 ) * geometry.item.mix + 50 ) / 100;
+	uint32_t luma_step = ( ( ( 1 << 16 ) - 1 ) * geometry.item.mix + 50 ) / 100 * ( 1.0 + softness );
 
 	// Adjust to consumer scale
 	int x = rint( geometry.item.x * width_dest / geometry.nw );
