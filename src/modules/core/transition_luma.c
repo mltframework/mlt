@@ -28,20 +28,18 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include "transition_composite.h"
 
 static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, int width, int height )
 {
 	int ret = 0;
+	int i = height + 1;
 	int width_src = width, height_src = height;
 	mlt_image_format format = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
-	uint8_t *p, *q;
-	uint8_t *limit;
 	uint8_t *alpha_src;
 	uint8_t *alpha_dst;
-
-	int32_t weigh = weight * ( 1 << 16 );
-	int32_t weigh_complement = ( 1 - weight ) * ( 1 << 16 );
+	int mix = weight * ( 1 << 16 );
 
 	if ( mlt_properties_get( &this->parent, "distort" ) )
 		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &this->parent, "distort" ) );
@@ -54,15 +52,13 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 	width_src = width_src > width ? width : width_src;
 	height_src = height_src > height ? height : height_src;
 	
-	p = p_dest;
-	q = alpha_dst;
-	limit = p_dest + height_src * width_src * 2;
-
-	while ( p < limit )
+	while ( --i )
 	{
-		*p_dest++ = ( *p_src++ * weigh + *p++ * weigh_complement ) >> 16;
-		*p_dest++ = ( *p_src++ * weigh + *p++ * weigh_complement ) >> 16;
-		*alpha_dst++ = ( *alpha_src++ * weigh + *q++ * weigh_complement ) >> 16;
+		composite_line_yuv( p_dest, p_src, width_src, alpha_dst, alpha_src, mix, NULL, 0, 0 );
+		p_src += width_src << 1;
+		p_dest += width << 1;
+		alpha_src += width_src;
+		alpha_dst += width;
 	}
 
 	return ret;
