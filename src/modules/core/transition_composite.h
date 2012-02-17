@@ -27,5 +27,7 @@ extern mlt_transition transition_composite_init( mlt_profile profile, mlt_servic
 
 // Courtesy functionality - allows regionalised filtering
 extern mlt_frame composite_copy_region( mlt_transition, mlt_frame, mlt_position );
+extern void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b,
+                                uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step );
 
 #endif
