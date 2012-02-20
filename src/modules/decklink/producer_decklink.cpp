@@ -357,6 +357,12 @@ public:
 			IDeckLinkVideoInputFrame* video,
 			IDeckLinkAudioInputPacket* audio )
 	{
+		if ( mlt_producer_get_speed( getProducer() ) == 0.0 && !mlt_deque_count( m_queue ))
+		{
+			pthread_cond_broadcast( &m_condition );
+			return S_OK;
+		}
+
 		// Create mlt_frame
 		mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( getProducer() ) );
 
