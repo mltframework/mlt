@@ -156,10 +156,7 @@ static uint8_t *frame_resize_image( mlt_frame this, int owidth, int oheight, int
 		{
 			alpha = resize_alpha( alpha, owidth, oheight, iwidth, iheight, alpha_value );
 			if ( alpha )
-			{
 				mlt_frame_set_alpha( this, alpha, owidth * oheight, mlt_pool_release );
-				this->get_alpha_mask = NULL;
-			}
 		}
 
 		// Return the output

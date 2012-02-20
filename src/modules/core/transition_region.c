@@ -130,8 +130,6 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 		mlt_frame_set_alpha( this, alpha, region_width * region_height, NULL );
 	}
 
-	this->get_alpha_mask = NULL;
-
 	return alpha;
 }
 

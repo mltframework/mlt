@@ -129,7 +129,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			{
 				crop( alpha, newalpha, 1, *width, *height, left, right, top, bottom );
 				mlt_frame_set_alpha( this, newalpha, owidth * oheight, mlt_pool_release );
-				this->get_alpha_mask = NULL;
 			}
 		}
 		*width = owidth;

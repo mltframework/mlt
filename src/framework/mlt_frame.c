@@ -322,6 +322,7 @@ int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_destructo
 
 int mlt_frame_set_alpha( mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy )
 {
+	self->get_alpha_mask = NULL;
 	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "alpha", alpha, size, destroy, NULL );
 }
 
