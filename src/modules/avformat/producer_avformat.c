@@ -1258,7 +1258,11 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 #endif
 
 	// extract alpha from planar formats
-	if ( ( pix_fmt == PIX_FMT_YUVA420P || pix_fmt == PIX_FMT_YUVA444P ) &&
+	if ( ( pix_fmt == PIX_FMT_YUVA420P
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(35<<8)+0)
+			|| pix_fmt == PIX_FMT_YUVA444P
+#endif
+			) &&
 		*format != mlt_image_rgb24a && *format != mlt_image_opengl &&
 		frame->data[3] && frame->linesize[3] )
 	{
