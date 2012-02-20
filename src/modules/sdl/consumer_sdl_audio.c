@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_audio.c -- A Simple DirectMedia Layer audio-only consumer
- * Copyright (C) 2009, 2010 Ushodaya Enterprises Limited
+ * Copyright (C) 2009-2012 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -67,7 +67,7 @@ static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer this, char *name );
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, char *name );
 
 /** This is what will be called by the factory - anything can be passed in
 	via the argument, but keep it simple.
@@ -76,45 +76,45 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer this, char *name
 mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
-	consumer_sdl this = calloc( sizeof( struct consumer_sdl_s ), 1 );
+	consumer_sdl self = calloc( sizeof( struct consumer_sdl_s ), 1 );
 
 	// If no malloc'd and consumer init ok
-	if ( this != NULL && mlt_consumer_init( &this->parent, this, profile ) == 0 )
+	if ( self != NULL && mlt_consumer_init( &self->parent, self, profile ) == 0 )
 	{
 		// Create the queue
-		this->queue = mlt_deque_init( );
+		self->queue = mlt_deque_init( );
 
 		// Get the parent consumer object
-		mlt_consumer parent = &this->parent;
+		mlt_consumer parent = &self->parent;
 
 		// We have stuff to clean up, so override the close method
 		parent->close = consumer_close;
 
 		// get a handle on properties
 		mlt_service service = MLT_CONSUMER_SERVICE( parent );
-		this->properties = MLT_SERVICE_PROPERTIES( service );
+		self->properties = MLT_SERVICE_PROPERTIES( service );
 
 		// Set the default volume
-		mlt_properties_set_double( this->properties, "volume", 1.0 );
+		mlt_properties_set_double( self->properties, "volume", 1.0 );
 
 		// This is the initialisation of the consumer
-		pthread_mutex_init( &this->audio_mutex, NULL );
-		pthread_cond_init( &this->audio_cond, NULL);
-		pthread_mutex_init( &this->video_mutex, NULL );
-		pthread_cond_init( &this->video_cond, NULL);
+		pthread_mutex_init( &self->audio_mutex, NULL );
+		pthread_cond_init( &self->audio_cond, NULL);
+		pthread_mutex_init( &self->video_mutex, NULL );
+		pthread_cond_init( &self->video_cond, NULL);
 
 		// Default scaler (for now we'll use nearest)
-		mlt_properties_set( this->properties, "rescale", "nearest" );
-		mlt_properties_set( this->properties, "deinterlace_method", "onefield" );
+		mlt_properties_set( self->properties, "rescale", "nearest" );
+		mlt_properties_set( self->properties, "deinterlace_method", "onefield" );
 
 		// Default buffer for low latency
-		mlt_properties_set_int( this->properties, "buffer", 1 );
+		mlt_properties_set_int( self->properties, "buffer", 1 );
 
 		// Default audio buffer
-		mlt_properties_set_int( this->properties, "audio_buffer", 2048 );
+		mlt_properties_set_int( self->properties, "audio_buffer", 2048 );
 
 		// Ensure we don't join on a non-running object
-		this->joined = 1;
+		self->joined = 1;
 		
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
@@ -122,16 +122,16 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 		parent->is_stopped = consumer_is_stopped;
 
 		// Initialize the refresh handler
-		pthread_cond_init( &this->refresh_cond, NULL );
-		pthread_mutex_init( &this->refresh_mutex, NULL );
-		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), this, "property-changed", ( mlt_listener )consumer_refresh_cb );
+		pthread_cond_init( &self->refresh_cond, NULL );
+		pthread_mutex_init( &self->refresh_mutex, NULL );
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), self, "property-changed", ( mlt_listener )consumer_refresh_cb );
 
 		// Return the consumer produced
 		return parent;
 	}
 
 	// malloc or consumer init failed
-	free( this );
+	free( self );
 
 	// Indicate failure
 	return NULL;
@@ -141,19 +141,19 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *na
 {
 	if ( !strcmp( name, "refresh" ) )
 	{
-		consumer_sdl this = parent->child;
-		pthread_mutex_lock( &this->refresh_mutex );
-		this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count + 1;
-		pthread_cond_broadcast( &this->refresh_cond );
-		pthread_mutex_unlock( &this->refresh_mutex );
+		consumer_sdl self = parent->child;
+		pthread_mutex_lock( &self->refresh_mutex );
+		self->refresh_count = self->refresh_count <= 0 ? 1 : self->refresh_count + 1;
+		pthread_cond_broadcast( &self->refresh_cond );
+		pthread_mutex_unlock( &self->refresh_mutex );
 	}
 }
 
 int consumer_start( mlt_consumer parent )
 {
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
-	if ( !this->running )
+	if ( !self->running )
 	{
 		consumer_stop( parent );
 
@@ -166,9 +166,9 @@ int consumer_start( mlt_consumer parent )
 			return -1;
 		}
 
-		this->running = 1;
-		this->joined = 0;
-		pthread_create( &this->thread, NULL, consumer_thread, this );
+		self->running = 1;
+		self->joined = 0;
+		pthread_create( &self->thread, NULL, consumer_thread, self );
 	}
 
 	return 0;
@@ -177,34 +177,34 @@ int consumer_start( mlt_consumer parent )
 int consumer_stop( mlt_consumer parent )
 {
 	// Get the actual object
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
-	if ( this->running && !this->joined )
+	if ( self->running && !self->joined )
 	{
 		// Kill the thread and clean up
-		this->joined = 1;
-		this->running = 0;
+		self->joined = 1;
+		self->running = 0;
 
 		// Unlatch the consumer thread
-		pthread_mutex_lock( &this->refresh_mutex );
-		pthread_cond_broadcast( &this->refresh_cond );
-		pthread_mutex_unlock( &this->refresh_mutex );
+		pthread_mutex_lock( &self->refresh_mutex );
+		pthread_cond_broadcast( &self->refresh_cond );
+		pthread_mutex_unlock( &self->refresh_mutex );
 
 		// Cleanup the main thread
 #ifndef WIN32
-		if ( this->thread )
+		if ( self->thread )
 #endif
-			pthread_join( this->thread, NULL );
+			pthread_join( self->thread, NULL );
 
 		// Unlatch the video thread
-		pthread_mutex_lock( &this->video_mutex );
-		pthread_cond_broadcast( &this->video_cond );
-		pthread_mutex_unlock( &this->video_mutex );
+		pthread_mutex_lock( &self->video_mutex );
+		pthread_cond_broadcast( &self->video_cond );
+		pthread_mutex_unlock( &self->video_mutex );
 
 		// Unlatch the audio callback
-		pthread_mutex_lock( &this->audio_mutex );
-		pthread_cond_broadcast( &this->audio_cond );
-		pthread_mutex_unlock( &this->audio_mutex );
+		pthread_mutex_lock( &self->audio_mutex );
+		pthread_cond_broadcast( &self->audio_cond );
+		pthread_mutex_unlock( &self->audio_mutex );
 
 		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 	}
@@ -214,36 +214,36 @@ int consumer_stop( mlt_consumer parent )
 
 int consumer_is_stopped( mlt_consumer parent )
 {
-	consumer_sdl this = parent->child;
-	return !this->running;
+	consumer_sdl self = parent->child;
+	return !self->running;
 }
 
 static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 {
-	consumer_sdl this = udata;
+	consumer_sdl self = udata;
 
 	// Get the volume
-	double volume = mlt_properties_get_double( this->properties, "volume" );
+	double volume = mlt_properties_get_double( self->properties, "volume" );
 
-	pthread_mutex_lock( &this->audio_mutex );
+	pthread_mutex_lock( &self->audio_mutex );
 
 	// Block until audio received
-	while ( this->running && len > this->audio_avail )
-		pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
+	while ( self->running && len > self->audio_avail )
+		pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
 
-	if ( this->audio_avail >= len )
+	if ( self->audio_avail >= len )
 	{
 		// Place in the audio buffer
 		if ( volume != 1.0 )
-			SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+			SDL_MixAudio( stream, self->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 		else
-			memcpy( stream, this->audio_buffer, len );
+			memcpy( stream, self->audio_buffer, len );
 
 		// Remove len from the audio available
-		this->audio_avail -= len;
+		self->audio_avail -= len;
 
 		// Remove the samples
-		memmove( this->audio_buffer, this->audio_buffer + len, this->audio_avail );
+		memmove( self->audio_buffer, self->audio_buffer + len, self->audio_avail );
 	}
 	else
 	{
@@ -251,23 +251,23 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		memset( stream, 0, len );
 
 		// Mix the audio 
-		SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+		SDL_MixAudio( stream, self->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
 		// No audio left
-		this->audio_avail = 0;
+		self->audio_avail = 0;
 	}
 
 	// We're definitely playing now
-	this->playing = 1;
+	self->playing = 1;
 
-	pthread_cond_broadcast( &this->audio_cond );
-	pthread_mutex_unlock( &this->audio_mutex );
+	pthread_cond_broadcast( &self->audio_cond );
+	pthread_mutex_unlock( &self->audio_mutex );
 }
 
-static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_audio, int *duration )
+static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_audio, int *duration )
 {
 	// Get the properties of this consumer
-	mlt_properties properties = this->properties;
+	mlt_properties properties = self->properties;
 	mlt_audio_format afmt = mlt_audio_s16;
 
 	// Set the preferred params of the test card signal
@@ -275,7 +275,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	int frequency = mlt_properties_get_int( properties, "frequency" );
 	static int counter = 0;
 
-	int samples = mlt_sample_calculator( mlt_properties_get_double( this->properties, "fps" ), frequency, counter++ );
+	int samples = mlt_sample_calculator( mlt_properties_get_double( self->properties, "fps" ), frequency, counter++ );
 	
 	int16_t *pcm;
 	int bytes;
@@ -285,7 +285,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 	if ( mlt_properties_get_int( properties, "audio_off" ) )
 	{
-		this->playing = 1;
+		self->playing = 1;
 		init_audio = 1;
 		return init_audio;
 	}
@@ -299,16 +299,16 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 		// specify audio format
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
-		this->playing = 0;
+		self->playing = 0;
 		request.freq = frequency;
 		request.format = AUDIO_S16SYS;
 		request.channels = channels;
 		request.samples = audio_buffer;
 		request.callback = sdl_fill_audio;
-		request.userdata = (void *)this;
+		request.userdata = (void *)self;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
 		{
-			mlt_log_error( MLT_CONSUMER_SERVICE( this ), "SDL failed to open audio: %s\n", SDL_GetError() );
+			mlt_log_error( MLT_CONSUMER_SERVICE( self ), "SDL failed to open audio: %s\n", SDL_GetError() );
 			init_audio = 2;
 		}
 		else if ( got.size != 0 )
@@ -322,33 +322,33 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	{
 		mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 		bytes = ( samples * channels * 2 );
-		pthread_mutex_lock( &this->audio_mutex );
-		while ( this->running && bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
-			pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
-		if ( this->running )
+		pthread_mutex_lock( &self->audio_mutex );
+		while ( self->running && bytes > ( sizeof( self->audio_buffer) - self->audio_avail ) )
+			pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
+		if ( self->running )
 		{
 			if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
-				memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
+				memcpy( &self->audio_buffer[ self->audio_avail ], pcm, bytes );
 			else
-				memset( &this->audio_buffer[ this->audio_avail ], 0, bytes );
-			this->audio_avail += bytes;
+				memset( &self->audio_buffer[ self->audio_avail ], 0, bytes );
+			self->audio_avail += bytes;
 		}
-		pthread_cond_broadcast( &this->audio_cond );
-		pthread_mutex_unlock( &this->audio_mutex );
+		pthread_cond_broadcast( &self->audio_cond );
+		pthread_mutex_unlock( &self->audio_mutex );
 	}
 	else
 	{
-		this->playing = 1;
+		self->playing = 1;
 	}
 
 	return init_audio;
 }
 
-static int consumer_play_video( consumer_sdl this, mlt_frame frame )
+static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 {
 	// Get the properties of this consumer
-	mlt_properties properties = this->properties;
-	if ( this->running && !mlt_consumer_is_stopped( &this->parent ) )
+	mlt_properties properties = self->properties;
+	if ( self->running && !mlt_consumer_is_stopped( &self->parent ) )
 		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 	return 0;
@@ -357,7 +357,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 static void *video_thread( void *arg )
 {
 	// Identify the arg
-	consumer_sdl this = arg;
+	consumer_sdl self = arg;
 
 	// Obtain time of thread start
 	struct timeval now;
@@ -369,7 +369,7 @@ static void *video_thread( void *arg )
 	double speed = 0;
 
 	// Get real time flag
-	int real_time = mlt_properties_get_int( this->properties, "real_time" );
+	int real_time = mlt_properties_get_int( self->properties, "real_time" );
 
 	// Get the current time
 	gettimeofday( &now, NULL );
@@ -377,19 +377,19 @@ static void *video_thread( void *arg )
 	// Determine start time
 	start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
 
-	while ( this->running )
+	while ( self->running )
 	{
 		// Pop the next frame
-		pthread_mutex_lock( &this->video_mutex );
-		next = mlt_deque_pop_front( this->queue );
-		while ( next == NULL && this->running )
+		pthread_mutex_lock( &self->video_mutex );
+		next = mlt_deque_pop_front( self->queue );
+		while ( next == NULL && self->running )
 		{
-			pthread_cond_wait( &this->video_cond, &this->video_mutex );
-			next = mlt_deque_pop_front( this->queue );
+			pthread_cond_wait( &self->video_cond, &self->video_mutex );
+			next = mlt_deque_pop_front( self->queue );
 		}
-		pthread_mutex_unlock( &this->video_mutex );
+		pthread_mutex_unlock( &self->video_mutex );
 
-		if ( !this->running || next == NULL ) break;
+		if ( !self->running || next == NULL ) break;
 
 		// Get the properties
 		properties =  MLT_FRAME_PROPERTIES( next );
@@ -404,7 +404,7 @@ static void *video_thread( void *arg )
 		elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - start;
 
 		// See if we have to delay the display of the current frame
-		if ( mlt_properties_get_int( properties, "rendered" ) == 1 && this->running )
+		if ( mlt_properties_get_int( properties, "rendered" ) == 1 && self->running )
 		{
 			// Obtain the scheduled playout time
 			int64_t scheduled = mlt_properties_get_int( properties, "playtime" );
@@ -421,11 +421,11 @@ static void *video_thread( void *arg )
 			}
 
 			// Show current frame if not too old
-			if ( !real_time || ( difference > -10000 || speed != 1.0 || mlt_deque_count( this->queue ) < 2 ) )
-				consumer_play_video( this, next );
+			if ( !real_time || ( difference > -10000 || speed != 1.0 || mlt_deque_count( self->queue ) < 2 ) )
+				consumer_play_video( self, next );
 
 			// If the queue is empty, recalculate start to allow build up again
-			if ( real_time && ( mlt_deque_count( this->queue ) == 0 && speed == 1.0 ) )
+			if ( real_time && ( mlt_deque_count( self->queue ) == 0 && speed == 1.0 ) )
 			{
 				gettimeofday( &now, NULL );
 				start = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - scheduled + 20000;
@@ -440,7 +440,7 @@ static void *video_thread( void *arg )
 	if ( next != NULL )
 		mlt_frame_close( next );
 
-	mlt_consumer_stopped( &this->parent );
+	mlt_consumer_stopped( &self->parent );
 
 	return NULL;
 }
@@ -451,10 +451,10 @@ static void *video_thread( void *arg )
 static void *consumer_thread( void *arg )
 {
 	// Identify the arg
-	consumer_sdl this = arg;
+	consumer_sdl self = arg;
 
 	// Get the consumer
-	mlt_consumer consumer = &this->parent;
+	mlt_consumer consumer = &self->parent;
 
 	// Get the properties
 	mlt_properties consumer_props = MLT_CONSUMER_PROPERTIES( consumer );
@@ -471,10 +471,10 @@ static void *consumer_thread( void *arg )
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
 //	int last_position = -1;
-	this->refresh_count = 0;
+	self->refresh_count = 0;
 
 	// Loop until told not to
-	while( this->running )
+	while( self->running )
 	{
 		// Get a frame from the attached producer
 		frame = mlt_consumer_rt_frame( consumer );
@@ -497,13 +497,13 @@ static void *consumer_thread( void *arg )
 			mlt_events_unblock( consumer_props, consumer_props );
 
 			// Play audio
-			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
+			init_audio = consumer_play_audio( self, frame, init_audio, &duration );
 
 			// Determine the start time now
-			if ( this->playing && init_video )
+			if ( self->playing && init_video )
 			{
 				// Create the video thread
-				pthread_create( &thread, NULL, video_thread, this );
+				pthread_create( &thread, NULL, video_thread, self );
 
 				// Video doesn't need to be initialised any more
 				init_video = 0;
@@ -512,31 +512,31 @@ static void *consumer_thread( void *arg )
 			// Set playtime for this frame
 			mlt_properties_set_int( properties, "playtime", playtime );
 
-			while ( this->running && speed != 0 && mlt_deque_count( this->queue ) > 15 )
+			while ( self->running && speed != 0 && mlt_deque_count( self->queue ) > 15 )
 				nanosleep( &tm, NULL );
 
 			// Push this frame to the back of the queue
-			if ( this->running && speed )
+			if ( self->running && speed )
 			{
-				pthread_mutex_lock( &this->video_mutex );
-				mlt_deque_push_back( this->queue, frame );
-				pthread_cond_broadcast( &this->video_cond );
-				pthread_mutex_unlock( &this->video_mutex );
+				pthread_mutex_lock( &self->video_mutex );
+				mlt_deque_push_back( self->queue, frame );
+				pthread_cond_broadcast( &self->video_cond );
+				pthread_mutex_unlock( &self->video_mutex );
 
 				// Calculate the next playtime
 				playtime += ( duration * 1000 );
 			}
-			else if ( this->running )
+			else if ( self->running )
 			{
-				pthread_mutex_lock( &this->refresh_mutex );
-				if ( refresh == 0 && this->refresh_count <= 0 )
+				pthread_mutex_lock( &self->refresh_mutex );
+				if ( refresh == 0 && self->refresh_count <= 0 )
 				{
-					consumer_play_video( this, frame );
-					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
+					consumer_play_video( self, frame );
+					pthread_cond_wait( &self->refresh_cond, &self->refresh_mutex );
 				}
 				mlt_frame_close( frame );
-				this->refresh_count --;
-				pthread_mutex_unlock( &this->refresh_mutex );
+				self->refresh_count --;
+				pthread_mutex_unlock( &self->refresh_mutex );
 			}
 			else
 			{
@@ -563,16 +563,16 @@ static void *consumer_thread( void *arg )
 	// Kill the video thread
 	if ( init_video == 0 )
 	{
-		pthread_mutex_lock( &this->video_mutex );
-		pthread_cond_broadcast( &this->video_cond );
-		pthread_mutex_unlock( &this->video_mutex );
+		pthread_mutex_lock( &self->video_mutex );
+		pthread_cond_broadcast( &self->video_cond );
+		pthread_mutex_unlock( &self->video_mutex );
 		pthread_join( thread, NULL );
 	}
 
-	while( mlt_deque_count( this->queue ) )
-		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
+	while( mlt_deque_count( self->queue ) )
+		mlt_frame_close( mlt_deque_pop_back( self->queue ) );
 
-	this->audio_avail = 0;
+	self->audio_avail = 0;
 
 	return NULL;
 }
@@ -583,7 +583,7 @@ static void *consumer_thread( void *arg )
 static void consumer_close( mlt_consumer parent )
 {
 	// Get the actual object
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
 	// Stop the consumer
 	mlt_consumer_stop( parent );
@@ -592,16 +592,16 @@ static void consumer_close( mlt_consumer parent )
 	mlt_consumer_close( parent );
 
 	// Close the queue
-	mlt_deque_close( this->queue );
+	mlt_deque_close( self->queue );
 
 	// Destroy mutexes
-	pthread_mutex_destroy( &this->audio_mutex );
-	pthread_cond_destroy( &this->audio_cond );
-	pthread_mutex_destroy( &this->video_mutex );
-	pthread_cond_destroy( &this->video_cond );
-	pthread_mutex_destroy( &this->refresh_mutex );
-	pthread_cond_destroy( &this->refresh_cond );
+	pthread_mutex_destroy( &self->audio_mutex );
+	pthread_cond_destroy( &self->audio_cond );
+	pthread_mutex_destroy( &self->video_mutex );
+	pthread_cond_destroy( &self->video_cond );
+	pthread_mutex_destroy( &self->refresh_mutex );
+	pthread_cond_destroy( &self->refresh_cond );
 
 	// Finally clean up this
-	free( this );
+	free( self );
 }
