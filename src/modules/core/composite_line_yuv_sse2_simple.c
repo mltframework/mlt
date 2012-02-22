@@ -162,6 +162,6 @@ void composite_line_yuv_sse2_simple(uint8_t *dest, uint8_t *src, int width, uint
 
         :
         : "r" (weight >> 8), "r" (alpha_b), "r" (src), "r" (dest), "r" (const1) , "r" (alpha_a), "r" (width / 8)
-        : //"xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","xmm8","xmm9", "memory"
+        //: "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","xmm8","xmm9", "memory"
     );
 };
