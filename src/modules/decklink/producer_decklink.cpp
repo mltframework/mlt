@@ -357,7 +357,8 @@ public:
 			IDeckLinkVideoInputFrame* video,
 			IDeckLinkAudioInputPacket* audio )
 	{
-		if ( mlt_producer_get_speed( getProducer() ) == 0.0 && !mlt_deque_count( m_queue ))
+		if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "preview" ) &&
+			mlt_producer_get_speed( getProducer() ) == 0.0 && !mlt_deque_count( m_queue ))
 		{
 			pthread_cond_broadcast( &m_condition );
 			return S_OK;

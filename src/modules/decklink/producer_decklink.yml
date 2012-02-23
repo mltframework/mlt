@@ -75,3 +75,12 @@ parameters:
     default: 0
     unit: lines
     widget: spinner
+
+  - identifier: preview
+    title: Enable preview
+    description: Support preview monitoring when paused (speed = 0).
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
