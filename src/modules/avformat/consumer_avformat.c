@@ -365,7 +365,7 @@ static int consumer_stop( mlt_consumer consumer )
 		// Wait for termination
 		pthread_join( *thread, NULL );
 
-		mlt_properties_set( properties, "thread", NULL );
+		mlt_properties_set_data( properties, "thread", NULL, 0, NULL, NULL );
 	}
 
 	return 0;
