@@ -161,8 +161,8 @@ void Profile::set_colorspace( int colorspace )
 
 void Profile::set_frame_rate( int numerator, int denominator )
 {
-	instance->sample_aspect_num = numerator;
-	instance->sample_aspect_den = denominator;
+	instance->frame_rate_num = numerator;
+	instance->frame_rate_den = denominator;
 }
 
 void Profile::set_explicit( int boolean )
