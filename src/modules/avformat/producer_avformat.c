@@ -329,6 +329,10 @@ static mlt_properties find_default_streams( producer_avformat self )
 				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->sample_aspect_ratio ) );
 #endif
+				snprintf( key, sizeof(key), "meta.media.%d.codec.width", i );
+				mlt_properties_set_int( meta_media, key, codec_context->width );
+				snprintf( key, sizeof(key), "meta.media.%d.codec.height", i );
+				mlt_properties_set_int( meta_media, key, codec_context->height );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.frame_rate", i );
 				mlt_properties_set_double( meta_media, key, (double) codec_context->time_base.den /
 										   ( codec_context->time_base.num == 0 ? 1 : codec_context->time_base.num ) );
