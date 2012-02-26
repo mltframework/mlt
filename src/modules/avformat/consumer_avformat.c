@@ -237,7 +237,11 @@ static int consumer_start( mlt_consumer consumer )
 		mlt_properties_set_data( properties, "acodec", codecs, 0, (mlt_destructor) mlt_properties_close, NULL );
 		mlt_properties_set_data( doc, "audio_codecs", codecs, 0, NULL, NULL );
 		while ( ( codec = av_codec_next( codec ) ) )
+#if LIBAVCODEC_VERSION_INT >= ((53<<16)+(34<<8)+0)
+			if ( ( codec->encode || codec->encode2 ) && codec->type == CODEC_TYPE_AUDIO )
+#else
 			if ( codec->encode && codec->type == CODEC_TYPE_AUDIO )
+#endif
 			{
 				snprintf( key, sizeof(key), "%d", mlt_properties_count( codecs ) );
 				mlt_properties_set( codecs, key, codec->name );
