@@ -196,6 +196,71 @@ static void load_filenames( producer_pixbuf self, mlt_properties producer_proper
 	self->count = mlt_properties_count( self->filenames );
 }
 
+static GdkPixbuf* reorient_with_exif( producer_pixbuf self, int image_idx, GdkPixbuf *pixbuf )
+{
+#ifdef USE_EXIF
+	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( &self->parent );
+	ExifData *d = exif_data_new_from_file( mlt_properties_get_value( self->filenames, image_idx ) );
+	ExifEntry *entry;
+	int exif_orientation = 0;
+
+	/* get orientation and rotate image accordingly if necessary */
+	if (d)
+	{
+		if ( ( entry = exif_content_get_entry ( d->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION ) ) )
+			exif_orientation = exif_get_short (entry->data, exif_data_get_byte_order (d));
+
+		/* Free the EXIF data */
+		exif_data_unref(d);
+	}
+
+	// Remember EXIF value, might be useful for someone
+	mlt_properties_set_int( producer_props, "_exif_orientation" , exif_orientation );
+
+	if ( exif_orientation > 1 )
+	{
+		GdkPixbuf *processed = NULL;
+		GdkPixbufRotation matrix = GDK_PIXBUF_ROTATE_NONE;
+
+		// Rotate image according to exif data
+		switch ( exif_orientation ) {
+		  case 2:
+			  processed = gdk_pixbuf_flip ( pixbuf, TRUE );
+			  break;
+		  case 3:
+			  matrix = GDK_PIXBUF_ROTATE_UPSIDEDOWN;
+			  processed = pixbuf;
+			  break;
+		  case 4:
+			  processed = gdk_pixbuf_flip ( pixbuf, FALSE );
+			  break;
+		  case 5:
+			  matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
+			  processed = gdk_pixbuf_flip ( pixbuf, TRUE );
+			  break;
+		  case 6:
+			  matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
+			  processed = pixbuf;
+			  break;
+		  case 7:
+			  matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
+			  processed = gdk_pixbuf_flip ( pixbuf, TRUE );
+			  break;
+		  case 8:
+			  matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
+			  processed = pixbuf;
+			  break;
+		}
+		if ( processed )
+		{
+			pixbuf = gdk_pixbuf_rotate_simple( processed, matrix );
+			g_object_unref( processed );
+		}
+	}
+#endif
+	return pixbuf;
+}
+
 static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int height )
 {
 	// Obtain properties of frame
@@ -257,64 +322,9 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 
 		if ( pixbuf )
 		{
-#ifdef USE_EXIF
 			// Read the exif value for this file
-			if ( disable_exif == 0) {
-				ExifData *d = exif_data_new_from_file( mlt_properties_get_value( self->filenames, image_idx ) );
-				ExifEntry *entry;
-				int exif_orientation = 0;
-
-				/* get orientation and rotate image accordingly if necessary */
-				if (d) {
-					if ( ( entry = exif_content_get_entry ( d->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION ) ) )
-						exif_orientation = exif_get_short (entry->data, exif_data_get_byte_order (d));
-
-					/* Free the EXIF data */
-					exif_data_unref(d);
-				}
-				
-				// Remember EXIF value, might be useful for someone
-				mlt_properties_set_int( producer_props, "_exif_orientation" , exif_orientation );
-
-				if ( exif_orientation > 1 )
-				{
-					GdkPixbuf *processed = NULL;
-					GdkPixbufRotation matrix = GDK_PIXBUF_ROTATE_NONE;
-
-					// Rotate image according to exif data
-					switch ( exif_orientation ) {
-					  case 2:
-					      processed = gdk_pixbuf_flip ( pixbuf, TRUE );
-					      break;
-					  case 3:
-					      matrix = GDK_PIXBUF_ROTATE_UPSIDEDOWN;
-					      processed = pixbuf;
-					      break;
-					  case 4:
-					      processed = gdk_pixbuf_flip ( pixbuf, FALSE );
-					      break;
-					  case 5:
-					      matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
-					      processed = gdk_pixbuf_flip ( pixbuf, TRUE );
-					      break;
-					  case 6:
-					      matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
-					      processed = pixbuf;
-					      break;
-					  case 7:
-					      matrix = GDK_PIXBUF_ROTATE_CLOCKWISE;
-					      processed = gdk_pixbuf_flip ( pixbuf, TRUE );
-					      break;
-					  case 8:
-					      matrix = GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE;
-					      processed = pixbuf;
-					      break;
-					}
-					if ( processed )
-						pixbuf = gdk_pixbuf_rotate_simple( processed, matrix );
-				}
-			}
-#endif
+			if ( !disable_exif )
+				pixbuf = reorient_with_exif( self, image_idx, pixbuf );
 
 			// Register this pixbuf for destruction and reuse
 			mlt_cache_item_close( pixbuf_cache );
