@@ -207,11 +207,6 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 	// Obtain properties of producer
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Obtain the cache flag and structure
-	int use_cache = mlt_properties_get_int( producer_props, "cache" );
-	mlt_properties cache = mlt_properties_get_data( producer_props, "_cache", NULL );
-	int update_cache = 0;
-
 	// restore GdkPixbuf
 	pthread_mutex_lock( &self->mutex );
 	mlt_cache_item pixbuf_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf" );
@@ -246,32 +241,6 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 
 	pthread_mutex_lock( &g_mutex );
 
-	// Check if the frame is already loaded
-	if ( use_cache )
-	{
-		if ( cache == NULL )
-		{
-			cache = mlt_properties_new( );
-			mlt_properties_set_data( producer_props, "_cache", cache, 0, ( mlt_destructor )mlt_properties_close, NULL );
-		}
-
-		mlt_frame cached = mlt_properties_get_data( cache, image_key, NULL );
-
-		if ( cached )
-		{
-			self->image_idx = image_idx;
-			mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
-			self->width = mlt_properties_get_int( cached_props, "width" );
-			self->height = mlt_properties_get_int( cached_props, "height" );
-			mlt_properties_set_int( producer_props, "_real_width", mlt_properties_get_int( cached_props, "real_width" ) );
-			mlt_properties_set_int( producer_props, "_real_height", mlt_properties_get_int( cached_props, "real_height" ) );
-			self->image = mlt_properties_get_data( cached_props, "image", NULL );
-			self->alpha = mlt_properties_get_int( cached_props, "alpha" );
-
-			if ( width != 0 && ( width != self->width || height != self->height ) )
-				self->image = NULL;
-		}
-	}
 	int disable_exif = mlt_properties_get_int( producer_props, "disable_exif" );
 	
 	// optimization for subsequent iterations on single picture
@@ -408,17 +377,13 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 		{
 			memcpy( self->image, gdk_pixbuf_get_pixels( pixbuf ), src_stride * height );
 		}
-		if ( !use_cache )
-			mlt_cache_item_close( self->image_cache );
+		mlt_cache_item_close( self->image_cache );
 		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image", self->image, image_size, mlt_pool_release );
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image" );
 		self->image_idx = image_idx;
 
 		// Finished with pixbuf now
 		g_object_unref( pixbuf );
-
-		// Ensure we update the cache when we need to
-		update_cache = use_cache;
 	}
 
 	// release references no longer needed
@@ -434,19 +399,6 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 	mlt_properties_set_int( properties, "height", self->height );
 	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
 	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
-
-	if ( update_cache )
-	{
-		mlt_frame cached = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
-		mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
-		mlt_properties_set_int( cached_props, "width", self->width );
-		mlt_properties_set_int( cached_props, "height", self->height );
-		mlt_properties_set_int( cached_props, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
-		mlt_properties_set_int( cached_props, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
-		mlt_frame_set_image( cached, self->image, self->width * ( self->alpha ? 4 : 3 ) * self->height, mlt_pool_release );
-		mlt_properties_set_int( cached_props, "alpha", self->alpha );
-		mlt_properties_set_data( cache, image_key, cached, 0, ( mlt_destructor )mlt_frame_close, NULL );
-	}
 
 	pthread_mutex_unlock( &g_mutex );
 }
