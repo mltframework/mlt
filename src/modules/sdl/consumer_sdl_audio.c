@@ -33,8 +33,6 @@
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
-#define MIN(a,b) ((a) > (b) ? (b) : (a))
-
 /** This classes definition.
 */
 
@@ -230,7 +228,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	pthread_mutex_lock( &self->audio_mutex );
 
 	// Block until audio received
-#ifndef WIN32
+#ifdef __DARWIN__
 	while ( self->running && len > self->audio_avail )
 		pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
 #endif
@@ -255,7 +253,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		memset( stream, 0, len );
 
 		// Mix the audio
-		SDL_MixAudio( stream, self->audio_buffer, MIN(len, self->audio_avail),
+		SDL_MixAudio( stream, self->audio_buffer, self->audio_avail,
 			( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
 		// No audio left
