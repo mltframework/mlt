@@ -23,7 +23,7 @@ parameters:
     type: string
     description: >
         The name of a graphics file loadable by a gdk-pixbuf loader. 
-        See /usr/lib/gdk-pixbuf/loaders.
+        See the output of gdk-pixbuf-query-loaders.
         Definitely png, jpeg, tiff, pnm, and xpm will work.
         
         If "%" in filename, the filename is used with sprintf generate a 

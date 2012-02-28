@@ -117,7 +117,7 @@ parameters:
       
       Mix is always a 2 digit percentage, defaults to 100.
     type: geometry
-    default: "85%/5%:10%x10%"
+    default: "0%/0%:100%x100%"
     readonly: no
     mutable: yes
   - identifier: end
