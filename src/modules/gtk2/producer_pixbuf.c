@@ -370,15 +370,15 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 
 		// Note - the original pixbuf is already safe and ready for destruction
 		pthread_mutex_lock( &g_mutex );
-		self->pixbuf = gdk_pixbuf_scale_simple( self->pixbuf, width, height, interp );
+		GdkPixbuf* pixbuf = gdk_pixbuf_scale_simple( self->pixbuf, width, height, interp );
 
 		// Store width and height
 		self->width = width;
 		self->height = height;
 
 		// Allocate/define image
-		int has_alpha = gdk_pixbuf_get_has_alpha( self->pixbuf );
-		int src_stride = gdk_pixbuf_get_rowstride( self->pixbuf );
+		int has_alpha = gdk_pixbuf_get_has_alpha( pixbuf );
+		int src_stride = gdk_pixbuf_get_rowstride( pixbuf );
 		int dst_stride = self->width * ( has_alpha ? 4 : 3 );
 		int image_size = dst_stride * ( height + 1 );
 		self->image = mlt_pool_alloc( image_size );
@@ -387,7 +387,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		if ( src_stride != dst_stride )
 		{
 			int y = self->height;
-			uint8_t *src = gdk_pixbuf_get_pixels( self->pixbuf );
+			uint8_t *src = gdk_pixbuf_get_pixels( pixbuf );
 			uint8_t *dst = self->image;
 			while ( y-- )
 			{
@@ -398,7 +398,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		}
 		else
 		{
-			memcpy( self->image, gdk_pixbuf_get_pixels( self->pixbuf ), src_stride * height );
+			memcpy( self->image, gdk_pixbuf_get_pixels( pixbuf ), src_stride * height );
 		}
 		pthread_mutex_unlock( &g_mutex );
 
@@ -410,6 +410,8 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 			// First, set the image so it can be converted when we get it
 			mlt_frame_set_image( frame, self->image, image_size, mlt_pool_release );
 			mlt_properties_set_int( properties, "format", self->format );
+			mlt_properties_set_int( properties, "width", width );
+			mlt_properties_set_int( properties, "height", height );
 			self->format = format;
 
 			// get_image will do the format conversion
@@ -438,14 +440,12 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha" );
 
 		// Finished with pixbuf now
-		g_object_unref( self->pixbuf );
+		g_object_unref( pixbuf );
 	}
 
 	// Set width/height of frame
 	mlt_properties_set_int( properties, "width", self->width );
 	mlt_properties_set_int( properties, "height", self->height );
-	mlt_properties_set_int( properties, "real_width", self->pixbuf_width );
-	mlt_properties_set_int( properties, "real_height", self->pixbuf_height );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
