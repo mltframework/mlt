@@ -58,15 +58,17 @@ struct producer_pixbuf_s
 	int pixbuf_height;
 	int width;
 	int height;
-	int alpha;
+	uint8_t *alpha;
 	uint8_t *image;
 	mlt_cache_item image_cache;
+	mlt_cache_item alpha_cache;
 	mlt_cache_item pixbuf_cache;
 	GdkPixbuf *pixbuf;
+	mlt_image_format format;
 };
 
 static void load_filenames( producer_pixbuf self, mlt_properties producer_properties );
-static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int height );
+static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame );
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
@@ -102,7 +104,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 				mlt_properties_set_data( frame_properties, "producer_pixbuf", self, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 				mlt_properties_set_position( frame_properties, "pixbuf_position", mlt_producer_position( producer ) );
-				refresh_image( self, frame, 0, 0 );
+				refresh_pixbuf( self, frame );
 				mlt_frame_close( frame );
 			}
 		}
@@ -338,7 +340,7 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 	return current_idx;
 }
 
-static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int height )
+static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_format format, int width, int height )
 {
 	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -354,7 +356,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 		self->image, self->pixbuf, current_idx, self->image_idx, self->pixbuf_idx, width );
 
 	// If we have a pixbuf and we need an image
-	if ( self->pixbuf && width > 0 && !self->image )
+	if ( self->pixbuf && ( !self->image || ( format != mlt_image_none && format != self->format ) ) )
 	{
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 		int interp = GDK_INTERP_BILINEAR;
@@ -373,13 +375,14 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 		// Store width and height
 		self->width = width;
 		self->height = height;
-		
+
 		// Allocate/define image
-		self->alpha = gdk_pixbuf_get_has_alpha( self->pixbuf );
+		int has_alpha = gdk_pixbuf_get_has_alpha( self->pixbuf );
 		int src_stride = gdk_pixbuf_get_rowstride( self->pixbuf );
-		int dst_stride = self->width * ( self->alpha ? 4 : 3 );
+		int dst_stride = self->width * ( has_alpha ? 4 : 3 );
 		int image_size = dst_stride * ( height + 1 );
 		self->image = mlt_pool_alloc( image_size );
+		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 		if ( src_stride != dst_stride )
 		{
@@ -399,10 +402,40 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, int width, int
 		}
 		pthread_mutex_unlock( &g_mutex );
 
+		// Convert image to requested format
+		if ( format != mlt_image_none && format != self->format )
+		{
+			uint8_t *buffer = NULL;
+
+			// First, set the image so it can be converted when we get it
+			mlt_frame_set_image( frame, self->image, image_size, mlt_pool_release );
+			mlt_properties_set_int( properties, "format", self->format );
+			self->format = format;
+
+			// get_image will do the format conversion
+			mlt_frame_get_image( frame, &buffer, &format, &width, &height, 0 );
+
+			// cache copies of the image and alpha buffers
+			if ( buffer )
+			{
+				image_size = mlt_image_format_size( format, width, height, NULL );
+				self->image = mlt_pool_alloc( image_size );
+				memcpy( self->image, buffer, image_size );
+			}
+			if ( ( buffer = mlt_frame_get_alpha_mask( frame ) ) )
+			{
+				self->alpha = mlt_pool_alloc( width * height );
+				memcpy( self->alpha, buffer, width * height );
+			}
+		}
+
 		mlt_cache_item_close( self->image_cache );
 		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image", self->image, image_size, mlt_pool_release );
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image" );
 		self->image_idx = current_idx;
+		mlt_cache_item_close( self->alpha_cache );
+		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha", self->alpha, width * height, mlt_pool_release );
+		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha" );
 
 		// Finished with pixbuf now
 		g_object_unref( self->pixbuf );
@@ -434,21 +467,23 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->pixbuf = mlt_cache_item_data( self->pixbuf_cache, NULL );
 	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image" );
 	self->image = mlt_cache_item_data( self->image_cache, NULL );
+	self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha" );
+	self->alpha = mlt_cache_item_data( self->alpha_cache, NULL );
 
 	// Refresh the image
-	refresh_image( self, frame, *width, *height );
+	refresh_image( self, frame, *format, *width, *height );
 
 	// Get width and height (may have changed during the refresh)
 	*width = self->width;
 	*height = self->height;
-	*format = self->alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+	*format = self->format;
 
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of the pixbuf producer...
 	if ( self->image )
 	{
 		// Clone the image
-		int image_size = self->width * self->height * ( self->alpha ? 4 :3 );
+		int image_size = mlt_image_format_size( self->format, self->width, self->height, NULL );
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
 		memcpy( image_copy, self->image, image_size );
 		// Now update properties so we free the copy after
@@ -457,6 +492,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*buffer = image_copy;
 		mlt_log_debug( MLT_PRODUCER_SERVICE( &self->parent ), "%dx%d (%s)\n",
 			self->width, self->height, mlt_image_format_name( *format ) );
+		// Clone the alpha channel
+		if ( self->alpha )
+		{
+			image_copy = mlt_pool_alloc( self->width * self->height );
+			memcpy( image_copy, self->alpha, self->width * self->height );
+			mlt_frame_set_alpha( frame, image_copy, self->width * self->height, mlt_pool_release );
+		}
 	}
 	else
 	{
@@ -466,6 +508,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Release references and locks
 	mlt_cache_item_close( self->pixbuf_cache );
 	mlt_cache_item_close( self->image_cache );
+	mlt_cache_item_close( self->alpha_cache );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	return error;
