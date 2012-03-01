@@ -37,9 +37,9 @@
  * rgb24a -> yuv422
  */
 
-typedef int ( *image_scaler )( mlt_frame this, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight );
+typedef int ( *image_scaler )( mlt_frame frame, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight );
 
-static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight )
+static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Create the output image
 	uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * 2 );
@@ -103,17 +103,17 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	}
  
 	// Now update the frame
-	mlt_frame_set_image( this, output, owidth * ( oheight + 1 ) * 2, mlt_pool_release );
+	mlt_frame_set_image( frame, output, owidth * ( oheight + 1 ) * 2, mlt_pool_release );
 	*image = output;
 
 	return 0;
 }
 
-static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, int oheight )
+static void scale_alpha( mlt_frame frame, int iwidth, int iheight, int owidth, int oheight )
 {
 	// Scale the alpha
 	uint8_t *output = NULL;
-	uint8_t *input = mlt_frame_get_alpha_mask( this );
+	uint8_t *input = mlt_frame_get_alpha_mask( frame );
 
 	if ( input != NULL )
 	{
@@ -134,22 +134,22 @@ static void scale_alpha( mlt_frame this, int iwidth, int iheight, int owidth, in
 		}
 
 		// Set it back on the frame
-		mlt_frame_set_alpha( this, output, owidth * oheight, mlt_pool_release );
+		mlt_frame_set_alpha( frame, output, owidth * oheight, mlt_pool_release );
 	}
 }
 
 /** Do it :-).
 */
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
 	
 	// Get the frame properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the filter from the stack
-	mlt_filter filter = mlt_frame_pop_service( this );
+	mlt_filter filter = mlt_frame_pop_service( frame );
 
 	// Get the filter properties
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
@@ -212,7 +212,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			*format = mlt_image_yuv422;
 
 		// Get the image as requested
-		mlt_frame_get_image( this, image, format, &iwidth, &iheight, writable );
+		mlt_frame_get_image( frame, image, format, &iwidth, &iheight, writable );
 
 		// Get rescale interpretation again, in case the producer wishes to override scaling
 		interps = mlt_properties_get( properties, "rescale.interp" );
@@ -227,7 +227,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			     *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 			{
 				// Call the virtual function
-				scaler_method( this, image, format, iwidth, iheight, owidth, oheight );
+				scaler_method( frame, image, format, iwidth, iheight, owidth, oheight );
 				*width = owidth;
 				*height = oheight;
 			}
@@ -235,7 +235,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			int alpha_size = 0;
 			mlt_properties_get_data( properties, "alpha", &alpha_size );
 			if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) && alpha_size != ( owidth * ( oheight + 1 ) ) )
-				scale_alpha( this, iwidth, iheight, owidth, oheight );
+				scale_alpha( frame, iwidth, iheight, owidth, oheight );
 		}
 		else
 		{
@@ -254,10 +254,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	// Push the filter
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 
 	// Push the get image method
 	mlt_frame_push_service( frame, filter_get_image );
@@ -271,16 +271,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 mlt_filter filter_rescale_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new scaler
-	mlt_filter this = mlt_filter_new( );
+	mlt_filter filter = mlt_filter_new( );
 
 	// If successful, then initialise it
-	if ( this != NULL )
+	if ( filter != NULL )
 	{
 		// Get the properties
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 		// Set the process method
-		this->process = filter_process;
+		filter->process = filter_process;
 
 		// Set the inerpolation
 		mlt_properties_set( properties, "interpolation", arg == NULL ? "bilinear" : arg );
@@ -289,6 +289,6 @@ mlt_filter filter_rescale_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set_data( properties, "method", filter_scale, 0, NULL, NULL );
 	}
 
-	return this;
+	return filter;
 }
 
