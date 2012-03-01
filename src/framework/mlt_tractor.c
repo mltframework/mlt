@@ -479,10 +479,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 					if ( first_video == NULL )
 						first_video = temp;
 
-					// Ensure that all frames know the aspect ratio of the background
-					mlt_properties_set_double( temp_properties, "output_ratio",
-											   mlt_properties_get_double( MLT_FRAME_PROPERTIES( first_video ), "aspect_ratio" ) );
-
 					mlt_properties_set_int( MLT_FRAME_PROPERTIES( temp ), "image_count", ++ image_count );
 					image_count = 1;
 				}

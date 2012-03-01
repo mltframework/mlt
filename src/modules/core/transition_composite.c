@@ -766,7 +766,7 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 	uint8_t resize_alpha = mlt_properties_get_int( b_props, "resize_alpha" );
-	double consumer_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) );
+	double output_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) );
 
 	// Do not scale if we are cropping - the compositing rectangle can crop the b image
 	// TODO: Use the animatable w and h of the crop geometry to scale independently of crop rectangle
@@ -775,8 +775,6 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
-		double background_ar = mlt_properties_get_double( b_props, "output_ratio" );
-		double output_ar = background_ar != 0.0 ? background_ar : consumer_ar;
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
 		geometry->sw = scaled_width;
@@ -791,13 +789,11 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		int real_width = get_value( b_props, "real_width", "width" );
 		int real_height = get_value( b_props, "real_height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
-		double background_ar = mlt_properties_get_double( b_props, "output_ratio" );
-		double output_ar = background_ar != 0.0 ? background_ar : consumer_ar;
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
-// fprintf(stderr, "%s: scaled %dx%d norm %dx%d real %dx%d output_ar %f => %f\n", __FILE__,
+// fprintf(stderr, "%s: scaled %dx%d norm %dx%d real %dx%d output_ar %f\n", __FILE__,
 // scaled_width, scaled_height, normalised_width, normalised_height, real_width, real_height,
-// background_ar, output_ar);
+// output_ar);
 
 		// Now ensure that our images fit in the normalised frame
 		if ( scaled_width > normalised_width )
