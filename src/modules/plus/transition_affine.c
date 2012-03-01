@@ -397,7 +397,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int normalised_width = profile->width;
 	int normalised_height = profile->height;
 
-	double consumer_ar = mlt_properties_get_double( a_props, "consumer_aspect_ratio" );
+	double consumer_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(transition) ) );
 
 	// Structures for geometry
 	struct mlt_geometry_item_s result;

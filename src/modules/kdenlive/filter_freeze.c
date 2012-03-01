@@ -68,7 +68,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_service_get_frame( mlt_producer_service(producer), &freeze_frame, 0 );
 
 			mlt_properties freeze_properties = MLT_FRAME_PROPERTIES( freeze_frame );
-			mlt_properties_set_double( freeze_properties, "consumer_aspect_ratio", mlt_properties_get_double( props, "consumer_aspect_ratio" ) );
 			mlt_properties_set( freeze_properties, "rescale.interp", mlt_properties_get( props, "rescale.interp" ) );
 			mlt_properties_set_double( freeze_properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
 			mlt_properties_set_int( freeze_properties, "progressive", mlt_properties_get_int( props, "progressive" ) );

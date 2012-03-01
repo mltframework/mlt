@@ -311,6 +311,7 @@ mlt_frame mlt_transition_process( mlt_transition self, mlt_frame a_frame, mlt_fr
 
 static int get_image_a( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	mlt_transition self = mlt_frame_pop_service( a_frame );
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 
 	// All transitions get scaling
@@ -319,14 +320,15 @@ static int get_image_a( mlt_frame a_frame, uint8_t **image, mlt_image_format *fo
 		mlt_properties_set( a_props, "rescale.interp", "nearest" );
 
 	// Ensure sane aspect ratio
-	if ( mlt_properties_get_double( a_props, "aspect_ratio" ) == 0.0 )
-		mlt_properties_set_double( a_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+	if ( mlt_frame_get_aspect_ratio( a_frame ) == 0.0 )
+		mlt_frame_set_aspect_ratio( a_frame, mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) ) );
 
 	return mlt_frame_get_image( a_frame, image, format, width, height, writable );
 }
 
 static int get_image_b( mlt_frame b_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	mlt_transition self = mlt_frame_pop_service( b_frame );
 	mlt_frame a_frame = mlt_frame_pop_frame( b_frame );
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
@@ -341,11 +343,11 @@ static int get_image_b( mlt_frame b_frame, uint8_t **image, mlt_image_format *fo
 	}
 
 	// Ensure sane aspect ratio
-	if ( mlt_properties_get_double( b_props, "aspect_ratio" ) == 0.0 )
-		mlt_properties_set_double( b_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
+	if ( mlt_frame_get_aspect_ratio( b_frame ) == 0.0 )
+		mlt_frame_set_aspect_ratio( b_frame, mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) ) );
 
 	mlt_properties_pass_list( b_props, a_props,
-		"consumer_deinterlace, deinterlace_method, consumer_aspect_ratio, consumer_tff" );
+		"consumer_deinterlace, deinterlace_method, consumer_tff" );
 
 	return mlt_frame_get_image( b_frame, image, format, width, height, writable );
 }
@@ -478,8 +480,10 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			if ( !( a_hide & type ) && !( b_hide & type ) )
 			{
 				// Add hooks for pre-processing frames
+				mlt_frame_push_service( a_frame_ptr, self );
 				mlt_frame_push_get_image( a_frame_ptr, get_image_a );
 				mlt_frame_push_frame( b_frame_ptr, a_frame_ptr );
+				mlt_frame_push_service( b_frame_ptr, self );
 				mlt_frame_push_get_image( b_frame_ptr, get_image_b );
 
 				// Process the transition

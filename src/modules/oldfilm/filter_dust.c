@@ -123,7 +123,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 				
 				if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &luma_frame, 0 ) == 0 ){
 		
-					mlt_properties_set_double ( MLT_FRAME_PROPERTIES ( luma_frame ) , "consumer_aspect_ratio" , 1.0 );
 					mlt_image_format luma_format = mlt_image_yuv422;
 					luma_width = dx;
 					luma_height = luma_width * mlt_properties_get_int( MLT_FRAME_PROPERTIES ( luma_frame ) , "height" ) / mlt_properties_get_int( MLT_FRAME_PROPERTIES ( luma_frame ) , "width" );
