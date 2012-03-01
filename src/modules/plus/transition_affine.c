@@ -33,9 +33,9 @@
 /** Calculate real geometry.
 */
 
-static void geometry_calculate( mlt_transition this, const char *store, struct mlt_geometry_item_s *output, float position )
+static void geometry_calculate( mlt_transition transition, const char *store, struct mlt_geometry_item_s *output, float position )
 {
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
 	int mirror_off = mlt_properties_get_int( properties, "mirror_off" );
 	int repeat_off = mlt_properties_get_int( properties, "repeat_off" );
@@ -55,16 +55,16 @@ static void geometry_calculate( mlt_transition this, const char *store, struct m
 }
 
 
-static mlt_geometry transition_parse_keys( mlt_transition this, const char *name, const char *store, int normalised_width, int normalised_height )
+static mlt_geometry transition_parse_keys( mlt_transition transition, const char *name, const char *store, int normalised_width, int normalised_height )
 {
 	// Get the properties of the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 
 	// Try to fetch it first
 	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
 
 	// Determine length and obtain cycle
-	mlt_position length = mlt_transition_get_length( this );
+	mlt_position length = mlt_transition_get_length( transition );
 	double cycle = mlt_properties_get_double( properties, "cycle" );
 
 	// Allow a geometry repeat cycle
@@ -96,27 +96,27 @@ static mlt_geometry transition_parse_keys( mlt_transition this, const char *name
 	return geometry;
 }
 
-static mlt_geometry composite_calculate( mlt_transition this, struct mlt_geometry_item_s *result, int nw, int nh, float position )
+static mlt_geometry composite_calculate( mlt_transition transition, struct mlt_geometry_item_s *result, int nw, int nh, float position )
 {
 	// Structures for geometry
-	mlt_geometry start = transition_parse_keys( this, "geometry", "geometries", nw, nh );
+	mlt_geometry start = transition_parse_keys( transition, "geometry", "geometries", nw, nh );
 
 	// Do the calculation
-	geometry_calculate( this, "geometries", result, position );
+	geometry_calculate( transition, "geometries", result, position );
 
 	return start;
 }
 
-static inline float composite_calculate_key( mlt_transition this, const char *name, const char *store, int norm, float position )
+static inline float composite_calculate_key( mlt_transition transition, const char *name, const char *store, int norm, float position )
 {
 	// Struct for the result
 	struct mlt_geometry_item_s result;
 
 	// Structures for geometry
-	transition_parse_keys( this, name, store, norm, 0 );
+	transition_parse_keys( transition, name, store, norm, 0 );
 
 	// Do the calculation
-	geometry_calculate( this, store, &result, position );
+	geometry_calculate( transition, store, &result, position );
 
 	return result.x;
 }
@@ -127,21 +127,21 @@ typedef struct
 }
 affine_t;
 
-static void affine_init( float this[3][3] )
+static void affine_init( float affine[3][3] )
 {
-	this[0][0] = 1;
-	this[0][1] = 0;
-	this[0][2] = 0;
-	this[1][0] = 0;
-	this[1][1] = 1;
-	this[1][2] = 0;
-	this[2][0] = 0;
-	this[2][1] = 0;
-	this[2][2] = 1;
+	affine[0][0] = 1;
+	affine[0][1] = 0;
+	affine[0][2] = 0;
+	affine[1][0] = 0;
+	affine[1][1] = 1;
+	affine[1][2] = 0;
+	affine[2][0] = 0;
+	affine[2][1] = 0;
+	affine[2][2] = 1;
 }
 
 // Multiply two this affine transform with that
-static void affine_multiply( float this[3][3], float that[3][3] )
+static void affine_multiply( float affine[3][3], float matrix[3][3] )
 {
 	float output[3][3];
 	int i;
@@ -149,132 +149,132 @@ static void affine_multiply( float this[3][3], float that[3][3] )
 
 	for ( i = 0; i < 3; i ++ )
 		for ( j = 0; j < 3; j ++ )
-			output[i][j] = this[i][0] * that[j][0] + this[i][1] * that[j][1] + this[i][2] * that[j][2];
+			output[i][j] = affine[i][0] * matrix[j][0] + affine[i][1] * matrix[j][1] + affine[i][2] * matrix[j][2];
 
-	this[0][0] = output[0][0];
-	this[0][1] = output[0][1];
-	this[0][2] = output[0][2];
-	this[1][0] = output[1][0];
-	this[1][1] = output[1][1];
-	this[1][2] = output[1][2];
-	this[2][0] = output[2][0];
-	this[2][1] = output[2][1];
-	this[2][2] = output[2][2];
+	affine[0][0] = output[0][0];
+	affine[0][1] = output[0][1];
+	affine[0][2] = output[0][2];
+	affine[1][0] = output[1][0];
+	affine[1][1] = output[1][1];
+	affine[1][2] = output[1][2];
+	affine[2][0] = output[2][0];
+	affine[2][1] = output[2][1];
+	affine[2][2] = output[2][2];
 }
 
 // Rotate by a given angle
-static void affine_rotate_x( float this[3][3], float angle )
+static void affine_rotate_x( float affine[3][3], float angle )
 {
-	float affine[3][3];
-	affine[0][0] = cos( angle * M_PI / 180 );
-	affine[0][1] = 0 - sin( angle * M_PI / 180 );
-	affine[0][2] = 0;
-	affine[1][0] = sin( angle * M_PI / 180 );
-	affine[1][1] = cos( angle * M_PI / 180 );
-	affine[1][2] = 0;
-	affine[2][0] = 0;
-	affine[2][1] = 0;
-	affine[2][2] = 1;
-	affine_multiply( this, affine );
+	float matrix[3][3];
+	matrix[0][0] = cos( angle * M_PI / 180 );
+	matrix[0][1] = 0 - sin( angle * M_PI / 180 );
+	matrix[0][2] = 0;
+	matrix[1][0] = sin( angle * M_PI / 180 );
+	matrix[1][1] = cos( angle * M_PI / 180 );
+	matrix[1][2] = 0;
+	matrix[2][0] = 0;
+	matrix[2][1] = 0;
+	matrix[2][2] = 1;
+	affine_multiply( affine, affine );
 }
 
-static void affine_rotate_y( float this[3][3], float angle )
+static void affine_rotate_y( float affine[3][3], float angle )
 {
-	float affine[3][3];
-	affine[0][0] = cos( angle * M_PI / 180 );
-	affine[0][1] = 0;
-	affine[0][2] = 0 - sin( angle * M_PI / 180 );
-	affine[1][0] = 0;
-	affine[1][1] = 1;
-	affine[1][2] = 0;
-	affine[2][0] = sin( angle * M_PI / 180 );
-	affine[2][1] = 0;
-	affine[2][2] = cos( angle * M_PI / 180 );
-	affine_multiply( this, affine );
+	float matrix[3][3];
+	matrix[0][0] = cos( angle * M_PI / 180 );
+	matrix[0][1] = 0;
+	matrix[0][2] = 0 - sin( angle * M_PI / 180 );
+	matrix[1][0] = 0;
+	matrix[1][1] = 1;
+	matrix[1][2] = 0;
+	matrix[2][0] = sin( angle * M_PI / 180 );
+	matrix[2][1] = 0;
+	matrix[2][2] = cos( angle * M_PI / 180 );
+	affine_multiply( affine, matrix );
 }
 
-static void affine_rotate_z( float this[3][3], float angle )
+static void affine_rotate_z( float affine[3][3], float angle )
 {
-	float affine[3][3];
-	affine[0][0] = 1;
-	affine[0][1] = 0;
-	affine[0][2] = 0;
-	affine[1][0] = 0;
-	affine[1][1] = cos( angle * M_PI / 180 );
-	affine[1][2] = sin( angle * M_PI / 180 );
-	affine[2][0] = 0;
-	affine[2][1] = - sin( angle * M_PI / 180 );
-	affine[2][2] = cos( angle * M_PI / 180 );
-	affine_multiply( this, affine );
+	float matrix[3][3];
+	matrix[0][0] = 1;
+	matrix[0][1] = 0;
+	matrix[0][2] = 0;
+	matrix[1][0] = 0;
+	matrix[1][1] = cos( angle * M_PI / 180 );
+	matrix[1][2] = sin( angle * M_PI / 180 );
+	matrix[2][0] = 0;
+	matrix[2][1] = - sin( angle * M_PI / 180 );
+	matrix[2][2] = cos( angle * M_PI / 180 );
+	affine_multiply( affine, matrix );
 }
 
-static void affine_scale( float this[3][3], float sx, float sy )
+static void affine_scale( float affine[3][3], float sx, float sy )
 {
-	float affine[3][3];
-	affine[0][0] = sx;
-	affine[0][1] = 0;
-	affine[0][2] = 0;
-	affine[1][0] = 0;
-	affine[1][1] = sy;
-	affine[1][2] = 0;
-	affine[2][0] = 0;
-	affine[2][1] = 0;
-	affine[2][2] = 1;
-	affine_multiply( this, affine );
+	float matrix[3][3];
+	matrix[0][0] = sx;
+	matrix[0][1] = 0;
+	matrix[0][2] = 0;
+	matrix[1][0] = 0;
+	matrix[1][1] = sy;
+	matrix[1][2] = 0;
+	matrix[2][0] = 0;
+	matrix[2][1] = 0;
+	matrix[2][2] = 1;
+	affine_multiply( affine, matrix );
 }
 
 // Shear by a given value
-static void affine_shear( float this[3][3], float shear_x, float shear_y, float shear_z )
+static void affine_shear( float affine[3][3], float shear_x, float shear_y, float shear_z )
 {
-	float affine[3][3];
-	affine[0][0] = 1;
-	affine[0][1] = tan( shear_x * M_PI / 180 );
-	affine[0][2] = 0;
-	affine[1][0] = tan( shear_y * M_PI / 180 );
-	affine[1][1] = 1;
-	affine[1][2] = tan( shear_z * M_PI / 180 );
-	affine[2][0] = 0;
-	affine[2][1] = 0;
-	affine[2][2] = 1;
-	affine_multiply( this, affine );
+	float matrix[3][3];
+	matrix[0][0] = 1;
+	matrix[0][1] = tan( shear_x * M_PI / 180 );
+	matrix[0][2] = 0;
+	matrix[1][0] = tan( shear_y * M_PI / 180 );
+	matrix[1][1] = 1;
+	matrix[1][2] = tan( shear_z * M_PI / 180 );
+	matrix[2][0] = 0;
+	matrix[2][1] = 0;
+	matrix[2][2] = 1;
+	affine_multiply( affine, matrix );
 }
 
-static void affine_offset( float this[3][3], float x, float y )
+static void affine_offset( float affine[3][3], float x, float y )
 {
-	this[0][2] += x;
-	this[1][2] += y;
+	affine[0][2] += x;
+	affine[1][2] += y;
 }
 
 // Obtain the mapped x coordinate of the input
-static inline double MapX( float this[3][3], float x, float y )
+static inline double MapX( float affine[3][3], float x, float y )
 {
-	return this[0][0] * x + this[0][1] * y + this[0][2];
+	return affine[0][0] * x + affine[0][1] * y + affine[0][2];
 }
 
 // Obtain the mapped y coordinate of the input
-static inline double MapY( float this[3][3], float x, float y )
+static inline double MapY( float affine[3][3], float x, float y )
 {
-	return this[1][0] * x + this[1][1] * y + this[1][2];
+	return affine[1][0] * x + affine[1][1] * y + affine[1][2];
 }
 
-static inline double MapZ( float this[3][3], float x, float y )
+static inline double MapZ( float affine[3][3], float x, float y )
 {
-	return this[2][0] * x + this[2][1] * y + this[2][2];
+	return affine[2][0] * x + affine[2][1] * y + affine[2][2];
 }
 
 #define MAX( x, y ) x > y ? x : y
 #define MIN( x, y ) x < y ? x : y
 
-static void affine_max_output( float this[3][3], float *w, float *h, float dz, float max_width, float max_height )
+static void affine_max_output( float affine[3][3], float *w, float *h, float dz, float max_width, float max_height )
 {
-	int tlx = MapX( this, -max_width,  max_height ) / dz;
-	int tly = MapY( this, -max_width,  max_height ) / dz;
-	int trx = MapX( this,  max_width,  max_height ) / dz;
-	int try = MapY( this,  max_width,  max_height ) / dz;
-	int blx = MapX( this, -max_width, -max_height ) / dz;
-	int bly = MapY( this, -max_width, -max_height ) / dz;
-	int brx = MapX( this,  max_width, -max_height ) / dz;
-	int bry = MapY( this,  max_width, -max_height ) / dz;
+	int tlx = MapX( affine, -max_width,  max_height ) / dz;
+	int tly = MapY( affine, -max_width,  max_height ) / dz;
+	int trx = MapX( affine,  max_width,  max_height ) / dz;
+	int try = MapY( affine,  max_width,  max_height ) / dz;
+	int blx = MapX( affine, -max_width, -max_height ) / dz;
+	int bly = MapY( affine, -max_width, -max_height ) / dz;
+	int brx = MapX( affine,  max_width, -max_height ) / dz;
+	int bry = MapY( affine,  max_width, -max_height ) / dz;
 
 	int max_x;
 	int max_y;
@@ -303,9 +303,9 @@ static void affine_max_output( float this[3][3], float *w, float *h, float dz, f
 
 #define IN_RANGE( v, r )	( v >= - r / 2 && v < r / 2 )
 
-static inline void get_affine( affine_t *affine, mlt_transition this, float position )
+static inline void get_affine( affine_t *affine, mlt_transition transition, float position )
 {
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 	int keyed = mlt_properties_get_int( properties, "keyed" );
 
 	if ( keyed == 0 )
@@ -336,14 +336,14 @@ static inline void get_affine( affine_t *affine, mlt_transition this, float posi
 	}
 	else
 	{
-		float rotate_x = composite_calculate_key( this, "rotate_x", "rotate_x_info", 360, position );
-		float rotate_y = composite_calculate_key( this, "rotate_y", "rotate_y_info", 360, position );
-		float rotate_z = composite_calculate_key( this, "rotate_z", "rotate_z_info", 360, position );
-		float shear_x = composite_calculate_key( this, "shear_x", "shear_x_info", 360, position );
-		float shear_y = composite_calculate_key( this, "shear_y", "shear_y_info", 360, position );
-		float shear_z = composite_calculate_key( this, "shear_z", "shear_z_info", 360, position );
-		float o_x = composite_calculate_key( this, "ox", "ox_info", 0, position );
-		float o_y = composite_calculate_key( this, "oy", "oy_info", 0, position );
+		float rotate_x = composite_calculate_key( transition, "rotate_x", "rotate_x_info", 360, position );
+		float rotate_y = composite_calculate_key( transition, "rotate_y", "rotate_y_info", 360, position );
+		float rotate_z = composite_calculate_key( transition, "rotate_z", "rotate_z_info", 360, position );
+		float shear_x = composite_calculate_key( transition, "shear_x", "shear_x_info", 360, position );
+		float shear_y = composite_calculate_key( transition, "shear_y", "shear_y_info", 360, position );
+		float shear_z = composite_calculate_key( transition, "shear_z", "shear_z_info", 360, position );
+		float o_x = composite_calculate_key( transition, "ox", "ox_info", 0, position );
+		float o_y = composite_calculate_key( transition, "oy", "oy_info", 0, position );
 		
 		affine_rotate_x( affine->matrix, rotate_x );
 		affine_rotate_y( affine->matrix, rotate_y );
@@ -362,10 +362,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
 
 	// Get the transition object
-	mlt_transition this = mlt_frame_pop_service( a_frame );
+	mlt_transition transition = mlt_frame_pop_service( a_frame );
 
 	// Get the properties of the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 
 	// Get the properties of the a frame
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
@@ -380,10 +380,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int b_height;
 
 	// Assign the current position
-	mlt_position position =  mlt_transition_get_position( this, a_frame );
+	mlt_position position =  mlt_transition_get_position( transition, a_frame );
 
 	int mirror = mlt_properties_get_position( properties, "mirror" );
-	int length = mlt_transition_get_length( this );
+	int length = mlt_transition_get_length( transition );
 	if ( mlt_properties_get_int( properties, "always_active" ) )
 	{
 		mlt_properties props = mlt_properties_get_data( b_props, "_producer", NULL );
@@ -409,9 +409,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// Calculate the region now
-	mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
-	composite_calculate( this, &result, normalised_width, normalised_height, ( float )position );
-	mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
+	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
+	composite_calculate( transition, &result, normalised_width, normalised_height, ( float )position );
+	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
 	// Fetch the b frame image
 	result.w = ( result.w * *width / normalised_width );
@@ -464,7 +464,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		affine_init( affine.matrix );
 
 		// Compute the affine transform
-		get_affine( &affine, this, ( float )position );
+		get_affine( &affine, transition, ( float )position );
 		dz = MapZ( affine.matrix, 0, 0 );
 		if ( ( int )abs( dz * 1000 ) < 25 )
 		{
