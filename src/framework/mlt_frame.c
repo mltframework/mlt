@@ -56,8 +56,6 @@ mlt_frame mlt_frame_init( mlt_service service )
 		mlt_properties_set_data( properties, "image", NULL, 0, NULL, NULL );
 		mlt_properties_set_int( properties, "width", profile? profile->width : 720 );
 		mlt_properties_set_int( properties, "height", profile? profile->height : 576 );
-		mlt_properties_set_int( properties, "normalised_width", profile? profile->width : 720 );
-		mlt_properties_set_int( properties, "normalised_height", profile? profile->height : 576 );
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL ) );
 		mlt_properties_set_data( properties, "audio", NULL, 0, NULL, NULL );
 		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
