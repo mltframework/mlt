@@ -217,7 +217,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Pop the top of stack now
-	mlt_filter this = mlt_frame_pop_service( frame );
+	mlt_filter filter = mlt_frame_pop_service( frame );
 
 	// Get the image from the frame
 	*format = mlt_image_yuv422;
@@ -226,10 +226,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the image from the frame
 	if ( error == 0 )
 	{
-		if ( this != NULL )
+		if ( filter != NULL )
 		{
 			// Get the filter properties
-			mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+			mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 			// Obtain the normalised width and height from the frame
 			int normalised_width = mlt_properties_get_int( frame_properties, "normalised_width" );
@@ -241,7 +241,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			struct geometry_s end;
 
 			// Retrieve the position
-			float position = mlt_filter_get_progress( this, frame );
+			float position = mlt_filter_get_progress( filter, frame );
 
 			// Now parse the geometries
 			geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
@@ -261,10 +261,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	// Push this on to the service stack
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 	
 	// Push the get image call
 	mlt_frame_push_get_image( frame, filter_get_image );
@@ -277,14 +277,14 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_obscure_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
-		this->process = filter_process;
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		filter->process = filter_process;
 		mlt_properties_set( properties, "start", arg != NULL ? arg : "0%/0%:100%x100%" );
 		mlt_properties_set( properties, "end", "" );
 	}
-	return this;
+	return filter;
 }
 
