@@ -66,9 +66,9 @@ static int alignment_parse( char* align )
 /** Calculate real geometry.
 */
 
-static void geometry_calculate( mlt_transition this, struct geometry_s *output, double position )
+static void geometry_calculate( mlt_transition self, struct geometry_s *output, double position )
 {
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 	mlt_geometry geometry = mlt_properties_get_data( properties, "geometries", NULL );
 	int mirror_off = mlt_properties_get_int( properties, "mirror_off" );
 	int repeat_off = mlt_properties_get_int( properties, "repeat_off" );
@@ -87,19 +87,19 @@ static void geometry_calculate( mlt_transition this, struct geometry_s *output, 
 	mlt_geometry_fetch( geometry, &output->item, position );
 }
 
-static mlt_geometry transition_parse_keys( mlt_transition this, int normalised_width, int normalised_height )
+static mlt_geometry transition_parse_keys( mlt_transition self, int normalised_width, int normalised_height )
 {
 	// Loop variable for property interrogation
 	int i = 0;
 
 	// Get the properties of the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 
 	// Create an empty geometries object
 	mlt_geometry geometry = mlt_geometry_init( );
 
 	// Get the duration
-	mlt_position length = mlt_transition_get_length( this );
+	mlt_position length = mlt_transition_get_length( self );
 	double cycle = mlt_properties_get_double( properties, "cycle" );
 
 	// Get the new style geometry string
@@ -174,10 +174,10 @@ static void alignment_calculate( struct geometry_s *geometry )
 /** Calculate the position for this frame.
 */
 
-static int position_calculate( mlt_transition this, mlt_position position )
+static int position_calculate( mlt_transition self, mlt_position position )
 {
 	// Get the in and out position
-	mlt_position in = mlt_transition_get_in( this );
+	mlt_position in = mlt_transition_get_in( self );
 
 	// Now do the calcs
 	return position - in;
@@ -607,7 +607,7 @@ scale_luma ( uint16_t *dest_buf, int dest_width, int dest_height, const uint16_t
 	}
 }
 
-static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int width, int height )
+static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int width, int height )
 {
 	// The cached luma map information
 	int luma_width = mlt_properties_get_int( properties, "_luma.width" );
@@ -694,7 +694,7 @@ static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int w
 				char *factory = mlt_properties_get( properties, "factory" );
 	
 				// Create the producer
-				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
 				mlt_producer producer = mlt_factory_producer( profile, factory, resource );
 	
 				// If we have one
@@ -757,16 +757,16 @@ static uint16_t* get_luma( mlt_transition this, mlt_properties properties, int w
 /** Get the properly sized image from b_frame.
 */
 
-static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **image, int *width, int *height, struct geometry_s *geometry )
+static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **image, int *width, int *height, struct geometry_s *geometry )
 {
 	int ret = 0;
 	mlt_image_format format = mlt_image_yuv422;
 
 	// Get the properties objects
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 	uint8_t resize_alpha = mlt_properties_get_int( b_props, "resize_alpha" );
-	double consumer_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(this) ) );
+	double consumer_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) );
 
 	// Do not scale if we are cropping - the compositing rectangle can crop the b image
 	// TODO: Use the animatable w and h of the crop geometry to scale independently of crop rectangle
@@ -870,7 +870,7 @@ static int get_b_frame_image( mlt_transition this, mlt_frame b_frame, uint8_t **
 	return ret && image != NULL;
 }
 
-static void crop_calculate( mlt_transition this, mlt_properties properties, struct geometry_s *result, double position )
+static void crop_calculate( mlt_transition self, mlt_properties properties, struct geometry_s *result, double position )
 {
 	// Initialize panning info
 	result->x_src = 0;
@@ -881,7 +881,7 @@ static void crop_calculate( mlt_transition this, mlt_properties properties, stru
 		if ( !crop )
 		{
 			crop = mlt_geometry_init();
-			mlt_position length = mlt_transition_get_length( this );
+			mlt_position length = mlt_transition_get_length( self );
 			double cycle = mlt_properties_get_double( properties, "cycle" );
 
 			// Allow a geometry repeat cycle
@@ -913,10 +913,10 @@ static void crop_calculate( mlt_transition this, mlt_properties properties, stru
 	}
 }
 
-static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s *result, mlt_frame a_frame, double position )
+static mlt_geometry composite_calculate( mlt_transition self, struct geometry_s *result, mlt_frame a_frame, double position )
 {
 	// Get the properties from the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 
 	// Get the properties from the frame
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
@@ -942,14 +942,14 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 		if ( start == NULL )
 		{
 			// Parse the transitions properties
-			start = transition_parse_keys( this, normalised_width, normalised_height );
+			start = transition_parse_keys( self, normalised_width, normalised_height );
 
 			// Assign to properties to ensure we get destroyed
 			mlt_properties_set_data( properties, "geometries", start, 0, ( mlt_destructor )mlt_geometry_close, NULL );
 		}
 		else
 		{
-			mlt_position length = mlt_transition_get_length( this );
+			mlt_position length = mlt_transition_get_length( self );
 			double cycle = mlt_properties_get_double( properties, "cycle" );
 			if ( cycle > 1 )
 				length = cycle;
@@ -959,7 +959,7 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 		}
 
 		// Do the calculation
-		geometry_calculate( this, result, position );
+		geometry_calculate( self, result, position );
 
 		// Assign normalised info
 		result->nw = normalised_width;
@@ -970,15 +970,15 @@ static mlt_geometry composite_calculate( mlt_transition this, struct geometry_s 
 	result->halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
 	result->valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
 
-	crop_calculate( this, properties, result, position );
+	crop_calculate( self, properties, result, position );
 
 	return start;
 }
 
-mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_position frame_position )
+mlt_frame composite_copy_region( mlt_transition self, mlt_frame a_frame, mlt_position frame_position )
 {
 	// Create a frame to return
-	mlt_frame b_frame = mlt_frame_init( MLT_TRANSITION_SERVICE( this ) );
+	mlt_frame b_frame = mlt_frame_init( MLT_TRANSITION_SERVICE( self ) );
 
 	// Get the properties of the a frame
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
@@ -987,10 +987,10 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// Get the position
-	int position = position_calculate( this, frame_position );
+	int position = position_calculate( self, frame_position );
 
 	// Get the unique id of the transition
-	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( this ), "_unique_id" );
+	char *name = mlt_properties_get( MLT_TRANSITION_PROPERTIES( self ), "_unique_id" );
 	char key[ 256 ];
 
 	// Destination image
@@ -1022,7 +1022,7 @@ mlt_frame composite_copy_region( mlt_transition this, mlt_frame a_frame, mlt_pos
 	struct geometry_s result;
 
 	// Calculate the region now
-	composite_calculate( this, &result, a_frame, position );
+	composite_calculate( self, &result, a_frame, position );
 
 	// Need to scale down to actual dimensions
 	x = rint( result.item.x * width / result.nw );
@@ -1101,7 +1101,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
 
 	// Get the transition from the a frame
-	mlt_transition this = mlt_frame_pop_service( a_frame );
+	mlt_transition self = mlt_frame_pop_service( a_frame );
 
 	// Get in and out
 	double position = mlt_deque_pop_back_double( MLT_FRAME_IMAGE_STACK( a_frame ) );
@@ -1109,7 +1109,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int in = mlt_frame_pop_service_int( a_frame );
 
 	// Get the properties from the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 
 	// TODO: clean up always_active behaviour
 	if ( mlt_properties_get_int( properties, "always_active" ) )
@@ -1135,8 +1135,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		struct geometry_s result;
 
 		// Calculate the position
-		double delta = mlt_transition_get_progress_delta( this, a_frame );
-		mlt_position length = mlt_transition_get_length( this );
+		double delta = mlt_transition_get_progress_delta( self, a_frame );
+		mlt_position length = mlt_transition_get_length( self );
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
@@ -1150,9 +1150,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Do the calculation
 		// NB: Locks needed here since the properties are being modified
 		int invert = mlt_properties_get_int( properties, "invert" );
-		mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
-		composite_calculate( this, &result, invert ? b_frame : a_frame, position );
-		mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
+		mlt_service_lock( MLT_TRANSITION_SERVICE( self ) );
+		composite_calculate( self, &result, invert ? b_frame : a_frame, position );
+		mlt_service_unlock( MLT_TRANSITION_SERVICE( self ) );
 
 		// Manual option to deinterlace
 		if ( mlt_properties_get_int( properties, "deinterlace" ) )
@@ -1174,7 +1174,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( a_frame == b_frame )
 		{
 			double aspect_ratio = mlt_frame_get_aspect_ratio( b_frame );
-			get_b_frame_image( this, b_frame, &image_b, &width_b, &height_b, &result );
+			get_b_frame_image( self, b_frame, &image_b, &width_b, &height_b, &result );
 			alpha_b = mlt_frame_get_alpha_mask( b_frame );
 			mlt_properties_set_double( a_props, "aspect_ratio", aspect_ratio );
 		}
@@ -1210,7 +1210,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			height_b = mlt_properties_get_int( a_props, "dest_height" );
 		}
 
-		if ( *image != image_b && ( ( invert ? 0 : image_b ) || get_b_frame_image( this, b_frame, invert ? image : &image_b, &width_b, &height_b, &result ) == 0 ) )
+		if ( *image != image_b && ( ( invert ? 0 : image_b ) || get_b_frame_image( self, b_frame, invert ? image : &image_b, &width_b, &height_b, &result ) == 0 ) )
 		{
 			uint8_t *dest = *image;
 			uint8_t *src = image_b;
@@ -1220,9 +1220,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			int field;
 			
 			double luma_softness = mlt_properties_get_double( properties, "softness" );
-			mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
-			uint16_t *luma_bitmap = get_luma( this, properties, width_b, height_b );
-			mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
+			mlt_service_lock( MLT_TRANSITION_SERVICE( self ) );
+			uint16_t *luma_bitmap = get_luma( self, properties, width_b, height_b );
+			mlt_service_unlock( MLT_TRANSITION_SERVICE( self ) );
 			char *operator = mlt_properties_get( properties, "operator" );
 
 			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha_mask( b_frame ) : alpha_b;
@@ -1254,9 +1254,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				
 				// Do the calculation if we need to
 				// NB: Locks needed here since the properties are being modified
-				mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
-				composite_calculate( this, &result, invert ? b_frame : a_frame, field_position );
-				mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
+				mlt_service_lock( MLT_TRANSITION_SERVICE( self ) );
+				composite_calculate( self, &result, invert ? b_frame : a_frame, field_position );
+				mlt_service_unlock( MLT_TRANSITION_SERVICE( self ) );
 
 				if ( mlt_properties_get_int( properties, "titles" ) )
 				{
@@ -1301,14 +1301,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 /** Composition transition processing.
 */
 
-static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
+static mlt_frame composite_process( mlt_transition self, mlt_frame a_frame, mlt_frame b_frame )
 {
 	// UGH - this is a TODO - find a more reliable means of obtaining in/out for the always_active case
-	if ( mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "always_active" ) == 0 )
+	if ( mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( self ), "always_active" ) == 0 )
 	{
-		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "in" ) );
-		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( this ), "out" ) );
-		mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( a_frame ), position_calculate( this, mlt_frame_get_position( a_frame ) ) );
+		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( self ), "in" ) );
+		mlt_frame_push_service_int( a_frame, mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( self ), "out" ) );
+		mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( a_frame ), position_calculate( self, mlt_frame_get_position( a_frame ) ) );
 	}
 	else
 	{
@@ -1318,7 +1318,7 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 		mlt_deque_push_back_double( MLT_FRAME_IMAGE_STACK( a_frame ), mlt_properties_get_int( props, "_frame" ) - mlt_properties_get_int( props, "in" ) );
 	}
 	
-	mlt_frame_push_service( a_frame, this );
+	mlt_frame_push_service( a_frame, self );
 	mlt_frame_push_frame( a_frame, b_frame );
 	mlt_frame_push_get_image( a_frame, transition_get_image );
 	return a_frame;
@@ -1329,12 +1329,12 @@ static mlt_frame composite_process( mlt_transition this, mlt_frame a_frame, mlt_
 
 mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_transition this = calloc( sizeof( struct mlt_transition_s ), 1 );
-	if ( this != NULL && mlt_transition_init( this, NULL ) == 0 )
+	mlt_transition self = calloc( sizeof( struct mlt_transition_s ), 1 );
+	if ( self != NULL && mlt_transition_init( self, NULL ) == 0 )
 	{
-		mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 		
-		this->process = composite_process;
+		self->process = composite_process;
 		
 		// Default starting motion and zoom
 		mlt_properties_set( properties, "start", arg != NULL ? arg : "0/0:100%x100%" );
@@ -1351,5 +1351,5 @@ mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type 
 		// Inform apps and framework that this is a video only transition
 		mlt_properties_set_int( properties, "_transition_type", 1 );
 	}
-	return this;
+	return self;
 }
