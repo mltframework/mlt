@@ -197,6 +197,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				}
 				QGraphicsTextItem *txt = scene->addText(text, font);
 				if (txtProperties.namedItem("font-outline").nodeValue().toDouble()>0.0){
+					qRegisterMetaType<QTextCursor>( "QTextCursor" );
 					QTextCursor cursor(txt->document());
 					cursor.select(QTextCursor::Document);
 					QTextCharFormat format;
@@ -440,7 +441,8 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 				    // the keystroke delay and a start offset, both in frames
 				    QStringList values = params.at( 2 ).split( ";" );
 				    int interval = qMax( 0, ( ( int ) position - values.at( 1 ).toInt()) / values.at( 0 ).toInt() );
-				    QTextCursor cursor = titem->textCursor();
+					qRegisterMetaType<QTextCursor>( "QTextCursor" );
+					QTextCursor cursor = titem->textCursor();
 				    cursor.movePosition(QTextCursor::EndOfBlock);
 				    // get the font format
 				    QTextCharFormat format = cursor.charFormat();
