@@ -46,12 +46,12 @@ static void crop( uint8_t *src, uint8_t *dest, int bpp, int width, int height, i
 /** Do it :-).
 */
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
 
 	// Get the properties from the frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Correct Width/height if necessary
 	if ( *width == 0 || *height == 0 )
@@ -73,7 +73,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	}
 
 	// Now get the image
-	error = mlt_frame_get_image( this, image, format, width, height, writable );
+	error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 	int owidth  = *width - left - right;
 	int oheight = *height - top - bottom;
@@ -86,10 +86,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int bpp;
 
 		// Subsampled YUV is messy and less precise.
-		if ( *format == mlt_image_yuv422 && this->convert_image )
+		if ( *format == mlt_image_yuv422 && frame->convert_image )
 		{
 			mlt_image_format requested_format = mlt_image_rgb24;
-			this->convert_image( this, image, format, requested_format );
+			frame->convert_image( frame, image, format, requested_format );
 		}
 	
 		mlt_log_debug( NULL, "[filter crop] %s %dx%d -> %dx%d\n", mlt_image_format_name(*format),
@@ -114,12 +114,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			crop( *image, output, bpp, *width, *height, left, right, top, bottom );
 
 			// Now update the frame
-			mlt_frame_set_image( this, output, size, mlt_pool_release );
+			mlt_frame_set_image( frame, output, size, mlt_pool_release );
 			*image = output;
 		}
 
 		// We should resize the alpha too
-		uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+		uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 		int alpha_size = 0;
 		mlt_properties_get_data( properties, "alpha", &alpha_size );
 		if ( alpha && alpha_size >= ( *width * *height ) )
@@ -128,7 +128,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			if ( newalpha )
 			{
 				crop( alpha, newalpha, 1, *width, *height, left, right, top, bottom );
-				mlt_frame_set_alpha( this, newalpha, owidth * oheight, mlt_pool_release );
+				mlt_frame_set_alpha( frame, newalpha, owidth * oheight, mlt_pool_release );
 			}
 		}
 		*width = owidth;
@@ -141,16 +141,16 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "active" ) )
+	if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "active" ) )
 	{
 		// Push the get_image method on to the stack
 		mlt_frame_push_get_image( frame, filter_get_image );
 	}
 	else
 	{
-		mlt_properties filter_props = MLT_FILTER_PROPERTIES( this );
+		mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
 		mlt_properties frame_props = MLT_FRAME_PROPERTIES( frame );
 		int left   = mlt_properties_get_int( filter_props, "left" );
 		int right  = mlt_properties_get_int( filter_props, "right" );
@@ -159,7 +159,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		int width  = mlt_properties_get_int( frame_props, "real_width" );
 		int height = mlt_properties_get_int( frame_props, "real_height" );
 		int use_profile = mlt_properties_get_int( filter_props, "use_profile" );
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 
 		if ( use_profile )
 		{
@@ -174,7 +174,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 			if ( aspect_ratio == 0.0 )
 				aspect_ratio = mlt_properties_get_double( frame_props, "consumer_aspect_ratio" );
 			double input_ar = aspect_ratio * width / height;
-			double output_ar = mlt_profile_dar( mlt_service_profile( MLT_FILTER_SERVICE(this) ) );
+			double output_ar = mlt_profile_dar( mlt_service_profile( MLT_FILTER_SERVICE(filter) ) );
 			int bias = mlt_properties_get_int( filter_props, "center_bias" );
 			
 			if ( input_ar > output_ar )
@@ -223,12 +223,12 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_crop_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
-	if ( mlt_filter_init( this, this ) == 0 )
+	mlt_filter filter = calloc( sizeof( struct mlt_filter_s ), 1 );
+	if ( mlt_filter_init( filter, filter ) == 0 )
 	{
-		this->process = filter_process;
+		filter->process = filter_process;
 		if ( arg )
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "active", atoi( arg ) );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "active", atoi( arg ) );
 	}
-	return this;
+	return filter;
 }
