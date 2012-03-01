@@ -95,11 +95,12 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 			mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 			mlt_transition_process( transition, a_frame, this );
 
-			if (mlt_properties_get_int( properties, "use_normalised" ))
+			if ( mlt_properties_get_int( properties, "use_normalised" ) )
 			{
-				// Use the normalised width & height from the a_frame
-				*width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame ), "normalised_width" );
-				*height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame ), "normalised_height" );
+				// Use the normalised width & height
+				mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+				*width = profile->width;
+				*height = profile->height;
 			}
 			
 			mlt_frame_get_image( a_frame, image, format, width, height, writable );

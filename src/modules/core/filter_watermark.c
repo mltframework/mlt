@@ -156,9 +156,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			if ( mlt_frame_get_aspect_ratio( frame ) == 0 )
 				mlt_properties_set_double( a_props, "aspect_ratio", mlt_properties_get_double( a_props, "consumer_aspect_ratio" ) );
 
-			mlt_properties_set_int( b_props, "normalised_width", mlt_properties_get_int( a_props, "normalised_width" ) );
-			mlt_properties_set_int( b_props, "normalised_height", mlt_properties_get_int( a_props, "normalised_height" ) );
-
 			if ( mlt_properties_get_int( properties, "distort" ) )
 			{
 				mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( composite ), "distort", 1 );

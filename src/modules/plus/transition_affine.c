@@ -393,8 +393,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 
 	// Obtain the normalised width and height from the a_frame
-	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
-	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
+	int normalised_width = profile->width;
+	int normalised_height = profile->height;
 
 	double consumer_ar = mlt_properties_get_double( a_props, "consumer_aspect_ratio" );
 

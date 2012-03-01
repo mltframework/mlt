@@ -925,8 +925,9 @@ static mlt_geometry composite_calculate( mlt_transition self, struct geometry_s 
 	mlt_geometry start = mlt_properties_get_data( properties, "geometries", NULL );
 
 	// Obtain the normalised width and height from the a_frame
-	int normalised_width = mlt_properties_get_int( a_props, "normalised_width" );
-	int normalised_height = mlt_properties_get_int( a_props, "normalised_height" );
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
+	int normalised_width = profile->width;
+	int normalised_height = profile->height;
 
 	char *name = mlt_properties_get( properties, "_unique_id" );
 	char key[ 256 ];
@@ -1140,8 +1141,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Get the image from the b frame
 		uint8_t *image_b = NULL;
-		int width_b = *width > 0 ? *width : mlt_properties_get_int( a_props, "normalised_width" );
-		int height_b = *height > 0 ? *height : mlt_properties_get_int( a_props, "normalised_height" );
+		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
+		int width_b = *width > 0 ? *width : profile->width;
+		int height_b = *height > 0 ? *height : profile->height;
 	
 		// Vars for alphas
 		uint8_t *alpha_a = NULL;

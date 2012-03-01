@@ -178,6 +178,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Pop the top of stack now
 	mlt_filter filter = mlt_frame_pop_service( frame );
+	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 
 	// Retrieve the aspect ratio
 	double aspect_ratio = mlt_deque_pop_back_double( MLT_FRAME_IMAGE_STACK( frame ) );
@@ -186,8 +187,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Correct Width/height if necessary
 	if ( *width == 0 || *height == 0 )
 	{
-		*width = mlt_properties_get_int( properties, "normalised_width" );
-		*height = mlt_properties_get_int( properties, "normalised_height" );
+		*width = profile->width;
+		*height = profile->height;
 	}
 
 	// Assign requested width/height from our subordinate
@@ -209,8 +210,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( mlt_properties_get_int( properties, "distort" ) == 0 )
 	{
 		// Normalise the input and out display aspect
-		int normalised_width = mlt_properties_get_int( properties, "normalised_width" );
-		int normalised_height = mlt_properties_get_int( properties, "normalised_height" );
+		int normalised_width = profile->width;
+		int normalised_height = profile->height;
 		int real_width = mlt_properties_get_int( properties, "real_width" );
 		int real_height = mlt_properties_get_int( properties, "real_height" );
 		if ( real_width == 0 )

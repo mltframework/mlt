@@ -49,6 +49,7 @@ static void crop( uint8_t *src, uint8_t *dest, int bpp, int width, int height, i
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
+	mlt_profile profile = mlt_frame_pop_service( frame );
 
 	// Get the properties from the frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -56,8 +57,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Correct Width/height if necessary
 	if ( *width == 0 || *height == 0 )
 	{
-		*width  = mlt_properties_get_int( properties, "normalised_width" );
-		*height = mlt_properties_get_int( properties, "normalised_height" );
+		*width  = profile->width;
+		*height = profile->height;
 	}
 
 	int left    = mlt_properties_get_int( properties, "crop.left" );
@@ -146,6 +147,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "active" ) )
 	{
 		// Push the get_image method on to the stack
+		mlt_frame_push_service( frame, mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
 		mlt_frame_push_get_image( frame, filter_get_image );
 	}
 	else

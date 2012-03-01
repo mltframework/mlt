@@ -20,6 +20,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -213,9 +214,6 @@ static void obscure_render( uint8_t *image, int width, int height, struct geomet
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	// Get the frame properties
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Pop the top of stack now
 	mlt_filter filter = mlt_frame_pop_service( frame );
 
@@ -230,10 +228,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			// Get the filter properties
 			mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-
-			// Obtain the normalised width and height from the frame
-			int normalised_width = mlt_properties_get_int( frame_properties, "normalised_width" );
-			int normalised_height = mlt_properties_get_int( frame_properties, "normalised_height" );
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 
 			// Structures for geometry
 			struct geometry_s result;
@@ -244,8 +239,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			float position = mlt_filter_get_progress( filter, frame );
 
 			// Now parse the geometries
-			geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), normalised_width, normalised_height );
-			geometry_parse( &end, &start, mlt_properties_get( properties, "end" ), normalised_width, normalised_height );
+			geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), profile->width, profile->height );
+			geometry_parse( &end, &start, mlt_properties_get( properties, "end" ), profile->width, profile->height );
 
 			// Do the calculation
 			geometry_calculate( &result, &start, &end, position, *width, *height );
