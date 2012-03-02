@@ -45,12 +45,14 @@ struct producer_qimage_s
 	int current_width;
 	int current_height;
 	mlt_cache_item image_cache;
-	pthread_mutex_t mutex;
+	mlt_cache_item qimage_cache;
+	void *qimage;
 };
 
 typedef struct producer_qimage_s *producer_qimage;
 
-extern void refresh_qimage( producer_qimage, mlt_frame, int width, int height );
+extern int refresh_qimage( producer_qimage self, mlt_frame frame );
+extern void refresh_image( producer_qimage, mlt_frame, int width, int height );
 extern void make_tempfile( producer_qimage, const char *xml );
 
 #ifdef USE_KDE

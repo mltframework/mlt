@@ -72,7 +72,7 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 				mlt_properties_set_data( frame_properties, "producer_qimage", self, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 				mlt_properties_set_position( frame_properties, "qimage_position", mlt_producer_position( producer ) );
-				refresh_qimage( self, frame, 0, 0 );
+				refresh_qimage( self, frame );
 				mlt_frame_close( frame );
 			}
 		}
@@ -81,8 +81,6 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 			producer_close( producer );
 			producer = NULL;
 		}
-		if ( producer )
-			pthread_mutex_init( &self->mutex, NULL );
 		return producer;
 	}
 	free( self );
@@ -152,11 +150,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 {
 	int error = 0;
 	
-	// Obtain properties of frame
+	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
-	// Obtain the producer for this frame
 	producer_qimage self = mlt_properties_get_data( properties, "producer_qimage", NULL );
+	mlt_producer producer = &self->parent;
 
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
@@ -164,7 +161,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_service_lock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	// Refresh the image
-	refresh_qimage( self, frame, *width, *height );
+	self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+	self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
+	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
+	self->current_image = mlt_cache_item_data( self->image_cache, NULL );
+	refresh_image( self, frame, *width, *height );
 
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
@@ -192,7 +193,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Release references and locks
-	pthread_mutex_unlock( &self->mutex );
+	mlt_cache_item_close( self->qimage_cache );
 	mlt_cache_item_close( self->image_cache );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
@@ -228,7 +229,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_position( properties, "qimage_position", mlt_producer_position( producer ) );
 
 		// Refresh the image
-		refresh_qimage( self, *frame, 0, 0 );
+		self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+		self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
+		refresh_qimage( self, *frame );
+		mlt_cache_item_close( self->qimage_cache );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
@@ -251,7 +255,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer parent )
 {
 	producer_qimage self = parent->child;
-	pthread_mutex_destroy( &self->mutex );
 	parent->close = NULL;
 	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
 	mlt_producer_close( parent );
