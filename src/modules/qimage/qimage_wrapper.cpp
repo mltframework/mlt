@@ -110,11 +110,6 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 		mlt_properties_set_int( producer_props, "force_reload", 0 );
 	}
 
-	// Obtain the cache flag and structure
-	int use_cache = mlt_properties_get_int( producer_props, "cache" );
-	mlt_properties cache = ( mlt_properties )mlt_properties_get_data( producer_props, "_cache", NULL );
-	int update_cache = 0;
-
 	// Get the time to live for each frame
 	double ttl = mlt_properties_get_int( producer_props, "ttl" );
 
@@ -130,33 +125,6 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 	sprintf( image_key, "%d", image_idx );
 
 	g_mutex.lock();
-
-	// Check if the frame is already loaded
-	if ( use_cache )
-	{
-		if ( cache == NULL )
-		{
-			cache = mlt_properties_new( );
-			mlt_properties_set_data( producer_props, "_cache", cache, 0, ( mlt_destructor )mlt_properties_close, NULL );
-		}
-
-		mlt_frame cached = ( mlt_frame )mlt_properties_get_data( cache, image_key, NULL );
-
-		if ( cached )
-		{
-			self->image_idx = image_idx;
-			mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
-			self->current_width = mlt_properties_get_int( cached_props, "width" );
-			self->current_height = mlt_properties_get_int( cached_props, "height" );
-			mlt_properties_set_int( producer_props, "_real_width", mlt_properties_get_int( cached_props, "real_width" ) );
-			mlt_properties_set_int( producer_props, "_real_height", mlt_properties_get_int( cached_props, "real_height" ) );
-			self->current_image = ( uint8_t * )mlt_properties_get_data( cached_props, "image", NULL );
-			self->has_alpha = mlt_properties_get_int( cached_props, "alpha" );
-
-			if ( width != 0 && ( width != self->current_width || height != self->current_height ) )
-				self->current_image = NULL;
-		}
-	}
 
 	int disable_exif = mlt_properties_get_int( producer_props, "disable_exif" );
 
@@ -310,14 +278,10 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 		}
 
 		// Update the cache
-		if ( !use_cache )
-			mlt_cache_item_close( self->image_cache );
+		mlt_cache_item_close( self->image_cache );
 		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, image_size, mlt_pool_release );
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 		self->image_idx = image_idx;
-
-		// Ensure we update the cache when we need to
-		update_cache = use_cache;
 	}
 
 	// release references no longer needed
@@ -334,20 +298,6 @@ void refresh_qimage( producer_qimage self, mlt_frame frame, int width, int heigh
 	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
 	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
 
-	if ( update_cache )
-	{
-		mlt_frame cached = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
-		mlt_properties cached_props = MLT_FRAME_PROPERTIES( cached );
-		mlt_properties_set_int( cached_props, "width", self->current_width );
-		mlt_properties_set_int( cached_props, "height", self->current_height );
-		mlt_properties_set_int( cached_props, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
-		mlt_properties_set_int( cached_props, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
-		mlt_properties_set_data( cached_props, "image", self->current_image,
-			self->current_width * ( self->current_height + 1 ) * ( self->has_alpha ? 4 : 3 ),
-			mlt_pool_release, NULL );
-		mlt_properties_set_int( cached_props, "alpha", self->has_alpha );
-		mlt_properties_set_data( cache, image_key, cached, 0, ( mlt_destructor )mlt_frame_close, NULL );
-	}
 	g_mutex.unlock();
 }
 
