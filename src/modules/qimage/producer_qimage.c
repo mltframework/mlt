@@ -165,19 +165,21 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
 	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 	self->current_image = mlt_cache_item_data( self->image_cache, NULL );
-	refresh_image( self, frame, *width, *height );
+	self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+	self->current_alpha = mlt_cache_item_data( self->alpha_cache, NULL );
+	refresh_image( self, frame, *format, *width, *height );
 
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
-	*format = self->has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+	*format = self->format;
 
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
 	// The fault is not in the design of mlt, but in the implementation of the qimage producer...
 	if ( self->current_image )
 	{
 		// Clone the image and the alpha
-		int image_size = self->current_width * ( self->current_height + 1 ) * ( self->has_alpha ? 4 :3 );
+		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
 		memcpy( image_copy, self->current_image, image_size );
 		// Now update properties so we free the copy after
@@ -186,6 +188,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*buffer = image_copy;
 		mlt_log_debug( MLT_PRODUCER_SERVICE( &self->parent ), "%dx%d (%s)\n",
 			self->current_width, self->current_height, mlt_image_format_name( *format ) );
+		// Clone the alpha channel
+		if ( self->current_alpha )
+		{
+			image_copy = mlt_pool_alloc( self->current_width * self->current_height );
+			memcpy( image_copy, self->current_alpha, self->current_width * self->current_height );
+			mlt_frame_set_alpha( frame, image_copy, self->current_width * self->current_height, mlt_pool_release );
+		}
 	}
 	else
 	{
@@ -195,6 +204,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Release references and locks
 	mlt_cache_item_close( self->qimage_cache );
 	mlt_cache_item_close( self->image_cache );
+	mlt_cache_item_close( self->alpha_cache );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	return error;

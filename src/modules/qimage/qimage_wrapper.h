@@ -41,18 +41,20 @@ struct producer_qimage_s
 	int image_idx;
 	int qimage_idx;
 	uint8_t *current_image;
-	int has_alpha;
+	uint8_t *current_alpha;
 	int current_width;
 	int current_height;
 	mlt_cache_item image_cache;
+	mlt_cache_item alpha_cache;
 	mlt_cache_item qimage_cache;
 	void *qimage;
+	mlt_image_format format;
 };
 
 typedef struct producer_qimage_s *producer_qimage;
 
 extern int refresh_qimage( producer_qimage self, mlt_frame frame );
-extern void refresh_image( producer_qimage, mlt_frame, int width, int height );
+extern void refresh_image( producer_qimage, mlt_frame, mlt_image_format, int width, int height );
 extern void make_tempfile( producer_qimage, const char *xml );
 
 #ifdef USE_KDE

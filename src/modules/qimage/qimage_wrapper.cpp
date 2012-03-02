@@ -215,7 +215,7 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	return image_idx;
 }
 
-void refresh_image( producer_qimage self, mlt_frame frame, int width, int height )
+void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format format, int width, int height )
 {
 	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -229,7 +229,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, int width, int height
 		self->current_image = NULL;
 
 	// If we have a qimage and need a new scaled image
-	if ( self->qimage && !self->current_image )
+	if ( self->qimage && ( !self->current_image || ( format != mlt_image_none  && format != self->format ) ) )
 	{
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 		int interp = 0;
@@ -252,7 +252,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, int width, int height
 		}
 		QImage scaled = interp == 0 ? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
-		self->has_alpha = scaled.hasAlphaChannel();
+		int has_alpha = scaled.hasAlphaChannel();
 #endif
 
 #ifdef USE_QT3
@@ -267,9 +267,10 @@ void refresh_image( producer_qimage self, mlt_frame frame, int width, int height
 		self->current_height = height;
 
 		// Allocate/define image
-		int dst_stride = width * ( self->has_alpha ? 4 : 3 );
+		int dst_stride = width * ( has_alpha ? 4 : 3 );
 		int image_size = dst_stride * ( height + 1 );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
+		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 		// Copy the image
 		int y = self->current_height + 1;
@@ -283,8 +284,37 @@ void refresh_image( producer_qimage self, mlt_frame frame, int width, int height
 				*dst++ = qRed(*src);
 				*dst++ = qGreen(*src);
 				*dst++ = qBlue(*src);
-				if ( self->has_alpha ) *dst++ = qAlpha(*src);
+				if ( has_alpha ) *dst++ = qAlpha(*src);
 				++src;
+			}
+		}
+
+		// Convert image to requested format
+		if ( format != mlt_image_none && format != self->format )
+		{
+			uint8_t *buffer = NULL;
+
+			// First, set the image so it can be converted when we get it
+			mlt_frame_set_image( frame, self->current_image, image_size, mlt_pool_release );
+			mlt_properties_set_int( properties, "format", self->format );
+			mlt_properties_set_int( properties, "width", width );
+			mlt_properties_set_int( properties, "height", height );
+			self->format = format;
+
+			// get_image will do the format conversion
+			mlt_frame_get_image( frame, &buffer, &format, &width, &height, 0 );
+
+			// cache copies of the image and alpha buffers
+			if ( buffer )
+			{
+				image_size = mlt_image_format_size( format, width, height, NULL );
+				self->current_image = (uint8_t*) mlt_pool_alloc( image_size );
+				memcpy( self->current_image, buffer, image_size );
+			}
+			if ( ( buffer = mlt_frame_get_alpha_mask( frame ) ) )
+			{
+				self->current_alpha = (uint8_t*) mlt_pool_alloc( width * height );
+				memcpy( self->current_alpha, buffer, width * height );
 			}
 		}
 
@@ -293,6 +323,9 @@ void refresh_image( producer_qimage self, mlt_frame frame, int width, int height
 		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, image_size, mlt_pool_release );
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 		self->image_idx = image_idx;
+		mlt_cache_item_close( self->alpha_cache );
+		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha", self->current_alpha, width * height, mlt_pool_release );
+		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha" );
 	}
 
 	// Set width/height of frame
