@@ -54,8 +54,6 @@ struct producer_pixbuf_s
 	int count;
 	int image_idx;
 	int pixbuf_idx;
-	int pixbuf_width;
-	int pixbuf_height;
 	int width;
 	int height;
 	uint8_t *alpha;
@@ -318,15 +316,16 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 			self->pixbuf_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf" );
 			self->pixbuf_idx = current_idx;
 
-			mlt_events_block( producer_props, NULL );
-			self->pixbuf_width = gdk_pixbuf_get_width( self->pixbuf );
-			self->pixbuf_height = gdk_pixbuf_get_height( self->pixbuf );
-			mlt_properties_set_int( producer_props, "_disable_exif", disable_exif );
-			mlt_events_unblock( producer_props, NULL );
-
 			// Store the width/height of the pixbuf temporarily
 			self->width = gdk_pixbuf_get_width( self->pixbuf );
 			self->height = gdk_pixbuf_get_height( self->pixbuf );
+
+			mlt_events_block( producer_props, NULL );
+			mlt_properties_set_int( producer_props, "_real_width", self->width );
+			mlt_properties_set_int( producer_props, "_real_height", self->height );
+			mlt_properties_set_int( producer_props, "_disable_exif", disable_exif );
+			mlt_events_unblock( producer_props, NULL );
+
 		}
 		pthread_mutex_unlock( &g_mutex );
 	}
@@ -334,8 +333,8 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 	// Set width/height of frame
 	mlt_properties_set_int( properties, "width", self->width );
 	mlt_properties_set_int( properties, "height", self->height );
-	mlt_properties_set_int( properties, "real_width", self->pixbuf_width );
-	mlt_properties_set_int( properties, "real_height", self->pixbuf_height );
+	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
+	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
 
 	return current_idx;
 }
