@@ -279,7 +279,6 @@ static int producer_collect_info( producer_libdv this, mlt_profile profile )
 					aspect_ratio = 8 / 9;
 			}
 			mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio);
-			mlt_properties_set_double( properties, "source_fps", this->is_pal ? 25 : ( 30000.0 / 1001.0 ) );
 			mlt_properties_set_int( properties, "meta.media.nb_streams", 2 );
 			mlt_properties_set_int( properties, "video_index", 0 );
 			mlt_properties_set( properties, "meta.media.0.stream.type", "video" );
@@ -291,6 +290,8 @@ static int producer_collect_info( producer_libdv this, mlt_profile profile )
 			mlt_properties_set( properties, "meta.media.1.codec.long_name", "signed 16-bit little-endian PCM" );
 			mlt_properties_set_int( properties, "meta.media.width", 720 );
 			mlt_properties_set_int( properties, "meta.media.height", this->is_pal ? 576 : 480 );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_num", this->is_pal? 25 : 30000 );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_den", this->is_pal?  1 :  1001 );
 
 			// Return the decoder
 			dv_decoder_return( dv_decoder );

@@ -1985,7 +1985,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #endif
 				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
-				source_fps = av_q2d( frame_rate );
 			}
 			else
 			{
@@ -1995,12 +1994,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 			}
 		}
-
-		// source_fps is deprecated in favor of meta.media.frame_rate_num and .frame_rate_den
-		if ( source_fps > 0 )
-			mlt_properties_set_double( properties, "source_fps", source_fps );
-		else
-			mlt_properties_set_double( properties, "source_fps", mlt_producer_get_fps( self->parent ) );
 
 		// Set the YUV colorspace from override or detect
 		self->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
