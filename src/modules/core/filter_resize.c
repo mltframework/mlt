@@ -212,8 +212,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Normalise the input and out display aspect
 		int normalised_width = profile->width;
 		int normalised_height = profile->height;
-		int real_width = mlt_properties_get_int( properties, "real_width" );
-		int real_height = mlt_properties_get_int( properties, "real_height" );
+		int real_width = mlt_properties_get_int( properties, "meta.media.width" );
+		int real_height = mlt_properties_get_int( properties, "meta.media.height" );
 		if ( real_width == 0 )
 			real_width = mlt_properties_get_int( properties, "width" );
 		if ( real_height == 0 )

@@ -772,8 +772,8 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 	// TODO: Use the animatable w and h of the crop geometry to scale independently of crop rectangle
 	if ( mlt_properties_get( properties, "crop" ) )
 	{
-		int real_width = get_value( b_props, "real_width", "width" );
-		int real_height = get_value( b_props, "real_height", "height" );
+		int real_width = get_value( b_props, "meta.media.width", "width" );
+		int real_height = get_value( b_props, "meta.media.height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
@@ -786,8 +786,8 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->item.w;
 		int normalised_height = geometry->item.h;
-		int real_width = get_value( b_props, "real_width", "width" );
-		int real_height = get_value( b_props, "real_height", "height" );
+		int real_width = get_value( b_props, "meta.media.width", "width" );
+		int real_height = get_value( b_props, "meta.media.height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;

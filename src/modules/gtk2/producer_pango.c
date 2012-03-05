@@ -442,8 +442,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			g_object_ref( pixbuf );
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
 
-			mlt_properties_set_int( producer_props, "real_width", gdk_pixbuf_get_width( pixbuf ) );
-			mlt_properties_set_int( producer_props, "real_height", gdk_pixbuf_get_height( pixbuf ) );
+			mlt_properties_set_int( producer_props, "meta.media.width", gdk_pixbuf_get_width( pixbuf ) );
+			mlt_properties_set_int( producer_props, "meta.media.height", gdk_pixbuf_get_height( pixbuf ) );
 
 			// Store the width/height of the pixbuf temporarily
 			this->width = gdk_pixbuf_get_width( pixbuf );
@@ -484,8 +484,6 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Set width/height
 	mlt_properties_set_int( properties, "width", this->width );
 	mlt_properties_set_int( properties, "height", this->height );
-	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "real_width" ) );
-	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "real_height" ) );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )

@@ -158,8 +158,8 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		int right  = mlt_properties_get_int( filter_props, "right" );
 		int top    = mlt_properties_get_int( filter_props, "top" );
 		int bottom = mlt_properties_get_int( filter_props, "bottom" );
-		int width  = mlt_properties_get_int( frame_props, "real_width" );
-		int height = mlt_properties_get_int( frame_props, "real_height" );
+		int width  = mlt_properties_get_int( frame_props, "meta.media.width" );
+		int height = mlt_properties_get_int( frame_props, "meta.media.height" );
 		int use_profile = mlt_properties_get_int( filter_props, "use_profile" );
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 
@@ -214,8 +214,8 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		mlt_properties_set_int( frame_props, "crop.bottom", bottom );
 		mlt_properties_set_int( frame_props, "crop.original_width", width );
 		mlt_properties_set_int( frame_props, "crop.original_height", height );
-		mlt_properties_set_int( frame_props, "real_width", width - left - right );
-		mlt_properties_set_int( frame_props, "real_height", height - top - bottom );
+		mlt_properties_set_int( frame_props, "meta.media.width", width - left - right );
+		mlt_properties_set_int( frame_props, "meta.media.height", height - top - bottom );
 	}
 	return frame;
 }

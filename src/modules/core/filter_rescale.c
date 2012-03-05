@@ -184,11 +184,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_properties_set( properties, "rescale.interp", interps );
 		}
 	
-		// If real_width/height exist, we want that as minimum information
-		if ( mlt_properties_get_int( properties, "real_width" ) )
+		// If meta.media.width/height exist, we want that as minimum information
+		if ( mlt_properties_get_int( properties, "meta.media.width" ) )
 		{
-			iwidth = mlt_properties_get_int( properties, "real_width" );
-			iheight = mlt_properties_get_int( properties, "real_height" );
+			iwidth = mlt_properties_get_int( properties, "meta.media.width" );
+			iheight = mlt_properties_get_int( properties, "meta.media.height" );
 		}
 	
 		// Let the producer know what we are actually requested to obtain

@@ -45,8 +45,8 @@ mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, cons
 			this->close = ( mlt_destructor )producer_close;
 			mlt_properties_set( properties, "resource", resource );
 			mlt_properties_set_data( properties, "image", image, 0, mlt_pool_release, NULL );
-			mlt_properties_set_int( properties, "real_width", width );
-			mlt_properties_set_int( properties, "real_height", height );
+			mlt_properties_set_int( properties, "meta.media.width", width );
+			mlt_properties_set_int( properties, "meta.media.height", height );
 		}
 		else
 		{
@@ -155,8 +155,8 @@ static int read_pgm( char *name, uint8_t **image, int *width, int *height, int *
 static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_producer producer = mlt_frame_pop_service( this );
-	int real_width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "real_width" );
-	int real_height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "real_height" );
+	int real_width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "meta.media.width" );
+	int real_height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "meta.media.height" );
 	int size = real_width * real_height;
 	uint8_t *image = mlt_pool_alloc( size * 2 );
 	uint8_t *source = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES( producer ), "image", NULL );
@@ -183,7 +183,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 	// Pass the data on the frame properties
-	mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( producer ), "real_width,real_height" );
 	mlt_properties_set_int( properties, "has_image", 1 );
 	mlt_properties_set_int( properties, "progressive", 1 );
 	mlt_properties_set_double( properties, "aspect_ratio", 1 );

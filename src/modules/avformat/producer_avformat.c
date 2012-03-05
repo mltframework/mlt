@@ -2099,11 +2099,8 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		// Set the width and height
 		mlt_properties_set_int( frame_properties, "width", self->video_codec->width );
 		mlt_properties_set_int( frame_properties, "height", self->video_codec->height );
-		// real_width and real_height are deprecated in favor of meta.media.width and .height
 		mlt_properties_set_int( properties, "meta.media.width", self->video_codec->width );
 		mlt_properties_set_int( properties, "meta.media.height", self->video_codec->height );
-		mlt_properties_set_int( frame_properties, "real_width", self->video_codec->width );
-		mlt_properties_set_int( frame_properties, "real_height", self->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
 		mlt_properties_set_int( frame_properties, "colorspace", self->colorspace );
 
@@ -2111,7 +2108,6 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		if ( self->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 		{
 			mlt_properties_set_int( properties, "meta.media.height", 1080 );
-			mlt_properties_set_int( frame_properties, "real_height", 1080 );
 		}
 
 		// Add our image operation

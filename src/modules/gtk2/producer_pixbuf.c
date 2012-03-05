@@ -321,8 +321,8 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 			self->height = gdk_pixbuf_get_height( self->pixbuf );
 
 			mlt_events_block( producer_props, NULL );
-			mlt_properties_set_int( producer_props, "_real_width", self->width );
-			mlt_properties_set_int( producer_props, "_real_height", self->height );
+			mlt_properties_set_int( producer_props, "meta.media.width", self->width );
+			mlt_properties_set_int( producer_props, "meta.media.height", self->height );
 			mlt_properties_set_int( producer_props, "_disable_exif", disable_exif );
 			mlt_events_unblock( producer_props, NULL );
 
@@ -333,8 +333,6 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 	// Set width/height of frame
 	mlt_properties_set_int( properties, "width", self->width );
 	mlt_properties_set_int( properties, "height", self->height );
-	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
-	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
 
 	return current_idx;
 }

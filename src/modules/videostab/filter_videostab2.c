@@ -174,8 +174,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 					int interp = 2;
 					float scale_zoom=1.0;
-					if (*width!=mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "real_width" ))
-						scale_zoom=(float)*width/(float)mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "real_width" );
+					if ( *width != mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.media.width" ) )
+						scale_zoom = (float) *width / (float) mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.media.width" );
 					if ( strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
 						interp = 0;
 					else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )

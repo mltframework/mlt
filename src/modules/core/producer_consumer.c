@@ -192,8 +192,8 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		mlt_properties_set_double( frame_props, "aspect_ratio", mlt_profile_sar( cx->profile ) );
 		mlt_properties_set_int( frame_props, "width", cx->profile->width );
 		mlt_properties_set_int( frame_props, "height", cx->profile->height );
-		mlt_properties_set_int( frame_props, "real_width", cx->profile->width );
-		mlt_properties_set_int( frame_props, "real_height", cx->profile->height );
+		mlt_properties_set_int( frame_props, "meta.media.width", cx->profile->width );
+		mlt_properties_set_int( frame_props, "meta.media.height", cx->profile->height );
 		mlt_properties_set_int( frame_props, "progressive", cx->profile->progressive );
 	}
 

@@ -421,8 +421,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	result.y = ( result.y * *height / normalised_height );
 
 	// Request full resolution of b frame image.
-	b_width = mlt_properties_get_int( b_props, "real_width" );
-	b_height = mlt_properties_get_int( b_props, "real_height" );
+	b_width = mlt_properties_get_int( b_props, "meta.media.width" );
+	b_height = mlt_properties_get_int( b_props, "meta.media.height" );
 	mlt_properties_set_int( b_props, "rescale_width", b_width );
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
 

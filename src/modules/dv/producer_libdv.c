@@ -289,6 +289,8 @@ static int producer_collect_info( producer_libdv this, mlt_profile profile )
 			mlt_properties_set( properties, "meta.media.1.stream.type", "audio" );
 			mlt_properties_set( properties, "meta.media.1.codec.name", "pcm_s16le" );
 			mlt_properties_set( properties, "meta.media.1.codec.long_name", "signed 16-bit little-endian PCM" );
+			mlt_properties_set_int( properties, "meta.media.width", 720 );
+			mlt_properties_set_int( properties, "meta.media.height", this->is_pal ? 576 : 480 );
 
 			// Return the decoder
 			dv_decoder_return( dv_decoder );
@@ -503,8 +505,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Update other info on the frame
 		mlt_properties_set_int( properties, "width", 720 );
 		mlt_properties_set_int( properties, "height", this->is_pal ? 576 : 480 );
-		mlt_properties_set_int( properties, "real_width", 720 );
-		mlt_properties_set_int( properties, "real_height", this->is_pal ? 576 : 480 );
 		mlt_properties_set_int( properties, "top_field_first", !this->is_pal ? 0 : ( data[ 5 ] & 0x07 ) == 0 ? 0 : 1 );
 		mlt_properties_set_int( properties, "colorspace", 601 );
 	

@@ -180,8 +180,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 	mlt_properties_set_int( properties, "test_image", 0 );
 	mlt_properties_set_int( properties, "width", swfdec->width );
 	mlt_properties_set_int( properties, "height", swfdec->height );
-	mlt_properties_set_int( properties, "real_width", swfdec->width );
-	mlt_properties_set_int( properties, "real_height", swfdec->height );
 	mlt_properties_set_int( properties, "progressive", 1 );
 	mlt_properties_set_double( properties, "aspect_ratio", 1.0 );
 	mlt_properties_set_position( properties, "swfdec.position", mlt_producer_frame( producer ) );

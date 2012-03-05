@@ -157,8 +157,8 @@ static SDL_Surface *load_image( mlt_producer producer )
 				surface->refcount ++;
 				mlt_properties_set_data( properties, "_surface", surface, 0, ( mlt_destructor )SDL_FreeSurface, 0 );
 				mlt_properties_set( properties, "_last_resource", this_resource );
-				mlt_properties_set_int( properties, "_real_width", surface->w );
-				mlt_properties_set_int( properties, "_real_height", surface->h );
+				mlt_properties_set_int( properties, "meta.media.width", surface->w );
+				mlt_properties_set_int( properties, "meta.media.height", surface->h );
 			}
 		}
 		else if ( surface != NULL )
@@ -195,8 +195,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 			mlt_properties_set_int( properties, "progressive", 1 );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
 			mlt_properties_set_data( properties, "surface", surface, 0, ( mlt_destructor )SDL_FreeSurface, NULL );
-			mlt_properties_set_int( properties, "real_width", surface->w );
-			mlt_properties_set_int( properties, "real_height", surface->h );
 
 			// Push the get_image method
 			mlt_frame_push_get_image( *frame, producer_get_image );

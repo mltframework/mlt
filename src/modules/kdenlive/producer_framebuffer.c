@@ -237,8 +237,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
-		mlt_properties_set_int( frame_properties, "real_width", mlt_properties_get_int( properties, "width" ) );
-		mlt_properties_set_int( frame_properties, "real_height", mlt_properties_get_int( properties, "height" ) );
+		mlt_properties_set_int( frame_properties, "meta.media.width", mlt_properties_get_int( properties, "width" ) );
+		mlt_properties_set_int( frame_properties, "meta.media.height", mlt_properties_get_int( properties, "height" ) );
 		mlt_properties_pass_list( frame_properties, properties, "width, height" );
 	}
 
