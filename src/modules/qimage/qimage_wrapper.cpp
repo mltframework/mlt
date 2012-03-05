@@ -194,8 +194,8 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 			self->current_height = qimage->height( );
 
 			mlt_events_block( producer_props, NULL );
-			mlt_properties_set_int( producer_props, "_real_width", self->current_width );
-			mlt_properties_set_int( producer_props, "_real_height", self->current_height );
+			mlt_properties_set_int( producer_props, "meta.media.width", self->current_width );
+			mlt_properties_set_int( producer_props, "meta.media.height", self->current_height );
 			mlt_properties_set_int( producer_props, "_disable_exif", disable_exif );
 			mlt_events_unblock( producer_props, NULL );
 		}
@@ -209,8 +209,6 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	// Set width/height of frame
 	mlt_properties_set_int( properties, "width", self->current_width );
 	mlt_properties_set_int( properties, "height", self->current_height );
-	mlt_properties_set_int( properties, "real_width", mlt_properties_get_int( producer_props, "_real_width" ) );
-	mlt_properties_set_int( properties, "real_height", mlt_properties_get_int( producer_props, "_real_height" ) );
 
 	return image_idx;
 }
