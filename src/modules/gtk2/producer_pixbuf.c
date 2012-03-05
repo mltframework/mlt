@@ -407,10 +407,8 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 			uint8_t *buffer = NULL;
 
 			// First, set the image so it can be converted when we get it
+			mlt_frame_replace_image( frame, self->image, self->format, width, height );
 			mlt_frame_set_image( frame, self->image, image_size, mlt_pool_release );
-			mlt_properties_set_int( properties, "format", self->format );
-			mlt_properties_set_int( properties, "width", width );
-			mlt_properties_set_int( properties, "height", height );
 			self->format = format;
 
 			// get_image will do the format conversion
