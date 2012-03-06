@@ -117,10 +117,9 @@ mlt_producer producer_pixbuf_init( char *filename )
 	return NULL;
 }
 
-static void load_filenames( producer_pixbuf self, mlt_properties producer_properties )
+static int load_svg( producer_pixbuf self, mlt_properties properties, const char *filename )
 {
-	char *filename = mlt_properties_get( producer_properties, "resource" );
-	self->filenames = mlt_properties_new( );
+	int result = 0;
 
 	// Read xml string
 	if ( strstr( filename, "<svg" ) )
@@ -133,12 +132,12 @@ static void load_filenames( producer_pixbuf self, mlt_properties producer_proper
 		{
 			// Write the svg into the temp file
 			ssize_t remaining_bytes;
-			char *xml = filename;
-			
+			const char *xml = filename;
+
 			// Strip leading crap
 			while ( xml[0] != '<' )
 				xml++;
-			
+
 			remaining_bytes = strlen( xml );
 			while ( remaining_bytes > 0 )
 				remaining_bytes -= write( fd, xml + strlen( xml ) - remaining_bytes, remaining_bytes );
@@ -147,14 +146,22 @@ static void load_filenames( producer_pixbuf self, mlt_properties producer_proper
 			mlt_properties_set( self->filenames, "0", fullname );
 
 			// Teehe - when the producer closes, delete the temp file and the space allo
-			mlt_properties_set_data( producer_properties, "__temporary_file__", fullname, 0, ( mlt_destructor )unlink, NULL );
+			mlt_properties_set_data( properties, "__temporary_file__", fullname, 0, ( mlt_destructor )unlink, NULL );
+			result = 1;
 		}
 	}
-	// Obtain filenames
-	else if ( strchr( filename, '%' ) != NULL )
+	return result;
+}
+
+static int load_sequence( producer_pixbuf self, mlt_properties properties, const char *filename )
+{
+	int result = 0;
+
+	// Obtain filenames with pattern
+	if ( strchr( filename, '%' ) != NULL )
 	{
 		// handle picture sequences
-		int i = mlt_properties_get_int( producer_properties, "begin" );
+		int i = mlt_properties_get_int( properties, "begin" );
 		int gap = 0;
 		char full[1024];
 		int keyvalue = 0;
@@ -176,9 +183,20 @@ static void load_filenames( producer_pixbuf self, mlt_properties producer_proper
 			}
 		}
 		if ( mlt_properties_count( self->filenames ) > 0 )
-			mlt_properties_set_int( producer_properties, "ttl", 1 );
+		{
+			mlt_properties_set_int( properties, "ttl", 1 );
+			result = 1;
+		}
 	}
-	else if ( strstr( filename, "/.all." ) != NULL )
+	return result;
+}
+
+static int load_folder( producer_pixbuf self, mlt_properties properties, const char *filename )
+{
+	int result = 0;
+
+	// Obtain filenames with folder
+	if ( strstr( filename, "/.all." ) != NULL )
 	{
 		char wildcard[ 1024 ];
 		char *dir_name = strdup( filename );
@@ -190,12 +208,22 @@ static void load_filenames( producer_pixbuf self, mlt_properties producer_proper
 		mlt_properties_dir_list( self->filenames, dir_name, wildcard, 1 );
 
 		free( dir_name );
+		result = 1;
 	}
-	else
+	return result;
+}
+
+static void load_filenames( producer_pixbuf self, mlt_properties properties )
+{
+	char *filename = mlt_properties_get( properties, "resource" );
+	self->filenames = mlt_properties_new( );
+
+	if (!load_svg( self, properties, filename ) &&
+		!load_sequence( self, properties, filename ) &&
+		!load_folder( self, properties, filename ) )
 	{
 		mlt_properties_set( self->filenames, "0", filename );
 	}
-
 	self->count = mlt_properties_count( self->filenames );
 }
 
