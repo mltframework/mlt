@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <ctype.h>
 
 // this protects concurrent access to gdk_pixbuf
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -191,6 +192,33 @@ static int load_sequence( producer_pixbuf self, mlt_properties properties, const
 	return result;
 }
 
+static int load_sequence2( producer_pixbuf self, mlt_properties properties, const char *filename )
+{
+	int result = 0;
+	const char *start;
+
+	// Obtain filenames with pattern containing a begin value, e.g. foo%1234d.png
+	if ( ( start = strchr( filename, '%' ) ) )
+	{
+		const char *end = ++start;
+		while ( isdigit( *end ) ) end++;
+		if ( end > start && ( end[0] == 'd' || end[0] == 'i' ) )
+		{
+			int n = end - start;
+			char *s = calloc( 1, n + 1 );
+			strncpy( s, start, n );
+			mlt_properties_set( properties, "begin", s );
+			free( s );
+			s = calloc( 1, strlen( filename ) );
+			strncpy( s, filename, start - filename );
+			sprintf( s + ( start - filename ), ".%d%s", n, end );
+			result = load_sequence( self, properties, s );
+			free( s );
+		}
+	}
+	return result;
+}
+
 static int load_folder( producer_pixbuf self, mlt_properties properties, const char *filename )
 {
 	int result = 0;
@@ -220,6 +248,7 @@ static void load_filenames( producer_pixbuf self, mlt_properties properties )
 
 	if (!load_svg( self, properties, filename ) &&
 		!load_sequence( self, properties, filename ) &&
+		!load_sequence2( self, properties, filename ) &&
 		!load_folder( self, properties, filename ) )
 	{
 		mlt_properties_set( self->filenames, "0", filename );
