@@ -149,7 +149,7 @@ static int load_sequence2( producer_qimage self, mlt_properties properties, cons
 	{
 		const char *end = ++start;
 		while ( isdigit( *end ) ) end++;
-		if ( end > start && ( end[0] == 'd' || end[0] == 'i' ) )
+		if ( end > start && ( end[0] == 'd' || end[0] == 'i' || end[0] == 'u' ) )
 		{
 			int n = end - start;
 			char *s = calloc( 1, n + 1 );
