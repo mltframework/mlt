@@ -2,7 +2,7 @@ schema_version: 0.1
 type: producer
 identifier: pixbuf
 title: GDK-PixBuf
-version: 1
+version: 2
 copyright: Ushodaya Enterprises Limited
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -26,9 +26,11 @@ parameters:
         See the output of gdk-pixbuf-query-loaders.
         Definitely png, jpeg, tiff, pnm, and xpm will work.
         
-        If "%" in filename, the filename is used with sprintf generate a 
+		If "%" in filename, the filename is used with sprintf to generate a
         filename from a counter for multi-file/flipbook animation. The file 
-        sequence ends when numeric discontinuity >100.
+		sequence ends when numeric discontinuity >100. If the file sequence
+		does not begin with the count of 100, you can also embed the number
+		of the first image between the "%" and a "d", "i", or "u".
         
         If filename contains "/.all.", suffix with an extension to load all 
         pictures with matching extension from a directory.
@@ -59,13 +61,13 @@ parameters:
     mutable: yes
     widget: spinner
     
-  - identifier: real_width
+  - identifier: meta.media.width
     title: Real width
     type: integer
     description: The original, unscaled width of the rendered image.
     readonly: yes
     
-  - identifier: real_height
+  - identifier: meta.media.height
     title: Real height
     type: integer
     description: The original, unscaled height of the rendered image.
