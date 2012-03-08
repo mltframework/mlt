@@ -90,6 +90,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 		mlt_properties_set_int( properties, "ttl", 25 );
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
+		mlt_properties_set_int( properties, "seekable", 1 );
 
 		// Validate the resource
 		if ( filename )

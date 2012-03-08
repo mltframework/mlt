@@ -60,6 +60,7 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties_set_int( properties, "ttl", 25 );
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
+		mlt_properties_set_int( properties, "seekable", 1 );
 		
 		// Validate the resource
 		if ( filename )
