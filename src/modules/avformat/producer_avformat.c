@@ -366,6 +366,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 #endif
 				break;
 			case CODEC_TYPE_AUDIO:
+				if ( !codec_context->channels )
+					break;
 				// Use first audio stream
 				if ( self->audio_index < 0 )
 					self->audio_index = i;
