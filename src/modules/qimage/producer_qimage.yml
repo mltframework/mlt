@@ -9,99 +9,98 @@ license: GPLv2
 language: en
 tags:
   - Video
-  description: >
-	A still graphics to video generator using Qt QImage
-  notes: >
-	QImage has builtin scaling. It will rescale the originally rendered title to
-	whatever the consumer requests. Therefore, it will lose its aspect ratio if
-	so requested, and it is up to the consumer to request a proper width and
-	height that maintains the image aspect.
-foo
+description: >
+    A still graphics to video generator using Qt QImage
+notes: >
+    QImage has builtin scaling. It will rescale the originally rendered title to
+    whatever the consumer requests. Therefore, it will lose its aspect ratio if
+    so requested, and it is up to the consumer to request a proper width and
+    height that maintains the image aspect.
 parameters:
   - identifier: argument
-	title: File
-	type: string
-	description: >
-		The name of a graphics file loadable by Qt.
+    title: File
+    type: string
+    description: >
+        The name of a graphics file loadable by Qt.
 
-		If "%" in filename, the filename is used with sprintf to generate a
-		filename from a counter for multi-file/flipbook animation. The file
-		sequence ends when numeric discontinuity >100. If the file sequence
-		does not begin with the count of 100, you can also embed the number
-		of the first image between the "%" and a "d", "i", or "u".
+        If "%" in filename, the filename is used with sprintf to generate a
+        filename from a counter for multi-file/flipbook animation. The file
+        sequence ends when numeric discontinuity >100. If the file sequence
+        does not begin with the count of 100, you can also embed the number
+        of the first image between the "%" and a "d", "i", or "u".
 
-		If filename contains "/.all.", suffix with an extension to load all
-		pictures with matching extension from a directory.
+        If filename contains "/.all.", suffix with an extension to load all
+        pictures with matching extension from a directory.
 
-		If filename contains the string "<svg", then qimage tries to load the
-		filename as inline SVG XML, which is convenient for melt commands.
-	readonly: no
-	required: yes
-	mutable: no
-	widget: fileopen
+        If filename contains the string "<svg", then qimage tries to load the
+        filename as inline SVG XML, which is convenient for melt commands.
+    readonly: no
+    required: yes
+    mutable: no
+    widget: fileopen
 
   - identifier: begin
-	title: Begin
-	type: integer
-	description: When using an image sequence, this sets the starting number.
-	readonly: no
-	minimum: 0
-	mutable: no
-	widget: spinner
+    title: Begin
+    type: integer
+    description: When using an image sequence, this sets the starting number.
+    readonly: no
+    minimum: 0
+    mutable: no
+    widget: spinner
 
   - identifier: ttl
-	title: Time-to-live
-	type: integer
-	description: How long (in frames) to repeat each picture in file sequences.
-	readonly: no
-	default: 25
-	minimum: 0
-	mutable: yes
-	widget: spinner
+    title: Time-to-live
+    type: integer
+    description: How long (in frames) to repeat each picture in file sequences.
+    readonly: no
+    default: 25
+    minimum: 0
+    mutable: yes
+    widget: spinner
 
   - identifier: meta.media.width
-	title: Real width
-	type: integer
-	description: The original, unscaled width of the rendered image.
-	readonly: yes
+    title: Real width
+    type: integer
+    description: The original, unscaled width of the rendered image.
+    readonly: yes
 
   - identifier: meta.media.height
-	title: Real height
-	type: integer
-	description: The original, unscaled height of the rendered image.
-	readonly: yes
+    title: Real height
+    type: integer
+    description: The original, unscaled height of the rendered image.
+    readonly: yes
 
   - identifier: width
-	title: Width
-	type: integer
-	description: The last requested scaled image width.
-	readonly: yes
+    title: Width
+    type: integer
+    description: The last requested scaled image width.
+    readonly: yes
 
   - identifier: height
-	title: Height
-	type: integer
-	description: The last requested scaled image height.
-	readonly: yes
+    title: Height
+    type: integer
+    description: The last requested scaled image height.
+    readonly: yes
 
   - identifier: force_reload
-	type: integer
-	description: >
-	  Reload the file instead of using its cached image. This property
-	  automatically resets itself once it has been set 1 and processed.
-	minimum: 0
-	maximum: 1
-	mutable: yes
+    type: integer
+    description: >
+      Reload the file instead of using its cached image. This property
+      automatically resets itself once it has been set 1 and processed.
+    minimum: 0
+    maximum: 1
+    mutable: yes
 
   - identifier: disable_exif
-	title: Disable auto-rotation
-	type: integer
-	minimum: 0
-	maximum: 1
-	widget: checkbox
+    title: Disable auto-rotation
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
 
   - identifier: force_aspect_ratio
-	title: Sample aspect ratio
-	type: float
-	description: Optionally override a (mis)detected aspect ratio
-	mutable: yes
+    title: Sample aspect ratio
+    type: float
+    description: Optionally override a (mis)detected aspect ratio
+    mutable: yes
 
