@@ -103,6 +103,59 @@ public:
 			m_deckLink->Release();
 	}
 	
+	bool listDevices( mlt_properties properties )
+	{
+		IDeckLinkIterator* decklinkIterator = NULL;
+		try
+		{
+			int i = 0;
+#ifdef WIN32
+			HRESULT result =  CoInitialize( NULL );
+			if ( FAILED( result ) )
+				throw "COM initialization failed";
+			result = CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &decklinkIterator );
+			if ( FAILED( result ) )
+				throw "The DeckLink drivers are not installed.";
+#else
+			decklinkIterator = CreateDeckLinkIteratorInstance();
+			if ( !decklinkIterator )
+				throw "The DeckLink drivers are not installed.";
+#endif
+			for ( ; decklinkIterator->Next( &m_deckLink ) == S_OK; i++ )
+			{
+				if ( m_deckLink->QueryInterface( IID_IDeckLinkOutput, (void**) &m_deckLinkOutput ) == S_OK )
+				{
+					char *name = NULL;
+					if ( m_deckLink->GetModelName( (const char**) &name ) == S_OK )
+					{
+						const char *format = "device.%d";
+						char *key = (char*) calloc( 1, strlen( format ) + 1 );
+
+						sprintf( key, format, i );
+						mlt_properties_set( properties, key, name );
+						mlt_log_verbose( NULL, "[consumer decklink] %s = %s\n", key, name );
+						free( key );
+						free( name );
+					}
+					m_deckLinkOutput->Release();
+				}
+				m_deckLink->Release();
+			}
+			decklinkIterator->Release();
+			mlt_properties_set_int( properties, "devices", i );
+			mlt_log_verbose( NULL, "[consumer decklink] devices = %d\n", i );
+
+			return true;
+		}
+		catch ( const char *error )
+		{
+			if ( decklinkIterator )
+				decklinkIterator->Release();
+			mlt_log_error( getConsumer(), "%s\n", error );
+			return false;
+		}
+	}
+
 	bool open( unsigned card = 0 )
 	{
 		unsigned i = 0;
@@ -656,7 +709,8 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 	if ( decklink && !mlt_consumer_init( decklink->getConsumer(), decklink, profile ) )
 	{
 		// If initialises without error
-		if ( decklink->open( arg? atoi(arg) : 0 ) )
+		if ( decklink->listDevices( MLT_CONSUMER_PROPERTIES( decklink->getConsumer() ) ) &&
+			 decklink->open( arg? atoi(arg) : 0 ) )
 		{
 			consumer = decklink->getConsumer();
 			

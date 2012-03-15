@@ -104,6 +104,56 @@ public:
 			m_decklink->Release();
 	}
 
+	bool listDevices( mlt_properties properties )
+	{
+		IDeckLinkIterator* decklinkIterator = NULL;
+		try
+		{
+			int i = 0;
+#ifdef WIN32
+			HRESULT result =  CoInitialize( NULL );
+			if ( FAILED( result ) )
+				throw "COM initialization failed";
+			result = CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &decklinkIterator );
+			if ( FAILED( result ) )
+				throw "The DeckLink drivers are not installed.";
+#else
+			decklinkIterator = CreateDeckLinkIteratorInstance();
+			if ( !decklinkIterator )
+				throw "The DeckLink drivers are not installed.";
+#endif
+			for ( ; decklinkIterator->Next( &m_decklink ) == S_OK; i++ )
+			{
+				if ( m_decklink->QueryInterface( IID_IDeckLinkInput, (void**) &m_decklinkInput ) == S_OK )
+				{
+					char *name = NULL;
+					if ( m_decklink->GetModelName( (const char**) &name ) == S_OK )
+					{
+						const char *format = "device.%d";
+						char *key = (char*) calloc( 1, strlen( format ) + 1 );
+
+						sprintf( key, format, i );
+						mlt_properties_set( properties, key, name );
+						free( key );
+						free( name );
+					}
+					m_decklinkInput->Release();
+				}
+				m_decklink->Release();
+			}
+			decklinkIterator->Release();
+			mlt_properties_set_int( properties, "devices", i );
+			return true;
+		}
+		catch ( const char *error )
+		{
+			if ( decklinkIterator )
+				decklinkIterator->Release();
+			mlt_log_error( getProducer(), "%s\n", error );
+			return false;
+		}
+	}
+
 	bool open( unsigned card =  0 )
 	{
 		IDeckLinkIterator* decklinkIterator = NULL;
@@ -633,7 +683,8 @@ mlt_producer producer_decklink_init( mlt_profile profile, mlt_service_type type,
 	// If allocated and initializes
 	if ( decklink && !mlt_producer_init( producer, decklink ) )
 	{
-		if ( decklink->open( arg? atoi( arg ) : 0 ) )
+		if ( decklink->listDevices( MLT_PRODUCER_PROPERTIES( producer ) ) &&
+			 decklink->open( arg? atoi( arg ) : 0 ) )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 

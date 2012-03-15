@@ -84,3 +84,15 @@ parameters:
     maximum: 1
     default: 0
     widget: checkbox
+
+  - identifier: devices
+    title: Number of devices
+    type: integer
+    readonly: yes
+    minimum: 0
+
+  - identifier: device.*
+    title: Device model
+    description: The model name of each device that accepts input.
+    type: string
+    readonly: yes

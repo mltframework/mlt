@@ -79,3 +79,15 @@ parameters:
     maximum: 1
     default: 1
     widget: slider
+
+  - identifier: devices
+    title: Number of devices
+    type: integer
+    readonly: yes
+    minimum: 0
+
+  - identifier: device.*
+    title: Device model
+    description: The model name of each device that provides output.
+    type: string
+    readonly: yes
