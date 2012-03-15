@@ -101,7 +101,6 @@ struct producer_avformat_s
 	int seekable;
 	int64_t current_position;
 	mlt_position nonseek_position;
-	int got_picture;
 	int top_field_first;
 	uint8_t *audio_buffer[ MAX_AUDIO_STREAMS ];
 	size_t audio_buffer_size[ MAX_AUDIO_STREAMS ];
@@ -1415,6 +1414,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	AVCodecContext *codec_context = stream->codec;
 
 	uint8_t *alpha = NULL;
+	int got_picture = 0;
+	int image_size = 0;
 
 	// Get the image cache
 	if ( ! self->image_cache && ! mlt_properties_get_int( properties, "noimagecache" ) )
@@ -1451,7 +1452,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
 				mlt_frame_set_image( frame, *buffer, size, NULL );
 			}
-			self->got_picture = 1;
+			got_picture = 1;
 
 			// check for alpha
 			item = mlt_cache_get( self->alpha_cache, (void*) position );
@@ -1467,7 +1468,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		}
 	}
 	// Cache miss
-	int image_size = 0;
 
 	// Packet
 	AVPacket pkt;
@@ -1513,7 +1513,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*format = pick_format( codec_context->pix_fmt );
 
 	// Duplicate the last image if necessary
-	if ( self->av_frame && self->av_frame->linesize[0] && self->got_picture
+	if ( self->av_frame && self->av_frame->linesize[0]
 		 && ( paused
 			  || self->current_position == req_position
 			  || ( !use_new_seek && self->current_position > req_position ) ) )
@@ -1541,16 +1541,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 #endif
 			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
 				format, *width, *height, self->colorspace, &alpha );
+			got_picture = 1;
 		}
-		else
-			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 	else
 	{
 		int ret = 0;
 		int64_t int_position = 0;
 		int decode_errors = 0;
-		int got_picture = 0;
 
 		av_init_packet( &pkt );
 
@@ -1750,7 +1748,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						format, *width, *height, self->colorspace, &alpha );
 					self->top_field_first |= self->av_frame->top_field_first;
 					self->current_position = int_position;
-					self->got_picture = 1;
 				}
 				else
 				{
@@ -1762,7 +1759,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		}
 	}
 
-	if ( self->got_picture && image_size > 0 && self->image_cache )
+	if ( image_size > 0 && self->image_cache )
 	{
 		// Copy buffer to image cache	
 		uint8_t *image = mlt_pool_alloc( image_size );
@@ -1776,8 +1773,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_cache_put( self->alpha_cache, (void*) position, image, alpha_size, mlt_pool_release );
 		}
 	}
+
 	// Try to duplicate last image if there was a decoding failure
-	else if ( !image_size && self->av_frame && self->av_frame->linesize[0] )
+	// TODO: with multithread decoding a partial frame decoding resulting
+	// in failure also resets av_frame making test below fail.
+	if ( !image_size && self->av_frame && self->av_frame->linesize[0] )
 	{
 		// Duplicate it
 		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
@@ -1802,10 +1802,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 #endif
 			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
 				format, *width, *height, self->colorspace, &alpha );
-			self->got_picture = 1;
+			got_picture = 1;
 		}
-		else
-			mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
@@ -1837,7 +1835,7 @@ exit_get_image:
 	if ( alpha )
 		mlt_frame_set_alpha( frame, alpha, (*width) * (*height), mlt_pool_release );
 
-	return !self->got_picture;
+	return !got_picture;
 }
 
 /** Process properties as AVOptions and apply to AV context obj
