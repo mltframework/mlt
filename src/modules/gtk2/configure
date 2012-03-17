@@ -9,7 +9,7 @@ then
 	pkg-config gdk-pixbuf-2.0 2> /dev/null
 	disable_pixbuf=$?
 
-	pkg-config pangoft2 2> /dev/null
+	pkg-config gdk-pixbuf-2.0 pangoft2 2> /dev/null
 	disable_pango=$?
 
 	if [ "$disable_gtk2" != "0" -a "$disable_pixbuf" != 0 -a "$disable_pango" != "0" ]
