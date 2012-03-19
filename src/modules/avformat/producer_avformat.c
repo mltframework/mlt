@@ -1264,7 +1264,7 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 
 	// extract alpha from planar formats
 	if ( ( pix_fmt == PIX_FMT_YUVA420P
-#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(35<<8)+0)
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(35<<8)+101)
 			|| pix_fmt == PIX_FMT_YUVA444P
 #endif
 			) &&
