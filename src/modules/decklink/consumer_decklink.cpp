@@ -114,58 +114,6 @@ public:
 		SAFE_RELEASE( m_deckLink );
 	}
 	
-	bool listDevices( mlt_properties properties )
-	{
-		IDeckLinkIterator* decklinkIterator = NULL;
-		try
-		{
-			int i = 0;
-#ifdef WIN32
-			HRESULT result =  CoInitialize( NULL );
-			if ( FAILED( result ) )
-				throw "COM initialization failed";
-			result = CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &decklinkIterator );
-			if ( FAILED( result ) )
-				throw "The DeckLink drivers are not installed.";
-#else
-			decklinkIterator = CreateDeckLinkIteratorInstance();
-			if ( !decklinkIterator )
-				throw "The DeckLink drivers are not installed.";
-#endif
-			for ( ; decklinkIterator->Next( &m_deckLink ) == S_OK; i++ )
-			{
-				if ( m_deckLink->QueryInterface( IID_IDeckLinkOutput, (void**) &m_deckLinkOutput ) == S_OK )
-				{
-					char *name = NULL;
-					if ( m_deckLink->GetModelName( (const char**) &name ) == S_OK )
-					{
-						const char *format = "device.%d";
-						char *key = (char*) calloc( 1, strlen( format ) + 1 );
-
-						sprintf( key, format, i );
-						mlt_properties_set( properties, key, name );
-						mlt_log_verbose( NULL, "[consumer decklink] %s = %s\n", key, name );
-						free( key );
-						free( name );
-					}
-					SAFE_RELEASE( m_deckLinkOutput );
-				}
-				SAFE_RELEASE( m_deckLink );
-			}
-			SAFE_RELEASE( decklinkIterator );
-			mlt_properties_set_int( properties, "devices", i );
-			mlt_log_verbose( NULL, "[consumer decklink] devices = %d\n", i );
-
-			return true;
-		}
-		catch ( const char *error )
-		{
-			SAFE_RELEASE( decklinkIterator );
-			mlt_log_error( getConsumer(), "%s\n", error );
-			return false;
-		}
-	}
-
 	bool open( unsigned card = 0 )
 	{
 		unsigned i = 0;
@@ -703,6 +651,51 @@ static void close( mlt_consumer consumer )
 
 extern "C" {
 
+// Listen for the list_devices property to be set
+static void on_property_changed( void*, mlt_properties properties, const char *name )
+{
+	IDeckLinkIterator* decklinkIterator = NULL;
+	IDeckLink* decklink = NULL;
+	IDeckLinkInput* decklinkOutput = NULL;
+	int i = 0;
+
+	if ( name && !strcmp( name, "list_devices" ) )
+		mlt_event_block( (mlt_event) mlt_properties_get_data( properties, "list-devices-event", NULL ) );
+	else
+		return;
+
+#ifdef WIN32
+	if ( FAILED( CoInitialize( NULL ) ) )
+		return;
+	if ( FAILED( CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &decklinkIterator ) ) )
+		return;
+#else
+	if ( !( decklinkIterator = CreateDeckLinkIteratorInstance() ) )
+		return;
+#endif
+	for ( ; decklinkIterator->Next( &decklink ) == S_OK; i++ )
+	{
+		if ( decklink->QueryInterface( IID_IDeckLinkOutput, (void**) &decklinkOutput ) == S_OK )
+		{
+			char *name = NULL;
+			if ( decklink->GetModelName( (const char**) &name ) == S_OK )
+			{
+				const char *format = "device.%d";
+				char *key = (char*) calloc( 1, strlen( format ) + 1 );
+
+				sprintf( key, format, i );
+				mlt_properties_set( properties, key, name );
+				free( key );
+				free( name );
+			}
+			SAFE_RELEASE( decklinkOutput );
+		}
+		SAFE_RELEASE( decklink );
+	}
+	SAFE_RELEASE( decklinkIterator );
+	mlt_properties_set_int( properties, "devices", i );
+}
+
 /** Initialise the consumer.
  */
 
@@ -716,17 +709,20 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 	if ( decklink && !mlt_consumer_init( decklink->getConsumer(), decklink, profile ) )
 	{
 		// If initialises without error
-		if ( decklink->listDevices( MLT_CONSUMER_PROPERTIES( decklink->getConsumer() ) ) &&
-			 decklink->open( arg? atoi(arg) : 0 ) )
+		if ( decklink->open( arg? atoi(arg) : 0 ) )
 		{
 			consumer = decklink->getConsumer();
-			
+			mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+
 			// Setup callbacks
 			consumer->close = close;
 			consumer->start = start;
 			consumer->stop = stop;
 			consumer->is_stopped = is_stopped;
-			mlt_properties_set( MLT_CONSUMER_PROPERTIES(consumer), "deinterlace_method", "onefield" );
+			mlt_properties_set( properties, "deinterlace_method", "onefield" );
+
+			mlt_event event = mlt_events_listen( properties, properties, "property-changed", (mlt_listener) on_property_changed );
+			mlt_properties_set_data( properties, "list-devices-event", event, 0, NULL, NULL );
 		}
 	}
 
