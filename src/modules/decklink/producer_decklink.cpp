@@ -31,6 +31,8 @@
 #include "DeckLinkAPI.h"
 #endif
 
+#define SAFE_RELEASE(V) if (V) { V->Release(); V = NULL; }
+
 class DeckLinkProducer
 	: public IDeckLinkInputCallback
 {
@@ -51,8 +53,8 @@ private:
 
 	BMDDisplayMode getDisplayMode( mlt_profile profile, int vancLines )
 	{
-		IDeckLinkDisplayModeIterator* iter;
-		IDeckLinkDisplayMode* mode;
+		IDeckLinkDisplayModeIterator* iter = NULL;
+		IDeckLinkDisplayMode* mode = NULL;
 		BMDDisplayMode result = (BMDDisplayMode) bmdDisplayModeNotSupported;
 
 		if ( m_decklinkInput->GetDisplayModeIterator( &iter ) == S_OK )
@@ -74,7 +76,9 @@ private:
 					 && ( height + vancLines == profile->height || ( height == 486 && profile->height == 480 + vancLines ) )
 					 && fps == mlt_profile_fps( profile ) )
 					result = mode->GetDisplayMode();
+				SAFE_RELEASE( mode );
 			}
+			SAFE_RELEASE( iter );
 		}
 
 		return result;
@@ -88,6 +92,12 @@ public:
 	mlt_producer getProducer() const
 		{ return m_producer; }
 
+	DeckLinkProducer()
+	{
+		m_decklink = NULL;
+		m_decklinkInput = NULL;
+	}
+
 	~DeckLinkProducer()
 	{
 		if ( m_queue )
@@ -98,10 +108,8 @@ public:
 			pthread_cond_destroy( &m_condition );
 			mlt_cache_close( m_cache );
 		}
-		if ( m_decklinkInput )
-			m_decklinkInput->Release();
-		if ( m_decklink )
-			m_decklink->Release();
+		SAFE_RELEASE( m_decklinkInput );
+		SAFE_RELEASE( m_decklink );
 	}
 
 	bool listDevices( mlt_properties properties )
@@ -137,18 +145,17 @@ public:
 						free( key );
 						free( name );
 					}
-					m_decklinkInput->Release();
+					SAFE_RELEASE( m_decklinkInput );
 				}
-				m_decklink->Release();
+				SAFE_RELEASE( m_decklink );
 			}
-			decklinkIterator->Release();
+			SAFE_RELEASE( decklinkIterator );
 			mlt_properties_set_int( properties, "devices", i );
 			return true;
 		}
 		catch ( const char *error )
 		{
-			if ( decklinkIterator )
-				decklinkIterator->Release();
+			SAFE_RELEASE( decklinkIterator );
 			mlt_log_error( getProducer(), "%s\n", error );
 			return false;
 		}
@@ -173,12 +180,16 @@ public:
 #endif
 
 			// Connect to the Nth DeckLink instance
-			unsigned i = 0;
-			do {
-				if ( decklinkIterator->Next( &m_decklink ) != S_OK )
-					throw "DeckLink card not found.";
-			} while ( ++i <= card );
-			decklinkIterator->Release();
+			for ( unsigned i = 0; decklinkIterator->Next( &m_decklink ) == S_OK ; i++)
+			{
+				if ( i == card )
+					break;
+				else
+					SAFE_RELEASE( m_decklink );
+			}
+			SAFE_RELEASE( decklinkIterator );
+			if ( !m_decklink )
+				throw "DeckLink card not found.";
 
 			// Get the input interface
 			if ( m_decklink->QueryInterface( IID_IDeckLinkInput, (void**) &m_decklinkInput ) != S_OK )
@@ -201,8 +212,8 @@ public:
 		}
 		catch ( const char *error )
 		{
-			if ( decklinkIterator )
-				decklinkIterator->Release();
+			SAFE_RELEASE( m_decklinkInput );
+			SAFE_RELEASE( m_decklink );
 			mlt_log_error( getProducer(), "%s\n", error );
 			return false;
 		}
@@ -243,7 +254,7 @@ public:
 			{
 				if ( decklinkAttributes->GetFlag( BMDDeckLinkSupportsInputFormatDetection, &doesDetectFormat ) != S_OK )
 					doesDetectFormat = false;
-				decklinkAttributes->Release();
+				SAFE_RELEASE( decklinkAttributes );
 			}
 			mlt_log_verbose( getProducer(), "%s format detection\n", doesDetectFormat ? "supports" : "does not support" );
 
@@ -446,7 +457,7 @@ public:
 							else
 								mlt_log_debug( getProducer(), "failed capture vanc line %d\n", i );
 						}
-						vanc->Release();
+						SAFE_RELEASE(vanc);
 					}
 				}
 
@@ -488,7 +499,7 @@ public:
 				}
 				if ( timecodeString )
 					free( (void*) timecodeString );
-				timecode->Release();
+				SAFE_RELEASE( timecode );
 			}
 		}
 		else

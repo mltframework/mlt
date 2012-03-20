@@ -33,6 +33,8 @@
 #include "DeckLinkAPI.h"
 #endif
 
+#define SAFE_RELEASE(V) if (V) { V->Release(); V = NULL; }
+
 static const unsigned PREROLL_MINIMUM = 3;
 
 class DeckLinkConsumer
@@ -64,8 +66,8 @@ private:
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
 		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( getConsumer() ) );
-		IDeckLinkDisplayModeIterator* iter;
-		IDeckLinkDisplayMode* mode;
+		IDeckLinkDisplayModeIterator* iter = NULL;
+		IDeckLinkDisplayMode* mode = NULL;
 		IDeckLinkDisplayMode* result = 0;
 		
 		if ( m_deckLinkOutput->GetDisplayModeIterator( &iter ) == S_OK )
@@ -83,7 +85,10 @@ private:
 					 && m_fps == mlt_profile_fps( profile )
 					 && ( m_height == profile->height || ( m_height == 486 && profile->height == 480 ) ) )
 					result = mode;
+				else
+					SAFE_RELEASE( mode );
 			}
+			SAFE_RELEASE( iter );
 		}
 		
 		return result;
@@ -92,15 +97,21 @@ private:
 public:
 	mlt_consumer getConsumer()
 		{ return &m_consumer; }
-	
+
+	DeckLinkConsumer()
+	{
+		m_displayMode = NULL;
+		m_deckLinkKeyer = NULL;
+		m_deckLinkOutput = NULL;
+		m_deckLink = NULL;
+	}
+
 	~DeckLinkConsumer()
 	{
-		if ( m_deckLinkKeyer )
-			m_deckLinkKeyer->Release();
-		if ( m_deckLinkOutput )
-			m_deckLinkOutput->Release();
-		if ( m_deckLink )
-			m_deckLink->Release();
+		SAFE_RELEASE( m_displayMode );
+		SAFE_RELEASE( m_deckLinkKeyer );
+		SAFE_RELEASE( m_deckLinkOutput );
+		SAFE_RELEASE( m_deckLink );
 	}
 	
 	bool listDevices( mlt_properties properties )
@@ -137,11 +148,11 @@ public:
 						free( key );
 						free( name );
 					}
-					m_deckLinkOutput->Release();
+					SAFE_RELEASE( m_deckLinkOutput );
 				}
-				m_deckLink->Release();
+				SAFE_RELEASE( m_deckLink );
 			}
-			decklinkIterator->Release();
+			SAFE_RELEASE( decklinkIterator );
 			mlt_properties_set_int( properties, "devices", i );
 			mlt_log_verbose( NULL, "[consumer decklink] devices = %d\n", i );
 
@@ -149,8 +160,7 @@ public:
 		}
 		catch ( const char *error )
 		{
-			if ( decklinkIterator )
-				decklinkIterator->Release();
+			SAFE_RELEASE( decklinkIterator );
 			mlt_log_error( getConsumer(), "%s\n", error );
 			return false;
 		}
@@ -182,30 +192,32 @@ public:
 			return false;
 		}
 #endif
-		
+
 		// Connect to the Nth DeckLink instance
-		do {
-			if ( deckLinkIterator->Next( &m_deckLink ) != S_OK )
-			{
-				mlt_log_error( getConsumer(), "DeckLink card not found\n" );
-				deckLinkIterator->Release();
-				return false;
-			}
-		} while ( ++i <= card );
-		deckLinkIterator->Release();
-		
+		for ( i = 0; deckLinkIterator->Next( &m_deckLink ) == S_OK ; i++)
+		{
+			if( i == card )
+				break;
+			else
+				SAFE_RELEASE( m_deckLink );
+		}
+		SAFE_RELEASE( deckLinkIterator );
+		if ( !m_deckLink )
+		{
+			mlt_log_error( getConsumer(), "DeckLink card not found\n" );
+			return false;
+		}
+
 		// Obtain the audio/video output interface (IDeckLinkOutput)
 		if ( m_deckLink->QueryInterface( IID_IDeckLinkOutput, (void**)&m_deckLinkOutput ) != S_OK )
 		{
 			mlt_log_error( getConsumer(), "No DeckLink cards support output\n" );
-			m_deckLink->Release();
-			m_deckLink = 0;
+			SAFE_RELEASE( m_deckLink );
 			return false;
 		}
 		
 		// Get the keyer interface
 		IDeckLinkAttributes *deckLinkAttributes = 0;
-		m_deckLinkKeyer = 0;
 		if ( m_deckLink->QueryInterface( IID_IDeckLinkAttributes, (void**) &deckLinkAttributes ) == S_OK )
 		{
 #ifdef WIN32
@@ -218,14 +230,12 @@ public:
 				if ( m_deckLink->QueryInterface( IID_IDeckLinkKeyer, (void**) &m_deckLinkKeyer ) != S_OK )
 				{
 					mlt_log_error( getConsumer(), "Failed to get keyer\n" );
-					m_deckLinkOutput->Release();
-					m_deckLinkOutput = 0;
-					m_deckLink->Release();
-					m_deckLink = 0;
+					SAFE_RELEASE( m_deckLinkOutput );
+					SAFE_RELEASE( m_deckLink );
 					return false;
 				}
 			}
-			deckLinkAttributes->Release();
+			SAFE_RELEASE( deckLinkAttributes );
 		}
 
 		// Provide this class as a delegate to the audio and video output interfaces
@@ -341,9 +351,7 @@ public:
 		}
 
 		// release decklink frame
-		if ( m_decklinkFrame )
-			m_decklinkFrame->Release();
-		m_decklinkFrame = NULL;
+		SAFE_RELEASE( m_decklinkFrame );
 
 		if ( wasRunning )
 			pthread_join( m_prerollThread, NULL );
@@ -432,8 +440,7 @@ public:
 			uint8_t* buffer = 0;
 			int stride = m_width * ( m_isKeyer? 4 : 2 );
 
-			if ( m_decklinkFrame )
-				m_decklinkFrame->Release();
+			SAFE_RELEASE( m_decklinkFrame );
 			if ( createFrame( &m_decklinkFrame ) )
 				m_decklinkFrame->GetBytes( (void**) &buffer );
 
