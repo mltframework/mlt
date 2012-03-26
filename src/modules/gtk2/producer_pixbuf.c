@@ -105,6 +105,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 				mlt_properties_set_position( frame_properties, "pixbuf_position", mlt_producer_position( producer ) );
 				refresh_pixbuf( self, frame );
+				mlt_cache_item_close( self->pixbuf_cache );
 				mlt_frame_close( frame );
 			}
 		}

@@ -61,7 +61,7 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
 		mlt_properties_set_int( properties, "seekable", 1 );
-		
+
 		// Validate the resource
 		if ( filename )
 			load_filenames( self, properties );
@@ -75,6 +75,7 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
 				mlt_properties_set_position( frame_properties, "qimage_position", mlt_producer_position( producer ) );
 				refresh_qimage( self, frame );
+				mlt_cache_item_close( self->qimage_cache );
 				mlt_frame_close( frame );
 			}
 		}
