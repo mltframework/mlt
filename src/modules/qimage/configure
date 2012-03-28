@@ -156,5 +156,6 @@ else
 		echo "qimage: QT environment not found - disabling"
 		touch ../disable-qimage
 	fi
-
+	[ "$gpl3" = "true" ] && echo GPL3=1 >> config.mak
+	exit 0
 fi

@@ -18,7 +18,8 @@ General build options:
   --libdir=directory      - lib directory (default: $prefix/lib)
   --datadir=directory     - data directory (default: $prefix/share)
   --mandir=directory      - man documentation directory (default: $prefix/share/man)
-  --enable-gpl            - Enable GPL components
+  --enable-gpl            - Enable GPLv2 components
+  --enable-gpl3           - Enable GPLv3 components
   --enable-debug          - Compile without optimizations support (default: off)
   --disable-debug         - Compile without debug support (default: on)
   --disable-mmx           - Compile without MMX support (default: on)
@@ -189,6 +190,7 @@ export mmx=true
 export sse=true
 export sse2=true
 export gpl=false
+export gpl3=false
 export arch=
 export cpu=
 export targetos=
@@ -228,6 +230,7 @@ do
 		--disable-sse )		sse=false; sse2=false ;;
 		--disable-sse2 )	sse2=false ;;
 		--enable-gpl )		gpl=true ;;
+		--enable-gpl3 )		gpl3=true ;;
 		--arch=* )			arch="${i#--arch=}" ;;
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 	esac
@@ -324,8 +327,16 @@ done
 # Build the pkg-config files
 build_pkgconfig
 
-# Report GPL Usage
-[ $help != 1 ] && 
-( [ "$gpl" = "false" ] && 
-echo "GPL Components are disabled" || 
-echo "GPL License Used" )
+# Report license Usage
+if [ $help != 1 ]
+then
+	if [ "$gpl" = "false" ]
+	then
+		echo "LGPLv2.1 license used; GPL components disabled"
+	elif [ "$gpl3" = "false" ]
+	then
+		echo "GPLv2 license used; GPLv3 components disabled"
+	else
+		echo "GPLv3 license used"
+	fi
+fi

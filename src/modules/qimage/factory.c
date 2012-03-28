@@ -37,8 +37,10 @@ MLT_REPOSITORY
 {
 	MLT_REGISTER( producer_type, "qimage", producer_qimage_init );
 	MLT_REGISTER( producer_type, "kdenlivetitle", producer_kdenlivetitle_init );
-	MLT_REGISTER( transition_type, "vqm", transition_vqm_init );
 	MLT_REGISTER_METADATA( producer_type, "qimage", metadata, "producer_qimage.yml" );
 	MLT_REGISTER_METADATA( producer_type, "kdenlivetitle", metadata, "producer_kdenlivetitle.yml" );
+#ifdef GPL3
+	MLT_REGISTER( transition_type, "vqm", transition_vqm_init );
 	MLT_REGISTER_METADATA( transition_type, "vqm", metadata, "transition_vqm.yml" );
+#endif
 }
