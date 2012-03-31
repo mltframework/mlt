@@ -331,3 +331,8 @@ const char *Properties::get_lcnumeric( )
 {
 	return mlt_properties_get_lcnumeric( get_properties() );
 }
+
+char *Properties::get_time( const char *name, mlt_time_format format )
+{
+	return mlt_properties_get_time( get_properties(), name, format );
+}

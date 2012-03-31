@@ -88,5 +88,6 @@ extern mlt_properties mlt_properties_parse_yaml( const char *file );
 extern char *mlt_properties_serialise_yaml( mlt_properties self );
 extern void mlt_properties_lock( mlt_properties self );
 extern void mlt_properties_unlock( mlt_properties self );
+extern char *mlt_properties_get_time( mlt_properties, const char* name, mlt_time_format );
 
 #endif

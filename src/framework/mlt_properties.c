@@ -871,8 +871,11 @@ int mlt_properties_parse( mlt_properties self, const char *namevalue )
 
 int mlt_properties_get_int( mlt_properties self, const char *name )
 {
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
+	property_list *list = self->local;
 	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_get_int( value );
+	return value == NULL ? 0 : mlt_property_get_int( value, fps, list->locale );
 }
 
 /** Set a property to an integer value.
@@ -955,9 +958,11 @@ int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t val
 
 double mlt_properties_get_double( mlt_properties self, const char *name )
 {
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
 	mlt_property value = mlt_properties_find( self, name );
 	property_list *list = self->local;
-	return value == NULL ? 0 : mlt_property_get_double_l( value, list->locale );
+	return value == NULL ? 0 : mlt_property_get_double( value, fps, list->locale );
 }
 
 /** Set a property to a floating point value.
@@ -998,8 +1003,11 @@ int mlt_properties_set_double( mlt_properties self, const char *name, double val
 
 mlt_position mlt_properties_get_position( mlt_properties self, const char *name )
 {
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
+	property_list *list = self->local;
 	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_get_position( value );
+	return value == NULL ? 0 : mlt_property_get_position( value, fps, list->locale );
 }
 
 /** Set a property to a position value.
@@ -1951,4 +1959,27 @@ void mlt_properties_unlock( mlt_properties self )
 {
 	if ( self )
 		pthread_mutex_unlock( &( ( property_list* )( self->local ) )->mutex );
+}
+
+/** Get a time string associated to the name.
+ *
+ * Do not free the returned string. It's lifetime is controlled by the property.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \param format the time format that you want
+ * \return the property's time value or NULL if \p name does not exist or there is no profile
+ */
+
+char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_format format )
+{
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	if ( profile )
+	{
+		double fps = mlt_profile_fps( profile );
+		mlt_property value = mlt_properties_find( self, name );
+		property_list *list = self->local;
+		return value == NULL ? NULL : mlt_property_get_time( value, format, fps, list->locale );
+	}
+	return NULL;
 }

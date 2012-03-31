@@ -264,10 +264,105 @@ int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destr
 	return 0;
 }
 
-/** Convert a base 10 or base 16 string to an integer.
+/** Parse a SMIL clock value.
+ *
+ * \private \memberof mlt_property_s
+ * \param s the string to parse
+ * \param fps frames per second
+ * \param locale the locale to use for parsing a real number value
+ * \return position in frames
+ */
+
+static int time_clock_to_frames( const char *s, double fps, locale_t locale )
+{
+	char *pos, *copy = strdup( s );
+	int hours = 0, minutes = 0;
+	double seconds;
+
+	s = copy;
+	pos = strrchr( s, ':' );
+	if ( pos ) {
+#if defined(__GLIBC__) || defined(__DARWIN__)
+		if ( locale )
+			seconds = strtod_l( pos + 1, NULL, locale );
+		else
+#endif
+			seconds = strtod( pos + 1, NULL );
+		*pos = 0;
+		pos = strrchr( s, ':' );
+		if ( pos ) {
+			minutes = atoi( pos + 1 );
+			*pos = 0;
+			hours = atoi( s );
+		}
+		else {
+			minutes = atoi( s );
+		}
+	}
+	else {
+#if defined(__GLIBC__) || defined(__DARWIN__)
+		if ( locale )
+			seconds = strtod_l( s, NULL, locale );
+		else
+#endif
+			seconds = strtod( s, NULL );
+	}
+	free( copy );
+
+	return fps * ( (hours * 3600) + (minutes * 60) + seconds ) + 0.5;
+}
+
+/** Parse a SMPTE timecode string.
+ *
+ * \private \memberof mlt_property_s
+ * \param s the string to parse
+ * \param fps frames per second
+ * \return position in frames
+ */
+
+static int time_code_to_frames( const char *s, double fps )
+{
+	char *pos, *copy = strdup( s );
+	int hours = 0, minutes = 0, seconds = 0, frames;
+
+	s = copy;
+	pos = strrchr( s, ';' );
+	if ( !pos )
+		pos = strrchr( s, ':' );
+	if ( pos ) {
+		frames = atoi( pos + 1 );
+		*pos = 0;
+		pos = strrchr( s, ':' );
+		if ( pos ) {
+			seconds = atoi( pos + 1 );
+			*pos = 0;
+			pos = strrchr( s, ':' );
+			if ( pos ) {
+				minutes = atoi( pos + 1 );
+				*pos = 0;
+				hours = atoi( s );
+			}
+			else {
+				minutes = atoi( s );
+			}
+		}
+		else {
+			seconds = atoi( s );
+		}
+	}
+	else {
+		frames = atoi( s );
+	}
+	free( copy );
+
+	return frames + ( fps * ( (hours * 3600) + (minutes * 60) + seconds ) + 0.5 );
+}
+
+/** Convert a string to an integer.
  *
  * The string must begin with '0x' to be interpreted as hexadecimal.
  * Otherwise, it is interpreted as base 10.
+ *
  * If the string begins with '#' it is interpreted as a hexadecimal color value
  * in the form RRGGBB or AARRGGBB. Color values that begin with '0x' are
  * always in the form RRGGBBAA where the alpha components are not optional.
@@ -277,14 +372,17 @@ int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destr
  * right to obtain RGB without alpha in order to make it do a logical instead
  * of arithmetic shift.
  *
+ * If the string contains a colon it is interpreted as a time value. If it also
+ * contains a period or comma character, the string is parsed as a clock value:
+ * HH:MM:SS. Otherwise, the time value is parsed as a SMPTE timecode: HH:MM:SS:FF.
  * \private \memberof mlt_property_s
  * \param value a string to convert
+ * \param fps frames per second, used when converting from time value
+ * \param locale the locale to use when converting from time clock value
  * \return the resultant integer
  */
-static inline int mlt_property_atoi( const char *value )
+static int mlt_property_atoi( const char *value, double fps, locale_t locale )
 {
-	if ( value == NULL )
-		return 0;
 	// Parse a hex color value as #RRGGBB or #AARRGGBB.
 	if ( value[0] == '#' )
 	{
@@ -298,6 +396,13 @@ static inline int mlt_property_atoi( const char *value )
 	{
 		return strtoul( value + 2, NULL, 16 );
 	}
+	else if ( fps > 0 && strchr( value, ':' ) )
+	{
+		if ( strchr( value, '.' ) || strchr( value, ',' ) )
+			return time_clock_to_frames( value, fps, locale );
+		else
+			return time_code_to_frames( value, fps );
+	}
 	else
 	{
 		return strtol( value, NULL, 10 );
@@ -308,10 +413,12 @@ static inline int mlt_property_atoi( const char *value )
  *
  * \public \memberof mlt_property_s
  * \param self a property
+ * \param fps frames per second, used when converting from time value
+ * \param locale the locale to use when converting from time clock value
  * \return an integer value
  */
 
-int mlt_property_get_int( mlt_property self )
+int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
 {
 	if ( self->types & mlt_prop_int )
 		return self->prop_int;
@@ -322,41 +429,50 @@ int mlt_property_get_int( mlt_property self )
 	else if ( self->types & mlt_prop_int64 )
 		return ( int )self->prop_int64;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return mlt_property_atoi( self->prop_string );
+		return mlt_property_atoi( self->prop_string, fps, locale );
 	return 0;
+}
+
+/** Convert a string to a floating point number.
+ *
+ * If the string contains a colon it is interpreted as a time value. If it also
+ * contains a period or comma character, the string is parsed as a clock value:
+ * HH:MM:SS. Otherwise, the time value is parsed as a SMPTE timecode: HH:MM:SS:FF.
+ * \private \memberof mlt_property_s
+ * \param value the string to convert
+ * \param fps frames per second, used when converting from time value
+ * \param locale the locale to use when converting from time clock value
+ * \return the resultant real number
+ */
+static double mlt_property_atof( const char *value, double fps, locale_t locale )
+{
+	if ( fps > 0 && strchr( value, ':' ) )
+	{
+		if ( strchr( value, '.' ) || strchr( value, ',' ) )
+			return time_clock_to_frames( value, fps, locale );
+		else
+			return time_code_to_frames( value, fps );
+	}
+	else
+	{
+#if defined(__GLIBC__) || defined(__DARWIN__)
+		if ( locale )
+			return strtod_l( value, NULL, locale );
+#endif
+		return strtod( value, NULL );
+	}
 }
 
 /** Get the property as a floating point.
  *
  * \public \memberof mlt_property_s
  * \param self a property
- * \return a floating point value
- */
-
-double mlt_property_get_double( mlt_property self )
-{
-	if ( self->types & mlt_prop_double )
-		return self->prop_double;
-	else if ( self->types & mlt_prop_int )
-		return ( double )self->prop_int;
-	else if ( self->types & mlt_prop_position )
-		return ( double )self->prop_position;
-	else if ( self->types & mlt_prop_int64 )
-		return ( double )self->prop_int64;
-	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return atof( self->prop_string );
-	return 0;
-}
-
-/** Get the property (with locale) as a floating point.
- *
- * \public \memberof mlt_property_s
- * \param self a property
+ * \param fps frames per second, used when converting from time value
  * \param locale the locale to use for this conversion
  * \return a floating point value
  */
 
-double mlt_property_get_double_l( mlt_property self, locale_t locale )
+double mlt_property_get_double( mlt_property self, double fps, locale_t locale )
 {
 	if ( self->types & mlt_prop_double )
 		return self->prop_double;
@@ -366,12 +482,8 @@ double mlt_property_get_double_l( mlt_property self, locale_t locale )
 		return ( double )self->prop_position;
 	else if ( self->types & mlt_prop_int64 )
 		return ( double )self->prop_int64;
-#if defined(__GLIBC__) || defined(__DARWIN__)
-	else if ( locale && ( self->types & mlt_prop_string ) && self->prop_string )
-		return strtod_l( self->prop_string, NULL, locale );
-#endif
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return strtod( self->prop_string, NULL );
+		return mlt_property_atof( self->prop_string, fps, locale );
 	return 0;
 }
 
@@ -380,10 +492,12 @@ double mlt_property_get_double_l( mlt_property self, locale_t locale )
  * A position is an offset time in terms of frame units.
  * \public \memberof mlt_property_s
  * \param self a property
+ * \param fps frames per second, used when converting from time value
+ * \param locale the locale to use when converting from time clock value
  * \return the position in frames
  */
 
-mlt_position mlt_property_get_position( mlt_property self )
+mlt_position mlt_property_get_position( mlt_property self, double fps, locale_t locale )
 {
 	if ( self->types & mlt_prop_position )
 		return self->prop_position;
@@ -394,7 +508,7 @@ mlt_position mlt_property_get_position( mlt_property self )
 	else if ( self->types & mlt_prop_int64 )
 		return ( mlt_position )self->prop_int64;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return ( mlt_position )atol( self->prop_string );
+		return ( mlt_position )mlt_property_atoi( self->prop_string, fps, locale );
 	return 0;
 }
 
@@ -642,4 +756,161 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 		self->prop_string = self->serialiser( self->data, self->length );
 	}
 	pthread_mutex_unlock( &self->mutex );
+}
+
+/** Convert frame count to a SMPTE timecode string.
+ *
+ * \private \memberof mlt_property_s
+ * \param frames a frame count
+ * \param fps frames per second
+ * \param[out] s the string to write into - must have enough space to hold largest time string
+ */
+
+static void time_smpte_from_frames( int frames, double fps, char *s )
+{
+	int hours, mins, secs;
+	char frame_sep = ':';
+
+	if ( fps == 30000.0/1001.0 )
+	{
+		fps = 30.0;
+		int i, max_frames = frames;
+		for ( i = 1800; i <= max_frames; i += 1800 )
+		{
+			if ( i % 18000 )
+			{
+				max_frames += 2;
+				frames += 2;
+			}
+		}
+		frame_sep = ';';
+	}
+	hours = frames / ( fps * 3600 );
+	frames -= hours * ( fps * 3600 );
+	mins = frames / ( fps * 60 );
+	frames -= mins * ( fps * 60 );
+	secs = frames / fps;
+	frames -= secs * fps;
+
+	sprintf( s, "%02d:%02d:%02d%c%02d", hours, mins, secs, frame_sep, frames );
+}
+
+/** Convert frame count to a SMIL clock value string.
+ *
+ * \private \memberof mlt_property_s
+ * \param frames a frame count
+ * \param fps frames per second
+ * \param[out] s the string to write into - must have enough space to hold largest time string
+ */
+
+static void time_clock_from_frames( int frames, double fps, char *s )
+{
+	int hours, mins;
+	double secs;
+
+	hours = frames / ( fps * 3600 );
+	frames -= hours * ( fps * 3600 );
+	mins = frames / ( fps * 60 );
+	frames -= mins * ( fps * 60 );
+	secs = (double) frames / fps;
+
+	sprintf( s, "%02d:%02d:%06.3f", hours, mins, secs );
+}
+
+/** Get the property as a time string.
+ *
+ * The time value can be either a SMPTE timecode or SMIL clock value.
+ * The caller is not responsible for deallocating the returned string!
+ * The string is deallocated when the property is closed.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param format the time format that you want
+ * \param fps frames per second
+ * \param locale the locale to use for this conversion
+ * \return a string representation of the property or NULL if failed
+ */
+
+char *mlt_property_get_time( mlt_property self, mlt_time_format format, double fps, locale_t locale )
+{
+	char *orig_localename = NULL;
+	const char *localename = "";
+
+	// Optimization for mlt_time_frames
+	if ( format == mlt_time_frames )
+		return mlt_property_get_string_l( self, locale );
+
+	// Remove existing string
+	if ( self->prop_string )
+		mlt_property_set_int( self, mlt_property_get_int( self, fps, locale ) );
+
+	// Use the specified locale
+	if ( locale )
+	{
+		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
+		// Save the current locale
+#if defined(__DARWIN__)
+		localname = querylocale( LC_NUMERIC, locale );
+#elif defined(__GLIBC__)
+		localename = locale->__names[ LC_NUMERIC ];
+#else
+		// TODO: not yet sure what to do on other platforms
+#endif
+		// Protect damaging the global locale from a temporary locale on another thread.
+		pthread_mutex_lock( &self->mutex );
+
+		// Get the current locale
+		orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
+
+		// Set the new locale
+		setlocale( LC_NUMERIC, localename );
+	}
+
+	// Convert number to string
+	if ( self->types & mlt_prop_int )
+	{
+		self->types |= mlt_prop_string;
+		self->prop_string = malloc( 32 );
+		if ( format == mlt_time_clock )
+			time_clock_from_frames( self->prop_int, fps, self->prop_string );
+		else
+			time_smpte_from_frames( self->prop_int, fps, self->prop_string );
+	}
+	else if ( self->types & mlt_prop_position )
+	{
+		self->types |= mlt_prop_string;
+		self->prop_string = malloc( 32 );
+		if ( format == mlt_time_clock )
+			time_clock_from_frames( (int) self->prop_position, fps, self->prop_string );
+		else
+			time_smpte_from_frames( (int) self->prop_position, fps, self->prop_string );
+	}
+	else if ( self->types & mlt_prop_double )
+	{
+		self->types |= mlt_prop_string;
+		self->prop_string = malloc( 32 );
+		if ( format == mlt_time_clock )
+			time_clock_from_frames( self->prop_double, fps, self->prop_string );
+		else
+			time_smpte_from_frames( self->prop_double, fps, self->prop_string );
+	}
+	else if ( self->types & mlt_prop_int64 )
+	{
+		self->types |= mlt_prop_string;
+		self->prop_string = malloc( 32 );
+		if ( format == mlt_time_clock )
+			time_clock_from_frames( (int) self->prop_int64, fps, self->prop_string );
+		else
+			time_smpte_from_frames( (int) self->prop_int64, fps, self->prop_string );
+	}
+
+	// Restore the current locale
+	if ( locale )
+	{
+		setlocale( LC_NUMERIC, orig_localename );
+		free( orig_localename );
+		pthread_mutex_unlock( &self->mutex );
+	}
+
+	// Return the string (may be NULL)
+	return self->prop_string;
 }
