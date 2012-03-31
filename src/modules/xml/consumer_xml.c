@@ -29,6 +29,7 @@
 #include <wchar.h>
 
 #define ID_SIZE 128
+#define TIME_PROPERTY "_consumer_xml"
 
 #define _x (const xmlChar*)
 #define _s (const char*)
@@ -48,6 +49,8 @@ struct serialise_context_s
 	char *root;
 	char *store;
 	int no_meta;
+	mlt_profile profile;
+	mlt_time_format time_format;
 };
 typedef struct serialise_context_s* serialise_context;
 
@@ -232,6 +235,8 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "height" ) )
 		{
 			char *value = filter_restricted( mlt_properties_get_value( properties, i ) );
+			if ( !strcmp( name, "length" ) )
+				value = strdup( mlt_properties_get_time( properties, name, context->time_format ) );
 			if ( value )
 			{
 				int rootlen = strlen( context->root );
@@ -290,20 +295,14 @@ static inline void serialise_service_filters( serialise_context context, mlt_ser
 			char *id = xml_get_id( context, MLT_FILTER_SERVICE( filter ), xml_filter );
 			if ( id != NULL )
 			{
-				int in = mlt_properties_get_position( properties, "in" );
-				int out = mlt_properties_get_position( properties, "out" );
 				p = xmlNewChild( node, NULL, _x("filter"), NULL );
 				xmlNewProp( p, _x("id"), _x(id) );
 				if ( mlt_properties_get( properties, "title" ) )
 					xmlNewProp( p, _x("title"), _x(mlt_properties_get( properties, "title" )) );
-				if ( in != 0 || out != 0 )
-				{
-					char temp[ 20 ];
-					sprintf( temp, "%d", in );
-					xmlNewProp( p, _x("in"), _x(temp) );
-					sprintf( temp, "%d", out );
-					xmlNewProp( p, _x("out"), _x(temp) );
-				}
+				if ( mlt_properties_get_position( properties, "in" ) )
+					xmlNewProp( p, _x("in"), _x( mlt_properties_get_time( properties, "in", context->time_format ) ) );
+				if ( mlt_properties_get_position( properties, "out" ) )
+					xmlNewProp( p, _x("out"), _x( mlt_properties_get_time( properties, "out", context->time_format ) ) );
 				serialise_properties( context, properties, p );
 				serialise_service_filters( context, MLT_FILTER_SERVICE( filter ), p );
 			}
@@ -330,8 +329,8 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
 			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
-		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
-		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
+		xmlNewProp( child, _x("in"), _x(mlt_properties_get_time( properties, "in", context->time_format )) );
+		xmlNewProp( child, _x("out"), _x(mlt_properties_get_time( properties, "out", context->time_format )) );
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
 
@@ -343,8 +342,8 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 		char *id = xml_get_id( context, parent, xml_existing );
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 		xmlNewProp( node, _x("parent"), _x(id) );
-		xmlNewProp( node, _x("in"), _x(mlt_properties_get( properties, "in" )) );
-		xmlNewProp( node, _x("out"), _x(mlt_properties_get( properties, "out" )) );
+		xmlNewProp( node, _x("in"), _x(mlt_properties_get_time( properties, "in", context->time_format )) );
+		xmlNewProp( node, _x("out"), _x(mlt_properties_get_time( properties, "out", context->time_format )) );
 	}
 }
 
@@ -384,8 +383,8 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 			xmlNewProp( track, _x("producer"), _x(id) );
 			if ( mlt_producer_is_cut( producer ) )
 			{
-				xmlNewProp( track, _x("in"), _x(mlt_properties_get( properties, "in" )) );
-				xmlNewProp( track, _x("out"), _x(mlt_properties_get( properties, "out" )) );
+				xmlNewProp( track, _x("in"), _x( mlt_properties_get_time( properties, "in", context->time_format ) ) );
+				xmlNewProp( track, _x("out"), _x( mlt_properties_get_time( properties, "out", context->time_format ) ) );
 				serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, context->store );
 				if ( !context->no_meta )
 					serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, "meta." );
@@ -453,14 +452,14 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 			if ( ! mlt_playlist_get_clip_info( MLT_PLAYLIST( service ), &info, i ) )
 			{
 				mlt_producer producer = mlt_producer_cut_parent( info.producer );
-				char *service_s = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "mlt_service" );
+				mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
+				char *service_s = mlt_properties_get( producer_props, "mlt_service" );
 				if ( service_s != NULL && strcmp( service_s, "blank" ) == 0 )
 				{
-					char length[ 20 ];
-					length[ 19 ] = '\0';
 					xmlNode *entry = xmlNewChild( child, NULL, _x("blank"), NULL );
-					snprintf( length, 19, "%d", (int)info.frame_count );
-					xmlNewProp( entry, _x("length"), _x(length) );
+					mlt_properties_set_data( producer_props, "_profile", context->profile, 0, NULL, NULL );
+					mlt_properties_set_position( producer_props, TIME_PROPERTY, info.frame_count );
+					xmlNewProp( entry, _x("length"), _x( mlt_properties_get_time( producer_props, TIME_PROPERTY, context->time_format ) ) );
 				}
 				else
 				{
@@ -468,10 +467,10 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					xmlNode *entry = xmlNewChild( child, NULL, _x("entry"), NULL );
 					id = xml_get_id( context, MLT_SERVICE( producer ), xml_existing );
 					xmlNewProp( entry, _x("producer"), _x(id) );
-					sprintf( temp, "%d", (int)info.frame_in );
-					xmlNewProp( entry, _x("in"), _x(temp) );
-					sprintf( temp, "%d", (int)info.frame_out );
-					xmlNewProp( entry, _x("out"), _x(temp) );
+					mlt_properties_set_position( producer_props, TIME_PROPERTY, info.frame_in );
+					xmlNewProp( entry, _x("in"), _x( mlt_properties_get_time( producer_props, TIME_PROPERTY, context->time_format ) ) );
+					mlt_properties_set_position( producer_props, TIME_PROPERTY, info.frame_out );
+					xmlNewProp( entry, _x("out"), _x( mlt_properties_get_time( producer_props, TIME_PROPERTY, context->time_format ) ) );
 					if ( info.repeat > 1 )
 					{
 						sprintf( temp, "%d", info.repeat );
@@ -522,8 +521,8 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 		if ( mlt_properties_get( properties, "global_feed" ) )
 			xmlNewProp( child, _x("global_feed"), _x(mlt_properties_get( properties, "global_feed" )) );
-		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
-		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
+		xmlNewProp( child, _x("in"), _x(mlt_properties_get_time( properties, "in", context->time_format )) );
+		xmlNewProp( child, _x("out"), _x(mlt_properties_get_time( properties, "out", context->time_format )) );
 
 		// Store application specific properties
 		serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, context->store );
@@ -557,8 +556,10 @@ static void serialise_filter( serialise_context context, mlt_service service, xm
 		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
 			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
-		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
-		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
+		if ( mlt_properties_get_position( properties, "in" ) )
+			xmlNewProp( child, _x("in"), _x( mlt_properties_get_time( properties, "in", context->time_format ) ) );
+		if ( mlt_properties_get_position( properties, "out" ) )
+			xmlNewProp( child, _x("out"), _x( mlt_properties_get_time( properties, "out", context->time_format ) ) );
 
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
@@ -586,8 +587,10 @@ static void serialise_transition( serialise_context context, mlt_service service
 		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
 			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
-		xmlNewProp( child, _x("in"), _x(mlt_properties_get( properties, "in" )) );
-		xmlNewProp( child, _x("out"), _x(mlt_properties_get( properties, "out" )) );
+		if ( mlt_properties_get_position( properties, "in" ) )
+			xmlNewProp( child, _x("in"), _x( mlt_properties_get_time( properties, "in", context->time_format ) ) );
+		if ( mlt_properties_get_position( properties, "out" ) )
+			xmlNewProp( child, _x("out"), _x( mlt_properties_get_time( properties, "out", context->time_format ) ) );
 
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
@@ -709,6 +712,12 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	// Assign the additional 'storage' pattern for properties
 	context->store = mlt_properties_get( MLT_CONSUMER_PROPERTIES( consumer ), "store" );
 	context->no_meta = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "no_meta" );
+	const char *time_format = mlt_properties_get( MLT_CONSUMER_PROPERTIES( consumer ), "time_format" );
+	if ( time_format && ( !strcmp( time_format, "smpte" ) || !strcmp( time_format, "SMPTE" )
+			|| !strcmp( time_format, "timecode" ) ) )
+		context->time_format = mlt_time_smpte;
+	else if ( time_format && ( !strcmp( time_format, "clock" ) || !strcmp( time_format, "CLOCK" ) ) )
+		context->time_format = mlt_time_clock;
 
 	// Assign a title property
 	if ( mlt_properties_get( properties, "title" ) != NULL )
@@ -741,6 +750,7 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 		xmlNewProp( profile_node, _x("frame_rate_den"), _x(tmpstr) );
 		sprintf( tmpstr, "%d", profile->colorspace );
 		xmlNewProp( profile_node, _x("colorspace"), _x(tmpstr) );
+		context->profile = profile;
 	}
 
 	// Construct the context maps

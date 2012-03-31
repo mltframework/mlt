@@ -71,3 +71,15 @@ parameters:
     maximum: 1
     default: 0
     widget: checkbox
+
+  - identifier: time_format
+    title: Time format
+    type: string
+    description: Output time-based values as timecode or clock formats.
+    values:
+      - frames
+      - smpte # or SMPTE
+      - timecode # same as smpte
+      - clock # or CLOCK
+    default: frames
+    widget: dropdown
