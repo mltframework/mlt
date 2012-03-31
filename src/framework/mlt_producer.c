@@ -509,6 +509,21 @@ mlt_position mlt_producer_get_length( mlt_producer self )
 	return mlt_properties_get_position( MLT_PRODUCER_PROPERTIES( self ), "length" );
 }
 
+/** Get the total, unedited length of the producer as a time string.
+ *
+ * The value returned by a live streaming producer is unknown.
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \param format the time value format
+ * \return the duration of the producer regardless of in and out points
+ */
+
+char* mlt_producer_get_length_time( mlt_producer self, mlt_time_format format )
+{
+    return mlt_properties_get_time( MLT_PRODUCER_PROPERTIES( self ), "length", format );
+}
+
 /** Prepare for next frame.
  *
  * Advance the play out position. If the speed is less than zero, it will

@@ -104,6 +104,7 @@ extern mlt_position mlt_producer_get_in( mlt_producer self );
 extern mlt_position mlt_producer_get_out( mlt_producer self );
 extern mlt_position mlt_producer_get_playtime( mlt_producer self );
 extern mlt_position mlt_producer_get_length( mlt_producer self );
+extern char* mlt_producer_get_length_time( mlt_producer self, mlt_time_format );
 extern void mlt_producer_prepare_next( mlt_producer self );
 extern int mlt_producer_attach( mlt_producer self, mlt_filter filter );
 extern int mlt_producer_detach( mlt_producer self, mlt_filter filter );

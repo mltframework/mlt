@@ -174,6 +174,11 @@ int Producer::get_length( )
 	return mlt_producer_get_length( get_producer( ) );
 }
 
+char* Producer::get_length_time( mlt_time_format format )
+{
+	return mlt_producer_get_length_time( get_producer( ), format );
+}
+
 int Producer::get_playtime( )
 {
 	return mlt_producer_get_playtime( get_producer( ) );

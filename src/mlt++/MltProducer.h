@@ -62,6 +62,7 @@ namespace Mlt
 			int get_in( );
 			int get_out( );
 			int get_length( );
+			char* get_length_time( mlt_time_format = mlt_time_smpte );
 			int get_playtime( );
 			Producer *cut( int in = 0, int out = -1 );
 			bool is_cut( );
