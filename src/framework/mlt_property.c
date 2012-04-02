@@ -849,7 +849,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
 #if defined(__DARWIN__)
-		localname = querylocale( LC_NUMERIC, locale );
+		localename = querylocale( LC_NUMERIC, locale );
 #elif defined(__GLIBC__)
 		localename = locale->__names[ LC_NUMERIC ];
 #else
