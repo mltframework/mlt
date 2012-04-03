@@ -304,6 +304,18 @@ static int jack_process (jack_nframes_t frames, void * data)
 		}
 	}
 
+	// Often jackd does not send the stopped event through the JackSyncCallback
+	jack_client_t *jack_client = mlt_properties_get_data( properties, "jack_client", NULL );
+	jack_position_t jack_pos;
+	jack_transport_state_t state = jack_transport_query( jack_client, &jack_pos );
+	int transport_state = mlt_properties_get_int( properties, "_transport_state" );
+	if ( state != transport_state )
+	{
+		mlt_properties_set_int( properties, "_transport_state", state );
+		if ( state == JackTransportStopped )
+			jack_sync( state, &jack_pos, filter );
+	}
+
 	return err;
 }
 
