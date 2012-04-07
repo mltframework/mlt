@@ -51,10 +51,10 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 	// Pick the lesser of two evils ;-)
 	width_src = width_src > width ? width : width_src;
 	height_src = height_src > height ? height : height_src;
-	
+
 	while ( --i )
 	{
-		composite_line_yuv( p_dest, p_src, width_src, alpha_dst, alpha_src, mix, NULL, 0, 0 );
+		composite_line_yuv( p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0 );
 		p_src += width_src << 1;
 		p_dest += width << 1;
 		alpha_src += width_src;
