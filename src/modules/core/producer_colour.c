@@ -80,6 +80,12 @@ rgba_color parse_color( char *color, unsigned int color_int )
 		result.g = 0x00;
 		result.b = 0xff;
 	}
+	else if ( !strcmp( color, "black" ) )
+	{
+		result.r = 0x00;
+		result.g = 0x00;
+		result.b = 0x00;
+	}
 	else if ( strcmp( color, "white" ) )
 	{
 		result.r = ( color_int >> 24 ) & 0xff;
