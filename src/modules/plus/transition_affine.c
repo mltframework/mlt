@@ -175,7 +175,7 @@ static void affine_rotate_x( float affine[3][3], float angle )
 	matrix[2][0] = 0;
 	matrix[2][1] = 0;
 	matrix[2][2] = 1;
-	affine_multiply( affine, affine );
+	affine_multiply( affine, matrix );
 }
 
 static void affine_rotate_y( float affine[3][3], float angle )

@@ -320,8 +320,8 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 		self->image_idx = image_idx;
 		mlt_cache_item_close( self->alpha_cache );
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha", self->current_alpha, width * height, mlt_pool_release );
-		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha" );
+		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, width * height, mlt_pool_release );
+		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
 	}
 
 	// Set width/height of frame
