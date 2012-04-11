@@ -136,7 +136,7 @@ mlt_filter filter_affine_init( mlt_profile profile, mlt_service_type type, const
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "background", arg ? arg : "colour:black" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "background", arg ? arg : "colour:0" );
 	}
 	return this;
 }

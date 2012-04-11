@@ -1,7 +1,7 @@
 melt \
 clip1.dv out=299 \
 -track \
-colour:black out=299 \
+colour:0 out=299 \
 -track \
 "+The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog..txt" \
 out=299 \
