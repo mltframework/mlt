@@ -48,64 +48,15 @@
 
 //--------------------------------------------------------
 //pointer to an interpolating function
+//parameters:
+//  source image
+//  source width
+//  source height
+//  X coordinate
+//  Y coordinate
+//  opacity
+//  destination image
 typedef int (*interpp)(unsigned char*, int, int, float, float, float, unsigned char*);
-
-//************************************
-//REMAP AN IMAGE
-
-//--------------------------------------------------------
-//  vhs = vhodna slika velikosti wi x hi
-//  izs = izhodna slika velikosti wo x ho
-//  map = za vsak pixel izs pove, kje ga vzamemo is vhs
-//  bgc = background color
-//  interp = kazalec na interpolacijsko funkcijo
-void remap(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *izs, float *map, unsigned char bgc, interpp interp)
-{
-	int i,j;
-	float x,y;
-
-	for (i=0;i<ho;i++)
-		for (j=0;j<wo;j++)
-		{
-		x=map[2*(wo*i+j)];
-		y=map[2*(wo*i+j)+1];
-		if (x>0)
-			interp(vhs,wi,hi,x,y,1.0,&izs[wo*i+j]);
-		else
-			izs[wo*i+j]=bgc;	//background fill
-	}
-}
-
-
-//--------------------------------------------------------
-//for four byte (int, 32 bit) values    (packed RGB color)
-//little endian !!
-//  vhs = vhodna slika velikosti wi x hi
-//  izs = izhodna slika velikosti wo x ho
-//  map = za vsak pixel izs pove, kje ga vzamemo is vhs
-//  bgc = background color
-//  interp = kazalec na interpolacijsko funkcijo
-void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *izs, float *map, uint32_t bgc, interpp interp)
-{
-	int i,j;
-	float x,y;
-
-	for (i=0;i<ho;i++)
-		for (j=0;j<wo;j++)
-		{
-		x=map[2*(wo*i+j)];
-		y=map[2*(wo*i+j)+1];
-		if (x>0)
-			interp(vhs,wi,hi,x,y,1.0,&izs[4*(wo*i+j)]);
-		else	//background fill
-		{
-			izs[4*(wo*i+j)]=bgc;
-			izs[4*(wo*i+j)+1]=bgc>>8;
-			izs[4*(wo*i+j)+2]=bgc>>16;
-			izs[4*(wo*i+j)+3]=bgc>>24;
-		}
-	}
-}
 
 //**************************************
 //HERE BEGIN THE INTERPOLATION FUNCTIONS
