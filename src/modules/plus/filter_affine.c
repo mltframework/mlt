@@ -61,6 +61,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		{
 			transition = mlt_factory_transition( profile, "affine", NULL );
 			mlt_properties_set_data( properties, "transition", transition, 0, (mlt_destructor)mlt_transition_close, NULL );
+			mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "b_alpha", 1 );
 		}
 
 		if ( producer != NULL && transition != NULL )
