@@ -31,6 +31,7 @@
 #include "DeckLinkAPI_h.h"
 #else
 #include "DeckLinkAPI.h"
+typedef const char* BSTR;
 #endif
 
 #define SAFE_RELEASE(V) if (V) { V->Release(); V = NULL; }
@@ -678,7 +679,7 @@ static void on_property_changed( void*, mlt_properties properties, const char *n
 		if ( decklink->QueryInterface( IID_IDeckLinkOutput, (void**) &decklinkOutput ) == S_OK )
 		{
 			char *name = NULL;
-			if ( decklink->GetModelName( (const char**) &name ) == S_OK )
+			if ( decklink->GetModelName( (BSTR*) &name ) == S_OK )
 			{
 				const char *format = "device.%d";
 				char *key = (char*) calloc( 1, strlen( format ) + 1 );
