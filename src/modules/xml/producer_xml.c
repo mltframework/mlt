@@ -88,6 +88,7 @@ struct deserialise_context_s
 	mlt_consumer consumer;
 	int multi_consumer;
 	int consumer_count;
+	int seekable;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -584,6 +585,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( producer ), context->lc_numeric );
+		context->seekable &= mlt_properties_get_int( MLT_SERVICE_PROPERTIES( producer ), "seekable" );
 
 		// Propagate the properties
 		qualify_property( context, properties, "resource" );
@@ -1546,6 +1548,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	context->destructors = mlt_properties_new();
 	context->params = mlt_properties_new();
 	context->profile = profile;
+	context->seekable = 1;
 
 	// Decode URL and parse parameters
 	mlt_properties_set( context->producer_map, "root", "" );
@@ -1739,6 +1742,8 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		mlt_properties_inc_ref( MLT_CONSUMER_PROPERTIES( context->consumer ) );
 		mlt_properties_set_data( properties, "consumer", context->consumer, 0,
 			(mlt_destructor) mlt_consumer_close, NULL );
+
+		mlt_properties_set_int( properties, "seekable", context->seekable );
 	}
 	else
 	{
