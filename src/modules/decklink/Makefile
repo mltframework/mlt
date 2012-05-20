@@ -7,13 +7,21 @@ include ../../../config.mak
 TARGET = ../libmltdecklink$(LIBSUF)
 
 OBJS = consumer_decklink.o \
-	producer_decklink.o
+	producer_decklink.o \
+	common.o
 
 ifeq ($(targetos), MinGW)
-OBJS += DeckLinkAPI_i.o
+CFLAGS += -Iwin
+OBJS += win/DeckLinkAPI_i.o
 LDFLAGS += -lole32
 else
-OBJS += DeckLinkAPIDispatch.o
+ifeq ($(targetos), Darwin)
+CFLAGS += -Idarwin
+OBJS += darwin/DeckLinkAPIDispatch.o
+else
+CFLAGS += -Ilinux
+OBJS += linux/DeckLinkAPIDispatch.o
+endif
 endif
 
 SRCS := $(OBJS:.o=.cpp)

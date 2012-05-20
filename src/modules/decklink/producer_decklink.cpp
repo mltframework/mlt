@@ -24,15 +24,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/time.h>
-#ifdef WIN32
-#include <objbase.h>
-#include "DeckLinkAPI_h.h"
-#else
-#include "DeckLinkAPI.h"
-typedef const char* BSTR;
-#endif
-
-#define SAFE_RELEASE(V) if (V) { V->Release(); V = NULL; }
+#include "common.h"
 
 class DeckLinkProducer
 	: public IDeckLinkInputCallback
@@ -250,6 +242,8 @@ public:
 		pthread_mutex_unlock( &m_mutex );
 
 		m_decklinkInput->StopStreams();
+		m_decklinkInput->DisableVideoInput();
+		m_decklinkInput->DisableAudioInput();
 
 		// Cleanup queue
 		pthread_mutex_lock( &m_mutex );
@@ -437,15 +431,16 @@ public:
 			IDeckLinkTimecode* timecode = 0;
 			if ( video->GetTimecode( bmdTimecodeVITC, &timecode ) == S_OK && timecode )
 			{
-				const char* timecodeString = 0;
+				DLString timecodeString = 0;
 
-				if ( timecode->GetString( (BSTR*) &timecodeString ) == S_OK )
+				if ( timecode->GetString( &timecodeString ) == S_OK )
 				{
-					mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.markup", timecodeString );
-					mlt_log_debug( getProducer(), "timecode %s\n", timecodeString );
+					char* s = getCString( timecodeString );
+					mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.markup", s );
+					mlt_log_debug( getProducer(), "timecode %s\n", s );
+					freeCString( s );
 				}
-				if ( timecodeString )
-					free( (void*) timecodeString );
+				freeDLString( timecodeString );
 				SAFE_RELEASE( timecode );
 			}
 		}
@@ -655,16 +650,18 @@ static void on_property_changed( void*, mlt_properties properties, const char *n
 	{
 		if ( decklink->QueryInterface( IID_IDeckLinkInput, (void**) &decklinkInput ) == S_OK )
 		{
-			char *name = NULL;
-			if ( decklink->GetModelName( (BSTR*) &name ) == S_OK )
+			DLString name = NULL;
+			if ( decklink->GetModelName( &name ) == S_OK )
 			{
+				char *name_cstr = getCString( name );
 				const char *format = "device.%d";
 				char *key = (char*) calloc( 1, strlen( format ) + 1 );
 
 				sprintf( key, format, i );
-				mlt_properties_set( properties, key, name );
+				mlt_properties_set( properties, key, name_cstr );
 				free( key );
-				free( name );
+				freeDLString( name );
+				freeCString( name_cstr );
 			}
 			SAFE_RELEASE( decklinkInput );
 		}
