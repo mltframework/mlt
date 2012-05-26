@@ -31,8 +31,8 @@ else
 		;;
 	esac
 
-	qimage_includedir=/usr/include/qt4
-	qimage_libdir=/usr/lib/qt4
+	qimage_includedir=
+	qimage_libdir=
 
 	if [ ! -d "$qimage_libdir" -o ! -d "$qimage_includedir" ]
 	then
@@ -95,19 +95,8 @@ else
 		fi
 	fi
 
-	pkg-config --exists 'QtGui >= 4'
-	if [ $? -eq 0 ] && [ "$force_qt3" = "" ]
+	if [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
 	then
-		echo "Qt version 4.x detected, will compile Qt4 qimage producer"
-		qt4_found=true
-		echo "#define USE_QT4" >> config.h
-		echo "USE_QT4=1" >> config.mak
-		echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg ) >> config.mak
-		echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg) >> config.mak
-		
-	elif [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
-	then
-
 		# test if we have a Qt3 or Qt4
 		if [ -f "$qimage_libdir/libQtCore.so" ] || [ -d "$qimage_libdir/QtGui.framework" ] || [ -f "$qimage_libdir/libQtCore4.a" ] && [ "$force_qt3" = "" ]
 		then
@@ -130,7 +119,7 @@ else
 			elif [ -f "$qimage_libdir/libQtCore4.a" ]
 			then
 				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-				echo QTLIBS=-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 >> config.mak
+				echo QTLIBS=-Wl,-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 >> config.mak
 			else
 				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
 				echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg >> config.mak
@@ -153,8 +142,19 @@ else
 		    fi
 		fi
 	else
-		echo "qimage: QT environment not found - disabling"
-		touch ../disable-qimage
+		pkg-config --exists 'QtGui >= 4'
+		if [ $? -eq 0 ] && [ "$force_qt3" = "" ]
+		then
+			echo "Qt version 4.x detected, will compile Qt4 qimage producer"
+			qt4_found=true
+			echo "#define USE_QT4" >> config.h
+			echo "USE_QT4=1" >> config.mak
+			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg ) >> config.mak
+			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg) >> config.mak
+		else
+			echo "qimage: QT environment not found - disabling"
+			touch ../disable-qimage
+		fi
 	fi
 	[ "$gpl3" = "true" ] && echo GPL3=1 >> config.mak
 	exit 0

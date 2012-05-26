@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#if !defined(__DARWIN__) && !defined(__FreeBSD__)
+#if !defined(__DARWIN__) && !defined(__FreeBSD__) && !defined(WIN32)
 #include <values.h>
 #endif
 

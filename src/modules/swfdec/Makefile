@@ -10,7 +10,7 @@ TARGET = ../libmltswfdec$(LIBSUF)
 OBJS = producer_swfdec.o
 
 ifeq ($(targetos), MinGW)
-LDFLAGS += -enable-auto-import -lz
+LDFLAGS += -Wl,enable-auto-import -lz
 endif
 
 SRCS := $(OBJS:.o=.c)
