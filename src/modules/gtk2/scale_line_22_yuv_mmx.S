@@ -19,7 +19,6 @@
  */
 	.file	"scale_line_22_yuv_mmx.S"
 	.version	"01.01"
-	.section .note.GNU-stack,"",%progbits
 
 .extern printf
 
@@ -31,7 +30,9 @@ MSG: .ascii "scale_line_22_yuv_mmx: %d %d\n"
 	.align 16
 
 #if !defined(__MINGW32__) && !defined(__CYGWIN__)	
-	
+
+	.section .note.GNU-stack,"",%progbits
+
 .globl pixops_scale_line_22_yuv_mmx
 	.type	 pixops_scale_line_22_yuv_mmx,@function
 pixops_scale_line_22_yuv_mmx:

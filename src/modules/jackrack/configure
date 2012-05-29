@@ -1,7 +1,15 @@
 #!/bin/sh
 
-if [ "$help" != "1" ]
+if [ "$help" = "1" ]
 then
+	cat << EOF
+JACK Rack options:
+
+  --gtk2-prefix=path      - Override the gtk+-2.0 prefix for pkg-config
+
+EOF
+
+else
 
 	pkg-config jack
 	disable_jack=$?
@@ -23,6 +31,14 @@ then
 		fi
 		disable_ladspa=`[ -f "$ladspa_prefix/include/ladspa.h" ] && echo 0 || echo 1`
 		echo GPL=1 > config.mak
+
+		for i in "$@"
+		do
+			case $i in
+				--gtk2-prefix=* )	pkgconfig_prefix="${i#--gtk2-prefix=}" ;;
+			esac
+		done
+		[ "$pkgconfig_prefix" != "" ] && echo "PKGCONFIG_PREFIX=--define-variable=prefix=\"$pkgconfig_prefix\"" >> config.mak
 	fi
 
 	if [ "$disable_jack" = "1" -o "$disable_xml2" = "1" -o "$disable_ladspa" = "1" ]

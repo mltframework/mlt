@@ -11,14 +11,14 @@ OBJS = factory.o
 
 ifdef USE_GTK2
 OBJS += consumer_gtk2.o
-CFLAGS += `pkg-config gtk+-2.0 --cflags`
-LDFLAGS += `pkg-config gtk+-2.0 --libs`
+CFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --cflags gtk+-2.0`
+LDFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --libs gtk+-2.0`
 endif
 
 ifdef USE_PIXBUF
 OBJS += producer_pixbuf.o pixops.o filter_rescale.o
-CFLAGS += `pkg-config gdk-pixbuf-2.0 --cflags`
-LDFLAGS += `pkg-config gdk-pixbuf-2.0 --libs`
+CFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --cflags gdk-pixbuf-2.0`
+LDFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --libs gdk-pixbuf-2.0`
 endif
 
 ifdef USE_EXIF
@@ -35,8 +35,8 @@ endif
 ifdef USE_PANGO
 OBJS += producer_pango.o
 OBJS += filter_dynamictext.o
-CFLAGS += `pkg-config pangoft2 --cflags`
-LDFLAGS += `pkg-config pangoft2 --libs`
+CFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --cflags pangoft2`
+LDFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --libs pangoft2`
 ifeq ($(targetos),Darwin)
 LDFLAGS += -liconv
 endif
