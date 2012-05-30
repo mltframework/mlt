@@ -1425,8 +1425,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	if ( self->image_cache )
 	{
-		mlt_cache_item item = mlt_cache_get( self->image_cache, (void*) position );
-		uint8_t *original = mlt_cache_item_data( item, (int*) format );
+		mlt_frame original = mlt_cache_get_frame( self->image_cache, mlt_frame_get_position( frame ) );
 		if ( original )
 		{
 			// Set the resolution
@@ -1437,32 +1436,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 				*height = 1080;
 
-			// Cache hit
-			int size = mlt_image_format_size( *format, *width, *height, NULL );
-			if ( writable )
-			{
-				*buffer = mlt_pool_alloc( size );
-				mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
-				memcpy( *buffer, original, size );
-				mlt_cache_item_close( item );
-			}
-			else
-			{
-				*buffer = original;
-				mlt_properties_set_data( frame_properties, "avformat.image_cache", item, 0, ( mlt_destructor )mlt_cache_item_close, NULL );
-				mlt_frame_set_image( frame, *buffer, size, NULL );
-			}
+			int size = 0;
+			*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( original ), "alpha", &size );
+			if (*buffer)
+				mlt_frame_set_alpha( frame, *buffer, size, NULL );
+			*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( original ), "image", &size );
+			mlt_frame_set_image( frame, *buffer, size, NULL );
+			mlt_properties_set_data( frame_properties, "avformat.image_cache", original, 0, (mlt_destructor) mlt_frame_close, NULL );
 			got_picture = 1;
-
-			// check for alpha
-			item = mlt_cache_get( self->alpha_cache, (void*) position );
-			original = mlt_cache_item_data( item, &size );
-			if ( original )
-			{
-				alpha = mlt_pool_alloc( size );
-				memcpy( alpha, original, size );
-				mlt_cache_item_close( item );
-			}
 
 			goto exit_get_image;
 		}
@@ -1765,20 +1746,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		}
 	}
 
+	// set alpha
+	if ( alpha )
+		mlt_frame_set_alpha( frame, alpha, (*width) * (*height), mlt_pool_release );
+
 	if ( image_size > 0 && self->image_cache )
-	{
-		// Copy buffer to image cache	
-		uint8_t *image = mlt_pool_alloc( image_size );
-		memcpy( image, *buffer, image_size );
-		mlt_cache_put( self->image_cache, (void*) position, image, *format, mlt_pool_release );
-		if ( alpha )
-		{
-			int alpha_size = (*width) * (*height);
-			image = mlt_pool_alloc( alpha_size );
-			memcpy( image, alpha, alpha_size );
-			mlt_cache_put( self->alpha_cache, (void*) position, image, alpha_size, mlt_pool_release );
-		}
-	}
+		mlt_cache_put_frame( self->image_cache, frame );
 
 	// Try to duplicate last image if there was a decoding failure
 	// TODO: with multithread decoding a partial frame decoding resulting
@@ -1836,10 +1809,6 @@ exit_get_image:
 	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
-
-	// set alpha
-	if ( alpha )
-		mlt_frame_set_alpha( frame, alpha, (*width) * (*height), mlt_pool_release );
 
 	return !got_picture;
 }
