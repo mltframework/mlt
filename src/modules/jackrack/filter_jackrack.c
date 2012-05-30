@@ -431,12 +431,20 @@ mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, con
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		char name[14];
-		
+		char name[16];
+		char *jack_client_name;
+		jack_status_t status = 0;
+
 		snprintf( name, sizeof( name ), "mlt%d", getpid() );
-		jack_client_t *jack_client = jack_client_open( name, JackNullOption, NULL );
+		jack_client_t *jack_client = jack_client_open( name, JackNullOption, &status, NULL );
 		if ( jack_client )
 		{
+			if ( status & JackNameNotUnique ) 
+			{
+				jack_client_name = jack_get_client_name ( jack_client );
+				strcpy( name, jack_client_name );
+			}
+
 			mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 			pthread_mutex_t *output_lock = mlt_pool_alloc( sizeof( pthread_mutex_t ) );
 			pthread_cond_t  *output_ready = mlt_pool_alloc( sizeof( pthread_cond_t ) );
