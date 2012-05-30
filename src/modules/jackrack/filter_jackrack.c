@@ -432,8 +432,8 @@ mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, con
 	if ( this != NULL )
 	{
 		char name[16];
-		char * jack_client_name;
-		jack_status_t status;
+		char *jack_client_name;
+		jack_status_t status = 0;
 
 		snprintf( name, sizeof( name ), "mlt%d", getpid() );
 		jack_client_t *jack_client = jack_client_open( name, JackNullOption, &status, NULL );
