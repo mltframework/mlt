@@ -27,11 +27,11 @@ ifdef GPL
 OBJS += $(GPL_OBJS)
 CFLAGS += -DGPL
 CFLAGS += `pkg-config --cflags libxml-2.0`
-CFLAGS += `pkg-config --cflags glib-2.0`
+CFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --cflags glib-2.0`
 
 LDFLAGS += $(LIBDL)
 LDFLAGS += `pkg-config --libs libxml-2.0`
-LDFLAGS += `pkg-config --libs glib-2.0`
+LDFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --libs glib-2.0`
 LDFLAGS += -lm
 
 YML_FILES = *.yml

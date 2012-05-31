@@ -254,12 +254,11 @@ public:
 
 	mlt_frame getFrame()
 	{
-		mlt_frame frame = NULL;
 		struct timeval now;
 		struct timespec tm;
 		double fps = mlt_producer_get_fps( getProducer() );
 		mlt_position position = mlt_producer_position( getProducer() );
-		mlt_cache_item cached = mlt_cache_get( m_cache, (void*) position );
+		mlt_frame frame = mlt_cache_get_frame( m_cache, position );
 
 		// Allow the buffer to fill to the requested initial buffer level.
 		if ( m_isBuffering )
@@ -284,13 +283,7 @@ public:
 			pthread_mutex_unlock( &m_mutex );
 		}
 
-		if ( cached )
-		{
-			// Copy cached frame instead of pulling from queue
-			frame = mlt_frame_clone( (mlt_frame) mlt_cache_item_data( cached, NULL ), 0 );
-			mlt_cache_item_close( cached );
-		}
-		else
+		if ( !frame )
 		{
 			// Wait if queue is empty
 			pthread_mutex_lock( &m_mutex );
@@ -311,8 +304,10 @@ public:
 
 			// add to cache
 			if ( frame )
-				mlt_cache_put( m_cache, (void*) position, mlt_frame_clone( frame, 1 ), 0,
-					(mlt_destructor) mlt_frame_close );
+			{
+				mlt_frame_set_position( frame, position );
+				mlt_cache_put_frame( m_cache, frame );
+			}
 		}
 
 		// Set frame timestamp and properties
@@ -601,7 +596,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE(producer) );
 
 	// Calculate the next timecode
-	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 	mlt_producer_prepare_next( producer );
 
 	// Close DeckLink if at end
