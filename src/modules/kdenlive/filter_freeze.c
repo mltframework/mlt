@@ -37,7 +37,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_frame freeze_frame = NULL;;
 	int freeze_before = mlt_properties_get_int( properties, "freeze_before" );
 	int freeze_after = mlt_properties_get_int( properties, "freeze_after" );
-	mlt_position pos = mlt_properties_get_position( properties, "frame" ) + mlt_producer_get_in(mlt_frame_get_original_producer(frame));
+	mlt_position pos = mlt_properties_get_position( properties, "frame" ) + mlt_producer_get_in( mlt_frame_get_original_producer( frame ) );
 	mlt_position currentpos = mlt_filter_get_position( filter, frame );
 
 	int do_freeze = 0;
@@ -56,7 +56,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			// freeze_frame has not been fetched yet or is not useful, so fetch it and cache it.
 			// get parent producer
-			mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+			mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 			mlt_producer_seek( producer, pos );
 
 			// Get the frame
