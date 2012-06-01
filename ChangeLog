@@ -1,4 +1,476 @@
+2012-06-01  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h,
+  src/modules/avformat/configure: set version to 0.8.0
+
+  * NEWS: add release notes for v0.8.0
+
+  * src/modules/avformat/producer_avformat.c: fix image format regression in
+  avformat caching
+
+  * src/modules/avformat/producer_avformat.c: remove unused alpha_cache member
+
+  * src/modules/avformat/producer_avformat.c: fix video_delay when using
+  new_seek (AVCHD)
+
+  * src/modules/avformat/producer_avformat.c: fix a/v sync after recent change
+  for faster AVCHD seeking
+
+2012-05-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/scale_line_22_yuv_mmx.S: fix regression in build on 32-bit
+  linux gcc 4.6.1
+
+2012-06-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: fix image format regression in
+  avformat caching
+
+  * src/modules/avformat/producer_avformat.c: remove unused alpha_cache member
+
+  * src/modules/avformat/producer_avformat.c: fix video_delay when using
+  new_seek (AVCHD)
+
+  * src/modules/avformat/producer_avformat.c: fix a/v sync after recent change
+  for faster AVCHD seeking
+
+2012-05-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/scale_line_22_yuv_mmx.S: fix regression in build on 32-bit
+  linux gcc 4.6.1
+
+2012-05-31  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/kdenlive/filter_freeze.c: Fix indentation
+
+2012-05-30  eddrog <eddrog@users.sourceforge.net>
+
+  * src/modules/jackrack/filter_jackrack.c: fix initialize status to zero
+
+2012-05-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: convert avformat producer to use
+  the new mlt_cache_put_frame
+
+  * src/modules/decklink/producer_decklink.cpp: fix decklink producer dropping
+  frames after few hours  mlt_cache_put() was not scalable when using position
+  as a key into the cache. Its reliance upon mlt_properties for
+  reference-counting cache items caused its hash tabe to grow too large after a
+  few hundred thousand frames. This version uses the new mlt_cache_put_frame,
+  which is simpler and more scalable by only using the cache arrays and copying
+  data.
+
+  * src/framework/mlt_cache.c, src/framework/mlt_cache.h: add
+  mlt_cache_put_frame and mlt_cache_get_frame
+
+  * src/modules/gtk2/Makefile, src/modules/gtk2/configure,
+  src/modules/gtk2/scale_line_22_yuv_mmx.S, src/modules/jackrack/Makefile,
+  src/modules/jackrack/configure: fix cross-compiling gtk2 and jackrack modules
+  for windows
+
+2012-05-26  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/mlt++/configure, src/modules/qimage/configure,
+  src/modules/swfdec/Makefile, src/modules/videostab/stab/estimate.c: add
+  configure options and fixes for cross-compiling
+
+2012-05-22  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/kdenlive/filter_freeze.c: Fix filter freeze problem with clip
+  cuts
+
+2012-05-22  eddrog <eddrog@users.sourceforge.net>
+
+  * src/modules/jackrack/filter_jackrack.c: fix unique name problem in
+  filter_jackrack when several filter instances are loaded within one process
+  on evaluating the jack status JackNameNotUnique
+
+2012-05-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/DeckLinkAPI.h,
+  src/modules/decklink/DeckLinkAPIDispatch.cpp,
+  src/modules/decklink/DeckLinkAPI_h.h, src/modules/decklink/DeckLinkAPI_i.cpp,
+  src/modules/decklink/LinuxCOM.h, src/modules/decklink/Makefile,
+  src/modules/decklink/common.cpp, src/modules/decklink/common.h,
+  src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/darwin/DeckLinkAPI.h,
+  .../decklink/darwin/DeckLinkAPIDispatch.cpp,
+  src/modules/decklink/linux/DeckLinkAPI.h,
+  src/modules/decklink/linux/DeckLinkAPIDispatch.cpp,
+  src/modules/decklink/linux/LinuxCOM.h,
+  src/modules/decklink/producer_decklink.cpp,
+  src/modules/decklink/win/DeckLinkAPI_h.h,
+  src/modules/decklink/win/DeckLinkAPI_i.cpp: fix decklink build for OS X
+
+2012-04-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: fix decklink build on Windows
+
+2012-04-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_affine.c, src/modules/plus/interp.h,
+  src/modules/plus/transition_affine.c: fix distortion handling alpha channel
+  in affine transition  Reported-by: j-b-m
+
+2012-04-10  Dan Dennedy <dan@dennedy.org>
+
+  * demo/mlt_ticker, src/modules/plus/filter_affine.c: fix background alpha
+  channel of affine filter  broke when black producer was changed to opaque
+  like other colors
+
+  * src/modules/plus/interp.h: remove remap functions and document
+  interpolation parameters in English
+
+2012-04-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_colour.c: fix color:black
+
+  * src/modules/core/transition_luma.c: fix regression due to alpha channels of
+  A and B swapped
+
+  * src/modules/core/producer_colour.c: fix the alpha channel to be opaque on
+  empty string
+
+  * src/modules/plus/transition_affine.c,
+  src/modules/qimage/qimage_wrapper.cpp: fix regressions during refactorization
+
+2012-04-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/filter_jackrack.c: fix jack-stopped event with some
+  JACK clients  It appears that JackTransportStopped is not received in
+  JackSyncCallback unless the client that calls jack_transport_stop() also
+  calls jack_transport_locate().
+
+  * src/framework/mlt_property.c: fix build for OS X
+
+2012-03-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/producer_xml.c: add support for parsing time(code) values
+  to xml producer
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/consumer_xml.yml: add
+  time_format property to xml consumer  Now you can save the in, out, and
+  length properties as timecode or clock values. Default unit it still in frame
+  count.
+
+  * src/framework/mlt_producer.c, src/framework/mlt_producer.h,
+  src/mlt++/MltProducer.cpp, src/mlt++/MltProducer.h: add
+  mlt_producer_get_length_time()  More functions that return time strings will
+  be added later.
+
+  * configure, src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/framework/mlt_types.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h: add support for timecode and clock time strings to
+  the framework
+
+2012-04-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: make speed of editing AVCHD
+  tolerable  This only works for FFmpeg v0.9.1 or newer but not yet for libav.
+  This uses the image scaling interpolation mode as a hint to perform less
+  (nearest) or more (bilinear or bicubic) diligent seeking. Since most editors
+  are using the SDL consumer with rescale=nearest, this makes scrubbing and
+  cuts/transitions faster. Then, upon encoding, since the avformat consumer
+  uses bilinear by default, it will use the slower, more accurate seeking to
+  ensure the integrity of cuts with an in point. This change has some quirks:
+  frame-stepping backwards sometimes does not update the image, and sometimes a
+  big jump forward shows artifacts.
+
+2012-03-27  Dan Dennedy <dan@dennedy.org>
+
+  * GPLv3, configure, src/modules/qimage/Makefile,
+  src/modules/qimage/configure, src/modules/qimage/factory.c: require configure
+  --enable-gpl3 for GPLv3 services (currently only vqm)
+
+2012-03-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/producer_qimage.c:
+  fix resource leak regression in image producers
+
+2012-03-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: enumerate DeckLink devices when
+  list_devices property is set
+
+2012-03-19  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: Initialize all decklink interface
+  pointers and reset them upon release.  Also, add a couple of missing
+  releases.
+
+2012-03-18  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Fix incorrect precompiler
+  conditionals for libav/ffmpeg versions.  Needed to support ffmpeg 0.9 and
+  0.10 releases.
+
+2012-03-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/configure: add gdk-pixbuf-2.0 dependency to pango producer
+
+  * src/framework/configure: fix build on OS X 10.6
+
+2012-03-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/consumer_decklink.yml,
+  src/modules/decklink/producer_decklink.cpp,
+  src/modules/decklink/producer_decklink.yml: enumerate available devices in
+  decklink module
+
+  * src/modules/avformat/producer_avformat.c: fix segfault on failure to decode
+  with multi-threaded decoding  self->got_picture was somewhat redundant with
+  self->av_frame, but not synchronized and not ever really reset. So, just
+  remove that state and use the state of self->av_frame and local got_picture.
+
+2012-03-12  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/avformat/producer_avformat.c: fix playing audio with 0 channels
+
+2012-03-11  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/gtk2/producer_pixbuf.yml,
+  src/modules/qimage/producer_qimage.yml: Fix broken pixbuf and qimage producer
+  metadata.
+
+2012-03-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pixbuf.c,
+  src/modules/qimage/producer_qimage.c: indicate image producers seekable
+
+2012-03-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.yml,
+  src/modules/qimage/producer_qimage.yml: update service metadata for pixbuf
+  and qimage
+
+2012-03-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/producer_qimage.c:
+  allow %u in image sequence pattern containing begin value
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/producer_qimage.c:
+  add image sequences where scanf format contains begin value  For example, if
+  an image sequence begins with the file foo1234.png, you can use the resource
+  string "foo%1234d.png" to load it.
+
+  * src/modules/qimage/producer_qimage.c: refactor load_filenames in qimage
+
+  * src/modules/gtk2/producer_pixbuf.c: refactor load_filenames in pixbuf
+
+2012-03-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/producer_decklink.cpp,
+  src/modules/qimage/qimage_wrapper.cpp: remove a couple more remnants of
+  legacy real_width and _height
+
+  * src/modules/avformat/producer_avformat.c, src/modules/dv/producer_libdv.c:
+  remove deprecated source_fps property
+
+  * src/framework/mlt_tractor.c, src/modules/avformat/producer_avformat.c,
+  src/modules/core/consumer_multi.c, src/modules/core/filter_crop.c,
+  src/modules/core/filter_rescale.c, src/modules/core/filter_resize.c,
+  src/modules/core/producer_colour.c, src/modules/core/producer_consumer.c,
+  src/modules/core/producer_loader.c, src/modules/core/transition_composite.c,
+  src/modules/dv/producer_libdv.c, src/modules/gtk2/producer_pango.c,
+  src/modules/gtk2/producer_pixbuf.c,
+  src/modules/kdenlive/producer_framebuffer.c,
+  src/modules/plus/transition_affine.c, src/modules/sdl/producer_sdl_image.c,
+  src/modules/swfdec/producer_swfdec.c,
+  src/modules/videostab/filter_videostab2.c, src/modules/vmfx/producer_pgm.c:
+  replace legacy real_width and _height with meta.media.width and .height  This
+  takes advantage of mlt_producer copying all meta properties from producer to
+  frame so we do not have to remember to do it everywhere it is needed.
+
+2012-02-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_frame.c,
+  src/framework/mlt_profile.c, src/framework/mlt_tractor.c,
+  src/framework/mlt_transition.c, src/modules/core/filter_crop.c,
+  src/modules/core/filter_watermark.c, src/modules/kdenlive/filter_freeze.c,
+  src/modules/kdenlive/producer_framebuffer.c,
+  src/modules/oldfilm/filter_dust.c, src/modules/plus/filter_affine.c,
+  src/modules/plus/transition_affine.c: remove consumer_aspect_ratio property -
+  use profile instead
+
+  * src/framework/mlt_tractor.c, src/modules/core/filter_watermark.c,
+  src/modules/core/transition_composite.c,
+  src/modules/kdenlive/filter_freeze.c: remove output_ratio property - use
+  profile instead
+
+  * src/modules/core/filter_crop.c, src/modules/core/filter_obscure.c,
+  src/modules/core/filter_rescale.c, src/modules/core/filter_resize.c,
+  src/modules/core/filter_watermark.c, src/modules/core/transition_composite.c,
+  src/modules/plus/filter_affine.c, src/modules/plus/transition_affine.c:
+  remove usage of normalised_width and _height properties from services
+
+  * src/modules/plus/transition_affine.c: rename this to transition and affine
+
+  * src/modules/core/transition_composite.c: rename this to self in composite
+  transition
+
+  * src/modules/core/filter_resize.c: rename this to frame and filter
+
+  * src/modules/core/filter_rescale.c: rename this to frame and filter
+
+  * src/modules/core/filter_obscure.c: rename this to filter
+
+  * src/modules/core/filter_crop.c: rename this to frame and filter
+
+  * src/framework/mlt_frame.c, src/framework/mlt_tractor.c: remove
+  normalised_width and _height properties from framework
+
+2012-03-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp:
+  fix regression with adding image conversion to image producers
+
+2012-03-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/producer_qimage.c,
+  src/modules/qimage/qimage_wrapper.cpp, src/modules/qimage/qimage_wrapper.h:
+  convert to and cache requested format in qimage
+
+2012-03-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/producer_qimage.c,
+  src/modules/qimage/qimage_wrapper.cpp, src/modules/qimage/qimage_wrapper.h:
+  split refresh_qimage() into refresh_qiamge() and refresh_image()
+
+  * src/modules/gtk2/producer_pixbuf.c: fix regression in pixbuf setting
+  _real_width and _height for loader
+
+  * src/modules/qimage/qimage_wrapper.cpp: factorize out exif reorientation in
+  qimage producer
+
+  * src/modules/qimage/qimage_wrapper.cpp: remove the cache property from
+  qimage  This is removed in the course of refactorizing to make the code more
+  maintainable for improvements. If you really need to cache an entire image
+  sequence in memory use a ramdisk.
+
+2012-02-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp: fix QObject::connect of type
+  QTextCursor errors
+
+2012-02-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c: fix regressions caused by refactoring
+  and format conversion
+
+  * src/modules/gtk2/producer_pixbuf.c: convert to and cache requested format
+  in pixbuf  Original idea for patch came from Maksym Veremeyenko.
+
+2012-02-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c: split refresh_image() into
+  refresh_pixbuf() and refresh_image()
+
+  * src/modules/core/transition_composite.yml,
+  src/modules/gtk2/producer_pixbuf.yml: couple of small service metadata fixes
+
+2012-02-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c: factorize out exif reorientation
+
+  * src/modules/gtk2/producer_pixbuf.c: remove the cache property from pixbuf 
+  This is removed in the course of refactorizing to make the code more
+  maintainable for improvements. If you really need to cache an entire image
+  sequence in memory use a ramdisk.
+
+2012-02-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/loader.dict: change priority of producers for swf files
+  (3494517)
+
+2012-02-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_audio.c: the audio also stutters on Linux when
+  paused
+
+2012-02-25  j-b-m <jb@kdenlive.org>
+
+  * src/modules/avformat/consumer_avformat.c: fix some audio codecs not
+  detected with newer libavcodec
+
+2012-02-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltProfile.cpp: fix Mlt::Profile::set_frame_rate setting
+  incorrect fields
+
+  * src/modules/avformat/consumer_avformat.c: fix segfault on stop in avformat
+  consumer
+
+  * src/modules/avformat/producer_avformat.c: add meta.media.codec.width and
+  .height
+
+  * src/modules/decklink/producer_decklink.cpp,
+  src/modules/decklink/producer_decklink.yml: fix regression when using
+  producer 'consumer' with decklink  This feature now requires one to set the
+  preview property on this producer to support special preview mode when the
+  speed is 0.
+
+  * src/modules/core/composite_line_yuv_sse2_simple.c: fix asm compilation on
+  some versions of gcc
+
+2012-02-20  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/decklink/producer_decklink.cpp: allow start decklink producer
+  from pause
+
+2012-02-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.c, src/modules/avformat/filter_avcolour_space.c,
+  src/modules/core/filter_crop.c, src/modules/core/filter_resize.c,
+  src/modules/core/transition_region.c: let mlt_frame_set_alpha clear the
+  get_alpha_mask function pointer
+
+  * src/modules/avformat/producer_avformat.c: fix avformat build on older
+  versions (YUVA444P is new)
+
+2012-02-17  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/avformat/producer_avformat.c: alpha extracting from planar
+  formats
+
+2012-02-16  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/framework/mlt_frame.c: clone alpha on whan cloning image
+
+2012-02-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl_audio.c: prevent audio from stuttering when
+  paused on Windows
+
+  * src/modules/sdl/consumer_sdl_audio.c: rename this to self
+
+  * configure, src/framework/mlt_version.h: set interim version 0.7.9
+
+2012-02-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_luma.c: refactor dissolve_yuv() to use
+  composite_line_yuv()
+
+  * src/modules/core/transition_composite.c,
+  src/modules/core/transition_composite.h: make composite_line_yuv() available
+  to other services
+
+2012-02-16  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/core/transition_composite.c: fix rounding causes by -ffast-math
+
+  * src/modules/core/composite_line_yuv_sse2_simple.c,
+  src/modules/core/transition_composite.c: use sse2 instruction for line
+  compositing
+
 2012-02-13  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: update ChangeLog for v0.7.8
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h,
   src/melt/melt.c: set version to 0.7.8
