@@ -1085,6 +1085,8 @@ static int seek_video( producer_avformat self, mlt_position position,
 					timestamp += self->first_pts;
 				else if ( context->start_time != AV_NOPTS_VALUE )
 					timestamp += context->start_time;
+				if ( req_position <= 0 )
+					timestamp = 0;
 			}
 			else
 			{
@@ -1501,9 +1503,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Duplicate the last image if necessary
 	if ( self->av_frame && self->av_frame->linesize[0]
-		 && ( paused
-			  || self->current_position == req_position
-			  || ( !use_new_seek && self->current_position > req_position ) ) )
+		 && ( paused || self->current_position >= req_position ) )
 	{
 		// Duplicate it
 		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
