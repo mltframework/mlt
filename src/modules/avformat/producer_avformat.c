@@ -1662,7 +1662,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							pts -= self->first_pts;
 						else if ( context->start_time != AV_NOPTS_VALUE )
 							pts -= context->start_time;
-						int_position = ( int64_t )( av_q2d( stream->time_base) * pts * source_fps + 0.1 );
+						int_position = ( int64_t )( ( av_q2d( stream->time_base) * pts + delay ) * source_fps + 0.1 );
 						mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "got frame %"PRId64", key %d\n", int_position, self->av_frame->key_frame );
 					}
 					// Handle ignore
