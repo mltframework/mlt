@@ -1480,7 +1480,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	double delay = mlt_properties_get_double( properties, "video_delay" );
 
 	// Seek if necessary
-	int paused = seek_video( self, position, req_position, must_decode, use_new_seek, &ignore );
+	const char *interp = mlt_properties_get( frame_properties, "rescale.interp" );
+	int preseek = must_decode
+#if defined(FFUDIV) && LIBAVFORMAT_VERSION_INT >= ((53<<16)+(24<<8)+2)
+		&& ( !use_new_seek || ( interp && strcmp( interp, "nearest" ) ) )
+#endif
+		&& codec_context->has_b_frames;
+	int paused = seek_video( self, position, req_position, preseek, use_new_seek, &ignore );
 
 	// Seek might have reopened the file
 	context = self->video_format;
