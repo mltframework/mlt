@@ -1428,6 +1428,17 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_frame original = mlt_cache_get_frame( self->image_cache, mlt_frame_get_position( frame ) );
 		if ( original )
 		{
+			mlt_properties orig_props = MLT_FRAME_PROPERTIES( original );
+			int size = 0;
+
+			*buffer = mlt_properties_get_data( orig_props, "alpha", &size );
+			if (*buffer)
+				mlt_frame_set_alpha( frame, *buffer, size, NULL );
+			*buffer = mlt_properties_get_data( orig_props, "image", &size );
+			mlt_frame_set_image( frame, *buffer, size, NULL );
+			mlt_properties_set_data( frame_properties, "avformat.image_cache", original, 0, (mlt_destructor) mlt_frame_close, NULL );
+			*format = mlt_properties_get_int( orig_props, "format" );
+
 			// Set the resolution
 			*width = codec_context->width;
 			*height = codec_context->height;
@@ -1436,15 +1447,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 				*height = 1080;
 
-			int size = 0;
-			*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( original ), "alpha", &size );
-			if (*buffer)
-				mlt_frame_set_alpha( frame, *buffer, size, NULL );
-			*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( original ), "image", &size );
-			mlt_frame_set_image( frame, *buffer, size, NULL );
-			mlt_properties_set_data( frame_properties, "avformat.image_cache", original, 0, (mlt_destructor) mlt_frame_close, NULL );
 			got_picture = 1;
-
 			goto exit_get_image;
 		}
 	}
@@ -1749,7 +1752,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_frame_set_alpha( frame, alpha, (*width) * (*height), mlt_pool_release );
 
 	if ( image_size > 0 && self->image_cache )
+	{
+		mlt_properties_set_int( frame_properties, "format", *format );
 		mlt_cache_put_frame( self->image_cache, frame );
+	}
 
 	// Try to duplicate last image if there was a decoding failure
 	// TODO: with multithread decoding a partial frame decoding resulting
