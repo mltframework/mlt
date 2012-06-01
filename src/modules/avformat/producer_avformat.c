@@ -114,7 +114,6 @@ struct producer_avformat_s
 	unsigned int invalid_pts_counter;
 	double resample_factor;
 	mlt_cache image_cache;
-	mlt_cache alpha_cache;
 	int colorspace;
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
@@ -1423,7 +1422,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( ! self->image_cache && ! mlt_properties_get_int( properties, "noimagecache" ) )
 	{
 		self->image_cache = mlt_cache_init();
-		self->alpha_cache = mlt_cache_init();
 	}
 	if ( self->image_cache )
 	{
@@ -2738,8 +2736,6 @@ static void producer_avformat_close( producer_avformat self )
 #endif
 	if ( self->image_cache )
 		mlt_cache_close( self->image_cache );
-	if ( self->alpha_cache )
-		mlt_cache_close( self->alpha_cache );
 
 	// Cleanup the mutexes
 	pthread_mutex_destroy( &self->audio_mutex );
