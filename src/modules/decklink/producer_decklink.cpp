@@ -87,6 +87,7 @@ public:
 
 	DeckLinkProducer()
 	{
+		m_producer = NULL;
 		m_decklink = NULL;
 		m_decklinkInput = NULL;
 	}
