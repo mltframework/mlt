@@ -3,7 +3,7 @@ MLT Release Notes
 
 Version 0.8.0 - June 1, 2012
 
-Th minor version is increased due to the addition of time properties!
+The minor version is increased due to the addition of time properties!
 The soname version increased in the process because some mlt_property
 functions changed; however, very few if any apps actually directly use
 mlt_property preferring to use mlt_properties instead. In addition:
