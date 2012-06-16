@@ -39,6 +39,38 @@ void freeDLString( DLString aDLString )
 	if ( aDLString ) CFRelease( aDLString );
 }
 
+#elif defined(WIN32)
+
+char* getCString( DLString aDLString )
+{
+	char* CString = NULL;
+	if ( aDLString )
+	{
+		int size = WideCharToMultiByte( CP_UTF8, 0, aDLString, -1, NULL, 0, NULL, NULL );
+		if (size)
+		{
+			CString = new char[ size ];
+			size = WideCharToMultiByte( CP_UTF8, 0, aDLString, -1, CString, size, NULL, NULL );
+			if ( !size )
+			{
+				delete[] CString;
+				CString = NULL;
+			}
+		}
+	}
+	return CString;
+}
+
+void freeCString( char* aCString )
+{
+	delete[] aCString;
+}
+
+void freeDLString( DLString aDLString )
+{
+	if ( aDLString ) free( (void*) aDLString );
+}
+
 #else
 
 char* getCString( DLString aDLString )
