@@ -640,7 +640,7 @@ mlt_consumer consumer_rtaudio_init( mlt_profile profile, mlt_service_type type, 
 	if ( rtaudio && !mlt_consumer_init( rtaudio->getConsumer(), rtaudio, profile ) )
 	{
 		// If initialises without error
-		if ( rtaudio->open( arg ) )
+		if ( rtaudio->open( arg? arg : getenv( "AUDIODEV" ) ) )
 		{
 			// Setup callbacks
 			consumer = rtaudio->getConsumer();
