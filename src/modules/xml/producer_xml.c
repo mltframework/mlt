@@ -1725,7 +1725,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		if ( getenv( "MLT_XML_DEEP" ) == NULL )
 		{
 			// Now assign additional properties
-			if ( info == 0 )
+			if ( info == 0 && !mlt_properties_get( properties, "resource" ) )
 				mlt_properties_set( properties, "resource", data );
 
 			// This tells consumer_xml not to deep copy
