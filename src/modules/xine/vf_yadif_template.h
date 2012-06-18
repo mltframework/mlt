@@ -163,7 +163,7 @@ static attribute_align_arg void FILTER_LINE_FUNC_NAME(int mode, uint8_t *dst, co
 \
             /* if(yadctx->mode<2) ... */\
             "movdqa      %[tmp3], %%xmm6 \n\t" /* diff */\
-            "cmp         $2, %[mode] \n\t"\
+            "cmpl        $2, %[mode] \n\t"\
             "jge         1f \n\t"\
             LOAD8("(%["prev2"],%[mrefs],2)", %%xmm2) /* prev2[x-2*refs] */\
             LOAD8("(%["next2"],%[mrefs],2)", %%xmm4) /* next2[x-2*refs] */\

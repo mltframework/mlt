@@ -54,7 +54,7 @@ const char *ALPHAOPERATIONSTR[5] = { "clear", "max", "min", "add", "sub" };
 
 /** Returns the index of \param string in \param stringList.
  * Useful for assigning string parameters to enums. */
-int stringValue( const char *string, const char **stringList, int max )
+static int stringValue( const char *string, const char **stringList, int max )
 {
     int i;
     for ( i = 0; i < max; i++ )
@@ -72,7 +72,7 @@ static void rotoPropertyChanged( mlt_service owner, mlt_filter this, char *name 
 }
 
 /** Linear interp */
-inline void lerp( const PointF *a, const PointF *b, PointF *result, double t )
+static inline void lerp( const PointF *a, const PointF *b, PointF *result, double t )
 {
     result->x = a->x + ( b->x - a->x ) * t;
     result->y = a->y + ( b->y - a->y ) * t;
@@ -80,7 +80,7 @@ inline void lerp( const PointF *a, const PointF *b, PointF *result, double t )
 
 /** Linear interp. with t = 0.5
  * Speed gain? */
-inline void lerpHalf( const PointF *a, const PointF *b, PointF *result )
+static inline void lerpHalf( const PointF *a, const PointF *b, PointF *result )
 {
     result->x = ( a->x + b->x ) * .5;
     result->y = ( a->y + b->y ) * .5;
@@ -93,7 +93,7 @@ int ncompare( const void *a, const void *b )
 }
 
 /** Turns a json array with two children into a point (x, y tuple). */
-void jsonGetPoint( cJSON *json, PointF *point )
+static void jsonGetPoint( cJSON *json, PointF *point )
 {
     if ( cJSON_GetArraySize( json ) == 2 )
     {
@@ -109,7 +109,7 @@ void jsonGetPoint( cJSON *json, PointF *point )
  * \param points pointer to array of points. Will be allocated and filled with the points in \param array
  * \return number of points
  */
-int json2BCurves( cJSON *array, BPointF **points )
+static int json2BCurves( cJSON *array, BPointF **points )
 {
     int count = cJSON_GetArraySize( array );
     cJSON *child = array->child;
@@ -134,7 +134,7 @@ int json2BCurves( cJSON *array, BPointF **points )
 }
 
 /** Blurs \param src horizontally. \See funtion blur. */
-void blurHorizontal( uint8_t *src, uint8_t *dst, int width, int height, int radius)
+static void blurHorizontal( uint8_t *src, uint8_t *dst, int width, int height, int radius)
 {
     int x, y, kx, yOff, total, amount, amountInit;
     amountInit = radius * 2 + 1;
@@ -167,7 +167,7 @@ void blurHorizontal( uint8_t *src, uint8_t *dst, int width, int height, int radi
 }
 
 /** Blurs \param src vertically. \See funtion blur. */
-void blurVertical( uint8_t *src, uint8_t *dst, int width, int height, int radius)
+static void blurVertical( uint8_t *src, uint8_t *dst, int width, int height, int radius)
 {
     int x, y, ky, total, amount, amountInit;
     amountInit = radius * 2 + 1;
@@ -202,7 +202,7 @@ void blurVertical( uint8_t *src, uint8_t *dst, int width, int height, int radius
  * \param radius blur radius
  * \param passes blur passes
  */
-void blur( uint8_t *map, int width, int height, int radius, int passes )
+static void blur( uint8_t *map, int width, int height, int radius, int passes )
 {
     uint8_t *src = mlt_pool_alloc( width * height );
     uint8_t *tmp = mlt_pool_alloc( width * height );
@@ -229,7 +229,7 @@ void blur( uint8_t *map, int width, int height, int radius, int passes )
  * \param map array of integers of the dimension width * height.
  *            The map entries belonging to the points in the polygon will be set to \param set * 255 the others to !set * 255.
  */
-void fillMap( PointF *vertices, int count, int width, int height, int invert, uint8_t *map )
+static void fillMap( PointF *vertices, int count, int width, int height, int invert, uint8_t *map )
 {
     int nodes, nodeX[1024], pixelY, i, j, value;
 
@@ -270,7 +270,7 @@ void fillMap( PointF *vertices, int count, int width, int height, int invert, ui
 /** Determines the point in the middle of the Bézier curve (t = 0.5) defined by \param p1 and \param p2
  * using De Casteljau's algorithm.
  */
-void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
+static void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
 {
     struct PointF ab, bc, cd;
 
@@ -292,7 +292,7 @@ void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
  * \param count Number of calculated points in \param points
  * \param size Allocated size of \param points (in elements not in bytes)
  */
-void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size )
+static void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, int *size )
 {
     double errorSqr = SQR( p1.p.x - p2.p.x ) + SQR( p1.p.y - p2.p.y );
 

@@ -25,7 +25,7 @@
 #include <framework/mlt_producer.h>
 #include <framework/mlt_geometry.h>
 
-inline double smoothstep( const double e1, const double e2, const double a )
+static inline double smoothstep( const double e1, const double e2, const double a )
 {
     if ( a < e1 ) return 0.0;
     if ( a > e2 ) return 1.0;

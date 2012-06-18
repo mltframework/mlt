@@ -169,7 +169,7 @@ static void filter_line_mmx2(int mode, uint8_t *dst, const uint8_t *prev, const 
 \
             /* if(p->mode<2) ... */\
             "movq    %[tmp3], %%mm6 \n\t" /* diff */\
-            "cmp       $2, %[mode] \n\t"\
+            "cmpl      $2, %[mode] \n\t"\
             "jge       1f \n\t"\
             LOAD4("(%["prev2"],%[mrefs],2)", %%mm2) /* prev2[x-2*refs] */\
             LOAD4("(%["next2"],%[mrefs],2)", %%mm4) /* next2[x-2*refs] */\
@@ -452,7 +452,7 @@ static attribute_align_arg void  YUY2ToPlanes_mmx(const unsigned char *srcYUY2, 
         "packuswb %%mm4, %%mm4 \n\t" /* xxxxVVVV */\
         "movd %%mm2, (%%edx,%%eax) \n\t" /* store u */\
         "add $4, %%eax \n\t" \
-        "cmp %%ecx, %%eax \n\t" \
+        "cmpl %%ecx, %%eax \n\t" \
         "movd %%mm4, -4(%%esi,%%eax) \n\t" /* store v */\
         "jl xloop%= \n\t"\
         : : "D"(srcYUY2), "b"(py), "d"(pu), "S"(pv), "c"(widthdiv2) : "%eax");
@@ -486,7 +486,7 @@ static attribute_align_arg void YUY2FromPlanes_mmx(unsigned char *dstYUY2, int p
         "punpckhbw %%mm1, %%mm3 \n\t" /* VYUYVYUY */\
         "movntq %%mm0, -16(%%edi,%%eax,4) \n\t" /*store */\
         "movntq %%mm3, -8(%%edi,%%eax,4) \n\t" /*  store */\
-        "cmp %%ecx, %%eax \n\t"\
+        "cmpl %%ecx, %%eax \n\t"\
         "jl xloop%= \n\t"\
         : : "b"(py), "d"(pu), "S"(pv), "D"(dstYUY2), "c"(widthdiv2) : "%eax");
         py += pitch_y;
