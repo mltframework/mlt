@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export version=0.7.9
+export version=0.8.1
 export soversion=5
 
 show_help()
@@ -27,6 +27,8 @@ General build options:
   --disable-sse2          - Compile without SSE2 support (default: on)
   --arch='arch'           - Compile for a specific architecture (default: none)
   --cpu='cpu'             - Compile for a specific CPU (default: none)
+  --target-os='os'        - Cross-compile to a specific OS (default: $(uname -s))
+  --target-arch='arch'    - Cross-compile to a specific CPU architecture
 
 Module disable options:
 
@@ -69,6 +71,7 @@ build_config()
 
 		echo "LARGE_FILE=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE"
 
+		[ "$amd64" = "true" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		[ "$arch" != "" ] && echo "TARGETARCH=-march=$arch"
 		[ "$cpu" != "" ] && echo "TARGETCPU=-mcpu=$cpu"
 		if [ "$optimisations" = "true" ]
@@ -84,13 +87,11 @@ build_config()
 
 		case $targetos in
 		Darwin)
-		sysctl -a hw | grep "x86_64: 1" > /dev/null && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		echo "CFLAGS+=-fPIC -D__DARWIN__ `sdl-config --cflags`"
 		echo "SHFLAGS=-dynamiclib"
 		echo "LDFLAGS+=`sdl-config --libs`"
 		;;
 		Linux|GNU/kFreeBSD|GNU)
-		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
 		echo "CFLAGS+=-fPIC -pthread"
@@ -100,7 +101,6 @@ build_config()
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		FreeBSD)
-		[ "$(uname -m)" = "amd64" -o "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
 		echo "CFLAGS+=-fPIC -pthread"
@@ -109,7 +109,6 @@ build_config()
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		NetBSD)
-		[ "$(uname -m)" = "amd64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
 		echo "CFLAGS+=-pthread"
@@ -118,7 +117,6 @@ build_config()
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		MinGW)
-		[ "$(uname -m)" = "x86_64" ] && echo "ARCH_X86_64=1" && echo "CFLAGS+=-DARCH_X86_64"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
 		echo "SHFLAGS=-shared"
@@ -193,33 +191,15 @@ export gpl=false
 export gpl3=false
 export arch=
 export cpu=
-export targetos=
-
-# Determine OS
-targetos=$(uname -s)
-# Chose appropriate suffix for libraries
-case $targetos in
-	Darwin)
-	LIBSUF=".dylib"
-	;;
-	Linux|FreeBSD|NetBSD)
-	LIBSUF=".so"
-	;;
-	MINGW32_NT-*)
-	targetos="MinGW"
-	LIBSUF=".dll"
-	;;
-	*)
-	LIBSUF=".so"
-	;;
-esac
-export LIBSUF
+export targetos=$(uname -s)
+export targetarch=
+export amd64=false
 
 # Iterate through arguments
 for i in "$@"
 do
 	case $i in
-		--help )			help=1 ;;
+		--help )		help=1 ;;
 		--prefix=* )		prefix="${i#--prefix=}" ;;
 		--libdir=* )		libdir="${i#--libdir=}" ;;
 		--datadir=* )		datadir="${i#--datadir=}" ;;
@@ -231,10 +211,39 @@ do
 		--disable-sse2 )	sse2=false ;;
 		--enable-gpl )		gpl=true ;;
 		--enable-gpl3 )		gpl3=true ;;
-		--arch=* )			arch="${i#--arch=}" ;;
-		--cpu=* )			cpu="${i#--cpu=}" ;;
+		--arch=* )		arch="${i#--arch=}" ;;
+		--cpu=* )		cpu="${i#--cpu=}" ;;
+		--target-os=* )		targetos="${i#--target-os=}" ;;
+		--target-arch=* )	targetarch="${i#--target-arch=}" ;;
 	esac
 done
+
+# Chose appropriate suffix for libraries
+case $targetos in
+	Darwin)
+	LIBSUF=".dylib"
+	if [ "$targetarch" = "" ]
+	then
+		sysctl -a hw | grep "x86_64: 1" > /dev/null
+		[ "$?" = "0" ] && targetarch="amd64"
+	fi
+	;;
+	Linux|FreeBSD|NetBSD)
+	LIBSUF=".so"
+	;;
+	MINGW32_NT-*|MinGW|mingw)
+	targetos="MinGW"
+	LIBSUF=".dll"
+	;;
+	*)
+	LIBSUF=".so"
+	;;
+esac
+export LIBSUF
+
+# Determine if we are compiling for 64-bit Intel architecture
+[ "$targetarch" = "" ] && targetarch=$(uname -m)
+[ "$targetarch" = "amd64" -o "$targetarch" = "x86_64" ] && amd64=true
 
 # Determine the libdir if it's not specified in the args
 [ "$libdir" = "" ] && libdir=$prefix/lib

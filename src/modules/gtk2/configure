@@ -1,15 +1,31 @@
 #!/bin/sh
 
-if [ "$help" != "1" ]
+if [ "$help" = "1" ]
 then
+	cat << EOF
+GTK+ options:
 
-	pkg-config gtk+-2.0 2> /dev/null
+  --gtk2-prefix=path      - Override the gtk+-2.0 prefix for pkg-config
+
+EOF
+
+else
+	pkgconfig_prefix=
+	for i in "$@"
+	do
+		case $i in
+			--gtk2-prefix=* )	pkgconfig_prefix="${i#--gtk2-prefix=}" ;;
+		esac
+	done
+	[ "$pkgconfig_prefix" != "" ] && pkgconfig_prefix="--define-variable=prefix=\"$pkgconfig_prefix\""
+
+	pkg-config $pkgconfig_prefix gtk+-2.0 2> /dev/null
 	disable_gtk2=$?
 
-	pkg-config gdk-pixbuf-2.0 2> /dev/null
+	pkg-config $pkgconfig_prefix gdk-pixbuf-2.0 2> /dev/null
 	disable_pixbuf=$?
 
-	pkg-config gdk-pixbuf-2.0 pangoft2 2> /dev/null
+	pkg-config $pkgconfig_prefix gdk-pixbuf-2.0 pangoft2 2> /dev/null
 	disable_pango=$?
 
 	if [ "$disable_gtk2" != "0" -a "$disable_pixbuf" != 0 -a "$disable_pango" != "0" ]
@@ -32,6 +48,8 @@ then
 	[ "$disable_gtk2" = "0" ] && echo "USE_GTK2=1" >> config.mak
 	[ "$disable_pixbuf" = "0" ] && echo "USE_PIXBUF=1" >> config.mak
 	[ "$disable_pango" = "0" ] && echo "USE_PANGO=1" >> config.mak
+
+	[ "$pkgconfig_prefix" != "" ] && echo "PKGCONFIG_PREFIX=$pkgconfig_prefix" >> config.mak
 
 	pkg-config --exists 'libexif'
 	if [ $? -eq 0 ]

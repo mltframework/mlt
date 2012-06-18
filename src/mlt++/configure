@@ -18,6 +18,6 @@ case $targetos in
 	MinGW)
 		echo LIBSUF=.dll
 		echo "CXXFLAGS+=-Wall $WARNINGS -DPIC"
-		echo "LIBFLAGS=-enable-auto-import -shared"
+		echo "LIBFLAGS=-Wl,-enable-auto-import -shared"
 		;;
 esac >> config.mak

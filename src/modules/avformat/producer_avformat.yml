@@ -2,7 +2,7 @@ schema_version: 0.1
 type: producer
 identifier: avformat
 title: FFmpeg Reader
-version: 1
+version: 2
 copyright: Copyright (C) 2003-2011 Ushodaya Enterprises Limited
 license: LGPL
 language: en
@@ -119,11 +119,13 @@ parameters:
     default: 0
     widget: checkbox
 
-  - identifier: new_seek
-    title: Use new seeking
+  - identifier: use_pts
+    title: Use video PTS
     description: >
-      When this is not provided (recommended), it is enabled only for H.264 in
-      MPEG-2 Transport Streams.
+      Try to use video PTS instead of DTS for seeking and A/V synchronization.
+      This is only enabled by default for H.264 with B pictures.
+      It is recommended to not use this, in general, but it might be helpful
+      to explicity enable or disable it for some videos.
     type: integer
     minimum: 0
     maximum: 1

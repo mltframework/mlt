@@ -1,6 +1,21 @@
 MLT Release Notes
 -----------------
 
+Version 0.8.0 - June 1, 2012
+
+The minor version is increased due to the addition of time properties!
+The soname version increased in the process because some mlt_property
+functions changed; however, very few if any apps actually directly use
+mlt_property preferring to use mlt_properties instead. In addition:
+
+* improve seek speed on AVCHD when using FFmpeg v0.9.1+ (NOT Libav!)
+* composite and dissolve speed improvements on x86-64
+* improve performance of caching in image producers
+* add device enumeration to decklink producer and consumer
+
+Special thanks go to contributors Maksym Veremeyenko and Ed Rogalsky.
+
+
 Version 0.7.8 - February 13, 2012
 
 This is a bugfix and minor enhancement release.

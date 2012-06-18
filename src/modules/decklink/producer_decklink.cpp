@@ -24,15 +24,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/time.h>
-#ifdef WIN32
-#include <objbase.h>
-#include "DeckLinkAPI_h.h"
-#else
-#include "DeckLinkAPI.h"
-typedef const char* BSTR;
-#endif
-
-#define SAFE_RELEASE(V) if (V) { V->Release(); V = NULL; }
+#include "common.h"
 
 class DeckLinkProducer
 	: public IDeckLinkInputCallback
@@ -95,6 +87,7 @@ public:
 
 	DeckLinkProducer()
 	{
+		m_producer = NULL;
 		m_decklink = NULL;
 		m_decklinkInput = NULL;
 	}
@@ -250,6 +243,8 @@ public:
 		pthread_mutex_unlock( &m_mutex );
 
 		m_decklinkInput->StopStreams();
+		m_decklinkInput->DisableVideoInput();
+		m_decklinkInput->DisableAudioInput();
 
 		// Cleanup queue
 		pthread_mutex_lock( &m_mutex );
@@ -260,12 +255,11 @@ public:
 
 	mlt_frame getFrame()
 	{
-		mlt_frame frame = NULL;
 		struct timeval now;
 		struct timespec tm;
 		double fps = mlt_producer_get_fps( getProducer() );
 		mlt_position position = mlt_producer_position( getProducer() );
-		mlt_cache_item cached = mlt_cache_get( m_cache, (void*) position );
+		mlt_frame frame = mlt_cache_get_frame( m_cache, position );
 
 		// Allow the buffer to fill to the requested initial buffer level.
 		if ( m_isBuffering )
@@ -290,13 +284,7 @@ public:
 			pthread_mutex_unlock( &m_mutex );
 		}
 
-		if ( cached )
-		{
-			// Copy cached frame instead of pulling from queue
-			frame = mlt_frame_clone( (mlt_frame) mlt_cache_item_data( cached, NULL ), 0 );
-			mlt_cache_item_close( cached );
-		}
-		else
+		if ( !frame )
 		{
 			// Wait if queue is empty
 			pthread_mutex_lock( &m_mutex );
@@ -317,8 +305,10 @@ public:
 
 			// add to cache
 			if ( frame )
-				mlt_cache_put( m_cache, (void*) position, mlt_frame_clone( frame, 1 ), 0,
-					(mlt_destructor) mlt_frame_close );
+			{
+				mlt_frame_set_position( frame, position );
+				mlt_cache_put_frame( m_cache, frame );
+			}
 		}
 
 		// Set frame timestamp and properties
@@ -437,15 +427,16 @@ public:
 			IDeckLinkTimecode* timecode = 0;
 			if ( video->GetTimecode( bmdTimecodeVITC, &timecode ) == S_OK && timecode )
 			{
-				const char* timecodeString = 0;
+				DLString timecodeString = 0;
 
-				if ( timecode->GetString( (BSTR*) &timecodeString ) == S_OK )
+				if ( timecode->GetString( &timecodeString ) == S_OK )
 				{
-					mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.markup", timecodeString );
-					mlt_log_debug( getProducer(), "timecode %s\n", timecodeString );
+					char* s = getCString( timecodeString );
+					mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.markup", s );
+					mlt_log_debug( getProducer(), "timecode %s\n", s );
+					freeCString( s );
 				}
-				if ( timecodeString )
-					free( (void*) timecodeString );
+				freeDLString( timecodeString );
 				SAFE_RELEASE( timecode );
 			}
 		}
@@ -606,7 +597,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE(producer) );
 
 	// Calculate the next timecode
-	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 	mlt_producer_prepare_next( producer );
 
 	// Close DeckLink if at end
@@ -655,16 +645,18 @@ static void on_property_changed( void*, mlt_properties properties, const char *n
 	{
 		if ( decklink->QueryInterface( IID_IDeckLinkInput, (void**) &decklinkInput ) == S_OK )
 		{
-			char *name = NULL;
-			if ( decklink->GetModelName( (BSTR*) &name ) == S_OK )
+			DLString name = NULL;
+			if ( decklink->GetModelName( &name ) == S_OK )
 			{
+				char *name_cstr = getCString( name );
 				const char *format = "device.%d";
 				char *key = (char*) calloc( 1, strlen( format ) + 1 );
 
 				sprintf( key, format, i );
-				mlt_properties_set( properties, key, name );
+				mlt_properties_set( properties, key, name_cstr );
 				free( key );
-				free( name );
+				freeDLString( name );
+				freeCString( name_cstr );
 			}
 			SAFE_RELEASE( decklinkInput );
 		}

@@ -26,15 +26,7 @@
 #include <sys/time.h>
 #include <limits.h>
 #include <pthread.h>
-#ifdef WIN32
-#include <objbase.h>
-#include "DeckLinkAPI_h.h"
-#else
-#include "DeckLinkAPI.h"
-typedef const char* BSTR;
-#endif
-
-#define SAFE_RELEASE(V) if (V) { V->Release(); V = NULL; }
+#include "common.h"
 
 static const unsigned PREROLL_MINIMUM = 3;
 
@@ -70,7 +62,7 @@ private:
 		IDeckLinkDisplayModeIterator* iter = NULL;
 		IDeckLinkDisplayMode* mode = NULL;
 		IDeckLinkDisplayMode* result = 0;
-		
+
 		if ( m_deckLinkOutput->GetDisplayModeIterator( &iter ) == S_OK )
 		{
 			while ( !result && iter->Next( &mode ) == S_OK )
@@ -81,7 +73,7 @@ private:
 				m_fps = (double) m_timescale / m_duration;
 				int p = mode->GetFieldDominance() == bmdProgressiveFrame;
 				mlt_log_verbose( getConsumer(), "BMD mode %dx%d %.3f fps prog %d\n", m_width, m_height, m_fps, p );
-				
+
 				if ( m_width == profile->width && p == profile->progressive
 					 && m_fps == mlt_profile_fps( profile )
 					 && ( m_height == profile->height || ( m_height == 486 && profile->height == 480 ) ) )
@@ -91,10 +83,10 @@ private:
 			}
 			SAFE_RELEASE( iter );
 		}
-		
+
 		return result;
 	}
-	
+
 public:
 	mlt_consumer getConsumer()
 		{ return &m_consumer; }
@@ -105,6 +97,7 @@ public:
 		m_deckLinkKeyer = NULL;
 		m_deckLinkOutput = NULL;
 		m_deckLink = NULL;
+		m_decklinkFrame = NULL;
 	}
 
 	~DeckLinkConsumer()
@@ -114,7 +107,7 @@ public:
 		SAFE_RELEASE( m_deckLinkOutput );
 		SAFE_RELEASE( m_deckLink );
 	}
-	
+
 	bool open( unsigned card = 0 )
 	{
 		unsigned i = 0;
@@ -134,7 +127,7 @@ public:
 		}
 #else
 		IDeckLinkIterator* deckLinkIterator = CreateDeckLinkIteratorInstance();
-		
+
 		if ( !deckLinkIterator )
 		{
 			mlt_log_error( getConsumer(), "The DeckLink drivers not installed.\n" );
@@ -164,7 +157,7 @@ public:
 			SAFE_RELEASE( m_deckLink );
 			return false;
 		}
-		
+
 		// Get the keyer interface
 		IDeckLinkAttributes *deckLinkAttributes = 0;
 		if ( m_deckLink->QueryInterface( IID_IDeckLinkAttributes, (void**) &deckLinkAttributes ) == S_OK )
@@ -189,7 +182,7 @@ public:
 
 		// Provide this class as a delegate to the audio and video output interfaces
 		m_deckLinkOutput->SetScheduledFrameCompletionCallback( this );
-		
+
 		return true;
 	}
 
@@ -232,7 +225,7 @@ public:
 			mlt_log_error( getConsumer(), "Profile is not compatible with decklink.\n" );
 			return false;
 		}
-		
+
 		// Set the keyer
 		if ( m_deckLinkKeyer && ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
 		{
@@ -281,7 +274,7 @@ public:
 
 		return true;
 	}
-	
+
 	bool stop()
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
@@ -357,7 +350,7 @@ public:
 			stop();
 			return false;
 		}
-		
+
 		// Make the first line black for field order correction.
 		if ( S_OK == frame->GetBytes( (void**) &buffer ) && buffer )
 		{
@@ -476,7 +469,7 @@ public:
 
 		return result;
 	}
-	
+
 	// *** DeckLink API implementation of IDeckLinkVideoOutputCallback IDeckLinkAudioOutputCallback *** //
 
 	// IUnknown needs only a dummy implementation
@@ -486,9 +479,9 @@ public:
 		{ return 1; }
 	virtual ULONG STDMETHODCALLTYPE Release()
 		{ return 1; }
-	
+
 	/************************* DeckLink API Delegate Methods *****************************/
-	
+
 	virtual HRESULT STDMETHODCALLTYPE ScheduledFrameCompleted( IDeckLinkVideoFrame* completedFrame, BMDOutputFrameCompletionResult completed )
 	{
 		if( !m_reprio )
@@ -570,7 +563,7 @@ public:
 	{
 		return mlt_consumer_is_stopped( getConsumer() ) ? S_FALSE : S_OK;
 	}
-	
+
 
 	void ScheduleNextFrame( bool preroll )
 	{
@@ -678,16 +671,18 @@ static void on_property_changed( void*, mlt_properties properties, const char *n
 	{
 		if ( decklink->QueryInterface( IID_IDeckLinkOutput, (void**) &decklinkOutput ) == S_OK )
 		{
-			char *name = NULL;
-			if ( decklink->GetModelName( (BSTR*) &name ) == S_OK )
+			DLString name = NULL;
+			if ( decklink->GetModelName( &name ) == S_OK )
 			{
+				char *name_cstr = getCString( name );
 				const char *format = "device.%d";
 				char *key = (char*) calloc( 1, strlen( format ) + 1 );
 
 				sprintf( key, format, i );
-				mlt_properties_set( properties, key, name );
+				mlt_properties_set( properties, key, name_cstr );
 				free( key );
-				free( name );
+				freeDLString( name );
+				freeCString( name_cstr );
 			}
 			SAFE_RELEASE( decklinkOutput );
 		}
