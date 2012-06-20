@@ -21,7 +21,7 @@
 #include "MltFilteredConsumer.h"
 using namespace Mlt;
 
-FilteredConsumer::FilteredConsumer( Profile& profile, char *id, char *arg ) :
+FilteredConsumer::FilteredConsumer( Profile& profile, const char *id, const char *arg ) :
 	Consumer( profile, id, arg )
 {
 	// Create a reference to the first service

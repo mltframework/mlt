@@ -37,7 +37,7 @@ namespace Mlt
 		private:
 			PushPrivate *m_private;
 		public:
-			PushConsumer( Profile& profile, char *id , char *service = NULL );
+			PushConsumer( Profile& profile, const char *id , const char *service = NULL );
 			virtual ~PushConsumer( );
 			void set_render( int width, int height, double aspect_ratio );
 			virtual int connect( Service &service );

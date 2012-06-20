@@ -39,7 +39,7 @@ static void filter_destructor( void *arg )
 	delete filter;
 }
 
-PushConsumer::PushConsumer( Profile& profile, char *id , char *service ) :
+PushConsumer::PushConsumer( Profile& profile, const char *id , const char *service ) :
 	Consumer( profile, id, service ),
 	m_private( new PushPrivate( ) )
 {

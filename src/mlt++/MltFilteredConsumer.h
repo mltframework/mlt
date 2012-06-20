@@ -39,7 +39,7 @@ namespace Mlt
 		private:
 			Service *first;
 		public:
-			FilteredConsumer( Profile& profile, char *id, char *arg = NULL );
+			FilteredConsumer( Profile& profile, const char *id, const char *arg = NULL );
 			FilteredConsumer( Consumer &consumer );
 			virtual ~FilteredConsumer( );
 			int connect( Service &service );
