@@ -52,8 +52,10 @@ namespace Mlt
 			mlt_producer get_parent( );
 			mlt_service get_service( );
 			int seek( int position );
+			int seek( const char* time );
 			int position( );
 			int frame( );
+			char* frame_time( mlt_time_format = mlt_time_smpte );
 			int set_speed( double speed );
 			int pause( );
 			double get_speed( );

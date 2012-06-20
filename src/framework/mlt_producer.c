@@ -287,6 +287,7 @@ mlt_properties mlt_producer_properties( mlt_producer self )
  * \param position set the "play head" position of the producer
  * \return false
  * \todo Document how the properties affect behavior.
+ * \see mlt_producer_seek_time
  */
 
 int mlt_producer_seek( mlt_producer self, mlt_position position )
@@ -325,6 +326,22 @@ int mlt_producer_seek( mlt_producer self, mlt_position position )
 	return 0;
 }
 
+/** Seek to a specified time string.
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \param time set the "play head" position of the producer to the time string
+ * \return false
+ * \see mlt_producer_seek
+ */
+
+int mlt_producer_seek_time( mlt_producer self, const char* time )
+{
+    mlt_properties_set( MLT_PRODUCER_PROPERTIES(self), "_seek_time", time );
+    mlt_position position = mlt_properties_get_position( MLT_PRODUCER_PROPERTIES(self), "_seek_time" );
+    return mlt_producer_seek( self, position );
+}
+
 /** Get the current position (relative to in point).
  *
  * \public \memberof mlt_producer_s
@@ -347,6 +364,19 @@ mlt_position mlt_producer_position( mlt_producer self )
 mlt_position mlt_producer_frame( mlt_producer self )
 {
 	return mlt_properties_get_position( MLT_PRODUCER_PROPERTIES( self ), "_frame" );
+}
+
+/** Get the current position (relative to start of producer) as a time string.
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \param format the time value format
+ * \return the position of the "play head" regardless of the in point
+ */
+
+char* mlt_producer_frame_time( mlt_producer self, mlt_time_format format )
+{
+    return mlt_properties_get_time( MLT_PRODUCER_PROPERTIES( self ), "_frame", format );
 }
 
 /** Set the playing speed.
