@@ -1548,7 +1548,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( ret >= 0 && pkt.stream_index == self->video_index && pkt.size > 0 )
 			{
 				// Determine time code of the packet
-				if ( pkt.pts == AV_NOPTS_VALUE )
+				if ( use_pts && pkt.pts == AV_NOPTS_VALUE )
 				{
 					self->invalid_pts_counter++;
 					if ( self->invalid_pts_counter > 20 )
