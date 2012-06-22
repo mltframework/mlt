@@ -271,6 +271,8 @@ static int jack_process (jack_nframes_t frames, void * data)
 		}
 		ring_size = jack_ringbuffer_read_space( output_buffers[i] );
 		jack_ringbuffer_read( output_buffers[i], ( char * )jack_output_buffers[i], ring_size < jack_size ? ring_size : jack_size );
+		if ( ring_size < jack_size )
+			memset( &jack_output_buffers[i][ring_size], 0, jack_size - ring_size );
 		
 		// Return audio through in port
 		jack_input_buffers[i] = jack_port_get_buffer( jack_input_ports[i], frames );
