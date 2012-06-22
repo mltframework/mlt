@@ -93,14 +93,14 @@ static int jack_sync( jack_transport_state_t state, jack_position_t *jack_pos, v
 
 static void on_jack_start( mlt_properties owner, mlt_properties properties )
 {
-	fprintf(stderr, "%s\n", __FUNCTION__);
+	mlt_log_verbose( NULL, "%s\n", __FUNCTION__ );
 	jack_client_t *jack_client = mlt_properties_get_data( properties, "jack_client", NULL );
 	jack_transport_start( jack_client );
 }
 
 static void on_jack_stop( mlt_properties owner, mlt_properties properties )
 {
-	fprintf(stderr, "%s\n", __FUNCTION__);
+	mlt_log_verbose( NULL, "%s\n", __FUNCTION__ );
 	jack_client_t *jack_client = mlt_properties_get_data( properties, "jack_client", NULL );
 	jack_transport_stop( jack_client );
 }
@@ -108,7 +108,7 @@ static void on_jack_stop( mlt_properties owner, mlt_properties properties )
 static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_position *position )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-
+	mlt_log_verbose( MLT_FILTER_SERVICE(filter), "%s: %d\n", __FUNCTION__, *position );
 
 	mlt_properties_set_int( properties, "_sync_guard", 1 );
 	mlt_properties_set_position( properties, "_jack_seek", *position );
@@ -120,7 +120,6 @@ static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_position 
 	jack_nframes_t jack_frame = jack_get_sample_rate( jack_client );
 	jack_frame *= *position / mlt_profile_fps( profile );
 
-	fprintf(stderr, "%s: %d\n", __FUNCTION__, *position);
 	jack_transport_locate( jack_client, jack_frame );
 }
 
