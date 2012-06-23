@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int create_instance( mlt_transition this, char *name, char *value, int count )
+static int create_instance( mlt_transition transition, char *name, char *value, int count )
 {
 	// Return from this function
 	int error = 0;
@@ -46,14 +46,14 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 		*arg ++ = '\0';
 
 	// Create the filter
-	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 	filter = mlt_factory_filter( profile, type, arg );
 
 	// If we have a filter, then initialise and store it
 	if ( filter != NULL )
 	{
-		// Properties of this
-		mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+		// Properties of transition
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 
 		// String to hold the property name
 		char id[ 256 ];
@@ -91,19 +91,19 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 	return error;
 }
 
-static uint8_t *filter_get_alpha_mask( mlt_frame this )
+static uint8_t *filter_get_alpha_mask( mlt_frame frame )
 {
 	uint8_t *alpha = NULL;
 
 	// Obtain properties of frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the shape frame
 	mlt_frame shape_frame = mlt_properties_get_data( properties, "shape_frame", NULL );
 
 	// Get the width and height of the image
-	int region_width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "width" );
-	int region_height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "height" );
+	int region_width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "width" );
+	int region_height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "height" );
 	uint8_t *image = NULL;
 	mlt_image_format format = mlt_image_yuv422;
 					
@@ -124,11 +124,11 @@ static uint8_t *filter_get_alpha_mask( mlt_frame this )
 			*p ++ = ( int )( ( ( *image ++ - 16 ) * 299 ) / 255 );
 			image ++;
 		}
-		mlt_frame_set_alpha( this, alpha, region_width * region_height, mlt_pool_release );
+		mlt_frame_set_alpha( frame, alpha, region_width * region_height, mlt_pool_release );
 	}
 	else
 	{
-		mlt_frame_set_alpha( this, alpha, region_width * region_height, NULL );
+		mlt_frame_set_alpha( frame, alpha, region_width * region_height, NULL );
 	}
 
 	return alpha;
@@ -146,12 +146,12 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	mlt_frame b_frame = mlt_frame_pop_frame( frame );
 
 	// Get the watermark transition object
-	mlt_transition this = mlt_frame_pop_service( frame );
+	mlt_transition transition = mlt_frame_pop_service( frame );
 
 	// Get the properties of the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 
-	mlt_service_lock( MLT_TRANSITION_SERVICE( this ) );
+	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 
 	// Get the composite from the transition
 	mlt_transition composite = mlt_properties_get_data( properties, "composite", NULL );
@@ -160,13 +160,13 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 	mlt_filter filter = mlt_properties_get_data( properties, "_filter_0", NULL );
 
 	// Get the position
-	mlt_position position = mlt_transition_get_position( this, frame );
+	mlt_position position = mlt_transition_get_position( transition, frame );
 
 	// Create a composite if we don't have one
 	if ( composite == NULL )
 	{
 		// Create composite via the factory
-		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 		composite = mlt_factory_transition( profile, "composite", NULL );
 
 		// If we have one
@@ -215,7 +215,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 				char *value = mlt_properties_get_value( properties, i );
 
 				// Create an instance
-				if ( create_instance( this, name, value, count ) == 0 )
+				if ( create_instance( transition, name, value, count ) == 0 )
 					count ++;
 			}
 		}
@@ -344,7 +344,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 					resource = "pixbuf:<svg width='100' height='100'><circle cx='50' cy='50' r='50' fill='black'/></svg>";
 
 				// Create the producer
-				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( this ) );
+				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 				producer = mlt_factory_producer( profile, factory, resource );
 
 				// If we have one
@@ -389,7 +389,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 	}
 
-	mlt_service_unlock( MLT_TRANSITION_SERVICE( this ) );
+	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
 	return error;
 }
@@ -397,10 +397,10 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 /** Filter processing.
 */
 
-static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
+static mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
 	// Push the transition on to the frame
-	mlt_frame_push_service( a_frame, this );
+	mlt_frame_push_service( a_frame, transition );
 
 	// Push the b_frame on to the stack
 	mlt_frame_push_frame( a_frame, b_frame );
@@ -418,16 +418,16 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 mlt_transition transition_region_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new transition
-	mlt_transition this = mlt_transition_new( );
+	mlt_transition transition = mlt_transition_new( );
 
 	// Further initialisation
-	if ( this != NULL )
+	if ( transition != NULL )
 	{
 		// Get the properties from the transition
-		mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+		mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 
 		// Assign the transition process method
-		this->process = transition_process;
+		transition->process = transition_process;
 
 		// Default factory
 		mlt_properties_set( properties, "factory", mlt_environment( "MLT_PRODUCER" ) );
@@ -440,6 +440,6 @@ mlt_transition transition_region_init( mlt_profile profile, mlt_service_type typ
 	}
 
 	// Return the transition
-	return this;
+	return transition;
 }
 
