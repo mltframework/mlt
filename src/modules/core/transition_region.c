@@ -302,7 +302,9 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		// by compositing filtered frame over itself
 		if ( mlt_properties_get_int( properties, "filter_only" ) )
 		{
+			char *name = mlt_properties_get( properties, "_unique_id" );
 			frame = composite_copy_region( composite, b_frame, position );
+			mlt_properties_set_data( b_props, name, frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
 
 		// Make sure the filter is in the correct position
