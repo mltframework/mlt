@@ -15,20 +15,44 @@ parameters:
     type: integer
     minimum: 1
     default: 2
+
   - identifier: out_1
     title: Send L
     type: string
+
   - identifier: out_2
     title: Send R
     type: string
+
   - identifier: volume
     title: Volume
     type: float
     minimum: 0.0
     default: 1.0
+
   - identifier: refresh
     description: >
       Applications should set this to update the video frame when paused.
     type: integer
     minimum: 0
     maximum: 1
+
+  - identifier: audio_off
+    title: Audio off
+    type: integer
+    description: If 1, disable audio output
+    mutable: yes
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
+
+  - identifier: scrub_audio
+    title: Audio scrubbing
+    type: integer
+    description: If enabled, sound is played even when the speed is not normal.
+    mutable: yes
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox

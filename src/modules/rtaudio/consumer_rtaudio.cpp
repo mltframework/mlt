@@ -389,6 +389,7 @@ public:
 		// Set the preferred params of the test card signal
 		int channels = mlt_properties_get_int( properties, "channels" );
 		int frequency = mlt_properties_get_int( properties, "frequency" );
+		int scrub = mlt_properties_get_int( properties, "scrub_audio" );
 		static int counter = 0;
 		int samples = mlt_sample_calculator( mlt_properties_get_double( properties, "fps" ), frequency, counter++ );
 		int16_t *pcm;
@@ -441,7 +442,7 @@ public:
 				pthread_cond_wait( &audio_cond, &audio_mutex );
 			if ( running )
 			{
-				if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
+				if ( scrub || mlt_properties_get_double( properties, "_speed" ) == 1 )
 					memcpy( &audio_buffer[ audio_avail ], pcm, bytes );
 				else
 					memset( &audio_buffer[ audio_avail ], 0, bytes );

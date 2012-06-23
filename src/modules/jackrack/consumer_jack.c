@@ -240,6 +240,8 @@ static int jack_process( jack_nframes_t frames, void * data )
 		char *dest = jack_port_get_buffer( self->ports[i], frames );
 
 		jack_ringbuffer_read( self->ringbuffers[i], dest, ring_size < jack_size ? ring_size : jack_size );
+		if ( ring_size < jack_size )
+			memset( dest + ring_size, 0, jack_size - ring_size );
 	}
 
 	return error;
@@ -303,8 +305,10 @@ static int consumer_play_audio( consumer_jack self, mlt_frame frame, int init_au
 	mlt_audio_format afmt = mlt_audio_float;
 
 	// Set the preferred params of the test card signal
+	double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame), "_speed" );
 	int channels = mlt_properties_get_int( properties, "channels" );
 	int frequency = mlt_properties_get_int( properties, "frequency" );
+	int scrub = mlt_properties_get_int( properties, "scrub_audio" );
 	int samples = mlt_sample_calculator( mlt_properties_get_double( properties, "fps" ), frequency, self->counter++ );
 	float *buffer;
 
@@ -324,11 +328,14 @@ static int consumer_play_audio( consumer_jack self, mlt_frame frame, int init_au
 		init_audio = 0;
 	}
 
-	if ( init_audio == 0 )
+	if ( init_audio == 0 && ( speed == 1.0 || speed == 0.0 ) )
 	{
 		int i;
 		size_t mlt_size = samples * sizeof(float);
 		float volume = mlt_properties_get_double( properties, "volume" );
+
+		if ( !scrub && speed == 0.0 )
+			volume = 0.0;
 
 		if ( volume != 1.0 )
 		{

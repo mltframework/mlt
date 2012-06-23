@@ -42,3 +42,13 @@ parameters:
     type: integer
     minimum: 0
     maximum: 1
+
+  - identifier: scrub_audio
+    title: Audio scrubbing
+    type: integer
+    description: If enabled, sound is played even when the speed is not normal.
+    mutable: yes
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
