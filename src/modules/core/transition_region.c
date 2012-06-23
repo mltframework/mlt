@@ -113,25 +113,26 @@ static uint8_t *filter_get_alpha_mask( mlt_frame frame )
 
 	alpha = mlt_frame_get_alpha_mask( shape_frame );
 
+	int size = region_width * region_height;
+	uint8_t *alpha_duplicate = mlt_pool_alloc( size );
+
 	// Generate from the Y component of the image if no alpha available
 	if ( alpha == NULL )
 	{
-		int size = region_width * region_height;
-		uint8_t *p = mlt_pool_alloc( size );
-		alpha = p;
+		alpha = alpha_duplicate;
 		while ( size -- )
 		{
-			*p ++ = ( int )( ( ( *image ++ - 16 ) * 299 ) / 255 );
+			*alpha ++ = ( int )( ( ( *image ++ - 16 ) * 299 ) / 255 );
 			image ++;
 		}
-		mlt_frame_set_alpha( frame, alpha, region_width * region_height, mlt_pool_release );
 	}
 	else
 	{
-		mlt_frame_set_alpha( frame, alpha, region_width * region_height, NULL );
+		memcpy( alpha_duplicate, alpha, size );
 	}
+	mlt_frame_set_alpha( frame, alpha_duplicate, region_width * region_height, mlt_pool_release );
 
-	return alpha;
+	return alpha_duplicate;
 }
 
 /** Do it :-).
