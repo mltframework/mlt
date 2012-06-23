@@ -73,6 +73,7 @@ static int create_instance( mlt_transition this, char *name, char *value, int co
 
 		// Pass all the key properties on the filter down
 		mlt_properties_pass( MLT_FILTER_PROPERTIES( filter ), properties, key );
+		mlt_properties_pass_list( MLT_FILTER_PROPERTIES( filter ), properties, "in, out, length" );
 
 		// Ensure that filter is assigned
 		mlt_properties_set_data( properties, id, filter, 0, ( mlt_destructor )mlt_filter_close, NULL );
