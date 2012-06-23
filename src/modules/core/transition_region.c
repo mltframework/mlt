@@ -102,8 +102,8 @@ static uint8_t *filter_get_alpha_mask( mlt_frame frame )
 	mlt_frame shape_frame = mlt_properties_get_data( properties, "shape_frame", NULL );
 
 	// Get the width and height of the image
-	int region_width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "width" );
-	int region_height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "height" );
+	int region_width = mlt_properties_get_int( properties, "width" );
+	int region_height = mlt_properties_get_int( properties, "height" );
 	uint8_t *image = NULL;
 	mlt_image_format format = mlt_image_yuv422;
 					
@@ -150,6 +150,9 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 
 	// Get the properties of the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
+
+	// Get the properties of the a frame
+	mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
 
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 
@@ -263,8 +266,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		}
 	}
 
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "width", *width );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "height", *height );
+	mlt_properties_set_int( a_props, "width", *width );
+	mlt_properties_set_int( a_props, "height", *height );
 
 	// Only continue if we have both filter and composite
 	if ( composite != NULL )
@@ -289,8 +292,11 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 
 			// Ensure a destructor
 			char *name = mlt_properties_get( properties, "_unique_id" );
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+			mlt_properties_set_data( a_props, name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
+
+		// Properties of the B frame
+		mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 		// filter_only prevents copying the alpha channel of the shape to the output frame
 		// by compositing filtered frame over itself
@@ -377,7 +383,7 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 				if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &shape_frame, 0 ) == 0 )
 				{
 					// Ensure that the shape frame will be closed
-					mlt_properties_set_data( MLT_FRAME_PROPERTIES( b_frame ), "shape_frame", shape_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+					mlt_properties_set_data( b_props, "shape_frame", shape_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
 					// Specify the callback for evaluation
 					b_frame->get_alpha_mask = filter_get_alpha_mask;
