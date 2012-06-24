@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "MltPlaylist.h"
 #include "MltTransition.h"
+#include "MltProfile.h"
 using namespace Mlt;
 
 ClipInfo::ClipInfo( ) :
@@ -85,6 +86,12 @@ Playlist::Playlist( ) :
 	instance = mlt_playlist_init( );
 }
 
+Playlist::Playlist( Profile& profile ) :
+	instance( NULL )
+{
+	instance = mlt_playlist_new( profile.get_profile() );
+}
+
 Playlist::Playlist( Service &producer ) :
 	instance( NULL )
 {
@@ -138,9 +145,14 @@ int Playlist::append( Producer &producer, int in, int out )
 	return mlt_playlist_append_io( get_playlist( ), producer.get_producer( ), in, out );
 }
 
-int Playlist::blank( int length )
+int Playlist::blank( int out )
 {
-	return mlt_playlist_blank( get_playlist( ), length );
+	return mlt_playlist_blank( get_playlist( ), out );
+}
+
+int Playlist::blank( const char *length )
+{
+	return mlt_playlist_blank_time( get_playlist( ), length );
 }
 
 int Playlist::clip( mlt_whence whence, int index )

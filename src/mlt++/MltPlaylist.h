@@ -33,6 +33,7 @@ namespace Mlt
 	class Service;
 	class Playlist;
 	class Transition;
+	class Profile;
 
 	class MLTPP_DECLSPEC ClipInfo
 	{
@@ -60,6 +61,7 @@ namespace Mlt
 			mlt_playlist instance;
 		public:
 			Playlist( );
+			Playlist( Profile& profile );
 			Playlist( Service &playlist );
 			Playlist( Playlist &playlist );
 			Playlist( mlt_playlist playlist );
@@ -69,7 +71,8 @@ namespace Mlt
 			int count( );
 			int clear( );
 			int append( Producer &producer, int in = -1, int out = -1 );
-			int blank( int length );
+			int blank( int out );
+			int blank( const char *length );
 			int clip( mlt_whence whence, int index );
 			int current_clip( );
 			Producer *current( );

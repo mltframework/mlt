@@ -466,7 +466,7 @@ static void on_end_multitrack( deserialise_context context, const xmlChar *name 
 
 static void on_start_playlist( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
-	mlt_playlist playlist = mlt_playlist_init( );
+	mlt_playlist playlist = mlt_playlist_new( context->profile );
 	mlt_service service = MLT_PLAYLIST_SERVICE( playlist );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
@@ -675,7 +675,6 @@ static void on_start_blank( deserialise_context context, const xmlChar *name, co
 	// Get the playlist from the stack
 	enum service_type type;
 	mlt_service service = context_pop_service( context, &type );
-	mlt_position length = 0;
 	
 	if ( type == mlt_playlist_type && service != NULL )
 	{
@@ -684,13 +683,11 @@ static void on_start_blank( deserialise_context context, const xmlChar *name, co
 		{
 			if ( xmlStrcmp( atts[0], _x("length") ) == 0 )
 			{
-				length = atoll( _s(atts[1]) );
+				// Append a blank to the playlist
+				mlt_playlist_blank_time( MLT_PLAYLIST( service ), _s(atts[1]) );
 				break;
 			}
 		}
-
-		// Append a blank to the playlist
-		mlt_playlist_blank( MLT_PLAYLIST( service ), length - 1 );
 
 		// Push the playlist back onto the stack
 		context_push_service( context, service, type );

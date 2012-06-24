@@ -126,7 +126,7 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 	int track = 0;
 	mlt_producer producer = NULL;
 	mlt_tractor mix = NULL;
-	mlt_playlist playlist = mlt_playlist_init( );
+	mlt_playlist playlist = mlt_playlist_new( profile );
 	mlt_properties group = mlt_properties_new( );
 	mlt_tractor tractor = mlt_tractor_new( );
 	mlt_properties properties = MLT_TRACTOR_PROPERTIES( tractor );
@@ -373,7 +373,11 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
 			producer = NULL;
-			mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
+			if ( strchr( argv[ i + 1 ], ':' ) )
+				mlt_playlist_blank_time( playlist, argv[ ++ i ] );
+			else
+				// support for legacy where plain int is an out point instead of length
+				mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
 		}
 		else if ( !strcmp( argv[ i ], "-track" ) ||
 				  !strcmp( argv[ i ], "-null-track" ) ||
@@ -391,7 +395,7 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 			{
 				mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track ++ );
 				track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
-				playlist = mlt_playlist_init( );
+				playlist = mlt_playlist_new( profile );
 			}
 			if ( playlist != NULL )
 			{

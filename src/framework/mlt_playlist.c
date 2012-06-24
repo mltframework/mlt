@@ -102,6 +102,23 @@ mlt_playlist mlt_playlist_init( )
 	return self;
 }
 
+/** Construct a playlist with a profile.
+ *
+ * Sets the resource property to "<playlist>".
+ * Set the mlt_type to property to "mlt_producer".
+ * \public \memberof mlt_playlist_s
+ * \param profile the profile to use with the profile
+ * \return a new playlist
+ */
+
+mlt_playlist mlt_playlist_new( mlt_profile profile )
+{
+    mlt_playlist self = mlt_playlist_init();
+    if ( self )
+        mlt_properties_set_data( MLT_PLAYLIST_PROPERTIES( self ), "_profile", profile, 0, NULL, NULL );
+    return self;
+}
+
 /** Get the producer associated to this playlist.
  *
  * \public \memberof mlt_playlist_s
@@ -702,15 +719,36 @@ int mlt_playlist_append_io( mlt_playlist self, mlt_producer producer, mlt_positi
  *
  * \public \memberof mlt_playlist_s
  * \param self a playlist
- * \param length the ending time of the blank entry, not its duration
+ * \param out the ending time of the blank entry, not its duration
  * \return true if there was an error
  */
 
-int mlt_playlist_blank( mlt_playlist self, mlt_position length )
+int mlt_playlist_blank( mlt_playlist self, mlt_position out )
 {
 	// Append to the virtual list
-	if (length >= 0)
-		return mlt_playlist_virtual_append( self, &self->blank, 0, length );
+	if ( out >= 0 )
+		return mlt_playlist_virtual_append( self, &self->blank, 0, out );
+	else
+		return 1;
+}
+
+/** Append a blank item to the playlist with duration as a time string.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param self a playlist
+ * \param length the duration of the blank entry as a time string
+ * \return true if there was an error
+ */
+
+int mlt_playlist_blank_time( mlt_playlist self, const char* length )
+{
+	if ( self && length )
+	{
+		mlt_properties properties = MLT_PLAYLIST_PROPERTIES( self );
+		mlt_properties_set( properties , "_blank_time", length );
+		mlt_position duration = mlt_properties_get_position( properties, "_blank_time" );
+		return mlt_playlist_blank( self, duration - 1 );
+	}
 	else
 		return 1;
 }
@@ -1067,7 +1105,7 @@ int mlt_playlist_join( mlt_playlist self, int clip, int count, int merge )
 	if ( error == 0 )
 	{
 		int i = clip;
-		mlt_playlist new_clip = mlt_playlist_init( );
+		mlt_playlist new_clip = mlt_playlist_new( mlt_service_profile( MLT_PLAYLIST_SERVICE(self) ) );
 		mlt_events_block( MLT_PLAYLIST_PROPERTIES( self ), self );
 		if ( clip + count >= self->count )
 			count = self->count - clip - 1;
