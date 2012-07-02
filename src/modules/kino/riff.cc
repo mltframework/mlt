@@ -542,6 +542,7 @@ void RIFFFile::ParseRIFF( void )
 	int container = AddDirectoryEntry( make_fourcc( "FILE" ), make_fourcc( "FILE" ), 0, RIFF_NO_PARENT );
 
 	pos = lseek( fd, 0, SEEK_SET );
+	fail_if( pos == -1 );
 
 	/* calculate file size from RIFF header instead from physical file. */
 
