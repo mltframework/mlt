@@ -65,7 +65,14 @@ FOURCC make_fourcc( const char *s )
 
 
 RIFFDirEntry::RIFFDirEntry()
-{}
+{
+	type = 0;
+	name = 0;
+	length = 0;
+	offset = 0;
+	parent = 0;
+	written = 0;
+}
 
 
 RIFFDirEntry::RIFFDirEntry ( FOURCC t, FOURCC n, int l, int o, int p ) : type( t ), name( n ), length( l ), offset( o ), parent( p ), written( 0 )
