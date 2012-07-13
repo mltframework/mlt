@@ -668,6 +668,7 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	else
 	{
 		mlt_log_warning( NULL, "%s: Unable to encode audio - disabling audio output.\n", __FILE__ );
+		audio_input_frame_size = 0;
 	}
 
 	return audio_input_frame_size;
@@ -1405,7 +1406,17 @@ static void *consumer_thread( void *arg )
 			audio_input_frame_size = open_audio( properties, oc, audio_st[i], audio_outbuf_size,
 				acodec? acodec : NULL );
 			if ( !audio_input_frame_size )
+			{
+				// Remove the audio stream from the output context
+				int j;
+				for ( j = 0; j < oc->nb_streams; j++ )
+				{
+					if ( oc->streams[j] == audio_st[i] )
+						av_freep( &oc->streams[j] );
+				}
+				--oc->nb_streams;
 				audio_st[i] = NULL;
+			}
 		}
 
 		// Setup custom I/O if redirecting
