@@ -1541,6 +1541,10 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	char *filename = NULL;
 	int info = strcmp( id, "xml-string" ) ? 0 : 1;
 
+	// Strip file:// prefix
+	if ( data && strlen( data ) >= 7 && strncmp( data, "file://", 7 ) == 0 )
+		data += 7;
+
 	if ( data == NULL || !strcmp( data, "" ) || ( info == 0 && !file_exists( data ) ) )
 		return NULL;
 
