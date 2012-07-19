@@ -790,8 +790,11 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 				if ( ret >= 0 && pkt.stream_index == self->video_index && pkt.size > 0 )
 				{
 					get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context, &pkt );
+					av_free_packet(&pkt);
 					break;
 				}
+				if ( ret >= 0 )
+					av_free_packet(&pkt);
 			}
 		}
 		else
