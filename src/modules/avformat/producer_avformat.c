@@ -191,6 +191,16 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			// Register our get_frame implementation
 			producer->get_frame = producer_get_frame;
 
+			// init mutexes
+			pthread_mutex_init( &self->audio_mutex, NULL );
+			pthread_mutex_init( &self->video_mutex, NULL );
+			pthread_mutex_init( &self->packets_mutex, NULL );
+			pthread_mutex_init( &self->open_mutex, NULL );
+
+			// init queues
+			self->apackets = mlt_deque_init();
+			self->vpackets = mlt_deque_init();
+
 			if ( strcmp( service, "avformat-novalidate" ) )
 			{
 				// Open the file
@@ -828,10 +838,6 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	// Lock the service
 	if ( take_lock )
 	{
-		pthread_mutex_init( &self->audio_mutex, NULL );
-		pthread_mutex_init( &self->video_mutex, NULL );
-		pthread_mutex_init( &self->packets_mutex, NULL );
-		pthread_mutex_init( &self->open_mutex, NULL );
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_mutex_lock( &self->video_mutex );
 	}
@@ -948,11 +954,6 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	}
 	if ( filename )
 		free( filename );
-	if ( !error )
-	{
-		self->apackets = mlt_deque_init();
-		self->vpackets = mlt_deque_init();
-	}
 
 	if ( self->dummy_context )
 	{
