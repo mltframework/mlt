@@ -43,6 +43,10 @@ OBJS = factory.o \
 	   consumer_multi.o \
 	   consumer_null.o
 
+ifdef SSE2_FLAGS
+OBJS += composite_line_yuv_sse2_simple.o
+endif
+
 ASM_OBJS = 
 
 SRCS := $(OBJS:.o=.c)

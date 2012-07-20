@@ -366,7 +366,7 @@ static inline uint8_t sample_mix( uint8_t dest, uint8_t src, int mix )
 /** Composite a source line over a destination line
 */
 #if defined(USE_SSE) && defined(ARCH_X86_64)
-#include "composite_line_yuv_sse2_simple.c"
+void composite_line_yuv_sse2_simple(uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight);
 #endif
 
 void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step )
