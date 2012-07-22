@@ -348,15 +348,15 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		// Or a specific producer
 		mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 
-		// The output frame will hold the 'global' data feeds (ie: those which are targetted for the final frame)
-		mlt_deque data_queue = mlt_deque_init( );
-
 		// Determine whether this tractor feeds to the consumer or stops here
 		int global_feed = mlt_properties_get_int( properties, "global_feed" );
 
 		// If we don't have one, we're in trouble...
 		if ( multitrack != NULL )
 		{
+			// The output frame will hold the 'global' data feeds (ie: those which are targetted for the final frame)
+			mlt_deque data_queue = mlt_deque_init( );
+
 			// Used to garbage collect all frames
 			char label[ 30 ];
 
