@@ -129,6 +129,7 @@ struct mlt_consumer_s
 	int consecutive_rendered;
 	int process_head;
 	int started;
+	pthread_t *threads; /**< \private used to deallocate all threads */
 };
 
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )

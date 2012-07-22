@@ -1000,6 +1000,7 @@ static void consumer_work_start( mlt_consumer self )
 
 	// We're running now
 	self->ahead = 1;
+	self->threads = thread;
 	
 	// These keep track of the accelleration of frame dropping or recovery.
 	self->consecutive_dropped = 0;
@@ -1136,8 +1137,8 @@ static void consumer_work_stop( mlt_consumer self )
 			pthread_join( *thread, NULL );
 
 		// Deallocate the array of threads
-		if ( thread )
-			free( thread );
+		if ( self->threads )
+			free( self->threads );
 
 		// Indicate that worker threads no longer running
 		self->started = 0;
