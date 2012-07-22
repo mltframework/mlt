@@ -176,7 +176,6 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
 				free( profile->description );
 				memcpy( profile, new_profile, sizeof( struct mlt_profile_s ) );
 				profile->description = strdup( new_profile->description );
-				mlt_profile_close( new_profile );
 			}
 			else
 			{
@@ -185,6 +184,7 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
 
 			// Apply to properties
 			apply_profile_properties( self, profile, properties );
+			mlt_profile_close( new_profile );
 		}
  	}
 	else if ( !strcmp( name, "frame_rate_num" ) )
