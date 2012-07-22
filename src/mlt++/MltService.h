@@ -52,6 +52,7 @@ namespace Mlt
 			Service *consumer( );
 			Service *producer( );
 			Profile *profile( );
+			mlt_profile get_profile( );
 			Frame *get_frame( int index = 0 );
 			mlt_service_type type( );
 			int attach( Filter &filter );

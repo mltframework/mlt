@@ -89,6 +89,11 @@ Profile *Service::profile( )
 	return new Profile( mlt_service_profile( get_service() ) );
 }
 
+mlt_profile Service::get_profile()
+{
+	return mlt_service_profile( get_service() );
+}
+
 Frame *Service::get_frame( int index )
 {
 	mlt_frame frame = NULL;
