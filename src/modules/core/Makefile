@@ -44,7 +44,9 @@ OBJS = factory.o \
 	   consumer_null.o
 
 ifdef SSE2_FLAGS
+ifdef ARCH_X86_64
 OBJS += composite_line_yuv_sse2_simple.o
+endif
 endif
 
 ASM_OBJS = 
