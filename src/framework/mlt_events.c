@@ -382,7 +382,6 @@ void mlt_events_disconnect( mlt_properties self, void *service )
 
 typedef struct
 {
-	int done;
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
 }
@@ -398,11 +397,8 @@ condition_pair;
 static void mlt_events_listen_for( mlt_properties self, condition_pair *pair )
 {
 	pthread_mutex_lock( &pair->mutex );
-	if ( pair->done == 0 )
-	{
-		pthread_cond_signal( &pair->cond );
-		pthread_mutex_unlock( &pair->mutex );
-	}
+	pthread_cond_signal( &pair->cond );
+	pthread_mutex_unlock( &pair->mutex );
 }
 
 /** Prepare to wait for an event.
@@ -416,7 +412,6 @@ static void mlt_events_listen_for( mlt_properties self, condition_pair *pair )
 mlt_event mlt_events_setup_wait_for( mlt_properties self, const char *id )
 {
 	condition_pair *pair = malloc( sizeof( condition_pair ) );
-	pair->done = 0;
 	pthread_cond_init( &pair->cond, NULL );
 	pthread_mutex_init( &pair->mutex, NULL );
 	pthread_mutex_lock( &pair->mutex );
@@ -452,10 +447,10 @@ void mlt_events_close_wait_for( mlt_properties self, mlt_event event )
 	{
 		condition_pair *pair = event->service;
 		event->owner = NULL;
-		pair->done = 0;
 		pthread_mutex_unlock( &pair->mutex );
 		pthread_mutex_destroy( &pair->mutex );
 		pthread_cond_destroy( &pair->cond );
+		free( pair );
 	}
 }
 
