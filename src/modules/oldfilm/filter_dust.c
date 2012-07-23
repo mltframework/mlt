@@ -163,9 +163,6 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		int h = *height;
 		int w = *width;
-		if (maxcount==0)
-			return 0;
-
 		int im=rand()%maxcount;
 		
 		while (im-- ){
