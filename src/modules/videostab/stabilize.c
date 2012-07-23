@@ -667,8 +667,11 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
     t = null_transform();
     num_trans = index; // amount of transforms we actually have
     if (num_trans < 1) {
-        printf( "too low contrast! No field remains.\n \
-                    (no translations are detected in frame %i)", sd->t);
+        printf( "too low contrast! No field remains.\n"
+                "(no translations are detected in frame %i)", sd->t);
+        free(ts);
+        free(fs);
+        free(angles);
         return t;
     }
 
@@ -728,6 +731,9 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
 #ifdef STABVERBOSE
     fclose(f);
 #endif
+    free(ts);
+    free(fs);
+    free(angles);
     return t;
 }
 
