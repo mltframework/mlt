@@ -100,7 +100,7 @@ static inline double get_smoothed_data( double *buf, int count )
 			j++;
 		}
 	}
-	smoothed /= j;
+	if (j) smoothed /= j;
 //	fprintf( stderr, "smoothed over %d values, result %f\n", j, smoothed );
 
 	return smoothed;
