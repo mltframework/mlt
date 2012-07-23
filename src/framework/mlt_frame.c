@@ -924,8 +924,8 @@ int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position
 
 void mlt_frame_write_ppm( mlt_frame frame )
 {
-	int width;
-	int height;
+	int width = 0;
+	int height = 0;
 	mlt_image_format format = mlt_image_rgb24;
 	uint8_t *image;
 	
