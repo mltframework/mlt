@@ -260,6 +260,7 @@ void mlt_cache_close( mlt_cache cache )
 
 void mlt_cache_purge( mlt_cache cache, void *object )
 {
+	if (!cache) return;
 	pthread_mutex_lock( &cache->mutex );
 	if ( cache && object )
 	{
