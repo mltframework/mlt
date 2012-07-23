@@ -75,11 +75,10 @@ static int filter_scale( mlt_frame this, uint8_t **image, mlt_image_format *form
 	case mlt_image_rgb24a:
 	case mlt_image_opengl:
 	{
-		// Create the output image
-		uint8_t *output = mlt_pool_alloc( size );
-
 		if ( strcmp( interps, "none" ) && ( iwidth != owidth || iheight != oheight ) )
 		{
+			// Create the output image
+			uint8_t *output = mlt_pool_alloc( size );
 			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data( *image, GDK_COLORSPACE_RGB,
 				( *format == mlt_image_rgb24a || *format == mlt_image_opengl ), 8, iwidth, iheight,
 				iwidth * bpp, NULL, NULL );
