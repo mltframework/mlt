@@ -337,6 +337,8 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 			                 ? mlt_pool_alloc( width * height ) : NULL;
 			if ( requested_format == mlt_image_rgb24a || requested_format == mlt_image_opengl )
 			{
+				if ( alpha )
+					mlt_pool_release( alpha );
 				alpha = mlt_frame_get_alpha_mask( frame );
 				mlt_properties_get_data( properties, "alpha", &alpha_size );
 			}
