@@ -1532,7 +1532,7 @@ static int file_exists( char *file )
 
 mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
 {
-	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
+	xmlSAXHandler *sax;
 	struct deserialise_context_s *context;
 	mlt_properties properties = NULL;
 	int i = 0;
@@ -1590,6 +1590,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	mlt_properties_set_int( context->destructors, "registered", 0 );
 
 	// Setup SAX callbacks for first pass
+	sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	sax->startElement = on_start_element;
 	sax->warning = on_error;
 	sax->error = on_error;
