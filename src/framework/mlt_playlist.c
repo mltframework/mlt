@@ -805,12 +805,6 @@ int mlt_playlist_remove( mlt_playlist self, int where )
 		// Get the clip info
 		mlt_playlist_get_clip_info( self, &where_info, where );
 
-		// Make sure the clip to be removed is valid and correct if necessary
-		if ( where < 0 )
-			where = 0;
-		if ( where >= self->count )
-			where = self->count - 1;
-
 		// Reorganise the list
 		for ( i = where + 1; i < self->count; i ++ )
 			self->list[ i - 1 ] = self->list[ i ];
