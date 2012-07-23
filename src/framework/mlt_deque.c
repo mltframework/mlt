@@ -61,13 +61,7 @@ struct mlt_deque_s
 
 mlt_deque mlt_deque_init( )
 {
-	mlt_deque self = malloc( sizeof( struct mlt_deque_s ) );
-	if ( self != NULL )
-	{
-		self->list = NULL;
-		self->size = 0;
-		self->count = 0;
-	}
+	mlt_deque self = calloc( 1, sizeof( struct mlt_deque_s ) );
 	return self;
 }
 
