@@ -41,6 +41,7 @@ mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type
 			if ( strcmp( temp, "" ) )
 				args[ count ++ ] = strdup( temp );
 		}
+		fclose( input );
 	}
 
 	mlt_producer result = producer_melt_init( profile, type, id, args );
