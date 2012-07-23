@@ -2359,7 +2359,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 			// We only deal with audio from the selected audio index
 			index = pkt.stream_index;
-			if ( ret >= 0 && pkt.data && pkt.size > 0 && ( index == self->audio_index ||
+			if ( index < MAX_AUDIO_STREAMS && ret >= 0 && pkt.data && pkt.size > 0 && ( index == self->audio_index ||
 				 ( self->audio_index == INT_MAX && context->streams[ index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
 			{
 				int channels2 = ( self->audio_index == INT_MAX || !self->audio_resample[index] ) ?
