@@ -74,7 +74,10 @@ mlt_deque mlt_deque_init( )
 
 int mlt_deque_count( mlt_deque self )
 {
-	return self->count;
+	if ( self )
+		return self->count;
+	else
+		return 0;
 }
 
 /** Allocate space on the deque.
