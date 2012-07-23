@@ -942,10 +942,10 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 					else
 					{
 						size = fread( logbuffer, 1, size, f );
-						fclose( f );
 						logbuffer[size] = '\0';
 						c->stats_in = logbuffer;
 					}
+					fclose( f );
 				}
 			}
 		}
