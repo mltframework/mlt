@@ -25,7 +25,7 @@ KLT_TrackingContext KLTCreateTrackingContext()
   KLT_TrackingContext tc = NULL;
 
   /* Allocate memory */
-  tc = (KLT_TrackingContext)  malloc(sizeof(KLT_TrackingContextRec));
+  tc = (KLT_TrackingContext) calloc(1, sizeof(KLT_TrackingContextRec));
 
   /* Set values to default values */
   tc->mindist = 10;
