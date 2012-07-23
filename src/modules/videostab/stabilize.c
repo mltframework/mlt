@@ -740,7 +740,7 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
 /** draws the field scanning area */
 void drawFieldScanArea(StabData* sd, const Field* field, const Transform* t)
 {
-    if (!sd->pixelformat == mlt_image_yuv420p) {
+	if (sd->pixelformat != mlt_image_yuv420p) {
 		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
@@ -751,7 +751,7 @@ void drawFieldScanArea(StabData* sd, const Field* field, const Transform* t)
 /** draws the field */
 void drawField(StabData* sd, const Field* field, const Transform* t)
 {
-    if (!sd->pixelformat == mlt_image_yuv420p){
+	if (sd->pixelformat != mlt_image_yuv420p){
 		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
@@ -762,7 +762,7 @@ void drawField(StabData* sd, const Field* field, const Transform* t)
 /** draws the transform data of this field */
 void drawFieldTrans(StabData* sd, const Field* field, const Transform* t)
 {
-    if (!sd->pixelformat == mlt_image_yuv420p){
+	if (sd->pixelformat != mlt_image_yuv420p){
 		mlt_log_warning (NULL, "format not usable\n");
         return;
 	}
