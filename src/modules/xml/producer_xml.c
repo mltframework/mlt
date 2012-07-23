@@ -1533,7 +1533,7 @@ static int file_exists( char *file )
 mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
 {
 	xmlSAXHandler *sax = calloc( 1, sizeof( xmlSAXHandler ) );
-	struct deserialise_context_s *context = calloc( 1, sizeof( struct deserialise_context_s ) );
+	struct deserialise_context_s *context;
 	mlt_properties properties = NULL;
 	int i = 0;
 	struct _xmlParserCtxt *xmlcontext;
