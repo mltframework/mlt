@@ -521,7 +521,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	p_src += x_src * bpp + y_src * stride_src;
 
 	// offset pointer into frame buffer based upon positive coordinates only!
-	p_dest += ( x < 0 ? 0 : x ) * bpp + ( y < 0 ? 0 : y ) * stride_dest;
+	p_dest += x * bpp + y * stride_dest;
 
 	// offset pointer into alpha channel based upon cropping
 	alpha_b += x_src + y_src * stride_src / bpp;
