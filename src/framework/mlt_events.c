@@ -143,7 +143,7 @@ void mlt_events_init( mlt_properties self )
 	mlt_events events = mlt_events_fetch( self );
 	if ( events == NULL )
 	{
-		events = malloc( sizeof( struct mlt_events_struct ) );
+		events = calloc( 1, sizeof( struct mlt_events_struct ) );
 		events->list = mlt_properties_new( );
 		mlt_events_store( self, events );
 	}
