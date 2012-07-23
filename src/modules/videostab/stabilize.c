@@ -796,20 +796,6 @@ struct iterdata {
 
 /*************************************************************************/
 
-/**
- * stabilize_init:  Initialize this instance of the module.  See
- * tcmodule-data.h for function details.
- */
-int stabilize_init(StabData* instance)
-{
-
-    instance = calloc(1,sizeof(StabData)); // allocation with zero values
-    if (!instance) {
-        return -1;
-    }
-    return 0;
-}
-
 /*
  * stabilize_configure:  Configure this instance of the module.  See
  * tcmodule-data.h for function details.

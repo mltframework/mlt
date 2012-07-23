@@ -178,7 +178,6 @@ void drawBox(unsigned char* I, int width, int height, int bytesPerPixel,
              int x, int y, int sizex, int sizey, unsigned char color);
 void addTrans(StabData* sd, Transform sl);
 
-int stabilize_init(StabData* instance);
 int stabilize_configure(StabData* instance);
 int stabilize_stop(StabData* instance);
 
