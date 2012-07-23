@@ -152,8 +152,14 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 			char **ptr = ov_comment(ov, -1)->user_comments;
 			while(*ptr) {
 				metadata = vorbis_metadata_from_str (*ptr);
-				if (metadata != NULL)
+				if (metadata != NULL) {
 					mlt_properties_set(properties, metadata->name, metadata->content);
+					if (metadata->name)
+						free(metadata->name);
+					if (metadata->content)
+						free(metadata->content);
+					free(metadata);
+				}
 				++ptr;
 			}
 
