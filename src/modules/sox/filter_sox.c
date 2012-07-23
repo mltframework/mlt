@@ -100,7 +100,10 @@ static int create_effect( mlt_filter this, char *value, int count, int channel, 
 	// Tokenise the effect specification
 	mlt_tokeniser_parse_new( tokeniser, value, " " );
 	if ( tokeniser->count < 1 )
+	{
+		mlt_tokeniser_close( tokeniser );
 		return error;
+	}
 
 	// Locate the effect
 	mlt_destructor effect_destructor = mlt_pool_release;
