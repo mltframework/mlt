@@ -530,7 +530,7 @@ void RIFFFile::ParseRIFF( void )
 {
 	FOURCC type;
 	DWORD length;
-	off_t filesize;
+	off_t filesize = 0;
 	off_t pos;
 	int container = AddDirectoryEntry( make_fourcc( "FILE" ), make_fourcc( "FILE" ), 0, RIFF_NO_PARENT );
 
