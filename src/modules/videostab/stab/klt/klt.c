@@ -22,7 +22,7 @@
 
 KLT_TrackingContext KLTCreateTrackingContext()
 {
-  KLT_TrackingContext tc;
+  KLT_TrackingContext tc = NULL;
 
   /* Allocate memory */
   tc = (KLT_TrackingContext)  malloc(sizeof(KLT_TrackingContextRec));
