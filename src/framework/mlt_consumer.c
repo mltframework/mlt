@@ -338,11 +338,16 @@ mlt_consumer mlt_consumer_new( mlt_profile profile )
 	mlt_consumer self = malloc( sizeof( struct mlt_consumer_s ) );
 
 	// Initialise it
-	if ( self != NULL )
-		mlt_consumer_init( self, NULL, profile );
-
-	// Return it
-	return self;
+	if ( self != NULL && mlt_consumer_init( self, NULL, profile ) == 0 )
+	{
+		// Return it
+		return self;
+	}
+	else
+	{
+		free(self);
+		return NULL;
+	}
 }
 
 /** Get the parent service object.
