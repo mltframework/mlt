@@ -414,8 +414,10 @@ int mlt_consumer_start( mlt_consumer self )
 	char *test_card = mlt_properties_get( properties, "test_card" );
 
 	// Just to make sure nothing is hanging around...
+	pthread_mutex_lock( &self->put_mutex );
 	self->put = NULL;
 	self->put_active = 1;
+	pthread_mutex_unlock( &self->put_mutex );
 
 	// Deal with it now.
 	if ( test_card != NULL )
