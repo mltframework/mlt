@@ -232,9 +232,11 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( self ) );
-		profile->sample_aspect_num = mlt_properties_get_int( properties, "sample_aspect_num" );
 		if ( profile )
+		{
+			profile->sample_aspect_num = mlt_properties_get_int( properties, "sample_aspect_num" );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile )  );
+		}
 	}
 	else if ( !strcmp( name, "sample_aspect_den" ) )
 	{
