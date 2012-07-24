@@ -448,8 +448,15 @@ int mlt_consumer_start( mlt_consumer self )
 	}
 
 	// Set the frame duration in microseconds for the frame-dropping heuristic
-	int frame_duration = 1000000 / mlt_properties_get_int( properties, "frame_rate_num" ) *
-			mlt_properties_get_int( properties, "frame_rate_den" );
+	int frame_rate_num = mlt_properties_get_int( properties, "frame_rate_num" );
+	int frame_rate_den = mlt_properties_get_int( properties, "frame_rate_den" );
+	int frame_duration = 0;
+
+	if ( frame_rate_num && frame_rate_den )
+	{
+		frame_duration = 1000000 / frame_rate_num * frame_rate_den;
+	}
+
 	mlt_properties_set_int( properties, "frame_duration", frame_duration );
 
 	// Check and run an ante command
