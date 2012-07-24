@@ -438,6 +438,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		int dst_stride = self->width * ( has_alpha ? 4 : 3 );
 		int image_size = dst_stride * ( height + 1 );
 		self->image = mlt_pool_alloc( image_size );
+		self->alpha = NULL;
 		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 		if ( src_stride != dst_stride )
@@ -485,13 +486,18 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 			}
 		}
 
+		// Update the cache
 		mlt_cache_item_close( self->image_cache );
 		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image", self->image, image_size, mlt_pool_release );
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.image" );
 		self->image_idx = current_idx;
 		mlt_cache_item_close( self->alpha_cache );
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha", self->alpha, width * height, mlt_pool_release );
-		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha" );
+		self->alpha_cache = NULL;
+		if ( self->alpha )
+		{
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha", self->alpha, width * height, mlt_pool_release );
+			self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.alpha" );
+		}
 
 		// Finished with pixbuf now
 		g_object_unref( pixbuf );

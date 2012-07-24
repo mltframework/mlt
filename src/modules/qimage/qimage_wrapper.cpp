@@ -268,6 +268,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		int dst_stride = width * ( has_alpha ? 4 : 3 );
 		int image_size = dst_stride * ( height + 1 );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
+		self->current_alpha = NULL;
 		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 		// Copy the image
@@ -320,8 +321,12 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 		self->image_idx = image_idx;
 		mlt_cache_item_close( self->alpha_cache );
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, width * height, mlt_pool_release );
-		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+		self->alpha_cache = NULL;
+		if ( self->current_alpha )
+		{
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, width * height, mlt_pool_release );
+			self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+		}
 	}
 
 	// Set width/height of frame
