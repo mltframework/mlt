@@ -617,7 +617,8 @@ int mlt_properties_pass_list( mlt_properties self, mlt_properties that, const ch
 		mlt_properties_pass_property( self, that, ptr );
 
 		ptr += count + 1;
-		ptr += strspn( ptr, delim );
+		if ( !done )
+			ptr += strspn( ptr, delim );
 	}
 
 	free( props );
