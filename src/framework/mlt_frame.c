@@ -801,6 +801,8 @@ unsigned char *mlt_frame_get_waveform( mlt_frame self, int w, int h )
 	unsigned char *bitmap = ( unsigned char* )mlt_pool_alloc( size );
 	if ( bitmap != NULL )
 		memset( bitmap, 0, size );
+	else
+		return NULL;
 	mlt_properties_set_data( properties, "waveform", bitmap, size, ( mlt_destructor )mlt_pool_release, NULL );
 
 	// Render vertical lines
