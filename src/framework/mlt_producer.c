@@ -156,6 +156,11 @@ mlt_producer mlt_producer_new( mlt_profile profile )
 			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( self ), "_profile", profile, 0, NULL, NULL );
 			mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( self ), "aspect_ratio", mlt_profile_sar( profile ) );
 		}
+		else
+		{
+			free( self );
+			return NULL;
+		}
 	}
 	return self;
 }
