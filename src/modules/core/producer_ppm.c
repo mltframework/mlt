@@ -40,7 +40,7 @@ static void producer_close( mlt_producer parent );
 
 mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, const char *id, char *command )
 {
-	producer_ppm this = calloc( sizeof( struct producer_ppm_s ), 1 );
+	producer_ppm this = calloc( 1, sizeof( struct producer_ppm_s ) );
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;

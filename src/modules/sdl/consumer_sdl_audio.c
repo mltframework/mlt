@@ -76,7 +76,7 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, char *name
 mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
-	consumer_sdl self = calloc( sizeof( struct consumer_sdl_s ), 1 );
+	consumer_sdl self = calloc( 1, sizeof( struct consumer_sdl_s ) );
 
 	// If no malloc'd and consumer init ok
 	if ( self != NULL && mlt_consumer_init( &self->parent, self, profile ) == 0 )

@@ -41,7 +41,7 @@
 mlt_frame mlt_frame_init( mlt_service service )
 {
 	// Allocate a frame
-	mlt_frame self = calloc( sizeof( struct mlt_frame_s ), 1 );
+	mlt_frame self = calloc( 1, sizeof( struct mlt_frame_s ) );
 
 	if ( self != NULL )
 	{

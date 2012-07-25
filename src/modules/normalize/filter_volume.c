@@ -445,7 +445,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_volume_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = calloc( sizeof( struct mlt_filter_s ), 1 );
+	mlt_filter this = calloc( 1, sizeof( struct mlt_filter_s ) );
 	if ( this != NULL && mlt_filter_init( this, NULL ) == 0 )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( this );

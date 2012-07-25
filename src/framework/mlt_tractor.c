@@ -49,7 +49,7 @@ static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor self );
 
 mlt_tractor mlt_tractor_init( )
 {
-	mlt_tractor self = calloc( sizeof( struct mlt_tractor_s ), 1 );
+	mlt_tractor self = calloc( 1, sizeof( struct mlt_tractor_s ) );
 	if ( self != NULL )
 	{
 		mlt_producer producer = &self->parent;
@@ -88,7 +88,7 @@ mlt_tractor mlt_tractor_init( )
 
 mlt_tractor mlt_tractor_new( )
 {
-	mlt_tractor self = calloc( sizeof( struct mlt_tractor_s ), 1 );
+	mlt_tractor self = calloc( 1, sizeof( struct mlt_tractor_s ) );
 	if ( self != NULL )
 	{
 		mlt_producer producer = &self->parent;

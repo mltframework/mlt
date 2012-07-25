@@ -64,7 +64,7 @@ static int mlt_playlist_resize_mix( mlt_playlist self, int clip, int in, int out
 
 mlt_playlist mlt_playlist_init( )
 {
-	mlt_playlist self = calloc( sizeof( struct mlt_playlist_s ), 1 );
+	mlt_playlist self = calloc( 1, sizeof( struct mlt_playlist_s ) );
 	if ( self != NULL )
 	{
 		mlt_producer producer = &self->parent;
@@ -336,7 +336,7 @@ static int mlt_playlist_virtual_append( mlt_playlist self, mlt_producer source, 
 	}
 
 	// Create the entry
-	self->list[ self->count ] = calloc( sizeof( playlist_entry ), 1 );
+	self->list[ self->count ] = calloc( 1, sizeof( playlist_entry ) );
 	if ( self->list[ self->count ] != NULL )
 	{
 		self->list[ self->count ]->producer = producer;

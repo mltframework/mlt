@@ -295,7 +295,7 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 
 mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_transition this = calloc( sizeof( struct mlt_transition_s ), 1 );
+	mlt_transition this = calloc( 1, sizeof( struct mlt_transition_s ) );
 	if ( this != NULL && mlt_transition_init( this, NULL ) == 0 )
 	{
 		this->process = transition_process;
