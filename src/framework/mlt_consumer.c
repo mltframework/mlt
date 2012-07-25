@@ -232,9 +232,11 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( self ) );
-		profile->sample_aspect_num = mlt_properties_get_int( properties, "sample_aspect_num" );
 		if ( profile )
+		{
+			profile->sample_aspect_num = mlt_properties_get_int( properties, "sample_aspect_num" );
 			mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile )  );
+		}
 	}
 	else if ( !strcmp( name, "sample_aspect_den" ) )
 	{
@@ -336,11 +338,16 @@ mlt_consumer mlt_consumer_new( mlt_profile profile )
 	mlt_consumer self = malloc( sizeof( struct mlt_consumer_s ) );
 
 	// Initialise it
-	if ( self != NULL )
-		mlt_consumer_init( self, NULL, profile );
-
-	// Return it
-	return self;
+	if ( self != NULL && mlt_consumer_init( self, NULL, profile ) == 0 )
+	{
+		// Return it
+		return self;
+	}
+	else
+	{
+		free(self);
+		return NULL;
+	}
 }
 
 /** Get the parent service object.
@@ -407,8 +414,10 @@ int mlt_consumer_start( mlt_consumer self )
 	char *test_card = mlt_properties_get( properties, "test_card" );
 
 	// Just to make sure nothing is hanging around...
+	pthread_mutex_lock( &self->put_mutex );
 	self->put = NULL;
 	self->put_active = 1;
+	pthread_mutex_unlock( &self->put_mutex );
 
 	// Deal with it now.
 	if ( test_card != NULL )
@@ -439,8 +448,15 @@ int mlt_consumer_start( mlt_consumer self )
 	}
 
 	// Set the frame duration in microseconds for the frame-dropping heuristic
-	int frame_duration = 1000000 / mlt_properties_get_int( properties, "frame_rate_num" ) *
-			mlt_properties_get_int( properties, "frame_rate_den" );
+	int frame_rate_num = mlt_properties_get_int( properties, "frame_rate_num" );
+	int frame_rate_den = mlt_properties_get_int( properties, "frame_rate_den" );
+	int frame_duration = 0;
+
+	if ( frame_rate_num && frame_rate_den )
+	{
+		frame_duration = 1000000 / frame_rate_num * frame_rate_den;
+	}
+
 	mlt_properties_set_int( properties, "frame_duration", frame_duration );
 
 	// Check and run an ante command

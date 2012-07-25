@@ -260,6 +260,7 @@ void mlt_cache_close( mlt_cache cache )
 
 void mlt_cache_purge( mlt_cache cache, void *object )
 {
+	if (!cache) return;
 	pthread_mutex_lock( &cache->mutex );
 	if ( cache && object )
 	{
@@ -447,8 +448,10 @@ mlt_cache_item mlt_cache_get( mlt_cache cache, void *object )
 		sprintf( key, "%p", *hit );
 		result = mlt_properties_get_data( cache->active, key, NULL );
 		if ( result && result->data )
+		{
 			result->refcount++;
-		mlt_log( NULL, MLT_LOG_DEBUG, "%s: get %d = %p, %p\n", __FUNCTION__, cache->count - 1, *hit, result->data );
+			mlt_log( NULL, MLT_LOG_DEBUG, "%s: get %d = %p, %p\n", __FUNCTION__, cache->count - 1, *hit, result->data );
+		}
 
 		// swap the current array
 		cache->current = alt;
