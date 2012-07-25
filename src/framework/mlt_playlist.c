@@ -70,7 +70,7 @@ mlt_playlist mlt_playlist_init( )
 		mlt_producer producer = &self->parent;
 
 		// Construct the producer
-		mlt_producer_init( producer, self );
+		if ( mlt_producer_init( producer, self ) != 0 ) goto error1;
 
 		// Override the producer get_frame
 		producer->get_frame = producer_get_frame;
@@ -80,7 +80,7 @@ mlt_playlist mlt_playlist_init( )
 		producer->close_object = self;
 
 		// Initialise blank
-		mlt_producer_init( &self->blank, NULL );
+		if ( mlt_producer_init( &self->blank, NULL ) != 0 ) goto error1;
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( &self->blank ), "mlt_service", "blank" );
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( &self->blank ), "resource", "blank" );
 
@@ -96,10 +96,17 @@ mlt_playlist mlt_playlist_init( )
 		mlt_properties_set_position( MLT_PLAYLIST_PROPERTIES( self ), "length", 0 );
 
 		self->size = 10;
-		self->list = malloc( self->size * sizeof( playlist_entry * ) );
+		self->list = calloc( self->size, sizeof( playlist_entry * ) );
+		if ( self->list == NULL ) goto error2;
+		
 	}
 
 	return self;
+error2:
+	free( self->list );
+error1:
+	free( self );
+	return NULL;
 }
 
 /** Construct a playlist with a profile.
