@@ -70,9 +70,16 @@ static int vdpau_init( producer_avformat self )
 	if ( !vdpau_init_done )
 	{
 		int flags = RTLD_NOW;
-		object = dlopen( "/usr/lib64/libvdpau.so", flags );
+		object = dlopen( "/usr/lib/libvdpau.so", flags );
+#ifdef ARCH_X86_64
 		if ( !object )
-			object = dlopen( "/usr/lib/libvdpau.so", flags );
+			object = dlopen( "/usr/lib64/libvdpau.so", flags );
+		if ( !object )
+			object = dlopen( "/usr/lib/x86_64-linux-gnu/libvdpau.so.1", flags );
+#elif ARCH_X86
+		if ( !object )
+			object = dlopen( "/usr/lib/i386-linux-gnu/libvdpau.so.1", flags );
+#endif
 		if ( !object )
 			object = dlopen( "/usr/local/lib/libvdpau.so", flags );
 		if ( object )
