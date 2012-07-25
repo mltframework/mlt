@@ -259,8 +259,8 @@ mlt_position mlt_filter_get_position( mlt_filter self, mlt_frame frame )
 	char name[20];
 
 	// Make the properties key from unique id
-	strcpy( name, "pos." );
-	strcat( name, unique_id );
+	snprintf( name, 20, "pos.%s", unique_id );
+	name[20 - 1] = '\0';
 
 	return mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name ) - in;
 }
@@ -304,8 +304,8 @@ mlt_frame mlt_filter_process( mlt_filter self, mlt_frame frame )
 	char name[20];
 
 	// Make the properties key from unique id
-	strcpy( name, "pos." );
-	strcat( name, unique_id );
+	snprintf( name, 20, "pos.%s", unique_id );
+	name[20 -1] = '\0';
 
 	// Save the position on the frame
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( frame ), name, position );
