@@ -74,9 +74,15 @@ int mlt_filter_init( mlt_filter self, void *child )
 mlt_filter mlt_filter_new( )
 {
 	mlt_filter self = calloc( 1, sizeof( struct mlt_filter_s ) );
-	if ( self != NULL )
-		mlt_filter_init( self, NULL );
-	return self;
+	if ( self != NULL && mlt_filter_init( self, NULL ) == 0 )
+	{
+		return self;
+	}
+	else
+	{
+		free(self);
+		return NULL;
+	}
 }
 
 /** Get the service class interface.
