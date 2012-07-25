@@ -37,7 +37,9 @@ static VdpDecoderCreate        *vdp_decoder_create;
 static VdpDecoderDestroy       *vdp_decoder_destroy;
 static VdpDecoderRender        *vdp_decoder_render;
 
+// TODO: Shouldn't these be protected by a mutex?
 static int vdpau_init_done = 0;
+static int vdpau_supported = 1;
 
 /** VDPAUD functions
 */
@@ -57,6 +59,8 @@ static void vdpau_fini( producer_avformat self )
 
 static int vdpau_init( producer_avformat self )
 {
+	if ( !vdpau_supported )
+		return 0;
 	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "vdpau_init\n" );
 	int success = 0;
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
@@ -87,6 +91,8 @@ static int vdpau_init( producer_avformat self )
 		else
 		{
 			mlt_log( MLT_PRODUCER_SERVICE(self->parent), MLT_LOG_WARNING, "%s: failed to dlopen libvdpau.so\n  (%s)\n", __FUNCTION__, dlerror() );
+			// Don't try again.
+			vdpau_supported = 0;
 			return success;
 		}
 	}
