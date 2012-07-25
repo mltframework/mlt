@@ -317,7 +317,7 @@ int mlt_producer_seek( mlt_producer self, mlt_position position )
 		mlt_producer_set_speed( self, 0 );
 		position = mlt_producer_get_playtime( self ) - 1;
 	}
-	else if ( use_points && !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( self ) )
+	else if ( use_points && eof && !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( self ) )
 	{
 		position = (int)position % (int)mlt_producer_get_playtime( self );
 	}
