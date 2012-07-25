@@ -152,14 +152,12 @@ static int vdpau_get_buffer( AVCodecContext *codec_context, AVFrame *frame )
 			frame->reordered_opaque = codec_context->reordered_opaque;
 			if ( frame->reference )
 			{
-				frame->age = self->vdpau->ip_age[0];
 				self->vdpau->ip_age[0] = self->vdpau->ip_age[1] + 1;
 				self->vdpau->ip_age[1] = 1;
 				self->vdpau->b_age++;
 			}
 			else
 			{
-				frame->age = self->vdpau->b_age;
 				self->vdpau->ip_age[0] ++;
 				self->vdpau->ip_age[1] ++;
 				self->vdpau->b_age = 1;
