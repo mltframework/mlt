@@ -87,7 +87,7 @@ int mlt_service_init( mlt_service self, void *child )
 	self->child = child;
 
 	// Generate local space
-	self->local = calloc( sizeof( mlt_service_base ), 1 );
+	self->local = calloc( 1, sizeof( mlt_service_base ) );
 
 	// Associate the methods
 	self->get_frame = service_get_frame;

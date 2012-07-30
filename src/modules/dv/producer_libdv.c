@@ -138,7 +138,7 @@ static int producer_collect_info( producer_libdv this, mlt_profile profile );
 
 mlt_producer producer_libdv_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
-	producer_libdv this = calloc( sizeof( struct producer_libdv_s ), 1 );
+	producer_libdv this = calloc( 1, sizeof( struct producer_libdv_s ) );
 
 	if ( filename != NULL && this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{

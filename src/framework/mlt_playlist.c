@@ -64,13 +64,13 @@ static int mlt_playlist_resize_mix( mlt_playlist self, int clip, int in, int out
 
 mlt_playlist mlt_playlist_init( )
 {
-	mlt_playlist self = calloc( sizeof( struct mlt_playlist_s ), 1 );
+	mlt_playlist self = calloc( 1, sizeof( struct mlt_playlist_s ) );
 	if ( self != NULL )
 	{
 		mlt_producer producer = &self->parent;
 
 		// Construct the producer
-		mlt_producer_init( producer, self );
+		if ( mlt_producer_init( producer, self ) != 0 ) goto error1;
 
 		// Override the producer get_frame
 		producer->get_frame = producer_get_frame;
@@ -80,7 +80,7 @@ mlt_playlist mlt_playlist_init( )
 		producer->close_object = self;
 
 		// Initialise blank
-		mlt_producer_init( &self->blank, NULL );
+		if ( mlt_producer_init( &self->blank, NULL ) != 0 ) goto error1;
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( &self->blank ), "mlt_service", "blank" );
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( &self->blank ), "resource", "blank" );
 
@@ -96,10 +96,17 @@ mlt_playlist mlt_playlist_init( )
 		mlt_properties_set_position( MLT_PLAYLIST_PROPERTIES( self ), "length", 0 );
 
 		self->size = 10;
-		self->list = malloc( self->size * sizeof( playlist_entry * ) );
+		self->list = calloc( self->size, sizeof( playlist_entry * ) );
+		if ( self->list == NULL ) goto error2;
+		
 	}
 
 	return self;
+error2:
+	free( self->list );
+error1:
+	free( self );
+	return NULL;
 }
 
 /** Construct a playlist with a profile.
@@ -329,7 +336,7 @@ static int mlt_playlist_virtual_append( mlt_playlist self, mlt_producer source, 
 	}
 
 	// Create the entry
-	self->list[ self->count ] = calloc( sizeof( playlist_entry ), 1 );
+	self->list[ self->count ] = calloc( 1, sizeof( playlist_entry ) );
 	if ( self->list[ self->count ] != NULL )
 	{
 		self->list[ self->count ]->producer = producer;

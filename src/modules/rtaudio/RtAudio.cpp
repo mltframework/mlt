@@ -1193,7 +1193,7 @@ bool RtApiCore :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   // Allocate necessary internal buffers.
   unsigned long bufferBytes;
   bufferBytes = stream_.nUserChannels[mode] * *bufferSize * formatBytes( stream_.userFormat );
-  //  stream_.userBuffer[mode] = (char *) calloc( bufferBytes, 1 );
+  //  stream_.userBuffer[mode] = (char *) calloc( 1, bufferBytes );
   stream_.userBuffer[mode] = (char *) malloc( bufferBytes * sizeof(char) );
   memset( stream_.userBuffer[mode], 0, bufferBytes * sizeof(char) );
   if ( stream_.userBuffer[mode] == NULL ) {
@@ -1218,7 +1218,7 @@ bool RtApiCore :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     if ( makeBuffer ) {
       bufferBytes *= *bufferSize;
       if ( stream_.deviceBuffer ) free( stream_.deviceBuffer );
-      stream_.deviceBuffer = (char *) calloc( bufferBytes, 1 );
+      stream_.deviceBuffer = (char *) calloc( 1, bufferBytes );
       if ( stream_.deviceBuffer == NULL ) {
         errorText_ = "RtApiCore::probeDeviceOpen: error allocating device buffer memory.";
         goto error;
@@ -2124,7 +2124,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   // Allocate necessary internal buffers.
   unsigned long bufferBytes;
   bufferBytes = stream_.nUserChannels[mode] * *bufferSize * formatBytes( stream_.userFormat );
-  stream_.userBuffer[mode] = (char *) calloc( bufferBytes, 1 );
+  stream_.userBuffer[mode] = (char *) calloc( 1, bufferBytes );
   if ( stream_.userBuffer[mode] == NULL ) {
     errorText_ = "RtApiJack::probeDeviceOpen: error allocating user buffer memory.";
     goto error;
@@ -2146,7 +2146,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     if ( makeBuffer ) {
       bufferBytes *= *bufferSize;
       if ( stream_.deviceBuffer ) free( stream_.deviceBuffer );
-      stream_.deviceBuffer = (char *) calloc( bufferBytes, 1 );
+      stream_.deviceBuffer = (char *) calloc( 1, bufferBytes );
       if ( stream_.deviceBuffer == NULL ) {
         errorText_ = "RtApiJack::probeDeviceOpen: error allocating device buffer memory.";
         goto error;
@@ -2999,7 +2999,7 @@ bool RtApiAsio :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   // Allocate necessary internal buffers
   unsigned long bufferBytes;
   bufferBytes = stream_.nUserChannels[mode] * *bufferSize * formatBytes( stream_.userFormat );
-  stream_.userBuffer[mode] = (char *) calloc( bufferBytes, 1 );
+  stream_.userBuffer[mode] = (char *) calloc( 1, bufferBytes );
   if ( stream_.userBuffer[mode] == NULL ) {
     errorText_ = "RtApiAsio::probeDeviceOpen: error allocating user buffer memory.";
     goto error;
@@ -3019,7 +3019,7 @@ bool RtApiAsio :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     if ( makeBuffer ) {
       bufferBytes *= *bufferSize;
       if ( stream_.deviceBuffer ) free( stream_.deviceBuffer );
-      stream_.deviceBuffer = (char *) calloc( bufferBytes, 1 );
+      stream_.deviceBuffer = (char *) calloc( 1, bufferBytes );
       if ( stream_.deviceBuffer == NULL ) {
         errorText_ = "RtApiAsio::probeDeviceOpen: error allocating device buffer memory.";
         goto error;
@@ -4216,7 +4216,7 @@ bool RtApiDs :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned 
 
   // Allocate necessary internal buffers
   long bufferBytes = stream_.nUserChannels[mode] * *bufferSize * formatBytes( stream_.userFormat );
-  stream_.userBuffer[mode] = (char *) calloc( bufferBytes, 1 );
+  stream_.userBuffer[mode] = (char *) calloc( 1, bufferBytes );
   if ( stream_.userBuffer[mode] == NULL ) {
     errorText_ = "RtApiDs::probeDeviceOpen: error allocating user buffer memory.";
     goto error;
@@ -4236,7 +4236,7 @@ bool RtApiDs :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned 
     if ( makeBuffer ) {
       bufferBytes *= *bufferSize;
       if ( stream_.deviceBuffer ) free( stream_.deviceBuffer );
-      stream_.deviceBuffer = (char *) calloc( bufferBytes, 1 );
+      stream_.deviceBuffer = (char *) calloc( 1, bufferBytes );
       if ( stream_.deviceBuffer == NULL ) {
         errorText_ = "RtApiDs::probeDeviceOpen: error allocating device buffer memory.";
         goto error;
@@ -5848,7 +5848,7 @@ bool RtApiAlsa :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   // Allocate necessary internal buffers.
   unsigned long bufferBytes;
   bufferBytes = stream_.nUserChannels[mode] * *bufferSize * formatBytes( stream_.userFormat );
-  stream_.userBuffer[mode] = (char *) calloc( bufferBytes, 1 );
+  stream_.userBuffer[mode] = (char *) calloc( 1, bufferBytes );
   if ( stream_.userBuffer[mode] == NULL ) {
     errorText_ = "RtApiAlsa::probeDeviceOpen: error allocating user buffer memory.";
     goto error;
@@ -5868,7 +5868,7 @@ bool RtApiAlsa :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     if ( makeBuffer ) {
       bufferBytes *= *bufferSize;
       if ( stream_.deviceBuffer ) free( stream_.deviceBuffer );
-      stream_.deviceBuffer = (char *) calloc( bufferBytes, 1 );
+      stream_.deviceBuffer = (char *) calloc( 1, bufferBytes );
       if ( stream_.deviceBuffer == NULL ) {
         errorText_ = "RtApiAlsa::probeDeviceOpen: error allocating device buffer memory.";
         goto error;
@@ -6858,7 +6858,7 @@ bool RtApiOss :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned
   // Allocate necessary internal buffers.
   unsigned long bufferBytes;
   bufferBytes = stream_.nUserChannels[mode] * *bufferSize * formatBytes( stream_.userFormat );
-  stream_.userBuffer[mode] = (char *) calloc( bufferBytes, 1 );
+  stream_.userBuffer[mode] = (char *) calloc( 1, bufferBytes );
   if ( stream_.userBuffer[mode] == NULL ) {
     errorText_ = "RtApiOss::probeDeviceOpen: error allocating user buffer memory.";
     goto error;
@@ -6878,7 +6878,7 @@ bool RtApiOss :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigned
     if ( makeBuffer ) {
       bufferBytes *= *bufferSize;
       if ( stream_.deviceBuffer ) free( stream_.deviceBuffer );
-      stream_.deviceBuffer = (char *) calloc( bufferBytes, 1 );
+      stream_.deviceBuffer = (char *) calloc( 1, bufferBytes );
       if ( stream_.deviceBuffer == NULL ) {
         errorText_ = "RtApiOss::probeDeviceOpen: error allocating device buffer memory.";
         goto error;

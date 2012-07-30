@@ -91,7 +91,7 @@ int mlt_properties_init( mlt_properties self, void *child )
 		self->child = child;
 
 		// Allocate the local structure
-		self->local = calloc( sizeof( property_list ), 1 );
+		self->local = calloc( 1, sizeof( property_list ) );
 
 		// Increment the ref count
 		( ( property_list * )self->local )->ref_count = 1;
@@ -113,7 +113,7 @@ int mlt_properties_init( mlt_properties self, void *child )
 mlt_properties mlt_properties_new( )
 {
 	// Construct a standalone properties object
-	mlt_properties self = calloc( sizeof( struct mlt_properties_s ), 1 );
+	mlt_properties self = calloc( 1, sizeof( struct mlt_properties_s ) );
 
 	// Initialise self
 	mlt_properties_init( self, NULL );

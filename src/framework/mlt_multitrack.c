@@ -43,7 +43,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 mlt_multitrack mlt_multitrack_init( )
 {
 	// Allocate the multitrack object
-	mlt_multitrack self = calloc( sizeof( struct mlt_multitrack_s ), 1 );
+	mlt_multitrack self = calloc( 1, sizeof( struct mlt_multitrack_s ) );
 
 	if ( self != NULL )
 	{

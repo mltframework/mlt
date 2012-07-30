@@ -74,9 +74,15 @@ int mlt_filter_init( mlt_filter self, void *child )
 mlt_filter mlt_filter_new( )
 {
 	mlt_filter self = calloc( 1, sizeof( struct mlt_filter_s ) );
-	if ( self != NULL )
-		mlt_filter_init( self, NULL );
-	return self;
+	if ( self != NULL && mlt_filter_init( self, NULL ) == 0 )
+	{
+		return self;
+	}
+	else
+	{
+		free(self);
+		return NULL;
+	}
 }
 
 /** Get the service class interface.
@@ -253,8 +259,8 @@ mlt_position mlt_filter_get_position( mlt_filter self, mlt_frame frame )
 	char name[20];
 
 	// Make the properties key from unique id
-	strcpy( name, "pos." );
-	strcat( name, unique_id );
+	snprintf( name, 20, "pos.%s", unique_id );
+	name[20 - 1] = '\0';
 
 	return mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), name ) - in;
 }
@@ -298,8 +304,8 @@ mlt_frame mlt_filter_process( mlt_filter self, mlt_frame frame )
 	char name[20];
 
 	// Make the properties key from unique id
-	strcpy( name, "pos." );
-	strcat( name, unique_id );
+	snprintf( name, 20, "pos.%s", unique_id );
+	name[20 -1] = '\0';
 
 	// Save the position on the frame
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( frame ), name, position );

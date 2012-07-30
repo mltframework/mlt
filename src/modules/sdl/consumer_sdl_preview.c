@@ -67,7 +67,7 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer this, char *name
 
 mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	consumer_sdl this = calloc( sizeof( struct consumer_sdl_s ), 1 );
+	consumer_sdl this = calloc( 1, sizeof( struct consumer_sdl_s ) );
 	if ( this != NULL && mlt_consumer_init( &this->parent, this, profile ) == 0 )
 	{
 		// Get the parent consumer object
