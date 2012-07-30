@@ -310,7 +310,7 @@ static int iconv_utf8( mlt_properties properties, const char *prop_name, const c
 	int result = -1;
 	
 	iconv_t	cd = iconv_open( "UTF-8", encoding );
-	if ( cd != ( iconv_t )-1 )
+	if ( text && ( cd != ( iconv_t )-1 ) )
 	{
 		char *inbuf_p = text;
 		size_t inbuf_n = strlen( text );
