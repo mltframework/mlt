@@ -56,7 +56,7 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 			sprintf( temp, "%s/feeds/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( profile, '%' ) + 1 );
 		else
 		{
-			snprintf( temp, sizeof( temp ), profile );
+			snprintf( temp, sizeof( temp ), "%s", profile );
 			temp[ sizeof( temp ) - 1 ] = '\0';
 		}
 
@@ -210,7 +210,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 									// special case: replace #timecode# with current frame timecode
 									int pos = mlt_properties_get_int( feed, "position" );
 									char *tc = frame_to_timecode( pos, mlt_profile_fps( mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) ) );
-									snprintf( result, sizeof( result ), tc );
+									snprintf( result, sizeof( result ), "%s", tc );
 									result[ sizeof( result ) - 1 ] = '\0';
 									free( tc );
 								}
