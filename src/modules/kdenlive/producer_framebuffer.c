@@ -252,7 +252,11 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	if ( !arg ) return NULL;
 	mlt_producer producer = NULL;
 	producer = calloc( 1, sizeof( struct mlt_producer_s ) );
-	mlt_producer_init( producer, NULL );
+	if ( !producer )
+		return NULL;
+
+	if ( mlt_producer_init( producer, NULL ) )
+		return NULL;
 
 	// Wrap loader
 	mlt_producer real_producer;
