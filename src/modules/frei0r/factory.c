@@ -386,10 +386,12 @@ MLT_REPOSITORY
 			char *save_firstptr = NULL;
 			char* firstname = strtok_r( shortname, ".", &save_firstptr );
 #endif
-			char pluginname[1024]="frei0r.";
-			strcat(pluginname,firstname);
+			char pluginname[1024] = "";
+			if ( firstname )
+				snprintf( pluginname, sizeof( pluginname ), "frei0r.%s", firstname);
+			pluginname[ sizeof( pluginname ) - 1 ] = '\0';
 
-			if ( mlt_properties_get( blacklist, firstname ) )
+			if ( firstname && mlt_properties_get( blacklist, firstname ) )
 				continue;
 
 			void* handle=dlopen(strcat(name, LIBSUF),RTLD_LAZY);
