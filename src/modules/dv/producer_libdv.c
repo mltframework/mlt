@@ -537,7 +537,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 
 	// Update timecode on the frame we're creating
-	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
+	if ( *frame != NULL )
+		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );
