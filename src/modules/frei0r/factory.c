@@ -278,13 +278,13 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 			}
 		}
 		check_thread_safe( properties, name );
-		mlt_properties_set_data(properties, "_dlclose_handle", handle , sizeof (void*) , NULL , NULL );
+		mlt_properties_set_data(properties, "_dlclose_handle", handle , sizeof ( handle ) , NULL , NULL );
 		mlt_properties_set_data(properties, "_dlclose", dlclose , sizeof (void*) , NULL , NULL );
-		mlt_properties_set_data(properties, "f0r_construct", f0r_construct , sizeof(void*),NULL,NULL);
-		mlt_properties_set_data(properties, "f0r_update", f0r_update , sizeof(void*),NULL,NULL);
+		mlt_properties_set_data(properties, "f0r_construct", f0r_construct , sizeof( f0r_construct ),NULL,NULL);
+		mlt_properties_set_data(properties, "f0r_update", f0r_update , sizeof( f0r_update ),NULL,NULL);
 		if (f0r_update2)
-			mlt_properties_set_data(properties, "f0r_update2", f0r_update2 , sizeof(void*),NULL,NULL);
-		mlt_properties_set_data(properties, "f0r_destruct", f0r_destruct , sizeof(void*),NULL,NULL);
+			mlt_properties_set_data(properties, "f0r_update2", f0r_update2 , sizeof( f0r_update2 ),NULL,NULL);
+		mlt_properties_set_data(properties, "f0r_destruct", f0r_destruct , sizeof( f0r_destruct ),NULL,NULL);
 		mlt_properties_set_data(properties, "f0r_get_plugin_info", f0r_get_plugin_info , sizeof(void*),NULL,NULL);
 		mlt_properties_set_data(properties, "f0r_get_param_info", f0r_get_param_info , sizeof(void*),NULL,NULL);
 		mlt_properties_set_data(properties, "f0r_set_param_value", f0r_set_param_value , sizeof(void*),NULL,NULL);
