@@ -1327,7 +1327,7 @@ static mlt_frame composite_process( mlt_transition self, mlt_frame a_frame, mlt_
 
 mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_transition self = calloc( sizeof( struct mlt_transition_s ), 1 );
+	mlt_transition self = calloc( 1, sizeof( struct mlt_transition_s ) );
 	if ( self != NULL && mlt_transition_init( self, NULL ) == 0 )
 	{
 		mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );

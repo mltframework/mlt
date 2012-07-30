@@ -292,7 +292,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 mlt_filter filter_panner_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter filter = calloc( sizeof( struct mlt_filter_s ), 1 );
+	mlt_filter filter = calloc( 1, sizeof( struct mlt_filter_s ) );
 	if ( filter != NULL && mlt_filter_init( filter, NULL ) == 0 )
 	{
 		filter->process = filter_process;

@@ -123,7 +123,7 @@ static PangoFT2FontMap *fontmap = NULL;
 
 mlt_producer producer_pango_init( const char *filename )
 {
-	producer_pango this = calloc( sizeof( struct producer_pango_s ), 1 );
+	producer_pango this = calloc( 1, sizeof( struct producer_pango_s ) );
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;

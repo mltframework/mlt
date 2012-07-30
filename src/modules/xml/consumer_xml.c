@@ -186,7 +186,7 @@ static char *xml_get_id( serialise_context context, mlt_service service, xml_typ
 mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
-	mlt_consumer this = calloc( sizeof( struct mlt_consumer_s ), 1 );
+	mlt_consumer this = calloc( 1, sizeof( struct mlt_consumer_s ) );
 
 	// If no malloc'd and consumer init ok
 	if ( this != NULL && mlt_consumer_init( this, NULL, profile ) == 0 )

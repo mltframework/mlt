@@ -41,7 +41,7 @@
 mlt_frame mlt_frame_init( mlt_service service )
 {
 	// Allocate a frame
-	mlt_frame self = calloc( sizeof( struct mlt_frame_s ), 1 );
+	mlt_frame self = calloc( 1, sizeof( struct mlt_frame_s ) );
 
 	if ( self != NULL )
 	{
@@ -801,6 +801,8 @@ unsigned char *mlt_frame_get_waveform( mlt_frame self, int w, int h )
 	unsigned char *bitmap = ( unsigned char* )mlt_pool_alloc( size );
 	if ( bitmap != NULL )
 		memset( bitmap, 0, size );
+	else
+		return NULL;
 	mlt_properties_set_data( properties, "waveform", bitmap, size, ( mlt_destructor )mlt_pool_release, NULL );
 
 	// Render vertical lines

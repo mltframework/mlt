@@ -57,7 +57,7 @@ struct mlt_field_s
 mlt_field mlt_field_init( )
 {
 	// Initialise the field
-	mlt_field self = calloc( sizeof( struct mlt_field_s ), 1 );
+	mlt_field self = calloc( 1, sizeof( struct mlt_field_s ) );
 
 	// Initialise it
 	if ( self != NULL )
@@ -90,7 +90,7 @@ mlt_field mlt_field_init( )
 mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
 {
 	// Initialise the field
-	mlt_field self = calloc( sizeof( struct mlt_field_s ), 1 );
+	mlt_field self = calloc( 1, sizeof( struct mlt_field_s ) );
 
 	// Initialise it
 	if ( self != NULL )

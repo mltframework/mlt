@@ -1301,7 +1301,7 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 {
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
-	char *value = calloc( len + 1, 1 );
+	char *value = calloc( 1, len + 1 );
 	enum service_type type;
 	mlt_service service = context_pop_service( context, &type );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
@@ -1324,7 +1324,7 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 		if ( s != NULL )
 		{
 			// Append new text to existing content
-			char *new = calloc( strlen( s ) + len + 1, 1 );
+			char *new = calloc( 1, strlen( s ) + len + 1 );
 			strcat( new, s );
 			strcat( new, value );
 			mlt_properties_set( properties, context->property, new );

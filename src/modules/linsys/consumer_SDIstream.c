@@ -211,7 +211,7 @@ int convertYCBCRtoRGB(int y1, int cb, int cr, int y2, uint8_t * target_rgb);
 mlt_consumer consumer_SDIstream_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg) {
 
 	// Create the consumer object
-	consumer_SDIstream this = calloc(sizeof(struct consumer_SDIstream_s), 1);
+	consumer_SDIstream this = calloc( 1, sizeof(struct consumer_SDIstream_s) );
 
 	// If malloc and consumer init ok
 	if (this != NULL && mlt_consumer_init(&this->parent, this, profile) == 0) {

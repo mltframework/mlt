@@ -73,7 +73,7 @@ static void producer_close( mlt_producer parent );
 
 mlt_producer producer_pixbuf_init( char *filename )
 {
-	producer_pixbuf self = calloc( sizeof( struct producer_pixbuf_s ), 1 );
+	producer_pixbuf self = calloc( 1, sizeof( struct producer_pixbuf_s ) );
 	if ( self != NULL && mlt_producer_init( &self->parent, self ) == 0 )
 	{
 		mlt_producer producer = &self->parent;

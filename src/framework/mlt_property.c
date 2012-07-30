@@ -864,6 +864,11 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 		// Set the new locale
 		setlocale( LC_NUMERIC, localename );
 	}
+	else
+	{
+		// Make sure we have a lock before accessing self->types
+		pthread_mutex_lock( &self->mutex );
+	}
 
 	// Convert number to string
 	if ( self->types & mlt_prop_int )
@@ -908,6 +913,11 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	{
 		setlocale( LC_NUMERIC, orig_localename );
 		free( orig_localename );
+		pthread_mutex_unlock( &self->mutex );
+	}
+	else
+	{
+		// Make sure we have a lock before accessing self->types
 		pthread_mutex_unlock( &self->mutex );
 	}
 

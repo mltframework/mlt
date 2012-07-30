@@ -70,7 +70,7 @@ mlt_repository mlt_repository_init( const char *directory )
 		return NULL;
 
 	// Construct the repository
-	mlt_repository self = calloc( sizeof( struct mlt_repository_s ), 1 );
+	mlt_repository self = calloc( 1, sizeof( struct mlt_repository_s ));
 	mlt_properties_init( &self->parent, self );
 	self->consumers = mlt_properties_new();
 	self->filters = mlt_properties_new();

@@ -147,7 +147,7 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
   	/* fprintf(stderr, ":::::::::::: CREATE TITLE\n"); */
 	/* Create a new producer object */
 	
-	producer_ktitle this = calloc( sizeof( struct producer_ktitle_s ), 1 );
+	producer_ktitle this = calloc( 1, sizeof( struct producer_ktitle_s ) );
 	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 	{
 		mlt_producer producer = &this->parent;

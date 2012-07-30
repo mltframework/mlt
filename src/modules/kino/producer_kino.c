@@ -47,7 +47,7 @@ mlt_producer producer_kino_init( mlt_profile profile, mlt_service_type type, con
 
 	if ( kino_wrapper_open( wrapper, filename ) )
 	{
-		producer_kino this = calloc( sizeof( struct producer_kino_s ), 1 );
+		producer_kino this = calloc( 1, sizeof( struct producer_kino_s ) );
 
 		if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
 		{

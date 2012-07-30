@@ -40,7 +40,7 @@ static void producer_close( mlt_producer parent );
 
 mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
-	producer_qimage self = calloc( sizeof( struct producer_qimage_s ), 1 );
+	producer_qimage self = calloc( 1, sizeof( struct producer_qimage_s ) );
 	if ( self != NULL && mlt_producer_init( &self->parent, self ) == 0 )
 	{
 		mlt_producer producer = &self->parent;

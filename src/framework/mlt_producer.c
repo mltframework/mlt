@@ -156,6 +156,11 @@ mlt_producer mlt_producer_new( mlt_profile profile )
 			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( self ), "_profile", profile, 0, NULL, NULL );
 			mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( self ), "aspect_ratio", mlt_profile_sar( profile ) );
 		}
+		else
+		{
+			free( self );
+			return NULL;
+		}
 	}
 	return self;
 }
@@ -312,7 +317,7 @@ int mlt_producer_seek( mlt_producer self, mlt_position position )
 		mlt_producer_set_speed( self, 0 );
 		position = mlt_producer_get_playtime( self ) - 1;
 	}
-	else if ( use_points && !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( self ) )
+	else if ( use_points && eof && !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( self ) )
 	{
 		position = (int)position % (int)mlt_producer_get_playtime( self );
 	}
