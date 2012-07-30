@@ -216,7 +216,8 @@ mlt_producer producer_pango_init( const char *filename )
 					if ( markup )
 					{
 						markup = realloc( markup, size );
-						strcat( markup, line );
+						if ( markup )
+							strcat( markup, line );
 					}
 					else
 					{
@@ -225,11 +226,14 @@ mlt_producer producer_pango_init( const char *filename )
 				}
 				fclose( f );
 
-				if ( markup[ strlen( markup ) - 1 ] == '\n' ) 
+				if ( markup && markup[ strlen( markup ) - 1 ] == '\n' )
 					markup[ strlen( markup ) - 1 ] = '\0';
 
 				mlt_properties_set( properties, "resource", filename );
-				mlt_properties_set( properties, "markup", ( markup == NULL ? "" : markup ) );
+				if ( markup )
+					mlt_properties_set( properties, "markup", markup );
+				else
+					mlt_properties_set( properties, "markup", "" );
 				free( markup );
 			}
 			else
