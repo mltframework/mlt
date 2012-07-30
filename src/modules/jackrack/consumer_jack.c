@@ -287,9 +287,10 @@ static void initialise_jack_ports( consumer_jack self )
 			if ( !ports )
 				ports = jack_get_ports( self->jack, NULL, NULL, JackPortIsPhysical | JackPortIsInput );
 			if ( ports )
-				strcpy( con_name, ports[i] );
+				snprintf( con_name, sizeof( con_name ), "%s", ports[i] );
 			else
 				snprintf( con_name, sizeof( con_name ), "system:playback_%d", i + 1);
+			con_name[ sizeof( con_name ) - 1 ] = '\0';
 		}
 		mlt_log_verbose( NULL, "JACK connect %s to %s\n", mlt_name, con_name );
 		jack_connect( self->jack, mlt_name, con_name );
