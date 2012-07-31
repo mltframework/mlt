@@ -411,7 +411,8 @@ bool RawHandler::Open( const char *s )
 		return false;
 	if ( read( fd, data, 4 ) < 0 )
 		return false;
-	lseek( fd, 0, SEEK_SET );
+	if ( lseek( fd, 0, SEEK_SET ) < 0 )
+		return false;
 	numBlocks = ( ( data[ 3 ] & 0x80 ) == 0 ) ? 250 : 300;
 	filename = s;
 	return true;
