@@ -47,6 +47,7 @@
 #ifndef __RTAUDIO_H
 #define __RTAUDIO_H
 
+#include <string.h>
 #include <string>
 #include <vector>
 #include "RtError.h"
@@ -651,7 +652,29 @@ protected:
 #endif
 
     RtApiStream()
-      :apiHandle(0), deviceBuffer(0) { device[0] = 11111; device[1] = 11111; }
+	:apiHandle(0),
+	mode(OUTPUT),
+	state(STREAM_STOPPED),
+	deviceBuffer(0),
+	userInterleaved(0),
+	sampleRate(0),
+	bufferSize(0),
+	nBuffers(0),
+	streamTime(0)
+    {
+	device[0] = 11111;
+	device[1] = 11111;
+	memset( &channelOffset, 0, sizeof( channelOffset ) );
+	memset( &deviceFormat, 0, sizeof( deviceFormat ) );
+	memset( &deviceInterleaved, 0, sizeof( deviceInterleaved ) );
+	memset( &doByteSwap, 0, sizeof( doByteSwap ) );
+	memset( &doConvertBuffer, 0, sizeof( doConvertBuffer ) );
+	memset( &latency, 0, sizeof( latency ) );
+	memset( &nDeviceChannels, 0, sizeof( nDeviceChannels ) );
+	memset( &nUserChannels, 0, sizeof( nUserChannels ) );
+	memset( &userBuffer, 0, sizeof( userBuffer ) );
+	memset( &userFormat, 0, sizeof( userFormat ) );
+    }
   };
 
   typedef signed short Int16;
