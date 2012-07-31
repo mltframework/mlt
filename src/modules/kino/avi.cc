@@ -1001,7 +1001,9 @@ bool AVIFile::isOpenDML( void )
 }
 
 AVI1File::AVI1File() : AVIFile()
-{}
+{
+	memset( &dvinfo, 0, sizeof( dvinfo ) );
+}
 
 
 AVI1File::~AVI1File()
