@@ -540,7 +540,7 @@ struct CallbackInfo {
 
   // Default constructor.
   CallbackInfo()
-    :object(0), callback(0), userData(0), apiInfo(0), isRunning(false) {}
+    :object(0), thread(0), callback(0), userData(0), apiInfo(0), isRunning(false) {}
 };
 
 // **************************************************************** //
