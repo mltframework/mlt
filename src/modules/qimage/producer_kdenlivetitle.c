@@ -33,20 +33,31 @@ void read_xml(mlt_properties properties)
 		int size = 0;
 		long lSize;
  
-		fseek (f , 0 , SEEK_END);
+		if ( fseek (f , 0 , SEEK_END) < 0 )
+			goto error;
 		lSize = ftell (f);
+		if ( lSize <= 0 )
+			goto error;
 		rewind (f);
 
 		char *infile = (char*) mlt_pool_alloc(lSize);
-		size=fread(infile,1,lSize,f);
-		infile[size] = '\0';
+		if ( infile )
+		{
+			size = fread(infile,1,lSize,f);
+			if ( size )
+			{
+				infile[size] = '\0';
+				mlt_properties_set(properties, "_xmldata", infile);
+			}
+			mlt_pool_release( infile );
+		}
+error:
 		fclose(f);
-		mlt_properties_set(properties, "_xmldata", infile);
-		mlt_pool_release( infile );
 	}
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+
 {
 	/* Obtain properties of frame */
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
