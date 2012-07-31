@@ -342,6 +342,7 @@ bool FileHandler::WriteFrame( const Frame& frame )
 RawHandler::RawHandler() : fd( -1 )
 {
 	extension = ".dv";
+	numBlocks = 0;
 }
 
 
