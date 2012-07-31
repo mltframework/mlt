@@ -88,6 +88,9 @@ AVIFile::AVIFile() : RIFFFile(),
 	}
 	idx1 = new AVISimpleIndex;
 	memset( idx1, 0, sizeof( AVISimpleIndex ) );
+	memset( dmlh, 0, sizeof( dmlh ) );
+	memset( &mainHdr, 0, sizeof( mainHdr ) );
+	memset( &streamHdr, 0, sizeof( streamHdr ) );
 }
 
 
