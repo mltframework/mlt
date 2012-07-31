@@ -136,6 +136,9 @@ AVIFile::AVIFile( const AVIFile& avi ) : RIFFFile( avi )
 
 	isUpdateIdx1 = avi.isUpdateIdx1;
 
+	odml_list = 0;
+	dmlh_chunk = 0;
+	memset( &streamHdr, 0, sizeof( streamHdr ) );
 }
 
 
