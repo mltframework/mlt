@@ -444,6 +444,7 @@ AVIHandler::AVIHandler( int format ) : avi( NULL ), aviFormat( format ), isOpenD
 	extension = ".avi";
 	for ( int c = 0; c < 4; c++ )
 		audioChannels[ c ] = NULL;
+	memset( &dvinfo, 0, sizeof( dvinfo ) );
 }
 
 
