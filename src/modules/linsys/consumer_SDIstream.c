@@ -359,7 +359,9 @@ static void *consumer_thread(void *arg) {
 
 	// Set additional device file defaults
 	struct stat st;
-	int fd = stat(this->device_file_video, &st);
+	int fd = -1;
+	if (this->device_file_video)
+		fd = stat(this->device_file_video, &st);
 	if (fd == -1) {
 		if (this->device_file_video)
 			free(this->device_file_video);
