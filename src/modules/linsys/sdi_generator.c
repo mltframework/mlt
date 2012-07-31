@@ -349,9 +349,9 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	}
 
 	if (info.blanking) {
-		printf("SDI frame size: %li\n", sdi_frame_size);
+		printf("SDI frame size: %lli\n", sdi_frame_size);
 	} else {
-		printf("Frame size for active video: %li\n", sdi_frame_size);
+		printf("Frame size for active video: %lli\n", sdi_frame_size);
 	}
 
 	/**
