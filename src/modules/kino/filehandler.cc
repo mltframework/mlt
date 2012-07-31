@@ -117,6 +117,10 @@ FileHandler::FileHandler() : done( false ), autoSplit( false ), maxFrameCount( 9
 		framesWritten( 0 ), filename( "" )
 {
 	/* empty body */
+	timeStamp = 0;
+	everyNthFrame = 0;
+	framesToSkip = 0;
+	maxFileSize = 0;
 }
 
 
