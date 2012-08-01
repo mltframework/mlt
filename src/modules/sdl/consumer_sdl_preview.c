@@ -294,7 +294,9 @@ static void *consumer_thread( void *arg )
 	// Determine if the application is dealing with the preview
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
 
+	pthread_mutex_lock( &this->refresh_mutex );
 	this->refresh_count = 0;
+	pthread_mutex_unlock( &this->refresh_mutex );
 
 	// Loop until told not to
 	while( this->running )
