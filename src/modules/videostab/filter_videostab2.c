@@ -82,7 +82,7 @@ Transform* deserialize_vectors( char *vectors, mlt_position length ,float scale_
 	mlt_geometry g = mlt_geometry_init();
 	Transform* tx=NULL;
 	// Parse the property as a geometry
-	if ( !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
+	if ( g && !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
 	{
 		struct mlt_geometry_item_s item;
 		int i;
