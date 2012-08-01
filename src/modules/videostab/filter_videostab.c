@@ -199,6 +199,8 @@ mlt_filter filter_videostab_init( mlt_profile profile, mlt_service_type type, co
 	if ( self )
 	{
 		mlt_filter parent = mlt_filter_new();
+		if ( !parent )
+			return NULL;
 		parent->child = self;
 		parent->close = filter_close;
 		parent->process = filter_process;
