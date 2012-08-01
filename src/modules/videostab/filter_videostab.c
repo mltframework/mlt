@@ -82,7 +82,7 @@ static void deserialize_vectors( videostab self, char *vectors, mlt_position len
 	mlt_geometry g = mlt_geometry_init();
 
 	// Parse the property as a geometry
-	if ( !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
+	if ( g && !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
 	{
 		struct mlt_geometry_item_s item;
 		int i;
