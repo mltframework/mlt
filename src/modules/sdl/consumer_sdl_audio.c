@@ -475,7 +475,10 @@ static void *consumer_thread( void *arg )
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
 //	int last_position = -1;
+
+	pthread_mutex_lock( &self->refresh_mutex );
 	self->refresh_count = 0;
+	pthread_mutex_unlock( &self->refresh_mutex );
 
 	// Loop until told not to
 	while( self->running )
