@@ -56,12 +56,15 @@ public:
 
 	RtAudioConsumer()
 		: device_id(-1)
+		, queue(NULL)
 		, joined(0)
 		, running(0)
 		, audio_avail(0)
 		, playing(0)
 		, refresh_count(0)
-		{}
+	{
+		memset( &consumer, 0, sizeof( consumer ) );
+	}
 
 	~RtAudioConsumer()
 	{
