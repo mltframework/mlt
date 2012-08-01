@@ -287,7 +287,9 @@ static void *consumer_thread( void *arg )
 	mlt_frame frame = NULL;
 	int last_position = -1;
 	int eos = 0;
-	int eos_threshold = 20 + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
+	int eos_threshold = 20;
+	if ( this->play )
+		eos_threshold = eos_threshold + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
 
 	// Determine if the application is dealing with the preview
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
