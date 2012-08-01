@@ -227,7 +227,9 @@ static int consumer_stop( mlt_consumer parent )
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
 
+		pthread_mutex_lock( &mlt_sdl_mutex );
 		this->sdl_screen = NULL;
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	return 0;
