@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter # consumer, filter, producer, or transition
 identifier: lines
 title: Scratchlines
-version: 0.2.5
+version: 0.2.6
 copyright: Copyright (C) 2008 Marco Gittler
 license: GPL
 language: en
@@ -20,7 +20,7 @@ bugs: # this can be just for documentation, or the tool may disclose it to help 
   - need to do some speed improvement.
 
 parameters:
-  - identifier: width
+  - identifier: line_width
     title: Width of line
     type: integer
     description: Linewidth in picture
