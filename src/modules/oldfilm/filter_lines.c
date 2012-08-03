@@ -36,7 +36,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		int h = *height;
 		int w = *width;
 
-		int width_line = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "width" );
+		int line_width = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "line_width" );
 		int num = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "num" );
 		double maxdarker= (double)mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "darker" ) ;
 		double maxlighter=(double)mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "lighter" ) ;
@@ -44,7 +44,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		char buf[256];
 		char typebuf[256];
 		
-		if (!width_line)
+		if ( line_width < 1 )
 			return 0;
 
 		double position = mlt_filter_get_progress( filter, this );
@@ -55,7 +55,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		while (num--){
 			int type=(rand()%3)+1;
 			int x1=(double)w*rand()/RAND_MAX;
-			int dx=rand()%width_line;
+			int dx=rand()%line_width;
 			int x=0,y=0;
 			int ystart=rand()%h;
 			int yend=rand()%h;
@@ -125,8 +125,8 @@ mlt_filter filter_lines_init( mlt_profile profile, mlt_service_type type, const 
 	if ( this != NULL )
 	{
 		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "width", "2" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "num", "5" );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "line_width", 2 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "num", 5 );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "darker" , 40 ) ;
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "lighter" , 40 ) ;
 	}
