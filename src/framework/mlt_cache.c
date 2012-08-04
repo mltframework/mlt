@@ -83,6 +83,7 @@ struct mlt_cache_s
 {
 	int count;             /**< the number of items currently in the cache */
 	int size;              /**< the maximum number of items permitted in the cache <= \p MAX_CACHE_SIZE */
+	int is_frames;         /**< indicates if this cache is used to cache frames */
 	void* *current;        /**< pointer to the current array of pointers */
 	void* A[ MAX_CACHE_SIZE ];
 	void* B[ MAX_CACHE_SIZE ];
@@ -121,6 +122,13 @@ void *mlt_cache_item_data( mlt_cache_item item, int *size )
 static void cache_object_close( mlt_cache cache, void *object, void* data )
 {
 	char key[19];
+
+	if ( cache->is_frames )
+	{
+		// Frame caches are easy - just close the object as mlt_frame.
+		mlt_frame_close( object );
+		return;
+	}
 
 	// Fetch the cache item from the active list by its owner's address
 	sprintf( key, "%p", object );
@@ -557,6 +565,7 @@ void mlt_cache_put_frame( mlt_cache cache, mlt_frame frame )
 
 	// swap the current array
 	cache->current = (void**) alt;
+	cache->is_frames = 1;
 	pthread_mutex_unlock( &cache->mutex );
 }
 
