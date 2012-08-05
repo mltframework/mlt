@@ -34,7 +34,7 @@
 #define MAX_CACHE_SIZE (200)
 
 /** the default number of data objects to cache per line */
-#define DEFAULT_CACHE_SIZE (10)
+#define DEFAULT_CACHE_SIZE (4)
 
 /** \brief Cache item class
  *
