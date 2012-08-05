@@ -119,6 +119,20 @@ parameters:
     default: 0
     widget: checkbox
 
+  - identifier: cache
+    title: Number of images cache
+    type: integer
+    description: >
+      By default, this producer caches images to facilitate YADIF deinterlace,
+      which needs previous and next frames. Also, caching helps with frame-
+      stepping within a player. The default number of images cached is supplied
+      by the MLT framework, which is currently 4, but you can override it
+      with this property. You can also disable caching by setting it to 0.
+      If you are using parallel processing with YADIF deinterlacing, then
+      you might need to increase caching to prevent inadvertent backward seeks.
+      One can also set this value globally for all instances of avformat by
+      setting the environment variable MLT_AVFORMAT_CACHE.
+
   - identifier: use_pts
     title: Use video PTS
     description: >
