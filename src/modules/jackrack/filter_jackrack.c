@@ -109,17 +109,11 @@ static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_position 
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_log_verbose( MLT_FILTER_SERVICE(filter), "%s: %d\n", __FUNCTION__, *position );
-
 	mlt_properties_set_int( properties, "_sync_guard", 1 );
-	mlt_properties_set_position( properties, "_jack_seek", *position );
-	return;
-
-
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 	jack_client_t *jack_client = mlt_properties_get_data( properties, "jack_client", NULL );
 	jack_nframes_t jack_frame = jack_get_sample_rate( jack_client );
 	jack_frame *= *position / mlt_profile_fps( profile );
-
 	jack_transport_locate( jack_client, jack_frame );
 }
 
@@ -378,19 +372,9 @@ static int jackrack_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			jack_ringbuffer_read( input_buffers[j], (char*)( q + j * *samples ), size );
 	}
 
-	// Do JACK seeking if requested
+	// help jack_sync() indicate when we are rolling
 	mlt_position pos = mlt_frame_get_position( frame );
 	mlt_properties_set_position( filter_properties, "_last_pos", pos );
-	if ( pos == mlt_properties_get_position( filter_properties, "_jack_seek" ) )
-	{
-		jack_client_t *jack_client = mlt_properties_get_data( filter_properties, "jack_client", NULL );
-		jack_position_t jack_pos;
-		jack_transport_query( jack_client, &jack_pos );
-		double fps = mlt_profile_fps( mlt_service_profile( MLT_FILTER_SERVICE(filter) ) );
-		jack_nframes_t jack_frame = jack_pos.frame_rate * pos / fps;
-		jack_transport_locate( jack_client, jack_frame );
-		mlt_properties_set_position( filter_properties, "_jack_seek", -1 );
-	}
 
 	return 0;
 }
