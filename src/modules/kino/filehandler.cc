@@ -117,6 +117,10 @@ FileHandler::FileHandler() : done( false ), autoSplit( false ), maxFrameCount( 9
 		framesWritten( 0 ), filename( "" )
 {
 	/* empty body */
+	timeStamp = 0;
+	everyNthFrame = 0;
+	framesToSkip = 0;
+	maxFileSize = 0;
 }
 
 
@@ -338,6 +342,7 @@ bool FileHandler::WriteFrame( const Frame& frame )
 RawHandler::RawHandler() : fd( -1 )
 {
 	extension = ".dv";
+	numBlocks = 0;
 }
 
 
@@ -406,7 +411,8 @@ bool RawHandler::Open( const char *s )
 		return false;
 	if ( read( fd, data, 4 ) < 0 )
 		return false;
-	lseek( fd, 0, SEEK_SET );
+	if ( lseek( fd, 0, SEEK_SET ) < 0 )
+		return false;
 	numBlocks = ( ( data[ 3 ] & 0x80 ) == 0 ) ? 250 : 300;
 	filename = s;
 	return true;
@@ -438,6 +444,7 @@ AVIHandler::AVIHandler( int format ) : avi( NULL ), aviFormat( format ), isOpenD
 	extension = ".avi";
 	for ( int c = 0; c < 4; c++ )
 		audioChannels[ c ] = NULL;
+	memset( &dvinfo, 0, sizeof( dvinfo ) );
 }
 
 

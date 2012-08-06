@@ -463,7 +463,7 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 	track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
 
 	// We must have a playlist to connect
-	if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first" ) || 
+	if ( playlist && !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first" ) || 
 		  mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
 		mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track );
 

@@ -199,10 +199,11 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
-	// Construct a new frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
-	if( frame != NULL )
+	if ( frame )
 	{
+		// Construct a new frame
+		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
+
 		// Stack the producer and producer's get image
 		mlt_frame_push_service( *frame, (void*) index );
 		mlt_frame_push_service( *frame, producer );
@@ -251,7 +252,14 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	if ( !arg ) return NULL;
 	mlt_producer producer = NULL;
 	producer = calloc( 1, sizeof( struct mlt_producer_s ) );
-	mlt_producer_init( producer, NULL );
+	if ( !producer )
+		return NULL;
+
+	if ( mlt_producer_init( producer, NULL ) )
+	{
+		free( producer );
+		return NULL;
+	}
 
 	// Wrap loader
 	mlt_producer real_producer;

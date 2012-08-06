@@ -472,7 +472,9 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
                         scene->render( &p1, source, end, Qt::IgnoreAspectRatio );
                 }
 		else {
-                        double percentage = position / anim_out;
+                        double percentage = 0;
+			if ( position && anim_out )
+				percentage = position / anim_out;
 			QPointF topleft = start.topLeft() + ( end.topLeft() - start.topLeft() ) * percentage;
 			QPointF bottomRight = start.bottomRight() + ( end.bottomRight() - start.bottomRight() ) * percentage;
 			const QRectF r1( topleft, bottomRight );

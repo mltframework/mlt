@@ -82,7 +82,7 @@ static void deserialize_vectors( videostab self, char *vectors, mlt_position len
 	mlt_geometry g = mlt_geometry_init();
 
 	// Parse the property as a geometry
-	if ( !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
+	if ( g && !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
 	{
 		struct mlt_geometry_item_s item;
 		int i;
@@ -199,6 +199,8 @@ mlt_filter filter_videostab_init( mlt_profile profile, mlt_service_type type, co
 	if ( self )
 	{
 		mlt_filter parent = mlt_filter_new();
+		if ( !parent )
+			return NULL;
 		parent->child = self;
 		parent->close = filter_close;
 		parent->process = filter_process;

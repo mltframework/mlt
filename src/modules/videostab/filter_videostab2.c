@@ -82,7 +82,7 @@ Transform* deserialize_vectors( char *vectors, mlt_position length ,float scale_
 	mlt_geometry g = mlt_geometry_init();
 	Transform* tx=NULL;
 	// Parse the property as a geometry
-	if ( !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
+	if ( g && !mlt_geometry_parse( g, vectors, length, -1, -1 ) )
 	{
 		struct mlt_geometry_item_s item;
 		int i;
@@ -241,11 +241,26 @@ static void filter_close( mlt_filter parent )
 mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	videostab2_data* data= calloc( 1, sizeof(videostab2_data));
-	data->stab = calloc( 1, sizeof(StabData) );
-	data->trans = calloc( 1, sizeof (TransformData) ) ;
 	if ( data )
 	{
+		data->stab = calloc( 1, sizeof(StabData) );
+		if ( !data->stab )
+		{
+			free( data );
+			return NULL;
+		}
+
+		data->trans = calloc( 1, sizeof (TransformData) ) ;
+		if ( !data->trans )
+		{
+			free( data->stab );
+			free( data );
+			return NULL;
+		}
+
 		mlt_filter parent = mlt_filter_new();
+		if ( !parent )
+			return NULL;
 
 		parent->child = data;
 		parent->close = filter_close;

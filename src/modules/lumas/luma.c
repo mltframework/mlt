@@ -367,11 +367,31 @@ int main( int argc, char **argv )
 		else if ( !strcmp( argv[ arg ], "-type" ) )
 			this.type = atoi( argv[ ++ arg ] );
 		else if ( !strcmp( argv[ arg ], "-w" ) )
-			this.w = atoi( argv[ ++ arg ] );
+		{
+			int tmp = atoi( argv[ ++ arg ] );
+			// TODO: is there an upper bound?
+			if ( tmp )
+				this.w = tmp;
+			else
+				return 1;
+		}
 		else if ( !strcmp( argv[ arg ], "-h" ) )
-			this.h = atoi( argv[ ++ arg ] );
+		{
+			int tmp = atoi( argv[ ++ arg ] );
+			// TODO: is there an upper bound?
+			if ( tmp )
+				this.h = tmp;
+			else return 1;
+		}
 		else if ( !strcmp( argv[ arg ], "-bands" ) )
-			this.bands = atoi( argv[ ++ arg ] );
+		{
+			int tmp = atoi( argv[ ++ arg ] );
+			// TODO: is there an upper bound?
+			if ( tmp >= 0 )
+				this.bands = tmp;
+			else
+				return 1;
+		}
 		else if ( !strcmp( argv[ arg ], "-rband" ) )
 			this.rband = atoi( argv[ ++ arg ] );
 		else if ( !strcmp( argv[ arg ], "-hmirror" ) )
