@@ -88,6 +88,9 @@ AVIFile::AVIFile() : RIFFFile(),
 	}
 	idx1 = new AVISimpleIndex;
 	memset( idx1, 0, sizeof( AVISimpleIndex ) );
+	memset( dmlh, 0, sizeof( dmlh ) );
+	memset( &mainHdr, 0, sizeof( mainHdr ) );
+	memset( &streamHdr, 0, sizeof( streamHdr ) );
 }
 
 
@@ -133,6 +136,9 @@ AVIFile::AVIFile( const AVIFile& avi ) : RIFFFile( avi )
 
 	isUpdateIdx1 = avi.isUpdateIdx1;
 
+	odml_list = 0;
+	dmlh_chunk = 0;
+	memset( &streamHdr, 0, sizeof( streamHdr ) );
 }
 
 
@@ -995,7 +1001,9 @@ bool AVIFile::isOpenDML( void )
 }
 
 AVI1File::AVI1File() : AVIFile()
-{}
+{
+	memset( &dvinfo, 0, sizeof( dvinfo ) );
+}
 
 
 AVI1File::~AVI1File()

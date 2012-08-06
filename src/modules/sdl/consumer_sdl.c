@@ -312,7 +312,9 @@ int consumer_stop( mlt_consumer parent )
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
 
+		pthread_mutex_lock( &mlt_sdl_mutex );
 		this->sdl_screen = NULL;
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	return 0;
@@ -868,7 +870,9 @@ static void *consumer_thread( void *arg )
 	while( mlt_deque_count( this->queue ) )
 		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
 
+	pthread_mutex_lock( &mlt_sdl_mutex );
 	this->sdl_screen = NULL;
+	pthread_mutex_unlock( &mlt_sdl_mutex );
 	this->audio_avail = 0;
 
 	return NULL;

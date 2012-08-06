@@ -275,6 +275,8 @@ static int slowmotion_get_image( mlt_frame this, uint8_t **image, mlt_image_form
 
 static int slowmotion_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 {
+	if ( !frame )
+		return 1;
 	// Construct a new frame
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
 

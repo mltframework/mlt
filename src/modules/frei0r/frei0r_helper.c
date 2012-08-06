@@ -76,7 +76,7 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 	}
 	if ( neu == 0 ){
 		inst= f0r_construct(*width,*height);
-		mlt_properties_set_data(  prop  ,  ctorname , inst, sizeof(void*) , f0r_destruct , NULL );;
+		mlt_properties_set_data(  prop  ,  ctorname , inst, sizeof( inst ) , f0r_destruct , NULL );;
 	}else{
 		inst=mlt_properties_get_data( prop ,  ctorname , NULL );
 	}

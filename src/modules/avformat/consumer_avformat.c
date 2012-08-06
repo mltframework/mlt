@@ -941,9 +941,12 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 						mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ), "Could not allocate log buffer\n" );
 					else
 					{
-						size = fread( logbuffer, 1, size, f );
-						logbuffer[size] = '\0';
-						c->stats_in = logbuffer;
+						if ( size >= 0 )
+						{
+							size = fread( logbuffer, 1, size, f );
+							logbuffer[size] = '\0';
+							c->stats_in = logbuffer;
+						}
 					}
 					fclose( f );
 				}

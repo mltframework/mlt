@@ -349,9 +349,9 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	}
 
 	if (info.blanking) {
-		printf("SDI frame size: %li\n", sdi_frame_size);
+		printf("SDI frame size: %lli\n", sdi_frame_size);
 	} else {
-		printf("Frame size for active video: %li\n", sdi_frame_size);
+		printf("Frame size for active video: %lli\n", sdi_frame_size);
 	}
 
 	/**
@@ -420,8 +420,8 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 				// Buffer size
 				// audio buffer per frame (Bytes) = sample rate / frame rate * ( sample size / 1Byte ) x channels
 				value = itoa(
-						audio_format->sample_rate / (myProfile->frame_rate_num / myProfile->frame_rate_den) * sample_size / 8
-								* audio_format->channels);
+						(uint64_t) audio_format->sample_rate / ( (uint64_t) myProfile->frame_rate_num / (uint64_t) myProfile->frame_rate_den) * (uint64_t) sample_size / 8
+								* (uint64_t) audio_format->channels);
 				setSDIAudioProperties(SETTING_BUFFER_SIZE_AUDIO, value, device_audio);
 				free(value);
 
