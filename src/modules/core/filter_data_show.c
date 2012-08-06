@@ -55,7 +55,10 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 		else if ( strchr( profile, '%' ) )
 			sprintf( temp, "%s/feeds/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( profile, '%' ) + 1 );
 		else
-			strcpy( temp, profile );
+		{
+			strncpy( temp, profile, sizeof( temp ) );
+			temp[ sizeof( temp ) - 1 ] = '\0';
+		}
 
 		// Load the specified profile or use the default
 		profile_properties = mlt_properties_load( temp );
@@ -207,7 +210,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 									// special case: replace #timecode# with current frame timecode
 									int pos = mlt_properties_get_int( feed, "position" );
 									char *tc = frame_to_timecode( pos, mlt_profile_fps( mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) ) );
-									strcat( result, tc );
+									strncat( result, tc, sizeof( result ) - strlen( result ) - 1 );
 									free( tc );
 								}
 								else if ( !strcmp( keywords, "frame" ) )
@@ -216,13 +219,14 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 									int pos = mlt_properties_get_int( feed, "position" );
 									char s[12];
 									snprintf( s, sizeof(s) - 1, "%d", pos );
+									s[sizeof( s ) - 1] = '\0';
 									strcat( result, s );
 								}
 								else
 								{
 									// replace keyword with metadata value
 									char *metavalue = metadata_value( MLT_FRAME_PROPERTIES( frame ), keywords );
-									strcat( result, metavalue ? metavalue : "-" );
+									strncat( result, metavalue ? metavalue : "-", sizeof( result ) - strlen( result ) -1 );
 								}
 								keywords = strtok( NULL, "#" );
 								ct++;

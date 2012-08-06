@@ -133,7 +133,10 @@ jack_rack_add_plugin (jack_rack_t * jack_rack, plugin_t * plugin)
         }
       saved_plugin = NULL;
     }
-	
+
+   if ( !saved_plugin )
+	return;
+
   /* initialize plugin parameters */
   plugin->enabled = settings_get_enabled (saved_plugin->settings);
   plugin->wet_dry_enabled = settings_get_wet_dry_enabled (saved_plugin->settings);

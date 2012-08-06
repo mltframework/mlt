@@ -359,7 +359,9 @@ static void *consumer_thread(void *arg) {
 
 	// Set additional device file defaults
 	struct stat st;
-	int fd = stat(this->device_file_video, &st);
+	int fd = -1;
+	if (this->device_file_video)
+		fd = stat(this->device_file_video, &st);
 	if (fd == -1) {
 		if (this->device_file_video)
 			free(this->device_file_video);
@@ -376,7 +378,8 @@ static void *consumer_thread(void *arg) {
 		} else {
 			close(fd);
 		}
-	} else if (strstr(this->device_file_video, "sdivideotx")) {
+	} else if (this->device_file_video &&
+			strstr(this->device_file_video, "sdivideotx")) {
 		if (this->device_file_audio)
 			free(this->device_file_audio);
 		this->device_file_audio = strdup("/dev/sdiaudiotx0");
@@ -419,7 +422,8 @@ static void *consumer_thread(void *arg) {
 	this->audio_format.sample_rate = 48000;
 	this->pix_fmt = mlt_image_yuv422;
 
-	if (!sdi_init(this->device_file_video, this->device_file_audio, this->blanking, mlt_service_profile((mlt_service) consumer), &this->audio_format)) {
+	if (this->device_file_video && this->device_file_audio &&
+		!sdi_init(this->device_file_video, this->device_file_audio, this->blanking, mlt_service_profile((mlt_service) consumer), &this->audio_format)) {
 		mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "failed to initialize\n" );
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-fatal-error", NULL );
 	}
