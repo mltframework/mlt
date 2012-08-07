@@ -287,9 +287,10 @@ static void initialise_jack_ports( consumer_jack self )
 			if ( !ports )
 				ports = jack_get_ports( self->jack, NULL, NULL, JackPortIsPhysical | JackPortIsInput );
 			if ( ports )
-				strcpy( con_name, ports[i] );
+				strncpy( con_name, ports[i], sizeof( con_name ));
 			else
 				snprintf( con_name, sizeof( con_name ), "system:playback_%d", i + 1);
+			con_name[ sizeof( con_name ) - 1 ] = '\0';
 		}
 		mlt_log_verbose( NULL, "JACK connect %s to %s\n", mlt_name, con_name );
 		jack_connect( self->jack, mlt_name, con_name );
@@ -484,7 +485,10 @@ static void *consumer_thread( void *arg )
 	int64_t playtime = 0;
 	struct timespec tm = { 0, 100000 };
 //	int last_position = -1;
+
+	pthread_mutex_lock( &self->refresh_mutex );
 	self->refresh_count = 0;
+	pthread_mutex_unlock( &self->refresh_mutex );
 
 	// Loop until told not to
 	while( self->running )

@@ -287,12 +287,16 @@ static void *consumer_thread( void *arg )
 	mlt_frame frame = NULL;
 	int last_position = -1;
 	int eos = 0;
-	int eos_threshold = 20 + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
+	int eos_threshold = 20;
+	if ( this->play )
+		eos_threshold = eos_threshold + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
 
 	// Determine if the application is dealing with the preview
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
 
+	pthread_mutex_lock( &this->refresh_mutex );
 	this->refresh_count = 0;
+	pthread_mutex_unlock( &this->refresh_mutex );
 
 	// Loop until told not to
 	while( this->running )

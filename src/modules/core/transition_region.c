@@ -47,7 +47,8 @@ static int create_instance( mlt_transition transition, char *name, char *value, 
 
 	// Create the filter
 	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
-	filter = mlt_factory_filter( profile, type, arg );
+	if ( type )
+		filter = mlt_factory_filter( profile, type, arg );
 
 	// If we have a filter, then initialise and store it
 	if ( filter != NULL )
