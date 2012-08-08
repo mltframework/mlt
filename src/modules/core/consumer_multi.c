@@ -328,7 +328,8 @@ static void foreach_consumer_put( mlt_consumer consumer, mlt_frame frame )
 			while ( nested_time <= self_time )
 			{
 				// put ideal number of samples into cloned frame
-				mlt_frame clone_frame = mlt_frame_clone( frame, 0 );
+				int deeply = index > 1 ? 1 : 0;
+				mlt_frame clone_frame = mlt_frame_clone( frame, deeply );
 				int nested_samples = mlt_sample_calculator( nested_fps, frequency, nested_pos );
 				// -10 is an optimization to avoid tiny amounts of leftover samples
 				nested_samples = nested_samples > current_samples - 10 ? current_samples : nested_samples;
