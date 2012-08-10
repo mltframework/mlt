@@ -11,8 +11,10 @@ LDFLAGS += -L../framework -lmlt -lpthread
 SRCS := $(OBJS:.o=.c)
 
 ifeq ($(targetos), MinGW)
+ifeq (, $(findstring MELT_NOSDL, $(CFLAGS)))
 CFLAGS += `sdl-config --cflags`
 LDFLAGS += `sdl-config --libs`
+endif
 bindir = $(prefix)
 endif
 
