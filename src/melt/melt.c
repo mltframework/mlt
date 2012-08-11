@@ -782,7 +782,7 @@ query_all:
 			mlt_log_set_level( MLT_LOG_DEBUG );
 		}
 	}
-	if ( !is_silent && !isatty( STDIN_FILENO ) )
+	if ( !is_silent && !isatty( STDIN_FILENO ) && !is_progress )
 		is_progress = 1;
 
 	// Create profile if not set explicitly
