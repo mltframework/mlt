@@ -672,7 +672,7 @@ int main( int argc, char **argv )
 	// Construct the factory
 	mlt_repository repo = mlt_factory_init( NULL );
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(MELT_NOSDL)
 	is_silent = 1;
 #endif
 	
