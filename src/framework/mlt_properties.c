@@ -192,8 +192,10 @@ static int load_properties( mlt_properties self, const char *filename )
 		// Read each string from the file
 		while( fgets( temp, 1024, file ) )
 		{
-			// Chomp the string
-			temp[ strlen( temp ) - 1 ] = '\0';
+			// Chomp the new line character from the string
+			int x = strlen( temp ) - 1;
+			if ( temp[x] == '\n' || temp[x] == '\r' )
+				temp[x] = '\0';
 
 			// Check if the line starts with a .
 			if ( temp[ 0 ] == '.' )
