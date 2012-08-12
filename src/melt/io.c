@@ -169,7 +169,7 @@ int term_read( )
         return n;
     }
 #else
-	struct timespec tm = { 0, 40000 };
+	struct timespec tm = { 0, 40000000 };
 	nanosleep( &tm, NULL );
 #endif
     return -1;

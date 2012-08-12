@@ -353,7 +353,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	int silent = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "silent" );
 	int progress = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "progress" );
-	struct timespec tm = { 0, 40000 };
+	struct timespec tm = { 0, 40000000 };
 	int total_length = mlt_producer_get_length( producer );
 	int last_position = 0;
 
@@ -406,6 +406,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				{
 					fprintf( stderr, "Current Position: %10d\r", (int)mlt_consumer_position( consumer ) );
 				}
+				fflush( stderr );
 			}
 
 			if ( silent || progress )
