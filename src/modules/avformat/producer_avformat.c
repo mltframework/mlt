@@ -1473,8 +1473,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				  strcmp( codec_context->codec->name, "rawvideo" ) );
 
 	// Turn on usage of new seek API and PTS for seeking
-	int use_pts = self->seekable &&
-		codec_context->codec_id == CODEC_ID_H264 && codec_context->has_b_frames;
+	int use_pts = self->seekable && codec_context->codec_id == CODEC_ID_H264;
 	if ( mlt_properties_get( properties, "use_pts" ) )
 		use_pts = mlt_properties_get_int( properties, "use_pts" );
 	double delay = mlt_properties_get_double( properties, "video_delay" );
