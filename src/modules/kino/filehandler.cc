@@ -512,14 +512,14 @@ bool AVIHandler::Create( const string& filename )
 
 	case AVI_DV1_FORMAT:
 		fail_null( avi = new AVI1File );
-		if ( avi->Create( filename.c_str() ) == false )
+		if ( !avi || avi->Create( filename.c_str() ) == false )
 			return false;
 		//avi->Init( videoInfo.isPAL ? AVI_PAL : AVI_NTSC, audioInfo.frequency, AVI_LARGE_INDEX );
 		break;
 
 	case AVI_DV2_FORMAT:
 		fail_null( avi = new AVI2File );
-		if ( avi->Create( filename.c_str() ) == false )
+		if ( !avi || avi->Create( filename.c_str() ) == false )
 			return false;
 		//if ( GetOpenDML() )
 			//avi->Init( videoInfo.isPAL ? AVI_PAL : AVI_NTSC, audioInfo.frequency,
