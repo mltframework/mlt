@@ -326,9 +326,9 @@ static int iconv_utf8( mlt_properties properties, const char *prop_name, const c
 			mlt_properties_set( properties, prop_name, "" );
 
 		mlt_pool_release( outbuf );
-		iconv_close( cd );
 		result = 0;
 	}
+	iconv_close( cd );
 	return result;
 }
 
