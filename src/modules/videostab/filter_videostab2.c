@@ -260,7 +260,12 @@ mlt_filter filter_videostab2_init( mlt_profile profile, mlt_service_type type, c
 
 		mlt_filter parent = mlt_filter_new();
 		if ( !parent )
+		{
+			free( data->trans );
+			free( data->stab );
+			free( data );
 			return NULL;
+		}
 
 		parent->child = data;
 		parent->close = filter_close;
