@@ -483,6 +483,7 @@ int mlt_properties_pass( mlt_properties self, mlt_properties that, const char *p
 
 static inline mlt_property mlt_properties_find( mlt_properties self, const char *name )
 {
+	if ( !name ) return NULL;
 	property_list *list = self->local;
 	mlt_property value = NULL;
 	int key = generate_hash( name );
