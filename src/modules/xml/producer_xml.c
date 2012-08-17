@@ -153,7 +153,7 @@ static mlt_service context_pop_service( deserialise_context context, enum servic
 {
 	mlt_service result = NULL;
 	
-	*type = invalid_type;
+	if ( type ) *type = invalid_type;
 	if ( context->stack_service_size > 0 )
 	{
 		result = context->stack_service[ -- context->stack_service_size ];
