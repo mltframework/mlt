@@ -1187,7 +1187,7 @@ static void consumer_work_stop( mlt_consumer self )
 
 void mlt_consumer_purge( mlt_consumer self )
 {
-	if ( self->ahead )
+	if ( self && self->ahead )
 	{
 		pthread_mutex_lock( &self->queue_mutex );
 		while ( mlt_deque_count( self->queue ) )
@@ -1464,7 +1464,7 @@ int mlt_consumer_stop( mlt_consumer self )
 int mlt_consumer_is_stopped( mlt_consumer self )
 {
 	// Check if the consumer is stopped
-	if ( self->is_stopped != NULL )
+	if ( self && self->is_stopped )
 		return self->is_stopped( self );
 
 	return 0;
