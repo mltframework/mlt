@@ -1886,8 +1886,11 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #endif
 
 		// Reset some image properties
-		mlt_properties_set_int( properties, "width", self->video_codec->width );
-		mlt_properties_set_int( properties, "height", self->video_codec->height );
+		if ( self->video_codec )
+		{
+			mlt_properties_set_int( properties, "width", self->video_codec->width );
+			mlt_properties_set_int( properties, "height", self->video_codec->height );
+		}
 		// For DV, we'll just use the saved aspect ratio
 		if ( codec_context->codec_id != CODEC_ID_DVVIDEO )
 			get_aspect_ratio( properties, stream, self->video_codec, NULL );
