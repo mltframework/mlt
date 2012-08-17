@@ -159,7 +159,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 
 	// Generate a frame
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
-	if ( frame )
+	if ( *frame )
 	{
 		// Seek the producer to the correct place
 		// Calculate our positions
