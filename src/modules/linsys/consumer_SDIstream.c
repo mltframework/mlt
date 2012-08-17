@@ -395,7 +395,7 @@ static void *consumer_thread(void *arg) {
 		} else {
 			this->blanking = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES( consumer ), "blanking");
 		}
-	} else if (strstr(this->device_file_video, "sdivideotx")) {
+	} else if (this->device_file_video && strstr(this->device_file_video, "sdivideotx")) {
 		this->blanking = 0;
 	} else {
 		// set default value without HD board, also with blanking
