@@ -429,7 +429,8 @@ static void *consumer_thread( void *arg )
 					this->ignore_change = 0;
 					mlt_consumer_start( this->play );
 				}
-				mlt_consumer_put_frame( this->play, frame );
+				if ( this->play )
+					mlt_consumer_put_frame( this->play, frame );
 			}
 
 			// Copy the rectangle info from the active consumer
