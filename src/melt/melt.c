@@ -44,7 +44,7 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
 	mlt_consumer consumer = mlt_properties_get_data( properties, "transport_consumer", NULL );
 	mlt_properties jack = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES( consumer ), "jack_filter", NULL );
-	mlt_position position = mlt_producer_position( producer );
+	mlt_position position = producer? mlt_producer_position( producer ) : 0;
 
 	mlt_properties_set_int( properties, "stats_off", 1 );
 
