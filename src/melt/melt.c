@@ -29,6 +29,7 @@
 #include <libgen.h>
 #include <limits.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <framework/mlt.h>
 
@@ -37,6 +38,17 @@
 #endif
 
 #include "io.h"
+
+static mlt_producer melt = NULL;
+
+static void stop_handler(int signum)
+{
+	if ( melt )
+	{
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( melt );
+		mlt_properties_set_int( properties, "done", 1 );
+	}
+}
 
 static void transport_action( mlt_producer producer, char *value )
 {
@@ -662,7 +674,6 @@ int main( int argc, char **argv )
 {
 	int i;
 	mlt_consumer consumer = NULL;
-	mlt_producer melt = NULL;
 	FILE *store = NULL;
 	char *name = NULL;
 	mlt_profile profile = NULL;
@@ -907,6 +918,12 @@ query_all:
 			mlt_events_listen( properties, consumer, "consumer-fatal-error", ( mlt_listener )on_fatal_error );
 			if ( mlt_consumer_start( consumer ) == 0 )
 			{
+				// Try to exit gracefully upon these signals
+				signal( SIGHUP, stop_handler );
+				signal( SIGINT, stop_handler );
+				signal( SIGPIPE, stop_handler );
+				signal( SIGTERM, stop_handler );
+
 				// Transport functionality
 				transport( melt, consumer );
 				
