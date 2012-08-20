@@ -919,10 +919,12 @@ query_all:
 			if ( mlt_consumer_start( consumer ) == 0 )
 			{
 				// Try to exit gracefully upon these signals
-				signal( SIGHUP, stop_handler );
 				signal( SIGINT, stop_handler );
-				signal( SIGPIPE, stop_handler );
 				signal( SIGTERM, stop_handler );
+#ifndef WIN32
+				signal( SIGHUP, stop_handler );
+				signal( SIGPIPE, stop_handler );
+#endif
 
 				// Transport functionality
 				transport( melt, consumer );
