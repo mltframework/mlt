@@ -235,8 +235,6 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "height" ) )
 		{
 			char *value;
-			fprintf(stderr, "serializing %s=%s (%d)\n", name, mlt_properties_get( properties, name ),
-					context->time_format);
 			if ( !strcmp( name, "length" ) )
 			{
 				char *time = mlt_properties_get_time( properties, name, context->time_format );
