@@ -1059,13 +1059,13 @@ static int seek_video( producer_avformat self, mlt_position position,
 		if ( self->last_position == POSITION_INITIAL )
 		{
 			int ret = 0;
-			int toscan = 100;
+			int toscan = 500;
 			AVPacket pkt;
 
 			while ( ret >= 0 && toscan-- > 0 )
 			{
 				ret = av_read_frame( context, &pkt );
-				if ( ret >= 0 && pkt.stream_index == self->video_index )
+				if ( ret >= 0 && pkt.stream_index == self->video_index && ( pkt.flags & PKT_FLAG_KEY ) )
 				{
 					mlt_log_debug( MLT_PRODUCER_SERVICE(producer),
 						"first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n",
