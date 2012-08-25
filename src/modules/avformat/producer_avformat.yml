@@ -133,18 +133,6 @@ parameters:
       One can also set this value globally for all instances of avformat by
       setting the environment variable MLT_AVFORMAT_CACHE.
 
-  - identifier: use_pts
-    title: Use video PTS
-    description: >
-      Try to use video PTS instead of DTS for seeking and A/V synchronization.
-      This is only enabled by default for H.264 with B pictures.
-      It is recommended to not use this, in general, but it might be helpful
-      to explicity enable or disable it for some videos.
-    type: integer
-    minimum: 0
-    maximum: 1
-    widget: checkbox
-
   - identifier: force_progressive
     title: Force progressive
     description: When provided, this overrides the detection of progressive video.

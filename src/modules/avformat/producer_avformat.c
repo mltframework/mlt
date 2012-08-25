@@ -112,6 +112,7 @@ struct producer_avformat_s
 	int max_channel;
 	int max_frequency;
 	unsigned int invalid_pts_counter;
+	unsigned int invalid_dts_counter;
 	double resample_factor;
 	mlt_cache image_cache;
 	int colorspace;
@@ -1020,8 +1021,19 @@ static void reopen_video( producer_avformat self, mlt_producer producer )
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 }
 
+static int64_t best_pts( producer_avformat self, int64_t pts, int64_t dts )
+{
+	self->invalid_pts_counter += pts == AV_NOPTS_VALUE;
+	self->invalid_dts_counter += dts == AV_NOPTS_VALUE;
+	if ( ( self->invalid_pts_counter <= self->invalid_dts_counter
+		   || dts == AV_NOPTS_VALUE ) && pts != AV_NOPTS_VALUE )
+		return pts;
+	else
+		return dts;
+}
+
 static int seek_video( producer_avformat self, mlt_position position,
-	int64_t req_position, int preseek, int use_pts )
+	int64_t req_position, int preseek )
 {
 	mlt_producer producer = self->parent;
 	int paused = 0;
@@ -1058,7 +1070,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 					mlt_log_debug( MLT_PRODUCER_SERVICE(producer),
 						"first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n",
 						pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
-					self->first_pts = use_pts? pkt.pts : pkt.dts;
+					self->first_pts = best_pts( self, pkt.pts, pkt.dts );
 					if ( self->first_pts != AV_NOPTS_VALUE )
 						toscan = 0;
 				}
@@ -1091,7 +1103,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 
 			// Seek to the timestamp
 			// NOTE: reopen_video is disabled at this time because it is causing trouble with A/V sync.
-			if ( 1 || use_pts || req_position > 0 || self->last_position <= 0 )
+			if ( 1 || req_position > 0 || self->last_position <= 0 )
 			{
 				codec_context->skip_loop_filter = AVDISCARD_NONREF;
 				av_seek_frame( context, self->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
@@ -1472,25 +1484,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				  strcmp( codec_context->codec->name, "mjpeg" ) &&
 				  strcmp( codec_context->codec->name, "rawvideo" ) );
 
-	// Turn on usage of new seek API and PTS for seeking
-	int use_pts = self->seekable &&
-		( codec_context->codec_id == CODEC_ID_H264
-#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(68<<8)+2)
-		|| codec_context->codec_id == CODEC_ID_VP8
-#endif
-		);
-	if ( mlt_properties_get( properties, "use_pts" ) )
-		use_pts = mlt_properties_get_int( properties, "use_pts" );
 	double delay = mlt_properties_get_double( properties, "video_delay" );
 
 	// Seek if necessary
 	const char *interp = mlt_properties_get( frame_properties, "rescale.interp" );
 	int preseek = must_decode
 #if defined(FFUDIV) && LIBAVFORMAT_VERSION_INT >= ((53<<16)+(24<<8)+2)
-		&& ( !use_pts || ( interp && strcmp( interp, "nearest" ) ) )
+		&& ( interp && strcmp( interp, "nearest" ) )
 #endif
 		&& codec_context->has_b_frames;
-	int paused = seek_video( self, position, req_position, preseek, use_pts );
+	int paused = seek_video( self, position, req_position, preseek );
 
 	// Seek might have reopened the file
 	context = self->video_format;
@@ -1573,22 +1576,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// We only deal with video from the selected video_index
 			if ( ret >= 0 && pkt.stream_index == self->video_index && pkt.size > 0 )
 			{
-				// Determine time code of the packet
-				if ( use_pts && pkt.pts == AV_NOPTS_VALUE )
-				{
-					self->invalid_pts_counter++;
-					if ( self->invalid_pts_counter > 20 )
-					{
-						mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "PTS invalid; using DTS instead\n" );
-						mlt_properties_set_int( properties, "use_pts", 0 );
-						use_pts = 0;
-					}
-				}
-				else
-				{
-					self->invalid_pts_counter = 0;
-				}
-				int64_t pts = ( use_pts && pkt.pts != AV_NOPTS_VALUE )? pkt.pts : pkt.dts;
+				int64_t pts = best_pts( self, pkt.pts, pkt.dts );
 				if ( pts != AV_NOPTS_VALUE )
 				{
 					if ( !self->seekable && self->first_pts == AV_NOPTS_VALUE )
@@ -1648,9 +1636,19 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 				if ( got_picture )
 				{
-					if ( use_pts )
-						// Get position of reordered frame
-						int_position = self->av_frame->reordered_opaque;
+					// Get position of reordered frame
+					int_position = self->av_frame->reordered_opaque;
+#if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(106<<8)+0))
+					pts = best_pts( self, self->av_frame->pkt_pts, self->av_frame->pkt_dts );
+					if ( pts != AV_NOPTS_VALUE )
+					{
+						if ( self->first_pts != AV_NOPTS_VALUE )
+							pts -= self->first_pts;
+						else if ( context->start_time != AV_NOPTS_VALUE )
+							pts -= context->start_time;
+						int_position = ( int64_t )( ( av_q2d( stream->time_base ) * pts + delay ) * source_fps + 0.5 );
+					}
+#endif
 
 					if ( int_position < req_position )
 						got_picture = 0;
