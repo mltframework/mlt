@@ -1,0 +1,10 @@
+f=flv
+
+acodec=libmp3lame
+ab=128k
+ar=44100
+
+vcodec=flv
+minrate=0
+vb=1M
+progressive=1

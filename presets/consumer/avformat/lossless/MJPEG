@@ -1,0 +1,5 @@
+progressive=1
+f=avi
+acodec=pcm_s16le
+vcodec=mjpeg
+qscale=1

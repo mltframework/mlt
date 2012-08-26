@@ -1,0 +1,9 @@
+f=mpeg
+acodec=ac3
+ab=512k
+vcodec=mpeg2video
+intra=1
+vb=0
+g=0
+bf=0
+qscale=1

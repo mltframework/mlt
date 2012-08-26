@@ -1,0 +1,15 @@
+f=mp4
+
+acodec=libmp3lame
+ab=128k
+ar=44100
+
+vcodec=mpeg4
+minrate=0
+vb=2M
+mbd=rd
+trellis=1
+flags=+mv4+aic
+cmp=satd
+subcmp=satd
+progressive=1

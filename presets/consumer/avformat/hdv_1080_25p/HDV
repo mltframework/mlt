@@ -1,0 +1,16 @@
+f=mpegts
+
+acodec=mp2
+ab=384k
+ar=48000
+ac=2
+
+vcodec=mpeg2video
+vb=25M
+g=15
+trellis=1
+bf=2
+b_strategy=1
+mbd=rd
+cmp=satd
+subcmp=satd

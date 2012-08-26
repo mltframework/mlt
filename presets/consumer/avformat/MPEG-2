@@ -1,0 +1,15 @@
+f=mpeg
+
+acodec=mp2
+ab=256k
+ar=48000
+
+vcodec=mpeg2video
+minrate=0
+vb=8M
+trellis=1
+bf=2
+b_strategy=1
+mbd=rd
+cmp=satd
+subcmp=satd
