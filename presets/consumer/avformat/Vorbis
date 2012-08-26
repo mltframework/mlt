@@ -1,0 +1,5 @@
+f=ogg
+acodec=vorbis
+ab=256k
+vn=1
+video_off=1
