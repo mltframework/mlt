@@ -2,5 +2,5 @@ vcodec=libx264
 threads=0
 vpre=medium
 preset=medium
-profile=main
+vprofile=main
 flags2=-dct8x8
