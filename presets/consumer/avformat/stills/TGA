@@ -3,3 +3,5 @@ f=image2
 vcodec=targa
 an=1
 audio_off=1
+
+meta.preset.extension=tga

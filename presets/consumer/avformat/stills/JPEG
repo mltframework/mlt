@@ -4,3 +4,5 @@ vcodec=mjpeg
 qscale=1
 an=1
 audio_off=1
+
+meta.preset.extension=jpg
