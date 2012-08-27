@@ -3,3 +3,5 @@ vcodec=dnxhd
 vb=175M
 threads=2
 acodec=pcm_s16le
+
+meta.preset.extension=mov

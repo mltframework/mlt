@@ -13,3 +13,6 @@ g=15
 me_range=63
 trellis=1
 
+
+meta.preset.extension=vob
+meta.preset.note=Process the output with a DVD authoring tool such as dvdauthor.

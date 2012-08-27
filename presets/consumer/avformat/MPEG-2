@@ -13,3 +13,6 @@ b_strategy=1
 mbd=rd
 cmp=satd
 subcmp=satd
+
+meta.preset.extension=mpg
+meta.preset.note=a general purpose MPEG-2 preset

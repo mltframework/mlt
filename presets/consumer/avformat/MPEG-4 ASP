@@ -14,3 +14,6 @@ subcmp=satd
 
 bf=2
 flags=+mv4+aic+qpel
+
+meta.preset.extension=mp4
+meta.preset.note=Part 2 Advanced Simple Profile

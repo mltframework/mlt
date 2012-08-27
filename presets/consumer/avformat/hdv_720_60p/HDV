@@ -14,3 +14,5 @@ b_strategy=1
 mbd=rd
 cmp=satd
 subcmp=satd
+
+meta.preset.extension=m2t

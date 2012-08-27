@@ -3,3 +3,5 @@ acodec=aac
 ab=256k
 vn=1
 video_off=1
+meta.preset.extension=m4a
+meta.preset.note=audio only

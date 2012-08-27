@@ -16,3 +16,7 @@ minrate=100k
 arnr_max_frames=7
 arnr_strength=5
 arnr_type=3
+
+meta.preset.name=WebM
+meta.preset.extension=webm
+meta.preset.note=On2 VP8 video with Ogg Vorbis audio in Matroska container

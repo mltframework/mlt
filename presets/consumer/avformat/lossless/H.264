@@ -10,3 +10,6 @@ preset=medium
 qscale=1
 qp=0
 coder=ac
+
+meta.preset.extension=mp4
+meta.preset.note=with AAC audio

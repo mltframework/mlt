@@ -17,3 +17,5 @@ rc_buf_aggressivity=0.25
 
 acodec=pcm_s16le
 
+
+meta.preset.extension=mxf

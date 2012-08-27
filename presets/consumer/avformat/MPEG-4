@@ -13,3 +13,6 @@ flags=+mv4+aic
 cmp=satd
 subcmp=satd
 progressive=1
+
+meta.preset.extension=mp4
+meta.preset.note=Part 2 Simple Profile

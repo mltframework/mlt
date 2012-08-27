@@ -3,3 +3,6 @@ f=avi
 acodec=pcm_s16le
 vcodec=mjpeg
 qscale=1
+
+meta.preset.extension=avi
+meta.preset.note=not lossless, but still high quality

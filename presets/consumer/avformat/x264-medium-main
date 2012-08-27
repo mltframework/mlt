@@ -1,6 +1,14 @@
+f=mp4
+
+acodec=aac
+ab=256k
+
 vcodec=libx264
 threads=0
 vpre=medium
 preset=medium
 vprofile=main
 flags2=-dct8x8
+
+meta.preset.extension=mp4
+meta.preset.name=H.264 Main Profile

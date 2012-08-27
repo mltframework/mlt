@@ -8,3 +8,6 @@ vcodec=flv
 minrate=0
 vb=1M
 progressive=1
+
+meta.preset.extension=flv
+meta.preset.note=This is the old Sorenson H.263-based codec. Most people use H.264 with Flash now.

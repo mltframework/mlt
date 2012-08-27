@@ -6,3 +6,6 @@ g=0
 bf=0
 threads=1
 vprofile=2
+
+meta.preset.extension=mov
+meta.preset.note=Designed by Apple in California. Set vprofile=1 for LT or =3 for HQ.

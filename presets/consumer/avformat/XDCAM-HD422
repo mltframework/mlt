@@ -16,3 +16,6 @@ bf=2
 vtag=xd5c
 
 acodec=pcm_s16le
+
+meta.preset.extension=mov
+meta.preset.note=use with mxf or mov
