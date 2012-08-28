@@ -1,5 +1,9 @@
 2012-08-28  Dan Dennedy <dan@dennedy.org>
 
+  * ChangeLog, presets/consumer/avformat/MPEG-4 ASP,
+  presets/consumer/avformat/MPEG-4-ASP, presets/consumer/avformat/webm: add
+  acodec to webm preset and rename MPEG-4 ASP preset
+
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: set version
   to 0.8.2
 
