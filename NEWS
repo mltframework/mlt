@@ -1,6 +1,22 @@
 MLT Release Notes
 -----------------
 
+Version 0.8.2 - August 28, 2012
+
+This is a bugfix and minor enhancement release.
+
+* Overhaul of A/V sync with libavformat-based inputs.
+* Fix a major memory leak introduced in previous release.
+* Fixes to problems revealed by Coverity Scan static analysis.
+* Improved encoding presets.
+* melt can now be built without SDL with define MELT_NOSDL, which is handy
+  for running it as a child process on Windows and OS X.
+* melt can now be signaled to quit, which also makes it more useful as a
+  child process.
+
+Special thanks to Mikko Rapeli who provided many of the Coverity fixes.
+
+
 Version 0.8.0 - June 1, 2012
 
 The minor version is increased due to the addition of time properties!
