@@ -3,8 +3,8 @@
 # Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
 # or a specific revision based upon whether the last digit of our version
 # is even or odd. An odd MLT version number always represents unreleased.
-ffmpeg_ver="0.9.2"
-libav_ver="0.8.2"
+ffmpeg_ver="0.10.4"
+libav_ver="0.8.3"
 micro_version=$(echo $version | cut -d . -f 3)
 odd_version=$(($micro_version % 2))
 [ "$odd_version" -eq "1" ] && ffmpeg_ver="HEAD" && libav_ver="HEAD"
