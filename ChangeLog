@@ -1,4 +1,1230 @@
+2012-08-28  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: set version
+  to 0.8.2
+
+  * src/modules/avformat/configure: change recommended versions of ffmpeg/libav
+
+  * NEWS: add release notes for v0.8.2
+
+2012-08-26  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/stills/BMP, presets/consumer/avformat/stills/DPX,
+  presets/consumer/avformat/stills/JPEG, presets/consumer/avformat/stills/PNG,
+  presets/consumer/avformat/stills/PPM, presets/consumer/avformat/stills/TGA,
+  presets/consumer/avformat/stills/TIFF: add meta.preset.extension to image
+  sequence presets
+
+  * presets/consumer/avformat/AAC, presets/consumer/avformat/Flash,
+  presets/consumer/avformat/MJPEG, presets/consumer/avformat/MP3,
+  presets/consumer/avformat/MPEG-2, presets/consumer/avformat/MPEG-4,
+  presets/consumer/avformat/MPEG-4 ASP, presets/consumer/avformat/Sony-PSP,
+  presets/consumer/avformat/Vorbis, presets/consumer/avformat/WAV,
+  presets/consumer/avformat/XDCAM-HD422,
+  presets/consumer/avformat/atsc_1080i_50/DNxHD,
+  presets/consumer/avformat/atsc_1080i_5994/DNxHD,
+  presets/consumer/avformat/atsc_1080p_2398/DNxHD,
+  presets/consumer/avformat/atsc_1080p_24/DNxHD,
+  presets/consumer/avformat/atsc_1080p_25/DNxHD,
+  presets/consumer/avformat/atsc_1080p_2997/DNxHD,
+  presets/consumer/avformat/atsc_1080p_30/DNxHD,
+  presets/consumer/avformat/atsc_1080p_50/DNxHD,
+  presets/consumer/avformat/atsc_1080p_5994/DNxHD,
+  presets/consumer/avformat/atsc_1080p_60/DNxHD,
+  presets/consumer/avformat/atsc_720p_2398/DNxHD,
+  presets/consumer/avformat/atsc_720p_50/DNxHD,
+  presets/consumer/avformat/atsc_720p_5994/DNxHD,
+  presets/consumer/avformat/atsc_720p_60/DNxHD,
+  presets/consumer/avformat/dv_ntsc/D10, presets/consumer/avformat/dv_ntsc/DVD,
+  presets/consumer/avformat/dv_ntsc_wide/D10,
+  presets/consumer/avformat/dv_ntsc_wide/DVD,
+  presets/consumer/avformat/dv_pal/D10, presets/consumer/avformat/dv_pal/DVD,
+  presets/consumer/avformat/dv_pal_wide/D10,
+  presets/consumer/avformat/dv_pal_wide/DVD,
+  presets/consumer/avformat/hdv_1080_25p/HDV,
+  presets/consumer/avformat/hdv_1080_30p/HDV,
+  presets/consumer/avformat/hdv_1080_50i/HDV,
+  presets/consumer/avformat/hdv_1080_60i/HDV,
+  presets/consumer/avformat/hdv_720_25p/HDV,
+  presets/consumer/avformat/hdv_720_30p/HDV,
+  presets/consumer/avformat/hdv_720_50p/HDV,
+  presets/consumer/avformat/hdv_720_60p/HDV,
+  presets/consumer/avformat/lossless/FFV1,
+  presets/consumer/avformat/lossless/H.264,
+  presets/consumer/avformat/lossless/HuffYUV,
+  presets/consumer/avformat/lossless/MJPEG,
+  presets/consumer/avformat/lossless/MPEG-2,
+  presets/consumer/avformat/lossless/MPEG-4,
+  presets/consumer/avformat/lossless/ProRes, presets/consumer/avformat/webm,
+  presets/consumer/avformat/x264-medium,
+  presets/consumer/avformat/x264-medium-baseline,
+  presets/consumer/avformat/x264-medium-main,
+  presets/consumer/avformat/x264-medium-pass1: add preset metadata such as
+  alternate name, filename extension, note.
+
+  * presets/consumer/avformat/Sony-PSP, presets/consumer/avformat/webm,
+  presets/consumer/avformat/x264-medium-baseline,
+  presets/consumer/avformat/x264-medium-main: change profile to vprofile in
+  presets
+
+  * presets/consumer/avformat/Vorbis,
+  presets/consumer/avformat/lossless/ProRes: add vorbis and prores encode
+  presets
+
+2012-08-25  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/AAC, presets/consumer/avformat/Flash,
+  presets/consumer/avformat/MJPEG, presets/consumer/avformat/MP3,
+  presets/consumer/avformat/MPEG-2, presets/consumer/avformat/MPEG-4,
+  presets/consumer/avformat/MPEG-4 ASP, presets/consumer/avformat/WAV,
+  presets/consumer/avformat/hdv_1080_25p/HDV,
+  presets/consumer/avformat/hdv_1080_30p/HDV,
+  presets/consumer/avformat/hdv_1080_50i/HDV,
+  presets/consumer/avformat/hdv_1080_60i/HDV,
+  presets/consumer/avformat/hdv_720_25p/HDV,
+  presets/consumer/avformat/hdv_720_30p/HDV,
+  presets/consumer/avformat/hdv_720_50p/HDV,
+  presets/consumer/avformat/hdv_720_60p/HDV,
+  presets/consumer/avformat/lossless/FFV1,
+  presets/consumer/avformat/lossless/H.264,
+  presets/consumer/avformat/lossless/HuffYUV,
+  presets/consumer/avformat/lossless/MJPEG,
+  presets/consumer/avformat/lossless/MPEG-2,
+  presets/consumer/avformat/lossless/MPEG-4,
+  presets/consumer/avformat/stills/BMP, presets/consumer/avformat/stills/DPX,
+  presets/consumer/avformat/stills/JPEG, presets/consumer/avformat/stills/PNG,
+  presets/consumer/avformat/stills/PPM, presets/consumer/avformat/stills/TGA,
+  presets/consumer/avformat/stills/TIFF,
+  presets/consumer/avformat/x264-medium-pass1: add a bunch of new encoding
+  presets
+
+  * src/modules/avformat/producer_avformat.c: fix seeking on some formats (HDV)
+  after a/v sync improvements
+
+2012-08-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: the recent A/V sync overhaul
+  needed some additional work
+
+2012-08-20  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/avformat/producer_avformat.c: Update
+  src/modules/avformat/producer_avformat.c  Better way to detect the
+  availability of PIX_FMT_YUVA444P.
+
+2012-08-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: fix build on ffmpeg v0.5 (no
+  CODEC_ID_VP8)
+
+  * src/modules/xml/consumer_xml.c: fix possible null pointer with strdup()
+
+  * src/melt/melt.c: let melt be stopped gracefully by signal
+
+2012-08-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: webm works better with use_pts=1
+  as well (3559115)
+
+  * src/modules/core/producer_consumer.c: fix null pointer check
+  (coverity-709396)
+
+  * src/modules/sdl/consumer_sdl_preview.c: fix possible null pointer
+  dereference (coverity-714581)
+
+2012-08-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c: fix possible null pointer dereferences
+  (coverity-714581)
+
+  * src/modules/linsys/consumer_SDIstream.c: fix possible null pointer
+  dereference (coverity-714580)
+
+  * src/framework/mlt_properties.c: fix possible null pointer dereference
+  (coverity-710882)
+
+  * src/modules/xml/producer_xml.c: fix possible null pointer dereference
+  (coverity-710870)
+
+  * src/modules/kino/filehandler.cc: fix possible null pointer dereferences
+  (coverity-709399)
+
+  * src/modules/avformat/producer_avformat.c: fix possible null pointer
+  dereferences (coverity-709395)
+
+  * src/melt/melt.c: fix possible null pointer dereference (coverity-709394)
+
+  * src/framework/mlt_consumer.c: fix possible null pointer dereference
+  (coverity-709393)
+
+  * src/modules/videostab/filter_videostab2.c: fix memory leak if fail to
+  alloc/init filter (coverity-714584)
+
+  * src/modules/videostab/filter_videostab.c: fix memory leak if fail to
+  alloc/init filter (coverity-714583)
+
+  * src/modules/gtk2/producer_pango.c: fix resource leak on iconv
+  (coverity-714582)
+
+2012-08-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: fix A/V synch on more H.264 files
+  (without B-frames)  reported by Jordan Keyes
+
+2012-08-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c: fix reading properties file without
+  trailing newline
+
+2012-08-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/melt/io.c, src/melt/melt.c: fix melt progress display on Windows
+
+  * src/melt/melt.c: fix -progress2 with pipe input
+
+  * src/melt/melt.c: fix melt progress indication on Windows with MELT_NOSDL
+
+2012-08-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/melt/Makefile: let melt be built without SDL on Windows  with
+  -DMELT_NOSDL in CFLAGS
+
+2012-08-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/consumer_multi.c: relay first nested consumer's frame-show
+  event instead of own
+
+  * src/modules/core/consumer_multi.c: fix integrity of images with multi
+  consumer
+
+2012-08-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/filter_jackrack.c: fix seeking jack clients when
+  seeking while paused
+
+2012-08-01  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/modules/videostab/filter_videostab2.c: videostab/filter_videostab2.c:
+  check for null  Fixes Coverity CID 709405: Dereference before null check
+  (REVERSE_INULL) Directly dereferencing pointer "data". 244        data->stab
+  = calloc( 1, sizeof(StabData) ); 245        data->trans = calloc( 1, sizeof
+  (TransformData) ) ; Dereferencing "data" before a null check. 246        if (
+  data )
+
+  * src/modules/videostab/filter_videostab.c,
+  src/modules/videostab/filter_videostab2.c: videostab/filter_videostab*.c:
+  check return value from mlt_filter_new()  Fixes Coverity CID 709365 and
+  709366: Dereference null return value (NULL_RETURNS) Function
+  "mlt_filter_new" returns null (checked 50 out of 52 times). [show details]
+  Assigning: "parent" = null return value from "mlt_filter_new". 201           
+      mlt_filter parent = mlt_filter_new(); Dereferencing a null pointer
+  "parent". 202                parent->child = self;
+
+  * src/modules/videostab/filter_videostab.c,
+  src/modules/videostab/filter_videostab2.c: videostab/filter_videostab*.c:
+  check for null  Fixes Coverity CID 709404: Dereference before null check
+  (REVERSE_INULL) Dereferencing pointer "g". [show details] 85        if (
+  !mlt_geometry_parse( g, vectors, length, -1, -1 ) ) ... Dereferencing "g"
+  before a null check. 104        if ( g ) mlt_geometry_close( g );
+
+  * src/modules/sdl/consumer_sdl_still.c: sdl/consumer_sdl_still.c: use mutex
+  when changing sdl_screen  Fixes Coverity CID 709357: Data race condition
+  (MISSING_LOCK) Accessing variable "this->sdl_screen"
+  (consumer_sdl_s.sdl_screen) requires the mlt_sdl_mutex lock. 230             
+    this->sdl_screen = NULL; ... Locking "mlt_sdl_mutex". 445               
+  pthread_mutex_lock( &mlt_sdl_mutex ); consumer_sdl_s.sdl_screen is being
+  accessed with lock "mlt_sdl_mutex" held. 446                this->sdl_screen
+  = SDL_SetVideoMode( this->window_width, this->window_height, 0,
+  this->sdl_flags ); 447                if ( consumer_get_dimensions(
+  &this->window_width, &this->window_height ) ) 448                       
+  this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height,
+  0, this->sdl_flags ); 449 450                uint32_t color =
+  mlt_properties_get_int( this->properties, "window_background" ); 451         
+        if ( this->sdl_screen ) 452                { 453                       
+  SDL_FillRect( this->sdl_screen, NULL, color >> 8 ); 454                      
+   changed = 1; 455                } 456                pthread_mutex_unlock(
+  &mlt_sdl_mutex );
+
+  * src/modules/sdl/consumer_sdl_preview.c: sdl/consumer_sdl_preview.c: use
+  mutex when changing refresh_count  Fixes Coverity CID 709360: Data race
+  condition (MISSING_LOCK)  Locking "this->refresh_mutex". 133               
+  pthread_mutex_lock( &this->refresh_mutex ); consumer_sdl_s.refresh_count is
+  being accessed with lock "this->refresh_mutex" held. 134               
+  this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count + 1;
+  135                pthread_cond_broadcast( &this->refresh_cond ); 136        
+         pthread_mutex_unlock( &this->refresh_mutex ); ... Accessing variable
+  "this->refresh_count" (consumer_sdl_s.refresh_count) requires the
+  consumer_sdl_s.refresh_mutex lock. 295        this->refresh_count = 0; ...
+  Locking "this->refresh_mutex". 445                               
+  pthread_mutex_lock( &this->refresh_mutex ); 446                              
+   if ( this->running && speed == 0 && this->refresh_count <= 0 ) 447          
+                       { 448                                       
+  mlt_events_fire( properties, "consumer-sdl-paused", NULL ); 449              
+                           pthread_cond_wait( &this->refresh_cond,
+  &this->refresh_mutex ); 450                                }
+  consumer_sdl_s.refresh_count is being accessed with lock
+  "this->refresh_mutex" held. 451                               
+  this->refresh_count --; 452                               
+  pthread_mutex_unlock( &this->refresh_mutex );
+
+  * src/modules/sdl/consumer_sdl_preview.c: sdl/consumer_sdl_preview.c: check
+  for null pointer  Fixes Coverity CID 709403: Dereference before null check
+  (REVERSE_INULL) Dereferencing pointer "this->play". [show details] 290       
+  int eos_threshold = 20 + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES(
+  this->play ), "buffer" ); ... Assigning: "this->active" = "this->play". 424  
+                                       this->active = this->play; ...
+  Dereferencing "this->play" before a null check. 466        if ( this->play )
+  mlt_consumer_stop( this->play );
+
+  * src/modules/sdl/consumer_sdl_audio.c: sdl/consumer_sdl_audio.c: use mutex
+  when changing refresh_count  Fixes Coverity CID 709359: Data race condition
+  (MISSING_LOCK)  Locking "self->refresh_mutex". 145               
+  pthread_mutex_lock( &self->refresh_mutex ); consumer_sdl_s.refresh_count is
+  being accessed with lock "self->refresh_mutex" held. 146               
+  self->refresh_count = self->refresh_count <= 0 ? 1 : self->refresh_count + 1;
+  147                pthread_cond_broadcast( &self->refresh_cond ); 148        
+         pthread_mutex_unlock( &self->refresh_mutex ); ... Accessing variable
+  "self->refresh_count" (consumer_sdl_s.refresh_count) requires the
+  consumer_sdl_s.refresh_mutex lock. 478        self->refresh_count = 0; ...
+  Locking "self->refresh_mutex". 535                               
+  pthread_mutex_lock( &self->refresh_mutex ); 536                              
+   if ( refresh == 0 && self->refresh_count <= 0 ) 537                         
+        { 538                                        consumer_play_video( self,
+  frame ); 539                                        pthread_cond_wait(
+  &self->refresh_cond, &self->refresh_mutex ); 540                             
+    } 541                                mlt_frame_close( frame );
+  consumer_sdl_s.refresh_count is being accessed with lock
+  "self->refresh_mutex" held. 542                               
+  self->refresh_count --; 543                               
+  pthread_mutex_unlock( &self->refresh_mutex );
+
+  * src/modules/sdl/consumer_sdl.c: sdl/consumer_sdl.c: use mutex when changing
+  sdl_screen  Fixes Coverity CID 709357 and 709358: Data race condition
+  (MISSING_LOCK)  Locking "mlt_sdl_mutex". 235                       
+  pthread_mutex_lock( &mlt_sdl_mutex ); consumer_sdl_s.sdl_screen is being
+  accessed with lock "mlt_sdl_mutex" held. 236                       
+  this->sdl_screen = SDL_GetVideoSurface( ); 237                       
+  pthread_mutex_unlock( &mlt_sdl_mutex ); ... Locking "mlt_sdl_mutex". 269     
+                    pthread_mutex_lock( &mlt_sdl_mutex );
+  consumer_sdl_s.sdl_screen is being accessed with lock "mlt_sdl_mutex" held.
+  270                        this->sdl_screen = SDL_SetVideoMode(
+  this->window_width, this->window_height, 0, this->sdl_flags ); 271           
+              pthread_mutex_unlock( &mlt_sdl_mutex ); ... Accessing variable
+  "this->sdl_screen" (consumer_sdl_s.sdl_screen) requires the mlt_sdl_mutex
+  lock. 315                this->sdl_screen = NULL; ... Locking
+  "mlt_sdl_mutex". 573                        pthread_mutex_lock(
+  &mlt_sdl_mutex ); consumer_sdl_s.sdl_screen is being accessed with lock
+  "mlt_sdl_mutex" held. 574                        this->sdl_screen =
+  SDL_SetVideoMode( this->window_width, this->window_height, this->bpp,
+  this->sdl_flags ); 575                        if ( consumer_get_dimensions(
+  &this->window_width, &this->window_height ) ) consumer_sdl_s.sdl_screen is
+  being accessed with lock "mlt_sdl_mutex" held. 576                           
+      this->sdl_screen = SDL_SetVideoMode( this->window_width,
+  this->window_height, this->bpp, this->sdl_flags ); 577                       
+  pthread_mutex_unlock( &mlt_sdl_mutex );
+
+  * src/modules/rtaudio/consumer_rtaudio.cpp: rtaudio/consumer_rtaudio.cpp: use
+  mutex when changing refresh_count  Fixes Coverity CID 710859: Data race
+  condition (MISSING_LOCK) Accessing variable "this->refresh_count"
+  (RtAudioConsumer.refresh_count) requires the RtAudioConsumer.refresh_mutex
+  lock. 225                refresh_count = 0; ... Locking
+  "this->refresh_mutex". 282                                       
+  pthread_mutex_lock( &refresh_mutex ); 283                                    
+     if ( refresh == 0 && refresh_count <= 0 ) 284                             
+            { 285                                                play_video(
+  frame ); 286                                               
+  pthread_cond_wait( &refresh_cond, &refresh_mutex ); 287                      
+                   } 288                                       
+  mlt_frame_close( frame ); RtAudioConsumer.refresh_count is being accessed
+  with lock "this->refresh_mutex" held. 289                                    
+     refresh_count --; 290                                       
+  pthread_mutex_unlock( &refresh_mutex ); ... Locking "rtaudio->refresh_mutex".
+  561                pthread_mutex_lock( &rtaudio->refresh_mutex );
+  RtAudioConsumer.refresh_count is being accessed with lock
+  "rtaudio->refresh_mutex" held. 562                rtaudio->refresh_count =
+  rtaudio->refresh_count <= 0 ? 1 : rtaudio->refresh_count + 1; 563            
+     pthread_cond_broadcast( &rtaudio->refresh_cond ); 564               
+  pthread_mutex_unlock( &rtaudio->refresh_mutex );
+
+  * src/modules/rtaudio/consumer_rtaudio.cpp: rtaudio/consumer_rtaudio.cpp:
+  initialize variables  Fixes Coverty CID 710879: Uninitialized pointer field
+  (UNINIT_CTOR)  n-static class member ""queue"" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member field
+  "consumer.child" is not initialized in this constructor nor in any functions
+  that it calls. Non-static class member field "consumer.close" is not
+  initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "consumer.event_listener" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "consumer.is_stopped" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "consumer.local" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "consumer.put" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member field
+  "consumer.queue" is not initialized in this constructor nor in any functions
+  that it calls. Non-static class member field "consumer.start" is not
+  initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "consumer.stop" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member field
+  "consumer.threads" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field
+  "consumer.worker_threads" is not initialized in this constructor nor in any
+  functions that it calls.
+
+2012-07-31  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/modules/rtaudio/RtAudio.h: rtaudio/RtAudio.h: initialize variables 
+  Fixes Coverity CID 710878: Uninitialized scalar field (UNINIT_CTOR)
+  Non-static class member ""bufferSize"" is not initialized in this constructor
+  nor in any functions that it calls. Non-static class member ""channelOffset""
+  is not initialized in this constructor nor in any functions that it calls.
+  Non-static class member ""deviceFormat"" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member
+  ""deviceInterleaved"" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member ""doByteSwap"" is not
+  initialized in this constructor nor in any functions that it calls.
+  Non-static class member ""doConvertBuffer"" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member
+  ""latency"" is not initialized in this constructor nor in any functions that
+  it calls. Non-static class member ""mode"" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member
+  ""nBuffers"" is not initialized in this constructor nor in any functions that
+  it calls. Non-static class member ""nDeviceChannels"" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  ""nUserChannels"" is not initialized in this constructor nor in any functions
+  that it calls. Non-static class member ""sampleRate"" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  ""state"" is not initialized in this constructor nor in any functions that it
+  calls. Non-static class member ""streamTime"" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member
+  ""userBuffer"" is not initialized in this constructor nor in any functions
+  that it calls. Non-static class member ""userFormat"" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  ""userInterleaved"" is not initialized in this constructor nor in any
+  functions that it calls. 654      :apiHandle(0), deviceBuffer(0) { device[0]
+  = 11111; device[1] = 11111; }
+
+  * src/modules/rtaudio/RtAudio.h: rtaudio/RtAudio.h: initialize variable 
+  Fixes Coverity CID 710877: Uninitialized scalar field (UNINIT_CTOR) Class
+  member declaration for ""thread"". 535  ThreadHandle thread; ... Non-static
+  class member ""thread"" is not initialized in this constructor nor in any
+  functions that it calls. 543    :object(0), callback(0), userData(0),
+  apiInfo(0), isRunning(false) {}
+
+  * src/modules/rtaudio/RtAudio.cpp: rtaudio/RtAudio.cpp: check for null
+  pointer  Fixes Coverity CID 710858: Dereference after null check
+  (FORWARD_NULL) Comparing "this->rtapi_" to null implies that "this->rtapi_"
+  might be null. 146    if ( rtapi_ ) return; ... Passing null variable
+  "this->rtapi_" to function "RtApi::getDeviceCount()", which dereferences it.
+  (The dereference happens because this is a virtual function call.) 159    if
+  ( rtapi_->getDeviceCount() ) break;
+
+  * src/modules/qimage/producer_kdenlivetitle.c:
+  qimage/producer_kdenlivetitle.c: add error handling  Fixes Coverity CID
+  709363: Argument cannot be negative (NEGATIVE_RETURNS) Function "ftell(f)"
+  returns a negative number. Assigning: signed variable "lSize" = "ftell". 37  
+               lSize = ftell (f); 38                rewind (f); 39 40          
+       char *infile = (char*) mlt_pool_alloc(lSize); "lSize" is passed to a
+  parameter that cannot be negative.  and compiler warning: 
+  producer_kdenlivetitle.c: In function ‘read_xml’:
+  producer_kdenlivetitle.c:49:19: warning: ‘infile’ may be used
+  uninitialized in this function [-Wmaybe-uninitialized]
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp:
+  qimage/kdenlivetitle_wrapper.cpp: check for division by zero  Fixes Coverity
+  CID 709345: Division or modulo by zero (DIVIDE_BY_ZERO) Assigning: "anim_out"
+  = "mlt_properties_get_position(producer_props, "_animation_out")". On this
+  path, function call "mlt_properties_get_position(producer_props,
+  "_animation_out")" has return value of 0 465                mlt_position
+  anim_out = mlt_properties_get_position( producer_props, "_animation_out" );
+  ... Division by expression "anim_out" which may be zero has undefined
+  behavior 475                        double percentage = position / anim_out;
+
+  * src/modules/plus/filter_affine.c: plus/filter_affine.c: check for null
+  pointer  Fixes Coverity CID 709402: Dereference before null check
+  (REVERSE_INULL) Dereferencing pointer "transition". [show details] 64        
+                 mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition
+  ), "b_alpha", 1 ); 65                } 66 Dereferencing "transition" before a
+  null check. 67                if ( producer != NULL && transition != NULL )
+
+  * src/modules/oldfilm/filter_dust.c: oldfilm/filter_dust.c: use correct
+  argument for sizeof()  Fixes Coverity CID 709408: Wrong sizeof argument
+  (SIZEOF_MISMATCH) Passing argument "savepic" of type "uint8_t *" and argument
+  "8 /* sizeof (uint8_t *) */" to function "mlt_properties_set_data" is
+  suspicious. 142                                               
+  mlt_properties_set_data ( properties , savename , savepic , sizeof(uint8_t*)
+  , mlt_pool_release, NULL ); Passing argument "savealpha" of type "uint8_t *"
+  and argument "8 /* sizeof (uint8_t *) */" to function
+  "mlt_properties_set_data" is suspicious. 143
+
+  * src/modules/motion_est/producer_slowmotion.c:
+  motion_est/producer_slowmotion.c: check for null pointer  Fixes Coverity CID
+  709401: Dereference before null check (REVERSE_INULL) Directly dereferencing
+  pointer "frame". 279        *frame = mlt_frame_init( MLT_PRODUCER_SERVICE(
+  this ) ); 280 281        mlt_properties properties =
+  MLT_PRODUCER_PROPERTIES(this); 282 283 Dereferencing "frame" before a null
+  check. 284        if( frame != NULL )
+
+  * src/modules/lumas/luma.c: lumas/luma.c: check lower bounds on input  Upper
+  bounds are not checked yet but maybe should be. Partially fixes these
+  Coverity findings:  CID 709423: Untrusted value as argument (TAINTED_SCALAR)
+  [select defect] 370                        this.w = atoi( argv[ ++ arg ] );
+  371                else if ( !strcmp( argv[ arg ], "-h" ) ) CID 709423:
+  Untrusted value as argument (TAINTED_SCALAR) [select defect] 372             
+            this.h = atoi( argv[ ++ arg ] ); 373                else if (
+  !strcmp( argv[ arg ], "-bands" ) ) CID 709423: Untrusted value as argument
+  (TAINTED_SCALAR) [select defect] 374                        this.bands =
+  atoi( argv[ ++ arg ] );
+
+  * src/modules/linsys/sdi_generator.c: linsys/sdi_generator.c: cast ints to
+  uint64_t  Fixes Coverity CID 709367: Unintentional integer overflow
+  (OVERFLOW_BEFORE_WIDEN) Potentially overflowing expression
+  "audio_format->sample_rate / (myProfile->frame_rate_num /
+  myProfile->frame_rate_den) * sample_size / 8 * audio_format->channels" with
+  type "int" (32 bits, signed) is evaluated using 32-bit arithmetic before
+  being used in a context which expects an expression of type "uint64_t" (64
+  bits, unsigned). To avoid overflow, cast either operand to "uint64_t" before
+  performing the multiplication. 422                                value =
+  itoa( 423                                               
+  audio_format->sample_rate / (myProfile->frame_rate_num /
+  myProfile->frame_rate_den) * sample_size / 8 424                             
+                                    * audio_format->channels);
+
+  * src/modules/linsys/sdi_generator.c: linsys/sdi_generator.c: fix printf()
+  format  Fixes compiler warning:  In file included from
+  consumer_SDIstream.c:148:0: sdi_generator.c: In function ‘sdi_init’:
+  sdi_generator.c:352:3: warning: format ‘%li’ expects argument of type
+  ‘long int’, but argument 2 has type ‘uint64_t’ [-Wformat]
+  sdi_generator.c:354:3: warning: format ‘%li’ expects argument of type
+  ‘long int’, but argument 2 has type ‘uint64_t’ [-Wformat]
+
+  * src/modules/linsys/consumer_SDIstream.c: linsys/consumer_SDIstream.c: check
+  for null pointers  Fixes Coverity CID 709351: Dereference after null check
+  (FORWARD_NULL) Comparing "this->device_file_audio" to null implies that
+  "this->device_file_audio" might be null. 370        if
+  (this->device_file_audio) { ... Passing null variable
+  "this->device_file_audio" to function "sdi_init", which dereferences it.
+  [show details] 422        if (!sdi_init(this->device_file_video,
+  this->device_file_audio, this->blanking, mlt_service_profile((mlt_service)
+  consumer), &this->audio_format)) {
+
+  * src/modules/linsys/consumer_SDIstream.c: linsys/consumer_SDIstream.c: check
+  for null pointer  Fixes Coverity CID 709400: Dereference before null check
+  (REVERSE_INULL) Dereferencing pointer "this->device_file_video". (The
+  dereference is assumed on the basis of the 'nonnull' parameter attribute.)
+  362        int fd = stat(this->device_file_video, &st); 363        if (fd ==
+  -1) { Dereferencing "this->device_file_video" before a null check. 364       
+          if (this->device_file_video)
+
+  * src/modules/kino/filehandler.cc: kino/filehandler.cc: initialize variables 
+  Fixes Coverity CID 709441: Uninitialized scalar field (UNINIT_CTOR)
+  Non-static class member field "dvinfo.dwDVAAuxCtl1" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "dvinfo.dwDVAAuxCtl" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "dvinfo.dwDVAAuxSrc1"
+  is not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "dvinfo.dwDVAAuxSrc" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member field
+  "dvinfo.dwDVReserved" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "dvinfo.dwDVVAuxCtl"
+  is not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "dvinfo.dwDVVAuxSrc" is not initialized in this
+  constructor nor in any functions that it calls.
+
+  * src/modules/kino/filehandler.cc: kino/filehandler.cc: check return value
+  from lseek()  Fixes Coverity CID 709329: Unchecked return value
+  (CHECKED_RETURN) Calling function "lseek" without checking return value (as
+  is done elsewhere 19 out of 20 times). No check of the return value of
+  "lseek(this->fd, 0L, 0)". 409        lseek( fd, 0, SEEK_SET );
+
+  * src/modules/kino/filehandler.cc: kino/filehandler.cc: initialize variable 
+  Fixes Coverity CID 709442: Uninitialized scalar field (UNINIT_CTOR)
+  Non-static class member ""numBlocks"" is not initialized in this constructor
+  nor in any functions that it calls.
+
+  * src/modules/kino/filehandler.cc: kino/filehandler.cc: initialize variables 
+  Fixes Coverity CID 709443: Uninitialized scalar field (UNINIT_CTOR)
+  Non-static class member ""everyNthFrame"" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member
+  ""framesToSkip"" is not initialized in this constructor nor in any functions
+  that it calls. Non-static class member ""maxFileSize"" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  ""timeStamp"" is not initialized in this constructor nor in any functions
+  that it calls.
+
+  * src/modules/kino/avi.cc: kino/avi.cc: initialize variable  Fixes Coverity
+  CID 709439: Uninitialized scalar field (UNINIT_CTOR) Non-static class member
+  field "dvinfo.dwDVAAuxCtl1" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "dvinfo.dwDVAAuxCtl"
+  is not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "dvinfo.dwDVAAuxSrc1" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "dvinfo.dwDVAAuxSrc" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "dvinfo.dwDVReserved"
+  is not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "dvinfo.dwDVVAuxCtl" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member field
+  "dvinfo.dwDVVAuxSrc" is not initialized in this constructor nor in any
+  functions that it calls.
+
+  * src/modules/kino/avi.cc: kino/avi.cc: initialize variables  Fixes Coverity
+  CID 709437: Uninitialized scalar field (UNINIT_CTOR) Non-static class member
+  ""dmlh_chunk"" is not initialized in this constructor nor in any functions
+  that it calls. Non-static class member ""odml_list"" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "streamHdr.dwFlags" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field
+  "streamHdr.dwInitialFrames" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.dwLength"
+  is not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.dwQuality" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "streamHdr.dwRate" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field
+  "streamHdr.dwSampleSize" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.dwScale" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.dwStart" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member field
+  "streamHdr.dwSuggestedBufferSize" is not initialized in this constructor nor
+  in any functions that it calls. Non-static class member field
+  "streamHdr.fccHandler" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.fccType" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.rcFrame" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member field
+  "streamHdr.wLanguage" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.wPriority"
+  is not initialized in this constructor nor in any functions that it calls.
+
+  * src/modules/kino/avi.cc: kino/avi.cc: initialize variables  Fixes Coverity
+  CID 709438: Uninitialized scalar field (UNINIT_CTOR) Non-static class member
+  ""dmlh"" is not initialized in this constructor nor in any functions that it
+  calls. Non-static class member field "mainHdr.dwFlags" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "mainHdr.dwHeight" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field
+  "mainHdr.dwInitialFrames" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field
+  "mainHdr.dwMaxBytesPerSec" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field
+  "mainHdr.dwMicroSecPerFrame" is not initialized in this constructor nor in
+  any functions that it calls. Non-static class member field
+  "mainHdr.dwPaddingGranularity" is not initialized in this constructor nor in
+  any functions that it calls. Non-static class member field
+  "mainHdr.dwReserved" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "mainHdr.dwStreams" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "mainHdr.dwSuggestedBufferSize" is not
+  initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "mainHdr.dwTotalFrames" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "mainHdr.dwWidth" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.dwFlags" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.dwInitialFrames" is not initialized
+  in this constructor nor in any functions that it calls. Non-static class
+  member field "streamHdr.dwLength" is not initialized in this constructor nor
+  in any functions that it calls. Non-static class member field
+  "streamHdr.dwQuality" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.dwRate" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.dwSampleSize" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "streamHdr.dwScale" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.dwStart" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.dwSuggestedBufferSize" is not
+  initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.fccHandler" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "streamHdr.fccType" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member field "streamHdr.rcFrame" is
+  not initialized in this constructor nor in any functions that it calls.
+  Non-static class member field "streamHdr.wLanguage" is not initialized in
+  this constructor nor in any functions that it calls. Non-static class member
+  field "streamHdr.wPriority" is not initialized in this constructor nor in any
+  functions that it calls.
+
+2012-07-30  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/modules/kdenlive/producer_framebuffer.c:
+  kdenlive/producer_framebuffer.c: check return values  Check calloc() return
+  and fix Coverity CID 709328: Unchecked return value (CHECKED_RETURN) Calling
+  function "mlt_producer_init" without checking return value (as is done
+  elsewhere 19 out of 20 times). No check of the return value of
+  "mlt_producer_init(producer, NULL)". 254        mlt_producer_init( producer,
+  NULL );
+
+  * src/modules/kdenlive/producer_framebuffer.c:
+  kdenlive/producer_framebuffer.c: check for null pointer  Fixes Coverity CID
+  709398: Dereference before null check (REVERSE_INULL) Directly dereferencing
+  pointer "frame". 203        *frame = mlt_frame_init( MLT_PRODUCER_SERVICE(
+  producer ) ); Dereferencing "frame" before a null check. 204        if( frame
+  != NULL )
+
+  * src/modules/jackrack/jack_rack.c: jack_rack_add_plugin(): handle null
+  pointer  Fixes Coverity CID 710857: Explicit null dereferenced (FORWARD_NULL)
+  Assigning: "saved_plugin" = 0. 134      saved_plugin = NULL; 135    } 136 137
+   /* initialize plugin parameters */ Dereferencing null variable
+  "saved_plugin". 138  plugin->enabled = settings_get_enabled
+  (saved_plugin->settings);
+
+  * src/modules/jackrack/consumer_jack.c: consumer_jack.c: initialize
+  refresh_count with mutex held  Fixes Coverity CID 709359.  Locking
+  "self->refresh_mutex". 148                pthread_mutex_lock(
+  &self->refresh_mutex ); consumer_jack_s.refresh_count is being accessed with
+  lock "self->refresh_mutex" held. 149                self->refresh_count =
+  self->refresh_count <= 0 ? 1 : self->refresh_count + 1; 150               
+  pthread_cond_broadcast( &self->refresh_cond ); 151               
+  pthread_mutex_unlock( &self->refresh_mutex ); ... 486//      int
+  last_position = -1; CID 709359: Data race condition (MISSING_LOCK) Accessing
+  variable "self->refresh_count" (consumer_jack_s.refresh_count) requires the
+  consumer_jack_s.refresh_mutex lock. 487        self->refresh_count = 0; ...
+  Locking "self->refresh_mutex". 544                               
+  pthread_mutex_lock( &self->refresh_mutex ); 545                              
+   if ( refresh == 0 && self->refresh_count <= 0 ) 546                         
+        { 547                                        consumer_play_video( self,
+  frame ); 548                                        pthread_cond_wait(
+  &self->refresh_cond, &self->refresh_mutex ); 549                             
+    } 550                                mlt_frame_close( frame );
+  consumer_jack_s.refresh_count is being accessed with lock
+  "self->refresh_mutex" held.
+
+  * src/modules/jackrack/consumer_jack.c: consumer_jack.c: fix possible buffer
+  overflow  CID 710871: Copy into fixed size buffer (STRING_OVERFLOW) You might
+  overrun the 30 byte fixed-size string "con_name" by copying "ports[i]"
+  without checking the length. 290                                strcpy(
+  con_name, ports[i] );
+
+  * src/modules/gtk2/producer_pango.c: producer_pango.c: check for null pointer
+   Fixes Coverity CID 710867: Dereference before null check (REVERSE_INULL)
+  Dereferencing pointer "text". (The dereference is assumed on the basis of the
+  'nonnull' parameter attribute.) 312                size_t inbuf_n = strlen(
+  text ); ... Dereferencing "text" before a null check. 319                if (
+  text != NULL && strcmp( text, "" ) && iconv( cd, &inbuf_p, &inbuf_n,
+  &outbuf_p, &outbuf_n ) != -1 )
+
+  * src/modules/gtk2/producer_pango.c: producer_pango_init(): check for null
+  pointer  Fixes Coverity CID 710868: Dereference before null check
+  (REVERSE_INULL) Dereferencing pointer "markup". (The dereference is assumed
+  on the basis of the 'nonnull' parameter attribute.) 219                      
+                           strcat( markup, line ); ... Dereferencing pointer
+  "markup". (The dereference is assumed on the basis of the 'nonnull' parameter
+  attribute.) 228                                if ( markup[ strlen( markup )
+  - 1 ] == '\n' ) 229                                        markup[ strlen(
+  markup ) - 1 ] = '\0'; ... Dereferencing "markup" before a null check. 232   
+                              mlt_properties_set( properties, "markup", (
+  markup == NULL ? "" : markup ) );
+
+  * src/modules/frei0r/frei0r_helper.c: frei0r/frei0r_helper.c: use correct
+  argument to sizeof()  Fixes Coverity CID 709407: Wrong sizeof argument
+  (SIZEOF_MISMATCH) Passing argument "inst" of type "void *" and argument "8 /*
+  sizeof (void *) */" to function "mlt_properties_set_data" is suspicious. 79  
+               mlt_properties_set_data(  prop  ,  ctorname , inst,
+  sizeof(void*) , f0r_destruct , NULL );;
+
+  * src/modules/frei0r/factory.c: frei0r/factory.c: fix possible buffer
+  overflow and null dereference  Fixes Coverity CID 709415: Copy into fixed
+  size buffer (STRING_OVERFLOW) You might overrun the 1024 byte fixed-size
+  string "pluginname" by copying "firstname" without checking the length. 390  
+                       strcat(pluginname,firstname);  and  CID 709397:
+  Dereference before null check (REVERSE_INULL) Dereferencing pointer
+  "firstname". (The dereference is assumed on the basis of the 'nonnull'
+  parameter attribute.) 390                       
+  strcat(pluginname,firstname);
+
+  * src/modules/frei0r/factory.c: frei0r/factory.c: fix sizeof() arguments 
+  Fixes Coverity CID 709406: Wrong sizeof argument (SIZEOF_MISMATCH) Passing
+  argument "handle" of type "void *" and argument "8 /* sizeof (void *) */" to
+  function "mlt_properties_set_data" is suspicious. 281               
+  mlt_properties_set_data(properties, "_dlclose_handle", handle , sizeof
+  (void*) , NULL , NULL ); 282               
+  mlt_properties_set_data(properties, "_dlclose", dlclose , sizeof (void*) ,
+  NULL , NULL ); CID 709406: Wrong sizeof argument (SIZEOF_MISMATCH) [select
+  defect] 283                mlt_properties_set_data(properties,
+  "f0r_construct", f0r_construct , sizeof(void*),NULL,NULL); CID 709406: Wrong
+  sizeof argument (SIZEOF_MISMATCH) [select defect] 284               
+  mlt_properties_set_data(properties, "f0r_update", f0r_update ,
+  sizeof(void*),NULL,NULL); 285                if (f0r_update2) 286            
+             mlt_properties_set_data(properties, "f0r_update2", f0r_update2 ,
+  sizeof(void*),NULL,NULL); CID 709406: Wrong sizeof argument (SIZEOF_MISMATCH)
+  [select defect] 287                mlt_properties_set_data(properties,
+  "f0r_destruct", f0r_destruct , sizeof(void*),NULL,NULL);
+
+  * src/modules/dv/producer_libdv.c: producer_libdv.c: check for null pointer 
+  Fixes Coverity CID 710856: Dereference after null check (FORWARD_NULL)
+  Comparing "*frame" to null implies that "*frame" might be null. 491          
+       if ( *frame != NULL ) 492                        data =
+  mlt_properties_get_data( MLT_FRAME_PROPERTIES( *frame ), "dv_data", NULL );
+  493        } 494 At conditional (2): "data != NULL" taking the false branch.
+  495        if ( data != NULL ) ... Passing null variable "*frame" to function
+  "mlt_frame_set_position", which dereferences it. [show details] 540       
+  mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
+
+2012-07-29  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/modules/core/transition_region.c: transition_region.c: check for null
+  pointer  Fixes Coverity CID 709350: Dereference after null check
+  (FORWARD_NULL) Comparing "type" to null implies that "type" might be null. 39
+         char *arg = type == NULL ? NULL : strchr( type, ':' ); ... Passing
+  null variable "type" to function "mlt_factory_filter", which dereferences it.
+  [show details] 50        filter = mlt_factory_filter( profile, type, arg );
+
+  * src/modules/core/producer_melt.c: producer_melt_init(): check for null
+  pointer  Fixes Coverity CID 709349: Dereference after null check
+  (FORWARD_NULL) Comparing "playlist" to null implies that "playlist" might be
+  null. 401                        if ( playlist != NULL ) ... Passing null
+  variable "&playlist->parent.parent.parent" to function
+  "mlt_properties_get_int", which dereferences it. [show details] 466        if
+  ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first"
+  ) || 467                  mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER(
+  playlist ) ) > 0 ) 468                mlt_multitrack_connect( multitrack,
+  MLT_PLAYLIST_PRODUCER( playlist ), track );
+
+2012-07-26  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/modules/core/filter_data_show.c: filter_data_show.c: check dest buffer
+  sizes  Fixes Coverity CID 709413: Copy into fixed size buffer
+  (STRING_OVERFLOW) You might overrun the 512 byte fixed-size string "temp" by
+  copying "profile" without checking the length. 58                       
+  strcpy( temp, profile );  and  CID 709414: Copy into fixed size buffer
+  (STRING_OVERFLOW) You might overrun the 512 byte fixed-size string "result"
+  by copying "metavalue" without checking the length. 225                      
+                                                   strcat( result, metavalue ?
+  metavalue : "-" );
+
+2012-08-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: add image cache size property to
+  avformat producer
+
+  * src/framework/mlt_cache.c: lower default cache size to 4 to reduce memory
+  usage
+
+2012-08-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_cache.c: fix memory leak when using mlt_cache for frames
+
+2012-08-03  Marco Gittler <g.marco@freenet.de>
+
+  * src/modules/oldfilm/filter_lines.c, src/modules/oldfilm/filter_lines.yml:
+  fix width output of filter in xml
+
+2012-07-26  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/modules/avformat/consumer_avformat.c: consumer_avformat: handle
+  negative return value  Fixes Coverity CID 709361: Argument cannot be negative
+  (NEGATIVE_RETURNS) Function "ftell(f)" returns a negative number. Assigning:
+  signed variable "size" = "ftell". 937                                       
+  size = ftell( f ); 938                                        fseek( f, 0,
+  SEEK_SET ); 939                                        logbuffer = av_malloc(
+  size + 1 ); At conditional (1): "!logbuffer" taking the false branch. 940    
+                                     if ( !logbuffer ) 941                     
+                            mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ),
+  "Could not allocate log buffer\n" ); 942                                     
+    else 943                                        { "size" is passed to a
+  parameter that cannot be negative. 944                                       
+          size = fread( logbuffer, 1, size, f );
+
+2012-07-25  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/framework/mlt_field.c, src/framework/mlt_frame.c,
+  src/framework/mlt_multitrack.c, src/framework/mlt_playlist.c,
+  src/framework/mlt_properties.c, src/framework/mlt_repository.c,
+  src/framework/mlt_service.c, src/framework/mlt_tractor.c,
+  src/modules/core/filter_audioconvert.c, src/modules/core/filter_crop.c,
+  src/modules/core/filter_imageconvert.c, src/modules/core/filter_panner.c,
+  src/modules/core/filter_resize.c, src/modules/core/producer_ppm.c,
+  src/modules/core/transition_composite.c, src/modules/core/transition_mix.c,
+  src/modules/dv/producer_libdv.c, src/modules/gtk2/producer_pango.c,
+  src/modules/gtk2/producer_pixbuf.c, src/modules/kino/producer_kino.c,
+  src/modules/linsys/consumer_SDIstream.c,
+  src/modules/normalize/filter_volume.c,
+  src/modules/qimage/producer_kdenlivetitle.c,
+  src/modules/qimage/producer_qimage.c, src/modules/rtaudio/RtAudio.cpp,
+  src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/consumer_sdl_preview.c, src/modules/sdl/consumer_sdl_still.c,
+  src/modules/xml/consumer_xml.c, src/modules/xml/producer_xml.c: Fix calloc()
+  parameter ordering  First parameter to calloc() is the count and second the
+  amount of bytes for each item. Likely this has no run time effect since the
+  resulting buffer size is the same.
+
+  * src/framework/mlt_property.c: mlt_property_get_time(): get mutex before
+  accessing self->types  Fixes Coverity CID 709356: Data race condition
+  (MISSING_LOCK) Accessing variable "self->types" (mlt_property_s.types)
+  requires the mlt_property_s.mutex lock. 871                self->types |=
+  mlt_prop_string;
+
+  * src/framework/mlt_producer.c: mlt_producer_seek(): check that eof is not
+  NULL  Fixes Coverity CID 709348: Dereference after null check (FORWARD_NULL)
+  Comparing "eof" to null implies that "eof" might be null. 310        else if
+  ( use_points && ( eof == NULL || !strcmp( eof, "pause" ) ) && position >=
+  mlt_producer_get_playtime( self ) ) 311        { 312               
+  mlt_producer_set_speed( self, 0 ); 313                position =
+  mlt_producer_get_playtime( self ) - 1; 314        } At conditional (3):
+  "use_points" taking the true branch. Passing null variable "eof" to function
+  "strcmp", which dereferences it. (The dereference is assumed on the basis of
+  the 'nonnull' parameter attribute.) 315        else if ( use_points &&
+  !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( self ) )
+
+  * src/framework/mlt_producer.c: mlt_producer_new(): check return value from
+  mlt_producer_init()
+
+  * src/framework/mlt_playlist.c: mlt_playlist_init(): check return values from
+  mlt_producer_init() and calloc()  Fixes Coverity CID 709327: Unchecked return
+  value (CHECKED_RETURN) Calling function "mlt_producer_init" without checking
+  return value (as is done elsewhere 17 out of 20 times). No check of the
+  return value of "mlt_producer_init(producer, self)". 73               
+  mlt_producer_init( producer, self );
+
+  * src/framework/mlt_frame.c: mlt_frame_get_waveform(): handle memory
+  allocation failure  Fixes Coverity CID 709347.  At conditional (1): "bitmap
+  != NULL" taking the false branch. CID 709347: Dereference after null check
+  (FORWARD_NULL) Comparing "bitmap" to null implies that "bitmap" might be
+  null. 802        if ( bitmap != NULL ) 803                memset( bitmap, 0,
+  size ); 804        mlt_properties_set_data( properties, "waveform", bitmap,
+  size, ( mlt_destructor )mlt_pool_release, NULL ); ... 826                    
+     // Position buffer pointer using y coordinate, stride, and x coordinate
+  Assigning null: "p" = "bitmap + i / skip + displacement * w". 827            
+             unsigned char *p = bitmap + i / skip + displacement * w; ... 831  
+                               if ( *pcm < 0 ) Dereferencing null variable "p".
+  832                                        p[ w * k ] = ( k == 0 ) ? 0xFF :
+  p[ w * k ] + gray; 833                                else Dereferencing null
+  variable "p". 834                                        p[ w * k ] = ( k ==
+  height ) ? 0xFF : p[ w * k ] + gray;
+
+  * src/framework/mlt_filter.c: mlt_filter.c: fix possible buffer overflows 
+  Fixes Coverity CID 709411: Copy into fixed size buffer (STRING_OVERFLOW) You
+  might overrun the 20 byte fixed-size string "name" by copying "unique_id"
+  without checking the length. 257        strcat( name, unique_id );  and  CID
+  709412: Copy into fixed size buffer (STRING_OVERFLOW) You might overrun the
+  20 byte fixed-size string "name" by copying "unique_id" without checking the
+  length. 302        strcat( name, unique_id );
+
+  * src/framework/mlt_filter.c: mlt_filter_new(): check return value from
+  mlt_filter_init()  Fixes Coverity CID 709326: Unchecked return value
+  (CHECKED_RETURN) Calling function "mlt_filter_init" without checking return
+  value (as is done elsewhere 7 out of 8 times). No check of the return value
+  of "mlt_filter_init(self, NULL)". 78                mlt_filter_init( self,
+  NULL ); 79        return self;
+
+  * src/modules/avformat/vdpau.c: vdpau: reduce runtime detection cost  Don't
+  try to dlopen() every time, once is enough.
+
+2012-07-25  Christian Marillat <marillat@debian.org>
+
+  * src/modules/avformat/vdpau.c: Fix vdpau library paths  They have changed in
+  Debian.
+
+  * src/modules/avformat/vdpau.c: vdpau compilation fix for ffmpeg 0.11  In
+  file included from producer_avformat.c:157:0: vdpau.c: In function
+  ‘vdpau_get_buffer’: vdpau.c:162:10: error: ‘AVFrame’ has no member
+  named ‘age’ vdpau.c:169:10: error: ‘AVFrame’ has no member named
+  ‘age’
+
+2012-07-24  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/framework/mlt_consumer.c: mlt_consumer_start(): check return value from
+  mlt_properties_get_int()  Fixes Coverity CID 709343: Division or modulo by
+  zero (DIVIDE_BY_ZERO) Division by expression
+  "mlt_properties_get_int(properties, "frame_rate_num")" which may be zero has
+  undefined behavior On this path, function call
+  "mlt_properties_get_int(properties, "frame_rate_num")" has return value of 0
+  442        int frame_duration = 1000000 / mlt_properties_get_int( properties,
+  "frame_rate_num" ) * 443                        mlt_properties_get_int(
+  properties, "frame_rate_den" );
+
+  * src/framework/mlt_consumer.c: mlt_consumer_start(): get mutex before
+  accessing put_active  Fixes Coverity CID 709355: Data race condition
+  (MISSING_LOCK) Accessing variable "self->put_active"
+  (mlt_consumer_s.put_active) requires the mlt_consumer_s.put_mutex lock. 411  
+       self->put_active = 1;
+
+  * src/framework/mlt_consumer.c: mlt_consumer_new(): handle return value from
+  mlt_consumer_init()  If init() fails return NULL. Fixes Coverity CID 709325. 
+  At conditional (1): "self != NULL" taking the true branch. 339        if (
+  self != NULL ) CID 709325: Unchecked return value (CHECKED_RETURN) Calling
+  function "mlt_consumer_init" without checking return value (as is done
+  elsewhere 10 out of 11 times). No check of the return value of
+  "mlt_consumer_init(self, NULL, profile)". 340               
+  mlt_consumer_init( self, NULL, profile );
+
+  * src/framework/mlt_consumer.c: mlt_consumer.c: watch out for null pointer 
+  Fixes Coverity CID 709393: Dereference before null check (REVERSE_INULL)
+  Directly dereferencing pointer "profile". 235               
+  profile->sample_aspect_num = mlt_properties_get_int( properties,
+  "sample_aspect_num" ); Dereferencing "profile" before a null check. 236      
+           if ( profile )
+
+2012-07-23  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/framework/mlt_cache.c: mlt_cache.c: watch out for null pointer  Fixes
+  Coverity CID 709346: Dereference after null check (FORWARD_NULL) Comparing
+  "result" to null implies that "result" might be null. 449                if (
+  result && result->data ) 450                        result->refcount++;
+  Dereferencing null variable "result". 451                mlt_log( NULL,
+  MLT_LOG_DEBUG, "%s: get %d = %p, %p\n", __FUNCTION__, cache->count - 1, *hit,
+  result->data ); 452
+
+  * src/framework/mlt_cache.c: mlt_cache.c: check for null pointer  Fixes CID
+  709392: Dereference before null check (REVERSE_INULL).
+
+2012-07-02  Mikko Rapeli <mikko.rapeli@iki.fi>
+
+  * src/modules/kino/riff.cc: riff.cc: Fail if lseek() fails  Fixes Coverity
+  CID 709362: Argument cannot be negative (NEGATIVE_RETURNS) Function
+  "lseek(this->fd, 0LL, 0)" returns a negative number. Assigning: signed
+  variable "pos" = "lseek". ... "pos" is passed to a parameter that cannot be
+  negative. 548                fail_if( lseek( fd, pos, SEEK_SET ) == ( off_t )
+  - 1 );
+
+  * src/modules/kino/riff.cc: riff.cc: Initialize data in constructor  Fixes
+  Coverity CID 709444: Uninitialized scalar field (UNINIT_CTOR) Non-static
+  class member ""length"" is not initialized in this constructor nor in any
+  functions that it calls. Non-static class member ""name"" is not initialized
+  in this constructor nor in any functions that it calls. Non-static class
+  member ""offset"" is not initialized in this constructor nor in any functions
+  that it calls. Non-static class member ""parent"" is not initialized in this
+  constructor nor in any functions that it calls. Non-static class member
+  ""type"" is not initialized in this constructor nor in any functions that it
+  calls. Non-static class member ""written"" is not initialized in this
+  constructor nor in any functions that it calls.
+
+2012-07-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/qimage_wrapper.cpp:
+  fix crash when switching image formats with alpha  This happens when
+  switching from image format with distinct alpha channel (yuv422) to one with
+  embedded alpha channel (rgb24a).  Reported-by: j-b-m
+
+  * src/framework/mlt_properties.c: fix memory read error found by valgrind
+
+2012-07-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_events.c: fix memory leak and missing unlock
+  (coverity-709377 & 709354)
+
+  * src/modules/normalize/filter_volume.c: fix possible divide by zero
+  (coverity-709344)
+
+  * src/modules/oldfilm/filter_dust.c: remove dead code (coverity-709337)
+
+  * src/modules/core/transition_composite.c: remove dead code (coverity-709335
+  & 709336)
+
+  * src/framework/mlt_playlist.c: remove dead code (coverity-709334)
+
+  * src/modules/videostab/stabilize.c: fix faulty image format tests
+  (coverity-709330, 709331, & 709332)
+
+  * src/modules/videostab/stabilize.c: fix memory leak (coverity-709387,
+  709388, & 709389)
+
+2012-07-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_deque.c: fix crash on null pointer  reported by Mikko
+  Rapeli
+
+  * src/framework/mlt_deque.c: initialze with calloc instead of memberwise
+  (future-proofing)
+
+  * src/framework/mlt_events.c: fix uninitialized memory in mlt_events
+
+2012-07-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/Makefile: fix regression building on 32-bit
+
+  * src/modules/videostab/stab/klt/klt.c: fix uninitialized memory
+  (coverity-709434)
+
+  * src/modules/avformat/producer_avformat.c: fix out-of-bounds read
+  (coverity-709368)
+
+  * src/modules/xml/producer_xml.c: fix memory leak (coverity-710866)
+
+  * src/modules/xml/producer_xml.c: fix memory leak (coverity-710865)
+
+  * src/modules/xml/consumer_xml.c: fix memory leak (coverity-710864)
+
+  * src/modules/gtk2/filter_rescale.c: fix memory leak (coverity-710863)
+
+  * src/modules/videostab/stab/klt/klt.c: fix uninitialized var
+  (coverity-709434)
+
+  * src/modules/kino/riff.cc: fix uninitialized var (coverity-709433)
+
+  * src/framework/mlt_multitrack.c: fix uninitialized array (coverity-709432)
+
+  * src/framework/mlt_frame.c: fix uninitialized vars (coverity-709430 &
+  709431)
+
+  * src/modules/vorbis/producer_vorbis.c: fix memory leak (coverity-709391)
+
+  * src/modules/videostab/stabilize.c, src/modules/videostab/stabilize.h:
+  remove unused function (coverity-709390)
+
+  * src/modules/sox/filter_sox.c: fix memory leak (coverity-709386)
+
+  * src/modules/core/producer_melt.c: fix file handle leak (coverity-709383)
+
+  * src/modules/core/filter_imageconvert.c: fix memory leak (coverity-709382)
+
+  * src/modules/avformat/consumer_avformat.c: fix file handle leak
+  (coverity-709381)
+
+  * src/mlt++/MltFilteredProducer.cpp: fix memory leak (coverity-709380)
+
+  * src/mlt++/MltService.cpp, src/mlt++/MltService.h: add
+  Service::get_profile() returns mlt_profile
+
+  * src/framework/mlt_tractor.c: fix memory leak (coverity-709379)
+
+  * src/framework/mlt_profile.c: fix memory leak (coverity-709378)
+
+  * src/framework/mlt_consumer.c: fix memory leak (coverity-709376)
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h: fix memory leak
+  (coverity-709375)
+
+  * src/modules/avformat/producer_avformat.c: fix out-of-bounds read
+  (coverity-709368 & 709369)
+
+2012-07-20  Dan Dennedy <dan@dennedy.org>
+
+  * AUTHORS, src/modules/core/Makefile,
+  src/modules/core/composite_line_yuv_sse2_simple.c,
+  src/modules/core/transition_composite.c: improve compatibility to compile
+  composite sse2 (macports-35243)
+
+2012-07-19  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/avformat/producer_avformat.c: move mutex and deque
+  initialization to producer init method
+
+  * src/modules/avformat/producer_avformat.c: fix leak of dv packets
+
+  * src/modules/avformat/producer_avformat.c: fix memleak if file fails to open
+
+2012-07-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/melt/melt.c: add define MELT_NOSDL to not use SDL_main()  This is
+  helpful on OS X when using melt as a utility to prevent the program from
+  appearing in the Dock.
+
+2012-07-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c: fix crash in avformat consumer
+  when audio encoding fails
+
+2012-07-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_loader.c, src/modules/xml/producer_xml.c: accept
+  file:// prefix on MLT XML file
+
+2012-06-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/plugin_mgr.c: fix some LADSPA crashing on dlclose on
+  some systems (3538363)
+
+2012-06-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_playlist.c, src/framework/mlt_playlist.h,
+  src/mlt++/MltPlaylist.cpp, src/mlt++/MltPlaylist.h,
+  src/modules/core/producer_melt.c, src/modules/xml/producer_xml.c: add support
+  for time string to playlist blanks
+
+  * src/modules/core/transition_region.c: make alpha channel independent of
+  lifetime of region frame
+
+  * src/modules/core/transition_region.c: fix memory leak when using
+  filter_only with region transition
+
+  * src/modules/core/transition_region.c: improve readability
+
+  * src/modules/core/transition_region.c: rename this to transition and frame
+
+  * src/modules/core/transition_region.c: fix filters that need progress with
+  region filter/transition  See for example, obscure filter, as used in
+  demo/mlt_obscure.
+
+  * src/modules/core/filter_region.c: fix race condition in region filter when
+  parallel processing  based on patch from j-b-m
+
+  * src/modules/jackrack/consumer_jack.c,
+  src/modules/jackrack/consumer_jack.yml,
+  src/modules/rtaudio/consumer_rtaudio.cpp,
+  src/modules/rtaudio/consumer_rtaudio.yml,
+  src/modules/sdl/consumer_sdl_audio.c, src/modules/sdl/consumer_sdl_audio.yml:
+  add support for audio scrubbing to audio-only consumers
+
+2012-06-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/filter_jackrack.c: change printfs in filter_jackrack
+  to mlt_log_verbose
+
+  * src/modules/jackrack/filter_jackrack.c: send jack silence on buffer
+  underrun  This occurs with the sdl_preview or any of the audio-only consumers
+  when paused. Otherwise, jack just plays unset memory, which is usually
+  something worse than just noise.
+
+  * src/modules/xml/producer_xml.c: fix loading xml file on windows
+
+2012-06-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c: stop checking PTS if we are only
+  using DTS
+
+2012-06-20  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qimage/configure: Fix Qt4 detection when Qt3 is installed
+
+2012-06-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_producer.c, src/framework/mlt_producer.h,
+  src/mlt++/MltProducer.cpp, src/mlt++/MltProducer.h: add
+  mlt_producer_seek_time and mlt_producer_frame_time
+
+  * .gitignore: add to .gitignore
+
+  * src/mlt++/MltFilteredConsumer.cpp, src/mlt++/MltFilteredConsumer.h,
+  src/mlt++/MltFilteredProducer.cpp, src/mlt++/MltFilteredProducer.h,
+  src/mlt++/MltPushConsumer.cpp, src/mlt++/MltPushConsumer.h: add const-ness to
+  some strings in specialized service classes
+
+2012-06-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/producer_xml.c: fix loading xml with producer not enclosed
+  in playlist or multitrack
+
+  * src/modules/rotoscoping/filter_rotoscoping.c,
+  src/modules/vmfx/filter_shape.c, src/modules/xine/vf_yadif_template.h,
+  src/modules/xine/yadif.c: fix clang errors
+
+2012-06-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/rtaudio/consumer_rtaudio.cpp: add support for AUDIODEV
+  environment var to rtaudio
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: overhaul a/v sync and seeking in
+  avformat producer  The new_seek property changed to use_pts. This
+  consolidates old seek and new seek code, improves a/v sync for more files,
+  and improves seek performance for AVCHD in general (including libav).
+
+  * src/modules/decklink/common.cpp: fix BSTR string conversion under Windows
+
+2012-06-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/producer_decklink.cpp: fix crash when reporting error
+  in decklink producer init
+
+  * NEWS, configure, src/framework/mlt_version.h: set interim version to 0.8.1
+
 2012-06-01  Dan Dennedy <dan@dennedy.org>
+
+  * ChangeLog: update ChangeLog for v0.8.0
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h,
   src/modules/avformat/configure: set version to 0.8.0
@@ -101,6 +1327,11 @@
   src/modules/decklink/producer_decklink.cpp,
   src/modules/decklink/win/DeckLinkAPI_h.h,
   src/modules/decklink/win/DeckLinkAPI_i.cpp: fix decklink build for OS X
+
+2012-05-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/producer_xml.c: indicate if mlt xml is seekable based on
+  its producers
 
 2012-04-18  Dan Dennedy <dan@dennedy.org>
 

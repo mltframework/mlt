@@ -1,4 +1,6 @@
 f=webm
+
+acodec=vorbis
 ab=128k
 
 vcodec=libvpx
@@ -19,4 +21,4 @@ arnr_type=3
 
 meta.preset.name=WebM
 meta.preset.extension=webm
-meta.preset.note=On2 VP8 video with Ogg Vorbis audio in Matroska container
+meta.preset.note=VP8 video with Ogg Vorbis audio in Matroska container: "Don't be evil"
