@@ -101,6 +101,8 @@ void mlt_log_set_level( int );
 %include <MltParser.h>
 %include <MltFilteredConsumer.h>
 
+
+
 #if defined(SWIGRUBY)
 
 %{
@@ -109,28 +111,31 @@ static void ruby_listener( mlt_properties owner, void *object );
 
 class RubyListener
 {
-	private:
+	protected:
 		VALUE callback;
 		Mlt::Event *event;
 
 	public:
-		RubyListener( Mlt::Properties &properties, char *id, VALUE callback ) : 
+		RubyListener( VALUE callback ) : callback( callback )
+		{}
+
+		RubyListener( Mlt::Properties &properties, char *id, VALUE callback ) :
 			callback( callback ) 
 		{
 			event = properties.listen( id, this, ( mlt_listener )ruby_listener );
 		}
 
-		~RubyListener( )
+		virtual ~RubyListener( )
 		{
 			delete event;
 		}
 
-    	void mark( ) 
+		void mark( )
 		{ 
 			((void (*)(VALUE))(rb_gc_mark))( callback ); 
 		}
 
-    	void doit( ) 
+		void doit( )
 		{
         	ID method = rb_intern( "call" );
         	rb_funcall( callback, method, 0 );
@@ -149,19 +154,60 @@ void markRubyListener( void* p )
     o->mark( );
 }
 
+static void on_playlist_next( mlt_properties owner, void *object, int i );
+
+class PlaylistNextListener : RubyListener
+{
+	private:
+		Mlt::Event *event;
+
+	public:
+		PlaylistNextListener( Mlt::Properties *properties, VALUE proc )
+			: RubyListener( proc )
+		{
+			event = properties->listen( "playlist-next", this, ( mlt_listener )on_playlist_next );
+		}
+
+		~PlaylistNextListener()
+		{
+			delete event;
+		}
+
+		void yield( int i )
+		{
+			ID method = rb_intern( "call" );
+			rb_funcall( callback, method, 1, INT2FIX( i ) );
+		}
+};
+
+static void on_playlist_next( mlt_properties owner, void *object, int i )
+{
+	PlaylistNextListener *o = static_cast< PlaylistNextListener * >( object );
+	o->yield( i );
+}
+
 %}
 
 // Ruby wrapper
 %rename( Listener )  RubyListener;
 %markfunc RubyListener "markRubyListener";
+%markfunc PlaylistNextListener "markRubyListener";
 
-class RubyListener 
+class RubyListener
 {
 	public:
 		RubyListener( Mlt::Properties &properties, char *id, VALUE callback );
 };
 
-#endif
+class PlaylistNextListener
+{
+	public:
+		PlaylistNextListener( Mlt::Properties *properties, VALUE proc );
+};
+
+#endif // SWIGGRUBY
+
+
 
 #if defined(SWIGPYTHON)
 %{
