@@ -284,8 +284,8 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
  * \private \memberof mlt_consumer_s
  * \param listener a function pointer that will be invoked
  * \param owner the events object that will be passed to \p listener
- * \param self  a service that will be passed to \p listener
- * \param args an array of pointers - the first entry is passed as a string to \p listener
+ * \param self a service that will be passed to \p listener
+ * \param args an array of pointers - the first entry is passed as a frame to \p listener
  */
 
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
@@ -301,8 +301,8 @@ static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner
  * \private \memberof mlt_consumer_s
  * \param listener a function pointer that will be invoked
  * \param owner the events object that will be passed to \p listener
- * \param self  a service that will be passed to \p listener
- * \param args an array of pointers - the first entry is passed as a string to \p listener
+ * \param self a service that will be passed to \p listener
+ * \param args an array of pointers - the first entry is passed as a frame to \p listener
  */
 
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
