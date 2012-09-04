@@ -58,6 +58,7 @@ namespace Mlt
 			int display_aspect_num() const;
 			int display_aspect_den() const;
 			double dar() const;
+			int is_explicit() const;
 			static Properties* list();
 			void from_producer( Producer &producer );
 			void set_width( int width );

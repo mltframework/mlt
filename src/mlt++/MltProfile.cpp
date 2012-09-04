@@ -123,6 +123,11 @@ double Profile::dar() const
 	return mlt_profile_dar( instance );
 }
 
+int Profile::is_explicit() const
+{
+	return instance->is_explicit;
+}
+
 Properties* Profile::list()
 {
 	return new Properties( mlt_profile_list() );
