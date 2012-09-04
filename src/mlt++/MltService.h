@@ -58,6 +58,7 @@ namespace Mlt
 			int attach( Filter &filter );
 			int detach( Filter &filter );
 			Filter *filter( int index );
+			void set_profile( Profile &profile );
 	};
 }
 
