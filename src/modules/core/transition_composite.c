@@ -355,7 +355,7 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 
 static inline int calculate_mix( uint16_t *luma, int j, int softness, int weight, int alpha, uint32_t step )
 {
-	return ( ( luma ? smoothstep( luma[ j ], luma[ j ] + softness, step ) : weight ) * alpha ) >> 8;
+	return ( ( luma ? smoothstep( luma[ j ], luma[ j ] + softness, step ) : weight ) * ( alpha + 1 ) ) >> 8;
 }
 
 static inline uint8_t sample_mix( uint8_t dest, uint8_t src, int mix )
@@ -460,7 +460,7 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	int stride_src = geometry.sw * bpp;
 	int stride_dest = width_dest * bpp;
 	int i_softness = ( 1 << 16 ) * softness;
-	int weight = ( ( ( 1 << 16 ) - 1 ) * geometry.item.mix + 50 ) / 100;
+	int weight = ( ( 1 << 16 ) * geometry.item.mix + 50 ) / 100;
 	uint32_t luma_step = ( ( ( 1 << 16 ) - 1 ) * geometry.item.mix + 50 ) / 100 * ( 1.0 + softness );
 
 	// Adjust to consumer scale
