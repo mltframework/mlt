@@ -650,6 +650,18 @@ mlt_profile mlt_service_profile( mlt_service self )
 	return self? mlt_properties_get_data( MLT_SERVICE_PROPERTIES( self ), "_profile", NULL ) : NULL;
 }
 
+/** Set the profile for a service.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param profile the profile to set onto the service
+ */
+
+void mlt_service_set_profile( mlt_service self, mlt_profile profile )
+{
+    mlt_properties_set_data( MLT_SERVICE_PROPERTIES( self ), "_profile", profile, 0, NULL, NULL );
+}
+
 /** Destroy a service.
  *
  * \public \memberof mlt_service_s
