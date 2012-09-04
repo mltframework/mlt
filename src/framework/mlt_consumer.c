@@ -449,6 +449,9 @@ int mlt_consumer_start( mlt_consumer self )
 		mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 	}
 
+	// The profile could have changed between a stop and a restart.
+	apply_profile_properties( self, mlt_service_profile( MLT_CONSUMER_SERVICE(self) ), properties );
+
 	// Set the frame duration in microseconds for the frame-dropping heuristic
 	int frame_rate_num = mlt_properties_get_int( properties, "frame_rate_num" );
 	int frame_rate_den = mlt_properties_get_int( properties, "frame_rate_den" );
