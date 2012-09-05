@@ -82,7 +82,7 @@ void interpolateBiCub(unsigned char *rv, float x, float y,
                       unsigned char* img, int width, int height, unsigned char def,unsigned char N, unsigned char channel)
 {
     // do a simple linear interpolation at the border
-    if (x < 1 || x > width-2 || y < 1 || y > height - 2) {
+    if (x < 1 || x >= width-2 || y < 1 || y >= height - 2) {
         interpolateBiLinBorder(rv, x,y,img,width,height,def,N,channel);
     } else {
         int x_f = myfloor(x);
@@ -116,7 +116,7 @@ void interpolateBiCub(unsigned char *rv, float x, float y,
 void interpolateSqr(unsigned char *rv, float x, float y,
                     unsigned char* img, int width, int height, unsigned char def,unsigned char N, unsigned char channel)
 {
-    if (x < 0 || x > width-1 || y < 0 || y > height - 1) {
+    if (x < 0 || x >= width-1 || y < 0 || y >= height-1) {
         interpolateBiLinBorder(rv, x, y, img, width, height, def,N,channel);
     } else {
         int x_f = myfloor(x);
@@ -141,7 +141,7 @@ void interpolateBiLin(unsigned char *rv, float x, float y,
                       unsigned char* img, int width, int height,
                       unsigned char def,unsigned char N, unsigned char channel)
 {
-    if (x < 0 || x > width-1 || y < 0 || y > height - 1) {
+    if (x < 0 || x >= width-1 || y < 0 || y >= height - 1) {
         interpolateBiLinBorder(rv, x, y, img, width, height, def,N,channel);
     } else {
         int x_f = myfloor(x);
