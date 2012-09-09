@@ -30,7 +30,7 @@
 #include <sys/param.h>
 #endif
 
-#if defined(__GLIBC__) || defined(__DARWIN__) || (__FreeBSD_version >= 1000002)
+#if defined(__GLIBC__) || defined(__DARWIN__) || (__FreeBSD_version >= 900506)
 #include <xlocale.h>
 #else
 typedef void* locale_t;
