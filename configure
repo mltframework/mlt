@@ -195,6 +195,9 @@ export targetos=$(uname -s)
 export targetarch=
 export amd64=false
 
+# Define the compiler used in tests (gcc is not installed everywhere)
+: ${CC:=gcc}
+
 # Iterate through arguments
 for i in "$@"
 do
@@ -327,7 +330,7 @@ do
 		[ $help = 0 ] && echo "Configuring `basename $i`:"
 		olddir=`pwd`
 		cd src/$i
-		./configure "$@"
+		CC="$CC" ./configure "$@"
 		[ $? != 0 ] && exit 1
 		cd $olddir
 	fi

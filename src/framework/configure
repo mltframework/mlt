@@ -4,7 +4,7 @@ echo "framework	-I$prefix/include -I$prefix/include/mlt -D_REENTRANT	-L$libdir -
 echo > config.mak
 if [ "$(uname -s)" = "FreeBSD" ]
 then
-	printf "#include <sys/param.h>\n int main(){ return 0;}" | gcc -c -x c - >/dev/null 2>&1
+	printf "#include <sys/param.h>\n int main(){ return 0;}" | $CC -c -x c - >/dev/null 2>&1
 	[ "$?" -eq 0 ] && echo "HAVE_SYS_PARAM_H=1" >> config.mak
 fi
 exit 0
