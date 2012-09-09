@@ -490,7 +490,7 @@ static mlt_frame* shuffle_get_frame( mlt_cache cache, mlt_position position )
 		while ( i-- && !hit )
 		{
 			mlt_frame *o = (mlt_frame*) &cache->current[ i ];
-			if ( mlt_frame_get_position( *o ) == position )
+			if ( mlt_frame_original_position( *o ) == position )
 				hit = o;
 		}
 		// if there was no hit, we will not be shuffling out an entry
@@ -507,7 +507,7 @@ static mlt_frame* shuffle_get_frame( mlt_cache cache, mlt_position position )
 	{
 		mlt_frame *o = (mlt_frame*) &cache->current[ i ];
 
-		if ( !hit && mlt_frame_get_position( *o ) == position )
+		if ( !hit && mlt_frame_original_position( *o ) == position )
 		{
 			hit = o;
 		}
@@ -536,7 +536,7 @@ static mlt_frame* shuffle_get_frame( mlt_cache cache, mlt_position position )
 void mlt_cache_put_frame( mlt_cache cache, mlt_frame frame )
 {
 	pthread_mutex_lock( &cache->mutex );
-	mlt_frame *hit = shuffle_get_frame( cache, mlt_frame_get_position( frame ) );
+	mlt_frame *hit = shuffle_get_frame( cache, mlt_frame_original_position( frame ) );
 	mlt_frame *alt = (mlt_frame*) ( cache->current == cache->A ? cache->B : cache->A );
 
 	// add the frame to the cache
