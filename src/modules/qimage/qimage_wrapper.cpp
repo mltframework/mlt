@@ -157,7 +157,7 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	double ttl = mlt_properties_get_int( producer_props, "ttl" );
 
 	// Get the original position of this frame
-	mlt_position position = mlt_properties_get_position( properties, "qimage_position" );
+	mlt_position position = mlt_frame_original_position( frame );
 	position += mlt_producer_get_in( producer );
 
 	// Image index

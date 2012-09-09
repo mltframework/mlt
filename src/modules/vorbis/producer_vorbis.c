@@ -214,11 +214,8 @@ static double producer_time_of_frame( mlt_producer this, mlt_position position )
 
 static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// Get the properties from the frame
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Obtain the frame number of this frame
-	mlt_position position = mlt_properties_get_position( frame_properties, "vorbis_position" );
+	mlt_position position = mlt_frame_original_position( frame );
 
 	// Get the producer 
 	mlt_producer this = mlt_frame_pop_audio( frame );
@@ -366,16 +363,12 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( this ) );
 
-	// Set the position of this producer
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( *frame );
-	mlt_properties_set_position( frame_properties, "vorbis_position", mlt_producer_frame( this ) );
-
 	// Set up the audio
 	mlt_frame_push_audio( *frame, this );
 	mlt_frame_push_audio( *frame, producer_get_audio );
 
 	// Pass audio properties to the frame
-	mlt_properties_pass_list( frame_properties, MLT_PRODUCER_PROPERTIES( this ), "frequency, channels" );
+	mlt_properties_pass_list( MLT_FRAME_PROPERTIES(*frame), MLT_PRODUCER_PROPERTIES( this ), "frequency, channels" );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( this );

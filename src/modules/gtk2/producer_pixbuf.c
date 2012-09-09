@@ -103,7 +103,6 @@ mlt_producer producer_pixbuf_init( char *filename )
 				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 				mlt_properties_set_data( frame_properties, "producer_pixbuf", self, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
-				mlt_properties_set_position( frame_properties, "pixbuf_position", mlt_producer_position( producer ) );
 				refresh_pixbuf( self, frame );
 				mlt_cache_item_close( self->pixbuf_cache );
 				mlt_frame_close( frame );
@@ -342,7 +341,7 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 	double ttl = mlt_properties_get_int( producer_props, "ttl" );
 
 	// Get the original position of this frame
-	mlt_position position = mlt_properties_get_position( properties, "pixbuf_position" );
+	mlt_position position = mlt_frame_original_position( frame );
 	position += mlt_producer_get_in( producer );
 
 	// Image index
@@ -598,9 +597,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Update timecode on the frame we're creating
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
-
-		// Ensure that we have a way to obtain the position in the get_image
-		mlt_properties_set_position( properties, "pixbuf_position", mlt_producer_position( producer ) );
 
 		// Refresh the pixbuf
 		self->pixbuf_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf" );

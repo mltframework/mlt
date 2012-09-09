@@ -1393,7 +1393,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the frame number of this frame
-	mlt_position position = mlt_properties_get_position( frame_properties, "avformat_position" );
+	mlt_position position = mlt_frame_original_position( frame );
 
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -1437,7 +1437,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	if ( self->image_cache )
 	{
-		mlt_frame original = mlt_cache_get_frame( self->image_cache, mlt_frame_get_position( frame ) );
+		mlt_frame original = mlt_cache_get_frame( self->image_cache, position );
 		if ( original )
 		{
 			mlt_properties orig_props = MLT_FRAME_PROPERTIES( original );
@@ -2240,7 +2240,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	pthread_mutex_lock( &self->audio_mutex );
 	
 	// Obtain the frame number of this frame
-	mlt_position position = mlt_properties_get_position( MLT_FRAME_PROPERTIES( frame ), "avformat_position" );
+	mlt_position position = mlt_frame_original_position( frame );
 
 	// Calculate the real time code
 	double real_timecode = producer_time_of_frame( self->parent, position );
@@ -2669,7 +2669,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Set the position of this producer
 	mlt_position position = self->seekable ? mlt_producer_frame( producer ) : self->nonseek_position++;
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "avformat_position", position );
+	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "original_position", position );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );

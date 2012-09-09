@@ -113,7 +113,6 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 	producer_swfdec swfdec = mlt_frame_pop_service( frame );
 	mlt_service service = MLT_PRODUCER_SERVICE( &swfdec->parent );
 	mlt_profile profile = mlt_service_profile( service );
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	mlt_service_lock( service );
 	
@@ -129,7 +128,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 	mlt_frame_set_image( frame, *buffer, *width * ( *height + 1 ) * 4, mlt_pool_release );
 
 	// Seek
-	mlt_position pos = mlt_properties_get_position( properties, "swfdec.position" );
+	mlt_position pos = mlt_frame_original_position( frame );
 	if ( pos > swfdec->last_position )
 	{
 		gulong msec = 1000UL * ( pos - swfdec->last_position ) * profile->frame_rate_den / profile->frame_rate_num;
@@ -182,7 +181,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 	mlt_properties_set_int( properties, "height", swfdec->height );
 	mlt_properties_set_int( properties, "progressive", 1 );
 	mlt_properties_set_double( properties, "aspect_ratio", 1.0 );
-	mlt_properties_set_position( properties, "swfdec.position", mlt_producer_frame( producer ) );
 
 	// Push the get_image method on to the stack
 	mlt_frame_push_service( *frame, swfdec );

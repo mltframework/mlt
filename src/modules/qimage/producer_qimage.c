@@ -73,7 +73,6 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 				mlt_properties_set_data( frame_properties, "producer_qimage", self, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
-				mlt_properties_set_position( frame_properties, "qimage_position", mlt_producer_position( producer ) );
 				refresh_qimage( self, frame );
 				mlt_cache_item_close( self->qimage_cache );
 				mlt_frame_close( frame );
@@ -293,9 +292,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		// Update timecode on the frame we're creating
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
-
-		// Ensure that we have a way to obtain the position in the get_image
-		mlt_properties_set_position( properties, "qimage_position", mlt_producer_position( producer ) );
 
 		// Refresh the image
 		self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );

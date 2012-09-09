@@ -369,14 +369,13 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	if ( pixbuf == NULL )
 	{
 		// Check for file support
-		int position = mlt_properties_get_position( properties, "pango_position" );
 		mlt_properties contents = mlt_properties_get_data( producer_props, "contents", NULL );
 		mlt_geometry key_frames = mlt_properties_get_data( producer_props, "key_frames", NULL );
 		struct mlt_geometry_item_s item;
 		if ( contents != NULL )
 		{
 			char temp[ 20 ];
-			mlt_geometry_prev_key( key_frames, &item, position );
+			mlt_geometry_prev_key( key_frames, &item, mlt_frame_original_position( frame ) );
 			sprintf( temp, "%d", item.frame );
 			markup = mlt_properties_get( contents, temp );
 		}
@@ -553,7 +552,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
-	mlt_properties_set_position( properties, "pango_position", mlt_producer_frame( producer ) );
 
 	// Refresh the pango image
 	pthread_mutex_lock( &pango_mutex );
