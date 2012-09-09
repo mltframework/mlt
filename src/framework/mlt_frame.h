@@ -115,6 +115,7 @@ extern int mlt_frame_is_test_audio( mlt_frame self );
 extern double mlt_frame_get_aspect_ratio( mlt_frame self );
 extern int mlt_frame_set_aspect_ratio( mlt_frame self, double value );
 extern mlt_position mlt_frame_get_position( mlt_frame self );
+extern mlt_position mlt_frame_original_position( mlt_frame self );
 extern int mlt_frame_set_position( mlt_frame self, mlt_position value );
 extern int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_destructor destroy );
 extern int mlt_frame_set_alpha( mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy );

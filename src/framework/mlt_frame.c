@@ -132,14 +132,34 @@ int mlt_frame_set_aspect_ratio( mlt_frame self, double value )
 
 /** Get the time position of this frame.
  *
+ * This position is not necessarily the position as the original
+ * producer knows it. It could be the position that the playlist,
+ * multitrack, or tractor producer set.
+ *
  * \public \memberof mlt_frame_s
  * \param self a frame
  * \return the position
+ * \see mlt_frame_original_position
  */
 
 mlt_position mlt_frame_get_position( mlt_frame self )
 {
 	int pos = mlt_properties_get_position( MLT_FRAME_PROPERTIES( self ), "_position" );
+	return pos < 0 ? 0 : pos;
+}
+
+/** Get the original time position of this frame.
+ *
+ * This is the position that the original producer set on the frame.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \return the position
+ */
+
+mlt_position mlt_frame_original_position( mlt_frame self )
+{
+	int pos = mlt_properties_get_position( MLT_FRAME_PROPERTIES( self ), "original_position" );
 	return pos < 0 ? 0 : pos;
 }
 
@@ -153,6 +173,9 @@ mlt_position mlt_frame_get_position( mlt_frame self )
 
 int mlt_frame_set_position( mlt_frame self, mlt_position value )
 {
+	// Only set the original_position the first time.
+	if ( ! mlt_properties_get( MLT_FRAME_PROPERTIES( self ), "original_position" ) )
+		mlt_properties_set_position( MLT_FRAME_PROPERTIES( self ), "original_position", value );
 	return mlt_properties_set_position( MLT_FRAME_PROPERTIES( self ), "_position", value );
 }
 
