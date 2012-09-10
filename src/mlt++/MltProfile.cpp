@@ -128,6 +128,11 @@ int Profile::is_explicit() const
 	return instance->is_explicit;
 }
 
+int Profile::colorspace() const
+{
+	return instance->colorspace;
+}
+
 Properties* Profile::list()
 {
 	return new Properties( mlt_profile_list() );
