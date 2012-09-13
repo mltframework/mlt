@@ -1344,7 +1344,7 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
 		img_convert( &output, PIX_FMT_RGB24, (AVPicture *)frame, pix_fmt, width, height );
 	}
-	else if ( format == mlt_image_rgb24a || format == mlt_image_opengl )
+	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB32, width, height );
