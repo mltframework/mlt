@@ -93,9 +93,6 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 		mlt_properties_set( properties, "rescale", "nearest" );
 		mlt_properties_set( properties, "deinterlace_method", "onefield" );
 		mlt_properties_set_int( properties, "prefill", 1 );
-
-		// Tell render thread we prefer yuv420p
-		mlt_properties_set( properties, "mlt_image_format", "yuv420p" );
 		mlt_properties_set_int( properties, "top_field_first", -1 );
 
 		parent->close = consumer_close;
