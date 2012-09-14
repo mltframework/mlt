@@ -30,6 +30,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define YADIF_MODE_TEMPORAL_SPATIAL (0)
+#define YADIF_MODE_TEMPORAL (2)
+
 static yadif_filter *init_yadif( int width, int height )
 {
 	yadif_filter *yadif = mlt_pool_alloc( sizeof( *yadif ) );
@@ -118,12 +121,17 @@ static int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **imag
 
 	// Get the preceding frame's image
 	int error = mlt_frame_get_image( previous_frame, &previous_image, format, &previous_width, &previous_height, 0 );
+	int progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( previous_frame ), "progressive" );
 
 	// Check that we aren't already progressive
-	if ( !error && previous_image  && *format == mlt_image_yuv422 &&
-		 !mlt_properties_get_int( MLT_FRAME_PROPERTIES( previous_frame ), "progressive" ) )
+	if ( !error && previous_image && !progressive )
 	{
+		// OK, now we know we have work to do and can request the image in our format
+		*format = mlt_image_yuv422;
+		error = mlt_frame_get_image( previous_frame, &previous_image, format, &previous_width, &previous_height, 0 );
+
 		// Get the current frame's image
+		*format = mlt_image_yuv422;
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 
 		if ( !error && *image && *format == mlt_image_yuv422 )
@@ -179,15 +187,16 @@ static int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **imag
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
+	mlt_filter filter = mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	int deinterlace = mlt_properties_get_int( properties, "consumer_deinterlace" );
+	// The progressive var should only represent the frame's original state and not the state
+	// as modified by this filter!
 	int progressive = mlt_properties_get_int( properties, "progressive" );
-	
-	// Pop the service off the stack
-	mlt_filter filter = mlt_frame_pop_service( frame );
+	// At this point - before image was requested - (progressive == 0) cannot be trusted because
+	// some producers (avformat) do not yet know.
 
-	// Get the input image
-	if ( deinterlace && !progressive )
+	if ( deinterlace )
 	{
 		// Determine deinterlace method
 		char *method_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "method" );
@@ -212,19 +221,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		else if ( strcmp( method_str, "greedy" ) == 0 )
 			method = DEINTERLACE_GREEDY;
 
-		*format = mlt_image_yuv422;
-
 		if ( method == DEINTERLACE_YADIF )
 		{
-			int mode = 0;
-			error = deinterlace_yadif( frame, filter, image, format, width, height, mode );
-			progressive = mlt_properties_get_int( properties, "progressive" );
+			error = deinterlace_yadif( frame, filter, image, format, width, height, YADIF_MODE_TEMPORAL_SPATIAL );
 		}
 		else if ( method == DEINTERLACE_YADIF_NOSPATIAL )
 		{
-			int mode = 2;
-			error = deinterlace_yadif( frame, filter, image, format, width, height, mode );
-			progressive = mlt_properties_get_int( properties, "progressive" );
+			error = deinterlace_yadif( frame, filter, image, format, width, height, YADIF_MODE_TEMPORAL );
 		}
 		if ( error || ( method > DEINTERLACE_NONE && method < DEINTERLACE_YADIF ) )
 		{
@@ -238,27 +241,36 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			// Get the current frame's image
 			error = mlt_frame_get_image( frame, image, format, width, height, writable );
 			progressive = mlt_properties_get_int( properties, "progressive" );
-
-			// Check that we aren't already progressive
-			if ( !progressive && !error && *image && *format == mlt_image_yuv422 )
+			if ( !error && !progressive )
 			{
-				// Deinterlace the image using one of the Xine deinterlacers
-				int image_size = *width * *height * 2;
-				uint8_t *new_image = mlt_pool_alloc( image_size );
+				// OK, now we know we have work to do and can request the image in our format
+				*format = mlt_image_yuv422;
+				error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
-				deinterlace_yuv( new_image, image, *width * 2, *height, method );
-				mlt_frame_set_image( frame, new_image, image_size, mlt_pool_release );
-				*image = new_image;
+				// Check that we aren't already progressive
+				if ( !error && *image && *format == mlt_image_yuv422 )
+				{
+					// Deinterlace the image using one of the Xine deinterlacers
+					int image_size = *width * *height * 2;
+					uint8_t *new_image = mlt_pool_alloc( image_size );
+
+					deinterlace_yuv( new_image, image, *width * 2, *height, method );
+					mlt_frame_set_image( frame, new_image, image_size, mlt_pool_release );
+					*image = new_image;
+				}
 			}
 		}
 		else if ( method == DEINTERLACE_NONE )
 		{
 			error = mlt_frame_get_image( frame, image, format, width, height, writable );
 		}
-		
+
+		// update progressive flag after having obtained image
+		progressive = mlt_properties_get_int( properties, "progressive" );
+
 		mlt_log_debug( MLT_FILTER_SERVICE( filter ), "error %d deint %d prog %d fmt %s method %s\n",
 			error, deinterlace, progressive, mlt_image_format_name( *format ), method_str ? method_str : "yadif" );
-		
+
 		if ( !error )
 		{
 			// Make sure that others know the frame is deinterlaced
