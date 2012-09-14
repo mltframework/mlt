@@ -125,6 +125,7 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 
 		// Tell render thread we prefer yuv420p
 		mlt_properties_set( this->properties, "mlt_image_format", "yuv420p" );
+		mlt_properties_set_int( this->properties, "top_field_first", -1 );
 
 		// Ensure we don't join on a non-running object
 		this->joined = 1;

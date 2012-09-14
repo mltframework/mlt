@@ -67,7 +67,8 @@
  * \properties \em display_aspect_num the numerator of the video frame aspect ratio, overrides \p mlt_profile_s
  * \properties \em display_aspect_den the denominator of the video frame aspect ratio, overrides \p mlt_profile_s
  * \properties \em priority the OS scheduling priority for the render threads when real_time is not 0.
- * \properties \em top_field_first when not progressive, whether interlace field order is top-field-first, defaults to 0
+ * \properties \em top_field_first when not progressive, whether interlace field order is top-field-first, defaults to 0.
+ *   Set this to -1 if the consumer does not care about the field order.
  * \properties \em mlt_image_format the image format to request in rendering threads, defaults to yuv422
  * \properties \em mlt_audio_format the audio format to request in rendering threads, defaults to S16
  */

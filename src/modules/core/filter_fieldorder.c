@@ -74,7 +74,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		}
 
 		// Correct field order if needed
-		if ( mlt_properties_get_int( properties, "top_field_first" ) != tff &&
+		if ( tff != -1 &&
+		     mlt_properties_get_int( properties, "top_field_first" ) != tff &&
 		     mlt_properties_get( properties, "progressive" ) &&
 		     mlt_properties_get_int( properties, "progressive" ) == 0 )
 		{
