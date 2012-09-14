@@ -65,7 +65,6 @@ struct consumer_sdl_s
 	SDL_Surface *sdl_screen;
 	SDL_Overlay *sdl_overlay;
 	SDL_Rect rect;
-	uint8_t *buffer;
 	int bpp;
 };
 
@@ -123,6 +122,9 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 
 		// Default audio buffer
 		mlt_properties_set_int( this->properties, "audio_buffer", 2048 );
+
+		// Tell render thread we prefer yuv420p
+		mlt_properties_set( this->properties, "mlt_image_format", "yuv420p" );
 
 		// Ensure we don't join on a non-running object
 		this->joined = 1;
@@ -497,7 +499,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
 
-	mlt_image_format vfmt = mlt_image_yuv422;
+	mlt_image_format vfmt = mlt_image_yuv420p;
 	int width = this->width, height = this->height;
 	uint8_t *image;
 	int changed = 0;
@@ -645,16 +647,21 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay == NULL )
 		{
 			SDL_SetClipRect( this->sdl_screen, &this->rect );
-			this->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, this->sdl_screen );
+			this->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YV12_OVERLAY, this->sdl_screen );
 		}
 
 		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay != NULL )
 		{
-			this->buffer = this->sdl_overlay->pixels[ 0 ];
 			if ( SDL_LockYUVOverlay( this->sdl_overlay ) >= 0 )
 			{
 				if ( image != NULL )
-					memcpy( this->buffer, image, width * height * 2 );
+				{
+					int img_sz = width * height;
+					int quarter_img_sz = width * height / 4;
+					memcpy( this->sdl_overlay->pixels[ 0 ], image, img_sz );
+					memcpy( this->sdl_overlay->pixels[ 2 ], image + img_sz, quarter_img_sz );
+					memcpy( this->sdl_overlay->pixels[ 1 ], image + img_sz + quarter_img_sz, quarter_img_sz );
+				}
 				SDL_UnlockYUVOverlay( this->sdl_overlay );
 				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
 			}
