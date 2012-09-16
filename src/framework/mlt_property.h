@@ -26,7 +26,8 @@
 
 #include "mlt_types.h"
 
-#ifdef HAVE_SYS_PARAM_H
+#if defined(__FreeBSD__)
+/* This header has existed since 1994 and defines __FreeBSD_version below. */
 #include <sys/param.h>
 #endif
 

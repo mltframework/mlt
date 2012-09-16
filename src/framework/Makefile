@@ -18,11 +18,6 @@ NAME = libmlt$(LIBSUF)
 TARGET = $(NAME).$(version)
 SONAME = $(NAME).$(soversion)
 SHFLAGS += -Wl,-soname,$(SONAME)
-	ifeq ($(targetos), FreeBSD)
-		ifdef HAVE_SYS_PARAM_H
-			CFLAGS += -DHAVE_SYS_PARAM_H
-		endif
-	endif
 endif
 
 OBJS = mlt_frame.o \
