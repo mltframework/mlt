@@ -244,6 +244,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			if ( !error && !progressive )
 			{
 				// OK, now we know we have work to do and can request the image in our format
+				while( mlt_deque_pop_back( MLT_FRAME_IMAGE_STACK( frame ) ) );
 				*format = mlt_image_yuv422;
 				error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
