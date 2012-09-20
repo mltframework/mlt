@@ -1539,13 +1539,13 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	struct _xmlParserCtxt *xmlcontext;
 	int well_formed = 0;
 	char *filename = NULL;
-	int info = strcmp( id, "xml-string" ) ? 0 : 1;
+	int is_filename = strcmp( id, "xml-string" );
 
 	// Strip file:// prefix
 	if ( data && strlen( data ) >= 7 && strncmp( data, "file://", 7 ) == 0 )
 		data += 7;
 
-	if ( data == NULL || !strcmp( data, "" ) || ( info == 0 && !file_exists( data ) ) )
+	if ( data == NULL || !strcmp( data, "" ) || ( is_filename && !file_exists( data ) ) )
 		return NULL;
 
 	context = calloc( 1, sizeof( struct deserialise_context_s ) );
@@ -1560,7 +1560,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 
 	// Decode URL and parse parameters
 	mlt_properties_set( context->producer_map, "root", "" );
-	if ( info == 0 )
+	if ( is_filename )
 	{
 		filename = strdup( data );
 		parse_url( context->params, url_decode( filename, data ) );
@@ -1601,7 +1601,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	xmlSubstituteEntitiesDefault( 1 );
 	// This is used to facilitate entity substitution in the SAX parser
 	context->entity_doc = xmlNewDoc( _x("1.0") );
-	if ( info == 0 )
+	if ( is_filename )
 		xmlcontext = xmlCreateFileParserCtxt( filename );
 	else
 		xmlcontext = xmlCreateMemoryParserCtxt( data, strlen( data ) );
@@ -1646,7 +1646,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 
 	// Setup the second pass
 	context->pass ++;
-	if ( info == 0 )
+	if ( is_filename )
 		xmlcontext = xmlCreateFileParserCtxt( filename );
 	else
 		xmlcontext = xmlCreateMemoryParserCtxt( data, strlen( data ) );
@@ -1734,7 +1734,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		if ( getenv( "MLT_XML_DEEP" ) == NULL )
 		{
 			// Now assign additional properties
-			if ( info == 0 && !mlt_properties_get( properties, "resource" ) )
+			if ( is_filename && mlt_service_identify( service ) == tractor_type )
 				mlt_properties_set( properties, "resource", data );
 
 			// This tells consumer_xml not to deep copy
