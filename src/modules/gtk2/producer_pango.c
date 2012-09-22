@@ -169,7 +169,8 @@ mlt_producer producer_pango_init( const char *filename )
 			char *markup = copy;
 			if ( strstr( markup, "/+" ) )
 				markup = strstr( markup, "/+" ) + 2;
-			( *strrchr( markup, '.' ) ) = '\0';
+			if ( strrchr( markup, '.' ) )
+				( *strrchr( markup, '.' ) ) = '\0';
 			while ( strchr( markup, '~' ) )
 				( *strchr( markup, '~' ) ) = '\n';
 			mlt_properties_set( properties, "resource", filename );
