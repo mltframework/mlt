@@ -416,7 +416,10 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 		int interp = GDK_INTERP_BILINEAR;
 
-		if ( strcmp( interps, "nearest" ) == 0 )
+		if ( !interps ) {
+			// Keep bilinear by default
+		}
+		else if ( strcmp( interps, "nearest" ) == 0 )
 			interp = GDK_INTERP_NEAREST;
 		else if ( strcmp( interps, "tiles" ) == 0 )
 			interp = GDK_INTERP_TILES;
