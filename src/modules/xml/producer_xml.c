@@ -1734,8 +1734,17 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		if ( getenv( "MLT_XML_DEEP" ) == NULL )
 		{
 			// Now assign additional properties
-			if ( is_filename && mlt_service_identify( service ) == tractor_type )
+			if ( is_filename && (
+				mlt_service_identify( service ) == tractor_type ||
+				mlt_service_identify( service ) == playlist_type ||
+				mlt_service_identify( service ) == multitrack_type ) )
+			{
+				mlt_properties_set_int( properties, "_original_type",
+					mlt_service_identify( service ) );
+				mlt_properties_set( properties, "_original_resource",
+					mlt_properties_get( properties, "resource" ) );
 				mlt_properties_set( properties, "resource", data );
+			}
 
 			// This tells consumer_xml not to deep copy
 			mlt_properties_set( properties, "xml", "was here" );
