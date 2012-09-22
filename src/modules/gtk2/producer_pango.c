@@ -157,6 +157,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set_int( properties, "seekable", 1 );
 
 		if ( filename == NULL || ( filename && ( !strcmp( filename, "" )
+			|| strstr( filename, "<producer>" )
 			// workaround for old kdenlive countdown generator
 			|| strstr( filename, "&lt;producer&gt;" ) ) ) )
 		{
