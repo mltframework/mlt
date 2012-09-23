@@ -1,6 +1,7 @@
 f=mkv
 acodec=flac
 vcodec=ffv1
+threads=1
 
 meta.preset.extension=mkv
 meta.preset.note=with FLAC audio in Matroska container
