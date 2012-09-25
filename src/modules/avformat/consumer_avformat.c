@@ -322,6 +322,38 @@ static int consumer_start( mlt_consumer consumer )
 			profile->height = height;
 		}
 
+		if ( mlt_properties_get( properties, "aspect" ) )
+		{
+			// "-aspect" on ffmpeg command line is display aspect ratio
+			double ar = mlt_properties_get_double( properties, "aspect" );
+			AVRational rational = av_d2q( ar, 255 );
+
+			// Update the profile and properties as well since this is an alias
+			// for mlt properties that correspond to profile settings
+			mlt_properties_set_int( properties, "display_aspect_num", rational.num );
+			mlt_properties_set_int( properties, "display_aspect_den", rational.den );
+			if ( profile )
+			{
+				profile->display_aspect_num = rational.num;
+				profile->display_aspect_den = rational.den;
+				mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile ) );
+			}
+
+			// Now compute the sample aspect ratio
+			rational = av_d2q( ar * height / width, 255 );
+
+			// Update the profile and properties as well since this is an alias
+			// for mlt properties that correspond to profile settings
+			mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
+			mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+			if ( profile )
+			{
+				profile->sample_aspect_num = rational.num;
+				profile->sample_aspect_den = rational.den;
+				mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
+			}
+		}
+
 		// Handle the ffmpeg command line "-r" property for frame rate
 		if ( mlt_properties_get( properties, "r" ) )
 		{
@@ -801,33 +833,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		{
 			// "-aspect" on ffmpeg command line is display aspect ratio
 			double ar = mlt_properties_get_double( properties, "aspect" );
-			AVRational rational = av_d2q( ar, 255 );
-
-			// Update the profile and properties as well since this is an alias 
-			// for mlt properties that correspond to profile settings
-			mlt_properties_set_int( properties, "display_aspect_num", rational.num );
-			mlt_properties_set_int( properties, "display_aspect_den", rational.den );
-			mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
-			if ( profile )
-			{
-				profile->display_aspect_num = rational.num;
-				profile->display_aspect_den = rational.den;
-				mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile ) );
-			}
-
-			// Now compute the sample aspect ratio
-			rational = av_d2q( ar * c->height / c->width, 255 );
-			c->sample_aspect_ratio = rational;
-			// Update the profile and properties as well since this is an alias 
-			// for mlt properties that correspond to profile settings
-			mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
-			mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
-			if ( profile )
-			{
-				profile->sample_aspect_num = rational.num;
-				profile->sample_aspect_den = rational.den;
-				mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
-			}
+			c->sample_aspect_ratio = av_d2q( ar * c->height / c->width, 255 );
 		}
 		else
 		{
