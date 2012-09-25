@@ -239,23 +239,33 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		}
 		if ( error || ( method > DEINTERLACE_NONE && method < DEINTERLACE_YADIF ) )
 		{
-			// Signal that we no longer need previous and next frames
 			mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
-			mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
-			
-			if ( error )
-				method = DEINTERLACE_ONEFIELD;
-			
+
 			// Get the current frame's image
-			error = mlt_frame_get_image( frame, image, format, width, height, writable );
+			int error2 = mlt_frame_get_image( frame, image, format, width, height, writable );
 			progressive = mlt_properties_get_int( properties, "progressive" );
-			if ( !error && !progressive )
+
+			if ( error )
+			{
+				method = DEINTERLACE_ONEFIELD;
+				// If YADIF requested, prev/next cancelled because some previous frames were progressive,
+				// but new frames are interlaced, then turn prev/next frames back on.
+				if ( !progressive )
+					mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 1 );
+			}
+			else
+			{
+				// Signal that we no longer need previous and next frames
+				mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
+			}
+			
+			if ( !error2 && !progressive )
 			{
 				// OK, now we know we have work to do and can request the image in our format
-				error = frame->convert_image( frame, image, format, mlt_image_yuv422 );
+				error2 = frame->convert_image( frame, image, format, mlt_image_yuv422 );
 
 				// Check that we aren't already progressive
-				if ( !error && *image && *format == mlt_image_yuv422 )
+				if ( !error2 && *image && *format == mlt_image_yuv422 )
 				{
 					// Deinterlace the image using one of the Xine deinterlacers
 					int image_size = *width * *height * 2;
