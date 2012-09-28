@@ -2272,7 +2272,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	if ( self->audio_index == INT_MAX )
 	{
 		index = 0;
-		index_max = context->nb_streams;
+		index_max = FFMIN( MAX_AUDIO_STREAMS, context->nb_streams );
 		*channels = self->total_channels;
 		*samples = *samples * FFMAX( self->max_frequency, *frequency ) / *frequency;
 		*frequency = FFMAX( self->max_frequency, *frequency );
@@ -2351,7 +2351,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			{
 				// Check if there is enough audio for all streams
 				got_audio = 1;
-				for ( index = 0; got_audio && index < context->nb_streams; index++ )
+				for ( index = 0; got_audio && index < index_max; index++ )
 					if ( ( self->audio_codec[ index ] && self->audio_used[ index ] < *samples ) || ignore[ index ] )
 						got_audio = 0;
 				if ( got_audio )
