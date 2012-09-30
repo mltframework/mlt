@@ -79,7 +79,7 @@ const char *avcodec_get_sample_fmt_name(int sample_fmt);
 #define POSITION_INITIAL (-2)
 #define POSITION_INVALID (-1)
 
-#define MAX_AUDIO_STREAMS (10)
+#define MAX_AUDIO_STREAMS (32)
 #define MAX_VDPAU_SURFACES (10)
 
 struct producer_avformat_s
