@@ -119,15 +119,6 @@ static int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **imag
 	if ( !previous_frame || !next_frame )
 		return 1;
 
-	// Some producers like pixbuf want rescale_width & _height, but will not get them if you request
-	// the previous image first. So, on the first iteration, we make the previous frame the same
-	// as the current frame.
-	if ( !mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "_notfirst" ) )
-	{
-		previous_frame = frame;
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES(filter), "_notfirst", 1 );
-	}
-
 	// Get the preceding frame's image
 	int error = mlt_frame_get_image( previous_frame, &previous_image, format, &previous_width, &previous_height, 0 );
 	int progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( previous_frame ), "progressive" );
@@ -229,6 +220,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		else if ( strcmp( method_str, "greedy" ) == 0 )
 			method = DEINTERLACE_GREEDY;
 
+		// Some producers like pixbuf want rescale_width & _height, but will not get them if you request
+		// the previous image first. So, on the first iteration, we use linearblend.
+		if ( ( method == DEINTERLACE_YADIF || method == DEINTERLACE_YADIF_NOSPATIAL ) &&
+			!mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "_notfirst" ) )
+		{
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES(filter), "_notfirst", 1 );
+			method = DEINTERLACE_LINEARBLEND;
+			error = 1;
+		}
+
 		if ( method == DEINTERLACE_YADIF )
 		{
 			error = deinterlace_yadif( frame, filter, image, format, width, height, YADIF_MODE_TEMPORAL_SPATIAL );
@@ -247,7 +248,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 			if ( error )
 			{
-				method = DEINTERLACE_ONEFIELD;
+				method = DEINTERLACE_LINEARBLEND;
 				// If YADIF requested, prev/next cancelled because some previous frames were progressive,
 				// but new frames are interlaced, then turn prev/next frames back on.
 				if ( !progressive )
@@ -258,14 +259,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				// Signal that we no longer need previous and next frames
 				mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
 			}
+			error = error2;
 			
-			if ( !error2 && !progressive )
+			if ( !error && !progressive )
 			{
 				// OK, now we know we have work to do and can request the image in our format
-				error2 = frame->convert_image( frame, image, format, mlt_image_yuv422 );
+				error = frame->convert_image( frame, image, format, mlt_image_yuv422 );
 
 				// Check that we aren't already progressive
-				if ( !error2 && *image && *format == mlt_image_yuv422 )
+				if ( !error && *image && *format == mlt_image_yuv422 )
 				{
 					// Deinterlace the image using one of the Xine deinterlacers
 					int image_size = *width * *height * 2;
