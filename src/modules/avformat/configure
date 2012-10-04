@@ -143,7 +143,7 @@ else
 		
 		if [ "$vdpau" = "true" ]
 		then
-			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC -I"$(pkg-config --cflags libavformat${avformat_suffix})" -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
+			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC $(pkg-config --cflags libavformat${avformat_suffix}) -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
 			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 		fi
 	else
