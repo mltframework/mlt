@@ -84,7 +84,8 @@ int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
 
 		// Push the get_image method
 		mlt_frame_push_get_image( *frame, producer_get_image );

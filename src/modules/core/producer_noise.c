@@ -146,7 +146,8 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 		// Aspect ratio is whatever it needs to be
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( this ), "aspect_ratio" ) );
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( this ) );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
