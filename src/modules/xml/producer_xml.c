@@ -160,8 +160,11 @@ static mlt_service context_pop_service( deserialise_context context, enum servic
 		if ( type != NULL )
 			*type = context->stack_types[ context->stack_service_size ];
 		// Set the service's profile and locale so mlt_property time-to-position conversions can get fps
-		mlt_properties_set_data( MLT_SERVICE_PROPERTIES( result ), "_profile", context->profile, 0, NULL, NULL );
-		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( result ), context->lc_numeric );
+		if ( result )
+		{
+			mlt_properties_set_data( MLT_SERVICE_PROPERTIES( result ), "_profile", context->profile, 0, NULL, NULL );
+			mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( result ), context->lc_numeric );
+		}
 	}
 	return result;
 }
