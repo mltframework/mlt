@@ -6,7 +6,7 @@ all clean:
 	for subdir in $$list; do \
 		if [ -x $$subdir/build -a ! -f .$$subdir -o $@ = clean ] ; \
 		then echo -n Building $$subdir... ; \
-			cd $$subdir && output=`./build $@ 2>&1` ; \
+			cd $$subdir && output=`CXXFLAGS="$(CXXFLAGS)" ./build $@ 2>&1` ; \
 			if [ $$? -eq 0 ] ; \
 			then echo OK && touch ../.$$subdir ; \
 			else echo $$output && exit 1 ; \

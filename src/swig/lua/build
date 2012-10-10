@@ -16,10 +16,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -lua mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -fPIC -DPIC -D_GNU_SOURCE -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
+	g++ -fPIC -DPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
 
 	# Create the module
-	g++ -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit $?
+	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit $?
 else
 	echo Lua not installed.
 	exit 1

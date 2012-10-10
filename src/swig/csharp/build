@@ -17,10 +17,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -csharp -dllimport libmltsharp -outdir src_swig -namespace Mlt mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -fPIC -D_GNU_SOURCE -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
+	g++ -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
 	
 	# Create the module
-	g++ -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmltsharp.so || exit $?
+	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmltsharp.so || exit $?
 
 	# Compile the library assembly
 	mcs -out:mlt-sharp.dll -target:library src_swig/*.cs

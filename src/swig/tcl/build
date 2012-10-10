@@ -16,10 +16,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -tcl mlt.i || exit 1
 
 	# Compile the wrapper
-	g++ -fPIC -D_GNU_SOURCE -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit 1
+	g++ -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit 1
 
 	# Create the module
-	g++ -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit 1
+	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit 1
 else
 	echo "Unable to locate tclsh."
 	exit 1

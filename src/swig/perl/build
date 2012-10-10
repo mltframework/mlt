@@ -6,5 +6,5 @@ then
 	exit 0
 fi
 
-perl Makefile.PL || exit 1
+CXXFLAGS="$CXXFLAGS" perl Makefile.PL || exit 1
 make

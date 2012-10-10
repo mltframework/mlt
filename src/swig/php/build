@@ -9,5 +9,5 @@ fi
 
 ln -sf ../mlt.i
 swig -c++ -I../../mlt++ -I../.. -php5 -noproxy mlt.i
-g++ -fPIC -DPIC -D_GNU_SOURCE -c -rdynamic -pthread -I../.. `php-config --includes` mlt_wrap.cpp
-g++ -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit $?
+g++ -fPIC -DPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. `php-config --includes` mlt_wrap.cpp
+g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit $?
