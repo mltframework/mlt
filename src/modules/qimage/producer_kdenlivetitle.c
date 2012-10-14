@@ -130,9 +130,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 		/* Set producer-specific frame properties */
-		mlt_profile profile = mlt_service_profile ( MLT_PRODUCER_SERVICE( producer ) ) ;
-		mlt_properties_set_int( properties, "progressive", ( profile ) ? profile->progressive : 1 );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
+		mlt_properties_pass_list( properties, producer_props, "progressive, aspect_ratio" );
 
 		/* Push the get_image method */
 		mlt_frame_push_get_image( *frame, producer_get_image );
@@ -169,7 +167,7 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
 		mlt_properties_set( properties, "resource", filename );
-		//mlt_properties_set_int( properties, "aspect_ratio", 1 );
+		mlt_properties_set_int( properties, "progressive", 1 );
 		read_xml(properties);
 		return producer;
 	}
