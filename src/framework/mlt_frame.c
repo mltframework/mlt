@@ -821,6 +821,8 @@ unsigned char *mlt_frame_get_waveform( mlt_frame self, int w, int h )
 
 	// Make an 8-bit buffer large enough to hold rendering
 	int size = w * h;
+	if ( size <= 0 )
+		return NULL;
 	unsigned char *bitmap = ( unsigned char* )mlt_pool_alloc( size );
 	if ( bitmap != NULL )
 		memset( bitmap, 0, size );
