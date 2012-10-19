@@ -114,8 +114,8 @@ else
 		else
 		    if [ -d "$kde_includedir" ]
 		    then
-			    echo "#define USE_KDE" >> config.h
-			    echo "USE_KDE=1" >> config.mak
+			    echo "#define USE_KDE3" >> config.h
+			    echo "USE_KDE3=1" >> config.mak
 			    echo "#define USE_QT3" >> config.h
 			    echo "USE_QT3=1" >> config.mak
 			    echo QTCXXFLAGS=-I$qimage_includedir -I$kde_includedir -DQT_THREAD_SUPPORT >> config.mak
@@ -143,6 +143,30 @@ else
 			touch ../disable-qimage
 		fi
 	fi
+
+	if [ "$qt4_found" != "" ]
+	then
+		# test if we have KDE4, required on some systems to get QImage extra formats (xcf, ...)
+		if [ "$kde_includedir" = "" ]
+		then
+		      if [ -f "/usr/include/kcomponentdata.h" ]
+		      then
+			      kde_includedir="/usr/include"
+		      elif [ -f "/usr/local/include/kcomponentdata.h" ]
+		      then
+			      kde_includedir="/usr/local/include"
+		      fi
+		fi
+		if [ -d "$kde_includedir" ]
+		then
+			echo "KDE version 4.x detected, will enable extra image formats"
+			echo "#define USE_KDE4" >> config.h
+			echo "USE_KDE4=1" >> config.mak
+			echo KDECXXFLAGS=-I$kde_includedir >> config.mak
+			echo KDELIBS=-lkdecore >> config.mak
+		fi
+	fi
+
 	[ "$gpl3" = "true" ] && echo GPL3=1 >> config.mak
 	exit 0
 fi

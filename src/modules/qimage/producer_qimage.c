@@ -48,10 +48,10 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 		// Get the properties interface
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
 	
-		// Callback registration
-#ifdef USE_KDE
+		// Initialize KDE image plugins
 		init_qimage();
-#endif
+
+		// Callback registration
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
 
