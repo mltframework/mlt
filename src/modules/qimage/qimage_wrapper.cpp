@@ -27,13 +27,15 @@
 #include <qimage.h>
 #include <qmutex.h>
 
-#ifdef USE_KDE
+#ifdef USE_KDE3
 #include <kinstance.h>
 #include <kimageio.h>
 #endif
-
 #endif
 
+#ifdef USE_KDE4
+#include <kcomponentdata.h>
+#endif
 
 #ifdef USE_QT4
 #include <QtGui/QImage>
@@ -55,7 +57,9 @@ extern "C" {
 #include <framework/mlt_pool.h>
 #include <framework/mlt_cache.h>
 
-#ifdef USE_KDE
+#ifdef USE_KDE4
+static KComponentData *instance = 0L;
+#elif USE_KDE3
 static KInstance *instance = 0L;
 #endif
 
@@ -64,21 +68,27 @@ static void qimage_delete( void *data )
 	QImage *image = ( QImage * )data;
 	delete image;
 	image = NULL;
-#ifdef USE_KDE
+#if defined(USE_KDE3) || defined(USE_KDE4) 
 	if (instance) delete instance;
 	instance = 0L;
 #endif
+
 }
 
-#ifdef USE_KDE
 void init_qimage()
 {
-	if (!instance) {
-	    instance = new KInstance("qimage_prod");
+#ifdef USE_KDE4
+	if ( !instance ) {
+	    instance = new KComponentData( "qimage_prod" );
+	}
+#elif defined(USE_KDE3)
+	if ( !instance ) {
+	    instance = new KInstance( "qimage_prod" );
 	    KImageIO::registerFormats();
 	}
-}
 #endif
+  
+}
 
 static QImage* reorient_with_exif( producer_qimage self, int image_idx, QImage *qimage )
 {
