@@ -891,6 +891,23 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	/* Check to see if somebody else has given us bounds */
 	struct mlt_geometry_item_s *bounds = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "bounds", NULL );
 
+	if ( !bounds )
+	{
+		char *property = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "bounding" );
+		if ( property )
+		{
+			mlt_geometry geometry = mlt_geometry_init( );
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
+			mlt_geometry_parse( geometry, property, 0, profile->width, profile->height );
+			if ( geometry )
+			{
+				bounds = calloc( 1, sizeof(*bounds) );
+				mlt_properties_set_data( MLT_FILTER_PROPERTIES(filter), "bounds", bounds, sizeof(*bounds), free, NULL );
+				mlt_geometry_fetch( geometry, bounds, 0 );
+			}
+		}
+	}
+
 	if( bounds != NULL ) {
 		// translate pixel units (from bounds) to macroblock units
 		// make sure whole macroblock stays within bounds
