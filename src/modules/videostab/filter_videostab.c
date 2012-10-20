@@ -72,8 +72,8 @@ static void serialize_vectors( videostab self, mlt_position length )
 
 		// Put the analysis results in a property
 		mlt_geometry_set_length( g, length );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( self->parent ), "vectors", mlt_geometry_serialise( g ) );
-		mlt_geometry_close( g );
+		mlt_properties_set_data( MLT_FILTER_PROPERTIES( self->parent ), "vectors", g, 0,
+			(mlt_destructor) mlt_geometry_close, (mlt_serialiser) mlt_geometry_serialise );
 	}
 }
 

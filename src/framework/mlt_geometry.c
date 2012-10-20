@@ -689,7 +689,7 @@ char *mlt_geometry_serialise( mlt_geometry self )
 			free( g->data );
 		g->data = ret;
 	}
-	return ret;
+	return strdup( ret );
 }
 
 // Close the geometry

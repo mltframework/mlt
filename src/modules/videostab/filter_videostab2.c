@@ -48,8 +48,8 @@ static void serialize_vectors( videostab2_data* self, mlt_position length )
 		mlt_position i;
 
 		// Initialize geometry item
-		item.key = item.f[0] = item.f[1] = 1;
-		item.f[2] = item.f[3] = item.f[4] = 1;
+		item.key = item.f[0] = item.f[1] = item.f[2] = item.f[3] = 1;
+		item.f[4] = 0;
 
 		tlist* transform_data =self->stab->transs;
 		for ( i = 0; i < length; i++ )
@@ -72,8 +72,8 @@ static void serialize_vectors( videostab2_data* self, mlt_position length )
 
 		// Put the analysis results in a property
 		mlt_geometry_set_length( g, length );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( (mlt_filter) self->parent ), "vectors", mlt_geometry_serialise( g ) );
-		mlt_geometry_close( g );
+		mlt_properties_set_data( MLT_FILTER_PROPERTIES( (mlt_filter) self->parent ), "vectors", g, 0,
+			(mlt_destructor) mlt_geometry_close, (mlt_serialiser) mlt_geometry_serialise );
 	}
 }
 // scale zoom implements the factor that the vetcors must be scaled since the vector is calulated for real with, now we need it for (scaled)width
