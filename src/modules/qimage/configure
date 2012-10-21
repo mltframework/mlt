@@ -162,7 +162,8 @@ else
 			echo "#define USE_KDE4" >> config.h
 			echo "USE_KDE4=1" >> config.mak
 			echo KDECXXFLAGS=-I$kde_includedir >> config.mak
-			echo KDELIBS=-L$kde_libdir -lkdecore >> config.mak
+			# the -L with kde4/devel is for Fedora
+			echo KDELIBS=-L$kde_libdir -L${kde_libdir}/kde4/devel -lkdecore >> config.mak
 		fi
 	fi
 
