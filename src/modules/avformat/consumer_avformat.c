@@ -532,58 +532,21 @@ static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
 	return AV_SAMPLE_FMT_NONE;
 }
 
-static int16_t* s16_to_s16p( int samples, int channels, int16_t* audio )
+static uint8_t* interleaved_to_planar( int samples, int channels, uint8_t* audio, int bytes_per_sample )
 {
-	int size = mlt_audio_format_size( mlt_audio_s16, samples, channels );
-	int16_t *buffer = mlt_pool_alloc( size );
-	int16_t *p = buffer;
+	int size = samples * channels * bytes_per_sample;
+	uint8_t *buffer = mlt_pool_alloc( size );
+	uint8_t *p = buffer;
 	int c;
 	for ( c = 0; c < channels; c++ )
 	{
-		int16_t *q = audio + c;
+		uint8_t *q = audio + c * bytes_per_sample;
 		int i = samples + 1;
 		while ( --i )
 		{
-			*p++ = *q;
-			q += channels;
-		}
-	}
-	return buffer;
-}
-
-static int32_t* s32le_to_s32p( int samples, int channels, int32_t* audio )
-{
-	int size = mlt_audio_format_size( mlt_audio_s32, samples, channels );
-	int32_t *buffer = mlt_pool_alloc( size );
-	int32_t *p = buffer;
-	int c;
-	for ( c = 0; c < channels; c++ )
-	{
-		int32_t *q = audio + c;
-		int i = samples + 1;
-		while ( --i )
-		{
-			*p++ = *q;
-			q += channels;
-		}
-	}
-	return buffer;
-}
-
-static float* f32le_to_fltp( int samples, int channels, float* audio )
-{
-	int size = mlt_audio_format_size( mlt_audio_float, samples, channels );
-	float *buffer = mlt_pool_alloc( size );
-	float *p = buffer;
-	int c;
-	for ( c = 0; c < channels; c++ )
-	{
-		float *q = audio + c;
-		int i = samples + 1;
-		while ( --i )
-		{
-			*p++ = *q;
-			q += channels;
+			memcpy( p, q, bytes_per_sample );
+			p += bytes_per_sample;
+			q += channels * bytes_per_sample;
 		}
 	}
 	return buffer;
@@ -1663,11 +1626,11 @@ static void *consumer_thread( void *arg )
 							void* p = audio_buf_1;
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
 							if ( codec->sample_fmt == AV_SAMPLE_FMT_FLTP )
-								p = f32le_to_fltp( samples, channels, p );
+								p = interleaved_to_planar( samples, channels, p, sizeof( float ) );
 							else if ( codec->sample_fmt == AV_SAMPLE_FMT_S16P )
-								p = s16_to_s16p( samples, channels, p );
+								p = interleaved_to_planar( samples, channels, p, sizeof( int16_t ) );
 							else if ( codec->sample_fmt == AV_SAMPLE_FMT_S32P )
-								p = s32le_to_s32p( samples, channels, p );
+								p = interleaved_to_planar( samples, channels, p, sizeof( int32_t ) );
 #endif
 							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, p );
 
