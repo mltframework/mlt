@@ -302,14 +302,13 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
         /* modify the frame with the current geometry */
 	mlt_frame_push_service( frame, this);
 	mlt_frame_push_get_image( frame, attach_boundry_to_frame );
-
-
+	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
 
 	/* apply the motion estimation filter */
-	mlt_filter motion_est = mlt_properties_get_data( MLT_FILTER_PROPERTIES(this), "_motion_est", NULL ); 
+	mlt_filter motion_est = mlt_properties_get_data( properties, "_motion_est", NULL ); 
+	/* Pass motion_est properties */
+	mlt_properties_pass( MLT_FILTER_PROPERTIES( motion_est ), properties, "motion_est." );
 	mlt_filter_process( motion_est, frame);
-
-
 
 	/* calculate the new geometry based on the motion */
 	mlt_frame_push_service( frame, this);
@@ -319,12 +318,12 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	/* visualize the motion vectors */
 	if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(this), "debug" ) == 1 )
 	{
-		mlt_filter vismv = mlt_properties_get_data( MLT_FILTER_PROPERTIES(this), "_vismv", NULL );
+		mlt_filter vismv = mlt_properties_get_data( properties, "_vismv", NULL );
 		if( vismv == NULL )
 		{
 			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
 			vismv = mlt_factory_filter( profile, "vismv", NULL );
-			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_vismv", vismv, 0, (mlt_destructor)mlt_filter_close, NULL );
+			mlt_properties_set_data( properties, "_vismv", vismv, 0, (mlt_destructor)mlt_filter_close, NULL );
 		}
 
 		mlt_filter_process( vismv, frame );
@@ -332,12 +331,12 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 	if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(this), "obscure" ) == 1 )
 	{
-		mlt_filter obscure = mlt_properties_get_data( MLT_FILTER_PROPERTIES(this), "_obscure", NULL );
+		mlt_filter obscure = mlt_properties_get_data( properties, "_obscure", NULL );
 		if( obscure == NULL )
 		{
 			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
 			obscure = mlt_factory_filter( profile, "obscure", NULL );
-			mlt_properties_set_data( MLT_FILTER_PROPERTIES(this), "_obscure", obscure, 0, (mlt_destructor)mlt_filter_close, NULL );
+			mlt_properties_set_data( properties, "_obscure", obscure, 0, (mlt_destructor)mlt_filter_close, NULL );
 		}
 
 		mlt_filter_process( obscure, frame );
