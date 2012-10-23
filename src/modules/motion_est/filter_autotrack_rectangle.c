@@ -180,8 +180,36 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		init_arrows( format, *width, *height );
 		draw_rectangle_outline(*image, boundry.x, boundry.y, boundry.w, boundry.h, 100);
-	}        
+	}
 
+	if( mlt_properties_get_int( filter_properties, "_serialize" ) == 1 )
+	{
+		// Add the vector change to the list
+		mlt_geometry key_frames = mlt_properties_get_data( filter_properties, "motion_vector_list", NULL );
+		if ( !key_frames )
+		{
+			key_frames = mlt_geometry_init();
+			mlt_properties_set_data( filter_properties, "motion_vector_list", key_frames, 0,
+			                         (mlt_destructor) mlt_geometry_close, (mlt_serialiser) mlt_geometry_serialise );
+			if ( key_frames )
+				mlt_geometry_set_length( key_frames, mlt_filter_get_length2( filter, frame ) );
+		}
+		if ( key_frames )
+		{
+			struct mlt_geometry_item_s item;
+			item.frame = (int) mlt_frame_get_position( frame );
+			item.key = 1;
+			item.x = boundry.x;
+			item.y = boundry.y;
+			item.w = boundry.w;
+			item.h = boundry.h;
+			item.mix = 0;
+			item.f[0] = item.f[1] = item.f[2] = item.f[3] = 1;
+			item.f[4] = 0;
+			mlt_geometry_insert( key_frames, &item );
+		}
+	}
+	
 	if( mlt_properties_get_int( filter_properties, "obscure" ) == 1 )
 	{
 		mlt_filter obscure = mlt_properties_get_data( filter_properties, "_obscure", NULL );
