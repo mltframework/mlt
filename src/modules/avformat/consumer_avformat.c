@@ -474,9 +474,9 @@ static int get_mlt_audio_format( int av_sample_fmt )
 		return mlt_audio_f32le;
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
 	case AV_SAMPLE_FMT_S32P:
-		return mlt_audio_s32;
+		return mlt_audio_s32le;
 	case AV_SAMPLE_FMT_FLTP:
-		return mlt_audio_float;
+		return mlt_audio_f32le;
 #endif
 	default:
 		return mlt_audio_s16;
@@ -518,6 +518,7 @@ static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
 		case AV_SAMPLE_FMT_S32:
 		case AV_SAMPLE_FMT_FLT:
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+		case AV_SAMPLE_FMT_S16P:
 		case AV_SAMPLE_FMT_S32P:
 		case AV_SAMPLE_FMT_FLTP:
 #endif
@@ -529,6 +530,63 @@ static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
 	mlt_log_error( properties, "audio codec sample_fmt not compatible" );
 
 	return AV_SAMPLE_FMT_NONE;
+}
+
+static int16_t* s16_to_s16p( int samples, int channels, int16_t* audio )
+{
+	int size = mlt_audio_format_size( mlt_audio_s16, samples, channels );
+	int16_t *buffer = mlt_pool_alloc( size );
+	int16_t *p = buffer;
+	int c;
+	for ( c = 0; c < channels; c++ )
+	{
+		int16_t *q = audio + c;
+		int i = samples + 1;
+		while ( --i )
+		{
+			*p++ = *q;
+			q += channels;
+		}
+	}
+	return buffer;
+}
+
+static int32_t* s32le_to_s32p( int samples, int channels, int32_t* audio )
+{
+	int size = mlt_audio_format_size( mlt_audio_s32, samples, channels );
+	int32_t *buffer = mlt_pool_alloc( size );
+	int32_t *p = buffer;
+	int c;
+	for ( c = 0; c < channels; c++ )
+	{
+		int32_t *q = audio + c;
+		int i = samples + 1;
+		while ( --i )
+		{
+			*p++ = *q;
+			q += channels;
+		}
+	}
+	return buffer;
+}
+
+static float* f32le_to_fltp( int samples, int channels, float* audio )
+{
+	int size = mlt_audio_format_size( mlt_audio_float, samples, channels );
+	float *buffer = mlt_pool_alloc( size );
+	float *p = buffer;
+	int c;
+	for ( c = 0; c < channels; c++ )
+	{
+		float *q = audio + c;
+		int i = samples + 1;
+		while ( --i )
+		{
+			*p++ = *q;
+			q += channels;
+		}
+	}
+	return buffer;
 }
 
 /** Add an audio output stream
@@ -1081,7 +1139,6 @@ static void write_transmitter( mlt_listener listener, mlt_properties owner, mlt_
 	listener( owner, service, (uint8_t*) args[0], (int) args[1] );
 }
 
-
 /** The main thread - the argument is simply the consumer.
 */
 
@@ -1603,7 +1660,23 @@ static void *consumer_thread( void *arg )
 						// Optimized for single track and no channel remap
 						if ( !audio_st[1] && !mlt_properties_count( frame_meta_properties ) )
 						{
-							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, (short*) audio_buf_1 );
+							void* p = audio_buf_1;
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+							if ( codec->sample_fmt == AV_SAMPLE_FMT_FLTP )
+								p = f32le_to_fltp( samples, channels, p );
+							else if ( codec->sample_fmt == AV_SAMPLE_FMT_S16P )
+								p = s16_to_s16p( samples, channels, p );
+							else if ( codec->sample_fmt == AV_SAMPLE_FMT_S32P )
+								p = s32le_to_s32p( samples, channels, p );
+#endif
+							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, p );
+
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+							if ( codec->sample_fmt == AV_SAMPLE_FMT_FLTP
+							     || codec->sample_fmt == AV_SAMPLE_FMT_S16P
+							     || codec->sample_fmt == AV_SAMPLE_FMT_S32P )
+								mlt_pool_release( p );
+#endif
 						}
 						else
 						{
