@@ -117,6 +117,7 @@ struct producer_avformat_s
 	double resample_factor;
 	mlt_cache image_cache;
 	int colorspace;
+	int full_luma;
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
 	mlt_deque apackets;
@@ -1245,11 +1246,10 @@ static mlt_image_format pick_format( enum PixelFormat pix_fmt )
 	}
 }
 
-static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
-	mlt_image_format *format, int width, int height, int colorspace, uint8_t **alpha )
+static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
+	mlt_image_format *format, int width, int height, uint8_t **alpha )
 {
 #ifdef SWSCALE
-	int full_range = -1;
 	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
 
 #ifdef USE_MMX
@@ -1289,7 +1289,7 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		set_luma_transfer( context, colorspace, full_range );
+		set_luma_transfer( context, self->colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1300,7 +1300,7 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
-		set_luma_transfer( context, colorspace, full_range );
+		set_luma_transfer( context, self->colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1311,7 +1311,7 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		set_luma_transfer( context, colorspace, full_range );
+		set_luma_transfer( context, self->colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1322,7 +1322,7 @@ static void convert_image( AVFrame *frame, uint8_t *buffer, int pix_fmt,
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		set_luma_transfer( context, colorspace, full_range );
+		set_luma_transfer( context, self->colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1524,13 +1524,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
-				convert_image( (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, self->colorspace, &alpha );
+				convert_image( self, (AVFrame*) &picture, *buffer,
+					PIX_FMT_YUV420P, format, *width, *height, &alpha );
 			}
 			else
 #endif
-			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
-				format, *width, *height, self->colorspace, &alpha );
+			convert_image( self, self->av_frame, *buffer, codec_context->pix_fmt,
+				format, *width, *height, &alpha );
 			got_picture = 1;
 		}
 	}
@@ -1687,8 +1687,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
 							if ( status == VDP_STATUS_OK )
 							{
-								convert_image( self->av_frame, *buffer, PIX_FMT_YUV420P,
-									format, *width, *height, self->colorspace, &alpha );
+								convert_image( self, self->av_frame, *buffer, PIX_FMT_YUV420P,
+									format, *width, *height, &alpha );
 							}
 							else
 							{
@@ -1704,8 +1704,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 #endif
-					convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
-						format, *width, *height, self->colorspace, &alpha );
+					convert_image( self, self->av_frame, *buffer, codec_context->pix_fmt,
+						format, *width, *height, &alpha );
 					self->top_field_first |= self->av_frame->top_field_first;
 					self->current_position = int_position;
 				}
@@ -1753,13 +1753,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
-				convert_image( (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, self->colorspace, &alpha );
+				convert_image( self, (AVFrame*) &picture, *buffer,
+					PIX_FMT_YUV420P, format, *width, *height, &alpha );
 			}
 			else
 #endif
-			convert_image( self->av_frame, *buffer, codec_context->pix_fmt,
-				format, *width, *height, self->colorspace, &alpha );
+			convert_image( self, self->av_frame, *buffer, codec_context->pix_fmt,
+				format, *width, *height, &alpha );
 			got_picture = 1;
 		}
 	}
@@ -1978,6 +1978,18 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #endif
 		// Let apps get chosen colorspace
 		mlt_properties_set_int( properties, "meta.media.colorspace", self->colorspace );
+
+		self->full_luma = -1;
+#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(72<<8)+2)
+		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );
+		if ( codec_context->color_range == AVCOL_RANGE_JPEG )
+			self->full_luma = 1;
+#endif
+		if ( mlt_properties_get( properties, "force_full_luma" ) )
+			self->full_luma = mlt_properties_get_int( properties, "force_full_luma" );
+		else if ( mlt_properties_get( properties, "set.force_full_luma" ) )
+			self->full_luma = mlt_properties_get_int( properties, "set.force_full_luma" );
+		mlt_properties_set( properties, "set.force_full_luma", NULL );
 	}
 	return self->video_codec && self->video_index > -1;
 }
