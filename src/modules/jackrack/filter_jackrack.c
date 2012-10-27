@@ -191,7 +191,7 @@ static void initialise_jack_ports( mlt_properties properties )
 		}
 	}
 	
-	// Start Jack processing - required before registering ports
+	// Start Jack processing
 	pthread_mutex_lock( &g_activate_mutex );
 	jack_activate( jack_client );
 	pthread_mutex_unlock( &g_activate_mutex  );
