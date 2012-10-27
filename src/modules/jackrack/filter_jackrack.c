@@ -166,11 +166,6 @@ static void initialise_jack_ports( mlt_properties properties )
 		sizeof( float *) * channels, mlt_pool_release, NULL );
 	mlt_properties_set_data( properties, "jack_input_buffers", jack_input_buffers,
 		sizeof( float *) * channels, mlt_pool_release, NULL );
-
-	// Start Jack processing - required before registering ports
-	pthread_mutex_lock( &g_activate_mutex );
-	jack_activate( jack_client );
-	pthread_mutex_unlock( &g_activate_mutex  );
 	
 	// Register Jack ports
 	for ( i = 0; i < channels; i++ )
@@ -196,6 +191,11 @@ static void initialise_jack_ports( mlt_properties properties )
 		}
 	}
 	
+	// Start Jack processing - required before registering ports
+	pthread_mutex_lock( &g_activate_mutex );
+	jack_activate( jack_client );
+	pthread_mutex_unlock( &g_activate_mutex  );
+
 	// Establish connections
 	for ( i = 0; i < channels; i++ )
 	{
