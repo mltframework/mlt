@@ -43,6 +43,18 @@ extern mlt_producer producer_avformat_init( mlt_profile profile, const char *ser
 #include <libavcodec/opt.h>
 #endif
 
+#if LIBAVUTIL_VERSION_INT < ((51<<16)+(12<<8)+0)
+#define AV_OPT_TYPE_FLAGS    FF_OPT_TYPE_FLAGS
+#define AV_OPT_TYPE_INT      FF_OPT_TYPE_INT
+#define AV_OPT_TYPE_INT64    FF_OPT_TYPE_INT64
+#define AV_OPT_TYPE_DOUBLE   FF_OPT_TYPE_DOUBLE
+#define AV_OPT_TYPE_FLOAT    FF_OPT_TYPE_FLOAT
+#define AV_OPT_TYPE_STRING   FF_OPT_TYPE_STRING
+#define AV_OPT_TYPE_RATIONAL FF_OPT_TYPE_RATIONAL
+#define AV_OPT_TYPE_BINARY   FF_OPT_TYPE_BINARY
+#define AV_OPT_TYPE_CONST    FF_OPT_TYPE_CONST
+#endif
+
 // A static flag used to determine if avformat has been initialised
 static int avformat_initialised = 0;
 
@@ -130,21 +142,21 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 #endif
 	{
 		// If matches flags and not a binary option (not supported by Mlt)
-		if ( !( opt->flags & req_flags ) || ( opt->type == FF_OPT_TYPE_BINARY ) )
+		if ( !( opt->flags & req_flags ) || ( opt->type == AV_OPT_TYPE_BINARY ) )
             continue;
 
 		// Ignore constants (keyword values)
-		if ( !unit && opt->type == FF_OPT_TYPE_CONST )
+		if ( !unit && opt->type == AV_OPT_TYPE_CONST )
 			continue;
 		// When processing a groups of options (unit)...
 		// ...ignore non-constants
-		else if ( unit && opt->type != FF_OPT_TYPE_CONST )
+		else if ( unit && opt->type != AV_OPT_TYPE_CONST )
 			continue;
 		// ...ignore constants not in this group
-		else if ( unit && opt->type == FF_OPT_TYPE_CONST && strcmp( unit, opt->unit ) )
+		else if ( unit && opt->type == AV_OPT_TYPE_CONST && strcmp( unit, opt->unit ) )
 			continue;
 		// ..add constants to the 'values' sequence
-		else if ( unit && opt->type == FF_OPT_TYPE_CONST )
+		else if ( unit && opt->type == AV_OPT_TYPE_CONST )
 		{
 			char key[20];
 			snprintf( key, 20, "%d", mlt_properties_count( params ) );
@@ -179,11 +191,11 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 
         switch ( opt->type )
 		{
-		case FF_OPT_TYPE_FLAGS:
+		case AV_OPT_TYPE_FLAGS:
 			mlt_properties_set( p, "type", "string" );
 			mlt_properties_set( p, "format", "flags" );
 			break;
-		case FF_OPT_TYPE_INT:
+		case AV_OPT_TYPE_INT:
 			if ( !opt->unit )
 			{
 				mlt_properties_set( p, "type", "integer" );
@@ -201,7 +213,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 				mlt_properties_set( p, "format", "integer or keyword" );
 			}
 			break;
-		case FF_OPT_TYPE_INT64:
+		case AV_OPT_TYPE_INT64:
 			mlt_properties_set( p, "type", "integer" );
 			mlt_properties_set( p, "format", "64-bit" );
 			if ( opt->min != INT64_MIN )
@@ -212,7 +224,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set_int64( p, "default", (int64_t) opt->default_val.dbl );
 #endif
 			break;
-		case FF_OPT_TYPE_FLOAT:
+		case AV_OPT_TYPE_FLOAT:
 			mlt_properties_set( p, "type", "float" );
 			if ( opt->min != FLT_MIN && opt->min != -340282346638528859811704183484516925440.0 )
 				mlt_properties_set_double( p, "minimum", opt->min );
@@ -222,7 +234,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set_double( p, "default", opt->default_val.dbl );
 #endif
 			break;
-		case FF_OPT_TYPE_DOUBLE:
+		case AV_OPT_TYPE_DOUBLE:
 			mlt_properties_set( p, "type", "float" );
 			mlt_properties_set( p, "format", "double" );
 			if ( opt->min != DBL_MIN )
@@ -233,24 +245,24 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set_double( p, "default", opt->default_val.dbl );
 #endif
 			break;
-		case FF_OPT_TYPE_STRING:
+		case AV_OPT_TYPE_STRING:
 			mlt_properties_set( p, "type", "string" );
 #if LIBAVUTIL_VERSION_MAJOR > 50
 			mlt_properties_set( p, "default", opt->default_val.str );
 #endif
 			break;
-		case FF_OPT_TYPE_RATIONAL:
+		case AV_OPT_TYPE_RATIONAL:
 			mlt_properties_set( p, "type", "string" );
 			mlt_properties_set( p, "format", "numerator:denominator" );
 			break;
-		case FF_OPT_TYPE_CONST:
+		case AV_OPT_TYPE_CONST:
 		default:
 			mlt_properties_set( p, "type", "integer" );
 			mlt_properties_set( p, "format", "constant" );
 			break;
         }
 		// If the option belongs to a group (unit) and is not a constant (keyword value)
-		if ( opt->unit && opt->type != FF_OPT_TYPE_CONST )
+		if ( opt->unit && opt->type != AV_OPT_TYPE_CONST )
 		{
 			// Create a 'values' sequence.
 			mlt_properties values = mlt_properties_new();
