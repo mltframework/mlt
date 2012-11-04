@@ -28,9 +28,11 @@ parameters:
         
         If "%" in filename, the filename is used with sprintf to generate a
         filename from a counter for multi-file/flipbook animation. The file 
-        sequence ends when numeric discontinuity >100. If the file sequence
-        does not begin with the count of 100, you can also embed the number
-        of the first image between the "%" and a "d", "i", or "u".
+        sequence ends when numeric discontinuity >100.
+        
+        If the file sequence does not begin within the count of 100,
+        you can pass the begin property like a query string paramter, for
+        example: anim-%04d.png?begin=1000.
         
         If filename contains "/.all.", suffix with an extension to load all 
         pictures with matching extension from a directory.
