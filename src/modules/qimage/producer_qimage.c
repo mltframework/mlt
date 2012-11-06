@@ -102,7 +102,7 @@ static int load_svg( producer_qimage self, mlt_properties properties, const char
 	return result;
 }
 
-static int load_sequence( producer_qimage self, mlt_properties properties, const char *filename )
+static int load_sequence_sprintf( producer_qimage self, mlt_properties properties, const char *filename )
 {
 	int result = 0;
 
@@ -140,7 +140,7 @@ static int load_sequence( producer_qimage self, mlt_properties properties, const
 	return result;
 }
 
-static int load_sequence2( producer_qimage self, mlt_properties properties, const char *filename )
+static int load_sequence_deprecated( producer_qimage self, mlt_properties properties, const char *filename )
 {
 	int result = 0;
 	const char *start;
@@ -160,9 +160,32 @@ static int load_sequence2( producer_qimage self, mlt_properties properties, cons
 			s = calloc( 1, strlen( filename ) );
 			strncpy( s, filename, start - filename );
 			sprintf( s + ( start - filename ), ".%d%s", n, end );
-			result = load_sequence( self, properties, s );
+			result = load_sequence_sprintf( self, properties, s );
 			free( s );
 		}
+	}
+	return result;
+}
+
+static int load_sequence_querystring( producer_qimage self, mlt_properties properties, const char *filename )
+{
+	int result = 0;
+
+	// Obtain filenames with pattern and begin value in query string
+	if ( strchr( filename, '%' ) && strchr( filename, '?' ) )
+	{
+		// Split filename into pattern and query string
+		char *s = strdup( filename );
+		char *querystring = strrchr( s, '?' );
+		*querystring++ = '\0';
+		if ( strstr( filename, "begin=" ) )
+			mlt_properties_set( properties, "begin", strstr( querystring, "begin=" ) + 6 );
+		else if ( strstr( filename, "begin:" ) )
+			mlt_properties_set( properties, "begin", strstr( querystring, "begin:" ) + 6 );
+		// Coerce to an int value so serialization does not have any extra query string cruft
+		mlt_properties_set_int( properties, "begin", mlt_properties_get_int( properties, "begin" ) );
+		result = load_sequence_sprintf( self, properties, s );
+		free( s );
 	}
 	return result;
 }
@@ -195,8 +218,9 @@ static void load_filenames( producer_qimage self, mlt_properties properties )
 	self->filenames = mlt_properties_new( );
 
 	if (!load_svg( self, properties, filename ) &&
-		!load_sequence( self, properties, filename ) &&
-		!load_sequence2( self, properties, filename ) &&
+		!load_sequence_querystring( self, properties, filename ) &&
+		!load_sequence_sprintf( self, properties, filename ) &&
+		!load_sequence_deprecated( self, properties, filename ) &&
 		!load_folder( self, properties, filename ) )
 	{
 		mlt_properties_set( self->filenames, "0", filename );
