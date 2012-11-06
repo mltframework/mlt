@@ -1535,7 +1535,7 @@ static int file_exists( char *file )
 
 mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
 {
-	xmlSAXHandler *sax;
+	xmlSAXHandler *sax, *sax_orig;
 	struct deserialise_context_s *context;
 	mlt_properties properties = NULL;
 	int i = 0;
@@ -1622,14 +1622,17 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	}
 
 	// Parse
+	sax_orig = xmlcontext->sax;
 	xmlcontext->sax = sax;
 	xmlcontext->_private = ( void* )context;	
 	xmlParseDocument( xmlcontext );
 	well_formed = xmlcontext->wellFormed;
 	
 	// Cleanup after parsing
-	xmlcontext->sax = NULL;
+	xmlcontext->sax = sax_orig;
 	xmlcontext->_private = NULL;
+	if ( xmlcontext->myDoc )
+		xmlFreeDoc( xmlcontext->myDoc );
 	xmlFreeParserCtxt( xmlcontext );
 	context->stack_node_size = 0;
 	context->stack_service_size = 0;
@@ -1676,6 +1679,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	sax->getEntity = on_get_entity;
 
 	// Parse
+	sax_orig = xmlcontext->sax;
 	xmlcontext->sax = sax;
 	xmlcontext->_private = ( void* )context;
 	xmlParseDocument( xmlcontext );
@@ -1685,6 +1689,11 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	xmlFreeDoc( context->entity_doc );
 	free( sax );
 	xmlMemoryDump( ); // for debugging
+	xmlcontext->sax = sax_orig;
+	xmlcontext->_private = NULL;
+	if ( xmlcontext->myDoc )
+		xmlFreeDoc( xmlcontext->myDoc );
+	xmlFreeParserCtxt( xmlcontext );
 
 	// Get the last producer on the stack
 	enum service_type type;
