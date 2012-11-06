@@ -90,11 +90,16 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 			p ++;
 		}
 
+		// Chop off the query string
+		p = strrchr( lookup, '?' );
+		if ( p )
+			p[0] = '\0';
+
 		// Strip file:// prefix
 		p = lookup;
 		if ( strncmp( lookup, "file://", 7 ) == 0 )
 			p += 7;
-
+			
 		// Iterate through the dictionary
 		for ( i = 0; result == NULL && i < mlt_properties_count( dictionary ); i ++ )
 		{
