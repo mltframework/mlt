@@ -582,6 +582,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		if ( !producer )
 		{
 			mlt_service_close( service );
+			free( service );
 			return;
 		}
 
@@ -668,8 +669,12 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 			// Push the producer onto the stack
 			context_push_service( context, producer, mlt_producer_type );
 		}
+	}
 
+	if ( service )
+	{
 		mlt_service_close( service );
+		free( service );
 	}
 }
 
@@ -863,12 +868,16 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 
 		if ( parent != NULL )
 			context_push_service( context, parent, parent_type );
-
-		mlt_service_close( track );
 	}
 	else
 	{
 		mlt_log_error( NULL, "[producer_xml] Invalid state at end of track\n" );
+	}
+
+	if ( track )
+	{
+		mlt_service_close( track );
+		free( track );
 	}
 }
 
@@ -908,6 +917,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 			if ( parent )
 				context_push_service( context, parent, parent_type );
 			mlt_service_close( service );
+			free( service );
 			return;
 		}
 
@@ -948,13 +958,16 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		{
 			mlt_log_error( NULL, "[producer_xml] filter closed with invalid parent...\n" );
 		}
-
-		// Close the dummy filter service
-		mlt_service_close( service );
 	}
 	else
 	{
 		mlt_log_error( NULL, "[producer_xml] Invalid top of stack on filter close\n" );
+	}
+
+	if ( service )
+	{
+		mlt_service_close( service );
+		free(service);
 	}
 }
 
@@ -994,6 +1007,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 			if ( parent )
 				context_push_service( context, parent, parent_type );
 			mlt_service_close( service );
+			free( service );
 			return;
 		}
 		track_service( context->destructors, effect, (mlt_destructor) mlt_transition_close );
@@ -1038,12 +1052,16 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 			mlt_log_error( NULL, "[producer_xml] transition closed with invalid parent...\n" );
 		}
 
-		// Close the dummy filter service
-		mlt_service_close( service );
 	}
 	else
 	{
 		mlt_log_error( NULL, "[producer_xml] Invalid top of stack on transition close\n" );
+	}
+
+	if ( service )
+	{
+		mlt_service_close( service );
+		free( service );
 	}
 }
 
