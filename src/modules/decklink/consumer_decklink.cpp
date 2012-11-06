@@ -189,12 +189,15 @@ public:
 
 	void* preroll_thread()
 	{
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+
 		// preroll frames
-		for ( unsigned i = 0; i < m_preroll; i++ )
+		for ( unsigned i = 0; i < m_preroll && mlt_properties_get_int( properties, "running" ); i++ )
 			ScheduleNextFrame( true );
 
 		// start scheduled playback
-		m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
+		if ( mlt_properties_get_int( properties, "running" ) )
+			m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
 
 		return 0;
 	}
@@ -266,11 +269,11 @@ public:
 		m_preroll = preroll;
 		m_reprio = false;
 
-		// Do preroll in thread to ensure asynchronicity of mlt_consumer_start().
-		pthread_create( &m_prerollThread, NULL, preroll_thread_proxy, this );
-
 		// Set the running state
 		mlt_properties_set_int( properties, "running", 1 );
+
+		// Do preroll in thread to ensure asynchronicity of mlt_consumer_start().
+		pthread_create( &m_prerollThread, NULL, preroll_thread_proxy, this );
 
 		return true;
 	}
@@ -282,7 +285,9 @@ public:
 
 		// set running state is 0
 		mlt_properties_set_int( properties, "running", 0 );
-		mlt_consumer_stopped( getConsumer() );
+
+		if ( wasRunning )
+			pthread_join( m_prerollThread, NULL );
 
 		// Stop the audio and video output streams immediately
 		if ( m_deckLinkOutput )
@@ -295,8 +300,7 @@ public:
 		// release decklink frame
 		SAFE_RELEASE( m_decklinkFrame );
 
-		if ( wasRunning )
-			pthread_join( m_prerollThread, NULL );
+		mlt_consumer_stopped( getConsumer() );
 
 		return true;
 	}
