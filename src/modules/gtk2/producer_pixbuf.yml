@@ -30,8 +30,8 @@ parameters:
         filename from a counter for multi-file/flipbook animation. The file 
         sequence ends when numeric discontinuity >100.
         
-        If the file sequence does not begin within the count of 100,
-        you can pass the begin property like a query string paramter, for
+        If the file sequence does not begin within the count of 100 you
+        can pass the begin property like a query string parameter, for
         example: anim-%04d.png?begin=1000.
         
         If filename contains "/.all.", suffix with an extension to load all 

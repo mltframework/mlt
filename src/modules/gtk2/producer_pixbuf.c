@@ -227,13 +227,16 @@ static int load_sequence_querystring( producer_pixbuf self, mlt_properties prope
 	int result = 0;
 
 	// Obtain filenames with pattern and begin value in query string
-	if ( strchr( filename, '%' ) && strchr( filename, '?' ) && strstr( filename, "begin=" ) )
+	if ( strchr( filename, '%' ) && strchr( filename, '?' ) )
 	{
 		// Split filename into pattern and query string
 		char *s = strdup( filename );
 		char *querystring = strrchr( s, '?' );
 		*querystring++ = '\0';
-		mlt_properties_set( properties, "begin", strstr( querystring, "begin=" ) + 6 );
+		if ( strstr( filename, "begin=" ) )
+			mlt_properties_set( properties, "begin", strstr( querystring, "begin=" ) + 6 );
+		else if ( strstr( filename, "begin:" ) )
+			mlt_properties_set( properties, "begin", strstr( querystring, "begin:" ) + 6 );
 		// Coerce to an int value so serialization does not have any extra query string cruft
 		mlt_properties_set_int( properties, "begin", mlt_properties_get_int( properties, "begin" ) );
 		result = load_sequence_sprintf( self, properties, s );
