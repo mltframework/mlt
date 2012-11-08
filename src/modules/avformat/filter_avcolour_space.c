@@ -169,7 +169,8 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
-		int size = avpicture_get_size( out_fmt, width, height );
+		int size = FFMAX( avpicture_get_size( out_fmt, width, height ),
+			mlt_image_format_size( output_format, width, height, NULL ) );
 		uint8_t *output = mlt_pool_alloc( size );
 
 		if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
