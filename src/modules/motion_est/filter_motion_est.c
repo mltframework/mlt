@@ -898,9 +898,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			mlt_geometry geometry = mlt_geometry_init( );
 			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
-			mlt_geometry_parse( geometry, property, 0, profile->width, profile->height );
 			if ( geometry )
 			{
+				mlt_geometry_parse( geometry, property, 0, profile->width, profile->height );
 				bounds = calloc( 1, sizeof(*bounds) );
 				mlt_properties_set_data( MLT_FILTER_PROPERTIES(filter), "bounds", bounds, sizeof(*bounds), free, NULL );
 				mlt_geometry_fetch( geometry, bounds, 0 );
