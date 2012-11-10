@@ -1132,9 +1132,13 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 					// Inherit the properties
 					mlt_properties_inherit( MLT_CONSUMER_PROPERTIES(context->consumer), properties );
 				}
-				// Close the dummy
-				mlt_service_close( service );
 			}
+		}
+		// Close the dummy
+		if ( service )
+		{
+			mlt_service_close( service );
+			free( service );
 		}
 	}
 }
