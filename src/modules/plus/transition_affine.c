@@ -492,13 +492,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				scale_x = geom_scale_x * ( scale_x == 0 ? 1 : scale_x );
 				scale_y = geom_scale_x * ( scale_y == 0 ? 1 : scale_y );
+				scale_y *= b_ar / consumer_ar;
 			}
 			else
 			{
 				scale_x = geom_scale_y * ( scale_x == 0 ? 1 : scale_x );
 				scale_y = geom_scale_y * ( scale_y == 0 ? 1 : scale_y );
+				scale_x *= consumer_ar / b_ar;
 			}
-			scale_x *= consumer_ar / b_ar;
 		}
 		if ( scale )
 		{
