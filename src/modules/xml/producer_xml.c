@@ -1069,11 +1069,12 @@ static void on_start_consumer( deserialise_context context, const xmlChar *name,
 {
 	if ( context->pass == 1 )
 	{
-		mlt_consumer consumer = mlt_consumer_new( context->profile );
-		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+		mlt_service service = calloc( 1, sizeof( struct mlt_service_s ) );
+		mlt_service_init( service, NULL );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
 		mlt_properties_set_lcnumeric( properties, context->lc_numeric );
-		context_push_service( context, MLT_CONSUMER_SERVICE(consumer), mlt_dummy_consumer_type );
+		context_push_service( context, service, mlt_dummy_consumer_type );
 
 		// Set the properties from attributes
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
