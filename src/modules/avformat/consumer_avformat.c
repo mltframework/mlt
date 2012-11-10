@@ -1932,7 +1932,22 @@ static void *consumer_thread( void *arg )
 				( channels * audio_input_frame_size < sample_fifo_used( fifo ) / sample_bytes ) )
 			{
 				sample_fifo_fetch( fifo, audio_buf_1, channels * audio_input_frame_size * sample_bytes );
-				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, (short*) audio_buf_1 );
+				void* p = audio_buf_1;
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+				if ( c->sample_fmt == AV_SAMPLE_FMT_FLTP )
+					p = interleaved_to_planar( audio_input_frame_size, channels, p, sizeof( float ) );
+				else if ( c->sample_fmt == AV_SAMPLE_FMT_S16P )
+					p = interleaved_to_planar( audio_input_frame_size, channels, p, sizeof( int16_t ) );
+				else if ( c->sample_fmt == AV_SAMPLE_FMT_S32P )
+					p = interleaved_to_planar( audio_input_frame_size, channels, p, sizeof( int32_t ) );
+#endif
+				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, p );
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+				if ( c->sample_fmt == AV_SAMPLE_FMT_FLTP
+				     || c->sample_fmt == AV_SAMPLE_FMT_S16P
+				     || c->sample_fmt == AV_SAMPLE_FMT_S32P )
+					mlt_pool_release( p );
+#endif
 			}
 			if ( pkt.size <= 0 )
 				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, NULL );
