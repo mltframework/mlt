@@ -234,7 +234,7 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "width" ) &&
 			 strcmp( name, "height" ) )
 		{
-			char *value;
+			char *value = NULL;
 			if ( !strcmp( name, "length" ) )
 			{
 				char *time = mlt_properties_get_time( properties, name, context->time_format );
