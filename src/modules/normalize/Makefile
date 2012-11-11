@@ -7,6 +7,7 @@ include ../../../config.mak
 TARGET = ../libmltnormalize$(LIBSUF)
 
 OBJS = factory.o \
+	   filter_audiolevel.o \
 	   filter_volume.o 
 
 SRCS := $(OBJS:.o=.c)

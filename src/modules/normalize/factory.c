@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <framework/mlt.h>
 
+extern mlt_filter filter_audiolevel_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_volume_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
@@ -33,6 +34,8 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
+	MLT_REGISTER( filter_type, "audiolevel", filter_audiolevel_init );
 	MLT_REGISTER( filter_type, "volume", filter_volume_init );
+	MLT_REGISTER_METADATA( filter_type, "audiolevel", metadata, "filter_audiolevel.yml" );
 	MLT_REGISTER_METADATA( filter_type, "volume", metadata, "filter_volume.yml" );
 }

@@ -1,0 +1,38 @@
+schema_version: 0.1
+type: filter
+identifier: audiolevel
+title: Audio Levels
+version: 1
+copyright: Dan Dennedy, Marco Gittler, and Steve Harris
+creator: Dan Dennedy
+contributor:
+  - Marco Gittler
+  - Steve Harris
+license: GPLv2
+language: en
+description: Compute the audio amplitude.
+notes: >
+  This filter provides the amplitude level as a percentage value in floating point.
+  This does not do any "slowing" of the data by averaging out peaks and
+  troughs of short duration like a VU meter.
+  Applications can also get this data on the frame as meta.media.audio_level.<N>
+  where <N> is the channel number starting with 0.
+tags:
+  - Audio
+parameters:
+  - identifier: iec_scale
+    title: Use IEC 60268-18 Scale
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 1
+    widget: checkbox
+
+  - identifier: _audio_level.<N>
+    description: >
+        <N> is the channel number starting with 0.
+        This is updated on every frame with audio.
+    readonly: yes
+    type: float
+    minimum: 0
+    maximum: 1
