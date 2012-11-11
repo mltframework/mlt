@@ -1,3 +1,5 @@
 pix_fmt=yuv422p
 vcodec=dvvideo
 acodec=pcm_s16le
+
+meta.preset.note=Double the amount of chroma as normal DV

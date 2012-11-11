@@ -12,4 +12,4 @@ qp=0
 coder=ac
 
 meta.preset.extension=mp4
-meta.preset.note=with AAC audio
+meta.preset.note=Intra-frame only, lossless compressed MPEG-4 AVC with AAC audio

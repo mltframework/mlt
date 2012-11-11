@@ -8,4 +8,4 @@ vb=0
 bf=0
 
 meta.preset.extension=avi
-meta.preset.note=somewhat lossy, with uncompressed audio
+meta.preset.note=somewhat lossy, intra-frame only MPEG-4, with uncompressed audio

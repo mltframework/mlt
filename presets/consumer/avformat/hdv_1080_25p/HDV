@@ -16,3 +16,4 @@ cmp=satd
 subcmp=satd
 
 meta.preset.extension=m2t
+meta.preset.note=HD MPEG-2 camcorder format
