@@ -1289,7 +1289,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		set_luma_transfer( context, self->colorspace, self->full_luma );
+		set_luma_transfer( context, self->colorspace, -1 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1322,7 +1322,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		set_luma_transfer( context, self->colorspace, self->full_luma );
+		set_luma_transfer( context, self->colorspace, -1 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1789,6 +1789,11 @@ exit_get_image:
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 
+	// If we already have RGB, then the full range processing either happened already
+	// or does not apply (RGB source).
+	if ( *format == mlt_image_rgb24 || *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+		mlt_properties_set( frame_properties, "force_full_luma", NULL );
+
 	return !got_picture;
 }
 
@@ -1983,13 +1988,10 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(72<<8)+2)
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );
 		if ( codec_context->color_range == AVCOL_RANGE_JPEG )
-			self->full_luma = 1;
+			mlt_properties_set_int( properties, "set.force_full_luma", 1 );
 #endif
-		if ( mlt_properties_get( properties, "force_full_luma" ) )
-			self->full_luma = mlt_properties_get_int( properties, "force_full_luma" );
-		else if ( mlt_properties_get( properties, "set.force_full_luma" ) )
+		if ( mlt_properties_get( properties, "set.force_full_luma" ) )
 			self->full_luma = mlt_properties_get_int( properties, "set.force_full_luma" );
-		mlt_properties_set( properties, "set.force_full_luma", NULL );
 	}
 	return self->video_codec && self->video_index > -1;
 }

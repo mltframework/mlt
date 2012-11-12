@@ -175,15 +175,3 @@ parameters:
     default: 0
     unit: seconds
     widget: timecode
-
-  - identifier: force_full_luma
-    title: Use full range
-    description: >
-      When converting from Y'CbCr to RGB, normally the range specified by the
-      decoder is used. For MPEG and many codings, the luma range is scaled from
-      [16, 235] to [0, 255] in RGB. When provided, this property overrides the
-      detected range of the video.
-    type: integer
-    minimum: 0
-    maximum: 1
-    widget: checkbox
