@@ -1,6 +1,16 @@
 MLT Release Notes
 -----------------
 
+Version 0.8.4 - November 13, 2012
+
+This is a bugfix and minor enhancement release.
+
+* Added playlist-next event and PlaylistNextListener to Ruby binding
+* FFmpeg 1.0 and libAV master compatibility
+* Improvements to motion_est filter to generate keyframes for apps
+* Added audiolevel (measurement) filter
+
+
 Version 0.8.2 - August 28, 2012
 
 This is a bugfix and minor enhancement release.
