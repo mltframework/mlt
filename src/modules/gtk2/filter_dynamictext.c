@@ -34,7 +34,7 @@
 static int get_next_token(char* str, int* pos, char* token, int* is_keyword)
 {
 	int token_pos = 0;
-	int str_len = strlen(str);
+	int str_len = strlen( str );
 
 	if( (*pos) >= str_len || str[*pos] == '\0' )
 	{
@@ -90,7 +90,7 @@ static void get_timecode_str( mlt_filter filter, mlt_frame frame, char* text )
 	char tc[12] = "";
 	if (fps == 0)
 	{
-		strncat( text, "-", MAX_TEXT_LEN - strlen(text) - 1 );
+		strncat( text, "-", MAX_TEXT_LEN - strlen( text ) - 1 );
 	}
 	else
 	{
@@ -101,7 +101,7 @@ static void get_timecode_str( mlt_filter filter, mlt_frame frame, char* text )
 		int hours = minutes / 60;
 		minutes = minutes % 60;
 		sprintf(tc, "%.2d:%.2d:%.2d:%.2d", hours, minutes, seconds, frames);
-		strncat( text, tc, MAX_TEXT_LEN - strlen(text) - 1 );
+		strncat( text, tc, MAX_TEXT_LEN - strlen( text ) - 1 );
 	}
 }
 
@@ -109,14 +109,14 @@ static void get_frame_str( mlt_filter filter, mlt_frame frame, char* text )
 {
 	int pos = mlt_frame_get_position( frame );
 	char s[12];
-	snprintf( s, sizeof(s) - 1, "%d", pos );
-	strncat( text, s, MAX_TEXT_LEN - strlen(text) - 1 );
+	snprintf( s, sizeof( s ) - 1, "%d", pos );
+	strncat( text, s, MAX_TEXT_LEN - strlen( text ) - 1 );
 }
 
 static void get_filedate_str( mlt_filter filter, mlt_frame frame, char* text )
 {
-	mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer( frame ));
-	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES(producer);
+	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	char* filename = mlt_properties_get( producer_properties, "resource");
 	struct stat file_info;
 
@@ -125,10 +125,32 @@ static void get_filedate_str( mlt_filter filter, mlt_frame frame, char* text )
 		struct tm* time_info = gmtime( &(file_info.st_mtime) );
 		char date[11] = "";
 		strftime( date, 11, "%Y/%m/%d", time_info );
-		strncat( text, date, MAX_TEXT_LEN - strlen(text) - 1);
+		strncat( text, date, MAX_TEXT_LEN - strlen( text ) - 1);
 	}
 }
 
+static void get_localfiledate_str( mlt_filter filter, mlt_frame frame, char* text )
+{
+	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+	char* filename = mlt_properties_get( producer_properties, "resource" );
+	struct stat file_info;
+
+	if( !stat( filename, &file_info ) )
+	{
+		struct tm* time_info = localtime( &(file_info.st_mtime) );
+		char date[11] = "";
+		strftime( date, 11, "%Y/%m/%d", time_info );
+		strncat( text, date, MAX_TEXT_LEN - strlen( text ) - 1);
+	}
+}
+
+static void get_resource_str( mlt_filter filter, mlt_frame frame, char* text )
+{
+	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+	strncat( text, mlt_properties_get( producer_properties, "resource" ), MAX_TEXT_LEN - strlen( text ) - 1 );
+}
 
 /** Perform substitution for keywords that are enclosed in "# #".
 */
@@ -143,26 +165,27 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 	{
 		if(!is_keyword)
 		{
-			strncat( result, keyword, MAX_TEXT_LEN - strlen(result) - 1 );
+			strncat( result, keyword, MAX_TEXT_LEN - strlen( result ) - 1 );
 		}
 		else if ( !strcmp( keyword, "timecode" ) )
 		{
-			get_timecode_str(filter, frame, result);
+			get_timecode_str( filter, frame, result );
 		}
 		else if ( !strcmp( keyword, "frame" ) )
 		{
-			get_frame_str(filter, frame, result);
+			get_frame_str( filter, frame, result );
 		}
 		else if ( !strcmp( keyword, "filedate" ) )
 		{
-			get_filedate_str(filter, frame, result);
+			get_filedate_str( filter, frame, result );
+		}
+		else if ( !strcmp( keyword, "localfiledate" ) )
+		{
+			get_localfiledate_str( filter, frame, result );
 		}
 		else if ( !strcmp( keyword, "resource" ) )
 		{
-			// special case: replace #resource# with cut parent resource name
-			mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer( frame ));
-			mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES(producer);
-			strncat( result, mlt_properties_get( producer_properties, "resource"), MAX_TEXT_LEN - strlen(result) - 1 );
+			get_resource_str( filter, frame, result );
 		}
 		else
 		{
@@ -177,12 +200,12 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 	}
 }
 
-static void apply_filter(mlt_filter filter, mlt_frame frame )
+static void apply_filter( mlt_filter filter, mlt_frame frame )
 {
 	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_filter watermark = mlt_properties_get_data( my_properties, "_watermark", NULL );
 	mlt_properties watermark_properties = MLT_FILTER_PROPERTIES( watermark );
-	char* dynamic_text = mlt_properties_get( my_properties, "argument");
+	char* dynamic_text = mlt_properties_get( my_properties, "argument" );
 
 	// Check for keywords in dynamic text
 	if ( dynamic_text )
@@ -222,14 +245,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	apply_filter(filter, frame);
+	apply_filter( filter, frame );
 
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	// Need to get the image
 	return mlt_frame_get_image( frame, image, format, width, height, 1 );
 }
-
 
 /** Filter processing.
 */
@@ -255,14 +277,14 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 	mlt_filter filter = mlt_filter_new( );
 	mlt_filter watermark = mlt_factory_filter( profile, "watermark", "pango:" );
 
-	// Initialise it
+	// Initialize it
 	if ( filter && watermark )
 	{
 		// Get the properties
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 		// Store the watermark filter for future use
-		mlt_properties_set_data( properties, "_watermark", watermark, 0, ( mlt_destructor )mlt_filter_close, NULL );
+		mlt_properties_set_data( properties, "_watermark", watermark, 0, (mlt_destructor)mlt_filter_close, NULL );
 
 		// Assign default values
 		mlt_properties_set( properties, "argument", arg ? arg: "#timecode#" );
@@ -285,12 +307,12 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 	{
 		if( filter )
 		{
-			mlt_filter_close(filter);
+			mlt_filter_close( filter );
 		}
 
 		if( watermark )
 		{
-			mlt_filter_close(watermark);
+			mlt_filter_close( watermark );
 		}
 
 		filter = NULL;
