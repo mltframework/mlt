@@ -1,3 +1,8 @@
+2012-11-14  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt_version.h: Set
+  version to 0.8.6
+
 2012-11-13  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h,
