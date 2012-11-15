@@ -1988,7 +1988,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(72<<8)+2)
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );
 		if ( codec_context->color_range == AVCOL_RANGE_JPEG )
-			mlt_properties_set_int( properties, "set.force_full_luma", 1 );
+			self->full_luma = 1;
 #endif
 		if ( mlt_properties_get( properties, "set.force_full_luma" ) )
 			self->full_luma = mlt_properties_get_int( properties, "set.force_full_luma" );
