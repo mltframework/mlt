@@ -40,9 +40,11 @@
 #ifdef USE_QT4
 #include <QtGui/QImage>
 #include <QtCore/QSysInfo>
+#include <QtGui/QApplication>
 #include <QtCore/QMutex>
 #include <QtCore/QtEndian>
 #include <QtCore/QTemporaryFile>
+#include <QtCore/QLocale>
 #endif
 
 #ifdef USE_EXIF
@@ -62,6 +64,8 @@ static KComponentData *instance = 0L;
 #elif USE_KDE3
 static KInstance *instance = 0L;
 #endif
+
+static QApplication *app = NULL;
 
 static void qimage_delete( void *data )
 {
@@ -178,6 +182,32 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	sprintf( image_key, "%d", image_idx );
 
 	int disable_exif = mlt_properties_get_int( producer_props, "disable_exif" );
+	
+	
+	if ( app == NULL ) 
+	{
+		if ( qApp ) 
+		{
+			app = qApp;
+		}
+		else 
+		{
+#ifdef linux
+			if ( getenv("DISPLAY") == 0 )
+			{
+				mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
+				exit( 1 );
+				return -1;
+			}
+#endif
+			int argc = 1;
+			char* argv[1];
+			argv[0] = (char*) "xxx";
+			app = new QApplication( argc, argv );
+			const char *localename = mlt_properties_get_lcnumeric( MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) ) );
+			QLocale::setDefault( QLocale( localename ) );
+		}
+	}
 
 	if ( image_idx != self->qimage_idx )
 		self->qimage = NULL;
