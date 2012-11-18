@@ -392,7 +392,6 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 					{
 						mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
 						pthread_mutex_unlock( &self->mutex );
-						exit(1);
 						return;
 					}
 #endif

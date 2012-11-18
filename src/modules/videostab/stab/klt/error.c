@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-
+#include <framework/mlt_log.h>
 
 /*********************************************************************
  * KLTError
@@ -25,11 +25,10 @@ void KLTError(char *fmt, ...)
   va_list args;
 
   va_start(args, fmt);
-  fprintf(stderr, "KLT Error: ");
-  vfprintf(stderr, fmt, args);
-  fprintf(stderr, "\n");
+  mlt_log_error(NULL, "KLT Error: ");
+  mlt_log_error(NULL, fmt, args);
+  mlt_log_error(NULL, "\n");
   va_end(args);
-  exit(1);
 }
 
 
