@@ -215,7 +215,6 @@ static int load_sequence_deprecated( producer_pixbuf self, mlt_properties proper
 			s = calloc( 1, strlen( filename ) + 2 );
 			strncpy( s, filename, start - filename );
 			sprintf( s + ( start - filename ), ".%d%s", n, end );
-			mlt_log_error(NULL, "s=%s\n", s);
 			result = load_sequence_sprintf( self, properties, s );
 			free( s );
 		}
