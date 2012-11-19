@@ -214,7 +214,7 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	if ( !self->qimage || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif )
 	{
 		self->current_image = NULL;
-		QImage *qimage = new QImage( mlt_properties_get_value( self->filenames, image_idx ) );
+		QImage *qimage = new QImage( QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) ) );
 		self->qimage = qimage;
 
 		if ( !qimage->isNull( ) )
