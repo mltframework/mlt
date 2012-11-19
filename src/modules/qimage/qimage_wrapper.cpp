@@ -196,7 +196,6 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 			if ( getenv("DISPLAY") == 0 )
 			{
 				mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
-				exit( 1 );
 				return -1;
 			}
 #endif
