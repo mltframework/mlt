@@ -535,9 +535,11 @@ static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
 static uint8_t* interleaved_to_planar( int samples, int channels, uint8_t* audio, int bytes_per_sample )
 {
 	int size = samples * channels * bytes_per_sample;
-	uint8_t *buffer = mlt_pool_alloc( size );
+	uint8_t *buffer = mlt_pool_alloc( AUDIO_ENCODE_BUFFER_SIZE );
 	uint8_t *p = buffer;
 	int c;
+
+	memset( buffer, 0, AUDIO_ENCODE_BUFFER_SIZE );
 	for ( c = 0; c < channels; c++ )
 	{
 		uint8_t *q = audio + c * bytes_per_sample;
@@ -1636,8 +1638,8 @@ static void *consumer_thread( void *arg )
 
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
 							if ( codec->sample_fmt == AV_SAMPLE_FMT_FLTP
-							     || codec->sample_fmt == AV_SAMPLE_FMT_S16P
-							     || codec->sample_fmt == AV_SAMPLE_FMT_S32P )
+								 || codec->sample_fmt == AV_SAMPLE_FMT_S16P
+								 || codec->sample_fmt == AV_SAMPLE_FMT_S32P )
 								mlt_pool_release( p );
 #endif
 						}
