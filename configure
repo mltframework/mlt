@@ -111,7 +111,7 @@ build_config()
 		NetBSD)
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
-		echo "CFLAGS+=-pthread"
+		echo "CFLAGS+=-fPIC -pthread"
 		echo "SHFLAGS=-shared"
 		echo "RDYNAMIC=-rdynamic"
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
