@@ -222,7 +222,9 @@ static int consumer_start( mlt_consumer consumer )
 			snprintf( key, sizeof(key), "%d", mlt_properties_count( formats ) );
 			mlt_properties_set( formats, key, format->name );
 		}
-		fprintf( stdout, "%s", mlt_properties_serialise_yaml( doc ) );
+		s = mlt_properties_serialise_yaml( doc );
+		fprintf( stdout, "%s", s );
+		free( s );
 		mlt_properties_close( doc );
 		error = 1;
 	}
@@ -248,7 +250,9 @@ static int consumer_start( mlt_consumer consumer )
 				snprintf( key, sizeof(key), "%d", mlt_properties_count( codecs ) );
 				mlt_properties_set( codecs, key, codec->name );
 			}
-		fprintf( stdout, "%s", mlt_properties_serialise_yaml( doc ) );
+		s = mlt_properties_serialise_yaml( doc );
+		fprintf( stdout, "%s", s );
+		free( s );
 		mlt_properties_close( doc );
 		error = 1;
 	}
@@ -274,7 +278,9 @@ static int consumer_start( mlt_consumer consumer )
 				snprintf( key, sizeof(key), "%d", mlt_properties_count( codecs ) );
 				mlt_properties_set( codecs, key, codec->name );
 			}
-		fprintf( stdout, "%s", mlt_properties_serialise_yaml( doc ) );
+		s = mlt_properties_serialise_yaml( doc );
+		fprintf( stdout, "%s", s );
+		free( s );
 		mlt_properties_close( doc );
 		error = 1;
 	}
