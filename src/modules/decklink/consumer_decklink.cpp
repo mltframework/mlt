@@ -75,7 +75,7 @@ private:
 				mlt_log_verbose( getConsumer(), "BMD mode %dx%d %.3f fps prog %d\n", m_width, m_height, m_fps, p );
 
 				if ( m_width == profile->width && p == profile->progressive
-					 && m_fps == mlt_profile_fps( profile )
+					 && (int) m_fps == (int) mlt_profile_fps( profile )
 					 && ( m_height == profile->height || ( m_height == 486 && profile->height == 480 ) ) )
 					result = mode;
 				else

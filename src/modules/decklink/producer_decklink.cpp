@@ -67,7 +67,7 @@ private:
 
 				if ( width == profile->width && p == profile->progressive
 					 && ( height + vancLines == profile->height || ( height == 486 && profile->height == 480 + vancLines ) )
-					 && fps == mlt_profile_fps( profile ) )
+					 && (int) fps == (int) mlt_profile_fps( profile ) )
 					result = mode->GetDisplayMode();
 				SAFE_RELEASE( mode );
 			}
