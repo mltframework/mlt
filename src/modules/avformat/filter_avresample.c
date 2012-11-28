@@ -34,6 +34,8 @@
 #  define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
 #endif
 
+#if LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)
+
 /** Get the audio.
 */
 
@@ -175,3 +177,5 @@ mlt_filter filter_avresample_init( char *arg )
 
 	return filter;
 }
+
+#endif // LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)

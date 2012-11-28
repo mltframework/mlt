@@ -1220,7 +1220,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 #endif
 }
 
-static mlt_image_format pick_format( enum PixelFormat pix_fmt )
+static mlt_image_format pick_pix_format( enum PixelFormat pix_fmt )
 {
 	switch ( pix_fmt )
 	{
@@ -1243,6 +1243,31 @@ static mlt_image_format pick_format( enum PixelFormat pix_fmt )
 		return mlt_image_rgb24;
 	default:
 		return mlt_image_yuv422;
+	}
+}
+
+static mlt_audio_format pick_audio_format( enum AVSampleFormat sample_fmt )
+{
+	switch ( sample_fmt )
+	{
+	// interleaved
+	case AV_SAMPLE_FMT_S16:
+		return mlt_audio_s16;
+	case AV_SAMPLE_FMT_S32:
+		return mlt_audio_s32le;
+	case AV_SAMPLE_FMT_FLT:
+		return mlt_audio_f32le;
+	// planar - this producer converts planar to interleaved
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+	case AV_SAMPLE_FMT_S16P:
+		return mlt_audio_s16;
+	case AV_SAMPLE_FMT_S32P:
+		return mlt_audio_s32le;
+	case AV_SAMPLE_FMT_FLTP:
+		return mlt_audio_f32le;
+#endif
+	default:
+		return mlt_audio_none;
 	}
 }
 
@@ -1502,7 +1527,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			codec_context->pix_fmt == PIX_FMT_RGBA ||
 			codec_context->pix_fmt == PIX_FMT_ABGR ||
 			codec_context->pix_fmt == PIX_FMT_BGRA )
-		*format = pick_format( codec_context->pix_fmt );
+		*format = pick_pix_format( codec_context->pix_fmt );
 
 	// Duplicate the last image if necessary
 	if ( self->av_frame && self->av_frame->linesize[0]
@@ -2130,6 +2155,19 @@ static int sample_bytes( AVCodecContext *context )
 #endif
 }
 
+static void planar_to_interleaved( uint8_t *dest, uint8_t *src, int samples, int channels, int bytes_per_sample )
+{
+	int s, c;
+	for ( s = 0; s < samples; s++ )
+	{
+		for ( c = 0; c < channels; c++ )
+		{
+			memcpy( dest, src + ( c * samples + s ) * bytes_per_sample, bytes_per_sample );
+			dest += bytes_per_sample;
+		}
+	}
+}
+
 static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int channels, int samples, double timecode, double fps )
 {
 	// Fetch the audio_format
@@ -2197,8 +2235,21 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			}
 			else
 			{
-				// Straight copy to audio buffer
-				memcpy( &audio_buffer[ audio_used * codec_context->channels * sizeof_sample ], decode_buffer, data_size );
+				uint8_t *source = decode_buffer;
+				uint8_t *dest = &audio_buffer[ audio_used * codec_context->channels * sizeof_sample ];
+				switch ( codec_context->sample_fmt )
+				{
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+				case AV_SAMPLE_FMT_S16P:
+				case AV_SAMPLE_FMT_S32P:
+				case AV_SAMPLE_FMT_FLTP:
+					planar_to_interleaved( dest, source, convert_samples, codec_context->channels, sizeof_sample );
+					break;
+#endif
+				default:
+					// Straight copy to audio buffer
+					memcpy( dest, decode_buffer, data_size );
+				}
 				audio_used += convert_samples;
 			}
 
@@ -2300,6 +2351,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 		if ( codec_context && !self->audio_buffer[ index ] )
 		{
+#if LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)
 			// Check for resample and create if necessary
 			if ( codec_context->channels <= 2 )
 			{
@@ -2322,6 +2374,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 #endif
 			}
 			else
+#endif
 			{
 				codec_context->request_channels = self->audio_index == INT_MAX ? codec_context->channels : *channels;
 				sizeof_sample = sample_bytes( codec_context );
@@ -2417,20 +2470,16 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			index = self->audio_index;
 			*channels = self->audio_codec[ index ]->channels;
 			*frequency = self->audio_codec[ index ]->sample_rate;
-			*format = self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_S32 ? mlt_audio_s32le
-				: self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_FLT ? mlt_audio_f32le
-				: mlt_audio_s16;
+			*format = pick_audio_format( self->audio_codec[ index ]->sample_fmt );
 			sizeof_sample = sample_bytes( self->audio_codec[ index ] );
 		}
 		else if ( self->audio_index == INT_MAX )
 		{
-			// This only works if all audio tracks have the same sample format.
 			for ( index = 0; index < index_max; index++ )
 				if ( self->audio_codec[ index ] && !self->audio_resample[ index ] )
 				{
-					*format = self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_S32 ? mlt_audio_s32le
-						: self->audio_codec[ index ]->sample_fmt == AV_SAMPLE_FMT_FLT ? mlt_audio_f32le
-						: mlt_audio_s16;
+					// XXX: This only works if all audio tracks have the same sample format.
+					*format = pick_audio_format( self->audio_codec[ index ]->sample_fmt );
 					sizeof_sample = sample_bytes( self->audio_codec[ index ] );
 					break;
 				}

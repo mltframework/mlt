@@ -120,8 +120,10 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 		return filter_avcolour_space_init( arg );
 	if ( !strcmp( id, "avdeinterlace" ) )
 		return filter_avdeinterlace_init( arg );
+#if LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)
 	if ( !strcmp( id, "avresample" ) )
 		return filter_avresample_init( arg );
+#endif
 #ifdef SWSCALE
 	if ( !strcmp( id, "swscale" ) )
 		return filter_swscale_init( profile, arg );
@@ -362,7 +364,9 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "avcolour_space", create_service );
 	MLT_REGISTER( filter_type, "avcolor_space", create_service );
 	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
+#if LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)
 	MLT_REGISTER( filter_type, "avresample", create_service );
+#endif
 #ifdef SWSCALE
 	MLT_REGISTER( filter_type, "swscale", create_service );
 #endif
