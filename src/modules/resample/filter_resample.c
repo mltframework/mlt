@@ -61,19 +61,14 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			*channels, *samples, *frequency, output_rate );
 
 		// Do not convert to float unless we need to change the rate
-		if ( *format != mlt_audio_float )
-		{
-			*format = mlt_audio_float;
-			mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
-		}
+		if ( *format != mlt_audio_f32le )
+			frame->convert_audio( frame, buffer, format, mlt_audio_f32le );
 
 		mlt_service_lock( MLT_FILTER_SERVICE(filter) );
 
-		float *input_buffer = mlt_properties_get_data( filter_properties, "input_buffer", NULL );
-		float *output_buffer = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
 		SRC_DATA data;
-		data.data_in = input_buffer;
-		data.data_out = output_buffer;
+		data.data_in = *buffer;
+		data.data_out = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
 		data.src_ratio = ( float ) output_rate / ( float ) *frequency;
 		data.input_frames = *samples;
 		data.output_frames = BUFFER_LEN / *channels;
@@ -88,44 +83,14 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			mlt_properties_set_int( filter_properties, "channels", *channels );
 		}
 
-		// Convert to interleaved
-		float *q = (float*) *buffer;
-		float *p = input_buffer;
-		int s, c;
-		for ( s = 0; s < *samples; s++ )
-			for ( c = 0; c < *channels; c++ )
-				*p++ = *( q + c * *samples + s );
-
 		// Resample the audio
 		error = src_process( state, &data );
 		if ( !error )
 		{
-			int size = data.output_frames_gen * *channels * sizeof(float);
-
-			// Resize if necessary
-			if ( data.output_frames_gen > *samples )
-			{
-				*buffer = mlt_pool_realloc( *buffer, size );
-				mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
-			}
-
-			// Convert to non-interleaved
-			p = (float*) *buffer;
-			for ( c = 0; c < *channels; c++ )
-			{
-				float *q = output_buffer + c;
-				int i = data.output_frames_gen + 1;
-				while ( --i  )
-				{
-					*p++ = *q;
-					q += *channels;
-				}
-			}
-
 			// Update output variables
 			*samples = data.output_frames_gen;
 			*frequency = output_rate;
-
+			*buffer = data.data_out;
 		}
 		else
 		{
@@ -163,14 +128,12 @@ mlt_filter filter_resample_init( mlt_profile profile, mlt_service_type type, con
 		SRC_STATE *state = src_new( RESAMPLE_TYPE, 2 /* channels */, &error );
 		if ( error == 0 )
 		{
-			void *input_buffer = mlt_pool_alloc( BUFFER_LEN );
 			void *output_buffer = mlt_pool_alloc( BUFFER_LEN );
 			this->process = filter_process;
 			if ( arg != NULL )
 				mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "frequency", atoi( arg ) );
 			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "channels", 2 );
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "state", state, 0, (mlt_destructor)src_delete, NULL );
-			mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "input_buffer", input_buffer, BUFFER_LEN, mlt_pool_release, NULL );
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES( this ), "output_buffer", output_buffer, BUFFER_LEN, mlt_pool_release, NULL );
 		}
 		else
