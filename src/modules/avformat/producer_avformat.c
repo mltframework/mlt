@@ -1246,7 +1246,7 @@ static mlt_image_format pick_pix_format( enum PixelFormat pix_fmt )
 	}
 }
 
-static mlt_audio_format pick_audio_format( enum AVSampleFormat sample_fmt )
+static mlt_audio_format pick_audio_format( int sample_fmt )
 {
 	switch ( sample_fmt )
 	{
