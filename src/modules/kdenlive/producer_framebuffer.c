@@ -321,6 +321,28 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 		{
 			double real_length = ( (double)  mlt_producer_get_length( real_producer ) ) / speed;
 			mlt_properties_set_position( properties, "length", real_length );
+			mlt_properties real_properties = MLT_PRODUCER_PROPERTIES( real_producer );
+			const char* service = mlt_properties_get( real_properties, "mlt_service" );
+			if ( service && !strcmp( service, "avformat" ) )
+			{
+				int n = mlt_properties_count( real_properties );
+				int i;
+				for ( i = 0; i < n; i++ )
+				{
+					if ( strstr( mlt_properties_get_name( real_properties, i ), "stream.frame_rate" ) )
+					{
+						double source_fps = mlt_properties_get_double( real_properties, mlt_properties_get_name( real_properties, i ) );
+						if ( source_fps > mlt_profile_fps( profile ) )
+						{
+							mlt_properties_set_double( real_properties, "force_fps", source_fps * speed );
+							mlt_properties_set_position( real_properties, "length", real_length );
+							mlt_properties_set_position( real_properties, "out", real_length - 1 );
+							speed = 1.0;
+						}
+						break;
+					}
+				}
+			}
 		}
 		mlt_properties_set_position( properties, "out", mlt_producer_get_length( producer ) - 1 );
 
