@@ -1934,14 +1934,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		double source_fps = (double) self->video_codec->time_base.den /
 								   ( self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
 		
-		if ( mlt_properties_get( properties, "force_fps" ) )
-		{
-			source_fps = mlt_properties_get_double( properties, "force_fps" );
-			stream->time_base = av_d2q( source_fps, 1024 );
-			mlt_properties_set_int( properties, "meta.media.frame_rate_num", stream->time_base.num );
-			mlt_properties_set_int( properties, "meta.media.frame_rate_den", stream->time_base.den );
-		}
-		else
 		{
 			// If the muxer reports a frame rate different than the codec
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
@@ -1980,6 +1972,15 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 			}
+		}
+		if ( mlt_properties_get( properties, "force_fps" ) )
+		{
+			double source_fps = mlt_properties_get_double( properties, "force_fps" );
+			AVRational fps = av_d2q( source_fps, 1024 );
+			stream->time_base.num *= mlt_properties_get_int( properties, "meta.media.frame_rate_num" ) * fps.den;
+			stream->time_base.den *= mlt_properties_get_int( properties, "meta.media.frame_rate_den" ) * fps.num;
+			mlt_properties_set_int( properties, "meta.media.frame_rate_num", fps.num );
+			mlt_properties_set_int( properties, "meta.media.frame_rate_den", fps.den );
 		}
 
 		// Set the YUV colorspace from override or detect
