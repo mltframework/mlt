@@ -55,7 +55,7 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	if ( error ) return error;
 
 	// Return now if no work to do
-	if ( output_rate != *frequency )
+	if ( output_rate != *frequency && *frequency > 0 && *channels > 0 )
 	{
 		mlt_log_debug( MLT_FILTER_SERVICE(filter), "channels %d samples %d frequency %d -> %d\n",
 			*channels, *samples, *frequency, output_rate );

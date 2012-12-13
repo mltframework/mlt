@@ -2391,7 +2391,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	}
 
 	// Get the audio if required
-	if ( !paused )
+	if ( !paused && *frequency > 0 )
 	{
 		int ret	= 0;
 		int got_audio = 0;
