@@ -1803,6 +1803,23 @@ static inline void indent_yaml( strbuf output, int indent )
 		strbuf_printf( output, " " );
 }
 
+static void strbuf_escape( strbuf output, const char *value, char c )
+{
+	char *v = strdup( value );
+	char *s = v;
+	char *found = strchr( s, c );
+
+	while ( found )
+	{
+		*found = '\0';
+		strbuf_printf( output, "%s\\%c", s, c );
+		s = found + 1;
+		found = strchr( s, c );
+	}
+	strbuf_printf( output, "%s", s );
+	free( v );
+}
+
 /** Convert a line string into a YAML block literal.
  *
  * \private \memberof strbuf_s
@@ -1827,6 +1844,7 @@ static void output_yaml_block_literal( strbuf output, const char *value, int ind
 	}
 	indent_yaml( output, indent );
 	strbuf_printf( output, "%s\n", sol );
+	free( v );
 }
 
 /** Recursively serialize a properties list into a string buffer as YAML Tiny.
@@ -1870,7 +1888,9 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 					}
 					else if ( strchr( value, ':' ) || strchr( value, '[' ) )
 					{
-						strbuf_printf( output, "\"%s\"\n", value );
+						strbuf_printf( output, "\"" );
+						strbuf_escape( output, value, '"' );
+						strbuf_printf( output, "\"\n", value );
 					}
 					else
 					{
@@ -1904,7 +1924,9 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 				}
 				else if ( strchr( value, ':' ) || strchr( value, '[' ) )
 				{
-					strbuf_printf( output, "%s: \"%s\"\n", list->name[ i ], value );
+					strbuf_printf( output, "%s: \"", list->name[ i ] );
+					strbuf_escape( output, value, '"' );
+					strbuf_printf( output, "\"\n" );
 				}
 				else
 				{
