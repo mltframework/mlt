@@ -83,32 +83,25 @@ def output(mlt_type, services, type_title)
   index.puts '<noautolink>'
   index.puts "---+ #{type_title} Plugins"
   unsorted = []
-  (0..(services.count - 1)).each {|i|
+  (0..(services.count - 1)).each do |i|
     unsorted << services.get_name(i)
-  }
-  unsorted.sort().each {|name|
+  end
+  unsorted.sort().each do |name|
     meta = $repo.metadata(mlt_type, name)
     if meta.is_valid
       filename = type_title + name.capitalize.gsub('.', '-')
-      unless ['ConsumerAvformat',
-                'FilterDynamictext',
-                'ProducerQimage',
-                'TransitionComposite',
-                ].include?(filename)
+      puts "Processing #{filename}"
+      yml = YAML.load(meta.serialise_yaml)
+      if yml
         File.open(filename + '.txt', 'w') do |f|
-          puts "Processing #{filename}"
-          yml = YAML.load(meta.serialise_yaml)
-          if yml
-            f.puts $processor.result(binding)
-            # puts "Wrote file #{filename}.txt"
-          else
-            puts "Failed to write file for #{filename}"
-          end
+          f.puts $processor.result(binding)
         end
-        index.puts "   * [[#{filename}][#{name}]]: #{meta.get('title')}\n"
+      else
+        puts "Failed to write file for #{filename}"
       end
+      index.puts "   * [[#{filename}][#{name}]]: #{meta.get('title')}\n"
     end
-  }
+  end 
   index.puts '</noautolink>'
   index.close
 end
