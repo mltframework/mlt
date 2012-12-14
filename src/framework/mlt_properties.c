@@ -1868,6 +1868,10 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 						strbuf_printf( output, "|\n" );
 						output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( "|" ) );
 					}
+					else if ( strchr( value, ':' ) || strchr( value, '[' ) )
+					{
+						strbuf_printf( output, "\"%s\"\n", value );
+					}
 					else
 					{
 						strbuf_printf( output, "%s\n", value );
@@ -1897,6 +1901,10 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 				{
 					strbuf_printf( output, "%s: |\n", list->name[ i ] );
 					output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( ": " ) );
+				}
+				else if ( strchr( value, ':' ) || strchr( value, '[' ) )
+				{
+					strbuf_printf( output, "%s: \"%s\"\n", list->name[ i ], value );
 				}
 				else
 				{
