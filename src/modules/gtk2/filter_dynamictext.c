@@ -230,9 +230,6 @@ static void apply_filter( mlt_filter filter, mlt_frame frame )
 	mlt_properties_set( watermark_properties, "producer.olcolour", mlt_properties_get( my_properties, "olcolour" ) );
 	mlt_properties_set( watermark_properties, "producer.pad", mlt_properties_get( my_properties, "pad" ) );
 	mlt_properties_set( watermark_properties, "producer.outline", mlt_properties_get( my_properties, "outline" ) );
-
-	// Process the filter
-	mlt_filter_process( watermark, frame );
 }
 
 /** Get the image.
@@ -263,6 +260,12 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 	// Register the get image method
 	mlt_frame_push_get_image( frame, filter_get_image );
+
+	mlt_filter watermark = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "_watermark", NULL );
+	if ( watermark )
+	{
+		mlt_filter_process( watermark, frame );
+	}
 
 	// Return the frame
 	return frame;
