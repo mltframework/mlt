@@ -1410,10 +1410,6 @@ void mlt_consumer_stopped( mlt_consumer self )
 
 int mlt_consumer_stop( mlt_consumer self )
 {
-	// Return error if supplied invalid or stopped consumer.
-	if ( !self || mlt_consumer_is_stopped( self ) )
-		return -1;
-
 	// Get the properies
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 
@@ -1493,7 +1489,7 @@ void mlt_consumer_close( mlt_consumer self )
 		if ( consumer_close )
 		{
 			// Just in case...
-			mlt_consumer_stop( self );
+			//mlt_consumer_stop( self );
 
 			self->close = NULL;
 			consumer_close( self );
