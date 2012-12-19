@@ -89,13 +89,14 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 		mlt_frame_set_audio( frame, new_buffer, *format, size, mlt_pool_release );
 		memcpy( new_buffer, *buffer, size );
 		*buffer = new_buffer;
+		cx->audio_position = mlt_frame_get_position( nested_frame );
 	}
 	else
 	{
 		// otherwise return no samples
 		*samples = 0;
+		*buffer = NULL;
 	}
-	cx->audio_position = mlt_frame_get_position( nested_frame );
 
 	return result;
 }
