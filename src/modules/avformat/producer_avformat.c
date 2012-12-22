@@ -124,6 +124,7 @@ struct producer_avformat_s
 	mlt_deque vpackets;
 	pthread_mutex_t packets_mutex;
 	pthread_mutex_t open_mutex;
+	int is_mutex_init;
 #ifdef VDPAU
 	struct
 	{
@@ -202,6 +203,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 					// Clean up
 					mlt_producer_close( producer );
 					producer = NULL;
+					producer_avformat_close( self );
 				}
 				else if ( self->seekable )
 				{
@@ -830,10 +832,14 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	// Lock the service
 	if ( take_lock )
 	{
-		pthread_mutex_init( &self->audio_mutex, NULL );
-		pthread_mutex_init( &self->video_mutex, NULL );
-		pthread_mutex_init( &self->packets_mutex, NULL );
-		pthread_mutex_init( &self->open_mutex, NULL );
+		if ( !self->is_mutex_init )
+		{
+			pthread_mutex_init( &self->audio_mutex, NULL );
+			pthread_mutex_init( &self->video_mutex, NULL );
+			pthread_mutex_init( &self->packets_mutex, NULL );
+			pthread_mutex_init( &self->open_mutex, NULL );
+			self->is_mutex_init = 1;
+		}
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_mutex_lock( &self->video_mutex );
 	}
@@ -2787,10 +2793,13 @@ static void producer_avformat_close( producer_avformat self )
 		mlt_cache_close( self->image_cache );
 
 	// Cleanup the mutexes
-	pthread_mutex_destroy( &self->audio_mutex );
-	pthread_mutex_destroy( &self->video_mutex );
-	pthread_mutex_destroy( &self->packets_mutex );
-	pthread_mutex_destroy( &self->open_mutex );
+	if ( self->is_mutex_init )
+	{
+		pthread_mutex_destroy( &self->audio_mutex );
+		pthread_mutex_destroy( &self->video_mutex );
+		pthread_mutex_destroy( &self->packets_mutex );
+		pthread_mutex_destroy( &self->open_mutex );
+	}
 
 	// Cleanup the packet queues
 	AVPacket *pkt;
