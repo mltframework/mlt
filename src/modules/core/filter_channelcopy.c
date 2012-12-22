@@ -48,6 +48,25 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	if ( from != to)
 	switch ( *format )
 	{
+		case mlt_audio_u8:
+		{
+			uint8_t *f = (uint8_t*) *buffer + from;
+			uint8_t *t = (uint8_t*) *buffer + to;
+			uint8_t x;
+			int i;
+
+			if ( swap )
+				for ( i = 0; i < *samples; i++, f += *channels, t += *channels )
+				{
+					x = *t;
+					*t = *f;
+					*f = x;
+				}
+			else
+				for ( i = 0; i < *samples; i++, f += *channels, t += *channels )
+					*t = *f;
+			break;
+		}
 		case mlt_audio_s16:
 		{
 			int16_t *f = (int16_t*) *buffer + from;

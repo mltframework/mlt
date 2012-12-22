@@ -64,6 +64,19 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				}
 			}
 		}
+		else if ( *format == mlt_audio_u8 )
+		{
+			uint8_t *p = (uint8_t*) new_buffer;
+			int i, j, k = 0;
+			for ( i = 0; i < *samples; i++ )
+			{
+				for ( j = 0; j < *channels; j++ )
+				{
+					p[ ( i * *channels ) + j ] = ((uint8_t*)(*buffer))[ ( i * channels_avail ) + k ];
+					k = ( k + 1 ) % channels_avail;
+				}
+			}
+		}
 		else
 		{
 			// non-interleaved - s32 or float

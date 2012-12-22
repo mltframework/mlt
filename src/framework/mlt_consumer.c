@@ -669,6 +669,8 @@ static void *consumer_read_ahead_thread( void *arg )
 			afmt = mlt_audio_float;
 		else if ( !strcmp( format, "f32le" ) )
 			afmt = mlt_audio_f32le;
+		else if ( !strcmp( format, "u8" ) )
+			afmt = mlt_audio_u8;
 	}
 	int counter = 0;
 	double fps = mlt_properties_get_double( properties, "fps" );

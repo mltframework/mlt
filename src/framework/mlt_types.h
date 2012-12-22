@@ -44,7 +44,7 @@ typedef enum
 	mlt_image_rgb24a,  /**< 8-bit RGB with alpha channel */
 	mlt_image_yuv422,  /**< 8-bit YUV 4:2:2 packed */
 	mlt_image_yuv420p, /**< 8-bit YUV 4:2:0 planar */
-	mlt_image_opengl   /**< suitable for OpenGL texture */
+	mlt_image_opengl  /**< (deprecated) suitable for OpenGL texture */
 }
 mlt_image_format;
 
@@ -58,7 +58,8 @@ typedef enum
 	mlt_audio_s32,     /**< signed 32-bit non-interleaved PCM */
 	mlt_audio_float,   /**< 32-bit non-interleaved floating point */
 	mlt_audio_s32le,   /**< signed 32-bit interleaved PCM */
-	mlt_audio_f32le    /**< 32-bit interleaved floating point */
+	mlt_audio_f32le,   /**< 32-bit interleaved floating point */
+	mlt_audio_u8       /**< unsigned 8-bit interleaved PCM */
 }
 mlt_audio_format;
 

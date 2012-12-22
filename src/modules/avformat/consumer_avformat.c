@@ -474,11 +474,15 @@ static int get_mlt_audio_format( int av_sample_fmt )
 {
 	switch ( av_sample_fmt )
 	{
+	case AV_SAMPLE_FMT_U8:
+		return mlt_audio_u8;
 	case AV_SAMPLE_FMT_S32:
 		return mlt_audio_s32le;
 	case AV_SAMPLE_FMT_FLT:
 		return mlt_audio_f32le;
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+	case AV_SAMPLE_FMT_U8P:
+		return mlt_audio_u8;
 	case AV_SAMPLE_FMT_S32P:
 		return mlt_audio_s32le;
 	case AV_SAMPLE_FMT_FLTP:
@@ -502,6 +506,8 @@ static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
 			sample_fmt = AV_SAMPLE_FMT_S32;
 		else if ( !strcmp( format, "f32le" ) )
 			sample_fmt = AV_SAMPLE_FMT_FLT;
+		else if ( !strcmp( format, "u8" ) )
+			sample_fmt = AV_SAMPLE_FMT_U8;
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
 		else if ( !strcmp( format, "s32" ) )
 			sample_fmt = AV_SAMPLE_FMT_S32P;
@@ -520,10 +526,12 @@ static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
 	{
 		switch (*p)
 		{
+		case AV_SAMPLE_FMT_U8:
 		case AV_SAMPLE_FMT_S16:
 		case AV_SAMPLE_FMT_S32:
 		case AV_SAMPLE_FMT_FLT:
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+		case AV_SAMPLE_FMT_U8P:
 		case AV_SAMPLE_FMT_S16P:
 		case AV_SAMPLE_FMT_S32P:
 		case AV_SAMPLE_FMT_FLTP:
@@ -1639,13 +1647,13 @@ static void *consumer_thread( void *arg )
 								p = interleaved_to_planar( samples, channels, p, sizeof( int16_t ) );
 							else if ( codec->sample_fmt == AV_SAMPLE_FMT_S32P )
 								p = interleaved_to_planar( samples, channels, p, sizeof( int32_t ) );
+							else if ( codec->sample_fmt == AV_SAMPLE_FMT_U8P )
+								p = interleaved_to_planar( samples, channels, p, sizeof( uint8_t ) );
 #endif
 							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, p );
 
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
-							if ( codec->sample_fmt == AV_SAMPLE_FMT_FLTP
-								 || codec->sample_fmt == AV_SAMPLE_FMT_S16P
-								 || codec->sample_fmt == AV_SAMPLE_FMT_S32P )
+							if ( p != audio_buf_1 )
 								mlt_pool_release( p );
 #endif
 						}
@@ -1948,12 +1956,12 @@ static void *consumer_thread( void *arg )
 					p = interleaved_to_planar( audio_input_frame_size, channels, p, sizeof( int16_t ) );
 				else if ( c->sample_fmt == AV_SAMPLE_FMT_S32P )
 					p = interleaved_to_planar( audio_input_frame_size, channels, p, sizeof( int32_t ) );
+				else if ( c->sample_fmt == AV_SAMPLE_FMT_U8P )
+					p = interleaved_to_planar( audio_input_frame_size, channels, p, sizeof( uint8_t ) );
 #endif
 				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, p );
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
-				if ( c->sample_fmt == AV_SAMPLE_FMT_FLTP
-				     || c->sample_fmt == AV_SAMPLE_FMT_S16P
-				     || c->sample_fmt == AV_SAMPLE_FMT_S32P )
+				if ( p != audio_buf_1 )
 					mlt_pool_release( p );
 #endif
 			}

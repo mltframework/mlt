@@ -44,6 +44,20 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	switch ( *format )
 	{
+		case mlt_audio_u8:
+		{
+			uint8_t *new_buffer = mlt_pool_alloc( size );
+			for ( i = 0; i < *samples; i++ )
+			{
+				uint8_t mixdown = 0;
+				for ( j = 0; j < *channels; j++ )
+					mixdown += ((uint8_t*) *buffer)[ ( i * *channels ) + j ] / *channels;
+				for ( j = 0; j < channels_out; j++ )
+					new_buffer[ ( i * channels_out ) + j ] = mixdown;
+			}
+			*buffer = new_buffer;
+			break;
+		}
 		case mlt_audio_s16:
 		{
 			int16_t *new_buffer = mlt_pool_alloc( size );

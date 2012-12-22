@@ -1257,6 +1257,8 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
 	switch ( sample_fmt )
 	{
 	// interleaved
+	case AV_SAMPLE_FMT_U8:
+		return mlt_audio_u8;
 	case AV_SAMPLE_FMT_S16:
 		return mlt_audio_s16;
 	case AV_SAMPLE_FMT_S32:
@@ -1265,6 +1267,8 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
 		return mlt_audio_f32le;
 	// planar - this producer converts planar to interleaved
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+	case AV_SAMPLE_FMT_U8P:
+		return mlt_audio_u8;
 	case AV_SAMPLE_FMT_S16P:
 		return mlt_audio_s16;
 	case AV_SAMPLE_FMT_S32P:
@@ -2247,6 +2251,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				switch ( codec_context->sample_fmt )
 				{
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
+				case AV_SAMPLE_FMT_U8P:
 				case AV_SAMPLE_FMT_S16P:
 				case AV_SAMPLE_FMT_S32P:
 				case AV_SAMPLE_FMT_FLTP:

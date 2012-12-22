@@ -629,6 +629,7 @@ const char * mlt_audio_format_name( mlt_audio_format format )
 		case mlt_audio_s32le:  return "s32le";
 		case mlt_audio_float:  return "float";
 		case mlt_audio_f32le:  return "f32le";
+		case mlt_audio_u8:     return "u8";
 	}
 	return "invalid";
 }
@@ -652,6 +653,7 @@ int mlt_audio_format_size( mlt_audio_format format, int samples, int channels )
 		case mlt_audio_s32:    return samples * channels * sizeof( int32_t );
 		case mlt_audio_f32le:
 		case mlt_audio_float:  return samples * channels * sizeof( float );
+		case mlt_audio_u8:     return samples * channels;
 	}
 	return 0;
 }
