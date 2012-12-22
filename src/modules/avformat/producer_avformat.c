@@ -156,6 +156,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame );
 static void apply_properties( void *obj, mlt_properties properties, int flags );
 static int video_codec_init( producer_avformat self, int index, mlt_properties properties );
 static void get_audio_streams_info( producer_avformat self );
+static mlt_audio_format pick_audio_format( int sample_fmt );
 
 #ifdef VDPAU
 #include "vdpau.c"
@@ -372,8 +373,9 @@ static mlt_properties find_default_streams( producer_avformat self )
 				if ( !codec_context->channels )
 					break;
 				// Use first audio stream
-				if ( self->audio_index < 0 )
+				if ( self->audio_index < 0 && pick_audio_format( codec_context->sample_fmt ) != mlt_audio_none )
 					self->audio_index = i;
+
 				mlt_properties_set( meta_media, key, "audio" );
 #if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
@@ -2651,6 +2653,11 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	{
 		index = self->audio_index;
 		mlt_properties_set_int( properties, "audio_index", index );
+	}
+	if ( context && index > -1 && index < INT_MAX &&
+		 pick_audio_format( context->streams[ index ]->codec->sample_fmt ) == mlt_audio_none )
+	{
+		index = -1;
 	}
 
 	// Update the audio properties if the index changed
