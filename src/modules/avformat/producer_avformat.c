@@ -212,7 +212,6 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 					// Clean up
 					mlt_producer_close( producer );
 					producer = NULL;
-					producer_avformat_close( self );
 				}
 				else if ( self->seekable )
 				{
