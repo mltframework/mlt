@@ -230,6 +230,7 @@ static void apply_filter( mlt_filter filter, mlt_frame frame )
 	mlt_properties_set( watermark_properties, "producer.olcolour", mlt_properties_get( my_properties, "olcolour" ) );
 	mlt_properties_set( watermark_properties, "producer.pad", mlt_properties_get( my_properties, "pad" ) );
 	mlt_properties_set( watermark_properties, "producer.outline", mlt_properties_get( my_properties, "outline" ) );
+	mlt_properties_set( watermark_properties, "producer.align", mlt_properties_get( my_properties, "halign" ) );
 }
 
 /** Get the image.
