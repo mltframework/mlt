@@ -108,3 +108,12 @@ parameters:
     type: float
     description: Optionally override a (mis)detected aspect ratio
     mutable: yes
+
+  - identifier: loop
+    title: Loop sequence of images indefinitively
+    description: when 1 (default) loop sequences of images, when 0, play them only once
+    type: integer
+    default: 1
+    minimum: 0
+    maximum: 1
+    widget: checkbox

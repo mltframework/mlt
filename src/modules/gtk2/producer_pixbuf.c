@@ -92,6 +92,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
 		mlt_properties_set_int( properties, "seekable", 1 );
+                mlt_properties_set_int( properties, "loop", 1 );
 
 		// Validate the resource
 		if ( filename )
@@ -371,7 +372,13 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 	position += mlt_producer_get_in( producer );
 
 	// Image index
-	int current_idx = ( int )floor( ( double )position / ttl ) % self->count;
+        int loop = mlt_properties_get_int( producer_props, "loop" );
+        int current_idx;
+        if (loop) {
+		current_idx = ( int )floor( ( double )position / ttl ) % self->count;
+        } else {
+		current_idx = MIN(( double )position / ttl, self->count - 1);
+        }
 
 	// Key for the cache
 	char image_key[ 10 ];
