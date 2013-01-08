@@ -278,6 +278,23 @@ int list_components( char* file )
 	return skip;
 }
 
+static int first_video_index( producer_avformat self )
+{
+	AVFormatContext *context = self->video_format? self->video_format : self->audio_format;
+	int i = -1; // not found
+
+	if ( context ) {
+		for ( i = 0; i < context->nb_streams; i++ ) {
+			if ( context->streams[i]->codec &&
+			     context->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO )
+				break;
+		}
+		if ( i == context->nb_streams )
+			i = -1;
+	}
+	return i;
+}
+
 /** Find the default streams.
 */
 
@@ -1041,6 +1058,31 @@ static int64_t best_pts( producer_avformat self, int64_t pts, int64_t dts )
 		return dts;
 }
 
+static void find_first_pts( producer_avformat self, int video_index )
+{
+	// find initial PTS
+	AVFormatContext *context = self->video_format? self->video_format : self->audio_format;
+	int ret = 0;
+	int toscan = 500;
+	AVPacket pkt;
+
+	while ( ret >= 0 && toscan-- > 0 )
+	{
+		ret = av_read_frame( context, &pkt );
+		if ( ret >= 0 && pkt.stream_index == video_index && ( pkt.flags & PKT_FLAG_KEY ) )
+		{
+			mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
+				"first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n",
+				pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
+			self->first_pts = best_pts( self, pkt.pts, pkt.dts );
+			if ( self->first_pts != AV_NOPTS_VALUE )
+				toscan = 0;
+		}
+		av_free_packet( &pkt );
+	}
+	av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
+}
+
 static int seek_video( producer_avformat self, mlt_position position,
 	int64_t req_position, int preseek )
 {
@@ -1064,29 +1106,8 @@ static int seek_video( producer_avformat self, mlt_position position,
 		double source_fps = mlt_properties_get_double( properties, "meta.media.frame_rate_num" ) /
 			mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
 
-		// find initial PTS
 		if ( self->last_position == POSITION_INITIAL )
-		{
-			int ret = 0;
-			int toscan = 500;
-			AVPacket pkt;
-
-			while ( ret >= 0 && toscan-- > 0 )
-			{
-				ret = av_read_frame( context, &pkt );
-				if ( ret >= 0 && pkt.stream_index == self->video_index && ( pkt.flags & PKT_FLAG_KEY ) )
-				{
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer),
-						"first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n",
-						pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
-					self->first_pts = best_pts( self, pkt.pts, pkt.dts );
-					if ( self->first_pts != AV_NOPTS_VALUE )
-						toscan = 0;
-				}
-				av_free_packet( &pkt );
-			}
-			av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
-		}
+			find_first_pts( self, self->video_index );
 
 		if ( self->av_frame && position + 1 == self->video_expected )
 		{
@@ -2129,6 +2150,15 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 	// Seek if necessary
 	if ( self->seekable && position != self->audio_expected )
 	{
+		if ( self->last_position == POSITION_INITIAL )
+		{
+			int video_index = self->video_index;
+			if ( video_index == -1 )
+				video_index = first_video_index( self );
+			if ( video_index >= 0 )
+				find_first_pts( self, video_index );
+		}
+
 		if ( position + 1 == self->audio_expected )
 		{
 			// We're paused - silence required
@@ -2303,6 +2333,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				// We are ahead, so seek backwards some more
 				seek_audio( self, req_position, timecode - 1.0 );
 		}
+		// Cancel the find_first_pts() in seek_audio()
+		if ( self->video_index == -1 && self->last_position == POSITION_INITIAL )
+			self->last_position = int_position;
 	}
 
 	self->audio_used[ index ] = audio_used;
