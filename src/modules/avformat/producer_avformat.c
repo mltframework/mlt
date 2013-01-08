@@ -2148,7 +2148,7 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 	int paused = 0;
 
 	// Seek if necessary
-	if ( self->seekable && position != self->audio_expected )
+	if ( self->seekable && ( position != self->audio_expected || self->last_position < 0 ) )
 	{
 		if ( self->last_position == POSITION_INITIAL )
 		{
