@@ -1,3 +1,60 @@
+2013-01-20  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h,
+  src/melt/melt.c: Set version to 0.8.8.
+
+2012-12-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Fix build against FFmepg 0.5 and
+  0.6.
+
+2012-12-26  Niv Sardi <xaiki@evilgiggle.com>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/gtk2/producer_pixbuf.yml:
+  pixbuf producer: loop option to loop sequence selectively 
+
+2012-12-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_frame.c,
+  src/framework/mlt_types.h, src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c,
+  src/modules/core/filter_audiochannels.c,
+  src/modules/core/filter_audioconvert.c,
+  src/modules/core/filter_channelcopy.c, src/modules/core/filter_mono.c: Add
+  mlt_audio_u8 (sourceforce-182).  It should support planar libavutil
+  AV_SAMPLE_FMT_U8P, but it is untested due to lacking a sample.
+
+2012-12-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/resample/filter_resample.c: Fix possible divide by zero
+  exceptions.
+
+2012-11-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/factory.c, src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/producer_avformat.c: Fix decoding audio with planar
+  formats.
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: Fix mlt_profile to DeckLink
+  DisplayMode matching.
+
+2012-11-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qimage/producer_qimage.c:
+  Fix crash on invalid image sequence.
+
+  * configure, src/framework/mlt_version.h: set to interim version 0.8.7
+
+  * src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/videostab/stab/klt/error.c: Remove exit()s that cause unexpected
+  app failures.  An app can register a mlt_log callback, trap errors, and do
+  something more graceful than abort as perhaps some of these are not really as
+  fatal as they claim to be (a different patch can change the levels as
+  needed).
+
 2012-11-14  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt_version.h: Set
