@@ -1844,6 +1844,10 @@ static void *consumer_thread( void *arg )
 						AVPacket pkt;
 						av_init_packet(&pkt);
 
+						// Set frame interlace hints
+						c->coded_frame->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
+						c->coded_frame->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+
 						pkt.flags |= PKT_FLAG_KEY;
 						pkt.stream_index= video_st->index;
 						pkt.data= (uint8_t *)output;
