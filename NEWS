@@ -1,6 +1,11 @@
 MLT Release Notes
 -----------------
 
+Version 0.8.8 - January 20, 2013
+
+This is purely a bugfix release. See the ChangeLog or git log.
+
+
 Version 0.8.6 - November 14, 2012
 
 This is a re-issue of the 0.8.4 release with a fix for a performance
