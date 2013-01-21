@@ -2312,7 +2312,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
 	{
 		int64_t pts = pkt.pts;
-		if ( self->first_pts != 0 )
+		if ( self->first_pts != AV_NOPTS_VALUE )
 			pts -= self->first_pts;
 		else if ( context->start_time != AV_NOPTS_VALUE )
 			pts -= context->start_time;
