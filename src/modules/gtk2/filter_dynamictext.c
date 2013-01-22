@@ -154,7 +154,6 @@ static void get_resource_str( mlt_filter filter, mlt_frame frame, char* text )
 
 /** Perform substitution for keywords that are enclosed in "# #".
 */
-
 static void substitute_keywords(mlt_filter filter, char* result, char* value, mlt_frame frame)
 {
 	char keyword[MAX_TEXT_LEN] = "";
@@ -200,11 +199,10 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 	}
 }
 
-static void apply_filter( mlt_filter filter, mlt_frame frame )
+static void setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame frame )
 {
 	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_filter watermark = mlt_properties_get_data( my_properties, "_watermark", NULL );
-	mlt_properties watermark_properties = MLT_FILTER_PROPERTIES( watermark );
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	char* dynamic_text = mlt_properties_get( my_properties, "argument" );
 
 	// Check for keywords in dynamic text
@@ -213,114 +211,161 @@ static void apply_filter( mlt_filter filter, mlt_frame frame )
 		// Apply keyword substitution before passing the text to the filter.
 		char result[MAX_TEXT_LEN] = "";
 		substitute_keywords( filter, result, dynamic_text, frame );
-		mlt_properties_set( watermark_properties, "producer.markup", (char*) result );
+		mlt_properties_set( producer_properties, "markup", (char*)result );
 	}
 
-	// Pass the properties to the watermark filter composite transition
-	mlt_properties_set( watermark_properties, "composite.geometry", mlt_properties_get( my_properties, "geometry" ) );
-	mlt_properties_set( watermark_properties, "composite.halign", mlt_properties_get( my_properties, "halign" ) );
-	mlt_properties_set( watermark_properties, "composite.valign", mlt_properties_get( my_properties, "valign" ) );
-
-	// Pass the properties to the watermark filter pango producer
-	mlt_properties_set( watermark_properties, "producer.family", mlt_properties_get( my_properties, "family" ) );
-	mlt_properties_set( watermark_properties, "producer.size", mlt_properties_get( my_properties, "size" ) );
-	mlt_properties_set( watermark_properties, "producer.weight", mlt_properties_get( my_properties, "weight" ) );
-	mlt_properties_set( watermark_properties, "producer.fgcolour", mlt_properties_get( my_properties, "fgcolour" ) );
-	mlt_properties_set( watermark_properties, "producer.bgcolour", mlt_properties_get( my_properties, "bgcolour" ) );
-	mlt_properties_set( watermark_properties, "producer.olcolour", mlt_properties_get( my_properties, "olcolour" ) );
-	mlt_properties_set( watermark_properties, "producer.pad", mlt_properties_get( my_properties, "pad" ) );
-	mlt_properties_set( watermark_properties, "producer.outline", mlt_properties_get( my_properties, "outline" ) );
-	mlt_properties_set( watermark_properties, "producer.align", mlt_properties_get( my_properties, "halign" ) );
+	// Pass the properties to the pango producer
+	mlt_properties_set( producer_properties, "family", mlt_properties_get( my_properties, "family" ) );
+	mlt_properties_set( producer_properties, "size", mlt_properties_get( my_properties, "size" ) );
+	mlt_properties_set( producer_properties, "weight", mlt_properties_get( my_properties, "weight" ) );
+	mlt_properties_set( producer_properties, "fgcolour", mlt_properties_get( my_properties, "fgcolour" ) );
+	mlt_properties_set( producer_properties, "bgcolour", mlt_properties_get( my_properties, "bgcolour" ) );
+	mlt_properties_set( producer_properties, "olcolour", mlt_properties_get( my_properties, "olcolour" ) );
+	mlt_properties_set( producer_properties, "pad", mlt_properties_get( my_properties, "pad" ) );
+	mlt_properties_set( producer_properties, "outline", mlt_properties_get( my_properties, "outline" ) );
+	mlt_properties_set( producer_properties, "align", mlt_properties_get( my_properties, "halign" ) );
 }
+
+static void setup_transition( mlt_filter filter, mlt_transition transition )
+{
+	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
+
+	mlt_properties_set( transition_properties, "geometry", mlt_properties_get( my_properties, "geometry" ) );
+	mlt_properties_set( transition_properties, "halign", mlt_properties_get( my_properties, "halign" ) );
+	mlt_properties_set( transition_properties, "valign", mlt_properties_get( my_properties, "valign" ) );
+	mlt_properties_set_int( transition_properties, "out", mlt_properties_get_int( my_properties, "_out" ) );
+	mlt_properties_set_int( transition_properties, "refresh", 1 );
+}
+
 
 /** Get the image.
 */
-
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	// Pop the service
+	int error = 0;
 	mlt_filter filter = mlt_frame_pop_service( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_producer producer = mlt_properties_get_data( properties, "_producer", NULL );
+	mlt_transition transition = mlt_properties_get_data( properties, "_transition", NULL );
+	mlt_frame text_frame = NULL;
+	mlt_position position = 0;
 
+	// Configure this filter
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-
-	apply_filter( filter, frame );
-
+	setup_producer( filter, producer, frame );
+	setup_transition( filter, transition );
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
-	// Need to get the image
-	return mlt_frame_get_image( frame, image, format, width, height, 1 );
+	// Make sure the producer is in the correct position
+	position = mlt_filter_get_position( filter, frame );
+	mlt_producer_seek( producer, position );
+
+	// Get the b frame and process with transition if successful
+	if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &text_frame, 0 ) == 0 )
+	{
+		// Get the a and b frame properties
+		mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
+		mlt_properties b_props = MLT_FRAME_PROPERTIES( text_frame );
+
+		// Set the frame and text_frame to be in the same position and have same consumer requirements
+		mlt_frame_set_position( text_frame, position );
+		mlt_frame_set_position( frame, position );
+		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) );
+
+		// Apply all filters that are attached to this filter to the b frame
+		mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), text_frame, 0 );
+
+		// Process the frame
+		mlt_transition_process( transition, frame, text_frame );
+
+		// Get the image
+		*format = mlt_image_yuv422;
+		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+
+		// Close the b frame
+		mlt_frame_close( text_frame );
+	}
+
+	return error;
 }
 
 /** Filter processing.
 */
-
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	// Push the filter
+	// Get the properties of the frame
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+
+	// Save the frame out point
+	mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_out", mlt_properties_get_int( properties, "out" ) );
+
+	// Push the filter on to the stack
 	mlt_frame_push_service( frame, filter );
 
-	// Register the get image method
+	// Push the get_image on to the stack
 	mlt_frame_push_get_image( frame, filter_get_image );
 
-	mlt_filter watermark = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "_watermark", NULL );
-	if ( watermark )
-	{
-		mlt_filter_process( watermark, frame );
-	}
-
-	// Return the frame
 	return frame;
 }
 
 /** Constructor for the filter.
 */
-
-mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
+mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	// Create the filter
-	mlt_filter filter = mlt_filter_new( );
-	mlt_filter watermark = mlt_factory_filter( profile, "watermark", "pango:" );
+	mlt_filter filter = mlt_filter_new();
+	mlt_transition transition = mlt_factory_transition( profile, "composite", NULL );
+	mlt_producer producer = producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "pango:" );
 
-	// Initialize it
-	if ( filter && watermark )
+	if ( filter && transition && producer )
 	{
-		// Get the properties
-		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 
-		// Store the watermark filter for future use
-		mlt_properties_set_data( properties, "_watermark", watermark, 0, (mlt_destructor)mlt_filter_close, NULL );
+		// Register the transition for reuse/destruction
+    	mlt_properties_set_data( my_properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
+
+		// Register the producer for reuse/destruction
+		mlt_properties_set_data( my_properties, "_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+
+		// Ensure that we loop
+		mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
 
 		// Assign default values
-		mlt_properties_set( properties, "argument", arg ? arg: "#timecode#" );
-		mlt_properties_set( properties, "geometry", "0%/0%:100%x100%:100" );
-		mlt_properties_set( properties, "family", "Sans" );
-		mlt_properties_set( properties, "size", "48" );
-		mlt_properties_set( properties, "weight", "400" );
-		mlt_properties_set( properties, "fgcolour", "0x000000ff" );
-		mlt_properties_set( properties, "bgcolour", "0x00000020" );
-		mlt_properties_set( properties, "olcolour", "0x00000000" );
-		mlt_properties_set( properties, "pad", "0" );
-		mlt_properties_set( properties, "halign", "left" );
-		mlt_properties_set( properties, "valign", "top" );
-		mlt_properties_set( properties, "outline", "0" );
+		mlt_properties_set( my_properties, "argument", arg ? arg: "#timecode#" );
+		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100" );
+		mlt_properties_set( my_properties, "family", "Sans" );
+		mlt_properties_set( my_properties, "size", "48" );
+		mlt_properties_set( my_properties, "weight", "400" );
+		mlt_properties_set( my_properties, "fgcolour", "0x000000ff" );
+		mlt_properties_set( my_properties, "bgcolour", "0x00000020" );
+		mlt_properties_set( my_properties, "olcolour", "0x00000000" );
+		mlt_properties_set( my_properties, "pad", "0" );
+		mlt_properties_set( my_properties, "halign", "left" );
+		mlt_properties_set( my_properties, "valign", "top" );
+		mlt_properties_set( my_properties, "outline", "0" );
 
-		// Specify the processing method
+		mlt_properties_set_int( my_properties, "_filter_private", 1 );
+
 		filter->process = filter_process;
 	}
-	else // filter or watermark failed for some reason
+	else
 	{
 		if( filter )
 		{
 			mlt_filter_close( filter );
 		}
 
-		if( watermark )
+		if( transition )
 		{
-			mlt_filter_close( watermark );
+			mlt_transition_close( transition );
+		}
+
+		if( producer )
+		{
+			mlt_producer_close( producer );
 		}
 
 		filter = NULL;
 	}
-
 	return filter;
 }
