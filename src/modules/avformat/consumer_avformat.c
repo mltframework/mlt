@@ -1847,7 +1847,12 @@ static void *consumer_thread( void *arg )
 						// Set frame interlace hints
 						c->coded_frame->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
 						c->coded_frame->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
-
+#if LIBAVCODEC_VERSION_INT >= ((53<<16)+(61<<8)+100)
+						if ( mlt_properties_get_int( frame_properties, "progressive" ) )
+							c->field_order = AV_FIELD_PROGRESSIVE;
+						else
+							c->field_order = (mlt_properties_get_int( frame_properties, "top_field_first" )) ? AV_FIELD_TT : AV_FIELD_BB;
+#endif
 						pkt.flags |= PKT_FLAG_KEY;
 						pkt.stream_index= video_st->index;
 						pkt.data= (uint8_t *)output;
