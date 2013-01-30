@@ -1385,7 +1385,8 @@ struct yaml_parser_context
 {
 	mlt_deque stack;
 	unsigned int level;
-	unsigned int index;
+	int index;
+	mlt_deque index_stack;
 	char block;
 	char *block_name;
 	unsigned int block_indent;
@@ -1441,7 +1442,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 	int error = 0;
 	char *ptr = strchr( name, ':' );
 	unsigned int indent = ltrim( &name );
-	mlt_properties properties = mlt_deque_peek_front( context->stack );
+	mlt_properties properties = mlt_deque_peek_back( context->stack );
 
 	// Ascending one more levels in the tree
 	if ( indent < context->level )
@@ -1449,8 +1450,11 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		unsigned int i;
 		unsigned int n = ( context->level - indent ) / 2;
 		for ( i = 0; i < n; i++ )
-			mlt_deque_pop_front( context->stack );
-		properties = mlt_deque_peek_front( context->stack );
+		{
+			mlt_deque_pop_back( context->stack );
+			context->index = mlt_deque_pop_back_int( context->index_stack );
+		}
+		properties = mlt_deque_peek_back( context->stack );
 		context->level = indent;
 	}
 
@@ -1492,7 +1496,8 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			mlt_properties_set_lcnumeric( child, mlt_properties_get_lcnumeric( properties ) );
 			mlt_properties_set_data( properties, name, child, 0,
 				( mlt_destructor )mlt_properties_close, NULL );
-			mlt_deque_push_front( context->stack, child );
+			mlt_deque_push_back( context->stack, child );
+			mlt_deque_push_back_int( context->index_stack, context->index );
 			context->index = 0;
 			free( name_ );
 			return error;
@@ -1508,7 +1513,8 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 			snprintf( key, sizeof(key), "%d", context->index++ );
 			mlt_properties_set_data( properties, key, child, 0,
 				( mlt_destructor )mlt_properties_close, NULL );
-			mlt_deque_push_front( context->stack, child );
+			mlt_deque_push_back( context->stack, child );
+			mlt_deque_push_back_int( context->index_stack, context->index );
 
 			name ++;
 			context->level += ltrim( &name ) + 1;
@@ -1682,7 +1688,9 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 			// Parser context
 			yaml_parser context = calloc( 1, sizeof( struct yaml_parser_context ) );
 			context->stack = mlt_deque_init();
-			mlt_deque_push_front( context->stack, self );
+			context->index_stack = mlt_deque_init();
+			mlt_deque_push_back( context->stack, self );
+			mlt_deque_push_back_int( context->index_stack, 0 );
 
 			// Read each string from the file
 			while( fgets( temp, 1024, file ) )
@@ -1703,6 +1711,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 			// Close the file
 			fclose( file );
 			mlt_deque_close( context->stack );
+			mlt_deque_close( context->index_stack );
 			if ( context->block_name )
 				free( context->block_name );
 			free( context );
