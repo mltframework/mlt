@@ -457,7 +457,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 					    empty.append( "\n " );
 				    cursor.insertText( txt.isEmpty() ? empty : txt, format );
 				    if ( !titem->data( 1 ).isNull() )
-					  titem->setTextWidth( titem->data( 1 ).toInt() );
+					  titem->setTextWidth( titem->data( 1 ).toDouble() );
 			    }
 		    }
 		}
