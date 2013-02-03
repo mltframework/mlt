@@ -561,7 +561,6 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	if ( uneven_x != uneven_x_src )
 	{
 		p_src += 2;
-		width_src -= 2;
 		alpha_b += 1;
 	}
 
