@@ -30,9 +30,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d $(DESTDIR)$(datadir)/mlt/rotoscoping
-	install -m 644 filter_rotoscoping.yml "$(DESTDIR)$(datadir)/mlt/rotoscoping"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d $(DESTDIR)$(mltdatadir)/rotoscoping
+	install -m 644 filter_rotoscoping.yml "$(DESTDIR)$(mltdatadir)/rotoscoping"
 
 ifneq ($(wildcard .depend),)
 include .depend

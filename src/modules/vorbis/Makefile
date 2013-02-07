@@ -32,9 +32,9 @@ clean:
 		rm -f $(OBJS) $(TARGET) 
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/vorbis"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/vorbis"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/vorbis"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/vorbis"
 
 ifneq ($(wildcard .depend),)
 include .depend

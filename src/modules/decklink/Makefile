@@ -45,13 +45,13 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/decklink"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/decklink"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/decklink"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/decklink"
 
 uninstall:
-	rm "$(DESTDIR)$(libdir)/mlt/libmltdecklink$(LIBSUF)" 2> /dev/null || true
-	rm -rf "$(DESTDIR)$(datadir)/mlt/decklink"
+	rm "$(DESTDIR)$(moduledir)/libmltdecklink$(LIBSUF)" 2> /dev/null || true
+	rm -rf "$(DESTDIR)$(mltdatadir)/decklink"
 
 ifneq ($(wildcard .depend),)
 include .depend

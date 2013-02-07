@@ -1,5 +1,4 @@
 include ../../config.mak
-include config.mak
 
 OBJS = melt.o \
 	   io.o
@@ -18,9 +17,9 @@ endif
 bindir = $(prefix)
 endif
 
-all: $(TARGET)
+all: $(meltname)
 
-$(TARGET): $(OBJS)
+$(meltname): $(OBJS)
 		$(CC) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
@@ -30,14 +29,24 @@ distclean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(OBJS) $(TARGET)
+		rm -f $(OBJS) $(meltname)
 
 install:	all
 	install -d "$(DESTDIR)$(bindir)"
-	install -c -m 755 $(TARGET) "$(DESTDIR)$(bindir)"
+	install -c -m 755 $(meltname) "$(DESTDIR)$(bindir)"
+ifeq ($(compat_dirs), true)
+ifneq ($(compat_nomelt), true)
+	ln -s $(meltname) "$(DESTDIR)$(bindir)/melt"
+endif
+endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(bindir)/$(TARGET)"
+	rm -f "$(DESTDIR)$(bindir)/$(meltname)"
+ifeq ($(compat_dirs), true)
+ifneq ($(compat_nomelt), true)
+	rm -f "$(DESTDIR)$(bindir)/melt"
+endif
+endif
 
 ifneq ($(wildcard .depend),)
 include .depend

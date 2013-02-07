@@ -27,9 +27,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/normalize"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/normalize"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/normalize"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/normalize"
 
 ifneq ($(wildcard .depend),)
 include .depend

@@ -34,9 +34,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d $(DESTDIR)$(datadir)/mlt/videostab
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/videostab"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d $(DESTDIR)$(mltdatadir)/videostab
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/videostab"
 
 
 ifneq ($(wildcard .depend),)

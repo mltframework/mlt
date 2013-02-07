@@ -41,9 +41,9 @@ clean:
 		rm -f $(OBJS) $(TARGET) $(CPPOBJS)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/qimage"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/qimage"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/qimage"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/qimage"
 
 ifneq ($(wildcard .depend),)
 include .depend

@@ -26,7 +26,7 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
 
 ifneq ($(wildcard .depend),)
 include .depend

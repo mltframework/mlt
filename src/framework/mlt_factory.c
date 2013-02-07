@@ -41,11 +41,6 @@
 #define PREFIX_LIB "/lib/mlt"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
 #define PREFIX_DATA "/share/mlt"
-#else
-/** the default subdirectory of the libdir for holding modules (plugins) */
-#define PREFIX_LIB LIBDIR "/mlt"
-/** the default subdirectory of the install prefix for holding module (plugin) data */
-#define PREFIX_DATA MLTDATADIR "/mlt"
 #endif
 
 /** holds the full path to the modules directory - initialized and retained for the entire session */
