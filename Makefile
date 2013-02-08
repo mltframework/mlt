@@ -29,13 +29,13 @@ install:
 	install -d "$(DESTDIR)$(prefix)/include"
 	install -d "$(DESTDIR)$(libdir)"
 	install -d "$(DESTDIR)$(moduledir)"
-ifeq ($(compat_dirs), true)
-	ln -s "$(moduledir)" "$(DESTDIR)$(libdir)/mlt"
+ifeq ($(extra_versioning), true)
+	ln -s "$(moduledir)" "$(DESTDIR)$(unversionedmoduledir)"
 endif
 	install -d "$(DESTDIR)$(libdir)/pkgconfig"
 	install -d "$(DESTDIR)$(mltdatadir)"
-ifeq ($(compat_dirs), true)
-	ln -s "$(mltdatadir)" "$(DESTDIR)$(prefix)/share/mlt"
+ifeq ($(extra_versioning), true)
+	ln -s "$(mltdatadir)" "$(DESTDIR)$(unversionedmltdatadir)"
 endif
 	install -c -m 644 *.pc "$(DESTDIR)$(libdir)/pkgconfig"
 	list='$(SUBDIRS)'; \

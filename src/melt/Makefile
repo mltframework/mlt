@@ -34,16 +34,16 @@ clean:
 install:	all
 	install -d "$(DESTDIR)$(bindir)"
 	install -c -m 755 $(meltname) "$(DESTDIR)$(bindir)"
-ifeq ($(compat_dirs), true)
-ifneq ($(compat_nomelt), true)
+ifeq ($(extra_versioning), true)
+ifeq ($(melt_noversion), false)
 	ln -s $(meltname) "$(DESTDIR)$(bindir)/melt"
 endif
 endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(bindir)/$(meltname)"
-ifeq ($(compat_dirs), true)
-ifneq ($(compat_nomelt), true)
+ifeq ($(extra_versioning), true)
+ifeq ($(melt_noversion), false)
 	rm -f "$(DESTDIR)$(bindir)/melt"
 endif
 endif
