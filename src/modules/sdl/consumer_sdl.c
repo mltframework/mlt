@@ -563,8 +563,9 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 			// open SDL window with video overlay, if possible
 			pthread_mutex_lock( &mlt_sdl_mutex );
-			consumer_get_dimensions( &this->window_width, &this->window_height );
 			SDL_Surface *screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
+			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
+				screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 
 			if ( screen )
