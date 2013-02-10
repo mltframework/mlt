@@ -62,7 +62,6 @@ struct consumer_sdl_s
 	int height;
 	int playing;
 	int sdl_flags;
-	SDL_Surface *sdl_screen;
 	SDL_Overlay *sdl_overlay;
 	SDL_Rect rect;
 	uint8_t *buffer;
@@ -231,12 +230,6 @@ int consumer_start( mlt_consumer parent )
 			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 			SDL_EnableUNICODE( 1 );
 		}
-		else if ( display_off == 0 )
-		{
-			pthread_mutex_lock( &mlt_sdl_mutex );
-			this->sdl_screen = SDL_GetVideoSurface( );
-			pthread_mutex_unlock( &mlt_sdl_mutex );
-		}
 
 		if ( audio_off == 0 )
 			SDL_InitSubSystem( SDL_INIT_AUDIO );
@@ -254,7 +247,8 @@ int consumer_start( mlt_consumer parent )
 			this->window_height = this->height;
 		}
 
-		if ( this->sdl_screen == NULL && display_off == 0 )
+		pthread_mutex_lock( &mlt_sdl_mutex );
+		if ( !SDL_GetVideoSurface() && display_off == 0 )
 		{
 			if ( mlt_properties_get_int( this->properties, "fullscreen" ) )
 			{
@@ -267,10 +261,9 @@ int consumer_start( mlt_consumer parent )
 				this->sdl_flags |= SDL_FULLSCREEN;
 				SDL_ShowCursor( SDL_DISABLE );
 			}
-			pthread_mutex_lock( &mlt_sdl_mutex );
-			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
-			pthread_mutex_unlock( &mlt_sdl_mutex );
+			SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
 		}
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 
 		pthread_create( &this->thread, NULL, consumer_thread, this );
 	}
@@ -312,10 +305,6 @@ int consumer_stop( mlt_consumer parent )
 			SDL_Quit( );
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
-
-		pthread_mutex_lock( &mlt_sdl_mutex );
-		this->sdl_screen = NULL;
-		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	return 0;
@@ -516,7 +505,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		void *pool = mlt_cocoa_autorelease_init();
 
 		// Handle events
-		if ( this->sdl_screen != NULL )
+		if ( SDL_GetVideoSurface() )
 		{
 			SDL_Event event;
 	
@@ -565,7 +554,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			this->sdl_overlay = NULL;
 		}
 
-		if ( this->running && ( this->sdl_screen == NULL || changed ) )
+		if ( this->running && ( !SDL_GetVideoSurface() || changed ) )
 		{
 			// Force an overlay recreation
 			if ( this->sdl_overlay != NULL )
@@ -574,14 +563,16 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 			// open SDL window with video overlay, if possible
 			pthread_mutex_lock( &mlt_sdl_mutex );
-			this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
-			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
-				this->sdl_screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
+			consumer_get_dimensions( &this->window_width, &this->window_height );
+			SDL_Surface *screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 
-			uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
-			SDL_FillRect( this->sdl_screen, NULL, color >> 8 );
-			SDL_Flip( this->sdl_screen );
+			if ( screen )
+			{
+				uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
+				SDL_FillRect( screen, NULL, color >> 8 );
+				SDL_Flip( screen );
+			}
 		}
 
 		if ( this->running )
@@ -640,16 +631,16 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			mlt_properties_set_int( this->properties, "rect_w", this->rect.w );
 			mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
 
-			SDL_SetClipRect( this->sdl_screen, &this->rect );
+			SDL_SetClipRect( SDL_GetVideoSurface(), &this->rect );
 		}
 
-		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay == NULL )
+		if ( this->running && SDL_GetVideoSurface() && this->sdl_overlay == NULL )
 		{
-			SDL_SetClipRect( this->sdl_screen, &this->rect );
-			this->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, this->sdl_screen );
+			SDL_SetClipRect( SDL_GetVideoSurface(), &this->rect );
+			this->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, SDL_GetVideoSurface() );
 		}
 
-		if ( this->running && this->sdl_screen != NULL && this->sdl_overlay != NULL )
+		if ( this->running && SDL_GetVideoSurface() && this->sdl_overlay != NULL )
 		{
 			this->buffer = this->sdl_overlay->pixels[ 0 ];
 			if ( SDL_LockYUVOverlay( this->sdl_overlay ) >= 0 )
@@ -657,7 +648,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 				if ( image != NULL )
 					memcpy( this->buffer, image, width * height * 2 );
 				SDL_UnlockYUVOverlay( this->sdl_overlay );
-				SDL_DisplayYUVOverlay( this->sdl_overlay, &this->sdl_screen->clip_rect );
+				SDL_DisplayYUVOverlay( this->sdl_overlay, &SDL_GetVideoSurface()->clip_rect );
 			}
 		}
 
@@ -871,9 +862,6 @@ static void *consumer_thread( void *arg )
 	while( mlt_deque_count( this->queue ) )
 		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
 
-	pthread_mutex_lock( &mlt_sdl_mutex );
-	this->sdl_screen = NULL;
-	pthread_mutex_unlock( &mlt_sdl_mutex );
 	this->audio_avail = 0;
 
 	return NULL;
