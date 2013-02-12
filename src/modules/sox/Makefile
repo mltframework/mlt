@@ -28,14 +28,14 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/sox"
-	install -m 644 filter_sox.yml "$(DESTDIR)$(datadir)/mlt/sox"
-	install -m 644 filter_sox_effect.yml "$(DESTDIR)$(datadir)/mlt/sox"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/sox"
+	install -m 644 filter_sox.yml "$(DESTDIR)$(mltdatadir)/sox"
+	install -m 644 filter_sox_effect.yml "$(DESTDIR)$(mltdatadir)/sox"
 
 uninstall:
-	rm "$(DESTDIR)$(libdir)/mlt/libmltsox$(LIBSUF)" 2> /dev/null || true
-	rm -rf "$(DESTDIR)$(datadir)/mlt/sox"
+	rm "$(DESTDIR)$(moduledir)/libmltsox$(LIBSUF)" 2> /dev/null || true
+	rm -rf "$(DESTDIR)$(mltdatadir)/sox"
 
 ifneq ($(wildcard .depend),)
 include .depend

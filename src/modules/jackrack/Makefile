@@ -58,14 +58,14 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/jackrack"
-	install -m 644 $(YML_FILES) "$(DESTDIR)$(datadir)/mlt/jackrack"
-	[ -f $(BLACKLIST) ] && install -m 644 $(BLACKLIST) "$(DESTDIR)$(datadir)/mlt/jackrack" || true
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/jackrack"
+	install -m 644 $(YML_FILES) "$(DESTDIR)$(mltdatadir)/jackrack"
+	[ -f $(BLACKLIST) ] && install -m 644 $(BLACKLIST) "$(DESTDIR)$(mltdatadir)/jackrack" || true
 
 uninstall:
-	rm "$(DESTDIR)$(libdir)/mlt/libmltjackrack$(LIBSUF)" 2> /dev/null || true
-	rm -rf "$(DESTDIR)$(datadir)/mlt/jackrack"
+	rm "$(DESTDIR)$(moduledir)/libmltjackrack$(LIBSUF)" 2> /dev/null || true
+	rm -rf "$(DESTDIR)$(mltdatadir)/jackrack"
 
 ifneq ($(wildcard .depend),)
 include .depend

@@ -48,13 +48,13 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	#install -d "$(DESTDIR)$(datadir)/mlt/rtaudio"
-	#install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/rtaudio"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	#install -d "$(DESTDIR)$(mltdatadir)/rtaudio"
+	#install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/rtaudio"
 
 uninstall:
-	rm "$(DESTDIR)$(libdir)/mlt/libmltrtaudio$(LIBSUF)" 2> /dev/null || true
-	rm -rf "$(DESTDIR)$(datadir)/mlt/rtaudio"
+	rm "$(DESTDIR)$(moduledir)/libmltrtaudio$(LIBSUF)" 2> /dev/null || true
+	rm -rf "$(DESTDIR)$(mltdatadir)/rtaudio"
 
 ifneq ($(wildcard .depend),)
 include .depend

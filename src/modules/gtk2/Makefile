@@ -71,9 +71,9 @@ clean:
 		rm -f $(OBJS) $(ASM_OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/gtk2"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/gtk2"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/gtk2"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/gtk2"
 
 ifneq ($(wildcard .depend),)
 include .depend

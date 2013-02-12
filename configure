@@ -14,21 +14,23 @@ Help options:
 
 General build options:
 
-  --prefix=directory      - install prefix for path (default: $prefix)
-  --libdir=directory      - lib directory (default: $prefix/lib)
-  --datadir=directory     - data directory (default: $prefix/share)
-  --mandir=directory      - man documentation directory (default: $prefix/share/man)
-  --enable-gpl            - Enable GPLv2 components
-  --enable-gpl3           - Enable GPLv3 components
-  --enable-debug          - Compile without optimizations support (default: off)
-  --disable-debug         - Compile without debug support (default: on)
-  --disable-mmx           - Compile without MMX support (default: on)
-  --disable-sse           - Compile without SSE support (default: on)
-  --disable-sse2          - Compile without SSE2 support (default: on)
-  --arch='arch'           - Compile for a specific architecture (default: none)
-  --cpu='cpu'             - Compile for a specific CPU (default: none)
-  --target-os='os'        - Cross-compile to a specific OS (default: $(uname -s))
-  --target-arch='arch'    - Cross-compile to a specific CPU architecture
+  --prefix=directory         - install prefix for path (default: $prefix)
+  --libdir=directory         - lib directory (default: $prefix/lib)
+  --datadir=directory        - data directory (default: $prefix/share)
+  --mandir=directory         - man documentation directory (default: $prefix/share/man)
+  --rename-melt              - Give melt executable a different name (it will not be versioned)
+  --enable-extra-versioning  - Version melt and the data and modules directories
+  --enable-gpl               - Enable GPLv2 components
+  --enable-gpl3              - Enable GPLv3 components
+  --enable-debug             - Compile without optimizations support (default: off)
+  --disable-debug            - Compile without debug support (default: on)
+  --disable-mmx              - Compile without MMX support (default: on)
+  --disable-sse              - Compile without SSE support (default: on)
+  --disable-sse2             - Compile without SSE2 support (default: on)
+  --arch='arch'              - Compile for a specific architecture (default: none)
+  --cpu='cpu'                - Compile for a specific CPU (default: none)
+  --target-os='os'           - Cross-compile to a specific OS (default: $(uname -s))
+  --target-arch='arch'       - Cross-compile to a specific CPU architecture
 
 Module disable options:
 
@@ -55,6 +57,8 @@ build_config()
 		echo "bindir=$prefix/bin"
 		echo "datadir=$datadir"
 		echo "mandir=$mandir"
+		echo "extra_versioning=$extra_versioning"
+		echo "melt_noversion=$melt_noversion"
 		echo "targetos=$targetos"
 
 		[ "$mmx" = "true" ] && 
@@ -128,6 +132,11 @@ build_config()
 		;;
 		esac
 		echo "LIBSUF=$LIBSUF"
+		echo "moduledir=${moduledir}"
+		echo "mltdatadir=${mltdatadir}"
+		echo "unversionedmoduledir=${unversionedmoduledir}"
+		echo "unversionedmltdatadir=${unversionedmltdatadir}"
+		echo "meltname=${meltname}"
 	) > config.mak
 
 	echo "#!/bin/sh" > mlt-config
@@ -155,6 +164,9 @@ build_pkgconfig()
 		echo version=$version
 		echo cflags=`grep ^framework packages.dat | cut -f 2`
 		echo libs=`grep ^framework packages.dat | cut -f 3`
+		echo moduledir=${moduledir}
+		echo mltdatadir=${mltdatadir}
+		echo meltbin=${prefix}/bin/${meltname}
 	) >> mlt-framework.pc
 	cat mlt-framework.pc.in >>mlt-framework.pc
 
@@ -194,6 +206,8 @@ export cpu=
 export targetos=$(uname -s)
 export targetarch=
 export amd64=false
+export extra_versioning=false
+export melt_noversion=false
 
 # Define the compiler used in tests (gcc is not installed everywhere)
 : ${CC:=gcc}
@@ -202,24 +216,36 @@ export amd64=false
 for i in "$@"
 do
 	case $i in
-		--help )		help=1 ;;
-		--prefix=* )		prefix="${i#--prefix=}" ;;
-		--libdir=* )		libdir="${i#--libdir=}" ;;
-		--datadir=* )		datadir="${i#--datadir=}" ;;
-		--mandir=* )		mandir="${i#--mandir=}" ;;
-		--enable-debug )	optimisations=false ;;
-		--disable-debug )	debug=false ;;
-		--disable-mmx )		mmx=false; sse=false; sse2=false ;;
-		--disable-sse )		sse=false; sse2=false ;;
-		--disable-sse2 )	sse2=false ;;
-		--enable-gpl )		gpl=true ;;
-		--enable-gpl3 )		gpl3=true ;;
-		--arch=* )		arch="${i#--arch=}" ;;
-		--cpu=* )		cpu="${i#--cpu=}" ;;
-		--target-os=* )		targetos="${i#--target-os=}" ;;
-		--target-arch=* )	targetarch="${i#--target-arch=}" ;;
+		--help )			help=1 ;;
+		--prefix=* )			prefix="${i#--prefix=}" ;;
+		--libdir=* )			libdir="${i#--libdir=}" ;;
+		--datadir=* )			datadir="${i#--datadir=}" ;;
+		--mandir=* )			mandir="${i#--mandir=}" ;;
+		--rename-melt=* )		meltname="${i#--rename-melt=}"; melt_noversion=true ;;
+		--enable-extra-versioning )	extra_versioning=true ;;
+		--enable-debug )		optimisations=false ;;
+		--disable-debug )		debug=false ;;
+		--disable-mmx )			mmx=false; sse=false; sse2=false ;;
+		--disable-sse )			sse=false; sse2=false ;;
+		--disable-sse2 )		sse2=false ;;
+		--enable-gpl )			gpl=true ;;
+		--enable-gpl3 )			gpl3=true ;;
+		--arch=* )			arch="${i#--arch=}" ;;
+		--cpu=* )			cpu="${i#--cpu=}" ;;
+		--target-os=* )			targetos="${i#--target-os=}" ;;
+		--target-arch=* )		targetarch="${i#--target-arch=}" ;;
 	esac
 done
+
+if [ -z "${meltname}" ]
+then
+	if [ "$extra_versioning" = "false" ]
+	then
+		meltname=melt
+	else
+		meltname=melt${soversion}
+	fi
+fi
 
 # Chose appropriate suffix for libraries
 case $targetos in
@@ -252,6 +278,17 @@ export LIBSUF
 [ "$libdir" = "" ] && libdir=$prefix/lib
 [ "$datadir" = "" ] && datadir=$prefix/share
 [ "$mandir" = "" ] && mandir=$prefix/share/man
+
+export unversionedmoduledir=${libdir}/mlt
+export unversionedmltdatadir=${datadir}/mlt
+if [ "$extra_versioning" = "false" ]
+then
+export moduledir=${libdir}/mlt
+export mltdatadir=${datadir}/mlt
+else
+export moduledir=${libdir}/mlt-${soversion}
+export mltdatadir=${datadir}/mlt-${soversion}
+fi
 
 # Double check MMX (Darwin, Linux and FreeBSD supported, may end up disabling MMX on other platforms incorrectly)
 if [ "$mmx" = "true" ]

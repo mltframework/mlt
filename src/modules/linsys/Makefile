@@ -32,9 +32,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/linsys"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/linsys"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/linsys"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/linsys"
 
 ifneq ($(wildcard .depend),)
 include .depend

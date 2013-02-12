@@ -9,7 +9,7 @@ distclean:
 clean:
 
 install:	all
-	install -d "$(DESTDIR)$(datadir)/mlt/feeds/PAL"
-	install -d "$(DESTDIR)$(datadir)/mlt/feeds/NTSC"
-	install -m 644 PAL/*.* "$(DESTDIR)$(datadir)/mlt/feeds/PAL"
-	install -m 644 NTSC/*.* "$(DESTDIR)$(datadir)/mlt/feeds/NTSC"
+	install -d "$(DESTDIR)$(mltdatadir)/feeds/PAL"
+	install -d "$(DESTDIR)$(mltdatadir)/feeds/NTSC"
+	install -m 644 PAL/*.* "$(DESTDIR)$(mltdatadir)/feeds/PAL"
+	install -m 644 NTSC/*.* "$(DESTDIR)$(mltdatadir)/feeds/NTSC"

@@ -77,12 +77,12 @@ clean:
 		rm -f $(OBJS) $(ASM_OBJS) $(TARGET) 
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/core"
-	install -m 644 data_fx.properties "$(DESTDIR)$(datadir)/mlt/core"
-	install -m 644 loader.dict "$(DESTDIR)$(datadir)/mlt/core"
-	install -m 644 loader.ini "$(DESTDIR)$(datadir)/mlt/core"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/core"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/core"
+	install -m 644 data_fx.properties "$(DESTDIR)$(mltdatadir)/core"
+	install -m 644 loader.dict "$(DESTDIR)$(mltdatadir)/core"
+	install -m 644 loader.ini "$(DESTDIR)$(mltdatadir)/core"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/core"
 
 ifneq ($(wildcard .depend),)
 include .depend

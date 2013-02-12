@@ -79,7 +79,7 @@ OBJS += ../win32/win32.o
 SRCS += ../win32/win32.c
 endif
 
-CFLAGS += $(RDYNAMIC) -DPREFIX="\"$(prefix)\"" -DLIBDIR="\"$(libdir)\"" -DMLTDATADIR="\"$(datadir)\""
+CFLAGS += $(RDYNAMIC) -DPREFIX_DATA="\"$(mltdatadir)\"" -DPREFIX_LIB="\"$(moduledir)\""
 
 LDFLAGS += $(LIBDL) -lpthread
 
@@ -114,8 +114,8 @@ install:
 	fi
 	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
 	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
-	install -d "$(DESTDIR)$(datadir)/mlt"
-	install -m 644 metaschema.yaml "$(DESTDIR)$(datadir)/mlt/"
+	install -d "$(DESTDIR)$(mltdatadir)"
+	install -m 644 metaschema.yaml "$(DESTDIR)$(mltdatadir)"
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
@@ -124,7 +124,7 @@ uninstall:
 		rm -f "$(DESTDIR)$(libdir)/$(NAME)" ; \
 	fi
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
-	rm -f "$(DESTDIR)$(datadir)/mlt/metaschema.yaml"
+	rm -f "$(DESTDIR)$(mltdatadir)/metaschema.yaml"
 
 ifneq ($(wildcard .depend),)
 include .depend

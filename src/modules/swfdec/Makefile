@@ -30,9 +30,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/swfdec"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/swfdec"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/swfdec"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/swfdec"
 
 ifneq ($(wildcard .depend),)
 include .depend

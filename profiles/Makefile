@@ -9,10 +9,10 @@ distclean:
 clean:
 
 install:	all uninstall
-	install -d "$(DESTDIR)$(datadir)/mlt/profiles"
-	install -m 644 * "$(DESTDIR)$(datadir)/mlt/profiles"
-	rm -f "$(DESTDIR)$(datadir)/mlt/profiles/"*~
-	rm -f "$(DESTDIR)$(datadir)/mlt/profiles/Makefile"
+	install -d "$(DESTDIR)$(mltdatadir)/profiles"
+	install -m 644 * "$(DESTDIR)$(mltdatadir)/profiles"
+	rm -f "$(DESTDIR)$(mltdatadir)/profiles/"*~
+	rm -f "$(DESTDIR)$(mltdatadir)/profiles/Makefile"
 
 uninstall:
-	rm -rf "$(DESTDIR)$(datadir)/mlt/profiles"
+	rm -rf "$(DESTDIR)$(mltdatadir)/profiles"

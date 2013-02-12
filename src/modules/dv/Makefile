@@ -31,9 +31,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/dv"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/dv"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/dv"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/dv"
 
 ifneq ($(wildcard .depend),)
 include .depend

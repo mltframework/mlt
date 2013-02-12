@@ -31,10 +31,10 @@ clean:
 		rm -f $(OBJS) $(TARGET) 
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/xml"
-	install -m 644 mlt-xml.dtd "$(DESTDIR)$(datadir)/mlt/xml"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/xml"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/xml"
+	install -m 644 mlt-xml.dtd "$(DESTDIR)$(mltdatadir)/xml"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/xml"
 
 ifneq ($(wildcard .depend),)
 include .depend

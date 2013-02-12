@@ -27,5 +27,5 @@ install:
 	done
 
 uninstall:
-	rm -rf "$(DESTDIR)$(libdir)/mlt"
+	rm -rf "$(DESTDIR)$(moduledir)"
 

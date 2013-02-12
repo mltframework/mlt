@@ -52,9 +52,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/sdl"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/sdl"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/sdl"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/sdl"
 
 ifneq ($(wildcard .depend),)
 include .depend
