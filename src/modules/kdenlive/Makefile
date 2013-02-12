@@ -32,9 +32,9 @@ clean:
 		rm -f $(OBJS) $(TARGET)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/kdenlive"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/kdenlive"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/kdenlive"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/kdenlive"
 
 ifneq ($(wildcard .depend),)
 include .depend
