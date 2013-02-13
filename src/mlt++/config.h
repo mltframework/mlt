@@ -28,7 +28,11 @@
         #define MLTPP_DECLSPEC __declspec( dllimport )
     #endif
 #else
-    #define MLTPP_DECLSPEC
+    #if __GNUC__ >= 4
+        #define MLTPP_DECLSPEC __attribute__ ((visibility ("default")))
+    #else
+        #define MLTPP_DECLSPEC
+    #endif
 #endif
 
 #endif
