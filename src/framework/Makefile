@@ -17,7 +17,11 @@ else
 NAME = libmlt$(LIBSUF)
 TARGET = $(NAME).$(version)
 SONAME = $(NAME).$(soversion)
-SHFLAGS += -Wl,-soname,$(SONAME) -Wl,--version-script=mlt.vers
+SHFLAGS += -Wl,-soname,$(SONAME)
+endif
+
+ifeq ($(targetos), Linux)
+SHFLAGS += -Wl,--version-script=mlt.vers
 endif
 
 OBJS = mlt_frame.o \
