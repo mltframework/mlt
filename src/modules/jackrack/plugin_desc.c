@@ -69,6 +69,7 @@ plugin_desc_init (plugin_desc_t * pd)
   pd->control_port_indicies = NULL;
   pd->aux_channels = 0;
   pd->aux_are_input = TRUE;
+  pd->has_input = TRUE;
 }
 
 static void
@@ -220,6 +221,11 @@ plugin_desc_set_port_counts (plugin_desc_t * pd)
   
   if (icount == ocount)
     pd->channels = icount;
+  else if( icount == 0 )
+    {
+      pd->channels = ocount;
+      pd->has_input = FALSE;
+    }
   else
     { /* deal with auxilliary ports */
       unsigned long ** port_indicies;

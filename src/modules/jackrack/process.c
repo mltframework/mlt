@@ -206,7 +206,8 @@ connect_chain (process_info_t * procinfo, jack_nframes_t frames)
     }
 
   /* input buffers for first plugin */
-  plugin_connect_input_ports (first_enabled, procinfo->jack_input_buffers);
+  if( plugin->desc->has_input )
+    plugin_connect_input_ports (first_enabled, procinfo->jack_input_buffers);
 }
 
 void
@@ -313,13 +314,15 @@ int process_ladspa (process_info_t * procinfo, jack_nframes_t frames,
   
   for (channel = 0; channel < procinfo->channels; channel++)
     {
-      procinfo->jack_input_buffers[channel] = inputs[channel];
-      if (!procinfo->jack_input_buffers[channel])
+      if(get_first_enabled_plugin (procinfo)->desc->has_input)
         {
-          mlt_log_verbose( NULL, "%s: no jack buffer for input port %ld\n", __FUNCTION__, channel);
-          return 1;
+          procinfo->jack_input_buffers[channel] = inputs[channel];
+          if (!procinfo->jack_input_buffers[channel])
+            {
+              mlt_log_verbose( NULL, "%s: no jack buffer for input port %ld\n", __FUNCTION__, channel);
+              return 1;
+            }
         }
-
       procinfo->jack_output_buffers[channel] = outputs[channel];
       if (!procinfo->jack_output_buffers[channel])
         {

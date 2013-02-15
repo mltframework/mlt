@@ -60,7 +60,7 @@ plugin_is_valid (const LADSPA_Descriptor * descriptor)
         ocount++;
     }
   
-  if (icount == 0 || ocount == 0)
+  if (ocount == 0)
     return FALSE;
   
   return TRUE;

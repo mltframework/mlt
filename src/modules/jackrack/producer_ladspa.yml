@@ -1,0 +1,15 @@
+schema_version: 0.1
+type: producer
+identifier: ladspa
+title: LADSPA
+version: 1
+copyright: Copyright (C) 2013 Ushodaya Enterprises Limited
+license: GPLv2
+language: en
+creator: Brian Matherly
+tags:
+  - Audio
+description: Generate audio using LADSPA plugins.
+notes: >
+  Automatically adapts to the number of channels and sampling rate of the consumer.
+

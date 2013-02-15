@@ -35,6 +35,7 @@ extern mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type ty
 
 extern mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 plugin_mgr_t *g_jackrack_plugin_mgr = NULL;
 #endif
@@ -42,8 +43,16 @@ plugin_mgr_t *g_jackrack_plugin_mgr = NULL;
 static mlt_properties metadata( mlt_service_type type, const char *id, char *data )
 {
 	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/jackrack/%s",
+	if( type == filter_type )
+	{
+		snprintf( file, PATH_MAX, "%s/jackrack/%s",
 			  mlt_environment( "MLT_DATA" ), strncmp( id, "ladspa.", 7 ) ? data : "filter_ladspa.yml" );
+	}
+	else
+	{
+		snprintf( file, PATH_MAX, "%s/jackrack/%s",
+			  mlt_environment( "MLT_DATA" ), strncmp( id, "ladspa.", 7 ) ? data : "producer_ladspa.yml" );
+	}
 	mlt_properties result = mlt_properties_parse_yaml( file );
 
 #ifdef GPL
@@ -114,15 +123,19 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 				if ( LADSPA_IS_HINT_LOGARITHMIC( hint_descriptor ) )
 					mlt_properties_set( p, "scale", "log" );
 			}
-			p = mlt_properties_new();
-			snprintf( key, sizeof(key), "%d", i );
-			mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
-			mlt_properties_set( p, "identifier", "wetness" );
-			mlt_properties_set( p, "title", "Wet/Dry" );
-			mlt_properties_set( p, "type", "float" );
-			mlt_properties_set_double( p, "default", 1 );
-			mlt_properties_set_double( p, "minimum", 0 );
-			mlt_properties_set_double( p, "maximum", 1 );
+
+			if( type == filter_type )
+			{
+				p = mlt_properties_new();
+				snprintf( key, sizeof(key), "%d", i );
+				mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
+				mlt_properties_set( p, "identifier", "wetness" );
+				mlt_properties_set( p, "title", "Wet/Dry" );
+				mlt_properties_set( p, "type", "float" );
+				mlt_properties_set_double( p, "default", 1 );
+				mlt_properties_set_double( p, "minimum", 0 );
+				mlt_properties_set_double( p, "maximum", 1 );
+			}
 		}
 	}
 #endif
@@ -142,8 +155,18 @@ MLT_REPOSITORY
 		char *s = malloc( strlen( "ladpsa." ) + 21 );
 
 		sprintf( s, "ladspa.%lu", desc->id );
-		MLT_REGISTER( filter_type, s, filter_ladspa_init );
-		MLT_REGISTER_METADATA( filter_type, s, metadata, NULL );
+
+		if( desc->has_input )
+		{
+			MLT_REGISTER( filter_type, s, filter_ladspa_init );
+			MLT_REGISTER_METADATA( filter_type, s, metadata, NULL );
+		}
+		else
+		{
+			MLT_REGISTER( producer_type, s, producer_ladspa_init );
+			MLT_REGISTER_METADATA( producer_type, s, metadata, NULL );
+		}
+
 		free( s );
 	}
 	mlt_factory_register_for_clean_up( g_jackrack_plugin_mgr, (mlt_destructor) plugin_mgr_destroy );

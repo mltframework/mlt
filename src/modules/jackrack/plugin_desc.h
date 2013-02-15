@@ -58,6 +58,8 @@ struct _plugin_desc
 
   unsigned long            control_port_count;
   unsigned long *          control_port_indicies;
+
+  gboolean                 has_input;
 };
 
 plugin_desc_t * plugin_desc_new ();
