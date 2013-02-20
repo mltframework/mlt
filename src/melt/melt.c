@@ -50,6 +50,15 @@ static void stop_handler(int signum)
 	}
 }
 
+static void abnormal_exit_handler(int signum)
+{
+	// The process is going down hard. Restore the terminal first.
+	term_exit();
+	// Reset the default handler so the core gets dumped.
+	signal(signum, SIG_DFL);
+	kill(getpid(), signum);
+}
+
 static void transport_action( mlt_producer producer, char *value )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -680,6 +689,11 @@ int main( int argc, char **argv )
 	int is_progress = 0;
 	int is_silent = 0;
 	mlt_profile backup_profile;
+
+	// Handle abnormal exit situations.
+	signal( SIGSEGV, abnormal_exit_handler );
+	signal( SIGILL, abnormal_exit_handler );
+	signal( SIGABRT, abnormal_exit_handler );
 
 	// Construct the factory
 	mlt_repository repo = mlt_factory_init( NULL );
