@@ -41,6 +41,7 @@ namespace Mlt
 			void *pop_front( );
 			void *peek_back( );
 			void *peek_front( );
+			void *peek( int index );
 	};
 }
 

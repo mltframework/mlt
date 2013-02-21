@@ -434,3 +434,10 @@ MLTPP_0.8.8 {
 
   local: *;
 };
+
+MLT_0.9.0 {
+  global:
+    extern "C++" {
+      "Mlt::Deque::peek(int)";
+    }
+} MLT_0.8.8;

@@ -66,3 +66,8 @@ void *Deque::peek_front( )
 	return mlt_deque_peek_front( deque );
 }
 
+void *Deque::peek( int index )
+{
+	return mlt_deque_peek( deque, index );
+}
+
