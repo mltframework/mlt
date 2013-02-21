@@ -47,11 +47,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			mlt_properties_get_int( properties, "progressive" ) == 0 )
 		{
 			// We only work with non-planar formats
-			if ( *format == mlt_image_yuv420p )
-			{
-				*format = mlt_image_yuv422;
-				mlt_frame_get_image( frame, image, format, width, height, writable );
-			}
+			if ( *format == mlt_image_yuv420p && frame->convert_image )
+				error = frame->convert_image( frame, image, format, mlt_image_yuv422 );
 
 			// Make a new image
 			int bpp;

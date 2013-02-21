@@ -96,13 +96,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_log_debug( NULL, "[filter crop] %s %dx%d -> %dx%d\n", mlt_image_format_name(*format),
 				 *width, *height, owidth, oheight);
 
-		// Provides a manual override for misreported field order
-		if ( mlt_properties_get( properties, "meta.top_field_first" ) )
-		{
-			mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( properties, "meta.top_field_first" ) );
-			mlt_properties_set_int( properties, "meta.top_field_first", 0 );
-		}
-
 		if ( top % 2 )
 			mlt_properties_set_int( properties, "top_field_first", !mlt_properties_get_int( properties, "top_field_first" ) );
 		

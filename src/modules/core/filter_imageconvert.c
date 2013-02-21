@@ -372,7 +372,8 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
-	frame->convert_image = convert_image;
+	if ( !frame->convert_image )
+		frame->convert_image = convert_image;
 	return frame;
 }
 

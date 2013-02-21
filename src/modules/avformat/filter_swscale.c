@@ -55,7 +55,7 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 		case mlt_image_yuv420p:
 			value = PIX_FMT_YUV420P;
 			break;
-		case mlt_image_none:
+		default:
 			fprintf( stderr, "Invalid format...\n" );
 			break;
 	}
