@@ -55,10 +55,8 @@ static void abnormal_exit_handler(int signum)
 	// The process is going down hard. Restore the terminal first.
 	term_exit();
 	// Reset the default handler so the core gets dumped.
-	signal(signum, SIG_DFL);
-#ifndef WIN32
-	kill(getpid(), signum);
-#endif
+	signal( signum, SIG_DFL );
+	raise( signum );
 }
 
 static void transport_action( mlt_producer producer, char *value )
