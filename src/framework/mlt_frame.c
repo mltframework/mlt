@@ -403,6 +403,8 @@ const char * mlt_image_format_name( mlt_image_format format )
 		case mlt_image_yuv422:  return "yuv422";
 		case mlt_image_yuv420p: return "yuv420p";
 		case mlt_image_opengl:  return "opengl";
+		case mlt_image_glsl:    return "glsl";
+		case mlt_image_glsl_texture: return "glsl_texture";
 	}
 	return "invalid";
 }
@@ -421,9 +423,6 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 	height += 1;
 	switch ( format )
 	{
-		case mlt_image_none:
-			if ( bpp ) *bpp = 0;
-			return 0;
 		case mlt_image_rgb24:
 			if ( bpp ) *bpp = 3;
 			return width * height * 3;
@@ -437,6 +436,9 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 		case mlt_image_yuv420p:
 			if ( bpp ) *bpp = 3 / 2;
 			return width * height * 3 / 2;
+		default:
+			if ( bpp ) *bpp = 0;
+			return 0;
 	}
 	return 0;
 }
@@ -538,10 +540,6 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 
 		switch( *format )
 		{
-			case mlt_image_none:
-				size = 0;
-				*buffer = NULL;
-				break;
 			case mlt_image_rgb24:
 				size *= 3;
 				size += *width * 3;
@@ -574,6 +572,10 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 				*buffer = mlt_pool_alloc( size );
 				if ( *buffer )
 					memset( *buffer, 255, size );
+				break;
+			default:
+				size = 0;
+				*buffer = NULL;
 				break;
 		}
 
