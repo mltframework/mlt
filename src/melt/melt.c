@@ -56,7 +56,9 @@ static void abnormal_exit_handler(int signum)
 	term_exit();
 	// Reset the default handler so the core gets dumped.
 	signal(signum, SIG_DFL);
+#ifndef
 	kill(getpid(), signum);
+#endif
 }
 
 static void transport_action( mlt_producer producer, char *value )
