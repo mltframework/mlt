@@ -89,6 +89,7 @@ struct deserialise_context_s
 	int multi_consumer;
 	int consumer_count;
 	int seekable;
+	mlt_consumer qglsl;
 };
 typedef struct deserialise_context_s *deserialise_context;
 
@@ -1069,12 +1070,10 @@ static void on_start_consumer( deserialise_context context, const xmlChar *name,
 {
 	if ( context->pass == 1 )
 	{
-		mlt_service service = calloc( 1, sizeof( struct mlt_service_s ) );
-		mlt_service_init( service, NULL );
-		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+		mlt_properties properties = mlt_properties_new();
 
 		mlt_properties_set_lcnumeric( properties, context->lc_numeric );
-		context_push_service( context, service, mlt_dummy_consumer_type );
+		context_push_service( context, (mlt_service) properties, mlt_dummy_consumer_type );
 
 		// Set the properties from attributes
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
@@ -1088,21 +1087,23 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 	{
 		// Get the consumer from the stack
 		enum service_type type;
-		mlt_service service = context_pop_service( context, &type );
+		mlt_properties properties = (mlt_properties) context_pop_service( context, &type );
 
-		if ( service && type == mlt_dummy_consumer_type )
+		if ( properties && type == mlt_dummy_consumer_type )
 		{
-			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 			qualify_property( context, properties, "resource" );
 			qualify_property( context, properties, "target" );
 			char *resource = trim( mlt_properties_get( properties, "resource" ) );
 
-			if ( context->multi_consumer > 1 )
+			if ( context->multi_consumer > 1 || context->qglsl )
 			{
 				// Instantiate the multi consumer
 				if ( !context->consumer )
 				{
-					context->consumer = mlt_factory_consumer( context->profile, "multi", NULL );
+					if ( context->qglsl )
+						context->consumer = context->qglsl;
+					else
+						context->consumer = mlt_factory_consumer( context->profile, "multi", NULL );
 					if ( context->consumer )
 					{
 						// Track this consumer
@@ -1112,11 +1113,12 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 				}
 				if ( context->consumer )
 				{
-					// Set this service instance on multi consumer
+					// Set this properties object on multi consumer
 					char key[20];
 					snprintf( key, sizeof(key), "%d", context->consumer_count++ );
-					mlt_properties_set_data( MLT_CONSUMER_PROPERTIES(context->consumer), key, service, 0,
-						(mlt_destructor) mlt_service_close, NULL );
+					mlt_properties_inc_ref( properties );
+					mlt_properties_set_data( MLT_CONSUMER_PROPERTIES(context->consumer), key, properties, 0,
+						(mlt_destructor) mlt_properties_close, NULL );
 				}
 			}
 			else
@@ -1136,11 +1138,8 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 			}
 		}
 		// Close the dummy
-		if ( service )
-		{
-			mlt_service_close( service );
-			free( service );
-		}
+		if ( properties )
+			mlt_properties_close( properties );
 	}
 }
 
@@ -1230,6 +1229,14 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 			on_start_profile( context, name, atts );
 		if ( xmlStrcmp( name, _x("consumer") ) == 0 )
 			context->multi_consumer++;
+
+		// Check for a service beginning with glsl. or movit.
+		for ( ; atts != NULL && *atts != NULL; atts += 2 ) {
+			if ( !xmlStrncmp( atts[1], _x("glsl."), 5 ) || !xmlStrncmp( atts[1], _x("movit."), 6 ) ) {
+				mlt_properties_set_int( context->params, "qglsl", 1 );
+				break;
+			}
+		}
 		return;
 	}
 	context->branch[ context->depth ] ++;
@@ -1360,7 +1367,11 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 			mlt_properties_set( properties, context->property, value );
 	}
 	context->entity_is_replace = 0;
-	
+
+	// Check for a service beginning with glsl. or movit.
+	if ( !strncmp( value, "glsl.", 5 ) || !strncmp( value, "movit.", 6 ) )
+		mlt_properties_set_int( context->params, "qglsl", 1 );
+
 	free( value);
 }
 
@@ -1618,6 +1629,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// Setup SAX callbacks for first pass
 	sax = calloc( 1, sizeof( xmlSAXHandler ) );
 	sax->startElement = on_start_element;
+	sax->characters = on_characters;
 	sax->warning = on_error;
 	sax->error = on_error;
 	sax->fatalError = on_error;
@@ -1693,9 +1705,15 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		return NULL;
 	}
 
+	// Create the qglsl consumer now, if requested, so that glsl.manager
+	// may exist when trying to load glsl. or movit. services.
+	// The "if requested" part can come from query string qglsl=1 or when
+	// a service beginning with glsl. or movit. appears in the XML.
+	if ( mlt_properties_get_int( context->params, "qglsl" ) )
+		context->qglsl = mlt_factory_consumer( profile, "qglsl", NULL );
+
 	// Setup SAX callbacks for second pass
 	sax->endElement = on_end_element;
-	sax->characters = on_characters;
 	sax->cdataBlock = on_characters;
 	sax->internalSubset = on_internal_subset;
 	sax->entityDecl = on_entity_declaration;
@@ -1805,6 +1823,8 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	}
 
 	// Clean up
+	if ( context->qglsl && context->consumer != context->qglsl )
+		mlt_consumer_close( context->qglsl );
 	mlt_properties_close( context->producer_map );
 	if ( context->params != NULL )
 		mlt_properties_close( context->params );
