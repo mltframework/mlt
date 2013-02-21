@@ -36,7 +36,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include <sys/syscall.h>
 
 #include <framework/mlt.h>
 
@@ -178,8 +177,6 @@ static void update()
 
 static void show_frame()
 {
-//	fprintf(stderr,"show_frame threadID : %ld\n", syscall(SYS_gettid));
-	
 	if ( (fb.width != new_frame.width) || (fb.height != new_frame.height) ) {
 		glDeleteFramebuffers( 1, &fb.fbo );
 		glDeleteTextures( 1, &fb.texture );
@@ -255,7 +252,7 @@ void* video_thread( void *arg )
 		next = mlt_consumer_rt_frame( consumer );
 
 		if ( !mlt_properties_get_int( MLT_FILTER_PROPERTIES( glsl_manager ), "glsl_supported" ) ) {
-			fprintf( stderr, "OpenGL Shading Language is not supported on this machine.\n" );
+			mlt_log_error( MLT_CONSUMER_SERVICE(consumer), "OpenGL Shading Language is not supported on this machine.\n" );
 			xgl->running = 0;
 			break;
 		}
@@ -414,8 +411,6 @@ static void createGLWindow()
 	XGetGeometry( GLWin.dpy, GLWin.win, &winDummy, &GLWin.x, &GLWin.y,
 		&GLWin.width, &GLWin.height, &borderDummy, &GLWin.depth );
 
-	fprintf(stderr, "Direct Rendering: %s\n",glXIsDirect( GLWin.dpy, GLWin.ctx ) ? "true" : "false" );
-	
 	// Verify GLSL works on this machine
 	hiddenctx.ctx = glXCreateContext( GLWin.dpy, vi, GLWin.ctx, GL_TRUE );
 	if ( hiddenctx.ctx ) {
@@ -527,7 +522,6 @@ void start_xgl( consumer_xgl consumer )
 
 static void on_consumer_thread_started( mlt_properties owner, HiddenContext* context )
 {
-	fprintf(stderr, "%s: %ld\n", __FUNCTION__, syscall(SYS_gettid));
 	// Initialize this thread's OpenGL state
 	glXMakeCurrent( context->dpy, context->win, context->ctx );
 	mlt_events_fire( MLT_FILTER_PROPERTIES(glsl_manager), "init glsl", NULL );
@@ -550,7 +544,6 @@ static void *consumer_thread( void * );
 
 mlt_consumer consumer_xgl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	fprintf(stderr, "consumer_xgl_init\n");
 	// Create the consumer object
 	consumer_xgl this = calloc( sizeof( struct consumer_xgl_s ), 1 );
 

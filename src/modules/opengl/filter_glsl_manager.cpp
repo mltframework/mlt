@@ -30,14 +30,6 @@ extern "C" {
 #include <framework/mlt_factory.h>
 }
 
-#ifdef WIN32
-#define SYS_gettid (224)
-#define syscall(X) (((X == SYS_gettid) && GetCurrentThreadId()) || 0)
-#else
-#include <unistd.h>
-#include <sys/syscall.h>
-#endif
-
 void deleteManager(GlslManager *p)
 {
 	delete p;
@@ -177,7 +169,7 @@ glsl_pbo GlslManager::get_pbo(int size)
 
 void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 {
-	mlt_log_verbose( filter->get_service(), "%s: %d\n", __FUNCTION__, syscall(SYS_gettid) );
+	mlt_log_debug( filter->get_service(), "%s: %d\n", __FUNCTION__ );
 #ifdef WIN32
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("\\share\\movit");
 #elif defined(__DARWIN__) && defined(RELOCATABLE)

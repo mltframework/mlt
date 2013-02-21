@@ -67,7 +67,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
-	mlt_log_verbose( NULL, "filter_movit_convert: %s -> %s\n",
+	mlt_log_debug( NULL, "filter_movit_convert: %s -> %s\n",
 		mlt_image_format_name( *format ), mlt_image_format_name( output_format ) );
 
 	// Use CPU if glsl not initialized or not supported.
