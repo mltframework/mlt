@@ -1,0 +1,35 @@
+schema_version: 0.1
+type: filter
+identifier: movit.diffusion
+title: Diffusion (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: >
+  There are many different effects that go under the name of "diffusion",
+  seemingly all of the inspired by the effect you get when you put a
+  diffusion filter in front of your camera lens. The effect most people
+  want is a general flattening/smoothing of the light, and reduction of
+  fine detail (most notably, blemishes in people's skin), without ruining
+  edges, which a regular blur would do.
+  We do a relatively simple version, sometimes known as "white diffusion",
+  where we first blur the picture, and then overlay it on the original
+  using the original as a matte.
+
+parameters:
+  - identifier: radius
+    title: Blur Radius
+    type: float
+    minimum: 0.0
+    default: 3.0
+
+  - identifier: mix
+    title: Blurriness
+    type: float
+    minimum: 0.0
+    maximum: 1.0
+    default: 0.3

@@ -1,0 +1,53 @@
+schema_version: 0.1
+type: filter
+identifier: movit.sharpen
+title: Deconvolution Sharpen (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: >
+  Deconvolution Sharpen is a filter that sharpens by way of deconvolution
+  (i.e., trying to reverse the blur kernel, as opposed to just boosting high
+  frequencies), more specifically by FIR Wiener filters. It is the same
+  algorithm as used by the (now largely abandoned) Refocus plug-in for GIMP,
+  and I suspect the same as in Photoshop's “Smart Sharpen” filter.
+  The effect gives generally better results than unsharp masking, but can be very
+  GPU intensive, and requires a fair bit of tweaking to get good results without
+  ringing and/or excessive noise. It should be mentioned that for the larger
+
+parameters:
+  - identifier: matrix_size
+    title: Matrix Size
+    type: integer
+    minimum: 0
+    maximum: 10
+    default: 5
+
+  - identifier: circle_radius
+    title: Circle Radius
+    type: float
+    minimum: 0
+    default: 2
+
+  - identifier: gaussian_radius
+    title: Gaussian Radius
+    type: float
+    minimum: 0
+    default: 0
+
+  - identifier: correlation
+    title: Correlation
+    type: float
+    minimum: 0
+    default: 0.95
+
+  - identifier: noise
+    title: Noise Level
+    type: float
+    minimum: 0
+    default: 0.01
+

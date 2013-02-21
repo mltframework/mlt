@@ -1,0 +1,25 @@
+schema_version: 0.1
+type: filter
+identifier: movit.opacity
+title: Opacity (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: Adjust the opacity of an image through the alpha channel.
+notes: >
+  When used in some transitions this will cause this video to be mixed with
+  the other video. If the video this is applied to already has an alpha channel,
+  then this preserves that by multiplying the opacity level with the alpha channel.
+  This filter is especially handy when used in conjunction with movit.overlay.
+
+parameters:
+  - identifier: opacity
+    title: Opacity
+    type: float
+    minimum: 0
+    maximum: 1
+    default: 1

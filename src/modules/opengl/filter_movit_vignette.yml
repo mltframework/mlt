@@ -1,0 +1,29 @@
+schema_version: 0.1
+type: filter
+identifier: movit.vignette
+title: Vignette (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: >
+  A circular vignette, falling off as cos² of the distance from the center
+  (the classic formula for approximating a real lens).
+
+parameters:
+  - identifier: radius
+    title: Outer Radius
+    type: float
+    minimum: 0.0
+    maximum: 1.0
+    default: 0.3
+
+  - identifier: inner_radius
+    title: Inner Radius
+    type: float
+    minimum: 0.0
+    maximum: 1.0
+    default: 0.3

@@ -1,0 +1,24 @@
+schema_version: 0.1
+type: filter
+identifier: movit.saturation
+title: Saturation (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: >
+  A simple desaturation/saturation effect. We use the Rec. 709
+  definition of luminance (in linear light, of course) and linearly
+  interpolate between that (saturation=0) and the original signal
+  (saturation=1). Extrapolating that curve further (ie., saturation > 1)
+  gives us increased saturation if so desired.
+
+parameters:
+  - identifier: saturation
+    title: Saturation
+    type: float
+    minimum: 0
+    default: 1

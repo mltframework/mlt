@@ -1,0 +1,13 @@
+schema_version: 0.1
+type: transition
+identifier: movit.overlay
+title: Dissolve (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: >
+  A simple video overlay or alpha-compositing effect using the Porter-Duff over operation.

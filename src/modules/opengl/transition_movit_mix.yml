@@ -1,0 +1,35 @@
+schema_version: 0.1
+type: transition
+identifier: movit.mix
+title: Dissolve (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: A simple video cross-fade or mixing effect.
+
+parameters:
+  - identifier: argument
+    title: Mix Level
+    description: Performs a dissolve if a mix level is not supplied.
+    type: float
+    minimum: 0
+    maximum: 1
+
+  - identifier: mix
+    title: Mix Level
+    description: Performs a dissolve if a mix level is not supplied.
+    type: float
+    minimum: 0
+    maximum: 1
+
+  - identifier: reverse
+    title: Reverse
+    type: integer
+    mutable: yes
+    description: >
+      Reverse the direction of the transition.
+    default: 0

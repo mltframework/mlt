@@ -1,0 +1,22 @@
+schema_version: 0.1
+type: filter
+identifier: movit.blur
+title: Blur (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: >
+  A separable 2D blur implemented by a combination of mipmap filtering
+  and convolution (essentially giving a convolution with a piecewise linear
+  approximation to the true impulse response).
+
+parameters:
+  - identifier: radius
+    title: Radius
+    type: float
+    minimum: 0
+    default: 3

@@ -1,0 +1,27 @@
+schema_version: 0.1
+type: filter
+identifier: movit.white_balance
+title: White Balance (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: Color correction in LMS color space.
+
+parameters:
+  - identifier: neutral_color
+    title: Neutral Color
+    type: string
+    widget: color
+    default: #7f7f7f
+
+  - identifier: color_temperature
+    title: Color Temperature
+    type: float
+    minimum: 1000.0
+    maximum: 15000.0
+    default: 6500.0
+    unit: Kelvin
