@@ -509,14 +509,14 @@ void start_xgl( consumer_xgl consumer )
 	new_frame.mlt_frame_ref = NULL;
 	
 	vthread.running = 0;
-	
+	xgl->xgl_started = 1;
+
 	createGLWindow();
 	run();
 	if ( vthread.running ) {
 		vthread.running = 0;
 		pthread_join( vthread.thread, NULL );
 	}
-	killGLWindow();
 	xgl->running = 0;
 }
 
@@ -681,6 +681,9 @@ static void consumer_close( mlt_consumer parent )
 
 	// Close the queue
 	mlt_deque_close( this->queue );
+
+	if ( this->xgl_started )
+		killGLWindow();
 
 	// Finally clean up this
 	free( this );
