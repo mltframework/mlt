@@ -56,7 +56,7 @@ static void abnormal_exit_handler(int signum)
 	term_exit();
 	// Reset the default handler so the core gets dumped.
 	signal(signum, SIG_DFL);
-#ifndef
+#ifndef WIN32
 	kill(getpid(), signum);
 #endif
 }
