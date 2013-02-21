@@ -50,9 +50,12 @@
  * \properties \em test_card the name of a resource to use as the test card, defaults to
  * environment variable MLT_TEST_CARD. If undefined, the hard-coded default test card is
  * white silence. A test card is what appears when nothing is produced.
- * \event \em consumer-frame-show Subclass implementations should fire this.
- * \event \em consumer-frame-render The abstract class fires this.
- * \event \em consumer-stopped
+ * \event \em consumer-frame-show Subclass implementations fire this immediately after showing a frame
+ * or when a frame should be shown (if audio-only consumer).
+ * \event \em consumer-frame-render The base class fires this immediately before rendering a frame.
+ * \event \em consumer-thread-started The base class fires when beginning execution of a rendering thread.
+ * \event \em consumer-thread-stopped The base class fires when a rendering thread has ended.
+ * \event \em consumer-stopped This is fired when the subclass implementation calls mlt_consumer_stopped().
  * \properties \em fps video frames per second as floating point (read only)
  * \properties \em frame_rate_num the numerator of the video frame rate, overrides \p mlt_profile_s
  * \properties \em frame_rate_den the denominator of the video frame rate, overrides \p mlt_profile_s

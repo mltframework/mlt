@@ -105,6 +105,8 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 
 		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
 		mlt_events_register( properties, "consumer-frame-render", ( mlt_transmitter )mlt_consumer_frame_render );
+		mlt_events_register( properties, "consumer-thread-started", NULL );
+		mlt_events_register( properties, "consumer-thread-stopped", NULL );
 		mlt_events_register( properties, "consumer-stopped", NULL );
 		mlt_events_listen( properties, self, "consumer-frame-show", ( mlt_listener )on_consumer_frame_show );
 
@@ -488,6 +490,8 @@ int mlt_consumer_start( mlt_consumer self )
 			self->format = mlt_image_yuv420p;
 		else if ( !strcmp( format, "none" ) )
 			self->format = mlt_image_none;
+		else if ( !strcmp( format, "glsl" ) )
+			self->format = mlt_image_glsl_texture;
 		else
 			self->format = mlt_image_yuv422;
 	}
@@ -706,6 +710,8 @@ static void *consumer_read_ahead_thread( void *arg )
 	if ( preview_off && preview_format != 0 )
 		self->format = preview_format;
 
+	mlt_events_fire( properties, "consumer-thread-started", NULL );
+
 	// Get the first frame
 	frame = mlt_consumer_get_frame( self );
 
@@ -853,6 +859,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Remove the last frame
 	mlt_frame_close( frame );
+	mlt_events_fire( properties, "consumer-thread-stopped" );
 
 	return NULL;
 }
@@ -912,6 +919,8 @@ static void *consumer_worker_thread( void *arg )
 	if ( preview_off && preview_format != 0 )
 		format = preview_format;
 
+	mlt_events_fire( properties, "consumer-thread-started", NULL );
+
 	// Continue to read ahead
 	while ( self->ahead )
 	{
@@ -964,6 +973,7 @@ static void *consumer_worker_thread( void *arg )
 		pthread_cond_broadcast( &self->done_cond );
 		pthread_mutex_unlock( &self->done_mutex );
 	}
+	mlt_events_fire( properties, "consumer-thread-stopped" );
 
 	return NULL;
 }
@@ -1194,11 +1204,14 @@ void mlt_consumer_purge( mlt_consumer self )
 {
 	if ( self && self->ahead )
 	{
-		pthread_mutex_lock( &self->queue_mutex );
+		if ( self->ahead && self->real_time )
+			pthread_mutex_lock( &self->queue_mutex );
 		while ( mlt_deque_count( self->queue ) )
 			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
-		pthread_cond_broadcast( &self->queue_cond );
-		pthread_mutex_unlock( &self->queue_mutex );
+		if ( self->ahead && self->real_time ) {
+			pthread_cond_broadcast( &self->queue_cond );
+			pthread_mutex_unlock( &self->queue_mutex );
+		}
 	}
 }
 
@@ -1379,6 +1392,11 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 	}
 	else // real_time == 0
 	{
+		if ( !self->ahead )
+		{
+			self->ahead = 1;
+			mlt_events_fire( properties, "consumer-thread-started", NULL );
+		}
 		// Get the frame in non real time
 		frame = mlt_consumer_get_frame( self );
 
