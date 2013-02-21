@@ -104,15 +104,15 @@ else
 			echo "USE_QT4=1" >> config.mak
 			if [ -d "$qimage_libdir/QtGui.framework" ]
 			then
-				echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg ) >> config.mak
-				echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg) >> config.mak
+				echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+				echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 			elif [ -f "$qimage_libdir/libQtCore4.a" ]
 			then
 				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-				echo QTLIBS=-Wl,-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 >> config.mak
+				echo QTLIBS=-Wl,-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 -lQtOpenGL4 >> config.mak
 			else
 				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-				echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg >> config.mak
+				echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg -lQtOpenGL >> config.mak
 			fi
 		else
 		    if [ "$without_kde" = "" ] && [ -d "$kde_includedir" ]
@@ -139,8 +139,8 @@ else
 			qt4_found=true
 			echo "#define USE_QT4" >> config.h
 			echo "USE_QT4=1" >> config.mak
-			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg ) >> config.mak
-			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg) >> config.mak
+			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 		else
 			echo "qimage: QT environment not found - disabling"
 			touch ../disable-qimage
