@@ -48,6 +48,7 @@
 #endif
 
 static QApplication *app = NULL;
+Q_DECLARE_METATYPE(QTextCursor);
 
 class ImageItem: public QGraphicsItem
 {
@@ -197,8 +198,10 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				}
 				QGraphicsTextItem *txt = scene->addText(text, font);
 				if (txtProperties.namedItem("font-outline").nodeValue().toDouble()>0.0){
-					qRegisterMetaType<QTextCursor>( "QTextCursor" );
-					QTextCursor cursor(txt->document());
+					QTextDocument *doc = txt->document();
+					// Make sure some that the text item does not request refresh by itself
+					doc->blockSignals(true);
+					QTextCursor cursor(doc);
 					cursor.select(QTextCursor::Document);
 					QTextCharFormat format;
 					format.setTextOutline(
@@ -401,6 +404,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 					const char *localename = mlt_properties_get_lcnumeric( MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) ) );
 					QLocale::setDefault( QLocale( localename ) );
 				}
+				qRegisterMetaType<QTextCursor>( "QTextCursor" );
 			}
 			scene = new QGraphicsScene();
 			scene->setItemIndexMethod( QGraphicsScene::NoIndex );
@@ -442,7 +446,6 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 				    // the keystroke delay and a start offset, both in frames
 				    QStringList values = params.at( 2 ).split( ";" );
 				    int interval = qMax( 0, ( ( int ) position - values.at( 1 ).toInt()) / values.at( 0 ).toInt() );
-				    qRegisterMetaType<QTextCursor>( "QTextCursor" );
 				    QTextCursor cursor = titem->textCursor();
 				    cursor.movePosition(QTextCursor::EndOfBlock);
 				    // get the font format
