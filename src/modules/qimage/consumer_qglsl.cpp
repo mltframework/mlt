@@ -30,7 +30,7 @@ static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
 	QApplication* app = qApp;
 
-	mlt_log_verbose(service, "%s\n", __FUNCTION__);
+	mlt_log_debug(service, "%s\n", __FUNCTION__);
 #ifdef linux
 	if ( getenv("DISPLAY") == 0 ) {
 		mlt_log_error(service, "The qglsl consumer requires a X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );

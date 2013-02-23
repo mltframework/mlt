@@ -169,7 +169,7 @@ glsl_pbo GlslManager::get_pbo(int size)
 
 void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 {
-	mlt_log_debug( filter->get_service(), "%s: %d\n", __FUNCTION__ );
+	mlt_log_debug( filter->get_service(), "%s\n", __FUNCTION__ );
 #ifdef WIN32
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("\\share\\movit");
 #elif defined(__DARWIN__) && defined(RELOCATABLE)
