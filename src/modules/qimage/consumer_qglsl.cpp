@@ -47,7 +47,6 @@ static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 	QGLWidget* renderContext = new QGLWidget;
 	renderContext->resize(0, 0);
 	renderContext->show();
-	app->processEvents();
 	mlt_events_fire(filter_properties, "init glsl", NULL);
 	if (!mlt_properties_get_int(filter_properties, "glsl_supported")) {
 		mlt_log_fatal(service,
