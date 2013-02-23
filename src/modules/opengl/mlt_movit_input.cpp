@@ -34,7 +34,9 @@ MltInput::MltInput(unsigned width, unsigned height)
 
 MltInput::~MltInput()
 {
-	delete input;
+	// XXX: this is crashing when a producer is closed
+	// on Windows when using melt with qglsl.
+//	delete input;
 }
 
 std::string MltInput::output_fragment_shader()

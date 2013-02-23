@@ -970,7 +970,10 @@ query_all:
 
 	// Disconnect producer from consumer to prevent ref cycles from closing services
 	if ( consumer )
+	{
 		mlt_consumer_connect( consumer, NULL );
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-cleanup", NULL);
+	}
 
 	// Close the producer
 	if ( melt != NULL )
