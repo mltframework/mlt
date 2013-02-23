@@ -53,6 +53,20 @@ static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 			"OpenGL Shading Language rendering is not supported on this machine.\n" );
 		mlt_events_fire(properties, "consumer-fatal-error", NULL);
 	}
+    else {
+        mlt_properties_set_data(properties, "qglslRenderContext", renderContext, 0, NULL, NULL);
+    }
+}
+
+static void onThreadStopped(mlt_properties owner, mlt_consumer consumer)
+{
+    mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
+    QGLWidget* renderContext = (QGLWidget*) mlt_properties_get_data(properties, "qglslRenderContext", NULL);
+    if (renderContext) {
+        renderContext->doneCurrent();
+        delete renderContext;
+        mlt_properties_set_data(properties, "qglslRenderContext", NULL, 0, NULL, NULL);
+    }
 }
 
 extern "C" {
@@ -66,6 +80,7 @@ mlt_consumer consumer_qglsl_init( mlt_profile profile, mlt_service_type type, co
 			mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
 			mlt_properties_set_data(properties, "glslManager", filter, 0, (mlt_destructor) mlt_filter_close, NULL);
 			mlt_events_listen(properties, consumer, "consumer-thread-started", (mlt_listener) onThreadStarted);
+            mlt_events_listen(properties, consumer, "consumer-thread-stopped", (mlt_listener) onThreadStopped);
 			return consumer;
 		}
 		mlt_consumer_close(consumer);
