@@ -135,6 +135,16 @@ static void attach_normalisers( mlt_profile profile, mlt_service service )
 
 	// Attach the audio and video format converters
 	int created = 0;
+	// movit.convert skips setting the frame->convert_image pointer if GLSL cannot be used.
+	mlt_filter filter = mlt_factory_filter( profile, "movit.convert", NULL );
+	if ( filter != NULL )
+	{
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
+		mlt_service_attach( service, filter );
+		mlt_filter_close( filter );
+		created = 1;
+	}
+	// avcolor_space and imageconvert only set frame->convert_image if it has not been set.
 	create_filter( profile, service, "avcolor_space", &created );
 	if ( !created )
 		create_filter( profile, service, "imageconvert", &created );

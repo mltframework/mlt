@@ -1029,6 +1029,13 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 	int size;
 
 	mlt_properties_inherit( new_props, properties );
+
+	// Carry over some special data properties for the multi consumer.
+	mlt_properties_set_data( new_props, "_producer",
+		mlt_frame_get_original_producer( self ), 0, NULL, NULL );
+	mlt_properties_set_data( new_props, "movit.convert",
+		mlt_properties_get_data( properties, "movit.convert", NULL), 0, NULL, NULL );
+
 	if ( is_deep )
 	{
 		data = mlt_properties_get_data( properties, "audio", &size );
