@@ -126,6 +126,7 @@ struct producer_avformat_s
 	pthread_mutex_t packets_mutex;
 	pthread_mutex_t open_mutex;
 	int is_mutex_init;
+	AVRational video_time_base;
 #ifdef VDPAU
 	struct
 	{
@@ -1117,15 +1118,15 @@ static int seek_video( producer_avformat self, mlt_position position,
 		else if ( self->seekable && ( position < self->video_expected || position - self->video_expected >= 12 || self->last_position < 0 ) )
 		{
 			// Calculate the timestamp for the requested frame
-			int64_t timestamp = req_position / ( av_q2d( stream->time_base ) * source_fps );
+			int64_t timestamp = req_position / ( av_q2d( self->video_time_base ) * source_fps );
 			if ( req_position <= 0 )
 				timestamp = 0;
 			else if ( self->first_pts != AV_NOPTS_VALUE )
 				timestamp += self->first_pts;
 			else if ( context->start_time != AV_NOPTS_VALUE )
 				timestamp += context->start_time;
-			if ( preseek && av_q2d( stream->time_base ) != 0 )
-				timestamp -= 2 / av_q2d( stream->time_base );
+			if ( preseek && av_q2d( self->video_time_base ) != 0 )
+				timestamp -= 2 / av_q2d( self->video_time_base );
 			if ( timestamp < 0 )
 				timestamp = 0;
 			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %"PRId64" position %d expected %d last_pos %"PRId64"\n",
@@ -1645,7 +1646,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						pts -= self->first_pts;
 					else if ( context->start_time != AV_NOPTS_VALUE )
 						pts -= context->start_time;
-					int_position = ( int64_t )( ( av_q2d( stream->time_base ) * pts + delay ) * source_fps + 0.5 );
+					int_position = ( int64_t )( ( av_q2d( self->video_time_base ) * pts + delay ) * source_fps + 0.5 );
 					if ( int_position == self->last_position )
 						int_position = self->last_position + 1;
 				}
@@ -1706,7 +1707,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							pts -= self->first_pts;
 						else if ( context->start_time != AV_NOPTS_VALUE )
 							pts -= context->start_time;
-						int_position = ( int64_t )( ( av_q2d( stream->time_base ) * pts + delay ) * source_fps + 0.5 );
+						int_position = ( int64_t )( ( av_q2d( self->video_time_base ) * pts + delay ) * source_fps + 0.5 );
 					}
 #endif
 
@@ -2009,12 +2010,13 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 			}
 		}
+		self->video_time_base = stream->time_base;
 		if ( mlt_properties_get( properties, "force_fps" ) )
 		{
 			double source_fps = mlt_properties_get_double( properties, "force_fps" );
 			AVRational fps = av_d2q( source_fps, 1024 );
-			stream->time_base.num *= mlt_properties_get_int( properties, "meta.media.frame_rate_num" ) * fps.den;
-			stream->time_base.den *= mlt_properties_get_int( properties, "meta.media.frame_rate_den" ) * fps.num;
+			self->video_time_base.num *= mlt_properties_get_int( properties, "meta.media.frame_rate_num" ) * fps.den;
+			self->video_time_base.den *= mlt_properties_get_int( properties, "meta.media.frame_rate_den" ) * fps.num;
 			mlt_properties_set_int( properties, "meta.media.frame_rate_num", fps.num );
 			mlt_properties_set_int( properties, "meta.media.frame_rate_den", fps.den );
 		}
