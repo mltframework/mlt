@@ -859,7 +859,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Remove the last frame
 	mlt_frame_close( frame );
-	mlt_events_fire( properties, "consumer-thread-stopped" );
+	mlt_events_fire( properties, "consumer-thread-stopped", NULL );
 
 	return NULL;
 }
