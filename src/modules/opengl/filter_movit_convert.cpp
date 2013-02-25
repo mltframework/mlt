@@ -90,9 +90,19 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	// Use a temporary chain to convert image in RAM to OpenGL texture.
 	if ( output_format == mlt_image_glsl_texture && *format != mlt_image_glsl ) {
-		input = new MltInput( width, height );
-		chain = new EffectChain( width, height );
-		chain->add_input( input );
+		// We might already have a texture from a previous conversion from mlt_image_glsl.
+		glsl_texture texture = (glsl_texture) mlt_properties_get_data( properties, "movit.convert", NULL );
+		if ( texture ) {
+			*image = (uint8_t*) &texture->texture;
+			mlt_frame_set_image( frame, *image, 0, NULL );
+			mlt_properties_set_int( properties, "format", output_format );
+			*format = output_format;
+			return error;
+		} else {
+			input = new MltInput( width, height );
+			chain = new EffectChain( width, height );
+			chain->add_input( input );
+		}
 	}
 
 	if ( *format != mlt_image_glsl ) {
@@ -245,7 +255,8 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 				check_error();
 				glBindTexture( GL_TEXTURE_2D, 0 );
 				check_error();
-				GlslManager::release_texture( texture );
+				mlt_properties_set_data( properties, "movit.convert", texture, 0,
+					(mlt_destructor) GlslManager::release_texture, NULL);
 	
 				mlt_properties_set_int( properties, "format", output_format );
 				*format = output_format;
