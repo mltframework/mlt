@@ -1,0 +1,36 @@
+schema_version: 0.1
+type: producer
+identifier: blipflash
+title: Blip Flash
+version: 1
+copyright: Brian Matherly
+creator: Brian Matherly
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+  - Video
+description: >
+  Generate periodic synchronized audio blips and video flashes. 
+  Blips are a 1kHz tone and last the duration of the flash frame.
+parameters:
+  - identifier: period
+    title: Flash Period
+    type: integer
+    description: >
+      The period between flashes in seconds.
+    default: 1
+    readonly: no
+    mutable: yes
+    widget: spinner
+  - identifier: offset
+    title: Audio Offset
+    type: integer
+    description: >
+      The number of frames to offset the audio. 
+      A positive number results in audio earlier than video. 
+      An negative number results in audio later than video. 
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner

@@ -1,0 +1,34 @@
+schema_version: 0.1
+type: consumer
+identifier: blipflash
+title: Blip Flash
+version: 1
+copyright: Brian Matherly
+creator: Brian Matherly
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Audio
+description: >
+  Calculate the A/V sync for a blip flash source. 
+  Sync can be recalculated whenever a blip or a flash is detected.
+parameters:
+  - identifier: argument
+    title: Report File
+    type: string
+    description: >
+      The file to report the results to. If empty, the results will be reported to standard out.
+    required: no
+    widget: filesave
+  - identifier: report
+    title: Report Style
+    type: string
+    description: >
+      When to report sync - every frame or only when blips occur.
+    default: blip
+    values:
+      - blip
+      - frame
+    mutable: yes
+    widget: combo
