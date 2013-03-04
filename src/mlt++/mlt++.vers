@@ -439,5 +439,6 @@ MLTPP_0.9.0 {
   global:
     extern "C++" {
       "Mlt::Deque::peek(int)";
+      "Mlt::Service::filter_count()";
     };
 } MLTPP_0.8.8;

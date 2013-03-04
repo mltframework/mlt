@@ -57,6 +57,7 @@ namespace Mlt
 			mlt_service_type type( );
 			int attach( Filter &filter );
 			int detach( Filter &filter );
+			int filter_count( );
 			Filter *filter( int index );
 			void set_profile( Profile &profile );
 	};

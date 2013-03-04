@@ -401,3 +401,8 @@ MLT_0.8.8 {
 
   local: *;
 };
+
+MLT_0.9.0 {
+  global:
+    "mlt_service_filter_count";
+} MLT_0.8.8;

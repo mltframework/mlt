@@ -118,6 +118,11 @@ int Service::detach( Filter &filter )
 	return mlt_service_detach( get_service( ), filter.get_filter( ) );
 }
 
+int Service::filter_count()
+{
+	return mlt_service_filter_count( get_service() );
+}
+
 Filter *Service::filter( int index )
 {
 	mlt_filter result = mlt_service_filter( get_service( ), index );

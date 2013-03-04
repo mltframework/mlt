@@ -618,7 +618,25 @@ int mlt_service_detach( mlt_service self, mlt_filter filter )
 	return error;
 }
 
-/** Retrieve a filter.
+/** Get the number of filters attached.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \return the number of attached filters or -1 if there was an error
+ */
+
+int mlt_service_filter_count( mlt_service self )
+{
+	int result = -1;
+	if ( self )
+	{
+		mlt_service_base *base = self->local;
+		result = base->filter_count;
+	}
+	return result;
+}
+
+/** Retrieve an attached filter.
  *
  * \public \memberof mlt_service_s
  * \param self a service
