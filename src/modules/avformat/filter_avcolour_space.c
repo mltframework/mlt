@@ -66,7 +66,8 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 			value = PIX_FMT_YUV420P;
 			break;
 		default:
-			mlt_log_error( NULL, "[filter avcolor_space] Invalid format\n" );
+			mlt_log_error( NULL, "[filter avcolor_space] Invalid format %s\n",
+				mlt_image_format_name( format ) );
 			break;
 	}
 
