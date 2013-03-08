@@ -26,7 +26,8 @@
 #include <movit/effect_chain.h>
 #include <movit/util.h>
 #include "mlt_movit_input.h"
-
+#include <mlt++/MltProducer.h>
+#include "mlt_flip_effect.h"
 
 static void yuv422_to_yuv422p( uint8_t *yuv422, uint8_t *yuv422p, int width, int height )
 {
@@ -59,6 +60,11 @@ static int convert_on_cpu( mlt_frame frame, uint8_t **image, mlt_image_format *f
 	return error;
 }
 
+static void delete_chain( EffectChain* chain )
+{
+	delete chain;
+}
+
 static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, mlt_image_format output_format )
 {
 	// Nothing to do!
@@ -85,27 +91,51 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	int img_size = mlt_image_format_size( *format, width, height, NULL );
 	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 	mlt_service service = MLT_PRODUCER_SERVICE(producer);
+	GlslManager::get_instance()->lock_service( frame );
 	EffectChain* chain = GlslManager::get_chain( service );
 	MltInput* input = GlslManager::get_input( service );
 
-	// Use a temporary chain to convert image in RAM to OpenGL texture.
-	if ( output_format == mlt_image_glsl_texture && *format != mlt_image_glsl ) {
-		// We might already have a texture from a previous conversion from mlt_image_glsl.
-		glsl_texture texture = (glsl_texture) mlt_properties_get_data( properties, "movit.convert", NULL );
-		if ( texture ) {
-			*image = (uint8_t*) &texture->texture;
-			mlt_frame_set_image( frame, *image, 0, NULL );
-			mlt_properties_set_int( properties, "format", output_format );
-			*format = output_format;
-			return error;
-		} else {
-			input = new MltInput( width, height );
-			chain = new EffectChain( width, height );
-			chain->add_input( input );
-		}
+	if ( !chain || !input ) {
+		GlslManager::get_instance()->unlock_service( frame );
+		return 2;
 	}
 
 	if ( *format != mlt_image_glsl ) {
+		bool finalize_chain = false;
+		if ( output_format == mlt_image_glsl_texture ) {
+			// We might already have a texture from a previous conversion from mlt_image_glsl.
+			glsl_texture texture = (glsl_texture) mlt_properties_get_data( properties, "movit.convert.texture", NULL );
+			// XXX: disabled for now because we do not have reliable way to clear the texture property
+			// when a downstream filter has changed image.
+			if ( 0 && texture ) {
+				*image = (uint8_t*) &texture->texture;
+				mlt_frame_set_image( frame, *image, 0, NULL );
+				mlt_properties_set_int( properties, "format", output_format );
+				*format = output_format;
+				GlslManager::get_instance()->unlock_service( frame );
+				return error;
+			} else {
+				// Use a separate chain to convert image in RAM to OpenGL texture.
+				// Use cached chain if available and compatible.
+				Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
+				chain = (EffectChain*) producer.get_data( "movit.convert.chain" );
+				input = (MltInput*) producer.get_data( "movit.convert.input" );
+				int w = producer.get_int( "movit.convert.width" );
+				int h = producer.get_int( "movit.convert.height" );
+				mlt_image_format f = (mlt_image_format) producer.get_int( "movit.convert.format" );
+				if ( !chain || width != w || height != h || output_format != f ) {
+					chain = new EffectChain( width, height );
+					input = new MltInput( width, height );
+					chain->add_input( input );
+					chain->add_effect( new Mlt::VerticalFlip() );
+					finalize_chain = true;
+					producer.set( "movit.convert.chain", chain, 0, (mlt_destructor) delete_chain );
+					producer.set( "movit.convert.width", width );
+					producer.set( "movit.convert.height", height );
+					producer.set( "movit.convert.width", output_format );
+				}
+			}
+		}
 		if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) { 
 			input->useFlatInput( chain, FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
 			input->set_pixel_data( *image );
@@ -168,6 +198,9 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			input->set_pixel_data( planar );
 			mlt_frame_set_image( frame, planar, img_size, mlt_pool_release );
 		}
+		// Finalize the separate conversion chain if needed.
+		if ( finalize_chain )
+			chain->finalize();
 	}
 
 	if ( output_format != mlt_image_glsl ) {
@@ -183,22 +216,16 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 			check_error();
 
-			// Using a temporary chain to convert image in RAM to OpenGL texture.
-			if ( *format != mlt_image_glsl )
-				GlslManager::reset_finalized( service );
 			GlslManager::render( service, chain, fbo->fbo, width, height );
 
 			glFinish();
 			check_error();
 			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 			check_error();
-			// Using a temporary chain to convert image in RAM to OpenGL texture.
-			if ( *format != mlt_image_glsl )
-				delete chain;
 
 			*image = (uint8_t*) &texture->texture;
 			mlt_frame_set_image( frame, *image, 0, NULL );
-			mlt_properties_set_data( properties, "movit.convert", texture, 0,
+			mlt_properties_set_data( properties, "movit.convert.texture", texture, 0,
 				(mlt_destructor) GlslManager::release_texture, NULL );
 			mlt_properties_set_int( properties, "format", output_format );
 			*format = output_format;
@@ -234,16 +261,13 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 				// Copy from PBO
 				uint8_t* buf = (uint8_t*) glMapBuffer( GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY );
 				check_error();
+				*image = (uint8_t*) mlt_pool_alloc( img_size );
+				mlt_frame_set_image( frame, *image, img_size, mlt_pool_release );
+				memcpy( *image, buf, img_size );
 
 				if ( output_format == mlt_image_yuv422 || output_format == mlt_image_yuv420p ) {
-					*image = buf;
 					*format = mlt_image_rgb24;
 					error = convert_on_cpu( frame, image, format, output_format );
-				}
-				else {
-					*image = (uint8_t*) mlt_pool_alloc( img_size );
-					mlt_frame_set_image( frame, *image, img_size, mlt_pool_release );
-					memcpy( *image, buf, img_size );
 				}
 	
 				// Release PBO and FBO
@@ -255,7 +279,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 				check_error();
 				glBindTexture( GL_TEXTURE_2D, 0 );
 				check_error();
-				mlt_properties_set_data( properties, "movit.convert", texture, 0,
+				mlt_properties_set_data( properties, "movit.convert.texture", texture, 0,
 					(mlt_destructor) GlslManager::release_texture, NULL);
 	
 				mlt_properties_set_int( properties, "format", output_format );
@@ -271,6 +295,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		mlt_properties_set_int( properties, "format", output_format );
 		*format = output_format;
 	}
+	GlslManager::get_instance()->unlock_service( frame );
 
 	return error;
 }
