@@ -25,6 +25,8 @@
 #include <movit/effect_chain.h>
 #include "mlt_movit_input.h"
 #include "mlt_flip_effect.h"
+#include <mlt++/MltEvent.h>
+#include <mlt++/MltProducer.h>
 
 extern "C" {
 #include <framework/mlt_factory.h>
@@ -181,6 +183,23 @@ void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 	filter->set( "glsl_supported", movit_initialized );
 }
 
+void GlslManager::onServiceChanged( mlt_properties owner, mlt_service aservice )
+{
+	Mlt::Service service( aservice );
+	service.lock();
+	service.set( "movit chain", NULL, 0 );
+	service.set( "movit input", NULL, 0 );
+	// Destroy the effect list.
+	GlslManager::get_instance()->set( service.get( "_unique_id" ), NULL, 0 );
+	service.unlock();
+}
+
+void GlslManager::onPropertyChanged( mlt_properties owner, mlt_service service, const char* property )
+{
+	if ( property && std::string( property ) == "disable" )
+		onServiceChanged( owner, service );
+}
+
 extern "C" {
 
 mlt_filter filter_glsl_manager_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
@@ -195,24 +214,38 @@ mlt_filter filter_glsl_manager_init( mlt_profile profile, mlt_service_type type,
 
 } // extern "C"
 
+Mlt::Properties GlslManager::effect_list( Mlt::Service& service )
+{
+	char *unique_id =  service.get( "_unique_id" );
+	mlt_properties properties = (mlt_properties) get_data( unique_id );
+	if ( !properties ) {
+		properties = mlt_properties_new();
+		set( unique_id, properties, 0, (mlt_destructor) mlt_properties_close );
+	}
+	Mlt::Properties p( properties );
+	return p;
+}
+
 static void deleteChain( EffectChain* chain )
 {
 	delete chain;
 }
 
-bool GlslManager::init_chain( mlt_service service )
+bool GlslManager::init_chain( mlt_service aservice )
 {
 	bool error = true;
-	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-	EffectChain* chain = (EffectChain*) mlt_properties_get_data( properties, "movit chain", NULL );
+	Mlt::Service service( aservice );
+	EffectChain* chain = (EffectChain*) service.get_data( "movit chain" );
 	if ( !chain ) {
-		mlt_profile profile = mlt_service_profile( service );
+		mlt_profile profile = mlt_service_profile( aservice );
 		Input* input = new MltInput( profile->width, profile->height );
 		chain = new EffectChain( profile->display_aspect_num, profile->display_aspect_den );
 		chain->add_input( input );
-		mlt_properties_set_data( properties, "movit chain", chain, 0, (mlt_destructor) deleteChain, NULL );
-		mlt_properties_set_data( properties, "movit input", input, 0, NULL, NULL );
-		mlt_properties_set_int( properties, "_movit finalized", 0 );
+		service.set( "movit chain", chain, 0, (mlt_destructor) deleteChain );
+		service.set( "movit input", input, 0 );
+		service.set( "_movit finalized", 0 );
+		service.listen( "service-changed", aservice, (mlt_listener) GlslManager::onServiceChanged );
+		service.listen( "property-changed", aservice, (mlt_listener) GlslManager::onPropertyChanged );
 		error = false;
 	}
 	return error;
@@ -235,32 +268,29 @@ void GlslManager::reset_finalized( mlt_service service )
 
 Effect* GlslManager::get_effect( mlt_filter filter, mlt_frame frame )
 {
-	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
+	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
 	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
-	return (Effect*) mlt_properties_get_data( properties, unique_id, NULL );
+	return (Effect*) GlslManager::get_instance()->effect_list( producer ).get_data( unique_id );
 }
 
 Effect* GlslManager::add_effect( mlt_filter filter, mlt_frame frame, Effect* effect )
 {
-	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
-	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
-	EffectChain* chain = (EffectChain*) mlt_properties_get_data( properties, "movit chain", NULL );
+	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
+	EffectChain* chain = (EffectChain*) producer.get_data( "movit chain" );
 	chain->add_effect( effect );
-	mlt_properties_set_data( properties, unique_id, effect, 0, NULL, NULL );
+	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
+	GlslManager::get_instance()->effect_list( producer ).set( unique_id, effect, 0 );
 	return effect;
 }
 
 Effect* GlslManager::add_effect( mlt_filter filter, mlt_frame frame, Effect* effect, Effect* input_b )
 {
-	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
-	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
-	EffectChain* chain = (EffectChain*) mlt_properties_get_data( properties, "movit chain", NULL );
+	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
+	EffectChain* chain = (EffectChain*) producer.get_data( "movit chain" );
 	chain->add_effect( effect, chain->last_added_effect(),
 		input_b? input_b : chain->last_added_effect() );
-	mlt_properties_set_data( properties, unique_id, effect, 0, NULL, NULL );
+	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
+	GlslManager::get_instance()->effect_list( producer ).set( unique_id, effect, 0 );
 	return effect;
 }
 
@@ -274,4 +304,16 @@ void GlslManager::render( mlt_service service, void* chain, GLuint fbo, int widt
 		effect_chain->finalize();
 	}
 	effect_chain->render_to_fbo( fbo, width, height );
+}
+
+void GlslManager::lock_service( mlt_frame frame )
+{
+	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
+	producer.lock();
+}
+
+void GlslManager::unlock_service( mlt_frame frame )
+{
+	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
+	producer.unlock();
 }

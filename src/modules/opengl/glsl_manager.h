@@ -80,6 +80,7 @@ public:
 	static void release_texture(glsl_texture);
 	glsl_pbo get_pbo(int size);
 
+	Properties effect_list( Mlt::Service &service );
 	static bool init_chain(mlt_service);
 	static EffectChain* get_chain(mlt_service);
 	static MltInput* get_input(mlt_service);
@@ -88,10 +89,13 @@ public:
 	static Effect* add_effect(mlt_filter, mlt_frame, Effect*);
 	static Effect* add_effect(mlt_filter, mlt_frame, Effect*, Effect* input_b);
 	static void render(mlt_service, void *chain, GLuint fbo, int width, int height);
+	static void lock_service(mlt_frame frame);
+	static void unlock_service(mlt_frame frame);
 
 private:
 	static void onInit( mlt_properties owner, GlslManager* filter );
-
+	static void onServiceChanged( mlt_properties owner, mlt_service service );
+	static void onPropertyChanged( mlt_properties owner, mlt_service service, const char* property );
 	Mlt::Deque fbo_list;
 	Mlt::Deque texture_list;
 	glsl_pbo  pbo;
