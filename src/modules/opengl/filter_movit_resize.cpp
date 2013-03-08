@@ -174,6 +174,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	}
 
 	if ( !error ) {
+		GlslManager::get_instance()->lock_service( frame );
 		Effect* effect = GlslManager::get_effect( filter, frame );
 		if ( effect ) {
 			bool ok = effect->set_int( "width", *width );
@@ -182,6 +183,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			ok |= effect->set_float( "top", geometry_item.y );
 			assert(ok);
 		}
+		GlslManager::get_instance()->unlock_service( frame );
 	}
 
 	return error;

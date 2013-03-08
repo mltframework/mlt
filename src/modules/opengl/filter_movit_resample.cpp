@@ -65,6 +65,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		*format = mlt_image_glsl;
 	error = mlt_frame_get_image( frame, image, format, &iwidth, &iheight, writable );
 	if ( !error ) {
+		GlslManager::get_instance()->lock_service( frame );
 		Effect* effect = GlslManager::get_effect( filter, frame );
 		if ( effect ) {
 			bool ok = effect->set_int( "width", owidth );
@@ -73,6 +74,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			*width = owidth;
 			*height = oheight;
 		}
+		GlslManager::get_instance()->unlock_service( frame );
 	}
 
 	return error;

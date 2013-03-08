@@ -48,11 +48,17 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// Get the movit objects
 	mlt_service service = MLT_TRANSITION_SERVICE( transition );
+	mlt_service_lock( service );
 	EffectChain* chain = GlslManager::get_chain( service );
 	Effect* effect = (Effect*) mlt_properties_get_data( properties, "movit effect", NULL );
 	MltInput* a_input = GlslManager::get_input( service );
 	MltInput* b_input = (MltInput*) mlt_properties_get_data( properties, "movit input B", NULL );
 	mlt_image_format output_format = *format;
+
+	if ( !chain || !a_input ) {
+		mlt_service_unlock( service );
+		return 2;
+	}
 
 	// Get the transition parameters
 	int reverse = mlt_properties_get_int( properties, "reverse" );
@@ -158,6 +164,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		}
 	}
 	if ( fbo ) GlslManager::release_fbo( fbo );
+	mlt_service_unlock( service );
 
 	return error;
 }
