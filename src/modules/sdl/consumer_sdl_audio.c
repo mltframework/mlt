@@ -144,7 +144,8 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *na
 	{
 		consumer_sdl self = parent->child;
 		pthread_mutex_lock( &self->refresh_mutex );
-		self->refresh_count = self->refresh_count <= 0 ? 1 : self->refresh_count + 1;
+		if ( self->refresh_count < 2 )
+			self->refresh_count = self->refresh_count <= 0 ? 1 : self->refresh_count + 1;
 		pthread_cond_broadcast( &self->refresh_cond );
 		pthread_mutex_unlock( &self->refresh_mutex );
 	}
@@ -537,7 +538,7 @@ static void *consumer_thread( void *arg )
 			else if ( self->running )
 			{
 				pthread_mutex_lock( &self->refresh_mutex );
-				if ( refresh == 0 && self->refresh_count <= 0 )
+				if ( ( refresh == 0 && self->refresh_count <= 0 ) || self->refresh_count > 1 )
 				{
 					consumer_play_video( self, frame );
 					pthread_cond_wait( &self->refresh_cond, &self->refresh_mutex );
