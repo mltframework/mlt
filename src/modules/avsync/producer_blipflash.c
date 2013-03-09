@@ -205,7 +205,7 @@ static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_form
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Correct the returns if necessary
-	if( *format != mlt_image_yuv422 || *format != mlt_image_rgb24 || *format != mlt_image_rgb24a )
+	if( *format != mlt_image_yuv422 && *format != mlt_image_rgb24 && *format != mlt_image_rgb24a )
 		*format = mlt_image_yuv422;
 	if( *width <= 0 )
 		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
