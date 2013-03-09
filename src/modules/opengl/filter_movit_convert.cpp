@@ -105,9 +105,10 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		if ( output_format == mlt_image_glsl_texture ) {
 			// We might already have a texture from a previous conversion from mlt_image_glsl.
 			glsl_texture texture = (glsl_texture) mlt_properties_get_data( properties, "movit.convert.texture", NULL );
-			// XXX: disabled for now because we do not have reliable way to clear the texture property
+			// XXX: requires a special property set on the frame by the app for now
+			// because we do not have reliable way to clear the texture property
 			// when a downstream filter has changed image.
-			if ( 0 && texture ) {
+			if ( texture && mlt_properties_get_int( properties, "movit.convert.use_texture") ) {
 				*image = (uint8_t*) &texture->texture;
 				mlt_frame_set_image( frame, *image, 0, NULL );
 				mlt_properties_set_int( properties, "format", output_format );
