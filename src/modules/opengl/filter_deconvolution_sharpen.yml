@@ -17,7 +17,7 @@ description: >
   and I suspect the same as in Photoshop's “Smart Sharpen” filter.
   The effect gives generally better results than unsharp masking, but can be very
   GPU intensive, and requires a fair bit of tweaking to get good results without
-  ringing and/or excessive noise. It should be mentioned that for the larger
+  ringing and/or excessive noise.
 
 parameters:
   - identifier: matrix_size
