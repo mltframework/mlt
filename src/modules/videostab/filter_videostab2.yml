@@ -117,11 +117,11 @@ parameters:
   - identifier: maxangle
     title: Maxangle
     type: float
-    description: max anglen to rotate (in rad)
+    description: max angle to rotate (in rad)
     readonly: no
     required: no
     minimum: -1
-    maximum: 1000
+    maximum: 3.142
     default: -1
     mutable: yes
     widget: spinner
