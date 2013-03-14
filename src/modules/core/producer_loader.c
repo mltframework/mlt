@@ -40,7 +40,23 @@ static mlt_producer create_from( mlt_profile profile, char *file, char *services
 		char *p = strchr( service, ',' );
 		if ( p != NULL )
 			*p ++ = '\0';
-		producer = mlt_factory_producer( profile, service, file );
+
+		// If  the service name has a colon as field delimiter, then treat the
+		// second field as a prefix for the file/url.
+		char *prefix = strchr( service, ':' );
+		if ( prefix )
+		{
+			*prefix ++ = '\0';
+			char* prefix_file = calloc( 1, strlen( file ) + strlen( prefix ) + 1 );
+			strcpy( prefix_file, prefix );
+			strcat( prefix_file, file );
+			producer = mlt_factory_producer( profile, service, prefix_file );
+			free( prefix_file );
+		}
+		else
+		{
+			producer = mlt_factory_producer( profile, service, file );
+		}
 		service = p;
 	}
 	while ( producer == NULL && service != NULL );
