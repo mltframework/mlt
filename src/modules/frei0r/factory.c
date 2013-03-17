@@ -147,8 +147,9 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	snprintf ( string, sizeof(string) , "%d" , info.minor_version );
 	mlt_properties_set_double ( metadata, "schema_version" , 0.1 );
 	mlt_properties_set ( metadata, "title" , info.name );
-	mlt_properties_set_double ( metadata, "version",
-		info.major_version +  info.minor_version / pow( 10, strlen( string ) ) );
+	char version[40];
+	snprintf( version, sizeof(version), "%d.%d", info.major_version, info.minor_version );
+	mlt_properties_set ( metadata, "version", version );
 	mlt_properties_set ( metadata, "identifier" , service_name );
 	mlt_properties_set ( metadata, "description" , info.explanation );
 	mlt_properties_set ( metadata, "creator" , info.author );
@@ -166,11 +167,12 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 			break;
 	}
 
-	mlt_properties parameter = mlt_properties_new ( );
-	mlt_properties_set_data ( metadata , "parameters" , parameter , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties tags = mlt_properties_new ( );
 	mlt_properties_set_data ( metadata , "tags" , tags , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 	mlt_properties_set ( tags , "0" , "Video" );
+
+	mlt_properties parameter = mlt_properties_new ( );
+	mlt_properties_set_data ( metadata , "parameters" , parameter , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 
 	for (j=0;j<info.num_params;j++){
 		snprintf ( string , sizeof(string), "%d" , j );
@@ -187,7 +189,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 			mlt_properties_set ( pnum , "minimum" , "0" );
 			mlt_properties_set ( pnum , "maximum" , "1" );
 			f0r_get_param_value( instance, &deflt, j);
-			mlt_properties_set_double ( pnum, "default", deflt );
+			mlt_properties_set_double ( pnum, "default", CLAMP(deflt, 0.0, 1.0) );
 			mlt_properties_set ( pnum , "mutable" , "yes" );
 			mlt_properties_set ( pnum , "widget" , "spinner" );
 		}else
@@ -197,7 +199,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 			mlt_properties_set ( pnum , "minimum" , "0" );
 			mlt_properties_set ( pnum , "maximum" , "1" );
 			f0r_get_param_value( instance, &deflt, j);
-			mlt_properties_set_double ( pnum, "default", deflt );
+			mlt_properties_set_int ( pnum, "default", deflt != 0.0 );
 			mlt_properties_set ( pnum , "mutable" , "yes" );
 			mlt_properties_set ( pnum , "widget" , "checkbox" );
 		}else
