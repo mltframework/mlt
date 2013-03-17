@@ -89,12 +89,16 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 		for (i=0;i<info.num_params;i++){
 			f0r_param_info_t pinfo;
 			f0r_get_param_info(&pinfo,i);
-			if (mlt_properties_get( prop , pinfo.name ) !=NULL ){
+			char index[20];
+			snprintf( index, sizeof(index), "%d", i );
+			char *val = mlt_properties_get( prop , index );
+			if ( !val )
+				val = mlt_properties_get( prop , pinfo.name );
+			if ( val ) {
 				switch (pinfo.type) {
 					case F0R_PARAM_DOUBLE:
 					case F0R_PARAM_BOOL:
 					{
-						char *val=mlt_properties_get(prop, pinfo.name );
 						mlt_geometry geom=mlt_geometry_init();
 						struct mlt_geometry_item_s item;
 						mlt_geometry_parse(geom,val,-1,-1,-1);
@@ -107,14 +111,15 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 					case F0R_PARAM_COLOR:
 					{
 						f0r_param_color_t color;
-						parse_color(mlt_properties_get_int(prop , pinfo.name), &color);
+						int int_color = mlt_properties_get(prop, index) ?
+							mlt_properties_get_int(prop, index) : mlt_properties_get_int(prop, pinfo.name);
+						parse_color(int_color, &color);
 						f0r_set_param_value(inst, &color, i);
 						break;
 					}
 					case F0R_PARAM_STRING:
 					{
-						f0r_param_string val = mlt_properties_get(prop, pinfo.name);
-						if (val) f0r_set_param_value(inst, &val, i);
+						f0r_set_param_value(inst, &val, i);
 						break;
 					}
 				}

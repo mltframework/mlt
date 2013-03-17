@@ -167,7 +167,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 		mlt_properties_set_data ( parameter , string , pnum , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 		f0r_param_info_t paraminfo;
 		param_info(&paraminfo,j);
-		mlt_properties_set ( pnum , "identifier" , paraminfo.name );
+		mlt_properties_set ( pnum , "identifier" , string );
 		mlt_properties_set ( pnum , "title" , paraminfo.name );
 		mlt_properties_set ( pnum , "description" , paraminfo.explanation);
 		if ( paraminfo.type == F0R_PARAM_DOUBLE ){
