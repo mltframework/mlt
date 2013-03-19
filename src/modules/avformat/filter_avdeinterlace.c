@@ -81,10 +81,6 @@ static uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP] = {0,};
                     movd_r2m(mm1,dst[0]);
 #endif
 
-#if LIBAVUTIL_VERSION_INT < (50<<16)
-#define PIX_FMT_YUYV422 PIX_FMT_YUV422
-#endif
-
 /* filter parameters: [-1 4 2 4 -1] // 8 */
 static inline void deinterlace_line(uint8_t *dst, 
 			     const uint8_t *lum_m4, const uint8_t *lum_m3, 

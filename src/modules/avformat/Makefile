@@ -7,6 +7,7 @@ include config.mak
 LDFLAGS += -lavformat$(AVFORMAT_SUFFIX)
 LDFLAGS += -lavcodec$(AVFORMAT_SUFFIX)
 LDFLAGS += -lavutil$(AVFORMAT_SUFFIX)
+LDFLAGS += -lswscale$(AVFORMAT_SUFFIX)
 LDFLAGS += $(EXTRA_LIBS)
 
 ifndef CODECS
@@ -20,10 +21,8 @@ OBJS = factory.o
 ifdef FILTERS
 OBJS += filter_avcolour_space.o \
 	    filter_avresample.o \
-	    filter_avdeinterlace.o
-ifdef SWSCALE
-OBJS += filter_swscale.o
-endif
+	    filter_avdeinterlace.o \
+	    filter_swscale.o
 CFLAGS += -DFILTERS
 endif
 
@@ -36,11 +35,6 @@ ifdef CODECS
 OBJS += producer_avformat.o \
 	    consumer_avformat.o
 CFLAGS += -DCODECS
-endif
-
-ifdef SWSCALE
-CFLAGS += -DSWSCALE
-LDFLAGS += -lswscale$(AVFORMAT_SUFFIX)
 endif
 
 ifdef DEVICES

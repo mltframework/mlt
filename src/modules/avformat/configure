@@ -17,7 +17,6 @@ FFmpeg/avformat options:
   --avformat-shared=path  - Link against a shared installation of libavformat (default)
   --avformat-static=path  - Link against a static build of libavformat
   --avformat-ldextra=libs - Provide additional libs to link with
-  --avformat-swscale      - Use libswcale instead of img_convert (with --avformat-static)
   --avformat-suffix=suff  - Specify a custom suffix
   --avformat-no-codecs    - Disable the producer and consumer to avoid the codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
@@ -57,7 +56,6 @@ else
 	export shared_ffmpeg=
 	export extra_libs=
 	export avformat_suffix=
-	export swscale=
 	export codecs=true
 	export filters=true
 	export devices=true
@@ -72,8 +70,6 @@ else
 			--avformat-shared=* )	shared_ffmpeg="${i#--avformat-shared=}" ;;
 			--avformat-ldextra=* )	extra_libs="${i#--avformat-ldextra=}" ;;
 			--avformat-suffix=* )	avformat_suffix="${i#--avformat-suffix=}" ;;
-			--avformat-swscale )	swscale=true ;;
-			--avformat-swscaler )	swscale=true ;;
 			--avformat-no-codecs )	codecs=false ;;
 			--avformat-no-filters )	filters=false ;;
 			--avformat-no-devices )	devices=false ;;
@@ -91,13 +87,9 @@ else
 			echo "CFLAGS+=-DAVDATADIR=\\\"${static_ffmpeg}/ffpresets/\\\"" >> config.mak
 			echo "CFLAGS+=-I$static_ffmpeg" >> config.mak
 			echo "LDFLAGS+=-L$static_ffmpeg/libavformat -L$static_ffmpeg/libavcodec -L$static_ffmpeg/libavutil" >> config.mak
+			echo "LDFLAGS+=-L$static_ffmpeg/libswscale" >> config.mak
 			[ $targetos = "Darwin" ] &&
 			 	echo "LDFLAGS+=-single_module" >> config.mak
-			if [ "$swscale" != "" ]
-			then
-				echo "LDFLAGS+=-L$static_ffmpeg/libswscale" >> config.mak
-				echo "SWSCALE=1" >> config.mak
-			fi
 			if [ "$devices" = "true" ]
 			then
 				echo "LDFLAGS+=-L$static_ffmpeg/libavdevice" >> config.mak
@@ -128,17 +120,12 @@ else
 		esac
 		echo "CFLAGS+=$(pkg-config --cflags libavformat${avformat_suffix})" >> config.mak
 		echo "LDFLAGS+=$(pkg-config --libs-only-L libavformat${avformat_suffix})" >> config.mak
+		echo "CFLAGS+=$(pkg-config --cflags libswscale${avformat_suffix})" >> config.mak
+		echo "LDFLAGS+=$(pkg-config --libs-only-L libswscale${avformat_suffix})" >> config.mak
 		if [ "$devices" = "true" ]
 		then
 			echo "CFLAGS+=$(pkg-config --cflags libavdevice${avformat_suffix})" >> config.mak
 			echo "LDFLAGS+=$(pkg-config --libs-only-L libavdevice${avformat_suffix})" >> config.mak
-		fi
-		avcodec_version=$(pkg-config --modversion libavcodec${avformat_suffix})
-		if [ "$swscale" != "" ] || [ $(echo $avcodec_version | cut -d. -f1) -gt 52 ] || ( [ $(echo $avcodec_version | cut -d. -f1) -ge 52 ] && [ $(echo $avcodec_version | cut -d. -f2) -ge 21 ] )
-		then
-			echo "CFLAGS+=$(pkg-config --cflags libswscale${avformat_suffix})" >> config.mak
-			echo "LDFLAGS+=$(pkg-config --libs-only-L libswscale${avformat_suffix})" >> config.mak
-			echo "SWSCALE=1" >> config.mak
 		fi
 		
 		if [ "$vdpau" = "true" ]

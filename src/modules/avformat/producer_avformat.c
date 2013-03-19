@@ -31,27 +31,12 @@
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
-#ifdef SWSCALE
-#  include <libswscale/swscale.h>
-#endif
-
-#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
-#  include <libavutil/samplefmt.h>
-#else
-#  define AV_SAMPLE_FMT_U8  SAMPLE_FMT_U8
-#  define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
-#  define AV_SAMPLE_FMT_S32 SAMPLE_FMT_S32
-#  define AV_SAMPLE_FMT_FLT SAMPLE_FMT_FLT
-#  if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-const char *avcodec_get_sample_fmt_name(int sample_fmt);
-#  endif
-#endif
+#include <libswscale/swscale.h>
+#include <libavutil/samplefmt.h>
+#include <libavutil/pixdesc.h>
 
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
-#endif
-#if (LIBAVUTIL_VERSION_INT > ((50<<16)+(7<<8)+0))
-#  include <libavutil/pixdesc.h>
 #endif
 #if (LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0))
 #  include <libavutil/dict.h>
@@ -62,11 +47,6 @@ const char *avcodec_get_sample_fmt_name(int sample_fmt);
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
-
-#if LIBAVUTIL_VERSION_INT < (50<<16)
-#define PIX_FMT_RGB32 PIX_FMT_RGBA32
-#define PIX_FMT_YUYV422 PIX_FMT_YUV422
-#endif
 
 #if LIBAVCODEC_VERSION_MAJOR >= 53
 #include <libavutil/opt.h>
@@ -82,10 +62,7 @@ const char *avcodec_get_sample_fmt_name(int sample_fmt);
 
 #define MAX_AUDIO_STREAMS (32)
 #define MAX_VDPAU_SURFACES (10)
-
-#ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
-#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
-#endif
+#define MAX_AUDIO_FRAME_SIZE (192000) // 1 second of 48khz 32bit audio
 
 struct producer_avformat_s
 {
@@ -341,19 +318,13 @@ static mlt_properties find_default_streams( producer_avformat self )
 					self->video_index = i;
 				mlt_properties_set( meta_media, key, "video" );
 				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
 				double ffmpeg_fps = av_q2d( context->streams[ i ]->avg_frame_rate );
 				if ( isnan( ffmpeg_fps ) || ffmpeg_fps == 0 )
 					ffmpeg_fps = av_q2d( context->streams[ i ]->r_frame_rate );
 				mlt_properties_set_double( meta_media, key, ffmpeg_fps );
-#else
-				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->r_frame_rate ) );
-#endif
 
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
 				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->sample_aspect_ratio ) );
-#endif
 				snprintf( key, sizeof(key), "meta.media.%d.codec.width", i );
 				mlt_properties_set_int( meta_media, key, codec_context->width );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.height", i );
@@ -369,7 +340,6 @@ static mlt_properties find_default_streams( producer_avformat self )
 #endif
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( codec_context->sample_aspect_ratio ) );
-#if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)
 				snprintf( key, sizeof(key), "meta.media.%d.codec.colorspace", i );
 				switch ( codec_context->colorspace )
 				{
@@ -388,7 +358,6 @@ static mlt_properties find_default_streams( producer_avformat self )
 					mlt_properties_set_int( meta_media, key, codec_context->width * codec_context->height > 750000 ? 709 : 601 );
 					break;
 				}
-#endif
 				break;
 			case CODEC_TYPE_AUDIO:
 				if ( !codec_context->channels )
@@ -398,13 +367,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 					self->audio_index = i;
 
 				mlt_properties_set( meta_media, key, "audio" );
-#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
 				mlt_properties_set( meta_media, key, av_get_sample_fmt_name( codec_context->sample_fmt ) );
-#elif (LIBAVCODEC_VERSION_INT >= ((51<<16)+(71<<8)+0))
-				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
-				mlt_properties_set( meta_media, key, avcodec_get_sample_fmt_name( codec_context->sample_fmt ) );
-#endif
 				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_rate", i );
 				mlt_properties_set_int( meta_media, key, codec_context->sample_rate );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.channels", i );
@@ -417,10 +381,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 // 		mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->time_base ) );
 		snprintf( key, sizeof(key), "meta.media.%d.codec.name", i );
 		mlt_properties_set( meta_media, key, codec->name );
-#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(55<<8)+0))
 		snprintf( key, sizeof(key), "meta.media.%d.codec.long_name", i );
 		mlt_properties_set( meta_media, key, codec->long_name );
-#endif
 		snprintf( key, sizeof(key), "meta.media.%d.codec.bit_rate", i );
 		mlt_properties_set_int( meta_media, key, codec_context->bit_rate );
 // 		snprintf( key, sizeof(key), "meta.media.%d.codec.time_base", i );
@@ -431,7 +393,6 @@ static mlt_properties find_default_streams( producer_avformat self )
 //		mlt_properties_set_int( meta_media, key, codec_context->level );
 
 		// Read Metadata
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
 		while ( ( tag = av_dict_get( stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX ) ) )
 #else
@@ -444,9 +405,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 				mlt_properties_set( meta_media, key, tag->value );
 			}
 		}
-#endif
 	}
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
 	while ( ( tag = av_dict_get( context->metadata, "", tag, AV_DICT_IGNORE_SUFFIX ) ) )
 #else
@@ -459,22 +418,6 @@ static mlt_properties find_default_streams( producer_avformat self )
 			mlt_properties_set( meta_media, key, tag->value );
 		}
 	}
-#else
-	if ( context->title && strcmp( context->title, "" ) )
-		mlt_properties_set(properties, "meta.attr.title.markup", context->title );
-	if ( context->author && strcmp( context->author, "" ) )
-		mlt_properties_set(properties, "meta.attr.author.markup", context->author );
-	if ( context->copyright && strcmp( context->copyright, "" ) )
-		mlt_properties_set(properties, "meta.attr.copyright.markup", context->copyright );
-	if ( context->comment )
-		mlt_properties_set(properties, "meta.attr.comment.markup", context->comment );
-	if ( context->album )
-		mlt_properties_set(properties, "meta.attr.album.markup", context->album );
-	if ( context->year )
-		mlt_properties_set_int(properties, "meta.attr.year.markup", context->year );
-	if ( context->track )
-		mlt_properties_set_int(properties, "meta.attr.track.markup", context->track );
-#endif
 
 	return meta_media;
 }
@@ -536,12 +479,7 @@ static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVC
 		}
 		else
 		{
-			AVRational ar =
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-				stream->sample_aspect_ratio;
-#else
-				codec_context->sample_aspect_ratio;
-#endif
+			AVRational ar = stream->sample_aspect_ratio;
 			// Override FFmpeg's notion of DV aspect ratios, which are
 			// based upon a width of 704. Since we do not have a normaliser
 			// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
@@ -577,12 +515,7 @@ static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVC
 	else
 	{
 		AVRational codec_sar = codec_context->sample_aspect_ratio;
-		AVRational stream_sar =
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
-			stream->sample_aspect_ratio;
-#else
-			{ 0, 1 };
-#endif
+		AVRational stream_sar = stream->sample_aspect_ratio;
 		if ( codec_sar.num > 0 )
 		{
 			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", codec_sar.num );
@@ -692,10 +625,8 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 						params->channel = atoi( value );
 					else if ( !strcmp( name, "channels" ) )
 						params->channels = atoi( value );
-#if (LIBAVUTIL_VERSION_INT > ((50<<16)+(7<<8)+0))
 					else if ( !strcmp( name, "pix_fmt" ) )
 						params->pix_fmt = av_get_pix_fmt( value );
-#endif
 					else if ( !strcmp( name, "width" ) )
 						params->width = atoi( value );
 					else if ( !strcmp( name, "height" ) )
@@ -829,7 +760,6 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 			get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context, NULL );
 		}
 
-#ifdef SWSCALE
 		// Verify that we can convert this to YUV 4:2:2
 		// TODO: we can now also return RGB and RGBA and quite possibly more in the future.
 		struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
@@ -838,7 +768,6 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 			sws_freeContext( context );
 		else
 			error = 1;
-#endif
 	}
 	return error;
 }
@@ -895,10 +824,8 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	if ( !error && self->video_format )
 	{
 		apply_properties( self->video_format, properties, AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(110<<8)+0)
 		if ( self->video_format->iformat && self->video_format->iformat->priv_class && self->video_format->priv_data )
 			apply_properties( self->video_format->priv_data, properties, AV_OPT_FLAG_DECODING_PARAM );
-#endif
 	}
 
 #if LIBAVFORMAT_VERSION_INT > ((53<<16)+(6<<8)+0)
@@ -1212,7 +1139,6 @@ static void get_audio_streams_info( producer_avformat self )
 
 static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
 {
-#if defined(SWSCALE) && (LIBSWSCALE_VERSION_INT >= ((0<<16)+(7<<8)+2))
 	int *coefficients;
 	const int *new_coefficients;
 	int full_range;
@@ -1245,7 +1171,6 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 		sws_setColorspaceDetails( context, new_coefficients, full_range, new_coefficients, full_range,
 			brightness, contrast, saturation );
 	}
-#endif
 }
 
 static mlt_image_format pick_pix_format( enum PixelFormat pix_fmt )
@@ -1306,7 +1231,6 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
 static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
 {
-#ifdef SWSCALE
 	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
 
 #ifdef USE_MMX
@@ -1384,37 +1308,6 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
-#else
-	if ( *format == mlt_image_yuv420p )
-	{
-		AVPicture pict;
-		pict.data[0] = buffer;
-		pict.data[1] = buffer + width * height;
-		pict.data[2] = buffer + ( 5 * width * height ) / 4;
-		pict.linesize[0] = width;
-		pict.linesize[1] = width >> 1;
-		pict.linesize[2] = width >> 1;
-		img_convert( &pict, PIX_FMT_YUV420P, (AVPicture *)frame, pix_fmt, width, height );
-	}
-	else if ( *format == mlt_image_rgb24 )
-	{
-		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
-		img_convert( &output, PIX_FMT_RGB24, (AVPicture *)frame, pix_fmt, width, height );
-	}
-	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
-	{
-		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_RGB32, width, height );
-		img_convert( &output, PIX_FMT_RGB32, (AVPicture *)frame, pix_fmt, width, height );
-	}
-	else
-	{
-		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		img_convert( &output, PIX_FMT_YUYV422, (AVPicture *)frame, pix_fmt, width, height );
-	}
-#endif
 }
 
 /** Allocate the image buffer and set it on the frame.
@@ -2392,7 +2285,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			sizeof_sample = sample_bytes( codec_context );
 
 			// Check for audio buffer and create if necessary
-			self->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof_sample;
+			self->audio_buffer_size[ index ] = MAX_AUDIO_FRAME_SIZE * sizeof_sample;
 			self->audio_buffer[ index ] = mlt_pool_alloc( self->audio_buffer_size[ index ] );
 
 			// Check for decoder buffer and create if necessary
@@ -2601,10 +2494,8 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(122<<8)+0)
 		if ( codec && codec->priv_class && codec_context->priv_data )
 			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-#endif
 	}
 	return self->audio_codec[ index ] && self->audio_index > -1;
 }

@@ -39,28 +39,10 @@
 // avformat header files
 #include <libavformat/avformat.h>
 #include <libavformat/avio.h>
-#ifdef SWSCALE
 #include <libswscale/swscale.h>
-#endif
-#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
 #include <libavutil/pixdesc.h>
-#endif
 #include <libavutil/mathematics.h>
-
-#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(38<<8)+0)
-#  include <libavutil/samplefmt.h>
-#else
-#  define AV_SAMPLE_FMT_NONE SAMPLE_FMT_NONE
-#  define AV_SAMPLE_FMT_U8  SAMPLE_FMT_U8
-#  define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
-#  define AV_SAMPLE_FMT_S32 SAMPLE_FMT_S32
-#  define AV_SAMPLE_FMT_FLT SAMPLE_FMT_FLT
-#endif
-
-#if LIBAVUTIL_VERSION_INT < (50<<16)
-#define PIX_FMT_RGB32 PIX_FMT_RGBA32
-#define PIX_FMT_YUYV422 PIX_FMT_YUV422
-#endif
+#include <libavutil/samplefmt.h>
 
 #if LIBAVCODEC_VERSION_MAJOR >= 53
 #include <libavutil/opt.h>
@@ -461,12 +443,8 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		if ( opt )
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(12<<8)+0)
 			av_opt_set( obj, opt_name, mlt_properties_get_value( properties, i), 0 );
-#elif LIBAVCODEC_VERSION_INT >= ((52<<16)+(7<<8)+0)
-			av_set_string3( obj, opt_name, mlt_properties_get_value( properties, i), alloc, NULL );
-#elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(59<<8)+0)
-			av_set_string2( obj, opt_name, mlt_properties_get_value( properties, i), alloc );
 #else
-			av_set_string( obj, opt_name, mlt_properties_get_value( properties, i) );
+			av_set_string3( obj, opt_name, mlt_properties_get_value( properties, i), alloc, NULL );
 #endif
 	}
 }
@@ -634,7 +612,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		apply_properties( c, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 
 		int audio_qscale = mlt_properties_get_int( properties, "aq" );
-        if ( audio_qscale > QSCALE_NONE )
+		if ( audio_qscale > QSCALE_NONE )
 		{
 			c->flags |= CODEC_FLAG_QSCALE;
 			c->global_quality = FF_QP2LAMBDA * audio_qscale;
@@ -649,15 +627,10 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->channels = channels;
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(43<<8)+0)
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
 			av_dict_set( &oc->metadata, "language", mlt_properties_get( properties, "alang" ), 0 );
 #else
 			av_metadata_set2( &oc->metadata, "language", mlt_properties_get( properties, "alang" ), 0 );
-#endif
-#else
-
-			strncpy( st->language, mlt_properties_get( properties, "alang" ), sizeof( st->language ) );
 #endif
 	}
 	else
@@ -683,7 +656,6 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	else
 		codec = avcodec_find_encoder( c->codec_id );
 
-#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(122<<8)+0)
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
 	{
@@ -702,7 +674,6 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 		}
 		apply_properties( c->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 	}
-#endif
 
 	// Continue if codec found and we can open it
 #if LIBAVCODEC_VERSION_INT >= ((53<<16)+(8<<8)+0)
@@ -840,13 +811,8 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
 		if ( st->time_base.den == 0 )
 			st->time_base = c->time_base;
-#if LIBAVUTIL_VERSION_INT >= ((50<<16)+(8<<8)+0)
 		c->pix_fmt = pix_fmt ? av_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
-#else
-		c->pix_fmt = pix_fmt ? avcodec_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
-#endif
 		
-#if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)
 		switch ( colorspace )
 		{
 		case 170:
@@ -865,7 +831,6 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 			c->colorspace = AVCOL_SPC_BT709;
 			break;
 		}
-#endif
 
 		if ( mlt_properties_get( properties, "aspect" ) )
 		{
@@ -878,9 +843,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 			c->sample_aspect_ratio.num = mlt_properties_get_int( properties, "sample_aspect_num" );
 			c->sample_aspect_ratio.den = mlt_properties_get_int( properties, "sample_aspect_den" );
 		}
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(21<<8)+0)
 		st->sample_aspect_ratio = c->sample_aspect_ratio;
-#endif
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
 		{
@@ -1049,7 +1012,6 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 	else
 		codec = avcodec_find_encoder( video_enc->codec_id );
 
-#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(122<<8)+0)
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
 	{
@@ -1068,7 +1030,6 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 		}
 		apply_properties( video_enc->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM );
 	}
-#endif
 
 	if( codec && codec->pix_fmts )
 	{
@@ -1188,11 +1149,7 @@ static void *consumer_thread( void *arg )
 	int count = 0;
 
 	// Allocate the context
-#if (LIBAVFORMAT_VERSION_INT >= ((52<<16)+(26<<8)+0))
 	AVFormatContext *oc = avformat_alloc_context( );
-#else
-	AVFormatContext *oc = av_alloc_format_context( );
-#endif
 
 	// Streams
 	AVStream *video_st = NULL;
@@ -1230,27 +1187,15 @@ static void *consumer_thread( void *arg )
 
 	// Check for user selected format first
 	if ( format != NULL )
-#if LIBAVFORMAT_VERSION_INT < ((52<<16)+(45<<8)+0)
-		fmt = guess_format( format, NULL, NULL );
-#else
 		fmt = av_guess_format( format, NULL, NULL );
-#endif
 
 	// Otherwise check on the filename
 	if ( fmt == NULL && filename != NULL )
-#if LIBAVFORMAT_VERSION_INT < ((52<<16)+(45<<8)+0)
-		fmt = guess_format( NULL, filename, NULL );
-#else
 		fmt = av_guess_format( NULL, filename, NULL );
-#endif
 
 	// Otherwise default to mpeg
 	if ( fmt == NULL )
-#if LIBAVFORMAT_VERSION_INT < ((52<<16)+(45<<8)+0)
-		fmt = guess_format( "mpeg", NULL, NULL );
-#else
 		fmt = av_guess_format( "mpeg", NULL, NULL );
-#endif
 
 	// We need a filename - default to stdout?
 	if ( filename == NULL || !strcmp( filename, "" ) )
@@ -1313,7 +1258,6 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Write metadata
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
 	for ( i = 0; i < mlt_properties_count( properties ); i++ )
 	{
 		char *name = mlt_properties_get_name( properties, i );
@@ -1325,44 +1269,15 @@ static void *consumer_thread( void *arg )
 			{
 				markup[0] = '\0';
 				if ( !strstr( key, ".stream." ) )
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(43<<8)+0)
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
 					av_dict_set( &oc->metadata, key, mlt_properties_get_value( properties, i ), 0 );
 #else
 					av_metadata_set2( &oc->metadata, key, mlt_properties_get_value( properties, i ), 0 );
 #endif
-#else
-					av_metadata_set( &oc->metadata, key, mlt_properties_get_value( properties, i ) );
-#endif
 			}
 			free( key );
 		}
 	}
-#else
-	char *tmp = NULL;
-	int metavalue;
-
-	tmp = mlt_properties_get( properties, "meta.attr.title.markup");
-	if (tmp != NULL) snprintf( oc->title, sizeof(oc->title), "%s", tmp );
-
-	tmp = mlt_properties_get( properties, "meta.attr.comment.markup");
-	if (tmp != NULL) snprintf( oc->comment, sizeof(oc->comment), "%s", tmp );
-
-	tmp = mlt_properties_get( properties, "meta.attr.author.markup");
-	if (tmp != NULL) snprintf( oc->author, sizeof(oc->author), "%s", tmp );
-
-	tmp = mlt_properties_get( properties, "meta.attr.copyright.markup");
-	if (tmp != NULL) snprintf( oc->copyright, sizeof(oc->copyright), "%s", tmp );
-
-	tmp = mlt_properties_get( properties, "meta.attr.album.markup");
-	if (tmp != NULL) snprintf( oc->album, sizeof(oc->album), "%s", tmp );
-
-	metavalue = mlt_properties_get_int( properties, "meta.attr.year.markup");
-	if (metavalue != 0) oc->year = metavalue;
-
-	metavalue = mlt_properties_get_int( properties, "meta.attr.track.markup");
-	if (metavalue != 0) oc->track = metavalue;
-#endif
 
 	oc->oformat = fmt;
 	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
@@ -1437,17 +1352,13 @@ static void *consumer_thread( void *arg )
 		{
 			mlt_properties p = mlt_properties_load( fpre );
 			apply_properties( oc, p, AV_OPT_FLAG_ENCODING_PARAM );
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(110<<8)+0)
 			if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
 				apply_properties( oc->priv_data, p, AV_OPT_FLAG_ENCODING_PARAM );
-#endif
 			mlt_properties_close( p );
 		}
 		apply_properties( oc, properties, AV_OPT_FLAG_ENCODING_PARAM );
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(110<<8)+0)
 		if ( oc->oformat && oc->oformat->priv_class && oc->priv_data )
 			apply_properties( oc->priv_data, properties, AV_OPT_FLAG_ENCODING_PARAM );
-#endif
 
 		if ( video_st && !open_video( properties, oc, video_st, vcodec? vcodec : NULL ) )
 			video_st = NULL;
@@ -1791,7 +1702,6 @@ static void *consumer_thread( void *arg )
 						}
 
 						// Do the colour space conversion
-#ifdef SWSCALE
 						int flags = SWS_BICUBIC;
 #ifdef USE_MMX
 						flags |= SWS_CPU_CAPS_MMX;
@@ -1804,9 +1714,6 @@ static void *consumer_thread( void *arg )
 						sws_scale( context, (const uint8_t* const*) input->data, input->linesize, 0, height,
 							output->data, output->linesize);
 						sws_freeContext( context );
-#else
-						img_convert( ( AVPicture * )output, video_st->codec->pix_fmt, ( AVPicture * )input, PIX_FMT_YUYV422, width, height );
-#endif
 
 						mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
@@ -2050,10 +1957,8 @@ on_fatal_error:
 	{
 #if LIBAVFORMAT_VERSION_MAJOR >= 53
 		if ( oc->pb  ) avio_close( oc->pb );
-#elif LIBAVFORMAT_VERSION_MAJOR >= 52
-		if ( oc->pb  ) url_fclose( oc->pb );
 #else
-		url_fclose( &oc->pb );
+		if ( oc->pb  ) url_fclose( oc->pb );
 #endif
 	}
 
