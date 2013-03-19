@@ -83,6 +83,10 @@ const char *avcodec_get_sample_fmt_name(int sample_fmt);
 #define MAX_AUDIO_STREAMS (32)
 #define MAX_VDPAU_SURFACES (10)
 
+#ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
+#endif
+
 struct producer_avformat_s
 {
 	mlt_producer parent;
@@ -93,7 +97,6 @@ struct producer_avformat_s
 	AVCodecContext *video_codec;
 	AVFrame *av_frame;
 	AVPacket pkt;
-	ReSampleContext *audio_resample[ MAX_AUDIO_STREAMS ];
 	mlt_position audio_expected;
 	mlt_position video_expected;
 	int audio_index;
@@ -115,7 +118,6 @@ struct producer_avformat_s
 	int max_frequency;
 	unsigned int invalid_pts_counter;
 	unsigned int invalid_dts_counter;
-	double resample_factor;
 	mlt_cache image_cache;
 	int colorspace;
 	int full_luma;
@@ -1206,9 +1208,6 @@ static void get_audio_streams_info( producer_avformat self )
 	}
 	mlt_log_verbose( NULL, "[producer avformat] audio: total_streams %d max_stream %d total_channels %d max_channels %d\n",
 		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
-	
-	// Other audio-specific initializations
-	self->resample_factor = 1.0;
 }
 
 static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
@@ -2227,9 +2226,6 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	// Get codec context
 	AVCodecContext *codec_context = self->audio_codec[ index ];
 
-	// Obtain the resample context if it exists (not always needed)
-	ReSampleContext *resample = self->audio_resample[ index ];
-
 	// Obtain the audio buffers
 	uint8_t *audio_buffer = self->audio_buffer[ index ];
 	uint8_t *decode_buffer = self->decode_buffer[ index ];
@@ -2241,7 +2237,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	while ( ptr && ret >= 0 && len > 0 )
 	{
-		int sizeof_sample = resample? sizeof( int16_t ) : sample_bytes( codec_context );
+		int sizeof_sample = sample_bytes( codec_context );
 		int data_size = self->audio_buffer_size[ index ];
 
 		// Decode the audio
@@ -2266,48 +2262,37 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		{
 			// Figure out how many samples will be needed after resampling
 			int convert_samples = data_size / codec_context->channels / sample_bytes( codec_context );
-			int samples_needed = self->resample_factor * convert_samples;
 
 			// Resize audio buffer to prevent overflow
-			if ( ( audio_used + samples_needed ) * channels * sizeof_sample > self->audio_buffer_size[ index ] )
+			if ( ( audio_used + convert_samples ) * channels * sizeof_sample > self->audio_buffer_size[ index ] )
 			{
-				self->audio_buffer_size[ index ] = ( audio_used + samples_needed * 2 ) * channels * sizeof_sample;
+				self->audio_buffer_size[ index ] = ( audio_used + convert_samples * 2 ) * channels * sizeof_sample;
 				audio_buffer = self->audio_buffer[ index ] = mlt_pool_realloc( audio_buffer, self->audio_buffer_size[ index ] );
 			}
-			if ( resample )
+			uint8_t *source = decode_buffer;
+			uint8_t *dest = &audio_buffer[ audio_used * codec_context->channels * sizeof_sample ];
+			switch ( codec_context->sample_fmt )
 			{
-				// Copy to audio buffer while resampling
-				uint8_t *source = decode_buffer;
-				uint8_t *dest = &audio_buffer[ audio_used * channels * sizeof_sample ];
-				audio_used += audio_resample( resample, (short*) dest, (short*) source, convert_samples );
-			}
-			else
-			{
-				uint8_t *source = decode_buffer;
-				uint8_t *dest = &audio_buffer[ audio_used * codec_context->channels * sizeof_sample ];
-				switch ( codec_context->sample_fmt )
-				{
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
-				case AV_SAMPLE_FMT_U8P:
-				case AV_SAMPLE_FMT_S16P:
-				case AV_SAMPLE_FMT_S32P:
-				case AV_SAMPLE_FMT_FLTP:
-					planar_to_interleaved( dest, source, convert_samples, codec_context->channels, sizeof_sample );
-					break;
+			case AV_SAMPLE_FMT_U8P:
+			case AV_SAMPLE_FMT_S16P:
+			case AV_SAMPLE_FMT_S32P:
+			case AV_SAMPLE_FMT_FLTP:
+				planar_to_interleaved( dest, source, convert_samples, codec_context->channels, sizeof_sample );
+				break;
 #endif
-				default:
-					// Straight copy to audio buffer
-					memcpy( dest, decode_buffer, data_size );
-				}
-				audio_used += convert_samples;
+			default:
+				// Straight copy to audio buffer
+				memcpy( dest, decode_buffer, data_size );
 			}
+			audio_used += convert_samples;
 
 			// Handle ignore
 			while ( *ignore && audio_used )
 			{
 				*ignore -= 1;
 				audio_used -= audio_used > samples ? samples : audio_used;
-				memmove( audio_buffer, &audio_buffer[ samples * (resample? channels : codec_context->channels) * sizeof_sample ],
+				memmove( audio_buffer, &audio_buffer[ samples * codec_context->channels * sizeof_sample ],
 						 audio_used * sizeof_sample );
 			}
 		}
@@ -2395,7 +2380,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		*frequency = FFMAX( self->max_frequency, *frequency );
 	}
 
-	// Initialize the resamplers and buffers
+	// Initialize the buffers
 	for ( ; index < index_max && index < MAX_AUDIO_STREAMS; index++ )
 	{
 		// Get codec context
@@ -2403,34 +2388,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 		if ( codec_context && !self->audio_buffer[ index ] )
 		{
-#if LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)
-			// Check for resample and create if necessary
-			if ( codec_context->channels <= 2 )
-			{
-				// Determine by how much resampling will increase number of samples
-				double resample_factor = self->audio_index == INT_MAX ? 1 : (double) *channels / codec_context->channels;
-				resample_factor *= (double) *frequency / codec_context->sample_rate;
-				if ( resample_factor > self->resample_factor )
-					self->resample_factor = resample_factor;
-				
-				// Create the resampler
-#if (LIBAVCODEC_VERSION_INT >= ((52<<16)+(15<<8)+0))
-				self->audio_resample[ index ] = av_audio_resample_init(
-					self->audio_index == INT_MAX ? codec_context->channels : *channels,
-					codec_context->channels, *frequency, codec_context->sample_rate,
-					AV_SAMPLE_FMT_S16, codec_context->sample_fmt, 16, 10, 0, 0.8 );
-#else
-				self->audio_resample[ index ] = audio_resample_init(
-					self->audio_index == INT_MAX ? codec_context->channels : *channels,
-					codec_context->channels, *frequency, codec_context->sample_rate );
-#endif
-			}
-			else
-#endif
-			{
-				codec_context->request_channels = self->audio_index == INT_MAX ? codec_context->channels : *channels;
-				sizeof_sample = sample_bytes( codec_context );
-			}
+			codec_context->request_channels = self->audio_index == INT_MAX ? codec_context->channels : *channels;
+			sizeof_sample = sample_bytes( codec_context );
 
 			// Check for audio buffer and create if necessary
 			self->audio_buffer_size[ index ] = AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof_sample;
@@ -2450,10 +2409,9 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 		av_init_packet( &pkt );
 		
-		// If not resampling, give consumer more than requested.
 		// It requested number samples based on requested frame rate.
 		// Do not clean this up with a samples *= ...!
-		if ( self->audio_index != INT_MAX && ! self->audio_resample[ self->audio_index ] )
+		if ( self->audio_index != INT_MAX )
 			*samples = *samples * self->audio_codec[ self->audio_index ]->sample_rate / *frequency;
 
 		while ( ret >= 0 && !got_audio )
@@ -2505,8 +2463,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			if ( index < MAX_AUDIO_STREAMS && ret >= 0 && pkt.data && pkt.size > 0 && ( index == self->audio_index ||
 				 ( self->audio_index == INT_MAX && context->streams[ index ]->codec->codec_type == CODEC_TYPE_AUDIO ) ) )
 			{
-				int channels2 = ( self->audio_index == INT_MAX || !self->audio_resample[index] ) ?
-					self->audio_codec[index]->channels : *channels;
+				int channels2 = self->audio_codec[index]->channels;
 				ret = decode_audio( self, &ignore[index], pkt, channels2, *samples, real_timecode, fps );
 			}
 
@@ -2517,7 +2474,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 		// Set some additional return values
 		*format = mlt_audio_s16;
-		if ( self->audio_index != INT_MAX && !self->audio_resample[ self->audio_index ] )
+		if ( self->audio_index != INT_MAX )
 		{
 			index = self->audio_index;
 			*channels = self->audio_codec[ index ]->channels;
@@ -2528,7 +2485,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		else if ( self->audio_index == INT_MAX )
 		{
 			for ( index = 0; index < index_max; index++ )
-				if ( self->audio_codec[ index ] && !self->audio_resample[ index ] )
+				if ( self->audio_codec[ index ] )
 				{
 					// XXX: This only works if all audio tracks have the same sample format.
 					*format = pick_audio_format( self->audio_codec[ index ]->sample_fmt );
@@ -2810,8 +2767,6 @@ static void producer_avformat_close( producer_avformat self )
 	int i;
 	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
 	{
-		if ( self->audio_resample[i] )
-			audio_resample_close( self->audio_resample[i] );
 		mlt_pool_release( self->audio_buffer[i] );
 		av_free( self->decode_buffer[i] );
 		if ( self->audio_codec[i] )
