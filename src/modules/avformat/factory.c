@@ -83,6 +83,11 @@ static int avformat_lockmgr(void **mutex, enum AVLockOp op)
    return 0;
 }
 
+static void avformat_exit( )
+{
+	av_lockmgr_register( NULL );
+}
+
 static void avformat_init( )
 {
 	// Initialise avformat if necessary
@@ -98,6 +103,7 @@ static void avformat_init( )
 		avformat_network_init();
 #endif
 		av_log_set_level( mlt_log_get_level() );
+		atexit(avformat_exit);
 	}
 }
 
