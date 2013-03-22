@@ -66,17 +66,22 @@ static int avformat_lockmgr(void **mutex, enum AVLockOp op)
    {
    case AV_LOCK_CREATE:
       *pmutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+       if (!*pmutex) return -1;
        pthread_mutex_init(*pmutex, NULL);
        break;
    case AV_LOCK_OBTAIN:
+       if (!*pmutex) return -1;
        pthread_mutex_lock(*pmutex);
        break;
    case AV_LOCK_RELEASE:
+       if (!*pmutex) return -1;
        pthread_mutex_unlock(*pmutex);
        break;
    case AV_LOCK_DESTROY:
+       if (!*pmutex) return -1;
        pthread_mutex_destroy(*pmutex);
        free(*pmutex);
+       *pmutex = NULL;
        break;
    }
 
