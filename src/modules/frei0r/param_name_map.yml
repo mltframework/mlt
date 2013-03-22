@@ -1,3 +1,13 @@
 # MLT frei0r param name mapping from old name to current index
 # plugin:
 #   param_name: index
+lenscorrection:
+  xcenter: 0
+  ycenter: 1
+  correctionnearcenter: 2
+  correctionnearedges: 3
+  brightness: 4
+
+pixeliz0r:
+  BlockSizeX: 0
+  BlockSizeY: 1
