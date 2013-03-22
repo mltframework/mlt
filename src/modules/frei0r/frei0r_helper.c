@@ -94,6 +94,17 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 			char *val = mlt_properties_get( prop , index );
 			if ( !val )
 				val = mlt_properties_get( prop , pinfo.name );
+			if ( !val ) {
+				// Use the backwards-compatibility param name map.
+				mlt_properties map = mlt_properties_get_data( prop, "_param_name_map", NULL );
+				if ( map ) {
+					int j;
+					for ( j = 0; !val && j < mlt_properties_count(map); j++ ) {
+						if ( !strcmp(mlt_properties_get_value(map, j), index) )
+							val = mlt_properties_get( prop , mlt_properties_get_name(map, j) );
+					}
+				}
+			}
 			if ( val ) {
 				switch (pinfo.type) {
 					case F0R_PARAM_DOUBLE:

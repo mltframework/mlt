@@ -328,6 +328,15 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 		snprintf( minor, sizeof( minor ), "%d", info.minor_version );
 		mlt_properties_set_double( properties, "version", info.major_version +  info.minor_version / pow( 10, strlen( minor ) ) );
 
+		// Use the global param name map for backwards compatibility when
+		// param names change and setting frei0r params by name instead of index.
+		mlt_properties param_name_map = mlt_properties_get_data( mlt_global_properties(), "frei0r.param_name_map", NULL );
+		if ( param_name_map ) {
+			// Lookup my plugin in the map
+			param_name_map = mlt_properties_get_data( param_name_map, name, NULL );
+			mlt_properties_set_data( properties, "_param_name_map", param_name_map, 0, NULL, NULL );
+		}
+
 		return ret;
 	}else{
 		mlt_log_error( NULL, "frei0r plugin \"%s\" is missing a function\n", name );
@@ -399,6 +408,12 @@ MLT_REPOSITORY
 	char dirname[PATH_MAX];
 	snprintf( dirname, PATH_MAX, "%s/frei0r/blacklist.txt", mlt_environment( "MLT_DATA" ) );
 	mlt_properties blacklist = mlt_properties_load( dirname );
+
+	// Load a param name map into global properties for backwards compatibility when
+	// param names change and setting frei0r params by name instead of index.
+	snprintf( dirname, PATH_MAX, "%s/frei0r/param_name_map.yml", mlt_environment( "MLT_DATA" ) );
+	mlt_properties_set_data( mlt_global_properties(), "frei0r.param_name_map",
+		mlt_properties_parse_yaml( dirname ), 0, (mlt_destructor) mlt_properties_close, NULL );
 
 	while (dircount--){
 
