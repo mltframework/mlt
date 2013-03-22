@@ -147,9 +147,8 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	snprintf ( string, sizeof(string) , "%d" , info.minor_version );
 	mlt_properties_set_double ( metadata, "schema_version" , 0.1 );
 	mlt_properties_set ( metadata, "title" , info.name );
-	char version[40];
-	snprintf( version, sizeof(version), "%d.%d", info.major_version, info.minor_version );
-	mlt_properties_set ( metadata, "version", version );
+	mlt_properties_set_double ( metadata, "version",
+		info.major_version +  info.minor_version / pow( 10, strlen( string ) ) );
 	mlt_properties_set ( metadata, "identifier" , service_name );
 	mlt_properties_set ( metadata, "description" , info.explanation );
 	mlt_properties_set ( metadata, "creator" , info.author );
