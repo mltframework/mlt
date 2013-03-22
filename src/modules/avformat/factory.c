@@ -88,7 +88,7 @@ static int avformat_lockmgr(void **mutex, enum AVLockOp op)
    return 0;
 }
 
-static void avformat_exit( )
+static void unregister_lockmgr( void *p )
 {
 	av_lockmgr_register( NULL );
 }
@@ -100,6 +100,7 @@ static void avformat_init( )
 	{
 		avformat_initialised = 1;
 		av_lockmgr_register( &avformat_lockmgr );
+		mlt_factory_register_for_clean_up( &avformat_lockmgr, unregister_lockmgr );
 		av_register_all( );
 #ifdef AVDEVICE
 		avdevice_register_all();
@@ -108,7 +109,6 @@ static void avformat_init( )
 		avformat_network_init();
 #endif
 		av_log_set_level( mlt_log_get_level() );
-		atexit(avformat_exit);
 	}
 }
 
