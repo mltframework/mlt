@@ -30,7 +30,10 @@
 #include <libavformat/avformat.h>
 #include <libavutil/samplefmt.h>
 
-#if LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)
+#if defined(FFUDIV) || (LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0))
+
+#define MAX_AUDIO_FRAME_SIZE (192000) // 1 second of 48khz 32bit audio
+
 
 /** Get the audio.
 */
@@ -148,7 +151,7 @@ mlt_filter filter_avresample_init( char *arg )
 	if ( filter != NULL )
 	{
 		// Calculate size of the buffer
-		int size = AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof( int16_t );
+		int size = MAX_AUDIO_FRAME_SIZE * sizeof( int16_t );
 
 		// Allocate the buffer
 		int16_t *buffer = mlt_pool_alloc( size );
@@ -170,4 +173,4 @@ mlt_filter filter_avresample_init( char *arg )
 	return filter;
 }
 
-#endif // LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0)
+#endif // defined(FFUDIV) || (LIBAVCODEC_VERSION_INT < ((54<<16)+(26<<8)+0))
