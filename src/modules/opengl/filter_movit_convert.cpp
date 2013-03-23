@@ -322,7 +322,7 @@ static mlt_frame process( mlt_filter filter, mlt_frame frame )
 
 static mlt_filter create_filter( mlt_profile profile, char *effect )
 {
-	mlt_filter filter = NULL;
+	mlt_filter filter;
 	char *id = strdup( effect );
 	char *arg = strchr( id, ':' );
 	if ( arg != NULL )
@@ -330,9 +330,9 @@ static mlt_filter create_filter( mlt_profile profile, char *effect )
 
 	// The swscale and avcolor_space filters require resolution as arg to test compatibility
 	if ( !strcmp( effect, "avcolor_space" ) )
-		arg = (char*) profile->width;
-
-	filter = mlt_factory_filter( profile, id, arg );
+		filter = mlt_factory_filter( profile, id, &profile->width );
+	else
+		filter = mlt_factory_filter( profile, id, arg );
 	if ( filter )
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
 	free( id );

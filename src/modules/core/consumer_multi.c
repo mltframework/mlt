@@ -83,15 +83,21 @@ static void create_filter( mlt_profile profile, mlt_service service, char *effec
 	if ( arg != NULL )
 		*arg ++ = '\0';
 
-	// The swscale and avcolor_space filters require resolution as arg to test compatibility
-	if ( strncmp( effect, "swscale", 7 ) == 0 || strncmp( effect, "avcolo", 6 ) == 0 )
-		arg = (char*) mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "meta.media.width" );
-
 	// We cannot use GLSL-based filters here.
 	if ( strncmp( effect, "movit.", 6 ) && strncmp( effect, "glsl.", 5 ) )
 	{
-		mlt_filter filter = mlt_factory_filter( profile, id, arg );
-		if ( filter != NULL )
+		mlt_filter filter;
+		// The swscale and avcolor_space filters require resolution as arg to test compatibility
+		if ( strncmp( effect, "swscale", 7 ) == 0 || strncmp( effect, "avcolo", 6 ) == 0 )
+		{
+			int width = mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "meta.media.width" );
+			filter = mlt_factory_filter( profile, id, &width );
+		}
+		else
+		{
+			filter = mlt_factory_filter( profile, id, arg );
+		}
+		if ( filter )
 		{
 			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
 			mlt_service_attach( service, filter );
