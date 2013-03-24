@@ -186,13 +186,15 @@ mlt_filter filter_swscale_init( mlt_profile profile, void *arg )
 	// Test to see if swscale accepts the arg as resolution
 	if ( arg )
 	{
-		int width = (int) arg;
-		struct SwsContext *context = sws_getContext( width, width, PIX_FMT_RGB32, 64, 64, PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
-		if ( context )
-			sws_freeContext( context );
-		else
-			return NULL;
-	}		
+		int *width = (int*) arg;
+		if ( *width > 0 )
+		{
+			struct SwsContext *context = sws_getContext( *width, *width, PIX_FMT_RGB32, 64, 64, PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
+			if ( context )
+				sws_freeContext( context );
+			else
+				return NULL;
+	}	}
 
 	// Create a new scaler
 	mlt_filter filter = mlt_factory_filter( profile, "rescale", NULL );
