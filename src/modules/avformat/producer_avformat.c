@@ -1868,7 +1868,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			get_aspect_ratio( properties, stream, self->video_codec, NULL );
 
 		// Determine the fps first from the codec
-		double source_fps = (double) self->video_codec->time_base.den /
+		double codec_fps = (double) self->video_codec->time_base.den /
 								   ( self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
 		
 		{
@@ -1882,14 +1882,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #else
 			double muxer_fps = av_q2d( stream->r_frame_rate );
 #endif
-			// Choose the lesser - the wrong tends to be off by some multiple of 10
-			source_fps = FFMIN( source_fps, muxer_fps );
-			if ( source_fps > 1.0 && ( source_fps < muxer_fps || isnan( muxer_fps ) ) )
-			{
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", self->video_codec->time_base.den );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
-			}
-			else if ( muxer_fps > 0 )
+			if ( !isnan( muxer_fps ) && muxer_fps > 0 )
 			{
 #if LIBAVFORMAT_VERSION_MAJOR >= 55
 				AVRational frame_rate = stream->avg_frame_rate;
@@ -1908,10 +1901,14 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 			}
+			else if ( codec_fps >= 1.0 )
+			{
+				mlt_properties_set_int( properties, "meta.media.frame_rate_num", self->video_codec->time_base.den );
+				mlt_properties_set_int( properties, "meta.media.frame_rate_den", self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
+			}
 			else
 			{
-				source_fps = mlt_producer_get_fps( self->parent );
-				AVRational frame_rate = av_d2q( source_fps, 255 );
+				AVRational frame_rate = av_d2q( mlt_producer_get_fps( self->parent ), 255 );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
 				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 			}
@@ -1919,8 +1916,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		self->video_time_base = stream->time_base;
 		if ( mlt_properties_get( properties, "force_fps" ) )
 		{
-			double source_fps = mlt_properties_get_double( properties, "force_fps" );
-			AVRational fps = av_d2q( source_fps, 1024 );
+			AVRational fps = av_d2q( mlt_properties_get_double( properties, "force_fps" ), 1024 );
 			self->video_time_base.num *= mlt_properties_get_int( properties, "meta.media.frame_rate_num" ) * fps.den;
 			self->video_time_base.den *= mlt_properties_get_int( properties, "meta.media.frame_rate_den" ) * fps.num;
 			mlt_properties_set_int( properties, "meta.media.frame_rate_num", fps.num );
