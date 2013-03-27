@@ -16,7 +16,7 @@ parameters:
     title: Neutral Color
     type: string
     widget: color
-    default: #7f7f7f
+    default: 0x7f7f7f00
 
   - identifier: color_temperature
     title: Color Temperature
