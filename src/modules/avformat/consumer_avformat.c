@@ -131,6 +131,7 @@ void sample_fifo_close( sample_fifo fifo )
 }
 
 // Forward references.
+static void property_changed( mlt_properties owner, mlt_consumer self, char *name );
 static int consumer_start( mlt_consumer consumer );
 static int consumer_stop( mlt_consumer consumer );
 static int consumer_is_stopped( mlt_consumer consumer );
@@ -185,10 +186,71 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		consumer->is_stopped = consumer_is_stopped;
 		
 		mlt_events_register( properties, "consumer-fatal-error", NULL );
+		mlt_event event = mlt_events_listen( properties, consumer, "property-changed", ( mlt_listener )property_changed );
+		mlt_properties_set_data( properties, "property-changed event", event, 0, NULL, NULL );
 	}
 
 	// Return consumer
 	return consumer;
+}
+
+static void property_changed( mlt_properties owner, mlt_consumer self, char *name )
+{
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
+
+	if ( !strcmp( name, "s" ) )
+	{
+		// Obtain the size property
+		char *size = mlt_properties_get( properties, "s" );
+		int width = mlt_properties_get_int( properties, "width" );
+		int height = mlt_properties_get_int( properties, "height" );
+		int tw, th;
+
+		if ( sscanf( size, "%dx%d", &tw, &th ) == 2 && tw > 0 && th > 0 )
+		{
+			width = tw;
+			height = th;
+		}
+		else
+		{
+			mlt_log_warning( MLT_CONSUMER_SERVICE(self), "Invalid size property %s - ignoring.\n", size );
+		}
+
+		// Now ensure we honour the multiple of two requested by libavformat
+		width = ( width / 2 ) * 2;
+		height = ( height / 2 ) * 2;
+		mlt_properties_set_int( properties, "width", width );
+		mlt_properties_set_int( properties, "height", height );
+	}
+	// "-aspect" on ffmpeg command line is display aspect ratio
+	else if ( !strcmp( name, "aspect" ) )
+	{
+		double ar = mlt_properties_get_double( properties, "aspect" );
+		AVRational rational = av_d2q( ar, 255 );
+		int width = mlt_properties_get_int( properties, "width" );
+		int height = mlt_properties_get_int( properties, "height" );
+
+		// Update the profile and properties as well since this is an alias
+		// for mlt properties that correspond to profile settings
+		mlt_properties_set_int( properties, "display_aspect_num", rational.num );
+		mlt_properties_set_int( properties, "display_aspect_den", rational.den );
+
+		// Now compute the sample aspect ratio
+		rational = av_d2q( ar * height / width, 255 );
+
+		// Update the profile and properties as well since this is an alias
+		// for mlt properties that correspond to profile settings
+		mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
+		mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+	}
+	// Handle the ffmpeg command line "-r" property for frame rate
+	else if ( !strcmp( name, "r" ) )
+	{
+		double frame_rate = mlt_properties_get_double( properties, "r" );
+		AVRational rational = av_d2q( frame_rate, 255 );
+		mlt_properties_set_int( properties, "frame_rate_num", rational.num );
+		mlt_properties_set_int( properties, "frame_rate_den", rational.den );
+	}
 }
 
 /** Start the consumer.
@@ -285,90 +347,8 @@ static int consumer_start( mlt_consumer consumer )
 		// Allocate a thread
 		pthread_t *thread = calloc( 1, sizeof( pthread_t ) );
 
-		// Get the width and height
-		int width = mlt_properties_get_int( properties, "width" );
-		int height = mlt_properties_get_int( properties, "height" );
+		mlt_event_block( mlt_properties_get_data( properties, "property-changed event", NULL ) );
 
-		// Obtain the size property
-		char *size = mlt_properties_get( properties, "s" );
-
-		// Interpret it
-		if ( size != NULL )
-		{
-			int tw, th;
-			if ( sscanf( size, "%dx%d", &tw, &th ) == 2 && tw > 0 && th > 0 )
-			{
-				width = tw;
-				height = th;
-			}
-			else
-			{
-				mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "Invalid size property %s - ignoring.\n", size );
-			}
-		}
-		
-		// Now ensure we honour the multiple of two requested by libavformat
-		width = ( width / 2 ) * 2;
-		height = ( height / 2 ) * 2;
-		mlt_properties_set_int( properties, "width", width );
-		mlt_properties_set_int( properties, "height", height );
-
-		// We need to set these on the profile as well because the s property is
-		// an alias to mlt properties that correspond to profile settings.
-		mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
-		if ( profile )
-		{
-			profile->width = width;
-			profile->height = height;
-		}
-
-		if ( mlt_properties_get( properties, "aspect" ) )
-		{
-			// "-aspect" on ffmpeg command line is display aspect ratio
-			double ar = mlt_properties_get_double( properties, "aspect" );
-			AVRational rational = av_d2q( ar, 255 );
-
-			// Update the profile and properties as well since this is an alias
-			// for mlt properties that correspond to profile settings
-			mlt_properties_set_int( properties, "display_aspect_num", rational.num );
-			mlt_properties_set_int( properties, "display_aspect_den", rational.den );
-			if ( profile )
-			{
-				profile->display_aspect_num = rational.num;
-				profile->display_aspect_den = rational.den;
-				mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile ) );
-			}
-
-			// Now compute the sample aspect ratio
-			rational = av_d2q( ar * height / width, 255 );
-
-			// Update the profile and properties as well since this is an alias
-			// for mlt properties that correspond to profile settings
-			mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
-			mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
-			if ( profile )
-			{
-				profile->sample_aspect_num = rational.num;
-				profile->sample_aspect_den = rational.den;
-				mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
-			}
-		}
-
-		// Handle the ffmpeg command line "-r" property for frame rate
-		if ( mlt_properties_get( properties, "r" ) )
-		{
-			double frame_rate = mlt_properties_get_double( properties, "r" );
-			AVRational rational = av_d2q( frame_rate, 255 );
-			mlt_properties_set_int( properties, "frame_rate_num", rational.num );
-			mlt_properties_set_int( properties, "frame_rate_den", rational.den );
-			if ( profile )
-			{
-				profile->frame_rate_num = rational.num;
-				profile->frame_rate_den = rational.den;
-				mlt_properties_set_double( properties, "fps", mlt_profile_fps( profile ) );
-			}
-		}
-		
 		// Apply AVOptions that are synonyms for standard mlt_consumer options
 		if ( mlt_properties_get( properties, "ac" ) )
 			mlt_properties_set_int( properties, "channels", mlt_properties_get_int( properties, "ac" ) );
@@ -406,6 +386,7 @@ static int consumer_stop( mlt_consumer consumer )
 		pthread_join( *thread, NULL );
 
 		mlt_properties_set_data( properties, "thread", NULL, 0, NULL, NULL );
+		mlt_event_unblock( mlt_properties_get_data( properties, "property-changed event", NULL ) );
 	}
 
 	return 0;
