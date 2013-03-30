@@ -2302,7 +2302,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		index = 0;
 		index_max = FFMIN( MAX_AUDIO_STREAMS, context->nb_streams );
 		*channels = self->total_channels;
-		*samples = *samples * FFMAX( self->max_frequency, *frequency ) / *frequency;
+		*samples = mlt_sample_calculator( fps, FFMAX( self->max_frequency, *frequency ), position );
 		*frequency = FFMAX( self->max_frequency, *frequency );
 	}
 
@@ -2335,10 +2335,9 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 		av_init_packet( &pkt );
 		
-		// It requested number samples based on requested frame rate.
-		// Do not clean this up with a samples *= ...!
+		// Caller requested number samples based on requested sample rate.
 		if ( self->audio_index != INT_MAX )
-			*samples = *samples * self->audio_codec[ self->audio_index ]->sample_rate / *frequency;
+			*samples = mlt_sample_calculator( fps, self->audio_codec[ self->audio_index ]->sample_rate, position );
 
 		while ( ret >= 0 && !got_audio )
 		{
