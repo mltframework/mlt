@@ -190,7 +190,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					data->trans->interpoltype = interp;
 					data->trans->smoothing = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "smoothing" );
 					data->trans->maxshift = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxshift" );
-					data->trans->maxangle = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "maxangle" );
+					data->trans->maxangle = mlt_properties_get_double( MLT_FILTER_PROPERTIES(filter), "maxangle" );
 					data->trans->crop = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "crop" );
 					data->trans->invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "invert" );
 					data->trans->relative = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "relative" );
