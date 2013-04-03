@@ -543,13 +543,13 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		mlt_service producer = NULL;
 
 		qualify_property( context, properties, "resource" );
-		char *resource = trim( mlt_properties_get( properties, "resource" ) );
+		char *resource = mlt_properties_get( properties, "resource" );
 
 		// Let Kino-SMIL src be a synonym for resource
 		if ( resource == NULL )
 		{
 			qualify_property( context, properties, "src" );
-			resource = trim( mlt_properties_get( properties, "src" ) );
+			resource = mlt_properties_get( properties, "src" );
 		}
 
 		// Instantiate the producer
@@ -643,7 +643,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 					// Get the parent properties
 					properties = MLT_SERVICE_PROPERTIES( parent );
 				
-					char *resource = trim( mlt_properties_get( properties, "resource" ) );
+					char *resource = mlt_properties_get( properties, "resource" );
 				
 					// Put the parent producer back
 					context_push_service( context, parent, type );
@@ -1093,7 +1093,7 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 		{
 			qualify_property( context, properties, "resource" );
 			qualify_property( context, properties, "target" );
-			char *resource = trim( mlt_properties_get( properties, "resource" ) );
+			char *resource = mlt_properties_get( properties, "resource" );
 
 			if ( context->multi_consumer > 1 || context->qglsl )
 			{
