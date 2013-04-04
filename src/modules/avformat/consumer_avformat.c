@@ -1662,6 +1662,7 @@ static void *consumer_thread( void *arg )
 								}
 							}
 #if LIBAVCODEC_VERSION_MAJOR >= 55
+							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
 							avcodec_fill_audio_frame( audio_avframe, codec->channels, codec->sample_fmt,
 								(const uint8_t*) audio_buf_2, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 							int got_packet = 0;
@@ -1671,6 +1672,7 @@ static void *consumer_thread( void *arg )
 							else if ( !got_packet )
 								pkt.size = 0;
 #else
+							codec->frame_size = FFMAX( samples, audio_input_nb_samples );
 							pkt.size = avcodec_encode_audio( codec, audio_outbuf, audio_outbuf_size, (short*) audio_buf_2 );
 							pkt.pts = codec->coded_frame? codec->coded_frame->pts : AV_NOPTS_VALUE;
 							pkt.flags |= PKT_FLAG_KEY;
