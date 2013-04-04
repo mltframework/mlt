@@ -1171,6 +1171,7 @@ static void *consumer_thread( void *arg )
 	// Misc
 	char key[27];
 	mlt_properties frame_meta_properties = mlt_properties_new();
+	int error_count = 0;
 
 	// Initialize audio_st
 	int i = MAX_AUDIO_STREAMS;
@@ -1697,10 +1698,13 @@ static void *consumer_thread( void *arg )
 								mlt_events_fire( properties, "consumer-fatal-error", NULL );
 								goto on_fatal_error;
 							}
+							error_count = 0;
 						}
 						else if ( pkt.size < 0 )
 						{
 							mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "error with audio encode %d\n", frame_count );
+							if ( ++error_count > 2 )
+								goto on_fatal_error;
 						}
 
 						mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), " frame_size %d\n", codec->frame_size );
@@ -1862,10 +1866,14 @@ static void *consumer_thread( void *arg )
 							// Dual pass logging
 							if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out )
 								fprintf( mlt_properties_get_data( properties, "_logfile", NULL ), "%s", c->stats_out );
+
+							error_count = 0;
 	 					} 
 						else if ( pkt.size < 0 )
 						{
 							mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "error with video encode %d\n", frame_count );
+							if ( ++error_count > 2 )
+								goto on_fatal_error;
 							ret = 0;
 						}
  					}
