@@ -157,7 +157,8 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		int error = mlt_frame_get_image( first_frame, &first_image, format, width, height, writable );
 
 		if ( error != 0 ) {
-			mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "first_image == NULL get image died\n" );
+			mlt_log_warning( MLT_PRODUCER_SERVICE( producer ), "first_image == NULL get image died\n" );
+			mlt_properties_set_data( properties, "first_frame", NULL, 0, NULL, NULL );
 			mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 			return error;
 		}
