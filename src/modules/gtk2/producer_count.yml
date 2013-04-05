@@ -1,0 +1,72 @@
+schema_version: 0.1
+type: producer
+identifier: count
+title: Count
+version: 1
+copyright: Brian Matherly
+creator: Brian Matherly
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+  - Video
+description: >
+  Generate frames with a counter and synchronized tone. 
+  The counter can go up or down.
+parameters:
+  - identifier: direction
+    title: Count Direction
+    description: Whether to count up or down.
+    type: string
+    default: down
+    values:
+      - up
+      - down
+    mutable: yes
+    widget: combo
+  - identifier: style
+    title: Counter Style
+    description: |
+      The style of the counter. 
+        * seconds    - seconds counting up from or down to 0
+        * seconds+1  - seconds counting up from or down to 1
+        * frames     - frames
+        * timecode   - timecode in the format HH:MM:SS:FF
+        * clock      - clock in the format HH:MM:SS
+    type: string
+    default: seconds+1
+    values:
+      - seconds
+      - frames
+      - timecode
+      - clock
+    mutable: yes
+    widget: combo
+  - identifier: sound
+    title: Sound
+    description:  |
+      The sound to be produced. 
+        * silent - No sound
+        * 2pop  - A 1kHz beep exactly two seconds before the out point
+        * frame0 - A 1kHz beep at frame 0 of every second
+    type: string
+    default: silent
+    values:
+      - none
+      - 2pop
+      - frame0
+    mutable: yes
+    widget: combo
+- identifier: background
+    title: Background
+    description:  |
+      The background style. 
+        * none - No background
+        * clock  - Film style clock animation
+    type: string
+    default: clock
+    values:
+      - none
+      - clock
+    mutable: yes
+    widget: combo

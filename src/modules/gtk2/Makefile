@@ -34,6 +34,7 @@ endif
 
 ifdef USE_PANGO
 OBJS += producer_pango.o
+OBJS += producer_count.o
 OBJS += filter_dynamictext.o
 CFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --cflags pangoft2`
 LDFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --libs pangoft2`
