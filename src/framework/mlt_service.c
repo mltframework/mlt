@@ -670,6 +670,7 @@ int mlt_service_move_filter( mlt_service self, int from, int to )
 					base->filters[i] = base->filters[i + 1];
 			}
 			base->filters[to] = filter;
+			mlt_events_fire( MLT_SERVICE_PROPERTIES(self), "service-changed", NULL );
 			error = 0;
 		}
 	}
