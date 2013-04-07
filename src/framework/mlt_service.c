@@ -636,6 +636,46 @@ int mlt_service_filter_count( mlt_service self )
 	return result;
 }
 
+/** Reorder the attached filters.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param from the current index value of the filter to move
+ * \param to the new index value for the filter specified in \p from
+ * \return true if there was an error
+ */
+
+int mlt_service_move_filter( mlt_service self, int from, int to )
+{
+	int error = -1;
+	if ( self )
+	{
+		mlt_service_base *base = self->local;
+		if ( from < 0 ) from = 0;
+		if ( from >= base->filter_count ) from = base->filter_count - 1;
+		if ( to < 0 ) to = 0;
+		if ( to >= base->filter_count ) to = base->filter_count - 1;
+		if ( from != to && base->filter_count > 1 )
+		{
+			mlt_filter filter = base->filters[from];
+			int i;
+			if ( from > to )
+			{
+				for ( i = from; i > to; i-- )
+					base->filters[i] = base->filters[i - 1];
+			}
+			else
+			{
+				for ( i = from; i < to; i++ )
+					base->filters[i] = base->filters[i + 1];
+			}
+			base->filters[to] = filter;
+			error = 0;
+		}
+	}
+	return error;
+}
+
 /** Retrieve an attached filter.
  *
  * \public \memberof mlt_service_s
