@@ -57,7 +57,7 @@ parameters:
       - frame0
     mutable: yes
     widget: combo
-- identifier: background
+  - identifier: background
     title: Background
     description:  |
       The background style. 
