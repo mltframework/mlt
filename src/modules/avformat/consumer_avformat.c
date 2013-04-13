@@ -441,6 +441,21 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	}
 }
 
+static enum PixelFormat pick_pix_fmt( mlt_image_format img_fmt )
+{
+	switch ( img_fmt )
+	{
+	case mlt_image_rgb24:
+		return PIX_FMT_RGB24;
+	case mlt_image_rgb24a:
+		return PIX_FMT_RGBA;
+	case mlt_image_yuv420p:
+		return PIX_FMT_YUV420P;
+	default:
+		return PIX_FMT_YUYV422;
+	}
+}
+
 static int get_mlt_audio_format( int av_sample_fmt )
 {
 	switch ( av_sample_fmt )
@@ -1126,14 +1141,33 @@ static void *consumer_thread( void *arg )
 	mlt_deque queue = mlt_properties_get_data( properties, "frame_queue", NULL );
 	sample_fifo fifo = mlt_properties_get_data( properties, "sample_fifo", NULL );
 
-	// Need two av pictures for converting
-	AVFrame *converted_avframe = NULL;
-	AVFrame *audio_avframe = NULL;
-	AVFrame *video_avframe = alloc_picture( PIX_FMT_YUYV422, width, height );
-
 	// For receiving images from an mlt_frame
 	uint8_t *image;
 	mlt_image_format img_fmt = mlt_image_yuv422;
+	// Get the image format to use for rendering threads
+	const char* img_fmt_name = mlt_properties_get( properties, "mlt_image_format" );
+	if ( img_fmt_name )
+	{
+		if ( !strcmp( img_fmt_name, "rgb24" ) )
+			img_fmt = mlt_image_rgb24;
+		else if ( !strcmp( img_fmt_name, "rgb24a" ) )
+			img_fmt = mlt_image_rgb24a;
+		else if ( !strcmp( img_fmt_name, "yuv420p" ) )
+			img_fmt = mlt_image_yuv420p;
+	}
+	else if ( mlt_properties_get( properties, "pix_fmt" ) )
+	{
+		img_fmt_name = mlt_properties_get( properties, "pix_fmt" );
+		if ( !strcmp( img_fmt_name, "rgba" ) ||
+		     !strcmp( img_fmt_name, "argb" ) ||
+		     !strcmp( img_fmt_name, "bgra" ) )
+			img_fmt = mlt_image_rgb24a;
+	}
+
+	// Need two av pictures for converting
+	AVFrame *converted_avframe = NULL;
+	AVFrame *audio_avframe = NULL;
+	AVFrame *video_avframe = alloc_picture( pick_pix_fmt( img_fmt ), width, height );
 
 	// For receiving audio samples back from the fifo
 	uint8_t *audio_buf_1 = av_malloc( AUDIO_ENCODE_BUFFER_SIZE );
@@ -1725,29 +1759,35 @@ static void *consumer_thread( void *arg )
 				if ( mlt_deque_count( queue ) )
 				{
 					int ret = 0;
-					AVCodecContext *c;
+					AVCodecContext *c = video_st->codec;
 
 					frame = mlt_deque_pop_front( queue );
 					frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-					c = video_st->codec;
-					
 					if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 					{
 						int i = 0;
 						uint8_t *p;
 						uint8_t *q;
+						int stride = mlt_image_format_size( img_fmt, width, 0, NULL );
 
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
-
 						q = image;
 
 						// Convert the mlt frame to an AVPicture
-						for ( i = 0; i < height; i ++ )
+						if ( img_fmt == mlt_image_yuv420p )
 						{
-							p = video_avframe->data[ 0 ] + i * video_avframe->linesize[ 0 ];
-							memcpy( p, q, width * 2 );
-							q += width * 2;
+							memcpy( video_avframe->data[0], q, video_avframe->linesize[0] );
+							q += stride;
+							memcpy( video_avframe->data[1], q, video_avframe->linesize[1] );
+							q += stride / 4;
+							memcpy( video_avframe->data[2], q, video_avframe->linesize[2] );
+						}
+						else for ( i = 0; i < height; i ++ )
+						{
+							p = video_avframe->data[0] + i * video_avframe->linesize[0];
+							memcpy( p, q, stride );
+							q += stride;
 						}
 
 						// Do the colour space conversion
@@ -1758,8 +1798,8 @@ static void *consumer_thread( void *arg )
 #ifdef USE_SSE
 						flags |= SWS_CPU_CAPS_MMX2;
 #endif
-						struct SwsContext *context = sws_getContext( width, height, PIX_FMT_YUYV422,
-							width, height, video_st->codec->pix_fmt, flags, NULL, NULL, NULL);
+						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
+							width, height, c->pix_fmt, flags, NULL, NULL, NULL);
 						sws_scale( context, (const uint8_t* const*) video_avframe->data, video_avframe->linesize, 0, height,
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
@@ -1767,7 +1807,11 @@ static void *consumer_thread( void *arg )
 						mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 						// Apply the alpha if applicable
-						if ( video_st->codec->pix_fmt == PIX_FMT_RGB32 )
+						if ( !mlt_properties_get( properties, "mlt_image_format" ) ||
+						     strcmp( mlt_properties_get( properties, "mlt_image_format" ), "rgb24a" ) )
+						if ( c->pix_fmt == PIX_FMT_RGBA ||
+						     c->pix_fmt == PIX_FMT_ARGB ||
+						     c->pix_fmt == PIX_FMT_BGRA )
 						{
 							uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 							register int n;
