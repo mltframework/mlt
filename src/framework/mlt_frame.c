@@ -443,6 +443,102 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 	return 0;
 }
 
+static int generate_test_image( mlt_properties properties, uint8_t **buffer,  mlt_image_format *format, int *width, int *height, int writable )
+{
+	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
+	mlt_image_format requested_format = *format;
+	int error = 1;
+
+	if ( producer )
+	{
+		mlt_frame test_frame = NULL;
+		mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &test_frame, 0 );
+		if ( test_frame )
+		{
+			mlt_properties test_properties = MLT_FRAME_PROPERTIES( test_frame );
+			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+			mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
+			error = mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
+			if ( !error && *buffer )
+			{
+				mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
+				mlt_properties_set_int( properties, "width", *width );
+				mlt_properties_set_int( properties, "height", *height );
+				if ( test_frame->convert_image && *buffer && requested_format != mlt_image_none )
+					test_frame->convert_image( test_frame, buffer, format, requested_format );
+				mlt_properties_set_int( properties, "format", *format );
+			}
+		}
+		else
+		{
+			mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
+		}
+	}
+	if ( error )
+	{
+		int size = 0;
+
+		*width = *width == 0 ? 720 : *width;
+		*height = *height == 0 ? 576 : *height;
+		size = *width * *height;
+
+		mlt_properties_set_int( properties, "format", *format );
+		mlt_properties_set_int( properties, "width", *width );
+		mlt_properties_set_int( properties, "height", *height );
+		mlt_properties_set_double( properties, "aspect_ratio", 1.0 );
+
+		switch( *format )
+		{
+			case mlt_image_rgb24:
+				size *= 3;
+				size += *width * 3;
+				*buffer = mlt_pool_alloc( size );
+				if ( *buffer )
+					memset( *buffer, 255, size );
+				break;
+			case mlt_image_rgb24a:
+			case mlt_image_opengl:
+				size *= 4;
+				size += *width * 4;
+				*buffer = mlt_pool_alloc( size );
+				if ( *buffer )
+					memset( *buffer, 255, size );
+				break;
+			case mlt_image_yuv422:
+				size *= 2;
+				size += *width * 2;
+				*buffer = mlt_pool_alloc( size );
+				if ( *buffer )
+				{
+					register uint8_t *p = *buffer;
+					register uint8_t *q = p + size;
+					while ( p != NULL && p != q )
+					{
+						*p ++ = 235;
+						*p ++ = 128;
+					}
+				}
+				break;
+			case mlt_image_yuv420p:
+				*buffer = mlt_pool_alloc( size * 3 / 2 );
+				if ( *buffer )
+				{
+					memset( *buffer, 235, size );
+					memset( *buffer + size, 128, size / 2 );
+				}
+				break;
+			default:
+				size = 0;
+				break;
+		}
+		mlt_properties_set_data( properties, "image", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_int( properties, "test_image", 1 );
+		error = 0;
+	}
+	return error;
+}
+
+
 /** Get the image associated to the frame.
  *
  * You should express the desired format, width, and height as inputs. As long
@@ -467,7 +563,6 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 {
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_get_image get_image = mlt_frame_pop_get_image( self );
-	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
 	mlt_image_format requested_format = *format;
 	int error = 0;
 
@@ -485,8 +580,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 		}
 		else
 		{
-			// Cause the image to be loaded from test card or fallback (white) below.
-			mlt_frame_get_image( self, buffer, format, width, height, writable );
+			error = generate_test_image( properties, buffer, format, width, height, writable );
 		}
 	}
 	else if ( mlt_properties_get_data( properties, "image", NULL ) )
@@ -501,86 +595,9 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 			mlt_properties_set_int( properties, "format", *format );
 		}
 	}
-	else if ( producer )
-	{
-		mlt_frame test_frame = NULL;
-		mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &test_frame, 0 );
-		if ( test_frame )
-		{
-			mlt_properties test_properties = MLT_FRAME_PROPERTIES( test_frame );
-			mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
-			mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
-			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
-			mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
-// 			mlt_properties_set_data( properties, "image", *buffer, *width * *height * 2, NULL, NULL );
-// 			mlt_properties_set_int( properties, "width", *width );
-// 			mlt_properties_set_int( properties, "height", *height );
-// 			mlt_properties_set_int( properties, "format", *format );
-		}
-		else
-		{
-			mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
-			mlt_frame_get_image( self, buffer, format, width, height, writable );
-		}
-	}
 	else
 	{
-		register uint8_t *p;
-		register uint8_t *q;
-		int size = 0;
-
-		*width = *width == 0 ? 720 : *width;
-		*height = *height == 0 ? 576 : *height;
-		size = *width * *height;
-
-		mlt_properties_set_int( properties, "format", *format );
-		mlt_properties_set_int( properties, "width", *width );
-		mlt_properties_set_int( properties, "height", *height );
-		mlt_properties_set_int( properties, "aspect_ratio", 0 );
-
-		switch( *format )
-		{
-			case mlt_image_rgb24:
-				size *= 3;
-				size += *width * 3;
-				*buffer = mlt_pool_alloc( size );
-				if ( *buffer )
-					memset( *buffer, 255, size );
-				break;
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-				size *= 4;
-				size += *width * 4;
-				*buffer = mlt_pool_alloc( size );
-				if ( *buffer )
-					memset( *buffer, 255, size );
-				break;
-			case mlt_image_yuv422:
-				size *= 2;
-				size += *width * 2;
-				*buffer = mlt_pool_alloc( size );
-				p = *buffer;
-				q = p + size;
-				while ( p != NULL && p != q )
-				{
-					*p ++ = 235;
-					*p ++ = 128;
-				}
-				break;
-			case mlt_image_yuv420p:
-				size = size * 3 / 2;
-				*buffer = mlt_pool_alloc( size );
-				if ( *buffer )
-					memset( *buffer, 255, size );
-				break;
-			default:
-				size = 0;
-				*buffer = NULL;
-				break;
-		}
-
-		mlt_properties_set_data( properties, "image", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
-		mlt_properties_set_int( properties, "test_image", 1 );
+		error = generate_test_image( properties, buffer, format, width, height, writable );
 	}
 
 	return error;
