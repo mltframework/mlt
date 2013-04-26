@@ -61,17 +61,17 @@ static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer this, mlt_frame frame );
-static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer this, SDL_Event *event );
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer this, char *name );
+static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer self, mlt_frame frame );
+static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer self, SDL_Event *event );
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, char *name );
 
 mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	consumer_sdl this = calloc( 1, sizeof( struct consumer_sdl_s ) );
-	if ( this != NULL && mlt_consumer_init( &this->parent, this, profile ) == 0 )
+	consumer_sdl self = calloc( 1, sizeof( struct consumer_sdl_s ) );
+	if ( self != NULL && mlt_consumer_init( &self->parent, self, profile ) == 0 )
 	{
 		// Get the parent consumer object
-		mlt_consumer parent = &this->parent;
+		mlt_consumer parent = &self->parent;
 
 		// Get the properties
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
@@ -88,8 +88,8 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 		}
 
 		// Create child consumers
-		this->play = mlt_factory_consumer( profile, "sdl", arg );
-		this->still = mlt_factory_consumer( profile, "sdl_still", arg );
+		self->play = mlt_factory_consumer( profile, "sdl", arg );
+		self->still = mlt_factory_consumer( profile, "sdl_still", arg );
 		mlt_properties_set( properties, "rescale", "nearest" );
 		mlt_properties_set( properties, "deinterlace_method", "onefield" );
 		mlt_properties_set_int( properties, "prefill", 1 );
@@ -99,26 +99,26 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
-		this->joined = 1;
-		mlt_events_listen( MLT_CONSUMER_PROPERTIES( this->play ), this, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
-		mlt_events_listen( MLT_CONSUMER_PROPERTIES( this->still ), this, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
-		mlt_events_listen( MLT_CONSUMER_PROPERTIES( this->play ), this, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
-		mlt_events_listen( MLT_CONSUMER_PROPERTIES( this->still ), this, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
-		pthread_cond_init( &this->refresh_cond, NULL );
-		pthread_mutex_init( &this->refresh_mutex, NULL );
-		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), this, "property-changed", ( mlt_listener )consumer_refresh_cb );
+		self->joined = 1;
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( self->play ), self, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( self->still ), self, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( self->play ), self, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( self->still ), self, "consumer-sdl-event", ( mlt_listener )consumer_sdl_event_cb );
+		pthread_cond_init( &self->refresh_cond, NULL );
+		pthread_mutex_init( &self->refresh_mutex, NULL );
+		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), self, "property-changed", ( mlt_listener )consumer_refresh_cb );
 		mlt_events_register( properties, "consumer-sdl-paused", NULL );
 		return parent;
 	}
-	free( this );
+	free( self );
 	return NULL;
 }
 
 void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_frame frame )
 {
-	consumer_sdl this = parent->child;
-	this->last_speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
-	this->last_position = mlt_frame_get_position( frame );
+	consumer_sdl self = parent->child;
+	self->last_speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+	self->last_position = mlt_frame_get_position( frame );
 	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-frame-show", frame, NULL );
 }
 
@@ -131,24 +131,24 @@ static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *na
 {
 	if ( !strcmp( name, "refresh" ) )
 	{
-		consumer_sdl this = parent->child;
-		pthread_mutex_lock( &this->refresh_mutex );
-		this->refresh_count = this->refresh_count <= 0 ? 1 : this->refresh_count + 1;
-		pthread_cond_broadcast( &this->refresh_cond );
-		pthread_mutex_unlock( &this->refresh_mutex );
+		consumer_sdl self = parent->child;
+		pthread_mutex_lock( &self->refresh_mutex );
+		self->refresh_count = self->refresh_count <= 0 ? 1 : self->refresh_count + 1;
+		pthread_cond_broadcast( &self->refresh_cond );
+		pthread_mutex_unlock( &self->refresh_mutex );
 	}
 }
 
 static int consumer_start( mlt_consumer parent )
 {
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
-	if ( !this->running )
+	if ( !self->running )
 	{
 		// properties
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
-		mlt_properties play = MLT_CONSUMER_PROPERTIES( this->play );
-		mlt_properties still = MLT_CONSUMER_PROPERTIES( this->still );
+		mlt_properties play = MLT_CONSUMER_PROPERTIES( self->play );
+		mlt_properties still = MLT_CONSUMER_PROPERTIES( self->still );
 
 		char *window_id = mlt_properties_get( properties, "window_id" );
 		char *audio_driver = mlt_properties_get( properties, "audio_driver" );
@@ -159,9 +159,9 @@ static int consumer_start( mlt_consumer parent )
 
 		consumer_stop( parent );
 
-		this->running = 1;
-		this->joined = 0;
-		this->last_speed = 1;
+		self->running = 1;
+		self->joined = 0;
+		self->last_speed = 1;
 
 		if ( output_display != NULL )
 			setenv( "DISPLAY", output_display, 1 );
@@ -219,14 +219,14 @@ static int consumer_start( mlt_consumer parent )
 		mlt_properties_set_int( play, "terminate_on_pause", 1 );
 
 		// Start the still producer just to initialise the gui
-		mlt_consumer_start( this->still );
-		this->active = this->still;
+		mlt_consumer_start( self->still );
+		self->active = self->still;
 
 		// Inform child consumers that we control the sdl
 		mlt_properties_set_int( play, "sdl_started", 1 );
 		mlt_properties_set_int( still, "sdl_started", 1 );
 
-		pthread_create( &this->thread, NULL, consumer_thread, this );
+		pthread_create( &self->thread, NULL, consumer_thread, self );
 	}
 
 	return 0;
@@ -235,9 +235,9 @@ static int consumer_start( mlt_consumer parent )
 static int consumer_stop( mlt_consumer parent )
 {
 	// Get the actual object
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
-	if ( this->joined == 0 )
+	if ( self->joined == 0 )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
 		int app_locked = mlt_properties_get_int( properties, "app_locked" );
@@ -247,16 +247,16 @@ static int consumer_stop( mlt_consumer parent )
 		if ( app_locked && unlock ) unlock( );
 
 		// Kill the thread and clean up
-		this->running = 0;
+		self->running = 0;
 
-		pthread_mutex_lock( &this->refresh_mutex );
-		pthread_cond_broadcast( &this->refresh_cond );
-		pthread_mutex_unlock( &this->refresh_mutex );
+		pthread_mutex_lock( &self->refresh_mutex );
+		pthread_cond_broadcast( &self->refresh_cond );
+		pthread_mutex_unlock( &self->refresh_mutex );
 #ifndef WIN32
-		if ( this->thread )
+		if ( self->thread )
 #endif
-			pthread_join( this->thread, NULL );
-		this->joined = 1;
+			pthread_join( self->thread, NULL );
+		self->joined = 1;
 
 		if ( app_locked && lock ) lock( );
 		
@@ -270,45 +270,44 @@ static int consumer_stop( mlt_consumer parent )
 
 static int consumer_is_stopped( mlt_consumer parent )
 {
-	consumer_sdl this = parent->child;
-	return !this->running;
+	consumer_sdl self = parent->child;
+	return !self->running;
 }
 
 static void *consumer_thread( void *arg )
 {
 	// Identify the arg
-	consumer_sdl this = arg;
+	consumer_sdl self = arg;
 
 	// Get the consumer
-	mlt_consumer consumer = &this->parent;
+	mlt_consumer consumer = &self->parent;
 
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// internal intialization
-	int first = 1;
 	mlt_frame frame = NULL;
 	int last_position = -1;
 	int eos = 0;
 	int eos_threshold = 20;
-	if ( this->play )
-		eos_threshold = eos_threshold + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( this->play ), "buffer" );
+	if ( self->play )
+		eos_threshold = eos_threshold + mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( self->play ), "buffer" );
 
 	// Determine if the application is dealing with the preview
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
 
-	pthread_mutex_lock( &this->refresh_mutex );
-	this->refresh_count = 0;
-	pthread_mutex_unlock( &this->refresh_mutex );
+	pthread_mutex_lock( &self->refresh_mutex );
+	self->refresh_count = 0;
+	pthread_mutex_unlock( &self->refresh_mutex );
 
 	// Loop until told not to
-	while( this->running )
+	while( self->running )
 	{
 		// Get a frame from the attached producer
 		frame = mlt_consumer_get_frame( consumer );
 
 		// Ensure that we have a frame
-		if ( this->running && frame != NULL )
+		if ( self->running && frame != NULL )
 		{
 			// Get the speed of the frame
 			double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
@@ -337,12 +336,12 @@ static void *consumer_thread( void *arg )
 			if ( speed == 1.0 )
 			{
 				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
-					mlt_consumer_purge( this->play );
+					mlt_consumer_purge( self->play );
 				last_position = mlt_frame_get_position( frame );
 			}
 			else
 			{
-				//mlt_consumer_purge( this->play );
+				//mlt_consumer_purge( self->play );
 				last_position = -1;
 			}
 
@@ -354,30 +353,30 @@ static void *consumer_thread( void *arg )
 				int pause = 0;
 
 #ifndef SKIP_WAIT_EOS
-				if ( this->active == this->play )
+				if ( self->active == self->play )
 				{
 					// Do not interrupt the play consumer near the end
-					if ( duration - this->last_position > eos_threshold )
+					if ( duration - self->last_position > eos_threshold )
 					{
 						// Get a new frame at the sought position
 						mlt_frame_close( frame );
 						if ( producer )
-							mlt_producer_seek( producer, this->last_position );
+							mlt_producer_seek( producer, self->last_position );
 						frame = mlt_consumer_get_frame( consumer );
 						pause = 1;
 					}
 					else
 					{
 						// Send frame with speed 0 to stop it
-						if ( frame && !mlt_consumer_is_stopped( this->play ) )
+						if ( frame && !mlt_consumer_is_stopped( self->play ) )
 						{
-							mlt_consumer_put_frame( this->play, frame );
+							mlt_consumer_put_frame( self->play, frame );
 							frame = NULL;
 							eos = 1;
 						}
 
 						// Check for end of stream
-						if ( mlt_consumer_is_stopped( this->play ) )
+						if ( mlt_consumer_is_stopped( self->play ) )
 						{
 							// Stream has ended
 							mlt_log_verbose( MLT_CONSUMER_SERVICE( consumer ), "END OF STREAM\n" );
@@ -393,22 +392,22 @@ static void *consumer_thread( void *arg )
 					}
 				}
 #else
-				pause = this->active == this->play;
+				pause = self->active == self->play;
 #endif
 				if ( pause )
 				{
 					// Start the still consumer
-					mlt_consumer_stop( this->play );
-					this->last_speed = speed;
-					this->active = this->still;
-					this->ignore_change = 0;
-					mlt_consumer_start( this->still );
+					mlt_consumer_stop( self->play );
+					self->last_speed = speed;
+					self->active = self->still;
+					self->ignore_change = 0;
+					mlt_consumer_start( self->still );
 				}
 				// Send the frame to the active child
 				if ( frame && !eos )
 				{
 					mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "refresh", 1 );
-					mlt_consumer_put_frame( this->active, frame );
+					mlt_consumer_put_frame( self->active, frame );
 				}
 				if ( pause && speed == 0.0 )
 				{
@@ -416,30 +415,30 @@ static void *consumer_thread( void *arg )
 				}
 			}
 			// Allow a little grace time before switching consumers on speed changes
-			else if ( this->ignore_change -- > 0 && this->active != NULL && !mlt_consumer_is_stopped( this->active ) )
+			else if ( self->ignore_change -- > 0 && self->active != NULL && !mlt_consumer_is_stopped( self->active ) )
 			{
-				mlt_consumer_put_frame( this->active, frame );
+				mlt_consumer_put_frame( self->active, frame );
 			}
 			// Otherwise use the normal player
 			else
 			{
-				if ( !mlt_consumer_is_stopped( this->still ) )
-					mlt_consumer_stop( this->still );
-				if ( mlt_consumer_is_stopped( this->play ) )
+				if ( !mlt_consumer_is_stopped( self->still ) )
+					mlt_consumer_stop( self->still );
+				if ( mlt_consumer_is_stopped( self->play ) )
 				{
-					this->last_speed = speed;
-					this->active = this->play;
-					this->ignore_change = 0;
-					mlt_consumer_start( this->play );
+					self->last_speed = speed;
+					self->active = self->play;
+					self->ignore_change = 0;
+					mlt_consumer_start( self->play );
 				}
-				if ( this->play )
-					mlt_consumer_put_frame( this->play, frame );
+				if ( self->play )
+					mlt_consumer_put_frame( self->play, frame );
 			}
 
 			// Copy the rectangle info from the active consumer
-			if ( this->running && preview_off == 0 )
+			if ( self->running && preview_off == 0 )
 			{
-				mlt_properties active = MLT_CONSUMER_PROPERTIES( this->active );
+				mlt_properties active = MLT_CONSUMER_PROPERTIES( self->active );
 				mlt_service_lock( MLT_CONSUMER_SERVICE( consumer ) );
 				mlt_properties_set_int( properties, "rect_x", mlt_properties_get_int( active, "rect_x" ) );
 				mlt_properties_set_int( properties, "rect_y", mlt_properties_get_int( active, "rect_y" ) );
@@ -448,31 +447,28 @@ static void *consumer_thread( void *arg )
 				mlt_service_unlock( MLT_CONSUMER_SERVICE( consumer ) );
 			}
 
-			if ( this->active == this->still )
+			if ( self->active == self->still )
 			{
-				pthread_mutex_lock( &this->refresh_mutex );
-				if ( this->running && speed == 0 && this->refresh_count <= 0 )
+				pthread_mutex_lock( &self->refresh_mutex );
+				if ( self->running && speed == 0 && self->refresh_count <= 0 )
 				{
 					mlt_events_fire( properties, "consumer-sdl-paused", NULL );
-					pthread_cond_wait( &this->refresh_cond, &this->refresh_mutex );
+					pthread_cond_wait( &self->refresh_cond, &self->refresh_mutex );
 				}
-				this->refresh_count --;
-				pthread_mutex_unlock( &this->refresh_mutex );
+				self->refresh_count --;
+				pthread_mutex_unlock( &self->refresh_mutex );
 			}
-
-			// We are definitely not waiting on the first frame any more
-			first = 0;
 		}
 		else
 		{
 			if ( frame ) mlt_frame_close( frame );
-			mlt_consumer_put_frame( this->active, NULL );
-			this->running = 0;
+			mlt_consumer_put_frame( self->active, NULL );
+			self->running = 0;
 		}
 	}
 
-	if ( this->play ) mlt_consumer_stop( this->play );
-	if ( this->still ) mlt_consumer_stop( this->still );
+	if ( self->play ) mlt_consumer_stop( self->play );
+	if ( self->still ) mlt_consumer_stop( self->still );
 
 	return NULL;
 }
@@ -483,18 +479,18 @@ static void *consumer_thread( void *arg )
 static void consumer_close( mlt_consumer parent )
 {
 	// Get the actual object
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
 	// Stop the consumer
 	mlt_consumer_stop( parent );
 
 	// Close the child consumers
-	mlt_consumer_close( this->play );
-	mlt_consumer_close( this->still );
+	mlt_consumer_close( self->play );
+	mlt_consumer_close( self->still );
 
 	// Now clean up the rest
 	mlt_consumer_close( parent );
 
-	// Finally clean up this
-	free( this );
+	// Finally clean up self
+	free( self );
 }
