@@ -229,7 +229,12 @@ void consumer_purge( mlt_consumer parent )
 	if ( self->running )
 	{
 		pthread_mutex_lock( &self->video_mutex );
-		while ( mlt_deque_count( self->queue ) )
+		mlt_frame frame = MLT_FRAME( mlt_deque_peek_back( self->queue ) );
+		// When playing rewind or fast forward then we need to keep one
+		// frame in the queue to prevent playback stalling.
+		double speed = frame? mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame), "_speed" ) : 0;
+		int n = ( speed == 0.0 || speed == 1.0 ) ? 0 : 1;
+		while ( mlt_deque_count( self->queue ) > n )
 			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
 		self->is_purge = 1;
 		pthread_cond_broadcast( &self->video_cond );
@@ -544,7 +549,7 @@ static void *consumer_thread( void *arg )
 			if ( self->running && speed )
 			{
 				pthread_mutex_lock( &self->video_mutex );
-				if ( self->is_purge )
+				if ( self->is_purge && speed == 1.0 )
 				{
 					mlt_frame_close( frame );
 					self->is_purge = 0;
