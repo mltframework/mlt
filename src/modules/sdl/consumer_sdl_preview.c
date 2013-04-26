@@ -59,6 +59,7 @@ struct consumer_sdl_s
 static int consumer_start( mlt_consumer parent );
 static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer parent );
+static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer self, mlt_frame frame );
@@ -99,6 +100,7 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
+		parent->purge = consumer_purge;
 		self->joined = 1;
 		mlt_events_listen( MLT_CONSUMER_PROPERTIES( self->play ), self, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
 		mlt_events_listen( MLT_CONSUMER_PROPERTIES( self->still ), self, "consumer-frame-show", ( mlt_listener )consumer_frame_show_cb );
@@ -272,6 +274,13 @@ static int consumer_is_stopped( mlt_consumer parent )
 {
 	consumer_sdl self = parent->child;
 	return !self->running;
+}
+
+void consumer_purge( mlt_consumer parent )
+{
+	consumer_sdl self = parent->child;
+	if ( self->running )
+		mlt_consumer_purge( self->play );
 }
 
 static void *consumer_thread( void *arg )

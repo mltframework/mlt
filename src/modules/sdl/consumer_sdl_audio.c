@@ -57,6 +57,7 @@ struct consumer_sdl_s
 	pthread_cond_t refresh_cond;
 	pthread_mutex_t refresh_mutex;
 	int refresh_count;
+	int is_purge;
 };
 
 /** Forward references to static functions.
@@ -65,6 +66,7 @@ struct consumer_sdl_s
 static int consumer_start( mlt_consumer parent );
 static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer parent );
+static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, char *name );
@@ -121,6 +123,7 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
+		parent->purge = consumer_purge;
 
 		// Initialize the refresh handler
 		pthread_cond_init( &self->refresh_cond, NULL );
@@ -218,6 +221,20 @@ int consumer_is_stopped( mlt_consumer parent )
 {
 	consumer_sdl self = parent->child;
 	return !self->running;
+}
+
+void consumer_purge( mlt_consumer parent )
+{
+	consumer_sdl self = parent->child;
+	if ( self->running )
+	{
+		pthread_mutex_lock( &self->video_mutex );
+		while ( mlt_deque_count( self->queue ) )
+			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
+		self->is_purge = 1;
+		pthread_cond_broadcast( &self->video_cond );
+		pthread_mutex_unlock( &self->video_mutex );
+	}
 }
 
 static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
@@ -356,7 +373,6 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 	mlt_properties properties = self->properties;
 	if ( self->running && !mlt_consumer_is_stopped( &self->parent ) )
 		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
-
 	return 0;
 }
 
@@ -528,8 +544,16 @@ static void *consumer_thread( void *arg )
 			if ( self->running && speed )
 			{
 				pthread_mutex_lock( &self->video_mutex );
-				mlt_deque_push_back( self->queue, frame );
-				pthread_cond_broadcast( &self->video_cond );
+				if ( self->is_purge )
+				{
+					mlt_frame_close( frame );
+					self->is_purge = 0;
+				}
+				else
+				{
+					mlt_deque_push_back( self->queue, frame );
+					pthread_cond_broadcast( &self->video_cond );
+				}
 				pthread_mutex_unlock( &self->video_mutex );
 
 				// Calculate the next playtime

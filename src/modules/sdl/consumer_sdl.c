@@ -66,6 +66,7 @@ struct consumer_sdl_s
 	SDL_Rect rect;
 	uint8_t *buffer;
 	int bpp;
+	int is_purge;
 };
 
 /** Forward references to static functions.
@@ -74,6 +75,7 @@ struct consumer_sdl_s
 static int consumer_start( mlt_consumer parent );
 static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer parent );
+static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static int consumer_get_dimensions( int *width, int *height );
@@ -147,6 +149,7 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
+		parent->purge = consumer_purge;
 
 		// Register specific events
 		mlt_events_register( self->properties, "consumer-sdl-event", ( mlt_transmitter )consumer_sdl_event );
@@ -314,6 +317,20 @@ int consumer_is_stopped( mlt_consumer parent )
 {
 	consumer_sdl self = parent->child;
 	return !self->running;
+}
+
+void consumer_purge( mlt_consumer parent )
+{
+	consumer_sdl self = parent->child;
+	if ( self->running )
+	{
+		pthread_mutex_lock( &self->video_mutex );
+		while ( mlt_deque_count( self->queue ) )
+			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
+		self->is_purge = 1;
+		pthread_cond_broadcast( &self->video_cond );
+		pthread_mutex_unlock( &self->video_mutex );
+	}
 }
 
 static int sdl_lock_display( )
@@ -824,8 +841,17 @@ static void *consumer_thread( void *arg )
 
 			// Push this frame to the back of the queue
 			pthread_mutex_lock( &self->video_mutex );
-			mlt_deque_push_back( self->queue, frame );
-			pthread_cond_broadcast( &self->video_cond );
+			if ( self->is_purge )
+			{
+				mlt_frame_close( frame );
+				frame = NULL;
+				self->is_purge = 0;
+			}
+			else
+			{
+				mlt_deque_push_back( self->queue, frame );
+				pthread_cond_broadcast( &self->video_cond );
+			}
 			pthread_mutex_unlock( &self->video_mutex );
 
 			// Calculate the next playtime

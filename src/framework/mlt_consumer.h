@@ -102,6 +102,12 @@ struct mlt_consumer_s
 	 */
 	int ( *is_stopped )( mlt_consumer );
 
+	/** Purge the consumer of buffered data (virtual function).
+	 *
+	 * \param mlt_consumer a consumer
+	 */
+	void ( *purge )( mlt_consumer );
+
 	/** The destructor virtual function
 	 *
 	 * \param mlt_consumer a consumer
@@ -124,6 +130,7 @@ struct mlt_consumer_s
 	int put_active;
 	mlt_event event_listener;
 	mlt_position position;
+	int is_purge;
 
 	/* additional fields added for the parallel work queue */
 	mlt_deque worker_threads;
