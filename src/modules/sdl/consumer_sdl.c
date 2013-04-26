@@ -77,7 +77,7 @@ static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static int consumer_get_dimensions( int *width, int *height );
-static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service this, void **args );
+static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 
 /** This is what will be called by the factory - anything can be passed in
 	via the argument, but keep it simple.
@@ -86,62 +86,62 @@ static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt
 mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
-	consumer_sdl this = calloc( 1, sizeof( struct consumer_sdl_s ) );
+	consumer_sdl self = calloc( 1, sizeof( struct consumer_sdl_s ) );
 
 	// If no malloc'd and consumer init ok
-	if ( this != NULL && mlt_consumer_init( &this->parent, this, profile ) == 0 )
+	if ( self != NULL && mlt_consumer_init( &self->parent, self, profile ) == 0 )
 	{
 		// Create the queue
-		this->queue = mlt_deque_init( );
+		self->queue = mlt_deque_init( );
 
 		// Get the parent consumer object
-		mlt_consumer parent = &this->parent;
+		mlt_consumer parent = &self->parent;
 
 		// We have stuff to clean up, so override the close method
 		parent->close = consumer_close;
 
 		// get a handle on properties
 		mlt_service service = MLT_CONSUMER_SERVICE( parent );
-		this->properties = MLT_SERVICE_PROPERTIES( service );
+		self->properties = MLT_SERVICE_PROPERTIES( service );
 
 		// Set the default volume
-		mlt_properties_set_double( this->properties, "volume", 1.0 );
+		mlt_properties_set_double( self->properties, "volume", 1.0 );
 
 		// This is the initialisation of the consumer
-		pthread_mutex_init( &this->audio_mutex, NULL );
-		pthread_cond_init( &this->audio_cond, NULL);
-		pthread_mutex_init( &this->video_mutex, NULL );
-		pthread_cond_init( &this->video_cond, NULL);
+		pthread_mutex_init( &self->audio_mutex, NULL );
+		pthread_cond_init( &self->audio_cond, NULL);
+		pthread_mutex_init( &self->video_mutex, NULL );
+		pthread_cond_init( &self->video_cond, NULL);
 		
 		// Default scaler (for now we'll use nearest)
-		mlt_properties_set( this->properties, "rescale", "nearest" );
-		mlt_properties_set( this->properties, "deinterlace_method", "onefield" );
-		mlt_properties_set_int( this->properties, "top_field_first", -1 );
+		mlt_properties_set( self->properties, "rescale", "nearest" );
+		mlt_properties_set( self->properties, "deinterlace_method", "onefield" );
+		mlt_properties_set_int( self->properties, "top_field_first", -1 );
 
 		// Default buffer for low latency
-		mlt_properties_set_int( this->properties, "buffer", 1 );
+		mlt_properties_set_int( self->properties, "buffer", 1 );
 
 		// Default audio buffer
-		mlt_properties_set_int( this->properties, "audio_buffer", 2048 );
+		mlt_properties_set_int( self->properties, "audio_buffer", 2048 );
 
 		// Ensure we don't join on a non-running object
-		this->joined = 1;
+		self->joined = 1;
 		
 		// process actual param
-		if ( arg && sscanf( arg, "%dx%d", &this->width, &this->height ) )
+		if ( arg && sscanf( arg, "%dx%d", &self->width, &self->height ) )
 		{
-			mlt_properties_set_int( this->properties, "_arg_size", 1 );
+			mlt_properties_set_int( self->properties, "_arg_size", 1 );
 		}
 		else
 		{
-			this->width = mlt_properties_get_int( this->properties, "width" );
-			this->height = mlt_properties_get_int( this->properties, "height" );
+			self->width = mlt_properties_get_int( self->properties, "width" );
+			self->height = mlt_properties_get_int( self->properties, "height" );
 		}
 	
 		// Set the sdl flags
-		this->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_DOUBLEBUF;
+		self->sdl_flags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL | SDL_DOUBLEBUF;
 #if !defined(__DARWIN__)
-		this->sdl_flags |= SDL_RESIZABLE;
+		self->sdl_flags |= SDL_RESIZABLE;
 #endif		
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
@@ -149,30 +149,30 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		parent->is_stopped = consumer_is_stopped;
 
 		// Register specific events
-		mlt_events_register( this->properties, "consumer-sdl-event", ( mlt_transmitter )consumer_sdl_event );
+		mlt_events_register( self->properties, "consumer-sdl-event", ( mlt_transmitter )consumer_sdl_event );
 
 		// Return the consumer produced
 		return parent;
 	}
 
 	// malloc or consumer init failed
-	free( this );
+	free( self );
 
 	// Indicate failure
 	return NULL;
 }
 
-static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
+static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
 {
 	if ( listener != NULL )
-		listener( owner, this, ( SDL_Event * )args[ 0 ] );
+		listener( owner, self, ( SDL_Event * )args[ 0 ] );
 }
 
 int consumer_start( mlt_consumer parent )
 {
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
-	if ( !this->running )
+	if ( !self->running )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
 		int video_off = mlt_properties_get_int( properties, "video_off" );
@@ -188,8 +188,8 @@ int consumer_start( mlt_consumer parent )
 
 		consumer_stop( parent );
 
-		this->running = 1;
-		this->joined = 0;
+		self->running = 1;
+		self->joined = 0;
 
 		if ( output_display != NULL )
 			setenv( "DISPLAY", output_display, 1 );
@@ -206,15 +206,15 @@ int consumer_start( mlt_consumer parent )
 		if ( audio_device != NULL )
 			setenv( "AUDIODEV", audio_device, 1 );
 
-		if ( ! mlt_properties_get_int( this->properties, "_arg_size" ) )
+		if ( ! mlt_properties_get_int( self->properties, "_arg_size" ) )
 		{
-			if ( mlt_properties_get_int( this->properties, "width" ) > 0 )
-				this->width = mlt_properties_get_int( this->properties, "width" );
-			if ( mlt_properties_get_int( this->properties, "height" ) > 0 )
-				this->height = mlt_properties_get_int( this->properties, "height" );
+			if ( mlt_properties_get_int( self->properties, "width" ) > 0 )
+				self->width = mlt_properties_get_int( self->properties, "width" );
+			if ( mlt_properties_get_int( self->properties, "height" ) > 0 )
+				self->height = mlt_properties_get_int( self->properties, "height" );
 		}
 
-		this->bpp = mlt_properties_get_int( this->properties, "bpp" );
+		self->bpp = mlt_properties_get_int( self->properties, "bpp" );
 
 		if ( sdl_started == 0 && display_off == 0 )
 		{
@@ -235,37 +235,37 @@ int consumer_start( mlt_consumer parent )
 			SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 		// Default window size
-		if ( mlt_properties_get_int( this->properties, "_arg_size" ) )
+		if ( mlt_properties_get_int( self->properties, "_arg_size" ) )
 		{
-			this->window_width = this->width;
-			this->window_height = this->height;
+			self->window_width = self->width;
+			self->window_height = self->height;
 		}
 		else
 		{
-			double display_ratio = mlt_properties_get_double( this->properties, "display_ratio" );
-			this->window_width = ( double )this->height * display_ratio + 0.5;
-			this->window_height = this->height;
+			double display_ratio = mlt_properties_get_double( self->properties, "display_ratio" );
+			self->window_width = ( double )self->height * display_ratio + 0.5;
+			self->window_height = self->height;
 		}
 
 		pthread_mutex_lock( &mlt_sdl_mutex );
 		if ( !SDL_GetVideoSurface() && display_off == 0 )
 		{
-			if ( mlt_properties_get_int( this->properties, "fullscreen" ) )
+			if ( mlt_properties_get_int( self->properties, "fullscreen" ) )
 			{
 				const SDL_VideoInfo *vi;
 				pthread_mutex_lock( &mlt_sdl_mutex );
 				vi = SDL_GetVideoInfo();
 				pthread_mutex_unlock( &mlt_sdl_mutex );
-				this->window_width = vi->current_w;
-				this->window_height = vi->current_h;
-				this->sdl_flags |= SDL_FULLSCREEN;
+				self->window_width = vi->current_w;
+				self->window_height = vi->current_h;
+				self->sdl_flags |= SDL_FULLSCREEN;
 				SDL_ShowCursor( SDL_DISABLE );
 			}
-			SDL_SetVideoMode( this->window_width, this->window_height, 0, this->sdl_flags );
+			SDL_SetVideoMode( self->window_width, self->window_height, 0, self->sdl_flags );
 		}
 		pthread_mutex_unlock( &mlt_sdl_mutex );
 
-		pthread_create( &this->thread, NULL, consumer_thread, this );
+		pthread_create( &self->thread, NULL, consumer_thread, self );
 	}
 
 	return 0;
@@ -274,28 +274,28 @@ int consumer_start( mlt_consumer parent )
 int consumer_stop( mlt_consumer parent )
 {
 	// Get the actual object
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
-	if ( this->joined == 0 )
+	if ( self->joined == 0 )
 	{
 		// Kill the thread and clean up
-		this->joined = 1;
-		this->running = 0;
+		self->joined = 1;
+		self->running = 0;
 #ifndef WIN32
-		if ( this->thread )
+		if ( self->thread )
 #endif
-			pthread_join( this->thread, NULL );
+			pthread_join( self->thread, NULL );
 
 		// internal cleanup
-		if ( this->sdl_overlay != NULL )
-			SDL_FreeYUVOverlay( this->sdl_overlay );
-		this->sdl_overlay = NULL;
+		if ( self->sdl_overlay != NULL )
+			SDL_FreeYUVOverlay( self->sdl_overlay );
+		self->sdl_overlay = NULL;
 
 		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
 		{
-			pthread_mutex_lock( &this->audio_mutex );
-			pthread_cond_broadcast( &this->audio_cond );
-			pthread_mutex_unlock( &this->audio_mutex );
+			pthread_mutex_lock( &self->audio_mutex );
+			pthread_cond_broadcast( &self->audio_cond );
+			pthread_mutex_unlock( &self->audio_mutex );
 			SDL_QuitSubSystem( SDL_INIT_AUDIO );
 		}
 
@@ -312,8 +312,8 @@ int consumer_stop( mlt_consumer parent )
 
 int consumer_is_stopped( mlt_consumer parent )
 {
-	consumer_sdl this = parent->child;
-	return !this->running;
+	consumer_sdl self = parent->child;
+	return !self->running;
 }
 
 static int sdl_lock_display( )
@@ -336,30 +336,30 @@ static void sdl_unlock_display( )
 
 static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 {
-	consumer_sdl this = udata;
+	consumer_sdl self = udata;
 
 	// Get the volume
-	double volume = mlt_properties_get_double( this->properties, "volume" );
+	double volume = mlt_properties_get_double( self->properties, "volume" );
 
-	pthread_mutex_lock( &this->audio_mutex );
+	pthread_mutex_lock( &self->audio_mutex );
 
 	// Block until audio received
-	while ( this->running && len > this->audio_avail )
-		pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
+	while ( self->running && len > self->audio_avail )
+		pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
 
-	if ( this->audio_avail >= len )
+	if ( self->audio_avail >= len )
 	{
 		// Place in the audio buffer
 		if ( volume != 1.0 )
-			SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+			SDL_MixAudio( stream, self->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 		else
-			memcpy( stream, this->audio_buffer, len );
+			memcpy( stream, self->audio_buffer, len );
 
 		// Remove len from the audio available
-		this->audio_avail -= len;
+		self->audio_avail -= len;
 
 		// Remove the samples
-		memmove( this->audio_buffer, this->audio_buffer + len, this->audio_avail );
+		memmove( self->audio_buffer, self->audio_buffer + len, self->audio_avail );
 	}
 	else
 	{
@@ -367,23 +367,23 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 		memset( stream, 0, len );
 
 		// Mix the audio 
-		SDL_MixAudio( stream, this->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+		SDL_MixAudio( stream, self->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
 		// No audio left
-		this->audio_avail = 0;
+		self->audio_avail = 0;
 	}
 
 	// We're definitely playing now
-	this->playing = 1;
+	self->playing = 1;
 
-	pthread_cond_broadcast( &this->audio_cond );
-	pthread_mutex_unlock( &this->audio_mutex );
+	pthread_cond_broadcast( &self->audio_cond );
+	pthread_mutex_unlock( &self->audio_mutex );
 }
 
-static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_audio, int *duration )
+static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_audio, int *duration )
 {
-	// Get the properties of this consumer
-	mlt_properties properties = this->properties;
+	// Get the properties of self consumer
+	mlt_properties properties = self->properties;
 	mlt_audio_format afmt = mlt_audio_s16;
 
 	// Set the preferred params of the test card signal
@@ -392,7 +392,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 	int frequency = mlt_properties_get_int( properties, "frequency" );
 	static int counter = 0;
 
-	int samples = mlt_sample_calculator( mlt_properties_get_double( this->properties, "fps" ), frequency, counter++ );
+	int samples = mlt_sample_calculator( mlt_properties_get_double( self->properties, "fps" ), frequency, counter++ );
 	
 	int16_t *pcm;
 	int bytes;
@@ -403,7 +403,7 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 	if ( mlt_properties_get_int( properties, "audio_off" ) )
 	{
-		this->playing = 1;
+		self->playing = 1;
 		init_audio = 1;
 		return init_audio;
 	}
@@ -417,16 +417,16 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 
 		// specify audio format
 		memset( &request, 0, sizeof( SDL_AudioSpec ) );
-		this->playing = 0;
+		self->playing = 0;
 		request.freq = frequency;
 		request.format = AUDIO_S16SYS;
 		request.channels = dest_channels;
 		request.samples = audio_buffer;
 		request.callback = sdl_fill_audio;
-		request.userdata = (void *)this;
+		request.userdata = (void *)self;
 		if ( SDL_OpenAudio( &request, &got ) != 0 )
 		{
-			mlt_log_error( MLT_CONSUMER_SERVICE( this ), "SDL failed to open audio: %s\n", SDL_GetError() );
+			mlt_log_error( MLT_CONSUMER_SERVICE( self ), "SDL failed to open audio: %s\n", SDL_GetError() );
 			init_audio = 2;
 		}
 		else if ( got.size != 0 )
@@ -441,20 +441,20 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 		mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 		
 		bytes = samples * dest_channels * sizeof(*pcm);
-		pthread_mutex_lock( &this->audio_mutex );
-		while ( this->running && bytes > ( sizeof( this->audio_buffer) - this->audio_avail ) )
-			pthread_cond_wait( &this->audio_cond, &this->audio_mutex );
-		if ( this->running )
+		pthread_mutex_lock( &self->audio_mutex );
+		while ( self->running && bytes > ( sizeof( self->audio_buffer) - self->audio_avail ) )
+			pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
+		if ( self->running )
 		{
 			if ( mlt_properties_get_double( properties, "_speed" ) == 1 )
 			{
 				if ( channels == dest_channels )
 				{
-					memcpy( &this->audio_buffer[ this->audio_avail ], pcm, bytes );
+					memcpy( &self->audio_buffer[ self->audio_avail ], pcm, bytes );
 				}
 				else
 				{
-					int16_t *dest = (int16_t*) &this->audio_buffer[ this->audio_avail ];
+					int16_t *dest = (int16_t*) &self->audio_buffer[ self->audio_avail ];
 					int i = samples + 1;
 					
 					while ( --i )
@@ -467,28 +467,28 @@ static int consumer_play_audio( consumer_sdl this, mlt_frame frame, int init_aud
 			}
 			else
 			{
-				memset( &this->audio_buffer[ this->audio_avail ], 0, bytes );
+				memset( &self->audio_buffer[ self->audio_avail ], 0, bytes );
 			}
-			this->audio_avail += bytes;
+			self->audio_avail += bytes;
 		}
-		pthread_cond_broadcast( &this->audio_cond );
-		pthread_mutex_unlock( &this->audio_mutex );
+		pthread_cond_broadcast( &self->audio_cond );
+		pthread_mutex_unlock( &self->audio_mutex );
 	}
 	else
 	{
-		this->playing = 1;
+		self->playing = 1;
 	}
 
 	return init_audio;
 }
 
-static int consumer_play_video( consumer_sdl this, mlt_frame frame )
+static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 {
 	// Get the properties of this consumer
-	mlt_properties properties = this->properties;
+	mlt_properties properties = self->properties;
 
 	mlt_image_format vfmt = mlt_image_yuv422;
-	int width = this->width, height = this->height;
+	int width = self->width, height = self->height;
 	uint8_t *image;
 	int changed = 0;
 
@@ -497,7 +497,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	mlt_image_format preview_format = mlt_properties_get_int( properties, "preview_format" );
 	int display_off = video_off | preview_off;
 
-	if ( this->running && display_off == 0 )
+	if ( self->running && display_off == 0 )
 	{
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
@@ -511,23 +511,23 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	
 			sdl_lock_display( );
 			pthread_mutex_lock( &mlt_sdl_mutex );
-			changed = consumer_get_dimensions( &this->window_width, &this->window_height );
+			changed = consumer_get_dimensions( &self->window_width, &self->window_height );
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 			sdl_unlock_display( );
 
 			while ( SDL_PollEvent( &event ) )
 			{
-				mlt_events_fire( this->properties, "consumer-sdl-event", &event, NULL );
+				mlt_events_fire( self->properties, "consumer-sdl-event", &event, NULL );
 
 				switch( event.type )
 				{
 					case SDL_VIDEORESIZE:
-						this->window_width = event.resize.w;
-						this->window_height = event.resize.h;
+						self->window_width = event.resize.w;
+						self->window_height = event.resize.h;
 						changed = 1;
 						break;
 					case SDL_QUIT:
-						this->running = 0;
+						self->running = 0;
 						break;
 					case SDL_KEYDOWN:
 						{
@@ -547,39 +547,39 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	
 		sdl_lock_display();
 
-		if ( width != this->width || height != this->height )
+		if ( width != self->width || height != self->height )
 		{
-			if ( this->sdl_overlay != NULL )
-				SDL_FreeYUVOverlay( this->sdl_overlay );
-			this->sdl_overlay = NULL;
+			if ( self->sdl_overlay != NULL )
+				SDL_FreeYUVOverlay( self->sdl_overlay );
+			self->sdl_overlay = NULL;
 		}
 
-		if ( this->running && ( !SDL_GetVideoSurface() || changed ) )
+		if ( self->running && ( !SDL_GetVideoSurface() || changed ) )
 		{
 			// Force an overlay recreation
-			if ( this->sdl_overlay != NULL )
-				SDL_FreeYUVOverlay( this->sdl_overlay );
-			this->sdl_overlay = NULL;
+			if ( self->sdl_overlay != NULL )
+				SDL_FreeYUVOverlay( self->sdl_overlay );
+			self->sdl_overlay = NULL;
 
 			// open SDL window with video overlay, if possible
 			pthread_mutex_lock( &mlt_sdl_mutex );
-			SDL_Surface *screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
-			if ( consumer_get_dimensions( &this->window_width, &this->window_height ) )
-				screen = SDL_SetVideoMode( this->window_width, this->window_height, this->bpp, this->sdl_flags );
+			SDL_Surface *screen = SDL_SetVideoMode( self->window_width, self->window_height, self->bpp, self->sdl_flags );
+			if ( consumer_get_dimensions( &self->window_width, &self->window_height ) )
+				screen = SDL_SetVideoMode( self->window_width, self->window_height, self->bpp, self->sdl_flags );
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 
 			if ( screen )
 			{
-				uint32_t color = mlt_properties_get_int( this->properties, "window_background" );
+				uint32_t color = mlt_properties_get_int( self->properties, "window_background" );
 				SDL_FillRect( screen, NULL, color >> 8 );
 				SDL_Flip( screen );
 			}
 		}
 
-		if ( this->running )
+		if ( self->running )
 		{
 			// Determine window's new display aspect ratio
-			double this_aspect = ( double )this->window_width / this->window_height;
+			double this_aspect = ( double )self->window_width / self->window_height;
 
 			// Get the display aspect ratio
 			double display_ratio = mlt_properties_get_double( properties, "display_ratio" );
@@ -588,68 +588,68 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 			double frame_aspect = mlt_frame_get_aspect_ratio( frame ) * width / height;
 
 			// Store the width and height received
-			this->width = width;
-			this->height = height;
+			self->width = width;
+			self->height = height;
 
 			// If using hardware scaler
 			if ( mlt_properties_get( properties, "rescale" ) != NULL &&
 				!strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
 			{
 				// Use hardware scaler to normalise display aspect ratio
-				this->rect.w = frame_aspect / this_aspect * this->window_width;
-				this->rect.h = this->window_height;
-				if ( this->rect.w > this->window_width )
+				self->rect.w = frame_aspect / this_aspect * self->window_width;
+				self->rect.h = self->window_height;
+				if ( self->rect.w > self->window_width )
 				{
-					this->rect.w = this->window_width;
-					this->rect.h = this_aspect / frame_aspect * this->window_height;
+					self->rect.w = self->window_width;
+					self->rect.h = this_aspect / frame_aspect * self->window_height;
 				}
 			}
 			// Special case optimisation to negate odd effect of sample aspect ratio
 			// not corresponding exactly with image resolution.
 			else if ( (int)( this_aspect * 1000 ) == (int)( display_ratio * 1000 ) ) 
 			{
-				this->rect.w = this->window_width;
-				this->rect.h = this->window_height;
+				self->rect.w = self->window_width;
+				self->rect.h = self->window_height;
 			}
 			// Use hardware scaler to normalise sample aspect ratio
-			else if ( this->window_height * display_ratio > this->window_width )
+			else if ( self->window_height * display_ratio > self->window_width )
 			{
-				this->rect.w = this->window_width;
-				this->rect.h = this->window_width / display_ratio;
+				self->rect.w = self->window_width;
+				self->rect.h = self->window_width / display_ratio;
 			}
 			else
 			{
-				this->rect.w = this->window_height * display_ratio;
-				this->rect.h = this->window_height;
+				self->rect.w = self->window_height * display_ratio;
+				self->rect.h = self->window_height;
 			}
 			
-			this->rect.x = ( this->window_width - this->rect.w ) / 2;
-			this->rect.y = ( this->window_height - this->rect.h ) / 2;
-			this->rect.x -= this->rect.x % 2;
+			self->rect.x = ( self->window_width - self->rect.w ) / 2;
+			self->rect.y = ( self->window_height - self->rect.h ) / 2;
+			self->rect.x -= self->rect.x % 2;
 
-			mlt_properties_set_int( this->properties, "rect_x", this->rect.x );
-			mlt_properties_set_int( this->properties, "rect_y", this->rect.y );
-			mlt_properties_set_int( this->properties, "rect_w", this->rect.w );
-			mlt_properties_set_int( this->properties, "rect_h", this->rect.h );
+			mlt_properties_set_int( self->properties, "rect_x", self->rect.x );
+			mlt_properties_set_int( self->properties, "rect_y", self->rect.y );
+			mlt_properties_set_int( self->properties, "rect_w", self->rect.w );
+			mlt_properties_set_int( self->properties, "rect_h", self->rect.h );
 
-			SDL_SetClipRect( SDL_GetVideoSurface(), &this->rect );
+			SDL_SetClipRect( SDL_GetVideoSurface(), &self->rect );
 		}
 
-		if ( this->running && SDL_GetVideoSurface() && this->sdl_overlay == NULL )
+		if ( self->running && SDL_GetVideoSurface() && self->sdl_overlay == NULL )
 		{
-			SDL_SetClipRect( SDL_GetVideoSurface(), &this->rect );
-			this->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, SDL_GetVideoSurface() );
+			SDL_SetClipRect( SDL_GetVideoSurface(), &self->rect );
+			self->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, SDL_GetVideoSurface() );
 		}
 
-		if ( this->running && SDL_GetVideoSurface() && this->sdl_overlay != NULL )
+		if ( self->running && SDL_GetVideoSurface() && self->sdl_overlay != NULL )
 		{
-			this->buffer = this->sdl_overlay->pixels[ 0 ];
-			if ( SDL_LockYUVOverlay( this->sdl_overlay ) >= 0 )
+			self->buffer = self->sdl_overlay->pixels[ 0 ];
+			if ( SDL_LockYUVOverlay( self->sdl_overlay ) >= 0 )
 			{
 				if ( image != NULL )
-					memcpy( this->buffer, image, width * height * 2 );
-				SDL_UnlockYUVOverlay( this->sdl_overlay );
-				SDL_DisplayYUVOverlay( this->sdl_overlay, &SDL_GetVideoSurface()->clip_rect );
+					memcpy( self->buffer, image, width * height * 2 );
+				SDL_UnlockYUVOverlay( self->sdl_overlay );
+				SDL_DisplayYUVOverlay( self->sdl_overlay, &SDL_GetVideoSurface()->clip_rect );
 			}
 		}
 
@@ -657,7 +657,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 		mlt_cocoa_autorelease_close( pool );
 		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 	}
-	else if ( this->running )
+	else if ( self->running )
 	{
 		vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
 		if ( !video_off )
@@ -671,7 +671,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 static void *video_thread( void *arg )
 {
 	// Identify the arg
-	consumer_sdl this = arg;
+	consumer_sdl self = arg;
 
 	// Obtain time of thread start
 	struct timeval now;
@@ -683,7 +683,7 @@ static void *video_thread( void *arg )
 	double speed = 0;
 
 	// Get real time flag
-	int real_time = mlt_properties_get_int( this->properties, "real_time" );
+	int real_time = mlt_properties_get_int( self->properties, "real_time" );
 
 	// Get the current time
 	gettimeofday( &now, NULL );
@@ -691,19 +691,19 @@ static void *video_thread( void *arg )
 	// Determine start time
 	start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
 
-	while ( this->running )
+	while ( self->running )
 	{
 		// Pop the next frame
-		pthread_mutex_lock( &this->video_mutex );
-		next = mlt_deque_pop_front( this->queue );
-		while ( next == NULL && this->running )
+		pthread_mutex_lock( &self->video_mutex );
+		next = mlt_deque_pop_front( self->queue );
+		while ( next == NULL && self->running )
 		{
-			pthread_cond_wait( &this->video_cond, &this->video_mutex );
-			next = mlt_deque_pop_front( this->queue );
+			pthread_cond_wait( &self->video_cond, &self->video_mutex );
+			next = mlt_deque_pop_front( self->queue );
 		}
-		pthread_mutex_unlock( &this->video_mutex );
+		pthread_mutex_unlock( &self->video_mutex );
 
-		if ( !this->running || next == NULL ) break;
+		if ( !self->running || next == NULL ) break;
 
 		// Get the properties
 		properties =  MLT_FRAME_PROPERTIES( next );
@@ -718,7 +718,7 @@ static void *video_thread( void *arg )
 		elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - start;
 
 		// See if we have to delay the display of the current frame
-		if ( mlt_properties_get_int( properties, "rendered" ) == 1 && this->running )
+		if ( mlt_properties_get_int( properties, "rendered" ) == 1 && self->running )
 		{
 			// Obtain the scheduled playout time
 			int64_t scheduled = mlt_properties_get_int( properties, "playtime" );
@@ -735,11 +735,11 @@ static void *video_thread( void *arg )
 			}
 
 			// Show current frame if not too old
-			if ( !real_time || ( difference > -10000 || speed != 1.0 || mlt_deque_count( this->queue ) < 2 ) )
-				consumer_play_video( this, next );
+			if ( !real_time || ( difference > -10000 || speed != 1.0 || mlt_deque_count( self->queue ) < 2 ) )
+				consumer_play_video( self, next );
 
 			// If the queue is empty, recalculate start to allow build up again
-			if ( real_time && ( mlt_deque_count( this->queue ) == 0 && speed == 1.0 ) )
+			if ( real_time && ( mlt_deque_count( self->queue ) == 0 && speed == 1.0 ) )
 			{
 				gettimeofday( &now, NULL );
 				start = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - scheduled + 20000;
@@ -748,7 +748,7 @@ static void *video_thread( void *arg )
 		else
 		{
 			static int dropped = 0;
-			mlt_log_info( MLT_CONSUMER_SERVICE(&this->parent), "dropped video frame %d\n", ++dropped );
+			mlt_log_info( MLT_CONSUMER_SERVICE(&self->parent), "dropped video frame %d\n", ++dropped );
 		}
 
 		// This frame can now be closed
@@ -759,7 +759,7 @@ static void *video_thread( void *arg )
 	if ( next != NULL )
 		mlt_frame_close( next );
 
-	mlt_consumer_stopped( &this->parent );
+	mlt_consumer_stopped( &self->parent );
 
 	return NULL;
 }
@@ -770,10 +770,10 @@ static void *video_thread( void *arg )
 static void *consumer_thread( void *arg )
 {
 	// Identify the arg
-	consumer_sdl this = arg;
+	consumer_sdl self = arg;
 
 	// Get the consumer
-	mlt_consumer consumer = &this->parent;
+	mlt_consumer consumer = &self->parent;
 
 	// Convenience functionality
 	int terminate_on_pause = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "terminate_on_pause" );
@@ -791,7 +791,7 @@ static void *consumer_thread( void *arg )
 	struct timespec tm = { 0, 100000 };
 
 	// Loop until told not to
-	while( this->running )
+	while( self->running )
 	{
 		// Get a frame from the attached producer
 		frame = !terminated? mlt_consumer_rt_frame( consumer ) : NULL;
@@ -804,13 +804,13 @@ static void *consumer_thread( void *arg )
 		if ( frame )
 		{
 			// Play audio
-			init_audio = consumer_play_audio( this, frame, init_audio, &duration );
+			init_audio = consumer_play_audio( self, frame, init_audio, &duration );
 
 			// Determine the start time now
-			if ( this->playing && init_video )
+			if ( self->playing && init_video )
 			{
 				// Create the video thread
-				pthread_create( &thread, NULL, video_thread, this );
+				pthread_create( &thread, NULL, video_thread, self );
 
 				// Video doesn't need to be initialised any more
 				init_video = 0;
@@ -819,28 +819,28 @@ static void *consumer_thread( void *arg )
 			// Set playtime for this frame
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "playtime", playtime );
 
-			while ( this->running && mlt_deque_count( this->queue ) > 15 )
+			while ( self->running && mlt_deque_count( self->queue ) > 15 )
 				nanosleep( &tm, NULL );
 
 			// Push this frame to the back of the queue
-			pthread_mutex_lock( &this->video_mutex );
-			mlt_deque_push_back( this->queue, frame );
-			pthread_cond_broadcast( &this->video_cond );
-			pthread_mutex_unlock( &this->video_mutex );
+			pthread_mutex_lock( &self->video_mutex );
+			mlt_deque_push_back( self->queue, frame );
+			pthread_cond_broadcast( &self->video_cond );
+			pthread_mutex_unlock( &self->video_mutex );
 
 			// Calculate the next playtime
 			playtime += ( duration * 1000 );
 		}
 		else if ( terminated )
 		{
-			if ( init_video || mlt_deque_count( this->queue ) == 0 )
+			if ( init_video || mlt_deque_count( self->queue ) == 0 )
 				break;
 			else
 				nanosleep( &tm, NULL );
 		}
 	}
 
-	this->running = 0;
+	self->running = 0;
 	
 	// Unblock sdl_preview
 	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "put_mode" ) == 1 )
@@ -854,16 +854,16 @@ static void *consumer_thread( void *arg )
 	// Kill the video thread
 	if ( init_video == 0 )
 	{
-		pthread_mutex_lock( &this->video_mutex );
-		pthread_cond_broadcast( &this->video_cond );
-		pthread_mutex_unlock( &this->video_mutex );
+		pthread_mutex_lock( &self->video_mutex );
+		pthread_cond_broadcast( &self->video_cond );
+		pthread_mutex_unlock( &self->video_mutex );
 		pthread_join( thread, NULL );
 	}
 
-	while( mlt_deque_count( this->queue ) )
-		mlt_frame_close( mlt_deque_pop_back( this->queue ) );
+	while( mlt_deque_count( self->queue ) )
+		mlt_frame_close( mlt_deque_pop_back( self->queue ) );
 
-	this->audio_avail = 0;
+	self->audio_avail = 0;
 
 	return NULL;
 }
@@ -922,7 +922,7 @@ static int consumer_get_dimensions( int *width, int *height )
 static void consumer_close( mlt_consumer parent )
 {
 	// Get the actual object
-	consumer_sdl this = parent->child;
+	consumer_sdl self = parent->child;
 
 	// Stop the consumer
 	///mlt_consumer_stop( parent );
@@ -931,12 +931,12 @@ static void consumer_close( mlt_consumer parent )
 	mlt_consumer_close( parent );
 
 	// Close the queue
-	mlt_deque_close( this->queue );
+	mlt_deque_close( self->queue );
 
 	// Destroy mutexes
-	pthread_mutex_destroy( &this->audio_mutex );
-	pthread_cond_destroy( &this->audio_cond );
+	pthread_mutex_destroy( &self->audio_mutex );
+	pthread_cond_destroy( &self->audio_cond );
 		
 	// Finally clean up this
-	free( this );
+	free( self );
 }
