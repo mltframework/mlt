@@ -1226,7 +1226,7 @@ void mlt_consumer_purge( mlt_consumer self )
 		if ( self->purge )
 			self->purge( self );
 
-		while ( mlt_deque_count( self->queue ) )
+		while ( self->ahead && mlt_deque_count( self->queue ) )
 			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
 		if ( self->ahead && self->real_time )
 		{
