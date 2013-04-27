@@ -406,7 +406,8 @@ static void *consumer_thread( void *arg )
 				if ( pause )
 				{
 					// Start the still consumer
-					mlt_consumer_stop( self->play );
+					if ( !mlt_consumer_is_stopped( self->play ) )
+						mlt_consumer_stop( self->play );
 					self->last_speed = speed;
 					self->active = self->still;
 					self->ignore_change = 0;

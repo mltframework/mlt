@@ -1109,8 +1109,15 @@ static void consumer_work_start( mlt_consumer self )
 static void consumer_read_ahead_stop( mlt_consumer self )
 {
 	// Make sure we're running
+// TODO improve support for atomic ops in general (see libavutil/atomic.h)
+#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
+	if ( __sync_val_compare_and_swap( &self->started, 1, 0 ) )
+	{
+#else
 	if ( self->started )
 	{
+		self->started = 0;
+#endif
 		// Inform thread to stop
 		self->ahead = 0;
 
@@ -1126,7 +1133,6 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 
 		// Join the thread
 		pthread_join( self->ahead_thread, NULL );
-		self->started = 0;
 
 		// Destroy the frame queue mutex
 		pthread_mutex_destroy( &self->queue_mutex );
@@ -1152,8 +1158,14 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 static void consumer_work_stop( mlt_consumer self )
 {
 	// Make sure we're running
+#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
+	if ( __sync_val_compare_and_swap( &self->started, 1, 0 ) )
+	{
+#else
 	if ( self->started )
 	{
+		self->started = 0;
+#endif
 		// Inform thread to stop
 		self->ahead = 0;
 
@@ -1180,9 +1192,6 @@ static void consumer_work_stop( mlt_consumer self )
 		// Deallocate the array of threads
 		if ( self->threads )
 			free( self->threads );
-
-		// Indicate that worker threads no longer running
-		self->started = 0;
 
 		// Destroy the mutexes
 		pthread_mutex_destroy( &self->queue_mutex );
@@ -1220,15 +1229,15 @@ void mlt_consumer_purge( mlt_consumer self )
 		pthread_cond_broadcast( &self->put_cond );
 		pthread_mutex_unlock( &self->put_mutex );
 
-		if ( self->ahead && self->real_time )
+		if ( self->started && self->real_time )
 			pthread_mutex_lock( &self->queue_mutex );
 
 		if ( self->purge )
 			self->purge( self );
 
-		while ( self->ahead && mlt_deque_count( self->queue ) )
+		while ( self->started && mlt_deque_count( self->queue ) )
 			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
-		if ( self->ahead && self->real_time )
+		if ( self->started && self->real_time )
 		{
 			self->is_purge = 1;
 			pthread_cond_broadcast( &self->queue_cond );
