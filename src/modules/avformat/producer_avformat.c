@@ -338,8 +338,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 				snprintf( key, sizeof(key), "meta.media.%d.codec.height", i );
 				mlt_properties_set_int( meta_media, key, codec_context->height );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.frame_rate", i );
-				AVRational frame_rate = av_inv_q( codec_context->time_base );
-				frame_rate.den *= codec_context->ticks_per_frame;
+				AVRational frame_rate = { codec_context->time_base.den, codec_context->time_base.num * codec_context->ticks_per_frame };
 				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.pix_fmt", i );
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(3<<8)+0)
@@ -1771,8 +1770,8 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		if ( isnan( fps ) || isinf( fps ) || fps < 1.0 )
 		{
 			// Get the frame rate from the codec.
-			frame_rate = av_inv_q( self->video_codec->time_base );
-			frame_rate.den *= self->video_codec->ticks_per_frame;
+			frame_rate.num = self->video_codec->time_base.den;
+			frame_rate.den = self->video_codec->time_base.num * self->video_codec->ticks_per_frame;
 			fps = av_q2d( frame_rate );
 		}
 		if ( isnan( fps ) || isinf( fps ) || fps < 1.0 )
