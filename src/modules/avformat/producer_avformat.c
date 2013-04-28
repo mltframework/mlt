@@ -431,121 +431,16 @@ static mlt_properties find_default_streams( producer_avformat self )
 	return meta_media;
 }
 
-static inline int dv_is_pal( AVPacket *pkt )
+static void get_aspect_ratio( mlt_properties properties, AVStream *stream, AVCodecContext *codec_context )
 {
-	return pkt->data[3] & 0x80;
-}
-
-static int dv_is_wide( AVPacket *pkt )
-{
-	int i = 80 /* block size */ *3 /* VAUX starts at block 3 */ +3 /* skip block header */;
-
-	for ( ; i < pkt->size; i += 5 /* packet size */ )
-	{
-		if ( pkt->data[ i ] == 0x61 )
-		{
-			uint8_t x = pkt->data[ i + 2 ] & 0x7;
-			return ( x == 2 ) || ( x == 7 );
-		}
-	}
-	return 0;
-}
-
-static double get_aspect_ratio( mlt_properties properties, AVStream *stream, AVCodecContext *codec_context, AVPacket *pkt )
-{
-	double aspect_ratio = 1.0;
-
-	if ( codec_context->codec_id == AV_CODEC_ID_DVVIDEO )
-	{
-		if ( pkt )
-		{
-			if ( dv_is_pal( pkt ) )
-			{
-				if ( dv_is_wide( pkt ) )
-				{
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 64 );
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 45 );
-				}
-				else
-				{
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 16 );
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 15 );
-				}
-			}
-			else
-			{
-				if ( dv_is_wide( pkt ) )
-				{
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 32 );
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 27 );
-				}
-				else
-				{
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 8 );
-					mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 9 );
-				}
-			}
-		}
-		else
-		{
-			AVRational ar = stream->sample_aspect_ratio;
-			// Override FFmpeg's notion of DV aspect ratios, which are
-			// based upon a width of 704. Since we do not have a normaliser
-			// that crops (nor is cropping 720 wide ITU-R 601 video always desirable)
-			// we just coerce the values to facilitate a passive behaviour through
-			// the rescale normaliser when using equivalent producers and consumers.
-			// = display_aspect / (width * height)
-			if ( ar.num == 10 && ar.den == 11 )
-			{
-				// 4:3 NTSC
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 8 );
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 9 );
-			}
-			else if ( ar.num == 59 && ar.den == 54 )
-			{
-				// 4:3 PAL
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 16 );
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 15 );
-			}
-			else if ( ar.num == 40 && ar.den == 33 )
-			{
-				// 16:9 NTSC
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 32 );
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 27 );
-			}
-			else if ( ar.num == 118 && ar.den == 81 )
-			{
-				// 16:9 PAL
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 64 );
-				mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 45 );
-			}
-		}
-	}
-	else
-	{
-		AVRational codec_sar = codec_context->sample_aspect_ratio;
-		AVRational stream_sar = stream->sample_aspect_ratio;
-		if ( codec_sar.num > 0 )
-		{
-			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", codec_sar.num );
-			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", codec_sar.den );
-		}
-		else if ( stream_sar.num > 0 )
-		{
-			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", stream_sar.num );
-			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", stream_sar.den );
-		}
-		else
-		{
-			mlt_properties_set_int( properties, "meta.media.sample_aspect_num", 1 );
-			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", 1 );
-		}
-	}
-	AVRational ar = { mlt_properties_get_double( properties, "meta.media.sample_aspect_num" ), mlt_properties_get_double( properties, "meta.media.sample_aspect_den" ) };
-	aspect_ratio = av_q2d( ar );
-	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
-
-	return aspect_ratio;
+	AVRational sar = stream->sample_aspect_ratio;
+	if ( sar.num <= 0 || sar.den <= 0 )
+		sar = codec_context->sample_aspect_ratio;
+	if ( sar.num <= 0 || sar.den <= 0 )
+		sar.num = sar.den = 1;
+	mlt_properties_set_int( properties, "meta.media.sample_aspect_num", sar.num );
+	mlt_properties_set_int( properties, "meta.media.sample_aspect_den", sar.den );
+	mlt_properties_set_double( properties, "aspect_ratio", av_q2d( sar ) );
 }
 
 #if LIBAVFORMAT_VERSION_INT > ((53<<16)+(6<<8)+0)
@@ -745,29 +640,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 		AVCodecContext *codec_context = format->streams[ self->video_index ]->codec;
 		mlt_properties_set_int( properties, "width", codec_context->width );
 		mlt_properties_set_int( properties, "height", codec_context->height );
-
-		if ( codec_context->codec_id == AV_CODEC_ID_DVVIDEO )
-		{
-			// Fetch the first frame of DV so we can read it directly
-			AVPacket pkt;
-			int ret = 0;
-			while ( ret >= 0 )
-			{
-				ret = av_read_frame( format, &pkt );
-				if ( ret >= 0 && pkt.stream_index == self->video_index && pkt.size > 0 )
-				{
-					get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context, &pkt );
-					av_free_packet(&pkt);
-					break;
-				}
-				if ( ret >= 0 )
-					av_free_packet(&pkt);
-			}
-		}
-		else
-		{
-			get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context, NULL );
-		}
+		get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context );
 
 		// Verify that we can convert this to YUV 4:2:2
 		// TODO: we can now also return RGB and RGBA and quite possibly more in the future.
@@ -1863,10 +1736,8 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		{
 			mlt_properties_set_int( properties, "width", self->video_codec->width );
 			mlt_properties_set_int( properties, "height", self->video_codec->height );
+			get_aspect_ratio( properties, stream, self->video_codec );
 		}
-		// For DV, we'll just use the saved aspect ratio
-		if ( codec_context->codec_id != AV_CODEC_ID_DVVIDEO )
-			get_aspect_ratio( properties, stream, self->video_codec, NULL );
 
 		// Start with the muxer frame rate.
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
