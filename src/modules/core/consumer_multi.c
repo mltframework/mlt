@@ -30,6 +30,7 @@ static int stop( mlt_consumer consumer );
 static int is_stopped( mlt_consumer consumer );
 static void *consumer_thread( void *arg );
 static void consumer_close( mlt_consumer consumer );
+static void purge( mlt_consumer consumer );
 
 static mlt_properties normalisers = NULL;
 
@@ -57,6 +58,7 @@ mlt_consumer consumer_multi_init( mlt_profile profile, mlt_service_type type, co
 		consumer->start = start;
 		consumer->stop = stop;
 		consumer->is_stopped = is_stopped;
+		consumer->purge = purge;
 	}
 
 	return consumer;
@@ -505,6 +507,27 @@ static int stop( mlt_consumer consumer )
 static int is_stopped( mlt_consumer consumer )
 {
 	return !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "running" );
+}
+
+/** Purge each of the child consumers.
+*/
+
+static void purge( mlt_consumer consumer )
+{
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+	if ( mlt_properties_get_int( properties, "running" ) )
+	{
+		mlt_consumer nested = NULL;
+		char key[30];
+		int index = 0;
+
+		do {
+			snprintf( key, sizeof(key), "%d.consumer", index++ );
+			nested = mlt_properties_get_data( properties, key, NULL );
+			if ( nested )
+				mlt_consumer_purge( nested );
+		} while ( nested );
+	}
 }
 
 /** The main thread - the argument is simply the consumer.
