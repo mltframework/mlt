@@ -100,6 +100,7 @@ static void transport_action( mlt_producer producer, char *value )
 			case '5':
 				mlt_producer_set_speed( producer, 0 );
 				mlt_consumer_purge( consumer );
+				mlt_producer_seek( producer, mlt_consumer_position( consumer ) + 1 );
 				mlt_events_fire( jack, "jack-stop", NULL );
 				break;
 			case '6':
