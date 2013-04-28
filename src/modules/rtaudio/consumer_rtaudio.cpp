@@ -50,6 +50,7 @@ public:
 	pthread_cond_t        refresh_cond;
 	pthread_mutex_t       refresh_mutex;
 	int                   refresh_count;
+	bool                  is_purge;
 
 	mlt_consumer getConsumer()
 		{ return &consumer; }
@@ -62,6 +63,7 @@ public:
 		, audio_avail(0)
 		, playing(0)
 		, refresh_count(0)
+		, is_purge(false)
 	{
 		memset( &consumer, 0, sizeof( consumer ) );
 	}
@@ -208,6 +210,24 @@ public:
 		return 0;
 	}
 
+	void purge()
+	{
+		if ( running )
+		{
+			pthread_mutex_lock( &video_mutex );
+			mlt_frame frame = MLT_FRAME( mlt_deque_peek_back( queue ) );
+			// When playing rewind or fast forward then we need to keep one
+			// frame in the queue to prevent playback stalling.
+			double speed = frame? mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame), "_speed" ) : 0;
+			int n = ( speed == 0.0 || speed == 1.0 ) ? 0 : 1;
+			while ( mlt_deque_count( queue ) > n )
+				mlt_frame_close( MLT_FRAME( mlt_deque_pop_back( queue ) ) );
+			is_purge = true;
+			pthread_cond_broadcast( &video_cond );
+			pthread_mutex_unlock( &video_mutex );
+		}
+	}
+
 	void consumer_thread()
 	{
 		// Get the properties
@@ -276,8 +296,16 @@ public:
 				if ( running && speed )
 				{
 					pthread_mutex_lock( &video_mutex );
-					mlt_deque_push_back( queue, frame );
-					pthread_cond_broadcast( &video_cond );
+					if ( is_purge && speed == 1.0 )
+					{
+						mlt_frame_close( frame );
+						is_purge = false;
+					}
+					else
+					{
+						mlt_deque_push_back( queue, frame );
+						pthread_cond_broadcast( &video_cond );
+					}
 					pthread_mutex_unlock( &video_mutex );
 
 					// Calculate the next playtime
@@ -619,6 +647,12 @@ static int is_stopped( mlt_consumer consumer )
 	return !rtaudio->running;
 }
 
+static void purge( mlt_consumer consumer )
+{
+	RtAudioConsumer* rtaudio = (RtAudioConsumer*) consumer->child;
+	rtaudio->purge();
+}
+
 /** Close the consumer.
  */
 
@@ -655,6 +689,7 @@ mlt_consumer consumer_rtaudio_init( mlt_profile profile, mlt_service_type type, 
 			consumer->start = start;
 			consumer->stop = stop;
 			consumer->is_stopped = is_stopped;
+			consumer->purge = purge;
 		}
 		else
 		{
