@@ -338,8 +338,9 @@ static mlt_properties find_default_streams( producer_avformat self )
 				snprintf( key, sizeof(key), "meta.media.%d.codec.height", i );
 				mlt_properties_set_int( meta_media, key, codec_context->height );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.frame_rate", i );
-				mlt_properties_set_double( meta_media, key, (double) codec_context->time_base.den /
-										   ( codec_context->time_base.num == 0 ? 1 : codec_context->time_base.num ) );
+				AVRational frame_rate = av_inv_q( codec_context->time_base );
+				frame_rate.den *= codec_context->ticks_per_frame;
+				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.pix_fmt", i );
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(3<<8)+0)
 				mlt_properties_set( meta_media, key, av_get_pix_fmt_name( codec_context->pix_fmt ) );
@@ -1867,65 +1868,64 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		if ( codec_context->codec_id != AV_CODEC_ID_DVVIDEO )
 			get_aspect_ratio( properties, stream, self->video_codec, NULL );
 
-		// Determine the fps first from the codec
-		double codec_fps = (double) self->video_codec->time_base.den /
-								   ( self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
-		
-		{
-			// If the muxer reports a frame rate different than the codec
+		// Start with the muxer frame rate.
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
-			double muxer_fps = av_q2d( stream->avg_frame_rate );
+		AVRational frame_rate = stream->avg_frame_rate;
+#else
+		AVRational frame_rate = stream->r_frame_rate;
+#endif
+		double fps = av_q2d( frame_rate );
+
 #if LIBAVFORMAT_VERSION_MAJOR < 55
-			if ( isnan( muxer_fps ) || muxer_fps == 0 )
-				muxer_fps = av_q2d( stream->r_frame_rate );
-#endif
-#else
-			double muxer_fps = av_q2d( stream->r_frame_rate );
-#endif
-			if ( !isnan( muxer_fps ) && muxer_fps > 0 )
-			{
-#if LIBAVFORMAT_VERSION_MAJOR >= 55
-				AVRational frame_rate = stream->avg_frame_rate;
-#else
-				AVRational frame_rate = stream->r_frame_rate;
-#endif
-				// With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
-				// avg_frame_rate gives some approximate value that does not well match the media.
-				// Also, on my sample where r_frame_rate = 1000, using avg_frame_rate directly
-				// results in some very choppy output, but some value slightly different works
-				// great.
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0) && LIBAVFORMAT_VERSION_MAJOR < 55
-				if ( av_q2d( stream->r_frame_rate ) >= 1000 && av_q2d( stream->avg_frame_rate ) > 0 )
-					frame_rate = av_d2q( av_q2d( stream->avg_frame_rate ), 1024 );
-#endif
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
-			}
-			else if ( codec_fps >= 1.0 )
-			{
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", self->video_codec->time_base.den );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", self->video_codec->time_base.num == 0 ? 1 : self->video_codec->time_base.num );
-			}
-			else
-			{
-				AVRational frame_rate = av_d2q( mlt_producer_get_fps( self->parent ), 255 );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
-				mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
-			}
+		// Verify and sanitize the muxer frame rate.
+		if ( isnan( fps ) || isinf( fps ) || fps == 0 )
+		{
+			frame_rate = stream->r_frame_rate;
+			fps = av_q2d( frame_rate );
 		}
+#endif
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0) && LIBAVFORMAT_VERSION_MAJOR < 55
+		// With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
+		// avg_frame_rate gives some approximate value that does not well match the media.
+		// Also, on my sample where r_frame_rate = 1000, using avg_frame_rate directly
+		// results in some very choppy output, but some value slightly different works
+		// great.
+		if ( av_q2d( stream->r_frame_rate ) >= 1000 && av_q2d( stream->avg_frame_rate ) > 0 )
+		{
+			frame_rate = av_d2q( av_q2d( stream->avg_frame_rate ), 1024 );
+			fps = av_q2d( frame_rate );
+		}
+#endif
+		// XXX frame rates less than 1 fps are not considered sane
+		if ( isnan( fps ) || isinf( fps ) || fps < 1.0 )
+		{
+			// Get the frame rate from the codec.
+			frame_rate = av_inv_q( self->video_codec->time_base );
+			frame_rate.den *= self->video_codec->ticks_per_frame;
+			fps = av_q2d( frame_rate );
+		}
+		if ( isnan( fps ) || isinf( fps ) || fps < 1.0 )
+		{
+			// Use the profile frame rate if all else fails.
+			mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
+			frame_rate.num = profile->frame_rate_num;
+			frame_rate.den = profile->frame_rate_den;
+		}
+
 		self->video_time_base = stream->time_base;
 		if ( mlt_properties_get( properties, "force_fps" ) )
 		{
-			AVRational fps = av_d2q( mlt_properties_get_double( properties, "force_fps" ), 1024 );
-			self->video_time_base.num *= mlt_properties_get_int( properties, "meta.media.frame_rate_num" ) * fps.den;
-			self->video_time_base.den *= mlt_properties_get_int( properties, "meta.media.frame_rate_den" ) * fps.num;
-			mlt_properties_set_int( properties, "meta.media.frame_rate_num", fps.num );
-			mlt_properties_set_int( properties, "meta.media.frame_rate_den", fps.den );
+			AVRational force_fps = av_d2q( mlt_properties_get_double( properties, "force_fps" ), 1024 );
+			self->video_time_base.num *= frame_rate.num * force_fps.den;
+			self->video_time_base.den *= frame_rate.den * force_fps.num;
+			frame_rate = force_fps;
 		}
+		mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
+		mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 
 		// Set the YUV colorspace from override or detect
 		self->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
-#if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)		
+#if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)
 		if ( ! self->colorspace )
 		{
 			switch ( self->video_codec->colorspace )
