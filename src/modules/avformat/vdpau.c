@@ -131,7 +131,8 @@ static int vdpau_init( producer_avformat self )
 		if ( object )
 			dlclose( object );
 		if ( self->vdpau )
-			vdpau_fini( self );
+			free( self->vdpau );
+		self->vdpau = NULL;
 	}
 
 	return success;
