@@ -168,8 +168,8 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		if ( mlt_producer_get_speed( this ) != 0 )
 			actual_position *= mlt_producer_get_speed( this );
 		mlt_position need_first = floor( actual_position );
-		mlt_producer_seek( cx->producer, need_first * mlt_profile_fps( cx->profile )
-			/ mlt_producer_get_fps( this ) );
+		mlt_producer_seek( cx->producer,
+			lrint( need_first * mlt_profile_fps( cx->profile ) / mlt_producer_get_fps( this ) ) );
 
 		// Get the nested frame
 		mlt_frame nested_frame = mlt_consumer_rt_frame( cx->consumer );
