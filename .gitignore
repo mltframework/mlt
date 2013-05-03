@@ -13,3 +13,6 @@ src/modules/lumas/NTSC/*.pgm
 src/modules/lumas/PAL/*.pgm
 src/swig/csharp/src_swig/*
 src/swig/perl/blib/*
+*.dylib
+src/swig/java/src_swig
+disable-*
