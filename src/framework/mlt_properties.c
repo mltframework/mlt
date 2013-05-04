@@ -451,6 +451,9 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 
 /** Pass all serializable properties that match a prefix to another properties object
  *
+ * \warning The prefix is stripped from the name when it is set on the \p self properties list!
+ * For example a property named "foo.bar" will match prefix "foo.", but the property
+ * will be named simply "bar" on the receiving properties object.
  * \public \memberof mlt_properties_s
  * \param self the properties to copy to
  * \param that The properties to copy from

@@ -192,6 +192,118 @@ private Q_SLOTS:
         QCOMPARE(p.get_int("key"), 5);
         QCOMPARE(p.get_double("key"), 16.0/9.0 *2 +3 -1);
     }
+
+    void PassOneProperty()
+    {
+        Properties p[2];
+        const char *s = "value";
+        p[0].set("key", s);
+        QCOMPARE(p[1].get("key"), (void*) 0);
+        p[1].pass_property(p[0], "key");
+        QCOMPARE(p[1].get("key"), s);
+    }
+
+    void PassMultipleByPrefix()
+    {
+        Properties p[2];
+        const char *s = "value";
+        p[0].set("key.one", s);
+        p[0].set("key.two", s);
+        QCOMPARE(p[1].get("key.one"), (void*) 0);
+        QCOMPARE(p[1].get("key.two"), (void*) 0);
+        p[1].pass_values(p[0], "key.");
+        QCOMPARE(p[1].get("one"), s);
+        QCOMPARE(p[1].get("two"), s);
+    }
+
+    void PassMultipleByList()
+    {
+        Properties p[2];
+        const char *s = "value";
+        p[0].set("key.one", s);
+        p[0].set("key.two", s);
+        QCOMPARE(p[1].get("key.one"), (void*) 0);
+        QCOMPARE(p[1].get("key.two"), (void*) 0);
+        p[1].pass_list(p[0], "key.one key.two");
+        QCOMPARE(p[1].get("key.one"), s);
+        QCOMPARE(p[1].get("key.two"), s);
+    }
+
+    void MirrorProperties()
+    {
+        Properties p[2];
+        p[0].mirror(p[1]);
+        p[0].set("key", "value");
+        QCOMPARE(p[1].get("key"), "value");
+    }
+
+    void InheritProperties()
+    {
+        Properties p[2];
+        p[0].set("key", "value");
+        QVERIFY(p[1].get("key") == 0);
+        p[1].inherit(p[0]);
+        QCOMPARE(p[1].get("key"), "value");
+    }
+
+    void ParseString()
+    {
+        Properties p;
+        QCOMPARE(p.get("key"), (void*) 0);
+        p.parse("key=value");
+        QCOMPARE(p.get("key"), "value");
+        p.parse("key=\"new value\"");
+        QCOMPARE(p.get("key"), "new value");
+    }
+
+    void RenameProperty()
+    {
+        Properties p;
+        p.set("key", "value");
+        QVERIFY(p.get("new key") == 0);
+        p.rename("key", "new key");
+        QCOMPARE(p.get("new key"), "value");
+    }
+
+    void SequenceDetected()
+    {
+        Properties p;
+        p.set("1", 1);
+        p.set("2", 2);
+        p.set("3", 3);
+        QVERIFY(p.is_sequence());
+        p.set("four", 4);
+        QVERIFY(!p.is_sequence());
+    }
+
+    void SerializesToYamlTiny()
+    {
+        Properties p[2];
+        p[0].set("key1", "value1");
+        p[0].set("key2", "value2");
+        p[1].set("1", "value3");
+        p[1].set("2", "value4");
+        p[0].set("seq", p[1].get_properties(), 0);
+        QCOMPARE(p[0].serialise_yaml(),
+                "---\n"
+                "key1: value1\n"
+                "key2: value2\n"
+                "seq:\n"
+                "  - value3\n"
+                "  - value4\n"
+                "...\n");
+    }
+
+    void RadixRespondsToLocale()
+    {
+        Properties p;
+        p.set_lcnumeric("en_US");
+        p.set("key", "0.125");
+        QCOMPARE(p.get_double("key"), double(1) / double(8));
+        p.set_lcnumeric("de_DE");
+        p.set("key", "0,125");
+        QCOMPARE(p.get_double("key"), double(1) / double(8));
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProperties)
