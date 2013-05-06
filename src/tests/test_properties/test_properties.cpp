@@ -81,8 +81,8 @@ private Q_SLOTS:
     {
         Properties p;
         qint64 i = 1LL << 32;
-        p.set("key", i);
-        QCOMPARE(p.get_int64("key"), i);
+        p.set("key", (int64_t)i);
+        QCOMPARE((qint64)p.get_int64("key"), i);
     }
 
     void SetAndGetData()
@@ -112,10 +112,10 @@ private Q_SLOTS:
         Properties p;
         const char *s = "-1";
         qint64 i = -1;
-        p.set("key", i);
+        p.set("key", (int64_t)i);
         QCOMPARE(p.get("key"), s);
         p.set("key", s);
-        QCOMPARE(p.get_int64("key"), i);
+        QCOMPARE((qint64)p.get_int64("key"), i);
     }
 
     void DoubleFromString()
