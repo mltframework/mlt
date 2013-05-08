@@ -116,31 +116,6 @@ struct mlt_consumer_s
 
 	void *local; /**< \private instance object */
 	void *child; /**< \private the object of a subclass */
-
-	int real_time;
-	int ahead;
-	mlt_image_format format;
-	mlt_deque queue;
-	pthread_t ahead_thread;
-	pthread_mutex_t queue_mutex;
-	pthread_cond_t queue_cond;
-	pthread_mutex_t put_mutex;
-	pthread_cond_t put_cond;
-	mlt_frame put;
-	int put_active;
-	mlt_event event_listener;
-	mlt_position position;
-	int is_purge;
-
-	/* additional fields added for the parallel work queue */
-	mlt_deque worker_threads;
-	pthread_mutex_t done_mutex;
-	pthread_cond_t done_cond;
-	int consecutive_dropped;
-	int consecutive_rendered;
-	int process_head;
-	int started;
-	pthread_t *threads; /**< \private used to deallocate all threads */
 };
 
 #define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )

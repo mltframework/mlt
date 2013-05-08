@@ -43,6 +43,37 @@
  */
 pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/** \brief private members of mlt_consumer */
+
+typedef struct
+{
+	int real_time;
+	int ahead;
+	mlt_image_format format;
+	mlt_deque queue;
+	pthread_t ahead_thread;
+	pthread_mutex_t queue_mutex;
+	pthread_cond_t queue_cond;
+	pthread_mutex_t put_mutex;
+	pthread_cond_t put_cond;
+	mlt_frame put;
+	int put_active;
+	mlt_event event_listener;
+	mlt_position position;
+	int is_purge;
+
+	/* additional fields added for the parallel work queue */
+	mlt_deque worker_threads;
+	pthread_mutex_t done_mutex;
+	pthread_cond_t done_cond;
+	int consecutive_dropped;
+	int consecutive_rendered;
+	int process_head;
+	int started;
+	pthread_t *threads; /**< used to deallocate all threads */
+}
+consumer_private;
+
 static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, char *name );
@@ -64,6 +95,8 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 	int error = 0;
 	memset( self, 0, sizeof( struct mlt_consumer_s ) );
 	self->child = child;
+	consumer_private *priv = self->local = calloc( 1, sizeof( consumer_private ) );
+
 	error = mlt_service_init( &self->parent, self );
 	if ( error == 0 )
 	{
@@ -99,8 +132,8 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 		mlt_properties_set( properties, "test_card", mlt_environment( "MLT_TEST_CARD" ) );
 
 		// Hmm - default all consumers to yuv422 :-/
-		self->format = mlt_image_yuv422;
-		mlt_properties_set( properties, "mlt_image_format", mlt_image_format_name( self->format ) );
+		priv->format = mlt_image_yuv422;
+		mlt_properties_set( properties, "mlt_image_format", mlt_image_format_name( priv->format ) );
 		mlt_properties_set( properties, "mlt_audio_format", mlt_audio_format_name( mlt_audio_s16 ) );
 
 		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
@@ -112,11 +145,11 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 
 		// Register a property-changed listener to handle the profile property -
 		// subsequent properties can override the profile
-		self->event_listener = mlt_events_listen( properties, self, "property-changed", ( mlt_listener )mlt_consumer_property_changed );
+		priv->event_listener = mlt_events_listen( properties, self, "property-changed", ( mlt_listener )mlt_consumer_property_changed );
 
 		// Create the push mutex and condition
-		pthread_mutex_init( &self->put_mutex, NULL );
-		pthread_cond_init( &self->put_cond, NULL );
+		pthread_mutex_init( &priv->put_mutex, NULL );
+		pthread_cond_init( &priv->put_cond, NULL );
 
 	}
 	return error;
@@ -132,7 +165,8 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 
 static void apply_profile_properties( mlt_consumer self, mlt_profile profile, mlt_properties properties )
 {
-	mlt_event_block( self->event_listener );
+	consumer_private *priv = self->local;
+	mlt_event_block( priv->event_listener );
 	mlt_properties_set_double( properties, "fps", mlt_profile_fps( profile ) );
 	mlt_properties_set_int( properties, "frame_rate_num", profile->frame_rate_num );
 	mlt_properties_set_int( properties, "frame_rate_den", profile->frame_rate_den );
@@ -146,7 +180,7 @@ static void apply_profile_properties( mlt_consumer self, mlt_profile profile, ml
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
 	mlt_properties_set_int( properties, "colorspace", profile->colorspace );
-	mlt_event_unblock( self->event_listener );
+	mlt_event_unblock( priv->event_listener );
 }
 
 /** The property-changed event listener
@@ -326,7 +360,7 @@ static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties own
 static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_frame frame )
 {
 	if ( frame )
-		consumer->position = mlt_frame_get_position( frame );
+		( ( consumer_private*) consumer->local )->position = mlt_frame_get_position( frame );
 }
 
 /** Create a new consumer.
@@ -408,8 +442,10 @@ int mlt_consumer_start( mlt_consumer self )
 	if ( !mlt_consumer_is_stopped( self ) )
 		return 0;
 
+	consumer_private *priv = self->local;
+
 	// Stop listening to the property-changed event
-	mlt_event_block( self->event_listener );
+	mlt_event_block( priv->event_listener );
 
 	// Get the properies
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
@@ -418,10 +454,10 @@ int mlt_consumer_start( mlt_consumer self )
 	char *test_card = mlt_properties_get( properties, "test_card" );
 
 	// Just to make sure nothing is hanging around...
-	pthread_mutex_lock( &self->put_mutex );
-	self->put = NULL;
-	self->put_active = 1;
-	pthread_mutex_unlock( &self->put_mutex );
+	pthread_mutex_lock( &priv->put_mutex );
+	priv->put = NULL;
+	priv->put_active = 1;
+	pthread_mutex_unlock( &priv->put_mutex );
 
 	// Deal with it now.
 	if ( test_card != NULL )
@@ -472,28 +508,28 @@ int mlt_consumer_start( mlt_consumer self )
 			mlt_log( MLT_CONSUMER_SERVICE( self ), MLT_LOG_ERROR, "system(%s) failed!\n", mlt_properties_get( properties, "ante" ) );
 
 	// Set the real_time preference
-	self->real_time = mlt_properties_get_int( properties, "real_time" );
+	priv->real_time = mlt_properties_get_int( properties, "real_time" );
 
 	// For worker threads implementation, buffer must be at least # threads
-	if ( abs( self->real_time ) > 1 && mlt_properties_get_int( properties, "buffer" ) <= abs( self->real_time ) )
-		mlt_properties_set_int( properties, "_buffer", abs( self->real_time ) + 1 );
+	if ( abs( priv->real_time ) > 1 && mlt_properties_get_int( properties, "buffer" ) <= abs( priv->real_time ) )
+		mlt_properties_set_int( properties, "_buffer", abs( priv->real_time ) + 1 );
 
 	// Get the image format to use for rendering threads
 	const char* format = mlt_properties_get( properties, "mlt_image_format" );
 	if ( format )
 	{
 		if ( !strcmp( format, "rgb24" ) )
-			self->format = mlt_image_rgb24;
+			priv->format = mlt_image_rgb24;
 		else if ( !strcmp( format, "rgb24a" ) )
-			self->format = mlt_image_rgb24a;
+			priv->format = mlt_image_rgb24a;
 		else if ( !strcmp( format, "yuv420p" ) )
-			self->format = mlt_image_yuv420p;
+			priv->format = mlt_image_yuv420p;
 		else if ( !strcmp( format, "none" ) )
-			self->format = mlt_image_none;
+			priv->format = mlt_image_none;
 		else if ( !strcmp( format, "glsl" ) )
-			self->format = mlt_image_glsl_texture;
+			priv->format = mlt_image_glsl_texture;
 		else
-			self->format = mlt_image_yuv422;
+			priv->format = mlt_image_yuv422;
 	}
 
 	// Start the service
@@ -524,20 +560,22 @@ int mlt_consumer_put_frame( mlt_consumer self, mlt_frame frame )
 	{
 		struct timeval now;
 		struct timespec tm;
-		pthread_mutex_lock( &self->put_mutex );
-		while ( self->put_active && self->put != NULL )
+		consumer_private *priv = self->local;
+
+		pthread_mutex_lock( &priv->put_mutex );
+		while ( priv->put_active && priv->put != NULL )
 		{
 			gettimeofday( &now, NULL );
 			tm.tv_sec = now.tv_sec + 1;
 			tm.tv_nsec = now.tv_usec * 1000;
-			pthread_cond_timedwait( &self->put_cond, &self->put_mutex, &tm );
+			pthread_cond_timedwait( &priv->put_cond, &priv->put_mutex, &tm );
 		}
-		if ( self->put_active && self->put == NULL )
-			self->put = frame;
+		if ( priv->put_active && priv->put == NULL )
+			priv->put = frame;
 		else
 			mlt_frame_close( frame );
-		pthread_cond_broadcast( &self->put_cond );
-		pthread_mutex_unlock( &self->put_mutex );
+		pthread_cond_broadcast( &priv->put_cond );
+		pthread_mutex_unlock( &priv->put_mutex );
 	}
 	else
 	{
@@ -570,18 +608,20 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer self )
 	{
 		struct timeval now;
 		struct timespec tm;
-		pthread_mutex_lock( &self->put_mutex );
-		while ( self->put_active && self->put == NULL )
+		consumer_private *priv = self->local;
+
+		pthread_mutex_lock( &priv->put_mutex );
+		while ( priv->put_active && priv->put == NULL )
 		{
 			gettimeofday( &now, NULL );
 			tm.tv_sec = now.tv_sec + 1;
 			tm.tv_nsec = now.tv_usec * 1000;
-			pthread_cond_timedwait( &self->put_cond, &self->put_mutex, &tm );
+			pthread_cond_timedwait( &priv->put_cond, &priv->put_mutex, &tm );
 		}
-		frame = self->put;
-		self->put = NULL;
-		pthread_cond_broadcast( &self->put_cond );
-		pthread_mutex_unlock( &self->put_mutex );
+		frame = priv->put;
+		priv->put = NULL;
+		pthread_cond_broadcast( &priv->put_cond );
+		pthread_mutex_unlock( &priv->put_mutex );
 		if ( frame != NULL )
 			mlt_service_apply_filters( service, frame, 0 );
 	}
@@ -645,6 +685,7 @@ static void *consumer_read_ahead_thread( void *arg )
 {
 	// The argument is the consumer
 	mlt_consumer self = arg;
+	consumer_private *priv = self->local;
 
 	// Get the properties of the consumer
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
@@ -708,7 +749,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	int drop_max = mlt_properties_get_int( properties, "drop_max" );
 
 	if ( preview_off && preview_format != 0 )
-		self->format = preview_format;
+		priv->format = preview_format;
 
 	mlt_events_fire( properties, "consumer-thread-started", NULL );
 
@@ -721,7 +762,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( !video_off )
 		{
 			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
-			mlt_frame_get_image( frame, &image, &self->format, &width, &height, 0 );
+			mlt_frame_get_image( frame, &image, &priv->format, &width, &height, 0 );
 		}
 
 		if ( !audio_off )
@@ -739,23 +780,23 @@ static void *consumer_read_ahead_thread( void *arg )
 	gettimeofday( &ante, NULL );
 
 	// Continue to read ahead
-	while ( self->ahead )
+	while ( priv->ahead )
 	{
 		// Put the current frame into the queue
-		pthread_mutex_lock( &self->queue_mutex );
-		while( self->ahead && mlt_deque_count( self->queue ) >= buffer )
-			pthread_cond_wait( &self->queue_cond, &self->queue_mutex );
-		if ( self->is_purge )
+		pthread_mutex_lock( &priv->queue_mutex );
+		while( priv->ahead && mlt_deque_count( priv->queue ) >= buffer )
+			pthread_cond_wait( &priv->queue_cond, &priv->queue_mutex );
+		if ( priv->is_purge )
 		{
 			mlt_frame_close( frame );
-			self->is_purge = 0;
+			priv->is_purge = 0;
 		}
 		else
 		{
-			mlt_deque_push_back( self->queue, frame );
+			mlt_deque_push_back( priv->queue, frame );
 		}
-		pthread_cond_broadcast( &self->queue_cond );
-		pthread_mutex_unlock( &self->queue_mutex );
+		pthread_cond_broadcast( &priv->queue_cond );
+		pthread_mutex_unlock( &priv->queue_mutex );
 
 		// Get the next frame
 		frame = mlt_consumer_get_frame( self );
@@ -779,7 +820,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 
 		// If skip flag not set or frame-dropping disabled
-		if ( !skip_next || self->real_time == -1 )
+		if ( !skip_next || priv->real_time == -1 )
 		{
 			if ( !video_off )
 			{
@@ -789,7 +830,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 				// Get the image
 				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
-				mlt_frame_get_image( frame, &image, &self->format, &width, &height, 0 );
+				mlt_frame_get_image( frame, &image, &priv->format, &width, &height, 0 );
 			}
 
 			// Indicate the rendered image is available.
@@ -854,7 +895,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		skip_next = 0;
 
 		// Only consider skipping if the buffer level is low (or really small)
-		if ( mlt_deque_count( self->queue ) <= buffer / 5 + 1 )
+		if ( mlt_deque_count( priv->queue ) <= buffer / 5 + 1 )
 		{
 			// Skip next frame if average cost exceeds frame duration.
 			if ( time_process / count > frame_duration )
@@ -890,8 +931,9 @@ static void *consumer_read_ahead_thread( void *arg )
 
 static inline int first_unprocessed_frame( mlt_consumer self )
 {
-	int index = self->real_time <= 0 ? 0 : self->process_head;
-	while ( index < mlt_deque_count( self->queue ) && MLT_FRAME( mlt_deque_peek( self->queue, index ) )->is_processing )
+	consumer_private *priv = self->local;
+	int index = priv->real_time <= 0 ? 0 : priv->process_head;
+	while ( index < mlt_deque_count( priv->queue ) && MLT_FRAME( mlt_deque_peek( priv->queue, index ) )->is_processing )
 		index++;
 	return index;
 }
@@ -906,6 +948,7 @@ static void *consumer_worker_thread( void *arg )
 {
 	// The argument is the consumer
 	mlt_consumer self = arg;
+	consumer_private *priv = self->local;
 
 	// Get the properties of the consumer
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
@@ -913,7 +956,7 @@ static void *consumer_worker_thread( void *arg )
 	// Get the width and height
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
-	mlt_image_format format = self->format;
+	mlt_image_format format = priv->format;
 
 	// See if video is turned off
 	int video_off = mlt_properties_get_int( properties, "video_off" );
@@ -930,29 +973,29 @@ static void *consumer_worker_thread( void *arg )
 	mlt_events_fire( properties, "consumer-thread-started", NULL );
 
 	// Continue to read ahead
-	while ( self->ahead )
+	while ( priv->ahead )
 	{
 		// Get the next unprocessed frame from the work queue
-		pthread_mutex_lock( &self->queue_mutex );
+		pthread_mutex_lock( &priv->queue_mutex );
 		int index = first_unprocessed_frame( self );
-		while ( self->ahead && index >= mlt_deque_count( self->queue ) )
+		while ( priv->ahead && index >= mlt_deque_count( priv->queue ) )
 		{
 			mlt_log_debug( MLT_CONSUMER_SERVICE(self), "waiting in worker index = %d queue count = %d\n",
-				index, mlt_deque_count( self->queue ) );
-			pthread_cond_wait( &self->queue_cond, &self->queue_mutex );
+				index, mlt_deque_count( priv->queue ) );
+			pthread_cond_wait( &priv->queue_cond, &priv->queue_mutex );
 			index = first_unprocessed_frame( self );
 		}
 
 		// Mark the frame for processing
-		frame = mlt_deque_peek( self->queue, index );
+		frame = mlt_deque_peek( priv->queue, index );
 		if ( frame )
 		{
 			mlt_log_debug( MLT_CONSUMER_SERVICE(self), "worker processing index = %d frame %d queue count = %d\n",
-				index, mlt_frame_get_position(frame), mlt_deque_count( self->queue ) );
+				index, mlt_frame_get_position(frame), mlt_deque_count( priv->queue ) );
 			frame->is_processing = 1;
 			mlt_properties_inc_ref( MLT_FRAME_PROPERTIES( frame ) );
 		}
-		pthread_mutex_unlock( &self->queue_mutex );
+		pthread_mutex_unlock( &priv->queue_mutex );
 
 		// If there's no frame, we're probably stopped...
 		if ( frame == NULL )
@@ -977,9 +1020,9 @@ static void *consumer_worker_thread( void *arg )
 		mlt_frame_close( frame );
 
 		// Tell a waiting thread (non-realtime main consumer thread) that we are done.
-		pthread_mutex_lock( &self->done_mutex );
-		pthread_cond_broadcast( &self->done_cond );
-		pthread_mutex_unlock( &self->done_mutex );
+		pthread_mutex_lock( &priv->done_mutex );
+		pthread_cond_broadcast( &priv->done_cond );
+		pthread_mutex_unlock( &priv->done_mutex );
 	}
 	mlt_events_fire( properties, "consumer-thread-stopped", NULL );
 
@@ -994,17 +1037,19 @@ static void *consumer_worker_thread( void *arg )
 
 static void consumer_read_ahead_start( mlt_consumer self )
 {
+	consumer_private *priv = self->local;
+
 	// We're running now
-	self->ahead = 1;
+	priv->ahead = 1;
 
 	// Create the frame queue
-	self->queue = mlt_deque_init( );
+	priv->queue = mlt_deque_init( );
 
 	// Create the queue mutex
-	pthread_mutex_init( &self->queue_mutex, NULL );
+	pthread_mutex_init( &priv->queue_mutex, NULL );
 
 	// Create the condition
-	pthread_cond_init( &self->queue_cond, NULL );
+	pthread_cond_init( &priv->queue_cond, NULL );
 
 	// Create the read ahead
 	if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES( self ), "priority" ) )
@@ -1017,15 +1062,15 @@ static void consumer_read_ahead_start( mlt_consumer self )
 		pthread_attr_setschedparam( &thread_attributes, &priority );
 		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_EXPLICIT_SCHED );
 		pthread_attr_setscope( &thread_attributes, PTHREAD_SCOPE_SYSTEM );
-		if ( pthread_create( &self->ahead_thread, &thread_attributes, consumer_read_ahead_thread, self ) < 0 )
-			pthread_create( &self->ahead_thread, NULL, consumer_read_ahead_thread, self );
+		if ( pthread_create( &priv->ahead_thread, &thread_attributes, consumer_read_ahead_thread, self ) < 0 )
+			pthread_create( &priv->ahead_thread, NULL, consumer_read_ahead_thread, self );
 		pthread_attr_destroy( &thread_attributes );
 	}
 	else
 	{
-		pthread_create( &self->ahead_thread, NULL, consumer_read_ahead_thread, self );
+		pthread_create( &priv->ahead_thread, NULL, consumer_read_ahead_thread, self );
 	}
-	self->started = 1;
+	priv->started = 1;
 }
 
 /** Start the worker threads.
@@ -1036,33 +1081,34 @@ static void consumer_read_ahead_start( mlt_consumer self )
 
 static void consumer_work_start( mlt_consumer self )
 {
-	int n = abs( self->real_time );
+	consumer_private *priv = self->local;
+	int n = abs( priv->real_time );
 	pthread_t *thread = calloc( 1, sizeof( pthread_t ) * n );
 
 	// We're running now
-	self->ahead = 1;
-	self->threads = thread;
+	priv->ahead = 1;
+	priv->threads = thread;
 	
 	// These keep track of the accelleration of frame dropping or recovery.
-	self->consecutive_dropped = 0;
-	self->consecutive_rendered = 0;
+	priv->consecutive_dropped = 0;
+	priv->consecutive_rendered = 0;
 	
 	// This is the position in the queue from which to look for a frame to process.
 	// If we always start from the head, then we may likely not complete processing
 	// before the frame is played out.
-	self->process_head = 0;
+	priv->process_head = 0;
 
 	// Create the queues
-	self->queue = mlt_deque_init();
-	self->worker_threads = mlt_deque_init();
+	priv->queue = mlt_deque_init();
+	priv->worker_threads = mlt_deque_init();
 
 	// Create the mutexes
-	pthread_mutex_init( &self->queue_mutex, NULL );
-	pthread_mutex_init( &self->done_mutex, NULL );
+	pthread_mutex_init( &priv->queue_mutex, NULL );
+	pthread_mutex_init( &priv->done_mutex, NULL );
 
 	// Create the conditions
-	pthread_cond_init( &self->queue_cond, NULL );
-	pthread_cond_init( &self->done_cond, NULL );
+	pthread_cond_init( &priv->queue_cond, NULL );
+	pthread_cond_init( &priv->done_cond, NULL );
 
 	// Create the read ahead
 	if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES( self ), "priority" ) )
@@ -1082,7 +1128,7 @@ static void consumer_work_start( mlt_consumer self )
 		{
 			if ( pthread_create( thread, &thread_attributes, consumer_worker_thread, self ) < 0 )
 				if ( pthread_create( thread, NULL, consumer_worker_thread, self ) == 0 )
-					mlt_deque_push_back( self->worker_threads, thread );
+					mlt_deque_push_back( priv->worker_threads, thread );
 			thread++;
 		}
 		pthread_attr_destroy( &thread_attributes );
@@ -1093,11 +1139,11 @@ static void consumer_work_start( mlt_consumer self )
 		while ( n-- )
 		{
 			if ( pthread_create( thread, NULL, consumer_worker_thread, self ) == 0 )
-				mlt_deque_push_back( self->worker_threads, thread );
+				mlt_deque_push_back( priv->worker_threads, thread );
 			thread++;
 		}
 	}
-	self->started = 1;
+	priv->started = 1;
 }
 
 /** Stop the read/render thread.
@@ -1108,44 +1154,46 @@ static void consumer_work_start( mlt_consumer self )
 
 static void consumer_read_ahead_stop( mlt_consumer self )
 {
+	consumer_private *priv = self->local;
+
 	// Make sure we're running
 // TODO improve support for atomic ops in general (see libavutil/atomic.h)
 #ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
-	if ( __sync_val_compare_and_swap( &self->started, 1, 0 ) )
+	if ( __sync_val_compare_and_swap( &priv->started, 1, 0 ) )
 	{
 #else
-	if ( self->started )
+	if ( priv->started )
 	{
-		self->started = 0;
+		priv->started = 0;
 #endif
 		// Inform thread to stop
-		self->ahead = 0;
+		priv->ahead = 0;
 
 		// Broadcast to the condition in case it's waiting
-		pthread_mutex_lock( &self->queue_mutex );
-		pthread_cond_broadcast( &self->queue_cond );
-		pthread_mutex_unlock( &self->queue_mutex );
+		pthread_mutex_lock( &priv->queue_mutex );
+		pthread_cond_broadcast( &priv->queue_cond );
+		pthread_mutex_unlock( &priv->queue_mutex );
 
 		// Broadcast to the put condition in case it's waiting
-		pthread_mutex_lock( &self->put_mutex );
-		pthread_cond_broadcast( &self->put_cond );
-		pthread_mutex_unlock( &self->put_mutex );
+		pthread_mutex_lock( &priv->put_mutex );
+		pthread_cond_broadcast( &priv->put_cond );
+		pthread_mutex_unlock( &priv->put_mutex );
 
 		// Join the thread
-		pthread_join( self->ahead_thread, NULL );
+		pthread_join( priv->ahead_thread, NULL );
 
 		// Destroy the frame queue mutex
-		pthread_mutex_destroy( &self->queue_mutex );
+		pthread_mutex_destroy( &priv->queue_mutex );
 
 		// Destroy the condition
-		pthread_cond_destroy( &self->queue_cond );
+		pthread_cond_destroy( &priv->queue_cond );
 
 		// Wipe the queue
-		while ( mlt_deque_count( self->queue ) )
-			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
+		while ( mlt_deque_count( priv->queue ) )
+			mlt_frame_close( mlt_deque_pop_back( priv->queue ) );
 
 		// Close the queue
-		mlt_deque_close( self->queue );
+		mlt_deque_close( priv->queue );
 	}
 }
 
@@ -1157,57 +1205,59 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 
 static void consumer_work_stop( mlt_consumer self )
 {
+	consumer_private *priv = self->local;
+
 	// Make sure we're running
 #ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
-	if ( __sync_val_compare_and_swap( &self->started, 1, 0 ) )
+	if ( __sync_val_compare_and_swap( &priv->started, 1, 0 ) )
 	{
 #else
-	if ( self->started )
+	if ( priv->started )
 	{
-		self->started = 0;
+		priv->started = 0;
 #endif
 		// Inform thread to stop
-		self->ahead = 0;
+		priv->ahead = 0;
 
 		// Broadcast to the queue condition in case it's waiting
-		pthread_mutex_lock( &self->queue_mutex );
-		pthread_cond_broadcast( &self->queue_cond );
-		pthread_mutex_unlock( &self->queue_mutex );
+		pthread_mutex_lock( &priv->queue_mutex );
+		pthread_cond_broadcast( &priv->queue_cond );
+		pthread_mutex_unlock( &priv->queue_mutex );
 
 		// Broadcast to the put condition in case it's waiting
-		pthread_mutex_lock( &self->put_mutex );
-		pthread_cond_broadcast( &self->put_cond );
-		pthread_mutex_unlock( &self->put_mutex );
+		pthread_mutex_lock( &priv->put_mutex );
+		pthread_cond_broadcast( &priv->put_cond );
+		pthread_mutex_unlock( &priv->put_mutex );
 
 		// Broadcast to the done condition in case it's waiting
-		pthread_mutex_lock( &self->done_mutex );
-		pthread_cond_broadcast( &self->done_cond );
-		pthread_mutex_unlock( &self->done_mutex );
+		pthread_mutex_lock( &priv->done_mutex );
+		pthread_cond_broadcast( &priv->done_cond );
+		pthread_mutex_unlock( &priv->done_mutex );
 
 		// Join the threads
 		pthread_t *thread;
-		while ( ( thread = mlt_deque_pop_back( self->worker_threads ) ) )
+		while ( ( thread = mlt_deque_pop_back( priv->worker_threads ) ) )
 			pthread_join( *thread, NULL );
 
 		// Deallocate the array of threads
-		if ( self->threads )
-			free( self->threads );
+		if ( priv->threads )
+			free( priv->threads );
 
 		// Destroy the mutexes
-		pthread_mutex_destroy( &self->queue_mutex );
-		pthread_mutex_destroy( &self->done_mutex );
+		pthread_mutex_destroy( &priv->queue_mutex );
+		pthread_mutex_destroy( &priv->done_mutex );
 
 		// Destroy the conditions
-		pthread_cond_destroy( &self->queue_cond );
-		pthread_cond_destroy( &self->done_cond );
+		pthread_cond_destroy( &priv->queue_cond );
+		pthread_cond_destroy( &priv->done_cond );
 
 		// Wipe the queues
-		while ( mlt_deque_count( self->queue ) )
-			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
+		while ( mlt_deque_count( priv->queue ) )
+			mlt_frame_close( mlt_deque_pop_back( priv->queue ) );
 
 		// Close the queues
-		mlt_deque_close( self->queue );
-		mlt_deque_close( self->worker_threads );
+		mlt_deque_close( priv->queue );
+		mlt_deque_close( priv->worker_threads );
 	}
 }
 
@@ -1221,42 +1271,44 @@ void mlt_consumer_purge( mlt_consumer self )
 {
 	if ( self )
 	{
-		pthread_mutex_lock( &self->put_mutex );
-		if ( self->put ) {
-			mlt_frame_close( self->put );
-			self->put = NULL;
-		}
-		pthread_cond_broadcast( &self->put_cond );
-		pthread_mutex_unlock( &self->put_mutex );
+		consumer_private *priv = self->local;
 
-		if ( self->started && self->real_time )
-			pthread_mutex_lock( &self->queue_mutex );
+		pthread_mutex_lock( &priv->put_mutex );
+		if ( priv->put ) {
+			mlt_frame_close( priv->put );
+			priv->put = NULL;
+		}
+		pthread_cond_broadcast( &priv->put_cond );
+		pthread_mutex_unlock( &priv->put_mutex );
+
+		if ( priv->started && priv->real_time )
+			pthread_mutex_lock( &priv->queue_mutex );
 
 		if ( self->purge )
 			self->purge( self );
 
-		while ( self->started && mlt_deque_count( self->queue ) )
-			mlt_frame_close( mlt_deque_pop_back( self->queue ) );
-		if ( self->started && self->real_time )
+		while ( priv->started && mlt_deque_count( priv->queue ) )
+			mlt_frame_close( mlt_deque_pop_back( priv->queue ) );
+		if ( priv->started && priv->real_time )
 		{
-			self->is_purge = 1;
-			pthread_cond_broadcast( &self->queue_cond );
-			pthread_mutex_unlock( &self->queue_mutex );
-			if ( abs( self->real_time ) > 1 )
+			priv->is_purge = 1;
+			pthread_cond_broadcast( &priv->queue_cond );
+			pthread_mutex_unlock( &priv->queue_mutex );
+			if ( abs( priv->real_time ) > 1 )
 			{
-				pthread_mutex_lock( &self->done_mutex );
-				pthread_cond_broadcast( &self->done_cond );
-				pthread_mutex_unlock( &self->done_mutex );
+				pthread_mutex_lock( &priv->done_mutex );
+				pthread_cond_broadcast( &priv->done_cond );
+				pthread_mutex_unlock( &priv->done_mutex );
 			}
 		}
 
-		pthread_mutex_lock( &self->put_mutex );
-		if ( self->put ) {
-			mlt_frame_close( self->put );
-			self->put = NULL;
+		pthread_mutex_lock( &priv->put_mutex );
+		if ( priv->put ) {
+			mlt_frame_close( priv->put );
+			priv->put = NULL;
 		}
-		pthread_cond_broadcast( &self->put_cond );
-		pthread_mutex_unlock( &self->put_mutex );
+		pthread_cond_broadcast( &priv->put_cond );
+		pthread_mutex_unlock( &priv->put_mutex );
 	}
 }
 
@@ -1267,9 +1319,9 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 {
 	// Frame to return
 	mlt_frame frame = NULL;
-
+	consumer_private *priv = self->local;
 	double fps = mlt_properties_get_double( properties, "fps" );
-	int threads = abs( self->real_time );
+	int threads = abs( priv->real_time );
 	int buffer = mlt_properties_get_int( properties, "_buffer" );
 	buffer = buffer > 0 ? buffer : mlt_properties_get_int( properties, "buffer" );
 	// This is a heuristic to determine a suitable minimum buffer size for the number of threads.
@@ -1277,7 +1329,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	buffer = buffer < headroom ? headroom : buffer;
 
 	// Start worker threads if not already started.
-	if ( ! self->ahead )
+	if ( ! priv->ahead )
 	{
 		int prefill = mlt_properties_get_int( properties, "prefill" );
 		prefill = prefill > 0 && prefill < buffer ? prefill : buffer;
@@ -1286,86 +1338,86 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 
 		// Fill the work queue.
 		int i = buffer;
-		while ( self->ahead && i-- )
+		while ( priv->ahead && i-- )
 		{
 			frame = mlt_consumer_get_frame( self );
 			if ( frame )
 			{
-				pthread_mutex_lock( &self->queue_mutex );
-				mlt_deque_push_back( self->queue, frame );
-				pthread_cond_signal( &self->queue_cond );
-				pthread_mutex_unlock( &self->queue_mutex );
+				pthread_mutex_lock( &priv->queue_mutex );
+				mlt_deque_push_back( priv->queue, frame );
+				pthread_cond_signal( &priv->queue_cond );
+				pthread_mutex_unlock( &priv->queue_mutex );
 			}
 		}
 
 		// Wait for prefill
-		while ( self->ahead && first_unprocessed_frame( self ) < prefill )
+		while ( priv->ahead && first_unprocessed_frame( self ) < prefill )
 		{
-			pthread_mutex_lock( &self->done_mutex );
-			pthread_cond_wait( &self->done_cond, &self->done_mutex );
-			pthread_mutex_unlock( &self->done_mutex );
+			pthread_mutex_lock( &priv->done_mutex );
+			pthread_cond_wait( &priv->done_cond, &priv->done_mutex );
+			pthread_mutex_unlock( &priv->done_mutex );
 		}
-		self->process_head = threads;
+		priv->process_head = threads;
 	}
 
 //	mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "size %d done count %d work count %d process_head %d\n",
-//		threads, first_unprocessed_frame( self ), mlt_deque_count( self->queue ), self->process_head );
+//		threads, first_unprocessed_frame( self ), mlt_deque_count( priv->queue ), priv->process_head );
 
 	// Feed the work queue
-	while ( self->ahead && mlt_deque_count( self->queue ) < buffer )
+	while ( priv->ahead && mlt_deque_count( priv->queue ) < buffer )
 	{
 		frame = mlt_consumer_get_frame( self );
 		if ( frame )
 		{
-			pthread_mutex_lock( &self->queue_mutex );
-			mlt_deque_push_back( self->queue, frame );
-			pthread_cond_signal( &self->queue_cond );
-			pthread_mutex_unlock( &self->queue_mutex );
+			pthread_mutex_lock( &priv->queue_mutex );
+			mlt_deque_push_back( priv->queue, frame );
+			pthread_cond_signal( &priv->queue_cond );
+			pthread_mutex_unlock( &priv->queue_mutex );
 		}
 	}
 
 	// Wait if not realtime.
-	while ( self->ahead && self->real_time < 0 && !self->is_purge &&
-		!( mlt_properties_get_int( MLT_FRAME_PROPERTIES( MLT_FRAME( mlt_deque_peek_front( self->queue ) ) ), "rendered" ) ) )
+	while ( priv->ahead && priv->real_time < 0 && !priv->is_purge &&
+		!( mlt_properties_get_int( MLT_FRAME_PROPERTIES( MLT_FRAME( mlt_deque_peek_front( priv->queue ) ) ), "rendered" ) ) )
 	{
-		pthread_mutex_lock( &self->done_mutex );
-		pthread_cond_wait( &self->done_cond, &self->done_mutex );
-		pthread_mutex_unlock( &self->done_mutex );
+		pthread_mutex_lock( &priv->done_mutex );
+		pthread_cond_wait( &priv->done_cond, &priv->done_mutex );
+		pthread_mutex_unlock( &priv->done_mutex );
 	}
 
 	// Get the frame from the queue.
-	pthread_mutex_lock( &self->queue_mutex );
-	frame = mlt_deque_pop_front( self->queue );
-	pthread_mutex_unlock( &self->queue_mutex );
+	pthread_mutex_lock( &priv->queue_mutex );
+	frame = mlt_deque_pop_front( priv->queue );
+	pthread_mutex_unlock( &priv->queue_mutex );
 	if ( ! frame ) {
-		self->is_purge = 0;
+		priv->is_purge = 0;
 		return frame;
 	}
 
 	// Adapt the worker process head to the runtime conditions.
-	if ( self->real_time > 0 )
+	if ( priv->real_time > 0 )
 	{
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "rendered" ) )
 		{
-			self->consecutive_dropped = 0;
-			if ( self->process_head > threads && self->consecutive_rendered >= self->process_head )
-				self->process_head--;
+			priv->consecutive_dropped = 0;
+			if ( priv->process_head > threads && priv->consecutive_rendered >= priv->process_head )
+				priv->process_head--;
 			else
-				self->consecutive_rendered++;
+				priv->consecutive_rendered++;
 		}
 		else
 		{
-			self->consecutive_rendered = 0;
-			if ( self->process_head < buffer - threads && self->consecutive_dropped > threads )
-				self->process_head++;
+			priv->consecutive_rendered = 0;
+			if ( priv->process_head < buffer - threads && priv->consecutive_dropped > threads )
+				priv->process_head++;
 			else
-				self->consecutive_dropped++;
+				priv->consecutive_dropped++;
 		}
 //		mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "dropped %d rendered %d process_head %d\n",
-//			self->consecutive_dropped, self->consecutive_rendered, self->process_head );
+//			priv->consecutive_dropped, priv->consecutive_rendered, priv->process_head );
 
 		// Check for too many consecutively dropped frames
-		if ( self->consecutive_dropped > mlt_properties_get_int( properties, "drop_max" ) )
+		if ( priv->consecutive_dropped > mlt_properties_get_int( properties, "drop_max" ) )
 		{
 			int orig_buffer = mlt_properties_get_int( properties, "buffer" );
 			int prefill = mlt_properties_get_int( properties, "prefill" );
@@ -1377,19 +1429,19 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				// Auto-scale the buffer to compensate
 				mlt_log_verbose( self, "increasing buffer to %d\n", buffer + threads );
 				mlt_properties_set_int( properties, "_buffer", buffer + threads );
-				self->consecutive_dropped = fps / 2;
+				priv->consecutive_dropped = fps / 2;
 			}
 			else
 			{
 				// Tell the consumer to render it
 				mlt_log_verbose( self, "forcing next frame\n" );
 				mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
-				self->consecutive_dropped = 0;
+				priv->consecutive_dropped = 0;
 			}
 		}
 	}
-	if ( self->is_purge ) {
-		self->is_purge = 0;
+	if ( priv->is_purge ) {
+		priv->is_purge = 0;
 		mlt_frame_close( frame );
 		frame = NULL;
 	}
@@ -1414,19 +1466,20 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
+	consumer_private *priv = self->local;
 
 	// Check if the user has requested real time or not
-	if ( self->real_time > 1 || self->real_time < -1 )
+	if ( priv->real_time > 1 || priv->real_time < -1 )
 	{
 		// see above
 		return worker_get_frame( self, properties );
 	}
-	else if ( self->real_time == 1 || self->real_time == -1 )
+	else if ( priv->real_time == 1 || priv->real_time == -1 )
 	{
 		int size = 1;
 
 		// Is the read ahead running?
-		if ( self->ahead == 0 )
+		if ( priv->ahead == 0 )
 		{
 			int buffer = mlt_properties_get_int( properties, "buffer" );
 			int prefill = mlt_properties_get_int( properties, "prefill" );
@@ -1436,18 +1489,18 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 		}
 
 		// Get frame from queue
-		pthread_mutex_lock( &self->queue_mutex );
-		while( self->ahead && mlt_deque_count( self->queue ) < size )
-			pthread_cond_wait( &self->queue_cond, &self->queue_mutex );
-		frame = mlt_deque_pop_front( self->queue );
-		pthread_cond_broadcast( &self->queue_cond );
-		pthread_mutex_unlock( &self->queue_mutex );
+		pthread_mutex_lock( &priv->queue_mutex );
+		while( priv->ahead && mlt_deque_count( priv->queue ) < size )
+			pthread_cond_wait( &priv->queue_cond, &priv->queue_mutex );
+		frame = mlt_deque_pop_front( priv->queue );
+		pthread_cond_broadcast( &priv->queue_cond );
+		pthread_mutex_unlock( &priv->queue_mutex );
 	}
 	else // real_time == 0
 	{
-		if ( !self->ahead )
+		if ( !priv->ahead )
 		{
-			self->ahead = 1;
+			priv->ahead = 1;
 			mlt_events_fire( properties, "consumer-thread-started", NULL );
 		}
 		// Get the frame in non real time
@@ -1471,7 +1524,7 @@ void mlt_consumer_stopped( mlt_consumer self )
 {
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( self ), "running", 0 );
 	mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-stopped", NULL );
-	mlt_event_unblock( self->event_listener );
+	mlt_event_unblock( ( ( consumer_private* ) self->local )->event_listener );
 }
 
 /** Stop the consumer.
@@ -1485,25 +1538,26 @@ int mlt_consumer_stop( mlt_consumer self )
 {
 	// Get the properies
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
+	consumer_private *priv = self->local;
 
 	// Just in case...
 	mlt_log( MLT_CONSUMER_SERVICE( self ), MLT_LOG_DEBUG, "stopping put waiting\n" );
-	pthread_mutex_lock( &self->put_mutex );
-	self->put_active = 0;
-	pthread_cond_broadcast( &self->put_cond );
-	pthread_mutex_unlock( &self->put_mutex );
+	pthread_mutex_lock( &priv->put_mutex );
+	priv->put_active = 0;
+	pthread_cond_broadcast( &priv->put_cond );
+	pthread_mutex_unlock( &priv->put_mutex );
 
 	// Stop the consumer
 	mlt_log( MLT_CONSUMER_SERVICE( self ), MLT_LOG_DEBUG, "stopping consumer\n" );
 	
 	// Cancel the read ahead threads
-	self->ahead = 0;
-	if ( self->started )
+	priv->ahead = 0;
+	if ( priv->started )
 	{
 		// Unblock the consumer calling mlt_consumer_rt_frame
-		pthread_mutex_lock( &self->queue_mutex );
-		pthread_cond_broadcast( &self->queue_cond );
-		pthread_mutex_unlock( &self->queue_mutex );		
+		pthread_mutex_lock( &priv->queue_mutex );
+		pthread_cond_broadcast( &priv->queue_cond );
+		pthread_mutex_unlock( &priv->queue_mutex );
 	}
 	
 	// Invoke the child callback
@@ -1512,9 +1566,9 @@ int mlt_consumer_stop( mlt_consumer self )
 
 	// Check if the user has requested real time or not and stop if necessary
 	mlt_log( MLT_CONSUMER_SERVICE( self ), MLT_LOG_DEBUG, "stopping read_ahead\n" );
-	if ( abs( self->real_time ) == 1 )
+	if ( abs( priv->real_time ) == 1 )
 		consumer_read_ahead_stop( self );
-	else if ( abs( self->real_time ) > 1 )
+	else if ( abs( priv->real_time ) > 1 )
 		consumer_work_stop( self );
 
 	// Kill the test card
@@ -1569,14 +1623,17 @@ void mlt_consumer_close( mlt_consumer self )
 		}
 		else
 		{
+			consumer_private *priv = self->local;
+
 			// Make sure it only gets called once
 			self->parent.close = NULL;
 
 			// Destroy the push mutex and condition
-			pthread_mutex_destroy( &self->put_mutex );
-			pthread_cond_destroy( &self->put_cond );
+			pthread_mutex_destroy( &priv->put_mutex );
+			pthread_cond_destroy( &priv->put_cond );
 
 			mlt_service_close( &self->parent );
+			free( priv );
 		}
 	}
 }
@@ -1590,6 +1647,6 @@ void mlt_consumer_close( mlt_consumer self )
 
 mlt_position mlt_consumer_position( mlt_consumer consumer )
 {
-	return consumer->position;
+	return ( ( consumer_private* ) consumer->local )->position;
 }
 		
