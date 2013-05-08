@@ -1076,7 +1076,7 @@ bool RtApiCore :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
 
     // We'll try higher bit rates first and then work our way down.
     std::vector< std::pair<UInt32, UInt32>  > physicalFormats;
-    formatFlags = description.mFormatFlags | kLinearPCMFormatFlagIsFloat & ~kLinearPCMFormatFlagIsSignedInteger;
+    formatFlags = (description.mFormatFlags | kLinearPCMFormatFlagIsFloat) & ~kLinearPCMFormatFlagIsSignedInteger;
     physicalFormats.push_back( std::pair<Float32, UInt32>( 32, formatFlags ) );
     formatFlags = (description.mFormatFlags | kLinearPCMFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked) & ~kLinearPCMFormatFlagIsFloat;
     physicalFormats.push_back( std::pair<Float32, UInt32>( 32, formatFlags ) );

@@ -154,7 +154,7 @@ static mlt_service context_pop_service( deserialise_context context, enum servic
 {
 	mlt_service result = NULL;
 	
-	if ( type ) *type = invalid_type;
+	if ( type ) *type = mlt_invalid_type;
 	if ( context->stack_service_size > 0 )
 	{
 		result = context->stack_service[ -- context->stack_service_size ];
@@ -731,7 +731,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 	if ( mlt_properties_get_data( temp, "producer", NULL ) != NULL )
 	{
 		mlt_playlist_clip_info info;
-		enum service_type parent_type = invalid_type;
+		enum service_type parent_type = mlt_invalid_type;
 		mlt_service parent = context_pop_service( context, &parent_type );
 		mlt_producer producer = mlt_properties_get_data( temp, "producer", NULL );
 
@@ -774,7 +774,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 static void on_end_entry( deserialise_context context, const xmlChar *name )
 {
 	// Get the entry from the stack
-	enum service_type entry_type = invalid_type;
+	enum service_type entry_type = mlt_invalid_type;
 	mlt_service entry = context_pop_service( context, &entry_type );
 
 	if ( entry == NULL && entry_type != mlt_entry_type )
@@ -817,7 +817,7 @@ static void on_end_track( deserialise_context context, const xmlChar *name )
 	if ( track != NULL && track_type == mlt_entry_type )
 	{
 		mlt_properties track_props = MLT_SERVICE_PROPERTIES( track );
-		enum service_type parent_type = invalid_type;
+		enum service_type parent_type = mlt_invalid_type;
 		mlt_service parent = context_pop_service( context, &parent_type );
 		mlt_multitrack multitrack = NULL;
 
@@ -903,7 +903,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 	mlt_service service = context_pop_service( context, &type );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
-	enum service_type parent_type = invalid_type;
+	enum service_type parent_type = mlt_invalid_type;
 	mlt_service parent = context_pop_service( context, &parent_type );
 
 	if ( service != NULL && type == mlt_dummy_filter_type )
@@ -993,7 +993,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 	mlt_service service = context_pop_service( context, &type );
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
-	enum service_type parent_type = invalid_type;
+	enum service_type parent_type = mlt_invalid_type;
 	mlt_service parent = context_pop_service( context, &parent_type );
 
 	if ( service != NULL && type == mlt_dummy_transition_type )

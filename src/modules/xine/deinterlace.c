@@ -66,8 +66,8 @@ static void deinterlace_bob_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
   uint64_t qwEdgeDetect;
   uint64_t qwThreshold;
 
-  static mmx_t YMask = {ub:{0xff,0,0xff,0,0xff,0,0xff,0}};
-  static mmx_t Mask = {ub:{0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
+  static mmx_t YMask = {.ub={0xff,0,0xff,0,0xff,0,0xff,0}};
+  static mmx_t Mask = {.ub={0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
 
   qwEdgeDetect = EdgeDetect;
   qwEdgeDetect += (qwEdgeDetect << 48) + (qwEdgeDetect << 32) + (qwEdgeDetect << 16);
@@ -217,8 +217,8 @@ static int deinterlace_weave_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
   uint64_t qwTemporalTolerance;
   uint64_t qwThreshold;
 
-  static mmx_t YMask = {ub:{0xff,0,0xff,0,0xff,0,0xff,0}};
-  static mmx_t Mask = {ub:{0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
+  static mmx_t YMask = {.ub={0xff,0,0xff,0,0xff,0,0xff,0}};
+  static mmx_t Mask = {.ub={0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
 
 
   // Make sure we have all the data we need.
@@ -402,7 +402,7 @@ static int deinterlace_greedy_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
   uint8_t* pOddLines = psrc[0]+width;
   uint8_t* pPrevLines;
 
-  static mmx_t ShiftMask = {ub:{0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
+  static mmx_t ShiftMask = {.ub={0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
 
   int LineLength = width;
   int SourcePitch = width * 2;
@@ -566,7 +566,7 @@ static void deinterlace_onefield_yuv_mmx( uint8_t *pdst, uint8_t *psrc[],
 
   int n;
 
-  static mmx_t Mask = {ub:{0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
+  static mmx_t Mask = {.ub={0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe,0xfe}};
 
   /*
    * copy first even line no matter what, and the first odd line if we're
