@@ -474,7 +474,7 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 			mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 		}
 	}
-	if ( error )
+	if ( error && *buffer && *format != mlt_image_none )
 	{
 		int size = 0;
 

@@ -402,7 +402,7 @@ mlt_properties mlt_profile_list( )
 void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer )
 {
 	mlt_frame fr = NULL;
-	uint8_t *buffer;
+	uint8_t *buffer = NULL;
 	mlt_image_format fmt = mlt_image_none;
 	mlt_properties p;
 	int w = profile->width;
