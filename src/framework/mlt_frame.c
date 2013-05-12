@@ -459,12 +459,12 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 			mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
 			error = mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
-			if ( !error && *buffer )
+			if ( !error && buffer && *buffer )
 			{
 				mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
 				mlt_properties_set_int( properties, "width", *width );
 				mlt_properties_set_int( properties, "height", *height );
-				if ( test_frame->convert_image && *buffer && requested_format != mlt_image_none )
+				if ( test_frame->convert_image && requested_format != mlt_image_none )
 					test_frame->convert_image( test_frame, buffer, format, requested_format );
 				mlt_properties_set_int( properties, "format", *format );
 			}
@@ -474,7 +474,7 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 			mlt_properties_set_data( properties, "test_card_producer", NULL, 0, NULL, NULL );
 		}
 	}
-	if ( error && *buffer && *format != mlt_image_none )
+	if ( error && buffer && *format != mlt_image_none )
 	{
 		int size = 0;
 
@@ -570,11 +570,11 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 	{
 		mlt_properties_set_int( properties, "image_count", mlt_properties_get_int( properties, "image_count" ) - 1 );
 		error = get_image( self, buffer, format, width, height, writable );
-		if ( !error && *buffer )
+		if ( !error && buffer && *buffer )
 		{
 			mlt_properties_set_int( properties, "width", *width );
 			mlt_properties_set_int( properties, "height", *height );
-			if ( self->convert_image && *buffer && requested_format != mlt_image_none )
+			if ( self->convert_image && requested_format != mlt_image_none )
 				self->convert_image( self, buffer, format, requested_format );
 			mlt_properties_set_int( properties, "format", *format );
 		}
@@ -583,7 +583,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 			error = generate_test_image( properties, buffer, format, width, height, writable );
 		}
 	}
-	else if ( mlt_properties_get_data( properties, "image", NULL ) )
+	else if ( mlt_properties_get_data( properties, "image", NULL ) && buffer )
 	{
 		*format = mlt_properties_get_int( properties, "format" );
 		*buffer = mlt_properties_get_data( properties, "image", NULL );
