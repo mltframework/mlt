@@ -217,7 +217,7 @@ static mlt_frame get_text_frame( mlt_producer producer, mlt_position position )
 
 		// Calculate clock values
 		int seconds = position / fps;
-		int frames = position % fps;
+		int frames = MLT_POSITION_MOD(position, fps);
 		int minutes = seconds / 60;
 		seconds = seconds % 60;
 		int hours = minutes / 60;
@@ -226,7 +226,7 @@ static mlt_frame get_text_frame( mlt_producer producer, mlt_position position )
 		// Apply the time style
 		if( !strcmp( style, "frames" ) )
 		{
-			snprintf( text, MAX_TEXT_LEN - 1, "%d", position );
+			snprintf( text, MAX_TEXT_LEN - 1, MLT_POSITION_FMT, position );
 		}
 		else if( !strcmp( style, "timecode" ) )
 		{
@@ -464,12 +464,12 @@ static void add_clock_to_frame( mlt_producer producer, mlt_frame frame, mlt_posi
 	if( !strcmp( direction, "down" ) )
 	{
 		int out = mlt_producer_get_out( producer );
-		int frames = fps - (( out - position ) % fps);
+		int frames = fps - MLT_POSITION_MOD(out - position, fps);
 		clock_angle = lrint( (frames + 1) * 360 / fps );
 	}
 	else
 	{
-		int frames = position % fps;
+		int frames = MLT_POSITION_MOD(position, fps);
 		clock_angle = lrint( (frames + 1) * 360 / fps );
 	}
 

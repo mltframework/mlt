@@ -982,7 +982,7 @@ void mlt_frame_write_ppm( mlt_frame frame )
 		FILE *file;
 		char filename[16];
 		
-		sprintf( filename, "frame-%05d.ppm", mlt_frame_get_position( frame ) );
+		sprintf( filename, "frame-%05d.ppm", (int)mlt_frame_get_position( frame ) );
 		file = fopen( filename, "wb" );
 		if ( !file )
 			return;

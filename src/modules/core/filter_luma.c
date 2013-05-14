@@ -76,8 +76,8 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 	}
 
-	mlt_position modulo_pos = position % out;
-	mlt_log_debug( MLT_FILTER_SERVICE(filter), "pos %d mod period %d\n", position, modulo_pos );
+	mlt_position modulo_pos = MLT_POSITION_MOD(position, out);
+	mlt_log_debug( MLT_FILTER_SERVICE(filter), "pos " MLT_POSITION_FMT " mod period " MLT_POSITION_FMT "\n", position, modulo_pos );
 	if ( luma != NULL &&
 	     ( mlt_properties_get( properties, "blur" ) != NULL ||
 		   ( position >= duration && modulo_pos < duration - 1 ) ) )
@@ -103,7 +103,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 
 		if ( dst != NULL )
 		{
-			mlt_log_debug( MLT_FILTER_SERVICE(filter), "copying frame %d\n", modulo_pos );
+			mlt_log_debug( MLT_FILTER_SERVICE(filter), "copying frame " MLT_POSITION_FMT "\n", modulo_pos );
 			mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 			memcpy( dst, src, size );
 			mlt_frame_set_image( b_frame, dst, size, mlt_pool_release );

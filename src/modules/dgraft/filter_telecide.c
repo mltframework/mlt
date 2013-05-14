@@ -786,7 +786,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
 		memcpy( image_copy, *image, image_size );
 		char key[20];
-		sprintf( key, "%d", pos );
+		sprintf( key, MLT_POSITION_FMT, pos );
 		mlt_properties_set_data( cx->image_cache, key, image_copy, image_size, (mlt_destructor)mlt_pool_release, NULL );
 		
 		// Only if we have enough frame images cached
@@ -794,7 +794,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		{
 			pos -= cx->cycle + 1;
 			// Get the current frame image
-			sprintf( key, "%d", pos );
+			sprintf( key, MLT_POSITION_FMT, pos );
 			cx->fcrp = mlt_properties_get_data( cx->image_cache, key, NULL );
 			if (!cx->fcrp) return error;
 			 
@@ -1148,7 +1148,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 final:			
 			// Flush frame at tail of period from the cache
-			sprintf( key, "%d", pos - 1 );
+			sprintf( key, MLT_POSITION_FMT, pos - 1 );
 			mlt_properties_set_data( cx->image_cache, key, NULL, 0, NULL, NULL );
 		}
 		else
@@ -1159,7 +1159,7 @@ final:
 	}
 	else if ( error == 0 && *format == mlt_image_yuv420p )
 	{
-		fprintf(stderr,"%s: %d pos %d\n", __FUNCTION__, *width * *height * 3/2, mlt_frame_get_position(frame) );
+		fprintf(stderr,"%s: %d pos " MLT_POSITION_FMT "\n", __FUNCTION__, *width * *height * 3/2, mlt_frame_get_position(frame) );
 	}
 
 	return error;

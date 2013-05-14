@@ -990,7 +990,7 @@ static void *consumer_worker_thread( void *arg )
 		frame = mlt_deque_peek( priv->queue, index );
 		if ( frame )
 		{
-			mlt_log_debug( MLT_CONSUMER_SERVICE(self), "worker processing index = %d frame %d queue count = %d\n",
+			mlt_log_debug( MLT_CONSUMER_SERVICE(self), "worker processing index = %d frame " MLT_POSITION_FMT " queue count = %d\n",
 				index, mlt_frame_get_position(frame), mlt_deque_count( priv->queue ) );
 			frame->is_processing = 1;
 			mlt_properties_inc_ref( MLT_FRAME_PROPERTIES( frame ) );

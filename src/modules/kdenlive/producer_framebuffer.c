@@ -74,7 +74,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		{
 			// Strobe effect wanted, calculate frame position
 			need_first = floor( actual_position );
-			need_first -= need_first % strobe;
+			need_first -= MLT_POSITION_MOD(need_first, strobe);
 		}
 		if ( freeze )
 		{

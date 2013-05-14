@@ -324,13 +324,13 @@ static void report_results( avsync_stats* stats, mlt_position pos )
 	{
 		if( stats->sample_offset == INT_MAX )
 		{
-			fprintf( stats->out_file, "%d\t??\n", pos );
+			fprintf( stats->out_file, MLT_POSITION_FMT "\t??\n", pos );
 		}
 		else
 		{
 			// Convert to milliseconds.
 			double ms_offset = (double)stats->sample_offset * 1000.0 / (double)SAMPLE_FREQ;
-			fprintf( stats->out_file, "%d\t%02.02f\n", pos, ms_offset );
+			fprintf( stats->out_file, MLT_POSITION_FMT "\t%02.02f\n", pos, ms_offset );
 		}
 	}
 	stats->blip = 0;
