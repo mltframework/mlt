@@ -521,6 +521,48 @@ private Q_SLOTS:
         mlt_property_close(item.property);
         mlt_animation_close(a);
     }
+
+    void test_property_get_double_pos()
+    {
+        locale_t locale;
+#if defined(__linux__) || defined(__DARWIN__)
+        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#endif
+        double fps = 25.0;
+        mlt_property p = mlt_property_init();
+        mlt_property_set_string(p, "10=100; 20=200");
+        QCOMPARE(mlt_property_get_double(p, fps, locale), 10.0);
+        QCOMPARE(mlt_property_get_double_pos(p, fps, locale, 0, 100), 100.0);
+        QCOMPARE(mlt_property_get_double_pos(p, fps, locale, 15, 100), 150.0);
+        QCOMPARE(mlt_property_get_double_pos(p, fps, locale, 20, 100), 200.0);
+
+        mlt_property_set_string(p, "1.5");
+        QCOMPARE(mlt_property_get_double(p, fps, locale), 1.5);
+        QCOMPARE(mlt_property_get_double_pos(p, fps, locale, 10, 100), 1.5);
+
+        mlt_property_close(p);
+    }
+
+    void test_property_get_int_pos()
+    {
+        locale_t locale;
+#if defined(__linux__) || defined(__DARWIN__)
+        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#endif
+        double fps = 25.0;
+        mlt_property p = mlt_property_init();
+        mlt_property_set_string(p, "10=100; 20=200");
+        QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
+        QCOMPARE(mlt_property_get_int_pos(p, fps, locale, 0, 100), 100);
+        QCOMPARE(mlt_property_get_int_pos(p, fps, locale, 15, 100), 150);
+        QCOMPARE(mlt_property_get_int_pos(p, fps, locale, 20, 100), 200);
+
+        mlt_property_set_string(p, "1.5");
+        QCOMPARE(mlt_property_get_int(p, fps, locale), 1);
+        QCOMPARE(mlt_property_get_int_pos(p, fps, locale, 10, 100), 1);
+
+        mlt_property_close(p);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProperties)
