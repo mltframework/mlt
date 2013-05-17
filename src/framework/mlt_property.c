@@ -925,6 +925,29 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	return self->prop_string;
 }
 
+static int is_property_numeric( mlt_property self, locale_t locale )
+{
+	int result = ( self->types & mlt_prop_int ) ||
+			( self->types & mlt_prop_int64 ) ||
+			( self->types & mlt_prop_double ) ||
+			( self->types & mlt_prop_position );
+
+	// If not already numeric but string is numeric.
+	if ( ( !result && self->types & mlt_prop_string ) && self->prop_string )
+	{
+		double temp;
+		char *p = NULL;
+#if defined(__GLIBC__) || defined(__DARWIN__)
+		if ( locale )
+			temp = strtod_l( self->prop_string, &p, locale );
+		else
+#endif
+		temp = strtod( self->prop_string, &p );
+		result = ( p != self->prop_string );
+	}
+	return result;
+}
+
 static inline double linearstep( double start, double end, double position, int length )
 {
 	double o = ( end - start ) / length;
@@ -935,8 +958,7 @@ int mlt_property_interpolate(mlt_property self, mlt_property previous, mlt_prope
 	double position, int length, double fps, locale_t locale )
 {
 	int error = 0;
-
-	if ( fps > 0 )
+	if ( fps > 0 && is_property_numeric( previous, locale ) && is_property_numeric( next, locale ) )
 	{
 		double start = previous? mlt_property_get_double( previous, fps, locale ) : 0;
 		double end = next? mlt_property_get_double( next, fps, locale ) : 0;
@@ -945,7 +967,7 @@ int mlt_property_interpolate(mlt_property self, mlt_property previous, mlt_prope
 	}
 	else
 	{
-		error = 1;
+		mlt_property_pass( self, previous );
 	}
 	return error;
 }

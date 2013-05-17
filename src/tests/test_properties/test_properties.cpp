@@ -352,6 +352,47 @@ private Q_SLOTS:
         mlt_animation_close(a);
     }
 
+    void IntAnimation()
+    {
+        locale_t locale;
+#if defined(__linux__) || defined(__DARWIN__)
+        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#endif
+        double fps = 25.0;
+        mlt_animation a = mlt_animation_new();
+        struct mlt_animation_item_s item;
+
+        mlt_animation_parse(a, "50=100; 60=60; 100=0", 100, fps, locale);
+        mlt_animation_remove(a, 60);
+        char *a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50=100;100=0");
+        if (a_serialized) free(a_serialized);
+        item.property = mlt_property_init();
+
+        mlt_animation_get_item(a, &item, 10);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 100);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 50);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 100);
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 75);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 50);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 100);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 0);
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 110);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 0);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_property_close(item.property);
+        mlt_animation_close(a);
+    }
+
     void AnimationWithTimeValueKeyframes()
     {
         locale_t locale;
@@ -387,6 +428,94 @@ private Q_SLOTS:
 
         mlt_animation_get_item(a, &item, 110);
         QCOMPARE(mlt_property_get_double(item.property, fps, locale), 0.0);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_property_close(item.property);
+        mlt_animation_close(a);
+    }
+
+    void DiscreteIntAnimation()
+    {
+        locale_t locale;
+#if defined(__linux__) || defined(__DARWIN__)
+        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#endif
+        double fps = 25.0;
+        mlt_animation a = mlt_animation_new();
+        struct mlt_animation_item_s item;
+
+        mlt_animation_parse(a, "50|=100; 60|=60; 100|=0", 100, fps, locale);
+        char *a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50|=100;60|=60;100|=0");
+        if (a_serialized) free(a_serialized);
+        item.property = mlt_property_init();
+
+        mlt_animation_get_item(a, &item, 10);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 100);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 50);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 100);
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 55);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 100);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 60);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 60);
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 75);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 60);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 100);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 0);
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 110);
+        QCOMPARE(mlt_property_get_int(item.property, fps, locale), 0);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_property_close(item.property);
+        mlt_animation_close(a);
+    }
+
+    void StringAnimation()
+    {
+        locale_t locale;
+#if defined(__linux__) || defined(__DARWIN__)
+        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#endif
+        double fps = 25.0;
+        mlt_animation a = mlt_animation_new();
+        struct mlt_animation_item_s item;
+
+        mlt_animation_parse(a, "50=hello world; 60=\"good night\"; 100=bar", 100, fps, locale);
+        char *a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50=hello world;60=\"good night\";100=bar");
+        if (a_serialized) free(a_serialized);
+        item.property = mlt_property_init();
+
+        mlt_animation_get_item(a, &item, 10);
+        QCOMPARE(mlt_property_get_string(item.property), "hello world");
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 50);
+        QCOMPARE(mlt_property_get_string(item.property), "hello world");
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 75);
+        QCOMPARE(mlt_property_get_string(item.property), "\"good night\"");
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 100);
+        QCOMPARE(mlt_property_get_string(item.property), "bar");
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 110);
+        QCOMPARE(mlt_property_get_string(item.property), "bar");
         QCOMPARE(item.is_key, 0);
 
         mlt_property_close(item.property);

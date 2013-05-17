@@ -68,11 +68,18 @@ void mlt_animation_interpolate( mlt_animation self )
 
 				if ( !prev )
 					current->item.is_key = 1;
-				mlt_property_interpolate( current->item.property,
-					prev->item.property, next->item.property,
-					current->item.frame - prev->item.frame,
-					next->item.frame - prev->item.frame,
-					self->fps, self->locale );
+				if ( current->item.keyframe_type == mlt_keyframe_discrete )
+				{
+					mlt_property_pass( current->item.property, prev->item.property );
+				}
+				else
+				{
+					mlt_property_interpolate( current->item.property,
+						prev->item.property, next->item.property,
+						current->item.frame - prev->item.frame,
+						next->item.frame - prev->item.frame,
+						self->fps, self->locale );
+				}
 			}
 
 			// Move to the next item
@@ -219,9 +226,14 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 				mlt_property_set_string( item->property, value );
 				item->frame = mlt_property_get_int( item->property, self->fps, self->locale );
 			}
-			value = strchr( value, '=' ) + 1;
 
-			// TODO the character preceeding the equal sign indicates method of interpolation.
+			// The character preceeding the equal sign indicates interpolation method.
+			p = strchr( value, '=' ) - 1;
+			if ( p[0] == '|' )
+				item->keyframe_type = mlt_keyframe_discrete;
+			else
+				item->keyframe_type = mlt_keyframe_linear;
+			value = &p[2];
 		}
 
 		// Special case - frame < 0
@@ -257,6 +269,8 @@ int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int pos
 
 	if ( node )
 	{
+		item->keyframe_type = node->item.keyframe_type;
+
 		// Position is before the first keyframe.
 		if ( position < node->item.frame )
 		{
@@ -279,9 +293,16 @@ int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int pos
 		else
 		{
 			item->is_key = 0;
-			mlt_property_interpolate( item->property, node->item.property, node->next->item.property,
-				position - node->item.frame, node->next->item.frame - node->item.frame,
-				self->fps, self->locale );
+			if ( node->item.keyframe_type == mlt_keyframe_discrete )
+			{
+				mlt_property_pass( item->property, node->item.property );
+			}
+			else
+			{
+				mlt_property_interpolate( item->property, node->item.property, node->next->item.property,
+					position - node->item.frame, node->next->item.frame - node->item.frame,
+					self->fps, self->locale );
+			}
 		}
 	}
 	else
@@ -301,6 +322,7 @@ int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 	animation_node node = calloc( 1, sizeof( *node ) );
 	node->item.frame = item->frame;
 	node->item.is_key = 1;
+	node->item.keyframe_type = item->keyframe_type;
 	node->item.property = mlt_property_init();
 	mlt_property_pass( node->item.property, item->property );
 
@@ -337,6 +359,7 @@ int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 			// Update matching node.
 			current->item.frame = item->frame;
 			current->item.is_key = 1;
+			current->item.keyframe_type = item->keyframe_type;
 			mlt_property_close( current->item.property );
 			current->item.property = node->item.property;
 			free( node );
@@ -378,6 +401,7 @@ int mlt_animation_next_key( mlt_animation self, mlt_animation_item item, int pos
 	{
 		item->frame = node->item.frame;
 		item->is_key = node->item.is_key;
+		item->keyframe_type = node->item.keyframe_type;
 		mlt_property_pass( item->property, node->item.property );
 	}
 
@@ -396,6 +420,7 @@ int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int pos
 	{
 		item->frame = node->item.frame;
 		item->is_key = node->item.is_key;
+		item->keyframe_type = node->item.keyframe_type;
 		mlt_property_pass( item->property, node->item.property );
 	}
 
@@ -481,7 +506,18 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 			{
 				// Append keyframe time and keyframe/value delimiter (=).
 				if ( item.frame - in != 0 )
-					sprintf( ret + used, "%d=", item.frame - in );
+				{
+					const char *s;
+					switch (item.keyframe_type) {
+					case mlt_keyframe_discrete:
+						s = "|";
+						break;
+					default:
+						s = "";
+						break;
+					}
+					sprintf( ret + used, "%d%s=", item.frame - in, s );
+				}
 				// Append item value.
 				if ( item.is_key )
 					strcat( ret, mlt_property_get_string_l( item.property, self->locale ) );
