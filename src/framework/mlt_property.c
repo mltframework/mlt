@@ -924,3 +924,28 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	// Return the string (may be NULL)
 	return self->prop_string;
 }
+
+static inline double linearstep( double start, double end, double position, int length )
+{
+	double o = ( end - start ) / length;
+	return start + position * o;
+}
+
+int mlt_property_interpolate(mlt_property self, mlt_property previous, mlt_property next,
+	double position, int length, double fps, locale_t locale )
+{
+	int error = 0;
+
+	if ( fps > 0 )
+	{
+		double start = previous? mlt_property_get_double( previous, fps, locale ) : 0;
+		double end = next? mlt_property_get_double( next, fps, locale ) : 0;
+		double value = next? linearstep( start, end, position, length ) : start;
+		error = mlt_property_set_double( self, value );
+	}
+	else
+	{
+		error = 1;
+	}
+	return error;
+}
