@@ -60,6 +60,8 @@ void mlt_animation_interpolate( mlt_animation self )
 		{
 			if ( !current->item.is_key )
 			{
+				double progress;
+				mlt_property points[4];
 				animation_node prev = current->prev;
 				animation_node next = current->next;
 
@@ -68,18 +70,14 @@ void mlt_animation_interpolate( mlt_animation self )
 
 				if ( !prev )
 					current->item.is_key = 1;
-				if ( current->item.keyframe_type == mlt_keyframe_discrete )
-				{
-					mlt_property_pass( current->item.property, prev->item.property );
-				}
-				else
-				{
-					mlt_property_interpolate( current->item.property,
-						prev->item.property, next->item.property,
-						current->item.frame - prev->item.frame,
-						next->item.frame - prev->item.frame,
-						self->fps, self->locale );
-				}
+				points[0] = prev->prev? prev->prev->item.property : prev->item.property;
+				points[1] = prev->item.property;
+				points[2] = next->item.property;
+				points[3] = next->next? next->next->item.property : next->item.property;
+				progress = current->item.frame - prev->item.frame;
+				progress /= next->item.frame - prev->item.frame;
+				mlt_property_interpolate( current->item.property, points, progress,
+					self->fps, self->locale, current->item.keyframe_type );
 			}
 
 			// Move to the next item
@@ -229,8 +227,10 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 
 			// The character preceeding the equal sign indicates interpolation method.
 			p = strchr( value, '=' ) - 1;
-			if ( p[0] == '|' )
+			if ( p[0] == '|' || p[0] == '!' )
 				item->keyframe_type = mlt_keyframe_discrete;
+			else if ( p[0] == '~' )
+				item->keyframe_type = mlt_keyframe_smooth;
 			else
 				item->keyframe_type = mlt_keyframe_linear;
 			value = &p[2];
@@ -239,10 +239,6 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 		// Special case - frame < 0
 		if ( item->frame < 0 )
 			item->frame += self->length;
-
-		// Obtain the current value at this position - this allows new
-		// frames to be created which don't specify all values
-		mlt_animation_get_item( self, item, item->frame );
 
 		// Set remainder of string as item value.
 		mlt_property_set_string( item->property, value );
@@ -292,17 +288,17 @@ int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int pos
 		// Interpolation needed.
 		else
 		{
+			double progress;
+			mlt_property points[4];
+			points[0] = node->prev? node->prev->item.property : node->item.property;
+			points[1] = node->item.property;
+			points[2] = node->next->item.property;
+			points[3] = node->next->next? node->next->next->item.property : node->next->item.property;
+			progress = position - node->item.frame;
+			progress /= node->next->item.frame - node->item.frame;
+			mlt_property_interpolate( item->property, points, progress,
+				self->fps, self->locale, item->keyframe_type );
 			item->is_key = 0;
-			if ( node->item.keyframe_type == mlt_keyframe_discrete )
-			{
-				mlt_property_pass( item->property, node->item.property );
-			}
-			else
-			{
-				mlt_property_interpolate( item->property, node->item.property, node->next->item.property,
-					position - node->item.frame, node->next->item.frame - node->item.frame,
-					self->fps, self->locale );
-			}
 		}
 	}
 	else
@@ -505,19 +501,20 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 			if ( ret )
 			{
 				// Append keyframe time and keyframe/value delimiter (=).
-				if ( item.frame - in != 0 )
-				{
-					const char *s;
-					switch (item.keyframe_type) {
-					case mlt_keyframe_discrete:
-						s = "|";
-						break;
-					default:
-						s = "";
-						break;
-					}
-					sprintf( ret + used, "%d%s=", item.frame - in, s );
+				const char *s;
+				switch (item.keyframe_type) {
+				case mlt_keyframe_discrete:
+					s = "|";
+					break;
+				case mlt_keyframe_smooth:
+					s = "~";
+					break;
+				default:
+					s = "";
+					break;
 				}
+				sprintf( ret + used, "%d%s=", item.frame - in, s );
+
 				// Append item value.
 				if ( item.is_key )
 					strcat( ret, mlt_property_get_string_l( item.property, self->locale ) );

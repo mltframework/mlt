@@ -75,6 +75,15 @@ typedef enum
 }
 mlt_time_format;
 
+/** Interpolation methods for animation keyframes */
+
+typedef enum {
+	mlt_keyframe_discrete, //< non-interpolated; value changes instantaneously at the key frame
+	mlt_keyframe_linear,   //< simple, constant pace from this key frame to the next
+	mlt_keyframe_smooth    //< eased pacing from this keyframe to the next using a Catmull-Rom spline
+}
+mlt_keyframe_type;
+
 /** The relative time qualifiers */
 
 typedef enum

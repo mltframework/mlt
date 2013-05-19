@@ -25,11 +25,6 @@
 #include "mlt_types.h"
 #include "mlt_property.h"
 
-typedef enum {
-	mlt_keyframe_discrete,
-	mlt_keyframe_linear
-} mlt_keyframe_type;
-
 struct mlt_animation_item_s
 {
 	int is_key; /**< = whether this is a key frame or an interpolated item */

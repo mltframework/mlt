@@ -942,26 +942,52 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 	return result;
 }
 
-static inline double linearstep( double start, double end, double position, int length )
+static inline double linear_interpolate( double y1, double y2, double t )
 {
-	double o = ( end - start ) / length;
-	return start + position * o;
+	return y1 + ( y2 - y1 ) * t;
 }
 
-int mlt_property_interpolate(mlt_property self, mlt_property previous, mlt_property next,
-	double position, int length, double fps, locale_t locale )
+//  For non-closed curves, you need to also supply the tangent vector at the first and last control point.
+// This is commonly done: T(P[0]) = P[1] - P[0] and T(P[n]) = P[n] - P[n-1].
+static inline double catmull_rom_interpolate( double y0, double y1, double y2, double y3, double t )
+{
+	double t2 = t * t;
+	double a0 = -0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3;
+	double a1 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3;
+	double a2 = -0.5 * y0 + 0.5 * y2;
+	double a3 = y1;
+	return a0 * t * t2 + a1 * t2 + a2 * t + a3;
+}
+
+int mlt_property_interpolate( mlt_property self, mlt_property p[],
+	double progress, double fps, locale_t locale, mlt_keyframe_type interp )
 {
 	int error = 0;
-	if ( fps > 0 && is_property_numeric( previous, locale ) && is_property_numeric( next, locale ) )
+	if ( interp != mlt_keyframe_discrete && fps > 0 &&
+		is_property_numeric( p[1], locale ) && is_property_numeric( p[2], locale ) )
 	{
-		double start = previous? mlt_property_get_double( previous, fps, locale ) : 0;
-		double end = next? mlt_property_get_double( next, fps, locale ) : 0;
-		double value = next? linearstep( start, end, position, length ) : start;
+		double value;
+		if ( interp == mlt_keyframe_linear )
+		{
+			double points[2];
+			points[0] = p[1]? mlt_property_get_double( p[1], fps, locale ) : 0;
+			points[1] = p[2]? mlt_property_get_double( p[2], fps, locale ) : 0;
+			value = p[2]? linear_interpolate( points[0], points[1], progress ) : points[0];
+		}
+		else if ( interp == mlt_keyframe_smooth )
+		{
+			double points[4];
+			points[0] = p[0]? mlt_property_get_double( p[0], fps, locale ) : 0;
+			points[1] = p[1]? mlt_property_get_double( p[1], fps, locale ) : 0;
+			points[2] = p[2]? mlt_property_get_double( p[2], fps, locale ) : 0;
+			points[3] = p[3]? mlt_property_get_double( p[3], fps, locale ) : 0;
+			value = p[2]? catmull_rom_interpolate( points[0], points[1], points[2], points[3], progress ) : points[1];
+		}
 		error = mlt_property_set_double( self, value );
 	}
 	else
 	{
-		mlt_property_pass( self, previous );
+		mlt_property_pass( self, p[1] );
 	}
 	return error;
 }

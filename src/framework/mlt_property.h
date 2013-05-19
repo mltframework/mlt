@@ -54,8 +54,8 @@ extern void *mlt_property_get_data( mlt_property self, int *length );
 extern void mlt_property_close( mlt_property self );
 extern void mlt_property_pass( mlt_property self, mlt_property that );
 extern char *mlt_property_get_time( mlt_property self, mlt_time_format, double fps, locale_t );
-extern int mlt_property_interpolate(mlt_property self, mlt_property previous, mlt_property next,
-                                     double position, int length, double fps, locale_t locale  );
+extern int mlt_property_interpolate(mlt_property self, mlt_property points[],
+                                     double progress, double fps, locale_t locale  , mlt_keyframe_type interp);
 extern double mlt_property_get_double_pos(mlt_property self, double fps, locale_t locale, int position, int length );
 extern int mlt_property_get_int_pos(mlt_property self, double fps, locale_t locale, int position, int length );
 
