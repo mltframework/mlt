@@ -78,9 +78,9 @@ mlt_time_format;
 /** Interpolation methods for animation keyframes */
 
 typedef enum {
-	mlt_keyframe_discrete, //< non-interpolated; value changes instantaneously at the key frame
-	mlt_keyframe_linear,   //< simple, constant pace from this key frame to the next
-	mlt_keyframe_smooth    //< eased pacing from this keyframe to the next using a Catmull-Rom spline
+	mlt_keyframe_discrete = 0, /**< non-interpolated; value changes instantaneously at the key frame */
+	mlt_keyframe_linear,       /**< simple, constant pace from this key frame to the next */
+	mlt_keyframe_smooth        /**< eased pacing from this keyframe to the next using a Catmull-Rom spline */
 }
 mlt_keyframe_type;
 
@@ -88,9 +88,9 @@ mlt_keyframe_type;
 
 typedef enum
 {
-	mlt_whence_relative_start,  /**< relative to the beginning */
-	mlt_whence_relative_current,/**< relative to the current position */
-	mlt_whence_relative_end     /**< relative to the end */
+	mlt_whence_relative_start = 0, /**< relative to the beginning */
+	mlt_whence_relative_current,   /**< relative to the current position */
+	mlt_whence_relative_end        /**< relative to the end */
 }
 mlt_whence;
 
@@ -98,7 +98,7 @@ mlt_whence;
 
 typedef enum
 {
-	invalid_type,               /**< invalid service */
+	invalid_type = 0,           /**< invalid service */
 	unknown_type,               /**< unknown class */
 	producer_type,              /**< Producer class */
 	tractor_type,               /**< Tractor class */

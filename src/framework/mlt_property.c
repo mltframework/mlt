@@ -1046,3 +1046,67 @@ int mlt_property_get_int_pos( mlt_property self, double fps, locale_t locale, in
 	}
 	return result;
 }
+
+/** Set a property animation keyframe to a real number.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param value a double precision floating point value
+ * \return false if successful, true to indicate error
+ */
+
+int mlt_property_set_double_pos( mlt_property self, double value, double fps, locale_t locale,
+	mlt_keyframe_type keyframe_type, int position, int length )
+{
+	int result;
+	if ( ( self->types & mlt_prop_string ) && self->prop_string )
+	{
+		struct mlt_animation_item_s item;
+		item.property = mlt_property_init();
+		item.frame = position;
+		item.keyframe_type = keyframe_type;
+		mlt_property_set_double( item.property, value );
+
+		refresh_animation( self, fps, locale, length );
+		result = mlt_animation_insert( self->animation, &item );
+		mlt_animation_interpolate( self->animation );
+		mlt_property_close( item.property );
+	}
+	else
+	{
+		result = mlt_property_set_double( self, value );
+	}
+	return result;
+}
+
+/** Set a property animation keyframe to an integer value.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param value a double precision floating point value
+ * \return false if successful, true to indicate error
+ */
+
+int mlt_property_set_int_pos( mlt_property self, int value, double fps, locale_t locale,
+	mlt_keyframe_type keyframe_type, int position, int length )
+{
+	int result;
+	if ( ( self->types & mlt_prop_string ) && self->prop_string )
+	{
+		struct mlt_animation_item_s item;
+		item.property = mlt_property_init();
+		item.frame = position;
+		item.keyframe_type = keyframe_type;
+		mlt_property_set_int( item.property, value );
+
+		refresh_animation( self, fps, locale, length );
+		result = mlt_animation_insert( self->animation, &item );
+		mlt_animation_interpolate( self->animation );
+		mlt_property_close( item.property );
+	}
+	else
+	{
+		result = mlt_property_set_int( self, value );
+	}
+	return result;
+}
