@@ -649,6 +649,15 @@ private Q_SLOTS:
         QCOMPARE(mlt_property_get_int_pos(p, fps, locale, 30, 100), 300);
         mlt_property_close(p);
     }
+
+    void PercentAsRatio()
+    {
+        Properties p;
+        p.set("foo", "12.3%");
+        QCOMPARE(p.get_double("foo"), 0.123);
+        p.set("foo", "456 %");
+        QCOMPARE(p.get_double("foo"), 456.0);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProperties)

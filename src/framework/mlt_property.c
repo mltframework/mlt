@@ -432,6 +432,8 @@ int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
  * If the string contains a colon it is interpreted as a time value. If it also
  * contains a period or comma character, the string is parsed as a clock value:
  * HH:MM:SS. Otherwise, the time value is parsed as a SMPTE timecode: HH:MM:SS:FF.
+ * If the numeric string ends with '%' then the value is divided by 100 to convert
+ * it into a ratio.
  * \private \memberof mlt_property_s
  * \param value the string to convert
  * \param fps frames per second, used when converting from time value
@@ -449,11 +451,17 @@ static double mlt_property_atof( const char *value, double fps, locale_t locale 
 	}
 	else
 	{
+		char *end = NULL;
+		double result;
 #if defined(__GLIBC__) || defined(__DARWIN__)
 		if ( locale )
-			return strtod_l( value, NULL, locale );
+			result = strtod_l( value, &end, locale );
 #endif
-		return strtod( value, NULL );
+		else
+			result = strtod( value, &end );
+		if ( *end && end[0] == '%' )
+			result /= 100.0;
+		return result;
 	}
 }
 
