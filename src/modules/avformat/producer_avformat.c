@@ -1811,8 +1811,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		if ( mlt_properties_get( properties, "force_fps" ) )
 		{
 			AVRational force_fps = av_d2q( mlt_properties_get_double( properties, "force_fps" ), 1024 );
-			self->video_time_base.num *= frame_rate.num * force_fps.den;
-			self->video_time_base.den *= frame_rate.den * force_fps.num;
+			self->video_time_base = av_mul_q( stream->time_base, av_div_q( frame_rate, force_fps ) );
 			frame_rate = force_fps;
 		}
 		mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
