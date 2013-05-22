@@ -410,7 +410,7 @@ MLT_REPOSITORY
 
 	// Load a param name map into global properties for backwards compatibility when
 	// param names change and setting frei0r params by name instead of index.
-	snprintf( dirname, PATH_MAX, "%s/frei0r/param_name_map.yml", mlt_environment( "MLT_DATA" ) );
+	snprintf( dirname, PATH_MAX, "%s/frei0r/param_name_map.yaml", mlt_environment( "MLT_DATA" ) );
 	mlt_properties_set_data( mlt_global_properties(), "frei0r.param_name_map",
 		mlt_properties_parse_yaml( dirname ), 0, (mlt_destructor) mlt_properties_close, NULL );
 

@@ -38,6 +38,7 @@ install: all
 	install -d "$(DESTDIR)$(mltdatadir)/frei0r"
 	install -m 644 blacklist.txt "$(DESTDIR)$(mltdatadir)/frei0r"
 	install -m 644 not_thread_safe.txt "$(DESTDIR)$(mltdatadir)/frei0r"
+	install -m 644 param_name_map.yaml "$(DESTDIR)$(mltdatadir)/frei0r"
 
 ifneq ($(wildcard .depend),)
 include .depend
