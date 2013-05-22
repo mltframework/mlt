@@ -816,46 +816,66 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	return error;
 }
 
-static void reopen_video( producer_avformat self, mlt_producer producer )
+static void prepare_reopen( producer_avformat self )
 {
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
-	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+	mlt_service_lock( MLT_PRODUCER_SERVICE( self->parent ) );
 	pthread_mutex_lock( &self->audio_mutex );
 	pthread_mutex_lock( &self->open_mutex );
 
+	int i;
+	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
+	{
+		mlt_pool_release( self->audio_buffer[i] );
+		self->audio_buffer[i] = NULL;
+		av_free( self->decode_buffer[i] );
+		self->decode_buffer[i] = NULL;
+		if ( self->audio_codec[i] )
+			avcodec_close( self->audio_codec[i] );
+		self->audio_codec[i] = NULL;
+	}
 	if ( self->video_codec )
 		avcodec_close( self->video_codec );
 	self->video_codec = NULL;
+
 #if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(17<<8)+0)
-	if ( self->dummy_context )
-		avformat_close_input( &self->dummy_context );
+	if ( self->seekable && self->audio_format )
+		avformat_close_input( &self->audio_format );
 	if ( self->video_format )
 		avformat_close_input( &self->video_format );
 #else
-	if ( self->dummy_context )
-		av_close_input_file( self->dummy_context );
+	if ( self->seekable && self->audio_format )
+		av_close_input_file( self->audio_format );
 	if ( self->video_format )
 		av_close_input_file( self->video_format );
 #endif
-	self->dummy_context = NULL;
+	self->audio_format = NULL;
 	self->video_format = NULL;
 	pthread_mutex_unlock( &self->open_mutex );
 
-	int audio_index = self->audio_index;
-	int video_index = self->video_index;
-
-	producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-		mlt_properties_get( properties, "resource" ), 0 );
-
-	self->audio_index = audio_index;
-	if ( self->video_format && video_index > -1 )
+	// Cleanup the packet queues
+	AVPacket *pkt;
+	if ( self->apackets )
 	{
-		self->video_index = video_index;
-		video_codec_init( self, video_index, properties );
+		while ( ( pkt = mlt_deque_pop_back( self->apackets ) ) )
+		{
+			av_free_packet( pkt );
+			free( pkt );
+		}
+		mlt_deque_close( self->apackets );
+		self->apackets = NULL;
 	}
-
+	if ( self->vpackets )
+	{
+		while ( ( pkt = mlt_deque_pop_back( self->vpackets ) ) )
+		{
+			av_free_packet( pkt );
+			free( pkt );
+		}
+		mlt_deque_close( self->vpackets );
+		self->vpackets = NULL;
+	}
 	pthread_mutex_unlock( &self->audio_mutex );
-	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( self->parent ) );
 }
 
 static int64_t best_pts( producer_avformat self, int64_t pts, int64_t dts )
@@ -943,22 +963,11 @@ static int seek_video( producer_avformat self, mlt_position position,
 				timestamp, position, self->video_expected, self->last_position );
 
 			// Seek to the timestamp
-			// NOTE: reopen_video is disabled at this time because it is causing trouble with A/V sync.
-			if ( 1 || req_position > 0 || self->last_position <= 0 )
-			{
-				codec_context->skip_loop_filter = AVDISCARD_NONREF;
-				av_seek_frame( context, self->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
+			codec_context->skip_loop_filter = AVDISCARD_NONREF;
+			av_seek_frame( context, self->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
 
-				// flush any pictures still in decode buffer
-				avcodec_flush_buffers( codec_context );
-			}
-			else
-			{
-				// Re-open video stream when rewinding to beginning from somewhere else.
-				// This is rather ugly, and I prefer not to do it this way, but ffmpeg is
-				// not reliably seeking to the first frame across formats.
-				reopen_video( self, producer );
-			}
+			// flush any pictures still in decode buffer
+			avcodec_flush_buffers( codec_context );
 
 			// Remove the cached info relating to the previous position
 			self->current_position = POSITION_INVALID;
@@ -1236,18 +1245,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	pthread_mutex_lock( &self->video_mutex );
 
+	uint8_t *alpha = NULL;
+	int got_picture = 0;
+	int image_size = 0;
+
 	// Fetch the video format context
 	AVFormatContext *context = self->video_format;
+	if ( !context )
+		goto exit_get_image;
 
 	// Get the video stream
 	AVStream *stream = context->streams[ self->video_index ];
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
-
-	uint8_t *alpha = NULL;
-	int got_picture = 0;
-	int image_size = 0;
 
 	// Get the image cache
 	if ( ! self->image_cache )
@@ -1404,6 +1415,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						mlt_deque_push_back( self->apackets, tmp );
 					}
 				}
+				else if ( ret < 0 )
+				{
+					mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_image\n", ret );
+					if ( !self->seekable && mlt_properties_get_int( properties, "reconnect" ) )
+					{
+						// Try to reconnect to live sources by closing context and codecs,
+						// and letting next call to get_frame() reopen.
+						prepare_reopen( self );
+						pthread_mutex_unlock( &self->packets_mutex );
+						goto exit_get_image;
+					}
+				}
 			}
 			pthread_mutex_unlock( &self->packets_mutex );
 
@@ -1461,6 +1484,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						if ( ++decode_errors <= 10 )
 							ret = 0;
+						else
+							mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "video decoding error %d\n", ret );
 					}
 					else
 					{
@@ -1849,11 +1874,15 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	// Get the video_index
 	int index = mlt_properties_get_int( properties, "video_index" );
 
+	int unlock_needed = 0;
+
 	// Reopen the file if necessary
 	if ( !context && index > -1 )
 	{
+		unlock_needed = 1;
+		pthread_mutex_lock( &self->video_mutex );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "resource" ), 1 );
+			mlt_properties_get( properties, "resource" ), 0 );
 		context = self->video_format;
 	}
 
@@ -1919,6 +1948,8 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		// If something failed, use test card image
 		mlt_properties_set_int( frame_properties, "test_image", 1 );
 	}
+	if ( unlock_needed )
+		pthread_mutex_unlock( &self->video_mutex );
 }
 
 static int seek_audio( producer_avformat self, mlt_position position, double timecode )
@@ -2161,6 +2192,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 	// Fetch the audio_format
 	AVFormatContext *context = self->audio_format;
+	if ( !context )
+		goto exit_get_audio;
 
 	int sizeof_sample = sizeof( int16_t );
 	
@@ -2248,6 +2281,18 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 						AVPacket *tmp = malloc( sizeof(AVPacket) );
 						*tmp = pkt;
 						mlt_deque_push_back( self->vpackets, tmp );
+					}
+				}
+				else if ( ret < 0 )
+				{
+					mlt_log_verbose( MLT_PRODUCER_SERVICE(self->parent), "av_read_frame returned error %d inside get_audio\n", ret );
+					if ( !self->seekable && mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( self->parent ), "reconnect" ) )
+					{
+						// Try to reconnect to live sources by closing context and codecs,
+						// and letting next call to get_frame() reopen.
+						prepare_reopen( self );
+						pthread_mutex_unlock( &self->packets_mutex );
+						goto exit_get_audio;
 					}
 				}
 			}
@@ -2347,6 +2392,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	}
 	else
 	{
+exit_get_audio:
 		// Get silence and don't touch the context
 		mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	}

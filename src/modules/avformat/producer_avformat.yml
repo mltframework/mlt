@@ -175,3 +175,13 @@ parameters:
     default: 0
     unit: seconds
     widget: timecode
+
+  - identifier: reconnect
+    title: Automatically reconnect?
+    description: >
+      Whether to attempt to automatically reconnect to a live source when a
+      read failure occurs.
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
