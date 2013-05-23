@@ -2055,3 +2055,55 @@ char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_f
 	}
 	return NULL;
 }
+
+/** Get an integer associated to the name at a frame position.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return The integer value, 0 if not found (which may also be a legitimate value)
+ */
+
+int mlt_properties_get_int_pos( mlt_properties self, const char *name, int position, int length )
+{
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
+	property_list *list = self->local;
+	mlt_property value = mlt_properties_find( self, name );
+	return value == NULL ? 0 : mlt_property_get_int_pos( value, fps, list->locale, position, length );
+}
+
+/** Set a property to an integer value at a frame position.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to set
+ * \param value the integer
+ * \return true if error
+ */
+
+int mlt_properties_set_int_pos( mlt_properties self, const char *name, int value,
+	mlt_keyframe_type keyframe_type, int position, int length )
+{
+	int error = 1;
+
+	if ( !self || !name ) return error;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property != NULL )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		error = mlt_property_set_int_pos( property, value, fps, list->locale, keyframe_type, position, length );
+		mlt_properties_do_mirror( self, name );
+	}
+
+	mlt_events_fire( self, "property-changed", name, NULL );
+
+	return error;
+}
+

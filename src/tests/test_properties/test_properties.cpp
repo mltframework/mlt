@@ -658,6 +658,36 @@ private Q_SLOTS:
         p.set("foo", "456 %");
         QCOMPARE(p.get_double("foo"), 456.0);
     }
+
+    void PropertiesAnimInt()
+    {
+        int len = 50;
+        Properties p;
+        p.set_lcnumeric("POSIX");
+
+        // Construct animation from scratch
+        p.set("foo",   0,  0, len);
+        p.set("foo", 100, 50, len, mlt_keyframe_smooth);
+        QCOMPARE(p.get_int("foo",  0, len), 0);
+        QCOMPARE(p.get_int("foo", 25, len), 50);
+        QCOMPARE(p.get_int("foo", 50, len), 100);
+        QCOMPARE(p.get("foo"), "0=0;50~=100");
+
+        // Animation from string value
+        p.set("foo", "10=100;20=200");
+        QCOMPARE(p.get_int("foo",  0, len), 100);
+        QCOMPARE(p.get_int("foo", 15, len), 150);
+        QCOMPARE(p.get_int("foo", 20, len), 200);
+
+        // Animation from string using time clock values
+        // Need to set a profile so fps can be used to convert time to frames.
+        Profile profile("dv_pal");
+        p.set("_profile", profile.get_profile(), 0);
+        p.set("foo", ":0.0=100; :2.0=200");
+        QCOMPARE(p.get_int("foo",  0, len), 100);
+        QCOMPARE(p.get_int("foo", 25, len), 150);
+        QCOMPARE(p.get_int("foo", 50, len), 200);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProperties)

@@ -90,4 +90,7 @@ extern void mlt_properties_lock( mlt_properties self );
 extern void mlt_properties_unlock( mlt_properties self );
 extern char *mlt_properties_get_time( mlt_properties, const char* name, mlt_time_format );
 
+extern int mlt_properties_get_int_pos( mlt_properties self, const char *name, int position, int length );
+extern int mlt_properties_set_int_pos( mlt_properties self, const char *name, int value, mlt_keyframe_type keyframe_type, int position, int length );
+
 #endif
