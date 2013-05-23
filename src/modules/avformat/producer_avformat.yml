@@ -185,3 +185,13 @@ parameters:
     minimum: 0
     maximum: 1
     widget: checkbox
+
+  - identifier: exit_on_disconnect
+    title: Exit upon disconnection?
+    description: >
+      When this is set, the program will terminate with an error if a live source
+      becomes disconnected.
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox
