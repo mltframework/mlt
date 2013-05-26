@@ -53,7 +53,7 @@ static void serialize_vectors( videostab self, mlt_position length )
 	if ( g )
 	{
 		struct mlt_geometry_item_s item;
-		mlt_position i;
+		int i;
 
 		// Initialize geometry item
 		item.key = item.f[0] = item.f[1] = 1;
@@ -134,7 +134,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if ( !vectors )
 		{
 			// Analyse
-			mlt_position pos = mlt_filter_get_position( filter, frame );
+			int pos = (int) mlt_filter_get_position( filter, frame );
 			self->pos_i[pos] = vc_add( pos == 0 ? vc_zero() : self->pos_i[pos - 1], es_estimate( self->es, *image ) );
 
 			// On last frame
