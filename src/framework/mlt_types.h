@@ -103,7 +103,7 @@ typedef enum
 mlt_service_type;
 
 /* I don't want to break anyone's applications without warning. -Zach */
-#define DOUBLE_MLT_POSITION
+#undef DOUBLE_MLT_POSITION
 #ifdef DOUBLE_MLT_POSITION
 #define MLT_POSITION_FMT "%f"
 #define MLT_POSITION_MOD(A, B) (A - B * ((int)(A / B)))
