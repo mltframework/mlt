@@ -1974,10 +1974,11 @@ static void *consumer_thread( void *arg )
 			pkt.data = audio_outbuf;
 			pkt.size = 0;
 
-			if ( fifo &&
-				( channels * audio_input_nb_samples < sample_fifo_used( fifo ) / sample_bytes ) )
+			if ( fifo && sample_fifo_used( fifo ) > 0 )
 			{
-				sample_fifo_fetch( fifo, audio_buf_1, channels * audio_input_nb_samples * sample_bytes );
+				// Drain the MLT FIFO
+				int samples = FFMIN( FFMIN( channels * audio_input_nb_samples, sample_fifo_used( fifo ) / sample_bytes ), AUDIO_ENCODE_BUFFER_SIZE );
+				sample_fifo_fetch( fifo, audio_buf_1, samples * sample_bytes );
 				void* p = audio_buf_1;
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
 				if ( c->sample_fmt == AV_SAMPLE_FMT_FLTP )
@@ -1991,7 +1992,7 @@ static void *consumer_thread( void *arg )
 #endif
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 				pkt.size = audio_outbuf_size;
-				audio_avframe->nb_samples = audio_input_nb_samples;
+				audio_avframe->nb_samples = FFMAX( samples / channels, audio_input_nb_samples );
 				avcodec_fill_audio_frame( audio_avframe, c->channels, c->sample_fmt,
 					(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 				int got_packet = 0;
@@ -2001,32 +2002,37 @@ static void *consumer_thread( void *arg )
 				else if ( !got_packet )
 					pkt.size = 0;
 #else
-				c->frame_size = audio_input_nb_samples;
+				c->frame_size = FFMAX( samples / channels, audio_input_nb_samples );
 				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, p );
 #endif
 #if LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0)
 				if ( p != audio_buf_1 )
 					mlt_pool_release( p );
 #endif
+				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing audio size %d\n", pkt.size );
 			}
-			if ( pkt.size <= 0 ) {
+			else
+			{
+				// Drain the codec
+				if ( pkt.size <= 0 ) {
 #if LIBAVCODEC_VERSION_MAJOR >= 55
-				pkt.size = audio_outbuf_size;
-				int got_packet = 0;
-				int ret = avcodec_encode_audio2( c, &pkt, NULL, &got_packet );
-				if ( ret < 0 )
-					pkt.size = ret;
-				else if ( !got_packet )
-					pkt.size = 0;
+					pkt.size = audio_outbuf_size;
+					int got_packet = 0;
+					int ret = avcodec_encode_audio2( c, &pkt, NULL, &got_packet );
+					if ( ret < 0 )
+						pkt.size = ret;
+					else if ( !got_packet )
+						pkt.size = 0;
 #else
-				pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, NULL );
-				pkt.pts = c->coded_frame? c->coded_frame->pts : AV_NOPTS_VALUE;
-				pkt.flags |= PKT_FLAG_KEY;
+					pkt.size = avcodec_encode_audio( c, audio_outbuf, audio_outbuf_size, NULL );
+					pkt.pts = c->coded_frame? c->coded_frame->pts : AV_NOPTS_VALUE;
+					pkt.flags |= PKT_FLAG_KEY;
 #endif
+				}
+				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing audio size %d\n", pkt.size );
+				if ( pkt.size <= 0 )
+					break;
 			}
-			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing audio size %d\n", pkt.size );
-			if ( pkt.size <= 0 )
-				break;
 
 			// Write the compressed frame in the media file
 			if ( pkt.pts != AV_NOPTS_VALUE )
