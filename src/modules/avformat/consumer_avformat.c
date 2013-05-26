@@ -1077,13 +1077,14 @@ static inline long time_difference( struct timeval *time1 )
 static int mlt_write(void *h, uint8_t *buf, int size)
 {
 	mlt_properties properties = (mlt_properties) h;
-	mlt_events_fire( properties, "avformat-write", buf, size, NULL );
+	mlt_events_fire( properties, "avformat-write", buf, &size, NULL );
 	return 0;
 }
 
 static void write_transmitter( mlt_listener listener, mlt_properties owner, mlt_service service, void **args )
 {
-	listener( owner, service, (uint8_t*) args[0], (int) args[1] );
+	int *p_size = (int*) args[1];
+	listener( owner, service, (uint8_t*) args[0], *p_size );
 }
 
 /** The main thread - the argument is simply the consumer.
