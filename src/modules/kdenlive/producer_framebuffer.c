@@ -38,7 +38,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	// Get the filter object and properties
 	mlt_producer producer = mlt_frame_pop_service( frame );
-	int index = ( int )mlt_frame_pop_service( frame );
+	int index = mlt_frame_pop_service_int( frame );
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
@@ -206,7 +206,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 		// Stack the producer and producer's get image
-		mlt_frame_push_service( *frame, (void*) index );
+		mlt_frame_push_service_int( *frame, index );
 		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_service( *frame, framebuffer_get_image );
 
