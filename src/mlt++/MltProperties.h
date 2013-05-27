@@ -103,6 +103,9 @@ namespace Mlt
 			int set( const char *name, mlt_rect value );
 			int set( const char *name, double x, double y, double w, double h, double opacity = 1.0 );
 			mlt_rect get_rect( const char* name );
+			int set( const char *name, mlt_rect value, int position, int length,
+				mlt_keyframe_type keyframe_type = mlt_keyframe_linear );
+			mlt_rect get_rect( const char *name, int position, int length );
 	};
 }
 

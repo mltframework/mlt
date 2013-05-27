@@ -96,4 +96,7 @@ extern int mlt_properties_set_int_pos( mlt_properties self, const char *name, in
 extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_rect value );
 extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char *name );
 
+extern int mlt_properties_set_rect_pos( mlt_properties self, const char *name, mlt_rect value, mlt_keyframe_type keyframe_type, int position, int length );
+extern mlt_rect mlt_properties_get_rect_pos( mlt_properties self, const char *name, int position, int length );
+
 #endif

@@ -463,7 +463,7 @@ static double mlt_property_atof( const char *value, double fps, locale_t locale 
 #endif
 		else
 			result = strtod( value, &end );
-		if ( *end && end[0] == '%' )
+		if ( end && end[0] == '%' )
 			result /= 100.0;
 		return result;
 	}
@@ -1000,66 +1000,42 @@ int mlt_property_interpolate( mlt_property self, mlt_property p[],
 			mlt_rect value = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
 			if ( interp == mlt_keyframe_linear )
 			{
-				int i = 5;
 				mlt_rect points[2];
 				mlt_rect zero = {0, 0, 0, 0, 0};
 				points[0] = p[1]? mlt_property_get_rect( p[1], locale ) : zero;
-				points[1] = p[2]? mlt_property_get_rect( p[2], locale ) : zero;
-				while ( i-- ) switch ( i )
+				if ( p[2] )
 				{
-					case 0: value.x = p[2]?
-							linear_interpolate( points[0].x, points[1].x, progress ):
-							points[0].x;
-						break;
-					case 1: value.y = p[2]?
-							linear_interpolate( points[0].y, points[1].y, progress ):
-							points[0].y;
-						break;
-					case 2: value.w = p[2]?
-							linear_interpolate( points[0].w, points[1].w, progress ):
-							points[0].w;
-						break;
-					case 3: value.h = p[2]?
-							linear_interpolate( points[0].h, points[1].h, progress ):
-							points[0].h;
-						break;
-					case 4: value.o = p[2]?
-							linear_interpolate( points[0].o, points[1].o, progress ):
-							points[0].o;
-						break;
+					points[1] = mlt_property_get_rect( p[2], locale );
+					value.x = linear_interpolate( points[0].x, points[1].x, progress );
+					value.y = linear_interpolate( points[0].y, points[1].y, progress );
+					value.w = linear_interpolate( points[0].w, points[1].w, progress );
+					value.h = linear_interpolate( points[0].h, points[1].h, progress );
+					value.o = linear_interpolate( points[0].o, points[1].o, progress );
+				}
+				else
+				{
+					value = points[0];
 				}
 			}
 			else if ( interp == mlt_keyframe_smooth )
 			{
-				int i = 5;
 				mlt_rect points[4];
 				mlt_rect zero = {0, 0, 0, 0, 0};
-				points[0] = p[0]? mlt_property_get_rect( p[0], locale ) : zero;
 				points[1] = p[1]? mlt_property_get_rect( p[1], locale ) : zero;
-				points[2] = p[2]? mlt_property_get_rect( p[2], locale ) : zero;
-				points[3] = p[3]? mlt_property_get_rect( p[3], locale ) : zero;
-				while ( i-- ) switch ( i )
+				if ( p[2] )
 				{
-					case 0: value.x = p[2]?
-							catmull_rom_interpolate( points[0].x, points[1].x, points[2].x, points[3].x, progress ):
-							points[1].x;
-						break;
-					case 1: value.y = p[2]?
-							catmull_rom_interpolate( points[0].y, points[1].y, points[2].y, points[3].y, progress ):
-							points[1].y;
-						break;
-					case 2: value.w = p[2]?
-							catmull_rom_interpolate( points[0].w, points[1].w, points[2].w, points[3].w, progress ):
-							points[1].w;
-						break;
-					case 3: value.h = p[2]?
-							catmull_rom_interpolate( points[0].h, points[1].h, points[2].h, points[3].h, progress ):
-							points[1].h;
-						break;
-					case 4: value.o = p[2]?
-							catmull_rom_interpolate( points[0].o, points[1].o, points[2].o, points[3].o, progress ):
-							points[1].o;
-						break;
+					points[0] = p[0]? mlt_property_get_rect( p[0], locale ) : zero;
+					points[2] = p[2]? mlt_property_get_rect( p[2], locale ) : zero;
+					points[3] = p[3]? mlt_property_get_rect( p[3], locale ) : zero;
+					value.x = catmull_rom_interpolate( points[0].x, points[1].x, points[2].x, points[3].x, progress );
+					value.y = catmull_rom_interpolate( points[0].y, points[1].y, points[2].y, points[3].y, progress );
+					value.w = catmull_rom_interpolate( points[0].w, points[1].w, points[2].w, points[3].w, progress );
+					value.h = catmull_rom_interpolate( points[0].h, points[1].h, points[2].h, points[3].h, progress );
+					value.o = catmull_rom_interpolate( points[0].o, points[1].o, points[2].o, points[3].o, progress );
+				}
+				else
+				{
+					value = points[1];
 				}
 			}
 			error = mlt_property_set_rect( self, value );
@@ -1289,6 +1265,8 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 				temp = strtod( value, &p );
 			if ( p != value )
 			{
+				if ( p[0] == '%' )
+					temp /= 100.0;
 				if ( *p ) p ++;
 				switch( count )
 				{
@@ -1308,4 +1286,53 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		}
 	}
 	return rect;
+}
+
+/** Set a property animation keyframe to a rectangle.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param value a rectangle
+ * \return false if successful, true to indicate error
+ */
+
+int mlt_property_set_rect_pos( mlt_property self, mlt_rect value, double fps, locale_t locale,
+	mlt_keyframe_type keyframe_type, int position, int length )
+{
+	int result;
+	struct mlt_animation_item_s item;
+
+	item.property = mlt_property_init();
+	item.frame = position;
+	item.keyframe_type = keyframe_type;
+	mlt_property_set_rect( item.property, value );
+
+	refresh_animation( self, fps, locale, length );
+	result = mlt_animation_insert( self->animation, &item );
+	mlt_animation_interpolate( self->animation );
+	mlt_property_close( item.property );
+
+	return result;
+}
+
+mlt_rect mlt_property_get_rect_pos( mlt_property self, double fps, locale_t locale, int position, int length )
+{
+	mlt_rect result;
+	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
+	{
+		struct mlt_animation_item_s item;
+		item.property = mlt_property_init();
+		item.property->types = mlt_prop_rect;
+
+		refresh_animation( self, fps, locale, length );
+		mlt_animation_get_item( self->animation, &item, position );
+		result = mlt_property_get_rect( item.property, locale );
+
+		mlt_property_close( item.property );
+	}
+	else
+	{
+		result = mlt_property_get_rect( self, locale );
+	}
+	return result;
 }

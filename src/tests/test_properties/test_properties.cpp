@@ -731,6 +731,68 @@ private Q_SLOTS:
         QCOMPARE(r.h, 4.4);
         QCOMPARE(r.o, 5.5);
     }
+
+    void RectAnimation()
+    {
+        int len = 50;
+        mlt_rect r1 = { 0, 0, 200, 200, 0 };
+        mlt_rect r2 = { 100, 100, 400, 400, 1.0 };
+        Properties p;
+        p.set_lcnumeric("POSIX");
+
+        // Construct animation from scratch
+        p.set("key", r1,  0, len);
+        p.set("key", r2, 50, len);
+        QCOMPARE(p.get_rect("key",  0, len).x, 0.0);
+        QCOMPARE(p.get_rect("key", 25, len).x, 50.0);
+        QCOMPARE(p.get_rect("key", 25, len).y, 50.0);
+        QCOMPARE(p.get_rect("key", 25, len).w, 300.0);
+        QCOMPARE(p.get_rect("key", 25, len).h, 300.0);
+        QCOMPARE(p.get_rect("key", 25, len).o, 0.5);
+        QCOMPARE(p.get_rect("key", 50, len).x, 100.0);
+        QCOMPARE(p.get("key"), "0=0 0 200 200 0;50=100 100 400 400 1");
+
+        // Animation from string value
+        QCOMPARE(p.get_rect("key",  0, len).x, 0.0);
+        QCOMPARE(p.get_rect("key",  0, len).y, 0.0);
+        QCOMPARE(p.get_rect("key",  0, len).w, 200.0);
+        QCOMPARE(p.get_rect("key",  0, len).h, 200.0);
+        QCOMPARE(p.get_rect("key",  0, len).o, 0.0);
+        QCOMPARE(p.get_rect("key", 50, len).x, 100.0);
+        QCOMPARE(p.get_rect("key", 50, len).y, 100.0);
+        QCOMPARE(p.get_rect("key", 50, len).w, 400.0);
+        QCOMPARE(p.get_rect("key", 50, len).h, 400.0);
+        QCOMPARE(p.get_rect("key", 50, len).o, 1.0);
+        QCOMPARE(p.get_rect("key", 15, len).x, 30.0);
+        QCOMPARE(p.get_rect("key", 15, len).y, 30.0);
+        QCOMPARE(p.get_rect("key", 15, len).w, 260.0);
+        QCOMPARE(p.get_rect("key", 15, len).h, 260.0);
+        QCOMPARE(p.get_rect("key", 15, len).o, 0.3);
+
+        // Smooth animation
+        p.set("key", "0~=0/0:200x200:0; 50=100/100:400x400:1");
+        QCOMPARE(p.get_rect("key",  0, len).x, 0.0);
+        QCOMPARE(p.get_rect("key",  0, len).y, 0.0);
+        QCOMPARE(p.get_rect("key",  0, len).w, 200.0);
+        QCOMPARE(p.get_rect("key",  0, len).h, 200.0);
+        QCOMPARE(p.get_rect("key",  0, len).o, 0.0);
+        QCOMPARE(p.get_rect("key", 50, len).x, 100.0);
+        QCOMPARE(p.get_rect("key", 50, len).y, 100.0);
+        QCOMPARE(p.get_rect("key", 50, len).w, 400.0);
+        QCOMPARE(p.get_rect("key", 50, len).h, 400.0);
+        QCOMPARE(p.get_rect("key", 50, len).o, 1.0);
+        QCOMPARE(p.get_rect("key", 15, len).x, 25.8);
+        QCOMPARE(p.get_rect("key", 15, len).y, 25.8);
+        QCOMPARE(p.get_rect("key", 15, len).w, 251.6);
+        QCOMPARE(p.get_rect("key", 15, len).h, 251.6);
+        QCOMPARE(p.get_rect("key", 15, len).o, 0.258);
+
+        // Using percentages
+        p.set("key", "0=0 0; 50=100% 200%");
+        QCOMPARE(p.get_rect("key", 25, len).x, 0.5);
+        QCOMPARE(p.get_rect("key", 25, len).y, 1.0);
+    }
+
 };
 
 QTEST_APPLESS_MAIN(TestProperties)

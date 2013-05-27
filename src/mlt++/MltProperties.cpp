@@ -362,3 +362,13 @@ mlt_rect Properties::get_rect( const char *name )
 {
 	return mlt_properties_get_rect( get_properties(), name );
 }
+
+int Properties::set(const char *name, mlt_rect value, int position, int length, mlt_keyframe_type keyframe_type)
+{
+	return mlt_properties_set_rect_pos( get_properties(), name, value, keyframe_type, position, length );
+}
+
+mlt_rect Properties::get_rect(const char *name, int position, int length)
+{
+	return mlt_properties_get_rect_pos( get_properties(), name, position, length );
+}

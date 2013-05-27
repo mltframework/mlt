@@ -221,8 +221,15 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 			else
 			{
 				// Parse an absolute time value.
-				mlt_property_set_string( item->property, value );
+				// Null terminate the string at the equal sign to prevent interpreting
+				// a colon in the part to the right of the equal sign as indicative of a
+				// a time value string.
+				char *s = strdup( value );
+				p = strchr( s, '=' );
+				p[0] = '\0';
+				mlt_property_set_string( item->property, s );
 				item->frame = mlt_property_get_int( item->property, self->fps, self->locale );
+				free( s );
 			}
 
 			// The character preceeding the equal sign indicates interpolation method.
