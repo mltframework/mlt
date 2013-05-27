@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <locale.h>
+#include <float.h>
 
 #define PRESETS_DIR "/presets"
 
@@ -2107,3 +2108,48 @@ int mlt_properties_set_int_pos( mlt_properties self, const char *name, int value
 	return error;
 }
 
+/** Set a property to a rectangle value.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to set
+ * \param value the rectangle
+ * \return true if error
+ */
+
+extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_rect value )
+{
+	int error = 1;
+
+	if ( !self || !name ) return error;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property != NULL )
+	{
+		error = mlt_property_set_rect( property, value );
+		mlt_properties_do_mirror( self, name );
+	}
+
+	mlt_events_fire( self, "property-changed", name, NULL );
+
+	return error;
+}
+
+/** Get a rectangle associated to the name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return The rectangle value, the rectangle fields will be DBL_MIN if not found
+ */
+
+extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char* name )
+{
+	property_list *list = self->local;
+	mlt_property value = mlt_properties_find( self, name );
+	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
+	return value == NULL ? rect : mlt_property_get_rect( value, list->locale );
+}

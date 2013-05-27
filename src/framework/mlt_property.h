@@ -62,5 +62,6 @@ extern int mlt_property_set_double_pos( mlt_property self, double value, double 
                                         mlt_keyframe_type keyframe_type, int position, int length );
 extern int mlt_property_set_int_pos( mlt_property self, int value, double fps, locale_t locale,
                                      mlt_keyframe_type keyframe_type, int position, int length );
-
+extern int mlt_property_set_rect( mlt_property self, mlt_rect value );
+extern mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale );
 #endif

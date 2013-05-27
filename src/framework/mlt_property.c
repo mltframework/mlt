@@ -34,6 +34,7 @@
 #include <string.h>
 #include <locale.h>
 #include <pthread.h>
+#include <float.h>
 
 
 /** Bit pattern used internally to indicated representations available.
@@ -47,7 +48,8 @@ typedef enum
 	mlt_prop_position = 4,//!< set as a position
 	mlt_prop_double = 8,  //!< set as a floating point
 	mlt_prop_data = 16,   //!< set as opaque binary
-	mlt_prop_int64 = 32   //!< set as a 64-bit integer
+	mlt_prop_int64 = 32,  //!< set as a 64-bit integer
+	mlt_prop_rect = 64    //!< set as a mlt_rect
 }
 mlt_property_type;
 
@@ -422,6 +424,8 @@ int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
 		return ( int )self->prop_position;
 	else if ( self->types & mlt_prop_int64 )
 		return ( int )self->prop_int64;
+	else if ( self->types & mlt_prop_rect && self->data )
+		return ( int ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 		return mlt_property_atoi( self->prop_string, fps, locale );
 	return 0;
@@ -484,6 +488,8 @@ double mlt_property_get_double( mlt_property self, double fps, locale_t locale )
 		return ( double )self->prop_position;
 	else if ( self->types & mlt_prop_int64 )
 		return ( double )self->prop_int64;
+	else if ( self->types & mlt_prop_rect && self->data )
+		return ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 		return mlt_property_atof( self->prop_string, fps, locale );
 	return 0;
@@ -509,6 +515,8 @@ mlt_position mlt_property_get_position( mlt_property self, double fps, locale_t 
 		return ( mlt_position )self->prop_double;
 	else if ( self->types & mlt_prop_int64 )
 		return ( mlt_position )self->prop_int64;
+	else if ( self->types & mlt_prop_rect && self->data )
+		return ( mlt_position ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 		return ( mlt_position )mlt_property_atoi( self->prop_string, fps, locale );
 	return 0;
@@ -549,6 +557,8 @@ int64_t mlt_property_get_int64( mlt_property self )
 		return ( int64_t )self->prop_double;
 	else if ( self->types & mlt_prop_position )
 		return ( int64_t )self->prop_position;
+	else if ( self->types & mlt_prop_rect && self->data )
+		return ( int64_t ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 		return mlt_property_atoll( self->prop_string );
 	return 0;
@@ -752,6 +762,16 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 		if ( that->prop_string != NULL )
 			self->prop_string = strdup( that->prop_string );
 	}
+	else if ( that->types & mlt_prop_rect )
+	{
+		mlt_property_clear( self );
+		self->types = mlt_prop_rect | mlt_prop_data;
+		self->length = that->length;
+		self->data = calloc( 1, self->length );
+		memcpy( self->data, that->data, self->length );
+		self->destructor = free;
+		self->serialiser = that->serialiser;
+	}
 	else if ( self->types & mlt_prop_data && self->serialiser != NULL )
 	{
 		self->types = mlt_prop_string;
@@ -932,7 +952,8 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 	int result = ( self->types & mlt_prop_int ) ||
 			( self->types & mlt_prop_int64 ) ||
 			( self->types & mlt_prop_double ) ||
-			( self->types & mlt_prop_position );
+			( self->types & mlt_prop_position ) ||
+			( self->types & mlt_prop_rect );
 
 	// If not already numeric but string is numeric.
 	if ( ( !result && self->types & mlt_prop_string ) && self->prop_string )
@@ -974,24 +995,96 @@ int mlt_property_interpolate( mlt_property self, mlt_property p[],
 	if ( interp != mlt_keyframe_discrete &&
 		is_property_numeric( p[1], locale ) && is_property_numeric( p[2], locale ) )
 	{
-		double value;
-		if ( interp == mlt_keyframe_linear )
+		if ( self->types & mlt_prop_rect )
 		{
-			double points[2];
-			points[0] = p[1]? mlt_property_get_double( p[1], fps, locale ) : 0;
-			points[1] = p[2]? mlt_property_get_double( p[2], fps, locale ) : 0;
-			value = p[2]? linear_interpolate( points[0], points[1], progress ) : points[0];
+			mlt_rect value = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
+			if ( interp == mlt_keyframe_linear )
+			{
+				int i = 5;
+				mlt_rect points[2];
+				mlt_rect zero = {0, 0, 0, 0, 0};
+				points[0] = p[1]? mlt_property_get_rect( p[1], locale ) : zero;
+				points[1] = p[2]? mlt_property_get_rect( p[2], locale ) : zero;
+				while ( i-- ) switch ( i )
+				{
+					case 0: value.x = p[2]?
+							linear_interpolate( points[0].x, points[1].x, progress ):
+							points[0].x;
+						break;
+					case 1: value.y = p[2]?
+							linear_interpolate( points[0].y, points[1].y, progress ):
+							points[0].y;
+						break;
+					case 2: value.w = p[2]?
+							linear_interpolate( points[0].w, points[1].w, progress ):
+							points[0].w;
+						break;
+					case 3: value.h = p[2]?
+							linear_interpolate( points[0].h, points[1].h, progress ):
+							points[0].h;
+						break;
+					case 4: value.o = p[2]?
+							linear_interpolate( points[0].o, points[1].o, progress ):
+							points[0].o;
+						break;
+				}
+			}
+			else if ( interp == mlt_keyframe_smooth )
+			{
+				int i = 5;
+				mlt_rect points[4];
+				mlt_rect zero = {0, 0, 0, 0, 0};
+				points[0] = p[0]? mlt_property_get_rect( p[0], locale ) : zero;
+				points[1] = p[1]? mlt_property_get_rect( p[1], locale ) : zero;
+				points[2] = p[2]? mlt_property_get_rect( p[2], locale ) : zero;
+				points[3] = p[3]? mlt_property_get_rect( p[3], locale ) : zero;
+				while ( i-- ) switch ( i )
+				{
+					case 0: value.x = p[2]?
+							catmull_rom_interpolate( points[0].x, points[1].x, points[2].x, points[3].x, progress ):
+							points[1].x;
+						break;
+					case 1: value.y = p[2]?
+							catmull_rom_interpolate( points[0].y, points[1].y, points[2].y, points[3].y, progress ):
+							points[1].y;
+						break;
+					case 2: value.w = p[2]?
+							catmull_rom_interpolate( points[0].w, points[1].w, points[2].w, points[3].w, progress ):
+							points[1].w;
+						break;
+					case 3: value.h = p[2]?
+							catmull_rom_interpolate( points[0].h, points[1].h, points[2].h, points[3].h, progress ):
+							points[1].h;
+						break;
+					case 4: value.o = p[2]?
+							catmull_rom_interpolate( points[0].o, points[1].o, points[2].o, points[3].o, progress ):
+							points[1].o;
+						break;
+				}
+			}
+			error = mlt_property_set_rect( self, value );
 		}
-		else if ( interp == mlt_keyframe_smooth )
+		else
 		{
-			double points[4];
-			points[0] = p[0]? mlt_property_get_double( p[0], fps, locale ) : 0;
-			points[1] = p[1]? mlt_property_get_double( p[1], fps, locale ) : 0;
-			points[2] = p[2]? mlt_property_get_double( p[2], fps, locale ) : 0;
-			points[3] = p[3]? mlt_property_get_double( p[3], fps, locale ) : 0;
-			value = p[2]? catmull_rom_interpolate( points[0], points[1], points[2], points[3], progress ) : points[1];
+			double value;
+			if ( interp == mlt_keyframe_linear )
+			{
+				double points[2];
+				points[0] = p[1]? mlt_property_get_double( p[1], fps, locale ) : 0;
+				points[1] = p[2]? mlt_property_get_double( p[2], fps, locale ) : 0;
+				value = p[2]? linear_interpolate( points[0], points[1], progress ) : points[0];
+			}
+			else if ( interp == mlt_keyframe_smooth )
+			{
+				double points[4];
+				points[0] = p[0]? mlt_property_get_double( p[0], fps, locale ) : 0;
+				points[1] = p[1]? mlt_property_get_double( p[1], fps, locale ) : 0;
+				points[2] = p[2]? mlt_property_get_double( p[2], fps, locale ) : 0;
+				points[3] = p[3]? mlt_property_get_double( p[3], fps, locale ) : 0;
+				value = p[2]? catmull_rom_interpolate( points[0], points[1], points[2], points[3], progress ) : points[1];
+			}
+			error = mlt_property_set_double( self, value );
 		}
-		error = mlt_property_set_double( self, value );
 	}
 	else
 	{
@@ -1117,4 +1210,102 @@ int mlt_property_set_int_pos( mlt_property self, int value, double fps, locale_t
 	mlt_property_close( item.property );
 
 	return result;
+}
+
+static char* serialise_mlt_rect( mlt_rect *rect, int length )
+{
+	char* result = calloc( 1, 100 );
+	if ( rect->x != DBL_MIN )
+		sprintf( result + strlen( result ), "%g", rect->x );
+	if ( rect->y != DBL_MIN )
+		sprintf( result + strlen( result ), " %g", rect->y );
+	if ( rect->w != DBL_MIN )
+		sprintf( result + strlen( result ), " %g", rect->w );
+	if ( rect->h != DBL_MIN )
+		sprintf( result + strlen( result ), " %g", rect->h );
+	if ( rect->o != DBL_MIN )
+		sprintf( result + strlen( result ), " %g", rect->o );
+	return result;
+}
+
+/** Set a property to a mlt_rect rectangle.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param value a mlt_rect
+ * \return false
+ */
+
+int mlt_property_set_rect( mlt_property self, mlt_rect value )
+{
+	pthread_mutex_lock( &self->mutex );
+	mlt_property_clear( self );
+	self->types = mlt_prop_rect | mlt_prop_data;
+	self->length = sizeof(value);
+	self->data = calloc( 1, self->length );
+	memcpy( self->data, &value, self->length );
+	self->destructor = free;
+	self->serialiser = (mlt_serialiser) serialise_mlt_rect;
+	pthread_mutex_unlock( &self->mutex );
+	return 0;
+}
+
+/** Get the property as a floating point.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param fps frames per second, used when converting from time value
+ * \param locale the locale to use for this conversion
+ * \return a rectangle value
+ */
+
+mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
+{
+	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
+	if ( self->types & mlt_prop_rect )
+		rect = *( (mlt_rect*) self->data );
+	else if ( self->types & mlt_prop_double )
+		rect.x = self->prop_double;
+	else if ( self->types & mlt_prop_int )
+		rect.x = ( double )self->prop_int;
+	else if ( self->types & mlt_prop_position )
+		rect.x = ( double )self->prop_position;
+	else if ( self->types & mlt_prop_int64 )
+		rect.x = ( double )self->prop_int64;
+	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
+	{
+		//return mlt_property_atof( self->prop_string, fps, locale );
+		char *value = self->prop_string;
+		char *p = NULL;
+		int count = 0;
+		while ( *value )
+		{
+			double temp;
+#if defined(__GLIBC__) || defined(__DARWIN__)
+			if ( locale )
+				temp = strtod_l( value, &p, locale );
+#endif
+			else
+				temp = strtod( value, &p );
+			if ( p != value )
+			{
+				if ( *p ) p ++;
+				switch( count )
+				{
+					case 0: rect.x = temp; break;
+					case 1: rect.y = temp; break;
+					case 2: rect.w = temp; break;
+					case 3: rect.h = temp; break;
+					case 4: rect.o = temp; break;
+				}
+			}
+			else
+			{
+				p++;
+			}
+			value = p;
+			count ++;
+		}
+	}
+	return rect;
 }

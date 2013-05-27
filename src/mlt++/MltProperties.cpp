@@ -346,3 +346,19 @@ int Properties::set( const char *name, int value, int position, int length, mlt_
 {
 	return mlt_properties_set_int_pos( get_properties(), name, value, keyframe_type, position, length );
 }
+
+int Properties::set( const char *name, mlt_rect value )
+{
+	return mlt_properties_set_rect( get_properties(), name, value );
+}
+
+int Properties::set( const char *name, double x, double y, double w, double h, double opacity )
+{
+	mlt_rect value = { x, y, w, h, opacity };
+	return mlt_properties_set_rect( get_properties(), name, value );
+}
+
+mlt_rect Properties::get_rect( const char *name )
+{
+	return mlt_properties_get_rect( get_properties(), name );
+}

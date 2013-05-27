@@ -27,13 +27,19 @@ extern "C" {
 #include <framework/mlt_property.h>
 #include <framework/mlt_animation.h>
 }
+#include <cfloat>
 
 class TestProperties: public QObject
 {
     Q_OBJECT
+    locale_t locale;
 
 public:
-    TestProperties() {}
+    TestProperties() {
+#if defined(__linux__) || defined(__DARWIN__)
+        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#endif
+    }
 
 private Q_SLOTS:
     void InstantiationIsAReference()
@@ -313,10 +319,6 @@ private Q_SLOTS:
 
     void DoubleAnimation()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
@@ -354,10 +356,6 @@ private Q_SLOTS:
 
     void IntAnimation()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
@@ -395,10 +393,6 @@ private Q_SLOTS:
 
     void AnimationWithTimeValueKeyframes()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
@@ -436,10 +430,6 @@ private Q_SLOTS:
 
     void DiscreteIntAnimation()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
@@ -484,10 +474,6 @@ private Q_SLOTS:
 
     void StringAnimation()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
@@ -524,10 +510,6 @@ private Q_SLOTS:
 
     void test_property_get_double_pos()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
@@ -545,10 +527,6 @@ private Q_SLOTS:
 
     void test_property_get_int_pos()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
@@ -566,10 +544,6 @@ private Q_SLOTS:
 
     void SmoothIntAnimation()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
@@ -614,10 +588,6 @@ private Q_SLOTS:
 
     void test_property_set_double_pos()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
@@ -633,10 +603,6 @@ private Q_SLOTS:
 
     void test_property_set_int_pos()
     {
-        locale_t locale;
-#if defined(__linux__) || defined(__DARWIN__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-#endif
         double fps = 25.0;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
@@ -687,6 +653,83 @@ private Q_SLOTS:
         QCOMPARE(p.get_int("foo",  0, len), 100);
         QCOMPARE(p.get_int("foo", 25, len), 150);
         QCOMPARE(p.get_int("foo", 50, len), 200);
+    }
+
+    void test_mlt_rect()
+    {
+        mlt_property p = mlt_property_init();
+        mlt_rect r = { 1, 2, 3, 4, 5 };
+
+        mlt_property_set_rect( p, r );
+        QCOMPARE(mlt_property_get_string(p), "1 2 3 4 5");
+        r.o = DBL_MIN;
+        mlt_property_set_rect( p, r );
+        QCOMPARE(mlt_property_get_string(p), "1 2 3 4");
+        r.w = DBL_MIN;
+        r.h = DBL_MIN;
+        mlt_property_set_rect( p, r );
+        QCOMPARE(mlt_property_get_string(p), "1 2");
+
+        mlt_property_set_string(p, "1.1/2.2:3.3x4.4:5.5");
+        r = mlt_property_get_rect(p, locale);
+        QCOMPARE(r.x, 1.1);
+        QCOMPARE(r.y, 2.2);
+        QCOMPARE(r.w, 3.3);
+        QCOMPARE(r.h, 4.4);
+        QCOMPARE(r.o, 5.5);
+
+        mlt_property_set_string(p, "1.1 2.2");
+        r = mlt_property_get_rect(p, locale);
+        QCOMPARE(r.x, 1.1);
+        QCOMPARE(r.y, 2.2);
+        QCOMPARE(r.w, DBL_MIN);
+
+        mlt_property_set_int64(p, UINT_MAX);
+        r = mlt_property_get_rect(p, locale);
+        QCOMPARE(r.x, double(UINT_MAX));
+
+        mlt_property_close(p);
+    }
+
+    void SetAndGetRect()
+    {
+        Properties p;
+        mlt_rect r;
+        r.x = 1.1;
+        r.y = 2.2;
+        r.w = 3.3;
+        r.h = 4.4;
+        r.o = 5.5;
+        p.set("key", r);
+        mlt_rect q = p.get_rect("key");
+        QCOMPARE(q.x, 1.1);
+        QCOMPARE(q.y, 2.2);
+        QCOMPARE(q.w, 3.3);
+        QCOMPARE(q.h, 4.4);
+        QCOMPARE(q.o, 5.5);
+        p.set("key", 10, 20, 30, 40);
+        q = p.get_rect("key");
+        QCOMPARE(q.x, 10.0);
+        QCOMPARE(q.y, 20.0);
+        QCOMPARE(q.w, 30.0);
+        QCOMPARE(q.h, 40.0);
+    }
+
+    void RectFromString()
+    {
+        Properties p;
+        p.set_lcnumeric("POSIX");
+        const char *s = "1.1 2.2 3.3 4.4 5.5";
+        mlt_rect r = { 1.1, 2.2, 3.3, 4.4, 5.5 };
+        p.set("key", r);
+        QCOMPARE(p.get("key"), s);
+        p.set("key", s);
+        r = p.get_rect("key");
+        QCOMPARE(r.x, 1.1);
+        QCOMPARE(r.y, 2.2);
+        QCOMPARE(r.w, 3.3);
+        QCOMPARE(r.h, 4.4);
+        QCOMPARE(r.o, 5.5);
     }
 };
 

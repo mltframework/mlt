@@ -123,6 +123,14 @@ typedef double mlt_position;
 typedef int32_t mlt_position;
 #endif
 
+typedef struct {
+	double x; /**< X coordinate */
+	double y; /**< Y coordinate */
+	double w; /**< width */
+	double h; /**< height */
+	double o; /**< opacity / mix-level */
+} mlt_rect;
+
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr; /**< pointer to Frame object */
 typedef struct mlt_property_s *mlt_property;            /**< pointer to Property object */
 typedef struct mlt_properties_s *mlt_properties;        /**< pointer to Properties object */
