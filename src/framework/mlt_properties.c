@@ -2065,13 +2065,13 @@ char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_f
  * \return The integer value, 0 if not found (which may also be a legitimate value)
  */
 
-int mlt_properties_get_int_pos( mlt_properties self, const char *name, int position, int length )
+int mlt_properties_anim_get_int( mlt_properties self, const char *name, int position, int length )
 {
 	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
 	double fps = mlt_profile_fps( profile );
 	property_list *list = self->local;
 	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_get_int_pos( value, fps, list->locale, position, length );
+	return value == NULL ? 0 : mlt_property_anim_get_int( value, fps, list->locale, position, length );
 }
 
 /** Set a property to an integer value at a frame position.
@@ -2083,7 +2083,7 @@ int mlt_properties_get_int_pos( mlt_properties self, const char *name, int posit
  * \return true if error
  */
 
-int mlt_properties_set_int_pos( mlt_properties self, const char *name, int value,
+int mlt_properties_anim_set_int( mlt_properties self, const char *name, int value,
 	mlt_keyframe_type keyframe_type, int position, int length )
 {
 	int error = 1;
@@ -2099,7 +2099,7 @@ int mlt_properties_set_int_pos( mlt_properties self, const char *name, int value
 		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
 		double fps = mlt_profile_fps( profile );
 		property_list *list = self->local;
-		error = mlt_property_set_int_pos( property, value, fps, list->locale, keyframe_type, position, length );
+		error = mlt_property_anim_set_int( property, value, fps, list->locale, keyframe_type, position, length );
 		mlt_properties_do_mirror( self, name );
 	}
 
@@ -2163,7 +2163,7 @@ extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char* name )
  * \return true if error
  */
 
-extern int mlt_properties_set_rect_pos( mlt_properties self, const char *name, mlt_rect value, mlt_keyframe_type keyframe_type, int position, int length )
+extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, mlt_rect value, mlt_keyframe_type keyframe_type, int position, int length )
 {
 	int error = 1;
 
@@ -2178,7 +2178,7 @@ extern int mlt_properties_set_rect_pos( mlt_properties self, const char *name, m
 		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
 		double fps = mlt_profile_fps( profile );
 		property_list *list = self->local;
-		error = mlt_property_set_rect_pos( property, value, fps, list->locale, keyframe_type, position, length );
+		error = mlt_property_anim_set_rect( property, value, fps, list->locale, keyframe_type, position, length );
 		mlt_properties_do_mirror( self, name );
 	}
 
@@ -2195,12 +2195,12 @@ extern int mlt_properties_set_rect_pos( mlt_properties self, const char *name, m
  * \return The rectangle value, the rectangle fields will be DBL_MIN if not found
  */
 
-extern mlt_rect mlt_properties_get_rect_pos( mlt_properties self, const char *name, int position, int length )
+extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *name, int position, int length )
 {
 	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
 	double fps = mlt_profile_fps( profile );
 	property_list *list = self->local;
 	mlt_property value = mlt_properties_find( self, name );
 	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
-	return value == NULL ? rect : mlt_property_get_rect_pos( value, fps, list->locale, position, length );
+	return value == NULL ? rect : mlt_property_anim_get_rect( value, fps, list->locale, position, length );
 }

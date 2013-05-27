@@ -1092,7 +1092,7 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 	}
 }
 
-double mlt_property_get_double_pos( mlt_property self, double fps, locale_t locale, int position, int length )
+double mlt_property_anim_get_double( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	double result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
@@ -1113,7 +1113,7 @@ double mlt_property_get_double_pos( mlt_property self, double fps, locale_t loca
 	return result;
 }
 
-int mlt_property_get_int_pos( mlt_property self, double fps, locale_t locale, int position, int length )
+int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	int result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
@@ -1142,7 +1142,7 @@ int mlt_property_get_int_pos( mlt_property self, double fps, locale_t locale, in
  * \return false if successful, true to indicate error
  */
 
-int mlt_property_set_double_pos( mlt_property self, double value, double fps, locale_t locale,
+int mlt_property_anim_set_double( mlt_property self, double value, double fps, locale_t locale,
 	mlt_keyframe_type keyframe_type, int position, int length )
 {
 	int result;
@@ -1169,7 +1169,7 @@ int mlt_property_set_double_pos( mlt_property self, double value, double fps, lo
  * \return false if successful, true to indicate error
  */
 
-int mlt_property_set_int_pos( mlt_property self, int value, double fps, locale_t locale,
+int mlt_property_anim_set_int( mlt_property self, int value, double fps, locale_t locale,
 	mlt_keyframe_type keyframe_type, int position, int length )
 {
 	int result;
@@ -1296,7 +1296,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
  * \return false if successful, true to indicate error
  */
 
-int mlt_property_set_rect_pos( mlt_property self, mlt_rect value, double fps, locale_t locale,
+int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, locale_t locale,
 	mlt_keyframe_type keyframe_type, int position, int length )
 {
 	int result;
@@ -1315,7 +1315,7 @@ int mlt_property_set_rect_pos( mlt_property self, mlt_rect value, double fps, lo
 	return result;
 }
 
-mlt_rect mlt_property_get_rect_pos( mlt_property self, double fps, locale_t locale, int position, int length )
+mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	mlt_rect result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )

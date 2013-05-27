@@ -337,14 +337,14 @@ char *Properties::get_time( const char *name, mlt_time_format format )
 	return mlt_properties_get_time( get_properties(), name, format );
 }
 
-int Properties::get_int( const char *name, int position, int length )
+int Properties::anim_get_int( const char *name, int position, int length )
 {
-	return mlt_properties_get_int_pos( get_properties(), name, position, length );
+	return mlt_properties_anim_get_int( get_properties(), name, position, length );
 }
 
-int Properties::set( const char *name, int value, int position, int length, mlt_keyframe_type keyframe_type )
+int Properties::anim_set( const char *name, int value, int position, int length, mlt_keyframe_type keyframe_type )
 {
-	return mlt_properties_set_int_pos( get_properties(), name, value, keyframe_type, position, length );
+	return mlt_properties_anim_set_int( get_properties(), name, value, keyframe_type, position, length );
 }
 
 int Properties::set( const char *name, mlt_rect value )
@@ -363,12 +363,12 @@ mlt_rect Properties::get_rect( const char *name )
 	return mlt_properties_get_rect( get_properties(), name );
 }
 
-int Properties::set(const char *name, mlt_rect value, int position, int length, mlt_keyframe_type keyframe_type)
+int Properties::anim_set(const char *name, mlt_rect value, int position, int length, mlt_keyframe_type keyframe_type)
 {
-	return mlt_properties_set_rect_pos( get_properties(), name, value, keyframe_type, position, length );
+	return mlt_properties_anim_set_rect( get_properties(), name, value, keyframe_type, position, length );
 }
 
-mlt_rect Properties::get_rect(const char *name, int position, int length)
+mlt_rect Properties::anim_get_rect(const char *name, int position, int length)
 {
-	return mlt_properties_get_rect_pos( get_properties(), name, position, length );
+	return mlt_properties_anim_get_rect( get_properties(), name, position, length );
 }
