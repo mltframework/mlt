@@ -2108,6 +2108,57 @@ int mlt_properties_anim_set_int( mlt_properties self, const char *name, int valu
 	return error;
 }
 
+/** Get a real number associated to the name at a frame position.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return The real number, 0 if not found (which may also be a legitimate value)
+ */
+
+double mlt_properties_anim_get_double( mlt_properties self, const char *name, int position, int length )
+{
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
+	property_list *list = self->local;
+	mlt_property value = mlt_properties_find( self, name );
+	return value == NULL ? 0.0 : mlt_property_anim_get_double( value, fps, list->locale, position, length );
+}
+
+/** Set a property to a real number at a frame position.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to set
+ * \param value the real number
+ * \return true if error
+ */
+
+int mlt_properties_anim_set_double( mlt_properties self, const char *name, double value,
+	mlt_keyframe_type keyframe_type, int position, int length )
+{
+	int error = 1;
+
+	if ( !self || !name ) return error;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property != NULL )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		error = mlt_property_anim_set_double( property, value, fps, list->locale, keyframe_type, position, length );
+		mlt_properties_do_mirror( self, name );
+	}
+
+	mlt_events_fire( self, "property-changed", name, NULL );
+
+	return error;
+}
+
 /** Set a property to a rectangle value.
  *
  * \public \memberof mlt_properties_s

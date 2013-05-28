@@ -347,6 +347,16 @@ int Properties::anim_set( const char *name, int value, int position, int length,
 	return mlt_properties_anim_set_int( get_properties(), name, value, keyframe_type, position, length );
 }
 
+double Properties::anim_get_double(const char *name, int position, int length)
+{
+	return mlt_properties_anim_get_double( get_properties(), name, position, length );
+}
+
+int Properties::anim_set(const char *name, double value, int position, int length, mlt_keyframe_type keyframe_type)
+{
+	return mlt_properties_anim_set_double( get_properties(), name, value, keyframe_type, position, length );
+}
+
 int Properties::set( const char *name, mlt_rect value )
 {
 	return mlt_properties_set_rect( get_properties(), name, value );

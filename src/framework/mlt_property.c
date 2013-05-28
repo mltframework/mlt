@@ -591,7 +591,7 @@ char *mlt_property_get_string( mlt_property self )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = malloc( 32 );
-			sprintf( self->prop_string, "%f", self->prop_double );
+			sprintf( self->prop_string, "%g", self->prop_double );
 		}
 		else if ( self->types & mlt_prop_position )
 		{
@@ -667,7 +667,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = malloc( 32 );
-			sprintf( self->prop_string, "%f", self->prop_double );
+			sprintf( self->prop_string, "%g", self->prop_double );
 		}
 		else if ( self->types & mlt_prop_position )
 		{

@@ -133,8 +133,8 @@ private Q_SLOTS:
     void DoubleFromString()
     {
         Properties p;
-        const char *s = "-1.234567";
-        double d = -1.234567;
+        const char *s = "-1.23456";
+        double d = -1.23456;
         p.set("key", d);
         QCOMPARE(p.get("key"), s);
         p.set("key", s);
@@ -653,6 +653,36 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_int("foo",  0, len), 100);
         QCOMPARE(p.anim_get_int("foo", 25, len), 150);
         QCOMPARE(p.anim_get_int("foo", 50, len), 200);
+    }
+
+    void PropertiesAnimDouble()
+    {
+        int len = 50;
+        Properties p;
+        p.set_lcnumeric("POSIX");
+
+        // Construct animation from scratch
+        p.anim_set("foo",   0.0,  0, len);
+        p.anim_set("foo", 100.0, 50, len, mlt_keyframe_smooth);
+        QCOMPARE(p.anim_get_double("foo",  0, len), 0.0);
+        QCOMPARE(p.anim_get_double("foo", 25, len), 50.0);
+        QCOMPARE(p.anim_get_double("foo", 50, len), 100.0);
+        QCOMPARE(p.get("foo"), "0=0;50~=100");
+
+        // Animation from string value
+        p.set("foo", "10=100.2;20=200.8");
+        QCOMPARE(p.anim_get_double("foo",  0, len), 100.2);
+        QCOMPARE(p.anim_get_double("foo", 15, len), 150.5);
+        QCOMPARE(p.anim_get_double("foo", 20, len), 200.8);
+
+        // Animation from string using time clock values
+        // Need to set a profile so fps can be used to convert time to frames.
+        Profile profile("dv_pal");
+        p.set("_profile", profile.get_profile(), 0);
+        p.set("foo", ":0.0=100; :2.0=200");
+        QCOMPARE(p.anim_get_double("foo",  0, len), 100.0);
+        QCOMPARE(p.anim_get_double("foo", 25, len), 150.0);
+        QCOMPARE(p.anim_get_double("foo", 50, len), 200.0);
     }
 
     void test_mlt_rect()
