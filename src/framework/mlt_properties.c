@@ -2067,6 +2067,54 @@ char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_f
 	return NULL;
 }
 
+mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
+{
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
+	property_list *list = self->local;
+	mlt_property value = mlt_properties_find( self, name );
+	mlt_color result = { 0xff, 0xff, 0xff, 0xff };
+	if ( value )
+	{
+		const char *color = mlt_property_get_string_l( value, list->locale );
+		unsigned int color_int = mlt_property_get_int( value, fps, list->locale );
+
+		if ( !strcmp( color, "red" ) )
+		{
+			result.r = 0xff;
+			result.g = 0x00;
+			result.b = 0x00;
+		}
+		else if ( !strcmp( color, "green" ) )
+		{
+			result.r = 0x00;
+			result.g = 0xff;
+			result.b = 0x00;
+		}
+		else if ( !strcmp( color, "blue" ) )
+		{
+			result.r = 0x00;
+			result.g = 0x00;
+			result.b = 0xff;
+		}
+		else if ( !strcmp( color, "black" ) )
+		{
+			result.r = 0x00;
+			result.g = 0x00;
+			result.b = 0x00;
+		}
+		else if ( strcmp( color, "white" ) )
+		{
+			result.r = ( color_int >> 24 ) & 0xff;
+			result.g = ( color_int >> 16 ) & 0xff;
+			result.b = ( color_int >> 8 ) & 0xff;
+			result.a = ( color_int ) & 0xff;
+		}
+	}
+	return result;
+}
+
+
 /** Get a string value by name.
  *
  * Do not free the returned string. It's lifetime is controlled by the property

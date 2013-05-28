@@ -836,6 +836,37 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_rect("key", 25, len).y, 1.0);
     }
 
+    void ColorFromInt()
+    {
+        Properties p;
+        p.set_lcnumeric("POSIX");
+        p.set("key", (int) 0xaabbccdd);
+        mlt_color color = p.get_color("key");
+        QCOMPARE(color.r, quint8(0xaa));
+        QCOMPARE(color.g, quint8(0xbb));
+        QCOMPARE(color.b, quint8(0xcc));
+        QCOMPARE(color.a, quint8(0xdd));
+        p.set("key", *((int*) &color));
+        QCOMPARE(p.get_int("key"), int(0xddccbbaa));
+    }
+
+    void ColorFromString()
+    {
+        Properties p;
+        p.set_lcnumeric("POSIX");
+        p.set("key", "red");
+        mlt_color color = p.get_color("key");
+        QCOMPARE(color.r, quint8(0xff));
+        QCOMPARE(color.g, quint8(0x00));
+        QCOMPARE(color.b, quint8(0x00));
+        QCOMPARE(color.a, quint8(0xff));
+        p.set("key", "#deadd00d");
+        color = p.get_color("key");
+        QCOMPARE(color.r, quint8(0xad));
+        QCOMPARE(color.g, quint8(0xd0));
+        QCOMPARE(color.b, quint8(0x0d));
+        QCOMPARE(color.a, quint8(0xde));
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProperties)

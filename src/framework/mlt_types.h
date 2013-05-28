@@ -129,7 +129,16 @@ typedef struct {
 	double w; /**< width */
 	double h; /**< height */
 	double o; /**< opacity / mix-level */
-} mlt_rect;
+}
+mlt_rect;
+
+typedef struct {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+}
+mlt_color;
 
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr; /**< pointer to Frame object */
 typedef struct mlt_property_s *mlt_property;            /**< pointer to Property object */
