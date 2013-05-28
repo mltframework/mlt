@@ -685,6 +685,19 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_double("foo", 50, len), 200.0);
     }
 
+    void PropertiesStringAnimation()
+    {
+        Properties p;
+        int len = 50;
+        p.anim_set("key", "foo", 10, len);
+        p.anim_set("key", "bar", 30, len);
+        QCOMPARE(p.get("key"), "10|=foo;30|=bar");
+        p.set("key", "0=; 10=foo bar; 30=hello world");
+        QCOMPARE(p.anim_get("key",  1, len), "");
+        QCOMPARE(p.anim_get("key", 15, len), "foo bar");
+        QCOMPARE(p.anim_get("key", 45, len), "hello world");
+    }
+
     void test_mlt_rect()
     {
         mlt_property p = mlt_property_init();

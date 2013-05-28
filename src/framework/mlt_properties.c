@@ -700,9 +700,19 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 
 			// Determine the value
 			if ( isdigit( id[ 0 ] ) )
-				current = atof( id );
+			{
+#if defined(__GLIBC__) || defined(__DARWIN__)
+				property_list *list = self->local;
+				if ( list->locale )
+					current = strtod_l( id, NULL, list->locale );
+#endif
+				else
+					current = strtod( id, NULL );
+			}
 			else
+			{
 				current = mlt_properties_get_double( self, id );
+			}
 
 			// Apply the operation
 			switch( op )
@@ -2055,6 +2065,62 @@ char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_f
 		return value == NULL ? NULL : mlt_property_get_time( value, format, fps, list->locale );
 	}
 	return NULL;
+}
+
+/** Get a string value by name.
+ *
+ * Do not free the returned string. It's lifetime is controlled by the property
+ * and this properties object.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return the property's string value or NULL if it does not exist
+ */
+
+char* mlt_properties_anim_get( mlt_properties self, const char *name, int position, int length )
+{
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
+	mlt_property value = mlt_properties_find( self, name );
+	property_list *list = self->local;
+	return value == NULL ? NULL : mlt_property_anim_get_string( value, fps, list->locale, position, length );
+}
+
+/** Set a property to a string.
+ *
+ * The event "property-changed" is fired after the property has been set.
+ *
+ * This makes a copy of the string value you supply.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to set
+ * \param value the property's new value
+ * \return true if error
+ */
+
+int mlt_properties_anim_set( mlt_properties self, const char *name, const char *value, int position, int length )
+{
+	int error = 1;
+
+	if ( !self || !name ) return error;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		error = mlt_property_anim_set_string( property, value,
+			fps, list->locale, position, length );
+		mlt_properties_do_mirror( self, name );
+	}
+
+	mlt_events_fire( self, "property-changed", name, NULL );
+
+	return error;
 }
 
 /** Get an integer associated to the name at a frame position.

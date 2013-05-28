@@ -1134,6 +1134,37 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 	return result;
 }
 
+char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t locale, int position, int length )
+{
+	char *result;
+	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
+	{
+		struct mlt_animation_item_s item;
+		item.property = mlt_property_init();
+
+		if ( !self->animation )
+			refresh_animation( self, fps, locale, length );
+		mlt_animation_get_item( self->animation, &item, position );
+
+		pthread_mutex_lock( &self->mutex );
+		if ( self->prop_string )
+			free( self->prop_string );
+		self->prop_string = mlt_property_get_string_l( item.property, locale );
+		if ( self->prop_string )
+			self->prop_string = strdup( self->prop_string );
+		self->types |= mlt_prop_string;
+		pthread_mutex_unlock( &self->mutex );
+
+		result = self->prop_string;
+		mlt_property_close( item.property );
+	}
+	else
+	{
+		result = mlt_property_get_string_l( self, locale );
+	}
+	return result;
+}
+
 /** Set a property animation keyframe to a real number.
  *
  * \public \memberof mlt_property_s
@@ -1179,6 +1210,24 @@ int mlt_property_anim_set_int( mlt_property self, int value, double fps, locale_
 	item.frame = position;
 	item.keyframe_type = keyframe_type;
 	mlt_property_set_int( item.property, value );
+
+	refresh_animation( self, fps, locale, length );
+	result = mlt_animation_insert( self->animation, &item );
+	mlt_animation_interpolate( self->animation );
+	mlt_property_close( item.property );
+
+	return result;
+}
+
+int mlt_property_anim_set_string( mlt_property self, const char *value, double fps, locale_t locale, int position, int length )
+{
+	int result;
+	struct mlt_animation_item_s item;
+
+	item.property = mlt_property_init();
+	item.frame = position;
+	item.keyframe_type = mlt_keyframe_discrete;
+	mlt_property_set_string( item.property, value );
 
 	refresh_animation( self, fps, locale, length );
 	result = mlt_animation_insert( self->animation, &item );

@@ -98,6 +98,8 @@ namespace Mlt
 			const char *get_lcnumeric( );
 			char *get_time( const char *name, mlt_time_format = mlt_time_smpte );
 
+			char* anim_get( const char *name, int position, int length );
+			int anim_set( const char *name, const char *value, int position, int length );
 			int anim_get_int( const char *name, int position, int length );
 			int anim_set( const char *name, int value, int position, int length,
 				mlt_keyframe_type keyframe_type = mlt_keyframe_linear );
