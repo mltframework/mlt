@@ -1207,6 +1207,7 @@ static void *consumer_thread( void *arg )
 	char key[27];
 	mlt_properties frame_meta_properties = mlt_properties_new();
 	int error_count = 0;
+	int64_t synth_audio_pts = 0;
 
 	// Initialize audio_st
 	int i = MAX_AUDIO_STREAMS;
@@ -1612,6 +1613,9 @@ static void *consumer_thread( void *arg )
 #endif
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
+							if ( audio_codec_id == AV_CODEC_ID_VORBIS )
+								audio_avframe->pts = synth_audio_pts;
+							synth_audio_pts += audio_avframe->nb_samples;
 							avcodec_fill_audio_frame( audio_avframe, codec->channels, codec->sample_fmt,
 								(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 							int got_packet = 0;
@@ -1699,6 +1703,9 @@ static void *consumer_thread( void *arg )
 							}
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
+							if ( audio_codec_id == AV_CODEC_ID_VORBIS )
+								audio_avframe->pts = synth_audio_pts;
+							synth_audio_pts += audio_avframe->nb_samples;
 							avcodec_fill_audio_frame( audio_avframe, codec->channels, codec->sample_fmt,
 								(const uint8_t*) audio_buf_2, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 							int got_packet = 0;
@@ -1734,6 +1741,8 @@ static void *consumer_thread( void *arg )
 								goto on_fatal_error;
 							}
 							error_count = 0;
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio stream %d pkt pts %"PRId64" frame_size %d stream pts %"PRId64"\n",
+								stream->index, pkt.pts, codec->frame_size, stream->pts.val );
 						}
 						else if ( pkt.size < 0 )
 						{
@@ -1742,7 +1751,6 @@ static void *consumer_thread( void *arg )
 								goto on_fatal_error;
 						}
 
-						mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), " frame_size %d\n", codec->frame_size );
 						if ( i == 0 )
 						{
 							audio_pts = (double)stream->pts.val * av_q2d( stream->time_base );
@@ -1993,6 +2001,9 @@ static void *consumer_thread( void *arg )
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 				pkt.size = audio_outbuf_size;
 				audio_avframe->nb_samples = FFMAX( samples / channels, audio_input_nb_samples );
+				if ( audio_codec_id == AV_CODEC_ID_VORBIS )
+					audio_avframe->pts = synth_audio_pts;
+				synth_audio_pts += audio_avframe->nb_samples;
 				avcodec_fill_audio_frame( audio_avframe, c->channels, c->sample_fmt,
 					(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 				int got_packet = 0;
@@ -2046,9 +2057,8 @@ static void *consumer_thread( void *arg )
 			pkt.stream_index = audio_st[0]->index;
 			if ( av_interleaved_write_frame( oc, &pkt ) != 0 )
 			{
-				mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ), "error writing flushed audio frame\n" );
-				mlt_events_fire( properties, "consumer-fatal-error", NULL );
-				goto on_fatal_error;
+				mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "error writing flushed audio frame\n" );
+				break;
 			}
 		}
 
