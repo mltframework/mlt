@@ -1175,7 +1175,7 @@ char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t loca
  */
 
 int mlt_property_anim_set_double( mlt_property self, double value, double fps, locale_t locale,
-	mlt_keyframe_type keyframe_type, int position, int length )
+	int position, int length, mlt_keyframe_type keyframe_type )
 {
 	int result;
 	struct mlt_animation_item_s item;
@@ -1202,7 +1202,7 @@ int mlt_property_anim_set_double( mlt_property self, double value, double fps, l
  */
 
 int mlt_property_anim_set_int( mlt_property self, int value, double fps, locale_t locale,
-	mlt_keyframe_type keyframe_type, int position, int length )
+	int position, int length, mlt_keyframe_type keyframe_type )
 {
 	int result;
 	struct mlt_animation_item_s item;
@@ -1347,7 +1347,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
  */
 
 int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, locale_t locale,
-	mlt_keyframe_type keyframe_type, int position, int length )
+	int position, int length, mlt_keyframe_type keyframe_type )
 {
 	int result;
 	struct mlt_animation_item_s item;

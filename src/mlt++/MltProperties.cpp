@@ -359,7 +359,7 @@ int Properties::anim_get_int( const char *name, int position, int length )
 
 int Properties::anim_set( const char *name, int value, int position, int length, mlt_keyframe_type keyframe_type )
 {
-	return mlt_properties_anim_set_int( get_properties(), name, value, keyframe_type, position, length );
+	return mlt_properties_anim_set_int( get_properties(), name, value, position, length, keyframe_type );
 }
 
 double Properties::anim_get_double(const char *name, int position, int length)
@@ -367,9 +367,9 @@ double Properties::anim_get_double(const char *name, int position, int length)
 	return mlt_properties_anim_get_double( get_properties(), name, position, length );
 }
 
-int Properties::anim_set(const char *name, double value, int position, int length, mlt_keyframe_type keyframe_type)
+int Properties::anim_set( const char *name, double value, int position, int length, mlt_keyframe_type keyframe_type )
 {
-	return mlt_properties_anim_set_double( get_properties(), name, value, keyframe_type, position, length );
+	return mlt_properties_anim_set_double( get_properties(), name, value, position, length, keyframe_type );
 }
 
 int Properties::set( const char *name, mlt_rect value )
@@ -388,9 +388,9 @@ mlt_rect Properties::get_rect( const char *name )
 	return mlt_properties_get_rect( get_properties(), name );
 }
 
-int Properties::anim_set(const char *name, mlt_rect value, int position, int length, mlt_keyframe_type keyframe_type)
+int Properties::anim_set( const char *name, mlt_rect value, int position, int length, mlt_keyframe_type keyframe_type )
 {
-	return mlt_properties_anim_set_rect( get_properties(), name, value, keyframe_type, position, length );
+	return mlt_properties_anim_set_rect( get_properties(), name, value, position, length, keyframe_type );
 }
 
 mlt_rect Properties::anim_get_rect(const char *name, int position, int length)

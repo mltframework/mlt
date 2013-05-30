@@ -2198,7 +2198,7 @@ int mlt_properties_anim_get_int( mlt_properties self, const char *name, int posi
  */
 
 int mlt_properties_anim_set_int( mlt_properties self, const char *name, int value,
-	mlt_keyframe_type keyframe_type, int position, int length )
+	int position, int length, mlt_keyframe_type keyframe_type )
 {
 	int error = 1;
 
@@ -2213,7 +2213,7 @@ int mlt_properties_anim_set_int( mlt_properties self, const char *name, int valu
 		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
 		double fps = mlt_profile_fps( profile );
 		property_list *list = self->local;
-		error = mlt_property_anim_set_int( property, value, fps, list->locale, keyframe_type, position, length );
+		error = mlt_property_anim_set_int( property, value, fps, list->locale, position, length, keyframe_type );
 		mlt_properties_do_mirror( self, name );
 	}
 
@@ -2249,7 +2249,7 @@ double mlt_properties_anim_get_double( mlt_properties self, const char *name, in
  */
 
 int mlt_properties_anim_set_double( mlt_properties self, const char *name, double value,
-	mlt_keyframe_type keyframe_type, int position, int length )
+	int position, int length, mlt_keyframe_type keyframe_type )
 {
 	int error = 1;
 
@@ -2264,7 +2264,7 @@ int mlt_properties_anim_set_double( mlt_properties self, const char *name, doubl
 		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
 		double fps = mlt_profile_fps( profile );
 		property_list *list = self->local;
-		error = mlt_property_anim_set_double( property, value, fps, list->locale, keyframe_type, position, length );
+		error = mlt_property_anim_set_double( property, value, fps, list->locale, position, length, keyframe_type );
 		mlt_properties_do_mirror( self, name );
 	}
 
@@ -2328,7 +2328,8 @@ extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char* name )
  * \return true if error
  */
 
-extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, mlt_rect value, mlt_keyframe_type keyframe_type, int position, int length )
+extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, mlt_rect value,
+	int position, int length , mlt_keyframe_type keyframe_type )
 {
 	int error = 1;
 
@@ -2343,7 +2344,7 @@ extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, 
 		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
 		double fps = mlt_profile_fps( profile );
 		property_list *list = self->local;
-		error = mlt_property_anim_set_rect( property, value, fps, list->locale, keyframe_type, position, length );
+		error = mlt_property_anim_set_rect( property, value, fps, list->locale, position, length, keyframe_type );
 		mlt_properties_do_mirror( self, name );
 	}
 
