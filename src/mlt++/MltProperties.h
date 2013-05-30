@@ -99,21 +99,21 @@ namespace Mlt
 			char *get_time( const char *name, mlt_time_format = mlt_time_smpte );
 			mlt_color get_color( const char *name );
 
-			char* anim_get( const char *name, int position, int length );
-			int anim_set( const char *name, const char *value, int position, int length );
-			int anim_get_int( const char *name, int position, int length );
-			int anim_set( const char *name, int value, int position, int length,
+			char* anim_get( const char *name, int position, int length = 0 );
+			int anim_set( const char *name, const char *value, int position, int length = 0 );
+			int anim_get_int( const char *name, int position, int length = 0 );
+			int anim_set( const char *name, int value, int position, int length = 0,
 				mlt_keyframe_type keyframe_type = mlt_keyframe_linear );
-			double anim_get_double( const char *name, int position, int length );
-			int anim_set( const char *name, double value, int position, int length,
+			double anim_get_double( const char *name, int position, int length = 0 );
+			int anim_set( const char *name, double value, int position, int length = 0,
 				mlt_keyframe_type keyframe_type = mlt_keyframe_linear );
 
 			int set( const char *name, mlt_rect value );
 			int set( const char *name, double x, double y, double w, double h, double opacity = 1.0 );
 			mlt_rect get_rect( const char* name );
-			int anim_set( const char *name, mlt_rect value, int position, int length,
+			int anim_set( const char *name, mlt_rect value, int position, int length = 0,
 				mlt_keyframe_type keyframe_type = mlt_keyframe_linear );
-			mlt_rect anim_get_rect( const char *name, int position, int length );
+			mlt_rect anim_get_rect( const char *name, int position, int length = 0 );
 	};
 }
 

@@ -174,7 +174,7 @@ int mlt_animation_parse(mlt_animation self, const char *data, int length, double
 }
 
 // Conditionally refresh in case of a change
-int mlt_animation_refresh(mlt_animation self, const char *data, int length)
+int mlt_animation_refresh( mlt_animation self, const char *data, int length )
 {
 	if ( ( length != self->length )|| ( data && ( !self->data || strcmp( data, self->data ) ) ) )
 		return mlt_animation_parse( self, data, length, self->fps, self->locale );
@@ -183,10 +183,21 @@ int mlt_animation_refresh(mlt_animation self, const char *data, int length)
 
 int mlt_animation_get_length( mlt_animation self )
 {
-	if ( self )
-		return self->length;
-	else
-		return 0;
+	int length = 0;
+	if ( self ) {
+		if ( self->length > 0 ) {
+			length = self->length;
+		}
+		else if ( self->nodes ) {
+			animation_node node = self->nodes;
+			while ( node ) {
+				if ( node->item.frame > length )
+					length = node->item.frame;
+				node = node->next;
+			}
+		}
+	}
+	return length;
 }
 
 void mlt_animation_set_length( mlt_animation self, int length )
@@ -204,33 +215,16 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 		// Determine if a position has been specified
 		if ( strchr( value, '=' ) )
 		{
-			double temp;
-			char *p = NULL;
-#if defined(__GLIBC__) || defined(__DARWIN__)
-			if ( self->locale )
-				temp = strtod_l( value, &p, self->locale );
-			else
-#endif
-			temp = strtod( value, &p );
-			// If p == value then it is likely a time clock or time code.
-			if ( temp > -1.0 && temp < 1.0 && p != value )
-			{
-				// Parse a relative time (-1, 1).
-				item->frame = temp * self->length;
-			}
-			else
-			{
-				// Parse an absolute time value.
-				// Null terminate the string at the equal sign to prevent interpreting
-				// a colon in the part to the right of the equal sign as indicative of a
-				// a time value string.
-				char *s = strdup( value );
-				p = strchr( s, '=' );
-				p[0] = '\0';
-				mlt_property_set_string( item->property, s );
-				item->frame = mlt_property_get_int( item->property, self->fps, self->locale );
-				free( s );
-			}
+			// Parse an absolute time value.
+			// Null terminate the string at the equal sign to prevent interpreting
+			// a colon in the part to the right of the equal sign as indicative of a
+			// a time value string.
+			char *s = strdup( value );
+			char *p = strchr( s, '=' );
+			p[0] = '\0';
+			mlt_property_set_string( item->property, s );
+			item->frame = mlt_property_get_int( item->property, self->fps, self->locale );
+			free( s );
 
 			// The character preceeding the equal sign indicates interpolation method.
 			p = strchr( value, '=' ) - 1;
@@ -245,7 +239,7 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 
 		// Special case - frame < 0
 		if ( item->frame < 0 )
-			item->frame += self->length;
+			item->frame += mlt_animation_get_length( self );
 
 		// Set remainder of string as item value.
 		mlt_property_set_string( item->property, value );
@@ -538,7 +532,7 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 // Serialise the current geometry
 char *mlt_animation_serialize( mlt_animation self )
 {
-	char *ret = mlt_animation_serialize_cut( self, 0, self->length );
+	char *ret = mlt_animation_serialize_cut( self, -1, -1 );
 	if ( ret )
 	{
 		if ( self->data )

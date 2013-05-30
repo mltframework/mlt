@@ -511,12 +511,13 @@ private Q_SLOTS:
     void test_property_anim_get_double()
     {
         double fps = 25.0;
+        int len = 0;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
         QCOMPARE(mlt_property_get_double(p, fps, locale), 10.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 0, 100), 100.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 15, 100), 150.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 20, 100), 200.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale,  0, len), 100.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 15, len), 150.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 20, len), 200.0);
 
         mlt_property_set_string(p, "1.5");
         QCOMPARE(mlt_property_get_double(p, fps, locale), 1.5);
@@ -528,12 +529,13 @@ private Q_SLOTS:
     void test_property_anim_get_int()
     {
         double fps = 25.0;
+        int len = 100;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
         QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 0, 100), 100);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 15, 100), 150);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 20, 100), 200);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale,  0, len), 100);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 15, len), 150);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 20, len), 200);
 
         mlt_property_set_string(p, "1.5");
         QCOMPARE(mlt_property_get_int(p, fps, locale), 1);
@@ -589,30 +591,32 @@ private Q_SLOTS:
     void test_property_anim_set_double()
     {
         double fps = 25.0;
+        int len = 100;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
-        mlt_property_anim_set_double(p, 1.5, fps, locale, mlt_keyframe_linear, 30, 100);
+        mlt_property_anim_set_double(p, 1.5, fps, locale, mlt_keyframe_linear, 30, len);
         QCOMPARE(mlt_property_get_double(p, fps, locale), 10.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 0, 100), 100.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 15, 100), 150.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 20, 100), 200.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 25, 100), 100.75);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 30, 100), 1.5);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale,  0, len), 100.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 15, len), 150.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 20, len), 200.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 25, len), 100.75);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 30, len), 1.5);
         mlt_property_close(p);
     }
 
     void test_property_anim_set_int()
     {
         double fps = 25.0;
+        int len = 0;
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
-        mlt_property_anim_set_int(p, 300, fps, locale, mlt_keyframe_linear, 30, 100);
+        mlt_property_anim_set_int(p, 300, fps, locale, mlt_keyframe_linear, 30, len);
         QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 0, 100), 100);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 15, 100), 150);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 20, 100), 200);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 25, 100), 250);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 30, 100), 300);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale,  0, len), 100);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 15, len), 150);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 20, len), 200);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 25, len), 250);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 30, len), 300);
         mlt_property_close(p);
     }
 
@@ -627,75 +631,72 @@ private Q_SLOTS:
 
     void PropertiesAnimInt()
     {
-        int len = 50;
         Properties p;
         p.set_lcnumeric("POSIX");
 
         // Construct animation from scratch
-        p.anim_set("foo",   0,  0, len);
-        p.anim_set("foo", 100, 50, len, mlt_keyframe_smooth);
-        QCOMPARE(p.anim_get_int("foo",  0, len), 0);
-        QCOMPARE(p.anim_get_int("foo", 25, len), 50);
-        QCOMPARE(p.anim_get_int("foo", 50, len), 100);
+        p.anim_set("foo",   0,  0);
+        p.anim_set("foo", 100, 50, -1, mlt_keyframe_smooth);
+        QCOMPARE(p.anim_get_int("foo",  0), 0);
+        QCOMPARE(p.anim_get_int("foo", 25), 50);
+        QCOMPARE(p.anim_get_int("foo", 50), 100);
         QCOMPARE(p.get("foo"), "0=0;50~=100");
 
         // Animation from string value
         p.set("foo", "10=100;20=200");
-        QCOMPARE(p.anim_get_int("foo",  0, len), 100);
-        QCOMPARE(p.anim_get_int("foo", 15, len), 150);
-        QCOMPARE(p.anim_get_int("foo", 20, len), 200);
+        QCOMPARE(p.anim_get_int("foo",  0), 100);
+        QCOMPARE(p.anim_get_int("foo", 15), 150);
+        QCOMPARE(p.anim_get_int("foo", 20), 200);
 
         // Animation from string using time clock values
         // Need to set a profile so fps can be used to convert time to frames.
         Profile profile("dv_pal");
         p.set("_profile", profile.get_profile(), 0);
         p.set("foo", ":0.0=100; :2.0=200");
-        QCOMPARE(p.anim_get_int("foo",  0, len), 100);
-        QCOMPARE(p.anim_get_int("foo", 25, len), 150);
-        QCOMPARE(p.anim_get_int("foo", 50, len), 200);
+        QCOMPARE(p.anim_get_int("foo",  0), 100);
+        QCOMPARE(p.anim_get_int("foo", 25), 150);
+        QCOMPARE(p.anim_get_int("foo", 50), 200);
     }
 
     void PropertiesAnimDouble()
     {
-        int len = 50;
         Properties p;
         p.set_lcnumeric("POSIX");
 
         // Construct animation from scratch
-        p.anim_set("foo",   0.0,  0, len);
-        p.anim_set("foo", 100.0, 50, len, mlt_keyframe_smooth);
-        QCOMPARE(p.anim_get_double("foo",  0, len), 0.0);
-        QCOMPARE(p.anim_get_double("foo", 25, len), 50.0);
-        QCOMPARE(p.anim_get_double("foo", 50, len), 100.0);
+        p.anim_set("foo",   0.0,  0);
+        p.anim_set("foo", 100.0, 50, -1, mlt_keyframe_smooth);
+        QCOMPARE(p.anim_get_double("foo",  0), 0.0);
+        QCOMPARE(p.anim_get_double("foo", 25), 50.0);
+        QCOMPARE(p.anim_get_double("foo", 50), 100.0);
         QCOMPARE(p.get("foo"), "0=0;50~=100");
 
         // Animation from string value
         p.set("foo", "10=100.2;20=200.8");
-        QCOMPARE(p.anim_get_double("foo",  0, len), 100.2);
-        QCOMPARE(p.anim_get_double("foo", 15, len), 150.5);
-        QCOMPARE(p.anim_get_double("foo", 20, len), 200.8);
+        QCOMPARE(p.anim_get_double("foo",  0), 100.2);
+        QCOMPARE(p.anim_get_double("foo", 15), 150.5);
+        QCOMPARE(p.anim_get_double("foo", 20), 200.8);
 
         // Animation from string using time clock values
         // Need to set a profile so fps can be used to convert time to frames.
         Profile profile("dv_pal");
         p.set("_profile", profile.get_profile(), 0);
         p.set("foo", ":0.0=100; :2.0=200");
-        QCOMPARE(p.anim_get_double("foo",  0, len), 100.0);
-        QCOMPARE(p.anim_get_double("foo", 25, len), 150.0);
-        QCOMPARE(p.anim_get_double("foo", 50, len), 200.0);
+        QCOMPARE(p.anim_get_double("foo",  0), 100.0);
+        QCOMPARE(p.anim_get_double("foo", 25), 150.0);
+        QCOMPARE(p.anim_get_double("foo", 50), 200.0);
     }
 
     void PropertiesStringAnimation()
     {
         Properties p;
-        int len = 50;
-        p.anim_set("key", "foo", 10, len);
-        p.anim_set("key", "bar", 30, len);
+        p.anim_set("key", "foo", 10);
+        p.anim_set("key", "bar", 30);
         QCOMPARE(p.get("key"), "10|=foo;30|=bar");
         p.set("key", "0=; 10=foo bar; 30=hello world");
-        QCOMPARE(p.anim_get("key",  1, len), "");
-        QCOMPARE(p.anim_get("key", 15, len), "foo bar");
-        QCOMPARE(p.anim_get("key", 45, len), "hello world");
+        QCOMPARE(p.anim_get("key",  1), "");
+        QCOMPARE(p.anim_get("key", 15), "foo bar");
+        QCOMPARE(p.anim_get("key", 45), "hello world");
     }
 
     void test_mlt_rect()
@@ -777,63 +778,62 @@ private Q_SLOTS:
 
     void RectAnimation()
     {
-        int len = 50;
         mlt_rect r1 = { 0, 0, 200, 200, 0 };
         mlt_rect r2 = { 100, 100, 400, 400, 1.0 };
         Properties p;
         p.set_lcnumeric("POSIX");
 
         // Construct animation from scratch
-        p.anim_set("key", r1,  0, len);
-        p.anim_set("key", r2, 50, len);
-        QCOMPARE(p.anim_get_rect("key",  0, len).x, 0.0);
-        QCOMPARE(p.anim_get_rect("key", 25, len).x, 50.0);
-        QCOMPARE(p.anim_get_rect("key", 25, len).y, 50.0);
-        QCOMPARE(p.anim_get_rect("key", 25, len).w, 300.0);
-        QCOMPARE(p.anim_get_rect("key", 25, len).h, 300.0);
-        QCOMPARE(p.anim_get_rect("key", 25, len).o, 0.5);
-        QCOMPARE(p.anim_get_rect("key", 50, len).x, 100.0);
+        p.anim_set("key", r1,  0);
+        p.anim_set("key", r2, 50);
+        QCOMPARE(p.anim_get_rect("key",  0).x, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 25).x, 50.0);
+        QCOMPARE(p.anim_get_rect("key", 25).y, 50.0);
+        QCOMPARE(p.anim_get_rect("key", 25).w, 300.0);
+        QCOMPARE(p.anim_get_rect("key", 25).h, 300.0);
+        QCOMPARE(p.anim_get_rect("key", 25).o, 0.5);
+        QCOMPARE(p.anim_get_rect("key", 50).x, 100.0);
         QCOMPARE(p.get("key"), "0=0 0 200 200 0;50=100 100 400 400 1");
 
         // Animation from string value
-        QCOMPARE(p.anim_get_rect("key",  0, len).x, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).y, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).w, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).h, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).o, 0.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).x, 100.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).y, 100.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).w, 400.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).h, 400.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).o, 1.0);
-        QCOMPARE(p.anim_get_rect("key", 15, len).x, 30.0);
-        QCOMPARE(p.anim_get_rect("key", 15, len).y, 30.0);
-        QCOMPARE(p.anim_get_rect("key", 15, len).w, 260.0);
-        QCOMPARE(p.anim_get_rect("key", 15, len).h, 260.0);
-        QCOMPARE(p.anim_get_rect("key", 15, len).o, 0.3);
+        QCOMPARE(p.anim_get_rect("key",  0).x, 0.0);
+        QCOMPARE(p.anim_get_rect("key",  0).y, 0.0);
+        QCOMPARE(p.anim_get_rect("key",  0).w, 200.0);
+        QCOMPARE(p.anim_get_rect("key",  0).h, 200.0);
+        QCOMPARE(p.anim_get_rect("key",  0).o, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 50).x, 100.0);
+        QCOMPARE(p.anim_get_rect("key", 50).y, 100.0);
+        QCOMPARE(p.anim_get_rect("key", 50).w, 400.0);
+        QCOMPARE(p.anim_get_rect("key", 50).h, 400.0);
+        QCOMPARE(p.anim_get_rect("key", 50).o, 1.0);
+        QCOMPARE(p.anim_get_rect("key", 15).x, 30.0);
+        QCOMPARE(p.anim_get_rect("key", 15).y, 30.0);
+        QCOMPARE(p.anim_get_rect("key", 15).w, 260.0);
+        QCOMPARE(p.anim_get_rect("key", 15).h, 260.0);
+        QCOMPARE(p.anim_get_rect("key", 15).o, 0.3);
 
         // Smooth animation
         p.set("key", "0~=0/0:200x200:0; 50=100/100:400x400:1");
-        QCOMPARE(p.anim_get_rect("key",  0, len).x, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).y, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).w, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).h, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0, len).o, 0.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).x, 100.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).y, 100.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).w, 400.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).h, 400.0);
-        QCOMPARE(p.anim_get_rect("key", 50, len).o, 1.0);
-        QCOMPARE(p.anim_get_rect("key", 15, len).x, 25.8);
-        QCOMPARE(p.anim_get_rect("key", 15, len).y, 25.8);
-        QCOMPARE(p.anim_get_rect("key", 15, len).w, 251.6);
-        QCOMPARE(p.anim_get_rect("key", 15, len).h, 251.6);
-        QCOMPARE(p.anim_get_rect("key", 15, len).o, 0.258);
+        QCOMPARE(p.anim_get_rect("key",  0).x, 0.0);
+        QCOMPARE(p.anim_get_rect("key",  0).y, 0.0);
+        QCOMPARE(p.anim_get_rect("key",  0).w, 200.0);
+        QCOMPARE(p.anim_get_rect("key",  0).h, 200.0);
+        QCOMPARE(p.anim_get_rect("key",  0).o, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 50).x, 100.0);
+        QCOMPARE(p.anim_get_rect("key", 50).y, 100.0);
+        QCOMPARE(p.anim_get_rect("key", 50).w, 400.0);
+        QCOMPARE(p.anim_get_rect("key", 50).h, 400.0);
+        QCOMPARE(p.anim_get_rect("key", 50).o, 1.0);
+        QCOMPARE(p.anim_get_rect("key", 15).x, 25.8);
+        QCOMPARE(p.anim_get_rect("key", 15).y, 25.8);
+        QCOMPARE(p.anim_get_rect("key", 15).w, 251.6);
+        QCOMPARE(p.anim_get_rect("key", 15).h, 251.6);
+        QCOMPARE(p.anim_get_rect("key", 15).o, 0.258);
 
         // Using percentages
         p.set("key", "0=0 0; 50=100% 200%");
-        QCOMPARE(p.anim_get_rect("key", 25, len).x, 0.5);
-        QCOMPARE(p.anim_get_rect("key", 25, len).y, 1.0);
+        QCOMPARE(p.anim_get_rect("key", 25).x, 0.5);
+        QCOMPARE(p.anim_get_rect("key", 25).y, 1.0);
     }
 
     void ColorFromInt()
@@ -866,6 +866,38 @@ private Q_SLOTS:
         QCOMPARE(color.g, quint8(0xd0));
         QCOMPARE(color.b, quint8(0x0d));
         QCOMPARE(color.a, quint8(0xde));
+    }
+
+    void SetIntAndGetAnim()
+    {
+        Properties p;
+        p.set_lcnumeric("POSIX");
+        p.set("key", 123);
+        QCOMPARE(p.anim_get_int("key", 10, 50), 123);
+        p.set("key", "123");
+        QCOMPARE(p.anim_get_int("key", 10, 50), 123);
+    }
+
+    void SetDoubleAndGetAnim()
+    {
+        Properties p;
+        p.set_lcnumeric("POSIX");
+        p.set("key", 123.0);
+        QCOMPARE(p.anim_get_double("key", 10, 50), 123.0);
+        p.set("key", "123");
+        QCOMPARE(p.anim_get_double("key", 10, 50), 123.0);
+    }
+
+    void AnimNegativeTimevalue()
+    {
+        Properties p;
+        Profile profile("dv_pal");
+        p.set("_profile", profile.get_profile(), 0);
+        p.set_lcnumeric("POSIX");
+        p.set("key", "0=100; -1=200");
+        QCOMPARE(p.anim_get_int("key", 75, 100), 175);
+        p.set("key", "0=100; -1:=200");
+        QCOMPARE(p.anim_get_int("key", 75, 125), 175);
     }
 };
 

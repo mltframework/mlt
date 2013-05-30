@@ -35,6 +35,7 @@
 #include <locale.h>
 #include <pthread.h>
 #include <float.h>
+#include <math.h>
 
 
 /** Bit pattern used internally to indicated representations available.
@@ -305,7 +306,7 @@ static int time_clock_to_frames( const char *s, double fps, locale_t locale )
 	}
 	free( copy );
 
-	return fps * ( (hours * 3600) + (minutes * 60) + seconds ) + 0.5;
+	return lrint( fps * ( (hours * 3600) + (minutes * 60) + seconds ) );
 }
 
 /** Parse a SMPTE timecode string.
@@ -351,7 +352,7 @@ static int time_code_to_frames( const char *s, double fps )
 	}
 	free( copy );
 
-	return frames + ( fps * ( (hours * 3600) + (minutes * 60) + seconds ) + 0.5 );
+	return lrint( fps * ( (hours * 3600) + (minutes * 60) + seconds ) + frames );
 }
 
 /** Convert a string to an integer.
