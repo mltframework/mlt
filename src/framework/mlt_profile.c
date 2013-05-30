@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <math.h>
 
 
 /** the default subdirectory of the datadir for holding profiles */
