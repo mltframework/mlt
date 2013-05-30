@@ -342,6 +342,11 @@ mlt_color Properties::get_color( const char *name )
 	return mlt_properties_get_color( get_properties(), name );
 }
 
+int Properties::set( const char *name, mlt_color value )
+{
+	return mlt_properties_set_color( get_properties(), name, value );
+}
+
 char *Properties::anim_get( const char *name, int position, int length )
 {
 	return mlt_properties_anim_get( get_properties(), name, position, length );

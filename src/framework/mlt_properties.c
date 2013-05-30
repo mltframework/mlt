@@ -2114,6 +2114,36 @@ mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
 	return result;
 }
 
+/** Set a property to an integer value by color.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to set
+ * \param value the color
+ * \return true if error
+ */
+
+int mlt_properties_set_color( mlt_properties self, const char *name, mlt_color color )
+{
+	int error = 1;
+
+	if ( !self || !name ) return error;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property != NULL )
+	{
+		uint32_t value = ( color.r << 24 ) | ( color.g << 16 ) | ( color.b << 8 ) | color.a;
+		error = mlt_property_set_int( property, value );
+		mlt_properties_do_mirror( self, name );
+	}
+
+	mlt_events_fire( self, "property-changed", name, NULL );
+
+	return error;
+}
 
 /** Get a string value by name.
  *

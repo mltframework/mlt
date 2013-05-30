@@ -846,8 +846,8 @@ private Q_SLOTS:
         QCOMPARE(color.g, quint8(0xbb));
         QCOMPARE(color.b, quint8(0xcc));
         QCOMPARE(color.a, quint8(0xdd));
-        p.set("key", *((int*) &color));
-        QCOMPARE(p.get_int("key"), int(0xddccbbaa));
+        p.set("key", color);
+        QCOMPARE(p.get_int("key"), int(0xaabbccdd));
     }
 
     void ColorFromString()
