@@ -440,6 +440,18 @@ MLTPP_0.9.0 {
   global:
     extern "C++" {
       "Mlt::Deque::peek(int)";
+      "Mlt::Properties::get_color(char const*)";
+      "Mlt::Properties::anim_get(char const*, int, int)";
+      "Mlt::Properties::anim_set(char const*, char const*, int, int)";
+      "Mlt::Properties::anim_get_int(char const*, int, int)";
+      "Mlt::Properties::anim_set(char const*, int, int, int, mlt_keyframe_type)";
+      "Mlt::Properties::anim_get_double(char const*, int, int)";
+      "Mlt::Properties::anim_set(char const*, double, int, int, mlt_keyframe_type)";
+      "Mlt::Properties::set(char const*, mlt_rect)";
+      "Mlt::Properties::set(char const*, double, double, double, double, double)";
+      "Mlt::Properties::get_rect(char const*)";
+      "Mlt::Properties::anim_set(char const*, mlt_rect, int, int, mlt_keyframe_type)";
+      "Mlt::Properties::anim_get_rect(char const*, int, int)";
       "Mlt::Service::filter_count()";
       "Mlt::Service::move_filter(int, int)";
     };
