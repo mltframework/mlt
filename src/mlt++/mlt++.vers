@@ -327,6 +327,7 @@ MLTPP_0.8.8 {
       "Mlt::Properties::set(char const*, char const*)";
       "Mlt::Properties::set(char const*, double)";
       "Mlt::Properties::set(char const*, int)";
+      "Mlt::Properties::set(char const*, long)";
       "Mlt::Properties::set(char const*, long long)";
       "Mlt::Properties::set(char const*, void*, int, void (*)(void*), char* (*)(void*, int))";
       "Mlt::Properties::set_lcnumeric(char const*)";
