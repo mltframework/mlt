@@ -455,6 +455,9 @@ public:
 				parameters.deviceName = mlt_properties_get( properties, "resource" );
 
 			try {
+				if ( rt.isStreamOpen() ) {
+				    rt.closeStream();
+				}
 				rt.openStream( &parameters, NULL, RTAUDIO_SINT16,
 					frequency, &bufferFrames, &rtaudio_callback, this, &options );
 				rt.startStream();
