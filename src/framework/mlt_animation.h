@@ -1,8 +1,11 @@
-/*
- * mlt_animation.h -- provides the property animation API
+/**
+ * \file mlt_animation.h
+ * \brief Property Animation class declaration
+ * \see mlt_animaton_s
+ *
  * Copyright (C) 2004-2013 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
- * Author: Dan Dennedy <dan@dennedy.org>
+ * \author Charles Yates <charles.yates@pandora.be>
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

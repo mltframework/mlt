@@ -3,7 +3,7 @@
  * \brief Properties class declaration
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2011 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2013 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  * \author Dan Dennedy <dan@dennedy.org>
  *

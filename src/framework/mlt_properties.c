@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2013 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  * \author Dan Dennedy <dan@dennedy.org>
  *
@@ -2130,7 +2130,7 @@ mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \param name the property to set
- * \param value the color
+ * \param color the color
  * \return true if error
  */
 

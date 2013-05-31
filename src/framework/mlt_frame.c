@@ -3,8 +3,9 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2013 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
+ * \author Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -183,7 +184,7 @@ int mlt_frame_set_position( mlt_frame self, mlt_position value )
  *
  * \public \memberof mlt_frame_s
  * \param self a frame
- * \param the get_image callback
+ * \param get_image the get_image callback
  * \return true if error
  */
 

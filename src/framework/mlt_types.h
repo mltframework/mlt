@@ -123,6 +123,8 @@ typedef double mlt_position;
 typedef int32_t mlt_position;
 #endif
 
+/** A rectangle type with coordinates, size, and opacity */
+
 typedef struct {
 	double x; /**< X coordinate */
 	double y; /**< Y coordinate */
@@ -131,6 +133,8 @@ typedef struct {
 	double o; /**< opacity / mix-level */
 }
 mlt_rect;
+
+/** A tuple of color components */
 
 typedef struct {
 	uint8_t r; /**< red */
