@@ -27,28 +27,47 @@
 #include <stdlib.h>
 #include <string.h>
 
+/** \brief animation list node pointer */
 typedef struct animation_node_s *animation_node;
+/** \brief private animation list node */
 struct animation_node_s
 {
 	struct mlt_animation_item_s item;
 	animation_node next, prev;
 };
 
+/** \brief Property Animation class
+ *
+ * This is the animation engine for a Property object. It is dependent upon
+ * the mlt_property API and used by the various mlt_property_anim_* functions.
+ */
+
 struct mlt_animation_s
 {
-	char *data;
-	int length;
-	double fps;
-	locale_t locale;
-	animation_node nodes;
+	char *data;           /**< the string representing the animation */
+	int length;           /**< the maximum number of frames to use when interpreting negative keyframe positions */
+	double fps;           /**< framerate to use when converting time clock strings to frame units */
+	locale_t locale;      /**< pointer to a locale to use when converting strings to numeric values */
+	animation_node nodes; /**< a linked list of keyframes (and possibly non-keyframe values) */
 };
 
-// Create a new geometry structure
+/** Create a new animation object.
+ *
+ * \public \memberof mlt_animation_s
+ * \return an animation object
+ */
+
 mlt_animation mlt_animation_new( )
 {
 	mlt_animation self = calloc( 1, sizeof( *self ) );
 	return self;
 }
+
+/** Re-interpolate non-keyframe nodess after a series of insertions or removals.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ */
 
 void mlt_animation_interpolate( mlt_animation self )
 {
@@ -86,6 +105,14 @@ void mlt_animation_interpolate( mlt_animation self )
 	}
 }
 
+/** Remove a node from the linked list.
+ *
+ * \private \memberof mlt_animation_s
+ * \param self an animation
+ * \param node the node to remove
+ * \return false
+ */
+
 static int mlt_animation_drop( mlt_animation self, animation_node node )
 {
 	if ( node == self->nodes )
@@ -115,6 +142,12 @@ static int mlt_animation_drop( mlt_animation self, animation_node node )
 	return 0;
 }
 
+/** Reset an animation and free all strings and properties.
+ *
+ * \private \memberof mlt_animation_s
+ * \param self an animation
+ */
+
 static void mlt_animation_clean( mlt_animation self )
 {
 	if ( self->data )
@@ -123,6 +156,19 @@ static void mlt_animation_clean( mlt_animation self )
 	while ( self->nodes )
 		mlt_animation_drop( self, self->nodes );
 }
+
+/** Parse a string representing an animation.
+ *
+ * A semicolon is the delimiter between keyframe=value items in the string.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param data the string representing an animation
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param fps the framerate to use when evaluating time strings
+ * \param locale the locale to use when converting strings to numbers
+ * \return true if there was an error
+ */
 
 int mlt_animation_parse(mlt_animation self, const char *data, int length, double fps, locale_t locale )
 {
@@ -173,13 +219,31 @@ int mlt_animation_parse(mlt_animation self, const char *data, int length, double
 	return error;
 }
 
-// Conditionally refresh in case of a change
+/** Conditionally refresh the animation if it is modified.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param data the string representing an animation
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return true if there was an error
+ */
+
 int mlt_animation_refresh( mlt_animation self, const char *data, int length )
 {
 	if ( ( length != self->length )|| ( data && ( !self->data || strcmp( data, self->data ) ) ) )
 		return mlt_animation_parse( self, data, length, self->fps, self->locale );
 	return 0;
 }
+
+/** Get the length of the animation.
+ *
+ * If the animation was initialized with a zero or negative value, then this
+ * gets the maximum frame number from animation's list of nodes.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \return the number of frames
+ */
 
 int mlt_animation_get_length( mlt_animation self )
 {
@@ -200,11 +264,37 @@ int mlt_animation_get_length( mlt_animation self )
 	return length;
 }
 
+/** Set the length of the animation.
+ *
+ * The length is used for interpreting negative keyframe positions as relative
+ * to the length. It is also used when serializing an animation as a string.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param length the length of the animation in frame units
+ */
+
 void mlt_animation_set_length( mlt_animation self, int length )
 {
 	if ( self )
 		self->length = length;
 }
+
+/** Parse a string representing an animation keyframe=value.
+ *
+ * This function does not affect the animation itself! But it will use some state
+ * of the animation for the parsing (e.g. fps, locale).
+ * It parses into a mlt_animation_item that you provide.
+ * \p item->frame should be specified if the string does not have an equal sign and time field.
+ * If an exclamation point (!) or vertical bar (|) character preceeds the equal sign, then
+ * the keyframe interpolation is set to discrete. If a tilde (~) preceeds the equal sign,
+ * then the keyframe interpolation is set to smooth (spline).
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param item an already allocated animation item
+ * \param value the string representing an animation
+ * \return true if there was an error
+ */
 
 int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const char *value )
 {
@@ -253,7 +343,16 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 	return error;
 }
 
-// Fetch a geometry item for an absolute position
+/** Load an animation item for an absolute position.
+ *
+ * This performs interpolation if there is no keyframe at the \p position.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param item an already allocated animation item that will be filled in
+ * \param position the frame number for the point in time
+ * \return true if there was an error
+ */
+
 int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int position )
 {
 	int error = 0;
@@ -312,7 +411,15 @@ int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int pos
 	return error;
 }
 
-// Specify an animation item at an absolute position
+/** Insert an animation item.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param item an animation item
+ * \return true if there was an error
+ * \see mlt_animation_parse_item
+ */
+
 int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 {
 	int error = 0;
@@ -371,7 +478,14 @@ int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 	return error;
 }
 
-// Remove the keyframe at the specified position
+/** Remove the keyframe at the specified position.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param position the frame number of the animation node to remove
+ * \return true if there was an error
+ */
+
 int mlt_animation_remove( mlt_animation self, int position )
 {
 	int error = 1;
@@ -386,7 +500,15 @@ int mlt_animation_remove( mlt_animation self, int position )
 	return error;
 }
 
-// Get the keyfame at the position or the next following
+/** Get the keyfame at the position or the next following.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param item an already allocated animation item which will be updated
+ * \param position the frame number at which to start looking for the next animation node
+ * \return true if there was an error
+ */
+
 int mlt_animation_next_key( mlt_animation self, mlt_animation_item item, int position )
 {
 	animation_node node = self->nodes;
@@ -405,7 +527,15 @@ int mlt_animation_next_key( mlt_animation self, mlt_animation_item item, int pos
 	return ( node == NULL );
 }
 
-// Get the keyframe at the position or the previous key
+/** Get the keyfame at the position or the next preceeding.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param item an already allocated animation item which will be updated
+ * \param position the frame number at which to start looking for the previous animation node
+ * \return true if there was an error
+ */
+
 int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int position )
 {
 	animation_node node = self->nodes;
@@ -423,6 +553,16 @@ int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int pos
 
 	return ( node == NULL );
 }
+
+/** Serialize a cut of the animation.
+ *
+ * The caller is responsible for free-ing the returned string.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param in the frame at which to start serializing animation nodes
+ * \param out the frame at which to stop serializing nodes
+ * \return a string representing the animation
+ */
 
 char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 {
@@ -529,7 +669,14 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 	return ret;
 }
 
-// Serialise the current geometry
+/** Serialize the animation.
+ *
+ * The caller is responsible for free-ing the returned string.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \return a string representing the animation
+ */
+
 char *mlt_animation_serialize( mlt_animation self )
 {
 	char *ret = mlt_animation_serialize_cut( self, -1, -1 );
@@ -542,7 +689,12 @@ char *mlt_animation_serialize( mlt_animation self )
 	return strdup( ret );
 }
 
-// Close the geometry
+/** Close the animation and deallocate all of its resources.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self the animation to destroy
+ */
+
 void mlt_animation_close( mlt_animation self )
 {
 	if ( self )

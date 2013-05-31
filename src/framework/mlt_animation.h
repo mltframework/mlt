@@ -25,44 +25,31 @@
 #include "mlt_types.h"
 #include "mlt_property.h"
 
+/** \brief An animation item that represents a keyframe-property combination. */
+
 struct mlt_animation_item_s
 {
-	int is_key; /**< = whether this is a key frame or an interpolated item */
-	int frame; /**< The actual frame this corresponds to */
-	mlt_property property;
-	mlt_keyframe_type keyframe_type;
+	int is_key;                      /**< a boolean of whether this is a key frame or an interpolated item */
+	int frame;                       /**< the frame number for this instance of the property */
+	mlt_property property;           /**< the property for this point in time */
+	mlt_keyframe_type keyframe_type; /**< the method of interpolation for this key frame */
 };
 typedef struct mlt_animation_item_s *mlt_animation_item; /**< pointer to an animation item */
 
-struct mlt_animation_s;
-
-/* Create a new animation object. */
 extern mlt_animation mlt_animation_new( );
-/* Parse the geometry specification for a given duration and range */
 extern int mlt_animation_parse(mlt_animation self, const char *data, int length, double fps, locale_t locale );
-/* Conditionally refresh the animation if it's modified */
 extern int mlt_animation_refresh( mlt_animation self, const char *data, int length );
-/* Get and set the length */
 extern int mlt_animation_get_length( mlt_animation self );
 extern void mlt_animation_set_length( mlt_animation self, int length );
-/* Parse an item - doesn't affect the animation itself but uses current information for evaluation */
-/* (item->frame should be specified if not included in the data itself) */
 extern int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const char *data );
-/* Fetch an animation item for an absolute position */
 extern int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int position );
-/* Specify an animation item at an absolute position */
 extern int mlt_animation_insert( mlt_animation self, mlt_animation_item item );
-/* Remove the key at the specified position */
 extern int mlt_animation_remove( mlt_animation self, int position );
-/* Typically, re-interpolate after a series of insertions or removals. */
 extern void mlt_animation_interpolate( mlt_animation self );
-/* Get the key at the position or the next following */
 extern int mlt_animation_next_key( mlt_animation self, mlt_animation_item item, int position );
 extern int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int position );
-/* Serialize the current animation. */
 extern char *mlt_animation_serialize_cut( mlt_animation self, int in, int out );
 extern char *mlt_animation_serialize( mlt_animation self );
-/* Close and destrory the animation. */
 extern void mlt_animation_close( mlt_animation self );
 
 #endif
