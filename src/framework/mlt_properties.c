@@ -2303,6 +2303,20 @@ int mlt_properties_anim_set_double( mlt_properties self, const char *name, doubl
 	return error;
 }
 
+/** Get the animation associated to the name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return The animation object or NULL if the property has no animation
+ */
+
+mlt_animation mlt_properties_get_animation( mlt_properties self, const char *name )
+{
+	mlt_property value = mlt_properties_find( self, name );
+	return value == NULL ? NULL : mlt_property_get_animation( value );
+}
+
 /** Set a property to a rectangle value.
  *
  * \public \memberof mlt_properties_s
@@ -2399,18 +2413,4 @@ extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *n
 	mlt_property value = mlt_properties_find( self, name );
 	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
 	return value == NULL ? rect : mlt_property_anim_get_rect( value, fps, list->locale, position, length );
-}
-
-/** Get the animation associated to the name.
- *
- * \public \memberof mlt_properties_s
- * \param self a properties list
- * \param name the property to get
- * \return The animation object or NULL if the property has no animation
- */
-
-mlt_animation mlt_properties_get_animation( mlt_properties self, const char *name )
-{
-	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? NULL : mlt_property_get_animation( value );
 }

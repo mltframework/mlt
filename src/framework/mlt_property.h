@@ -54,18 +54,19 @@ extern void *mlt_property_get_data( mlt_property self, int *length );
 extern void mlt_property_close( mlt_property self );
 extern void mlt_property_pass( mlt_property self, mlt_property that );
 extern char *mlt_property_get_time( mlt_property self, mlt_time_format, double fps, locale_t );
-extern int mlt_property_interpolate( mlt_property self, mlt_property points[],
-                                     double progress, double fps, locale_t locale, mlt_keyframe_type interp );
+
+extern int mlt_property_interpolate( mlt_property self, mlt_property points[], double progress, double fps, locale_t locale, mlt_keyframe_type interp );
 extern double mlt_property_anim_get_double( mlt_property self, double fps, locale_t locale, int position, int length );
 extern int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, int position, int length );
 extern char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t locale, int position, int length );
 extern int mlt_property_anim_set_double( mlt_property self, double value, double fps, locale_t locale, int position, int length, mlt_keyframe_type keyframe_type );
 extern int mlt_property_anim_set_int( mlt_property self, int value, double fps, locale_t locale, int position, int length, mlt_keyframe_type keyframe_type );
 extern int mlt_property_anim_set_string( mlt_property self, const char *value, double fps, locale_t locale, int position, int length );
+extern mlt_animation mlt_property_get_animation( mlt_property self );
+
 extern int mlt_property_set_rect( mlt_property self, mlt_rect value );
 extern mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale );
 extern int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, locale_t locale, int position, int length, mlt_keyframe_type keyframe_type );
 extern mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t locale, int position, int length );
-extern mlt_animation mlt_property_get_animation( mlt_property self );
 
 #endif

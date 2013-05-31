@@ -1238,6 +1238,11 @@ int mlt_property_anim_set_string( mlt_property self, const char *value, double f
 	return result;
 }
 
+mlt_animation mlt_property_get_animation( mlt_property self )
+{
+	return self->animation;
+}
+
 static char* serialise_mlt_rect( mlt_rect *rect, int length )
 {
 	char* result = calloc( 1, 100 );
@@ -1385,9 +1390,4 @@ mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t loc
 		result = mlt_property_get_rect( self, locale );
 	}
 	return result;
-}
-
-mlt_animation mlt_property_get_animation( mlt_property self )
-{
-	return self->animation;
 }
