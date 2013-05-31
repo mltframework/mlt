@@ -948,6 +948,14 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	return self->prop_string;
 }
 
+/** Determine if the property holds a numeric or numeric string value.
+ *
+ * \private \memberof mlt_property_s
+ * \param self a property
+ * \param locale the locale to use for string evaluation
+ * \return true if it is numeric
+ */
+
 static int is_property_numeric( mlt_property self, locale_t locale )
 {
 	int result = ( self->types & mlt_prop_int ) ||
@@ -972,13 +980,23 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 	return result;
 }
 
+/** A linear interpolation function for animation.
+ *
+ * \private \memberof mlt_property_s
+ */
+
 static inline double linear_interpolate( double y1, double y2, double t )
 {
 	return y1 + ( y2 - y1 ) * t;
 }
 
-//  For non-closed curves, you need to also supply the tangent vector at the first and last control point.
-// This is commonly done: T(P[0]) = P[1] - P[0] and T(P[n]) = P[n] - P[n-1].
+/** A smooth spline interpolation for animation.
+ *
+ * For non-closed curves, you need to also supply the tangent vector at the first and last control point.
+ * This is commonly done: T(P[0]) = P[1] - P[0] and T(P[n]) = P[n] - P[n-1].
+ * \private \memberof mlt_property_s
+ */
+
 static inline double catmull_rom_interpolate( double y0, double y1, double y2, double y3, double t )
 {
 	double t2 = t * t;
@@ -988,6 +1006,20 @@ static inline double catmull_rom_interpolate( double y0, double y1, double y2, d
 	double a3 = y1;
 	return a0 * t * t2 + a1 * t2 + a2 * t + a3;
 }
+
+/** Interpolate a new property value given a set of other properties.
+ *
+ * \public \memberof mlt_property_s
+ * \param self the property onto which to set the computed value
+ * \param p an array of at least 1 value in p[1] if \p interp is discrete,
+ *  2 values in p[1] and p[2] if \p interp is linear, or
+ *  4 values in p[0] - p[3] if \p interp is smooth
+ * \param progress a ratio in the range [0, 1] to indicate how far between p[1] and p[2]
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param interp the interpolation method to use
+ * \return true if there was an error
+ */
 
 int mlt_property_interpolate( mlt_property self, mlt_property p[],
 	double progress, double fps, locale_t locale, mlt_keyframe_type interp )
@@ -1070,6 +1102,16 @@ int mlt_property_interpolate( mlt_property self, mlt_property p[],
 	return error;
 }
 
+/** Create a new animation or refresh an existing one.
+ *
+ * \private \memberof mlt_property_s
+ * \param self a property
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ */
+
 static void refresh_animation( mlt_property self, double fps, locale_t locale, int length  )
 {
 	if ( !self->animation )
@@ -1093,6 +1135,18 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 	}
 }
 
+/** Get the real number at a frame position.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return the real number
+ */
+
 double mlt_property_anim_get_double( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	double result;
@@ -1114,6 +1168,18 @@ double mlt_property_anim_get_double( mlt_property self, double fps, locale_t loc
 	return result;
 }
 
+/** Get the property as an integer number at a frame position.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return an integer value
+ */
+
 int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	int result;
@@ -1134,6 +1200,18 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 	}
 	return result;
 }
+
+/** Get the string at certain a frame position.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return the string representation of the property or NULL if failed
+ */
 
 char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t locale, int position, int length )
 {
@@ -1171,6 +1249,12 @@ char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t loca
  * \public \memberof mlt_property_s
  * \param self a property
  * \param value a double precision floating point value
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param keyframe_type the interpolation method for this keyframe
  * \return false if successful, true to indicate error
  */
 
@@ -1197,7 +1281,13 @@ int mlt_property_anim_set_double( mlt_property self, double value, double fps, l
  *
  * \public \memberof mlt_property_s
  * \param self a property
- * \param value a double precision floating point value
+ * \param value an integer
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param keyframe_type the interpolation method for this keyframe
  * \return false if successful, true to indicate error
  */
 
@@ -1220,6 +1310,22 @@ int mlt_property_anim_set_int( mlt_property self, int value, double fps, locale_
 	return result;
 }
 
+/** Set a property animation keyframe to a string.
+ *
+ * Strings only support discrete animation. Do not use this to set a property's
+ * animation string that contains a semicolon-delimited set of values; use
+ * mlt_property_set() for that.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param value a string
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return false if successful, true to indicate error
+ */
+
 int mlt_property_anim_set_string( mlt_property self, const char *value, double fps, locale_t locale, int position, int length )
 {
 	int result;
@@ -1238,10 +1344,30 @@ int mlt_property_anim_set_string( mlt_property self, const char *value, double f
 	return result;
 }
 
+/** Get an object's animation object.
+ *
+ * You might need to call another mlt_property_anim_ function to actually construct
+ * the animation, as this is a simple accessor function.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return the animation object or NULL if there is no animation
+ */
+
 mlt_animation mlt_property_get_animation( mlt_property self )
 {
-	return self->animation;
+    return self->animation;
 }
+
+/** Convert a rectangle value into a string.
+ *
+ * Unlike the deprecated mlt_geometry API, the canonical form of a mlt_rect
+ * is a space delimited "x y w h o" even though many kinds of field delimiters
+ * may be used to convert a string to a rectangle.
+ * \private \memberof mlt_property_s
+ * \param rect the rectangle to convert
+ * \param length not used
+ * \return the string representation of a rectangle
+ */
 
 static char* serialise_mlt_rect( mlt_rect *rect, int length )
 {
@@ -1263,7 +1389,7 @@ static char* serialise_mlt_rect( mlt_rect *rect, int length )
  *
  * \public \memberof mlt_property_s
  * \param self a property
- * \param value a mlt_rect
+ * \param value a rectangle
  * \return false
  */
 
@@ -1281,12 +1407,14 @@ int mlt_property_set_rect( mlt_property self, mlt_rect value )
 	return 0;
 }
 
-/** Get the property as a floating point.
+/** Get the property as a rectangle.
  *
+ * You can use any non-numeric character(s) as a field delimiter.
+ * If the number has a '%' immediately following it, the number is divided by
+ * 100 to convert it into a real number.
  * \public \memberof mlt_property_s
  * \param self a property
- * \param fps frames per second, used when converting from time value
- * \param locale the locale to use for this conversion
+ * \param locale the locale to use for when converting from a string
  * \return a rectangle value
  */
 
@@ -1348,6 +1476,12 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
  * \public \memberof mlt_property_s
  * \param self a property
  * \param value a rectangle
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param keyframe_type the interpolation method for this keyframe
  * \return false if successful, true to indicate error
  */
 
@@ -1369,6 +1503,18 @@ int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, l
 
 	return result;
 }
+
+/** Get a rectangle at a frame position.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return the rectangle
+ */
 
 mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t locale, int position, int length )
 {

@@ -2067,6 +2067,17 @@ char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_f
 	return NULL;
 }
 
+/** Convert a numeric property to a tuple of color components.
+ *
+ * If the property's string is red, green, blue, white, or black, then it
+ * is converted to the corresponding opaque color tuple. Otherwise, the property
+ * is fetched as an integer and then converted.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return a color structure
+ */
+
 mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
 {
 	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
@@ -2145,13 +2156,16 @@ int mlt_properties_set_color( mlt_properties self, const char *name, mlt_color c
 	return error;
 }
 
-/** Get a string value by name.
+/** Get a string value by name at a frame position.
  *
  * Do not free the returned string. It's lifetime is controlled by the property
  * and this properties object.
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \param name the property to get
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
  * \return the property's string value or NULL if it does not exist
  */
 
@@ -2164,7 +2178,7 @@ char* mlt_properties_anim_get( mlt_properties self, const char *name, int positi
 	return value == NULL ? NULL : mlt_property_anim_get_string( value, fps, list->locale, position, length );
 }
 
-/** Set a property to a string.
+/** Set a property to a string at a frame position.
  *
  * The event "property-changed" is fired after the property has been set.
  *
@@ -2173,6 +2187,9 @@ char* mlt_properties_anim_get( mlt_properties self, const char *name, int positi
  * \param self a properties list
  * \param name the property to set
  * \param value the property's new value
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
  * \return true if error
  */
 
@@ -2206,7 +2223,10 @@ int mlt_properties_anim_set( mlt_properties self, const char *name, const char *
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \param name the property to get
- * \return The integer value, 0 if not found (which may also be a legitimate value)
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return the integer value, 0 if not found (which may also be a legitimate value)
  */
 
 int mlt_properties_anim_get_int( mlt_properties self, const char *name, int position, int length )
@@ -2224,6 +2244,10 @@ int mlt_properties_anim_get_int( mlt_properties self, const char *name, int posi
  * \param self a properties list
  * \param name the property to set
  * \param value the integer
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param keyframe_type the interpolation method for this keyframe
  * \return true if error
  */
 
@@ -2257,7 +2281,10 @@ int mlt_properties_anim_set_int( mlt_properties self, const char *name, int valu
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \param name the property to get
- * \return The real number, 0 if not found (which may also be a legitimate value)
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return the real number, 0 if not found (which may also be a legitimate value)
  */
 
 double mlt_properties_anim_get_double( mlt_properties self, const char *name, int position, int length )
@@ -2275,6 +2302,10 @@ double mlt_properties_anim_get_double( mlt_properties self, const char *name, in
  * \param self a properties list
  * \param name the property to set
  * \param value the real number
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param keyframe_type the interpolation method for this keyframe
  * \return true if error
  */
 
@@ -2352,7 +2383,7 @@ extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_r
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \param name the property to get
- * \return The rectangle value, the rectangle fields will be DBL_MIN if not found
+ * \return the rectangle value, the rectangle fields will be DBL_MIN if not found
  */
 
 extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char* name )
@@ -2369,6 +2400,10 @@ extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char* name )
  * \param self a properties list
  * \param name the property to set
  * \param value the rectangle
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param keyframe_type the interpolation method for this keyframe
  * \return true if error
  */
 
@@ -2397,12 +2432,15 @@ extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, 
 	return error;
 }
 
-/** Get a rectangle associated to the name.
+/** Get a rectangle associated to the name at a frame position.
  *
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \param name the property to get
- * \return The rectangle value, the rectangle fields will be DBL_MIN if not found
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return the rectangle value, the rectangle fields will be DBL_MIN if not found
  */
 
 extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *name, int position, int length )
