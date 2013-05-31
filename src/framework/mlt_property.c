@@ -1386,3 +1386,8 @@ mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t loc
 	}
 	return result;
 }
+
+mlt_animation mlt_property_get_animation( mlt_property self )
+{
+	return self->animation;
+}

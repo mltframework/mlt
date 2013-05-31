@@ -103,5 +103,6 @@ extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_r
 extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char *name );
 extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, mlt_rect value, int position, int length, mlt_keyframe_type keyframe_type );
 extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *name, int position, int length );
+extern mlt_animation mlt_properties_get_animation( mlt_properties self, const char *name );
 
 #endif

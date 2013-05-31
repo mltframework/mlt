@@ -161,6 +161,7 @@ typedef struct mlt_profile_s *mlt_profile;              /**< pointer to Profile 
 typedef struct mlt_repository_s *mlt_repository;        /**< pointer to Repository object */
 typedef struct mlt_cache_s *mlt_cache;                  /**< pointer to Cache object */
 typedef struct mlt_cache_item_s *mlt_cache_item;        /**< pointer to CacheItem object */
+typedef struct mlt_animation_s *mlt_animation;          /**< pointer to Property Animation object */
 
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */

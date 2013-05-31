@@ -32,10 +32,9 @@ struct mlt_animation_item_s
 	mlt_property property;
 	mlt_keyframe_type keyframe_type;
 };
-typedef struct mlt_animation_item_s *mlt_animation_item;
+typedef struct mlt_animation_item_s *mlt_animation_item; /**< pointer to an animation item */
 
 struct mlt_animation_s;
-typedef struct mlt_animation_s *mlt_animation;
 
 /* Create a new animation object. */
 extern mlt_animation mlt_animation_new( );
