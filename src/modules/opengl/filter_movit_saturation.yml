@@ -22,3 +22,4 @@ parameters:
     type: float
     minimum: 0
     default: 1
+    mutable: yes

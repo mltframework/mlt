@@ -18,6 +18,7 @@ parameters:
     type: float
     minimum: 0
     maximum: 1
+    mutable: yes
 
   - identifier: mix
     title: Mix Level
@@ -25,6 +26,7 @@ parameters:
     type: float
     minimum: 0
     maximum: 1
+    mutable: yes
 
   - identifier: reverse
     title: Reverse

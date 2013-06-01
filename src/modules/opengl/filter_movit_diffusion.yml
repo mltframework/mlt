@@ -26,6 +26,7 @@ parameters:
     type: float
     minimum: 0.0
     default: 3.0
+    mutable: yes
 
   - identifier: mix
     title: Blurriness
@@ -33,3 +34,4 @@ parameters:
     minimum: 0.0
     maximum: 1.0
     default: 0.3
+    mutable: yes

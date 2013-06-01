@@ -17,6 +17,7 @@ parameters:
     type: string
     widget: color
     default: 0x7f7f7f00
+    mutable: yes
 
   - identifier: color_temperature
     title: Color Temperature
@@ -25,3 +26,4 @@ parameters:
     maximum: 15000.0
     default: 6500.0
     unit: Kelvin
+    mutable: yes

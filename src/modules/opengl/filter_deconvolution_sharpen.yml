@@ -26,28 +26,32 @@ parameters:
     minimum: 0
     maximum: 10
     default: 5
+    mutable: yes
 
   - identifier: circle_radius
     title: Circle Radius
     type: float
     minimum: 0
     default: 2
+    mutable: yes
 
   - identifier: gaussian_radius
     title: Gaussian Radius
     type: float
     minimum: 0
     default: 0
+    mutable: yes
 
   - identifier: correlation
     title: Correlation
     type: float
     minimum: 0
     default: 0.95
+    mutable: yes
 
   - identifier: noise
     title: Noise Level
     type: float
     minimum: 0
     default: 0.01
-
+    mutable: yes

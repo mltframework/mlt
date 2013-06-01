@@ -30,51 +30,60 @@ parameters:
     type: float
     minimum: 0.0
     default: 0.0
+    mutable: yes
 
   - identifier: lift_g
     title: Lift Green
     type: float
     minimum: 0.0
     default: 0.0
+    mutable: yes
 
   - identifier: lift_b
     title: Lift Blue
     type: float
     minimum: 0.0
     default: 0.0
+    mutable: yes
 
   - identifier: gamma_r
     title: Gamma Red
     type: float
     minimum: 0.0
     default: 1.0
+    mutable: yes
 
   - identifier: gamma_g
     title: Gamma Green
     type: float
     minimum: 0.0
     default: 1.0
+    mutable: yes
 
   - identifier: gamma_b
     title: Gamma Blue
     type: float
     minimum: 0.0
     default: 1.0
+    mutable: yes
 
   - identifier: gain_r
     title: Gain Red
     type: float
     minimum: 0.0
     default: 1.0
+    mutable: yes
 
   - identifier: gain_g
     title: Gain Green
     type: float
     minimum: 0.0
     default: 1.0
+    mutable: yes
 
   - identifier: gain_b
     title: Gain Blue
     type: float
     minimum: 0.0
     default: 1.0
+    mutable: yes

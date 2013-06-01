@@ -24,18 +24,32 @@
 #include "glsl_manager.h"
 #include <movit/saturation_effect.h>
 
+static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+{
+	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	GlslManager::get_instance()->lock_service( frame );
+	Effect* effect = GlslManager::get_effect( filter, frame );
+	if ( effect ) {
+		mlt_position position = mlt_filter_get_position( filter, frame );
+		mlt_position length = mlt_filter_get_length2( filter, frame );
+		bool ok = effect->set_float( "saturation",
+			mlt_properties_anim_get_double( properties, "saturation", position, length ) );
+		assert(ok);
+	}
+	GlslManager::get_instance()->unlock_service( frame );
+	*format = mlt_image_glsl;
+	return mlt_frame_get_image( frame, image, format, width, height, writable );
+}
+
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	if ( !mlt_frame_is_test_card( frame ) ) {
-		Effect* effect = GlslManager::get_effect( filter, frame );
-		if ( !effect )
-			effect = GlslManager::add_effect( filter, frame, new SaturationEffect() );
-		if ( effect ) {
-			mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
-			bool ok = effect->set_float( "saturation", mlt_properties_get_double( filter_props, "saturation" ) );
-			assert(ok);
-		}
+		if ( !GlslManager::get_effect( filter, frame ) )
+			GlslManager::add_effect( filter, frame, new SaturationEffect() );
 	}
+	mlt_frame_push_service( frame, filter );
+	mlt_frame_push_get_image( frame, get_image );
 	return frame;
 }
 

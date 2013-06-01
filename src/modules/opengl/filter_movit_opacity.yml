@@ -23,3 +23,4 @@ parameters:
     minimum: 0
     maximum: 1
     default: 1
+    mutable: yes

@@ -24,22 +24,40 @@
 #include "glsl_manager.h"
 #include <movit/deconvolution_sharpen_effect.h>
 
+static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+{
+	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	GlslManager::get_instance()->lock_service( frame );
+	Effect* effect = GlslManager::get_effect( filter, frame );
+	if ( effect ) {
+		mlt_position position = mlt_filter_get_position( filter, frame );
+		mlt_position length = mlt_filter_get_length2( filter, frame );
+		bool ok = effect->set_int( "matrix_size",
+			mlt_properties_anim_get_int( properties, "matrix_size", position, length ) );
+		ok |= effect->set_float( "cirlce_radius",
+			mlt_properties_anim_get_double( properties, "circle_radius", position, length ) );
+		ok |= effect->set_float( "gaussian_radius",
+			mlt_properties_anim_get_double( properties, "gaussian_radius", position, length ) );
+		ok |= effect->set_float( "correlation",
+			mlt_properties_anim_get_double( properties, "correlation", position, length ) );
+		ok |= effect->set_float( "noise",
+			mlt_properties_anim_get_double( properties, "noise", position, length ) );
+		assert(ok);
+	}
+	GlslManager::get_instance()->unlock_service( frame );
+	*format = mlt_image_glsl;
+	return mlt_frame_get_image( frame, image, format, width, height, writable );
+}
+
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	if ( !mlt_frame_is_test_card( frame ) ) {
-		Effect* effect = GlslManager::get_effect( filter, frame );
-		if ( !effect )
+		if ( !GlslManager::get_effect( filter, frame ) )
 			GlslManager::add_effect( filter, frame, new DeconvolutionSharpenEffect() );
-		if ( effect ) {
-			mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
-			bool ok = effect->set_int( "matrix_size", mlt_properties_get_int( filter_props, "matrix_size" ) );
-			ok |= effect->set_float( "circle_radius", mlt_properties_get_double( filter_props, "circle_radius" ) );
-			ok |= effect->set_float( "gaussian_radius", mlt_properties_get_double( filter_props, "gaussian_radius" ) );
-			ok |= effect->set_float( "correlation", mlt_properties_get_double( filter_props, "correlation" ) );
-			ok |= effect->set_float( "noise", mlt_properties_get_double( filter_props, "noise" ) );
-			assert(ok);
-		}
 	}
+	mlt_frame_push_service( frame, filter );
+	mlt_frame_push_get_image( frame, get_image );
 	return frame;
 }
 
