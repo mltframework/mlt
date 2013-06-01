@@ -20,3 +20,4 @@ parameters:
     type: float
     minimum: 0
     default: 3
+    mutable: yes
