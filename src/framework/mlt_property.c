@@ -462,8 +462,8 @@ static double mlt_property_atof( const char *value, double fps, locale_t locale 
 #if defined(__GLIBC__) || defined(__DARWIN__)
 		if ( locale )
 			result = strtod_l( value, &end, locale );
+        else
 #endif
-		else
 			result = strtod( value, &end );
 		if ( end && end[0] == '%' )
 			result /= 100.0;
@@ -1444,8 +1444,8 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 #if defined(__GLIBC__) || defined(__DARWIN__)
 			if ( locale )
 				temp = strtod_l( value, &p, locale );
+            else
 #endif
-			else
 				temp = strtod( value, &p );
 			if ( p != value )
 			{

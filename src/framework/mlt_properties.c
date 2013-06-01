@@ -710,8 +710,8 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 				property_list *list = self->local;
 				if ( list->locale )
 					current = strtod_l( id, NULL, list->locale );
+                else
 #endif
-				else
 					current = strtod( id, NULL );
 			}
 			else
