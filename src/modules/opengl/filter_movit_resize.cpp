@@ -42,36 +42,6 @@ static float alignment_parse( char* align )
 	return ret;
 }
 
-static struct mlt_geometry_item_s get_geometry( mlt_profile profile, mlt_filter filter, mlt_frame frame )
-{
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
-	struct mlt_geometry_item_s item;
-	mlt_geometry geometry = (mlt_geometry) mlt_properties_get_data( filter_props, "geometry", NULL );
-	char *string = mlt_properties_get( properties, "resize.geometry" );
-	int length = mlt_filter_get_length2( filter, frame );
-
-	if ( !geometry ) {
-		geometry = mlt_geometry_init();
-		mlt_properties_set_data( filter_props, "geometry", geometry, 0,
-			(mlt_destructor) mlt_geometry_close, NULL );
-		mlt_geometry_parse( geometry, string, length, profile->width, profile->height );
-	} else {
-		mlt_geometry_refresh( geometry, string, length, profile->width, profile->height );
-	}
-
-	mlt_geometry_fetch( geometry, &item, mlt_filter_get_position( filter, frame ) );
-
-	if ( !mlt_properties_get_int( properties, "resize.fill" ) ) {
-		int x = mlt_properties_get_int( properties, "meta.media.width" );
-		item.w = item.w > x ? x : item.w;
-		x = mlt_properties_get_int( properties, "meta.media.height" );
-		item.h = item.h > x ? x : item.h;
-	}
-
-	return item;
-}
-
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
@@ -94,14 +64,27 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	int owidth = *width;
 	int oheight = *height;
 
-	// Use a geometry to compute position and size
-	struct mlt_geometry_item_s geometry_item;
-	geometry_item.x = geometry_item.y = 0.0f;
-	geometry_item.distort = 0;
-	if ( mlt_properties_get( properties, "resize.geometry" ) ) {
-		geometry_item = get_geometry( profile, filter, frame );
-		owidth = lrintf( geometry_item.w );
-		oheight = lrintf( geometry_item.h );
+	// Use a mlt_rect to compute position and size
+	mlt_rect rect;
+	rect.x = rect.y = 0.0;
+	if ( mlt_properties_get( properties, "resize.rect" ) ) {
+		mlt_position position = mlt_filter_get_position( filter, frame );
+		mlt_position length = mlt_filter_get_length2( filter, frame );
+		rect = mlt_properties_anim_get_rect( properties, "resize.rect", position, length );
+		if ( strchr( mlt_properties_get( properties, "resize.rect" ), '%' ) ) {
+			rect.x *= profile->width;
+			rect.w *= profile->width;
+			rect.y *= profile->height;
+			rect.h *= profile->height;
+		}
+		if ( !mlt_properties_get_int( properties, "resize.fill" ) ) {
+			int x = mlt_properties_get_int( properties, "meta.media.width" );
+			rect.w = rect.w > x ? x : rect.w;
+			x = mlt_properties_get_int( properties, "meta.media.height" );
+			rect.h = rect.h > x ? x : rect.h;
+		}
+		owidth = lrintf( rect.w );
+		oheight = lrintf( rect.h );
 	}
 
 	// Check for the special case - no aspect ratio means no problem :-)
@@ -116,8 +99,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	if ( *format == mlt_image_none || ( rescale && !strcmp( rescale, "none" ) ) )
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 
-	if ( mlt_properties_get_int( properties, "distort" ) == 0 &&
-	     geometry_item.distort == 0 )
+	if ( mlt_properties_get_int( properties, "distort" ) == 0 )
 	{
 		// Normalise the input and out display aspect
 		int normalised_width = profile->width;
@@ -163,14 +145,14 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	// Offset the position according to alignment
 	float w = float( *width - owidth );
 	float h = float( *height - oheight );
-	if ( mlt_properties_get( properties, "resize.geometry" ) ) {
-		// default left if geometry supplied
-		geometry_item.x += w * alignment_parse( mlt_properties_get( properties, "resize.halign" ) ) / 2.0f;
-		geometry_item.y += h * alignment_parse( mlt_properties_get( properties, "resize.valign" ) ) / 2.0f;
+	if ( mlt_properties_get( properties, "resize.rect" ) ) {
+		// default left if rect supplied
+		rect.x += w * alignment_parse( mlt_properties_get( properties, "resize.halign" ) ) / 2.0f;
+		rect.y += h * alignment_parse( mlt_properties_get( properties, "resize.valign" ) ) / 2.0f;
 	} else {
-		// default center if no geometry
-		geometry_item.x = w * 0.5f;
-		geometry_item.y = h * 0.5f;
+		// default center if no rect
+		rect.x = w * 0.5f;
+		rect.y = h * 0.5f;
 	}
 
 	if ( !error ) {
@@ -179,8 +161,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		if ( effect ) {
 			bool ok = effect->set_int( "width", *width );
 			ok |= effect->set_int( "height", *height );
-			ok |= effect->set_float( "left", geometry_item.x );
-			ok |= effect->set_float( "top", geometry_item.y );
+			ok |= effect->set_float( "left", rect.x );
+			ok |= effect->set_float( "top", rect.y );
 			assert(ok);
 		}
 		GlslManager::get_instance()->unlock_service( frame );

@@ -13,7 +13,7 @@ description: >
   Change the coordinates and scale to fit within a rectangle.
 
 parameters:
-  - identifier: geometry
+  - identifier: rect
     title: Rectangle
     type: geometry
     description: > 

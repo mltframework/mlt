@@ -25,7 +25,7 @@ static mlt_frame process( mlt_filter filter, mlt_frame frame )
 	// Drive the resize and resample filters on the b_frame for these composite parameters
 	mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
 	mlt_properties frame_props = MLT_FRAME_PROPERTIES(frame);
-	mlt_properties_set( frame_props, "resize.geometry", mlt_properties_get( properties, "geometry" ) );
+	mlt_properties_set( frame_props, "resize.rect", mlt_properties_get( properties, "rect" ) );
 	mlt_properties_set( frame_props, "resize.fill", mlt_properties_get( properties, "fill" ) );
 	mlt_properties_set( frame_props, "resize.halign", mlt_properties_get( properties, "halign" ) );
 	mlt_properties_set( frame_props, "resize.valign", mlt_properties_get( properties, "valign" ) );
@@ -39,7 +39,7 @@ mlt_filter filter_movit_rect_init( mlt_profile profile, mlt_service_type type, c
 	GlslManager* glsl = GlslManager::get_instance();
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
-		mlt_properties_set( MLT_FILTER_PROPERTIES(filter), "geometry", arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES(filter), "rect", arg );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES(filter), "fill", 1 );
 		filter->process = process;
 	}
