@@ -37,6 +37,7 @@ parameters:
     default: seconds+1
     values:
       - seconds
+      - seconds+1
       - frames
       - timecode
       - clock
