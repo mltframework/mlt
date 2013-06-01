@@ -22,6 +22,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// For strtod_l
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "mlt_properties.h"
 #include "mlt_property.h"
 #include "mlt_deque.h"

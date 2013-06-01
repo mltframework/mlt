@@ -451,7 +451,7 @@ MLTPP_0.9.0 {
       "Mlt::Properties::get_color(char const*)";
       "Mlt::Properties::get_rect(char const*)";
       "Mlt::Properties::set(char const*, double, double, double, double, double)";
-      "Mlt::Properties::set(char const*, mlt_color);
+      "Mlt::Properties::set(char const*, mlt_color)";
       "Mlt::Properties::set(char const*, mlt_rect)";
       "Mlt::Service::filter_count()";
       "Mlt::Service::move_filter(int, int)";
