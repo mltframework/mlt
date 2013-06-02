@@ -40,6 +40,7 @@ void deleteManager(GlslManager *p)
 GlslManager::GlslManager()
 	: Mlt::Filter( mlt_filter_new() )
 	, pbo(0)
+	, initEvent(0)
 {
 	mlt_filter filter = get_filter();
 	if ( filter ) {
@@ -49,7 +50,7 @@ GlslManager::GlslManager()
 			(mlt_destructor) deleteManager, NULL);
 
 		mlt_events_register( get_properties(), "init glsl", NULL );
-		listen("init glsl", this, (mlt_listener) GlslManager::onInit);
+		initEvent = listen("init glsl", this, (mlt_listener) GlslManager::onInit);
 	}
 }
 
@@ -61,6 +62,7 @@ GlslManager::~GlslManager()
 	while (texture_list.peek_back())
 		delete (glsl_texture) texture_list.pop_back();
 	delete pbo;
+	delete initEvent;
 }
 
 GlslManager* GlslManager::get_instance()

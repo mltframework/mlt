@@ -66,6 +66,7 @@ typedef struct glsl_pbo_s *glsl_pbo;
 class Effect;
 class EffectChain;
 class MltInput;
+class Mlt::Event;
 
 class GlslManager : public Mlt::Filter
 {
@@ -100,6 +101,7 @@ private:
 	Mlt::Deque texture_list;
 	glsl_pbo  pbo;
 	EffectChain* current_chain;
+	Mlt::Event* initEvent;
 };
 
 #endif // GLSL_MANAGER_H
