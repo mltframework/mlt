@@ -90,8 +90,13 @@ void mlt_animation_interpolate( mlt_animation self )
 				while ( prev && !prev->item.is_key ) prev = prev->prev;
 				while ( next && !next->item.is_key ) next = next->next;
 
-				if ( !prev )
+				if ( !prev ) {
 					current->item.is_key = 1;
+					prev = current;
+				}
+				if ( !next ) {
+					next = current;
+				}
 				points[0] = prev->prev? prev->prev->item.property : prev->item.property;
 				points[1] = prev->item.property;
 				points[2] = next->item.property;
