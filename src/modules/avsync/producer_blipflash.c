@@ -62,7 +62,7 @@ static void fill_blip( mlt_properties producer_properties, float* buffer, int fr
 		mlt_properties_set_data( producer_properties, "_blip", blip, new_size, mlt_pool_release, NULL );
 	};
 
-	memcpy( buffer, blip, new_size );
+	if( blip ) memcpy( buffer, blip, new_size );
 }
 
 static int producer_get_audio( mlt_frame frame, int16_t** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
