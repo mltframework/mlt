@@ -417,7 +417,8 @@ static void *consumer_thread( void *arg )
 				if ( frame && !eos )
 				{
 					mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "refresh", 1 );
-					mlt_consumer_put_frame( self->active, frame );
+					if ( self->active )
+						mlt_consumer_put_frame( self->active, frame );
 				}
 				if ( pause && speed == 0.0 )
 				{
