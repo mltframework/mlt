@@ -693,8 +693,9 @@ char *mlt_animation_serialize( mlt_animation self )
 		if ( self->data )
 			free( self->data );
 		self->data = ret;
+		ret = strdup( ret );
 	}
-	return strdup( ret );
+	return ret;
 }
 
 /** Close the animation and deallocate all of its resources.
