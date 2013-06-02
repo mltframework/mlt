@@ -1,6 +1,38 @@
 MLT Release Notes
 -----------------
 
+Version 0.9.0 - June 2, 2013
+
+This is a significant enhancement release.
+
+Build (especially interesting for Linux packagers)
+ * Added --rename-melt and --enable-extra-versioning configure options.
+ * Added symbol versioning on Linux.
+
+Framework
+ * Improved pause behavior when using buffered rendering in mlt_consumer.
+ * Added mlt_animation API (exposed via Mlt::Properties in C++).
+ * Added mlt_rect and mlt_color types.
+ * Deprecated mlt_geometry API.
+
+Modules
+ * Support for the latest versions of FFmpeg and Libav (but dropping support
+   for 0.5 and 0.6 versions).
+ * Added alpha channel output to avformat consumer.
+ * Added reconnect and exit_on_disconnect properties to avformat producer.
+ * Added opengl module that uses Movit for GLSL image processing.
+ * Added qglsl consumer to use opengl with avformat, sdi, and decklink.
+ * Added avsync module with blipflash producer and consumer for testing.
+ * Added new "count" producer to gtk2 module.
+ * Changed frei0r to use index-based property names making it impervious to
+   param name changes (param name still accepted for compatibility).
+ * Added default parameter values to frei0r metadata.
+
+Other
+ * Added more python example web services.
+ * Added the beginnings of unit test suite.
+
+
 Version 0.8.8 - January 20, 2013
 
 This is purely a bugfix release. See the ChangeLog or git log.
