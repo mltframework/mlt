@@ -141,6 +141,7 @@ static SDL_Surface *load_image( mlt_producer producer )
 	if ( filenames == NULL )
 	{
 		filenames = parse_file_names( resource );
+		mlt_properties_set_data( properties, "_filenames", filenames, 0, ( mlt_destructor )mlt_properties_close, 0 );
 		mlt_properties_set_data( properties, "_surface", surface, 0, ( mlt_destructor )SDL_FreeSurface, 0 );
 	}
 
