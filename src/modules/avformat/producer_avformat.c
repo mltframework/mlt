@@ -2537,14 +2537,11 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 				audio_codec_init( self, index, properties );
 		}
 	}
-	else if ( context && index > -1 && audio_codec_init( self, index, properties ) )
+	else if ( context && index > -1 && index < MAX_AUDIO_STREAMS &&
+		audio_codec_init( self, index, properties ) )
 	{
-		// Set the frame properties
-		if ( index < MAX_AUDIO_STREAMS )
-		{
-			mlt_properties_set_int( frame_properties, "audio_frequency", self->audio_codec[ index ]->sample_rate );
-			mlt_properties_set_int( frame_properties, "audio_channels", self->audio_codec[ index ]->channels );
-		}
+		mlt_properties_set_int( frame_properties, "audio_frequency", self->audio_codec[ index ]->sample_rate );
+		mlt_properties_set_int( frame_properties, "audio_channels", self->audio_codec[ index ]->channels );
 	}
 	if ( context && index > -1 )
 	{
