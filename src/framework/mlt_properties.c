@@ -777,9 +777,14 @@ int mlt_properties_set_or_default( mlt_properties self, const char *name, const 
 
 char *mlt_properties_get( mlt_properties self, const char *name )
 {
+	char *result = NULL;
 	mlt_property value = mlt_properties_find( self, name );
-	property_list *list = self->local;
-	return value == NULL ? NULL : mlt_property_get_string_l( value, list->locale );
+	if ( value )
+	{
+		property_list *list = self->local;
+		result = mlt_property_get_string_l( value, list->locale );
+	}
+	return result;
 }
 
 /** Get a property name by index.
@@ -906,11 +911,16 @@ int mlt_properties_parse( mlt_properties self, const char *namevalue )
 
 int mlt_properties_get_int( mlt_properties self, const char *name )
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	property_list *list = self->local;
+	int result = 0;
 	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_get_int( value, fps, list->locale );
+	if ( value )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		result = mlt_property_get_int( value, fps, list->locale );
+	}
+	return result;
 }
 
 /** Set a property to an integer value.
@@ -997,11 +1007,16 @@ int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t val
 
 double mlt_properties_get_double( mlt_properties self, const char *name )
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
+	double result = 0;
 	mlt_property value = mlt_properties_find( self, name );
-	property_list *list = self->local;
-	return value == NULL ? 0 : mlt_property_get_double( value, fps, list->locale );
+	if ( value )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		result = mlt_property_get_double( value, fps, list->locale );
+	}
+	return result;
 }
 
 /** Set a property to a floating point value.
@@ -1044,11 +1059,16 @@ int mlt_properties_set_double( mlt_properties self, const char *name, double val
 
 mlt_position mlt_properties_get_position( mlt_properties self, const char *name )
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	property_list *list = self->local;
+	mlt_position result = 0;
 	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_get_position( value, fps, list->locale );
+	if ( value )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		result = mlt_property_get_position( value, fps, list->locale );
+	}
+	return result;
 }
 
 /** Set a property to a position value.
