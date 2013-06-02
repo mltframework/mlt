@@ -141,6 +141,7 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	if (!instance) {
 		f0r_deinit();
 		dlclose(handle);
+		mlt_properties_close(metadata);
 		return NULL;
 	}
 	plginfo(&info);
