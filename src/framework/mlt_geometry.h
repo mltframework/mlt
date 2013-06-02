@@ -1,7 +1,10 @@
-/*
- * mlt_geometry.h -- provides the geometry API
+/**
+ * \file mlt_geometry.h
+ * \brief geometry animation API (deprecated)
+ * \deprecated use mlt_animation_s instead
+ *
  * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +26,10 @@
 
 #include "mlt_types.h"
 
+/** geometry animation item (deprecated)
+ * \deprecated use mlt_animation_s instead
+ */
+
 struct mlt_geometry_item_s
 {
 	/* Will be 1 when this is a key frame */
@@ -36,6 +43,10 @@ struct mlt_geometry_item_s
 	/* Indicates which values are fixed */
 	int f[ 5 ];
 };
+
+/** geometry object (deprecated)
+ * \deprecated use mlt_animation_s instead
+ */
 
 struct mlt_geometry_s
 {

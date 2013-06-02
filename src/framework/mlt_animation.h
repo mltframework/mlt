@@ -1,7 +1,7 @@
 /**
  * \file mlt_animation.h
  * \brief Property Animation class declaration
- * \see mlt_animaton_s
+ * \see mlt_animation_s
  *
  * Copyright (C) 2004-2013 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>

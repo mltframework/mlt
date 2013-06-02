@@ -24,6 +24,15 @@
 #ifndef _MLT_H_
 #define _MLT_H_
 
+/** \mainpage MLT API Reference Documentation
+ * \par
+ * We recommend that you look in <a href="annotated.html"><b>Data Structures</b></a>
+ * or <a href="files.html"><b>Files</b></a>.
+ * \par
+ * Additional documentation about MLT, in general, can be found on the
+ * <a href="http://www.mltframework.org/bin/view/MLT/Documentation">MLT website</a>.
+ */
+
 #ifdef __cplusplus
 extern "C"
 {

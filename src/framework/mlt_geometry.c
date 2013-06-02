@@ -1,7 +1,10 @@
-/*
- * mlt_geometry.c -- provides the geometry API
+/**
+ * \file mlt_geometry.c
+ * \brief geometry animation API (deprecated)
+ * \deprecated use mlt_animation_s instead
+ *
  * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,12 +30,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+/** private part of geometry animation item (deprecated)
+ * \deprecated use mlt_animation_s instead
+ */
+
 typedef struct geometry_item_s
 {
 	struct mlt_geometry_item_s data;
 	struct geometry_item_s *next, *prev;
 }
 *geometry_item;
+
+/** private part of geometry object (deprecated)
+ * \deprecated use mlt_animation_s instead
+ */
 
 typedef struct
 {
