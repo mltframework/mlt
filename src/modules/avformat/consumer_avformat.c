@@ -236,7 +236,7 @@ static void property_changed( mlt_properties owner, mlt_consumer self, char *nam
 		mlt_properties_set_int( properties, "display_aspect_den", rational.den );
 
 		// Now compute the sample aspect ratio
-		rational = av_d2q( ar * height / width, 255 );
+		rational = av_d2q( ar * height / FFMAX(width, 1), 255 );
 
 		// Update the profile and properties as well since this is an alias
 		// for mlt properties that correspond to profile settings
