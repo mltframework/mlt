@@ -446,7 +446,7 @@ static void *consumer_thread( void *arg )
 			}
 
 			// Copy the rectangle info from the active consumer
-			if ( self->running && preview_off == 0 )
+			if ( self->running && preview_off == 0 && self->active )
 			{
 				mlt_properties active = MLT_CONSUMER_PROPERTIES( self->active );
 				mlt_service_lock( MLT_CONSUMER_SERVICE( consumer ) );
