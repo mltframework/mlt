@@ -1125,9 +1125,11 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 		else
 		{
 			mlt_animation_set_length( self->animation, length );
+			pthread_mutex_lock( &self->mutex );
 			self->types |= mlt_prop_data;
 			self->data = self->animation;
 			self->serialiser = (mlt_serialiser) mlt_animation_serialize;
+			pthread_mutex_unlock( &self->mutex );
 		}
 	}
 	else if ( self->prop_string )
