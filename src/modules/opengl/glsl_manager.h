@@ -66,7 +66,6 @@ typedef struct glsl_pbo_s *glsl_pbo;
 class Effect;
 class EffectChain;
 class MltInput;
-class Mlt::Event;
 
 class GlslManager : public Mlt::Filter
 {
