@@ -41,6 +41,12 @@ public:
 #endif
     }
 
+    ~TestProperties() {
+#if defined(__linux__) || defined(__DARWIN__)
+        freelocale(locale);
+#endif
+    }
+
 private Q_SLOTS:
     void InstantiationIsAReference()
     {
@@ -296,7 +302,8 @@ private Q_SLOTS:
         p[1].set("1", "value3");
         p[1].set("2", "value4");
         p[0].set("seq", p[1].get_properties(), 0);
-        QCOMPARE(p[0].serialise_yaml(),
+        char* serializedYaml = p[0].serialise_yaml();
+        QCOMPARE(serializedYaml,
                 "---\n"
                 "key1: value1\n"
                 "key2: value2\n"
@@ -304,6 +311,7 @@ private Q_SLOTS:
                 "  - value3\n"
                 "  - value4\n"
                 "...\n");
+        free(serializedYaml);
     }
 
     void RadixRespondsToLocale()
