@@ -110,7 +110,7 @@ static void fill_image( mlt_properties producer_properties, char* color, uint8_t
 
 	int new_size = mlt_image_format_size( format, width, height, NULL );
 	int old_size = 0;
-	uint8_t* image = image = mlt_properties_get_data( producer_properties, color, &old_size );
+	uint8_t* image = mlt_properties_get_data( producer_properties, color, &old_size );
 
 	if( !image || new_size > old_size )
 	{
