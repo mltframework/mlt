@@ -100,7 +100,6 @@ private:
 	Mlt::Deque fbo_list;
 	Mlt::Deque texture_list;
 	glsl_pbo  pbo;
-	EffectChain* current_chain;
 	Mlt::Event* initEvent;
 };
 
