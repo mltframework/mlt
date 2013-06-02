@@ -189,7 +189,7 @@ static void fill_image( mlt_properties producer_properties, char* color, uint8_t
 		}
 	}
 
-	memcpy( buffer, image, new_size );
+	if( image ) memcpy( buffer, image, new_size );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_format* format, int* width, int* height, int writable )
