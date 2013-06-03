@@ -1,3 +1,502 @@
+2013-06-02  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 0.9.0.
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/glsl_manager.h: Fix tiny memory leak in GlslManager
+  (coverity-1026795).
+
+  * src/framework/mlt.h, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h, src/framework/mlt_geometry.c,
+  src/framework/mlt_geometry.h: Indicate mlt_geometry is deprecated in API
+  docs.
+
+2013-06-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/opengl/filter_movit_rect.cpp,
+  src/modules/opengl/filter_movit_rect.yml,
+  src/modules/opengl/filter_movit_resize.cpp: Convert movit.rect to mlt_rect.
+
+2013-05-31  Dan Dennedy <dan@dennedy.org>
+
+  * .../opengl/filter_deconvolution_sharpen.cpp,
+  .../opengl/filter_deconvolution_sharpen.yml,
+  src/modules/opengl/filter_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_lift_gamma_gain.yml,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_diffusion.yml,
+  src/modules/opengl/filter_movit_glow.cpp,
+  src/modules/opengl/filter_movit_glow.yml,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_opacity.yml,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_saturation.yml,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_movit_vignette.yml,
+  src/modules/opengl/filter_white_balance.cpp,
+  src/modules/opengl/filter_white_balance.yml,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_mix.yml: Add property animation to the
+  other movit services.
+
+  * presets/filter/movit.blur/blur_in, presets/filter/movit.blur/blur_in_out,
+  presets/filter/movit.blur/blur_out: Add animated movit.blur presets.
+
+  * src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_blur.yml: Add property animation to
+  movit.blur filter.
+
+  * src/framework/mlt_properties.c, src/framework/mlt_property.c: Compile fixes
+  for Windows after merging animation branch.
+
+  * src/framework/mlt_properties.c, src/mlt++/mlt++.vers: Compile fixes for
+  Linux after merging animation branch.
+
+2013-05-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_animation.c, src/framework/mlt_animation.h,
+  src/framework/mlt_frame.c, src/framework/mlt_frame.h,
+  src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/framework/mlt_types.h: Various documentation and copyright fixes and
+  updates.
+
+  * src/framework/mlt_animation.c, src/framework/mlt_animation.h: Document the
+  new mlt_animation API.
+
+  * src/framework/mlt_properties.c, src/framework/mlt_property.c,
+  src/framework/mlt_types.h: Document the property animation, rect, and color
+  additions.
+
+  * src/framework/mlt_animation.h, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/framework/mlt_property.c,
+  src/framework/mlt_property.h, src/framework/mlt_types.h: Add
+  mlt_properties_get_animation(); it might come in handy.
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h, src/mlt++/mlt++.vers,
+  src/tests/test_properties/test_properties.cpp: Add
+  mlt_properties_set_color().
+
+2013-05-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/mlt++/MltProperties.cpp, src/tests/test_properties/test_properties.cpp:
+  Reorder some property anim parameters for consistency.
+
+  * src/framework/Makefile, src/framework/mlt_animation.c,
+  src/framework/mlt_profile.c, src/framework/mlt_property.c,
+  src/mlt++/MltProperties.h, src/tests/test_properties/test_properties.cpp:
+  Make animation length optional.  It is only really needed when using negative
+  time values. With some fixes for parsing negatives in time code/clock values.
+
+2013-05-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_types.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/tests/test_properties/test_properties.cpp: Add
+  mlt_color and mlt_properties_get_color().
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h,
+  src/tests/test_properties/test_properties.cpp: Add
+  mlt_properties_anim_set/get() for string.
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/tests/test_properties/test_properties.cpp: Add
+  mlt_properties_anim_set/get_double().
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h,
+  src/tests/test_properties/test_properties.cpp: Rename functions with _pos to
+  anim_.
+
+  * src/framework/mlt_animation.c, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/framework/mlt_property.c,
+  src/framework/mlt_property.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/tests/test_properties/test_properties.cpp: Add
+  mlt_properties_set/get_rect_pos for rect animation.
+
+2013-05-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/framework/mlt_types.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/tests/test_properties/test_properties.cpp: Add
+  mlt_rect and mlt_properties_set/get_rect.
+
+2013-05-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_property.c, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/tests/test_properties/test_properties.cpp: Add
+  mlt_properties_set/get_int_pos and Properties::set/get_int.
+
+2013-05-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_property.c,
+  src/tests/test_properties/test_properties.cpp: Interpret % after numeric
+  string.
+
+  * src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/framework/mlt_types.h, src/tests/test_properties/test_properties.cpp: Add
+  mlt_property_set_double_pos() and mlt_property_set_int_pos().
+
+2013-05-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_animation.c, src/framework/mlt_animation.h,
+  src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/framework/mlt_types.h, src/tests/test_properties/test_properties.cpp: Add
+  Catmull-Rom spline smooth animation interpolation.
+
+2013-05-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_property.c, src/framework/mlt_property.h,
+  src/tests/test_properties/test_properties.cpp: Add
+  mlt_property_get_double_pos() and mlt_property_get_int_pos().
+
+2013-05-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_animation.c, src/framework/mlt_animation.h,
+  src/framework/mlt_property.c, src/tests/test_properties/test_properties.cpp:
+  Add support for discrete animation including strings.
+
+  * src/framework/Makefile, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h, src/framework/mlt_property.c,
+  src/framework/mlt_property.h, src/tests/test_properties/test_properties.cpp:
+  Add mlt_animation and mlt_property_interpolate().  mlt_property_interpolate()
+  only works on a scalar double property at this time.
+
+2013-05-14  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_frame.c,
+  src/framework/mlt_types.h, src/modules/avformat/producer_avformat.c,
+  src/modules/avsync/consumer_blipflash.c, src/modules/core/filter_luma.c,
+  src/modules/dgraft/filter_telecide.c, src/modules/gtk2/producer_count.c,
+  src/modules/kdenlive/producer_framebuffer.c,
+  src/modules/xine/filter_deinterlace.c: make mlt_position type double
+
+2013-05-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Add exit_on_disconnect property
+  to avformat producer.
+
+2013-05-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/Makefile, src/modules/frei0r/factory.c,
+  src/modules/frei0r/param_name_map.yaml,
+  src/modules/frei0r/param_name_map.yml: Rename frei0r param_name_map filename
+  and install it.
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Add reconnect property to
+  avformat producer.
+
+2013-05-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_melt.c, src/modules/rtaudio/RtAudio.cpp,
+  src/modules/xine/deinterlace.c, src/modules/xml/producer_xml.c: Fix some
+  compile warnings raised by clang.
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h: Make a bunch of
+  fields of mlt_consumer_s truly private.
+
+2013-05-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c,
+  src/tests/test_properties/test_properties.cpp: Add more properties unit
+  tests.
+
+2013-05-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/tests/test_properties/test_properties.cpp,
+  src/tests/test_properties/test_properties.pro: Add more unit tests for
+  mlt_property.
+
+2013-04-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/tests/common.pri, src/tests/test_properties/test_properties.cpp,
+  src/tests/test_properties/test_properties.pro,
+  src/tests/test_repository/test_repository.cpp,
+  src/tests/test_repository/test_repository.pro, src/tests/tests.pro: Add the
+  start of a unit test suite using QtTest.
+
+  * src/tests/Makefile, src/tests/README, src/tests/charlie.c, src/tests/dan.c,
+  src/tests/dissolve.c, src/tests/hello.c, src/tests/io.c, src/tests/io.h,
+  src/tests/luma.c, src/tests/pango.c, src/tests/pixbuf.c, src/tests/test.png:
+  Remove old files in src/tests to make way for new ones.
+
+2013-04-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/modules/sdl/consumer_sdl_preview.c: Fix
+  race condition in mlt_consumer_stop().
+
+2013-04-25  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_consumer.c, src/framework/mlt_consumer.h,
+  src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/consumer_sdl_preview.c: Make mlt_consumer_purge() more
+  thorough. (SF-187)  This is applied to SDL consumers only at the moment since
+  that is what most applications are using. Needs to be extended to other
+  consumers.
+
+2013-04-12  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version 0.8.9.
+
+2013-04-07  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/gtk2/producer_count.yml, src/modules/oldfilm/filter_dust.yml,
+  src/modules/oldfilm/filter_grain.yml, src/modules/oldfilm/filter_oldfilm.yml:
+  Misc YAML fixes
+
+2013-04-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_service.c,
+  src/framework/mlt_service.h, src/mlt++/MltService.cpp,
+  src/mlt++/MltService.h, src/mlt++/mlt++.vers: Add mlt_service_move_filter()
+  and Mlt::Service::move_filter().
+
+2013-04-04  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/gtk2/Makefile, src/modules/gtk2/factory.c,
+  src/modules/gtk2/producer_count.c, src/modules/gtk2/producer_count.yml: Add
+  new count producer
+
+2013-03-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/factory.c, src/modules/avformat/filter_avresample.c:
+  Restore avresample filter when build against FFmpeg.  This provides a LGPL
+  audio resampler, but it is using deprecated APIs. Support for swresample or
+  libav avresampler is another project.
+
+2013-03-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Add support for libavformat and
+  libavcodec major version 55.
+
+2013-03-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure,
+  src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_avdeinterlace.c,
+  src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c: Drop support for FFmpeg v0.5 and
+  v0.6 and require swscale.  This is cleanup work to make way for more version
+  handling to handle current git master of libav that removes deprecated APIs.
+
+2013-03-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/core/consumer_multi.c, src/modules/core/producer_loader.c,
+  src/modules/opengl/filter_movit_convert.cpp: Make the arg to avcolor_space
+  filter a pointer.  Instead of passing an int cast as pointer.
+
+2013-03-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/factory.c, src/modules/frei0r/frei0r_helper.c,
+  src/modules/frei0r/param_name_map.yml: Add a frei0r param name mapping
+  system.  For apps that set frei0r parameters by their name, this provides
+  backwards compatibility when a frei0r parameter name changes.
+
+2013-03-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/factory.c, src/modules/frei0r/frei0r_helper.c: Switch to
+  indexed propery names for frei0r params.  Properties supplied by frei0r param
+  name are supported for backwards compatibility.
+
+2013-03-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/loader.dict, src/modules/core/producer_loader.c: Tell
+  loader how to use WebVfx.  With my latest (merged) patches to WebVfx, one can
+  load plain old HTML and QML files. They do not need webvfx script to
+  initialize rendering - with some caveats about the meaning of
+  document-loaded. However, without this loader change, plain resources need 
+  to prefaced with "plain:". The loader producer can now do that and instead
+  "webvfx:" is needed to tell webvfx to wait for script in the content to call
+  WebVfx.renderReady(true) (unless you use "webvfx:plain:...").  Also, WebVfx
+  can also now load HTML over HTTP. This is especially handy if your content is
+  updating itself with data from a web service. Otherwise, you will run into
+  cross-site-scripting errors.
+
+2013-03-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/opengl/filter_movit_crop.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_overlay.cpp: Add locking to opengl
+  services for thread protection.
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/glsl_manager.h: Make opengl filters support attach,
+  detach, and disable.
+
+2013-03-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_service.c,
+  src/framework/mlt_service.h, src/mlt++/MltService.cpp,
+  src/mlt++/MltService.h, src/mlt++/mlt++.vers: Add mlt_service_filter_count
+  and Mlt::Service::filter_count.
+
+2013-02-25  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/avsync/Makefile, src/modules/avsync/consumer_blipflash.c,
+  src/modules/avsync/consumer_blipflash.yml, src/modules/avsync/factory.c,
+  src/modules/avsync/producer_blipflash.c,
+  src/modules/avsync/producer_blipflash.yml: Add new avsync module
+
+2013-02-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.c, src/modules/core/consumer_multi.c: Let qglsl
+  multi consumer work with more consumers.  Works with sdl and decklink
+  consumers.
+
+  * src/framework/mlt_consumer.c, src/modules/core/producer_loader.c: Fix crash
+  on missing NULL at end of mlt_events_fire().
+
+2013-02-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/melt/melt.c, src/modules/opengl/mlt_movit_input.cpp,
+  src/modules/qimage/consumer_qglsl.cpp: Fix OpenGL context cleanup on Windows.
+   Would crash at end of melt with qglsl.
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/qimage/consumer_qglsl.cpp: Some minor logging cleanup.
+
+2013-02-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/opengl/consumer_xgl.c,
+  src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_movit_convert.cpp: Cleanup some logging from work
+  in opengl branch.
+
+  * src/melt/melt.c, src/modules/xml/producer_xml.c: Let melt and xml producer
+  use qglsl consumer (opengl branch).
+
+  * src/modules/qimage/Makefile, src/modules/qimage/configure,
+  src/modules/qimage/consumer_qglsl.cpp, src/modules/qimage/factory.c: Add
+  qglsl multi consumer (opengl branch).
+
+  * src/framework/mlt_profile.c, src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c, src/modules/core/consumer_multi.c,
+  src/modules/core/filter_crop.c, src/modules/core/filter_fieldorder.c,
+  src/modules/core/filter_imageconvert.c, src/modules/core/loader.ini,
+  src/modules/core/producer_loader.c: Let loader producer use new GLSL
+  normalizing filters (opengl branch).
+
+  * src/modules/opengl/Makefile, src/modules/opengl/configure,
+  src/modules/opengl/consumer_xgl.c, src/modules/opengl/factory.c,
+  src/modules/opengl/fbo_input.cpp, src/modules/opengl/fbo_input.h,
+  .../opengl/filter_deconvolution_sharpen.cpp,
+  .../opengl/filter_deconvolution_sharpen.yml,
+  src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_lift_gamma_gain.yml,
+  src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_blur.yml,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_diffusion.yml,
+  src/modules/opengl/filter_movit_glow.cpp,
+  src/modules/opengl/filter_movit_glow.yml,
+  src/modules/opengl/filter_movit_mirror.cpp,
+  src/modules/opengl/filter_movit_mirror.yml,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_opacity.yml,
+  src/modules/opengl/filter_movit_rect.cpp,
+  src/modules/opengl/filter_movit_rect.yml,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_saturation.yml,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_movit_vignette.yml,
+  src/modules/opengl/filter_white_balance.cpp,
+  src/modules/opengl/filter_white_balance.yml,
+  src/modules/opengl/glsl_manager.h, src/modules/opengl/mlt_flip_effect.h,
+  src/modules/opengl/mlt_movit_input.cpp, src/modules/opengl/mlt_movit_input.h,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_mix.yml,
+  src/modules/opengl/transition_movit_overlay.cpp,
+  src/modules/opengl/transition_movit_overlay.yml: Add the new opengl module
+  (opengl branch).
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h: Add
+  consumer-thread-started and -stopped events (opengl branch).
+
+  * src/framework/mlt_frame.c, src/framework/mlt_types.h: Add mlt_image_glsl
+  and _glsl_texture (opengl branch).
+
+  * src/mlt++/MltDeque.cpp, src/mlt++/MltDeque.h, src/mlt++/mlt++.vers: Add
+  Mlt::Deque::peek() (opengl branch).
+
+2013-02-15  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/jackrack/Makefile, src/modules/jackrack/factory.c,
+  src/modules/jackrack/plugin_desc.c, src/modules/jackrack/plugin_desc.h,
+  src/modules/jackrack/plugin_mgr.c, src/modules/jackrack/process.c,
+  src/modules/jackrack/producer_ladspa.c,
+  src/modules/jackrack/producer_ladspa.yml: Add ladspa producer
+
+2013-02-13  Cristian Morales Vega <reddwarf@opensuse.org>
+
+  * src/framework/Makefile, src/mlt++/Makefile: Fix OSX buld which broke when
+  adding Linux symbols versioning
+
+2013-02-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_still.c:
+  Remove local references to SDL_Surface. (SF-186)  Why bother when
+  SDL_GetVideoSurface() is available?
+
+2013-02-07  Cristian Morales Vega <reddwarf@opensuse.org>
+
+  * src/framework/Makefile, src/framework/mlt.vers, src/mlt++/Makefile,
+  src/mlt++/config.h, src/mlt++/mlt++.vers: Use symbol versioning
+
+2013-02-08  Cristian Morales Vega <reddwarf@opensuse.org>
+
+  * Makefile, configure, src/melt/Makefile: Make the versioning opt-in
+
+2013-02-07  Cristian Morales Vega <reddwarf@opensuse.org>
+
+  * Makefile, configure, profiles/Makefile, src/framework/Makefile,
+  src/framework/mlt_factory.c, src/melt/Makefile, src/melt/configure,
+  src/modules/Makefile, src/modules/avformat/Makefile,
+  src/modules/core/Makefile, src/modules/decklink/Makefile,
+  src/modules/dgraft/Makefile, src/modules/dv/Makefile,
+  src/modules/effectv/Makefile, src/modules/feeds/Makefile,
+  src/modules/frei0r/Makefile, src/modules/gtk2/Makefile,
+  src/modules/jackrack/Makefile, src/modules/kdenlive/Makefile,
+  src/modules/kino/Makefile, src/modules/linsys/Makefile,
+  src/modules/lumas/Makefile, src/modules/motion_est/Makefile,
+  src/modules/normalize/Makefile, src/modules/oldfilm/Makefile,
+  src/modules/plus/Makefile, src/modules/qimage/Makefile,
+  src/modules/resample/Makefile, src/modules/rotoscoping/Makefile,
+  src/modules/rtaudio/Makefile, src/modules/sdl/Makefile,
+  src/modules/sox/Makefile, src/modules/swfdec/Makefile,
+  src/modules/videostab/Makefile, src/modules/vmfx/Makefile,
+  src/modules/vorbis/Makefile, src/modules/xine/Makefile,
+  src/modules/xml/Makefile: Version modules and data directories, and melt 
+  Allow the "extras" of binary incompatible versions of MLT to be installed
+  simultaneously. I don't like the idea of versioning the melt binary. But
+  kdenlive is the main user of MLT and it expects the same formats support from
+  both the libmltX it is linked to, and the melt binary it uses to do the
+  actual work.
+
 2013-01-20  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h,
