@@ -301,7 +301,7 @@ then
 		grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
 		;;
 		FreeBSD)
-		[ "$(make -V MACHINE_CPU:Mmmx)" ] || mmx=false
+		[ "$(make -V MACHINE_CPU:Mmmx -f /dev/null)" ] || mmx=false
 		;;
 		*)
 		grep mmx /proc/cpuinfo > /dev/null 2>&1 || mmx=false
@@ -320,7 +320,7 @@ then
 		grep sse /proc/cpuinfo > /dev/null 2>&1 || sse=false
 		;;
 		FreeBSD)
-		[ "$(make -V MACHINE_CPU:Msse)" ] || sse=false
+		[ "$(make -V MACHINE_CPU:Msse -f /dev/null)" ] || sse=false
 		;;
 		*)
 		grep sse /proc/cpuinfo > /dev/null 2>&1 || sse=false
@@ -339,7 +339,7 @@ then
 		grep sse2 /proc/cpuinfo > /dev/null 2>&1 || sse2=false
 		;;
 		FreeBSD)
-		[ "$(make -V MACHINE_CPU:Msse2)" ] || sse2=false
+		[ "$(make -V MACHINE_CPU:Msse2 -f /dev/null)" ] || sse2=false
 		;;
 		*)
 		grep sse2 /proc/cpuinfo > /dev/null 2>&1 || sse2=false
