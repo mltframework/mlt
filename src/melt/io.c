@@ -32,6 +32,8 @@
 #else
 // MinGW defines struct timespec in pthread.h
 #include <pthread.h>
+// for nanosleep()
+#include <framework/mlt_types.h>
 #endif
 #include <unistd.h>
 #include <sys/time.h>
@@ -98,8 +100,10 @@ int *get_int( int *output, int use )
 /** This stores the previous settings
 */
 
+#ifndef WIN32
 static struct termios oldtty;
 static int mode = 0;
+#endif
 
 /** This is called automatically on application exit to restore the 
 	previous tty settings.
