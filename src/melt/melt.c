@@ -988,8 +988,11 @@ query_all:
 	mlt_profile_close( profile );
 
 exit_factory:
-		
+
+// Workaround qmelt on OS X from crashing at exit.
+#if !defined(__MACH__) || !defined(QT_GUI_LIB)
 	mlt_factory_close( );
+#endif
 
 	return 0;
 }
