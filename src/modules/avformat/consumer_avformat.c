@@ -1874,16 +1874,29 @@ static void *consumer_thread( void *arg )
 					{
 						AVPacket pkt;
 						av_init_packet( &pkt );
-						pkt.data = video_outbuf;
-						pkt.size = video_outbuf_size;
+						if ( c->codec->id == AV_CODEC_ID_RAWVIDEO ) {
+							pkt.data = NULL;
+							pkt.size = 0;
+						} else {
+							pkt.data = video_outbuf;
+							pkt.size = video_outbuf_size;
+						}
 
 						// Set the quality
 						converted_avframe->quality = c->global_quality;
+						converted_avframe->pts = frame_count;
 
 						// Set frame interlace hints
 						converted_avframe->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
 						converted_avframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
-						converted_avframe->pts = frame_count;
+#if LIBAVCODEC_VERSION_INT >= ((53<<16)+(61<<8)+100)
+						if ( mlt_properties_get_int( frame_properties, "progressive" ) )
+							c->field_order = AV_FIELD_PROGRESSIVE;
+						else if ( c->codec_id == AV_CODEC_ID_MJPEG )
+							c->field_order = (mlt_properties_get_int( frame_properties, "top_field_first" )) ? AV_FIELD_TT : AV_FIELD_BB;
+						else
+							c->field_order = (mlt_properties_get_int( frame_properties, "top_field_first" )) ? AV_FIELD_TB : AV_FIELD_BT;
+#endif
 
 	 					// Encode the image
 #if LIBAVCODEC_VERSION_MAJOR >= 55
@@ -2068,8 +2081,13 @@ static void *consumer_thread( void *arg )
 			AVCodecContext *c = video_st->codec;
 			AVPacket pkt;
 			av_init_packet( &pkt );
-			pkt.data = video_outbuf;
-			pkt.size = video_outbuf_size;
+			if ( c->codec->id == AV_CODEC_ID_RAWVIDEO ) {
+				pkt.data = NULL;
+				pkt.size = 0;
+			} else {
+				pkt.data = video_outbuf;
+				pkt.size = video_outbuf_size;
+			}
 
 			// Encode the image
 #if LIBAVCODEC_VERSION_MAJOR >= 55
