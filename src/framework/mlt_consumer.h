@@ -55,6 +55,7 @@
  * \event \em consumer-frame-render The base class fires this immediately before rendering a frame.
  * \event \em consumer-thread-started The base class fires when beginning execution of a rendering thread.
  * \event \em consumer-thread-stopped The base class fires when a rendering thread has ended.
+ * \event \em consumer-stopping This is fired when stop was requested, but before render threads are joined.
  * \event \em consumer-stopped This is fired when the subclass implementation calls mlt_consumer_stopped().
  * \properties \em fps video frames per second as floating point (read only)
  * \properties \em frame_rate_num the numerator of the video frame rate, overrides \p mlt_profile_s

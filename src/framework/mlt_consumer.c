@@ -140,6 +140,7 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 		mlt_events_register( properties, "consumer-frame-render", ( mlt_transmitter )mlt_consumer_frame_render );
 		mlt_events_register( properties, "consumer-thread-started", NULL );
 		mlt_events_register( properties, "consumer-thread-stopped", NULL );
+		mlt_events_register( properties, "consumer-stopping", NULL );
 		mlt_events_register( properties, "consumer-stopped", NULL );
 		mlt_events_listen( properties, self, "consumer-frame-show", ( mlt_listener )on_consumer_frame_show );
 
@@ -1168,6 +1169,7 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 #endif
 		// Inform thread to stop
 		priv->ahead = 0;
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
 
 		// Broadcast to the condition in case it's waiting
 		pthread_mutex_lock( &priv->queue_mutex );
@@ -1218,6 +1220,7 @@ static void consumer_work_stop( mlt_consumer self )
 #endif
 		// Inform thread to stop
 		priv->ahead = 0;
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
 
 		// Broadcast to the queue condition in case it's waiting
 		pthread_mutex_lock( &priv->queue_mutex );
