@@ -179,7 +179,7 @@ static void apply_profile_properties( mlt_consumer self, mlt_profile profile, ml
 	mlt_properties_set_int( properties, "sample_aspect_den", profile->sample_aspect_den );
 	mlt_properties_set_double( properties, "display_ratio", mlt_profile_dar( profile )  );
 	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
-	mlt_properties_set_int( properties, "display_aspect_num", profile->display_aspect_num );
+	mlt_properties_set_int( properties, "display_aspect_den", profile->display_aspect_den );
 	mlt_properties_set_int( properties, "colorspace", profile->colorspace );
 	mlt_event_unblock( priv->event_listener );
 }
