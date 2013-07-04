@@ -1480,7 +1480,7 @@ static void *consumer_thread( void *arg )
 	if ( video_st )
 		converted_avframe = alloc_picture( video_st->codec->pix_fmt, width, height );
 
-#if LIBAVCODEC_VERSION_MAJOR >= 55
+#if LIBAVCODEC_VERSION_MAJOR >= 54
 	// Allocate audio AVFrame
 	if ( audio_st[0] )
 	{
@@ -1613,7 +1613,7 @@ static void *consumer_thread( void *arg )
 							else if ( codec->sample_fmt == AV_SAMPLE_FMT_U8P )
 								p = interleaved_to_planar( samples, channels, p, sizeof( uint8_t ) );
 #endif
-#if LIBAVCODEC_VERSION_MAJOR >= 55
+#if LIBAVCODEC_VERSION_MAJOR >= 54
 							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
 							if ( audio_codec_id == AV_CODEC_ID_VORBIS )
 								audio_avframe->pts = synth_audio_pts;
@@ -1703,7 +1703,7 @@ static void *consumer_thread( void *arg )
 									dest_offset += current_channels;
 								}
 							}
-#if LIBAVCODEC_VERSION_MAJOR >= 55
+#if LIBAVCODEC_VERSION_MAJOR >= 54
 							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
 							if ( audio_codec_id == AV_CODEC_ID_VORBIS )
 								audio_avframe->pts = synth_audio_pts;
@@ -2013,7 +2013,7 @@ static void *consumer_thread( void *arg )
 				else if ( c->sample_fmt == AV_SAMPLE_FMT_U8P )
 					p = interleaved_to_planar( audio_input_nb_samples, channels, p, sizeof( uint8_t ) );
 #endif
-#if LIBAVCODEC_VERSION_MAJOR >= 55
+#if LIBAVCODEC_VERSION_MAJOR >= 54
 				pkt.size = audio_outbuf_size;
 				audio_avframe->nb_samples = FFMAX( samples / channels, audio_input_nb_samples );
 				if ( audio_codec_id == AV_CODEC_ID_VORBIS )
@@ -2041,7 +2041,7 @@ static void *consumer_thread( void *arg )
 			{
 				// Drain the codec
 				if ( pkt.size <= 0 ) {
-#if LIBAVCODEC_VERSION_MAJOR >= 55
+#if LIBAVCODEC_VERSION_MAJOR >= 54
 					pkt.size = audio_outbuf_size;
 					int got_packet = 0;
 					int ret = avcodec_encode_audio2( c, &pkt, NULL, &got_packet );
