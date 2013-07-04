@@ -1178,7 +1178,7 @@ static void *consumer_thread( void *arg )
 	int count = 0;
 
 	// Allocate the context
-	AVFormatContext *oc = avformat_alloc_context( );
+	AVFormatContext *oc = NULL;
 
 	// Streams
 	AVStream *video_st = NULL;
@@ -1231,6 +1231,22 @@ static void *consumer_thread( void *arg )
 	// We need a filename - default to stdout?
 	if ( filename == NULL || !strcmp( filename, "" ) )
 		filename = "pipe:";
+
+#if LIBAVUTIL_VERSION_INT >= ((53<<16)+(2<<8)+0)
+	avformat_alloc_output_context2( &oc, fmt, format, filename );
+#else
+	oc = avformat_alloc_context( );
+	oc->oformat = fmt;
+	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
+
+	if ( oc->oformat && oc->oformat->priv_class && !oc->priv_data && oc->oformat->priv_data_size ) {
+		oc->priv_data = av_mallocz( oc->oformat->priv_data_size );
+		if ( oc->priv_data ) {
+			*(const AVClass**)oc->priv_data = oc->oformat->priv_class;
+			av_opt_set_defaults( oc->priv_data );
+		}
+	}
+#endif
 
 	// Get the codec ids selected
 	audio_codec_id = fmt->audio_codec;
@@ -1309,9 +1325,6 @@ static void *consumer_thread( void *arg )
 			free( key );
 		}
 	}
-
-	oc->oformat = fmt;
-	snprintf( oc->filename, sizeof(oc->filename), "%s", filename );
 
 	// Get a frame now, so we can set some AVOptions from properties.
 	frame = mlt_consumer_rt_frame( consumer );
