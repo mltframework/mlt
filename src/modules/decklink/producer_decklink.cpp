@@ -43,6 +43,7 @@ private:
 	int              m_colorspace;
 	int              m_vancLines;
 	mlt_cache        m_cache;
+	bool             m_reprio;
 
 	BMDDisplayMode getDisplayMode( mlt_profile profile, int vancLines )
 	{
@@ -357,6 +358,43 @@ public:
 			IDeckLinkVideoInputFrame* video,
 			IDeckLinkAudioInputPacket* audio )
 	{
+		if( !m_reprio )
+		{
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES( getProducer() );
+
+			if ( mlt_properties_get( properties, "priority" ) )
+			{
+				int r;
+				pthread_t thread;
+				pthread_attr_t tattr;
+				struct sched_param param;
+
+				pthread_attr_init(&tattr);
+				pthread_attr_setschedpolicy(&tattr, SCHED_FIFO);
+
+				if ( !strcmp( "max", mlt_properties_get( properties, "priority" ) ) )
+					param.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+				else if ( !strcmp( "min", mlt_properties_get( properties, "priority" ) ) )
+					param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
+				else
+					param.sched_priority = mlt_properties_get_int( properties, "priority" );
+
+				pthread_attr_setschedparam(&tattr, &param);
+
+				thread = pthread_self();
+
+				r = pthread_setschedparam(thread, SCHED_FIFO, &param);
+				if( r )
+					mlt_log_verbose( getProducer(),
+						"VideoInputFrameArrived: pthread_setschedparam returned %d\n", r);
+				else
+					mlt_log_verbose( getProducer(),
+						"VideoInputFrameArrived: param.sched_priority=%d\n", param.sched_priority);
+			};
+
+			m_reprio = true;
+		};
+
 		if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "preview" ) &&
 			mlt_producer_get_speed( getProducer() ) == 0.0 && !mlt_deque_count( m_queue ))
 		{
