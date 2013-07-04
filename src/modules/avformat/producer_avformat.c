@@ -2010,6 +2010,20 @@ static int sample_bytes( AVCodecContext *context )
 #endif
 }
 
+#if LIBAVCODEC_VERSION_MAJOR >= 55
+static void planar_to_interleaved( uint8_t *dest, AVFrame *src, int samples, int channels, int bytes_per_sample )
+{
+	int s, c;
+	for ( s = 0; s < samples; s++ )
+	{
+		for ( c = 0; c < channels; c++ )
+		{
+			memcpy( dest, &src->data[c][s * bytes_per_sample], bytes_per_sample );
+			dest += bytes_per_sample;
+		}
+	}
+}
+#else
 static void planar_to_interleaved( uint8_t *dest, uint8_t *src, int samples, int channels, int bytes_per_sample )
 {
 	int s, c;
@@ -2022,19 +2036,7 @@ static void planar_to_interleaved( uint8_t *dest, uint8_t *src, int samples, int
 		}
 	}
 }
-
-static void planar_to_interleaved2( uint8_t *dest, AVFrame *src, int samples, int channels, int bytes_per_sample )
-{
-	int s, c;
-	for ( s = 0; s < samples; s++ )
-	{
-		for ( c = 0; c < channels; c++ )
-		{
-			memcpy( dest, &src->data[c][s * bytes_per_sample], bytes_per_sample );
-			dest += bytes_per_sample;
-		}
-	}
-}
+#endif
 
 static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int channels, int samples, double timecode, double fps )
 {
@@ -2106,7 +2108,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			case AV_SAMPLE_FMT_S32P:
 			case AV_SAMPLE_FMT_FLTP:
 #if LIBAVCODEC_VERSION_MAJOR >= 55
-				planar_to_interleaved2( dest, self->audio_frame, convert_samples, codec_context->channels, sizeof_sample );
+				planar_to_interleaved( dest, self->audio_frame, convert_samples, codec_context->channels, sizeof_sample );
 #else
 				planar_to_interleaved( dest, decode_buffer, convert_samples, codec_context->channels, sizeof_sample );
 #endif
