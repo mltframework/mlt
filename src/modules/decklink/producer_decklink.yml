@@ -96,3 +96,11 @@ parameters:
     description: The model name of each device that accepts input.
     type: string
     readonly: yes
+
+  - identifier: priority
+    title: Thread priority
+    description: Set the DeckLink thread's scheduling class to realtime and its priority.
+    type: integer
+    minimum: 1
+    maximum: 99
+    default: 20
