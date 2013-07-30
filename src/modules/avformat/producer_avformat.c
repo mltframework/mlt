@@ -2211,8 +2211,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		index = 0;
 		index_max = FFMIN( MAX_AUDIO_STREAMS, context->nb_streams );
 		*channels = self->total_channels;
-		*samples = mlt_sample_calculator( fps, FFMAX( self->max_frequency, *frequency ), position );
-		*frequency = FFMAX( self->max_frequency, *frequency );
+		*samples = mlt_sample_calculator( fps, self->max_frequency, position );
+		*frequency = self->max_frequency;
 	}
 
 	// Initialize the buffers
