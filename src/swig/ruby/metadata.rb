@@ -27,7 +27,7 @@ media types:
 %   end
 %%BR%
 % end
-description: <%= yml['description'] %> %BR%
+description: <%= ERB::Util.h(yml['description']) %> %BR%
 version: <%= yml['version'] %> %BR%
 creator: <%= yml['creator'] %> %BR%
 % yml['contributor'] and yml['contributor'].each do |x|
@@ -39,7 +39,7 @@ contributor: <%= x %> %BR%
 % if yml['notes']
 ---++ Notes
 %   yml['notes'].each do |x|
-<%= x %>
+<%= ERB::Util.h(x) %>
 %   end
 % end
 
@@ -55,7 +55,7 @@ contributor: <%= x %> %BR%
 %   yml['parameters'].each do |param|
 ---+++ <%= param['identifier'] %>
 <%= "title: #{param['title']} %BR%\n" if param['title'] %>
-<%= "description: #{param['description']} %BR%\n" if param['description'] %>
+<%= "description: #{ERB::Util.h(param['description'])} %BR%\n" if param['description'] %>
 type: <%= param['type'] %> %BR%
 readonly: <%= param['readonly'] or 'no' %> %BR%
 required: <%= param['required'] or 'no' %> %BR%
