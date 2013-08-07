@@ -1043,8 +1043,6 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 	mlt_frame new_frame = mlt_frame_init( NULL );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_properties new_props = MLT_FRAME_PROPERTIES( new_frame );
-	int width = mlt_properties_get_int( properties, "width" );
-	int height = mlt_properties_get_int( properties, "height" );
 	void *data, *copy;
 	int size;
 
@@ -1055,9 +1053,6 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 		mlt_frame_get_original_producer( self ), 0, NULL, NULL );
 	mlt_properties_set_data( new_props, "movit.convert",
 		mlt_properties_get_data( properties, "movit.convert", NULL), 0, NULL, NULL );
-
-	mlt_properties_set_int( new_props, "meta.media.width", width );
-	mlt_properties_set_int( new_props, "meta.media.height", height );
 
 	if ( is_deep )
 	{
@@ -1075,6 +1070,9 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 		data = mlt_properties_get_data( properties, "image", &size );
 		if ( data )
 		{
+			int width = mlt_properties_get_int( properties, "width" );
+			int height = mlt_properties_get_int( properties, "height" );
+
 			if ( ! size )
 				size = mlt_image_format_size( mlt_properties_get_int( properties, "format" ),
 					width, height, NULL );

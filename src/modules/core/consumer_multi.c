@@ -365,6 +365,7 @@ static void foreach_consumer_put( mlt_consumer consumer, mlt_frame frame )
 				// put ideal number of samples into cloned frame
 				int deeply = index > 1 ? 1 : 0;
 				mlt_frame clone_frame = mlt_frame_clone( frame, deeply );
+				mlt_properties clone_props = MLT_FRAME_PROPERTIES( clone_frame );
 				int nested_samples = mlt_sample_calculator( nested_fps, frequency, nested_pos );
 				// -10 is an optimization to avoid tiny amounts of leftover samples
 				nested_samples = nested_samples > current_samples - 10 ? current_samples : nested_samples;
@@ -380,14 +381,20 @@ static void foreach_consumer_put( mlt_consumer consumer, mlt_frame frame )
 					nested_size = 0;
 				}
 				mlt_frame_set_audio( clone_frame, prev_buffer, format, nested_size, mlt_pool_release );
-				mlt_properties_set_int( MLT_FRAME_PROPERTIES(clone_frame), "audio_samples", nested_samples );
-				mlt_properties_set_int( MLT_FRAME_PROPERTIES(clone_frame), "audio_frequency", frequency );
-				mlt_properties_set_int( MLT_FRAME_PROPERTIES(clone_frame), "audio_channels", channels );
+				mlt_properties_set_int( clone_props, "audio_samples", nested_samples );
+				mlt_properties_set_int( clone_props, "audio_frequency", frequency );
+				mlt_properties_set_int( clone_props, "audio_channels", channels );
 
 				// chomp the audio
 				current_samples -= nested_samples;
 				current_size -= nested_size;
 				buffer += nested_size;
+
+				// Fix some things
+				mlt_properties_set_int( clone_props, "meta.media.width",
+					mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "width" ) );
+				mlt_properties_set_int( clone_props, "meta.media.height",
+					mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "height" ) );
 
 				// send frame to nested consumer
 				mlt_consumer_put_frame( nested, clone_frame );
