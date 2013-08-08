@@ -21,10 +21,6 @@ CXXFLAGS += $(CFLAGS) $(QTCXXFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) -Wno-deprecat
 
 LDFLAGS += $(QTLIBS) $(EXIFLIBS) $(KDELIBS)
 
-ifdef USE_KDE3
-LDFLAGS += -lkio
-endif
-
 SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)
 
 all: 	$(TARGET)

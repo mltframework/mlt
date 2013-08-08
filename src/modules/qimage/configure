@@ -5,9 +5,8 @@ then
 	cat << EOF
 QImage options:
 
-  --force-qt3		  - Force compile against Qt3 if Qt4 is present on the system
-  --qimage-libdir         - Location of QT lib directory [/usr/lib/qt4 or /usr/lib/qt3]
-  --qimage-includedir     - Location of QT include directory [/usr/include/qt4 or /usr/include/qt3]
+  --qimage-libdir         - Location of QT lib directory [/usr/lib/qt4]
+  --qimage-includedir     - Location of QT include directory [/usr/include/qt4]
   --kde-libdir            - Location of KDE lib directory [/usr/lib]
   --kde-includedir        - Location of KDE include directory [/usr/include/kde]
   --exif-libdir           - Location of libexif lib directory [/usr/lib]
@@ -41,8 +40,6 @@ else
 		qimage_libdir="$QTDIR/lib"
 	fi
 
-	export force_qt3=
-	export qt4_found=
 	export without_kde=
 
 	for i in "$@"
@@ -54,7 +51,6 @@ else
 			--kde-includedir=* )	kde_includedir="${i#--kde-includedir=}" ;;
 			--exif-libdir=* )	exif_libdir="${i#--exif-libdir=}" ;;
 			--exif-includedir=* )	exif_includedir="${i#--exif-includedir=}" ;;
-			--force-qt3 )		force_qt3="true" ;;
 			--without-kde )	without_kde="true" ;;
 		esac
 	done
@@ -65,85 +61,79 @@ else
 	pkg-config --exists 'libexif'
 	if [ $? -eq 0 ]
 	then
-	    echo "Libexif found, enabling auto rotate"
-	    echo "#define USE_EXIF" >> config.h
-	    echo "USE_EXIF=1" >> config.mak
-	    echo EXIFCXXFLAGS=$(pkg-config --cflags libexif ) >> config.mak
-	    echo EXIFLIBS=$(pkg-config --libs libexif) >> config.mak
+		echo "- Libexif found, enabling auto rotate"
+		echo "#define USE_EXIF" >> config.h
+		echo "USE_EXIF=1" >> config.mak
+		echo EXIFCXXFLAGS=$(pkg-config --cflags libexif ) >> config.mak
+		echo EXIFLIBS=$(pkg-config --libs libexif) >> config.mak
 	elif [ -d "$exif_libdir" -a -d "$exif_includedir" ]
 	then
 		# test if we have a libexif
 		if [ -f "$exif_libdir/exif-data.h" ]
 		then
-			echo "Libexif found, enabling auto rotate"
+			echo "- Libexif found, enabling auto rotate"
 			echo "#define USE_EXIF" >> config.h
 			echo "USE_EXIF=1" >> config.mak
 			echo EXIFCXXFLAGS=-I$exif_includedir >> config.mak
-                        echo EXIFLIBS=-L$exif_libdir lexif >> config.mak
+			echo EXIFLIBS=-L$exif_libdir lexif >> config.mak
 		else
-			echo "Libexif not found, disabling exif features (auto rotate)"
+			echo "- Libexif not found, disabling exif features (auto rotate)"
 		fi
 	fi
 
 	if [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
 	then
-		# test if we have a Qt3 or Qt4
-		if [ -f "$qimage_libdir/libQtCore.so" ] || [ -d "$qimage_libdir/QtGui.framework" ] || [ -f "$qimage_libdir/libQtCore4.a" ] && [ "$force_qt3" = "" ]
+		# test if we have a Qt5 or Qt4
+		if [ -f "$qimage_libdir/libQt5Core.so" ]
 		then
-			echo "Qt version 4.x detected, will compile Qt4 qimage producer"
-			qt4_found=true
+			echo "- Qt version 5.x detected"
+			# TODO re-enable KDE support when KDE Frameworks 5 widely available
+			without_kde=true
+		elif [ -f "$qimage_libdir/libQtCore.so" ] || [ -d "$qimage_libdir/QtGui.framework" ] || [ -f "$qimage_libdir/libQtCore4.a" ] && [ "$force_qt3" = "" ]
+		then
+			echo "- Qt version 4.x detected"
 		else
-			echo "Qt version 3.x detected, will compile Qt3 qimage producer"
+			echo "- Qt not found: disabling"
+			touch ../disable-qimage
+			exit 0
 		fi
 
-		echo "Include directory: " $qimage_includedir
+		echo "- Include directory: " $qimage_includedir
 
-		if [ "$qt4_found" != "" ] && [ "$force_qt3" = "" ]
+		if [ -f "$qimage_libdir/libQt5Core.so" ]
 		then
-			echo "#define USE_QT4" >> config.h
-			echo "USE_QT4=1" >> config.mak
-			if [ -d "$qimage_libdir/QtGui.framework" ]
-			then
-				echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
-				echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
-			elif [ -f "$qimage_libdir/libQtCore4.a" ]
-			then
-				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-				echo QTLIBS=-Wl,-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 -lQtOpenGL4 >> config.mak
-			else
-				echo QTCXXFLAGS=-I$qimage_includedir >> config.mak
-				echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg -lQtOpenGL >> config.mak
-			fi
+			echo QTCXXFLAGS=-I$qimage_includedir -I$qimage_includedir/QtCore -I$qimage_includedir/QtGui -I$qimage_includedir/QtXml -I$qimage_includedir/QtSvg -I$qimage_includedir/QtOpenGL -I$qimage_includedir/QtWidgets >> config.mak
+			echo QTLIBS=-Wl,-rpath-link,"$qimage_includedir" -L"$qimage_libdir" -lQt5Core -lQt5Gui -lQt5Xml -lQt5Svg -lQt5OpenGL -lQt5Widgets >> config.mak
+		elif [ -d "$qimage_libdir/QtGui.framework" ]
+		then
+			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+		elif [ -f "$qimage_libdir/libQtCore4.a" ]
+		then
+			echo QTCXXFLAGS=-I$qimage_includedir -I$qimage_includedir/QtCore -I$qimage_includedir/QtGui -I$qimage_includedir/QtXml -I$qimage_includedir/QtSvg -I$qimage_includedir/QtOpenGL >> config.mak
+			echo QTLIBS=-Wl,-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 -lQtOpenGL4 >> config.mak
 		else
-		    if [ "$without_kde" = "" ] && [ -d "$kde_includedir" ]
-		    then
-			    echo "#define USE_KDE3" >> config.h
-			    echo "USE_KDE3=1" >> config.mak
-			    echo "#define USE_QT3" >> config.h
-			    echo "USE_QT3=1" >> config.mak
-			    echo QTCXXFLAGS=-I$qimage_includedir -I$kde_includedir -DQT_THREAD_SUPPORT >> config.mak
-				echo QTLIBS=-L$qimage_libdir -L$kde_libdir -lqt-mt >> config.mak
-		    else
-			    echo "qimage: KDE environment not found or disabled by request - disabling extra image formats"
-			    echo "#define USE_QT3" >> config.h
-			    echo "USE_QT3=1" >> config.mak
-			    echo QTCXXFLAGS=-I$qimage_includedir -DQT_THREAD_SUPPORT>> config.mak
-			    echo QTLIBS=-L$qimage_libdir -lqt-mt >> config.mak
-		    fi
+			echo QTCXXFLAGS=-I$qimage_includedir  -I$qimage_includedir/QtCore -I$qimage_includedir/QtGui -I$qimage_includedir/QtXml -I$qimage_includedir/QtSvg -I$qimage_includedir/QtOpenGL >> config.mak
+			echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg -lQtOpenGL >> config.mak
 		fi
 	else
 		pkg-config --exists 'QtGui >= 4'
-		if [ $? -eq 0 ] && [ "$force_qt3" = "" ]
+		if [ $? -eq 0 ]
 		then
-			echo "Qt version 4.x detected, will compile Qt4 qimage producer"
-			qt4_found=true
-			echo "#define USE_QT4" >> config.h
-			echo "USE_QT4=1" >> config.mak
+			echo "- Qt version 4.x detected"
 			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 		else
-			echo "qimage: QT environment not found - disabling"
-			touch ../disable-qimage
+			pkg-config --exists 'Qt5Gui'
+			if [ $? -eq 0 ]
+			then
+				echo "- Qt version 5.x detected"
+				echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5OpenGL Qt5Widgets) >> config.mak
+				echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5OpenGL Qt5Widgets) >> config.mak
+			else
+				echo "- Qt not found - disabling"
+				touch ../disable-qimage
+			fi
 		fi
 	fi
 
@@ -163,7 +153,7 @@ else
 			fi
 			if [ -d "$kde_includedir" ] && [ -d "$kde_libdir" ]
 			then
-				echo "KDE version 4.x detected, will enable extra image formats"
+				echo "- KDE version 4.x detected, will enable extra image formats"
 				echo "#define USE_KDE4" >> config.h
 				echo "USE_KDE4=1" >> config.mak
 				echo KDECXXFLAGS=-I$kde_includedir >> config.mak

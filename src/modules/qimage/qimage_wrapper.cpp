@@ -23,29 +23,17 @@
 
 #include "qimage_wrapper.h"
 
-#ifdef USE_QT3
-#include <qimage.h>
-#include <qmutex.h>
-
-#ifdef USE_KDE3
-#include <kinstance.h>
-#include <kimageio.h>
-#endif
-#endif
-
 #ifdef USE_KDE4
 #include <kcomponentdata.h>
 #endif
 
-#ifdef USE_QT4
-#include <QtGui/QImage>
-#include <QtCore/QSysInfo>
-#include <QtGui/QApplication>
-#include <QtCore/QMutex>
-#include <QtCore/QtEndian>
-#include <QtCore/QTemporaryFile>
-#include <QtCore/QLocale>
-#endif
+#include <QImage>
+#include <QSysInfo>
+#include <QApplication>
+#include <QMutex>
+#include <QtEndian>
+#include <QTemporaryFile>
+#include <QLocale>
 
 #ifdef USE_EXIF
 #include <libexif/exif-data.h>
@@ -61,8 +49,6 @@ extern "C" {
 
 #ifdef USE_KDE4
 static KComponentData *instance = 0L;
-#elif USE_KDE3
-static KInstance *instance = 0L;
 #endif
 
 static QApplication *app = NULL;
@@ -72,7 +58,7 @@ static void qimage_delete( void *data )
 	QImage *image = ( QImage * )data;
 	delete image;
 	image = NULL;
-#if defined(USE_KDE3) || defined(USE_KDE4) 
+#if defined(USE_KDE4)
 	if (instance) delete instance;
 	instance = 0L;
 #endif
@@ -84,11 +70,6 @@ void init_qimage()
 #ifdef USE_KDE4
 	if ( !instance ) {
 	    instance = new KComponentData( "qimage_prod" );
-	}
-#elif defined(USE_KDE3)
-	if ( !instance ) {
-	    instance = new KInstance( "qimage_prod" );
-	    KImageIO::registerFormats();
 	}
 #endif
   
@@ -278,7 +259,6 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			|| strcmp( interps, "bicubic" ) == 0 )
 			interp = 1;
 
-#ifdef USE_QT4
 		// Note - the original qimage is already safe and ready for destruction
 		if ( qimage->depth() == 1 )
 		{
@@ -290,14 +270,6 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		QImage scaled = interp == 0 ? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
 		int has_alpha = scaled.hasAlphaChannel();
-#endif
-
-#ifdef USE_QT3
-		// Note - the original qimage is already safe and ready for destruction
-		QImage scaled = interp == 0 ? qimage->scale( width, height, QImage::ScaleFree ) :
-			qimage->smoothScale( width, height, QImage::ScaleFree );
-		self->has_alpha = 1;
-#endif
 
 		// Store width and height
 		self->current_width = width;

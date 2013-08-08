@@ -20,31 +20,31 @@
 
 #include "kdenlivetitle_wrapper.h"
 
-#include <QtGui/QImage>
-#include <QtGui/QPainter>
-#include <QtCore/QDebug>
-#include <QtGui/QApplication>
-#include <QtCore/QMutex>
-#include <QtGui/QGraphicsScene>
-#include <QtGui/QGraphicsTextItem>
-#include <QtSvg/QGraphicsSvgItem>
-#include <QtSvg/QSvgRenderer>
-#include <QtGui/QTextCursor>
-#include <QtGui/QTextDocument>
-#include <QtGui/QStyleOptionGraphicsItem>
+#include <QImage>
+#include <QPainter>
+#include <QDebug>
+#include <QApplication>
+#include <QMutex>
+#include <QGraphicsScene>
+#include <QGraphicsTextItem>
+#include <QGraphicsSvgItem>
+#include <QSvgRenderer>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QStyleOptionGraphicsItem>
 
-#include <QtCore/QString>
+#include <QString>
 
-#include <QtXml/QDomElement>
-#include <QtCore/QRectF>
-#include <QtGui/QColor>
-#include <QtGui/QWidget>
+#include <QDomElement>
+#include <QRectF>
+#include <QColor>
+#include <QWidget>
 #include <framework/mlt_log.h>
 
 #if QT_VERSION >= 0x040600
-#include <QtGui/QGraphicsEffect>
-#include <QtGui/QGraphicsBlurEffect>
-#include <QtGui/QGraphicsDropShadowEffect>
+#include <QGraphicsEffect>
+#include <QGraphicsBlurEffect>
+#include <QGraphicsDropShadowEffect>
 #endif
 
 static QApplication *app = NULL;
@@ -260,7 +260,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				if (base64.isEmpty()){
 					img.load(url);
 				}else{
-					img.loadFromData(QByteArray::fromBase64(base64.toAscii()));
+					img.loadFromData(QByteArray::fromBase64(base64.toLatin1()));
 				}
 				ImageItem *rec = new ImageItem(img);
 				scene->addItem( rec );
@@ -275,7 +275,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					rec = new QGraphicsSvgItem(url);
 				}else{
 					rec = new QGraphicsSvgItem();
-					QSvgRenderer *renderer= new QSvgRenderer(QByteArray::fromBase64(base64.toAscii()), rec );
+					QSvgRenderer *renderer= new QSvgRenderer(QByteArray::fromBase64(base64.toLatin1()), rec );
 					rec->setSharedRenderer(renderer);
 				}
 				if (rec){

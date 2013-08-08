@@ -22,7 +22,14 @@
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
-#include <QtGui/QtGui>
+#include <QApplication>
+#include <QImage>
+#include <QColor>
+#include <QLocale>
+#include <QPainter>
+#include <QPalette>
+#include <QFont>
+#include <QString>
 
 static QApplication *app = 0;
 

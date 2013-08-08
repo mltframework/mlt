@@ -18,9 +18,9 @@
  */
 
 #include <framework/mlt.h>
-#include <QtGui/QApplication>
-#include <QtCore/QLocale>
-#include <QtOpenGL/QGLWidget>
+#include <QApplication>
+#include <QLocale>
+#include <QGLWidget>
 
 static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 {
