@@ -8,5 +8,7 @@ threads=0
 vpre=medium
 preset=medium
 
+movflags=+faststart
+
 meta.preset.extension=mp4
 meta.preset.name=H.264 High Profile

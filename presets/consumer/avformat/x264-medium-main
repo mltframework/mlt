@@ -10,5 +10,7 @@ preset=medium
 vprofile=main
 flags2=-dct8x8
 
+movflags=+faststart
+
 meta.preset.extension=mp4
 meta.preset.name=H.264 Main Profile

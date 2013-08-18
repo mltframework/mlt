@@ -13,5 +13,7 @@ bf=0
 flags2=-wpred-dct8x8
 wpredp=0
 
+movflags=+faststart
+
 meta.preset.extension=mp4
 meta.preset.name=H.264 Baseline Profile

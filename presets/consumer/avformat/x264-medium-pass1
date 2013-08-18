@@ -15,4 +15,6 @@ pass=1
 an=1
 audio_off=1
 
+movflags=+faststart
+
 meta.preset.hidden=1

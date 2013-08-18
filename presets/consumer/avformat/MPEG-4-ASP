@@ -11,9 +11,10 @@ mbd=rd
 trellis=1
 cmp=satd
 subcmp=satd
-
 bf=2
 flags=+mv4+aic+qpel
+
+movflags=+faststart
 
 meta.preset.extension=mp4
 meta.preset.note=Part 2 Advanced Simple Profile

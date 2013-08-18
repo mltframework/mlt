@@ -14,5 +14,7 @@ cmp=satd
 subcmp=satd
 progressive=1
 
+movflags=+faststart
+
 meta.preset.extension=mp4
 meta.preset.note=Part 2 Simple Profile
