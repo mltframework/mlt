@@ -2213,6 +2213,18 @@ on_fatal_error:
 		free( full );
 		free( cwd );
 		remove( "x264_2pass.log.temp" );
+
+		// Recent versions of libavcodec/x264 support passlogfile and need cleanup if specified.
+		if ( !mlt_properties_get( properties, "_logfilename" ) &&
+		      mlt_properties_get( properties, "passlogfile" ) )
+		{
+			file = mlt_properties_get( properties, "passlogfile" );
+			remove( file );
+			full = malloc( strlen( file ) + strlen( ".mbtree" ) + 1 );
+			sprintf( full, "%s.mbtree", file );
+			remove( full );
+			free( full );
+		}
 	}
 
 	while ( ( frame = mlt_deque_pop_back( queue ) ) )
