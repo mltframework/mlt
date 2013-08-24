@@ -79,6 +79,7 @@ public:
 	glsl_texture get_texture(int width, int height, GLint internal_format);
 	static void release_texture(glsl_texture);
 	glsl_pbo get_pbo(int size);
+	void cleanupContext();
 
 	Properties effect_list( Mlt::Service &service );
 	static bool init_chain(mlt_service);
@@ -94,12 +95,14 @@ public:
 
 private:
 	static void onInit( mlt_properties owner, GlslManager* filter );
+	static void onClose( mlt_properties owner, GlslManager* filter );
 	static void onServiceChanged( mlt_properties owner, mlt_service service );
 	static void onPropertyChanged( mlt_properties owner, mlt_service service, const char* property );
 	Mlt::Deque fbo_list;
 	Mlt::Deque texture_list;
 	glsl_pbo  pbo;
 	Mlt::Event* initEvent;
+	Mlt::Event* closeEvent;
 };
 
 #endif // GLSL_MANAGER_H

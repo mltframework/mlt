@@ -41,6 +41,7 @@ GlslManager::GlslManager()
 	: Mlt::Filter( mlt_filter_new() )
 	, pbo(0)
 	, initEvent(0)
+	, closeEvent(0)
 {
 	mlt_filter filter = get_filter();
 	if ( filter ) {
@@ -50,19 +51,18 @@ GlslManager::GlslManager()
 			(mlt_destructor) deleteManager, NULL);
 
 		mlt_events_register( get_properties(), "init glsl", NULL );
+		mlt_events_register( get_properties(), "close glsl", NULL );
 		initEvent = listen("init glsl", this, (mlt_listener) GlslManager::onInit);
+		closeEvent = listen("close glsl", this, (mlt_listener) GlslManager::onClose);
 	}
 }
 
 GlslManager::~GlslManager()
 {
 	mlt_log_debug(get_service(), "%s\n", __FUNCTION__);
-	while (fbo_list.peek_back())
-		delete (glsl_fbo) fbo_list.pop_back();
-	while (texture_list.peek_back())
-		delete (glsl_texture) texture_list.pop_back();
-	delete pbo;
+	cleanupContext();
 	delete initEvent;
+	delete closeEvent;
 }
 
 GlslManager* GlslManager::get_instance()
@@ -171,6 +171,25 @@ glsl_pbo GlslManager::get_pbo(int size)
 	return pbo;
 }
 
+void GlslManager::cleanupContext()
+{
+	while (fbo_list.peek_back()) {
+		glsl_fbo fbo = (glsl_fbo) fbo_list.pop_back();
+		glDeleteFramebuffers(1, &fbo->fbo);
+		delete fbo;
+	}
+	while (texture_list.peek_back()) {
+		glsl_texture texture = (glsl_texture) texture_list.pop_back();
+		glDeleteTextures(1, &texture->texture);
+		delete texture;
+	}
+	if (pbo) {
+		glDeleteBuffers(1, &pbo->pbo);
+		delete pbo;
+		pbo = 0;
+	}
+}
+
 void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 {
 	mlt_log_debug( filter->get_service(), "%s\n", __FUNCTION__ );
@@ -183,6 +202,11 @@ void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 #endif
 	::init_movit( path, mlt_log_get_level() == MLT_LOG_DEBUG? MOVIT_DEBUG_ON : MOVIT_DEBUG_OFF );
 	filter->set( "glsl_supported", movit_initialized );
+}
+
+void GlslManager::onClose( mlt_properties owner, GlslManager *filter )
+{
+	filter->cleanupContext();
 }
 
 void GlslManager::onServiceChanged( mlt_properties owner, mlt_service aservice )
