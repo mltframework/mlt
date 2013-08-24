@@ -17,6 +17,12 @@ ifdef GPL3
 	CFLAGS += -DGPL3
 endif
 
+ifneq ($(targetos), Darwin)
+ifneq ($(targetos), MinGW)
+    LDFLAGS += -lX11
+endif
+endif
+
 CXXFLAGS += $(CFLAGS) $(QTCXXFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) -Wno-deprecated
 
 LDFLAGS += $(QTLIBS) $(EXIFLIBS) $(KDELIBS)
