@@ -38,7 +38,11 @@ private:
 
 public:
 	GLWidget()
+#ifdef Q_OS_MAC
+		: QGLWidget()
+#else
 		: QGLWidget(0, 0, Qt::SplashScreen)
+#endif
 		, renderContext(0)
 		, isInitialized(false)
 	{
