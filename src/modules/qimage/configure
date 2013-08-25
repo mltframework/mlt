@@ -84,7 +84,7 @@ else
 	if [ -d "$qimage_libdir" -a -d "$qimage_includedir" ]
 	then
 		# test if we have a Qt5 or Qt4
-		if [ -f "$qimage_libdir/libQt5Core.so" ] || [ -d "$qimage_libdir/QtWidgets.framework" ] || [ -f "$qimage_libdir/libQtCore5.a" ]
+		if [ -f "$qimage_libdir/libQt5Core.so" ] || [ -d "$qimage_libdir/QtWidgets.framework" ] || [ -f "$qimage_libdir/libQt5Core.a" ]
 		then
 			echo "- Qt version 5.x detected"
 			# TODO re-enable KDE support when KDE Frameworks 5 widely available
@@ -100,22 +100,27 @@ else
 
 		echo "- Include directory: " $qimage_includedir
 
-		if [ -f "$qimage_libdir/libQt5Core.so" ] || [ -f "$qimage_libdir/libQtCore5.a" ]
+		# Qt5 on Linux, BSD, or Windows
+		if [ -f "$qimage_libdir/libQt5Core.so" ] || [ -f "$qimage_libdir/libQt5Core.a" ]
 		then
 			echo QTCXXFLAGS=-I$qimage_includedir -I$qimage_includedir/QtCore -I$qimage_includedir/QtGui -I$qimage_includedir/QtXml -I$qimage_includedir/QtSvg -I$qimage_includedir/QtOpenGL -I$qimage_includedir/QtWidgets >> config.mak
 			echo QTLIBS=-Wl,-rpath-link,"$qimage_libdir" -L"$qimage_libdir" -lQt5Core -lQt5Gui -lQt5Xml -lQt5Svg -lQt5OpenGL -lQt5Widgets >> config.mak
+		# Qt5 on OS X
 		elif [ -d "$qimage_libdir/QtWidgets.framework" ]
 		then
 				echo QTCXXFLAGS=-I$qimage_includedir -I$qimage_includedir/QtCore -I$qimage_includedir/QtGui -I$qimage_includedir/QtXml -I$qimage_includedir/QtSvg -I$qimage_includedir/QtOpenGL -I$qimage_includedir/QtWidgets >> config.mak
 				echo QTLIBS=-F"$qimage_libdir" -framework QtCore -framework QtGui -framework QtXml -framework QtSvg -framework QtOpenGL -framework QtWidgets >> config.mak
+		# Qt4 on OS X
 		elif [ -d "$qimage_libdir/QtGui.framework" ]
 		then
 			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+		# Qt4 on Windows
 		elif [ -f "$qimage_libdir/libQtCore4.a" ]
 		then
 			echo QTCXXFLAGS=-I$qimage_includedir -I$qimage_includedir/QtCore -I$qimage_includedir/QtGui -I$qimage_includedir/QtXml -I$qimage_includedir/QtSvg -I$qimage_includedir/QtOpenGL >> config.mak
 			echo QTLIBS=-Wl,-enable-auto-import -L$qimage_libdir -lQtCore4 -lQtGui4 -lQtXml4 -lQtSvg4 -lQtOpenGL4 >> config.mak
+		# Qt4 on Linux or BSD
 		else
 			echo QTCXXFLAGS=-I$qimage_includedir  -I$qimage_includedir/QtCore -I$qimage_includedir/QtGui -I$qimage_includedir/QtXml -I$qimage_includedir/QtSvg -I$qimage_includedir/QtOpenGL >> config.mak
 			echo QTLIBS=-L$qimage_libdir -lQtCore -lQtGui -lQtXml -lQtSvg -lQtOpenGL >> config.mak
