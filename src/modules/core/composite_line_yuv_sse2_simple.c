@@ -25,11 +25,16 @@ void composite_line_yuv_sse2_simple(uint8_t *dest, uint8_t *src, int width, uint
     {
         0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00
     };
+    const static unsigned char const2[] =
+    {
+        0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00
+    };
 
     __asm__ volatile
     (
         "pxor           %%xmm0, %%xmm0          \n\t"   /* clear zero register */
         "movdqu         (%4), %%xmm9            \n\t"   /* load const1 */
+        "movdqu         (%7), %%xmm10           \n\t"   /* load const2 */
         "movd           %0, %%xmm1              \n\t"   /* load weight and decompose */
         "movlhps        %%xmm1, %%xmm1          \n\t"
         "pshuflw        $0, %%xmm1, %%xmm1      \n\t"
@@ -68,6 +73,10 @@ void composite_line_yuv_sse2_simple(uint8_t *dest, uint8_t *src, int width, uint
         "movdqa         %%xmm9, %%xmm4          \n\t"
         "psubw          %%xmm3, %%xmm4          \n\t"
         "pmullw         %%xmm2, %%xmm4          \n\t"
+        "movdqa         %%xmm4, %%xmm5          \n\t"
+        "psrlw          $8, %%xmm4              \n\t"
+        "paddw          %%xmm5, %%xmm4          \n\t"
+        "paddw          %%xmm10, %%xmm4         \n\t"
         "psrlw          $8, %%xmm4              \n\t"
         "paddw          %%xmm4, %%xmm3          \n\t"
         "packuswb       %%xmm0, %%xmm3          \n\t"
@@ -147,7 +156,15 @@ void composite_line_yuv_sse2_simple(uint8_t *dest, uint8_t *src, int width, uint
         "pmullw         %%xmm9, %%xmm6          \n\t"
         "paddw          %%xmm3, %%xmm4          \n\t"   /* dst = dst + src */
         "paddw          %%xmm5, %%xmm6          \n\t"
-        "psrlw          $8, %%xmm4              \n\t"   /* dst = dst >> 8 */
+        "movdqa         %%xmm4, %%xmm3          \n\t"   /* dst = ((dst >> 8) + dst + 128) >> 8 */
+        "movdqa         %%xmm6, %%xmm5          \n\t"
+        "psrlw          $8, %%xmm4              \n\t"
+        "psrlw          $8, %%xmm6              \n\t"
+        "paddw          %%xmm3, %%xmm4          \n\t"
+        "paddw          %%xmm5, %%xmm6          \n\t"
+        "paddw          %%xmm10, %%xmm4         \n\t"
+        "paddw          %%xmm10, %%xmm6         \n\t"
+        "psrlw          $8, %%xmm4              \n\t"
         "psrlw          $8, %%xmm6              \n\t"
 //        "pminsw         %%xmm9, %%xmm4          \n\t"   /* clamp values */
 //        "pminsw         %%xmm9, %%xmm6          \n\t"
@@ -182,7 +199,7 @@ void composite_line_yuv_sse2_simple(uint8_t *dest, uint8_t *src, int width, uint
         "jnz            loop_start              \n\t"
 
         :
-        : "r" (weight >> 8), "r" (alpha_b), "r" (src), "r" (dest), "r" (const1) , "r" (alpha_a), "r" (width / 8)
+        : "r" (weight >> 8), "r" (alpha_b), "r" (src), "r" (dest), "r" (const1) , "r" (alpha_a), "r" (width / 8), "r" (const2)
         //: "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","xmm8","xmm9", "memory"
     );
 };
