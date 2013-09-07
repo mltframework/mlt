@@ -1,166 +1,157 @@
-Installation Documentation
+---+ Installation Documentation
 
-Copyright (C) 2004-2009 Ushodaya Enterprises Limited
-Author: Charles Yates <charles.yates@pandora.be>
-Last Revision: 2009-05-08
+Last Revision: 2013-09-07
 
-
-INSTALL
--------
-
-	This document provides a description of the MLT project installation and
-	organisation.
+   This document provides a description of the MLT project installation and
+   organisation.
 
 
-Directories
------------
+---++ Directories
 
-	The directory heirarchy is defined as follows:
+   The directory heirarchy is defined as follows:
 
-	+ demo                  - A selection of samples to show off capabilities.
-	+ docs                  - Location of all documentation
-	+ src                   - All project source is provided here
-	    + framework         - The mlt media framework
-	    + modules           - All services are defined here
-	        + avformat      - libavformat dependent services
-	        + core          - Independent MLT services
-	        + dv            - libdv dependent services
-	        + gtk2          - pango and pixbuf dependent services
-	        + normalize     - audio normalisation functions (**)
-	        + plus          - throwaway silliness
-	        + resample      - libresample dependent services (**)
-	        + sdl           - SDL dependent services
-	        + vorbis        - vorbis dependenent services
-	        + xml           - XML (de)serialization services
-	        + xine          - Xine-derived sources (**)
-	    + melt              - A media playing test application (**)
-	    + tests             - Reserved for regression and unit tests
+   * demo                - A selection of samples to show off capabilities.
+   * docs                - Location of all documentation
+   * presets             - Properties presets for various services
+   * profiles            - MLT profile configurations
+   * src                 - All project source is provided here
+      * framework        - The MLT media framework
+      * melt             - A media playing test application (*)
+      * mlt++            - C++ wrapper for framework
+      * modules          - All services are defined here
+         * avformat      - FFmpeg/Libav dependent services
+         * avsync        - services to help test audio/video synchronization
+         * core          - independent MLT services
+         * decklink      - Blackmagick Design SDI/HDMI services
+         * dgraft        - ports of Donald Graft's filters (*)
+         * dv            - libdv dependent services
+         * effectv       - ports of !EffecTV filters (*)
+         * feeds         - templates for use with core's data filters
+         * frei0r        - adapter for frei0r video plugins
+         * gtk2          - GTK+ pango and pixbuf dependent services
+         * jackrack      - adapter for LADSPA audio plugins and JACK server
+         * kdenlive      - services contributed by Kdenlive project
+         * kino          - DV/AVI demuxer from Kino project (*)
+         * linsys        - DVEO SDI card consumer (*)
+         * lumas         - wipe file generator for core's luma transition
+         * motion_est    - motion estimation-based filters (*)
+         * normalize     - audio normalisation functions (*)
+         * oldfilm       - filters to make pristine video dirty
+         * opengl        - !OpenGL dependent services (*)
+         * plus          - miscellaneous services (pending move to core)
+         * qimage        - Qt dependent services (*)
+         * resample      - libresample dependent services (*)
+         * rotoscoping   - spline-based alpha mask filter (*)
+         * rtaudio       - audio consumer based on !RtAudio project code
+         * sdl           - SDL dependent services
+         * sox           - !SoX dependent audio filters
+         * swfdec        - Swfdec dependent producer for Flash files
+         * videostab     - video stabilization filters (*)
+         * vmfx          - services contributed by (defunct) Visual Media FX
+         * vorbis        - vorbis dependenent services
+         * xine          - Xine-derived sources (*)
+         * xml           - XML (de)serialization services
+      * swig             - High level language bindings using SWIG
+      * tests            - Reserved for regression and unit tests
+      * win32            - Windows-specific helper functions
 
-	Additional subdirectories may be nested below those shown and should be
-	documented in their parent.
+   Additional subdirectories may be nested below those shown and should be
+   documented in their parent.
 
-	(*)  Not posted to CVS due to licensing issues.
-	(**) Contains GPL dependencies or code.
-
-
-Dependencies
-------------
-
-	The MLT core is dependent on:
-
-	* a C99 compliant C compiler
-	* posix threading
-	* standard posix libraries
-
-	The MLT applications and libraries provided are all dependent on the core.
-
-	The modules have the following dependencies:
-
-	----------- ----------------------------------------------------------
-	MODULE      DESCRIPTION
-	----------- ----------------------------------------------------------
-	avformat    Provided from ffmpeg CVS and compiled as a shared library.
-	            URL: http://ffmpeg.sf.net
-	----------- ----------------------------------------------------------
-	dv          libdv 0.102 or later.
-	            URL: http://libdv.sf.net
-	----------- ----------------------------------------------------------
-	gtk2        GTK2 and associated dependencies.
-	            URL: http://www.gtk.org
-	----------- ----------------------------------------------------------
-	resample    libsamplerate 0.15 or later 
-	            URL: http://www.mega-nerd.com/SRC/ (GPL)
-	----------- ----------------------------------------------------------
-	sdl         SDL 1.2 or later.
-	            URL: http://www.libsdl.org
-	----------- ----------------------------------------------------------
-	vorbis      libvorbis 1.0.1 or later.
-	            URL: http://www.vorbis.com/
-	----------- ----------------------------------------------------------
-	xml         libxml2 2.5 or later.
-	            URL: http://www.xmlsoft.org/
-	----------- ----------------------------------------------------------
+   (*) Contains GPL dependencies or code.
 
 
-Configuration
--------------
+---++ Dependencies
 
-	Configuration is triggered from the top level directory via a 
-	./configure script.
+   The MLT core is dependent on:
 
-	Each source bearing subdirectory shown above have their own configure
-	script which are called automatically from the top level.
+   * a C99 compliant C compiler
+   * posix threading (pthread)
+   * standard posix libraries (libc)
 
-	Typically, new modules can be introduced without modification to the 
-	configure script and arguments are accepted and passed through to all 
-	subdirectories.
+   The MLT applications and libraries provided are all dependent on the core.
 
-	More information on usage is found by running:
+   The modules have the following dependencies:
 
-	    ./configure --help
-
-	NB: This script must be run to register new services after a CVS checkout
-	or subsequent update.
-
-	
-Compilation
------------
-
-	Makefiles are generated during configuration and these are based on
-	a per directory template which must be provided by the developer.
-
-
-Testing
--------
-
-	To execute the mlt tools without installation, or to test a new version
-	on a system with an already installed mlt version, you should run:
-
-	. setenv
-
-	NB: This applies to your current shell only and it assumes sh or bash.
+   | *Module* | *Description* |
+   | avformat | [[http://www.ffmpeg.org][FFmpeg]] or [[http://www.libav.org][libav]] v0.7 or later |
+   | dv       | [[http://libdv.sf.net][libdv]] 0.102 or later |
+   | gtk2     | [[http://www.gtk.org][GTK2]] and associated dependencies |
+   | jackrack | [[http://jackaudio.org][JACK]], [[http://www.xmlsoft.org/][libxml2]], and ladspa.h |
+   | opengl   | [[http://git.sesse.net/movit][Movit]] |
+   | qimage   | [[http://www.qt-project.org][Qt]] 4.4 or later |
+   | resample | [[http://www.mega-nerd.com/SRC][libsamplerate]] 0.15 or later |
+   | sdl      | [[http://www.libsdl.org][SDL]] 1.2 or later |
+   | sox      | [[http://sox.sourceforge.net][SoX]] 13 or later |
+   | swfdec   | [[http://github.com/mltframework/swfdec][swfdec]] 0.8 or later |
+   | vorbis   | [[http://www.vorbis.com][libvorbis]] 1.0.1 or later |
+   | xml      | [[http://www.xmlsoft.org][libxml2]] 2.5 or later |
 
 
-Installation
-------------
+---++ Configuration
 
-	The install is triggered by running make install from the top level
-	directory.
-	
-	The framework produces a single shared object which is installed in 
-	$prefix/lib/ and public header files which are installed in
-	$prefix/include/mlt/framework.
+   Configuration is triggered from the top level directory via a 
+   ./configure script.
 
-	The modules produce a shared object per module and update text files
-	containing a list of modules provided by this build. These are installed 
-	in $prefix/share/mlt/modules. It is at the discretion of the module to 
-	install additional support files. 
-	
-	To allow the development of external components, mlt-config and scripts 
-	are generated and installed in $prefix/bin.
+   Each source bearing subdirectory shown above have their own configure
+   script which are called automatically from the top level.
 
-	After install, only those modules listed are usable by the server. No
-	module is loaded unless explicitly requested via server configuration
-	or usage.
+   Typically, new modules can be introduced without modification to the 
+   configure script and arguments are accepted and passed through to all 
+   subdirectories.
 
-	External modules are also placed in this $prefix/share/mlt/modules, and the
-	installation of those must modify the text file accordingly before they
-	will be considered at runtime.
+   More information on usage is found by running:
+
+   =./configure --help=
+
+   Note: This script must be run to register new services after a git clone
+   or subsequent update.
+
+---++ Compilation
+
+   Makefiles are generated during configuration and these are based on
+   a per directory template which must be provided by the developer.
 
 
-Development
------------
+---++ Testing
 
-	All compilation in the project has {top-level-dir}/src on the include path. 
-	All headers are included as:
+   To execute the MLT tools without installation, or to test a new version
+   on a system with an already installed MLT version in a Bash shell run:
 
-	    #include <framework/file.h>
-	
-	All external modules have {prefix}/include/mlt on the include path. All 
-	headers should also be included as:
+   =source setenv=
 
-	    #include <framework/file.h>
+   Note: This applies to your current shell only and it assumes sh or bash.
 
-	This allows migration of source between external and internal modules. 
-	The configuration and Makefile template requirements will require
-	attention though.
+
+---++ Installation
+
+   The install is triggered by running make install from the top level
+   directory.
+
+   The framework produces a single shared object which is installed in
+   $prefix/lib/ and public header files which are installed in
+   $prefix/include/mlt/framework and $prefix/include/mlt++.
+
+   The modules produce a shared object per module installed to
+   $prefix/lib/mlt. Also, each module may have support files installed to
+   $prefix/share/mlt/modules.
+
+   For the development of modules and applications, pkg-config metadata files
+   are generated and installed in $prefix/lib/pkgconfig.
+
+
+---++ Development
+
+   All compilation in the project has {top-level-dir}/src on the include path. 
+   All headers are included as:
+
+   #include <framework/file.h>
+
+   All external modules have {prefix}/include/mlt on the include path. All 
+   headers should also be included as:
+
+   #include <framework/file.h>
+
+   This allows migration of source between external and internal modules. 
+   The configuration and Makefile template requirements will require
+   attention though.
