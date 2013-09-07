@@ -109,6 +109,11 @@ else
 		fi
 	elif [ "$shared_ffmpeg" != "" ]
 	then
+		if ! $(pkg-config libswscale${avformat_suffix}); then
+			echo "- libswscale not found: disabling"
+			touch ../disable-avformat
+			exit 0
+		fi
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
 		case $targetos in
 			MINGW32_NT-*)
@@ -124,6 +129,11 @@ else
 		echo "LDFLAGS+=$(pkg-config --libs-only-L libswscale${avformat_suffix})" >> config.mak
 		if [ "$devices" = "true" ]
 		then
+			if ! $(pkg-config libavdevice${avformat_suffix}); then
+				echo "- libavdevice not found: disabling"
+				touch ../disable-avformat
+				exit 0
+			fi
 			echo "CFLAGS+=$(pkg-config --cflags libavdevice${avformat_suffix})" >> config.mak
 			echo "LDFLAGS+=$(pkg-config --libs-only-L libavdevice${avformat_suffix})" >> config.mak
 		fi
