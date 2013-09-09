@@ -1628,9 +1628,11 @@ static void *consumer_thread( void *arg )
 #endif
 #if LIBAVCODEC_VERSION_MAJOR >= 54
 							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
+#if LIBAVCODEC_VERSION_MAJOR >= 55
 							if ( audio_codec_id == AV_CODEC_ID_VORBIS )
 								audio_avframe->pts = synth_audio_pts;
 							synth_audio_pts += audio_avframe->nb_samples;
+#endif
 							avcodec_fill_audio_frame( audio_avframe, codec->channels, codec->sample_fmt,
 								(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 							int got_packet = 0;
@@ -1718,9 +1720,11 @@ static void *consumer_thread( void *arg )
 							}
 #if LIBAVCODEC_VERSION_MAJOR >= 54
 							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
+#if LIBAVCODEC_VERSION_MAJOR >= 55
 							if ( audio_codec_id == AV_CODEC_ID_VORBIS )
 								audio_avframe->pts = synth_audio_pts;
 							synth_audio_pts += audio_avframe->nb_samples;
+#endif
 							avcodec_fill_audio_frame( audio_avframe, codec->channels, codec->sample_fmt,
 								(const uint8_t*) audio_buf_2, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 							int got_packet = 0;
@@ -2029,9 +2033,11 @@ static void *consumer_thread( void *arg )
 #if LIBAVCODEC_VERSION_MAJOR >= 54
 				pkt.size = audio_outbuf_size;
 				audio_avframe->nb_samples = FFMAX( samples / channels, audio_input_nb_samples );
+#if LIBAVCODEC_VERSION_MAJOR >= 55
 				if ( audio_codec_id == AV_CODEC_ID_VORBIS )
 					audio_avframe->pts = synth_audio_pts;
 				synth_audio_pts += audio_avframe->nb_samples;
+#endif
 				avcodec_fill_audio_frame( audio_avframe, c->channels, c->sample_fmt,
 					(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 				int got_packet = 0;
