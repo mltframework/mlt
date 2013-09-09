@@ -686,8 +686,7 @@ static void query_vcodecs( )
 
 static void on_fatal_error( mlt_properties owner, mlt_consumer consumer )
 {
-	mlt_consumer_stop( consumer );
-	exit( EXIT_FAILURE );
+	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer), "done", 1 );
 }
 
 int main( int argc, char **argv )
